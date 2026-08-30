@@ -38,14 +38,37 @@ By default, the setup service listens only on the local loopback interface and o
    root@host:~# ./bareos-setup --no-browser
    Open this URL in your browser: http://127.0.0.1:19101/?token=...
 
-The URL contains a setup token and should be treated as sensitive. To access the wizard from another host, bind the setup service to a reachable interface, for example:
+The URL contains a setup token and should be treated as sensitive.
+
+.. _section-bareos-setup-remote:
+
+Accessing the wizard from another host
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The setup service speaks plain HTTP, so it must not be exposed directly to an untrusted network. To run the wizard from your workstation, forward the setup port over SSH instead. This is the recommended way to install a remote server:
+
+.. code-block:: shell-session
+   :caption: Forward the setup port over SSH
+
+   user@workstation:~$ ssh -L 19101:127.0.0.1:19101 root@server
+
+Leave that session open, start the wizard in it, and open the printed ``http://127.0.0.1:19101/?token=...`` URL in your local browser:
+
+.. code-block:: shell-session
+   :caption: Start the wizard inside the forwarded session
+
+   root@server:~# ./bareos-setup --no-browser
+
+All traffic is then encrypted and authenticated by SSH, and the setup service still listens only on the server's loopback interface. Because the browser reaches the wizard through the tunnel, the connection is a local one from the server's point of view, so the wizard also accepts Bareos Subscription credentials directly in the browser.
+
+Alternatively, the setup service can be bound to a reachable interface:
 
 .. code-block:: shell-session
    :caption: Listen on all interfaces
 
    root@host:~# ./bareos-setup --listen 0.0.0.0 --no-browser
 
-Only use this on a trusted network. The setup wizard executes privileged commands as root or through sudo.
+Use this only on a trusted network. The setup wizard executes privileged commands as root or through sudo, the setup token in the URL is the only access control, and the connection is not encrypted. For that reason the wizard does not accept Bareos Subscription credentials in the browser over such a connection; it asks for them on the terminal it is running on instead. Prefer the SSH tunnel above.
 
 The web wizard guides you through these steps:
 

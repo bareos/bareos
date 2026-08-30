@@ -131,6 +131,8 @@
               Remote browser session: subscription credentials are requested
               securely on the terminal running <code>bareos-setup</code> when
               installation starts. They are not shown or sent in this browser.
+              To enter them here instead, reach the wizard through an SSH
+              tunnel: <code>ssh -L 19101:127.0.0.1:19101 root@host</code>.
             </q-banner>
             <q-banner v-else-if="store.repository === 'subscription' && !subscriptionCredentialModeKnown"
               class="bg-warning q-mt-md" rounded>

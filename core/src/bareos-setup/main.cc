@@ -90,11 +90,12 @@ int main(int argc, char* argv[])
   std::string listen_address = "127.0.0.1";
   app.add_option("--listen,-l", listen_address,
                  "IPv4 address to listen on. Defaults to 127.0.0.1 "
-                 "(loopback only, the secure default). Use 0.0.0.0 to "
-                 "listen on all interfaces, or a specific interface "
-                 "address, so the wizard can be reached from other "
-                 "hosts -- only do this on a trusted network, since "
-                 "the wizard executes privileged commands.")
+                 "(loopback only, the secure default). To reach the "
+                 "wizard from another host, prefer forwarding the port "
+                 "over SSH (ssh -L 19101:127.0.0.1:19101 root@host) "
+                 "rather than binding to a reachable interface: the "
+                 "setup service speaks plain HTTP and executes "
+                 "privileged commands.")
       ->default_val("127.0.0.1");
 
   bool no_browser = false;
@@ -120,8 +121,14 @@ int main(int argc, char* argv[])
     std::cerr << "Warning: listening on " << listen_address
               << " instead of the "
               << "default 127.0.0.1. The setup wizard executes privileged "
-                 "commands as root; only do this on a trusted network. The "
-                 "setup token in the URL remains the only access control.\n";
+                 "commands as root and speaks plain HTTP, so the setup "
+                 "token in the URL is the only access control; only do "
+                 "this on a trusted network.\n"
+                 "Consider forwarding the port over SSH instead, which "
+                 "keeps the wizard on loopback and encrypts the "
+                 "connection:\n"
+                 "  ssh -L "
+              << port << ":127.0.0.1:" << port << " root@<this-host>\n";
   }
   if (listen_address == "localhost") listen_address = "127.0.0.1";
 
