@@ -873,3 +873,225 @@ TEST(BareosSetupSessionOrchestration,
                          }),
             commands.end());
 }
+
+TEST(BareosSetupStepsShared, ParsesIdLikeFromOsRelease)
+{
+  const auto info = ParseOsRelease(
+      "ID=eurolinux\nID_LIKE=\"rhel centos fedora\"\nVERSION_ID=\"9.4\"\n"
+      "PRETTY_NAME=\"EuroLinux 9.4\"\n");
+
+  EXPECT_EQ(info.distro, "eurolinux");
+  EXPECT_EQ(info.version, "9.4");
+  EXPECT_EQ(info.pretty_name, "EuroLinux 9.4");
+  EXPECT_EQ(info.id_like,
+            (std::vector<std::string>{"rhel", "centos", "fedora"}));
+}
+
+TEST(BareosSetupStepsShared, ParsesOsReleaseWithoutIdLike)
+{
+  const auto info = ParseOsRelease("ID=debian\nVERSION_ID=\"13\"\n");
+
+  EXPECT_EQ(info.distro, "debian");
+  EXPECT_TRUE(info.id_like.empty());
+}
+
+TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
+{
+  // DetectOs() must never throw: the wizard has to stay usable on systems
+  // without /etc/os-release so it can offer a manual repository choice.
+  const auto info = DetectOs();
+  EXPECT_FALSE(info.arch.empty());
+  EXPECT_FALSE(info.pkg_mgr.empty());
+}
+
+TEST(BareosSetupStepsShared, ValidatesRepositoryOsPaths)
+{
+  for (const auto& path : KnownRepoOsPaths()) {
+    EXPECT_TRUE(IsValidRepoOsPath(path)) << path;
+  }
+
+  // IsSafeSetupIdentifier() permits '.', so ".." must be rejected explicitly
+  // or a manual entry could escape the release directory of the download URL.
+  EXPECT_FALSE(IsValidRepoOsPath(".."));
+  EXPECT_FALSE(IsValidRepoOsPath("EL_9/.."));
+  EXPECT_FALSE(IsValidRepoOsPath("../EL_9"));
+  EXPECT_FALSE(IsValidRepoOsPath("EL..9"));
+  EXPECT_FALSE(IsValidRepoOsPath("."));
+  EXPECT_FALSE(IsValidRepoOsPath(""));
+  EXPECT_FALSE(IsValidRepoOsPath("-EL_9"));
+  EXPECT_FALSE(IsValidRepoOsPath("EL_9."));
+  EXPECT_FALSE(IsValidRepoOsPath("EL 9"));
+  EXPECT_FALSE(IsValidRepoOsPath(std::string(65, 'a')));
+}
+
+TEST(BareosSetupStepsShared, SuggestsRepositoryPathsFromIdLike)
+{
+  OsInfo el;
+  el.distro = "eurolinux";
+  el.id_like = {"rhel", "centos", "fedora"};
+  el.version = "9.4";
+  const auto el_paths = SuggestRepoOsPaths(el);
+  ASSERT_FALSE(el_paths.empty());
+  EXPECT_EQ(el_paths.front(), "EL_9");
+
+  OsInfo debian;
+  debian.distro = "devuan";
+  debian.id_like = {"debian"};
+  debian.version = "13";
+  const auto debian_paths = SuggestRepoOsPaths(debian);
+  ASSERT_FALSE(debian_paths.empty());
+  EXPECT_EQ(debian_paths.front(), "Debian_13");
+
+  OsInfo ubuntu;
+  ubuntu.distro = "linuxmint";
+  ubuntu.id_like = {"ubuntu", "debian"};
+  ubuntu.version = "24.04";
+  const auto ubuntu_paths = SuggestRepoOsPaths(ubuntu);
+  ASSERT_FALSE(ubuntu_paths.empty());
+  EXPECT_EQ(ubuntu_paths.front(), "xUbuntu_24.04");
+
+  OsInfo suse;
+  suse.distro = "suse-derivative";
+  suse.id_like = {"suse"};
+  suse.version = "16.0";
+  const auto suse_paths = SuggestRepoOsPaths(suse);
+  ASSERT_FALSE(suse_paths.empty());
+  EXPECT_EQ(suse_paths.front(), "SUSE_16");
+}
+
+TEST(BareosSetupStepsShared, SuggestsFamilyPathsWhenTheVersionDoesNotMatch)
+{
+  // Amazon Linux 2023 declares ID_LIKE=fedora but VERSION_ID=2023, which is
+  // not a published Bareos repository. The guess must be dropped and only
+  // real family paths offered, so the user cannot be sent to a 404.
+  OsInfo amazon;
+  amazon.distro = "amzn";
+  amazon.id_like = {"fedora"};
+  amazon.version = "2023";
+  const auto paths = SuggestRepoOsPaths(amazon);
+
+  ASSERT_FALSE(paths.empty());
+  EXPECT_EQ(std::find(paths.begin(), paths.end(), "Fedora_2023"), paths.end());
+  for (const auto& path : paths) {
+    EXPECT_NE(
+        std::find(KnownRepoOsPaths().begin(), KnownRepoOsPaths().end(), path),
+        KnownRepoOsPaths().end())
+        << path;
+  }
+}
+
+TEST(BareosSetupStepsShared, SuggestsNothingForAnUnrelatedDistribution)
+{
+  OsInfo other;
+  other.distro = "nixos";
+  other.version = "25.05";
+  EXPECT_TRUE(SuggestRepoOsPaths(other).empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsAddRepoCommandForAnExplicitPath)
+{
+  const auto command = BuildAddRepoCmdForPath("EL_10", "community");
+
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.org/current/EL_10/"
+            "add_bareos_repositories.sh");
+  EXPECT_EQ(BuildAddRepoCmdForPath("EL_10", "community"),
+            BuildAddRepoCmd("rhel", "10.2", "community"));
+}
+
+TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
+{
+  const auto command = BuildRepoPathProbeCmd("SUSE_16", "subscription", true);
+
+  EXPECT_NE(std::find(command.begin(), command.end(), "--head"), command.end());
+  EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
+            command.end() - 3);
+  EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
+            command.end());
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.com/bareos/release/latest/SUSE_16/"
+            "add_bareos_repositories.sh");
+}
+
+TEST(BareosSetupStepsShared, IdentifiesSuseRepositoryPaths)
+{
+  EXPECT_TRUE(IsSuseRepoOsPath("SUSE_16"));
+  EXPECT_TRUE(IsSuseRepoOsPath("SUSE_15"));
+  EXPECT_FALSE(IsSuseRepoOsPath("EL_9"));
+  EXPECT_FALSE(IsSuseRepoOsPath(""));
+}
+
+TEST(BareosSetupStepsShared, SeparatesPackageManagerFromDistributionSupport)
+{
+  // An unknown distribution can still be installed through a manual
+  // repository choice, but an unknown package manager cannot.
+  EXPECT_TRUE(IsSupportedPackageManager("apt"));
+  EXPECT_TRUE(IsSupportedPackageManager("zypper"));
+  EXPECT_FALSE(IsSupportedPackageManager("unknown"));
+  EXPECT_FALSE(IsSupportedPackageManager("pkg"));
+  EXPECT_FALSE(IsSupportedSetupPlatform("eurolinux", "dnf"));
+}
+
+TEST(BareosSetupSessionOrchestration, RepositoryStepRejectsOverrideWhenDetected)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires a recognised distribution";
+  }
+  // A recognised system must never be pointed at a mismatched repository.
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version
+                              + R"(","repository":"community",)"
+                                R"("repo_os_path":"Debian_13"})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepAcceptsTheDetectedPathAsOverride)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires a recognised distribution";
+  }
+  const std::string message
+      = R"({"distro":")" + os.distro + R"(","version":")" + os.version
+        + R"(","repository":"community",)"
+          R"("repo_os_path":")"
+        + BuildRepoOsPath(os.distro, os.version) + R"("})";
+
+  EXPECT_EQ(RunStepDiscardingOutput("repository", message, true, true), 0);
+}
+
+TEST(BareosSetupSessionOrchestration, RepositoryStepRejectsUnsafeOverridePaths)
+{
+  const auto os = DetectOs();
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    // On a recognised system any override is refused already, which is
+    // asserted separately; the traversal rejection itself is covered by
+    // IsValidRepoOsPath's unit test.
+    GTEST_SKIP() << "requires an unrecognised distribution";
+  }
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version
+                              + R"(","repository":"community",)"
+                                R"("repo_os_path":".."})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepRequiresAChoiceOnUnknownDistributions)
+{
+  const auto os = DetectOs();
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires an unrecognised distribution";
+  }
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version + R"(","repository":"community"})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}

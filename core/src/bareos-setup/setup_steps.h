@@ -29,9 +29,22 @@
 #include <string>
 #include <vector>
 
+#include "os_detector.h"
+
 /** Validate the small set of values accepted from the wizard. */
 bool IsSupportedSetupPlatform(const std::string& distro,
                               const std::string& package_manager);
+
+/**
+ * Check whether the package manager is one the wizard can drive.
+ *
+ * The distribution ID only selects the repository path; every other setup
+ * step is driven by the package manager. A system with an unknown package
+ * manager therefore cannot be installed at all, while an unknown
+ * distribution can still be handled through a manual repository choice.
+ */
+bool IsSupportedPackageManager(const std::string& package_manager);
+
 bool IsSafeSetupIdentifier(const std::string& value);
 
 /** Generate a cryptographically random secret for the initial admin account. */
@@ -104,12 +117,63 @@ std::vector<std::string> BuildRunAsPostgresCmd(const std::string& script);
 std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version);
 
+/**
+ * The repository OS paths published by Bareos that this installer supports.
+ *
+ * Offered as a manual choice when the distribution is not recognised. This
+ * is the single source of truth: it is sent to the web wizard in the state
+ * message and printed by the TUI, so the two cannot drift apart.
+ */
+const std::vector<std::string>& KnownRepoOsPaths();
+
+/**
+ * Validate a repository OS path segment.
+ *
+ * Stricter than IsSafeSetupIdentifier(): that helper accepts "..", which as
+ * a repository path would escape the release directory in the constructed
+ * download URL.
+ */
+bool IsValidRepoOsPath(const std::string& value);
+
+/**
+ * Suggest repository OS paths for a platform the wizard does not recognise.
+ *
+ * ID_LIKE identifies the family a derivative is compatible with, but not the
+ * version the Bareos repository is named after (Amazon Linux 2023 declares
+ * ID_LIKE=fedora with VERSION_ID=2023, Linux Mint 22 declares ID_LIKE=ubuntu
+ * with VERSION_ID=22). The result is therefore only ever a suggestion to
+ * preselect in the picker; it is never used to install without the user
+ * confirming it. The best guess comes first, followed by the remaining paths
+ * of the same family.
+ */
+std::vector<std::string> SuggestRepoOsPaths(const OsInfo& info);
+
 // Build the command to download and run add_bareos_repositories.sh.
 std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& version,
                                          const std::string& repo_type,
                                          bool read_curl_config_from_stdin
                                          = false);
+
+/** Build the add-repository command for an explicit repository OS path. */
+std::vector<std::string> BuildAddRepoCmdForPath(const std::string& repo_os_path,
+                                                const std::string& repo_type,
+                                                bool read_curl_config_from_stdin
+                                                = false);
+
+/**
+ * Build a probe that checks whether a repository OS path actually exists.
+ *
+ * Run before adding the repository so that a wrong manual choice fails
+ * immediately with a clear message instead of part-way through the install.
+ */
+std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
+                                               const std::string& repo_type,
+                                               bool read_curl_config_from_stdin
+                                               = false);
+
+/** Whether a repository OS path belongs to the SUSE family. */
+bool IsSuseRepoOsPath(const std::string& repo_os_path);
 
 /** Build curl config content containing subscription credentials. */
 std::string BuildCurlUserConfig(const std::string& login,

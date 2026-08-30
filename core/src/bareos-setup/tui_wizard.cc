@@ -10,6 +10,8 @@
 */
 #include "tui_wizard.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -91,17 +93,89 @@ bool RunWithInput(const std::vector<std::string>& command,
          == 0;
 }
 
+/**
+ * Ask the user which Bareos repository to install from.
+ *
+ * Only reached when the distribution is not recognised. Returns an empty
+ * string if the user aborts or the entry is invalid.
+ */
+std::string PromptRepoOsPath(const OsInfo& os)
+{
+  std::cout
+      << "\nThis Linux distribution was not recognised.\n"
+         "Bareos has no repository specifically for \""
+      << (os.pretty_name.empty() ? os.distro : os.pretty_name)
+      << "\", but a repository built for a compatible distribution can be\n"
+         "used instead.\n\n"
+         "WARNING: such a combination is untested and unsupported.\n\n"
+         "Available Bareos repositories:\n";
+
+  const auto& known = KnownRepoOsPaths();
+  const auto suggestions = SuggestRepoOsPaths(os);
+  const std::string suggested = suggestions.empty() ? "" : suggestions.front();
+  for (size_t i = 0; i < known.size(); ++i) {
+    std::cout << "  " << (i + 1) << ") " << known[i];
+    if (known[i] == suggested) std::cout << "   (suggested)";
+    std::cout << "\n";
+  }
+
+  const auto answer = Prompt(
+      "Repository (number, or a repository name not listed above)", suggested);
+  if (answer.empty()) return {};
+
+  std::string choice = answer;
+  if (std::all_of(answer.begin(), answer.end(),
+                  [](unsigned char c) { return std::isdigit(c) != 0; })) {
+    const unsigned long index = std::stoul(answer);
+    if (index < 1 || index > known.size()) {
+      std::cerr << "Invalid selection.\n";
+      return {};
+    }
+    choice = known[index - 1];
+  }
+  if (!IsValidRepoOsPath(choice)) {
+    std::cerr << "Invalid repository name.\n";
+    return {};
+  }
+
+  if (Prompt("Install from " + choice
+                 + " even though this combination is untested? (yes/no)",
+             "no")
+      != "yes") {
+    return {};
+  }
+  return choice;
+}
+
 }  // namespace
 
 int RunTuiWizard(bool dry_run)
 {
   std::cout << "Bareos Setup\n\n";
   const auto os = DetectOs();
-  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
-    std::cerr << "This Linux distribution is not supported.\n";
+  if (!IsSupportedPackageManager(os.pkg_mgr)) {
+    std::cerr << "No supported package manager (apt, dnf, yum or zypper) was "
+                 "found. Bareos cannot be installed on this system.\n";
     return 1;
   }
-  std::cout << "Detected " << os.pretty_name << " (" << os.pkg_mgr << ")\n";
+  if (os.pretty_name.empty()) {
+    std::cout << "Detected an unknown distribution (" << os.pkg_mgr << ")\n";
+  } else {
+    std::cout << "Detected " << os.pretty_name << " (" << os.pkg_mgr << ")\n";
+  }
+
+  std::string repo_os_path;
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    repo_os_path = BuildRepoOsPath(os.distro, os.version);
+  } else {
+    repo_os_path = PromptRepoOsPath(os);
+    if (repo_os_path.empty()) {
+      std::cerr << "No Bareos repository selected.\n";
+      return 1;
+    }
+  }
+  const bool manual_repo_choice
+      = !IsSupportedSetupPlatform(os.distro, os.pkg_mgr);
 
   const auto repository
       = Prompt("Repository (community/subscription)", "subscription");
@@ -148,8 +222,31 @@ int RunTuiWizard(bool dry_run)
   }
 
   const bool use_curl_config = repository == "subscription";
+  if (manual_repo_choice) {
+    std::cout << "Verifying that the " << repo_os_path
+              << " Bareos repository is available.\n";
+    const auto probe_cmd
+        = BuildRepoPathProbeCmd(repo_os_path, repository, use_curl_config);
+    const bool reachable
+        = use_curl_config
+              ? RunWithInput(
+                    probe_cmd,
+                    dry_run ? "" : BuildCurlUserConfig(login, password),
+                    dry_run, {login, password})
+              : Run(probe_cmd, dry_run);
+    if (!reachable) {
+      std::cerr << "The Bareos repository \"" << repo_os_path
+                << "\" could not be reached. Select a repository that matches "
+                   "this system"
+                << (use_curl_config
+                        ? " and check your subscription credentials.\n"
+                        : ".\n");
+      if (!dry_run) std::filesystem::remove(repository_script);
+      return 1;
+    }
+  }
   auto add_repo_cmd
-      = BuildAddRepoCmd(os.distro, os.version, repository, use_curl_config);
+      = BuildAddRepoCmdForPath(repo_os_path, repository, use_curl_config);
   add_repo_cmd.insert(add_repo_cmd.end() - 1,
                       {"--output", repository_script.string()});
   const bool repo_downloaded
@@ -183,10 +280,10 @@ int RunTuiWizard(bool dry_run)
   auto packages = os.pkg_mgr == "apt"
                       ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
                       : BuildDefaultPackageList(os.pkg_mgr);
-  if (os.distro == "sles") {
+  if (IsSuseRepoOsPath(repo_os_path)) {
     std::cout << "Checking whether the mtx package is available.\n";
     if (!Run(BuildMtxAvailabilityCheckCmd(), dry_run)) {
-      std::cout << "Warning: mtx is not available from the configured SLES "
+      std::cout << "Warning: mtx is not available from the configured SUSE "
                    "repositories, so bareos-storage-tape cannot be "
                    "installed.\n";
       packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
