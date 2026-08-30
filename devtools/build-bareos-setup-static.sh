@@ -24,17 +24,128 @@
 # The binary is stripped and, unless BAREOS_SETUP_NO_UPX is set, additionally
 # compressed with upx to further reduce its size for distribution.
 #
-# Usage: devtools/build-bareos-setup-static.sh [output-path]
-#   output-path defaults to ./bareos-setup (in the current directory).
+# Usage: devtools/build-bareos-setup-static.sh [--arch amd64|arm64] [output-path]
+#   --arch        target architecture, defaults to amd64. Can also be set via
+#                 the BAREOS_SETUP_ARCH environment variable. Building for an
+#                 architecture other than the host's requires qemu-user-static
+#                 binfmt emulation to be registered.
+#   output-path   defaults to ./bareos-setup, or ./bareos-setup-<arch> when
+#                 --arch was given explicitly, so that builds for different
+#                 architectures do not overwrite each other.
 
 set -e
 set -u
 
+usage()
+{
+  cat <<'EOT'
+Usage: devtools/build-bareos-setup-static.sh [--arch amd64|arm64] [output-path]
+  --arch        target architecture, defaults to amd64. Can also be set via
+                the BAREOS_SETUP_ARCH environment variable. Building for an
+                architecture other than the host's requires qemu-user-static
+                binfmt emulation to be registered.
+  output-path   defaults to ./bareos-setup, or ./bareos-setup-<arch> when
+                --arch was given explicitly, so that builds for different
+                architectures do not overwrite each other.
+EOT
+}
+
+arch="${BAREOS_SETUP_ARCH:-}"
+arch_given=0
+if [ -n "${arch}" ]; then
+  arch_given=1
+fi
+positional=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --arch)
+      if [ $# -lt 2 ]; then
+        echo "build-bareos-setup-static.sh: --arch requires an argument" >&2
+        exit 1
+      fi
+      arch="$2"
+      arch_given=1
+      shift 2
+      ;;
+    --arch=*)
+      arch="${1#--arch=}"
+      arch_given=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "build-bareos-setup-static.sh: unknown option $1" >&2
+      usage >&2
+      exit 1
+      ;;
+    *)
+      if [ -n "${positional}" ]; then
+        echo "build-bareos-setup-static.sh: too many arguments" >&2
+        exit 1
+      fi
+      positional="$1"
+      shift
+      ;;
+  esac
+done
+if [ $# -gt 0 ]; then
+  positional="$1"
+fi
+
+arch="${arch:-amd64}"
+case "${arch}" in
+  amd64 | x86_64) arch="amd64" ;;
+  arm64 | aarch64) arch="arm64" ;;
+  *)
+    echo "build-bareos-setup-static.sh: unsupported --arch '${arch}'," \
+      "expected amd64 or arm64" >&2
+    exit 1
+    ;;
+esac
+
 topdir="$(realpath "$(dirname "$0")/..")"
-image_tag="bareos-setup-static-build"
-output_path="$(realpath -m "${1:-bareos-setup}")"
+# Tag the image per architecture so that builds for different targets don't
+# invalidate each other's cached build environment.
+image_tag="bareos-setup-static-build:${arch}"
+default_output="bareos-setup"
+if [ "${arch_given}" = 1 ]; then
+  default_output="bareos-setup-${arch}"
+fi
+output_path="$(realpath -m "${positional:-${default_output}}")"
 output_dir="$(dirname "${output_path}")"
 output_name="$(basename "${output_path}")"
+
+# Building for a foreign architecture only works if the kernel can execute the
+# target binaries, i.e. if qemu-user-static is registered with binfmt_misc.
+# Detect that up front, because otherwise the failure surfaces deep inside the
+# container as an obscure "exec format error".
+host_arch="$(uname -m)"
+case "${host_arch}" in
+  x86_64 | amd64) host_arch="amd64" ;;
+  aarch64 | arm64) host_arch="arm64" ;;
+esac
+if [ "${arch}" != "${host_arch}" ]; then
+  binfmt_name="qemu-aarch64"
+  if [ "${arch}" = "amd64" ]; then
+    binfmt_name="qemu-x86_64"
+  fi
+  if [ ! -e "/proc/sys/fs/binfmt_misc/${binfmt_name}" ]; then
+    echo "build-bareos-setup-static.sh: building for ${arch} on a" \
+      "${host_arch} host requires qemu-user-static binfmt emulation," \
+      "but /proc/sys/fs/binfmt_misc/${binfmt_name} is not registered." >&2
+    echo "Register it once with:" >&2
+    echo "  podman run --rm --privileged" \
+      "docker.io/multiarch/qemu-user-static --reset -p yes" >&2
+    exit 1
+  fi
+fi
 
 mkdir -p "${output_dir}"
 
@@ -83,6 +194,7 @@ if [ -z "$container_engine" ]; then
 fi
 
 "${container_engine}" build \
+  --platform "linux/${arch}" \
   -t "${image_tag}" \
   "${topdir}/devtools/bareos-setup-static-build"
 
@@ -91,6 +203,7 @@ fi
 # issues, and only the resulting binary is copied out to the host via the
 # /out bind mount.
 "${container_engine}" run --rm \
+  --platform "linux/${arch}" \
   -e "BAREOS_SETUP_NO_UPX=${BAREOS_SETUP_NO_UPX:-}" \
   -v "${topdir}:/src:ro" \
   -v "${output_dir}:/out" \
@@ -107,9 +220,17 @@ fi
     cmake --build /build --target bareos-setup --parallel \"\$(nproc)\"
     cp /build/core/src/bareos-setup/bareos-setup '/out/${output_name}'
     if [ -z \"\${BAREOS_SETUP_NO_UPX:-}\" ]; then
-      upx --best --lzma '/out/${output_name}'
+      # upx does not support every target it can be installed for, so treat a
+      # compression failure as a non-fatal size optimisation that was skipped
+      # rather than as a build error. The uncompressed binary is fully usable.
+      if ! upx --best --lzma '/out/${output_name}'; then
+        echo \"Note: upx could not compress the ${arch} binary;\" \
+          \"shipping it uncompressed.\" >&2
+        # upx leaves a partially written file behind when it fails.
+        cp /build/core/src/bareos-setup/bareos-setup '/out/${output_name}'
+      fi
     fi
   "
 
-echo "Built static bareos-setup binary: ${output_path}"
+echo "Built static bareos-setup binary for ${arch}: ${output_path}"
 file "${output_path}" || true
