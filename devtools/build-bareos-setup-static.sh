@@ -176,10 +176,9 @@ trap cleanup EXIT
 # into the container (to avoid the build polluting/ownership-mismatching
 # the host checkout), pre-build the Vue dist bundle on the host, where npm
 # is expected to be available, before the container-based native build.
-dist_index="${topdir}/bareos-setup-vue/dist/index.html"
-if [ ! -r "${dist_index}" ]; then
-  (cd "${topdir}" && cmake -P bareos-setup-vue/build-dist.cmake)
-fi
+# This must run unconditionally: bareos-setup-vue/dist survives between
+# builds, so reusing an existing one would silently ship a stale UI.
+(cd "${topdir}" && cmake -P bareos-setup-vue/build-dist.cmake)
 
 container_engine="${CONTAINER_ENGINE:-}"
 if [ -z "$container_engine" ]; then
