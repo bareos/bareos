@@ -43,7 +43,7 @@ The URL contains a setup token and should be treated as sensitive.
 .. _section-bareos-setup-remote:
 
 Accessing the wizard from another host
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The setup service speaks plain HTTP, so it must not be exposed directly to an untrusted network. To run the wizard from your workstation, forward the setup port over SSH instead. This is the recommended way to install a remote server:
 
