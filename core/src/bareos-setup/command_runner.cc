@@ -90,9 +90,15 @@ static void DrainFd(int fd,
                     OutputCallback& cb)
 {
   std::array<char, 4096> tmp{};
-  ssize_t n = read(fd, tmp.data(), tmp.size());
-  if (n <= 0) return;
-  buf.append(tmp.data(), static_cast<size_t>(n));
+  // Read until the pipe is drained. A single read() would truncate output
+  // whenever more than one buffer's worth is pending -- most importantly on
+  // POLLHUP, after which the loop in RunCommandImpl() stops polling this fd
+  // and the remaining bytes would be lost.
+  for (;;) {
+    const ssize_t n = read(fd, tmp.data(), tmp.size());
+    if (n <= 0) break;
+    buf.append(tmp.data(), static_cast<size_t>(n));
+  }
   // Emit complete lines
   size_t pos;
   while ((pos = buf.find('\n')) != std::string::npos) {
