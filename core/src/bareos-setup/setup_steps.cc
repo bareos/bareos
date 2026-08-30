@@ -298,8 +298,8 @@ std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
                                  + "/add_bareos_repositories.sh";
 
   std::vector<std::string> command
-      = {"curl",       "--fail", "--silent",   "--show-error",
-         "--location", "--head", "--max-time", "15"};
+      = {"curl",   "--fail",     "--silent", "--show-error", "--location",
+         "--head", "--max-time", "15",       "--output",     "/dev/null"};
   if (read_curl_config_from_stdin)
     command.insert(command.end(), {"--config", "-"});
   command.emplace_back(script_url);
@@ -316,10 +316,22 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
 {
   if (repo_type != "community") return {};
 
-  const std::string base = "https://download.bareos.org/current";
-
-  return {"curl",   "--fail",     "--silent", "--show-error",
-          "--head", "--max-time", "10",       base};
+  // The trailing slash avoids a redirect, and --location handles one anyway
+  // if the layout ever changes. --output discards the response: this only
+  // checks reachability, and letting curl write a response body to stdout
+  // both floods the install log with raw HTTP and makes the check fail with
+  // a write error if anything goes wrong on the receiving end.
+  return {"curl",
+          "--fail",
+          "--silent",
+          "--show-error",
+          "--location",
+          "--head",
+          "--max-time",
+          "15",
+          "--output",
+          "/dev/null",
+          "https://download.bareos.org/current/"};
 }
 
 std::string SetupAdminConfigPath()

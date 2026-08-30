@@ -255,10 +255,18 @@ TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
 
 TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForCommunityRepo)
 {
-  EXPECT_EQ(BuildNetworkCheckCmd("community"),
-            (std::vector<std::string>{
-                "curl", "--fail", "--silent", "--show-error", "--head",
-                "--max-time", "10", "https://download.bareos.org/current"}));
+  const auto command = BuildNetworkCheckCmd("community");
+
+  // The URL must end in a slash so the check does not merely observe a
+  // redirect, and the response must be discarded rather than written to
+  // stdout: a reachability probe has no use for the body, and writing it
+  // made curl fail with "client returned ERROR on write" in the installer.
+  EXPECT_EQ(command.back(), "https://download.bareos.org/current/");
+  EXPECT_NE(std::find(command.begin(), command.end(), "--location"),
+            command.end());
+  const auto output = std::find(command.begin(), command.end(), "--output");
+  ASSERT_NE(output, command.end());
+  EXPECT_EQ(*(output + 1), "/dev/null");
 }
 
 TEST(BareosSetupStepsShared, BuildsNoUnauthenticatedSubscriptionNetworkCheck)
@@ -1094,4 +1102,35 @@ TEST(BareosSetupSessionOrchestration,
 
   EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
                std::runtime_error);
+}
+
+TEST(BareosSetupStepsShared, DiscardsProbeResponseBodies)
+{
+  const auto command = BuildRepoPathProbeCmd("EL_10", "community");
+  const auto output = std::find(command.begin(), command.end(), "--output");
+  ASSERT_NE(output, command.end());
+  EXPECT_EQ(*(output + 1), "/dev/null");
+}
+
+TEST(BareosSetupStepsShared, CapturesCommandOutputLargerThanTheReadBuffer)
+{
+  // Regression test: the output drain used to issue a single 4096 byte
+  // read per poll wakeup, so anything still buffered when the pipe hung up
+  // was silently dropped.
+  constexpr int kLines = 4000;
+  std::string collected;
+  int lines = 0;
+  const int rc = RunCommand(
+      {"sh", "-c",
+       "i=0; while [ $i -lt " + std::to_string(kLines)
+           + " ]; do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
+             "i=$((i+1)); done"},
+      false, [&](const std::string& line, const std::string&) {
+        collected += line;
+        ++lines;
+      });
+
+  EXPECT_EQ(rc, 0);
+  EXPECT_EQ(lines, kLines);
+  EXPECT_EQ(collected.size(), static_cast<size_t>(kLines) * 40);
 }
