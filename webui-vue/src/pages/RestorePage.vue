@@ -613,8 +613,8 @@ const form = ref({
   where:         '/tmp/bareos-restores',
   replace:       'Always',
   pluginoptions: '',
-  mergeJobs:     true,
-  mergeFilesets: true,
+  mergeJobs:     settings.restoreMergeJobs,
+  mergeFilesets: settings.restoreMergeJobs && settings.restoreMergeFilesets,
 })
 
 const sourceClientKey = ref('')
@@ -767,9 +767,9 @@ async function applyRouteSourceSelection() {
   const qClient = typeof route.query.client === 'string' ? route.query.client : ''
   const qDirector = typeof route.query.director === 'string' ? route.query.director : ''
   const qJobid = typeof route.query.jobid === 'string' ? route.query.jobid : ''
-  form.value.mergeJobs = normaliseRestoreToggle(route.query.mergejobs, true)
+  form.value.mergeJobs = normaliseRestoreToggle(route.query.mergejobs, settings.restoreMergeJobs)
   form.value.mergeFilesets = form.value.mergeJobs
-    ? normaliseRestoreToggle(route.query.mergefilesets, true)
+    ? normaliseRestoreToggle(route.query.mergefilesets, settings.restoreMergeFilesets)
     : false
   const resolvedDirector = resolveRestoreSourceDirector(activeDirectors.value, qDirector)
 
@@ -1904,6 +1904,11 @@ watch(() => form.value.mergeJobs, (enabled) => {
   if (!enabled && form.value.mergeFilesets) {
     form.value.mergeFilesets = false
   }
+})
+
+// Remember the last checkbox state, so the next restore starts with it.
+watch(() => [form.value.mergeJobs, form.value.mergeFilesets], ([mergeJobs, mergeFilesets]) => {
+  settings.setRestoreMergeDefaults({ mergeJobs, mergeFilesets })
 })
 
 watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, nextFilesets], [previousJobs, previousFilesets]) => {
