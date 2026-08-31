@@ -66,6 +66,8 @@
             <q-card-section class="q-gutter-sm">
               <q-btn icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
                      :loading="rerunLoading" @click="confirmRerun" />
+              <q-btn v-if="!isRestoreJob" icon="restore" :label="t('Restore Job')" color="secondary" no-caps
+                     @click="openRestoreDetails" />
               <q-btn v-if="isRunning" icon="cancel" :label="t('Cancel Job')" color="negative" no-caps
                      :loading="cancelLoading" @click="confirmCancel" />
             </q-card-section>
@@ -587,6 +589,32 @@ function confirmRerun() {
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(doRerun)
+}
+
+async function openRestoreDetails() {
+  if (!job.value) { return }
+
+  try {
+    if (currentJobDirector.value) {
+      await switchActiveDirector(currentJobDirector.value)
+    }
+    await router.push({
+      name: 'restore',
+      query: {
+        client: job.value.client,
+        director: currentJobDirector.value,
+        jobid: currentJobId.value,
+      },
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: currentJobDirector.value || t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
 }
 
 async function doRerun() {
