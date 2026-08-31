@@ -87,17 +87,11 @@ struct hello_formatter<global_resource::Type::Console,
  * Name will always be the name used during authentication, so in this case
  * its the unique name of the job (jcr->JobName).
  */
-
-struct connection_triplet {
+struct ParsedHello {
   global_resource::Type to;    // this should be equal to "my type"
   global_resource::Type from;  // this is the actual type of other end
   global_resource::Type type;  // this is the type used for auth
 
-  auto operator<=>(const connection_triplet&) const = default;
-};
-
-struct ParsedHello {
-  connection_triplet triplet;
   std::string name;
 
   int fd_protocol_version;  // only for fd -> dir connections

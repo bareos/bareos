@@ -90,14 +90,7 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   Auth auth{config};
 
-  connection_triplet allowed_triplets[] = {
-      {Type::Storage, Type::Director, Type::Director},
-      {Type::Storage, Type::Storage, Type::Job},
-      {Type::Storage, Type::Client, Type::Job},
-  };
-
-  std::optional parsed_hello
-      = BareosAccept(bs, myself, &auth, allowed_triplets);
+  std::optional parsed_hello = BareosAccept(bs, myself, &auth);
   if (!parsed_hello) {
     Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
     return error_and_close(bs);
@@ -117,10 +110,10 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
       auto* jcr = auth.job->jcr;
       auth.job->jcr = nullptr;
 
-      if (parsed_hello->triplet.from == Type::Client) {
+      if (parsed_hello->from == Type::Client) {
         jcr->authenticated = true;
         return HandleFiledConnection(bs, jcr);
-      } else if (parsed_hello->triplet.from == Type::Storage) {
+      } else if (parsed_hello->from == Type::Storage) {
         jcr->authenticated = true;
         return handle_stored_connection(bs, jcr);
       }

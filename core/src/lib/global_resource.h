@@ -56,8 +56,6 @@ enum class Type : std::uint64_t
   User,
 };
 
-static constexpr std::size_t type_count = 20;
-
 struct TypeName {
   Type type;
   std::string_view name;

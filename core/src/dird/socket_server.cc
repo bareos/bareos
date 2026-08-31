@@ -96,13 +96,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   using global_resource::Type;
 
-  connection_triplet allowed_triplets[] = {
-      {Type::Director, Type::Client, Type::Client},
-      {Type::Director, Type::Console, Type::Console},
-  };
-
-  std::optional parsed_hello
-      = BareosAccept(bs, myself, &auth, allowed_triplets);
+  std::optional parsed_hello = BareosAccept(bs, myself, &auth);
   if (!parsed_hello) { return error_and_close(bs); }
 
   switch (auth.GetType()) {

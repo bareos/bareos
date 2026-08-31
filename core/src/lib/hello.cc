@@ -196,7 +196,9 @@ std::optional<ParsedHello> parse_hello(std::string_view hello_msg)
   }
 
   return ParsedHello{
-      .triplet = {.to = to, .from = from, .type = type},
+      .to = to,
+      .from = from,
+      .type = type,
       .name = name,
       .fd_protocol_version = fd_protocol_version,
       .old_console = old_console,

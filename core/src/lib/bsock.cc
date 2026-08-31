@@ -917,23 +917,11 @@ bool BareosConnect(JobControlRecord* jcr,
 }
 
 struct TlsWrapper : public TlsConfigProvider {
-  TlsWrapper(TlsConfigProvider* provider,
-             std::span<connection_triplet> triplets)
-      : wrapped{provider}
-  {
-    for (auto& triplet : triplets) {
-      allowed_types |= std::uint64_t{1} << to_underlying(triplet.type);
-    }
-  }
+  TlsWrapper(TlsConfigProvider* provider) : wrapped{provider} {}
 
   const TlsResource* get(global_resource::Type type,
                          std::string_view name) override
   {
-    auto type_as_mask = std::uint64_t{1} << to_underlying(type);
-    if ((type_as_mask & allowed_types) != type_as_mask) {
-      // this type is not allowed!
-      return nullptr;
-    }
     psk_res = wrapped->get(type, name);
     if (psk_res) {
       psk_type = type;
@@ -946,19 +934,15 @@ struct TlsWrapper : public TlsConfigProvider {
 
   bool is_set() const { return psk_res; }
 
-  std::uint64_t allowed_types{};
-  static_assert(global_resource::type_count <= sizeof(allowed_types) * 8);
   global_resource::Type psk_type{};
   std::string psk_name{};
   const TlsResource* psk_res{};
 };
 
-std::optional<ParsedHello> BareosAccept(
-    BareosSocket* socket,
-    const TlsResource* initial_tls,
-    TlsConfigProvider* provider,
-    Authenticator* auth,
-    std::span<connection_triplet> allowed_triplets)
+std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        const TlsResource* initial_tls,
+                                        TlsConfigProvider* provider,
+                                        Authenticator* auth)
 {
   // provider is allowed to be NULL in case no tls-psk is wanted
   if (!socket) {
@@ -971,7 +955,7 @@ std::optional<ParsedHello> BareosAccept(
     return std::nullopt;
   }
 
-  TlsWrapper wrapper{provider, allowed_triplets};
+  TlsWrapper wrapper{provider};
 
   auth_timer timer{socket};
 
@@ -1020,36 +1004,18 @@ std::optional<ParsedHello> BareosAccept(
     return std::nullopt;
   }
 
-  if (std::find(std::begin(allowed_triplets), std::end(allowed_triplets),
-                parsed_hello->triplet)
-      == std::end(allowed_triplets)) {
-    auto from_name
-        = global_resource::GetNameFromType(parsed_hello->triplet.from);
-    auto to_name = global_resource::GetNameFromType(parsed_hello->triplet.to);
-    auto type_name
-        = global_resource::GetNameFromType(parsed_hello->triplet.type);
-
-    Emsg1(M_ERROR, 0,
-          "Connection request from %s failed: triplet (%.*s, %.*s, %.*s) not "
-          "allowed!\n",
-          socket->who(), (int)from_name.size(), from_name.data(),
-          (int)to_name.size(), to_name.data(), (int)type_name.size(),
-          type_name.data());
-    return std::nullopt;
-  }
-
   if (wrapper.is_set()) {
     if (wrapper.psk_name != parsed_hello->name
-        || wrapper.psk_type != parsed_hello->triplet.type) {
+        || wrapper.psk_type != parsed_hello->type) {
       Emsg1(M_ERROR, 0, T_("tls/cram mismatch detected for %s!\n"),
             socket->who());
       return std::nullopt;
     }
   }
 
-  tls_resource = wrapper.is_set() ? wrapper.psk_res
-                                  : provider->get(parsed_hello->triplet.type,
-                                                  parsed_hello->name);
+  tls_resource = wrapper.is_set()
+                     ? wrapper.psk_res
+                     : provider->get(parsed_hello->type, parsed_hello->name);
   if (!tls_resource) {
     Emsg1(M_ERROR, 0, T_("Could not map identity to tls resource for %s.\n"),
           socket->who());
@@ -1057,10 +1023,10 @@ std::optional<ParsedHello> BareosAccept(
   }
 
   if (received_clear_text_handshake) {
-    if (parsed_hello->triplet.type == global_resource::Type::Console
+    if (parsed_hello->type == global_resource::Type::Console
         && parsed_hello->old_console && !tls_resource->tls_require_) {
       Dmsg0(200, "Accepting cleartext handshake for old console");
-    } else if (parsed_hello->triplet.type == global_resource::Type::Client
+    } else if (parsed_hello->type == global_resource::Type::Client
                && !tls_resource->tls_require_) {
       Dmsg0(200, "Accepting cleartext handshake for client\n");
     } else if (tls_resource->tls_enable_) {

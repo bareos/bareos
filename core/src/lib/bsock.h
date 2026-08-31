@@ -318,20 +318,17 @@ bool BareosConnect(JobControlRecord* jcr,
                        cleartext_authentication);
 }
 
-std::optional<ParsedHello> BareosAccept(
-    BareosSocket* socket,
-    const TlsResource* initial_tls,
-    TlsConfigProvider* provider,
-    Authenticator* auth,
-    std::span<connection_triplet> allowed_triplets);
+std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        const TlsResource* initial_tls,
+                                        TlsConfigProvider* provider,
+                                        Authenticator* auth);
 
 static inline auto BareosAccept(BareosSocket* socket,
                                 const TlsResource* initial_tls,
-                                TlsConfigProvider* provider,
-                                std::span<connection_triplet> allowed_triplets)
+                                TlsConfigProvider* provider)
 {
   Md5Authenticator auth{};
-  return BareosAccept(socket, initial_tls, provider, &auth, allowed_triplets);
+  return BareosAccept(socket, initial_tls, provider, &auth);
 }
 
 #endif  // BAREOS_LIB_BSOCK_H_

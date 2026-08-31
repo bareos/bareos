@@ -89,14 +89,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   using global_resource::Type;
 
-  connection_triplet allowed_triplets[] = {
-      {Type::Client, Type::Director, Type::Director},
-      {Type::Client, Type::Storage, Type::Job},
-  };
-
-  if (!BareosAccept(bs, myself, &auth, allowed_triplets)) {
-    return error_and_close(bs);
-  }
+  if (!BareosAccept(bs, myself, &auth)) { return error_and_close(bs); }
 
   switch (auth.GetType()) {
     case Auth::inbound_type::Director: {
