@@ -29,7 +29,6 @@
 #define BAREOS_LIB_TLS_H_
 
 #include "include/bareos.h"
-#include "lib/get_tls_psk_by_fqname_callback.h"
 #include "lib/crypto.h"
 
 #include <memory>
