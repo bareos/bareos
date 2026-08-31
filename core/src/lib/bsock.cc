@@ -744,7 +744,7 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
   TlsPolicy remote_policy{kBnetTlsUnknown};
   TlsPolicy local_policy = args.target->GetPolicy();
-  if (!args.cleartext) { local_policy = kBnetTlsAuto; }
+  if (args.socket->tls_conn) { local_policy = kBnetTlsAuto; }
   if (!cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
                           args.target->password_.value, local_policy, false,
                           &remote_policy)) {
@@ -863,7 +863,6 @@ bool BareosConnect(JobControlRecord* jcr,
 
   auth_timer timer{socket};
 
-  bool have_tls = false;
   if (res->IsTlsConfigured() && !cleartext_authentication) {
     auto tls = ParameterizeAndInitTlsConnectionAsAClient(
         jcr, res, qualified_name.c_str(), res->password_.value);
@@ -888,8 +887,6 @@ bool BareosConnect(JobControlRecord* jcr,
            "Authenticate = Yes' was set\n",
            socket->who());
       socket->CloseTlsConnectionAndFreeMemory();
-    } else {
-      have_tls = true;
     }
   } else {
     Qmsg(jcr, M_INFO, 0, T_("Connected %s at %s:%d, encryption: None\n"),
@@ -904,7 +901,6 @@ bool BareosConnect(JobControlRecord* jcr,
   if (!auth->authenticate_outbound({
           .jcr = jcr,
           .socket = socket,
-          .cleartext = !have_tls,
           .target = res,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
@@ -939,8 +935,6 @@ bool BareosAccept(BareosSocket* socket,
 
   auth_timer timer{socket};
 
-  bool have_tls = false;
-
   bool received_clear_text_handshake = false;
   if (!guess_whether_cleartext(socket, &received_clear_text_handshake)) {
     Emsg1(M_ERROR, 0, "Could not check for cleartext handshake with %s\n",
@@ -965,8 +959,6 @@ bool BareosAccept(BareosSocket* socket,
     if (initial_tls->authenticate_) {
       // cleanup tls
       socket->CloseTlsConnectionAndFreeMemory();
-    } else {
-      have_tls = true;
     }
   }
 
@@ -980,15 +972,6 @@ bool BareosAccept(BareosSocket* socket,
 
     std::string_view hello{socket->msg,
                            static_cast<size_t>(socket->message_length)};
-
-
-    // auto connection_parser = parse_hello(my_type, hello);
-    // if (!connection_parser) {
-    //   Emsg1(M_ERROR, 0, "Could not parse hello\n");
-    //   return false;
-    // }
-
-    // if (GetConnectionSettingsFor()) {}
 
     tls_resource = hello_parser->parse(hello);
     if (!tls_resource) {
@@ -1009,7 +992,6 @@ bool BareosAccept(BareosSocket* socket,
 
     if (!auth->authenticate_inbound({
             .socket = socket,
-            .cleartext = !have_tls,
             .target = tls_resource,
         })) {
       Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());

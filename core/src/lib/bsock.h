@@ -267,13 +267,11 @@ struct Authenticator {
   struct OutboundArgs {
     JobControlRecord* jcr;
     BareosSocket* socket;
-    bool cleartext;
     const TlsResource* target;
   };
 
   struct InboundArgs {
     BareosSocket* socket;
-    bool cleartext;
     const TlsResource* target;
   };
 
