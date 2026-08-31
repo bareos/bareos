@@ -64,7 +64,7 @@
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header">{{ t('Actions') }}</q-card-section>
             <q-card-section class="q-gutter-sm">
-              <q-btn icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
+              <q-btn v-if="canRerunCurrentJob" icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
                      :loading="rerunLoading" @click="confirmRerun" />
               <q-btn v-if="!isRestoreJob" icon="restore" :label="t('Restore Job')" color="secondary" no-caps
                      @click="openRestoreDetails" />
@@ -170,6 +170,7 @@ import {
   buildJobDetailsQuery,
   buildListJobCommand,
   buildRerunJobCommand,
+  canRerunJob,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -504,6 +505,7 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
 const isRestoreJob = computed(() => resolveJobTypeCode(job.value?.type) === 'R')
+const canRerunCurrentJob = computed(() => canRerunJob(job.value))
 const showVolumesCard = computed(() => !isRestoreJob.value || volumes.value.length > 0)
 
 const volumeCols = computed(() => [

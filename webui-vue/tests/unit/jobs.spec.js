@@ -31,6 +31,7 @@ import {
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  canRerunJob,
   filterRunnableJobOptions,
   formatRunWhenPickerDate,
   resolvePermittedRunJobDefault,
@@ -218,6 +219,34 @@ describe('jobs filter helpers', () => {
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
+  })
+
+  it('only allows rerunning job types the director can reschedule', () => {
+    // Mirrors IsRerunableJobType() in core/src/include/job_types.h.
+    for (const type of ['Backup', 'Copy', 'Migrate', 'Migration']) {
+      expect(canRerunJob({ type })).toBe(true)
+    }
+
+    for (const type of [
+      'Restore', 'Verify', 'Admin', 'Archive', 'Job Copy', 'Migrated Job',
+      'Consolidate', 'Scan', 'Console', 'System',
+    ]) {
+      expect(canRerunJob({ type })).toBe(false)
+    }
+  })
+
+  it('accepts raw job type codes and rejects unknown ones', () => {
+    expect(canRerunJob({ type: 'B' })).toBe(true)
+    expect(canRerunJob({ type: 'c' })).toBe(true)
+    expect(canRerunJob({ type: 'g' })).toBe(true)
+    expect(canRerunJob({ type: 'R' })).toBe(false)
+    expect(canRerunJob({ type: 'C' })).toBe(false)
+
+    expect(canRerunJob({ type: 'Nonsense' })).toBe(false)
+    expect(canRerunJob({ type: '' })).toBe(false)
+    expect(canRerunJob({})).toBe(false)
+    expect(canRerunJob(null)).toBe(false)
+    expect(canRerunJob(undefined)).toBe(false)
   })
 
   it('quotes job command arguments consistently', () => {

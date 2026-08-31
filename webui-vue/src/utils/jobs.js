@@ -27,6 +27,11 @@ import { isErrorJobStatus, isWarningJobStatus, isOkJobStatus } from '../composab
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
 const JOB_TYPE_FILTERS = new Set(['B', 'A', 'V', 'R', 'D', 'C', 'c', 'M', 'g', 'O', 'S', 'U', 'I'])
 
+// The director can only reschedule these job types, see IsRerunableJobType()
+// in core/src/include/job_types.h. Offering a rerun for any other type would
+// silently do nothing.
+const RERUNABLE_JOB_TYPES = new Set(['B', 'c', 'g'])
+
 // Resolve which part of a job's log should be jumped to, based on its
 // status: the first error/warning line, or the final termination summary
 // line for a successful job. Returns '' when there is no specific target
@@ -99,6 +104,10 @@ export function normaliseJobLevelFilter(value) {
   }
 
   return JOB_LEVEL_FILTERS.has(value) ? value : ''
+}
+
+export function canRerunJob(job) {
+  return RERUNABLE_JOB_TYPES.has(resolveJobTypeCode(job?.type))
 }
 
 export function normaliseJobTypeFilter(value) {
