@@ -516,7 +516,10 @@ static void start_bareos_server(std::promise<bool>* promise,
   //                     for new-style connections
   console_res.tls_enable_ = false;
 
-  if (!BareosAccept(bs.get(), &console_res, nullptr, &auth)) {
+  // we need to set the name explicitly, because otherwise the name check will
+  // fail!
+  Md5Authenticator md5{"myname"};
+  if (!BareosAccept(bs.get(), &console_res, nullptr, &auth, &md5)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,

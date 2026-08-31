@@ -267,6 +267,14 @@ bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
   return false;
 }
 
+static std::string generate_identity()
+{
+  char data[120];
+  if (!MakeSessionKey(data)) { throw std::runtime_error{data}; }
+  return data;
+}
+
+static std::string default_cram_identity = generate_identity();
 }  // namespace
 
 
@@ -1011,12 +1019,10 @@ bool BareosAccept(BareosSocket* socket,
   return BareosAccept(socket, initial_tls, provider, hello_parser, &auth);
 }
 
-
-static std::string generate_identity()
+Md5Authenticator::Md5Authenticator() : Md5Authenticator(default_cram_identity)
 {
-  char data[120];
-  if (!MakeSessionKey(data)) { throw std::runtime_error{data}; }
-  return data;
 }
-
-std::string Md5Authenticator::cram_identity = generate_identity();
+Md5Authenticator::Md5Authenticator(std::string identity)
+    : cram_identity(std::move(identity))
+{
+}
