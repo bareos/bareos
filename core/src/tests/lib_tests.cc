@@ -207,40 +207,6 @@ TEST(Util, version_number_test)
             BareosVersionNumber::kUndefined);
 }
 
-namespace {
-struct TestUseConfigAndJcrs : UseConfigAndJcrs {
-  using UseConfigAndJcrs::found_jcr;
-  using UseConfigAndJcrs::UseConfigAndJcrs;
-};
-
-}  // namespace
-
-TEST(TlsPskAuth, JobPskCannotAuthenticateAsDirector)
-{
-  ConfigurationParser parser;
-
-  ResourceTable table[] = {{"Director",
-                            "Directors",
-                            nullptr,
-                            R_DIRECTOR,
-                            global_resource::Type::Director,
-                            {},
-                            {},
-                            {},
-                            {},
-                            {}},
-                           {}};
-
-  TestUseConfigAndJcrs provider(parser.GetCurrentConfiguration(), table);
-  provider.found_jcr
-      = storagedaemon::SetupDummyJcr("Test Job", nullptr, nullptr);
-
-  auto error = provider.is_resource_name_different_from_tls_name(
-      R_DIRECTOR, "Test Director");
-  ASSERT_TRUE(error.has_value());
-  EXPECT_NE(error->find("tried authenticating as resource"), std::string::npos);
-}
-
 TEST(Util, version_number_major_minor)
 {
   BareosVersionNumber version = BareosVersionNumber::kRelease_18_2;

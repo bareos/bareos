@@ -65,12 +65,13 @@ static pthread_t tcp_server_tid;
 
 void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
+  using global_resource::Type;
+
   BareosSocket* bs = (BareosSocket*)arg;
 
   bs->SetEnableKtls(me->enable_ktls);
 
   auto config = parser->GetCurrentConfiguration();
-  UseConfigAndJcrs tls_secret_provider{config, parser->resource_definitions_};
 
   auto* myself
       = dynamic_cast<StorageResource*>(config->GetNextRes(R_STORAGE, nullptr));
@@ -90,56 +91,46 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   Auth auth{config};
 
-  if (!BareosAccept(bs, myself, &tls_secret_provider, &auth)) {
+  connection_triplet allowed_triplets[] = {
+      {Type::Storage, Type::Director, Type::Director},
+      {Type::Storage, Type::Storage, Type::Job},
+      {Type::Storage, Type::Client, Type::Job},
+  };
+
+  std::optional parsed_hello
+      = BareosAccept(bs, myself, &auth, allowed_triplets);
+  if (!parsed_hello) {
+    Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
     return error_and_close(bs);
   }
 
   switch (auth.GetType()) {
-    case Auth::inbound_type::Client: {
-      if (std::optional error
-          = tls_secret_provider.check_job_name(auth.client->jcr->Job)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
-
-      auto* jcr = auth.client->jcr;
-      auth.client->jcr = nullptr;
-      jcr->authenticated = true;
-      return HandleFiledConnection(bs, jcr);
-    } break;
     case Auth::inbound_type::Director: {
-      if (std::optional error
-          = tls_secret_provider.is_resource_name_different_from_tls_name(
-              R_DIRECTOR, auth.director->res->resource_name_)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
-
       bs->sleep_time_after_authentication_error = 0;
 
-      if (!bs->fsend("3000 OK Hello\n")) { return error_and_close(bs); }
-      return HandleDirectorConnection(bs, auth.director->res);
-    } break;
-    case Auth::inbound_type::Storage: {
-      if (std::optional error
-          = tls_secret_provider.check_job_name(auth.storage->jcr->Job)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
+      if (!bs->fsend("3000 OK Hello\n")) {
+        Emsg2(M_ERROR, 0, "Could not send OK Hello to %s\n", bs->who());
         return error_and_close(bs);
       }
-
-      auto* jcr = auth.storage->jcr;
-      auth.storage->jcr = nullptr;
-      jcr->authenticated = true;
-      return handle_stored_connection(bs, jcr);
+      return HandleDirectorConnection(bs, auth.director->res);
     } break;
+    case Auth::inbound_type::Job: {
+      auto* jcr = auth.job->jcr;
+      auth.job->jcr = nullptr;
 
+      if (parsed_hello->triplet.from == Type::Client) {
+        jcr->authenticated = true;
+        return HandleFiledConnection(bs, jcr);
+      } else if (parsed_hello->triplet.from == Type::Storage) {
+        jcr->authenticated = true;
+        return handle_stored_connection(bs, jcr);
+      }
+    } break;
     default: {
-      return error_and_close(bs);
     } break;
   }
+  Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
+  return error_and_close(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)

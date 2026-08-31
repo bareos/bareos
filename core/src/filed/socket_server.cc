@@ -64,14 +64,7 @@ static std::atomic<bool> server_running = false;
  */
 static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
-  BareosSocket* bs = (BareosSocket*)arg;
-
-  auto config = parser->GetCurrentConfiguration();
-
-  UseConfigAndJcrs tls_secret_provider{config, parser->resource_definitions_};
-
-  auto* myself
-      = dynamic_cast<ClientResource*>(config->GetNextRes(R_CLIENT, nullptr));
+  auto* bs = reinterpret_cast<BareosSocket*>(arg);
 
   auto error_and_close = [](BareosSocket* socket) {
     Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
@@ -81,37 +74,34 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
     return nullptr;
   };
 
+  auto config = parser->GetCurrentConfiguration();
+
+  auto* myself
+      = dynamic_cast<ClientResource*>(config->GetNextRes(R_CLIENT, nullptr));
+
   if (!myself) {
     Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
     return error_and_close(bs);
   }
 
-  bs->SetEnableKtls(myself->enable_ktls);
-
   Auth auth{config};
 
-  if (!BareosAccept(bs, myself, &tls_secret_provider, &auth)) {
+  bs->SetEnableKtls(myself->enable_ktls);
+
+  using global_resource::Type;
+
+  connection_triplet allowed_triplets[] = {
+      {Type::Client, Type::Director, Type::Director},
+      {Type::Client, Type::Storage, Type::Job},
+  };
+
+  if (!BareosAccept(bs, myself, &auth, allowed_triplets)) {
     return error_and_close(bs);
   }
 
   switch (auth.GetType()) {
     case Auth::inbound_type::Director: {
-      if (std::optional error
-          = tls_secret_provider.is_resource_name_different_from_tls_name(
-              R_DIRECTOR, auth.director->res->resource_name_)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
-
       bs->sleep_time_after_authentication_error = 0;
-
-      if (!auth.director->res->conn_from_dir_to_fd) {
-        Emsg2(M_ERROR, 0,
-              "Connection from director %s (as %s) is not allowed\n", bs->who(),
-              auth.director->res->resource_name_);
-        return error_and_close(bs);
-      }
 
       if (!bs->fsend("2000 OK Hello %d\n", FD_PROTOCOL_VERSION)) {
         Emsg2(M_ERROR, 0, "Could not send OK Hello to %s: ERR=%s\n", bs->who(),
@@ -122,12 +112,6 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
       return handle_director_connection(bs, auth.director->res);
     } break;
     case Auth::inbound_type::Storage: {
-      if (std::optional error
-          = tls_secret_provider.check_job_name(auth.storage->jcr->Job)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
       auto* jcr = auth.storage->jcr;
       auth.storage->jcr = nullptr;
       jcr->authenticated = true;
@@ -135,9 +119,9 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
     } break;
 
     default: {
-      return error_and_close(bs);
     }
   }
+  return error_and_close(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)

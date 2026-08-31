@@ -91,27 +91,23 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
     return error_and_close(bs);
   }
 
-  UsePasswordsFromConfig tls_secret_provider{config,
-                                             parser->resource_definitions_};
+  DirectorAuth auth{config};
 
   bs->SetEnableKtls(myself->enable_ktls);
 
-  DirectorAuth auth{config};
+  using global_resource::Type;
 
-  if (!BareosAccept(bs, myself, &tls_secret_provider, &auth)) {
-    return error_and_close(bs);
-  }
+  connection_triplet allowed_triplets[] = {
+      {Type::Director, Type::Client, Type::Client},
+      {Type::Director, Type::Console, Type::Console},
+  };
+
+  std::optional parsed_hello
+      = BareosAccept(bs, myself, &auth, allowed_triplets);
+  if (!parsed_hello) { return error_and_close(bs); }
 
   switch (auth.GetType()) {
     case DirectorAuth::inbound_type::Client: {
-      if (auto error
-          = tls_secret_provider.is_resource_name_different_from_tls_name(
-              R_CLIENT, auth.client->res->resource_name_)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
-
       // we are authenticated now, so the client does not need to wait anymore
       bs->sleep_time_after_authentication_error = 0;
 
@@ -132,17 +128,9 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
       return HandleFiledConnection(*client_connections.get(), bs,
                                    auth.client->res,
-                                   auth.client->protocol_version);
+                                   parsed_hello->fd_protocol_version);
     } break;
     case DirectorAuth::inbound_type::Console: {
-      if (auto error
-          = tls_secret_provider.is_resource_name_different_from_tls_name(
-              R_CONSOLE, auth.console->res->resource_name_)) {
-        Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-              error->c_str());
-        return error_and_close(bs);
-      }
-
       // Now that the _console_ connection is authenticated, we still
       // need to do the authorization part
 
@@ -155,7 +143,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
         // if pam authentication is used, then the client is additionally
         // authenticated as a user, and we use that users acls.
 
-        if (auth.console->is_old) {
+        if (parsed_hello->old_console) {
           // old consoles do not support pam
           Emsg4(M_ERROR, 0,
                 T_("Unable to pam authenticate old console \"%s\" at "

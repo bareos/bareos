@@ -20,6 +20,8 @@
 */
 
 #include "lib/hello.h"
+#include "include/version_numbers.h"
+#include "lib/util.h"
 #include <fmt/format.h>
 #include "include/version_hex.h"
 
@@ -149,12 +151,21 @@ std::optional<ParsedHello> parse_hello(std::string_view hello_msg)
                     "Hello %127s calling version %127s Version=\"%u.%u.%u\"",
                     name, version, &major, &minor, &patch)
                  == 4
-             || sscanf(cpy.c_str(), "Hello %127s calling version version", name)
+             || sscanf(cpy.c_str(), "Hello %127s calling version %127s", name,
+                       version)
                     == 4
              || sscanf(cpy.c_str(), "Hello %127s calling", name) == 1) {
     to = Type::Director;
     from = Type::Console;
     type = Type::Console;
+
+    if (version[0] != 0) {
+      auto parsed_version = parse_version(version);
+      old_console = parsed_version < BareosVersionNumber::kRelease_18_2;
+    } else {
+      old_console = true;
+    }
+
   } else if (sscanf(cpy.c_str(), "Hello Start Job %127s Version=\"%u.%u.%u\"",
                     name, &major, &minor, &patch)
                  == 4
@@ -185,9 +196,7 @@ std::optional<ParsedHello> parse_hello(std::string_view hello_msg)
   }
 
   return ParsedHello{
-      .from = from,
-      .to = to,
-      .type = type,
+      .triplet = {.to = to, .from = from, .type = type},
       .name = name,
       .fd_protocol_version = fd_protocol_version,
       .old_console = old_console,

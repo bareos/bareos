@@ -31,10 +31,11 @@
 
 namespace filedaemon {
 
-struct Auth : ::ClientHelloParser {
+struct Auth : ::TlsConfigProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  TlsResource* parse(std::string_view hello) override;
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override;
 
   enum class inbound_type
   {
@@ -65,7 +66,6 @@ struct Auth : ::ClientHelloParser {
  private:
   std::shared_ptr<LoadedConfiguration> p;
   inbound_type type{inbound_type::Unknown};
-  uint32_t remote_version{0};
 };
 
 } /* namespace filedaemon */

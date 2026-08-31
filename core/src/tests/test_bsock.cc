@@ -471,13 +471,13 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth : ::ClientHelloParser {
+struct dummy_auth {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  TlsResource* parse(std::string_view hello) override
+  TlsResource* parse(std::string_view hello)
   {
     Dmsg1(10, "Cons->Dir: %s", std::string{hello}.c_str());
 
@@ -516,7 +516,13 @@ static void start_bareos_server(std::promise<bool>* promise,
   //                     for new-style connections
   console_res.tls_enable_ = false;
 
-  if (!BareosAccept(bs.get(), &console_res, nullptr, &auth)) {
+  connection_triplet allowed_triplets[] = {{
+      global_resource::Type::Director,
+      global_resource::Type::Console,
+      global_resource::Type::Director,
+  }};
+
+  if (!BareosAccept(bs.get(), &console_res, nullptr, allowed_triplets)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,

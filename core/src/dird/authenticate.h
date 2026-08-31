@@ -39,12 +39,13 @@ class UaContext;
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
 
-struct DirectorAuth : ::ClientHelloParser {
+struct DirectorAuth : ::TlsConfigProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
   {
   }
 
-  TlsResource* parse(std::string_view hello) override;
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override;
 
   enum class inbound_type
   {
@@ -57,10 +58,6 @@ struct DirectorAuth : ::ClientHelloParser {
     ConsoleResource* res{};
     ConsoleConnectionLease lease;
 
-    // old means 'older than 18.2', as this is when pam + initial tls
-    // was introduced
-    bool is_old{false};
-
     // the default console is allowed to do everything
     bool is_default{false};
 
@@ -69,7 +66,6 @@ struct DirectorAuth : ::ClientHelloParser {
 
   struct client_data {
     ClientResource* res;
-    int protocol_version;
   };
 
   inbound_type GetType() const { return type; }
@@ -80,7 +76,6 @@ struct DirectorAuth : ::ClientHelloParser {
  private:
   std::shared_ptr<LoadedConfiguration> p;
   inbound_type type{inbound_type::Unknown};
-  uint32_t remote_version{0};
 };
 
 std::unique_ptr<UserAcl> AuthenticatePamUser(BareosSocket* socket,

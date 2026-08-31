@@ -37,6 +37,7 @@
 #include "lib/hello.h"
 #include "lib/s_password.h"
 #include "dird/authenticate.h"
+#include <climits>
 #if defined(HAVE_PAM)
 #  include "dird/auth_pam.h"
 #endif
@@ -131,85 +132,58 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   return true;
 }
 
-inline constexpr const char hello_client_with_version_v2[]
-    = "Hello Client %127s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"";
-
-inline constexpr const char hello_client_with_version[]
-    = "Hello Client %127s FdProtocolVersion=%d calling";
-
-inline constexpr const char hello_client[] = "Hello Client %127s calling";
-
-inline constexpr const char hello_console[] = "Hello %127s calling";
-inline constexpr const char hello_console_with_version[]
-    = "Hello %127s calling version %127s Version=\"%u.%u.%u\"";
-
-TlsResource* DirectorAuth::parse(std::string_view msg)
+const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
+                                     std::string_view name)
 {
-  char version[MAX_NAME_LENGTH]{};
   char tbuf[MAX_TIME_LENGTH];
-  char name[MAX_NAME_LENGTH]{};
-  int fd_protocol_version{0};
-
-  unsigned major{}, minor{}, patch{};
-  std::string cpy{msg};
-  if ((bsscanf(cpy.c_str(), hello_client_with_version_v2, name,
-               &fd_protocol_version, &major, &minor, &patch)
-       == 5)
-      || (bsscanf(cpy.c_str(), hello_client_with_version, name,
-                  &fd_protocol_version)
-          == 2)
-      || (bsscanf(cpy.c_str(), hello_client, name) == 1)) {
-    type = inbound_type::Client;
-  } else if (bsscanf(cpy.c_str(), hello_console_with_version, name, version,
-                     &major, &minor, &patch)
-                 == 5
-             || bsscanf(cpy.c_str(), hello_console, name) == 1) {
-    type = inbound_type::Console;
-  }
-
-  remote_version = VERSION_HEX(major, minor, patch);
-  UnbashSpaces(name);
-
   bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL));
+
+  int name_len = (int)std::min((size_t)INT_MAX, name.size());
+  const char* name_ptr = name.data();
 
   auto* myself
       = dynamic_cast<DirectorResource*>(p->GetNextRes(R_DIRECTOR, nullptr));
 
   if (!myself) { return nullptr; }
 
-  switch (type) {
-    case inbound_type::Client: {
-      Dmsg1(110, "Got a FD connection from %s at %s\n", name, tbuf);
+  switch (auth_type) {
+    case global_resource::Type::Client: {
+      Dmsg1(110, "Got a FD connection from %.*s at %s\n", name_len, name_ptr,
+            tbuf);
       auto* res
           = dynamic_cast<ClientResource*>(p->GetResWithName(R_CLIENT, name));
 
       if (!res) {
-        Dmsg1(50, "Unknown FD %s for new connection\n", name);
+        Dmsg1(50, "Unknown FD %.*s for new connection\n", name_len, name_ptr);
         return nullptr;
       }
 
       if (res->password_.encoding != p_encoding_md5) {
-        Dmsg1(50, "Bad password for FD %s: md5 is required\n", name);
+        Dmsg1(50, "Bad password for FD %.*s: md5 is required\n", name_len,
+              name_ptr);
         return nullptr;
       }
 
       auto& data = client.emplace();
       data.res = res;
-      data.protocol_version = fd_protocol_version;
 
+      type = inbound_type::Client;
       return res;
     } break;
-    case inbound_type::Console: {
-      Dmsg1(110, "Got a Console connection from %s at %s\n", name, tbuf);
+    case global_resource::Type::Console: {
+      Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
+            name_ptr, tbuf);
       auto* res
           = dynamic_cast<ConsoleResource*>(p->GetResWithName(R_CONSOLE, name));
       if (!res) {
-        Dmsg1(50, "Unknown Console %s for new connection\n", name);
+        Dmsg1(50, "Unknown Console %.*s for new connection\n", name_len,
+              name_ptr);
         return nullptr;
       }
 
       if (res->password_.encoding != p_encoding_md5) {
-        Dmsg1(50, "Bad password for Console %s: md5 is required\n", name);
+        Dmsg1(50, "Bad password for Console %.*s: md5 is required\n", name_len,
+              name_ptr);
         return nullptr;
       }
 
@@ -246,23 +220,14 @@ TlsResource* DirectorAuth::parse(std::string_view msg)
         data.tls = *res;
       }
 
-      auto parsed_version = parse_version(version);
-      if (parsed_version >= BareosVersionNumber::kRelease_18_2) {
-        data.is_old = false;
-        if (data.tls.tls_enable_) { data.tls.tls_require_ = true; }
-      } else {
-        data.is_old = true;
-      }
-
+      type = inbound_type::Console;
       return &data.tls;
     } break;
-    default:
-      [[fallthrough]];
-    case inbound_type::Unknown: {
-      Dmsg1(110, "received bad hello at %s\n", tbuf);
-      return nullptr;
-    } break;
+    default: {
+    }
   }
+
+  return nullptr;
 }
 
 std::unique_ptr<UserAcl> AuthenticatePamUser(BareosSocket* socket,

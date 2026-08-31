@@ -258,11 +258,6 @@ enum
   BNET_ERROR = -3
 };
 
-struct ClientHelloParser {
-  virtual TlsResource* parse(std::string_view hello) = 0;
-  virtual ~ClientHelloParser() = default;
-};
-
 struct Authenticator {
   struct OutboundArgs {
     JobControlRecord* jcr;
@@ -323,15 +318,20 @@ bool BareosConnect(JobControlRecord* jcr,
                        cleartext_authentication);
 }
 
-bool BareosAccept(BareosSocket* socket,
-                  const TlsResource* initial_tls,
-                  TlsSecretProvider* provider,
-                  ClientHelloParser* hello_parser);
+std::optional<ParsedHello> BareosAccept(
+    BareosSocket* socket,
+    const TlsResource* initial_tls,
+    TlsConfigProvider* provider,
+    Authenticator* auth,
+    std::span<connection_triplet> allowed_triplets);
 
-bool BareosAccept(BareosSocket* socket,
-                  const TlsResource* initial_tls,
-                  TlsSecretProvider* provider,
-                  ClientHelloParser* hello_parser,
-                  Authenticator* auth);
+static inline auto BareosAccept(BareosSocket* socket,
+                                const TlsResource* initial_tls,
+                                TlsConfigProvider* provider,
+                                std::span<connection_triplet> allowed_triplets)
+{
+  Md5Authenticator auth{};
+  return BareosAccept(socket, initial_tls, provider, &auth, allowed_triplets);
+}
 
 #endif  // BAREOS_LIB_BSOCK_H_
