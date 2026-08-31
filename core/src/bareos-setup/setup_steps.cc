@@ -27,6 +27,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -50,11 +51,58 @@ bool IsElDistro(const std::string& distro)
          || distro == "rocky";
 }
 
-std::string RepoBaseUrl(const std::string& repo_type)
+std::string RepoBaseUrl(const std::string& repo_type,
+                        const std::string& release = {})
 {
-  return (repo_type == "subscription")
-             ? "https://download.bareos.com/bareos/release/latest"
-             : "https://download.bareos.org/current";
+  if (repo_type != "subscription") return "https://download.bareos.org/current";
+  return "https://download.bareos.com/bareos/release/" + release;
+}
+
+bool IsNumericVersion(const std::string& version)
+{
+  if (version.empty()) return false;
+  bool expect_digit = true;
+  for (const unsigned char ch : version) {
+    if (std::isdigit(ch) != 0) {
+      expect_digit = false;
+    } else if (ch == '.' && !expect_digit) {
+      expect_digit = true;
+    } else {
+      return false;
+    }
+  }
+  return !expect_digit;
+}
+
+bool IsNewerVersion(const std::string& candidate, const std::string& current)
+{
+  std::istringstream candidate_stream(candidate);
+  std::istringstream current_stream(current);
+  std::string candidate_part;
+  std::string current_part;
+  while (std::getline(candidate_stream, candidate_part, '.')
+         || std::getline(current_stream, current_part, '.')) {
+    const auto first_significant = [](const std::string& part) {
+      const auto first = part.find_first_not_of('0');
+      return first == std::string::npos ? part.size() : first;
+    };
+    const auto candidate_first = first_significant(candidate_part);
+    const auto current_first = first_significant(current_part);
+    const auto candidate_length = candidate_part.size() - candidate_first;
+    const auto current_length = current_part.size() - current_first;
+    if (candidate_length != current_length) {
+      return candidate_length > current_length;
+    }
+    if (candidate_length != 0) {
+      const int comparison
+          = candidate_part.compare(candidate_first, candidate_length,
+                                   current_part, current_first, current_length);
+      if (comparison != 0) return comparison > 0;
+    }
+    candidate_part.clear();
+    current_part.clear();
+  }
+  return false;
 }
 
 std::string CurlConfigQuote(const std::string& value)
@@ -119,7 +167,8 @@ std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
                                        "bareos-database-tools",
                                        "bareos-tools",
                                        "bareos-webui-new",
-                                       "bareos-webui-proxy"};
+                                       "bareos-webui-proxy",
+                                       "policycoreutils"};
   if (pkg_mgr == "dnf" || pkg_mgr == "yum") { packages.push_back("mod_ssl"); }
   // The Bareos catalog packages do not pull in a local PostgreSQL server
   // (Bareos also supports remote catalogs), so the wizard has to add it
@@ -196,10 +245,11 @@ std::string BuildRepoOsPath(const std::string& distro,
 std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& version,
                                          const std::string& repo_type,
-                                         bool read_curl_config_from_stdin)
+                                         bool read_curl_config_from_stdin,
+                                         const std::string& release)
 {
   return BuildAddRepoCmdForPath(BuildRepoOsPath(distro, version), repo_type,
-                                read_curl_config_from_stdin);
+                                read_curl_config_from_stdin, release);
 }
 
 const std::vector<std::string>& KnownRepoOsPaths()
@@ -277,10 +327,11 @@ std::vector<std::string> SuggestRepoOsPaths(const OsInfo& info)
 std::vector<std::string> BuildAddRepoCmdForPath(
     const std::string& repo_os_path,
     const std::string& repo_type,
-    bool read_curl_config_from_stdin)
+    bool read_curl_config_from_stdin,
+    const std::string& release)
 {
-  const std::string script_url = RepoBaseUrl(repo_type) + "/" + repo_os_path
-                                 + "/add_bareos_repositories.sh";
+  const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
+                                 + repo_os_path + "/add_bareos_repositories.sh";
 
   std::vector<std::string> command
       = {"curl", "--fail", "--silent", "--show-error", "--location"};
@@ -292,10 +343,11 @@ std::vector<std::string> BuildAddRepoCmdForPath(
 
 std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
                                                const std::string& repo_type,
-                                               bool read_curl_config_from_stdin)
+                                               bool read_curl_config_from_stdin,
+                                               const std::string& release)
 {
-  const std::string script_url = RepoBaseUrl(repo_type) + "/" + repo_os_path
-                                 + "/add_bareos_repositories.sh";
+  const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
+                                 + repo_os_path + "/add_bareos_repositories.sh";
 
   std::vector<std::string> command
       = {"curl",   "--fail",     "--silent", "--show-error", "--location",
@@ -304,6 +356,32 @@ std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
     command.insert(command.end(), {"--config", "-"});
   command.emplace_back(script_url);
   return command;
+}
+
+std::vector<std::string> BuildSubscriptionReleaseIndexCmd(
+    bool read_curl_config_from_stdin)
+{
+  std::vector<std::string> command
+      = {"curl", "--fail", "--silent", "--show-error", "--location"};
+  if (read_curl_config_from_stdin)
+    command.insert(command.end(), {"--config", "-"});
+  command.emplace_back("https://download.bareos.com/bareos/release/");
+  return command;
+}
+
+std::string ParseLatestSubscriptionRelease(const std::string& index)
+{
+  static const std::regex directory_link(R"(href="([0-9]+(?:\.[0-9]+)*)/")");
+  std::string latest;
+  for (std::sregex_iterator it(index.begin(), index.end(), directory_link), end;
+       it != end; ++it) {
+    const std::string candidate = (*it)[1];
+    if (IsNumericVersion(candidate)
+        && (latest.empty() || IsNewerVersion(candidate, latest))) {
+      latest = candidate;
+    }
+  }
+  return latest;
 }
 
 std::string BuildCurlUserConfig(const std::string& login,
@@ -413,6 +491,18 @@ std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
              "EOF"}};
   }
   return {};
+}
+
+std::vector<std::string> BuildWebUiSelinuxSetupCmd()
+{
+  return {
+      "sh",
+      "-c",
+      "if command -v getenforce >/dev/null 2>&1 && "
+      "[ \"$(getenforce)\" = Enforcing ]; then "
+      "setsebool -P httpd_can_network_connect on; "
+      "fi",
+  };
 }
 
 std::vector<std::string> BuildBareosDaemonServiceNames(
