@@ -456,8 +456,15 @@ unsigned int psk_server_cb(SSL* ssl,
     return result;
   }
 
+  auto [type, name] = global_resource::ParseQualifiedName(identity);
+
+  if (type == global_resource::Type::Unknown) {
+    Dmsg0(100, "Could not parse identity: %s!\n", identity);
+    return result;
+  }
+
   auto psklen = data->get_shared_secret_for(
-      identity, std::span<unsigned char>(psk_output, max_psk_len));
+      type, name, std::span<unsigned char>(psk_output, max_psk_len));
 
   return psklen;
 }

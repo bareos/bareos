@@ -38,15 +38,14 @@ struct UsePasswordsFromConfig : TlsSecretProvider {
   }
 
 
-  unsigned int get_shared_secret_for(std::string_view identity,
+  unsigned int get_shared_secret_for(global_resource::Type type,
+                                     std::string_view name,
                                      std::span<unsigned char> output) override
   {
-    auto [type, name] = global_resource::ParseQualifiedName(identity);
     auto r_type = LocalTypeFromGlobalType(definitions, type);
 
     if (r_type < 0) {
-      Dmsg1(100, "Could not parse resource type from %.*s.\n",
-            (int)identity.size(), identity.data());
+      Dmsg1(100, "Type %d is not known locally.\n", (int)(type));
       return 0;
     }
 
@@ -139,13 +138,12 @@ struct UseConfigAndJcrs : UsePasswordsFromConfig {
   JobControlRecord* found_jcr{nullptr};
 
   unsigned int get_shared_secret_for(
-      std::string_view identity,
+      global_resource::Type type,
+      std::string_view name,
       std::span<unsigned char> psk_buffer) override
   {
-    auto [type, name] = global_resource::ParseQualifiedName(identity);
-
     if (type != global_resource::Type::Job) {
-      return UsePasswordsFromConfig::get_shared_secret_for(identity,
+      return UsePasswordsFromConfig::get_shared_secret_for(type, name,
                                                            psk_buffer);
     }
 

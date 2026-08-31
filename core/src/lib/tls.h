@@ -30,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "lib/crypto.h"
+#include "lib/global_resource.h"
 
 #include <memory>
 #include <span>
@@ -39,7 +40,8 @@ class JobControlRecord;
 class PskCredentials;
 
 struct TlsSecretProvider {
-  virtual unsigned int get_shared_secret_for(std::string_view idenity,
+  virtual unsigned int get_shared_secret_for(global_resource::Type type,
+                                             std::string_view idenity,
                                              std::span<unsigned char> secret)
       = 0;
 };
