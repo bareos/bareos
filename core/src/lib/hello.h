@@ -81,5 +81,26 @@ struct hello_formatter<global_resource::Type::Console,
   static std::string format(std::string_view name);
 };
 
+struct ParsedHello {
+  /* A connection that happens during e.g. a backup from fd to storage, will set
+   * from = Client, to = Storage, type = Job (!),
+   * as the client will authenticate as "job".
+   * Name will always be the name used during authentication, so in this case
+   * its the unique name of the job (jcr->JobName).
+   */
+
+  global_resource::Type from;  // this should be equal to "my type"
+  global_resource::Type to;    // this is the actual type of other end
+
+  global_resource::Type type;  // this is the type used for auth
+  std::string name;
+
+  int fd_protocol_version;  // only for fd -> dir connections
+  bool old_console;         // only for console -> dir connections
+
+  uint32_t bareos_version;  // = 0 means < 26.0.0
+};
+
+std::optional<ParsedHello> parse_hello(std::string_view hello_msg);
 
 #endif  // BAREOS_LIB_HELLO_H_
