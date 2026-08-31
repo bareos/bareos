@@ -301,6 +301,8 @@ static DeviceResource* find_device_res(std::string_view archive_device_string,
   DeviceResource* candidate;
   DeviceResource* found = nullptr;
 
+  if (archive_device_string.empty()) { return nullptr; }
+
   Dmsg0(900, "Enter find_device_res\n");
   foreach_res (candidate, R_DEVICE) {
     Dmsg2(900, "Compare %s and %.*s\n", candidate->archive_device_string,
@@ -324,7 +326,8 @@ static DeviceResource* find_device_res(std::string_view archive_device_string,
     /* Search for name of Device resource rather than archive name */
 
     if (archive_device_string.starts_with('"')
-        && archive_device_string.ends_with('"')) {
+        && archive_device_string.ends_with('"')
+        && archive_device_string.size() >= 2) {
       archive_device_string.remove_prefix(1);
       archive_device_string.remove_suffix(1);
     }
