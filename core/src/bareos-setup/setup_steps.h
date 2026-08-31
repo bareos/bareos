@@ -205,9 +205,6 @@ std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
 /** Path of the admin console resource created by setup. */
 std::string SetupAdminConfigPath();
 
-/** Path of the WebUI proxy configuration created by setup. */
-std::string SetupProxyConfigPath();
-
 /**
  * Configuration files the wizard creates and therefore owns. Setup must
  * never silently overwrite them when they already exist.

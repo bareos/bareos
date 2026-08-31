@@ -417,14 +417,9 @@ std::string SetupAdminConfigPath()
   return "/etc/bareos/bareos-dir.d/console/admin.conf";
 }
 
-std::string SetupProxyConfigPath()
-{
-  return "/etc/bareos-webui-proxy/bareos-webui-proxy.ini";
-}
-
 std::vector<std::string> SetupOwnedConfigPaths()
 {
-  return {SetupAdminConfigPath(), SetupProxyConfigPath()};
+  return {SetupAdminConfigPath()};
 }
 
 std::vector<std::string> BuildFileAbsentCheckCmd(const std::string& path)
