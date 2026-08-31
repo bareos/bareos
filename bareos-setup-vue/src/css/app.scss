@@ -21,3 +21,14 @@
 .output-line-err  { color: #ff6b6b; }
 .output-line-out  { color: #e0e0e0; }
 .output-line-info { color: #74c7ec; }
+
+.console-inline {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  border-radius: 4px;
+  padding: 2px 6px;
+  word-break: break-all;
+}

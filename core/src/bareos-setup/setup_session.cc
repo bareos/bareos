@@ -47,7 +47,6 @@ struct SetupProgress {
   bool finished = false;
   std::string admin_password;
   bool admin_config_created = false;
-  bool proxy_config_created = false;
   // Repository OS path resolved by the repository step; may be a manual
   // choice on distributions the wizard does not recognise.
   std::string repo_os_path;
@@ -59,7 +58,6 @@ struct SessionContext {
 };
 
 const std::string kAdminConfigPath = SetupAdminConfigPath();
-const std::string kProxyConfigPath = SetupProxyConfigPath();
 
 std::mutex& TerminalCredentialPromptMutex()
 {
@@ -600,38 +598,10 @@ int CreateAdmin(WsCodec& ws, const SessionContext& context)
 int ConfigureProxy(WsCodec& ws, const SessionContext& context)
 {
   const auto os = DetectOs();
-  const std::string config
-      = "[listen]\n"
-        "address = 127.0.0.1\n"
-        "port = 9104\n"
-        "\n"
-        "[bareos-dir]\n"
-        "address = 127.0.0.1\n"
-        "port = 9101\n"
-        "director_name = bareos-dir\n"
-        "tls_psk_disable = no\n";
-  const std::string path{kProxyConfigPath};
-  {
-    bool already_created = false;
-    {
-      std::lock_guard lock(Progress().mutex);
-      already_created = Progress().proxy_config_created;
-    }
-    if (!context.dry_run && !already_created) {
-      EnsureNoExistingSetupConfigs(ws, context, {path});
-    }
-  }
-  const std::vector<std::string> write_argv
-      = {"install", "-D", "-m", "0640", "/dev/stdin", path};
-  if (RunWithInput(write_argv, config, ws, context) != 0) { return 1; }
-  {
-    std::lock_guard lock(Progress().mutex);
-    if (!context.dry_run) Progress().proxy_config_created = true;
-  }
-  // bareos-webui-proxy.service runs as User=bareos/Group=bareos (not
-  // root), so the config file must be group-readable by "bareos" or the
-  // service fails to start with "cannot load" on every restart attempt.
-  if (Run({"chown", "root:bareos", path}, ws, context) != 0) return 1;
+  // No configuration file is written: the built-in defaults of
+  // bareos-webui-proxy already describe exactly the layout this setup
+  // creates, and the service falls back to them when no file exists. Any
+  // configuration an administrator placed there is therefore left alone.
   if (Run({"systemctl", "enable", "--now", "bareos-webui-proxy"}, ws, context)
       != 0) {
     return 1;
@@ -754,18 +724,13 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
   }
   if (action == "rollback") {
     bool remove_admin = false;
-    bool remove_proxy = false;
     {
       std::lock_guard lock(Progress().mutex);
       remove_admin = Progress().admin_config_created;
-      remove_proxy = Progress().proxy_config_created;
     }
     if (context.dry_run) {
       Output(ws, "[preview] dry run: rollback effects not executed.");
     } else {
-      if (remove_proxy) {
-        Run({"rm", "-f", std::string{kProxyConfigPath}}, ws, context);
-      }
       if (remove_admin) {
         Run({"rm", "-f", std::string{kAdminConfigPath}}, ws, context);
       }
@@ -777,7 +742,6 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
       Progress().finished = false;
       Progress().admin_password.clear();
       Progress().admin_config_created = false;
-      Progress().proxy_config_created = false;
     }
     Send(ws, json_pack("{s:s}", "type", "rollback_complete"));
     return;

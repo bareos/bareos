@@ -49,7 +49,7 @@
           <q-item><q-item-section avatar><q-icon name="verified_user" color="positive" /></q-item-section>
             <q-item-section>Secure by default: TLS and strong admin passwords are generated automatically.</q-item-section></q-item>
           <q-item><q-item-section avatar><q-icon name="health_and_safety" color="positive" /></q-item-section>
-            <q-item-section>Safe to run: existing Bareos admin or WebUI proxy configuration makes setup abort before either file is changed.</q-item-section></q-item>
+            <q-item-section>Safe to run: an existing Bareos admin configuration makes setup abort before that file is changed.</q-item-section></q-item>
           <q-item><q-item-section avatar><q-icon name="admin_panel_settings" color="positive" /></q-item-section>
             <q-item-section>Transparent privilege use: only standard, approved commands are ever executed as root or via sudo — nothing else.</q-item-section></q-item>
         </q-list>
@@ -234,15 +234,47 @@
           and no credentials were generated.
         </p>
         <p v-else>Installation and service verification completed.</p>
-        <p v-if="adminPasswordVisible"><q-icon name="vpn_key" color="warning" class="q-mr-xs" />Save this initial WebUI password now:
-          <code>{{ store.admin.username }} / {{ store.admin.password }}</code>
-          <q-btn flat dense icon="content_copy" label="Copy password" class="q-ml-sm"
-            @click="copyAdminPassword" />
-          <br>
-          Copy the password and store it somewhere safe. If it is lost, you can
-          find it on this host in
-          <code>/etc/bareos/bareos-dir.d/console/admin.conf</code>.
-        </p>
+        <q-card v-if="adminPasswordVisible" flat bordered
+          class="credentials-card q-mb-md">
+          <q-card-section>
+            <div class="row items-center q-mb-sm">
+              <q-icon name="vpn_key" color="warning" size="1.6em" class="q-mr-sm" />
+              <div class="text-h6">Initial WebUI login</div>
+            </div>
+            <q-banner dense class="bg-warning text-black q-mb-md" rounded>
+              <template #avatar><q-icon name="warning" /></template>
+              This password is shown only once. Store it somewhere safe now.
+            </q-banner>
+            <div class="row items-center q-gutter-sm q-mb-sm">
+              <div class="credential-label">Username</div>
+              <div class="credential-value">{{ store.admin.username }}</div>
+              <q-btn unelevated color="primary"
+                :icon="copiedField === 'username' ? 'check' : 'content_copy'"
+                :label="copiedField === 'username' ? 'Copied!' : 'Copy'"
+                aria-label="Copy username"
+                @click="copyCredential('username')" />
+            </div>
+            <div class="row items-center q-gutter-sm">
+              <div class="credential-label">Password</div>
+              <div class="credential-value">
+                {{ passwordRevealed ? store.admin.password : maskedPassword }}
+              </div>
+              <q-btn flat round dense
+                :icon="passwordRevealed ? 'visibility_off' : 'visibility'"
+                :aria-label="passwordRevealed ? 'Hide password' : 'Show password'"
+                @click="passwordRevealed = !passwordRevealed" />
+              <q-btn unelevated color="primary"
+                :icon="copiedField === 'password' ? 'check' : 'content_copy'"
+                :label="copiedField === 'password' ? 'Copied!' : 'Copy'"
+                aria-label="Copy password"
+                @click="copyCredential('password')" />
+            </div>
+            <p class="q-mt-md q-mb-none">
+              If it is lost, you can find it on this host in
+              <span class="console-inline">/etc/bareos/bareos-dir.d/console/admin.conf</span>.
+            </p>
+          </q-card-section>
+        </q-card>
         <q-banner v-else-if="adminPasswordPrintedToTerminal" class="bg-info text-white q-mb-md" rounded>
           <template #avatar><q-icon name="terminal" /></template>
           The initial WebUI admin password was printed on the terminal where
@@ -438,6 +470,10 @@ const primaryActionIcon = computed(() => {
   return 'arrow_forward'
 })
 const adminPasswordVisible = computed(() => Boolean(store.admin?.password))
+const passwordRevealed = ref(false)
+const copiedField = ref('')
+let copiedTimer = null
+const maskedPassword = computed(() => '•'.repeat(store.admin?.password?.length || 0))
 const adminPasswordPrintedToTerminal = computed(() =>
   Boolean(store.admin?.password_printed_to_terminal))
 const nextStepLinks = computed(() => [
@@ -504,12 +540,38 @@ const installationLog = computed(() => installSteps.map(item => {
   return `## ${item.label}\n${log}`
 }).filter(Boolean).join('\n\n'))
 const hasInstallationLog = computed(() => installationLog.value.length > 0)
+async function copyText(text) {
+  // navigator.clipboard is only defined in a secure context. The setup
+  // server speaks plain HTTP, so it is available on loopback but not for
+  // a remote browser; fall back to the deprecated execCommand path there.
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch (_) { /* fall through to the legacy path */ }
+  }
+  try {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.top = '-1000px'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    area.setSelectionRange(0, text.length)
+    const copied = document.execCommand('copy')
+    document.body.removeChild(area)
+    return copied
+  } catch (_) {
+    return false
+  }
+}
 async function copyInstallationLog() {
   if (!installationLog.value) return
-  try {
-    await navigator.clipboard.writeText(installationLog.value)
+  if (await copyText(installationLog.value)) {
     $q.notify({ type: 'positive', message: 'Installation log copied.' })
-  } catch (_) {
+  } else {
     $q.notify({ type: 'negative', message: 'Could not copy installation log.' })
   }
 }
@@ -554,13 +616,24 @@ function start() {
 }
 function retry() { start() }
 function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false; currentStepId.value = null }
-async function copyAdminPassword() {
-  if (!store.admin?.password) return
-  try {
-    await navigator.clipboard.writeText(store.admin.password)
-    $q.notify({ type: 'positive', message: 'Password copied to clipboard.' })
-  } catch (_) {
-    $q.notify({ type: 'negative', message: 'Could not copy password to clipboard.' })
+async function copyCredential(field) {
+  const text = field === 'username'
+    ? store.admin?.username
+    : store.admin?.password
+  if (!text) return
+  if (await copyText(text)) {
+    copiedField.value = field
+    if (copiedTimer) clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => { copiedField.value = '' }, 2000)
+    $q.notify({
+      type: 'positive',
+      message: field === 'username' ? 'Username copied.' : 'Password copied.',
+    })
+  } else {
+    $q.notify({
+      type: 'negative',
+      message: `Could not copy ${field} to clipboard.`,
+    })
   }
 }
 function closeSetup() { send({ action: 'close' }) }
@@ -647,5 +720,20 @@ onMounted(() => send({ action: 'state' }))
 }
 .webui-url-table__label {
   width: 12rem;
+}
+.credentials-card {
+  border-color: var(--q-warning);
+  border-width: 2px;
+}
+.credential-label {
+  width: 6rem;
+  font-weight: 500;
+}
+.credential-value {
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  word-break: break-all;
 }
 </style>

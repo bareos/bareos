@@ -422,7 +422,7 @@ TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
   ASSERT_NE(mkdtemp(buffer.data()), nullptr);
   const std::filesystem::path fake_dir = buffer.data();
   const std::filesystem::path admin_path = fake_dir / "admin.conf";
-  const std::filesystem::path proxy_path = fake_dir / "bareos-webui-proxy.ini";
+  const std::filesystem::path absent_path = fake_dir / "not-created.conf";
   {
     std::ofstream out(admin_path);
     out << "preexisting\n";
@@ -437,29 +437,28 @@ TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
   EXPECT_NE(RunCommand(existing_cmd, false,
                        [](const std::string&, const std::string&) {}),
             0);
-  EXPECT_EQ(RunCommand(BuildFileAbsentCheckCmd(proxy_path.string()), false,
+  EXPECT_EQ(RunCommand(BuildFileAbsentCheckCmd(absent_path.string()), false,
                        [](const std::string&, const std::string&) {}),
             0);
 
   const std::string message
       = BuildExistingSetupConfigError({admin_path.string()});
   EXPECT_NE(message.find(admin_path.string()), std::string::npos);
-  EXPECT_EQ(message.find(proxy_path.string()), std::string::npos);
+  EXPECT_EQ(message.find(absent_path.string()), std::string::npos);
   EXPECT_NE(message.find("Refusing to continue"), std::string::npos);
 
   std::error_code ec;
   std::filesystem::remove_all(fake_dir, ec);
 }
 
-TEST(BareosSetupStepsShared, OwnsAdminAndProxyConfigPaths)
+TEST(BareosSetupStepsShared, OwnsOnlyTheAdminConfigPath)
 {
+  // The WebUI proxy configuration is deliberately not setup-owned: setup
+  // never writes it, so an administrator's own file must not block setup.
   EXPECT_EQ(SetupOwnedConfigPaths(),
-            (std::vector<std::string>{SetupAdminConfigPath(),
-                                      SetupProxyConfigPath()}));
+            (std::vector<std::string>{SetupAdminConfigPath()}));
   EXPECT_EQ(SetupAdminConfigPath(),
             "/etc/bareos/bareos-dir.d/console/admin.conf");
-  EXPECT_EQ(SetupProxyConfigPath(),
-            "/etc/bareos-webui-proxy/bareos-webui-proxy.ini");
 }
 
 TEST(BareosSetupStepsShared, AcceptsSameOriginRequests)
@@ -677,15 +676,16 @@ TEST(BareosSetupSessionOrchestration,
   EXPECT_EQ(commands.find("install "), std::string::npos);
 }
 
-TEST(BareosSetupSessionOrchestration,
-     ProxyStepChownsConfigSoTheBareosUserCanReadIt)
+TEST(BareosSetupSessionOrchestration, ProxyStepWritesNoProxyConfiguration)
 {
-  // Regression test: bareos-webui-proxy.service runs as
-  // User=bareos/Group=bareos (not root). Without chowning the config
-  // file to "root:bareos" after writing it (which install -D leaves
-  // owned by root:root at mode 0640), the proxy process cannot read
-  // its own config and crash-loops with "cannot load
-  // '/etc/bareos-webui-proxy/bareos-webui-proxy.ini'" forever.
+  // bareos-webui-proxy's built-in defaults already describe exactly the
+  // layout setup creates (loopback listener on 9104, bareos-dir on 9101),
+  // and the service falls back to them when no configuration file exists.
+  // Writing one would only restate the defaults -- and, because the
+  // service runs as User=bareos/Group=bareos rather than root, it would
+  // also need an easy-to-forget chown to stay readable. Not writing it at
+  // all avoids that class of bug and leaves an administrator's own
+  // configuration untouched.
   const auto os = DetectOs();
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
@@ -695,12 +695,9 @@ TEST(BareosSetupSessionOrchestration,
   ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
-  const auto chown_it
-      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
-          return line.find("chown root:bareos") != std::string::npos
-                 && line.find("bareos-webui-proxy.ini") != std::string::npos;
-        });
-  ASSERT_NE(chown_it, commands.end());
+  for (const auto& line : commands) {
+    EXPECT_EQ(line.find("bareos-webui-proxy.ini"), std::string::npos) << line;
+  }
   const auto enable_it
       = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
           return line.find("systemctl enable --now bareos-webui-proxy")
@@ -712,9 +709,6 @@ TEST(BareosSetupSessionOrchestration,
           return line.find("httpd_can_network_connect") != std::string::npos;
         });
   ASSERT_NE(selinux_it, commands.end());
-  // The chown must happen before the daemon is (re)started, otherwise a
-  // config-file read race could still hit the old ownership.
-  EXPECT_LT(chown_it - commands.begin(), enable_it - commands.begin());
   const std::string web_server
       = "systemctl enable --now " + BuildWebServerServiceName(os.pkg_mgr);
   const auto web_server_it = std::find_if(
@@ -722,6 +716,7 @@ TEST(BareosSetupSessionOrchestration,
         return line.find(web_server) != std::string::npos;
       });
   ASSERT_NE(web_server_it, commands.end());
+  EXPECT_LT(enable_it - commands.begin(), web_server_it - commands.begin());
   EXPECT_LT(selinux_it - commands.begin(), web_server_it - commands.begin());
 }
 
