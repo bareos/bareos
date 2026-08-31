@@ -162,6 +162,8 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
     const char* password)
 {
   ASSERT(tls_resource);
+  ASSERT(tls_resource->IsTlsConfigured());
+
   auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
   if (!result) {
     Qmsg0(jcr, M_FATAL, 0, T_("TLS connection initialization failed.\n"));
@@ -173,7 +175,7 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
   result->SetCipherList(tls_resource->cipherlist_);
   result->SetCipherSuites(tls_resource->ciphersuites_);
 
-  if (tls_resource->IsTlsConfigured()) {
+  if (identity) {
     PskCredentials psk_cred{identity, password};
     result->SetTlsPskClientContext(psk_cred);
   } else {
@@ -748,16 +750,104 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
   TlsPolicy local_policy = args.target->GetPolicy();
   if (!args.cleartext) { local_policy = kBnetTlsAuto; }
-  return cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
-                            args.target->password_.value, local_policy, false,
-                            &remote_policy);
+  if (!cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
+                          args.target->password_.value, local_policy, false,
+                          &remote_policy)) {
+    return false;
+  }
+
+  if (args.socket->tls_conn) {
+    // if we already established tls, then there is nothing left to do
+    return true;
+  }
+
+  switch (select_tls_status(remote_policy, local_policy)) {
+    default:
+      [[fallthrough]];
+    case TlsStatus::Error: {
+      Jmsg1(args.jcr, M_ERROR, 0,
+            T_("It was not possible to negotiate a shared tls policy with "
+               "%s.\n"),
+            args.socket->who());
+      return false;
+    } break;
+    case TlsStatus::Disabled: {
+      // nothing to do
+    } break;
+    case TlsStatus::Enabled: {
+      // this tls connection does _not_ support tls-psk!
+      auto tls = ParameterizeAndInitTlsConnectionAsAClient(
+          args.jcr, args.target, nullptr, nullptr);
+
+      if (!tls) {
+        Jmsg(args.jcr, M_FATAL, 0,
+             "Could initialize secondary tls context for %s\n",
+             args.socket->who());
+        return false;
+      }
+
+      if (!DoTlsHandshakeWithServer(args.jcr, args.socket, std::move(tls),
+                                    &args.target->tls_cert_)) {
+        return false;
+      }
+
+      if (args.target->authenticate_) {
+        args.socket->CloseTlsConnectionAndFreeMemory();
+      }
+    } break;
+  }
+
+  return true;
 }
 
 bool Md5Authenticator::authenticate_inbound(InboundArgs args)
 {
-  return cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
-                            args.target->password_.value,
-                            args.target->GetPolicy(), true, &remote_policy);
+  if (!cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
+                          args.target->password_.value,
+                          args.target->GetPolicy(), true, &remote_policy)) {
+    return false;
+  }
+
+  if (args.socket->tls_conn) {
+    // if we already established tls, then there is nothing left to do
+    return true;
+  }
+
+  switch (select_tls_status(remote_policy, args.target->GetPolicy())) {
+    case TlsStatus::Error: {
+      Emsg1(M_ERROR, 0,
+            T_("It was not possible to negotiate a shared tls policy with "
+               "%s.\n"),
+            args.socket->who());
+      return false;
+    } break;
+    case TlsStatus::Disabled: {
+      // nothing to do here
+    } break;
+    case TlsStatus::Enabled: {
+      // we do _not_ want tls-psk here, as this path is only used by
+      // old clients that do not support tls-psk anyways
+      auto tls
+          = ParameterizeAndInitTlsConnectionAsAServer(args.target, nullptr);
+
+      if (!tls) {
+        Emsg1(M_ERROR, 0, "Could initialize secondary tls context for %s\n",
+              args.socket->who());
+        return false;
+      }
+
+      if (!DoTlsHandshakeWithClient(nullptr, args.socket, std::move(tls),
+                                    &args.target->tls_cert_)) {
+        return false;
+      }
+
+      if (args.target->authenticate_) {
+        args.socket->CloseTlsConnectionAndFreeMemory();
+      }
+    } break;
+  }
+
+  return true;
 }
 
 bool BareosConnect(JobControlRecord* jcr,
@@ -823,46 +913,6 @@ bool BareosConnect(JobControlRecord* jcr,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
-  }
-
-  /* only create the tls connection if it does not already exist */
-  if (!have_tls) {
-    bool connection_tls = true;
-    switch (select_tls_status(auth->remote_policy, res->GetPolicy())) {
-      default:
-        [[fallthrough]];
-      case TlsStatus::Error: {
-        Jmsg1(jcr, M_ERROR, 0,
-              T_("It was not possible to negotiate a shared tls policy with "
-                 "%s.\n"),
-              socket->who());
-        return false;
-      } break;
-      case TlsStatus::Disabled: {
-        connection_tls = false;
-      } break;
-      case TlsStatus::Enabled: {
-        connection_tls = true;
-      } break;
-    }
-
-    if (connection_tls) {
-      auto tls = ParameterizeAndInitTlsConnectionAsAClient(
-          jcr, res, qualified_name.c_str(), res->password_.value);
-
-      if (!tls) {
-        Jmsg(jcr, M_FATAL, 0, "Could initialize secondary tls context for %s\n",
-             socket->who());
-        return false;
-      }
-
-      if (!DoTlsHandshakeWithServer(jcr, socket, std::move(tls),
-                                    &res->tls_cert_)) {
-        return false;
-      }
-
-      if (res->authenticate_) { socket->CloseTlsConnectionAndFreeMemory(); }
-    }
   }
 
   jcr->authenticated = true;
@@ -968,47 +1018,6 @@ bool BareosAccept(BareosSocket* socket,
         })) {
       Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
       return false;
-    }
-  }
-
-  /* only create the tls connection if it does not already exist
-   *
-   * one might argue that we should drop the tls connection if
-   * the resource we authenticated has tls disabled, or simply drop the
-   * connection, but that is not how it was done. */
-  if (!have_tls) {
-    switch (select_tls_status(auth->remote_policy, tls_resource->GetPolicy())) {
-      case TlsStatus::Error: {
-        Emsg1(M_ERROR, 0,
-              T_("It was not possible to negotiate a shared tls policy with "
-                 "%s.\n"),
-              socket->who());
-        return false;
-      } break;
-      case TlsStatus::Disabled: {
-        // nothing to do here
-      } break;
-      case TlsStatus::Enabled: {
-        // we do _not_ want tls-psk here, as this path is only used by
-        // old clients that do not support tls-psk anyways
-        auto tls2
-            = ParameterizeAndInitTlsConnectionAsAServer(tls_resource, nullptr);
-
-        if (!tls2) {
-          Emsg1(M_ERROR, 0, "Could initialize secondary tls context for %s\n",
-                socket->who());
-          return false;
-        }
-
-        if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls2),
-                                      &tls_resource->tls_cert_)) {
-          return false;
-        }
-
-        if (tls_resource->authenticate_) {
-          socket->CloseTlsConnectionAndFreeMemory();
-        }
-      } break;
     }
   }
 
