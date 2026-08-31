@@ -516,7 +516,7 @@ static void start_bareos_server(std::promise<bool>* promise,
   //                     for new-style connections
   console_res.tls_enable_ = false;
 
-  if (!BareosAccept(bs.get(), "myname", &console_res, nullptr, &auth)) {
+  if (!BareosAccept(bs.get(), &console_res, nullptr, &auth)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,

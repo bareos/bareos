@@ -90,10 +90,7 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   Auth auth{config};
 
-  if (!BareosAccept(bs,
-                    global_resource::QualifiedName(
-                        global_resource::Type::Storage, myself->resource_name_),
-                    myself, &tls_secret_provider, &auth)) {
+  if (!BareosAccept(bs, myself, &tls_secret_provider, &auth)) {
     return error_and_close(bs);
   }
 

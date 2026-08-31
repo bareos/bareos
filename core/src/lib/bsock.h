@@ -283,7 +283,6 @@ struct Authenticator {
 };
 
 struct Md5Authenticator : Authenticator {
-  Md5Authenticator(std::string name);
   bool authenticate_outbound(OutboundArgs args) override;
   bool authenticate_inbound(InboundArgs args) override;
 
@@ -295,7 +294,7 @@ struct Md5Authenticator : Authenticator {
    * that you cannot use us, to solve our own challenge.
    * This value can be anything, but it should always be the same for the
    * livetime of the program, otherwise it will not do its job! */
-  std::string cram_identity;
+  static std::string cram_identity;
 };
 
 bool BareosConnect(JobControlRecord* jcr,
@@ -317,13 +316,12 @@ bool BareosConnect(JobControlRecord* jcr,
   auto qualified_name
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
-  Md5Authenticator auth{qualified_name};
+  Md5Authenticator auth{};
   return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
                        cleartext_authentication);
 }
 
 bool BareosAccept(BareosSocket* socket,
-                  const std::string& qualified_name,
                   const TlsResource* initial_tls,
                   TlsSecretProvider* provider,
                   ClientHelloParser* hello_parser);

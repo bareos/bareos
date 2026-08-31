@@ -740,12 +740,6 @@ bool cram_md5_handshake(JobControlRecord* jcr,
   return auth_success;
 }
 
-Md5Authenticator::Md5Authenticator(std::string name)
-    : cram_identity{std::move(name)}
-{
-  BashSpaces(cram_identity.data());
-}
-
 bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
   TlsPolicy remote_policy{kBnetTlsUnknown};
@@ -1027,12 +1021,11 @@ bool BareosAccept(BareosSocket* socket,
 }
 
 bool BareosAccept(BareosSocket* socket,
-                  const std::string& qualified_name,
                   const TlsResource* initial_tls,
                   TlsSecretProvider* provider,
                   ClientHelloParser* hello_parser)
 {
-  Md5Authenticator auth{qualified_name};
+  Md5Authenticator auth{};
   return BareosAccept(socket, initial_tls, provider, hello_parser, &auth);
 }
 
@@ -1119,3 +1112,13 @@ std::string hello_formatter<Type::Console, Type::Director>::format(
                      bashed_printer{name}, kBareosVersionStrings.Full,
                      version.Major, version.Minor, version.Patch);
 }
+
+
+static std::string generate_identity()
+{
+  char data[120];
+  if (!MakeSessionKey(data)) { throw std::runtime_error{data}; }
+  return data;
+}
+
+std::string Md5Authenticator::cram_identity = generate_identity();
