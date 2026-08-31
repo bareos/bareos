@@ -63,6 +63,7 @@ target_sources(
           edit.cc
           fnmatch.cc
           guid_to_name.cc
+          hello.cc
           hmac.cc
           htable.cc
           jcr.cc
@@ -99,7 +100,6 @@ target_sources(
           var.cc
           watchdog.cc
           xxhash.cc
-          hello_parser.cc
 )
 
 if(HAVE_WIN32)
