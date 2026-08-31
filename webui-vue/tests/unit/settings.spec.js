@@ -110,4 +110,54 @@ describe('settings store', () => {
     expect(restored.getTableRowsPerPage('jobs.list', 15)).toBe(33)
     expect(restored.getTableRowsPerPage('storages.pools', 15)).toBe(11)
   })
+
+  it('persists and restores the restore merge defaults', async () => {
+    const settings = useSettingsStore()
+
+    expect(settings.restoreMergeJobs).toBe(true)
+    expect(settings.restoreMergeFilesets).toBe(true)
+
+    settings.setRestoreMergeDefaults({ mergeJobs: true, mergeFilesets: false })
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        restoreMergeJobs: true,
+        restoreMergeFilesets: false,
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      restoreMergeJobs: false,
+      restoreMergeFilesets: false,
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.restoreMergeJobs).toBe(false)
+    expect(restored.restoreMergeFilesets).toBe(false)
+  })
+
+  it('never keeps the fileset default enabled without related jobs', async () => {
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      restoreMergeJobs: false,
+      restoreMergeFilesets: true,
+    }))
+
+    setActivePinia(createPinia())
+    const settings = useSettingsStore()
+    expect(settings.restoreMergeFilesets).toBe(false)
+
+    settings.setRestoreMergeDefaults({ mergeJobs: false, mergeFilesets: true })
+    expect(settings.restoreMergeFilesets).toBe(false)
+
+    settings.restoreMergeJobs = true
+    settings.restoreMergeFilesets = true
+    settings.restoreMergeJobs = false
+
+    await nextTick()
+
+    expect(settings.restoreMergeFilesets).toBe(false)
+  })
 })
