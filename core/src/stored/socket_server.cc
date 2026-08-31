@@ -41,7 +41,6 @@
 #include "lib/bnet_server_tcp.h"
 #include "lib/bsock.h"
 #include "lib/thread_list.h"
-#include "lib/try_tls_handshake_as_a_server.h"
 #include "include/version_hex.h"
 
 namespace storagedaemon {

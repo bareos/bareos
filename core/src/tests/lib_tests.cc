@@ -28,7 +28,6 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bareos_resource.h"
-#include "lib/try_tls_handshake_as_a_server.h"
 #include "stored/butil.h"
 #include "lib/util.h"
 #include "lib/version.h"

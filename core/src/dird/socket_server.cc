@@ -42,7 +42,6 @@
 #include "lib/global_resource.h"
 #include "lib/thread_list.h"
 #include "lib/thread_specific_data.h"
-#include "lib/try_tls_handshake_as_a_server.h"
 #include "dird/authenticate.h"
 #include "lib/version.h"
 

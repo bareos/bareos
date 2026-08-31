@@ -280,7 +280,6 @@ BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
 BAREOS_IMPORT JobControlRecord* get_jcr_for_authentication(
     std::string_view job_name);
 
-TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
 BAREOS_IMPORT std::size_t NumJobsRun();
 
 BAREOS_IMPORT void b_free_jcr(const char* file,
