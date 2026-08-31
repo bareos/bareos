@@ -236,6 +236,35 @@ int RunWithInput(const std::vector<std::string>& command,
       });
 }
 
+std::string DiscoverSubscriptionRelease(WsCodec& ws,
+                                        const SessionContext& context,
+                                        const std::vector<std::string>& secrets,
+                                        const std::string& curl_config)
+{
+  const auto command = BuildSubscriptionReleaseIndexCmd(true);
+  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
+  if (context.dry_run) return "newest-release";
+
+  std::string index;
+  const int result = RunCommandWithInput(
+      command, curl_config, true,
+      [&index](const std::string& line, const std::string&) {
+        index += line;
+        index += '\n';
+      });
+  if (result != 0) {
+    throw std::runtime_error(
+        "Unable to retrieve the Bareos Subscription release index.");
+  }
+  const auto release = ParseLatestSubscriptionRelease(index);
+  if (release.empty()) {
+    throw std::runtime_error(
+        "The Bareos Subscription release index contains no valid release.");
+  }
+  Output(ws, "Using Bareos Subscription release " + release + ".");
+  return release;
+}
+
 void EnsureNoExistingSetupConfigs(WsCodec& ws,
                                   const SessionContext& context,
                                   const std::vector<std::string>& paths)
@@ -358,21 +387,23 @@ int InstallRepository(WsCodec& ws,
   }
 
   const bool use_curl_config = repo_type == "subscription";
+  const std::string curl_config
+      = context.dry_run ? "" : BuildCurlUserConfig(login, password);
+  const std::string release
+      = use_curl_config
+            ? DiscoverSubscriptionRelease(ws, context, secrets, curl_config)
+            : "";
   // Only a manually chosen repository can be wrong here; a detected one is
   // validated implicitly by the download below.
   const bool manual_repo_choice = !requested_repo_os_path.empty();
   if (manual_repo_choice) {
     Output(ws, "Verifying that the " + repo_os_path
                    + " Bareos repository is available.");
-    const auto probe_cmd
-        = BuildRepoPathProbeCmd(repo_os_path, repo_type, use_curl_config);
-    const int probe
-        = use_curl_config
-              ? RunWithInput(
-                    probe_cmd,
-                    context.dry_run ? "" : BuildCurlUserConfig(login, password),
-                    ws, context, secrets)
-              : Run(probe_cmd, ws, context, secrets);
+    const auto probe_cmd = BuildRepoPathProbeCmd(repo_os_path, repo_type,
+                                                 use_curl_config, release);
+    const int probe = use_curl_config ? RunWithInput(probe_cmd, curl_config, ws,
+                                                     context, secrets)
+                                      : Run(probe_cmd, ws, context, secrets);
     if (probe != 0) {
       throw std::runtime_error(
           "The Bareos repository \"" + repo_os_path
@@ -383,19 +414,15 @@ int InstallRepository(WsCodec& ws,
     }
   }
 
-  auto command
-      = BuildAddRepoCmdForPath(repo_os_path, repo_type, use_curl_config);
+  auto command = BuildAddRepoCmdForPath(repo_os_path, repo_type,
+                                        use_curl_config, release);
   const std::filesystem::path script
       = context.dry_run ? std::filesystem::path{"bareos-setup-repository.sh"}
                         : RuntimeFile("repository");
   command.insert(command.end() - 1, {"--output", script.string()});
-  const int download
-      = use_curl_config
-            ? RunWithInput(
-                  command,
-                  context.dry_run ? "" : BuildCurlUserConfig(login, password),
-                  ws, context, secrets)
-            : Run(command, ws, context, secrets);
+  const int download = use_curl_config ? RunWithInput(command, curl_config, ws,
+                                                      context, secrets)
+                                       : Run(command, ws, context, secrets);
   if (download != 0) {
     if (!context.dry_run) std::filesystem::remove(script);
     return download;
@@ -613,6 +640,7 @@ int ConfigureProxy(WsCodec& ws, const SessionContext& context)
   for (const auto& command : https_setup_cmds) {
     if (Run(command, ws, context) != 0) return 1;
   }
+  if (Run(BuildWebUiSelinuxSetupCmd(), ws, context) != 0) return 1;
   if (Run({"systemctl", "enable", "--now",
            BuildWebServerServiceName(os.pkg_mgr)},
           ws, context)

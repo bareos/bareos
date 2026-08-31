@@ -41,7 +41,8 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "mod_ssl", "postgresql-server"}));
+                "bareos-webui-proxy", "policycoreutils", "mod_ssl",
+                "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
@@ -51,7 +52,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "postgresql"}));
+                "bareos-webui-proxy", "policycoreutils", "postgresql"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
@@ -61,7 +62,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "postgresql-server"}));
+                "bareos-webui-proxy", "policycoreutils", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
@@ -71,35 +72,35 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy"}));
+                "bareos-webui-proxy", "policycoreutils"}));
   EXPECT_EQ(BuildPackageListWithoutPostgresServer("dnf"),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "mod_ssl"}));
+                "bareos-webui-proxy", "policycoreutils", "mod_ssl"}));
   EXPECT_EQ(BuildPackageListWithoutPostgresServer("zypper"),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy"}));
+                "bareos-webui-proxy", "policycoreutils"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
 {
-  EXPECT_EQ(
-      BuildPackageListWithoutTapeStorage("zypper"),
-      (std::vector<std::string>{
-          "bareos-filedaemon", "bareos-director", "bareos-storage",
-          "bareos-storage-dedupable", "bareos-database-tools", "bareos-tools",
-          "bareos-webui-new", "bareos-webui-proxy", "postgresql-server"}));
+  EXPECT_EQ(BuildPackageListWithoutTapeStorage("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-dedupable", "bareos-database-tools",
+                "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
+                "policycoreutils", "postgresql-server"}));
   EXPECT_EQ(BuildPackageListWithoutTapeStorage("dnf"),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-dedupable", "bareos-database-tools",
                 "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
-                "mod_ssl", "postgresql-server"}));
+                "policycoreutils", "mod_ssl", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
@@ -390,15 +391,17 @@ TEST(BareosSetupStepsShared, JoinsCommandForDisplayEscapingEmbeddedQuotes)
 
 TEST(BareosSetupStepsShared, BuildsSubscriptionRepoCommandWithoutCredentials)
 {
-  const auto command = BuildAddRepoCmd("sles", "16.0", "subscription", true);
+  const auto command
+      = BuildAddRepoCmd("sles", "16.0", "subscription", true, "25");
 
   EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
             command.end() - 3);
   EXPECT_EQ(std::find(command.begin(), command.end(), "-"), command.end() - 2);
   EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
             command.end());
-  EXPECT_NE(command.back().find("SUSE_16/add_bareos_repositories.sh"),
-            std::string::npos);
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.com/bareos/release/25/SUSE_16/"
+            "add_bareos_repositories.sh");
 }
 
 TEST(BareosSetupStepsShared, BuildsCurlUserConfig)
@@ -704,16 +707,22 @@ TEST(BareosSetupSessionOrchestration,
                  != std::string::npos;
         });
   ASSERT_NE(enable_it, commands.end());
+  const auto selinux_it
+      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+          return line.find("httpd_can_network_connect") != std::string::npos;
+        });
+  ASSERT_NE(selinux_it, commands.end());
   // The chown must happen before the daemon is (re)started, otherwise a
   // config-file read race could still hit the old ownership.
   EXPECT_LT(chown_it - commands.begin(), enable_it - commands.begin());
   const std::string web_server
       = "systemctl enable --now " + BuildWebServerServiceName(os.pkg_mgr);
-  EXPECT_NE(std::find_if(commands.begin(), commands.end(),
-                         [&web_server](const auto& line) {
-                           return line.find(web_server) != std::string::npos;
-                         }),
-            commands.end());
+  const auto web_server_it = std::find_if(
+      commands.begin(), commands.end(), [&web_server](const auto& line) {
+        return line.find(web_server) != std::string::npos;
+      });
+  ASSERT_NE(web_server_it, commands.end());
+  EXPECT_LT(selinux_it - commands.begin(), web_server_it - commands.begin());
 }
 
 TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
@@ -1009,7 +1018,8 @@ TEST(BareosSetupStepsShared, BuildsAddRepoCommandForAnExplicitPath)
 
 TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
 {
-  const auto command = BuildRepoPathProbeCmd("SUSE_16", "subscription", true);
+  const auto command
+      = BuildRepoPathProbeCmd("SUSE_16", "subscription", true, "25");
 
   EXPECT_NE(std::find(command.begin(), command.end(), "--head"), command.end());
   EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
@@ -1017,8 +1027,51 @@ TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
   EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
             command.end());
   EXPECT_EQ(command.back(),
-            "https://download.bareos.com/bareos/release/latest/SUSE_16/"
+            "https://download.bareos.com/bareos/release/25/SUSE_16/"
             "add_bareos_repositories.sh");
+}
+
+TEST(BareosSetupStepsShared, SelectsLatestSubscriptionRelease)
+{
+  const std::string index = R"(
+    <a href="24/">24/</a>
+    <a href="25/">25/</a>
+    <a href="25.1/">25.1/</a>
+    <a href="100000000000000000000000000000000000000/">100000000000000000000000000000000000000/</a>
+    <a href="not-a-release/">not-a-release/</a>
+    <a href="26-rc1/">26-rc1/</a>
+  )";
+  EXPECT_EQ(ParseLatestSubscriptionRelease(index),
+            "100000000000000000000000000000000000000");
+}
+
+TEST(BareosSetupStepsShared, RejectsInvalidSubscriptionReleaseIndex)
+{
+  EXPECT_TRUE(
+      ParseLatestSubscriptionRelease(
+          R"(<a href="latest/">latest/</a><a href="25-rc1/">25-rc1</a>)")
+          .empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsSubscriptionReleaseIndexCommand)
+{
+  const auto command = BuildSubscriptionReleaseIndexCmd(true);
+  EXPECT_EQ(command.back(), "https://download.bareos.com/bareos/release/");
+  EXPECT_NE(std::find(command.begin(), command.end(), "--config"),
+            command.end());
+}
+
+TEST(BareosSetupStepsShared, BuildsEnforcingSelinuxWebUiCommand)
+{
+  EXPECT_EQ(BuildWebUiSelinuxSetupCmd(),
+            (std::vector<std::string>{
+                "sh",
+                "-c",
+                "if command -v getenforce >/dev/null 2>&1 && "
+                "[ \"$(getenforce)\" = Enforcing ]; then "
+                "setsebool -P httpd_can_network_connect on; "
+                "fi",
+            }));
 }
 
 TEST(BareosSetupStepsShared, IdentifiesSuseRepositoryPaths)

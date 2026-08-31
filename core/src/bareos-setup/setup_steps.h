@@ -153,13 +153,16 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& version,
                                          const std::string& repo_type,
                                          bool read_curl_config_from_stdin
-                                         = false);
+                                         = false,
+                                         const std::string& release = {});
 
 /** Build the add-repository command for an explicit repository OS path. */
 std::vector<std::string> BuildAddRepoCmdForPath(const std::string& repo_os_path,
                                                 const std::string& repo_type,
                                                 bool read_curl_config_from_stdin
-                                                = false);
+                                                = false,
+                                                const std::string& release
+                                                = {});
 
 /**
  * Build a probe that checks whether a repository OS path actually exists.
@@ -170,7 +173,19 @@ std::vector<std::string> BuildAddRepoCmdForPath(const std::string& repo_os_path,
 std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
                                                const std::string& repo_type,
                                                bool read_curl_config_from_stdin
-                                               = false);
+                                               = false,
+                                               const std::string& release = {});
+
+/** Build the command that retrieves the Subscription release directory index.
+ */
+std::vector<std::string> BuildSubscriptionReleaseIndexCmd(
+    bool read_curl_config_from_stdin = false);
+
+/**
+ * Extract the highest numeric release directory version from a Subscription
+ * repository index. Returns an empty string when no valid version is found.
+ */
+std::string ParseLatestSubscriptionRelease(const std::string& index);
 
 /** Whether a repository OS path belongs to the SUSE family. */
 bool IsSuseRepoOsPath(const std::string& repo_os_path);
@@ -218,6 +233,12 @@ std::string BuildWebServerServiceName(const std::string& pkg_mgr);
 /** Return commands that activate HTTPS for the packaged WebUI web server. */
 std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
     const std::string& pkg_mgr);
+
+/**
+ * Build the conditional SELinux setup required by HTTPD to reach the WebUI
+ * proxy. The command is a no-op unless SELinux is enforcing.
+ */
+std::vector<std::string> BuildWebUiSelinuxSetupCmd();
 
 /** Return canonical Bareos daemon unit names for enable/start/status checks. */
 std::vector<std::string> BuildBareosDaemonServiceNames(

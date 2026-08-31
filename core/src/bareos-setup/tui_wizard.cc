@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <sys/stat.h>
 #include <termios.h>
@@ -91,6 +92,38 @@ bool RunWithInput(const std::vector<std::string>& command,
                std::cout << RedactSetupSecrets(line, secrets) << "\n";
              })
          == 0;
+}
+
+std::string DiscoverSubscriptionRelease(bool dry_run,
+                                        const std::string& curl_config,
+                                        const std::vector<std::string>& secrets)
+{
+  const auto command = BuildSubscriptionReleaseIndexCmd(true);
+  if (dry_run) {
+    std::cout << "[preview] "
+              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
+              << "\n";
+    return "newest-release";
+  }
+
+  std::string index;
+  if (RunCommandWithInput(
+          command, curl_config, true,
+          [&index](const std::string& line, const std::string&) {
+            index += line;
+            index += '\n';
+          })
+      != 0) {
+    throw std::runtime_error(
+        "Unable to retrieve the Bareos Subscription release index.");
+  }
+  const auto release = ParseLatestSubscriptionRelease(index);
+  if (release.empty()) {
+    throw std::runtime_error(
+        "The Bareos Subscription release index contains no valid release.");
+  }
+  std::cout << "Using Bareos Subscription release " << release << ".\n";
+  return release;
 }
 
 /**
@@ -222,17 +255,26 @@ int RunTuiWizard(bool dry_run)
   }
 
   const bool use_curl_config = repository == "subscription";
+  const std::string curl_config
+      = dry_run ? "" : BuildCurlUserConfig(login, password);
+  std::string release;
+  try {
+    release = use_curl_config ? DiscoverSubscriptionRelease(
+                                    dry_run, curl_config, {login, password})
+                              : "";
+  } catch (const std::runtime_error& error) {
+    std::cerr << error.what() << "\n";
+    if (!dry_run) std::filesystem::remove(repository_script);
+    return 1;
+  }
   if (manual_repo_choice) {
     std::cout << "Verifying that the " << repo_os_path
               << " Bareos repository is available.\n";
-    const auto probe_cmd
-        = BuildRepoPathProbeCmd(repo_os_path, repository, use_curl_config);
+    const auto probe_cmd = BuildRepoPathProbeCmd(repo_os_path, repository,
+                                                 use_curl_config, release);
     const bool reachable
         = use_curl_config
-              ? RunWithInput(
-                    probe_cmd,
-                    dry_run ? "" : BuildCurlUserConfig(login, password),
-                    dry_run, {login, password})
+              ? RunWithInput(probe_cmd, curl_config, dry_run, {login, password})
               : Run(probe_cmd, dry_run);
     if (!reachable) {
       std::cerr << "The Bareos repository \"" << repo_os_path
@@ -245,16 +287,14 @@ int RunTuiWizard(bool dry_run)
       return 1;
     }
   }
-  auto add_repo_cmd
-      = BuildAddRepoCmdForPath(repo_os_path, repository, use_curl_config);
+  auto add_repo_cmd = BuildAddRepoCmdForPath(repo_os_path, repository,
+                                             use_curl_config, release);
   add_repo_cmd.insert(add_repo_cmd.end() - 1,
                       {"--output", repository_script.string()});
-  const bool repo_downloaded
-      = use_curl_config
-            ? RunWithInput(add_repo_cmd,
-                           dry_run ? "" : BuildCurlUserConfig(login, password),
-                           dry_run, {login, password})
-            : Run(add_repo_cmd, dry_run);
+  const bool repo_downloaded = use_curl_config
+                                   ? RunWithInput(add_repo_cmd, curl_config,
+                                                  dry_run, {login, password})
+                                   : Run(add_repo_cmd, dry_run);
   if (!repo_downloaded) {
     if (!dry_run) std::filesystem::remove(repository_script);
     return 1;
@@ -383,6 +423,7 @@ int RunTuiWizard(bool dry_run)
   for (const auto& command : https_setup_cmds) {
     if (!Run(command, dry_run)) return 1;
   }
+  if (!Run(BuildWebUiSelinuxSetupCmd(), dry_run)) return 1;
   if (!Run({"systemctl", "enable", "--now",
             BuildWebServerServiceName(os.pkg_mgr)},
            dry_run)) {
