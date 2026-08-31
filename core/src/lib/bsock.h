@@ -294,7 +294,8 @@ struct Md5Authenticator : Authenticator {
    * cram_identity is used for the third part.  It makes sure
    * that you cannot use us, to solve our own challenge.
    * This value can be anything, but it should always be the same for the
-   * livetime of the program, otherwise it will not do its job! */
+   * livetime of the program, otherwise it will not do its job!
+   * This string shall _NOT_ contain whitespace! */
   std::string cram_identity;
 };
 
@@ -317,7 +318,7 @@ bool BareosConnect(JobControlRecord* jcr,
   auto qualified_name
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
-  Md5Authenticator auth{};
+  Md5Authenticator auth{qualified_name};
   return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
                        cleartext_authentication);
 }

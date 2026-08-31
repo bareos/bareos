@@ -866,9 +866,6 @@ bool BareosConnect(JobControlRecord* jcr,
   ASSERT(socket);
   ASSERT(res);
 
-  std::string bashed = qualified_name;
-  BashSpaces(bashed.data());
-
   auth_timer timer{socket};
 
   if (res->IsTlsConfigured() && !cleartext_authentication) {
@@ -1025,4 +1022,5 @@ Md5Authenticator::Md5Authenticator() : Md5Authenticator(default_cram_identity)
 Md5Authenticator::Md5Authenticator(std::string identity)
     : cram_identity(std::move(identity))
 {
+  BashSpaces(cram_identity.data());
 }
