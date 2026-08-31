@@ -311,7 +311,7 @@ bool BareosConnect(JobControlRecord* jcr,
   auto qualified_name
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
-  Md5Authenticator auth{std::string{name}};
+  Md5Authenticator auth{qualified_name};
   return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
                        cleartext_authentication);
 }

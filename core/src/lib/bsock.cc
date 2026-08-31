@@ -755,9 +755,9 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 
 bool Md5Authenticator::authenticate_inbound(InboundArgs args)
 {
-  return !cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
-                             args.target->password_.value,
-                             args.target->GetPolicy(), true, &remote_policy);
+  return cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
+                            args.target->password_.value,
+                            args.target->GetPolicy(), true, &remote_policy);
 }
 
 bool BareosConnect(JobControlRecord* jcr,
@@ -815,7 +815,7 @@ bool BareosConnect(JobControlRecord* jcr,
     return false;
   }
 
-  if (auth->authenticate_outbound({
+  if (!auth->authenticate_outbound({
           .jcr = jcr,
           .socket = socket,
           .cleartext = !have_tls,
