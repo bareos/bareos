@@ -99,6 +99,43 @@
           </q-item-section>
         </q-item>
       </q-card-section>
+      <q-separator />
+
+      <q-card-section>
+        <!-- Restore defaults -->
+        <div class="text-subtitle2 q-mb-sm">{{ t('Restore') }}</div>
+        <q-item tag="label" dense>
+          <q-item-section avatar>
+            <q-icon name="playlist_add_check" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Include related jobs up to the last full backup') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Preselection used when the restore page is opened.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle v-model="settings.restoreMergeJobs" />
+          </q-item-section>
+        </q-item>
+        <q-item tag="label" dense :disable="!settings.restoreMergeJobs">
+          <q-item-section avatar>
+            <q-icon name="folder_copy" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Include all client filesets') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Preselection used when the restore page is opened.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle
+              v-model="settings.restoreMergeFilesets"
+              :disable="!settings.restoreMergeJobs"
+            />
+          </q-item-section>
+        </q-item>
+      </q-card-section>
     </q-card>
   </q-page>
 </template>
