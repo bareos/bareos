@@ -371,7 +371,8 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
-                   <q-btn flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
+                   <q-btn v-if="canRerunJob(props.row)"
+                         flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
                          @click="confirmRerun(props.row)" class="q-mr-xs" />
                   <q-btn v-if="isRunning(props.row.status)"
                          flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')"
@@ -703,6 +704,7 @@ import {
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  canRerunJob,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
@@ -1257,7 +1259,7 @@ const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 // Rerunable = any finished job (not currently running)
 const rerunSearch  = ref('')
 const rerunableJobs = computed(() => {
-  const base = jobs.value.filter(j => !isRunning(j.status))
+  const base = jobs.value.filter(j => !isRunning(j.status) && canRerunJob(j))
   if (!rerunSearch.value) return base
   const q = rerunSearch.value.toLowerCase()
   return base.filter(j =>
