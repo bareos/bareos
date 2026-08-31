@@ -748,6 +748,7 @@ Md5Authenticator::Md5Authenticator(std::string name)
 
 bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
+  TlsPolicy remote_policy{kBnetTlsUnknown};
   TlsPolicy local_policy = args.target->GetPolicy();
   if (!args.cleartext) { local_policy = kBnetTlsAuto; }
   if (!cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
@@ -802,6 +803,7 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 
 bool Md5Authenticator::authenticate_inbound(InboundArgs args)
 {
+  TlsPolicy remote_policy{kBnetTlsUnknown};
   if (!cram_md5_handshake(nullptr, args.socket, cram_identity.c_str(),
                           args.target->password_.value,
                           args.target->GetPolicy(), true, &remote_policy)) {

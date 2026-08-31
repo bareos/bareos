@@ -280,8 +280,6 @@ struct Authenticator {
   virtual bool authenticate_outbound(OutboundArgs args) = 0;
   virtual bool authenticate_inbound(InboundArgs args) = 0;
   virtual ~Authenticator() = default;
-
-  TlsPolicy remote_policy{kBnetTlsUnknown};
 };
 
 struct Md5Authenticator : Authenticator {
