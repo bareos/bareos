@@ -54,7 +54,7 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    char* dev_name,
                                    const std::string& VolumeName,
                                    bool readonly);
-static DeviceResource* find_device_res(char* archive_device_string,
+static DeviceResource* find_device_res(std::string_view archive_device_string,
                                        bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
 
@@ -132,6 +132,16 @@ std::string AvailableDevicesListing()
        (resource = my_config->GetNextRes(R_DEVICE, resource));) {
     DeviceResource* device = dynamic_cast<DeviceResource*>(resource);
 
+    if (!device) {
+      // this should not be possible
+      continue;
+    }
+
+    if (device->resource_name_[0] == '$') {
+      // these are not real device names
+      continue;
+    }
+
     std::string device_str;
     device_str += " \"";
     device_str += device->resource_name_;
@@ -190,6 +200,8 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
       }
     }
   }
+
+  if (!dev_name) { return false; }
 
   if ((device_resource = find_device_res(dev_name, readonly)) == NULL) {
     Jmsg2(jcr, M_FATAL, 0,
@@ -283,27 +295,26 @@ static void MyFreeJcr(JobControlRecord* jcr)
  * Returns: NULL on failure
  *          Device resource pointer on success
  */
-static DeviceResource* find_device_res(char* archive_device_string,
+static DeviceResource* find_device_res(std::string_view archive_device_string,
                                        bool readonly)
 {
-  bool found = false;
-  DeviceResource* device_resource;
+  DeviceResource* candidate;
+  DeviceResource* found = nullptr;
 
   Dmsg0(900, "Enter find_device_res\n");
-  foreach_res (device_resource, R_DEVICE) {
-    Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
-          archive_device_string);
+  foreach_res (candidate, R_DEVICE) {
+    Dmsg2(900, "Compare %s and %.*s\n", candidate->archive_device_string,
+          (int)archive_device_string.size(), archive_device_string.data());
 
-    ASSERT(device_resource->resource_name_);
+    ASSERT(candidate->resource_name_);
 
-    if (device_resource->resource_name_[0] == '$') {
+    if (candidate->resource_name_[0] == '$') {
       // this is a dummy device, and is not to be used
       continue;
     }
 
-    if (bstrcmp(device_resource->archive_device_string,
-                archive_device_string)) {
-      found = true;
+    if (archive_device_string == candidate->archive_device_string) {
+      found = candidate;
       break;
     }
   }
@@ -311,36 +322,39 @@ static DeviceResource* find_device_res(char* archive_device_string,
   // we cannot select devices starting with `$` as they are not real devices
   if (!found && archive_device_string[0] != '$') {
     /* Search for name of Device resource rather than archive name */
-    if (archive_device_string[0] == '"') {
-      int len = strlen(archive_device_string);
-      bstrncpy(archive_device_string, archive_device_string + 1, len + 1);
-      len--;
-      if (len > 0) { archive_device_string[len - 1] = 0; /* zap trailing " */ }
-    }
-    foreach_res (device_resource, R_DEVICE) {
-      Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
-            archive_device_string);
 
-      if (bstrcmp(device_resource->resource_name_, archive_device_string)) {
-        found = true;
-        break;
+    if (archive_device_string.starts_with('"')
+        && archive_device_string.ends_with('"')) {
+      archive_device_string.remove_prefix(1);
+      archive_device_string.remove_suffix(1);
+    }
+
+    if (!archive_device_string.empty()
+        && !archive_device_string.starts_with('$')) {
+      foreach_res (candidate, R_DEVICE) {
+        Dmsg2(900, "Compare %s and %.*s\n", candidate->resource_name_,
+              (int)archive_device_string.size(), archive_device_string.data());
+
+        if (candidate->resource_name_ == archive_device_string) {
+          found = candidate;
+          break;
+        }
       }
     }
   }
 
   if (!found) {
-    Pmsg2(0, T_("Could not find device \"%s\" in config file %s.\n"),
-          archive_device_string, configfile);
+    Pmsg2(0, T_("Could not find device \"%.*s\" in config file %s.\n"),
+          (int)archive_device_string.size(), archive_device_string.data(),
+          configfile);
     return NULL;
   }
 
-  if (readonly) {
-    Pmsg1(0, T_("Using device: \"%s\" for reading.\n"), archive_device_string);
-  } else {
-    Pmsg1(0, T_("Using device: \"%s\" for writing.\n"), archive_device_string);
-  }
+  Pmsg1(0, T_("Using device: \"%.*s\" for %s.\n"),
+        (int)archive_device_string.size(), archive_device_string.data(),
+        readonly ? "reading" : "writing");
 
-  return device_resource;
+  return found;
 }
 
 // Device got an error, attempt to analyse it
