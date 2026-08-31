@@ -287,6 +287,14 @@ struct Md5Authenticator : Authenticator {
   bool authenticate_outbound(OutboundArgs args) override;
   bool authenticate_inbound(InboundArgs args) override;
 
+  /* a cram-md5 challenge consists of three parts:
+   *  - a current timestamp,
+   *  - a random value, and
+   *  - some way to identify our own challenges
+   * cram_identity is used for the third part.  It makes sure
+   * that you cannot use us, to solve our own challenge.
+   * This value can be anything, but it should always be the same for the
+   * livetime of the program, otherwise it will not do its job! */
   std::string cram_identity;
 };
 
