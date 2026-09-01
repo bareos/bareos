@@ -607,9 +607,30 @@ static bool connect_to_server(std::string console_name,
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    if (!BareosConnect<global_resource::Type::Console,
-                       global_resource::Type::Director>(
-            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth)) {
+    bool auth_success = [&] {
+      if (!cleartext_auth) {
+        return BareosConnect<global_resource::Type::Console,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
+      } else {
+        /* old style tls is only supported for clients and old consoles;
+         * since we connect as a console, we need to pretent to be an old
+         * console This is done by using and old style hello msg */
+
+        auto qualified_name = global_resource::QualifiedName(
+            global_resource::Type::Console, console_name);
+
+        auto bashed = console_name;
+        BashSpaces(bashed.data());
+
+        auto hello = "Hello " + bashed + " calling";
+        Md5Authenticator auth{qualified_name};
+        return BareosConnect(&jcr, UA_sock.get(), qualified_name, &custom,
+                             hello, &auth, cleartext_auth);
+      }
+    }();
+
+    if (!auth_success) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
       return false;
     }
