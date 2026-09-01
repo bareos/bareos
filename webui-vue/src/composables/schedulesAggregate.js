@@ -24,6 +24,7 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache } from './ttlCache.js'
 
 function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
@@ -186,7 +187,7 @@ export function buildStatusSchedules(statusResponse, showResponse, showAllRespon
   )
 }
 
-const schedulesShowCache = new Map()
+const schedulesShowCache = createTtlCache()
 const CACHE_TTL_MS = 60_000
 
 function buildCacheKey(credentials, directors) {
@@ -202,10 +203,13 @@ export function clearSchedulesShowCache() {
 
 export async function fetchAggregatedSchedulesShow(credentials, directors, { forceRefresh = false } = {}) {
   const cacheKey = buildCacheKey(credentials, directors)
-  const cached = schedulesShowCache.get(cacheKey)
-  if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-    return cached.data
+  if (!forceRefresh) {
+    const cached = schedulesShowCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
   }
+  const fetchGeneration = schedulesShowCache.beginFetch()
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [showResponse, scheduleStateResponse] = await Promise.all([
@@ -221,7 +225,7 @@ export async function fetchAggregatedSchedulesShow(credentials, directors, { for
     schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
   }
-  schedulesShowCache.set(cacheKey, { timestamp: Date.now(), data })
+  schedulesShowCache.set(cacheKey, data, fetchGeneration)
   return data
 }
 

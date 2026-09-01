@@ -29,7 +29,6 @@
 #  include <unistd.h>
 #endif
 
-#include <cstdlib>
 #include <sstream>
 
 #include "include/fcntl_def.h"
@@ -550,19 +549,6 @@ static bool is_equal(const std::string& a, const char* b)
   return Bstrcasecmp(a.c_str(), b);
 }
 
-// Test-only escape hatch: some systemtests (webui-vue-common) attach extra,
-// non-functional key=value metadata (e.g. module_name, vcserver, ...) to
-// bpipe plugin definitions so the FileSet text can be used to exercise the
-// WebUI's restore-plugin-hint UI without needing the real plugins installed.
-// This must never change behaviour for real users, so it is only enabled
-// when the file daemon process has this environment variable set, which
-// production configurations and packaging will never set.
-static bool AllowUnknownTestMetadataOptions()
-{
-  const char* value = getenv("BAREOS_BPIPE_ALLOW_TEST_METADATA_OPTIONS");
-  return value != nullptr && ParseBoolean(value);
-}
-
 static bRC parse_single_option(const std::string& key,
                                const std::string& value,
                                plugin_ctx* p_ctx)
@@ -577,11 +563,6 @@ static bRC parse_single_option(const std::string& key,
     SetString(&p_ctx->writer, c_str);
   } else if (is_equal(key, "usesuffix")) {
     p_ctx->usesuffix = ParseBoolean(c_str);
-  } else if (AllowUnknownTestMetadataOptions()) {
-    // Ignore unknown options only when explicitly opted-in via environment
-    // variable (see AllowUnknownTestMetadataOptions()). Any other unknown
-    // option remains a configuration error, as before.
-    return bRC_OK;
   } else {
     return bRC_Error;
   }
