@@ -26,134 +26,144 @@
     class="bg-blue-1 text-grey-9"
     data-testid="restore-plugin-info"
   >
-    <div class="text-weight-medium">{{ t('Plugin restore detected') }}</div>
-    <div class="text-caption q-mt-xs">
-      {{
-        pluginRestoreInfo.usesMergedJobs
-          ? t('One of the related backup jobs in this restore uses a plugin.')
-          : t('The selected backup job uses a plugin.')
-      }}
-    </div>
-    <div class="q-mt-sm text-caption">
+    <div class="row items-center justify-between no-wrap">
       <div>
-        <span class="text-grey-7">{{ t('Plugin') }}:</span>
-        <span class="plugin-restore-details__value">
+        <span class="text-weight-medium">{{ t('Plugin restore detected') }}:</span>
+        <span class="plugin-restore-details__value text-weight-medium">
           {{ pluginRestoreInfo.pluginNames.join(', ') }}
         </span>
       </div>
-      <div>
-        <span class="text-grey-7">{{ t('Fileset') }}:</span>
-        <span class="plugin-restore-details__value">
-          {{ pluginRestoreInfo.filesetNames.join(', ') }}
-        </span>
-      </div>
-      <div v-if="pluginRestoreInfo.optionKeys.length">
-        <span class="text-grey-7">{{ t('Options seen in backup definition') }}:</span>
-        <span class="plugin-restore-details__value">
-          {{ pluginRestoreInfo.optionKeys.join(', ') }}
-        </span>
-      </div>
-    </div>
-    <div class="text-caption q-mt-sm">
-      {{ t('Bareos does not expose which restore plugin options are required or optional. Use the detected plugin and backup definition below as a guide and consult the plugin documentation if needed.') }}
-    </div>
-    <div class="q-mt-sm">
       <q-btn
         flat
         dense
         no-caps
         color="primary"
-        icon="menu_book"
-        :label="t('Show all known plugin hints')"
-        data-testid="restore-all-plugin-hints"
-        @click="allPluginHintsDialog = true"
+        :icon="showDetails ? 'expand_less' : 'expand_more'"
+        :label="showDetails ? t('Hide details') : t('Show details & hints')"
+        @click="showDetails = !showDetails"
       />
     </div>
-    <div
-      v-for="pluginHint in pluginHints"
-      :key="pluginHint.id"
-      class="q-mt-sm"
-    >
-      <div class="text-caption text-weight-medium">
-        {{ t('Known options for') }} {{ pluginHint.displayName }}
+
+    <div v-if="showDetails" class="q-mt-sm">
+      <div class="text-caption">
+        {{
+          pluginRestoreInfo.usesMergedJobs
+            ? t('One of the related backup jobs in this restore uses a plugin.')
+            : t('The selected backup job uses a plugin.')
+        }}
       </div>
-      <div
-        class="text-caption q-mt-xs"
-        :class="pluginHint.supportLevel === 'contrib' ? 'text-orange-8' : 'text-grey-7'"
-      >
-        {{ pluginSupportLabel(pluginHint) }}
-      </div>
-      <div
-        v-if="pluginHint.supportLevel === 'contrib'"
-        class="text-caption text-orange-8 q-mt-xs"
-      >
-        {{ t('Contrib plugins are community contributions and are not supported.') }}
-      </div>
-      <div
-        v-if="pluginHint.manualUrl"
-        class="text-caption q-mt-xs"
-      >
-        <a
-          :href="pluginHint.manualUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-primary"
-        >
-          {{ t('Open manual page') }}
-        </a>
-      </div>
-      <div
-        v-if="pluginHint.note"
-        class="text-caption text-grey-8 q-mt-xs"
-      >
-        {{ pluginHint.note }}
-      </div>
-      <div class="text-caption text-grey-7 q-mb-xs">
-        {{ t('Best-effort hints derived from Bareos manuals, shipped examples and plugin README files.') }}
-      </div>
-      <q-markup-table
-        dense
-        flat
-        bordered
-        class="plugin-restore-details__table"
-      >
-        <thead>
-          <tr>
-            <th>{{ t('Option') }}</th>
-            <th>{{ t('Status') }}</th>
-            <th>{{ t('Source') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="option in pluginHint.options"
-            :key="`${pluginHint.id}:${option.name}`"
-          >
-            <td>
-              <div class="text-mono">{{ option.name }}</div>
-              <div
-                v-if="option.description"
-                class="text-caption text-grey-7 plugin-restore-details__description"
-              >
-                {{ option.description }}
-              </div>
-            </td>
-            <td>{{ pluginOptionStatusLabel(option.status) }}</td>
-            <td>{{ pluginOptionSourceLabel(option.source) }}</td>
-          </tr>
-        </tbody>
-      </q-markup-table>
-    </div>
-    <div class="q-mt-sm q-gutter-xs">
-      <div
-        v-for="definition in pluginRestoreInfo.definitions"
-        :key="`${definition.filesetName}:${definition.raw}`"
-        class="plugin-restore-details__definition"
-      >
-        <div class="text-caption text-grey-7">
-          {{ t('Backup plugin definition') }} — {{ definition.filesetName }}
+      <div class="q-mt-xs text-caption">
+        <div>
+          <span class="text-grey-7">{{ t('Fileset') }}:</span>
+          <span class="plugin-restore-details__value">
+            {{ pluginRestoreInfo.filesetNames.join(', ') }}
+          </span>
         </div>
-        <code class="plugin-restore-details__code">{{ definition.raw }}</code>
+        <div v-if="pluginRestoreInfo.optionKeys.length">
+          <span class="text-grey-7">{{ t('Options seen in backup definition') }}:</span>
+          <span class="plugin-restore-details__value">
+            {{ pluginRestoreInfo.optionKeys.join(', ') }}
+          </span>
+        </div>
+      </div>
+      <div class="text-caption q-mt-xs">
+        {{ t('Bareos does not expose which restore plugin options are required or optional. Use the detected plugin and backup definition below as a guide.') }}
+      </div>
+      <div class="q-mt-xs">
+        <q-btn
+          flat
+          dense
+          no-caps
+          color="primary"
+          icon="menu_book"
+          :label="t('Show all known plugin hints')"
+          data-testid="restore-all-plugin-hints"
+          @click="allPluginHintsDialog = true"
+        />
+      </div>
+      <div
+        v-for="pluginHint in pluginHints"
+        :key="pluginHint.id"
+        class="q-mt-sm"
+      >
+        <div class="text-caption text-weight-medium">
+          {{ t('Known options for') }} {{ pluginHint.displayName }}
+        </div>
+        <div
+          class="text-caption q-mt-xs"
+          :class="pluginHint.supportLevel === 'contrib' ? 'text-orange-8' : 'text-grey-7'"
+        >
+          {{ pluginSupportLabel(pluginHint) }}
+        </div>
+        <div
+          v-if="pluginHint.supportLevel === 'contrib'"
+          class="text-caption text-orange-8 q-mt-xs"
+        >
+          {{ t('Contrib plugins are community contributions and are not supported.') }}
+        </div>
+        <div
+          v-if="pluginHint.manualUrl"
+          class="text-caption q-mt-xs"
+        >
+          <a
+            :href="pluginHint.manualUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-primary"
+          >
+            {{ t('Open manual page') }}
+          </a>
+        </div>
+        <div
+          v-if="pluginHint.note"
+          class="text-caption text-grey-8 q-mt-xs"
+        >
+          {{ pluginHint.note }}
+        </div>
+        <q-markup-table
+          dense
+          flat
+          bordered
+          class="plugin-restore-details__table q-mt-xs"
+        >
+          <thead>
+            <tr>
+              <th>{{ t('Option') }}</th>
+              <th>{{ t('Status') }}</th>
+              <th>{{ t('Source') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="option in pluginHint.options"
+              :key="`${pluginHint.id}:${option.name}`"
+            >
+              <td>
+                <div class="text-mono">{{ option.name }}</div>
+                <div
+                  v-if="option.description"
+                  class="text-caption text-grey-7 plugin-restore-details__description"
+                >
+                  {{ option.description }}
+                </div>
+              </td>
+              <td>{{ pluginOptionStatusLabel(option.status) }}</td>
+              <td>{{ pluginOptionSourceLabel(option.source) }}</td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+      </div>
+      <div class="q-mt-sm q-gutter-xs">
+        <div
+          v-for="definition in pluginRestoreInfo.definitions"
+          :key="`${definition.filesetName}:${definition.raw}`"
+          class="plugin-restore-details__definition"
+        >
+          <div class="text-caption text-grey-7">
+            {{ t('Backup plugin definition') }} — {{ definition.filesetName }}
+          </div>
+          <code class="plugin-restore-details__code">{{ definition.raw }}</code>
+        </div>
       </div>
     </div>
   </q-banner>
@@ -285,6 +295,7 @@ defineProps({
 })
 
 const { t } = useI18n()
+const showDetails = ref(false)
 const allPluginHintsDialog = ref(false)
 const allPluginHints = computed(() => getAllRestorePluginHints())
 
