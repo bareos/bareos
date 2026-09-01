@@ -68,8 +68,6 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   BareosSocket* bs = (BareosSocket*)arg;
 
-  bs->SetEnableKtls(me->enable_ktls);
-
   auto config = parser->GetCurrentConfiguration();
 
   auto* myself
@@ -87,6 +85,8 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
     Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
     return error_and_close(bs);
   }
+
+  bs->SetEnableKtls(myself->enable_ktls);
 
   Auth auth{config};
 
