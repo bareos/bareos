@@ -42,6 +42,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': '登录失败',
     'Successfully logged in': '登录成功',
     'Not yet logged in': '尚未登录',
+    'Jobs Past 24 h': '过去24小时的作业',
+    'Recent Jobs': '最近的作业',
+    'Pool Storage (Bytes)': '存储池空间(字节)',
+    'Pool Storage (Volumes)': '存储池空间(卷)',
+    'Trouble View': '问题视图',
+    'Database Table Sizes': '数据库表大小',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      '按状态汇总过去24小时内启动的作业数量。',
+    'Table showing the most recent job run per job name.':
+      '按作业名称显示最近一次运行的表格。',
+    'Live list of currently running jobs with progress.':
+      '当前正在运行的作业及其进度的实时列表。',
+    'Cumulative job, file, and byte totals across all directors.':
+      '所有 Director 的作业、文件和字节累计总数。',
+    'Doughnut chart showing bytes stored across pools.':
+      '显示各存储池已存储字节数的环形图。',
+    'Doughnut chart showing volume count across pools.':
+      '显示各存储池卷数量的环形图。',
+    'Error and warning lines from job logs in the last 24 hours.':
+      '过去24小时作业日志中的错误和警告行。',
+    'Database size and per-table size breakdown.':
+      '数据库大小及按表划分的大小明细。',
   },
   cs_CZ: {
     'Log in to Bareos': 'Přihlásit se do Bareos',
@@ -60,6 +82,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Přihlášení selhalo',
     'Successfully logged in': 'Úspěšně přihlášeno',
     'Not yet logged in': 'Zatím nepřihlášeno',
+    'Jobs Past 24 h': 'Joby za posledních 24 h',
+    'Recent Jobs': 'Nedávné joby',
+    'Pool Storage (Bytes)': 'Úložiště poolu (bajty)',
+    'Pool Storage (Volumes)': 'Úložiště poolu (svazky)',
+    'Trouble View': 'Přehled problémů',
+    'Database Table Sizes': 'Velikosti tabulek databáze',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Souhrnný počet jobů spuštěných za posledních 24 hodin podle stavu.',
+    'Table showing the most recent job run per job name.':
+      'Tabulka zobrazující poslední spuštění pro každý název jobu.',
+    'Live list of currently running jobs with progress.':
+      'Živý seznam aktuálně běžících jobů s průběhem.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Kumulativní součty jobů, souborů a bajtů napříč všemi direktory.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Prstencový graf zobrazující bajty uložené v jednotlivých poolech.',
+    'Doughnut chart showing volume count across pools.':
+      'Prstencový graf zobrazující počet svazků v jednotlivých poolech.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Řádky chyb a upozornění z protokolů jobů za posledních 24 hodin.',
+    'Database size and per-table size breakdown.':
+      'Velikost databáze a rozpis podle tabulek.',
   },
   nl_BE: {
     'Log in to Bareos': 'Aanmelden bij Bareos',
@@ -78,6 +122,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Aanmelden mislukt',
     'Successfully logged in': 'Succesvol aangemeld',
     'Not yet logged in': 'Nog niet aangemeld',
+    'Jobs Past 24 h': 'Jobs afgelopen 24 u',
+    'Recent Jobs': 'Recente jobs',
+    'Pool Storage (Bytes)': 'Poolopslag (bytes)',
+    'Pool Storage (Volumes)': 'Poolopslag (volumes)',
+    'Trouble View': 'Probleemoverzicht',
+    'Database Table Sizes': 'Databasetabelgroottes',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Samenvattend aantal jobs gestart in de afgelopen 24 uur, per status.',
+    'Table showing the most recent job run per job name.':
+      'Tabel met de meest recente uitvoering per jobnaam.',
+    'Live list of currently running jobs with progress.':
+      'Live lijst van momenteel actieve jobs met voortgang.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Cumulatieve job-, bestands- en bytetotalen over alle directors.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Ringdiagram met opgeslagen bytes per pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Ringdiagram met het aantal volumes per pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Fout- en waarschuwingsregels uit joblogs van de afgelopen 24 uur.',
+    'Database size and per-table size breakdown.':
+      'Databasegrootte en uitsplitsing per tabel.',
   },
   de_DE: {
     'Log in to Bareos': 'Bei Bareos anmelden',
@@ -109,6 +175,28 @@ const MESSAGE_OVERRIDES = {
       'WebSocket-Verbindung fehlgeschlagen. Proxy-Konfiguration oder Firewall prüfen.',
     'Director list request failed: {message}':
       'Anfrage der Direktorenliste fehlgeschlagen: {message}',
+    'Jobs Past 24 h': 'Jobs (letzte 24 Stunden)',
+    'Recent Jobs': 'Letzte Jobs',
+    'Pool Storage (Bytes)': 'Pool-Speicher (Bytes)',
+    'Pool Storage (Volumes)': 'Pool-Speicher (Volumes)',
+    'Trouble View': 'Fehleransicht',
+    'Database Table Sizes': 'Datenbank-Tabellengrößen',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Zusammenfassung der in den letzten 24 Stunden gestarteten Jobs nach Status.',
+    'Table showing the most recent job run per job name.':
+      'Tabelle mit dem letzten Joblauf pro Jobname.',
+    'Live list of currently running jobs with progress.':
+      'Live-Liste der aktuell laufenden Jobs mit Fortschritt.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Kumulierte Job-, Datei- und Byte-Summen über alle Direktoren.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Ringdiagramm mit gespeicherten Bytes je Pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Ringdiagramm mit der Anzahl der Volumes je Pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Fehler- und Warnzeilen aus Joblogs der letzten 24 Stunden.',
+    'Database size and per-table size breakdown.':
+      'Datenbankgröße und Größenaufschlüsselung je Tabelle.',
   },
   fr_FR: {
     'Log in to Bareos': 'Se connecter à Bareos',
@@ -127,6 +215,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Échec de la connexion',
     'Successfully logged in': 'Connecté avec succès',
     'Not yet logged in': 'Pas encore connecté',
+    'Jobs Past 24 h': 'Jobs des dernières 24 h',
+    'Recent Jobs': 'Jobs récents',
+    'Pool Storage (Bytes)': 'Stockage des pools (octets)',
+    'Pool Storage (Volumes)': 'Stockage des pools (volumes)',
+    'Trouble View': 'Vue des incidents',
+    'Database Table Sizes': 'Tailles des tables de la base de données',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Nombre de jobs démarrés au cours des dernières 24 heures, par statut.',
+    'Table showing the most recent job run per job name.':
+      'Tableau montrant la dernière exécution de chaque job.',
+    'Live list of currently running jobs with progress.':
+      'Liste en direct des jobs actuellement en cours avec leur progression.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Totaux cumulés des jobs, fichiers et octets sur tous les directeurs.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Graphique en anneau montrant les octets stockés par pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Graphique en anneau montrant le nombre de volumes par pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      "Lignes d'erreur et d'avertissement des journaux de jobs des dernières 24 heures.",
+    'Database size and per-table size breakdown.':
+      'Taille de la base de données et répartition par table.',
   },
   hu_HU: {
     'Log in to Bareos': 'Bejelentkezés a Bareosba',
@@ -145,6 +255,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Bejelentkezés sikertelen',
     'Successfully logged in': 'Sikeres bejelentkezés',
     'Not yet logged in': 'Még nincs bejelentkezve',
+    'Jobs Past 24 h': 'Feladatok az elmúlt 24 órában',
+    'Recent Jobs': 'Legutóbbi feladatok',
+    'Pool Storage (Bytes)': 'Poolterület (bájt)',
+    'Pool Storage (Volumes)': 'Poolterület (kötetek)',
+    'Trouble View': 'Problémanézet',
+    'Database Table Sizes': 'Adatbázistábla-méretek',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Az elmúlt 24 órában elindított feladatok összesített száma állapot szerint.',
+    'Table showing the most recent job run per job name.':
+      'Táblázat, amely feladatnevenként a legutóbbi futtatást mutatja.',
+    'Live list of currently running jobs with progress.':
+      'Élő lista az aktuálisan futó feladatokról a folyamat állapotával.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Kumulált feladat-, fájl- és bájtösszegek az összes direktoron.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Gyűrűdiagram, amely poolonként a tárolt bájtokat mutatja.',
+    'Doughnut chart showing volume count across pools.':
+      'Gyűrűdiagram, amely poolonként a kötetek számát mutatja.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Hiba- és figyelmeztető sorok a feladatnaplókból az elmúlt 24 órából.',
+    'Database size and per-table size breakdown.':
+      'Adatbázisméret és táblánkénti méretbontás.',
   },
   it_IT: {
     'Log in to Bareos': 'Accedi a Bareos',
@@ -163,6 +295,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Accesso non riuscito',
     'Successfully logged in': 'Accesso effettuato con successo',
     'Not yet logged in': 'Non ancora connesso',
+    'Jobs Past 24 h': 'Job delle ultime 24 ore',
+    'Recent Jobs': 'Job recenti',
+    'Pool Storage (Bytes)': 'Archiviazione pool (byte)',
+    'Pool Storage (Volumes)': 'Archiviazione pool (volumi)',
+    'Trouble View': 'Vista problemi',
+    'Database Table Sizes': 'Dimensioni tabelle del database',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Conteggio riepilogativo dei job avviati nelle ultime 24 ore per stato.',
+    'Table showing the most recent job run per job name.':
+      "Tabella con l'ultima esecuzione di ogni job.",
+    'Live list of currently running jobs with progress.':
+      'Elenco in tempo reale dei job attualmente in esecuzione con avanzamento.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Totali cumulativi di job, file e byte su tutti i direttori.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Grafico a ciambella con i byte archiviati per pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Grafico a ciambella con il numero di volumi per pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Righe di errore e avviso dai log dei job nelle ultime 24 ore.',
+    'Database size and per-table size breakdown.':
+      'Dimensione del database e ripartizione per tabella.',
   },
   pl_PL: {
     'Log in to Bareos': 'Zaloguj się do Bareos',
@@ -181,6 +335,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Logowanie nie powiodło się',
     'Successfully logged in': 'Zalogowano pomyślnie',
     'Not yet logged in': 'Jeszcze nie zalogowano',
+    'Jobs Past 24 h': 'Zadania z ostatnich 24 h',
+    'Recent Jobs': 'Ostatnie zadania',
+    'Pool Storage (Bytes)': 'Magazyn puli (bajty)',
+    'Pool Storage (Volumes)': 'Magazyn puli (woluminy)',
+    'Trouble View': 'Widok problemów',
+    'Database Table Sizes': 'Rozmiary tabel bazy danych',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Podsumowanie liczby zadań uruchomionych w ostatnich 24 godzinach według statusu.',
+    'Table showing the most recent job run per job name.':
+      'Tabela pokazująca ostatnie uruchomienie dla każdej nazwy zadania.',
+    'Live list of currently running jobs with progress.':
+      'Lista na żywo aktualnie uruchomionych zadań wraz z postępem.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Skumulowane sumy zadań, plików i bajtów we wszystkich dyrektorach.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Wykres pierścieniowy pokazujący liczbę bajtów przechowywanych w poszczególnych pulach.',
+    'Doughnut chart showing volume count across pools.':
+      'Wykres pierścieniowy pokazujący liczbę woluminów w poszczególnych pulach.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Wiersze błędów i ostrzeżeń z dzienników zadań z ostatnich 24 godzin.',
+    'Database size and per-table size breakdown.':
+      'Rozmiar bazy danych i podział według tabel.',
   },
   pt_BR: {
     'Log in to Bareos': 'Entrar no Bareos',
@@ -199,6 +375,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Falha no login',
     'Successfully logged in': 'Login realizado com sucesso',
     'Not yet logged in': 'Ainda não conectado',
+    'Jobs Past 24 h': 'Jobs nas últimas 24 h',
+    'Recent Jobs': 'Jobs recentes',
+    'Pool Storage (Bytes)': 'Armazenamento de pools (bytes)',
+    'Pool Storage (Volumes)': 'Armazenamento de pools (volumes)',
+    'Trouble View': 'Visão de problemas',
+    'Database Table Sizes': 'Tamanhos das tabelas do banco de dados',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Contagem resumida dos jobs iniciados nas últimas 24 horas por status.',
+    'Table showing the most recent job run per job name.':
+      'Tabela mostrando a execução mais recente de cada job.',
+    'Live list of currently running jobs with progress.':
+      'Lista ao vivo dos jobs em execução no momento, com progresso.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Totais acumulados de jobs, arquivos e bytes em todos os diretores.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Gráfico de rosca mostrando os bytes armazenados por pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Gráfico de rosca mostrando a quantidade de volumes por pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Linhas de erro e aviso dos logs de jobs nas últimas 24 horas.',
+    'Database size and per-table size breakdown.':
+      'Tamanho do banco de dados e detalhamento por tabela.',
   },
   ru_RU: {
     'Log in to Bareos': 'Войти в Bareos',
@@ -217,6 +415,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Ошибка входа',
     'Successfully logged in': 'Вход выполнен успешно',
     'Not yet logged in': 'Вход еще не выполнен',
+    'Jobs Past 24 h': 'Задания за последние 24 ч',
+    'Recent Jobs': 'Недавние задания',
+    'Pool Storage (Bytes)': 'Хранилище пулов (байты)',
+    'Pool Storage (Volumes)': 'Хранилище пулов (тома)',
+    'Trouble View': 'Обзор проблем',
+    'Database Table Sizes': 'Размеры таблиц базы данных',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Сводное количество заданий, запущенных за последние 24 часа, по статусу.',
+    'Table showing the most recent job run per job name.':
+      'Таблица с последним запуском для каждого имени задания.',
+    'Live list of currently running jobs with progress.':
+      'Живой список текущих выполняющихся заданий с прогрессом.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Суммарные показатели заданий, файлов и байтов по всем директорам.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Кольцевая диаграмма с объёмом байтов, хранящихся в пулах.',
+    'Doughnut chart showing volume count across pools.':
+      'Кольцевая диаграмма с количеством томов в пулах.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Строки ошибок и предупреждений из журналов заданий за последние 24 часа.',
+    'Database size and per-table size breakdown.':
+      'Размер базы данных и разбивка по таблицам.',
   },
   sk_SK: {
     'Log in to Bareos': 'Prihlásiť sa do Bareos',
@@ -235,6 +455,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Prihlásenie zlyhalo',
     'Successfully logged in': 'Úspešne prihlásený',
     'Not yet logged in': 'Zatiaľ neprihlásený',
+    'Jobs Past 24 h': 'Joby za posledných 24 h',
+    'Recent Jobs': 'Nedávne joby',
+    'Pool Storage (Bytes)': 'Úložisko poolu (bajty)',
+    'Pool Storage (Volumes)': 'Úložisko poolu (zväzky)',
+    'Trouble View': 'Prehľad problémov',
+    'Database Table Sizes': 'Veľkosti tabuliek databázy',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Súhrnný počet jobov spustených za posledných 24 hodín podľa stavu.',
+    'Table showing the most recent job run per job name.':
+      'Tabuľka zobrazujúca posledné spustenie pre každý názov jobu.',
+    'Live list of currently running jobs with progress.':
+      'Živý zoznam aktuálne bežiacich jobov s priebehom.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Kumulatívne súčty jobov, súborov a bajtov naprieč všetkými riaditeľmi.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Prstencový graf zobrazujúci bajty uložené v jednotlivých pooloch.',
+    'Doughnut chart showing volume count across pools.':
+      'Prstencový graf zobrazujúci počet zväzkov v jednotlivých pooloch.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Riadky chýb a upozornení z protokolov jobov za posledných 24 hodín.',
+    'Database size and per-table size breakdown.':
+      'Veľkosť databázy a rozpis podľa tabuliek.',
   },
   es_ES: {
     'Log in to Bareos': 'Iniciar sesión en Bareos',
@@ -253,6 +495,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Error de inicio de sesión',
     'Successfully logged in': 'Inicio de sesión correcto',
     'Not yet logged in': 'Aún no has iniciado sesión',
+    'Jobs Past 24 h': 'Jobs en las últimas 24 h',
+    'Recent Jobs': 'Jobs recientes',
+    'Pool Storage (Bytes)': 'Almacenamiento de pools (bytes)',
+    'Pool Storage (Volumes)': 'Almacenamiento de pools (volúmenes)',
+    'Trouble View': 'Vista de incidencias',
+    'Database Table Sizes': 'Tamaños de tablas de la base de datos',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Recuento resumido de jobs iniciados en las últimas 24 horas por estado.',
+    'Table showing the most recent job run per job name.':
+      'Tabla que muestra la ejecución más reciente de cada job.',
+    'Live list of currently running jobs with progress.':
+      'Lista en vivo de los jobs actualmente en ejecución con su progreso.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Totales acumulados de jobs, archivos y bytes en todos los directores.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Gráfico de anillos con los bytes almacenados por pool.',
+    'Doughnut chart showing volume count across pools.':
+      'Gráfico de anillos con el número de volúmenes por pool.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Líneas de error y advertencia de los registros de jobs de las últimas 24 horas.',
+    'Database size and per-table size breakdown.':
+      'Tamaño de la base de datos y desglose por tabla.',
   },
   tr_TR: {
     'Log in to Bareos': "Bareos'ta oturum aç",
@@ -271,6 +535,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Oturum açma başarısız',
     'Successfully logged in': 'Başarıyla oturum açıldı',
     'Not yet logged in': 'Henüz oturum açılmadı',
+    'Jobs Past 24 h': 'Son 24 saatteki işler',
+    'Recent Jobs': 'Son işler',
+    'Pool Storage (Bytes)': 'Havuz depolama (bayt)',
+    'Pool Storage (Volumes)': 'Havuz depolama (birimler)',
+    'Trouble View': 'Sorun görünümü',
+    'Database Table Sizes': 'Veritabanı tablo boyutları',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Son 24 saatte başlatılan işlerin duruma göre özet sayıları.',
+    'Table showing the most recent job run per job name.':
+      'Her iş adı için en son çalıştırmayı gösteren tablo.',
+    'Live list of currently running jobs with progress.':
+      'Şu anda çalışan işlerin ilerlemesiyle birlikte canlı listesi.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Tüm direktörler genelinde birikimli iş, dosya ve bayt toplamları.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Havuzlar genelinde depolanan baytları gösteren halka grafik.',
+    'Doughnut chart showing volume count across pools.':
+      'Havuzlar genelinde birim sayısını gösteren halka grafik.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Son 24 saatteki iş günlüklerinden hata ve uyarı satırları.',
+    'Database size and per-table size breakdown.':
+      'Veritabanı boyutu ve tablo bazında dağılım.',
   },
   uk_UA: {
     'Log in to Bareos': 'Увійти до Bareos',
@@ -289,6 +575,28 @@ const MESSAGE_OVERRIDES = {
     'Login failure': 'Помилка входу',
     'Successfully logged in': 'Успішний вхід',
     'Not yet logged in': 'Ще не виконано вхід',
+    'Jobs Past 24 h': 'Завдання за останні 24 год',
+    'Recent Jobs': 'Останні завдання',
+    'Pool Storage (Bytes)': 'Сховище пулів (байти)',
+    'Pool Storage (Volumes)': 'Сховище пулів (томи)',
+    'Trouble View': 'Огляд проблем',
+    'Database Table Sizes': 'Розміри таблиць бази даних',
+    'Summary counts of jobs started in the last 24 hours by status.':
+      'Зведена кількість завдань, запущених за останні 24 години, за станом.',
+    'Table showing the most recent job run per job name.':
+      'Таблиця з останнім запуском для кожної назви завдання.',
+    'Live list of currently running jobs with progress.':
+      'Живий список поточних завдань, що виконуються, з прогресом.',
+    'Cumulative job, file, and byte totals across all directors.':
+      'Сукупні підсумки завдань, файлів і байтів за всіма директорами.',
+    'Doughnut chart showing bytes stored across pools.':
+      'Кільцева діаграма з обсягом байтів, збережених у пулах.',
+    'Doughnut chart showing volume count across pools.':
+      'Кільцева діаграма з кількістю томів у пулах.',
+    'Error and warning lines from job logs in the last 24 hours.':
+      'Рядки помилок і попереджень з журналів завдань за останні 24 години.',
+    'Database size and per-table size breakdown.':
+      'Розмір бази даних і розподіл за таблицями.',
   },
 }
 
