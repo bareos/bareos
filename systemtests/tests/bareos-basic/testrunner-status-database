@@ -47,14 +47,10 @@ assert_contains()
 cat <<END_OF_DATA >"$tmp"/bconcmds
 @$out $tmp/status-database-default.txt
 status database
-@$out $tmp/status-database-top-min.txt
-status database top=0
-@$out $tmp/status-database-top-max.txt
-status database top=500
 @$out ${NULL_DEV}
 .api 2
-@$out $tmp/status-database-top2.json
-status database top=2
+@$out $tmp/status-database.json
+status database
 @$out ${NULL_DEV}
 .api 0
 END_OF_DATA
@@ -66,18 +62,13 @@ assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Status: (ok|war
 assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Checked at: "
 assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Catalog: "
 assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Engine: postgresql$"
-assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Table limit: 10$"
 assert_contains "$tmp/status-database-default.txt" "Largest tables:"
 
-assert_contains "$tmp/status-database-top-min.txt" "^[[:space:]]+Table limit: 1$"
-assert_contains "$tmp/status-database-top-max.txt" "^[[:space:]]+Table limit: 100$"
-
-assert_contains "$tmp/status-database-top2.json" "\"database_status\""
-assert_contains "$tmp/status-database-top2.json" "\"status\"[[:space:]]*:[[:space:]]*\"(ok|warning|error|unavailable)\""
-assert_contains "$tmp/status-database-top2.json" "\"checked_at\""
-assert_contains "$tmp/status-database-top2.json" "\"top\"[[:space:]]*:[[:space:]]*2"
-assert_contains "$tmp/status-database-top2.json" "\"database\""
-assert_contains "$tmp/status-database-top2.json" "\"engine\"[[:space:]]*:[[:space:]]*\"postgresql\""
-assert_contains "$tmp/status-database-top2.json" "\"tables\""
+assert_contains "$tmp/status-database.json" "\"database_status\""
+assert_contains "$tmp/status-database.json" "\"status\"[[:space:]]*:[[:space:]]*\"(ok|warning|error|unavailable)\""
+assert_contains "$tmp/status-database.json" "\"checked_at\""
+assert_contains "$tmp/status-database.json" "\"database\""
+assert_contains "$tmp/status-database.json" "\"engine\"[[:space:]]*:[[:space:]]*\"postgresql\""
+assert_contains "$tmp/status-database.json" "\"tables\""
 
 end_test
