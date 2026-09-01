@@ -1,0 +1,17 @@
+FileSet {
+  Name = "PluginOptionsTest-hyperv"
+  Description = "Smoke-test fileset backed by the bpipe plugin with Hyper-V options"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/hyperv-demo/vm.vhdx"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+             ":module_name=bareos-fd-hyperv"
+             ":vmname=VMWin2019"
+             ":instanceid=1234-5678"
+  }
+}

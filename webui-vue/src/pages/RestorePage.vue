@@ -150,10 +150,6 @@
                   outlined dense emit-value map-options
                   data-testid="restore-replace-policy"
                 />
-                <PluginRestoreInfoPanel
-                  :plugin-restore-info="pluginRestoreInfo"
-                  :plugin-hints="pluginHints"
-                />
                 <q-input
                   v-if="showPluginOptions"
                   v-model="form.pluginoptions"
@@ -164,6 +160,10 @@
                   :hint="pluginOptionsHint"
                   :placeholder="pluginOptionsPlaceholder"
                   data-testid="restore-plugin-options"
+                />
+                <PluginRestoreInfoPanel
+                  :plugin-restore-info="pluginRestoreInfo"
+                  :plugin-hints="pluginHints"
                 />
               </q-card-section>
             </q-card>

@@ -97,7 +97,7 @@ describe('analytics aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('list jobs'),
+        id: commandsA.get('list jobs limit=1000') ?? commandsA.get('list jobs'),
         data: {
           jobs: [{ jobid: 10, name: 'BackupCatalog', client: 'fd-a', jobbytes: 11, jobfiles: 3 }],
         },
@@ -106,7 +106,7 @@ describe('analytics aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs'),
+        id: commandsB.get('list jobs limit=1000') ?? commandsB.get('list jobs'),
         data: {
           jobs: [{ jobid: 20, name: 'BackupCatalog', client: 'fd-a', jobbytes: 22, jobfiles: 6 }],
         },
