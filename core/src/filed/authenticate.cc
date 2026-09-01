@@ -114,7 +114,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       type = inbound_type::Director;
       return data.res;
     } break;
-    case global_resource::Type::Storage: {
+    case global_resource::Type::Job: {
       auto* jcr = get_jcr_for_authentication(name);
       if (!jcr) {
         Dmsg1(50, "Authentication for job %.*s not possible\n", name_len,
