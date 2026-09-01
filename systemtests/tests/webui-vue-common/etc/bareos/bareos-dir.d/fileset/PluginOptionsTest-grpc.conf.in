@@ -1,0 +1,15 @@
+FileSet {
+  Name = "PluginOptionsTest-grpc"
+  Description = "Smoke-test fileset backed by the bpipe plugin with gRPC options"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/grpc-demo/stream.bin"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+             ":target=127.0.0.1:9090"
+  }
+}

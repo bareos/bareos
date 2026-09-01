@@ -24,7 +24,7 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Client List') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
+            <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
@@ -213,7 +213,7 @@ const timelineClientDetailsQuery = computed(() => buildClientDetailsQuery({
   clientsScopeDirector: clientsListScopeDirector.value,
 }))
 
-async function refresh() {
+async function refresh(forceRefresh = false) {
   loading.value = true
   error.value   = null
   directorErrors.value = []
@@ -229,7 +229,7 @@ async function refresh() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value)
+      const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value, { forceRefresh })
       rawClients.value = result.clients
       directorErrors.value = result.directorErrors
       return

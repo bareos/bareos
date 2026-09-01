@@ -186,7 +186,27 @@ export function buildStatusSchedules(statusResponse, showResponse, showAllRespon
   )
 }
 
-export async function fetchAggregatedSchedulesShow(credentials, directors) {
+const schedulesShowCache = new Map()
+const CACHE_TTL_MS = 60_000
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearSchedulesShowCache() {
+  schedulesShowCache.clear()
+}
+
+export async function fetchAggregatedSchedulesShow(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  const cached = schedulesShowCache.get(cacheKey)
+  if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+    return cached.data
+  }
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [showResponse, scheduleStateResponse] = await Promise.all([
       client.call('show schedules'),
@@ -197,10 +217,12 @@ export async function fetchAggregatedSchedulesShow(credentials, directors) {
     }
   })
 
-  return {
+  const data = {
     schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
   }
+  schedulesShowCache.set(cacheKey, { timestamp: Date.now(), data })
+  return data
 }
 
 export async function fetchAggregatedSchedulesStatus(credentials, directors, range) {

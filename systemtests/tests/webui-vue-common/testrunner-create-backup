@@ -29,6 +29,15 @@ export TestName
 JobNames=(
   backup-bareos-fd
   backup-bareos-fd-pluginoptions
+  backup-bareos-fd-plugin-vmware
+  backup-bareos-fd-plugin-postgresql
+  backup-bareos-fd-plugin-proxmox
+  backup-bareos-fd-plugin-mariabackup
+  backup-bareos-fd-plugin-percona-xtrabackup
+  backup-bareos-fd-plugin-ldap
+  backup-bareos-fd-plugin-libcloud
+  backup-bareos-fd-plugin-hyperv
+  backup-bareos-fd-plugin-grpc
 )
 
 . ./environment
@@ -40,10 +49,10 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out ${tmp}/webui-vue-create-backup.out
-run job=${JobNames[0]} yes
-wait
-run job=${JobNames[1]} yes
-wait
+$(for job in "${JobNames[@]}"; do
+  echo "run job=${job} yes"
+  echo "wait"
+done)
 messages
 quit
 END_OF_DATA
@@ -53,8 +62,10 @@ run_bconsole
 expect_grep 'Termination:.*Backup OK' \
   "${tmp}/webui-vue-create-backup.out" \
   "Backup did not succeed."
-expect_grep 'backup-bareos-fd-pluginoptions' \
-  "${tmp}/webui-vue-create-backup.out" \
-  "Plugin backup job did not run."
+for job in "${JobNames[@]}"; do
+  expect_grep "${job}" \
+    "${tmp}/webui-vue-create-backup.out" \
+    "Plugin backup job ${job} did not run."
+done
 
 end_test
