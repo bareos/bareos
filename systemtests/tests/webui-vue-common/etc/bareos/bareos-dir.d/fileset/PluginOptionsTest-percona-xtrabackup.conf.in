@@ -1,6 +1,6 @@
 FileSet {
   Name = "PluginOptionsTest-percona-xtrabackup"
-  Description = "Smoke-test fileset backed by the bpipe plugin with Percona XtraBackup options"
+  Description = "Smoke-test fileset backed by the bpipe plugin (Percona XtraBackup-style demo data)"
   Enable VSS = No
   Include {
     Options {
@@ -10,8 +10,5 @@ FileSet {
              ":file=/percona-xtrabackup-demo/stream"
              ":reader=bash @current_test_directory@/readprogram"
              ":writer=bash @current_test_directory@/writeprogram"
-             ":module_name=bareos-fd-percona-xtrabackup"
-             ":user=root"
-             ":password=secret"
   }
 }
