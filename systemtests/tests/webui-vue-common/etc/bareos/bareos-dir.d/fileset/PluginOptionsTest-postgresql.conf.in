@@ -1,6 +1,6 @@
 FileSet {
   Name = "PluginOptionsTest-postgresql"
-  Description = "Smoke-test fileset backed by the bpipe plugin with PostgreSQL options"
+  Description = "Smoke-test fileset backed by the bpipe plugin (PostgreSQL-style demo data)"
   Enable VSS = No
   Include {
     Options {
@@ -10,9 +10,5 @@ FileSet {
              ":file=/postgresql-demo/dump.sql"
              ":reader=bash @current_test_directory@/readprogram"
              ":writer=bash @current_test_directory@/writeprogram"
-             ":module_name=bareos-fd-postgresql"
-             ":dbuser=postgres"
-             ":dbname=appdb"
-             ":switch_wal=yes"
   }
 }

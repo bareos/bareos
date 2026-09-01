@@ -28,6 +28,7 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache } from './ttlCache.js'
 
 function decorateClients(entries, enabledMap, director) {
   return directorCollection(entries).map((entry) => {
@@ -54,7 +55,7 @@ function sortClients(clients) {
   })
 }
 
-const clientsCache = new Map()
+const clientsCache = createTtlCache()
 const CACHE_TTL_MS = 60_000 // 60 seconds TTL
 
 function buildCacheKey(credentials, directors) {
@@ -70,10 +71,13 @@ export function clearClientsCache() {
 
 export async function fetchAggregatedClients(credentials, directors, { forceRefresh = false } = {}) {
   const cacheKey = buildCacheKey(credentials, directors)
-  const cached = clientsCache.get(cacheKey)
-  if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-    return cached.data
+  if (!forceRefresh) {
+    const cached = clientsCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
   }
+  const fetchGeneration = clientsCache.beginFetch()
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [listResult, dotResult] = await Promise.all([
@@ -95,6 +99,6 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
     clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
-  clientsCache.set(cacheKey, { timestamp: Date.now(), data })
+  clientsCache.set(cacheKey, data, fetchGeneration)
   return data
 }
