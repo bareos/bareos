@@ -54,7 +54,27 @@ function sortClients(clients) {
   })
 }
 
-export async function fetchAggregatedClients(credentials, directors) {
+const clientsCache = new Map()
+const CACHE_TTL_MS = 60_000 // 60 seconds TTL
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearClientsCache() {
+  clientsCache.clear()
+}
+
+export async function fetchAggregatedClients(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  const cached = clientsCache.get(cacheKey)
+  if (!forceRefresh && cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+    return cached.data
+  }
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [listResult, dotResult] = await Promise.all([
       client.call('llist clients'),
@@ -71,8 +91,10 @@ export async function fetchAggregatedClients(credentials, directors) {
     }
   })
 
-  return {
+  const data = {
     clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
+  clientsCache.set(cacheKey, { timestamp: Date.now(), data })
+  return data
 }

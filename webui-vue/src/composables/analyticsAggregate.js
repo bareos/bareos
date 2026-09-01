@@ -53,9 +53,9 @@ function sortJobs(jobs) {
   })
 }
 
-export async function fetchAggregatedAnalytics(credentials, directors) {
+export async function fetchAggregatedAnalytics(credentials, directors, maxJobsLimit = 1000) {
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const result = await client.call('list jobs')
+    const result = await client.call(`list jobs limit=${maxJobsLimit}`)
     return decorateJobs(result?.jobs, director)
   })
 

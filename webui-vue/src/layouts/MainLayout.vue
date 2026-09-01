@@ -12,7 +12,7 @@
             <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
           </span>
           <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-            BAREOS
+            Bareos
           </span>
         </div>
         <q-separator dark />
@@ -113,7 +113,7 @@
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
         <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-          BAREOS
+          Bareos
         </span>
 
         <!-- Main nav tabs (desktop only) -->

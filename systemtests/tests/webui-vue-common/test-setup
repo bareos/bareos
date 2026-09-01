@@ -129,6 +129,13 @@ ${BAREOS_SCRIPTS_DIR}/setup
 
 setup_data
 
+# Opt in to bpipe's relaxed option parsing so the demo plugin FileSets in
+# this systemtest (see etc/bareos/bareos-dir.d/fileset/PluginOptionsTest-*)
+# can carry additional key=value metadata (module_name, vcserver, ...) used
+# to exercise the WebUI restore-plugin-hint UI. This must not be set for
+# any other systemtest or production configuration.
+export BAREOS_BPIPE_ALLOW_TEST_METADATA_OPTIONS=yes
+
 bin/bareos start
 bin/bareos status
 print_debug "$(bin/bconsole <<<"status dir")"

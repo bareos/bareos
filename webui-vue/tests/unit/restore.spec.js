@@ -339,7 +339,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {
@@ -373,7 +373,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {
