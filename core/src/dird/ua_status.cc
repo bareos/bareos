@@ -676,28 +676,6 @@ struct DatabaseTableSize {
   uint64_t bytes = 0;
 };
 
-static constexpr int kDefaultDatabaseTop = 10;
-static constexpr int kMinDatabaseTop = 1;
-static constexpr int kMaxDatabaseTop = 100;
-
-static int ParseDatabaseTop(UaContext* ua, std::vector<std::string>& errors)
-{
-  int top = kDefaultDatabaseTop;
-  const char* top_value = GetArgValue(ua, NT_("top"));
-  if (!top_value) { return top; }
-
-  errno = 0;
-  char* endptr = nullptr;
-  long parsed = strtol(top_value, &endptr, 10);
-  if (errno != 0 || endptr == top_value || *endptr != '\0') {
-    errors.emplace_back(T_("Invalid top value. Falling back to default 10."));
-    return top;
-  }
-
-  parsed = std::max<long>(kMinDatabaseTop, std::min<long>(kMaxDatabaseTop, parsed));
-  return static_cast<int>(parsed);
-}
-
 static bool QueryDatabaseTotalSize(UaContext* ua,
                                    uint64_t& total_bytes,
                                    std::vector<std::string>& errors)
@@ -762,7 +740,6 @@ static bool QueryLargestTables(UaContext* ua,
 static void EmitDatabaseStatusApi(UaContext* ua,
                                   const char* status,
                                   const char* checked_at,
-                                  int top,
                                   bool total_available,
                                   uint64_t total_bytes,
                                   bool tables_available,
@@ -772,7 +749,6 @@ static void EmitDatabaseStatusApi(UaContext* ua,
   ua->send->ObjectStart("database_status");
   ua->send->ObjectKeyValue("status", status, "%s\n");
   ua->send->ObjectKeyValue("checked_at", checked_at, "%s\n");
-  ua->send->ObjectKeyValueSignedInt("top", top, "%d\n");
 
   ua->send->ObjectStart("database");
   ua->send->ObjectKeyValue("engine", "postgresql", "%s\n");
@@ -809,7 +785,6 @@ static void EmitDatabaseStatusApi(UaContext* ua,
 static void EmitDatabaseStatusText(UaContext* ua,
                                    const char* status,
                                    const char* checked_at,
-                                   int top,
                                    bool total_available,
                                    uint64_t total_bytes,
                                    const std::vector<DatabaseTableSize>& tables,
@@ -823,28 +798,29 @@ static void EmitDatabaseStatusText(UaContext* ua,
   ua->SendMsg(T_(" Checked at: %s\n"), checked_at);
   ua->SendMsg(T_(" Catalog: %s\n"), ua->catalog->db_name);
   ua->SendMsg(T_(" Engine: postgresql\n"));
-  ua->SendMsg(T_(" Table limit: %d\n"), top);
 
   if (total_available) {
-    ua->SendMsg(
-        T_(" Total size: %s bytes (%s)\n"),
-        edit_uint64_with_commas(total_bytes, bytes_with_commas),
-        edit_uint64_with_suffix(total_bytes, bytes_with_suffix));
+    ua->SendMsg(T_(" Total size: %s bytes (%s)\n"),
+                edit_uint64_with_commas(total_bytes, bytes_with_commas),
+                edit_uint64_with_suffix(total_bytes, bytes_with_suffix));
   } else {
     ua->SendMsg(T_(" Total size: unavailable\n"));
   }
 
   if (!errors.empty()) {
     ua->SendMsg(T_(" Warnings/Errors:\n"));
-    for (const auto& error : errors) { ua->SendMsg(T_("  - %s\n"), error.c_str()); }
+    for (const auto& error : errors) {
+      ua->SendMsg(T_("  - %s\n"), error.c_str());
+    }
   }
 
   if (!tables.empty()) {
     ua->SendMsg(T_("\n Largest tables:\n"));
     ua->SendMsg(T_(" %-4s %-48s %18s  %12s\n"), "#", "Table", "Bytes", "Human");
-    ua->SendMsg(T_(
-        "--------------------------------------------------------------------------"
-        "--------\n"));
+    ua->SendMsg(
+        T_("-------------------------------------------------------------------"
+           "-------"
+           "--------\n"));
 
     int index = 1;
     for (const auto& table : tables) {
@@ -866,18 +842,16 @@ static void DoDatabaseStatus(UaContext* ua)
   bool tables_available = false;
   uint64_t total_bytes = 0;
 
-  int top = ParseDatabaseTop(ua, errors);
-
   char checked_at[MAX_TIME_LENGTH];
   bstrftime_nc(checked_at, sizeof(checked_at), time(nullptr));
 
   if (!OpenDb(ua)) {
     errors.emplace_back(T_("Failed to open catalog database."));
     if (ua->api) {
-      EmitDatabaseStatusApi(ua, "unavailable", checked_at, top, false, 0, false,
+      EmitDatabaseStatusApi(ua, "unavailable", checked_at, false, 0, false,
                             tables, errors);
     } else {
-      EmitDatabaseStatusText(ua, "unavailable", checked_at, top, false, 0, tables,
+      EmitDatabaseStatusText(ua, "unavailable", checked_at, false, 0, tables,
                              errors);
     }
     return;
@@ -887,10 +861,10 @@ static void DoDatabaseStatus(UaContext* ua)
     errors.emplace_back(
         T_("status database currently supports only PostgreSQL catalogs."));
     if (ua->api) {
-      EmitDatabaseStatusApi(ua, "unavailable", checked_at, top, false, 0, false,
+      EmitDatabaseStatusApi(ua, "unavailable", checked_at, false, 0, false,
                             tables, errors);
     } else {
-      EmitDatabaseStatusText(ua, "unavailable", checked_at, top, false, 0, tables,
+      EmitDatabaseStatusText(ua, "unavailable", checked_at, false, 0, tables,
                              errors);
     }
     return;
@@ -907,11 +881,11 @@ static void DoDatabaseStatus(UaContext* ua)
   }
 
   if (ua->api) {
-    EmitDatabaseStatusApi(ua, status, checked_at, top, total_available,
-                          total_bytes, tables_available, tables, errors);
+    EmitDatabaseStatusApi(ua, status, checked_at, total_available, total_bytes,
+                          tables_available, tables, errors);
   } else {
-    EmitDatabaseStatusText(ua, status, checked_at, top, total_available,
-                           total_bytes, tables, errors);
+    EmitDatabaseStatusText(ua, status, checked_at, total_available, total_bytes,
+                           tables, errors);
   }
 }
 
