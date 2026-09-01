@@ -51,7 +51,7 @@
       <WidgetShell
         v-for="widget in dashboard.widgets"
         :key="widget.id"
-        :title="widget.title || defaultTitle(widget.type)"
+        :title="widgetTitle(widget)"
         :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
         :edit-mode="editMode"
         style="min-height:200px"
@@ -95,7 +95,7 @@
         @moved="onItemMoved"
       >
         <WidgetShell
-          :title="widget.title || defaultTitle(widget.type)"
+          :title="widgetTitle(widget)"
           :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
           :edit-mode="editMode"
           style="height:100%"
@@ -424,6 +424,14 @@ function defaultTitle(type) {
   return getWidgetDefinition(type)?.defaultTitle ?? type
 }
 
+// Widget titles are stored as plain (English) strings, either the widget's
+// default title or a user-supplied custom title. Run them through t() so
+// the built-in default titles get translated; t() falls back to the
+// original string for unknown keys, so custom user titles are unaffected.
+function widgetTitle(widget) {
+  return t(widget.title || defaultTitle(widget.type))
+}
+
 function resolveWidgetComponent(type) {
   return getWidgetDefinition(type)?.component ?? null
 }
@@ -446,7 +454,7 @@ function removeWidget(widget) {
   $q.dialog({
     title: t('Remove Widget'),
     message: t('Remove "{title}" from this dashboard?', {
-      title: widget.title || defaultTitle(widget.type),
+      title: widgetTitle(widget),
     }),
     ok:     { label: t('Remove'), color: 'negative', flat: true },
     cancel: { label: t('Cancel'), flat: true },
