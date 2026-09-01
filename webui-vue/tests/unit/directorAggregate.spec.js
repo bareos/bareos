@@ -211,7 +211,6 @@ describe('director aggregate dashboard helpers', () => {
           database_status: {
             status: 'ok',
             checked_at: '2026-03-23 09:30:00',
-            top: 10,
             database: {
               engine: 'postgresql',
               name: 'bareos',
