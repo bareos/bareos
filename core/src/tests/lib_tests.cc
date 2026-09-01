@@ -18,8 +18,19 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/* GCC 15 produces a false-positive -Wmaybe-uninitialized in
+ * testing::internal::MatcherBase<T>::Destroy() when inlined under LTO.
+ * This is a GTest/GCC-15 specific issue and does not reproduce on
+ * earlier or later GCC versions, so the suppression is scoped tightly. */
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ == 15
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ == 15
+#  pragma GCC diagnostic pop
+#endif
 #include "include/bareos.h"
 
 #include "include/version_numbers.h"
