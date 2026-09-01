@@ -222,7 +222,6 @@ function normalizeDatabaseStatus(statusResult, director) {
     director,
     status: payload.status ?? 'unavailable',
     checkedAt: payload.checked_at ?? '',
-    top: Math.max(0, numberValue(payload.top)),
     database: {
       engine: database.engine ?? '',
       name: database.name ?? '',
