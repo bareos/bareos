@@ -155,10 +155,10 @@ std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
                      cpy.c_str(),
                      "Hello %127s calling version %127s Version=\"%u.%u.%u\"",
                      name, version, &major, &minor, &patch)
-                     == 4
+                     == 5
                  || sscanf(cpy.c_str(), "Hello %127s calling version %127s",
                            name, version)
-                        == 4
+                        == 2
                  || sscanf(cpy.c_str(), "Hello %127s calling", name) == 1) {
         from = Type::Console;
         type = Type::Console;
