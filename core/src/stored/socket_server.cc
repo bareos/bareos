@@ -90,7 +90,7 @@ void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   Auth auth{config};
 
-  std::optional parsed_hello = BareosAccept(bs, myself, &auth);
+  std::optional parsed_hello = BareosAccept(bs, Type::Storage, myself, &auth);
   if (!parsed_hello) {
     Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
     return error_and_close(bs);

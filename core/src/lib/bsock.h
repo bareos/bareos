@@ -319,16 +319,18 @@ bool BareosConnect(JobControlRecord* jcr,
 }
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        global_resource::Type type,
                                         const TlsResource* initial_tls,
                                         TlsConfigProvider* provider,
                                         Authenticator* auth);
 
 static inline auto BareosAccept(BareosSocket* socket,
+                                global_resource::Type type,
                                 const TlsResource* initial_tls,
                                 TlsConfigProvider* provider)
 {
   Md5Authenticator auth{};
-  return BareosAccept(socket, initial_tls, provider, &auth);
+  return BareosAccept(socket, type, initial_tls, provider, &auth);
 }
 
 #endif  // BAREOS_LIB_BSOCK_H_

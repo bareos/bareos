@@ -111,8 +111,8 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       auto& data = director.emplace();
       data.res = res;
 
+      type = inbound_type::Director;
       return data.res;
-
     } break;
     case global_resource::Type::Storage: {
       auto* jcr = get_jcr_for_authentication(name);
@@ -130,6 +130,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       data.job = *myself;
       data.job.password_.value = jcr->sd_auth_key;
 
+      type = inbound_type::Storage;
       return &data.job;
     } break;
     default: {

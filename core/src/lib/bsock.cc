@@ -940,6 +940,7 @@ struct TlsWrapper : public TlsConfigProvider {
 };
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        global_resource::Type my_type,
                                         const TlsResource* initial_tls,
                                         TlsConfigProvider* provider,
                                         Authenticator* auth)
@@ -996,7 +997,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
   std::string_view hello{socket->msg,
                          static_cast<size_t>(socket->message_length)};
 
-  auto parsed_hello = parse_hello(hello);
+  auto parsed_hello = parse_hello(my_type, hello);
   if (!parsed_hello) {
     Emsg1(M_ERROR, 0,
           T_("Connection request from %s failed: could not parse the hello\n"),

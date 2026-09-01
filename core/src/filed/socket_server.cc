@@ -89,7 +89,9 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   using global_resource::Type;
 
-  if (!BareosAccept(bs, myself, &auth)) { return error_and_close(bs); }
+  if (!BareosAccept(bs, Type::Client, myself, &auth)) {
+    return error_and_close(bs);
+  }
 
   switch (auth.GetType()) {
     case Auth::inbound_type::Director: {

@@ -69,13 +69,8 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       data.job = *myself;
       data.job.password_.value = jcr->sd_auth_key;
 
-      // we cannot require tls, as old clients only do cleartext auth
-      // and tls_require prevents this
-      // TODO: check with master
-      // data.client.tls_require_ = false;
-
+      type = inbound_type::Job;
       return &data.job;
-
     } break;
     case global_resource::Type::Director: {
       auto* res = dynamic_cast<DirectorResource*>(
@@ -112,6 +107,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       auto& data = director.emplace();
       data.res = res;
 
+      type = inbound_type::Director;
       return res;
     } break;
     default: {

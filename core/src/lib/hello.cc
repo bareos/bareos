@@ -105,98 +105,106 @@ std::string hello_formatter<Type::Console, Type::Director>::format(
                      version.Major, version.Minor, version.Patch);
 }
 
-std::optional<ParsedHello> parse_hello(std::string_view hello_msg)
+std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
+                                       std::string_view hello_msg)
 {
   std::string cpy{hello_msg};
 
   unsigned major{}, minor{}, patch{};
   char name[128] = {};
   int fd_protocol_version = {};
-  Type type{}, from{}, to{};
+  Type type{}, from = Type::Unknown;
   bool old_console{};
   char version[128] = {};
 
-  if (sscanf(cpy.c_str(),
-             "Hello Storage calling Start Job %127s Version=\"%u.%u.%u\"", name,
-             &major, &minor, &patch)
-          == 4
-      || sscanf(cpy.c_str(), "Hello Storage calling Start Job %127s", name)
-             == 1) {
-    to = Type::Client;
-    from = Type::Storage;
-    type = Type::Job;
-  } else if (sscanf(cpy.c_str(),
-                    "Hello Director %127s calling Version=\"%u.%u.%u\"", name,
-                    &major, &minor, &patch)
-                 == 4
-             || sscanf(cpy.c_str(), "Hello Director %127s calling", name)
-                    == 1) {
-    to = Type::Client;
-    from = Type::Director;
-    type = Type::Director;
-  } else if (sscanf(cpy.c_str(),
-                    "Hello Client %127s FdProtocolVersion=%d calling "
-                    "Version=\"%u.%u.%u\"",
-                    name, &fd_protocol_version, &major, &minor, &patch)
-                 == 5
-             || sscanf(cpy.c_str(),
-                       "Hello Client %127s FdProtocolVersion=%d calling", name,
-                       &fd_protocol_version)
-                    == 2
-             || sscanf(cpy.c_str(), "Hello Client %127s calling", name) == 1) {
-    to = Type::Director;
-    from = Type::Client;
-    type = Type::Client;
-  } else if (sscanf(cpy.c_str(),
-                    "Hello %127s calling version %127s Version=\"%u.%u.%u\"",
-                    name, version, &major, &minor, &patch)
-                 == 4
-             || sscanf(cpy.c_str(), "Hello %127s calling version %127s", name,
-                       version)
-                    == 4
-             || sscanf(cpy.c_str(), "Hello %127s calling", name) == 1) {
-    to = Type::Director;
-    from = Type::Console;
-    type = Type::Console;
+  switch (my_type) {
+    case global_resource::Type::Client: {
+      if (sscanf(cpy.c_str(),
+                 "Hello Storage calling Start Job %127s Version=\"%u.%u.%u\"",
+                 name, &major, &minor, &patch)
+              == 4
+          || sscanf(cpy.c_str(), "Hello Storage calling Start Job %127s", name)
+                 == 1) {
+        from = Type::Storage;
+        type = Type::Job;
+      } else if (sscanf(cpy.c_str(),
+                        "Hello Director %127s calling Version=\"%u.%u.%u\"",
+                        name, &major, &minor, &patch)
+                     == 4
+                 || sscanf(cpy.c_str(), "Hello Director %127s calling", name)
+                        == 1) {
+        from = Type::Director;
+        type = Type::Director;
+      }
+    } break;
 
-    if (version[0] != 0) {
-      auto parsed_version = parse_version(version);
-      old_console = parsed_version < BareosVersionNumber::kRelease_18_2;
-    } else {
-      old_console = true;
-    }
+    case global_resource::Type::Director: {
+      if (sscanf(cpy.c_str(),
+                 "Hello Client %127s FdProtocolVersion=%d calling "
+                 "Version=\"%u.%u.%u\"",
+                 name, &fd_protocol_version, &major, &minor, &patch)
+              == 5
+          || sscanf(cpy.c_str(),
+                    "Hello Client %127s FdProtocolVersion=%d calling", name,
+                    &fd_protocol_version)
+                 == 2
+          || sscanf(cpy.c_str(), "Hello Client %127s calling", name) == 1) {
+        from = Type::Client;
+        type = Type::Client;
+      } else if (sscanf(
+                     cpy.c_str(),
+                     "Hello %127s calling version %127s Version=\"%u.%u.%u\"",
+                     name, version, &major, &minor, &patch)
+                     == 4
+                 || sscanf(cpy.c_str(), "Hello %127s calling version %127s",
+                           name, version)
+                        == 4
+                 || sscanf(cpy.c_str(), "Hello %127s calling", name) == 1) {
+        from = Type::Console;
+        type = Type::Console;
 
-  } else if (sscanf(cpy.c_str(), "Hello Start Job %127s Version=\"%u.%u.%u\"",
-                    name, &major, &minor, &patch)
-                 == 4
-             || sscanf(cpy.c_str(), "Hello Start Job %127s", name) == 1) {
-    to = Type::Storage;
-    from = Type::Client;
-    type = Type::Job;
-  } else if (sscanf(cpy.c_str(),
-                    "Hello Start Storage Job %127s Version=\"%u.%u.%u\"", name,
-                    &major, &minor, &patch)
-                 == 4
-             || sscanf(cpy.c_str(), "Hello Start Storage Job %127s", name)
-                    == 1) {
-    to = Type::Storage;
-    from = Type::Storage;
-    type = Type::Job;
-  } else if (sscanf(cpy.c_str(),
-                    "Hello Director %127s calling Version=\"%u.%u.%u\"", name,
-                    &major, &minor, &patch)
-                 == 4
-             || sscanf(cpy.c_str(), "Hello Director %127s calling", name)
-                    == 1) {
-    to = Type::Storage;
-    type = Type::Director;
-    from = Type::Director;
-  } else {
-    return std::nullopt;
+        if (version[0] != 0) {
+          auto parsed_version = parse_version(version);
+          old_console = parsed_version < BareosVersionNumber::kRelease_18_2;
+        } else {
+          old_console = true;
+        }
+      }
+    } break;
+
+    case global_resource::Type::Storage: {
+      if (sscanf(cpy.c_str(), "Hello Start Job %127s Version=\"%u.%u.%u\"",
+                 name, &major, &minor, &patch)
+              == 4
+          || sscanf(cpy.c_str(), "Hello Start Job %127s", name) == 1) {
+        from = Type::Client;
+        type = Type::Job;
+      } else if (sscanf(cpy.c_str(),
+                        "Hello Start Storage Job %127s Version=\"%u.%u.%u\"",
+                        name, &major, &minor, &patch)
+                     == 4
+                 || sscanf(cpy.c_str(), "Hello Start Storage Job %127s", name)
+                        == 1) {
+        from = Type::Storage;
+        type = Type::Job;
+      } else if (sscanf(cpy.c_str(),
+                        "Hello Director %127s calling Version=\"%u.%u.%u\"",
+                        name, &major, &minor, &patch)
+                     == 4
+                 || sscanf(cpy.c_str(), "Hello Director %127s calling", name)
+                        == 1) {
+        type = Type::Director;
+        from = Type::Director;
+      }
+    } break;
+
+    default: {
+    } break;
   }
 
+  if (from == Type::Unknown) { return std::nullopt; }
+
   return ParsedHello{
-      .to = to,
       .from = from,
       .type = type,
       .name = name,

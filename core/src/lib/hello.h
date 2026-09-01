@@ -87,8 +87,8 @@ struct hello_formatter<global_resource::Type::Console,
  * Name will always be the name used during authentication, so in this case
  * its the unique name of the job (jcr->JobName).
  */
+
 struct ParsedHello {
-  global_resource::Type to;    // this should be equal to "my type"
   global_resource::Type from;  // this is the actual type of other end
   global_resource::Type type;  // this is the type used for auth
 
@@ -100,6 +100,7 @@ struct ParsedHello {
   uint32_t bareos_version;  // = 0 means < 26.0.0
 };
 
-std::optional<ParsedHello> parse_hello(std::string_view hello_msg);
+std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
+                                       std::string_view hello_msg);
 
 #endif  // BAREOS_LIB_HELLO_H_

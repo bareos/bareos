@@ -471,15 +471,21 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth {
+struct dummy_auth : ::TlsConfigProvider {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  TlsResource* parse(std::string_view hello)
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view res_name) override
   {
-    Dmsg1(10, "Cons->Dir: %s", std::string{hello}.c_str());
+    Dmsg1(10, "Cons->Dir: received %s:%s",
+          std::string{global_resource::GetNameFromType(type)}.c_str(),
+          std::string{res_name}.c_str());
+
+    EXPECT_EQ(type, global_resource::Type::Console);
+    EXPECT_EQ(res_name, name);
 
     res = *dir_cons_config;
     res.password_.value = password.data();
@@ -516,7 +522,8 @@ static void start_bareos_server(std::promise<bool>* promise,
   //                     for new-style connections
   console_res.tls_enable_ = false;
 
-  if (!BareosAccept(bs.get(), &console_res, nullptr)) {
+  if (!BareosAccept(bs.get(), global_resource::Type::Director, &console_res,
+                    &auth)) {
     Dmsg0(10, "Server: inbound auth failed\n");
   } else {
     bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,

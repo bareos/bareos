@@ -96,7 +96,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
   using global_resource::Type;
 
-  std::optional parsed_hello = BareosAccept(bs, myself, &auth);
+  std::optional parsed_hello = BareosAccept(bs, Type::Director, myself, &auth);
   if (!parsed_hello) { return error_and_close(bs); }
 
   switch (auth.GetType()) {
