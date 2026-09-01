@@ -615,7 +615,7 @@ static bool connect_to_server(std::string console_name,
       } else {
         /* old style tls is only supported for clients and old consoles;
          * since we connect as a console, we need to pretent to be an old
-         * console This is done by using and old style hello msg */
+         * console. This is done by using and old style hello msg */
 
         auto qualified_name = global_resource::QualifiedName(
             global_resource::Type::Console, console_name);
