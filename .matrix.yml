@@ -72,6 +72,7 @@ OS:
     "42":
       TYPE: rpm
       IMAGE: fedora42
+      CUSTOM_TEST_IMAGES: [ ]
       ARCH:
       - x86_64
     "41":
