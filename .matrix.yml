@@ -92,7 +92,7 @@ OS:
     "7":
       TYPE: rpm
       IMAGE: rhel7
-      CUSTOM_TEST_IMAGES: [ CentOS, RHEL ]
+      CUSTOM_TEST_IMAGES: [ CentOS ]
       ARCH:
         - x86_64
   FreeBSD:

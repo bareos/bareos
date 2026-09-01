@@ -11,6 +11,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - spec: use gcc-15 for rhel builds [PR #2709]
 
+### Fixed
+- bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2788]
+
 ## [23.1.7] - 2026-04-01
 
 ### Changed
@@ -1780,4 +1783,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2551]: https://github.com/bareos/bareos/pull/2551
 [PR #2675]: https://github.com/bareos/bareos/pull/2675
 [PR #2709]: https://github.com/bareos/bareos/pull/2709
+[PR #2788]: https://github.com/bareos/bareos/pull/2788
 [unreleased]: https://github.com/bareos/bareos/tree/master
