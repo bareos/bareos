@@ -379,8 +379,9 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {string} command  e.g. "list jobs"
    * @returns {Promise<object>}
    */
-  function call(command) {
-    return _activeSession?.call(command) ?? Promise.reject(new Error('Not connected to director'))
+  function call(command, callOptions) {
+    return _activeSession?.call(command, callOptions)
+      ?? Promise.reject(new Error('Not connected to director'))
   }
 
   /**

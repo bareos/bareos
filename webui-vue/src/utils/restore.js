@@ -25,10 +25,15 @@ import { resolveJobLevelCode } from './jobLevels.js'
 export function getRestoreBrowserPlaceholder({
   browserError,
   loadingBrowser,
+  buildingCache,
   hasSelectedJob,
 }) {
   if (browserError) {
     return 'error'
+  }
+
+  if (buildingCache && hasSelectedJob) {
+    return 'building-cache'
   }
 
   if (loadingBrowser && hasSelectedJob) {
