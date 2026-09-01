@@ -179,7 +179,7 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
     PskCredentials psk_cred{identity, password};
     result->SetTlsPskClientContext(psk_cred);
   } else {
-    Dmsg2(200, "Tls is not configured %s\n", identity);
+    Dmsg2(200, "Psk is not setup, as not identity was provided\n");
   }
 
   if (!result->init()) {
