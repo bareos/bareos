@@ -305,6 +305,10 @@
                 <div class="text-caption text-negative q-mt-sm q-mb-md">{{ browserError }}</div>
                 <q-btn flat dense color="primary" :label="t('Retry')" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
               </template>
+              <template v-else-if="browserPlaceholder === 'building-cache'">
+                <q-spinner size="48px" color="primary" /><br />
+                <span class="text-caption q-mt-sm">{{ t('Building file index for this job. This can take a while for jobs with a large number of files...') }}</span>
+              </template>
               <template v-else-if="browserPlaceholder === 'loading'">
                 <q-spinner size="48px" color="primary" /><br />
                 <span class="text-caption q-mt-sm">{{ t('Loading file list...') }}</span>
@@ -561,6 +565,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
+import { BVFS_UPDATE_TIMEOUT_MS } from '../utils/directorCommandSocket.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -1085,6 +1090,7 @@ async function loadBackups(client) {
 // ── BVFS browser ─────────────────────────────────────────────────────────────
 const browserReady    = ref(false)
 const loadingBrowser  = ref(false)
+const buildingCache   = ref(false)
 const browserError    = ref('')
 const mergedJobids    = ref('')  // comma-separated job IDs for BVFS commands
 
@@ -1096,6 +1102,7 @@ const currentEntries = ref([])
 const browserPlaceholder = computed(() => getRestoreBrowserPlaceholder({
   browserError: browserError.value,
   loadingBrowser: loadingBrowser.value,
+  buildingCache: buildingCache.value,
   hasSelectedJob: !!form.value.jobid,
 }))
 
@@ -1140,10 +1147,16 @@ async function initBrowser() {
     const ids = directorCollection(gjr?.jobids).map(j => j.id).filter(Boolean).join(',')
     mergedJobids.value = ids || String(form.value.jobid)
 
-    // Step 2: update BVFS cache (non-fatal — may be slow on large catalogs)
+    // Step 2: update BVFS cache (non-fatal — may be slow on large catalogs,
+    // so use an extended timeout and surface a distinct "building" message).
+    buildingCache.value = true
     try {
-      await director.call(`.bvfs_update jobid=${mergedJobids.value}`)
-    } catch (_) { /* ignore */ }
+      await director.call(
+        `.bvfs_update jobid=${mergedJobids.value}`,
+        { timeoutMs: BVFS_UPDATE_TIMEOUT_MS }
+      )
+    } catch (_) { /* ignore — browse with whatever cache already exists */ }
+    buildingCache.value = false
 
     // Step 3: browse root
     navStack.value = [{ label: '/', pathId: null }]
@@ -1153,6 +1166,7 @@ async function initBrowser() {
     browserError.value = e.message || t('Failed to load file tree')
   } finally {
     loadingBrowser.value = false
+    buildingCache.value = false
   }
 }
 
