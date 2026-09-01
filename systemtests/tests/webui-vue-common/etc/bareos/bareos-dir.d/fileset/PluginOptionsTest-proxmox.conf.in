@@ -1,6 +1,6 @@
 FileSet {
   Name = "PluginOptionsTest-proxmox"
-  Description = "Smoke-test fileset backed by the bpipe plugin with Proxmox options"
+  Description = "Smoke-test fileset backed by the bpipe plugin (Proxmox-style demo data)"
   Enable VSS = No
   Include {
     Options {
@@ -10,9 +10,5 @@ FileSet {
              ":file=/proxmox-demo/100.vma"
              ":reader=bash @current_test_directory@/readprogram"
              ":writer=bash @current_test_directory@/writeprogram"
-             ":module_name=bareos-fd-proxmox"
-             ":vmid=100"
-             ":storage=local-lvm"
-             ":mode=snapshot"
   }
 }
