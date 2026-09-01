@@ -1,0 +1,19 @@
+FileSet {
+  Name = "PluginOptionsTest-libcloud"
+  Description = "Smoke-test fileset backed by the bpipe plugin with Libcloud options"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/libcloud-demo/objects.tar"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+             ":module_name=bareos-fd-libcloud"
+             ":provider=s3"
+             ":key=AKIAIOSFODNN7EXAMPLE"
+             ":secret=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+             ":bucket=backup-bucket"
+  }
+}

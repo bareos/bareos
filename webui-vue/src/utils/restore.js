@@ -380,6 +380,14 @@ export function resolveRestorePluginHintId(definition) {
   return null
 }
 
+// Resolves a human-readable plugin name for display, preferring the
+// module_name-derived hint (e.g. "VMware") over the generic plugin loader
+// name (e.g. "bpipe", "python-fd", "grpc") that the FileSet actually invokes.
+export function resolveRestorePluginDisplayName(definition) {
+  const hintId = resolveRestorePluginHintId(definition)
+  return (hintId && restorePluginHints[hintId]?.displayName) || definition?.pluginName || ''
+}
+
 export function buildRestorePluginOptionExample(pluginHint) {
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
   const preferredOptions = options.filter(option => option.status === 'required')
@@ -439,7 +447,7 @@ export function buildRestorePluginFilesetDetails(filesets) {
       description: fileset?.description ?? '',
       hasPlugin: definitions.length > 0,
       definitions,
-      pluginNames: [...new Set(definitions.map(definition => definition.pluginName).filter(Boolean))],
+      pluginNames: [...new Set(definitions.map(resolveRestorePluginDisplayName).filter(Boolean))],
       optionKeys: [...new Set(definitions.flatMap(definition => definition.optionKeys))],
     })
   }

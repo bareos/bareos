@@ -11,7 +11,7 @@ import {
 const LS_KEY = 'bareos_settings'
 
 const DEFAULTS = {
-  refreshInterval: 10,  // seconds
+  refreshInterval: 30,  // seconds
   darkMode: false,
   relativeTime: false,  // show timestamps as relative ("2 hours ago") or absolute
   locale: detectPreferredLocale(),

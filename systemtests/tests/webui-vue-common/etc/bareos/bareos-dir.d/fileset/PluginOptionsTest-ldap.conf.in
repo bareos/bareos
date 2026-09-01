@@ -1,0 +1,19 @@
+FileSet {
+  Name = "PluginOptionsTest-ldap"
+  Description = "Smoke-test fileset backed by the bpipe plugin with LDAP options"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/ldap-demo/directory.ldif"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+             ":module_name=bareos-fd-ldap"
+             ":host=ldap.example.com"
+             ":basedn=dc=example,dc=com"
+             ":binddn=cn=admin,dc=example,dc=com"
+             ":password=secret"
+  }
+}

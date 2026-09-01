@@ -31,6 +31,8 @@ import {
   paginateJobs,
 } from '../utils/jobs.js'
 
+export const MAX_JOBS_FETCH_LIMIT = 1000
+
 function numberValue(value) {
   const number = Number(value ?? 0)
   return Number.isFinite(number) ? number : 0
@@ -228,7 +230,7 @@ export async function fetchAggregatedJobsPage(
             }
 
             return client.call(buildListJobsCommand({
-              limit: fetchAllJobs ? count : fetchLimit,
+              limit: fetchAllJobs ? Math.min(count, MAX_JOBS_FETCH_LIMIT) : fetchLimit,
               offset: 0,
               statusFilter: currentStatusFilter,
               levelFilter,
