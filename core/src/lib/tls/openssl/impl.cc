@@ -467,6 +467,8 @@ unsigned int psk_server_cb(SSL* ssl,
   // , std::span<unsigned char>(psk_output, max_psk_len)
   auto* tls_res = data->get(type, name);
 
+  if (!tls_res) { return ERROR_RETURN; }
+
   auto* pw = tls_res->password_.value;
   auto pw_len = strlen(pw);
   if (pw_len > max_psk_len) {
