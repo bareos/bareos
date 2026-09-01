@@ -102,5 +102,12 @@ esac
 # Send the stack trace info to someone for analyzing or at least letting someone know we crashed.
 #
 PNAME="${PNAME} on $(hostname)"
-cat ${WD}/bareos.$2.traceback \
-  | @sbindir@/bsmtp -h @smtp_host@ -f @dump_email@ -s "Bareos ${DEBUGGER} traceback of ${PNAME}" @dump_email@
+# Environment variable:
+#   BAREOS_BTRACEBACK_SMTP_CMD is a shell expression that is used to notify
+#     you about the crash.  It evaluated via sh, and receives the title as its
+#     first argument ($0).  Its stdin is mapped to the content of the traceback.
+#     By default it uses bsmtp to sent the content to @dump_email@.
+#     You can set this to e.g. /bin/true to disable the send, or set it to
+#     'cat >> mylog' to append it to some log.
+: "${BAREOS_BTRACEBACK_SMTP_CMD:=timeout -k 5s 30 \"@sbindir@/bsmtp\" -h \"@smtp_host@\" -f \"@dump_email@\" -s \"\$0\" \"@dump_email@\"}"
+/bin/sh -c "${BAREOS_BTRACEBACK_SMTP_CMD}" "Bareos ${DEBUGGER} traceback of ${PNAME}" <"${WD}/bareos.$2.traceback"
