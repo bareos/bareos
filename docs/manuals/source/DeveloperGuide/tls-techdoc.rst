@@ -67,6 +67,126 @@ TLS Handshake before Bareos 18.2
   W <-> D: Close TCP connection
 
 
+Unified Authentication API
+---------------------------
+Since Bareos 26, the connection and authentication code that used to be
+duplicated in every daemon (``dird``, ``filed``, ``stored``,
+``bconsole``/``bat``, ``bareos-tray-monitor``) has been unified into a
+generic implementation in :file:`lib/bsock.h`, :file:`lib/bsock.cc`,
+:file:`lib/hello.h` and :file:`lib/hello.cc`. Every component-pair
+specific detail (the exact wording of the *Hello* message, which
+resource is used to authenticate against, ...) is expressed via small
+template/interface implementations instead of duplicated connection
+logic.
+
+Outbound connections: ``BareosConnect()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A component that wants to *connect to* another component (e.g. the
+Director connecting to the Storage daemon) uses the templated
+``BareosConnect<my_type, target_type>()`` overload:
+
+.. code-block:: cpp
+
+  template <global_resource::Type type, global_resource::Type target_type>
+  bool BareosConnect(JobControlRecord* jcr,
+                     BareosSocket* socket,
+                     std::string_view name,
+                     const TlsResource* res,
+                     bool cleartext_authentication = false);
+
+This overload looks up ``hello_formatter<type, target_type>`` to build
+the correct *Hello* message and to determine which
+``global_resource::Type`` is used for authentication
+(``hello_formatter<...>::auth_type``), then delegates to the
+non-templated ``BareosConnect()`` overload, using
+``Md5Authenticator`` (CRAM-MD5) for the actual challenge/response.
+
+Inbound connections: ``BareosAccept()``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A component that *accepts* connections (all daemons) calls
+``BareosAccept()`` once per incoming socket:
+
+.. code-block:: cpp
+
+  std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                          global_resource::Type type,
+                                          const TlsResource* initial_tls,
+                                          TlsConfigProvider* provider,
+                                          Authenticator* auth);
+
+``BareosAccept()`` performs the initial TLS-PSK/cert handshake (or
+accepts a cleartext connection for old peers), receives and parses the
+*Hello* message via ``parse_hello()``, uses ``provider`` to map the
+identity found in the *Hello* message to a ``TlsResource`` (e.g. the
+matching ``DirectorResource`` or a per-job resource), and finally calls
+``auth->authenticate_inbound()`` to complete the secondary CRAM-MD5
+authentication. ``provider`` may be ``nullptr`` if no TLS-PSK lookup is
+required (e.g. cleartext-only setups); ``BareosAccept()`` handles this
+case by treating the identity lookup as failed rather than
+dereferencing a null pointer.
+
+On success, ``BareosAccept()`` returns a ``ParsedHello`` describing who
+connected (``from``), which resource type was used to authenticate
+(``type``), the peer's name/version, and any component-pair specific
+extra fields (e.g. ``fd_protocol_version`` for File daemon connections,
+``old_console`` for pre-18.2 consoles).
+
+Extending the ``Authenticator`` interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Both ``BareosConnect()`` and ``BareosAccept()`` take an
+``Authenticator*``:
+
+.. code-block:: cpp
+
+  struct Authenticator {
+    struct OutboundArgs {
+      JobControlRecord* jcr;
+      BareosSocket* socket;
+      const TlsResource* target;
+    };
+    struct InboundArgs {
+      BareosSocket* socket;
+      const TlsResource* target;
+    };
+
+    virtual bool authenticate_outbound(OutboundArgs args) = 0;
+    virtual bool authenticate_inbound(InboundArgs args) = 0;
+    virtual ~Authenticator() = default;
+  };
+
+The only implementation currently shipped is ``Md5Authenticator``,
+which performs the classic CRAM-MD5 challenge/response using
+``TlsResource::password_``. To support a different secondary
+authentication scheme (e.g. for a future protocol version), implement
+a new ``Authenticator`` and pass it explicitly to ``BareosConnect()``/
+``BareosAccept()`` instead of relying on the ``Md5Authenticator``
+convenience overloads.
+
+Adding a new component-pair
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To support a new pair of connecting components (or a new *Hello*
+message variant for an existing pair):
+
+#. Add a ``hello_formatter<my_type, target_type>`` specialization in
+   :file:`lib/hello.h`/:file:`lib/hello.cc` that defines
+   ``auth_type`` (the ``global_resource::Type`` used to look up the
+   peer's ``TlsResource``) and a ``format()`` function producing the
+   *Hello* message string sent by the connecting side.
+#. Add a matching branch to ``parse_hello()`` in :file:`lib/hello.cc`
+   for the accepting side's ``my_type``, so the new *Hello* message is
+   recognized and turned into a ``ParsedHello``.
+#. Provide a ``TlsConfigProvider::get()`` implementation (or extend an
+   existing one, see e.g. ``filedaemon::Auth`` /
+   ``storagedaemon::Auth``) that maps the parsed identity to the
+   correct ``TlsResource`` for the new ``auth_type``.
+
+Each daemon's own ``Auth::get()`` implementation is the place to look
+for resource lookup failures; make sure any newly added rejection
+branch there also emits a visible ``Emsg()``/``Jmsg()`` (not just a
+``Dmsg()``) so that connection failures remain diagnosable without
+enabling debug output.
+
+
 TLS Configuration Implementation
 --------------------------------
 TLS configuration directives will be transferred from the configuration into dedicated classes as follows.
