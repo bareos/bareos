@@ -204,6 +204,8 @@ std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
 
   if (from == Type::Unknown) { return std::nullopt; }
 
+  UnbashSpaces(name);
+
   return ParsedHello{
       .from = from,
       .type = type,
