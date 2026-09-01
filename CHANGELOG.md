@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix alphabetic requirements when some tests are disabled [PR #2762]
 - new webui: Simplify configuration and improve robustness [PR #2754]
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2785]
+- dplcompat: fix SIGABRT when a chunk deletion fails during truncate [PR #2779]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2378,5 +2379,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2762]: https://github.com/bareos/bareos/pull/2762
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
 [PR #2772]: https://github.com/bareos/bareos/pull/2772
+[PR #2779]: https://github.com/bareos/bareos/pull/2779
 [PR #2785]: https://github.com/bareos/bareos/pull/2785
 [unreleased]: https://github.com/bareos/bareos/tree/master
