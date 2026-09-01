@@ -65,9 +65,9 @@
               <div class="row items-center no-wrap q-gutter-sm">
                 <q-icon :name="def.icon" size="28px" color="primary" />
                 <div style="min-width:0">
-                  <div class="text-weight-medium text-body2 ellipsis">{{ def.label }}</div>
+                  <div class="text-weight-medium text-body2 ellipsis">{{ t(def.label) }}</div>
                   <div class="text-caption text-grey-6" style="white-space:normal">
-                    {{ def.description }}
+                    {{ t(def.description) }}
                   </div>
                 </div>
               </div>
