@@ -24,7 +24,7 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
-import { createTtlCache } from './ttlCache.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule}`
@@ -193,6 +193,7 @@ const CACHE_TTL_MS = 60_000
 function buildCacheKey(credentials, directors) {
   return JSON.stringify({
     user: credentials?.username ?? '',
+    session: hashCacheFingerprint(credentials?.password),
     directors: [...directors].sort(),
   })
 }
