@@ -25,7 +25,7 @@ directorAggregateErrors,
 fulfilledDirectorValues,
 runDirectorAggregates,
 } from './directorAggregateRunner.js'
-import { createTtlCache } from './ttlCache.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function decorateFilesets(entries, director) {
   return directorCollection(entries).map(entry => ({
@@ -58,6 +58,7 @@ const CACHE_TTL_MS = 60_000 // 60 seconds TTL
 function buildCacheKey(credentials, directors) {
   return JSON.stringify({
     user: credentials?.username ?? '',
+    session: hashCacheFingerprint(credentials?.password),
     directors: [...directors].sort(),
   })
 }
