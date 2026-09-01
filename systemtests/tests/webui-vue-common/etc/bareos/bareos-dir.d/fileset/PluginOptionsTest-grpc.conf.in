@@ -1,6 +1,6 @@
 FileSet {
   Name = "PluginOptionsTest-grpc"
-  Description = "Smoke-test fileset backed by the bpipe plugin with gRPC options"
+  Description = "Smoke-test fileset backed by the bpipe plugin (gRPC-style demo data)"
   Enable VSS = No
   Include {
     Options {
@@ -10,6 +10,5 @@ FileSet {
              ":file=/grpc-demo/stream.bin"
              ":reader=bash @current_test_directory@/readprogram"
              ":writer=bash @current_test_directory@/writeprogram"
-             ":target=127.0.0.1:9090"
   }
 }

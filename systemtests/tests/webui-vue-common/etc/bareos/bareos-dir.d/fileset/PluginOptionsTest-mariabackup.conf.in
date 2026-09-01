@@ -1,6 +1,6 @@
 FileSet {
   Name = "PluginOptionsTest-mariabackup"
-  Description = "Smoke-test fileset backed by the bpipe plugin with Mariabackup options"
+  Description = "Smoke-test fileset backed by the bpipe plugin (Mariabackup-style demo data)"
   Enable VSS = No
   Include {
     Options {
@@ -10,9 +10,5 @@ FileSet {
              ":file=/mariabackup-demo/xbstream"
              ":reader=bash @current_test_directory@/readprogram"
              ":writer=bash @current_test_directory@/writeprogram"
-             ":module_name=bareos-fd-mariabackup"
-             ":user=root"
-             ":password=secret"
-             ":host=localhost"
   }
 }
