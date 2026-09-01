@@ -78,6 +78,9 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
         Dmsg1(60, "Got a DIR connection at %s from unknown dir %.*s\n",
               bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)), name_len,
               name_ptr);
+        Emsg1(M_ERROR, 0,
+              T_("Connection from unknown Director %.*s rejected.\n"), name_len,
+              name_ptr);
         return nullptr;
       }
 
@@ -119,6 +122,8 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       if (!jcr) {
         Dmsg1(50, "Authentication for job %.*s not possible\n", name_len,
               name_ptr);
+        Emsg1(M_ERROR, 0, T_("Connection for unknown job %.*s rejected.\n"),
+              name_len, name_ptr);
         return nullptr;
       }
 
