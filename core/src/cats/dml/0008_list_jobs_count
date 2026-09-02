@@ -1,14 +1,15 @@
 # "WHERE JobId > 0" is a dummy where clause,
 #                   to make it easier to extend the filter
 #                   (all filters starts with "AND ...")
-# JOIN with Media is required for filter to Media.Volumename.
+# JobMedia/Media are only needed to filter or list a specific volume; the
+# join is now supplied dynamically so it doesn't multiply Job rows in front
+# of the COUNT(DISTINCT ...) when no volume filter is in effect. FileSet is
+# not referenced by any filter in this query, so it has been dropped.
 
 SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+%s
 WHERE Job.JobId > 0
 %s
 %s;

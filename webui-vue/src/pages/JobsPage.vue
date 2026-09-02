@@ -689,7 +689,6 @@ import { createDirectorCommandClient } from '../composables/directorAggregate.js
 import {
   fetchAggregatedJobsPage,
   sortJobsByPagination,
-  usesDefaultJobsSorting,
 } from '../composables/jobsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
@@ -715,7 +714,6 @@ import {
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
   filterRunnableJobOptions,
-  filterJobsBySearch,
   filterJobsTextOptions,
   formatRunWhenPickerDate,
   MAX_JOBS_FETCH_LIMIT,
@@ -724,6 +722,7 @@ import {
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
+  resolveJobsOrderColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   resolveJobsClientQuery,
@@ -940,12 +939,20 @@ async function fetchPage() {
   error.value   = null
   directorErrors.value = []
   const currentPagination = pagination.value
-  const { page, rowsPerPage } = currentPagination
+  const { page, rowsPerPage, sortBy, descending } = currentPagination
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
-  const useDefaultSorting = usesDefaultJobsSorting(currentPagination)
   const normalizedSearchTerm = normaliseJobsSearchTerm(search.value)
-  const fetchAllJobs = rowsPerPage === 0 || !useDefaultSorting || normalizedSearchTerm !== ''
+  // Sorting and searching are resolved on the director whenever the sort
+  // column has a real catalog equivalent (see the `order=` whitelist in
+  // core/src/cats/sql_list.cc), so the browser only ever fetches
+  // `rowsPerPage` rows. `duration`/`speed` (derived client-side) and
+  // `director` (n/a for a single director) have no server-side
+  // equivalent, and `rowsPerPage === 0` ("All", no longer reachable from
+  // the UI but still defended against) has no bounded page to request in
+  // the first place -- both fall back to a capped, client-sorted fetch
+  // further down.
+  const serverOrderColumn = rowsPerPage > 0 ? resolveJobsOrderColumn(sortBy) : null
   try {
     if (activeDirectors.value.length === 0) {
       jobs.value = []
@@ -993,6 +1000,7 @@ async function fetchPage() {
       typeFilter: typeFilters.value,
       jobFilter: jobFilter.value,
       clientFilter: clientFilter.value,
+      searchTerm: normalizedSearchTerm,
     }))
     const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
     if (count === 0) {
@@ -1002,22 +1010,25 @@ async function fetchPage() {
       pagination.value = { ...pagination.value, rowsNumber: 0 }
       return
     }
-    // "Fetch everything" (non-default sort, free-text search, or the
-    // largest page-size option) is capped so that a very large job history
-    // never ships its entire table to the browser in one call.
-    const truncated = fetchAllJobs && count > MAX_JOBS_FETCH_LIMIT
-    const limit = fetchAllJobs
-      ? Math.min(count, MAX_JOBS_FETCH_LIMIT)
-      : rowsPerPage
+    // "Fetch everything" is now limited to the rare columns without a
+    // server-side sort (duration/speed): those are still capped so a very
+    // large job history never ships its entire table to the browser.
+    const truncated = !serverOrderColumn && count > MAX_JOBS_FETCH_LIMIT
+    const limit = serverOrderColumn
+      ? rowsPerPage
+      : Math.min(count, MAX_JOBS_FETCH_LIMIT)
     const pageResult = await director.call(
       buildListJobsCommand({
         limit,
-        offset: fetchAllJobs ? 0 : offset,
+        offset: serverOrderColumn ? offset : 0,
         statusFilter: encodedStatusFilters,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
         jobFilter: jobFilter.value,
         clientFilter: clientFilter.value,
+        orderColumn: serverOrderColumn ?? '',
+        descending,
+        searchTerm: normalizedSearchTerm,
       })
     )
     const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
@@ -1028,13 +1039,9 @@ async function fetchPage() {
         scopeKey: `${currentDirector}:${normalized.id}`,
       }
     })
-    const sortedJobs = useDefaultSorting
+    const visibleJobs = serverOrderColumn
       ? fetchedJobs
-      : sortJobsByPagination(fetchedJobs, currentPagination)
-    const matchingJobs = filterJobsBySearch(sortedJobs, normalizedSearchTerm)
-    const visibleJobs = fetchAllJobs
-      ? paginateJobs(matchingJobs, currentPagination)
-      : matchingJobs
+      : paginateJobs(sortJobsByPagination(fetchedJobs, currentPagination), currentPagination)
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
     if (runningJobIds.length > 0) {
       const runtimeStatus = await Promise.allSettled([director.call('status director')])
@@ -1044,10 +1051,9 @@ async function fetchPage() {
     } else {
       jobs.value = visibleJobs
     }
-    const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
-    totalJobs.value = filteredCount
+    totalJobs.value = count
     jobsTruncated.value = truncated
-    pagination.value = { ...pagination.value, rowsNumber: filteredCount }
+    pagination.value = { ...pagination.value, rowsNumber: count }
   } catch (e) {
     error.value = e.message
   } finally {
