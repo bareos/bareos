@@ -18,4 +18,4 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
