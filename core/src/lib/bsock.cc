@@ -945,7 +945,6 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         TlsConfigProvider* provider,
                                         Authenticator* auth)
 {
-  // provider is allowed to be NULL in case no tls-psk is wanted
   if (!socket) {
     Emsg1(M_ERROR, 0, "socket is NULL in BareosAccept.\n");
     return std::nullopt;
@@ -953,6 +952,16 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
 
   if (!initial_tls) {
     Emsg1(M_ERROR, 0, "initial_tls is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  if (!provider) {
+    Emsg1(M_ERROR, 0, "provider is NULL in BareosAccept.\n");
+    return std::nullopt;
+  }
+
+  if (!auth) {
+    Emsg1(M_ERROR, 0, "auth is NULL in BareosAccept.\n");
     return std::nullopt;
   }
 
