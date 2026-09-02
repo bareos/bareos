@@ -20,6 +20,12 @@
 -->
 <template>
   <div class="recent-jobs-widget" style="height:100%; width:100%">
+    <q-banner v-if="error" dense class="bg-negative text-white">
+      {{ error }}
+    </q-banner>
+    <q-banner v-if="truncated" dense class="bg-warning text-white">
+      {{ t('Showing the first {limit} of {total} matching jobs. Narrow your filter to see the rest.', { limit: formatNumber(maxJobsFetchLimit), total: formatNumber(totalJobs) }) }}
+    </q-banner>
     <q-table
       :rows="recentJobs"
       :columns="recentCols"
@@ -27,7 +33,10 @@
       dense flat
       :loading="loading"
       style="height:100%; width:100%"
+      virtual-scroll
+      :rows-per-page-options="recentJobsRowsPerPageOptions"
       v-model:pagination="pagination"
+      @request="onRequest"
     >
       <template #body-cell-id="props">
         <q-td :props="props" class="text-right">
@@ -134,18 +143,23 @@
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { inject, computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../../mock/index.js'
 import { buildJobDetailsQuery, withJobsStatusFilterQuery, resolveJobLogFocus } from '../../utils/jobs.js'
+import { formatNumber } from '../../utils/locales.js'
 import { buildClientDetailsQuery } from '../../utils/clients.js'
 import { resolveDirectorColors } from '../../utils/directorColors.js'
 import { useSettingsStore } from '../../stores/settings.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { usePersistedTablePagination } from '../../composables/usePersistedTablePagination.js'
+import {
+  fetchAggregatedRecentJobsPage,
+  MAX_JOBS_FETCH_LIMIT,
+} from '../../composables/jobsAggregate.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import JobStatusBadge from '../../components/JobStatusBadge.vue'
 import JobLevelBadge from '../../components/JobLevelBadge.vue'
@@ -157,9 +171,15 @@ const settings = useSettingsStore()
 const auth = useAuthStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
-const loading = computed(() => ctx.loading.value)
-const recentJobs = computed(() => ctx.aggregate.value.recentJobs)
+const recentJobsLoading = ref(false)
+const loading = computed(() => ctx.loading.value || recentJobsLoading.value)
+const recentJobs = ref([])
+const totalJobs = ref(0)
+const truncated = ref(false)
+const error = ref('')
 const directorOptions = computed(() => ctx.directorOptions.value)
+const recentJobsRowsPerPageOptions = [10, 25, 50]
+const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 
 const fmtSpeed = formatSpeed
 
@@ -167,6 +187,8 @@ const pagination = usePersistedTablePagination('dashboard.recentJobs', {
   rowsPerPage: 10,
   sortBy: 'id',
   descending: true,
+}, {
+  allowedRowsPerPage: recentJobsRowsPerPageOptions,
 })
 
 const showDirectorColumn = computed(() => directorOptions.value.length > 1)
@@ -207,8 +229,12 @@ const recentCols = computed(() => {
   return columns
 })
 
-const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
-const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))
+const maxBytes = computed(() => recentJobs.value.reduce(
+  (max, job) => Math.max(max, Number(job.bytes) || 0), 1
+))
+const maxDurationSecs = computed(() => recentJobs.value.reduce(
+  (max, job) => Math.max(max, parseDurationSecs(job.duration)), 1
+))
 
 function jobSpeedBps(row) {
   const secs = parseDurationSecs(row.duration)
@@ -217,13 +243,73 @@ function jobSpeedBps(row) {
   return bytes / secs
 }
 
-const maxSpeedBps = computed(() => Math.max(1, ...recentJobs.value
-  .filter(j => !isRunningJob(j))
-  .map(j => jobSpeedBps(j))))
+const maxSpeedBps = computed(() => recentJobs.value.reduce(
+  (max, job) => isRunningJob(job) ? max : Math.max(max, jobSpeedBps(job)), 1
+))
 
 function bytesGauge(val)  { return val / maxBytes.value }
 function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
 function speedGauge(row)  { return jobSpeedBps(row) / maxSpeedBps.value }
+
+let latestRequestId = 0
+
+async function fetchRecentJobs() {
+  const requestId = ++latestRequestId
+  const credentials = auth.getCredentials()
+  const directors = ctx.activeDirectors.value
+  if (!credentials || directors.length === 0) {
+    recentJobs.value = []
+    totalJobs.value = 0
+    truncated.value = false
+    pagination.value = { ...pagination.value, rowsNumber: 0 }
+    return
+  }
+
+  recentJobsLoading.value = true
+  error.value = ''
+  try {
+    const result = await fetchAggregatedRecentJobsPage(
+      credentials,
+      directors,
+      pagination.value
+    )
+    if (requestId !== latestRequestId) return
+
+    recentJobs.value = result.jobs
+    totalJobs.value = result.totalJobs
+    truncated.value = result.truncated
+    pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
+    error.value = result.directorErrors.map(entry => entry.message).join(' ')
+  } catch (fetchError) {
+    if (requestId !== latestRequestId) return
+    recentJobs.value = []
+    totalJobs.value = 0
+    truncated.value = false
+    pagination.value = { ...pagination.value, rowsNumber: 0 }
+    error.value = fetchError.message
+  } finally {
+    if (requestId === latestRequestId) {
+      recentJobsLoading.value = false
+    }
+  }
+}
+
+function onRequest(props) {
+  pagination.value = { ...pagination.value, ...props.pagination }
+}
+
+watch(
+  () => [
+    ctx.refreshToken.value,
+    ctx.activeDirectors.value.join('\0'),
+    pagination.value.page,
+    pagination.value.rowsPerPage,
+    pagination.value.sortBy,
+    pagination.value.descending,
+  ],
+  fetchRecentJobs,
+  { immediate: true }
+)
 
 function jobStatus(row) { return row.runtimeStatus ?? row.status ?? '?' }
 function isWaitingStatus(status) {
