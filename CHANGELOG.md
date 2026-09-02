@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: fix alphabetic requirements when some tests are disabled [PR #2766]
 - new webui: Simplify configuration and improve robustness [PR #2776]
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2786]
+- core: script btraceback support environment variable [PR #2782]
 
 ### Changed
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2758]
@@ -2349,5 +2350,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2769]: https://github.com/bareos/bareos/pull/2769
 [PR #2773]: https://github.com/bareos/bareos/pull/2773
 [PR #2776]: https://github.com/bareos/bareos/pull/2776
+[PR #2782]: https://github.com/bareos/bareos/pull/2782
 [PR #2786]: https://github.com/bareos/bareos/pull/2786
 [unreleased]: https://github.com/bareos/bareos/tree/master
