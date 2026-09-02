@@ -53,9 +53,9 @@ struct BareosVersionStrings {
 BAREOS_IMPORT const struct BareosVersionStrings kBareosVersionStrings;
 
 struct BareosVersion {
-  std::uint8_t Major;
-  std::uint8_t Minor;
-  std::uint8_t Patch;
+  std::uint8_t Major{};
+  std::uint8_t Minor{};
+  std::uint8_t Patch{};
   std::string prerelease_version{};
 
   auto operator<=>(const BareosVersion&) const = default;

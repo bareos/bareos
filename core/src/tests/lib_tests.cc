@@ -19,7 +19,6 @@
    02110-1301, USA.
 */
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "include/bareos.h"
 
 #include "include/version_numbers.h"
@@ -316,9 +315,8 @@ TEST(BareosVersion, try_parse)
   BAD("1.256.1");
   BAD("1.1.256");
 
-#define GOOD(Input, ...)                       \
-  EXPECT_THAT(BareosVersion::try_parse(Input), \
-              testing::Optional(BareosVersion __VA_ARGS__))
+#define GOOD(Input, ...) \
+  EXPECT_EQ(BareosVersion::try_parse(Input), (BareosVersion __VA_ARGS__))
 
   GOOD("1.2.3", {1, 2, 3});
   GOOD("1.2.3~preversion", {1, 2, 3, "version"});
