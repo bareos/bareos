@@ -338,6 +338,20 @@ export function buildListJobsCountCommand({
     })
 }
 
+export function buildListRecentJobsCommand({
+    limit,
+    offset = 0,
+    sortColumn = '',
+    descending = true,
+} = {}) {
+    return `llist jobs last current enabled${descending ? ' reverse' : ''}` +
+      ` limit=${limit} offset=${offset}${sortColumn ? ` sortby=${sortColumn}` : ''}`
+}
+
+export function buildListRecentJobsCountCommand() {
+    return 'list jobs count last current enabled'
+}
+
 export function buildListJobCommand(jobId) {
   return `llist jobid=${jobId}`
 }
