@@ -56,6 +56,7 @@ for ID in $(seq 1 ${limit}); do
 @$out ${log_home}/incr-${ID}.out
 run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Incremental yes
 wait
+message
 END_OF_DATA
 
   run_bconsole "${tmp}/bconcmds"
