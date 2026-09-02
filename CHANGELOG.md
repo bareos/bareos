@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - fix reverse-history-search crash on windows [PR #2640]
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2787]
+- core: script btraceback support environment variable [PR #2783]
 
 ### Changed
 - bvfs: fix cache race [PR #2651]
@@ -2041,5 +2042,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2651]: https://github.com/bareos/bareos/pull/2651
 [PR #2674]: https://github.com/bareos/bareos/pull/2674
 [PR #2708]: https://github.com/bareos/bareos/pull/2708
+[PR #2783]: https://github.com/bareos/bareos/pull/2783
 [PR #2787]: https://github.com/bareos/bareos/pull/2787
 [unreleased]: https://github.com/bareos/bareos/tree/master
