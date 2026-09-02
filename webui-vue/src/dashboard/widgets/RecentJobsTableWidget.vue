@@ -20,7 +20,6 @@
 -->
 <template>
   <div class="recent-jobs-widget" style="height:100%; width:100%">
-    <span class="sr-only">Most recent job status per job name</span>
     <q-table
       :rows="recentJobs"
       :columns="recentCols"

@@ -52,6 +52,7 @@
         v-for="widget in dashboard.widgets"
         :key="widget.id"
         :title="widgetTitle(widget)"
+        :description="widgetDescription(widget)"
         :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
         :edit-mode="editMode"
         style="min-height:200px"
@@ -96,6 +97,7 @@
       >
         <WidgetShell
           :title="widgetTitle(widget)"
+          :description="widgetDescription(widget)"
           :icon="getWidgetDefinition(widget.type)?.icon ?? ''"
           :edit-mode="editMode"
           style="height:100%"
@@ -430,6 +432,13 @@ function defaultTitle(type) {
 // original string for unknown keys, so custom user titles are unaffected.
 function widgetTitle(widget) {
   return t(widget.title || defaultTitle(widget.type))
+}
+
+// Widget descriptions come from the registry (English), translated the same
+// way as titles, and shown as a hover tooltip on the widget's title bar.
+function widgetDescription(widget) {
+  const description = getWidgetDefinition(widget.type)?.description
+  return description ? t(description) : ''
 }
 
 function resolveWidgetComponent(type) {
