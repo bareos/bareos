@@ -178,7 +178,7 @@ async function waitForQSelectReady(page, testId) {
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
-    hasText: 'Most recent job status per job name',
+    hasText: 'Recent Jobs',
   })
   const totalsCard = page.locator('.q-card').filter({
     hasText: 'Job Totals',
