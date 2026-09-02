@@ -35,7 +35,7 @@
       :style="editMode ? 'cursor: grab' : ''"
     >
       <q-icon v-if="icon" :name="icon" size="sm" class="q-mr-sm" />
-      <span class="ellipsis" style="flex:1; min-width:0">{{ title }}</span>
+      <span class="ellipsis" style="flex:1; min-width:0" :title="description || undefined">{{ title }}</span>
       <q-space />
 
       <!-- Edit-mode controls -->
@@ -75,9 +75,10 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 defineProps({
-  title:    { type: String,  default: '' },
-  icon:     { type: String,  default: '' },
-  editMode: { type: Boolean, default: false },
+  title:       { type: String,  default: '' },
+  description: { type: String,  default: '' },
+  icon:        { type: String,  default: '' },
+  editMode:    { type: Boolean, default: false },
 })
 
 defineEmits(['configure', 'remove'])
