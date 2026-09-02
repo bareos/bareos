@@ -110,16 +110,6 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
-function sortJobsById(jobs) {
-  return [...jobs].sort((left, right) => {
-    const idCompare = numberValue(right.id) - numberValue(left.id)
-    if (idCompare !== 0) {
-      return idCompare
-    }
-    return String(left.director ?? '').localeCompare(String(right.director ?? ''))
-  })
-}
-
 function decorateRuntimeJobs(entries, director) {
   return directorCollection(entries).map((entry, index) => {
     const id = optionalNumberValue(entry.jobid ?? entry.id)
@@ -305,7 +295,6 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     const jobCalls = [
       client.call('llist jobs days=1'),
       client.call('list jobs jobstatus=R'),
-      client.call('llist jobs last current enabled'),
       client.call('list jobtotals'),
       client.call('list clients'),
       client.call('list storages'),
@@ -322,7 +311,6 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     const [
       past24hResult,
       runningResult,
-      lastResult,
       totalsResult,
       clientsResult,
       storagesResult,
@@ -336,9 +324,6 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       : []
     const runningJobs = runningResult.status === 'fulfilled'
       ? decorateJobs(runningResult.value?.jobs, credentials.director)
-      : []
-    const recentJobs = lastResult.status === 'fulfilled'
-      ? decorateJobs(lastResult.value?.jobs, credentials.director)
       : []
     const jobsPast24h = past24hResult.status === 'fulfilled'
       ? decorateJobs(past24hResult.value?.jobs, credentials.director)
@@ -379,7 +364,6 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       transport: client.transport,
       jobsPast24h,
       runningJobs: mergeRunningJobs(runningJobs, runtimeRunningJobs),
-      recentJobs: overlayRuntimeStatus(recentJobs, runtimeRunningJobs),
       pools,
       databaseStatus: databaseStatusResult.status === 'fulfilled'
         ? normalizeDatabaseStatus(databaseStatusResult.value, credentials.director)
@@ -421,10 +405,6 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       ...combined.runningJobs,
       ...(snapshot.runningJobs ?? []),
     ]),
-    recentJobs: sortJobsById([
-      ...combined.recentJobs,
-      ...(snapshot.recentJobs ?? []),
-    ]),
     pools: [
       ...combined.pools,
       ...(snapshot.pools ?? []),
@@ -445,7 +425,6 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
   }), {
     jobsPast24h: [],
     runningJobs: [],
-    recentJobs: [],
     pools: [],
     databaseStatuses: [],
     clientCount: 0,
