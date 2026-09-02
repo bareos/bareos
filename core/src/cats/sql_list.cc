@@ -477,6 +477,38 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
+namespace {
+// Whitelist mapping for `list jobs order=<keyword>` / `llist jobs
+// order=<keyword>`. This is the only place user input is allowed to
+// influence an ORDER BY clause -- never interpolate raw user input into
+// ORDER BY directly, always go through this table.
+struct JobsOrderColumn {
+  const char* keyword;
+  const char* sql_column;
+};
+constexpr JobsOrderColumn kJobsOrderColumns[] = {
+    {"jobid", "Job.JobId"},         {"name", "Job.Name"},
+    {"client", "Client.Name"},      {"type", "Job.Type"},
+    {"level", "Job.Level"},         {"starttime", "Job.StartTime"},
+    {"jobfiles", "Job.JobFiles"},   {"jobbytes", "Job.JobBytes"},
+    {"joberrors", "Job.JobErrors"}, {"jobstatus", "Job.JobStatus"},
+};
+}  // namespace
+
+bool BareosDb::GetJobsOrderColumn(const char* keyword, std::string& sql_column)
+{
+  if (!keyword || !*keyword) { return false; }
+
+  for (const auto& entry : kJobsOrderColumns) {
+    if (Bstrcasecmp(keyword, entry.keyword)) {
+      sql_column = entry.sql_column;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               JobDbRecord* jr,
                               const char* range,
@@ -491,7 +523,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               bool count,
                               OutputFormatter* sendit,
                               e_list_type type,
-                              bool descending)
+                              bool descending,
+                              const char* order_column,
+                              const char* search)
 {
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
@@ -551,15 +585,53 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
+  if (search && *search) {
+    // Escape the value through the same EscapeString() used for every other
+    // free-text filter above; percent/underscore are left as literal SQL
+    // LIKE wildcards for the user, matching how the equivalent client-side
+    // filter it replaces (webui's filterJobsBySearch) treated substrings.
+    // ILIKE is PostgreSQL-specific, which is acceptable since PostgreSQL is
+    // the only supported catalog backend (see cats/dml/create_queryfiles.sh).
+    int len = strlen(search);
+    temp.check_size(len * 2 + 1);
+    EscapeString(jcr, temp.c_str(), search, len);
+    std::string escaped_search = temp.c_str();
+    temp.bsprintf(
+        "AND (Job.Name ILIKE '%%%s%%' OR Client.Name ILIKE '%%%s%%' OR "
+        "CAST(Job.JobId AS TEXT) LIKE '%%%s%%') ",
+        escaped_search.c_str(), escaped_search.c_str(), escaped_search.c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
+  // JobMedia/Media are only needed to filter or list a specific volume; skip
+  // the join otherwise so it can't multiply Job rows in front of the
+  // COUNT(DISTINCT ...)/DISTINCT.
+  PoolMem joins(PM_MESSAGE);
+  if (volumename) {
+    PmStrcat(joins,
+             "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+             "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId ");
+  }
+
   DbLocker _{this};
 
   // For non-count queries the ORDER BY clause accepts an optional direction
-  // suffix (" DESC") followed by the LIMIT/OFFSET range string.
+  // suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
+  // column itself may only come from the fixed whitelist above -- an
+  // unrecognized order_column (including nullptr) falls back to the
+  // pre-existing default rather than ever being interpolated directly.
+  std::string resolved_order_column;
+  const char* order_by
+      = (order_column
+         && GetJobsOrderColumn(order_column, resolved_order_column))
+            ? resolved_order_column.c_str()
+            : "StartTime";
   const std::string order_range
       = (descending ? std::string(" DESC") : std::string()) + range;
 
   if (count) {
-    FillQuery<SQL_QUERY::list_jobs_count>(cmd, selection.c_str(), range);
+    FillQuery<SQL_QUERY::list_jobs_count>(cmd, joins.c_str(), selection.c_str(),
+                                          range);
   } else if (last) {
     if (type == VERT_LIST) {
       FillQuery<SQL_QUERY::list_jobs_long_last>(cmd, selection.c_str(),
@@ -570,15 +642,16 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery<SQL_QUERY::list_jobs_long>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs_long>(cmd, selection.c_str(), order_by,
                                            order_range.c_str());
     } else {
-      FillQuery<SQL_QUERY::list_jobs>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs>(cmd, selection.c_str(), order_by,
                                       order_range.c_str());
     }
   }
 
   if (!QueryDb(jcr, cmd)) { return; }
+
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, type);
