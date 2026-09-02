@@ -2011,8 +2011,8 @@ static int PyRestoreObject_init(PyRestoreObject* self,
 // Destructor.
 static void PyRestoreObject_dealloc(PyRestoreObject* self)
 {
-  if (self->object_name) { Py_XDECREF(self->object_name); }
-  if (self->object) { Py_XDECREF(self->object); }
+  Py_CLEAR(self->object_name);
+  Py_CLEAR(self->object);
   PyObject_Del(self);
 }
 
@@ -2184,12 +2184,12 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
 // Destructor.
 static void PySavePacket_dealloc(PySavePacket* self)
 {
-  if (self->fname) { Py_XDECREF(self->fname); }
-  if (self->link) { Py_XDECREF(self->link); }
-  if (self->flags) { Py_XDECREF(self->flags); }
-  if (self->object_name) { Py_XDECREF(self->object_name); }
-  if (self->object) { Py_XDECREF(self->object); }
-  if (self->statp) { Py_XDECREF(self->statp); }
+  Py_CLEAR(self->fname);
+  Py_CLEAR(self->link);
+  Py_CLEAR(self->flags);
+  Py_CLEAR(self->object_name);
+  Py_CLEAR(self->object);
+  Py_CLEAR(self->statp);
   PyObject_Del(self);
 }
 
@@ -2366,8 +2366,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 // Destructor.
 static void PyIoPacket_dealloc(PyIoPacket* self)
 {
-  if (self->buf) { Py_XDECREF(self->buf); }
   PyObject_Del(self);
+  Py_CLEAR(self->buf);
 }
 
 // Python specific handlers for PyAclPacket structure mapping.
@@ -2404,7 +2404,7 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
 // Destructor.
 static void PyAclPacket_dealloc(PyAclPacket* self)
 {
-  if (self->content) { Py_XDECREF(self->content); }
+  Py_CLEAR(self->content);
   PyObject_Del(self);
 }
 
@@ -2445,8 +2445,8 @@ static int PyXattrPacket_init(PyXattrPacket* self,
 // Destructor.
 static void PyXattrPacket_dealloc(PyXattrPacket* self)
 {
-  if (self->value) { Py_XDECREF(self->value); }
-  if (self->name) { Py_XDECREF(self->name); }
+  Py_CLEAR(self->value);
+  Py_CLEAR(self->name);
   PyObject_Del(self);
 }
 
