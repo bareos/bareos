@@ -219,6 +219,7 @@ describe('jobs aggregate helpers', () => {
         }),
       ],
       totalJobs: 4,
+      truncated: false,
       directorErrors: [],
     })
   })
@@ -357,6 +358,7 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:31', director: 'prod-a', id: 31, status: 'f' }),
       ],
       totalJobs: 4,
+      truncated: false,
       directorErrors: [],
     })
   })
@@ -434,6 +436,7 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:9', director: 'prod-a', id: 9, client: 'fd-2' }),
       ],
       totalJobs: 2,
+      truncated: false,
       directorErrors: [],
     })
   })
