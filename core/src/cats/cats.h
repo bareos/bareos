@@ -796,6 +796,11 @@ class BareosDb : public BareosDbQueryEnum {
                        PoolDbRecord* pr,
                        OutputFormatter* sendit,
                        e_list_type type);
+  // Whitelist lookup for `list jobs order=<keyword>`. Returns false (and
+  // leaves sql_column untouched) for any keyword not in the fixed set of
+  // sortable Job columns -- callers must treat that as a rejected argument,
+  // never fall back to interpolating the raw keyword into SQL.
+  bool GetJobsOrderColumn(const char* keyword, std::string& sql_column);
   void ListJobRecords(JobControlRecord* jcr,
                       JobDbRecord* jr,
                       const char* range,
@@ -810,7 +815,9 @@ class BareosDb : public BareosDbQueryEnum {
                       bool count,
                       OutputFormatter* sendit,
                       e_list_type type,
-                      bool descending = false);
+                      bool descending = false,
+                      const char* order_column = nullptr,
+                      const char* search = nullptr);
   void ListJobTotals(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      OutputFormatter* sendit);

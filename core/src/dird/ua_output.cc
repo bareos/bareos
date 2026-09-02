@@ -929,11 +929,22 @@ static bool ListJobs(UaContext* ua,
 
   const bool descending = FindArg(ua, NT_("reverse")) >= 0;
 
+  const char* order = GetArgValue(ua, NT_("order"));
+  if (order) {
+    std::string discard;
+    if (!ua->db->GetJobsOrderColumn(order, discard)) {
+      ua->ErrorMsg(T_("invalid order parameter\n"));
+      return false;
+    }
+  }
+
+  const char* search = GetArgValue(ua, NT_("search"));
+
   ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
                          optionslist.last, optionslist.count, ua->send.get(),
-                         llist, descending);
+                         llist, descending, order, search);
 
   return true;
 }
@@ -1502,10 +1513,10 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   if (llist == VERT_LIST) {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs_long>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   } else {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   }
 
   return true;
