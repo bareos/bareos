@@ -498,6 +498,25 @@ constexpr JobsSortColumn kJobsSortColumns[] = {
     {"jobfiles", "Job.JobFiles"},   {"jobbytes", "Job.JobBytes"},
     {"joberrors", "Job.JobErrors"}, {"jobstatus", "Job.JobStatus"},
 };
+
+std::optional<std::string> EscapeLikePattern(BareosDb* db,
+                                             JobControlRecord* jcr,
+                                             const char* value)
+{
+  const auto escaped_value = db->EscapeString(jcr, value);
+  if (!escaped_value) { return std::nullopt; }
+
+  std::string pattern;
+  pattern.reserve(escaped_value->size() * 2);
+  for (const char character : *escaped_value) {
+    if (character == '!' || character == '%' || character == '_') {
+      pattern += '!';
+    }
+    pattern += character;
+  }
+
+  return pattern;
+}
 }  // namespace
 
 bool BareosDb::GetJobsSortColumn(const char* keyword, std::string& sql_column)
@@ -597,23 +616,14 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (search && *search) {
-    /* Escape the SQL literal first. Within the LIKE pattern, make the three
-     * special characters literal as well, matching the former client-side
-     * substring search. `!` avoids PostgreSQL backslash-literal semantics.
-     */
-    int len = strlen(search);
-    temp.check_size(len * 2 + 1);
-    EscapeString(jcr, temp.c_str(), search, len);
-    std::string escaped_search = temp.c_str();
+    const auto escaped_search = EscapeLikePattern(this, jcr, search);
+    if (!escaped_search) { return; }
     temp.bsprintf(
-        "AND (Job.Name ILIKE '%%' || "
-        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
-        "|| '%%' ESCAPE '!' OR Client.Name ILIKE '%%' || "
-        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
-        "|| '%%' ESCAPE '!' OR CAST(Job.JobId AS TEXT) LIKE '%%' || "
-        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
-        "|| '%%' ESCAPE '!') ",
-        escaped_search.c_str(), escaped_search.c_str(), escaped_search.c_str());
+        "AND (Job.Name ILIKE '%%%s%%' ESCAPE '!' OR "
+        "Client.Name ILIKE '%%%s%%' ESCAPE '!' OR "
+        "CAST(Job.JobId AS TEXT) LIKE '%%%s%%' ESCAPE '!') ",
+        escaped_search->c_str(), escaped_search->c_str(),
+        escaped_search->c_str());
     PmStrcat(selection, temp.c_str());
   }
 
