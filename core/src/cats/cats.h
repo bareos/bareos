@@ -45,6 +45,7 @@
 #include "lib/util.h"
 
 #include <bitset>
+#include <optional>
 #include <string>
 #include <stdexcept>
 #include <system_error>
@@ -801,23 +802,32 @@ class BareosDb : public BareosDbQueryEnum {
    * sortable Job columns -- callers must treat that as a rejected argument,
    * never fall back to interpolating the raw keyword into SQL. */
   bool GetJobsSortColumn(const char* keyword, std::string& sql_column);
-  void ListJobRecords(JobControlRecord* jcr,
-                      JobDbRecord* jr,
-                      const char* range,
-                      const char* clientname,
-                      std::vector<char> jobstatusarray,
-                      std::vector<char> joblevels,
-                      std::vector<char> jobtypes,
-                      const char* volumename,
-                      const char* poolname,
-                      utime_t since_time,
-                      bool last,
-                      bool count,
-                      OutputFormatter* sendit,
-                      e_list_type type,
-                      bool descending = false,
-                      const char* sort_column = nullptr,
-                      const char* search = nullptr);
+  /* job_names/client_names restrict the result to the given Job.Name /
+   * Client.Name values (used to push the `current`/`enabled`/`disabled`
+   * filters -- which depend on the live director configuration, not on any
+   * catalog column -- down into SQL, so range and count queries see the
+   * exact same filtered dataset). std::nullopt means "no such filter". */
+  void ListJobRecords(
+      JobControlRecord* jcr,
+      JobDbRecord* jr,
+      const char* range,
+      const char* clientname,
+      std::vector<char> jobstatusarray,
+      std::vector<char> joblevels,
+      std::vector<char> jobtypes,
+      const char* volumename,
+      const char* poolname,
+      utime_t since_time,
+      bool last,
+      bool count,
+      OutputFormatter* sendit,
+      e_list_type type,
+      bool descending = false,
+      const char* sort_column = nullptr,
+      const char* search = nullptr,
+      const std::optional<std::vector<std::string>>& job_names = std::nullopt,
+      const std::optional<std::vector<std::string>>& client_names
+      = std::nullopt);
   void ListJobTotals(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      OutputFormatter* sendit);
