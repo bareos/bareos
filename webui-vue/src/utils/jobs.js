@@ -278,14 +278,14 @@ export function buildJobsFilterClauses({
     : [buildJobsFilterClause(sharedFilters)]
 }
 
-// Maps a jobs table `sortBy` field to the director's `order=<column>`
-// keyword (the whitelist enforced server-side by GetJobsOrderColumn() in
+// Maps a jobs table `sortBy` field to the director's `sortby=<column>`
+// keyword (the whitelist enforced server-side by GetJobsSortColumn() in
 // core/src/cats/sql_list.cc). Columns with no direct catalog equivalent are
 // intentionally omitted: `duration`/`speed` are derived client-side from
 // `bytes`/`duration`, and `director` only exists in the multi-director
 // aggregate view. Callers must fall back to a capped, client-sorted fetch
 // for any column this returns null for.
-const JOBS_ORDER_COLUMNS = {
+const JOBS_SORT_COLUMNS = {
   id: 'jobid',
   name: 'name',
   client: 'client',
@@ -298,8 +298,8 @@ const JOBS_ORDER_COLUMNS = {
   errors: 'joberrors',
 }
 
-export function resolveJobsOrderColumn(sortBy) {
-  return JOBS_ORDER_COLUMNS[sortBy] ?? null
+export function resolveJobsSortColumn(sortBy) {
+  return JOBS_SORT_COLUMNS[sortBy] ?? null
 }
 
 export function buildListJobsCommand({
@@ -310,12 +310,12 @@ export function buildListJobsCommand({
   typeFilter = '',
   jobFilter = '',
   clientFilter = '',
-  orderColumn = '',
+  sortColumn = '',
   descending = true,
   searchTerm = '',
 } = {}) {
   return `llist jobs${descending ? ' reverse' : ''} limit=${limit} offset=${offset}` +
-    `${orderColumn ? ` order=${orderColumn}` : ''}` +
+    `${sortColumn ? ` sortby=${sortColumn}` : ''}` +
     `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({ statusFilter, levelFilter, typeFilter, jobFilter, clientFilter })
 }

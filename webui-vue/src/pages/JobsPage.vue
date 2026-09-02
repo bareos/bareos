@@ -722,7 +722,7 @@ import {
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
-  resolveJobsOrderColumn,
+  resolveJobsSortColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   resolveJobsClientQuery,
@@ -944,7 +944,7 @@ async function fetchPage() {
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
   const normalizedSearchTerm = normaliseJobsSearchTerm(search.value)
   // Sorting and searching are resolved on the director whenever the sort
-  // column has a real catalog equivalent (see the `order=` whitelist in
+  // column has a real catalog equivalent (see the `sortby=` whitelist in
   // core/src/cats/sql_list.cc), so the browser only ever fetches
   // `rowsPerPage` rows. `duration`/`speed` (derived client-side) and
   // `director` (n/a for a single director) have no server-side
@@ -952,7 +952,7 @@ async function fetchPage() {
   // the UI but still defended against) has no bounded page to request in
   // the first place -- both fall back to a capped, client-sorted fetch
   // further down.
-  const serverOrderColumn = rowsPerPage > 0 ? resolveJobsOrderColumn(sortBy) : null
+  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
   try {
     if (activeDirectors.value.length === 0) {
       jobs.value = []
@@ -1013,20 +1013,20 @@ async function fetchPage() {
     // "Fetch everything" is now limited to the rare columns without a
     // server-side sort (duration/speed): those are still capped so a very
     // large job history never ships its entire table to the browser.
-    const truncated = !serverOrderColumn && count > MAX_JOBS_FETCH_LIMIT
-    const limit = serverOrderColumn
+    const truncated = !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT
+    const limit = serverSortColumn
       ? rowsPerPage
       : Math.min(count, MAX_JOBS_FETCH_LIMIT)
     const pageResult = await director.call(
       buildListJobsCommand({
         limit,
-        offset: serverOrderColumn ? offset : 0,
+        offset: serverSortColumn ? offset : 0,
         statusFilter: encodedStatusFilters,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
         jobFilter: jobFilter.value,
         clientFilter: clientFilter.value,
-        orderColumn: serverOrderColumn ?? '',
+        sortColumn: serverSortColumn ?? '',
         descending,
         searchTerm: normalizedSearchTerm,
       })
@@ -1039,7 +1039,7 @@ async function fetchPage() {
         scopeKey: `${currentDirector}:${normalized.id}`,
       }
     })
-    const visibleJobs = serverOrderColumn
+    const visibleJobs = serverSortColumn
       ? fetchedJobs
       : paginateJobs(sortJobsByPagination(fetchedJobs, currentPagination), currentPagination)
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
