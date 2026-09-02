@@ -1,0 +1,93 @@
+publiccodeYmlVersion: 0.5.0
+name: Bareos
+url: https://github.com/bareos/bareos
+landingURL: https://www.bareos.com/
+softwareVersion: 25.1.0
+releaseDate: 2026-08-03
+logo: bareos-github-banner.png
+platforms:
+  - linux
+  - windows
+  - mac
+  - freebsd
+  - web
+categories:
+  - backup
+  - it-management
+  - it-security
+developmentStatus: stable
+softwareType: standalone/backend
+description:
+  de:
+    shortDescription: >
+      Open-Source-Software für Backup, Wiederherstellung und Verwaltung von
+      Daten in gemischten IT-Umgebungen.
+    longDescription: >
+      Bareos (Backup Archiving REcovery Open Sourced) ist eine
+      Open-Source-Lösung für Backup, Wiederherstellung und Archivierung in
+      gemischten IT-Umgebungen. Die Software unterstützt Organisationen dabei,
+      Daten über Netzwerke, Betriebssysteme, Speicherziele und Workloads hinweg
+      zu sichern, wiederherzustellen und zu verwalten. Sie eignet sich für
+      Umgebungen mit vielen Clients, mehreren Storage-Daemons und
+      unterschiedlichen Backup-Zielen.
+
+      Bareos unterstützt Linux, Windows, FreeBSD, macOS und weitere etablierte
+      Betriebssysteme. Backups können auf Festplatten, Bandmedien und
+      S3-kompatiblen Objektspeichern abgelegt werden. Eine katalogbasierte
+      Verwaltung erleichtert das Auffinden und Wiederherstellen von Dateien. Für
+      Administration und Wiederherstellung stehen Kommandozeilenwerkzeuge, eine
+      skriptbare Konsole und eine Weboberfläche zur Verfügung.
+
+      Die Lösung bietet verschlüsselte Kommunikation, Backup-Verschlüsselung,
+      rollenbasierte Zugriffskontrolle, Unterstützung für Always-Incremental-
+      Backup-Szenarien sowie Erweiterungsmöglichkeiten über Plugins. Dadurch
+      kann Bareos unter anderem virtualisierte Umgebungen, Datenbanken und
+      spezialisierte Workloads absichern.
+    features:
+      - Plattformübergreifende Backup- und Restore-Funktionen
+      - Speicherung auf Disk, Tape und S3-kompatiblen Objektspeichern
+      - WebUI, Kommandozeilenwerkzeuge und skriptbare Administration
+      - Rollenbasierte Zugriffskontrolle und Verschlüsselung
+      - Erweiterbar über Plugins für spezielle Workloads
+  en:
+    shortDescription: >
+      Open-source backup, recovery and data management software for mixed IT
+      environments.
+    longDescription: >
+      Bareos (Backup Archiving REcovery Open Sourced) is open-source software
+      for backup, recovery and archiving in mixed IT environments. It helps
+      organizations back up, restore and manage data across networks, operating
+      systems, storage targets and workloads. The architecture is designed for
+      deployments with many clients, multiple storage daemons and different
+      backup targets.
+
+      Bareos supports Linux, Windows, FreeBSD, macOS and other established
+      operating systems. Backups can be stored on disk, tape and S3-compatible
+      object storage. A catalog-based approach helps users find, select and
+      restore the right data. Administration and restore workflows are supported
+      through command-line tools, a scriptable console and a web-based user
+      interface.
+
+      The software provides encrypted communication, backup encryption,
+      role-based access control, support for Always Incremental backup
+      strategies and extension points through plugins. This allows Bareos to
+      protect virtual environments, databases and specialized workloads while
+      remaining transparent and fully open source under the AGPLv3 license.
+    features:
+      - Cross-platform backup and restore
+      - Storage on disk, tape and S3-compatible object storage
+      - WebUI, command-line tools and scriptable administration
+      - Role-based access control and encryption
+      - Plugin-based support for specialized workloads
+legal:
+  license: AGPL-3.0-only
+maintenance:
+  type: community
+  contacts:
+    - name: Bareos
+      email: info@bareos.com
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - de
+    - en
