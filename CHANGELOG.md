@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2786]
 - core: script btraceback support environment variable [PR #2782]
 - stored: fix segfault on missing Changer Command" [PR #2791]
+- dplcompat: fix SIGABRT when a chunk deletion fails during truncate [PR #2789]
 
 ### Changed
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2758]
@@ -2353,5 +2354,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2776]: https://github.com/bareos/bareos/pull/2776
 [PR #2782]: https://github.com/bareos/bareos/pull/2782
 [PR #2786]: https://github.com/bareos/bareos/pull/2786
+[PR #2789]: https://github.com/bareos/bareos/pull/2789
 [PR #2791]: https://github.com/bareos/bareos/pull/2791
 [unreleased]: https://github.com/bareos/bareos/tree/master
