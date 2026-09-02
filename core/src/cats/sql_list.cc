@@ -478,10 +478,10 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
 }
 
 namespace {
-// Whitelist mapping for `list jobs order=<keyword>` / `llist jobs
-// order=<keyword>`. This is the only place user input is allowed to
-// influence an ORDER BY clause -- never interpolate raw user input into
-// ORDER BY directly, always go through this table.
+/* Whitelist mapping for `list jobs order=<keyword>` / `llist jobs
+ * order=<keyword>`. This is the only place user input is allowed to
+ * influence an ORDER BY clause -- never interpolate raw user input into
+ * ORDER BY directly, always go through this table. */
 struct JobsOrderColumn {
   const char* keyword;
   const char* sql_column;
@@ -586,12 +586,13 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (search && *search) {
-    // Escape the value through the same EscapeString() used for every other
-    // free-text filter above; percent/underscore are left as literal SQL
-    // LIKE wildcards for the user, matching how the equivalent client-side
-    // filter it replaces (webui's filterJobsBySearch) treated substrings.
-    // ILIKE is PostgreSQL-specific, which is acceptable since PostgreSQL is
-    // the only supported catalog backend (see cats/dml/create_queryfiles.sh).
+    /* Escape the value through the same EscapeString() used for every other
+     * free-text filter above; percent/underscore are left as literal SQL
+     * LIKE wildcards for the user, matching how the equivalent client-side
+     * filter it replaces (webui's filterJobsBySearch) treated substrings.
+     * ILIKE is PostgreSQL-specific, which is acceptable since PostgreSQL is
+     * the only supported catalog backend (see cats/dml/create_queryfiles.sh).
+     */
     int len = strlen(search);
     temp.check_size(len * 2 + 1);
     EscapeString(jcr, temp.c_str(), search, len);
@@ -603,9 +604,9 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  // JobMedia/Media are only needed to filter or list a specific volume; skip
-  // the join otherwise so it can't multiply Job rows in front of the
-  // COUNT(DISTINCT ...)/DISTINCT.
+  /* JobMedia/Media are only needed to filter or list a specific volume; skip
+   * the join otherwise so it can't multiply Job rows in front of the
+   * COUNT(DISTINCT ...)/DISTINCT. */
   PoolMem joins(PM_MESSAGE);
   if (volumename) {
     PmStrcat(joins,
@@ -615,11 +616,11 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 
   DbLocker _{this};
 
-  // For non-count queries the ORDER BY clause accepts an optional direction
-  // suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
-  // column itself may only come from the fixed whitelist above -- an
-  // unrecognized order_column (including nullptr) falls back to the
-  // pre-existing default rather than ever being interpolated directly.
+  /* For non-count queries the ORDER BY clause accepts an optional direction
+   * suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
+   * column itself may only come from the fixed whitelist above -- an
+   * unrecognized order_column (including nullptr) falls back to the
+   * pre-existing default rather than ever being interpolated directly. */
   std::string resolved_order_column;
   const char* order_by
       = (order_column
