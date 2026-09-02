@@ -381,7 +381,7 @@ bool DropletCompatibleDevice::TruncateRemoteVolume(DeviceControlRecord*)
   for (const auto& [chunk_name, stat] : *chunk_map) {
     if (is_chunk_name(chunk_name)) {
       if (auto res = m_storage.remove(vol_name, chunk_name); !res) {
-        PmStrcpy(errmsg, chunk_map.error().c_str());
+        PmStrcpy(errmsg, res.error().c_str());
         dev_errno = EIO;
         return false;
       }
