@@ -103,7 +103,7 @@ if(HAVE_PYTHON)
   if(NOT MSVC) # TODO: fix on MSVC
     add_test(
       NAME bareosfd-python3-module
-      COMMAND ${Python3_EXECUTABLE}
+      COMMAND ${CMAKE_SOURCE_DIR}/gdb-run.sh ${Python3_EXECUTABLE}
               ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py "--verbose"
     )
 
