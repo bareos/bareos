@@ -2292,6 +2292,7 @@ static void PyRestorePacket_dealloc(PyObject* obj)
 {
   auto* self = reinterpret_cast<PyRestorePacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
+  Py_CLEAR(self->statp);
   PyObject_Del(self);
 }
 
