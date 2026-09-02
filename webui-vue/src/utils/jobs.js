@@ -24,6 +24,12 @@ import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobTypeCode } from './jobTypes.js'
 import { isErrorJobStatus, isWarningJobStatus, isOkJobStatus } from '../composables/useDirectorFetch.js'
 
+// Upper bound on the number of jobs fetched for a single "fetch everything"
+// request (e.g. sorting by a non-default column, a free-text search, or the
+// "All" rows-per-page option). Without a cap, a director with a very large
+// job history would ship its entire Job table to the browser in one call.
+export const MAX_JOBS_FETCH_LIMIT = 1000
+
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
 const JOB_TYPE_FILTERS = new Set(['B', 'A', 'V', 'R', 'D', 'C', 'c', 'M', 'g', 'O', 'S', 'U', 'I'])
 
