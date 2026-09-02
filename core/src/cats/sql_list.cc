@@ -586,20 +586,22 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (search && *search) {
-    /* Escape the value through the same EscapeString() used for every other
-     * free-text filter above; percent/underscore are left as literal SQL
-     * LIKE wildcards for the user, matching how the equivalent client-side
-     * filter it replaces (webui's filterJobsBySearch) treated substrings.
-     * ILIKE is PostgreSQL-specific, which is acceptable since PostgreSQL is
-     * the only supported catalog backend (see cats/dml/create_queryfiles.sh).
+    /* Escape the SQL literal first. Within the LIKE pattern, make the three
+     * special characters literal as well, matching the former client-side
+     * substring search. `!` avoids PostgreSQL backslash-literal semantics.
      */
     int len = strlen(search);
     temp.check_size(len * 2 + 1);
     EscapeString(jcr, temp.c_str(), search, len);
     std::string escaped_search = temp.c_str();
     temp.bsprintf(
-        "AND (Job.Name ILIKE '%%%s%%' OR Client.Name ILIKE '%%%s%%' OR "
-        "CAST(Job.JobId AS TEXT) LIKE '%%%s%%') ",
+        "AND (Job.Name ILIKE '%%' || "
+        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
+        "|| '%%' ESCAPE '!' OR Client.Name ILIKE '%%' || "
+        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
+        "|| '%%' ESCAPE '!' OR CAST(Job.JobId AS TEXT) LIKE '%%' || "
+        "REPLACE(REPLACE(REPLACE('%s', '!', '!!'), '%%', '!%%'), '_', '!_') "
+        "|| '%%' ESCAPE '!') ",
         escaped_search.c_str(), escaped_search.c_str(), escaped_search.c_str());
     PmStrcat(selection, temp.c_str());
   }
