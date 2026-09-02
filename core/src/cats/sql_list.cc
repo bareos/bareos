@@ -478,15 +478,15 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
 }
 
 namespace {
-/* Whitelist mapping for `list jobs order=<keyword>` / `llist jobs
- * order=<keyword>`. This is the only place user input is allowed to
+/* Whitelist mapping for `list jobs sortby=<keyword>` / `llist jobs
+ * sortby=<keyword>`. This is the only place user input is allowed to
  * influence an ORDER BY clause -- never interpolate raw user input into
  * ORDER BY directly, always go through this table. */
-struct JobsOrderColumn {
+struct JobsSortColumn {
   const char* keyword;
   const char* sql_column;
 };
-constexpr JobsOrderColumn kJobsOrderColumns[] = {
+constexpr JobsSortColumn kJobsSortColumns[] = {
     {"jobid", "Job.JobId"},         {"name", "Job.Name"},
     {"client", "Client.Name"},      {"type", "Job.Type"},
     {"level", "Job.Level"},         {"starttime", "Job.StartTime"},
@@ -495,11 +495,11 @@ constexpr JobsOrderColumn kJobsOrderColumns[] = {
 };
 }  // namespace
 
-bool BareosDb::GetJobsOrderColumn(const char* keyword, std::string& sql_column)
+bool BareosDb::GetJobsSortColumn(const char* keyword, std::string& sql_column)
 {
   if (!keyword || !*keyword) { return false; }
 
-  for (const auto& entry : kJobsOrderColumns) {
+  for (const auto& entry : kJobsSortColumns) {
     if (Bstrcasecmp(keyword, entry.keyword)) {
       sql_column = entry.sql_column;
       return true;
@@ -524,7 +524,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               OutputFormatter* sendit,
                               e_list_type type,
                               bool descending,
-                              const char* order_column,
+                              const char* sort_column,
                               const char* search)
 {
   char ed1[50];
@@ -619,13 +619,12 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   /* For non-count queries the ORDER BY clause accepts an optional direction
    * suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
    * column itself may only come from the fixed whitelist above -- an
-   * unrecognized order_column (including nullptr) falls back to the
+   * unrecognized sort_column (including nullptr) falls back to the
    * pre-existing default rather than ever being interpolated directly. */
-  std::string resolved_order_column;
+  std::string resolved_sort_column;
   const char* order_by
-      = (order_column
-         && GetJobsOrderColumn(order_column, resolved_order_column))
-            ? resolved_order_column.c_str()
+      = (sort_column && GetJobsSortColumn(sort_column, resolved_sort_column))
+            ? resolved_sort_column.c_str()
             : "StartTime";
   const std::string order_range
       = (descending ? std::string(" DESC") : std::string()) + range;

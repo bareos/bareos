@@ -35,7 +35,7 @@ import {
   filterRunnableJobOptions,
   formatRunWhenPickerDate,
   MAX_JOBS_FETCH_LIMIT,
-  resolveJobsOrderColumn,
+  resolveJobsSortColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   encodeJobsLevelFilters,
@@ -230,33 +230,33 @@ describe('jobs filter helpers', () => {
     expect(buildListJobsCommand({
       limit: 25,
       offset: 50,
-      orderColumn: 'client',
+      sortColumn: 'client',
       descending: false,
       searchTerm: 'Daily "Backup"',
-    })).toBe('llist jobs limit=25 offset=50 order=client search="Daily \\"Backup\\""')
+    })).toBe('llist jobs limit=25 offset=50 sortby=client search="Daily \\"Backup\\""')
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
   })
 
-  it('resolves jobs table sort columns to the director order= whitelist', () => {
-    // Mirrors kJobsOrderColumns in core/src/cats/sql_list.cc.
-    expect(resolveJobsOrderColumn('id')).toBe('jobid')
-    expect(resolveJobsOrderColumn('name')).toBe('name')
-    expect(resolveJobsOrderColumn('client')).toBe('client')
-    expect(resolveJobsOrderColumn('type')).toBe('type')
-    expect(resolveJobsOrderColumn('level')).toBe('level')
-    expect(resolveJobsOrderColumn('status')).toBe('jobstatus')
-    expect(resolveJobsOrderColumn('starttime')).toBe('starttime')
-    expect(resolveJobsOrderColumn('files')).toBe('jobfiles')
-    expect(resolveJobsOrderColumn('bytes')).toBe('jobbytes')
-    expect(resolveJobsOrderColumn('errors')).toBe('joberrors')
+  it('resolves jobs table sort columns to the director sortby= whitelist', () => {
+    // Mirrors kJobsSortColumns in core/src/cats/sql_list.cc.
+    expect(resolveJobsSortColumn('id')).toBe('jobid')
+    expect(resolveJobsSortColumn('name')).toBe('name')
+    expect(resolveJobsSortColumn('client')).toBe('client')
+    expect(resolveJobsSortColumn('type')).toBe('type')
+    expect(resolveJobsSortColumn('level')).toBe('level')
+    expect(resolveJobsSortColumn('status')).toBe('jobstatus')
+    expect(resolveJobsSortColumn('starttime')).toBe('starttime')
+    expect(resolveJobsSortColumn('files')).toBe('jobfiles')
+    expect(resolveJobsSortColumn('bytes')).toBe('jobbytes')
+    expect(resolveJobsSortColumn('errors')).toBe('joberrors')
     // Columns with no catalog equivalent: derived client-side, or n/a for
     // a single director. Callers must fall back to client-side sorting.
-    expect(resolveJobsOrderColumn('duration')).toBeNull()
-    expect(resolveJobsOrderColumn('speed')).toBeNull()
-    expect(resolveJobsOrderColumn('director')).toBeNull()
-    expect(resolveJobsOrderColumn('unknown')).toBeNull()
+    expect(resolveJobsSortColumn('duration')).toBeNull()
+    expect(resolveJobsSortColumn('speed')).toBeNull()
+    expect(resolveJobsSortColumn('director')).toBeNull()
+    expect(resolveJobsSortColumn('unknown')).toBeNull()
   })
 
   it('only allows rerunning job types the director can reschedule', () => {

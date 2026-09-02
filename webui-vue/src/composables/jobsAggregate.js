@@ -29,7 +29,7 @@ import {
   normaliseJobStatusFilters,
   normaliseJobsSearchTerm,
   paginateJobs,
-  resolveJobsOrderColumn,
+  resolveJobsSortColumn,
 } from '../utils/jobs.js'
 
 export { MAX_JOBS_FETCH_LIMIT }
@@ -170,7 +170,7 @@ export async function fetchAggregatedJobsPage(
   const statusFilters = normaliseJobStatusFilters(statusFilter)
   const filters = statusFilters.length > 0 ? statusFilters : ['']
   const normalizedSearchTerm = normaliseJobsSearchTerm(searchTerm)
-  // Columns with a real catalog equivalent (the `order=` whitelist in
+  // Columns with a real catalog equivalent (the `sortby=` whitelist in
   // core/src/cats/sql_list.cc) are sorted and search-filtered on each
   // director itself, so only the top `offset + rowsPerPage` rows per
   // director need to be fetched before the final client-side merge across
@@ -178,7 +178,7 @@ export async function fetchAggregatedJobsPage(
   // server-side equivalent, and `rowsPerPage === 0` ("All") has no bounded
   // `offset + rowsPerPage` to request in the first place -- both fall back
   // to a capped, client-sorted fetch per director.
-  const serverOrderColumn = rowsPerPage > 0 ? resolveJobsOrderColumn(sortBy) : null
+  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -191,7 +191,7 @@ export async function fetchAggregatedJobsPage(
       let countResults
       let directorStatusResult
 
-      if (serverOrderColumn) {
+      if (serverSortColumn) {
         [jobsResults, countResults, directorStatusResult] = await Promise.all([
           Promise.allSettled(filters.map(currentStatusFilter => (
             client.call(buildListJobsCommand({
@@ -202,7 +202,7 @@ export async function fetchAggregatedJobsPage(
               typeFilter,
               jobFilter,
               clientFilter,
-              orderColumn: serverOrderColumn,
+              sortColumn: serverSortColumn,
               descending,
               searchTerm: normalizedSearchTerm,
             }))
@@ -295,7 +295,7 @@ export async function fetchAggregatedJobsPage(
         director,
         jobs,
         count,
-        truncated: !serverOrderColumn && count > MAX_JOBS_FETCH_LIMIT,
+        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT,
       }
     } finally {
       client.disconnect()
