@@ -63,7 +63,7 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0007_list_jobs_long */
@@ -85,16 +85,14 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0008_list_jobs_count */
 R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+%s
 WHERE Job.JobId > 0
 %s
 %s;

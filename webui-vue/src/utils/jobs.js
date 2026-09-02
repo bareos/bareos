@@ -278,6 +278,30 @@ export function buildJobsFilterClauses({
     : [buildJobsFilterClause(sharedFilters)]
 }
 
+// Maps a jobs table `sortBy` field to the director's `order=<column>`
+// keyword (the whitelist enforced server-side by GetJobsOrderColumn() in
+// core/src/cats/sql_list.cc). Columns with no direct catalog equivalent are
+// intentionally omitted: `duration`/`speed` are derived client-side from
+// `bytes`/`duration`, and `director` only exists in the multi-director
+// aggregate view. Callers must fall back to a capped, client-sorted fetch
+// for any column this returns null for.
+const JOBS_ORDER_COLUMNS = {
+  id: 'jobid',
+  name: 'name',
+  client: 'client',
+  type: 'type',
+  level: 'level',
+  status: 'jobstatus',
+  starttime: 'starttime',
+  files: 'jobfiles',
+  bytes: 'jobbytes',
+  errors: 'joberrors',
+}
+
+export function resolveJobsOrderColumn(sortBy) {
+  return JOBS_ORDER_COLUMNS[sortBy] ?? null
+}
+
 export function buildListJobsCommand({
   limit,
   offset = 0,
@@ -286,8 +310,13 @@ export function buildListJobsCommand({
   typeFilter = '',
   jobFilter = '',
   clientFilter = '',
+  orderColumn = '',
+  descending = true,
+  searchTerm = '',
 } = {}) {
-  return `llist jobs reverse limit=${limit} offset=${offset}` +
+  return `llist jobs${descending ? ' reverse' : ''} limit=${limit} offset=${offset}` +
+    `${orderColumn ? ` order=${orderColumn}` : ''}` +
+    `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({ statusFilter, levelFilter, typeFilter, jobFilter, clientFilter })
 }
 
@@ -297,14 +326,16 @@ export function buildListJobsCountCommand({
   typeFilter = '',
   jobFilter = '',
   clientFilter = '',
+  searchTerm = '',
 } = {}) {
-  return `list jobs count${buildJobsFilterClause({
-    statusFilter,
-    levelFilter,
-    typeFilter,
-    jobFilter,
-    clientFilter,
-  })}`
+  return `list jobs count${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
+    buildJobsFilterClause({
+      statusFilter,
+      levelFilter,
+      typeFilter,
+      jobFilter,
+      clientFilter,
+    })
 }
 
 export function buildListJobCommand(jobId) {
