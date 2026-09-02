@@ -186,7 +186,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 order=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 sortby=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: {
           jobs: [
             { jobid: '10', name: 'CommonJob', clientname: 'common-fd', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
@@ -198,7 +198,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 order=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 sortby=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: {
           jobs: [
             { jobid: '11', name: 'CommonJob', clientname: 'common-fd', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },
@@ -309,7 +309,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 order=jobid jobstatus=f'),
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=f'),
         data: {
           jobs: [
             { jobid: '31', name: 'failed-a', clientname: 'fd-a', jobstatus: 'f', starttime: '2026-04-29 10:00:00' },
@@ -320,7 +320,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 order=jobid jobstatus=E'),
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=E'),
         data: {
           jobs: [
             { jobid: '30', name: 'error-a', clientname: 'fd-a', jobstatus: 'E', starttime: '2026-04-29 09:00:00' },
@@ -331,7 +331,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 order=jobid jobstatus=f'),
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=f'),
         data: {
           jobs: [
             { jobid: '41', name: 'failed-b', clientname: 'fd-b', jobstatus: 'f', starttime: '2026-04-29 12:00:00' },
@@ -342,7 +342,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 order=jobid jobstatus=E'),
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=E'),
         data: {
           jobs: [
             { jobid: '40', name: 'error-b', clientname: 'fd-b', jobstatus: 'E', starttime: '2026-04-29 11:00:00' },

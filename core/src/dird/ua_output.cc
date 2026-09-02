@@ -929,11 +929,11 @@ static bool ListJobs(UaContext* ua,
 
   const bool descending = FindArg(ua, NT_("reverse")) >= 0;
 
-  const char* order = GetArgValue(ua, NT_("order"));
-  if (order) {
+  const char* sortby = GetArgValue(ua, NT_("sortby"));
+  if (sortby) {
     std::string discard;
-    if (!ua->db->GetJobsOrderColumn(order, discard)) {
-      ua->ErrorMsg(T_("invalid order parameter\n"));
+    if (!ua->db->GetJobsSortColumn(sortby, discard)) {
+      ua->ErrorMsg(T_("invalid sortby parameter\n"));
       return false;
     }
   }
@@ -944,7 +944,7 @@ static bool ListJobs(UaContext* ua,
                          optionslist.jobstatuslist, optionslist.joblevel_list,
                          optionslist.jobtypes, volumename, poolname, schedtime,
                          optionslist.last, optionslist.count, ua->send.get(),
-                         llist, descending, order, search);
+                         llist, descending, sortby, search);
 
   return true;
 }
