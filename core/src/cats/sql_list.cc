@@ -530,23 +530,26 @@ bool BareosDb::GetJobsSortColumn(const char* keyword, std::string& sql_column)
   return false;
 }
 
-void BareosDb::ListJobRecords(JobControlRecord* jcr,
-                              JobDbRecord* jr,
-                              const char* range,
-                              const char* clientname,
-                              std::vector<char> jobstatuslist,
-                              std::vector<char> joblevels,
-                              std::vector<char> jobtypes,
-                              const char* volumename,
-                              const char* poolname,
-                              utime_t since_time,
-                              bool last,
-                              bool count,
-                              OutputFormatter* sendit,
-                              e_list_type type,
-                              bool descending,
-                              const char* sort_column,
-                              const char* search)
+void BareosDb::ListJobRecords(
+    JobControlRecord* jcr,
+    JobDbRecord* jr,
+    const char* range,
+    const char* clientname,
+    std::vector<char> jobstatuslist,
+    std::vector<char> joblevels,
+    std::vector<char> jobtypes,
+    const char* volumename,
+    const char* poolname,
+    utime_t since_time,
+    bool last,
+    bool count,
+    OutputFormatter* sendit,
+    e_list_type type,
+    bool descending,
+    const char* sort_column,
+    const char* search,
+    const std::optional<std::vector<std::string>>& job_names,
+    const std::optional<std::vector<std::string>>& client_names)
 {
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
@@ -616,6 +619,22 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
+  /* `current`/`enabled`/`disabled` are resolved by the caller (dird) to the
+   * matching set of Job/Client resource names -- this is the only place
+   * that filtering is applied, so range and count queries always see the
+   * exact same rows. */
+  if (job_names) {
+    temp.bsprintf("AND %s ",
+                  BuildSqlNameInClause("Job.Name", *job_names).c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
+  if (client_names) {
+    temp.bsprintf("AND %s ",
+                  BuildSqlNameInClause("Client.Name", *client_names).c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
   /* JobMedia/Media are only needed to filter or list a specific volume; skip
    * the join otherwise so it can't multiply Job rows in front of the
    * COUNT(DISTINCT ...)/DISTINCT. */
@@ -642,14 +661,22 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
       = (descending ? std::string(" DESC") : std::string()) + range;
 
   if (count) {
-    FillQuery<SQL_QUERY::list_jobs_count>(cmd, joins.c_str(), selection.c_str(),
-                                          range);
+    if (last) {
+      /* Mirrors the "last job per name" dedup subquery used by
+       * list_jobs_last/list_jobs_long_last, so `list jobs count last`
+       * reports the same row count `llist jobs last` would return instead
+       * of counting every historical Job row. */
+      FillQuery<SQL_QUERY::list_jobs_count_last>(cmd, selection.c_str());
+    } else {
+      FillQuery<SQL_QUERY::list_jobs_count>(cmd, joins.c_str(),
+                                            selection.c_str(), range);
+    }
   } else if (last) {
     if (type == VERT_LIST) {
       FillQuery<SQL_QUERY::list_jobs_long_last>(cmd, selection.c_str(),
-                                                order_range.c_str());
+                                                order_by, order_range.c_str());
     } else {
-      FillQuery<SQL_QUERY::list_jobs_last>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs_last>(cmd, selection.c_str(), order_by,
                                            order_range.c_str());
     }
   } else {

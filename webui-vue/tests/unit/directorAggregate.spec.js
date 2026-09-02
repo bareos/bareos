@@ -93,7 +93,7 @@ describe('director aggregate dashboard helpers', () => {
       }),
     })
     await vi.waitFor(() => {
-      expect(socket.sent).toHaveLength(11)
+      expect(socket.sent).toHaveLength(10)
     })
 
     const commandIds = new Map(
@@ -135,22 +135,6 @@ describe('director aggregate dashboard helpers', () => {
             jobstatus: 'R',
             starttime: '2026-03-23 09:00:00',
             jobfiles: '10',
-            jobbytes: '1024',
-          }],
-        },
-      }),
-    })
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandIds.get('llist jobs last current enabled'),
-        data: {
-          jobs: [{
-            jobid: '8',
-            name: 'BackupClient2',
-            clientname: 'db-fd',
-            jobstatus: 'R',
-            starttime: '2026-03-23 09:00:00',
             jobbytes: '1024',
           }],
         },
@@ -263,13 +247,6 @@ describe('director aggregate dashboard helpers', () => {
           runtimeStatus: 'Is waiting for a mount request',
         }),
       ],
-      recentJobs: [
-        expect.objectContaining({
-          director: 'prod-dir',
-          id: 8,
-          runtimeStatus: 'Is waiting for a mount request',
-        }),
-      ],
       clientCount: 2,
       storageCount: 1,
       jobTotals: {
@@ -297,7 +274,6 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-a',
         jobsPast24h: [{ scopeKey: 'prod-a:1', director: 'prod-a', id: 1, status: 'T', starttime: '2026-03-23 08:00:00' }],
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
-        recentJobs: [{ scopeKey: 'prod-a:3', director: 'prod-a', id: 3, status: 'W', starttime: '2026-03-23 10:00:00' }],
         databaseStatus: {
           director: 'prod-a',
           status: 'warning',
@@ -312,7 +288,6 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-b',
         jobsPast24h: [{ scopeKey: 'prod-b:4', director: 'prod-b', id: 4, status: 'f', starttime: '2026-03-23 11:00:00' }],
         runningJobs: [],
-        recentJobs: [{ scopeKey: 'prod-b:5', director: 'prod-b', id: 5, status: 'T', starttime: '2026-03-23 12:00:00' }],
         databaseStatus: {
           director: 'prod-b',
           status: 'ok',
@@ -328,10 +303,6 @@ describe('director aggregate dashboard helpers', () => {
     expect(aggregate.jobsPast24h.map(job => job.scopeKey)).toEqual([
       'prod-b:4',
       'prod-a:1',
-    ])
-    expect(aggregate.recentJobs.map(job => job.scopeKey)).toEqual([
-      'prod-b:5',
-      'prod-a:3',
     ])
     expect(aggregate.clientCount).toBe(5)
     expect(aggregate.storageCount).toBe(3)

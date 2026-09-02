@@ -372,6 +372,41 @@ TEST(StringManipulation, DelimitedString_PrintsCorrectMultipleCharacters)
   EXPECT_STREQ(result.c_str(), "'A','B','C','D','E','F'");
 }
 
+TEST(StringManipulation, NameInClause_MatchesNothingWhenNoNamesGiven)
+{
+  std::string result = BuildSqlNameInClause("Job.Name", {});
+
+  EXPECT_STREQ(result.c_str(), "Job.Name IN (NULL)");
+}
+
+TEST(StringManipulation, NameInClause_QuotesAndJoinsValidNames)
+{
+  std::string result
+      = BuildSqlNameInClause("Job.Name", {"backup-job", "Full.Backup"});
+
+  EXPECT_STREQ(result.c_str(), "Job.Name IN ('backup-job','Full.Backup')");
+}
+
+TEST(StringManipulation, NameInClause_DropsNamesThatFailIsNameValid)
+{
+  // A name containing a single quote could never come from a successfully
+  // parsed Bareos resource (IsNameValid() forbids it at config-parse time),
+  // but BuildSqlNameInClause() must still refuse to interpolate it rather
+  // than trust the caller -- this is what keeps the function safe even if a
+  // future caller passes less-trusted input.
+  std::string result = BuildSqlNameInClause(
+      "Job.Name", {"'; DROP TABLE Job; --", "still-valid-name"});
+
+  EXPECT_STREQ(result.c_str(), "Job.Name IN ('still-valid-name')");
+}
+
+TEST(StringManipulation, NameInClause_MatchesNothingWhenAllNamesAreInvalid)
+{
+  std::string result = BuildSqlNameInClause("Client.Name", {"invalid'name"});
+
+  EXPECT_STREQ(result.c_str(), "Client.Name IN (NULL)");
+}
+
 
 TEST(BareosVersion, try_parse)
 {

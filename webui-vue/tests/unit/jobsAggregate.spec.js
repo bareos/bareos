@@ -23,6 +23,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedJobsPage,
+  fetchAggregatedRecentJobsPage,
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../../src/composables/jobsAggregate.js'
@@ -438,6 +439,71 @@ describe('jobs aggregate helpers', () => {
       truncated: false,
       directorErrors: [],
     })
+  })
+
+  it('loads recent jobs with the same bounded server pagination', async () => {
+    const loading = fetchAggregatedRecentJobsPage(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a'],
+      { page: 2, rowsPerPage: 10, sortBy: 'starttime', descending: true }
+    )
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(4)
+    })
+
+    const commands = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+    expect(commands.has('llist jobs last current enabled reverse limit=20 offset=0 sortby=starttime')).toBe(true)
+    expect(commands.has('list jobs count last current enabled')).toBe(true)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('llist jobs last current enabled reverse limit=20 offset=0 sortby=starttime'),
+        data: {
+          jobs: Array.from({ length: 20 }, (_, index) => ({
+            jobid: String(20 - index),
+            name: `Job-${20 - index}`,
+            starttime: `2026-04-29 10:${String(59 - index).padStart(2, '0')}:00`,
+          })),
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('list jobs count last current enabled'),
+        data: { jobs: [{ count: '25' }] },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('status director'),
+        data: { running: [] },
+      }),
+    })
+
+    const result = await loading
+    expect(result).toMatchObject({
+      totalJobs: 25,
+      truncated: false,
+      directorErrors: [],
+    })
+    expect(result.jobs).toHaveLength(10)
+    expect(result.jobs[0]).toMatchObject({ id: 10 })
+    expect(result.jobs.at(-1)).toMatchObject({ id: 1 })
   })
 
 })

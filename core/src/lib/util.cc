@@ -993,6 +993,31 @@ std::string CreateDelimitedStringForSqlQueries(
   return empty_list;
 }
 
+std::string BuildSqlNameInClause(const std::string& column,
+                                 const std::vector<std::string>& names)
+{
+  std::string values;
+  for (const auto& name : names) {
+    // Never interpolate a name that doesn't pass the same whitelist the
+    // configuration parser enforces on every resource name -- this is
+    // belt-and-suspenders since callers only pass already-parsed resource
+    // names, but it guarantees this function can never be used to inject
+    // arbitrary SQL regardless of caller.
+    if (!IsNameValid(name.c_str())) { continue; }
+    if (!values.empty()) { values += ","; }
+    values += "'";
+    values += name;
+    values += "'";
+  }
+
+  if (values.empty()) {
+    // No (valid) name given: match nothing rather than every row.
+    return column + " IN (NULL)";
+  }
+
+  return column + " IN (" + values + ")";
+}
+
 std::string TPAsString(const std::chrono::system_clock::time_point& tp)
 {
   std::time_t t = std::chrono::system_clock::to_time_t(tp);

@@ -47,6 +47,7 @@
 #include "dird/jcr_util.h"
 
 #include <array>
+#include <optional>
 #include <string>
 
 namespace directordaemon {
@@ -719,6 +720,51 @@ struct ListCmdOptions {
   }
 };
 
+namespace {
+/* The `current`/`enabled`/`disabled` keywords depend on whether a Job or
+ * Client *resource* currently exists in the live configuration and, for
+ * `enabled`/`disabled`, on its current enabled state -- properties that are
+ * not stored in the catalog and therefore can never be expressed as a plain
+ * catalog column. Historically these were applied as a post-fetch filter on
+ * the already-limited/offset SQL result, which silently broke pagination
+ * (rows removed after LIMIT/OFFSET already trimmed the page) and any COUNT()
+ * query (a COUNT result has a single column, so filtering on a Job/Client
+ * name column read past the end of the result row).
+ *
+ * Resolving the filter to the small, bounded set of matching resource names
+ * *before* the query runs lets it be pushed into SQL as a plain "Name IN
+ * (...)" clause, so range and count queries see exactly the same filtered
+ * dataset. Returns std::nullopt when the given options don't request any
+ * such filtering, i.e. "do not filter by name". */
+std::optional<std::vector<std::string>> JobNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current && !optionslist.enabled && !optionslist.disabled) {
+    return std::nullopt;
+  }
+
+  std::vector<std::string> names;
+  JobResource* job = nullptr;
+  foreach_res (job, R_JOB) {
+    if (optionslist.enabled && !job->enabled) { continue; }
+    if (optionslist.disabled && job->enabled) { continue; }
+    names.emplace_back(job->resource_name_);
+  }
+  return names;
+}
+
+std::optional<std::vector<std::string>> ClientNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current) { return std::nullopt; }
+
+  std::vector<std::string> names;
+  ClientResource* client = nullptr;
+  foreach_res (client, R_CLIENT) { names.emplace_back(client->resource_name_); }
+  return names;
+}
+}  // namespace
+
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
                       const ListCmdOptions& optionslist)
@@ -893,6 +939,11 @@ static bool ListJobs(UaContext* ua,
   const char* volumename = GetArgValue(ua, NT_("volume"));
   const char* poolname = GetArgValue(ua, NT_("pool"));
 
+  /* Job/Client `current`/`enabled`/`disabled` filtering is resolved to a SQL
+   * "Name IN (...)" clause below (job_name_filter/client_name_filter) so it
+   * applies identically to range and count queries. Pool/FileSet `current`
+   * filtering (VERT_LIST only) stays a post-fetch filter -- it is not used
+   * by any count query and is out of scope for this fix. */
   switch (llist) {
     case VERT_LIST:
       if (!optionslist.count) {  // count result is one column, no filtering
@@ -901,28 +952,23 @@ static bool ListJobs(UaContext* ua,
         SetAclFilter(ua, 22, Pool_ACL);
         SetAclFilter(ua, 25, FileSet_ACL);
         if (optionslist.current) {
-          SetResFilter(ua, 2, R_JOB);
-          SetResFilter(ua, 7, R_CLIENT);
           SetResFilter(ua, 22, R_POOL);
           SetResFilter(ua, 25, R_FILESET);
         }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
       break;
     default:
       if (!optionslist.count) {  // count result is one column, no filtering
         SetAclFilter(ua, 1, Job_ACL);
         SetAclFilter(ua, 2, Client_ACL);
-        if (optionslist.current) {
-          SetResFilter(ua, 1, R_JOB);
-          SetResFilter(ua, 2, R_CLIENT);
-        }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
       break;
   }
+
+  const std::optional<std::vector<std::string>> job_name_filter
+      = JobNameFilterFor(optionslist);
+  const std::optional<std::vector<std::string>> client_name_filter
+      = ClientNameFilterFor(optionslist);
 
   std::string query_range;
   SetQueryRange(query_range, ua, &jr);
@@ -940,11 +986,11 @@ static bool ListJobs(UaContext* ua,
 
   const char* search = GetArgValue(ua, NT_("search"));
 
-  ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                         optionslist.jobstatuslist, optionslist.joblevel_list,
-                         optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send.get(),
-                         llist, descending, sortby, search);
+  ua->db->ListJobRecords(
+      ua->jcr, &jr, query_range.c_str(), clientname, optionslist.jobstatuslist,
+      optionslist.joblevel_list, optionslist.jobtypes, volumename, poolname,
+      schedtime, optionslist.last, optionslist.count, ua->send.get(), llist,
+      descending, sortby, search, job_name_filter, client_name_filter);
 
   return true;
 }

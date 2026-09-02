@@ -25,6 +25,8 @@ import { createDirectorCommandClient } from './directorAggregate.js'
 import {
   buildListJobsCommand,
   buildListJobsCountCommand,
+  buildListRecentJobsCommand,
+  buildListRecentJobsCountCommand,
   MAX_JOBS_FETCH_LIMIT,
   normaliseJobStatusFilters,
   normaliseJobsSearchTerm,
@@ -315,6 +317,63 @@ export async function fetchAggregatedJobsPage(
         ? [{
           director: directors[index],
           message: result.reason?.message ?? 'Failed to load jobs.',
+        }]
+        : []
+    )),
+  }
+}
+
+export async function fetchAggregatedRecentJobsPage(credentials, directors, pagination) {
+  const { page = 1, rowsPerPage = 25, sortBy = 'id', descending = true } = pagination ?? {}
+  const offset = Math.max(0, (page - 1) * rowsPerPage)
+  const fetchLimit = offset + rowsPerPage
+  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
+
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const [jobsResult, countResult, directorStatusResult] = await Promise.all([
+        client.call(buildListRecentJobsCommand({
+          limit: serverSortColumn ? fetchLimit : MAX_JOBS_FETCH_LIMIT,
+          sortColumn: serverSortColumn,
+          descending,
+        })),
+        client.call(buildListRecentJobsCountCommand()),
+        client.call('status director'),
+      ])
+      const jobs = sortJobsByPagination(overlayRuntimeStatuses(
+        decorateJobs(jobsResult?.jobs, director),
+        decorateRuntimeJobs(directorStatusResult?.running)
+      ), pagination)
+      const count = numberValue(directorCollection(countResult?.jobs)[0]?.count)
+
+      return {
+        director,
+        jobs,
+        count,
+        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT,
+      }
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
+  const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
+
+  return {
+    jobs: paginateJobs(jobs, pagination),
+    totalJobs: successful.reduce((sum, result) => sum + result.count, 0),
+    truncated: successful.some(result => result.truncated),
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load recent jobs.',
         }]
         : []
     )),

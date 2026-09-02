@@ -88,6 +88,18 @@ std::string CreateDelimitedStringForSqlQueries(
     const std::vector<char>& elements,
     char delim);
 
+/**
+ * Builds a "<column> IN ('a','b',...)" SQL fragment for a list of Bareos
+ * resource names (e.g. Job or Client names). Every name is validated with
+ * IsNameValid() -- the same character whitelist the configuration parser
+ * enforces on every resource name -- before being interpolated; any name
+ * that fails validation is dropped instead of risking SQL injection. If
+ * every name is dropped (or none were given), the returned fragment matches
+ * no rows (rather than silently matching every row).
+ */
+std::string BuildSqlNameInClause(const std::string& column,
+                                 const std::vector<std::string>& names);
+
 std::string TPAsString(const std::chrono::system_clock::time_point& tp);
 regex_t* StringToRegex(const char* input);
 void to_lower(std::string& s);
