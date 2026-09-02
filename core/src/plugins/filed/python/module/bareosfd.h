@@ -70,7 +70,7 @@ typedef struct {
 } PyRestoreObject;
 
 // Forward declarations of type specific functions.
-static void PyRestoreObject_dealloc(PyRestoreObject* self);
+static void PyRestoreObject_dealloc(PyObject* self);
 static int PyRestoreObject_init(PyRestoreObject* self,
                                 PyObject* args,
                                 PyObject* kwds);
@@ -111,7 +111,7 @@ static PyTypeObject PyRestoreObjectType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_object",
     .tp_basicsize = sizeof(PyRestoreObject),
-    .tp_dealloc   = (destructor)PyRestoreObject_dealloc,
+    .tp_dealloc   = PyRestoreObject_dealloc,
     .tp_repr      = (reprfunc)PyRestoreObject_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -140,7 +140,7 @@ typedef struct {
 } PyStatPacket;
 
 // Forward declarations of type specific functions.
-static void PyStatPacket_dealloc(PyStatPacket* self);
+static void PyStatPacket_dealloc(PyObject* self);
 static int PyStatPacket_init(PyStatPacket* self,
                              PyObject* args,
                              PyObject* kwds);
@@ -192,7 +192,7 @@ static PyTypeObject PyStatPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "stat_pkt",
     .tp_basicsize = sizeof(PyStatPacket),
-    .tp_dealloc   = (destructor)PyStatPacket_dealloc,
+    .tp_dealloc   = PyStatPacket_dealloc,
     .tp_repr      = (reprfunc)PyStatPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -223,7 +223,7 @@ typedef struct {
 } PySavePacket;
 
 // Forward declarations of type specific functions.
-static void PySavePacket_dealloc(PySavePacket* self);
+static void PySavePacket_dealloc(PyObject* self);
 static int PySavePacket_init(PySavePacket* self,
                              PyObject* args,
                              PyObject* kwds);
@@ -270,7 +270,7 @@ static PyTypeObject PySavePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "save_pkt",
     .tp_basicsize = sizeof(PySavePacket),
-    .tp_dealloc   = (destructor)PySavePacket_dealloc,
+    .tp_dealloc   = PySavePacket_dealloc,
     .tp_repr      = (reprfunc)PySavePacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "save_pkt object",
@@ -308,7 +308,7 @@ typedef struct {
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
-static void PyRestorePacket_dealloc(PyRestorePacket* self);
+static void PyRestorePacket_dealloc(PyObject* self);
 static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
                                 PyObject* kwds);
@@ -366,7 +366,7 @@ static PyTypeObject PyRestorePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_pkt",
     .tp_basicsize = sizeof(PyRestorePacket),
-    .tp_dealloc   = (destructor)PyRestorePacket_dealloc,
+    .tp_dealloc   = PyRestorePacket_dealloc,
     .tp_repr      = (reprfunc)PyRestorePacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "restore_pkt object",
@@ -399,7 +399,7 @@ typedef struct {
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
-static void PyIoPacket_dealloc(PyIoPacket* self);
+static void PyIoPacket_dealloc(PyObject* self);
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyIoPacket_repr(PyIoPacket* self);
 
@@ -446,7 +446,7 @@ static PyTypeObject PyIoPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "io_pkt",
     .tp_basicsize = sizeof(PyIoPacket),
-    .tp_dealloc   = (destructor)PyIoPacket_dealloc,
+    .tp_dealloc   = PyIoPacket_dealloc,
     .tp_repr      = (reprfunc)PyIoPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -464,7 +464,7 @@ typedef struct {
 } PyAclPacket;
 
 // Forward declarations of type specific functions.
-static void PyAclPacket_dealloc(PyAclPacket* self);
+static void PyAclPacket_dealloc(PyObject* self);
 static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyAclPacket_repr(PyAclPacket* self);
 
@@ -485,7 +485,7 @@ static PyTypeObject PyAclPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "acl_pkt",
     .tp_basicsize = sizeof(PyAclPacket),
-    .tp_dealloc   = (destructor)PyAclPacket_dealloc,
+    .tp_dealloc   = PyAclPacket_dealloc,
     .tp_repr      = (reprfunc)PyAclPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "acl_pkt object",
@@ -504,7 +504,7 @@ typedef struct {
 } PyXattrPacket;
 
 // Forward declarations of type specific functions.
-static void PyXattrPacket_dealloc(PyXattrPacket* self);
+static void PyXattrPacket_dealloc(PyObject* self);
 static int PyXattrPacket_init(PyXattrPacket* self,
                               PyObject* args,
                               PyObject* kwds);
@@ -529,7 +529,7 @@ static PyTypeObject PyXattrPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "xattr_pkt",
     .tp_basicsize = sizeof(PyXattrPacket),
-    .tp_dealloc   = (destructor)PyXattrPacket_dealloc,
+    .tp_dealloc   = PyXattrPacket_dealloc,
     .tp_repr      = (reprfunc)PyXattrPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "xattr_pkt object",

@@ -2009,8 +2009,10 @@ static int PyRestoreObject_init(PyRestoreObject* self,
 }
 
 // Destructor.
-static void PyRestoreObject_dealloc(PyRestoreObject* self)
+static void PyRestoreObject_dealloc(PyObject* obj)
 {
+  auto* self = reinterpret_cast<PyRestoreObject*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->object_name);
   Py_CLEAR(self->object);
   PyObject_Del(self);
@@ -2090,7 +2092,12 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
 }
 
 // Destructor.
-static void PyStatPacket_dealloc(PyStatPacket* self) { PyObject_Del(self); }
+static void PyStatPacket_dealloc(PyObject* obj)
+{
+  auto* self = reinterpret_cast<PyStatPacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
+  PyObject_Del(self);
+}
 
 // Python specific handlers for PySavePacket structure mapping.
 
@@ -2182,8 +2189,10 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
 }
 
 // Destructor.
-static void PySavePacket_dealloc(PySavePacket* self)
+static void PySavePacket_dealloc(PyObject* obj)
 {
+  auto* self = reinterpret_cast<PySavePacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->fname);
   Py_CLEAR(self->link);
   Py_CLEAR(self->flags);
@@ -2279,8 +2288,10 @@ static int PyRestorePacket_init(PyRestorePacket* self,
 }
 
 // Destructor.
-static void PyRestorePacket_dealloc(PyRestorePacket* self)
+static void PyRestorePacket_dealloc(PyObject* obj)
 {
+  auto* self = reinterpret_cast<PyRestorePacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   PyObject_Del(self);
 }
 
@@ -2364,10 +2375,12 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 }
 
 // Destructor.
-static void PyIoPacket_dealloc(PyIoPacket* self)
+static void PyIoPacket_dealloc(PyObject* obj)
 {
-  PyObject_Del(self);
+  auto* self = reinterpret_cast<PyIoPacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->buf);
+  PyObject_Del(obj);
 }
 
 // Python specific handlers for PyAclPacket structure mapping.
@@ -2402,8 +2415,10 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
 }
 
 // Destructor.
-static void PyAclPacket_dealloc(PyAclPacket* self)
+static void PyAclPacket_dealloc(PyObject* obj)
 {
+  auto* self = reinterpret_cast<PyAclPacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->content);
   PyObject_Del(self);
 }
@@ -2443,8 +2458,10 @@ static int PyXattrPacket_init(PyXattrPacket* self,
 }
 
 // Destructor.
-static void PyXattrPacket_dealloc(PyXattrPacket* self)
+static void PyXattrPacket_dealloc(PyObject* obj)
 {
+  auto* self = reinterpret_cast<PyXattrPacket*>(obj);
+  PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->value);
   Py_CLEAR(self->name);
   PyObject_Del(self);
