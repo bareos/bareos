@@ -34,6 +34,7 @@ import {
   canRerunJob,
   filterRunnableJobOptions,
   formatRunWhenPickerDate,
+  MAX_JOBS_FETCH_LIMIT,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   encodeJobsLevelFilters,
@@ -159,6 +160,12 @@ describe('jobs filter helpers', () => {
       { id: 1 },
     ])
     expect(paginateJobs(jobs, { page: 1, rowsPerPage: 0 })).toEqual(jobs)
+  })
+
+  it('caps the "fetch everything" limit at a fixed maximum', () => {
+    // Guards against a very large catalog shipping its whole Job table to
+    // the browser in one call when sorting/searching bypasses pagination.
+    expect(MAX_JOBS_FETCH_LIMIT).toBe(1000)
   })
 
   it('merges job media rows by volume and counts segments', () => {
