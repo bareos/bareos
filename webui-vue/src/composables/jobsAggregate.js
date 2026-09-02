@@ -26,12 +26,13 @@ import {
   buildListJobsCommand,
   buildListJobsCountCommand,
   filterJobsBySearch,
+  MAX_JOBS_FETCH_LIMIT,
   normaliseJobStatusFilters,
   normaliseJobsSearchTerm,
   paginateJobs,
 } from '../utils/jobs.js'
 
-export const MAX_JOBS_FETCH_LIMIT = 1000
+export { MAX_JOBS_FETCH_LIMIT }
 
 function numberValue(value) {
   const number = Number(value ?? 0)
@@ -280,6 +281,7 @@ export async function fetchAggregatedJobsPage(
         director,
         jobs,
         count,
+        truncated: fetchAllJobs && count > MAX_JOBS_FETCH_LIMIT,
       }
     } finally {
       client.disconnect()
@@ -296,6 +298,7 @@ export async function fetchAggregatedJobsPage(
   return {
     jobs: paginateJobs(filteredJobs, pagination),
     totalJobs,
+    truncated: successful.some(result => result.truncated),
     directorErrors: results.flatMap((result, index) => (
       result.status === 'rejected'
         ? [{

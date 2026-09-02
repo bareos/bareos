@@ -116,6 +116,9 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <q-banner v-if="jobsTruncated" dense class="bg-warning text-white">
+              {{ t('Showing the first {limit} of {total} matching jobs. Narrow your filter to see the rest.', { limit: formatNumber(maxJobsFetchLimit), total: formatNumber(totalJobs) }) }}
+            </q-banner>
             <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
               <q-chip
                 v-if="search"
@@ -193,6 +196,9 @@
               row-key="scopeKey"
               binary-state-sort
               dense flat
+              virtual-scroll
+              style="max-height: 70vh"
+              :rows-per-page-options="jobsRowsPerPageOptions"
               :loading="loading"
               v-model:pagination="pagination"
               @request="onRequest"
@@ -712,6 +718,7 @@ import {
   filterJobsBySearch,
   filterJobsTextOptions,
   formatRunWhenPickerDate,
+  MAX_JOBS_FETCH_LIMIT,
   normaliseJobId,
   normaliseJobsSearchTerm,
   normaliseJobsTextOptions,
@@ -781,14 +788,16 @@ const jobFilterOptions = ref([])
 const clientFilterOptions = ref([])
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
+const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 const fmtSpeed  = formatSpeed
+const jobsRowsPerPageOptions = [10, 25, 50]
 const pagination = usePersistedTablePagination('jobs.list', {
   page: 1,
   rowsPerPage: 25,
   sortBy: 'id',
   descending: true,
   rowsNumber: 0,
-})
+}, { allowedRowsPerPage: jobsRowsPerPageOptions })
 const jobDefsPagination = usePersistedTablePagination('jobs.defs', {
   rowsPerPage: 15,
 })
@@ -923,6 +932,7 @@ function syncJobsScopeDirectorQuery() {
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
 const totalJobs  = ref(0)
+const jobsTruncated = ref(false)
 const loading    = ref(false)
 const error      = ref(null)
 async function fetchPage() {
@@ -940,6 +950,7 @@ async function fetchPage() {
     if (activeDirectors.value.length === 0) {
       jobs.value = []
       totalJobs.value = 0
+      jobsTruncated.value = false
       pagination.value = { ...pagination.value, rowsNumber: 0 }
       return
     }
@@ -964,144 +975,66 @@ async function fetchPage() {
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
       totalJobs.value = result.totalJobs
+      jobsTruncated.value = result.truncated
       pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
       return
     }
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
-    if (!encodedStatusFilters.includes(',')) {
-      const countResult = await director.call(buildListJobsCountCommand({
+    // A single combined query is used regardless of how many statuses are
+    // selected: `jobstatus=T,E,f` is sent as-is and the director resolves it
+    // natively via `Job.JobStatus IN (...)` (see sql_list.cc). Splitting this
+    // into one director call per status used to multiply catalog/director
+    // load for no benefit.
+    const countResult = await director.call(buildListJobsCountCommand({
+      statusFilter: encodedStatusFilters,
+      levelFilter: levelFilters.value,
+      typeFilter: typeFilters.value,
+      jobFilter: jobFilter.value,
+      clientFilter: clientFilter.value,
+    }))
+    const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
+    if (count === 0) {
+      jobs.value = []
+      totalJobs.value = 0
+      jobsTruncated.value = false
+      pagination.value = { ...pagination.value, rowsNumber: 0 }
+      return
+    }
+    // "Fetch everything" (non-default sort, free-text search, or the
+    // largest page-size option) is capped so that a very large job history
+    // never ships its entire table to the browser in one call.
+    const truncated = fetchAllJobs && count > MAX_JOBS_FETCH_LIMIT
+    const limit = fetchAllJobs
+      ? Math.min(count, MAX_JOBS_FETCH_LIMIT)
+      : rowsPerPage
+    const pageResult = await director.call(
+      buildListJobsCommand({
+        limit,
+        offset: fetchAllJobs ? 0 : offset,
         statusFilter: encodedStatusFilters,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
         jobFilter: jobFilter.value,
         clientFilter: clientFilter.value,
-      }))
-      const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
-      if (count === 0) {
-        jobs.value = []
-        totalJobs.value = 0
-        pagination.value = { ...pagination.value, rowsNumber: 0 }
-        return
-      }
-      const limit = fetchAllJobs
-        ? Math.max(count, 1)
-        : rowsPerPage
-      const pageResult = await director.call(
-        buildListJobsCommand({
-          limit,
-          offset: fetchAllJobs ? 0 : offset,
-          statusFilter: encodedStatusFilters,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        })
-      )
-      const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
-        const normalized = normaliseJob(job)
-        return {
-          ...normalized,
-          director: currentDirector,
-          scopeKey: `${currentDirector}:${normalized.id}`,
-        }
       })
-      const sortedJobs = useDefaultSorting
-        ? fetchedJobs
-        : sortJobsByPagination(fetchedJobs, currentPagination)
-      const matchingJobs = filterJobsBySearch(sortedJobs, normalizedSearchTerm)
-      const visibleJobs = fetchAllJobs
-        ? paginateJobs(matchingJobs, currentPagination)
-        : matchingJobs
-      const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
-      if (runningJobIds.length > 0) {
-        const runtimeStatus = await Promise.allSettled([director.call('status director')])
-        jobs.value = runtimeStatus[0].status === 'fulfilled'
-          ? overlayRuntimeStatuses(visibleJobs, runtimeStatus[0].value?.running)
-          : visibleJobs
-      } else {
-        jobs.value = visibleJobs
+    )
+    const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
+      const normalized = normaliseJob(job)
+      return {
+        ...normalized,
+        director: currentDirector,
+        scopeKey: `${currentDirector}:${normalized.id}`,
       }
-      const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
-      totalJobs.value = filteredCount
-      pagination.value = { ...pagination.value, rowsNumber: filteredCount }
-      return
-    }
-
-    const filters = resolveJobsStatusFilters({ status: encodedStatusFilters })
-    const countResults = await Promise.allSettled(filters.map(status => (
-      director.call(buildListJobsCountCommand({
-        statusFilter: status,
-        levelFilter: levelFilters.value,
-        typeFilter: typeFilters.value,
-        jobFilter: jobFilter.value,
-        clientFilter: clientFilter.value,
-      }))
-    )))
-    const pageResults = await Promise.allSettled(filters.map((status, index) => {
-      if (useDefaultSorting && !fetchAllJobs) {
-        return director.call(
-          buildListJobsCommand({
-            limit: offset + rowsPerPage,
-            offset: 0,
-            statusFilter: status,
-            levelFilter: levelFilters.value,
-            typeFilter: typeFilters.value,
-            jobFilter: jobFilter.value,
-            clientFilter: clientFilter.value,
-          })
-        )
-      }
-
-      const countResult = countResults[index]
-      if (countResult?.status === 'fulfilled') {
-        const count = Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
-        if (count === 0) {
-          return Promise.resolve({ jobs: [] })
-        }
-
-        return director.call(buildListJobsCommand({
-          limit: count,
-          offset: 0,
-          statusFilter: status,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        }))
-      }
-
-      return director.call(
-        buildListJobsCommand({
-          limit: offset + rowsPerPage,
-          offset: 0,
-          statusFilter: status,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        })
-      )
-    }))
-    const rejectedPageResult = pageResults.find(result => result.status === 'rejected')
-    if (rejectedPageResult?.status === 'rejected') {
-      throw rejectedPageResult.reason
-    }
-    const mergedJobs = sortJobsByPagination([...pageResults.flatMap((result) => (
-      result.status === 'fulfilled'
-        ? directorCollection(result.value?.jobs).map((job) => {
-          const normalized = normaliseJob(job)
-          return {
-            ...normalized,
-            director: currentDirector,
-            scopeKey: `${currentDirector}:${normalized.id}`,
-          }
-        })
-        : []
-    ))], currentPagination)
-    const matchingJobs = filterJobsBySearch(mergedJobs, normalizedSearchTerm)
-    const visibleJobs = paginateJobs(matchingJobs, currentPagination)
+    })
+    const sortedJobs = useDefaultSorting
+      ? fetchedJobs
+      : sortJobsByPagination(fetchedJobs, currentPagination)
+    const matchingJobs = filterJobsBySearch(sortedJobs, normalizedSearchTerm)
+    const visibleJobs = fetchAllJobs
+      ? paginateJobs(matchingJobs, currentPagination)
+      : matchingJobs
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
     if (runningJobIds.length > 0) {
       const runtimeStatus = await Promise.allSettled([director.call('status director')])
@@ -1111,29 +1044,15 @@ async function fetchPage() {
     } else {
       jobs.value = visibleJobs
     }
-    const count = countResults.reduce((sum, result, index) => (
-      sum + (
-        result.status === 'fulfilled'
-          ? Number(directorCollection(result.value?.jobs)[0]?.count ?? 0)
-          : numberOfJobsFromResult(pageResults[index])
-      )
-    ), 0)
     const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
     totalJobs.value = filteredCount
+    jobsTruncated.value = truncated
     pagination.value = { ...pagination.value, rowsNumber: filteredCount }
   } catch (e) {
     error.value = e.message
   } finally {
     loading.value = false
   }
-}
-
-function numberOfJobsFromResult(result) {
-  if (result?.status !== 'fulfilled') {
-    return 0
-  }
-
-  return directorCollection(result.value?.jobs).length
 }
 
 function refresh() { fetchPage() }
@@ -1143,9 +1062,13 @@ function onRequest(props) {
   fetchPage()
 }
 
-const maxBytes    = computed(() => Math.max(1, ...jobs.value.map(j => j.bytes)))
-const maxFiles    = computed(() => Math.max(1, ...jobs.value.map(j => j.files)))
-const maxDuration = computed(() => Math.max(1, ...jobs.value.map(j => parseDurationSecs(j.duration))))
+function maxOf(values) {
+  return values.reduce((max, value) => (value > max ? value : max), 1)
+}
+
+const maxBytes    = computed(() => maxOf(jobs.value.map(j => j.bytes)))
+const maxFiles    = computed(() => maxOf(jobs.value.map(j => j.files)))
+const maxDuration = computed(() => maxOf(jobs.value.map(j => parseDurationSecs(j.duration))))
 
 function bytesGauge(val)    { return (val || 0) / maxBytes.value }
 function filesGauge(val)    { return (val || 0) / maxFiles.value }
@@ -1157,7 +1080,7 @@ function jobSpeedBps(row) {
   const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
   return bytes / secs
 }
-const maxSpeed = computed(() => Math.max(1, ...jobs.value
+const maxSpeed = computed(() => maxOf(jobs.value
   .filter(j => !isRunning(j.status))
   .map(j => jobSpeedBps(j))))
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeed.value }
@@ -1798,6 +1721,12 @@ function startAutoRefresh() {
   stopAutoRefresh()
   countdown.value = settings.refreshInterval
   _timer = setInterval(() => {
+    // Skip the tick while a fetch is already in flight or the tab isn't
+    // visible, so a slow response can't overlap with the next auto-refresh
+    // and the page doesn't keep polling in the background.
+    if (loading.value || document.hidden) {
+      return
+    }
     countdown.value -= 1
     if (countdown.value <= 0) {
       refresh()
