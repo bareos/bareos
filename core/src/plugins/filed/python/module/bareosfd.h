@@ -290,11 +290,11 @@ typedef struct {
   int32_t LinkFI;               /* File index to data if hard link */
   uint32_t uid;                 /* Userid */
   PyObject* statp;              /* Decoded stat packet */
-  const char* attrEx;           /* Extended attributes if any */
-  const char* ofname;           /* Output filename */
-  const char* olname;           /* Output link name */
-  const char* where;            /* Where */
-  const char* RegexWhere;       /* Regex where */
+  char* attrEx;                 /* Extended attributes if any */
+  char* ofname;                 /* Output filename */
+  char* olname;                 /* Output link name */
+  char* where;                  /* Where */
+  char* RegexWhere;             /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
 #  if HAVE_WIN32
@@ -303,8 +303,8 @@ typedef struct {
   int filedes; /* filedescriptor for read/write in core */
 #  endif
 
-  const char* original_file_name;
-  const char* original_link_name;
+  char* original_file_name;
+  char* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
