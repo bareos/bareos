@@ -218,6 +218,10 @@ describe('jobs filter helpers', () => {
     expect(buildListJobsCountCommand({
       searchTerm: 'fd-2',
     })).toBe('list jobs count search="fd-2"')
+    expect(buildListJobsCountCommand({
+      days: 1,
+      statusFilter: ['W', 'E', 'f', 'A'],
+    })).toBe('list jobs count days=1 jobstatus=W,E,f,A')
     expect(buildListJobsCommand({
       limit: 25,
       offset: 50,
@@ -234,6 +238,12 @@ describe('jobs filter helpers', () => {
       descending: false,
       searchTerm: 'Daily "Backup"',
     })).toBe('llist jobs limit=25 offset=50 sortby=client search="Daily \\"Backup\\""')
+    expect(buildListJobsCommand({
+      limit: 200,
+      days: 1,
+      statusFilter: ['W', 'E', 'f', 'A'],
+      sortColumn: 'jobid',
+    })).toBe('llist jobs reverse limit=200 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A')
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
