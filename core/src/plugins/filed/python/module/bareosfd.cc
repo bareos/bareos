@@ -931,7 +931,7 @@ static inline PyAclPacket* NativeToPyAclPacket(acl_pkt* ap)
   PyAclPacket* pAclPacket = PyObject_New(PyAclPacket, &PyAclPacketType);
 
   if (pAclPacket) {
-    pAclPacket->fname = ap->fname;
+    pAclPacket->fname = dup_str(ap->fname);
 
     if (ap->content_length && ap->content) {
       pAclPacket->content
@@ -2465,10 +2465,13 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
   self->fname = NULL;
   self->content = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|so", kwlist, &self->fname,
+  const char* fname{};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|so", kwlist, &fname,
                                    &self->content)) {
     return -1;
   }
+  self->fname = dup_str(fname);
 
   return 0;
 }
@@ -2479,6 +2482,7 @@ static void PyAclPacket_dealloc(PyObject* obj)
   auto* self = reinterpret_cast<PyAclPacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->content);
+  C_CLEAR(self->fname);
   PyObject_Del(self);
 }
 
