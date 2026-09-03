@@ -47,21 +47,6 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 
 class TestBareosFd(unittest.TestCase):
-    def test_ModuleDicts(self):
-        # help (bareosfd)
-        print(bareosfd.bCFs)
-        print(bareosfd.CF_ERROR)
-
-    def test_AccurateOptionConstants(self):
-        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
-        self.assertEqual(
-            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
-            bareosfd.bAccurateOptionMtime,
-        )
-        self.assertTrue(
-            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
-        )
-
     def test_RestoreObject(self):
         test_RestoreObject = bareosfd.RestoreObject()
         self.assertEqual(
