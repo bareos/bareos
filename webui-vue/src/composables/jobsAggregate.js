@@ -379,3 +379,64 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
     )),
   }
 }
+
+export async function fetchAggregatedTroubleJobs(
+  credentials,
+  directors,
+  { days = 1, limit = 200, statusFilter = ['W', 'E', 'f', 'A'] } = {}
+) {
+  const safeLimit = Math.max(0, limit)
+
+  const results = await Promise.allSettled(directors.map(async (director) => {
+    const client = await createDirectorCommandClient({
+      ...credentials,
+      director,
+    })
+
+    try {
+      const [jobsResult, countResult] = await Promise.all([
+        client.call(buildListJobsCommand({
+          limit: safeLimit,
+          offset: 0,
+          days,
+          statusFilter,
+          sortColumn: 'jobid',
+          descending: true,
+        })),
+        client.call(buildListJobsCountCommand({
+          days,
+          statusFilter,
+        })),
+      ])
+
+      return {
+        director,
+        jobs: decorateJobs(jobsResult?.jobs, director),
+        count: numberValue(directorCollection(countResult?.jobs)[0]?.count),
+      }
+    } finally {
+      client.disconnect()
+    }
+  }))
+
+  const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
+  const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), {
+    sortBy: 'id',
+    descending: true,
+  })
+  const totalJobs = successful.reduce((sum, result) => sum + result.count, 0)
+
+  return {
+    jobs: jobs.slice(0, safeLimit),
+    totalJobs,
+    truncated: totalJobs > safeLimit,
+    directorErrors: results.flatMap((result, index) => (
+      result.status === 'rejected'
+        ? [{
+          director: directors[index],
+          message: result.reason?.message ?? 'Failed to load trouble jobs.',
+        }]
+        : []
+    )),
+  }
+}
