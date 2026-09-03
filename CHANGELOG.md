@@ -10,9 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2787]
 - core: script btraceback support environment variable [PR #2783]
 - dplcompat: fix SIGABRT when a chunk deletion fails during truncate [PR #2790]
+- bvfs: fix cache race [PR #2651]
+
+### Security
+- fix stack-overflow in .bvfs_versions command [PR #2787] [GHSA-6mg8-w259-9wc9](https://github.com/bareos/bareos/security/advisories/GHSA-6mg8-w259-9wc9)
 
 ### Changed
-- bvfs: fix cache race [PR #2651]
 - spec: use gcc-15 for rhel builds [PR #2708]
 
 ### Documentation
