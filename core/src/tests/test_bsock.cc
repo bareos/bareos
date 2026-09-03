@@ -484,7 +484,8 @@ struct dummy_auth : ::TlsConfigProvider {
           std::string{global_resource::GetNameFromType(type)}.c_str(),
           std::string{res_name}.c_str());
 
-    if (type != global_resource::Type::Console) { return nullptr; }
+    // some tests use clients instead, so we should not check this
+    // if (type != global_resource::Type::Console) { return nullptr; }
 
     // for some reason, the tests test some nonsensical stuff.
     // E.g. they test that you _can_ login, even if you provide a different name
@@ -613,20 +614,12 @@ static bool connect_to_server(std::string console_name,
                              global_resource::Type::Director>(
             &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       } else {
-        /* old style tls is only supported for clients and old consoles;
-         * since we connect as a console, we need to pretent to be an old
-         * console. This is done by using and old style hello msg */
+        /* old style tls is only supported for clients,
+         * so we need to connect as a client*/
 
-        auto qualified_name = global_resource::QualifiedName(
-            global_resource::Type::Console, console_name);
-
-        auto bashed = console_name;
-        BashSpaces(bashed.data());
-
-        auto hello = "Hello " + bashed + " calling";
-        Md5Authenticator auth{qualified_name};
-        return BareosConnect(&jcr, UA_sock.get(), qualified_name, &custom,
-                             hello, &auth, cleartext_auth);
+        return BareosConnect<global_resource::Type::Client,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       }
     }();
 
@@ -823,6 +816,7 @@ TEST(bsock, auth_works_with_old_style_tls)
 
   cons_dir_config->tls_enable_ = true;
   dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_require_ = false;
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);
