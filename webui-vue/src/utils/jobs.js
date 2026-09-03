@@ -305,6 +305,7 @@ export function resolveJobsSortColumn(sortBy) {
 export function buildListJobsCommand({
   limit,
   offset = 0,
+  days,
   statusFilter = '',
   levelFilter = '',
   typeFilter = '',
@@ -316,11 +317,13 @@ export function buildListJobsCommand({
 } = {}) {
   return `llist jobs${descending ? ' reverse' : ''} limit=${limit} offset=${offset}` +
     `${sortColumn ? ` sortby=${sortColumn}` : ''}` +
+    `${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
     `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({ statusFilter, levelFilter, typeFilter, jobFilter, clientFilter })
 }
 
 export function buildListJobsCountCommand({
+  days,
   statusFilter = '',
   levelFilter = '',
   typeFilter = '',
@@ -328,7 +331,8 @@ export function buildListJobsCountCommand({
   clientFilter = '',
   searchTerm = '',
 } = {}) {
-  return `list jobs count${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
+  return `list jobs count${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
+    `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({
       statusFilter,
       levelFilter,
