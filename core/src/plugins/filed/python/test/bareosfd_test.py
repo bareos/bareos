@@ -21,6 +21,7 @@ import unittest
 import time
 import types
 import os
+import sys
 
 # for key, value in os.environ.items():
 #    print(f'{key}: {value}')
@@ -48,6 +49,7 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 class TestBareosFd(unittest.TestCase):
     def test_ModuleDicts(self):
+        print("weird!", file=sys.stderr)
         # help (bareosfd)
         print(bareosfd.bCFs)
         print(bareosfd.CF_ERROR)
