@@ -80,6 +80,12 @@ static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
                                restore_object_pkt* rop);
 static bRC PyHandleBackupFile(PluginContext* plugin_ctx, save_pkt* sp);
 
+static char* dup_str(const char* str)
+{
+  if (!str) { return nullptr; }
+  return strdup(str);
+}
+
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
 
@@ -751,11 +757,11 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->LinkFI = rp->LinkFI;
     pRestorePacket->uid = rp->uid;
     pRestorePacket->statp = (PyObject*)NativeToPyStatPacket(&rp->statp);
-    pRestorePacket->attrEx = rp->attrEx;
-    pRestorePacket->ofname = rp->ofname;
-    pRestorePacket->olname = rp->olname;
-    pRestorePacket->where = rp->where;
-    pRestorePacket->RegexWhere = rp->RegexWhere;
+    pRestorePacket->attrEx = dup_str(rp->attrEx);
+    pRestorePacket->ofname = dup_str(rp->ofname);
+    pRestorePacket->olname = dup_str(rp->olname);
+    pRestorePacket->where = dup_str(rp->where);
+    pRestorePacket->RegexWhere = dup_str(rp->RegexWhere);
     pRestorePacket->replace = rp->replace;
     pRestorePacket->create_status = rp->create_status;
 #if HAVE_WIN32
@@ -765,8 +771,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->filedes = rp->filedes;
 #endif
 
-    pRestorePacket->original_file_name = rp->original_file_name;
-    pRestorePacket->original_link_name = rp->original_link_name;
+    pRestorePacket->original_file_name = dup_str(rp->original_file_name);
+    pRestorePacket->original_link_name = dup_str(rp->original_link_name);
   }
 
   return pRestorePacket;
@@ -2188,6 +2194,12 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   return 0;
 }
 
+#define C_CLEAR(x) \
+  do {             \
+    free(x);       \
+    x = nullptr;   \
+  } while (0)
+
 // Destructor.
 static void PySavePacket_dealloc(PyObject* obj)
 {
@@ -2274,15 +2286,31 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   self->original_file_name = nullptr;
   self->original_link_name = nullptr;
 
+  const char *attrEx{}, *ofname{}, *olname{}, *where{}, *RegexWhere{},
+      *orig_fname, *orig_lname;
+
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|iiiiiIosssssii", kwlist, &self->stream,
-          &self->data_stream, &self->type, &self->file_index, &self->LinkFI,
-          &self->uid, &self->statp, &self->attrEx, &self->ofname, &self->olname,
-          &self->where, &self->RegexWhere, &self->replace, &self->create_status,
-          &self->filedes, &self->original_file_name,
-          &self->original_link_name)) {
+          args, kwds,
+#if HAVE_WIN32
+          /* filedes is long long */
+          "|iiiiiIOsssssiiLss",
+#else
+          /* filedes is int */
+          "|iiiiiIOsssssiiiss",
+#endif
+          kwlist, &self->stream, &self->data_stream, &self->type,
+          &self->file_index, &self->LinkFI, &self->uid, &self->statp, &attrEx,
+          &ofname, &olname, &where, &RegexWhere, &self->replace,
+          &self->create_status, &self->filedes, &orig_fname, &orig_lname)) {
     return -1;
   }
+  self->attrEx = dup_str(attrEx);
+  self->ofname = dup_str(ofname);
+  self->olname = dup_str(olname);
+  self->where = dup_str(where);
+  self->RegexWhere = dup_str(RegexWhere);
+  self->original_file_name = dup_str(orig_fname);
+  self->original_link_name = dup_str(orig_lname);
 
   return 0;
 }
@@ -2293,6 +2321,16 @@ static void PyRestorePacket_dealloc(PyObject* obj)
   auto* self = reinterpret_cast<PyRestorePacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->statp);
+
+  C_CLEAR(self->attrEx);
+  C_CLEAR(self->ofname);
+  C_CLEAR(self->olname);
+  C_CLEAR(self->where);
+  C_CLEAR(self->RegexWhere);
+
+  C_CLEAR(self->original_file_name);
+  C_CLEAR(self->original_link_name);
+
   PyObject_Del(self);
 }
 
