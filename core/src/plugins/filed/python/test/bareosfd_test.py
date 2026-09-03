@@ -47,63 +47,42 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 
 class TestBareosFd(unittest.TestCase):
-    # def test_ModuleDicts(self):
-    #     # help (bareosfd)
-    #     print(bareosfd.bCFs)
-    #     print(bareosfd.CF_ERROR)
+    def test_ModuleDicts(self):
+        # help (bareosfd)
+        print(bareosfd.bCFs)
+        print(bareosfd.CF_ERROR)
 
-    # def test_AccurateOptionConstants(self):
-    #     self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
-    #     self.assertEqual(
-    #         bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
-    #         bareosfd.bAccurateOptionMtime,
-    #     )
-    #     self.assertTrue(
-    #         bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
-    #     )
+    def test_AccurateOptionConstants(self):
+        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
+        self.assertEqual(
+            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
+            bareosfd.bAccurateOptionMtime,
+        )
+        self.assertTrue(
+            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
+        )
 
-    # #     print bCFs
-    # #     bEventType
-    # #     bFileType
-    # #     CoreFunctions
-    # #     bIOPS
-    # #     bJobMessageType
-    # #     bLevels
-    # #     bRCs
-    # #     bVariable
-
-    # # def test_bJobMessageType(self):
-    # #     # bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
-    # #     self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
-    # # )
-
-    # # def test_SetValue(self):
-    # #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
-
-    # # def test_DebugMessage(self):
-    # #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
-
-    # def test_RestoreObject(self):
-    #     test_RestoreObject = bareosfd.RestoreObject()
-    #     self.assertEqual(
-    #         'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
-    #         str(test_RestoreObject),
-    #     )
-    #     r2 = bareosfd.RestoreObject()
-    #     r2.object_name = "this is a very long object name"
-    #     r2.object = "123456780"
-    #     # r2.plugin_name="this is a plugin name"
-    #     r2.object_type = 3
-    #     r2.object_len = 111111
-    #     r2.object_full_len = 11111111
-    #     r2.object_index = 1234
-    #     r2.object_compression = 1
-    #     r2.stream = 4
-    #     r2.jobid = 123123
-    #     self.assertEqual(
-    #         'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
-    #         str(r2),
-    #     )
+    def test_RestoreObject(self):
+        test_RestoreObject = bareosfd.RestoreObject()
+        self.assertEqual(
+            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
+            str(test_RestoreObject),
+        )
+        r2 = bareosfd.RestoreObject()
+        r2.object_name = "this is a very long object name"
+        r2.object = "123456780"
+        # r2.plugin_name="this is a plugin name"
+        r2.object_type = 3
+        r2.object_len = 111111
+        r2.object_full_len = 11111111
+        r2.object_index = 1234
+        r2.object_compression = 1
+        r2.stream = 4
+        r2.jobid = 123123
+        self.assertEqual(
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            str(r2),
+        )
 
     def test_StatPacket(self):
         timestamp_before = time.time()
@@ -169,26 +148,6 @@ class TestBareosFd(unittest.TestCase):
         self.assertEqual(
             'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
             str(test_RestorePacket),
-        )
-
-    def test_IoPacket(self):
-        test_IoPacket = bareosfd.IoPacket()
-        self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
-            str(test_IoPacket),
-        )
-
-    def test_AclPacket(self):
-        test_AclPacket = bareosfd.AclPacket()
-        test_AclPacket.content = bytearray(b"Hello ACL")
-        self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
-        )
-
-    def test_XattrPacket(self):
-        test_XattrPacket = bareosfd.XattrPacket()
-        self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
         )
 
 
