@@ -128,6 +128,13 @@ class TestBareosFd(unittest.TestCase):
             str(test_SavePacket),
         )
 
+    def test_RestorePacket(self):
+        test_RestorePacket = bareosfd.RestorePacket()
+        self.assertEqual(
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            str(test_RestorePacket),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
