@@ -28,6 +28,7 @@ import {
   buildListJobCommand,
   buildListJobsCommand,
   buildListJobsCountCommand,
+  buildListTroubleLogCommand,
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
@@ -247,6 +248,13 @@ describe('jobs filter helpers', () => {
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
+  })
+
+  it('builds a batched joblog command for several jobids, dropping invalid/duplicate ones', () => {
+    expect(buildListTroubleLogCommand([8000, 7999, 7998])).toBe('list joblog jobids=8000,7999,7998')
+    expect(buildListTroubleLogCommand(['8000', 7999, 7999, -1, 0, 'x'])).toBe('list joblog jobids=8000,7999')
+    expect(buildListTroubleLogCommand([])).toBeNull()
+    expect(buildListTroubleLogCommand()).toBeNull()
   })
 
   it('resolves jobs table sort columns to the director sortby= whitelist', () => {
