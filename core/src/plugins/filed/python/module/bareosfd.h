@@ -459,8 +459,8 @@ IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyAclPacket type
 typedef struct {
-  PyObject_HEAD const char* fname; /* Filename */
-  PyObject* content;               /* ACL content */
+  PyObject_HEAD char* fname; /* Filename */
+  PyObject* content;         /* ACL content */
 } PyAclPacket;
 
 // Forward declarations of type specific functions.
