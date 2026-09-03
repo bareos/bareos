@@ -262,10 +262,12 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
     return {nullptr, X509_free};
   }
 
-  X509_NAME* subject = X509_get_subject_name(cert.get());
+  /* auto: X509_get_subject_name() returns a non-const pointer on
+   * OpenSSL < 4.0 and a const pointer on OpenSSL >= 4.0 */
+  auto* subject = X509_get_subject_name(cert.get());
   if (!subject
       || X509_NAME_add_entry_by_txt(
-             subject, "CN", MBSTRING_ASC,
+             const_cast<X509_NAME*>(subject), "CN", MBSTRING_ASC,
              reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
              0)
              != 1) {
@@ -273,8 +275,8 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
     return {nullptr, X509_free};
   }
 
-  X509_NAME* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
-                                       : X509_get_subject_name(cert.get());
+  auto* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
+                                  : X509_get_subject_name(cert.get());
   if (!issuer_name || X509_set_issuer_name(cert.get(), issuer_name) != 1) {
     *error = "Could not set certificate issuer: " + GetOpenSslError();
     return {nullptr, X509_free};
