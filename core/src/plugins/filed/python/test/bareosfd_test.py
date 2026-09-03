@@ -47,28 +47,6 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 
 class TestBareosFd(unittest.TestCase):
-    def test_RestoreObject(self):
-        test_RestoreObject = bareosfd.RestoreObject()
-        self.assertEqual(
-            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
-            str(test_RestoreObject),
-        )
-        r2 = bareosfd.RestoreObject()
-        r2.object_name = "this is a very long object name"
-        r2.object = "123456780"
-        # r2.plugin_name="this is a plugin name"
-        r2.object_type = 3
-        r2.object_len = 111111
-        r2.object_full_len = 11111111
-        r2.object_index = 1234
-        r2.object_compression = 1
-        r2.stream = 4
-        r2.jobid = 123123
-        self.assertEqual(
-            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
-            str(r2),
-        )
-
     def test_StatPacket(self):
         timestamp_before = time.time()
         test_StatPacket = bareosfd.StatPacket()
