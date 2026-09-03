@@ -18,10 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix segfault on missing Changer Command" [PR #2791]
 - dplcompat: fix SIGABRT when a chunk deletion fails during truncate [PR #2789]
 - hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2794]
-
-### Changed
 - cmake: fix add_alphabetic_requirements() no-op sort [PR #2758]
 - webui-vue: update nanoid to patched version [PR #2773]
+
+### Security
+- fix stack-overflow in .bvfs_versions command [PR #2786] [GHSA-6mg8-w259-9wc9](https://github.com/bareos/bareos/security/advisories/GHSA-6mg8-w259-9wc9)
 
 ## [25.1.0] - 2026-08-03
 
