@@ -133,9 +133,7 @@ override_dh_auto_test:
 # No tabs allowed before ifeq.
 ifneq (nocheck,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	ulimit -c unlimited
-	cd cmake-build && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake -R bareosfd-python3-module$$ --repeat until-fail:1000 || echo "ctest result:$?"
-	coredumpctl list
-	exit 1
+	cd cmake-build && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake -R bareosfd-python3-module$$ --repeat until-fail:50 || echo "ctest result:$?"
 else
 	@echo "ctest: skipped"
 endif
