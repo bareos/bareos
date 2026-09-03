@@ -29,6 +29,12 @@
         @click="loadTroubleLines"
       />
     </div>
+    <q-banner v-if="error" dense class="bg-negative text-white">
+      {{ error }}
+    </q-banner>
+    <q-banner v-if="truncated" dense class="bg-warning text-white">
+      {{ t('Showing logs for the first {limit} of {total} troubled jobs from the last 24 hours.', { limit: MAX_JOBS, total: totalTroubleJobs }) }}
+    </q-banner>
     <q-scroll-area style="flex:1 1 auto">
       <div v-if="loading && !lines.length" class="text-center text-grey q-pa-md">
         {{ t('Loading…') }}
@@ -77,6 +83,7 @@ import { useSettingsStore } from '../../stores/settings.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { createDirectorCommandClient } from '../../composables/directorAggregate.js'
+import { fetchAggregatedTroubleJobs } from '../../composables/jobsAggregate.js'
 import { buildJobDetailsQuery, classifyLogLine } from '../../utils/jobs.js'
 import { timeAgo } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
@@ -84,7 +91,6 @@ import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 // Safety cap on the number of jobs whose logs are fetched, to avoid an
 // unbounded number of `list joblog` calls if an unusually large number of
 // jobs ran in the last 24 hours. The number of *lines* shown is not capped.
-const TROUBLE_STATUSES = new Set(['W', 'E', 'f', 'A'])
 const MAX_JOBS = 200
 
 const { t } = useI18n()
@@ -97,6 +103,9 @@ const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
 const loading = ref(false)
 const lines = ref([])
+const error = ref('')
+const truncated = ref(false)
+const totalTroubleJobs = ref(0)
 
 let isUnmounted = false
 onUnmounted(() => { isUnmounted = true })
@@ -108,16 +117,40 @@ let latestRequestId = 0
 
 async function loadTroubleLines() {
   const requestId = ++latestRequestId
-  const jobs = (ctx.aggregate.value.jobsPast24h ?? [])
-    .filter(j => TROUBLE_STATUSES.has(j.status))
-    .slice(0, MAX_JOBS)
+  const credentials = auth.getCredentials()
+  const directors = ctx.activeDirectors.value
 
-  if (!jobs.length) {
-    if (requestId === latestRequestId && !isUnmounted) lines.value = []
+  if (!credentials || directors.length === 0) {
+    if (requestId === latestRequestId && !isUnmounted) {
+      lines.value = []
+      error.value = ''
+      truncated.value = false
+      totalTroubleJobs.value = 0
+    }
     return
   }
 
   if (requestId === latestRequestId && !isUnmounted) loading.value = true
+
+  const troubleJobs = await fetchAggregatedTroubleJobs(credentials, directors, {
+    days: 1,
+    limit: MAX_JOBS,
+  })
+  if (requestId !== latestRequestId || isUnmounted) return
+
+  const jobs = troubleJobs.jobs
+  totalTroubleJobs.value = troubleJobs.totalJobs
+  truncated.value = troubleJobs.truncated
+  error.value = troubleJobs.directorErrors.map(entry => entry.message).join(' ')
+
+  if (!jobs.length) {
+    if (requestId === latestRequestId && !isUnmounted) {
+      lines.value = []
+      loading.value = false
+    }
+    return
+  }
+
   const collected = []
 
   // Fetch job logs using dedicated, short-lived director connections
@@ -189,7 +222,11 @@ async function openLine(line) {
   }
 }
 
-watch(() => ctx.aggregate.value.jobsPast24h, loadTroubleLines, { immediate: true })
+watch(
+  () => [ctx.refreshToken.value, ctx.activeDirectors.value.join('\0')],
+  loadTroubleLines,
+  { immediate: true }
+)
 </script>
 
 <style scoped>
