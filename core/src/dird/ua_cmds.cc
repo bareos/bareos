@@ -192,6 +192,7 @@ const char list_cmd_usage[] = NT_(
     "ujobid=<complete_name> | "
     "joblog jobid=<jobid> [count] | "
     "joblog ujobid=<complete_name> [count] | "
+    "joblog jobids=<jobid,jobid,...> | "
     "jobmedia jobid=<jobid> | "
     "jobmedia ujobid=<complete_name> | "
     "jobtotals | "
