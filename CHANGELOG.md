@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [25.1.1] - 2026-09-03
 
 ### Documentation
 - docs: update volume add warning about delete rotate key [PR #2742]
@@ -1370,6 +1370,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [25.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F25.0.3
 [25.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F25.0.4
 [25.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F25.1.0
+[25.1.1]: https://github.com/bareos/bareos/releases/tag/Release%2F25.1.1
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -2359,4 +2360,3 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2789]: https://github.com/bareos/bareos/pull/2789
 [PR #2791]: https://github.com/bareos/bareos/pull/2791
 [PR #2794]: https://github.com/bareos/bareos/pull/2794
-[unreleased]: https://github.com/bareos/bareos/tree/master
