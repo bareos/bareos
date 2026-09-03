@@ -21,7 +21,6 @@ import unittest
 import time
 import types
 import os
-import sys
 
 # for key, value in os.environ.items():
 #    print(f'{key}: {value}')
@@ -49,7 +48,6 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 class TestBareosFd(unittest.TestCase):
     def test_StatPacket(self):
-        print("test message", file=sys.stderr)
         timestamp_before = time.time()
         test_StatPacket = bareosfd.StatPacket()
         timestamp_after = time.time()
