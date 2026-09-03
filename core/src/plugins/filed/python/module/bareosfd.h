@@ -384,7 +384,7 @@ typedef struct {
   int32_t flags;               /* Open flags */
   int32_t mode;                /* Permissions for created files */
   PyObject* buf;               /* Read/Write buffer */
-  const char* fname;           /* Open filename */
+  char* fname;                 /* Open filename */
   int32_t status;              /* Return status */
   int32_t io_errno;            /* Errno code */
   int32_t lerror;              /* Win32 error code */

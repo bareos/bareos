@@ -547,7 +547,7 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->count = io->count;
     pIoPkt->flags = io->flags;
     pIoPkt->mode = io->mode;
-    pIoPkt->fname = io->fname;
+    pIoPkt->fname = dup_str(io->fname);
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
@@ -2393,13 +2393,15 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = false;
   self->filedes = kInvalidFiledescriptor;
 
+  const char* fname{};
+
 #if HAVE_WIN32
   long long parsed_offset = static_cast<long long>(self->offset);
   int parsed_win32 = self->win32 ? 1 : 0;
   long long parsed_filedes = static_cast<long long>(self->filedes);
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|HiiiosiiiiLpL", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+          &self->flags, &self->mode, &self->buf, &fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
           &parsed_win32, &parsed_filedes)) {
     return -1;
@@ -2412,7 +2414,7 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   int parsed_win32 = self->win32 ? 1 : 0;
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|HiiiosiiiiLpi", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+          &self->flags, &self->mode, &self->buf, &fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
           &parsed_win32, &self->filedes)) {
     return -1;
@@ -2420,6 +2422,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->offset = static_cast<int64_t>(parsed_offset);
   self->win32 = parsed_win32 != 0;
 #endif
+
+  self->fname = dup_str(fname);
 
   return 0;
 }
@@ -2430,6 +2434,7 @@ static void PyIoPacket_dealloc(PyObject* obj)
   auto* self = reinterpret_cast<PyIoPacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->buf);
+  C_CLEAR(self->fname);
   PyObject_Del(obj);
 }
 
