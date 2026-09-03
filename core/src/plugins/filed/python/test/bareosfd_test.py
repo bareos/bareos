@@ -27,7 +27,7 @@ import sys
 #    print(f'{key}: {value}')
 
 print("PATH", os.environ["PATH"])
-print("PYTHONPATH", os.environ["PYTHONPATH"])
+# print("PYTHONPATH", os.environ["PYTHONPATH"])
 
 import bareosfd
 
@@ -48,6 +48,417 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 
 class TestBareosFd(unittest.TestCase):
+    def test_ModuleDicts3(self):
+        print("weird!", file=sys.stderr)
+        # help (bareosfd)
+        print(bareosfd.bCFs)
+        print(bareosfd.CF_ERROR)
+
+    def test_AccurateOptionConstants3(self):
+        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
+        self.assertEqual(
+            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
+            bareosfd.bAccurateOptionMtime,
+        )
+        self.assertTrue(
+            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
+        )
+
+    #     print bCFs
+    #     bEventType
+    #     bFileType
+    #     CoreFunctions
+    #     bIOPS
+    #     bJobMessageType
+    #     bLevels
+    #     bRCs
+    #     bVariable
+
+    # def test_bJobMessageType3(self):
+    #     # bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
+    #     self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
+    # )
+
+    # def test_SetValue3(self):
+    #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
+
+    # def test_DebugMessage3(self):
+    #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
+
+    def test_RestoreObject3(self):
+        test_RestoreObject = bareosfd.RestoreObject()
+        self.assertEqual(
+            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
+            str(test_RestoreObject),
+        )
+        r2 = bareosfd.RestoreObject()
+        r2.object_name = "this is a very long object name"
+        r2.object = "123456780"
+        # r2.plugin_name="this is a plugin name"
+        r2.object_type = 3
+        r2.object_len = 111111
+        r2.object_full_len = 11111111
+        r2.object_index = 1234
+        r2.object_compression = 1
+        r2.stream = 4
+        r2.jobid = 123123
+        self.assertEqual(
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            str(r2),
+        )
+
+    def test_StatPacket3(self):
+        timestamp_before = time.time()
+        test_StatPacket = bareosfd.StatPacket()
+        timestamp_after = time.time()
+
+        # check that initialization uses a current timestamp while tolerating
+        # scheduler jitter and coarse timer granularity on CI machines.
+        for ts_value in (
+            test_StatPacket.st_atime,
+            test_StatPacket.st_mtime,
+            test_StatPacket.st_ctime,
+        ):
+            # python time.time() uses CLOCK_REALTIME, while our code
+            # uses time(NULL).  These can differ by a few milliseconds,
+            # which can cause large differences (>1sec) because of rounding.
+            # E.g. we can have
+            #   timestamp_before = 1785830999.000088, and
+            #   ts_value = 1785830998
+            # Which are further apart than 1 second, even tough
+            # time(NULL) probably just lagged behind CLOCK_REALTIME by ~90us.
+
+            self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
+            self.assertLessEqual(ts_value, timestamp_after + 2.0)
+
+        # set fixed values for comparison
+        test_StatPacket.st_atime = 999
+        test_StatPacket.st_mtime = 1000
+        test_StatPacket.st_ctime = 1001
+        sp2 = bareosfd.StatPacket(
+            dev=0,
+            ino=0,
+            mode=0o0700,
+            nlink=0,
+            uid=0,
+            gid=0,
+            rdev=0,
+            size=-1,
+            atime=1,
+            mtime=1,
+            ctime=1,
+            blksize=4096,
+            blocks=1,
+        )
+
+    def test_SavePacket3(self):
+        test_SavePacket = bareosfd.SavePacket(fname="testfilename")
+        self.assertEqual(
+            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
+            str(test_SavePacket),
+        )
+
+    def test_RestorePacket3(self):
+        test_RestorePacket = bareosfd.RestorePacket()
+        self.assertEqual(
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            str(test_RestorePacket),
+        )
+
+    def test_IoPacket3(self):
+        test_IoPacket = bareosfd.IoPacket()
+        self.assertEqual(
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            str(test_IoPacket),
+        )
+
+    def test_AclPacket3(self):
+        test_AclPacket = bareosfd.AclPacket()
+        test_AclPacket.content = bytearray(b"Hello ACL")
+        self.assertEqual(
+            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+        )
+
+    def test_XattrPacket3(self):
+        test_XattrPacket = bareosfd.XattrPacket()
+        self.assertEqual(
+            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+        )
+
+    def test_ModuleDicts22(self):
+        print("weird!", file=sys.stderr)
+        # help (bareosfd)
+        print(bareosfd.bCFs)
+        print(bareosfd.CF_ERROR)
+
+    def test_AccurateOptionConstants22(self):
+        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
+        self.assertEqual(
+            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
+            bareosfd.bAccurateOptionMtime,
+        )
+        self.assertTrue(
+            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
+        )
+
+    #     print bCFs
+    #     bEventType
+    #     bFileType
+    #     CoreFunctions
+    #     bIOPS
+    #     bJobMessageType
+    #     bLevels
+    #     bRCs
+    #     bVariable
+
+    # def test_bJobMessageType22(self):
+    #     # bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
+    #     self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
+    # )
+
+    # def test_SetValue22(self):
+    #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
+
+    # def test_DebugMessage22(self):
+    #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
+
+    def test_RestoreObject22(self):
+        test_RestoreObject = bareosfd.RestoreObject()
+        self.assertEqual(
+            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
+            str(test_RestoreObject),
+        )
+        r2 = bareosfd.RestoreObject()
+        r2.object_name = "this is a very long object name"
+        r2.object = "123456780"
+        # r2.plugin_name="this is a plugin name"
+        r2.object_type = 3
+        r2.object_len = 111111
+        r2.object_full_len = 11111111
+        r2.object_index = 1234
+        r2.object_compression = 1
+        r2.stream = 4
+        r2.jobid = 123123
+        self.assertEqual(
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            str(r2),
+        )
+
+    def test_StatPacket22(self):
+        timestamp_before = time.time()
+        test_StatPacket = bareosfd.StatPacket()
+        timestamp_after = time.time()
+
+        # check that initialization uses a current timestamp while tolerating
+        # scheduler jitter and coarse timer granularity on CI machines.
+        for ts_value in (
+            test_StatPacket.st_atime,
+            test_StatPacket.st_mtime,
+            test_StatPacket.st_ctime,
+        ):
+            # python time.time() uses CLOCK_REALTIME, while our code
+            # uses time(NULL).  These can differ by a few milliseconds,
+            # which can cause large differences (>1sec) because of rounding.
+            # E.g. we can have
+            #   timestamp_before = 1785830999.000088, and
+            #   ts_value = 1785830998
+            # Which are further apart than 1 second, even tough
+            # time(NULL) probably just lagged behind CLOCK_REALTIME by ~90us.
+
+            self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
+            self.assertLessEqual(ts_value, timestamp_after + 2.0)
+
+        # set fixed values for comparison
+        test_StatPacket.st_atime = 999
+        test_StatPacket.st_mtime = 1000
+        test_StatPacket.st_ctime = 1001
+        sp2 = bareosfd.StatPacket(
+            dev=0,
+            ino=0,
+            mode=0o0700,
+            nlink=0,
+            uid=0,
+            gid=0,
+            rdev=0,
+            size=-1,
+            atime=1,
+            mtime=1,
+            ctime=1,
+            blksize=4096,
+            blocks=1,
+        )
+
+    def test_SavePacket22(self):
+        test_SavePacket = bareosfd.SavePacket(fname="testfilename")
+        self.assertEqual(
+            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
+            str(test_SavePacket),
+        )
+
+    def test_RestorePacket22(self):
+        test_RestorePacket = bareosfd.RestorePacket()
+        self.assertEqual(
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            str(test_RestorePacket),
+        )
+
+    def test_IoPacket22(self):
+        test_IoPacket = bareosfd.IoPacket()
+        self.assertEqual(
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            str(test_IoPacket),
+        )
+
+    def test_AclPacket22(self):
+        test_AclPacket = bareosfd.AclPacket()
+        test_AclPacket.content = bytearray(b"Hello ACL")
+        self.assertEqual(
+            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+        )
+
+    def test_XattrPacket22(self):
+        test_XattrPacket = bareosfd.XattrPacket()
+        self.assertEqual(
+            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+        )
+
+    def test_ModuleDicts2(self):
+        print("weird!", file=sys.stderr)
+        # help (bareosfd)
+        print(bareosfd.bCFs)
+        print(bareosfd.CF_ERROR)
+
+    def test_AccurateOptionConstants2(self):
+        self.assertIn(b"bAccurateOptionMtime", bareosfd.bAccurateOption)
+        self.assertEqual(
+            bareosfd.bAccurateOption[b"bAccurateOptionMtime"],
+            bareosfd.bAccurateOptionMtime,
+        )
+        self.assertTrue(
+            bareosfd.bAccurateOptionMtime & bareosfd.bAccurateOptionCtime == 0
+        )
+
+    #     print bCFs
+    #     bEventType
+    #     bFileType
+    #     CoreFunctions
+    #     bIOPS
+    #     bJobMessageType
+    #     bLevels
+    #     bRCs
+    #     bVariable
+
+    # def test_bJobMessageType2(self):
+    #     # bareosfd.DebugMessage( bareosfd.bJobMessageType['M_INFO'], "This is a Job message")
+    #     self.assertEqual(str(bareosfd.bJobMessageType), """{'M_MOUNT': 10L, 'M_SECURITY': 14L, 'M_DEBUG': 2L, 'M_WARNING': 5L, 'M_SAVED': 7L, 'M_TERM': 12L, 'M_ABORT': 1L, 'M_INFO': 6L, 'M_ERROR': 4L, 'M_FATAL': 3L, 'M_NOTSAVED': 8L, 'M_RESTORED': 13L, 'M_ERROR_TERM': 11L, 'M_ALERT': 15L, 'M_VOLMGMT': 16L, 'M_SKIPPED': 9L}"""
+    # )
+
+    # def test_SetValue2(self):
+    #     self.assertRaises(RuntimeError, bareosfd.SetValue, 2)
+
+    # def test_DebugMessage2(self):
+    #     self.assertRaises(RuntimeError, bareosfd.DebugMessage, 100, "This is a debug message")
+
+    def test_RestoreObject2(self):
+        test_RestoreObject = bareosfd.RestoreObject()
+        self.assertEqual(
+            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
+            str(test_RestoreObject),
+        )
+        r2 = bareosfd.RestoreObject()
+        r2.object_name = "this is a very long object name"
+        r2.object = "123456780"
+        # r2.plugin_name="this is a plugin name"
+        r2.object_type = 3
+        r2.object_len = 111111
+        r2.object_full_len = 11111111
+        r2.object_index = 1234
+        r2.object_compression = 1
+        r2.stream = 4
+        r2.jobid = 123123
+        self.assertEqual(
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            str(r2),
+        )
+
+    def test_StatPacket2(self):
+        timestamp_before = time.time()
+        test_StatPacket = bareosfd.StatPacket()
+        timestamp_after = time.time()
+
+        # check that initialization uses a current timestamp while tolerating
+        # scheduler jitter and coarse timer granularity on CI machines.
+        for ts_value in (
+            test_StatPacket.st_atime,
+            test_StatPacket.st_mtime,
+            test_StatPacket.st_ctime,
+        ):
+            # python time.time() uses CLOCK_REALTIME, while our code
+            # uses time(NULL).  These can differ by a few milliseconds,
+            # which can cause large differences (>1sec) because of rounding.
+            # E.g. we can have
+            #   timestamp_before = 1785830999.000088, and
+            #   ts_value = 1785830998
+            # Which are further apart than 1 second, even tough
+            # time(NULL) probably just lagged behind CLOCK_REALTIME by ~90us.
+
+            self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
+            self.assertLessEqual(ts_value, timestamp_after + 2.0)
+
+        # set fixed values for comparison
+        test_StatPacket.st_atime = 999
+        test_StatPacket.st_mtime = 1000
+        test_StatPacket.st_ctime = 1001
+        sp2 = bareosfd.StatPacket(
+            dev=0,
+            ino=0,
+            mode=0o0700,
+            nlink=0,
+            uid=0,
+            gid=0,
+            rdev=0,
+            size=-1,
+            atime=1,
+            mtime=1,
+            ctime=1,
+            blksize=4096,
+            blocks=1,
+        )
+
+    def test_SavePacket2(self):
+        test_SavePacket = bareosfd.SavePacket(fname="testfilename")
+        self.assertEqual(
+            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
+            str(test_SavePacket),
+        )
+
+    def test_RestorePacket2(self):
+        test_RestorePacket = bareosfd.RestorePacket()
+        self.assertEqual(
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            str(test_RestorePacket),
+        )
+
+    def test_IoPacket2(self):
+        test_IoPacket = bareosfd.IoPacket()
+        self.assertEqual(
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            str(test_IoPacket),
+        )
+
+    def test_AclPacket2(self):
+        test_AclPacket = bareosfd.AclPacket()
+        test_AclPacket.content = bytearray(b"Hello ACL")
+        self.assertEqual(
+            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+        )
+
+    def test_XattrPacket2(self):
+        test_XattrPacket = bareosfd.XattrPacket()
+        self.assertEqual(
+            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+        )
+
     def test_ModuleDicts(self):
         print("weird!", file=sys.stderr)
         # help (bareosfd)
