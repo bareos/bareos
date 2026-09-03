@@ -261,7 +261,7 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->no_read = sp->no_read;
     pSavePkt->portable = sp->portable;
     pSavePkt->accurate_found = sp->accurate_found;
-    pSavePkt->cmd = sp->cmd;
+    pSavePkt->cmd = dup_str(sp->cmd);
     pSavePkt->save_time = sp->save_time;
     pSavePkt->delta_seq = sp->delta_seq;
     pSavePkt->object_name = NULL;
@@ -2183,14 +2183,24 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->object_index = 0;
   self->statp = NULL;
 
+  int no_read{}, portable{}, accurate_found{}, save_time{};
+  unsigned delta_seq{};
+
+  const char* cmd{};
+
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|OOiOpppsiiOOii", kwlist, &self->fname, &self->link,
-          &self->type, &self->flags, &self->no_read, &self->portable,
-          &self->accurate_found, &self->cmd, &self->save_time, &self->delta_seq,
-          &self->object_name, &self->object, &self->object_len,
-          &self->object_index)) {
+          args, kwds, "|OOiOpppsiIOOii", kwlist, &self->fname, &self->link,
+          &self->type, &self->flags, &no_read, &portable, &accurate_found, &cmd,
+          &save_time, &delta_seq, &self->object_name, &self->object,
+          &self->object_len, &self->object_index)) {
     return -1;
   }
+  self->no_read = no_read;
+  self->portable = portable;
+  self->accurate_found = accurate_found;
+  self->save_time = save_time;
+  self->cmd = dup_str(cmd);
+  self->delta_seq = delta_seq;
   return 0;
 }
 
@@ -2211,6 +2221,7 @@ static void PySavePacket_dealloc(PyObject* obj)
   Py_CLEAR(self->object_name);
   Py_CLEAR(self->object);
   Py_CLEAR(self->statp);
+  C_CLEAR(self->cmd);
   PyObject_Del(self);
 }
 
