@@ -1061,7 +1061,7 @@ static inline PyXattrPacket* NativeToPyXattrPacket(xattr_pkt* xp)
   PyXattrPacket* pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
 
   if (pXattrPacket) {
-    pXattrPacket->fname = xp->fname;
+    pXattrPacket->fname = dup_str(xp->fname);
 
     if (xp->name_length && xp->name) {
       pXattrPacket->name
@@ -2512,10 +2512,14 @@ static int PyXattrPacket_init(PyXattrPacket* self,
   self->name = NULL;
   self->value = NULL;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|soo", kwlist, &self->fname,
+  const char* fname{};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|soo", kwlist, &fname,
                                    &self->name, &self->value)) {
     return -1;
   }
+
+  self->fname = dup_str(fname);
 
   return 0;
 }
@@ -2527,6 +2531,7 @@ static void PyXattrPacket_dealloc(PyObject* obj)
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->value);
   Py_CLEAR(self->name);
+  C_CLEAR(self->fname);
   PyObject_Del(self);
 }
 
