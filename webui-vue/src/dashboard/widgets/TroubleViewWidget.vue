@@ -84,7 +84,7 @@ import { useAuthStore } from '../../stores/auth.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { createDirectorCommandClient } from '../../composables/directorAggregate.js'
 import { fetchAggregatedTroubleJobs } from '../../composables/jobsAggregate.js'
-import { buildJobDetailsQuery, classifyLogLine } from '../../utils/jobs.js'
+import { buildJobDetailsQuery, buildListTroubleLogCommand, classifyLogLine } from '../../utils/jobs.js'
 import { timeAgo } from '../../mock/index.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 
@@ -151,7 +151,20 @@ async function loadTroubleLines() {
     return
   }
 
-  const collected = []
+  // Filled in as each job's log resolves, indexed by position in `jobs` so
+  // the final result stays in the widget's jobid-descending order regardless
+  // of which job's request happens to complete first.
+  const buckets = new Array(jobs.length).fill(null)
+  const indexByJobId = new Map(jobs.map((job, index) => [String(job.id ?? job.jobid), index]))
+  const jobById = new Map(jobs.map(job => [String(job.id ?? job.jobid), job]))
+
+  // Group jobs by director so a single batched `list joblog jobids=...` call
+  // per director can replace one `list joblog jobid=` call per job.
+  const jobIdsByDirector = new Map()
+  for (const job of jobs) {
+    if (!jobIdsByDirector.has(job.director)) jobIdsByDirector.set(job.director, [])
+    jobIdsByDirector.get(job.director).push(job.id ?? job.jobid)
+  }
 
   // Fetch job logs using dedicated, short-lived director connections
   // (rather than the shared director store used for navigation), so this
@@ -169,18 +182,32 @@ async function loadTroubleLines() {
   }
 
   try {
-    for (const job of jobs) {
-      if (requestId !== latestRequestId || isUnmounted) return
+    // One batched request per director instead of one request per job: the
+    // director now fans the request out to every requested JobId itself in
+    // a single SQL query (`list joblog jobids=...`), rather than the widget
+    // issuing (and the director serializing) up to MAX_JOBS separate
+    // `list joblog jobid=` round-trips -- which previously took 15-20+
+    // seconds once the catalog grew large, since a single director
+    // connection processes console commands strictly serially regardless
+    // of how "concurrently" the client fires them.
+    await Promise.allSettled([...jobIdsByDirector.entries()].map(async ([director, jobIds]) => {
+      const command = buildListTroubleLogCommand(jobIds)
+      if (!command) return
       try {
-        const client = await getClient(job.director)
-        const res = await client.call(`list joblog jobid=${job.id ?? job.jobid}`)
+        const client = await getClient(director)
+        const res = await client.call(command)
         const rows = Array.isArray(res?.joblog) ? res.joblog : []
         for (const row of rows) {
+          const jobId = String(row.jobid ?? '')
+          const index = indexByJobId.get(jobId)
+          const job = jobById.get(jobId)
+          if (index === undefined || !job) continue
           const time = (row.time ?? '').trim()
           const logtext = (row.logtext ?? '').trimEnd()
           const type = classifyLogLine(`${time} ${logtext}`.trim())
           if (type === 'error' || type === 'warning') {
-            collected.push({
+            if (!buckets[index]) buckets[index] = []
+            buckets[index].push({
               time,
               logtext,
               type,
@@ -191,15 +218,16 @@ async function loadTroubleLines() {
           }
         }
       } catch {
-        // Skip jobs whose log could not be fetched (e.g. director offline).
+        // Skip the director's jobs whose logs could not be fetched (e.g.
+        // director offline); other directors' results are unaffected.
       }
-    }
+    }))
   } finally {
     for (const clientPromise of clientsByDirector.values()) {
       clientPromise.then(client => client.disconnect()).catch(() => {})
     }
     if (requestId === latestRequestId && !isUnmounted) {
-      lines.value = collected
+      lines.value = buckets.flatMap(bucket => bucket ?? [])
       loading.value = false
     }
   }

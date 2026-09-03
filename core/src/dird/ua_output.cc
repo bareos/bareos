@@ -44,11 +44,13 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
 #include "dird/jcr_util.h"
 
 #include <array>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace directordaemon {
 
@@ -524,6 +526,7 @@ bool show_cmd(UaContext* ua, const char*)
  *  list jobmedia ujobid=uname
  *  list joblog jobid=<nn>
  *  list joblog job=name
+ *  list joblog jobids=<nn,nn,...> - joblog rows for several jobs in one query
  *  list log [ limit=<number> [ offset=<number> ] ]
  *  list basefiles jobid=nnn    - list files saved for job nn
  *  list basefiles ujobid=uname
@@ -604,6 +607,73 @@ static int GetJobidFromCmdline(UaContext* ua)
   }
 
   return jr.JobId;
+}
+
+// Parses "jobids=<comma-list>" (used by the batch "list joblog jobids="
+// command) into ACL-filtered, existing JobIds. Unlike GetJobidFromCmdline(),
+// a single invalid, non-existent, or ACL-denied entry does not reject the
+// whole command -- it is silently skipped, matching how a caller (e.g. the
+// webui) would have simply received an empty joblog array for that one
+// jobid had it issued 200 individual "list joblog jobid=" commands instead.
+// Each candidate JobId still goes through the exact same per-job Job_ACL /
+// Client_ACL checks GetJobidFromCmdline() performs for the single-job
+// command, so a restricted console user cannot use jobids= to read logs for
+// jobs outside their allowed ACLs.
+// @return true if "jobids=" was present on the command line at all (whether
+// or not any jobid in it ultimately passed validation/ACL checks).
+static bool GetAclFilteredJobidsFromCmdline(UaContext* ua,
+                                            std::vector<JobId_t>* jobids)
+{
+  const char* jobids_arg = GetArgValue(ua, NT_("jobids"));
+  if (!jobids_arg) { return false; }
+
+  for (const std::string& token : split_string(jobids_arg, ',')) {
+    int64_t candidate = str_to_int64(token.c_str());
+    if (candidate <= 0) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Ignoring invalid jobid "
+            "'%s'.\n",
+            token.c_str());
+      continue;
+    }
+
+    JobDbRecord jr{};
+    jr.JobId = static_cast<JobId_t>(candidate);
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Failed to get job record for "
+            "jobid %" PRIu32 ".\n",
+            jr.JobId);
+      continue;
+    }
+
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Job %s\n",
+            jr.Name);
+      continue;
+    }
+
+    if (jr.ClientId) {
+      ClientDbRecord cr{};
+      cr.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+        Dmsg1(200,
+              "GetAclFilteredJobidsFromCmdline: Failed to get client record "
+              "for ClientId %" PRIdbid "\n",
+              jr.ClientId);
+        continue;
+      }
+      if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
+        Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Client %s\n",
+              cr.Name);
+        continue;
+      }
+    }
+
+    jobids->push_back(jr.JobId);
+  }
+
+  return true;
 }
 
 /**
@@ -1106,6 +1176,18 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
+    if (GetArgValue(ua, NT_("jobids"))) {
+      // Batch variant: one query for several JobIds instead of one
+      // "list joblog jobid=" round-trip per job. ACL filtering happens
+      // per-JobId inside GetAclFilteredJobidsFromCmdline(); an unauthorized
+      // or nonexistent jobid is simply omitted, not an error, since the
+      // caller already does not know in advance which of its requested
+      // jobids will be visible to it.
+      std::vector<JobId_t> jobids;
+      GetAclFilteredJobidsFromCmdline(ua, &jobids);
+      ua->db->ListJoblogRecordsForJobs(ua->jcr, jobids, ua->send.get(), llist);
+      return true;
+    }
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
                                 optionslist.count, ua->send.get(), llist);

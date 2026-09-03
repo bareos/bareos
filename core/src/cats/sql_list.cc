@@ -449,6 +449,63 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
+namespace {
+// Defense-in-depth cap on the number of JobIds accepted by
+// ListJoblogRecordsForJobs(), independent of any limit the caller may
+// already enforce (e.g. the webui Trouble View's own MAX_JOBS=200): a
+// pathologically large jobids= list would otherwise build an equally large
+// SQL IN (...) clause. Log(JobId) is indexed, so cost scales with the
+// number of matching rows regardless, but this keeps the query text itself
+// bounded.
+constexpr size_t kMaxJoblogBatchJobIds = 1000;
+}  // namespace
+
+void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
+                                        const std::vector<JobId_t>& jobids,
+                                        OutputFormatter* sendit,
+                                        e_list_type type)
+{
+  if (jobids.empty()) { return; }
+
+  // JobIds are validated, already-ACL-checked unsigned integers (the caller
+  // is responsible for both), so they can be joined directly into the SQL
+  // IN (...) list with no quoting/escaping -- there is no string
+  // interpolation of caller-supplied text anywhere in this query.
+  std::string jobid_list;
+  size_t included = 0;
+  for (JobId_t jobid : jobids) {
+    if (included >= kMaxJoblogBatchJobIds) { break; }
+    if (jobid == 0) { continue; }
+    if (!jobid_list.empty()) { jobid_list += ','; }
+    jobid_list += std::to_string(jobid);
+    ++included;
+  }
+  if (jobid_list.empty()) { return; }
+
+  DbLocker _{this};
+  Mmsg(cmd,
+       "SELECT Log.JobId AS JobId, Time, LogText "
+       "FROM Log "
+       "WHERE Log.JobId IN (%s) "
+       "ORDER BY Log.JobId, Log.LogId ",
+       jobid_list.c_str());
+
+  if (!QueryDb(jcr, cmd)) { return; }
+
+  if (type != VERT_LIST) {
+    /* See the comment in ListJoblogRecords(): logtext already contains
+     * embedded newlines etc, so anything other than a vertical list should
+     * be dumped as raw, unformatted rows. */
+    type = RAW_LIST;
+  }
+
+  sendit->ArrayStart("joblog");
+  ListResult(jcr, sendit, type);
+  sendit->ArrayEnd("joblog");
+
+  SqlFreeResult();
+}
+
 /**
  * list job statistics records for certain jobid
  *
