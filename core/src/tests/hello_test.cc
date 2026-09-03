@@ -112,22 +112,16 @@ TEST(ParseHello, BareNameConsoleIsOldConsole)
 {
   // pre-13.2 console: only sends its (bashed) name, nothing else
   auto result = parse_hello(Type::Director, "Hello *UserAgent* calling");
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->from, Type::Console);
-  EXPECT_EQ(result->type, Type::Console);
-  EXPECT_TRUE(result->old_console);
+  EXPECT_EQ(result, std::nullopt);
 }
 
 TEST(ParseHello, ConsoleWithVersionStringNoSemver)
 {
   // console that sends its version string, but not the
   // Version="major.minor.patch" suffix (pre-18.2 style)
-  auto result = parse_hello(Type::Director,
-                            "Hello *UserAgent* calling version 17.2.4");
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->from, Type::Console);
-  EXPECT_EQ(result->type, Type::Console);
-  EXPECT_TRUE(result->old_console);
+  auto result
+      = parse_hello(Type::Director, "Hello *UserAgent* calling version 17.2.4");
+  EXPECT_EQ(result, std::nullopt);
 }
 
 TEST(ParseHello, ConsoleWithOldSemverIsOldConsole)
@@ -137,10 +131,7 @@ TEST(ParseHello, ConsoleWithOldSemverIsOldConsole)
   auto result = parse_hello(
       Type::Director,
       "Hello *UserAgent* calling version 17.2.4 Version=\"17.2.4\"");
-  ASSERT_TRUE(result);
-  EXPECT_EQ(result->from, Type::Console);
-  EXPECT_EQ(result->type, Type::Console);
-  EXPECT_TRUE(result->old_console);
+  EXPECT_EQ(result, std::nullopt);
 }
 
 TEST(ParseHello, ConsoleWithNewSemverIsNotOldConsole)
@@ -153,7 +144,6 @@ TEST(ParseHello, ConsoleWithNewSemverIsNotOldConsole)
   ASSERT_TRUE(result);
   EXPECT_EQ(result->from, Type::Console);
   EXPECT_EQ(result->type, Type::Console);
-  EXPECT_FALSE(result->old_console);
 }
 
 TEST(ParseHello, UnrecognizedHelloIsRejected)

@@ -95,7 +95,6 @@ struct ParsedHello {
   std::string name;
 
   int fd_protocol_version;  // only for fd -> dir connections
-  bool old_console;         // only for console -> dir connections
 
   uint32_t bareos_version;  // = 0 means < 26.0.0
 };

@@ -136,16 +136,6 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
         // if pam authentication is used, then the client is additionally
         // authenticated as a user, and we use that users acls.
 
-        if (parsed_hello->old_console) {
-          // old consoles do not support pam
-          Emsg4(M_ERROR, 0,
-                T_("Unable to pam authenticate old console \"%s\" at "
-                   "%s:%s:%d.\n"),
-                auth.console->res->resource_name_, bs->who(), bs->host(),
-                bs->port());
-          return error_and_close(bs);
-        }
-
         if (!SendResponseMessage(bs, kMessageIdPamRequired, "")) {
           Emsg4(M_ERROR, 0,
                 T_("Unable to pam authenticate console \"%s\" at %s:%s:%d.\n"),

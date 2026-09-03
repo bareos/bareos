@@ -1033,11 +1033,8 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
   }
 
   if (received_clear_text_handshake) {
-    if (parsed_hello->type == global_resource::Type::Console
-        && parsed_hello->old_console && !tls_resource->tls_require_) {
-      Dmsg0(200, "Accepting cleartext handshake for old console");
-    } else if (parsed_hello->type == global_resource::Type::Client
-               && !tls_resource->tls_require_) {
+    if (parsed_hello->type == global_resource::Type::Client
+        && !tls_resource->tls_require_) {
       Dmsg0(200, "Accepting cleartext handshake for client\n");
     } else if (tls_resource->tls_enable_) {
       Emsg1(M_ERROR, 0, T_("Received a cleartext hello from %s.\n"),

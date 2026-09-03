@@ -114,7 +114,6 @@ std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
   char name[128] = {};
   int fd_protocol_version = {};
   Type type{}, from = Type::Unknown;
-  bool old_console{};
   char version[128] = {};
 
   switch (my_type) {
@@ -158,16 +157,13 @@ std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
                      == 5
                  || sscanf(cpy.c_str(), "Hello %127s calling version %127s",
                            name, version)
-                        == 2
-                 || sscanf(cpy.c_str(), "Hello %127s calling", name) == 1) {
+                        == 2) {
         from = Type::Console;
         type = Type::Console;
 
-        if (version[0] != 0) {
-          auto parsed_version = parse_version(version);
-          old_console = parsed_version < BareosVersionNumber::kRelease_18_2;
-        } else {
-          old_console = true;
+        auto parsed_version = parse_version(version);
+        if (parsed_version < BareosVersionNumber::kRelease_18_2) {
+          return std::nullopt;
         }
       }
     } break;
@@ -211,7 +207,6 @@ std::optional<ParsedHello> parse_hello(global_resource::Type my_type,
       .type = type,
       .name = name,
       .fd_protocol_version = fd_protocol_version,
-      .old_console = old_console,
       .bareos_version = VERSION_HEX(major, minor, patch),
   };
 }
