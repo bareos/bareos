@@ -2012,6 +2012,7 @@ static int PyRestoreObject_init(PyRestoreObject* self,
           &self->object_compression, &self->stream, &self->JobId)) {
     return -1;
   }
+  Py_XINCREF(self->object);
   self->plugin_name = dup_str(plugin_name);
 
   return 0;
@@ -2205,6 +2206,12 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
           &self->object_len, &self->object_index)) {
     return -1;
   }
+
+  Py_XINCREF(self->fname);
+  Py_XINCREF(self->link);
+  Py_XINCREF(self->object_name);
+  Py_XINCREF(self->object);
+
   self->no_read = no_read;
   self->portable = portable;
   self->accurate_found = accurate_found;
@@ -2319,6 +2326,9 @@ static int PyRestorePacket_init(PyRestorePacket* self,
           &self->create_status, &self->filedes, &orig_fname, &orig_lname)) {
     return -1;
   }
+
+  Py_XINCREF(self->statp);
+
   self->attrEx = dup_str(attrEx);
   self->ofname = dup_str(ofname);
   self->olname = dup_str(olname);
@@ -2427,6 +2437,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = parsed_win32 != 0;
 #endif
 
+  Py_XINCREF(self->buf);
+
   self->fname = dup_str(fname);
 
   return 0;
@@ -2471,6 +2483,8 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
                                    &self->content)) {
     return -1;
   }
+
+  Py_XINCREF(self->content);
   self->fname = dup_str(fname);
 
   return 0;
@@ -2519,6 +2533,8 @@ static int PyXattrPacket_init(PyXattrPacket* self,
     return -1;
   }
 
+  Py_XINCREF(self->name);
+  Py_XINCREF(self->value);
   self->fname = dup_str(fname);
 
   return 0;
