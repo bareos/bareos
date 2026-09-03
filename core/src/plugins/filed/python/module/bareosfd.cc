@@ -2302,7 +2302,7 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   self->original_link_name = nullptr;
 
   const char *attrEx{}, *ofname{}, *olname{}, *where{}, *RegexWhere{},
-      *orig_fname, *orig_lname;
+      *orig_fname{}, *orig_lname{};
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds,
