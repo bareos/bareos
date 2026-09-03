@@ -33,6 +33,9 @@ import {
 } from '../utils/directorCommandSocket.js'
 import { useAuthStore } from '../stores/auth.js'
 import { SESSION_AUTH_PASSWORD } from '../utils/sessionApi.js'
+import { buildListJobsCountCommand } from '../utils/jobs.js'
+
+const JOBS_PAST_24H_STATUSES = ['R', 'C', 'T', 'W', 'f']
 
 export async function createDirectorCommandClient(credentials, options = {}) {
   const auth = useAuthStore()
@@ -58,20 +61,30 @@ export async function createDirectorCommandClient(credentials, options = {}) {
   }
 }
 
-function decorateJobs(entries, director) {
-  return directorCollection(entries).map((entry) => {
-    const job = normaliseJob(entry)
-    return {
-      ...job,
-      director,
-      scopeKey: `${director}:${job.id}`,
-    }
-  })
-}
-
 function numberValue(value) {
   const number = Number(value ?? 0)
   return Number.isFinite(number) ? number : 0
+}
+
+function jobCountFromResult(result) {
+  return result.status === 'fulfilled'
+    ? numberValue(directorCollection(result.value?.jobs)[0]?.count)
+    : 0
+}
+
+function jobsPast24hStatusCountsFromResults(results) {
+  return Object.fromEntries(
+    JOBS_PAST_24H_STATUSES.map((status, index) => [
+      status,
+      jobCountFromResult(results[index]),
+    ])
+  )
+}
+
+function emptyJobsPast24hStatusCounts() {
+  return Object.fromEntries(
+    JOBS_PAST_24H_STATUSES.map(status => [status, 0])
+  )
 }
 
 function booleanValue(value, fallback = false) {
@@ -158,32 +171,6 @@ function runtimeJobsById(runtimeJobs) {
       .filter(job => job.id != null)
       .map(job => [job.id, job])
   )
-}
-
-function mergeRunningJobs(catalogJobs, runtimeJobs) {
-  const runtimeById = runtimeJobsById(runtimeJobs)
-  const mergedCatalogJobs = catalogJobs.map(job => withRuntimeJobState(job, runtimeById.get(job.id)))
-  const knownJobIds = new Set(catalogJobs.map(job => job.id))
-  const runtimeOnlyJobs = runtimeJobs
-    .filter(job => !knownJobIds.has(job.id))
-    .map(job => withRuntimeJobState({
-      id: job.id ?? 0,
-      name: job.name ?? '',
-      client: job.client ?? '',
-      type: job.type ?? '',
-      level: job.level ?? '',
-      status: 'R',
-      starttime: job.starttime ?? '',
-      endtime: '',
-      duration: job.duration ?? '',
-      files: job.files ?? 0,
-      bytes: job.bytes ?? 0,
-      errors: job.errors ?? 0,
-      director: job.director,
-      scopeKey: job.scopeKey,
-    }, job))
-
-  return sortJobsByStartTime([...mergedCatalogJobs, ...runtimeOnlyJobs])
 }
 
 function overlayRuntimeStatus(jobs, runtimeJobs) {
@@ -292,9 +279,14 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
   try {
     const includePools = options.includePools !== false
 
+    const jobsPast24hCountCalls = JOBS_PAST_24H_STATUSES.map(status => (
+      client.call(buildListJobsCountCommand({
+        days: 1,
+        statusFilter: status,
+      }))
+    ))
     const jobCalls = [
-      client.call('llist jobs days=1'),
-      client.call('list jobs jobstatus=R'),
+      ...jobsPast24hCountCalls,
       client.call('list jobtotals'),
       client.call('list clients'),
       client.call('list storages'),
@@ -308,26 +300,21 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       ? [client.call('llist pools'), client.call('llist volumes')]
       : []
 
+    const results = await Promise.allSettled([...jobCalls, ...poolCalls])
+    const past24hCountResults = results.slice(0, JOBS_PAST_24H_STATUSES.length)
     const [
-      past24hResult,
-      runningResult,
       totalsResult,
       clientsResult,
       storagesResult,
       directorStatusResult,
       databaseStatusResult,
       ...poolResults
-    ] = await Promise.allSettled([...jobCalls, ...poolCalls])
+    ] = results.slice(JOBS_PAST_24H_STATUSES.length)
 
-    const runtimeRunningJobs = directorStatusResult.status === 'fulfilled'
-      ? decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director)
+    const runningJobs = directorStatusResult.status === 'fulfilled'
+      ? sortJobsByStartTime(decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director))
       : []
-    const runningJobs = runningResult.status === 'fulfilled'
-      ? decorateJobs(runningResult.value?.jobs, credentials.director)
-      : []
-    const jobsPast24h = past24hResult.status === 'fulfilled'
-      ? decorateJobs(past24hResult.value?.jobs, credentials.director)
-      : []
+    const jobsPast24hStatusCounts = jobsPast24hStatusCountsFromResults(past24hCountResults)
 
     const poolsResult  = includePools ? poolResults[0] : null
     const volumesResult = includePools ? poolResults[1] : null
@@ -362,8 +349,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     return {
       director: credentials.director,
       transport: client.transport,
-      jobsPast24h,
-      runningJobs: mergeRunningJobs(runningJobs, runtimeRunningJobs),
+      jobsPast24hStatusCounts,
+      runningJobs,
       pools,
       databaseStatus: databaseStatusResult.status === 'fulfilled'
         ? normalizeDatabaseStatus(databaseStatusResult.value, credentials.director)
@@ -397,10 +384,13 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
 
 export function aggregateDirectorDashboardSnapshots(snapshots) {
   const aggregate = snapshots.reduce((combined, snapshot) => ({
-    jobsPast24h: sortJobsByStartTime([
-      ...combined.jobsPast24h,
-      ...(snapshot.jobsPast24h ?? []),
-    ]),
+    jobsPast24hStatusCounts: Object.fromEntries(
+      JOBS_PAST_24H_STATUSES.map(status => [
+        status,
+        numberValue(combined.jobsPast24hStatusCounts?.[status])
+          + numberValue(snapshot.jobsPast24hStatusCounts?.[status]),
+      ])
+    ),
     runningJobs: sortJobsByStartTime([
       ...combined.runningJobs,
       ...(snapshot.runningJobs ?? []),
@@ -423,7 +413,7 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       bytes: combined.jobTotals.bytes + numberValue(snapshot.jobTotals?.bytes),
     },
   }), {
-    jobsPast24h: [],
+    jobsPast24hStatusCounts: emptyJobsPast24hStatusCounts(),
     runningJobs: [],
     pools: [],
     databaseStatuses: [],

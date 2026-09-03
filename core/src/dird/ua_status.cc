@@ -1658,6 +1658,11 @@ static void ListRunningJobs(UaContext* ua)
       ua->send->ObjectStart();
       ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%llu\n");
       ua->send->ObjectKeyValue("name", jcr->Job, "%s\n");
+      ua->send->ObjectKeyValue("client",
+                               jcr->dir_impl->res.client
+                                   ? jcr->dir_impl->res.client->resource_name_
+                                   : "",
+                               "%s\n");
       ua->send->ObjectKeyValue("level", level, "%s\n");
       ua->send->ObjectKeyValue("type", job_type_to_str(jcr->getJobType()),
                                "%s\n");

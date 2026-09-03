@@ -20,8 +20,22 @@
 -->
 <template>
   <div style="height:100%; overflow:auto">
-    <q-list separator>
-      <q-item v-for="job in runningJobs" :key="job.scopeKey" class="q-py-sm">
+    <q-list v-if="!runningJobs.length" separator>
+      <q-item>
+        <q-item-section class="text-grey text-caption text-center q-py-md">
+          {{ t('No running jobs') }}
+        </q-item-section>
+      </q-item>
+    </q-list>
+    <q-virtual-scroll
+      v-else
+      style="height:100%"
+      :items="runningJobs"
+      virtual-scroll-item-size="96"
+      separator
+      v-slot="{ item: job }"
+    >
+      <q-item :key="job.scopeKey" class="q-py-sm">
         <q-item-section>
           <q-item-label>
             <a href="#" class="text-primary text-weight-medium" @click.prevent="openJobDetails(job)">
@@ -65,12 +79,7 @@
           />
         </q-item-section>
       </q-item>
-      <q-item v-if="!runningJobs.length">
-        <q-item-section class="text-grey text-caption text-center q-py-md">
-          {{ t('No running jobs') }}
-        </q-item-section>
-      </q-item>
-    </q-list>
+    </q-virtual-scroll>
   </div>
 </template>
 
