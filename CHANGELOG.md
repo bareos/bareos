@@ -14,6 +14,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2788]
 
+### Security
+- fix stack-overflow in .bvfs_versions command [PR #2788] [GHSA-6mg8-w259-9wc9](https://github.com/bareos/bareos/security/advisories/GHSA-6mg8-w259-9wc9)
+
 ## [23.1.7] - 2026-04-01
 
 ### Changed
