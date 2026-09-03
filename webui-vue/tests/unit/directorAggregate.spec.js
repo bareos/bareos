@@ -93,7 +93,7 @@ describe('director aggregate dashboard helpers', () => {
       }),
     })
     await vi.waitFor(() => {
-      expect(socket.sent).toHaveLength(10)
+      expect(socket.sent).toHaveLength(13)
     })
 
     const commandIds = new Map(
@@ -103,43 +103,22 @@ describe('director aggregate dashboard helpers', () => {
       })
     )
 
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandIds.get('llist jobs days=1'),
-        data: {
-          jobs: [{
-            jobid: '7',
-            name: 'BackupClient1',
-            clientname: 'bareos-fd',
-            jobstatus: 'T',
-            starttime: '2026-03-23 08:00:01',
-            realendtime: '2026-03-23 08:12:44',
-            duration: '0:12:43',
-            jobfiles: '42',
-            jobbytes: '2048',
-            joberrors: '0',
-          }],
-        },
-      }),
-    })
-    socket.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandIds.get('list jobs jobstatus=R'),
-        data: {
-          jobs: [{
-            jobid: '8',
-            name: 'BackupClient2',
-            clientname: 'db-fd',
-            jobstatus: 'R',
-            starttime: '2026-03-23 09:00:00',
-            jobfiles: '10',
-            jobbytes: '1024',
-          }],
-        },
-      }),
-    })
+    expect(commandIds.has('llist jobs days=1')).toBe(false)
+    for (const [status, count] of [
+      ['R', '1'],
+      ['C', '2'],
+      ['T', '7'],
+      ['W', '1'],
+      ['f', '1'],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response',
+          id: commandIds.get(`list jobs count days=1 jobstatus=${status}`),
+          data: { jobs: [{ count }] },
+        }),
+      })
+    }
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
@@ -179,6 +158,7 @@ describe('director aggregate dashboard helpers', () => {
           running: [{
             jobid: '8',
             name: 'BackupClient2',
+            client: 'db-fd',
             start_time: '2026-03-23 09:00:00',
             files: '11',
             bytes: '2048',
@@ -231,17 +211,18 @@ describe('director aggregate dashboard helpers', () => {
 
     await expect(snapshotPromise).resolves.toMatchObject({
       director: 'prod-dir',
-      jobsPast24h: [
-        expect.objectContaining({
-          director: 'prod-dir',
-          id: 7,
-          scopeKey: 'prod-dir:7',
-        }),
-      ],
+      jobsPast24hStatusCounts: {
+        R: 1,
+        C: 2,
+        T: 7,
+        W: 1,
+        f: 1,
+      },
       runningJobs: [
         expect.objectContaining({
           director: 'prod-dir',
           id: 8,
+          client: 'db-fd',
           files: 11,
           bytes: 2048,
           runtimeStatus: 'Is waiting for a mount request',
@@ -272,7 +253,7 @@ describe('director aggregate dashboard helpers', () => {
     const aggregate = aggregateDirectorDashboardSnapshots([
       {
         director: 'prod-a',
-        jobsPast24h: [{ scopeKey: 'prod-a:1', director: 'prod-a', id: 1, status: 'T', starttime: '2026-03-23 08:00:00' }],
+        jobsPast24hStatusCounts: { R: 1, C: 2, T: 3, W: 4, f: 5 },
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
         databaseStatus: {
           director: 'prod-a',
@@ -286,7 +267,7 @@ describe('director aggregate dashboard helpers', () => {
       },
       {
         director: 'prod-b',
-        jobsPast24h: [{ scopeKey: 'prod-b:4', director: 'prod-b', id: 4, status: 'f', starttime: '2026-03-23 11:00:00' }],
+        jobsPast24hStatusCounts: { R: 10, C: 20, T: 30, W: 40, f: 50 },
         runningJobs: [],
         databaseStatus: {
           director: 'prod-b',
@@ -300,10 +281,13 @@ describe('director aggregate dashboard helpers', () => {
       },
     ])
 
-    expect(aggregate.jobsPast24h.map(job => job.scopeKey)).toEqual([
-      'prod-b:4',
-      'prod-a:1',
-    ])
+    expect(aggregate.jobsPast24hStatusCounts).toEqual({
+      R: 11,
+      C: 22,
+      T: 33,
+      W: 44,
+      f: 55,
+    })
     expect(aggregate.clientCount).toBe(5)
     expect(aggregate.storageCount).toBe(3)
     expect(aggregate.jobTotals).toEqual({
