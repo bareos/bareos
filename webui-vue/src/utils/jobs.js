@@ -360,6 +360,19 @@ export function buildListJobCommand(jobId) {
   return `llist jobid=${jobId}`
 }
 
+// Batch variant of `list joblog jobid=<id>`: fetches joblog rows for several
+// jobs in a single director round-trip instead of one command per job. Only
+// positive integer JobIds are included; invalid/duplicate values are
+// silently dropped rather than sent to the director.
+export function buildListTroubleLogCommand(jobIds) {
+  const ids = [...new Set(
+    (jobIds ?? [])
+      .map(id => Number(id))
+      .filter(id => Number.isSafeInteger(id) && id > 0),
+  )]
+  return ids.length ? `list joblog jobids=${ids.join(',')}` : null
+}
+
 export function normaliseJobsSearchTerm(value) {
   return typeof value === 'string' ? value.trim() : ''
 }

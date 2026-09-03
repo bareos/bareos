@@ -859,6 +859,18 @@ class BareosDb : public BareosDbQueryEnum {
                          bool count,
                          OutputFormatter* sendit,
                          e_list_type type);
+  // Batch variant of ListJoblogRecords(): returns joblog rows for several
+  // JobIds in a single query, each row tagged with its JobId, so a caller
+  // that already knows which jobs it cares about (e.g. the webui Trouble
+  // View's bounded jobstatus/days prefilter) does not have to issue one
+  // "list joblog jobid=" round-trip per job. Callers are responsible for any
+  // ACL filtering of jobids before calling this -- unlike ListJoblogRecords()
+  // (which relies on GetJobidFromCmdline() having already checked Job_ACL for
+  // the single requested job), this method performs no ACL checks itself.
+  void ListJoblogRecordsForJobs(JobControlRecord* jcr,
+                                const std::vector<JobId_t>& jobids,
+                                OutputFormatter* sendit,
+                                e_list_type type);
   void ListLogRecords(JobControlRecord* jcr,
                       const char* clientname,
                       const char* range,
