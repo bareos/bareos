@@ -24,6 +24,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedJobsPage,
   fetchAggregatedRecentJobsPage,
+  fetchAggregatedTroubleJobs,
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../../src/composables/jobsAggregate.js'
@@ -504,6 +505,63 @@ describe('jobs aggregate helpers', () => {
     expect(result.jobs).toHaveLength(10)
     expect(result.jobs[0]).toMatchObject({ id: 10 })
     expect(result.jobs.at(-1)).toMatchObject({ id: 1 })
+  })
+
+  it('loads trouble jobs with a bounded server-side prefilter', async () => {
+    const loading = fetchAggregatedTroubleJobs(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a'],
+      { limit: 2 }
+    )
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(3)
+    })
+
+    const commands = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+    expect(commands.has('llist jobs reverse limit=2 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A')).toBe(true)
+    expect(commands.has('list jobs count days=1 jobstatus=W,E,f,A')).toBe(true)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('llist jobs reverse limit=2 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A'),
+        data: {
+          jobs: [
+            { jobid: '20', name: 'warning-job', jobstatus: 'W' },
+            { jobid: '19', name: 'error-job', jobstatus: 'E' },
+          ],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('list jobs count days=1 jobstatus=W,E,f,A'),
+        data: { jobs: [{ count: '5' }] },
+      }),
+    })
+
+    await expect(loading).resolves.toEqual({
+      jobs: [
+        expect.objectContaining({ scopeKey: 'prod-a:20', status: 'W' }),
+        expect.objectContaining({ scopeKey: 'prod-a:19', status: 'E' }),
+      ],
+      totalJobs: 5,
+      truncated: true,
+      directorErrors: [],
+    })
   })
 
 })
