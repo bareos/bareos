@@ -40,10 +40,12 @@ import StatNumber from '../../components/StatNumber.vue'
 
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
-const past24hJobs = computed(() => ctx.aggregate.value.jobsPast24h)
+const past24hStatusCounts = computed(() => (
+  ctx.aggregate.value.jobsPast24hStatusCounts ?? {}
+))
 
 const summaryStats = computed(() => {
-  const countByStatus = (code) => past24hJobs.value.filter(j => j.status === code).length
+  const countByStatus = (code) => Number(past24hStatusCounts.value[code] ?? 0)
   return [
     { label: t('Running'),    status: 'R', color: 'info',     count: countByStatus('R') },
     { label: t('Waiting'),    status: 'C', color: 'grey',     count: countByStatus('C') },
