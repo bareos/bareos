@@ -105,91 +105,91 @@ class TestBareosFd(unittest.TestCase):
             str(r2),
         )
 
-    # def test_StatPacket(self):
-    #     timestamp_before = time.time()
-    #     test_StatPacket = bareosfd.StatPacket()
-    #     timestamp_after = time.time()
+    def test_StatPacket(self):
+        timestamp_before = time.time()
+        test_StatPacket = bareosfd.StatPacket()
+        timestamp_after = time.time()
 
-    #     # check that initialization uses a current timestamp while tolerating
-    #     # scheduler jitter and coarse timer granularity on CI machines.
-    #     for ts_value in (
-    #         test_StatPacket.st_atime,
-    #         test_StatPacket.st_mtime,
-    #         test_StatPacket.st_ctime,
-    #     ):
-    #         # python time.time() uses CLOCK_REALTIME, while our code
-    #         # uses time(NULL).  These can differ by a few milliseconds,
-    #         # which can cause large differences (>1sec) because of rounding.
-    #         # E.g. we can have
-    #         #   timestamp_before = 1785830999.000088, and
-    #         #   ts_value = 1785830998
-    #         # Which are further apart than 1 second, even tough
-    #         # time(NULL) probably just lagged behind CLOCK_REALTIME by ~90us.
+        # check that initialization uses a current timestamp while tolerating
+        # scheduler jitter and coarse timer granularity on CI machines.
+        for ts_value in (
+            test_StatPacket.st_atime,
+            test_StatPacket.st_mtime,
+            test_StatPacket.st_ctime,
+        ):
+            # python time.time() uses CLOCK_REALTIME, while our code
+            # uses time(NULL).  These can differ by a few milliseconds,
+            # which can cause large differences (>1sec) because of rounding.
+            # E.g. we can have
+            #   timestamp_before = 1785830999.000088, and
+            #   ts_value = 1785830998
+            # Which are further apart than 1 second, even tough
+            # time(NULL) probably just lagged behind CLOCK_REALTIME by ~90us.
 
-    #         self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
-    #         self.assertLessEqual(ts_value, timestamp_after + 2.0)
+            self.assertGreaterEqual(ts_value, timestamp_before - 2.0)
+            self.assertLessEqual(ts_value, timestamp_after + 2.0)
 
-    #     # set fixed values for comparison
-    #     test_StatPacket.st_atime = 999
-    #     test_StatPacket.st_mtime = 1000
-    #     test_StatPacket.st_ctime = 1001
-    #     self.assertEqual(
-    #         "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
-    #         str(test_StatPacket),
-    #     )
-    #     sp2 = bareosfd.StatPacket(
-    #         dev=0,
-    #         ino=0,
-    #         mode=0o0700,
-    #         nlink=0,
-    #         uid=0,
-    #         gid=0,
-    #         rdev=0,
-    #         size=-1,
-    #         atime=1,
-    #         mtime=1,
-    #         ctime=1,
-    #         blksize=4096,
-    #         blocks=1,
-    #     )
-    #     self.assertEqual(
-    #         "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)",
-    #         str(sp2),
-    #     )
+        # set fixed values for comparison
+        test_StatPacket.st_atime = 999
+        test_StatPacket.st_mtime = 1000
+        test_StatPacket.st_ctime = 1001
+        self.assertEqual(
+            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
+            str(test_StatPacket),
+        )
+        sp2 = bareosfd.StatPacket(
+            dev=0,
+            ino=0,
+            mode=0o0700,
+            nlink=0,
+            uid=0,
+            gid=0,
+            rdev=0,
+            size=-1,
+            atime=1,
+            mtime=1,
+            ctime=1,
+            blksize=4096,
+            blocks=1,
+        )
+        self.assertEqual(
+            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)",
+            str(sp2),
+        )
 
-    # def test_SavePacket(self):
-    #     test_SavePacket = bareosfd.SavePacket(fname="testfilename")
-    #     self.assertEqual(
-    #         'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
-    #         str(test_SavePacket),
-    #     )
+    def test_SavePacket(self):
+        test_SavePacket = bareosfd.SavePacket(fname="testfilename")
+        self.assertEqual(
+            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
+            str(test_SavePacket),
+        )
 
-    # def test_RestorePacket(self):
-    #     test_RestorePacket = bareosfd.RestorePacket()
-    #     self.assertEqual(
-    #         'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
-    #         str(test_RestorePacket),
-    #     )
+    def test_RestorePacket(self):
+        test_RestorePacket = bareosfd.RestorePacket()
+        self.assertEqual(
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            str(test_RestorePacket),
+        )
 
-    # def test_IoPacket(self):
-    #     test_IoPacket = bareosfd.IoPacket()
-    #     self.assertEqual(
-    #         'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
-    #         str(test_IoPacket),
-    #     )
+    def test_IoPacket(self):
+        test_IoPacket = bareosfd.IoPacket()
+        self.assertEqual(
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            str(test_IoPacket),
+        )
 
-    # def test_AclPacket(self):
-    #     test_AclPacket = bareosfd.AclPacket()
-    #     test_AclPacket.content = bytearray(b"Hello ACL")
-    #     self.assertEqual(
-    #         'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
-    #     )
+    def test_AclPacket(self):
+        test_AclPacket = bareosfd.AclPacket()
+        test_AclPacket.content = bytearray(b"Hello ACL")
+        self.assertEqual(
+            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+        )
 
-    # def test_XattrPacket(self):
-    #     test_XattrPacket = bareosfd.XattrPacket()
-    #     self.assertEqual(
-    #         'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
-    #     )
+    def test_XattrPacket(self):
+        test_XattrPacket = bareosfd.XattrPacket()
+        self.assertEqual(
+            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+        )
 
 
 if __name__ == "__main__":
