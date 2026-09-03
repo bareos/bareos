@@ -20,7 +20,7 @@
 -->
 <template>
   <div style="height:100%; overflow:auto">
-    <q-list v-if="!runningJobs.length" separator>
+    <q-list v-if="!activeJobs.length && !queuedJobs.length" separator>
       <q-item>
         <q-item-section class="text-grey text-caption text-center q-py-md">
           {{ t('No running jobs') }}
@@ -30,55 +30,84 @@
     <q-virtual-scroll
       v-else
       style="height:100%"
-      :items="runningJobs"
+      :items="displayRows"
       virtual-scroll-item-size="96"
       separator
-      v-slot="{ item: job }"
+      v-slot="{ item: row }"
     >
-      <q-item :key="job.scopeKey" class="q-py-sm">
+      <q-item
+        v-if="row.type === 'section'"
+        :key="row.key"
+        dense
+        class="bg-grey-2 text-caption text-weight-medium"
+      >
         <q-item-section>
-          <q-item-label>
-            <a href="#" class="text-primary text-weight-medium" @click.prevent="openJobDetails(job)">
-              {{ job.name }}
-            </a>
-            <DirectorBadge
-              v-if="showDirectorColumn"
-              :director="job.director"
-              size="sm"
-              class="q-ml-xs"
-            />
-            <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
-          </q-item-label>
-          <q-item-label caption>
-            {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }}
-            &middot; {{ formatBytes(job.bytes ?? 0) }}
-            &middot; {{ formatDuration(elapsedSecs(job)) }}
-          </q-item-label>
-          <q-item-label
-            v-if="jobStatus(job)"
-            caption
-            :class="isWaitingStatus(jobStatus(job)) ? 'text-orange-7' : 'text-grey-6'"
-          >
-            <q-icon
-              v-if="isWaitingStatus(jobStatus(job))"
-              name="hourglass_empty"
-              size="14px"
-              class="q-mr-xs"
-            />
-            {{ jobStatus(job) }}
-          </q-item-label>
-          <q-linear-progress indeterminate color="positive" class="q-mt-xs"
-            style="height:6px; border-radius:3px" />
+          <span v-if="row.label">{{ row.label }}</span>
         </q-item-section>
-        <q-item-section side>
+        <q-item-section v-if="row.showToggle" side>
           <q-btn
-            flat round dense
-            icon="cancel" color="negative" size="sm"
-            :title="t('Cancel Job')"
-            @click="confirmCancel(job)"
+            flat round dense size="sm"
+            :icon="row.toggleIcon"
+            :title="row.toggleTitle"
+            @click="toggleQueuedViewMode"
           />
         </q-item-section>
       </q-item>
+
+      <q-item
+        v-else-if="row.type === 'group'"
+        :key="row.key"
+        clickable
+        class="q-py-sm"
+        @click="toggleQueuedGroup(row.group.key)"
+      >
+        <q-item-section avatar>
+          <q-icon
+            :name="isQueuedGroupExpanded(row.group.key) ? 'expand_more' : 'chevron_right'"
+            color="grey-7"
+          />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label class="text-weight-medium text-orange-8">
+            {{ row.group.key }}
+            <q-badge color="orange-7" text-color="white" class="q-ml-sm">
+              {{ row.group.count }}
+            </q-badge>
+          </q-item-label>
+          <q-item-label caption>
+            {{ t('Queued jobs') }}
+          </q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <q-btn
+            flat round dense size="sm"
+            icon="cancel"
+            color="negative"
+            :title="t('Cancel all in group')"
+            @click.stop="confirmCancelGroup(row.group)"
+          />
+        </q-item-section>
+      </q-item>
+
+      <div v-else-if="row.type === 'group-job'" :key="row.key" class="q-pl-lg">
+        <RunningJobRow
+          :job="row.job"
+          :duration-secs="elapsedSecs(row.job)"
+          :show-director-column="showDirectorColumn"
+          @open-details="openJobDetails"
+          @cancel="confirmCancel"
+        />
+      </div>
+
+      <RunningJobRow
+        v-else
+        :key="row.key"
+        :job="row.job"
+        :duration-secs="elapsedSecs(row.job)"
+        :show-director-column="showDirectorColumn"
+        @open-details="openJobDetails"
+        @cancel="confirmCancel"
+      />
     </q-virtual-scroll>
   </div>
 </template>
@@ -88,19 +117,21 @@ import { inject, computed, ref, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import { formatBytes, formatDuration } from '../../mock/index.js'
 import { buildJobDetailsQuery, buildCancelJobCommand } from '../../utils/jobs.js'
-import { formatNumber } from '../../utils/locales.js'
-import { useSettingsStore } from '../../stores/settings.js'
+import { isWaitingStatus, groupRunningJobsByStatus, elapsedRunningSecs } from '../../utils/runningJobsGrouping.js'
+import {
+  QUEUED_GROUP_THRESHOLD,
+  resolveQueuedViewMode,
+  extractCancelableGroupJobs,
+} from '../../utils/runningJobsWidget.js'
 import { useDirectorStore } from '../../stores/director.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
-import DirectorBadge from '../../components/DirectorBadge.vue'
+import RunningJobRow from './RunningJobRow.vue'
 
 const { t } = useI18n()
 const $q = useQuasar()
 const router = useRouter()
-const settings = useSettingsStore()
 const director = useDirectorStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
@@ -108,20 +139,104 @@ const runningJobs = computed(() => ctx.aggregate.value.runningJobs)
 const directorOptions = computed(() => ctx.directorOptions.value)
 const showDirectorColumn = computed(() => directorOptions.value.length > 1)
 
+const queuedViewModeOverride = ref(null)
+const expandedQueuedGroupKeys = ref([])
+
 const now = ref(Date.now())
 const _clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
 onUnmounted(() => clearInterval(_clockTimer))
 
+const activeJobs = computed(() =>
+  runningJobs.value.filter(job => !isWaitingStatus(jobStatus(job)))
+)
+const queuedJobs = computed(() =>
+  runningJobs.value.filter(job => isWaitingStatus(jobStatus(job)))
+)
+const showSectionLabels = computed(() =>
+  activeJobs.value.length > 0 && queuedJobs.value.length > 0
+)
+const showQueuedViewToggle = computed(() => queuedJobs.value.length > 0)
+const queuedJobGroups = computed(() => groupRunningJobsByStatus(queuedJobs.value))
+const queuedViewMode = computed(() =>
+  resolveQueuedViewMode(
+    queuedJobs.value.length,
+    queuedViewModeOverride.value,
+    QUEUED_GROUP_THRESHOLD
+  )
+)
+const displayRows = computed(() => {
+  const rows = []
+
+  if (showSectionLabels.value && activeJobs.value.length) {
+    rows.push({
+      type: 'section',
+      key: 'section-active',
+      label: t('Active'),
+      showToggle: false,
+    })
+  }
+
+  for (const job of activeJobs.value) {
+    rows.push({ type: 'job', key: `active:${job.scopeKey}`, job })
+  }
+
+  if (queuedJobs.value.length) {
+    if (showSectionLabels.value || showQueuedViewToggle.value) {
+      rows.push({
+        type: 'section',
+        key: 'section-queued',
+        label: showSectionLabels.value ? t('Queued') : '',
+        showToggle: showQueuedViewToggle.value,
+        toggleIcon: queuedViewMode.value === 'grouped' ? 'view_list' : 'account_tree',
+        toggleTitle: queuedViewMode.value === 'grouped'
+          ? t('Switch to flat queued view')
+          : t('Switch to grouped queued view'),
+      })
+    }
+
+    if (queuedViewMode.value === 'grouped') {
+      for (const group of queuedJobGroups.value) {
+        rows.push({ type: 'group', key: `group:${group.key}`, group })
+        if (isQueuedGroupExpanded(group.key)) {
+          for (const job of group.jobs) {
+            rows.push({
+              type: 'group-job',
+              key: `group-job:${group.key}:${job.scopeKey}`,
+              job,
+            })
+          }
+        }
+      }
+    } else {
+      for (const job of queuedJobs.value) {
+        rows.push({ type: 'job', key: `queued:${job.scopeKey}`, job })
+      }
+    }
+  }
+
+  return rows
+})
+
 function elapsedSecs(job) {
-  if (!job.starttime) return 0
-  const start = new Date(job.starttime.replace(' ', 'T')).getTime()
-  if (isNaN(start)) return 0
-  return Math.max(0, Math.floor((now.value - start) / 1000))
+  return elapsedRunningSecs(job, now.value)
 }
 
 function jobStatus(row) { return row.runtimeStatus ?? row.status ?? '?' }
-function isWaitingStatus(status) {
-  return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+
+function isQueuedGroupExpanded(groupKey) {
+  return expandedQueuedGroupKeys.value.includes(groupKey)
+}
+
+function toggleQueuedGroup(groupKey) {
+  expandedQueuedGroupKeys.value = isQueuedGroupExpanded(groupKey)
+    ? expandedQueuedGroupKeys.value.filter(key => key !== groupKey)
+    : [...expandedQueuedGroupKeys.value, groupKey]
+}
+
+function toggleQueuedViewMode() {
+  queuedViewModeOverride.value = queuedViewMode.value === 'grouped'
+    ? 'flat'
+    : 'grouped'
 }
 
 async function openJobDetails(row) {
@@ -146,6 +261,21 @@ function confirmCancel(job) {
   }).onOk(() => doCancel(job))
 }
 
+function confirmCancelGroup(group) {
+  const jobsToCancel = extractCancelableGroupJobs(group)
+  const count = jobsToCancel.length
+
+  $q.dialog({
+    title: t('Cancel all in group'),
+    message: t('Cancel {count} queued job(s) in "{reason}"?', {
+      count,
+      reason: group.key,
+    }),
+    ok:     { label: t('Cancel all in group'), color: 'negative', flat: true },
+    cancel: { label: t('Keep Running'), flat: true },
+  }).onOk(() => doCancelGroup(group))
+}
+
 async function doCancel(job) {
   try {
     await switchActiveDirector(job.director)
@@ -155,5 +285,48 @@ async function doCancel(job) {
   } catch (e) {
     $q.notify({ type: 'negative', message: t('Cancel failed: {message}', { message: e.message }) })
   }
+}
+
+async function doCancelGroup(group) {
+  const jobsToCancel = extractCancelableGroupJobs(group)
+  let completed = 0
+  let failed = 0
+
+  for (const [index, { job, id }] of jobsToCancel.entries()) {
+    $q.notify({
+      type: 'info',
+      message: t('Cancelling {current} of {total}...', {
+        current: index + 1,
+        total: jobsToCancel.length,
+      }),
+      timeout: 900,
+    })
+
+    try {
+      await switchActiveDirector(job.director)
+      await director.call(buildCancelJobCommand(id))
+      completed += 1
+    } catch (e) {
+      failed += 1
+    }
+  }
+
+  if (failed) {
+    $q.notify({
+      type: 'warning',
+      message: t('Cancelled {completed} of {total} queued job(s) ({failed} failed).', {
+        completed,
+        total: jobsToCancel.length,
+        failed,
+      }),
+    })
+  } else {
+    $q.notify({
+      type: 'positive',
+      message: t('Cancelled {count} queued job(s).', { count: completed }),
+    })
+  }
+
+  ctx.refresh()
 }
 </script>
