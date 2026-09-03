@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [24.0.11] - 2026-09-03
 
 ### Fixed
 - fix reverse-history-search crash on windows [PR #2640]
@@ -1182,6 +1182,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [24.0.8]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.8
 [24.0.9]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.9
 [24.0.10]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.10
+[24.0.11]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.11
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -2049,4 +2050,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2783]: https://github.com/bareos/bareos/pull/2783
 [PR #2787]: https://github.com/bareos/bareos/pull/2787
 [PR #2790]: https://github.com/bareos/bareos/pull/2790
-[unreleased]: https://github.com/bareos/bareos/tree/master
