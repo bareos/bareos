@@ -21,6 +21,9 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "functions-ndmp.in" @ONLY ""
+  )
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
@@ -1222,6 +1225,11 @@ function(add_alphabetic_requirements prefix test_subdir)
   set(all_tests "")
   foreach(file ${all_test_files})
     string(REPLACE "testrunner-" "" test ${file})
+    # To be discussed if we keep this safety
+    get_test_property("${test_basename}:${test}" DISABLED disabled)
+    if(disabled)
+      continue()
+    endif()
     list(APPEND all_tests "${test}")
   endforeach()
 
