@@ -297,7 +297,7 @@ class BareosFdPluginBaseclass(object):
                 "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
             )
             return bRC_OK
-        else:
+        elif not (IOP.flags & (os.O_CREAT | os.O_WRONLY)):
             try:
                 is_fifo = stat.S_ISFIFO(os.stat(self.FNAME).st_mode)
             except FileNotFoundError:
@@ -319,6 +319,8 @@ class BareosFdPluginBaseclass(object):
                 "file %s has type %s - trying to open it\n"
                 % (self.FNAME, self.fileType),
             )
+        else:
+            self.fileType = "FT_REG"
         try:
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                 bareosfd.DebugMessage(
