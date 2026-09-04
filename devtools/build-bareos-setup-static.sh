@@ -212,6 +212,7 @@ fi
     mkdir -p /build
     cmake -S /src -B /build -G Ninja \
       -DBAREOS_SETUP_STATIC=ON \
+      -DENABLE_BAREOS_SETUP=ON \
       -Dacl=OFF -Dndmp=OFF \
       -DBUILD_TESTING=OFF -DENABLE_GRPC=OFF -DENABLE_SYSTEMTESTS=OFF \
       -DENABLE_WEBUI=OFF \
