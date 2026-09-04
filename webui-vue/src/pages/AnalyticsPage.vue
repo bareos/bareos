@@ -1,11 +1,11 @@
 <template>
-  <q-page class="q-pa-md">
-    <DirectorErrorsBanner :errors="directorErrors" />
-    <q-banner v-if="error" dense class="bg-negative text-white q-mb-md">
+  <div class="q-pa-sm" :class="{ 'analytics-widget': isDashboardWidget }">
+    <DirectorErrorsBanner v-if="section === 'summary'" :errors="directorErrors" />
+    <q-banner v-if="section === 'summary' && error" dense class="bg-negative text-white q-mb-md">
       {{ error }}
     </q-banner>
 
-    <div class="row q-col-gutter-md q-mb-md">
+    <div v-if="section === 'summary'" class="row q-col-gutter-md">
       <div class="col-6 col-sm-3 col-md-2" v-for="s in overallStats" :key="s.label">
         <q-card flat bordered class="bareos-panel text-center">
           <q-card-section class="q-py-sm">
@@ -23,79 +23,71 @@
       </div>
     </div>
 
-    <div class="row q-col-gutter-md">
-      <div class="col-12 col-md-8">
-        <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Stored Data per Job (treemap)') }}</span>
-            <q-space />
-            <q-btn-toggle v-model="treemapMode" flat no-caps dense
-              text-color="grey-4" toggle-color="white"
-              :options="[{ label: t('Bytes'), value: 'bytes' }, { label: t('Files'), value: 'files' }]" />
-          </q-card-section>
-          <q-card-section class="q-pa-sm">
-            <div ref="treemapEl" style="position:relative;width:100%;height:280px;overflow:hidden">
-              <div v-if="loading" class="flex flex-center" style="height:100%">
-                <q-spinner size="40px" color="primary" />
+    <div v-if="section === 'treemap'" class="analytics-fill">
+      <div ref="treemapEl" style="position:relative;width:100%;height:100%;overflow:hidden">
+        <div v-if="loading && !treemapTiles.length" class="flex flex-center" style="height:100%">
+          <q-spinner size="40px" color="primary" />
+        </div>
+        <template v-else>
+          <component
+            :is="tile.jobsQuery !== null ? 'router-link' : 'div'"
+            v-for="tile in treemapTiles" :key="tile.name"
+            :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
+            :style="tile.style"
+            style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
+            :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
+            <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
+              <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ tile.name }}
               </div>
-              <template v-else>
-                <component
-                  :is="tile.jobsQuery !== null ? 'router-link' : 'div'"
-                  v-for="tile in treemapTiles" :key="tile.name"
-                  :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
-                  :style="tile.style"
-                  style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
-                  :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
-                  <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
-                    <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                      {{ tile.name }}
-                    </div>
-                    <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                      {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
-                    </div>
-                  </div>
-                </component>
-                <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
-                  <span>{{ t('No data') }}</span>
-                </div>
-              </template>
+              <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
+                {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
+              </div>
             </div>
-          </q-card-section>
-        </q-card>
-
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Job Status Breakdown') }}</q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table :rows="statusRows" :columns="statusCols" row-key="label"
-                     dense flat hide-bottom :pagination="{ rowsPerPage: 0 }" :loading="loading">
-              <template #body-cell-bar="props">
-                <q-td :props="props" style="width:200px">
-                  <q-linear-progress :value="props.row.count / maxStatusCount || 0"
-                    :color="props.row.color" track-color="grey-2" size="12px" rounded />
-                </q-td>
-              </template>
-              <template #body-cell-label="props">
-                <q-td :props="props">
-                  <router-link
-                    v-if="props.row.jobsQuery !== null"
-                    :to="{ name: 'jobs', query: props.row.jobsQuery }"
-                    style="text-decoration: none"
-                  >
-                    <q-badge :color="props.row.color" :label="props.row.label" />
-                  </router-link>
-                  <q-badge v-else :color="props.row.color" :label="props.row.label" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
+          </component>
+          <div v-if="!treemapTiles.length" class="flex flex-center text-grey" style="height:100%">
+            <span>{{ t('No data') }}</span>
+          </div>
+        </template>
+        <div v-if="loading && treemapTiles.length" class="analytics-refresh-indicator">
+          <q-spinner size="14px" color="primary" />
+        </div>
       </div>
+    </div>
 
-      <div class="col-12 col-md-4">
-        <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header">{{ t('Bytes per Client') }}</q-card-section>
-          <q-card-section class="q-pa-sm q-gutter-xs">
-            <div v-if="loading" class="text-center q-py-md">
+    <q-table
+      v-if="section === 'status'"
+      :rows="statusRows"
+      :columns="statusCols"
+      row-key="label"
+      dense
+      flat
+      hide-bottom
+      :pagination="{ rowsPerPage: 0 }"
+      :loading="loading"
+    >
+      <template #body-cell-bar="tableProps">
+        <q-td :props="tableProps" style="width:200px">
+          <q-linear-progress :value="tableProps.row.count / maxStatusCount || 0"
+            :color="tableProps.row.color" track-color="grey-2" size="12px" rounded />
+        </q-td>
+      </template>
+      <template #body-cell-label="tableProps">
+        <q-td :props="tableProps">
+          <router-link
+            v-if="tableProps.row.jobsQuery !== null"
+            :to="{ name: 'jobs', query: tableProps.row.jobsQuery }"
+            style="text-decoration: none"
+          >
+            <q-badge :color="tableProps.row.color" :label="tableProps.row.label" />
+          </router-link>
+          <q-badge v-else :color="tableProps.row.color" :label="tableProps.row.label" />
+        </q-td>
+      </template>
+    </q-table>
+
+    <div v-if="section === 'client-bytes'" class="q-pa-sm q-gutter-xs analytics-fill" style="position:relative">
+            <div v-if="loading && !clientBytes.length" class="text-center q-py-md">
               <q-spinner size="32px" color="primary" />
             </div>
             <template v-else>
@@ -103,23 +95,23 @@
                 <div class="row items-center q-mb-xs" style="gap:4px">
                   <router-link
                     :to="{ name: 'jobs', query: c.jobsQuery }"
-                    class="text-caption ellipsis text-primary"
-                    style="width:110px;min-width:0;text-decoration:none"
+                    class="text-caption ellipsis"
+                    :style="{ width: '110px', minWidth: 0, textDecoration: 'none', color: c.color }"
                     :title="c.name"
                   >{{ c.name }}</router-link>
-                  <q-linear-progress :value="bytesGauge(c.bytes)" color="primary" track-color="grey-3"
-                                     size="10px" rounded style="flex:1" />
+                  <q-linear-progress :value="bytesGauge(c.bytes)" track-color="grey-3"
+                                     :style="{ flex: 1, color: c.color }" size="10px" rounded />
                   <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
                 </div>
               </div>
               <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
             </template>
-          </q-card-section>
-        </q-card>
+            <div v-if="loading && clientBytes.length" class="analytics-refresh-indicator">
+              <q-spinner size="14px" color="primary" />
+            </div>
+    </div>
 
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Job Level Distribution') }}</q-card-section>
-          <q-card-section class="q-pa-sm">
+    <div v-if="section === 'level-distribution'" class="q-pa-sm analytics-fill">
             <div v-for="l in levelDist" :key="l.label" class="q-mb-sm">
               <div class="row items-center q-mb-xs" style="gap:6px">
                 <span class="text-caption" style="width:90px">{{ l.label }}</span>
@@ -128,15 +120,12 @@
                 <span class="text-caption text-grey-6" style="width:30px;text-align:right">{{ l.count }}</span>
               </div>
             </div>
-          </q-card-section>
-        </q-card>
-      </div>
     </div>
-  </q-page>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
@@ -151,7 +140,11 @@ import {
 } from '../utils/jobs.js'
 import { formatNumber } from '../utils/locales.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import { DASHBOARD_CONTEXT_KEY } from '../dashboard/dashboardContext.js'
 
+const props = defineProps({
+  widgetProps: { type: Object, default: () => ({}) },
+})
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
@@ -162,9 +155,18 @@ const treemapEl = ref(null)
 const treemapW = ref(600)
 const treemapH = ref(280)
 const rawJobs = ref([])
-const loading = ref(false)
+const loadingLocal = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
+const dashboardContext = inject(DASHBOARD_CONTEXT_KEY, null)
+const isDashboardWidget = computed(() => dashboardContext !== null)
+const section = computed(() => props.widgetProps.section ?? ({
+  'analytics-summary': 'summary',
+  'analytics-treemap': 'treemap',
+  'analytics-status-breakdown': 'status',
+  'analytics-client-bytes': 'client-bytes',
+  'analytics-level-distribution': 'level-distribution',
+}[props.widgetProps.type] ?? 'summary'))
 
 const {
   directorOptions,
@@ -181,7 +183,7 @@ function formatFileCount(count) {
 }
 
 async function refresh() {
-  loading.value = true
+  loadingLocal.value = true
   error.value = null
   directorErrors.value = []
   try {
@@ -213,11 +215,16 @@ async function refresh() {
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   } finally {
-    loading.value = false
+    loadingLocal.value = false
   }
 }
 
-const jobs = computed(() => directorCollection(rawJobs.value))
+const jobs = computed(() => dashboardContext
+  ? directorCollection(dashboardContext.analyticsJobs.value)
+  : directorCollection(rawJobs.value))
+const loading = computed(() => dashboardContext
+  ? dashboardContext.analyticsLoading.value
+  : loadingLocal.value)
 const totalJobs = computed(() => jobs.value.length || 1)
 
 const overallStats = computed(() => {
@@ -304,6 +311,10 @@ function prefixedLabel(directorName, baseName) {
   return isCommonAnalytics.value ? `${directorName} / ${baseName}` : baseName
 }
 
+const PALETTE = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
+  '#00838F', '#558B2F', '#6D4C41', '#455A64', '#E91E63',
+  '#0277BD', '#2E7D32', '#EF6C00', '#6A1B9A', '#AD1457']
+
 const clientBytes = computed(() => {
   const map = {}
   for (const j of jobs.value) {
@@ -321,6 +332,7 @@ const clientBytes = computed(() => {
   return Object.values(map)
     .sort((a, b) => b.bytes - a.bytes)
     .slice(0, 12)
+    .map((c, i) => ({ ...c, color: PALETTE[i % PALETTE.length] }))
 })
 
 const maxBytes = computed(() => Math.max(1, ...clientBytes.value.map(c => c.bytes)))
@@ -354,10 +366,6 @@ const jobGroups = computed(() => {
   }
   return Object.values(map).sort((a, b) => b.bytes - a.bytes)
 })
-
-const PALETTE = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
-  '#00838F', '#558B2F', '#6D4C41', '#455A64', '#E91E63',
-  '#0277BD', '#2E7D32', '#EF6C00', '#6A1B9A', '#AD1457']
 
 function squarify(items, x0, y0, x1, y1) {
   if (!items.length) return []
@@ -426,9 +434,15 @@ const treemapTiles = computed(() => {
 })
 
 onMounted(() => {
-  director.fetchAvailableDirectors().catch(() => {})
-  syncSelectedDirectors()
-  refresh()
+  if (!dashboardContext) {
+    director.fetchAvailableDirectors().catch(() => {})
+    syncSelectedDirectors()
+    refresh()
+  }
+
+  // The ResizeObserver must run in both standalone and dashboard-widget
+  // mode: it sizes the treemap tiles to the widget's actual rendered
+  // dimensions instead of the hardcoded fallback size.
   if (!treemapEl.value) return
   const ro = new ResizeObserver(entries => {
     for (const e of entries) {
@@ -437,13 +451,48 @@ onMounted(() => {
     }
   })
   ro.observe(treemapEl.value)
+  onUnmounted(() => ro.disconnect())
 })
 
 watch(() => directorOptions.value, () => {
+  if (dashboardContext) return
   syncSelectedDirectors()
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
+  if (dashboardContext) return
   refresh()
 })
 </script>
+
+<style scoped>
+.analytics-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-fill {
+  height: 100%;
+}
+
+/* Inside a dashboard widget the outer element is a flex column with a
+   definite height (see WidgetShell); make the section fill it via flex
+   instead of relying on a percentage-height chain, so absolutely
+   positioned content (the treemap tiles) isn't clipped to zero height. */
+.analytics-widget .analytics-fill {
+  flex: 1;
+  min-height: 0;
+}
+
+.analytics-refresh-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  line-height: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 3px;
+}
+</style>

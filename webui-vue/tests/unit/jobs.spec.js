@@ -28,11 +28,15 @@ import {
   buildListJobCommand,
   buildListJobsCommand,
   buildListJobsCountCommand,
+  buildListTroubleLogCommand,
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  canRerunJob,
   filterRunnableJobOptions,
   formatRunWhenPickerDate,
+  MAX_JOBS_FETCH_LIMIT,
+  resolveJobsSortColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   encodeJobsLevelFilters,
@@ -71,6 +75,7 @@ import {
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
   withJobsTypeFilterQuery,
+  classifyLogLine,
 } from '../../src/utils/jobs.js'
 
 describe('jobs filter helpers', () => {
@@ -159,6 +164,12 @@ describe('jobs filter helpers', () => {
     expect(paginateJobs(jobs, { page: 1, rowsPerPage: 0 })).toEqual(jobs)
   })
 
+  it('caps the "fetch everything" limit at a fixed maximum', () => {
+    // Guards against a very large catalog shipping its whole Job table to
+    // the browser in one call when sorting/searching bypasses pagination.
+    expect(MAX_JOBS_FETCH_LIMIT).toBe(1000)
+  })
+
   it('merges job media rows by volume and counts segments', () => {
     expect(mergeJobMediaByVolume([
       { volumename: 'Vol-001', firstindex: 0, lastindex: 0 },
@@ -205,6 +216,13 @@ describe('jobs filter helpers', () => {
       jobFilter: 'Daily "Backup"',
       clientFilter: 'fd one',
     })).toBe('list jobs count jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
+    expect(buildListJobsCountCommand({
+      searchTerm: 'fd-2',
+    })).toBe('list jobs count search="fd-2"')
+    expect(buildListJobsCountCommand({
+      days: 1,
+      statusFilter: ['W', 'E', 'f', 'A'],
+    })).toBe('list jobs count days=1 jobstatus=W,E,f,A')
     expect(buildListJobsCommand({
       limit: 25,
       offset: 50,
@@ -214,9 +232,77 @@ describe('jobs filter helpers', () => {
       jobFilter: 'Daily "Backup"',
       clientFilter: 'fd one',
     })).toBe('llist jobs reverse limit=25 offset=50 jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
+    expect(buildListJobsCommand({
+      limit: 25,
+      offset: 50,
+      sortColumn: 'client',
+      descending: false,
+      searchTerm: 'Daily "Backup"',
+    })).toBe('llist jobs limit=25 offset=50 sortby=client search="Daily \\"Backup\\""')
+    expect(buildListJobsCommand({
+      limit: 200,
+      days: 1,
+      statusFilter: ['W', 'E', 'f', 'A'],
+      sortColumn: 'jobid',
+    })).toBe('llist jobs reverse limit=200 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A')
     expect(buildListJobCommand(42)).toBe('llist jobid=42')
     expect(buildCancelJobCommand(42)).toBe('cancel jobid=42 yes')
     expect(buildRerunJobCommand(42)).toBe('rerun jobid=42 yes')
+  })
+
+  it('builds a batched joblog command for several jobids, dropping invalid/duplicate ones', () => {
+    expect(buildListTroubleLogCommand([8000, 7999, 7998])).toBe('list joblog jobids=8000,7999,7998')
+    expect(buildListTroubleLogCommand(['8000', 7999, 7999, -1, 0, 'x'])).toBe('list joblog jobids=8000,7999')
+    expect(buildListTroubleLogCommand([])).toBeNull()
+    expect(buildListTroubleLogCommand()).toBeNull()
+  })
+
+  it('resolves jobs table sort columns to the director sortby= whitelist', () => {
+    // Mirrors kJobsSortColumns in core/src/cats/sql_list.cc.
+    expect(resolveJobsSortColumn('id')).toBe('jobid')
+    expect(resolveJobsSortColumn('name')).toBe('name')
+    expect(resolveJobsSortColumn('client')).toBe('client')
+    expect(resolveJobsSortColumn('type')).toBe('type')
+    expect(resolveJobsSortColumn('level')).toBe('level')
+    expect(resolveJobsSortColumn('status')).toBe('jobstatus')
+    expect(resolveJobsSortColumn('starttime')).toBe('starttime')
+    expect(resolveJobsSortColumn('files')).toBe('jobfiles')
+    expect(resolveJobsSortColumn('bytes')).toBe('jobbytes')
+    expect(resolveJobsSortColumn('errors')).toBe('joberrors')
+    // Columns with no catalog equivalent: derived client-side, or n/a for
+    // a single director. Callers must fall back to client-side sorting.
+    expect(resolveJobsSortColumn('duration')).toBeNull()
+    expect(resolveJobsSortColumn('speed')).toBeNull()
+    expect(resolveJobsSortColumn('director')).toBeNull()
+    expect(resolveJobsSortColumn('unknown')).toBeNull()
+  })
+
+  it('only allows rerunning job types the director can reschedule', () => {
+    // Mirrors IsRerunableJobType() in core/src/include/job_types.h.
+    for (const type of ['Backup', 'Copy', 'Migrate', 'Migration']) {
+      expect(canRerunJob({ type })).toBe(true)
+    }
+
+    for (const type of [
+      'Restore', 'Verify', 'Admin', 'Archive', 'Job Copy', 'Migrated Job',
+      'Consolidate', 'Scan', 'Console', 'System',
+    ]) {
+      expect(canRerunJob({ type })).toBe(false)
+    }
+  })
+
+  it('accepts raw job type codes and rejects unknown ones', () => {
+    expect(canRerunJob({ type: 'B' })).toBe(true)
+    expect(canRerunJob({ type: 'c' })).toBe(true)
+    expect(canRerunJob({ type: 'g' })).toBe(true)
+    expect(canRerunJob({ type: 'R' })).toBe(false)
+    expect(canRerunJob({ type: 'C' })).toBe(false)
+
+    expect(canRerunJob({ type: 'Nonsense' })).toBe(false)
+    expect(canRerunJob({ type: '' })).toBe(false)
+    expect(canRerunJob({})).toBe(false)
+    expect(canRerunJob(null)).toBe(false)
+    expect(canRerunJob(undefined)).toBe(false)
   })
 
   it('quotes job command arguments consistently', () => {
@@ -624,5 +710,27 @@ describe('jobs filter helpers', () => {
     expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '1' })).toBe(true)
     expect(resolveJobDetailsDashboardOrigin({ dashboardOrigin: '0' })).toBe(false)
     expect(resolveJobDetailsDashboardOrigin({})).toBe(false)
+  })
+
+  it('classifies log lines by severity', () => {
+    expect(classifyLogLine('Fatal error: something went wrong')).toBe('error')
+    expect(classifyLogLine('Backup Error: no such file')).toBe('error')
+    expect(classifyLogLine('Job failed')).toBe('error')
+    expect(classifyLogLine('Warning: something odd happened')).toBe('warning')
+    expect(classifyLogLine(
+      '  Could not stat "/nonexistent/path": ERR=No such file or directory',
+    )).toBe('warning')
+    expect(classifyLogLine('Could not access "/foo/bar"')).toBe('warning')
+    expect(classifyLogLine('Archive file not saved: /foo/bar')).toBe('warning')
+    expect(classifyLogLine('Unknown file type 12345')).toBe('warning')
+    expect(classifyLogLine('Could not follow link "/foo/bar": ERR=Too many levels')).toBe('warning')
+    expect(classifyLogLine('Could not open directory "/foo/bar": ERR=Permission denied')).toBe('warning')
+    expect(classifyLogLine('Cannot open "/foo/bar": ERR=Permission denied.')).toBe('warning')
+    expect(classifyLogLine('Alert: TapeAlert 20: Clean now')).toBe('warning')
+    expect(classifyLogLine('Security violation: bareos-fd attempted restore')).toBe('warning')
+    expect(classifyLogLine('Termination:            Backup OK')).toBe('ok')
+    expect(classifyLogLine('  Non-fatal FD errors:    0')).toBe('normal')
+    expect(classifyLogLine('  Warnings:               0')).toBe('normal')
+    expect(classifyLogLine('Using Device "FileStorage"')).toBe('normal')
   })
 })

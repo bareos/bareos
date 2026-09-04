@@ -449,6 +449,63 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
+namespace {
+// Defense-in-depth cap on the number of JobIds accepted by
+// ListJoblogRecordsForJobs(), independent of any limit the caller may
+// already enforce (e.g. the webui Trouble View's own MAX_JOBS=200): a
+// pathologically large jobids= list would otherwise build an equally large
+// SQL IN (...) clause. Log(JobId) is indexed, so cost scales with the
+// number of matching rows regardless, but this keeps the query text itself
+// bounded.
+constexpr size_t kMaxJoblogBatchJobIds = 1000;
+}  // namespace
+
+void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
+                                        const std::vector<JobId_t>& jobids,
+                                        OutputFormatter* sendit,
+                                        e_list_type type)
+{
+  if (jobids.empty()) { return; }
+
+  // JobIds are validated, already-ACL-checked unsigned integers (the caller
+  // is responsible for both), so they can be joined directly into the SQL
+  // IN (...) list with no quoting/escaping -- there is no string
+  // interpolation of caller-supplied text anywhere in this query.
+  std::string jobid_list;
+  size_t included = 0;
+  for (JobId_t jobid : jobids) {
+    if (included >= kMaxJoblogBatchJobIds) { break; }
+    if (jobid == 0) { continue; }
+    if (!jobid_list.empty()) { jobid_list += ','; }
+    jobid_list += std::to_string(jobid);
+    ++included;
+  }
+  if (jobid_list.empty()) { return; }
+
+  DbLocker _{this};
+  Mmsg(cmd,
+       "SELECT Log.JobId AS JobId, Time, LogText "
+       "FROM Log "
+       "WHERE Log.JobId IN (%s) "
+       "ORDER BY Log.JobId, Log.LogId ",
+       jobid_list.c_str());
+
+  if (!QueryDb(jcr, cmd)) { return; }
+
+  if (type != VERT_LIST) {
+    /* See the comment in ListJoblogRecords(): logtext already contains
+     * embedded newlines etc, so anything other than a vertical list should
+     * be dumped as raw, unformatted rows. */
+    type = RAW_LIST;
+  }
+
+  sendit->ArrayStart("joblog");
+  ListResult(jcr, sendit, type);
+  sendit->ArrayEnd("joblog");
+
+  SqlFreeResult();
+}
+
 /**
  * list job statistics records for certain jobid
  *
@@ -477,21 +534,79 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
-void BareosDb::ListJobRecords(JobControlRecord* jcr,
-                              JobDbRecord* jr,
-                              const char* range,
-                              const char* clientname,
-                              std::vector<char> jobstatuslist,
-                              std::vector<char> joblevels,
-                              std::vector<char> jobtypes,
-                              const char* volumename,
-                              const char* poolname,
-                              utime_t since_time,
-                              bool last,
-                              bool count,
-                              OutputFormatter* sendit,
-                              e_list_type type,
-                              bool descending)
+namespace {
+/* Whitelist mapping for `list jobs sortby=<keyword>` / `llist jobs
+ * sortby=<keyword>`. This is the only place user input is allowed to
+ * influence an ORDER BY clause -- never interpolate raw user input into
+ * ORDER BY directly, always go through this table. */
+struct JobsSortColumn {
+  const char* keyword;
+  const char* sql_column;
+};
+constexpr JobsSortColumn kJobsSortColumns[] = {
+    {"jobid", "Job.JobId"},         {"name", "Job.Name"},
+    {"client", "Client.Name"},      {"type", "Job.Type"},
+    {"level", "Job.Level"},         {"starttime", "Job.StartTime"},
+    {"jobfiles", "Job.JobFiles"},   {"jobbytes", "Job.JobBytes"},
+    {"joberrors", "Job.JobErrors"}, {"jobstatus", "Job.JobStatus"},
+};
+
+std::string EscapeLikePattern(BareosDb* db,
+                              JobControlRecord* jcr,
+                              const char* value)
+{
+  int len = strlen(value);
+  PoolMem escaped_value(PM_MESSAGE);
+  escaped_value.check_size(len * 2 + 1);
+  db->EscapeString(jcr, escaped_value.c_str(), value, len);
+
+  std::string pattern;
+  pattern.reserve(strlen(escaped_value.c_str()) * 2);
+  for (const char character : std::string(escaped_value.c_str())) {
+    if (character == '!' || character == '%' || character == '_') {
+      pattern += '!';
+    }
+    pattern += character;
+  }
+
+  return pattern;
+}
+}  // namespace
+
+bool BareosDb::GetJobsSortColumn(const char* keyword, std::string& sql_column)
+{
+  if (!keyword || !*keyword) { return false; }
+
+  for (const auto& entry : kJobsSortColumns) {
+    if (Bstrcasecmp(keyword, entry.keyword)) {
+      sql_column = entry.sql_column;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void BareosDb::ListJobRecords(
+    JobControlRecord* jcr,
+    JobDbRecord* jr,
+    const char* range,
+    const char* clientname,
+    std::vector<char> jobstatuslist,
+    std::vector<char> joblevels,
+    std::vector<char> jobtypes,
+    const char* volumename,
+    const char* poolname,
+    utime_t since_time,
+    bool last,
+    bool count,
+    OutputFormatter* sendit,
+    e_list_type type,
+    bool descending,
+    const char* sort_column,
+    const char* search,
+    const std::optional<std::vector<std::string>>& job_names,
+    const std::optional<std::vector<std::string>>& client_names)
 {
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
@@ -551,34 +666,88 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
+  if (search && *search) {
+    std::string escaped_search = EscapeLikePattern(this, jcr, search);
+    temp.bsprintf(
+        "AND (Job.Name ILIKE '%%%s%%' ESCAPE '!' OR "
+        "Client.Name ILIKE '%%%s%%' ESCAPE '!' OR "
+        "CAST(Job.JobId AS TEXT) LIKE '%%%s%%' ESCAPE '!') ",
+        escaped_search.c_str(), escaped_search.c_str(), escaped_search.c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
+  /* `current`/`enabled`/`disabled` are resolved by the caller (dird) to the
+   * matching set of Job/Client resource names -- this is the only place
+   * that filtering is applied, so range and count queries always see the
+   * exact same rows. */
+  if (job_names) {
+    temp.bsprintf("AND %s ",
+                  BuildSqlNameInClause("Job.Name", *job_names).c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
+  if (client_names) {
+    temp.bsprintf("AND %s ",
+                  BuildSqlNameInClause("Client.Name", *client_names).c_str());
+    PmStrcat(selection, temp.c_str());
+  }
+
+  /* JobMedia/Media are only needed to filter or list a specific volume; skip
+   * the join otherwise so it can't multiply Job rows in front of the
+   * COUNT(DISTINCT ...)/DISTINCT. */
+  PoolMem joins(PM_MESSAGE);
+  if (volumename) {
+    PmStrcat(joins,
+             "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+             "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId ");
+  }
+
   DbLocker _{this};
 
-  // For non-count queries the ORDER BY clause accepts an optional direction
-  // suffix (" DESC") followed by the LIMIT/OFFSET range string.
+  /* For non-count queries the ORDER BY clause accepts an optional direction
+   * suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
+   * column itself may only come from the fixed whitelist above -- an
+   * unrecognized sort_column (including nullptr) falls back to the
+   * pre-existing default rather than ever being interpolated directly. */
+  std::string resolved_sort_column;
+  const char* order_by
+      = (sort_column && GetJobsSortColumn(sort_column, resolved_sort_column))
+            ? resolved_sort_column.c_str()
+            : "StartTime";
   const std::string order_range
       = (descending ? std::string(" DESC") : std::string()) + range;
 
   if (count) {
-    FillQuery<SQL_QUERY::list_jobs_count>(cmd, selection.c_str(), range);
+    if (last) {
+      /* Mirrors the "last job per name" dedup subquery used by
+       * list_jobs_last/list_jobs_long_last, so `list jobs count last`
+       * reports the same row count `llist jobs last` would return instead
+       * of counting every historical Job row. */
+      FillQuery<SQL_QUERY::list_jobs_count_last>(cmd, selection.c_str());
+    } else {
+      FillQuery<SQL_QUERY::list_jobs_count>(cmd, joins.c_str(),
+                                            selection.c_str(), range);
+    }
   } else if (last) {
     if (type == VERT_LIST) {
       FillQuery<SQL_QUERY::list_jobs_long_last>(cmd, selection.c_str(),
-                                                order_range.c_str());
+                                                order_by, order_range.c_str());
     } else {
-      FillQuery<SQL_QUERY::list_jobs_last>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs_last>(cmd, selection.c_str(), order_by,
                                            order_range.c_str());
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery<SQL_QUERY::list_jobs_long>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs_long>(cmd, selection.c_str(), order_by,
                                            order_range.c_str());
     } else {
-      FillQuery<SQL_QUERY::list_jobs>(cmd, selection.c_str(),
+      FillQuery<SQL_QUERY::list_jobs>(cmd, selection.c_str(), order_by,
                                       order_range.c_str());
     }
   }
 
   if (!QueryDb(jcr, cmd)) { return; }
+
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, type);

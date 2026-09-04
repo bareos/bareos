@@ -177,7 +177,7 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Schedules') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
+            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules(true)" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
@@ -297,7 +297,7 @@ const schedError = ref(null)
 const shownSchedules = ref([])
 const togglingName = ref(null)
 
-async function refreshSchedules() {
+async function refreshSchedules(forceRefresh = false) {
   schedLoading.value = true
   schedError.value = null
   directorErrors.value = []
@@ -313,7 +313,7 @@ async function refreshSchedules() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedSchedulesShow(credentials, activeDirectors.value)
+      const result = await fetchAggregatedSchedulesShow(credentials, activeDirectors.value, { forceRefresh })
       shownSchedules.value = result.schedules
       directorErrors.value = result.directorErrors
       return
@@ -351,7 +351,7 @@ async function toggleSchedule(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${quoteDirectorString(row.name)}`)
-    await Promise.all([refreshSchedules(), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus()])
     $q.notify({
       type: 'positive',
       message: row.enabled
@@ -373,7 +373,7 @@ async function toggleJob(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${quoteDirectorString(row.job)}`)
-    await Promise.all([refreshSchedules(), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus()])
     await nextTick()
 
     const updatedRow = scheduleJobRows.value.find(candidate => candidate.jobScopeKey === row.jobScopeKey)

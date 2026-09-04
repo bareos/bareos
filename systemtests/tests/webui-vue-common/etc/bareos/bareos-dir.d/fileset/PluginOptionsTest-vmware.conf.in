@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-vmware"
+  Description = "Smoke-test fileset backed by the bpipe plugin (VMware-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/vmware-demo/vmware-backup.vmdk"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

@@ -28,6 +28,7 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function decorateClients(entries, enabledMap, director) {
   return directorCollection(entries).map((entry) => {
@@ -54,7 +55,34 @@ function sortClients(clients) {
   })
 }
 
-export async function fetchAggregatedClients(credentials, directors) {
+const clientsCache = createTtlCache()
+const CACHE_TTL_MS = 60_000 // 60 seconds TTL
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    // Fold the session credential into the key so a re-login under the same
+    // username (but a different password/session) can't reuse another
+    // session's cached catalog data within the TTL window.
+    session: hashCacheFingerprint(credentials?.password),
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearClientsCache() {
+  clientsCache.clear()
+}
+
+export async function fetchAggregatedClients(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  if (!forceRefresh) {
+    const cached = clientsCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
+  }
+  const fetchGeneration = clientsCache.beginFetch()
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [listResult, dotResult] = await Promise.all([
       client.call('llist clients'),
@@ -71,8 +99,10 @@ export async function fetchAggregatedClients(credentials, directors) {
     }
   })
 
-  return {
+  const data = {
     clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
+  clientsCache.set(cacheKey, data, fetchGeneration)
+  return data
 }

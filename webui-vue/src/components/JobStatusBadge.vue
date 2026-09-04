@@ -1,5 +1,11 @@
 <template>
-  <q-badge :color="info.color" :label="info.label" />
+  <q-badge
+    :color="info.color"
+    :label="info.label"
+    :class="{ 'cursor-pointer': clickable }"
+    :title="clickable ? t('Jump to log') : undefined"
+    @click="clickable && $emit('click', $event)"
+  />
 </template>
 
 <script setup>
@@ -8,7 +14,9 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   status: { type: String, required: true },
+  clickable: { type: Boolean, default: false },
 })
+defineEmits(['click'])
 const { t } = useI18n()
 
 const info = computed(() => ({

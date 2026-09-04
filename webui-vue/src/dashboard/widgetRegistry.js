@@ -1,0 +1,229 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+
+/**
+ * Central widget registry.
+ *
+ * Each entry describes a widget type:
+ *   type        – unique string key used in persisted config
+ *   label       – human-readable name shown in the picker dialog
+ *   description – short description shown in the picker dialog
+ *   icon        – Quasar/MDI icon name
+ *   component   – async import of the Vue component
+ *   defaultTitle – default title for new instances
+ *   defaultLayout – { w, h } default grid size
+ *   requiredProps – array of prop descriptors that must be filled before
+ *                   the widget is placed on the dashboard:
+ *     { key, label, type: 'text'|'select', options?: fn(credentials,directors) }
+ *   optionalProps – same shape, shown only in the configure dialog
+ */
+
+import { defineAsyncComponent } from 'vue'
+
+const WIDGETS = [
+  {
+    type: 'jobs-past-24h',
+    label: 'Jobs Past 24 h',
+    description: 'Summary counts of jobs started in the last 24 hours by status.',
+    icon: 'mdi-clock-outline',
+    component: defineAsyncComponent(() => import('./widgets/JobsPast24hWidget.vue')),
+    defaultTitle: 'Jobs Past 24 h',
+    defaultLayout: { w: 8, h: 5 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'jobs-past-24h-chart',
+    label: 'Jobs Past 24 h (Chart)',
+    description: 'Doughnut chart of job status counts in the last 24 hours.',
+    icon: 'mdi-chart-donut',
+    component: defineAsyncComponent(() => import('./widgets/JobStatus24hChartWidget.vue')),
+    defaultTitle: 'Jobs Past 24 h (Chart)',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'recent-jobs-table',
+    label: 'Recent Jobs',
+    description: 'Table showing the most recent job run per job name.',
+    icon: 'mdi-table',
+    component: defineAsyncComponent(() => import('./widgets/RecentJobsTableWidget.vue')),
+    defaultTitle: 'Recent Jobs',
+    defaultLayout: { w: 8, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'running-jobs',
+    label: 'Running Jobs',
+    description: 'Live list of currently running jobs with progress.',
+    icon: 'mdi-play-circle-outline',
+    component: defineAsyncComponent(() => import('./widgets/RunningJobsWidget.vue')),
+    defaultTitle: 'Running Jobs',
+    defaultLayout: { w: 4, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'running-jobs-status-chart',
+    label: 'Running Jobs by Status',
+    description: 'Doughnut chart of currently running and queued jobs by status.',
+    icon: 'mdi-chart-donut',
+    component: defineAsyncComponent(() => import('./widgets/RunningJobsStatusChartWidget.vue')),
+    defaultTitle: 'Running Jobs by Status',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'running-jobs-treemap',
+    label: 'Running Jobs Treemap',
+    description: 'Treemap of active jobs sized by running time.',
+    icon: 'mdi-chart-tree',
+    component: defineAsyncComponent(() => import('./widgets/RunningJobsTreemapWidget.vue')),
+    defaultTitle: 'Running Jobs Treemap',
+    defaultLayout: { w: 6, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'job-totals',
+    label: 'Job Totals',
+    description: 'Cumulative job, file, and byte totals across all directors.',
+    icon: 'mdi-sigma',
+    component: defineAsyncComponent(() => import('./widgets/JobTotalsWidget.vue')),
+    defaultTitle: 'Job Totals',
+    defaultLayout: { w: 4, h: 4 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'pool-bytes-chart',
+    label: 'Pool Storage (Bytes)',
+    description: 'Doughnut chart showing bytes stored across pools.',
+    icon: 'mdi-chart-pie',
+    component: defineAsyncComponent(() => import('./widgets/PoolBytesChartWidget.vue')),
+    defaultTitle: 'Pool Storage (Bytes)',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'pool-volumes-chart',
+    label: 'Pool Storage (Volumes)',
+    description: 'Doughnut chart showing volume count across pools.',
+    icon: 'mdi-chart-pie',
+    component: defineAsyncComponent(() => import('./widgets/PoolVolumesChartWidget.vue')),
+    defaultTitle: 'Pool Storage (Volumes)',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'trouble-view',
+    label: 'Trouble View',
+    description: 'Error and warning lines from job logs in the last 24 hours.',
+    icon: 'mdi-alert-circle-outline',
+    component: defineAsyncComponent(() => import('./widgets/TroubleViewWidget.vue')),
+    defaultTitle: 'Trouble View',
+    defaultLayout: { w: 6, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'database-status',
+    label: 'Database Table Sizes',
+    description: 'Database size and per-table size breakdown.',
+    icon: 'mdi-database',
+    component: defineAsyncComponent(() => import('./widgets/DatabaseStatusWidget.vue')),
+    defaultTitle: 'Database Table Sizes',
+    defaultLayout: { w: 6, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'analytics-summary',
+    label: 'Analytics Summary',
+    description: 'Job, file, and byte totals across the selected directors.',
+    icon: 'mdi-chart-box-outline',
+    component: defineAsyncComponent(() => import('../pages/AnalyticsPage.vue')),
+    defaultTitle: 'Analytics Summary',
+    defaultLayout: { w: 12, h: 5 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'analytics-treemap',
+    label: 'Stored Data per Job',
+    description: 'Treemap of stored bytes or files grouped by job.',
+    icon: 'mdi-chart-tree',
+    component: defineAsyncComponent(() => import('../pages/AnalyticsPage.vue')),
+    defaultTitle: 'Stored Data per Job',
+    defaultLayout: { w: 8, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'analytics-status-breakdown',
+    label: 'Job Status Breakdown',
+    description: 'Job counts by completion status.',
+    icon: 'mdi-chart-bar',
+    component: defineAsyncComponent(() => import('../pages/AnalyticsPage.vue')),
+    defaultTitle: 'Job Status Breakdown',
+    defaultLayout: { w: 8, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'analytics-client-bytes',
+    label: 'Bytes per Client',
+    description: 'Stored data totals grouped by client.',
+    icon: 'mdi-devices',
+    component: defineAsyncComponent(() => import('../pages/AnalyticsPage.vue')),
+    defaultTitle: 'Bytes per Client',
+    defaultLayout: { w: 4, h: 10 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
+    type: 'analytics-level-distribution',
+    label: 'Job Level Distribution',
+    description: 'Job counts grouped by backup level.',
+    icon: 'mdi-chart-bar-stacked',
+    component: defineAsyncComponent(() => import('../pages/AnalyticsPage.vue')),
+    defaultTitle: 'Job Level Distribution',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+]
+
+/** Map from type key → definition (for O(1) lookup). */
+const WIDGET_MAP = Object.fromEntries(WIDGETS.map(w => [w.type, w]))
+
+export function getAllWidgetDefinitions() {
+  return WIDGETS
+}
+
+export function getWidgetDefinition(type) {
+  return WIDGET_MAP[type] ?? null
+}

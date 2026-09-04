@@ -178,7 +178,7 @@ async function waitForQSelectReady(page, testId) {
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
-    hasText: 'Most recent job status per job name',
+    hasText: 'Recent Jobs',
   })
   const totalsCard = page.locator('.q-card').filter({
     hasText: 'Job Totals',
@@ -405,4 +405,38 @@ test('opens the console and runs a raw command through the proxied director conn
   const consoleOutput = await openConsole(page)
   await page.getByText('status director', { exact: true }).click()
   await expect(consoleOutput).toContainText('Terminated Jobs:')
+})
+
+test('dashboard first resize attempt must persist', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/dashboard')
+
+  await page.getByTitle('Edit layout').click()
+  await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
+
+  const firstItem = page.locator('.vgl-item').first()
+  const resizer = firstItem.locator('.vgl-item__resizer').first()
+  await expect(firstItem).toBeVisible()
+  await expect(resizer).toBeVisible()
+
+  const before = await firstItem.boundingBox()
+  if (!before) throw new Error('Could not get initial widget bounds')
+
+  const handle = await resizer.boundingBox()
+  if (!handle) throw new Error('Could not get resize handle bounds')
+
+  const startX = handle.x + handle.width / 2
+  const startY = handle.y + handle.height / 2
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX - 260, startY - 120, { steps: 16 })
+  await page.mouse.up()
+
+  await page.waitForTimeout(350)
+  const after = await firstItem.boundingBox()
+  if (!after) throw new Error('Could not get resized widget bounds')
+
+  const widthChanged = Math.abs(after.width - before.width) > 20
+  const heightChanged = Math.abs(after.height - before.height) > 10
+  expect(widthChanged || heightChanged).toBe(true)
 })

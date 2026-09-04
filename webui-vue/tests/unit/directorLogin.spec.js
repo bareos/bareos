@@ -32,14 +32,23 @@ describe('director login helpers', () => {
     message.replace('{message}', String(values.message ?? ''))
   )
 
-  it('formats the list_directors load error with the concrete cause', () => {
+  it('explains when the webui proxy cannot load configured directors', () => {
+    expect(directorListLoadErrorMessage(new Error('Failed to load directors'), t))
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
     expect(directorListLoadErrorMessage(new Error('Cannot connect to proxy'), t))
-      .toBe('Director list request failed: Cannot connect to proxy')
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
+    expect(directorListLoadErrorMessage(new Error('Timed out while loading directors'), t))
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
   })
 
-  it('falls back to an unknown error message when needed', () => {
+  it('explains when the director-list request has no error detail', () => {
     expect(directorListLoadErrorMessage(null, t))
-      .toBe('Director list request failed: Unknown error')
+      .toBe('Could not load the configured directors. Check that the webui proxy is running and reachable.')
+  })
+
+  it('preserves an unexpected director-list error', () => {
+    expect(directorListLoadErrorMessage(new Error('Invalid proxy response'), t))
+      .toBe('Director list request failed: Invalid proxy response')
   })
 
   it('enables automatic all-director login only for the main login flow', () => {

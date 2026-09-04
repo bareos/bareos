@@ -22,9 +22,61 @@
 import { jobStatusMap } from '../mock/index.js'
 import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobTypeCode } from './jobTypes.js'
+import { isErrorJobStatus, isWarningJobStatus, isOkJobStatus } from '../composables/useDirectorFetch.js'
+
+// Upper bound on the number of jobs fetched for a single "fetch everything"
+// request (e.g. sorting by a non-default column, a free-text search, or the
+// "All" rows-per-page option). Without a cap, a director with a very large
+// job history would ship its entire Job table to the browser in one call.
+export const MAX_JOBS_FETCH_LIMIT = 1000
 
 const JOB_LEVEL_FILTERS = new Set(['F', 'I', 'D', 'V', 'B'])
 const JOB_TYPE_FILTERS = new Set(['B', 'A', 'V', 'R', 'D', 'C', 'c', 'M', 'g', 'O', 'S', 'U', 'I'])
+
+// The director can only reschedule these job types, see IsRerunableJobType()
+// in core/src/include/job_types.h. Offering a rerun for any other type would
+// silently do nothing.
+const RERUNABLE_JOB_TYPES = new Set(['B', 'c', 'g'])
+
+// Resolve which part of a job's log should be jumped to, based on its
+// status: the first error/warning line, or the final termination summary
+// line for a successful job. Returns '' when there is no specific target
+// (e.g. Running/Waiting/Canceled), meaning the caller should fall back to
+// the default "scroll to bottom" behavior.
+export function resolveJobLogFocus(status) {
+  if (isErrorJobStatus(status)) return 'error'
+  if (isWarningJobStatus(status)) return 'warning'
+  if (isOkJobStatus(status)) return 'ok'
+  return ''
+}
+
+// Classify a single job log line by severity, for highlighting and for
+// extracting error/warning lines (e.g. Trouble View widget, Job Details
+// log highlighting). Order matters: the "0 errors/warnings" summary guard
+// must run before the generic error/warning checks below it.
+//
+// The warning pattern covers Bareos' M_NOTSAVED file daemon messages
+// (backup.cc), which cause a job's Warning status without containing the
+// word "warning" itself (e.g. "Could not stat ...", "Cannot open ...").
+// "Security violation" (M_SECURITY) and tape "Alert: ..." (M_ALERT)
+// messages are also classified as warnings so they remain visible, even
+// though they don't increment the job's warning/error counters.
+export function classifyLogLine(line) {
+  const l = line.toLowerCase()
+  if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
+    return 'normal'
+  }
+  if (/error|fatal|failed/.test(l)) return 'error'
+  if (
+    /warning|warn|could not stat|could not access|not saved|unknown file type/.test(l)
+    || /could not follow link|could not open directory|cannot open/.test(l)
+    || /security violation|\balert:/.test(l)
+  ) {
+    return 'warning'
+  }
+  if (/\bok\b|termination:.*ok|backup ok/.test(l)) return 'ok'
+  return 'normal'
+}
 
 export function normaliseJobId(value) {
   if (typeof value === 'number') {
@@ -58,6 +110,10 @@ export function normaliseJobLevelFilter(value) {
   }
 
   return JOB_LEVEL_FILTERS.has(value) ? value : ''
+}
+
+export function canRerunJob(job) {
+  return RERUNABLE_JOB_TYPES.has(resolveJobTypeCode(job?.type))
 }
 
 export function normaliseJobTypeFilter(value) {
@@ -222,37 +278,99 @@ export function buildJobsFilterClauses({
     : [buildJobsFilterClause(sharedFilters)]
 }
 
+// Maps a jobs table `sortBy` field to the director's `sortby=<column>`
+// keyword (the whitelist enforced server-side by GetJobsSortColumn() in
+// core/src/cats/sql_list.cc). Columns with no direct catalog equivalent are
+// intentionally omitted: `duration`/`speed` are derived client-side from
+// `bytes`/`duration`, and `director` only exists in the multi-director
+// aggregate view. Callers must fall back to a capped, client-sorted fetch
+// for any column this returns null for.
+const JOBS_SORT_COLUMNS = {
+  id: 'jobid',
+  name: 'name',
+  client: 'client',
+  type: 'type',
+  level: 'level',
+  status: 'jobstatus',
+  starttime: 'starttime',
+  files: 'jobfiles',
+  bytes: 'jobbytes',
+  errors: 'joberrors',
+}
+
+export function resolveJobsSortColumn(sortBy) {
+  return JOBS_SORT_COLUMNS[sortBy] ?? null
+}
+
 export function buildListJobsCommand({
   limit,
   offset = 0,
+  days,
   statusFilter = '',
   levelFilter = '',
   typeFilter = '',
   jobFilter = '',
   clientFilter = '',
+  sortColumn = '',
+  descending = true,
+  searchTerm = '',
 } = {}) {
-  return `llist jobs reverse limit=${limit} offset=${offset}` +
+  return `llist jobs${descending ? ' reverse' : ''} limit=${limit} offset=${offset}` +
+    `${sortColumn ? ` sortby=${sortColumn}` : ''}` +
+    `${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
+    `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({ statusFilter, levelFilter, typeFilter, jobFilter, clientFilter })
 }
 
 export function buildListJobsCountCommand({
+  days,
   statusFilter = '',
   levelFilter = '',
   typeFilter = '',
   jobFilter = '',
   clientFilter = '',
+  searchTerm = '',
 } = {}) {
-  return `list jobs count${buildJobsFilterClause({
-    statusFilter,
-    levelFilter,
-    typeFilter,
-    jobFilter,
-    clientFilter,
-  })}`
+  return `list jobs count${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
+    `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
+    buildJobsFilterClause({
+      statusFilter,
+      levelFilter,
+      typeFilter,
+      jobFilter,
+      clientFilter,
+    })
+}
+
+export function buildListRecentJobsCommand({
+    limit,
+    offset = 0,
+    sortColumn = '',
+    descending = true,
+} = {}) {
+    return `llist jobs last current enabled${descending ? ' reverse' : ''}` +
+      ` limit=${limit} offset=${offset}${sortColumn ? ` sortby=${sortColumn}` : ''}`
+}
+
+export function buildListRecentJobsCountCommand() {
+    return 'list jobs count last current enabled'
 }
 
 export function buildListJobCommand(jobId) {
   return `llist jobid=${jobId}`
+}
+
+// Batch variant of `list joblog jobid=<id>`: fetches joblog rows for several
+// jobs in a single director round-trip instead of one command per job. Only
+// positive integer JobIds are included; invalid/duplicate values are
+// silently dropped rather than sent to the director.
+export function buildListTroubleLogCommand(jobIds) {
+  const ids = [...new Set(
+    (jobIds ?? [])
+      .map(id => Number(id))
+      .filter(id => Number.isSafeInteger(id) && id > 0),
+  )]
+  return ids.length ? `list joblog jobids=${ids.join(',')}` : null
 }
 
 export function normaliseJobsSearchTerm(value) {
@@ -556,6 +674,7 @@ export function buildJobDetailsQuery({
   directorTab,
   directorTarget,
   dashboardOrigin,
+  logFocus,
 } = {}) {
   const query = {}
 
@@ -679,6 +798,10 @@ export function buildJobDetailsQuery({
 
   if (dashboardOrigin) {
     query.dashboardOrigin = '1'
+  }
+
+  if (logFocus === 'error' || logFocus === 'warning' || logFocus === 'ok') {
+    query.logFocus = logFocus
   }
 
   return query

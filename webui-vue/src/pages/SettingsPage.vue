@@ -99,6 +99,83 @@
           </q-item-section>
         </q-item>
       </q-card-section>
+      <q-separator />
+
+      <q-card-section>
+        <!-- Restore defaults -->
+        <div class="text-subtitle2 q-mb-sm">{{ t('Restore') }}</div>
+        <q-item tag="label" dense>
+          <q-item-section avatar>
+            <q-icon name="playlist_add_check" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Include related jobs up to the last full backup') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Preselection used when the restore page is opened.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle v-model="settings.restoreMergeJobs" />
+          </q-item-section>
+        </q-item>
+        <q-item tag="label" dense :disable="!settings.restoreMergeJobs">
+          <q-item-section avatar>
+            <q-icon name="folder_copy" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Include all client filesets') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Preselection used when the restore page is opened.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-toggle
+              v-model="settings.restoreMergeFilesets"
+              :disable="!settings.restoreMergeJobs"
+            />
+          </q-item-section>
+        </q-item>
+      </q-card-section>
+      <q-separator />
+
+      <q-card-section>
+        <!-- Backup & restore -->
+        <div class="text-subtitle2 q-mb-sm">{{ t('Backup & Restore') }}</div>
+        <q-item dense>
+          <q-item-section avatar>
+            <q-icon name="save_alt" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Dashboards & Settings') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Save or restore your dashboards, widgets, and other settings as a file.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <div class="row q-gutter-xs">
+              <q-btn
+                outline dense no-caps
+                icon="file_download"
+                :label="t('Backup')"
+                @click="downloadBackup"
+              />
+              <q-btn
+                outline dense no-caps
+                icon="file_upload"
+                :label="t('Restore')"
+                @click="triggerRestoreFilePicker"
+              />
+            </div>
+          </q-item-section>
+        </q-item>
+        <input
+          ref="restoreFileInput"
+          type="file"
+          accept="application/json,.json"
+          style="display:none"
+          @change="onRestoreFileSelected"
+        />
+      </q-card-section>
     </q-card>
   </q-page>
 </template>
@@ -108,10 +185,18 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import { useSettingsStore } from '../stores/settings.js'
+import { useBackupRestore } from '../composables/useBackupRestore.js'
 
 const $q       = useQuasar()
 const settings = useSettingsStore()
 const { t } = useI18n()
+
+const {
+  restoreFileInput,
+  downloadBackup,
+  triggerRestoreFilePicker,
+  onRestoreFileSelected,
+} = useBackupRestore({ t, $q })
 
 function applyDark(val) {
   $q.dark.set(val)

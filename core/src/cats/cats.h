@@ -45,6 +45,7 @@
 #include "lib/util.h"
 
 #include <bitset>
+#include <optional>
 #include <string>
 #include <stdexcept>
 #include <system_error>
@@ -796,21 +797,37 @@ class BareosDb : public BareosDbQueryEnum {
                        PoolDbRecord* pr,
                        OutputFormatter* sendit,
                        e_list_type type);
-  void ListJobRecords(JobControlRecord* jcr,
-                      JobDbRecord* jr,
-                      const char* range,
-                      const char* clientname,
-                      std::vector<char> jobstatusarray,
-                      std::vector<char> joblevels,
-                      std::vector<char> jobtypes,
-                      const char* volumename,
-                      const char* poolname,
-                      utime_t since_time,
-                      bool last,
-                      bool count,
-                      OutputFormatter* sendit,
-                      e_list_type type,
-                      bool descending = false);
+  /* Whitelist lookup for `list jobs sortby=<keyword>`. Returns false (and
+   * leaves sql_column untouched) for any keyword not in the fixed set of
+   * sortable Job columns -- callers must treat that as a rejected argument,
+   * never fall back to interpolating the raw keyword into SQL. */
+  bool GetJobsSortColumn(const char* keyword, std::string& sql_column);
+  /* job_names/client_names restrict the result to the given Job.Name /
+   * Client.Name values (used to push the `current`/`enabled`/`disabled`
+   * filters -- which depend on the live director configuration, not on any
+   * catalog column -- down into SQL, so range and count queries see the
+   * exact same filtered dataset). std::nullopt means "no such filter". */
+  void ListJobRecords(
+      JobControlRecord* jcr,
+      JobDbRecord* jr,
+      const char* range,
+      const char* clientname,
+      std::vector<char> jobstatusarray,
+      std::vector<char> joblevels,
+      std::vector<char> jobtypes,
+      const char* volumename,
+      const char* poolname,
+      utime_t since_time,
+      bool last,
+      bool count,
+      OutputFormatter* sendit,
+      e_list_type type,
+      bool descending = false,
+      const char* sort_column = nullptr,
+      const char* search = nullptr,
+      const std::optional<std::vector<std::string>>& job_names = std::nullopt,
+      const std::optional<std::vector<std::string>>& client_names
+      = std::nullopt);
   void ListJobTotals(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      OutputFormatter* sendit);
@@ -842,6 +859,18 @@ class BareosDb : public BareosDbQueryEnum {
                          bool count,
                          OutputFormatter* sendit,
                          e_list_type type);
+  // Batch variant of ListJoblogRecords(): returns joblog rows for several
+  // JobIds in a single query, each row tagged with its JobId, so a caller
+  // that already knows which jobs it cares about (e.g. the webui Trouble
+  // View's bounded jobstatus/days prefilter) does not have to issue one
+  // "list joblog jobid=" round-trip per job. Callers are responsible for any
+  // ACL filtering of jobids before calling this -- unlike ListJoblogRecords()
+  // (which relies on GetJobidFromCmdline() having already checked Job_ACL for
+  // the single requested job), this method performs no ACL checks itself.
+  void ListJoblogRecordsForJobs(JobControlRecord* jcr,
+                                const std::vector<JobId_t>& jobids,
+                                OutputFormatter* sendit,
+                                e_list_type type);
   void ListLogRecords(JobControlRecord* jcr,
                       const char* clientname,
                       const char* range,

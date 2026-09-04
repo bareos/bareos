@@ -109,6 +109,11 @@ class JobController extends AbstractRestfulController
                 $this->result['failed'] = count($jobs['failed']);
 
             } elseif(isset($client)) {
+                /* 'desc' has always been a no-op here: `llist jobs` never
+                 * accepted an order= direction keyword (that convention
+                 * belongs to `list backups`' ascending/descending), and
+                 * the director's `sortby=<column>` keyword doesn't read
+                 * this argument either, so it is passed through unused. */
                 $this->result = $this->getClientModel()->getClientJobs($this->bsock, $client, null, 'desc', null);
             } else {
                 $this->result = $this->getJobModel()->getJobs($this->bsock, null, $period);

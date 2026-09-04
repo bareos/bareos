@@ -65,6 +65,24 @@ describe('restore browser placeholder', () => {
     })).toBe('loading')
   })
 
+  it('shows a building-cache state while the bvfs cache is being built', () => {
+    expect(getRestoreBrowserPlaceholder({
+      browserError: '',
+      loadingBrowser: true,
+      buildingCache: true,
+      hasSelectedJob: true,
+    })).toBe('building-cache')
+  })
+
+  it('prefers the error state over building-cache', () => {
+    expect(getRestoreBrowserPlaceholder({
+      browserError: 'Failed to load file tree',
+      loadingBrowser: true,
+      buildingCache: true,
+      hasSelectedJob: true,
+    })).toBe('error')
+  })
+
   it('falls back to the initial empty prompt otherwise', () => {
     expect(getRestoreBrowserPlaceholder({
       browserError: '',
@@ -339,7 +357,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {
@@ -373,7 +391,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {

@@ -1,0 +1,345 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+
+/**
+ * Pinia store for configurable multi-dashboard state.
+ *
+ * Persisted to localStorage under LS_KEY.
+ * Future enhancement: replace localStorage serialisation with a server-side
+ * API call so layout is shared across browsers/devices.
+ *
+ * Each dashboard has:
+ *   { id, name, widgets[] }
+ *
+ * Each widget instance has:
+ *   { id, type, title, props, layout: { x, y, w, h } }
+ */
+
+import { defineStore } from 'pinia'
+import { ref, watch } from 'vue'
+import { PRECONFIGURED_DASHBOARDS } from '../dashboard/defaultDashboard.js'
+
+const LS_KEY = 'bareos_dashboards'
+
+/** Minimum safe grid dimensions for any widget. */
+const MIN_W = 2
+const MIN_H = 3
+
+function generateId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+}
+
+function normaliseDashboard(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const id = String(raw.id ?? '').trim()
+  const name = String(raw.name ?? '').trim()
+  if (!id || !name) return null
+
+  const widgets = Array.isArray(raw.widgets)
+    ? raw.widgets.flatMap(w => { const n = normaliseWidget(w); return n ? [n] : [] })
+    : []
+
+  return { id, name, widgets }
+}
+
+function normaliseWidget(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const id = String(raw.id ?? '').trim()
+  const type = String(raw.type ?? '').trim()
+  if (!id || !type) return null
+
+  return {
+    id,
+    type,
+    title: String(raw.title ?? '').trim(),
+    props: raw.props && typeof raw.props === 'object' ? { ...raw.props } : {},
+    layout: normaliseLayout(raw.layout, id),
+  }
+}
+
+function normaliseLayout(raw, i) {
+  return {
+    x: Number.isInteger(Number(raw?.x)) ? Number(raw.x) : 0,
+    y: Number.isInteger(Number(raw?.y)) ? Number(raw.y) : 0,
+    w: Math.max(MIN_W, Number.isInteger(Number(raw?.w)) ? Number(raw.w) : 4),
+    h: Math.max(MIN_H, Number.isInteger(Number(raw?.h)) ? Number(raw.h) : 5),
+    i: String(i),
+    minW: MIN_W,
+    minH: MIN_H,
+  }
+}
+
+function cloneDashboard(dashboard) {
+  return {
+    ...dashboard,
+    widgets: dashboard.widgets.map(widget => ({
+      ...widget,
+      props: { ...widget.props },
+      layout: { ...widget.layout },
+    })),
+  }
+}
+
+function addMissingPreconfiguredDashboards(dashboards) {
+  const names = new Set(dashboards.map(dashboard => dashboard.name))
+  return [
+    ...dashboards,
+    ...PRECONFIGURED_DASHBOARDS
+      .filter(dashboard => !names.has(dashboard.name))
+      .map(cloneDashboard),
+  ]
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      const stored = Array.isArray(parsed) ? parsed : parsed?.dashboards
+      if (Array.isArray(stored) && stored.length > 0) {
+        const dashboards = stored.flatMap(d => {
+          const nd = normaliseDashboard(d)
+          return nd ? [nd] : []
+        })
+        if (dashboards.length > 0) {
+          const savedActiveId = parsed?.activeDashboardId
+          const migratedDashboards = addMissingPreconfiguredDashboards(
+            dashboards
+          )
+          const validActiveId = migratedDashboards.find(d => d.id === savedActiveId)?.id
+          return {
+            dashboards: migratedDashboards,
+            activeDashboardId: validActiveId ?? migratedDashboards[0].id,
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // First run: seed the built-in editable dashboards.
+  return {
+    dashboards: PRECONFIGURED_DASHBOARDS.map(cloneDashboard),
+    activeDashboardId: null,
+  }
+}
+
+export const useDashboardStore = defineStore('dashboards', () => {
+  const loaded = loadFromStorage()
+  const dashboards = ref(loaded.dashboards)
+  const activeDashboardId = ref(
+    loaded.activeDashboardId ?? dashboards.value[0]?.id ?? null
+  )
+
+  function save() {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      dashboards: dashboards.value,
+      activeDashboardId: activeDashboardId.value,
+    }))
+  }
+
+  watch(dashboards, save, { deep: true })
+  watch(activeDashboardId, save)
+
+  // ── active dashboard ─────────────────────────────────────────────────────
+
+  function activeDashboard() {
+    return dashboards.value.find(d => d.id === activeDashboardId.value) ?? dashboards.value[0]
+  }
+
+  function setActiveDashboard(id) {
+    activeDashboardId.value = id
+  }
+
+  // ── dashboard CRUD ───────────────────────────────────────────────────────
+
+  function addDashboard(name) {
+    const id = generateId()
+    dashboards.value = [...dashboards.value, { id, name: String(name).trim(), widgets: [] }]
+    activeDashboardId.value = id
+    return id
+  }
+
+  function renameDashboard(id, name) {
+    dashboards.value = dashboards.value.map(d =>
+      d.id === id ? { ...d, name: String(name).trim() } : d
+    )
+  }
+
+  function removeDashboard(id) {
+    if (dashboards.value.length <= 1) return
+    dashboards.value = dashboards.value.filter(d => d.id !== id)
+    if (activeDashboardId.value === id) {
+      activeDashboardId.value = dashboards.value[0]?.id ?? null
+    }
+  }
+
+  /**
+   * Discard all custom dashboards/widgets and re-seed the built-in
+   * preconfigured dashboards (Overview + Analytics) from scratch.
+   */
+  function resetAllDashboards() {
+    dashboards.value = PRECONFIGURED_DASHBOARDS.map(cloneDashboard)
+    activeDashboardId.value = dashboards.value[0]?.id ?? null
+  }
+
+  // ── backup / restore ─────────────────────────────────────────────────────
+
+  /** Serialisable snapshot of all dashboards, suitable for JSON export. */
+  function exportDashboards() {
+    return {
+      bareosDashboardsBackup: 1,
+      exportedAt: new Date().toISOString(),
+      dashboards: dashboards.value,
+      activeDashboardId: activeDashboardId.value,
+    }
+  }
+
+  /**
+   * Replace all dashboards with the contents of a previously exported
+   * backup. Throws an Error with a user-facing message if the data is not
+   * a recognisable dashboards backup.
+   */
+  function importDashboards(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data) || data.bareosDashboardsBackup !== 1) {
+      throw new Error('This file does not contain a dashboards backup.')
+    }
+    if (!Array.isArray(data.dashboards)) {
+      throw new Error('This file does not contain a dashboards backup.')
+    }
+
+    const seenDashboardIds = new Set()
+    const imported = data.dashboards.flatMap(d => {
+      const nd = normaliseDashboard(d)
+      if (!nd || seenDashboardIds.has(nd.id)) return []
+      seenDashboardIds.add(nd.id)
+
+      const seenWidgetIds = new Set()
+      nd.widgets = nd.widgets.filter(w => {
+        if (seenWidgetIds.has(w.id)) return false
+        seenWidgetIds.add(w.id)
+        return true
+      })
+      return [nd]
+    })
+    if (imported.length === 0) {
+      throw new Error('This file does not contain any valid dashboards.')
+    }
+    const validActiveId = imported.find(d => d.id === data.activeDashboardId)?.id
+    dashboards.value = imported
+    activeDashboardId.value = validActiveId ?? imported[0].id
+  }
+
+  // ── widget CRUD ──────────────────────────────────────────────────────────
+
+  function addWidget(dashboardId, { type, title, props, layout }) {
+    const id = generateId()
+    const widget = {
+      id,
+      type,
+      title: String(title ?? '').trim(),
+      props: props && typeof props === 'object' ? { ...props } : {},
+      layout: normaliseLayout(layout, id),
+    }
+    dashboards.value = dashboards.value.map(d =>
+      d.id === dashboardId
+        ? { ...d, widgets: [...d.widgets, widget] }
+        : d
+    )
+    return id
+  }
+
+  function updateWidgetLayout(dashboardId, widgetId, layout) {
+    dashboards.value = dashboards.value.map(d => {
+      if (d.id !== dashboardId) return d
+      return {
+        ...d,
+        widgets: d.widgets.map(w =>
+          w.id === widgetId ? { ...w, layout: normaliseLayout(layout, widgetId) } : w
+        ),
+      }
+    })
+  }
+
+  function updateWidgetLayouts(dashboardId, layouts) {
+    // layouts: array of vue-grid-layout layout items { i, x, y, w, h }
+    dashboards.value = dashboards.value.map(d => {
+      if (d.id !== dashboardId) return d
+      const byId = Object.fromEntries(layouts.map(l => [l.i, l]))
+      return {
+        ...d,
+        widgets: d.widgets.map(w => {
+          const l = byId[w.id]
+          return l ? { ...w, layout: normaliseLayout(l, w.id) } : w
+        }),
+      }
+    })
+  }
+
+  function updateWidgetTitle(dashboardId, widgetId, title) {
+    dashboards.value = dashboards.value.map(d => {
+      if (d.id !== dashboardId) return d
+      return {
+        ...d,
+        widgets: d.widgets.map(w =>
+          w.id === widgetId ? { ...w, title: String(title ?? '').trim() } : w
+        ),
+      }
+    })
+  }
+
+  function updateWidgetProps(dashboardId, widgetId, props) {
+    dashboards.value = dashboards.value.map(d => {
+      if (d.id !== dashboardId) return d
+      return {
+        ...d,
+        widgets: d.widgets.map(w =>
+          w.id === widgetId ? { ...w, props: { ...props } } : w
+        ),
+      }
+    })
+  }
+
+  function removeWidget(dashboardId, widgetId) {
+    dashboards.value = dashboards.value.map(d => {
+      if (d.id !== dashboardId) return d
+      return { ...d, widgets: d.widgets.filter(w => w.id !== widgetId) }
+    })
+  }
+
+  return {
+    dashboards,
+    activeDashboardId,
+    activeDashboard,
+    setActiveDashboard,
+    addDashboard,
+    renameDashboard,
+    removeDashboard,
+    resetAllDashboards,
+    exportDashboards,
+    importDashboards,
+    addWidget,
+    updateWidgetLayout,
+    updateWidgetLayouts,
+    updateWidgetTitle,
+    updateWidgetProps,
+    removeWidget,
+  }
+})

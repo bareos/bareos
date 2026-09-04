@@ -63,7 +63,7 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0007_list_jobs_long */
@@ -85,16 +85,14 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0008_list_jobs_count */
 R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+%s
 WHERE Job.JobId > 0
 %s
 %s;
@@ -126,7 +124,7 @@ INNER JOIN (
    GROUP BY Job.Name
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0010_list_jobs_long_last */
@@ -159,7 +157,7 @@ INNER JOIN (
    GROUP BY Job.Name
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0011_sel_JobMedia */
@@ -1213,4 +1211,23 @@ WHERE
   client_name = '%s'
 ORDER BY
   fileset;
+)SQL",
+
+/* 0086_list_jobs_count_last */
+R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
+FROM Job
+INNER JOIN (
+   SELECT MAX(Job.JobId) as MaxJobId
+   FROM Job
+   LEFT JOIN Client ON Client.ClientId=Job.ClientId
+   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+   WHERE Job.JobId > 0
+   %s
+   GROUP BY Job.Name
+) LastJob
+ON Job.JobId = LastJob.MaxJobId
+;
 )SQL",
