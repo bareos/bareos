@@ -498,9 +498,9 @@ IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyXattrPacket type
 typedef struct {
-  PyObject_HEAD char* fname; /* Filename */
-  PyObject* name;            /* XATTR name */
-  PyObject* value;           /* XATTR value */
+  PyObject_HEAD PyObject* fname; /* Filename */
+  PyObject* name;                /* XATTR name */
+  PyObject* value;               /* XATTR value */
 } PyXattrPacket;
 
 // Forward declarations of type specific functions.
@@ -515,7 +515,7 @@ static PyMethodDef PyXattrPacket_methods[] = {
 };
 
 static PyMemberDef PyXattrPacket_members[]
-    = {{(char*)"fname", T_STRING, offsetof(PyXattrPacket, fname), 0,
+    = {{(char*)"fname", T_OBJECT, offsetof(PyXattrPacket, fname), 0,
         (char*)"Filename"},
        {(char*)"name", T_OBJECT, offsetof(PyXattrPacket, name), 0,
         (char*)"XATTR name buffer"},

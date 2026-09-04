@@ -1066,7 +1066,11 @@ static inline PyXattrPacket* NativeToPyXattrPacket(xattr_pkt* xp)
   PyXattrPacket* pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
 
   if (pXattrPacket) {
-    pXattrPacket->fname = dup_str(xp->fname);
+    pXattrPacket->fname = PyUnicode_FromString(xp->fname);
+    if (!pXattrPacket->fname) {
+      PyObject_Free(pXattrPacket);
+      return nullptr;
+    }
 
     if (xp->name_length && xp->name) {
       pXattrPacket->name
@@ -2508,8 +2512,9 @@ static PyObject* PyXattrPacket_repr(PyXattrPacket* self)
   PyObject* s;
   PoolMem buf(PM_MESSAGE);
 
-  Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")", self->fname,
-       PyGetByteArrayValue(self->name), PyGetByteArrayValue(self->value));
+  Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")",
+       PyUnicode_AsUTF8(self->fname), PyGetByteArrayValue(self->name),
+       PyGetByteArrayValue(self->value));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2526,16 +2531,14 @@ static int PyXattrPacket_init(PyXattrPacket* self,
   self->name = NULL;
   self->value = NULL;
 
-  const char* fname{};
-
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|soo", kwlist, &fname,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UOO", kwlist, &self->fname,
                                    &self->name, &self->value)) {
     return -1;
   }
 
   Py_XINCREF(self->name);
   Py_XINCREF(self->value);
-  self->fname = dup_str(fname);
+  Py_XINCREF(self->fname);
 
   return 0;
 }
@@ -2547,7 +2550,7 @@ static void PyXattrPacket_dealloc(PyObject* obj)
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->value);
   Py_CLEAR(self->name);
-  C_CLEAR(self->fname);
+  Py_CLEAR(self->fname);
   PyObject_Del(self);
 }
 
