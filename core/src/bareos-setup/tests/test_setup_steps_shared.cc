@@ -21,6 +21,8 @@
 #include "setup_steps.h"
 
 #include <algorithm>
+#include <array>
+#include <climits>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -33,6 +35,7 @@
 #include "command_runner.h"
 #include "os_detector.h"
 #include "setup_session.h"
+#include "ws_codec.h"
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
 {
@@ -195,6 +198,52 @@ TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
 TEST(BareosSetupCommandRunner, DoesNotFindNonexistentTool)
 {
   EXPECT_FALSE(IsToolInPath("definitely-not-a-real-tool-xyz"));
+}
+
+TEST(BareosSetupCommandRunner, DeliversBoundedStandardInput)
+{
+  std::string output;
+  EXPECT_EQ(
+      RunCommandWithInput({"sh", "-c", "cat"}, "setup input", false,
+                          [&output](const std::string& line,
+                                    const std::string&) { output += line; }),
+      0);
+  EXPECT_EQ(output, "setup input");
+}
+
+TEST(BareosSetupCommandRunner, RejectsInputExceedingPipeBuf)
+{
+  EXPECT_THROW(
+      RunCommandWithInput({"sh", "-c", "cat"}, std::string(PIPE_BUF + 1, 'x'),
+                          false, [](const std::string&, const std::string&) {}),
+      std::invalid_argument);
+}
+
+TEST(WsCodec, RejectsOversizedFramesBeforePayloadAllocation)
+{
+  int sockets[2];
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  constexpr uint64_t oversized_payload = 16ULL * 1024 * 1024 + 1;
+  const std::array<unsigned char, 10> header{
+      0x81,
+      127,
+      static_cast<unsigned char>(oversized_payload >> 56),
+      static_cast<unsigned char>(oversized_payload >> 48),
+      static_cast<unsigned char>(oversized_payload >> 40),
+      static_cast<unsigned char>(oversized_payload >> 32),
+      static_cast<unsigned char>(oversized_payload >> 24),
+      static_cast<unsigned char>(oversized_payload >> 16),
+      static_cast<unsigned char>(oversized_payload >> 8),
+      static_cast<unsigned char>(oversized_payload),
+  };
+  ASSERT_EQ(write(sockets[1], header.data(), header.size()),
+            static_cast<ssize_t>(header.size()));
+  WsCodec codec(sockets[0]);
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
+
+  close(sockets[0]);
+  close(sockets[1]);
 }
 
 TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)

@@ -34,6 +34,7 @@
 #ifndef BAREOS_LIB_WS_CODEC_H_
 #define BAREOS_LIB_WS_CODEC_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -63,6 +64,8 @@ class WsCodec {
   bool IsClosed() const { return closed_; }
 
  private:
+  static constexpr std::size_t kMaxMessageSize = 16 * 1024 * 1024;
+
   int fd_;
   bool closed_ = false;
 
