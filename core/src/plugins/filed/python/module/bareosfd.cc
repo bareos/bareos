@@ -2006,7 +2006,7 @@ static int PyRestoreObject_init(PyRestoreObject* self,
   const char* plugin_name{};
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|UosiiiiiiI", kwlist, &self->object_name, &self->object,
+          args, kwds, "|UOsiiiiiiI", kwlist, &self->object_name, &self->object,
           &plugin_name, &self->object_type, &self->object_len,
           &self->object_full_len, &self->object_index,
           &self->object_compression, &self->stream, &self->JobId)) {
