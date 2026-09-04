@@ -2464,8 +2464,8 @@ static PyObject* PyAclPacket_repr(PyAclPacket* self)
   PyObject* s;
   PoolMem buf(PM_MESSAGE);
 
-  Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")", self->fname,
-       PyGetByteArrayValue(self->content));
+  Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")",
+       PyUnicode_AsUTF8(self->fname), PyGetByteArrayValue(self->content));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
