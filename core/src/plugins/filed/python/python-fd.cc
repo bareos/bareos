@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -256,22 +256,6 @@ extern "C" bRC freePlugin(PluginContext* plugin_ctx)
 
   if (!plugin_priv_ctx) { return bRC_Error; }
 
-  if (plugin_priv_ctx->plugin_options) {
-    free(plugin_priv_ctx->plugin_options);
-  }
-
-  if (plugin_priv_ctx->module_path) { free(plugin_priv_ctx->module_path); }
-
-  if (plugin_priv_ctx->module_name) { free(plugin_priv_ctx->module_name); }
-
-  if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
-
-  if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
-
-  if (plugin_priv_ctx->object_name) { free(plugin_priv_ctx->object_name); }
-
-  if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-
   // Stop any sub interpreter started per plugin instance.
   auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
   if (!ts) {
@@ -282,7 +266,8 @@ extern "C" bRC freePlugin(PluginContext* plugin_ctx)
   }
   PyEval_AcquireThread(ts);
 
-  if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
+  Py_XDECREF(plugin_priv_ctx->pModule);
+  Py_XDECREF(plugin_priv_ctx->py_fname);
 
   Py_EndInterpreter(ts);
 
@@ -297,6 +282,13 @@ extern "C" bRC freePlugin(PluginContext* plugin_ctx)
     // endinterpreter releases the gil for us since 3.12
   }
 
+  free(plugin_priv_ctx->plugin_options);
+  free(plugin_priv_ctx->module_path);
+  free(plugin_priv_ctx->module_name);
+  free(plugin_priv_ctx->fname);
+  free(plugin_priv_ctx->link);
+  free(plugin_priv_ctx->object_name);
+  free(plugin_priv_ctx->object);
   free(plugin_priv_ctx);
   plugin_ctx->plugin_private_context = NULL;
 

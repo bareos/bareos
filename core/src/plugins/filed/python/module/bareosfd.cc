@@ -46,6 +46,7 @@
 #include "bareosfd.h"
 #include "include/filetypes.h"
 #include "lib/edit.h"
+#include "unicodeobject.h"
 
 namespace filedaemon {
 
@@ -286,13 +287,13 @@ static inline bool PySavePacketToNative(
       /* As this has to linger as long as the backup is running we save it in
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
-        if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
+        Py_XDECREF(plugin_priv_ctx->py_fname);
+        Py_INCREF(pSavePkt->fname);
+        plugin_priv_ctx->py_fname = pSavePkt->fname;
 
-        const char* fileName_AsUTF8 = PyUnicode_AsUTF8(pSavePkt->fname);
-        if (!fileName_AsUTF8) return false;
-
-        plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
-        sp->fname = plugin_priv_ctx->fname;
+        Py_ssize_t size{};
+        auto* str = PyUnicode_AsUTF8AndSize(pSavePkt->fname, &size);
+        sp->fname = plugin_priv_ctx->fname = strndup(str, size);
       } else {
         PyErr_SetString(PyExc_TypeError,
                         "fname needs to be of type string \"utf-8\"");
@@ -547,7 +548,7 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->count = io->count;
     pIoPkt->flags = io->flags;
     pIoPkt->mode = io->mode;
-    pIoPkt->fname = dup_str(io->fname);
+    pIoPkt->fname = PyUnicode_FromString(io->fname);
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
@@ -2407,15 +2408,13 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = false;
   self->filedes = kInvalidFiledescriptor;
 
-  const char* fname{};
-
 #if HAVE_WIN32
   long long parsed_offset = static_cast<long long>(self->offset);
   int parsed_win32 = self->win32 ? 1 : 0;
   long long parsed_filedes = static_cast<long long>(self->filedes);
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|HiiiosiiiiLpL", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &fname, &self->status,
+          args, kwds, "|HiiiUsiiiiLpL", kwlist, &self->func, &self->count,
+          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
           &parsed_win32, &parsed_filedes)) {
     return -1;
@@ -2427,8 +2426,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   long long parsed_offset = static_cast<long long>(self->offset);
   int parsed_win32 = self->win32 ? 1 : 0;
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|HiiiosiiiiLpi", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &fname, &self->status,
+          args, kwds, "|HiiiUsiiiiLpi", kwlist, &self->func, &self->count,
+          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
           &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
           &parsed_win32, &self->filedes)) {
     return -1;
@@ -2438,8 +2437,7 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 #endif
 
   Py_XINCREF(self->buf);
-
-  self->fname = dup_str(fname);
+  Py_XINCREF(self->fname);
 
   return 0;
 }
