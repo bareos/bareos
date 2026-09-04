@@ -2,9 +2,9 @@ publiccodeYmlVersion: 0.5.0
 name: Bareos
 url: https://github.com/bareos/bareos
 landingURL: https://www.bareos.com/
-softwareVersion: 25.1.0
-releaseDate: 2026-08-03
-logo: bareos-github-banner.png
+softwareVersion: 25.1.1
+releaseDate: 2026-09-03
+logo: core/src/images/bareos-logo-full.svg
 platforms:
   - linux
   - windows
@@ -15,6 +15,19 @@ categories:
   - backup
   - it-management
   - it-security
+usedBy:
+  - Staatliche Archive Bayerns
+  - Stadt Jena
+  - Die Französische Regierung (Empfohlen in der SILL Liste)
+  - Stadt Vera (Almería (Spanien))
+  - FSU Jena
+  - Universität Utah, Center for High Performance Computing
+  - Aristoteles-Universität Thessaloniki
+  - Consiglio Nazionale delle Ricerche (CNR) Italien
+  - Digital Repository of Ireland
+  - TU Darmstadt
+  - Jozef-Stefan-Institut Slowenien
+  - Hochschule Bremen
 developmentStatus: stable
 softwareType: standalone/backend
 description:
@@ -43,6 +56,19 @@ description:
       Backup-Szenarien sowie Erweiterungsmöglichkeiten über Plugins. Dadurch
       kann Bareos unter anderem virtualisierte Umgebungen, Datenbanken und
       spezialisierte Workloads absichern.
+
+      Weiterführende Links:
+
+      - [Bareos-Dokumentation lesen](https://docs.bareos.org/)
+
+      - [Bareos-Testzugang anfragen](https://www.bareos.com/try/)
+
+      - [Bareos-Preiskalkulator öffnen](https://www.bareos.com/pricing/)
+
+      - [Einem Bareos Expert Circle beitreten](https://www.bareos.com/meet/)
+
+      - [Consulting, Support und finanzierte Entwicklung entdecken](https://www.bareos.com/services/)
+
     features:
       - Plattformübergreifende Backup- und Restore-Funktionen
       - Speicherung auf Disk, Tape und S3-kompatiblen Objektspeichern
@@ -73,6 +99,20 @@ description:
       strategies and extension points through plugins. This allows Bareos to
       protect virtual environments, databases and specialized workloads while
       remaining transparent and fully open source under the AGPLv3 license.
+
+      Further reading:
+
+      - [Read the Bareos documentation](https://docs.bareos.org/)
+
+      - [Request Bareos trial access](https://www.bareos.com/try/)
+
+      - [Open the Bareos pricing calculator](https://www.bareos.com/pricing/)
+
+      - [Join a Bareos Expert Circle](https://www.bareos.com/meet/)
+
+      - [Explore consulting, support, and funded development](https://www.bareos.com/services/)
+
+    documentation: https://docs.bareos.org
     features:
       - Cross-platform backup and restore
       - Storage on disk, tape and S3-compatible object storage
