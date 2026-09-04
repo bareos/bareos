@@ -328,12 +328,6 @@ bool generic_tape_device::offline()
   return true;
 }
 
-/**
- * Write an end of file on the device
- *
- * Returns: true on success
- *          false on failure
- */
 bool generic_tape_device::weof(int num)
 {
   mtop mt_com{};
@@ -357,8 +351,20 @@ bool generic_tape_device::weof(int num)
   ClearEof();
   ClearEot();
   mt_com.mt_op = MTWEOF;
+#if defined(MTWEOFI)
+  mt_com.mt_op = MTWEOFI;
+#endif
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
+#if defined(MTWEOFI)
+  if (status < 0 && mt_com.mt_op == MTWEOFI
+      && (errno == ENOTTY || errno == ENOSYS)) {
+    Dmsg1(129, "Immediate filemark unsupported on %s, falling back to MTWEOF\n",
+          prt_name);
+    mt_com.mt_op = MTWEOF;
+    status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
+  }
+#endif
   if (status == 0) {
     block_num = 0;
     file += num;
