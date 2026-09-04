@@ -937,6 +937,17 @@ const char* GetUsageStringForConsoleConfigureCommand()
         configure_usage_string->strcat(" |\n");
       }
     }
+    // subcommand: delete
+    for (int r = 0; dird_resource_tables[r].name; r++) {
+      auto& table = dird_resource_tables[r];
+      if ((table.rcode != R_DIRECTOR) && (table.items)) {
+        configure_usage_string->strcat("delete ");
+        resourcename.strcpy(table.name);
+        resourcename.toLower();
+        configure_usage_string->strcat(resourcename);
+        configure_usage_string->strcat(" name=<name> |\n");
+      }
+    }
     // subcommand: export
     configure_usage_string->strcat("export client=<client>");
   }

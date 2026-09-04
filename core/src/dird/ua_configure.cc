@@ -33,6 +33,8 @@
 #include "lib/util.h"
 #include <array>
 #include <algorithm>
+#include <cerrno>
+#include <cstring>
 
 namespace directordaemon {
 
@@ -302,6 +304,36 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
 }
 
 /**
+ * "configure add client" writes a File Daemon export file containing a
+ * plaintext copy of the Director's password (see
+ * ConfigureCreateFdResource() above) to
+ * bareos-dir-export/client/<clientname>/bareos-fd.d/director/<dirname>.conf.
+ * Deleting the Client resource must also remove this file: otherwise it is
+ * left behind as a stale, credential-bearing artifact (CWE-459). Removal is
+ * best-effort and does not fail the delete: the Client resource itself is
+ * already gone by the time this is called, so there is nothing left to roll
+ * back, and a leftover export file is reported to the user instead.
+ */
+static inline void ConfigureRemoveFdExport(UaContext* ua,
+                                           const char* clientname)
+{
+  PoolMem basedir(PM_FNAME);
+  PoolMem path(PM_FNAME);
+  const char* dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->resource_name_;
+
+  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
+  if (!my_config->GetPathOfResource(path, basedir.c_str(), "director", dirname,
+                                    false)) {
+    return;
+  }
+
+  if (unlink(path.c_str()) != 0 && errno != ENOENT) {
+    ua->WarningMsg(T_("failed to remove filedaemon export file \"%s\": %s\n"),
+                   path.c_str(), strerror(errno));
+  }
+}
+
+/**
  * To add a resource during runtime, the following approach is used:
  *
  * - Create a temporary file which contains the new resource.
@@ -326,6 +358,17 @@ static inline bool ConfigureAddResource(UaContext* ua,
   PoolMem filename(PM_FNAME);
   PoolMem temp(PM_FNAME);
   JobResource* res = NULL;
+
+  /* Held for the whole check-then-mutate sequence below, since
+   * ParseConfigFile() -> SaveResource() -> AppendToResourcesChain() and
+   * RemoveResource() do not lock the resource tree themselves.
+   * ConfigureDeleteResource() takes the same lock for its complete
+   * check-then-free sequence, so a concurrent "configure add" and
+   * "configure delete" cannot interleave and leave a dangling reference.
+   * The underlying rwlock is re-entrant for the locking thread, so nesting
+   * with the locking the called functions (e.g. GetResWithName()) do
+   * themselves is safe. */
+  ResLocker _{my_config};
 
   if (!configure_create_resource_string(ua, first_parameter, res_table, name,
                                         resource)) {
@@ -425,6 +468,189 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
   return result;
 }
 
+/**
+ * To delete a resource during runtime, the following approach is used:
+ *
+ * - Look up the resource and refuse to proceed if any other loaded
+ *   resource still references it: deleting the config file while a
+ *   reference remains would leave the reference dangling on the next
+ *   reload/restart, and freeing the resource itself while something still
+ *   points to it would corrupt the live configuration. The caller must
+ *   remove or update the referencing resource(s) first.
+ * - Remove the resource's on-disk config file.
+ * - Remove the resource from the in-memory configuration.
+ */
+/**
+ * FindResourceReferences() only scans directives of type CFG_TYPE_RES and
+ * CFG_TYPE_ALIST_RES, which covers plain resource-pointer directives. A
+ * Schedule's "Run" directive is of type CFG_TYPE_RUN instead: it can carry
+ * its own Pool/Storage/Messages overrides via a chain of RunResource
+ * records that live only in the dird-specific ScheduleResource, so the
+ * generic (daemon-agnostic) FindResourceReferences() in lib/parse_conf.cc
+ * cannot inspect them. Scan those overrides here instead, at the dird
+ * level where RunResource is visible, and append any matches so a
+ * resource still referenced only via a Run override is not deleted out
+ * from under a Schedule.
+ */
+static inline void FindRunResourceReferences(
+    int rcode,
+    const BareosResource* target,
+    std::vector<ResourceReference>* references)
+{
+  ScheduleResource* sched = nullptr;
+  foreach_res (sched, R_SCHEDULE) {
+    for (RunResource* run = sched->run; run; run = run->next) {
+      auto check = [&](BareosResource* referenced, const char* directive) {
+        if (referenced == target) {
+          references->push_back({R_SCHEDULE, sched->resource_name_, directive});
+        }
+      };
+      switch (rcode) {
+        case R_POOL:
+          check(run->pool, "Pool");
+          check(run->full_pool, "FullBackupPool");
+          check(run->vfull_pool, "VirtualFullBackupPool");
+          check(run->inc_pool, "IncrementalBackupPool");
+          check(run->diff_pool, "DifferentialBackupPool");
+          check(run->next_pool, "NextPool");
+          break;
+        case R_STORAGE:
+          check(run->storage, "Storage");
+          break;
+        case R_MSGS:
+          check(run->msgs, "Messages");
+          break;
+        default:
+          break;
+      }
+    }
+  }
+}
+
+static inline void ConfigureSendReferences(
+    UaContext* ua,
+    const std::vector<ResourceReference>& references)
+{
+  ua->send->ArrayStart("references");
+  for (const auto& ref : references) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("resource", my_config->ResToStr(ref.rcode));
+    ua->send->ObjectKeyValue("name", ref.resource_name.c_str());
+    ua->send->ObjectKeyValue("directive", ref.directive_name.c_str());
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("references");
+}
+
+static inline bool ConfigureDeleteResource(UaContext* ua,
+                                           const ResourceTable* res_table,
+                                           const char* name)
+{
+  PoolMem path(PM_FNAME);
+
+  /* Held for the whole check-then-free sequence below, since
+   * FindResourceReferences() and RemoveResource() do not lock the resource
+   * tree themselves. ConfigureAddResource() takes the same lock for its
+   * complete add sequence (existence check through ParseConfigFile() /
+   * SaveResource() / AppendToResourcesChain() and any rollback), so a
+   * concurrent "configure add" and "configure delete" cannot interleave and
+   * leave a dangling reference. The underlying rwlock is re-entrant for the
+   * locking thread, so nesting with the locking the called functions (e.g.
+   * GetResWithName()) do themselves is safe. */
+  ResLocker _{my_config};
+
+  BareosResource* res = my_config->GetResWithName(res_table->rcode, name);
+  if (!res) {
+    ua->ErrorMsg(T_("Resource \"%s\" with name \"%s\" does not exist.\n"),
+                 res_table->name, name);
+    return false;
+  }
+
+  std::vector<ResourceReference> references
+      = my_config->FindResourceReferences(res_table->rcode, res);
+  FindRunResourceReferences(res_table->rcode, res, &references);
+  if (!references.empty()) {
+    ua->send->ObjectStart("delete");
+    ua->send->ObjectKeyValue("resource", res_table->name);
+    ua->send->ObjectKeyValue("name", name);
+    ConfigureSendReferences(ua, references);
+    ua->send->ObjectEnd("delete");
+    ua->ErrorMsg(
+        T_("Resource \"%s\" with name \"%s\" is still referenced by %zu "
+           "other resource(s). Remove or update those first.\n"),
+        res_table->name, name, references.size());
+    return false;
+  }
+
+  if (!my_config->GetPathOfResource(path, NULL, res_table->name, name, false)) {
+    ua->ErrorMsg(
+        T_("failed to determine config resource file path for \"%s\"\n"), name);
+    return false;
+  }
+
+  bool file_removed = (unlink(path.c_str()) == 0);
+  if (!file_removed && errno != ENOENT) {
+    ua->ErrorMsg(T_("failed to remove config resource file \"%s\": %s\n"),
+                 path.c_str(), strerror(errno));
+    return false;
+  }
+
+  my_config->RemoveResource(res_table->rcode, name);
+
+  // Also remove the credential-bearing File Daemon export file created by
+  // "configure add client", if any.
+  if (res_table->rcode == R_CLIENT) { ConfigureRemoveFdExport(ua, name); }
+
+  ua->send->ObjectStart("delete");
+  ua->send->ObjectKeyValue("resource", res_table->name);
+  ua->send->ObjectKeyValue("name", name);
+  ua->send->ObjectKeyValue("filename", path.c_str(),
+                           file_removed
+                               ? "Removed resource config file \"%s\".\n"
+                               : "Resource config file \"%s\" was already "
+                                 "absent.\n");
+  ua->send->ObjectEnd("delete");
+
+  return true;
+}
+
+static inline void ConfigureDeleteUsage(UaContext* ua)
+{
+  ua->ErrorMsg(T_("usage: configure delete <resourcetype> name=<name>\n"));
+}
+
+static inline bool ConfigureDelete(UaContext* ua, int resource_type_parameter)
+{
+  bool result = false;
+
+  const ResourceTable* res_table
+      = my_config->GetResourceTable(ua->argk[resource_type_parameter]);
+  if (!res_table) {
+    ua->ErrorMsg(T_("invalid resource type %s.\n"),
+                 ua->argk[resource_type_parameter]);
+    return false;
+  }
+
+  if (res_table->rcode == R_DIRECTOR) {
+    ua->ErrorMsg(
+        T_("Only one Director resource allowed. It cannot be "
+           "deleted.\n"));
+    return false;
+  }
+
+  int name_index = FindArgWithValue(ua, NT_("name"));
+  if (name_index < 0) {
+    ConfigureDeleteUsage(ua);
+    return false;
+  }
+
+  ua->send->ObjectStart("configure");
+  result = ConfigureDeleteResource(ua, res_table, ua->argv[name_index]);
+  ua->send->ObjectEnd("configure");
+
+  return result;
+}
+
 static inline void ConfigureExportUsage(UaContext* ua)
 {
   ua->ErrorMsg(T_("usage: configure export client=<clientname>\n"));
@@ -469,12 +695,15 @@ bool ConfigureCmd(UaContext* ua, const char*)
     ua->ErrorMsg(
         T_("usage:\n"
            "  configure add <resourcetype> <key1>=<value1> ...\n"
+           "  configure delete <resourcetype> name=<name>\n"
            "  configure export client=<clientname>\n"));
     return false;
   }
 
   if (Bstrcasecmp(ua->argk[1], NT_("add"))) {
     result = ConfigureAdd(ua, 2);
+  } else if (Bstrcasecmp(ua->argk[1], NT_("delete"))) {
+    result = ConfigureDelete(ua, 2);
   } else if (Bstrcasecmp(ua->argk[1], NT_("export"))) {
     result = ConfigureExport(ua);
   } else {

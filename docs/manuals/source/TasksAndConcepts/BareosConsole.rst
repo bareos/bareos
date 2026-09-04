@@ -503,8 +503,8 @@ create
 .. _section-bcommandConfigure:
 
 configure
-   Configures director resources during runtime. The first configure subcommands are
-   :bcommand:`configure add`\  and :bcommand:`configure export`\ .
+   Configures director resources during runtime. The configure subcommands are
+   :bcommand:`configure add`\ , :bcommand:`configure delete`\  and :bcommand:`configure export`\ .
    Other subcommands may follow in later releases.
 
    .. _section-bcommandConfigureAdd:
@@ -577,6 +577,42 @@ configure
          The same data is also used for :command:`bconsole` command line completion.
 
       Available since Bareos :sinceVersion:`16.2.4: configure add`.
+
+
+   .. _section-bcommandConfigureDelete:
+
+   configure delete
+      :index:`\ <single: Console; Command; configure delete>`
+
+      This command allows to delete resources during runtime. Usage:
+
+      .. code-block:: bconsole
+         :caption: configure delete usage
+
+         configure delete <resourcetype> name=<resourcename>
+
+      This feature requires :ref:`section-ConfigurationSubdirectories`.
+
+      The command removes the resource's configuration file at
+
+      :file:`<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf`
+
+      and unloads the resource from the running |dir|.
+
+      If another resource still references the resource to be deleted (for example
+      a Job resource that references a Client via its :config:option:`Dir/Job/Client`\
+      directive), the command refuses to delete it and lists the referencing resources.
+      There is no override for this: remove or update the referencing resource(s)
+      first (for example with :bcommand:`configure delete`\  on the referencing
+      Job), then delete the resource.
+
+      .. code-block:: bconsole
+         :caption: Example: deleting a client resource during runtime
+
+         *<input>configure delete client name=client2-fd</input>
+         Removed resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf".
+
+      Available since Bareos :sinceVersion:`26.0.0: configure delete`.
 
 
    .. _section-bcommandConfigureExport:
