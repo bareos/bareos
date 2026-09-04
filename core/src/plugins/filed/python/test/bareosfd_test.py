@@ -168,7 +168,7 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket3(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 
@@ -176,13 +176,13 @@ class TestBareosFd(unittest.TestCase):
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+            'AclPacket(fname="", content="Hello ACL")', str(test_AclPacket)
         )
 
     def test_XattrPacket3(self):
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+            'XattrPacket(fname="", name="", value="")', str(test_XattrPacket)
         )
 
     def test_ModuleDicts22(self):
@@ -305,7 +305,7 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket22(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 
@@ -313,13 +313,13 @@ class TestBareosFd(unittest.TestCase):
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+            'AclPacket(fname="", content="Hello ACL")', str(test_AclPacket)
         )
 
     def test_XattrPacket22(self):
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+            'XattrPacket(fname="", name="", value="")', str(test_XattrPacket)
         )
 
     def test_ModuleDicts2(self):
@@ -442,7 +442,7 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket2(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 
@@ -450,13 +450,13 @@ class TestBareosFd(unittest.TestCase):
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+            'AclPacket(fname="", content="Hello ACL")', str(test_AclPacket)
         )
 
     def test_XattrPacket2(self):
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+            'XattrPacket(fname="", name="", value="")', str(test_XattrPacket)
         )
 
     def test_ModuleDicts(self):
@@ -579,7 +579,7 @@ class TestBareosFd(unittest.TestCase):
     def test_IoPacket(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 
@@ -587,13 +587,13 @@ class TestBareosFd(unittest.TestCase):
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+            'AclPacket(fname="", content="Hello ACL")', str(test_AclPacket)
         )
 
     def test_XattrPacket(self):
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+            'XattrPacket(fname="", name="", value="")', str(test_XattrPacket)
         )
 
 

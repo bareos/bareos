@@ -642,7 +642,11 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
     PyObject* pRetVal;
 
     PyObject* fname = plugin_priv_ctx->py_fname;
-    if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
+    if (!io->fname) {
+      // on some operations, the fname is just not set for some reason
+      // e.g. read/write
+      fname = Py_None;
+    } else if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
       fname = PyUnicode_FromString(io->fname);
     } else {
       Py_INCREF(fname);
@@ -2422,7 +2426,7 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        ", offset=%" PRId64 ", win32=%d, filedes=%" PRIdPTR ")",
        self->func, self->count, self->flags,
        static_cast<unsigned int>(self->mode & ~S_IFMT),
-       PyGetByteArrayValue(self->buf), PyUnicode_AsUTF8(self->fname),
+       PyGetByteArrayValue(self->buf), PyGetStringValue(self->fname),
        self->status, self->io_errno, self->lerror, self->whence, self->offset,
        self->win32, static_cast<intptr_t>(self->filedes));
   s = PyUnicode_FromString(buf.c_str());
@@ -2508,7 +2512,7 @@ static PyObject* PyAclPacket_repr(PyAclPacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")",
-       PyUnicode_AsUTF8(self->fname), PyGetByteArrayValue(self->content));
+       PyGetStringValue(self->fname), PyGetByteArrayValue(self->content));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
@@ -2552,7 +2556,7 @@ static PyObject* PyXattrPacket_repr(PyXattrPacket* self)
   PoolMem buf(PM_MESSAGE);
 
   Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")",
-       PyUnicode_AsUTF8(self->fname), PyGetByteArrayValue(self->name),
+       PyGetStringValue(self->fname), PyGetByteArrayValue(self->name),
        PyGetByteArrayValue(self->value));
   s = PyUnicode_FromString(buf.c_str());
 
