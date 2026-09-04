@@ -44,7 +44,42 @@ BrandingText "Bareos Installer"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 !define VCREDIST_URL "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+; VCREDIST_REGPATH is only used for an extra diagnostic log line: the
+; registry marker can be stale or missing even when the runtime is
+; actually usable, so it must never gate pass/fail on its own. The
+; authoritative check compares the target system's vcruntime140.dll file
+; version (see VCRedist.IsInstalled) against VCRUNTIME_REQUIRED_VERSION
+; (defined below from VCTOOLSREDISTDIR).
 !define VCREDIST_REGPATH "Software\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
+
+# enforce VCTOOLSREDISTDIR environment variable
+!if "$%VCTOOLSREDISTDIR%" == ""
+!error "VCTOOLSREDISTDIR is not set in the environment, cannot determine required VC++ runtime version"
+!endif
+
+# Locate the x64 CRT redist folder shipping vcruntime140.dll below
+# VCTOOLSREDISTDIR. Its subfolder name (Microsoft.VC<toolset>.CRT) changes
+# with the MSVC toolset version, so it has to be discovered rather than
+# hardcoded.
+!tempfile VCCRTDIRLISTFILE
+!system '(for /d %I in ("$%VCTOOLSREDISTDIR%\x64\Microsoft.VC*.CRT") do @echo %I) > "${VCCRTDIRLISTFILE}"'
+!searchparse /noerrors /file "${VCCRTDIRLISTFILE}" "" VCCRTDIR "$\r"
+!delfile "${VCCRTDIRLISTFILE}"
+
+!ifndef VCCRTDIR
+!error "Could not find a Microsoft.VC*.CRT folder below $%VCTOOLSREDISTDIR%\x64, cannot determine required VC++ runtime version"
+!endif
+
+!define VCRUNTIME_DLL "${VCCRTDIR}\vcruntime140.dll"
+
+# Read the version of the vcruntime140.dll Bareos was built/redistributed
+# with. !getdllversion aborts the NSIS compile with a clear error if the
+# file does not exist or has no version info, so a separate existence
+# check is not needed. This defines VCRT_1..VCRT_4 (major.minor.build.revision).
+!getdllversion "${VCRUNTIME_DLL}" VCRT_
+!define VCRUNTIME_REQUIRED_VERSION "${VCRT_1}.${VCRT_2}.${VCRT_3}.${VCRT_4}"
+!warning "windows installer requires VC++ runtime vcruntime140.dll >= ${VCRUNTIME_REQUIRED_VERSION} (from ${VCRUNTIME_DLL})"
+
 !define INSTALLER_HELP "[/S silent install]$\r$\n\
 [/SILENTKEEPCONFIG keep config on silent upgrades]$\r$\n\
 [/WRITELOGS log to INSTDIR\install.log]$\r$\n\
@@ -474,8 +509,9 @@ InstType "Full - All Daemons, Director with PostgreSQL Catalog Database (needs l
 InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 Function VCRedist.CustomPage
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
     ;Disable Next Button
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 0
@@ -492,7 +528,8 @@ Function VCRedist.CustomPage
         "The required Microsoft Visual C++ Redistributable could not be found."
 
     ${NSD_CreateLabel} 0 0 100% 60u \
-        "Bareos requires the Microsoft Visual C++ Redistributable to be installed, \
+        "Bareos requires the Microsoft Visual C++ Redistributable version \
+         ${VCRUNTIME_REQUIRED_VERSION} or later to be installed, \
          but it could not be found on the system.$\r$\n\
          $\r$\n\
          The required version of the Microsoft Visual C++ Redistributable package is available at$\r$\n\
@@ -519,12 +556,69 @@ Function VCRedist.CustomPage
 FunctionEnd
 
 Function VCRedist.RecheckTimer
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 != ""
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "yes"
     ${NSD_KillTimer} VCRedist.RecheckTimer
     GetDlgItem $0 $HWNDPARENT 1
     EnableWindow $0 1
   ${EndIf}
+FunctionEnd
+
+# Checks whether the VC++ runtime installed on the target system is at
+# least as new as the version Bareos was built with (VCRUNTIME_REQUIRED_VERSION,
+# derived at compile-time from VCTOOLSREDISTDIR). Pushes "yes" or "no".
+#
+# This inspects the file version of the target system's vcruntime140.dll
+# directly (via GetDLLVersion) instead of relying on the VC++ redist
+# registry marker, which can be stale, missing, or otherwise not reflect
+# whether the runtime is actually usable. The registry is still read
+# below, but purely for diagnostic logging.
+Function VCRedist.IsInstalled
+  ReadRegDword $R0 HKLM "${VCREDIST_REGPATH}" "Installed"
+  ${If} $R0 == ""
+    DetailPrint "VC++ redist registry marker missing at ${VCREDIST_REGPATH} (diagnostic only, not authoritative)"
+  ${EndIf}
+
+  ClearErrors
+  # This installer is a 32-bit NSIS executable even for the x64 target,
+  # so WOW64 file-system redirection is active by default and would
+  # otherwise resolve $SYSDIR to SysWOW64 (the x86 DLL). Disable it
+  # around the lookup so the real 64-bit System32\vcruntime140.dll is
+  # read, then restore the default redirection state immediately.
+  ${DisableX64FSRedirection}
+  GetDLLVersion "$SYSDIR\vcruntime140.dll" $R0 $R1
+  ${EnableX64FSRedirection}
+  ${If} ${Errors}
+    DetailPrint "vcruntime140.dll not found in $SYSDIR (required: ${VCRUNTIME_REQUIRED_VERSION})"
+    StrCpy $R1 "no"
+    Push $R1
+    Return
+  ${EndIf}
+
+  # decode the installed high/low version dwords into major.minor.build.revision
+  IntOp $R2 $R0 / 0x00010000
+  IntOp $R3 $R0 & 0x0000FFFF
+  IntOp $R4 $R1 / 0x00010000
+  IntOp $R5 $R1 & 0x0000FFFF
+
+  DetailPrint "Installed vcruntime140.dll version: $R2.$R3.$R4.$R5 (required: ${VCRUNTIME_REQUIRED_VERSION})"
+
+  IntCmp $R2 ${VCRT_1} VCRedistCmpMinor VCRedistFail VCRedistPass
+  VCRedistCmpMinor:
+  IntCmp $R3 ${VCRT_2} VCRedistCmpBuild VCRedistFail VCRedistPass
+  VCRedistCmpBuild:
+  IntCmp $R4 ${VCRT_3} VCRedistCmpRevision VCRedistFail VCRedistPass
+  VCRedistCmpRevision:
+  IntCmp $R5 ${VCRT_4} VCRedistPass VCRedistFail VCRedistPass
+
+  VCRedistFail:
+    StrCpy $R1 "no"
+    Goto VCRedistCheckDone
+  VCRedistPass:
+    StrCpy $R1 "yes"
+  VCRedistCheckDone:
+  Push $R1
 FunctionEnd
 
 Function VCRedist.OpenLink
@@ -560,11 +654,13 @@ FunctionEnd
 Section -CheckVCRedist
   # non-silent install is handled on a custom page
   IfSilent 0 CheckVCRedistEnd
-  ReadRegDword $R1 HKLM "${VCREDIST_REGPATH}" "Installed"
-  ${If} $R1 == ""
-    MessageBox MB_OK|MB_ICONSTOP \
-      "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
-       The installer will exit now."
+  Call VCRedist.IsInstalled
+  Pop $R1
+  ${If} $R1 == "no"
+    DetailPrint "VC++ prerequisite check failed in silent mode (required: ${VCRUNTIME_REQUIRED_VERSION})."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed in silent mode (required: ${VCRUNTIME_REQUIRED_VERSION})"
+    FileClose $R1
     Abort
   ${EndIf}
   CheckVCRedistEnd:
@@ -589,6 +685,7 @@ Section -SetPasswords
   SetShellVarContext all
 
   # TODO: replace by ConfigureConfiguration ?
+  Call GenerateMissingPasswords
 
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
   FileWrite $R1 "s#@DB_USER@#$DbUser#g$\r$\n"
@@ -1484,6 +1581,20 @@ Function .onInit
   #
   StrCmp $R0 "" done
 
+  Call VCRedist.IsInstalled
+  Pop $R1
+  StrCmp $R1 "yes" vcRuntimeReadyForUpgrade
+    DetailPrint "VC++ prerequisite check failed before upgrade uninstall (required: ${VCRUNTIME_REQUIRED_VERSION})."
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Bareos requires Microsoft Visual C++ Redistributable ${VCRUNTIME_REQUIRED_VERSION} or later to be installed before upgrade can continue.$\r$\n\
+         Please install it and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "VC++ prerequisite check failed before upgrade uninstall (required: ${VCRUNTIME_REQUIRED_VERSION})"
+    FileClose $R1
+    Abort
+  vcRuntimeReadyForUpgrade:
+
   #LogText "Prior Bareos version installed: $0"
 
   #
@@ -1710,88 +1821,6 @@ AutoSelecPostgresIfAvailableEnd:
 
   SetPluginUnload alwaysoff
 
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $ClientPassword "" genclientpassword skipclientpassword
-  genclientpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientpassword:
-
-  strcmp $ClientMonitorPassword "" genclientmonpassword skipclientmonpassword
-  genclientmonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $ClientMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipclientmonpassword:
-
-
-  # check if password is set by cmdline. If so, skip creation
-  strcmp $StoragePassword "" genstoragepassword skipstoragepassword
-  genstoragepassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StoragePassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragepassword:
-
-  strcmp $StorageMonitorPassword "" genstoragemonpassword skipstoragemonpassword
-  genstoragemonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $StorageMonitorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipstoragemonpassword:
-
-  strcmp $DirectorPassword "" gendirectorpassword skipdirectorpassword
-  gendirectorpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectorpassword:
-
-  strcmp $DirectorMonPassword "" gendirectormonpassword skipdirectormonpassword
-  gendirectormonpassword:
-    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
-    pop $R0
-    ${If} $R0 = 0
-     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
-     IfErrors +4
-       FileRead $R1 $R0
-       ${StrTrimNewLines} $DirectorMonPassword $R0
-       FileClose $R1
-    ${EndIf}
-  skipdirectormonpassword:
-
-
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
   strcmp $ClientName     "" +1 +2
@@ -1854,6 +1883,100 @@ AutoSelecPostgresIfAvailableEnd:
 
 FunctionEnd
 
+#
+# password generation helpers
+#
+# GeneratePassword expects the parameter name to log/report on in $R3 and
+# leaves the generated password on the stack. It is only ever called
+# after the VC++ prerequisite check has passed, so openssl.exe is
+# expected to run successfully; any remaining failure is reported and
+# aborts the installation (with a MessageBox in interactive mode, and
+# abortreason.txt only in silent mode).
+Function GeneratePassword
+  nsExec::ExecToStack '"$PLUGINSDIR\openssl.exe" rand -base64 -out "$PLUGINSDIR\pw.txt" 33'
+  Pop $R0
+  Pop $R2
+  DetailPrint "openssl rand for $R3 exit code: $R0"
+
+  ${If} $R0 != "0"
+    DetailPrint "openssl rand output for $R3: $R2"
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to generate installer passwords.$\r$\n\
+         Please install Microsoft Visual C++ Redistributable and restart the installer."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation failed for $R3 (openssl exit code: $R0)"
+    FileClose $R1
+    Abort
+  ${EndIf}
+
+  IfFileExists "$PLUGINSDIR\pw.txt" +2 0
+    Goto GeneratePasswordReadFailed
+  ClearErrors
+  FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+  IfErrors GeneratePasswordReadFailed
+  ClearErrors
+  FileRead $R1 $R0
+  ${StrTrimNewLines} $R0 $R0
+  IfErrors GeneratePasswordReadFailed
+  StrCmp $R0 "" GeneratePasswordReadFailed
+  FileClose $R1
+  Push $R0
+  Return
+
+GeneratePasswordReadFailed:
+    DetailPrint "Cannot read generated password file: $PLUGINSDIR\pw.txt"
+    IfSilent +1 0
+      MessageBox MB_OK|MB_ICONSTOP \
+        "Failed to read generated password for $R3.$\r$\n\
+         The installer will exit now."
+    FileOpen $R1 $TEMP\abortreason.txt w
+    FileWrite $R1 "password generation output missing for $R3 in $PLUGINSDIR\pw.txt"
+    FileClose $R1
+    Abort
+FunctionEnd
+
+# Generates a password for every password variable that is still empty
+# (i.e. was not set via command-line override). Safe to call more than
+# once; already-set variables are left untouched.
+Function GenerateMissingPasswords
+  strcmp $ClientPassword "" 0 skipClientPasswordGeneration
+    StrCpy $R3 "ClientPassword"
+    Call GeneratePassword
+    Pop $ClientPassword
+skipClientPasswordGeneration:
+
+  strcmp $ClientMonitorPassword "" 0 skipClientMonitorPasswordGeneration
+    StrCpy $R3 "ClientMonitorPassword"
+    Call GeneratePassword
+    Pop $ClientMonitorPassword
+skipClientMonitorPasswordGeneration:
+
+  strcmp $StoragePassword "" 0 skipStoragePasswordGeneration
+    StrCpy $R3 "StoragePassword"
+    Call GeneratePassword
+    Pop $StoragePassword
+skipStoragePasswordGeneration:
+
+  strcmp $StorageMonitorPassword "" 0 skipStorageMonitorPasswordGeneration
+    StrCpy $R3 "StorageMonitorPassword"
+    Call GeneratePassword
+    Pop $StorageMonitorPassword
+skipStorageMonitorPasswordGeneration:
+
+  strcmp $DirectorPassword "" 0 skipDirectorPasswordGeneration
+    StrCpy $R3 "DirectorPassword"
+    Call GeneratePassword
+    Pop $DirectorPassword
+skipDirectorPasswordGeneration:
+
+  strcmp $DirectorMonPassword "" 0 skipDirectorMonPasswordGeneration
+    StrCpy $R3 "DirectorMonPassword"
+    Call GeneratePassword
+    Pop $DirectorMonPassword
+skipDirectorMonPasswordGeneration:
+FunctionEnd
+
 
 
 #
@@ -1863,6 +1986,8 @@ Function getClientParameters
   push $R0
   # skip if we are upgrading
   strcmp $Upgrading "yes" skip
+
+  Call GenerateMissingPasswords
 
   # prefill the dialog fields with our passwords and other
   # information
