@@ -175,6 +175,87 @@ describe('dashboards store', () => {
     expect(store.dashboards).toHaveLength(1)
   })
 
+  it('resetAllDashboards discards custom dashboards/widgets and re-seeds the defaults', () => {
+    const store = useDashboardStore()
+    store.addDashboard('Custom')
+    store.addWidget(store.dashboards[0].id, { type: 'analytics-summary', title: 'x', props: {}, layout: {} })
+    const defaultOverviewWidgetCount = store.dashboards[0].widgets.length - 1
+
+    store.resetAllDashboards()
+
+    expect(store.dashboards).toHaveLength(2)
+    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics'])
+    expect(store.activeDashboardId).toBe(store.dashboards[0].id)
+    expect(store.dashboards[0].widgets).toHaveLength(defaultOverviewWidgetCount)
+  })
+
+  it('exportDashboards() returns a snapshot that importDashboards() can restore', () => {
+    const store = useDashboardStore()
+    store.addDashboard('Custom')
+    store.addWidget(store.dashboards[0].id, { type: 'analytics-summary', title: 'x', props: {}, layout: {} })
+
+    const backup = store.exportDashboards()
+    expect(backup.dashboards).toHaveLength(3)
+    expect(backup.activeDashboardId).toBe(store.activeDashboardId)
+
+    store.resetAllDashboards()
+    expect(store.dashboards).toHaveLength(2)
+
+    store.importDashboards(backup)
+    expect(store.dashboards).toHaveLength(3)
+    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics', 'Custom'])
+    expect(store.activeDashboardId).toBe(backup.activeDashboardId)
+  })
+
+  it('importDashboards() rejects data without a dashboards array', () => {
+    const store = useDashboardStore()
+    expect(() => store.importDashboards({ foo: 'bar' })).toThrow()
+    expect(() => store.importDashboards(null)).toThrow()
+  })
+
+  it('importDashboards() rejects data missing the backup envelope marker', () => {
+    const store = useDashboardStore()
+    // A plain dashboards array/object, not wrapped in the expected
+    // { bareosDashboardsBackup: 1, dashboards: [...] } envelope, must be
+    // rejected rather than silently accepted as a backup.
+    expect(() => store.importDashboards([{ id: 'x', name: 'Unexpected' }])).toThrow()
+    expect(() => store.importDashboards({ dashboards: [{ id: 'x', name: 'Unexpected' }] })).toThrow()
+  })
+
+  it('importDashboards() rejects a dashboards array with no valid entries', () => {
+    const store = useDashboardStore()
+    expect(() => store.importDashboards({ dashboards: [{ id: '', name: '' }] })).toThrow()
+  })
+
+  it('importDashboards() drops dashboards and widgets with duplicate ids', () => {
+    const store = useDashboardStore()
+    store.importDashboards({
+      bareosDashboardsBackup: 1,
+      dashboards: [
+        { id: 'dup', name: 'First', widgets: [
+          { id: 'w1', type: 'job-totals' },
+          { id: 'w1', type: 'jobs-past-24h' },
+        ] },
+        { id: 'dup', name: 'Second', widgets: [] },
+      ],
+    })
+
+    expect(store.dashboards).toHaveLength(1)
+    expect(store.dashboards[0].name).toBe('First')
+    expect(store.dashboards[0].widgets).toHaveLength(1)
+    expect(store.dashboards[0].widgets[0].type).toBe('job-totals')
+  })
+
+  it('importDashboards() falls back to the first dashboard when the saved active id is missing', () => {
+    const store = useDashboardStore()
+    const backup = store.exportDashboards()
+    backup.activeDashboardId = 'does-not-exist'
+
+    store.importDashboards(backup)
+
+    expect(store.activeDashboardId).toBe(store.dashboards[0].id)
+  })
+
   it('activeDashboard() returns the dashboard matching activeDashboardId', () => {
     const store = useDashboardStore()
     const id = store.addDashboard('Second')
