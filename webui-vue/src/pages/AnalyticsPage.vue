@@ -25,7 +25,7 @@
 
     <div v-if="section === 'treemap'" class="analytics-fill">
       <div ref="treemapEl" style="position:relative;width:100%;height:100%;overflow:hidden">
-        <div v-if="loading" class="flex flex-center" style="height:100%">
+        <div v-if="loading && !treemapTiles.length" class="flex flex-center" style="height:100%">
           <q-spinner size="40px" color="primary" />
         </div>
         <template v-else>
@@ -49,6 +49,9 @@
             <span>{{ t('No data') }}</span>
           </div>
         </template>
+        <div v-if="loading && treemapTiles.length" class="analytics-refresh-indicator">
+          <q-spinner size="14px" color="primary" />
+        </div>
       </div>
     </div>
 
@@ -83,8 +86,8 @@
       </template>
     </q-table>
 
-    <div v-if="section === 'client-bytes'" class="q-pa-sm q-gutter-xs analytics-fill">
-            <div v-if="loading" class="text-center q-py-md">
+    <div v-if="section === 'client-bytes'" class="q-pa-sm q-gutter-xs analytics-fill" style="position:relative">
+            <div v-if="loading && !clientBytes.length" class="text-center q-py-md">
               <q-spinner size="32px" color="primary" />
             </div>
             <template v-else>
@@ -92,17 +95,20 @@
                 <div class="row items-center q-mb-xs" style="gap:4px">
                   <router-link
                     :to="{ name: 'jobs', query: c.jobsQuery }"
-                    class="text-caption ellipsis text-primary"
-                    style="width:110px;min-width:0;text-decoration:none"
+                    class="text-caption ellipsis"
+                    :style="{ width: '110px', minWidth: 0, textDecoration: 'none', color: c.color }"
                     :title="c.name"
                   >{{ c.name }}</router-link>
-                  <q-linear-progress :value="bytesGauge(c.bytes)" color="primary" track-color="grey-3"
-                                     size="10px" rounded style="flex:1" />
+                  <q-linear-progress :value="bytesGauge(c.bytes)" track-color="grey-3"
+                                     :style="{ flex: 1, color: c.color }" size="10px" rounded />
                   <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
                 </div>
               </div>
               <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
             </template>
+            <div v-if="loading && clientBytes.length" class="analytics-refresh-indicator">
+              <q-spinner size="14px" color="primary" />
+            </div>
     </div>
 
     <div v-if="section === 'level-distribution'" class="q-pa-sm analytics-fill">
@@ -119,7 +125,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
@@ -305,6 +311,10 @@ function prefixedLabel(directorName, baseName) {
   return isCommonAnalytics.value ? `${directorName} / ${baseName}` : baseName
 }
 
+const PALETTE = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
+  '#00838F', '#558B2F', '#6D4C41', '#455A64', '#E91E63',
+  '#0277BD', '#2E7D32', '#EF6C00', '#6A1B9A', '#AD1457']
+
 const clientBytes = computed(() => {
   const map = {}
   for (const j of jobs.value) {
@@ -322,6 +332,7 @@ const clientBytes = computed(() => {
   return Object.values(map)
     .sort((a, b) => b.bytes - a.bytes)
     .slice(0, 12)
+    .map((c, i) => ({ ...c, color: PALETTE[i % PALETTE.length] }))
 })
 
 const maxBytes = computed(() => Math.max(1, ...clientBytes.value.map(c => c.bytes)))
@@ -355,10 +366,6 @@ const jobGroups = computed(() => {
   }
   return Object.values(map).sort((a, b) => b.bytes - a.bytes)
 })
-
-const PALETTE = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
-  '#00838F', '#558B2F', '#6D4C41', '#455A64', '#E91E63',
-  '#0277BD', '#2E7D32', '#EF6C00', '#6A1B9A', '#AD1457']
 
 function squarify(items, x0, y0, x1, y1) {
   if (!items.length) return []
@@ -427,10 +434,15 @@ const treemapTiles = computed(() => {
 })
 
 onMounted(() => {
-  if (dashboardContext) return
-  director.fetchAvailableDirectors().catch(() => {})
-  syncSelectedDirectors()
-  refresh()
+  if (!dashboardContext) {
+    director.fetchAvailableDirectors().catch(() => {})
+    syncSelectedDirectors()
+    refresh()
+  }
+
+  // The ResizeObserver must run in both standalone and dashboard-widget
+  // mode: it sizes the treemap tiles to the widget's actual rendered
+  // dimensions instead of the hardcoded fallback size.
   if (!treemapEl.value) return
   const ro = new ResizeObserver(entries => {
     for (const e of entries) {
@@ -439,6 +451,7 @@ onMounted(() => {
     }
   })
   ro.observe(treemapEl.value)
+  onUnmounted(() => ro.disconnect())
 })
 
 watch(() => directorOptions.value, () => {
@@ -453,7 +466,33 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 </script>
 
 <style scoped>
+.analytics-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .analytics-fill {
   height: 100%;
+}
+
+/* Inside a dashboard widget the outer element is a flex column with a
+   definite height (see WidgetShell); make the section fill it via flex
+   instead of relying on a percentage-height chain, so absolutely
+   positioned content (the treemap tiles) isn't clipped to zero height. */
+.analytics-widget .analytics-fill {
+  flex: 1;
+  min-height: 0;
+}
+
+.analytics-refresh-indicator {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  line-height: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 3px;
 }
 </style>
