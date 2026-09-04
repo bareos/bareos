@@ -58,3 +58,90 @@ export const DEFAULT_DASHBOARD = {
     },
   ],
 }
+
+export const ANALYTICS_DASHBOARD = {
+  id: 'analytics',
+  name: 'Analytics',
+  widgets: [
+    {
+      id: 'w-analytics-summary',
+      type: 'analytics-summary',
+      title: 'Analytics Summary',
+      props: {},
+      layout: {
+        x: 0,
+        y: 0,
+        w: 12,
+        h: 5,
+        i: 'w-analytics-summary',
+        minW: 2,
+        minH: 3,
+      },
+    },
+    {
+      id: 'w-analytics-treemap',
+      type: 'analytics-treemap',
+      title: 'Stored Data per Job',
+      props: {},
+      layout: {
+        x: 0,
+        y: 5,
+        w: 8,
+        h: 10,
+        i: 'w-analytics-treemap',
+        minW: 2,
+        minH: 3,
+      },
+    },
+    {
+      id: 'w-analytics-status',
+      type: 'analytics-status-breakdown',
+      title: 'Job Status Breakdown',
+      props: {},
+      layout: {
+        x: 0,
+        y: 15,
+        w: 8,
+        h: 8,
+        i: 'w-analytics-status',
+        minW: 2,
+        minH: 3,
+      },
+    },
+    {
+      id: 'w-analytics-client-bytes',
+      type: 'analytics-client-bytes',
+      title: 'Bytes per Client',
+      props: {},
+      layout: {
+        x: 8,
+        y: 5,
+        w: 4,
+        h: 10,
+        i: 'w-analytics-client-bytes',
+        minW: 2,
+        minH: 3,
+      },
+    },
+    {
+      id: 'w-analytics-levels',
+      type: 'analytics-level-distribution',
+      title: 'Job Level Distribution',
+      props: {},
+      layout: {
+        x: 8,
+        y: 15,
+        w: 4,
+        h: 8,
+        i: 'w-analytics-levels',
+        minW: 2,
+        minH: 3,
+      },
+    },
+  ],
+}
+
+export const PRECONFIGURED_DASHBOARDS = [
+  DEFAULT_DASHBOARD,
+  ANALYTICS_DASHBOARD,
+]
