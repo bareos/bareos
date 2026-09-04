@@ -2379,9 +2379,9 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        ", offset=%" PRId64 ", win32=%d, filedes=%" PRIdPTR ")",
        self->func, self->count, self->flags,
        static_cast<unsigned int>(self->mode & ~S_IFMT),
-       PyGetByteArrayValue(self->buf), self->fname, self->status,
-       self->io_errno, self->lerror, self->whence, self->offset, self->win32,
-       static_cast<intptr_t>(self->filedes));
+       PyGetByteArrayValue(self->buf), PyUnicode_AsUTF8(self->fname),
+       self->status, self->io_errno, self->lerror, self->whence, self->offset,
+       self->win32, static_cast<intptr_t>(self->filedes));
   s = PyUnicode_FromString(buf.c_str());
 
   return s;
