@@ -36,7 +36,6 @@ const routes = [
       { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue'), meta: { title: 'Pool Details' } },
       { path: 'storages/volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue'), meta: { title: 'Volume Details' } },
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue'), meta: { title: 'Director' } },
-      { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue'), meta: { title: 'Analytics' } },
       { path: 'filesets',  name: 'filesets',  component: () => import('../pages/FilesetsPage.vue'), meta: { title: 'Filesets' } },
       { path: 'acls',      name: 'acls',      component: () => import('../pages/AclPage.vue'), meta: { title: 'Command ACL' } },
       { path: 'settings',  name: 'settings',  component: () => import('../pages/SettingsPage.vue'), meta: { title: 'Settings' } },
