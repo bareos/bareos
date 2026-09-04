@@ -1413,9 +1413,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/barri-fd.so
 
-%files barri-cli
-%defattr(-, root, root)
-%{_bindir}/barri-cli
 %endif
 
 %if 0%{?enable_incus}
