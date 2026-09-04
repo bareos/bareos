@@ -538,8 +538,9 @@ bail_out:
   return retval;
 }
 
-static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
+static inline PyIoPacket* NativeToPyIoPacket(PyObject* fname, io_pkt* io)
 {
+  if (!fname) { return nullptr; }
   PyIoPacket* pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
 
   if (pIoPkt) {
@@ -548,7 +549,7 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->count = io->count;
     pIoPkt->flags = io->flags;
     pIoPkt->mode = io->mode;
-    pIoPkt->fname = PyUnicode_FromString(io->fname);
+    pIoPkt->fname = fname;
     pIoPkt->whence = io->whence;
     pIoPkt->offset = io->offset;
 #if HAVE_WIN32
@@ -575,6 +576,8 @@ static inline PyIoPacket* NativeToPyIoPacket(io_pkt* io)
     pIoPkt->lerror = 0;
     pIoPkt->win32 = false;
     pIoPkt->status = 0;
+  } else {
+    Py_DECREF(fname);
   }
 
   return pIoPkt;
@@ -638,7 +641,14 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
     PyIoPacket* pIoPkt;
     PyObject* pRetVal;
 
-    pIoPkt = NativeToPyIoPacket(io);
+    PyObject* fname = plugin_priv_ctx->py_fname;
+    if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
+      fname = PyUnicode_FromString(io->fname);
+    } else {
+      Py_INCREF(fname);
+    }
+
+    pIoPkt = NativeToPyIoPacket(fname, io);
     if (!pIoPkt) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, (PyObject*)pIoPkt, NULL);
