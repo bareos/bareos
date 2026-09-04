@@ -32,7 +32,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/ascii_control_characters.h"
-#include "stored/autochanger.h"
+#include "stored/authenticate.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/dir_cmd.h"
@@ -41,7 +41,6 @@
 #include "lib/bnet_server_tcp.h"
 #include "lib/bsock.h"
 #include "lib/thread_list.h"
-#include "lib/try_tls_handshake_as_a_server.h"
 #include "include/version_hex.h"
 
 namespace storagedaemon {
@@ -49,10 +48,6 @@ namespace storagedaemon {
 static ThreadList thread_list;
 static std::atomic<bool> server_running = false;
 static pthread_t tcp_server_tid;
-
-// Sanity check for the lengths of the Hello messages.
-#define MIN_MSG_LEN 25
-#define MAX_MSG_LEN (int)sizeof(name) + 30
 
 /**
  * Connection request. We accept connections either from the
@@ -67,120 +62,67 @@ static pthread_t tcp_server_tid;
  * handle_director_connection()
  */
 
-void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
+void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 {
+  using global_resource::Type;
+
   BareosSocket* bs = (BareosSocket*)arg;
-  char name[MAX_NAME_LENGTH];
-  char tbuf[MAX_TIME_LENGTH];
 
-  bs->SetEnableKtls(me->enable_ktls);
+  auto config = parser->GetCurrentConfiguration();
 
-  UseConfigAndJcrs tls_secret_provider{config};
-  if (!TryTlsHandshakeAsAServer(bs, config, &tls_secret_provider)) {
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
+  auto* myself
+      = dynamic_cast<StorageResource*>(config->GetNextRes(R_STORAGE, nullptr));
+
+  auto error_and_close = [](BareosSocket* socket) {
+    Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
+    socket->signal(BNET_TERMINATE);
+    socket->close();
+    delete socket;
     return nullptr;
+  };
+
+  if (!myself) {
+    Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
+    return error_and_close(bs);
   }
 
-  if (bs->recv() <= 0) {
-    Emsg1(M_ERROR, 0, T_("Connection request from %s failed.\n"), bs->who());
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return NULL;
+  bs->SetEnableKtls(myself->enable_ktls);
+
+  Auth auth{config};
+
+  std::optional parsed_hello = BareosAccept(bs, Type::Storage, myself, &auth);
+  if (!parsed_hello) {
+    Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
+    return error_and_close(bs);
   }
 
-  // Do a sanity check on the message received
-  if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
-    Dmsg1(000, "<filed: %s", bs->msg);
-    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-          bs->message_length);
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return NULL;
+  switch (auth.GetType()) {
+    case Auth::inbound_type::Director: {
+      bs->sleep_time_after_authentication_error = 0;
+
+      if (!bs->fsend("3000 OK Hello\n")) {
+        Emsg2(M_ERROR, 0, "Could not send OK Hello to %s\n", bs->who());
+        return error_and_close(bs);
+      }
+      return HandleDirectorConnection(bs, auth.director->res);
+    } break;
+    case Auth::inbound_type::Job: {
+      auto* jcr = auth.job->jcr;
+      auth.job->jcr = nullptr;
+
+      if (parsed_hello->from == Type::Client) {
+        jcr->authenticated = true;
+        return HandleFiledConnection(bs, jcr);
+      } else if (parsed_hello->from == Type::Storage) {
+        jcr->authenticated = true;
+        return handle_stored_connection(bs, jcr);
+      }
+    } break;
+    default: {
+    } break;
   }
-
-  Dmsg1(110, "Conn: %s", bs->msg);
-
-  unsigned major = 0;
-  unsigned minor = 0;
-  unsigned patch = 0;
-
-  if (bsscanf(bs->msg, "Hello Start Job %127s Version=\"%u.%u.%u\"", name,
-              &major, &minor, &patch)
-          == 4
-      || bsscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-    Dmsg1(110, "Got a FD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-    if (std::optional error = tls_secret_provider.check_job_name(name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-
-    return HandleFiledConnection(bs, name);
-  } else if (bsscanf(bs->msg,
-                     "Hello Start Storage Job %127s Version=\"%u.%u.%u\"", name,
-                     &major, &minor, &patch)
-                 == 4
-             || bsscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-    Dmsg1(110, "Got a SD connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-    if (std::optional error = tls_secret_provider.check_job_name(name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-
-    return handle_stored_connection(bs, name);
-  } else if (bsscanf(bs->msg,
-                     "Hello Director %127s calling Version=\"%u.%u.%u\"", name,
-                     &major, &minor, &patch)
-                 == 4
-             || bsscanf(bs->msg, "Hello Director %127s calling", name) == 1) {
-    bs->remote_version = VERSION_HEX(major, minor, patch);
-    Dmsg1(110, "Got a DIR connection at %s\n",
-          bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-    if (std::optional error
-        = tls_secret_provider.is_resource_name_different_from_tls_name(
-            R_DIRECTOR, name)) {
-      Emsg2(M_ERROR, 0, "Invalid connection from %s: ERR=%s\n", bs->who(),
-            error->c_str());
-      Bmicrosleep(5, 0); /* make user wait 5 seconds */
-      bs->signal(BNET_TERMINATE);
-      bs->close();
-      delete bs;
-      return NULL;
-    }
-
-    return HandleDirectorConnection(bs);
-  } else {
-    Dmsg1(60, "Bad hello message: %s\n", bs->msg);
-    Emsg1(M_ERROR, 0, T_("Connection request from %s refused (bad hello).\n"),
-          bs->who());
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    bs->signal(BNET_TERMINATE);
-    bs->close();
-    delete bs;
-    return NULL;
-  }
+  Emsg2(M_ERROR, 0, "could not accept connection from %s\n", bs->who());
+  return error_and_close(bs);
 }
 
 static void* UserAgentShutdownCallback(void* bsock)

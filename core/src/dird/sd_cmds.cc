@@ -40,12 +40,15 @@
 #include "dird/storage.h"
 #include "dird/ua_label.h"
 #include "dird/ua_server.h"
+#include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/global_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/version.h"
+#include "lib/hello.h"
 
 namespace directordaemon {
 
@@ -109,48 +112,63 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
     return false;
   }
 
+  auto config = jcr->dir_impl->used_config_for_job;
+  if (!config) {
+    // cancel jobs do not have a configuration set, but the cancel job itself
+    // will keep 'store' alive.
+    config = my_config->GetCurrentConfiguration();
+  }
+  auto* myself = dynamic_cast<DirectorResource*>(
+      config->GetNextRes(R_DIRECTOR, nullptr));
+
+  if (!myself) {
+    Dmsg0(200,
+          "ConnectToStorageDaemon: Director resource pointer is invalid\n");
+    return false;
+  }
+
   utime_t heart_beat;
   if (store->heartbeat_interval) {
     heart_beat = store->heartbeat_interval;
   } else {
-    heart_beat = me->heartbeat_interval;
+    heart_beat = myself->heartbeat_interval;
   }
 
   Dmsg2(100, "bNetConnect to Storage daemon %s:%" PRIu32 "\n", store->address,
         store->SDport);
   std::unique_ptr<BareosSocket> sd(new BareosSocketTCP);
   if (!sd) { return false; }
-  sd->SetSourceAddress(me->DIRsrc_addr);
+  sd->SetSourceAddress(myself->DIRsrc_addr);
   if (!sd->connect(jcr, retry_interval, max_retry_time, heart_beat,
                    T_("Storage daemon"), store->address, nullptr, store->SDport,
                    verbose)) {
     return false;
   }
 
-  if (store->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_),
-        me->resource_name_);
-    if (qualified_resource_name.empty()) {
-      Dmsg0(100,
-            "Could not generate qualified resource name for a storage "
-            "resource\n");
-      sd->close();
-      return false;
-    }
+  sd->SetEnableKtls(myself->enable_ktls);
 
-    sd->SetEnableKtls(me->enable_ktls);
-
-    if (!sd->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, store, false,
-                            qualified_resource_name.c_str(),
-                            store->password_.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with storagedaemon\n");
-      sd->close();
-      return false;
-    }
+  if (!BareosConnect<global_resource::Type::Director,
+                     global_resource::Type::Storage>(
+          jcr, sd.get(), myself->resource_name_, store)) {
+    sd->close();
+    return false;
   }
 
-  if (!AuthenticateWithStorageDaemon(sd.get(), jcr, store)) {
+  Dmsg1(116, ">stored: %s", sd->msg);
+  if (sd->recv() <= 0) {
+    Jmsg3(jcr, M_FATAL, 0,
+          T_("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+          sd->who(), sd->host(), sd->bstrerror());
+    sd->close();
+    return false;
+  }
+
+  Dmsg1(110, "<stored: %s", sd->msg);
+  if (!bstrcmp(sd->msg, "3000 OK Hello\n")) {
+    Dmsg0(100, T_("Storage daemon rejected Hello command\n"));
+    Jmsg2(jcr, M_FATAL, 0,
+          T_("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+          sd->host(), sd->port());
     sd->close();
     return false;
   }

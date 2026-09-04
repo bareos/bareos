@@ -415,6 +415,10 @@ class LowLevel(object):
         )
         regex = bytes(bytearray(regex_str, "utf8"))
         incoming_message = self.recv_msg(regex)
+
+        if len(incoming_message) == 0 and self.status == Constants.BNET_TERMINATE:
+            raise bareos.exceptions.ConnectionLostError("received BNET_TERMINATE")
+
         match = re.search(regex, incoming_message, re.DOTALL)
         code = int(match.group(1))
         text = match.group(2)
@@ -586,10 +590,6 @@ class LowLevel(object):
 
         Returns:
            bytearray: Message retrieved via the connection.
-
-        Raises:
-            bareos.exceptions.SignalReceivedException:
-               If a Bareos signal is received.
         """
         self.__check_socket_connection()
         try:

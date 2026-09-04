@@ -48,10 +48,7 @@ void BashSpaces(std::string& str);
 void BashSpaces(PoolMem& pm);
 void UnbashSpaces(char* str);
 void UnbashSpaces(PoolMem& pm);
-bool GetNameAndResourceTypeAndVersionFromHello(const std::string& input,
-                                               std::string& name,
-                                               std::string& r_type_str,
-                                               BareosVersionNumber& version);
+BareosVersionNumber parse_version(std::string_view input);
 const char* IndentMultilineString(PoolMem& resultbuffer,
                                   const char* multilinestring,
                                   const char* separator);

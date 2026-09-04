@@ -260,7 +260,7 @@ if(NOT client-only)
     lib_tests
     ADDITIONAL_SOURCES
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
-      htable_test.cc global_resource_test.cc
+      htable_test.cc global_resource_test.cc hello_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
     LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
   )

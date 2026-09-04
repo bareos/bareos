@@ -1085,35 +1085,16 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
 
 void* HandleFiledConnection(connection_pool& connections,
                             BareosSocket* fd,
-                            char* client_name,
+                            ClientResource* client_resource,
                             int fd_protocol_version)
 {
-  connection conn{client_name, fd_protocol_version, fd};
+  connection conn{client_resource->resource_name_, fd_protocol_version, fd};
 
-  auto client_resource
-      = (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
-  if (!client_resource) {
-    Emsg1(M_WARNING, 0,
-          "Client \"%s\" tries to connect, "
-          "but no matching resource is defined.\n",
-          client_name);
-    return NULL;
-  }
-
-  if (!IsConnectFromClientAllowed(client_resource)) {
-    Emsg1(M_WARNING, 0,
-          "Connection from client \"%s\" to director is not allowed.\n",
-          client_name);
-    return NULL;
-  }
-
-  if (!AuthenticateFileDaemon(fd, client_name)) { return NULL; }
-
-  Dmsg1(20, "Connected to file daemon %s\n", client_name);
+  Dmsg1(20, "Connected to file daemon %s\n", client_resource->resource_name_);
 
   connections.add_authenticated_connection(std::move(conn));
 
-  RunOnIncomingConnectInterval(client_name).Run();
+  RunOnIncomingConnectInterval(client_resource->resource_name_).Run();
 
   /* The connection is now kept in the connection_pool.
    * This thread is no longer required and will end now. */

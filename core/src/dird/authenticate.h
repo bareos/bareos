@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,16 +22,64 @@
 #ifndef BAREOS_DIRD_AUTHENTICATE_H_
 #define BAREOS_DIRD_AUTHENTICATE_H_
 
+#include "dird/console_connection_lease.h"
+#include "dird/ua.h"
+#include "lib/bsock.h"
+#include "dird/dird_conf.h"
+#include "lib/parse_conf.h"
+
+#include <string>
+#include <memory>
+#include <optional>
+
 namespace directordaemon {
 
 class StorageResource;
 class UaContext;
 
-bool AuthenticateWithStorageDaemon(BareosSocket* sd,
-                                   JobControlRecord* jcr,
-                                   StorageResource* store);
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
-bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name);
+
+struct DirectorAuth : ::TlsConfigProvider {
+  DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
+  {
+  }
+
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override;
+
+  enum class inbound_type
+  {
+    Unknown,
+    Client,
+    Console
+  };
+
+  struct console_data {
+    ConsoleResource* res{};
+    ConsoleConnectionLease lease;
+
+    // the default console is allowed to do everything
+    bool is_default{false};
+
+    TlsResource tls;
+  };
+
+  struct client_data {
+    ClientResource* res;
+  };
+
+  inbound_type GetType() const { return type; }
+
+  std::optional<console_data> console;
+  std::optional<client_data> client;
+
+ private:
+  std::shared_ptr<LoadedConfiguration> p;
+  inbound_type type{inbound_type::Unknown};
+};
+
+std::unique_ptr<UserAcl> AuthenticatePamUser(BareosSocket* socket,
+                                             LoadedConfiguration* conf);
 
 } /* namespace directordaemon */
 

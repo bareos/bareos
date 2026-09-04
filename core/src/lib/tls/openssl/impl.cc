@@ -38,6 +38,7 @@
 #include <array>
 
 #include "lib/bsock.h"
+#include "lib/global_resource.h"
 #include "lib/tls/openssl.h"
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
@@ -80,7 +81,7 @@ class TlsOpenSsl : public Tls {
                       int port,
                       const char* who) const override;
   void SetTlsPskClientContext(const PskCredentials& credentials) override;
-  void SetTlsPskServerContext(TlsSecretProvider* data) override;
+  void SetTlsPskServerContext(TlsConfigProvider* data) override;
 
   void Setca_certfile_(const std::string& ca_certfile) override;
   void SetCaCertdir(const std::string& ca_certdir) override;
@@ -287,7 +288,6 @@ bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
     LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
-        bsock->SetTlsEstablished();
         status = true;
         goto cleanup;
       case SSL_ERROR_ZERO_RETURN:
@@ -363,18 +363,72 @@ const PskCredentials& SSL_CTX_getcred(const SSL_CTX* ctx)
   return *creds;
 }
 
-void SSL_CTX_set_secretprovider(SSL_CTX* ctx, TlsSecretProvider* parser)
+void SSL_CTX_set_secretprovider(SSL_CTX* ctx, TlsConfigProvider* parser)
 {
   SSL_CTX_set_ex_data(ctx, static_cast<int>(CtxDataIndex::SecretProvider),
                       parser);
 }
 
-TlsSecretProvider* SSL_CTX_get_secretprovider(SSL_CTX* ctx)
+TlsConfigProvider* SSL_CTX_get_secretprovider(SSL_CTX* ctx)
 {
   void* ptr = SSL_CTX_get_ex_data(
       ctx, static_cast<int>(CtxDataIndex::SecretProvider));
-  auto* provider = static_cast<TlsSecretProvider*>(ptr);
+  auto* provider = static_cast<TlsConfigProvider*>(ptr);
   return provider;
+}
+
+[[maybe_unused]] unsigned int psk_server_cb2(SSL* ssl,
+                                             const char* identity,
+                                             unsigned char* psk_output,
+                                             unsigned int max_psk_len)
+{
+  SSL_CTX* openssl_ctx = SSL_get_SSL_CTX(ssl);
+
+  if (!openssl_ctx) {
+    Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
+    return 0;
+  }
+
+  LoadedConfiguration* config = nullptr;
+  bool allow_jobs = false;
+
+  auto [type, name] = global_resource::ParseQualifiedName(identity);
+
+  switch (type) {
+    case global_resource::Type::Unknown: {
+      return 0;
+    } break;
+    case global_resource::Type::Job: {
+      if (!allow_jobs) { return 0; }
+      auto* jcr = get_jcr_by_full_name(name);
+      if (!jcr->sd_auth_key || !bstrcmp(jcr->sd_auth_key, "dummy")) {
+        FreeJcr(jcr);
+        return 0;
+      }
+
+      auto pwlen = strlen(jcr->sd_auth_key);
+
+      if (pwlen > max_psk_len) { return 0; }
+
+      memcpy(psk_output, jcr->sd_auth_key, pwlen);
+      return pwlen;
+    } break;
+    default: {
+      // TODO: make this work
+      auto* res = config->GetResWithName((int)type, name);
+      // TODO: check if type is ok
+      auto* as_tls = dynamic_cast<TlsResource*>(res);
+
+      if (!as_tls || !as_tls->password_.value) { return 0; }
+
+      auto pwlen = strlen(as_tls->password_.value);
+
+      if (pwlen > max_psk_len) { return 0; }
+
+      memcpy(psk_output, as_tls->password_.value, pwlen);
+      return pwlen;
+    } break;
+  }
 }
 
 unsigned int psk_server_cb(SSL* ssl,
@@ -382,13 +436,13 @@ unsigned int psk_server_cb(SSL* ssl,
                            unsigned char* psk_output,
                            unsigned int max_psk_len)
 {
-  unsigned int result = 0;
+  static constexpr unsigned int ERROR_RETURN = 0;
 
   SSL_CTX* openssl_ctx = SSL_get_SSL_CTX(ssl);
 
   if (!openssl_ctx) {
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
-    return result;
+    return ERROR_RETURN;
   }
   BStringList lst(std::string(identity),
                   AsciiControlCharacters::RecordSeparator());
@@ -400,13 +454,30 @@ unsigned int psk_server_cb(SSL* ssl,
 
   if (!data) {
     Dmsg0(100, "secret provider not set!\n");
-    return result;
+    return ERROR_RETURN;
   }
 
-  auto psklen = data->get_shared_secret_for(
-      identity, std::span<unsigned char>(psk_output, max_psk_len));
+  auto [type, name] = global_resource::ParseQualifiedName(identity);
 
-  return psklen;
+  if (type == global_resource::Type::Unknown) {
+    Dmsg0(100, "Could not parse identity: %s!\n", identity);
+    return ERROR_RETURN;
+  }
+
+  // , std::span<unsigned char>(psk_output, max_psk_len)
+  auto* tls_res = data->get(type, name);
+
+  if (!tls_res) { return ERROR_RETURN; }
+
+  auto* pw = tls_res->password_.value;
+  auto pw_len = strlen(pw);
+  if (pw_len > max_psk_len) {
+    Dmsg0(100, "psk_server_cb: password too long for %s\n", identity);
+    return ERROR_RETURN;
+  }
+
+  memcpy(psk_output, pw, pw_len);
+  return pw_len;
 }
 
 unsigned int psk_client_cb(SSL* ssl,
@@ -754,7 +825,7 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
   SSL_CTX_set_psk_client_callback(openssl_ctx_, psk_client_cb);
 }
 
-void TlsOpenSsl::SetTlsPskServerContext(TlsSecretProvider* data)
+void TlsOpenSsl::SetTlsPskServerContext(TlsConfigProvider* data)
 {
   if (!openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
