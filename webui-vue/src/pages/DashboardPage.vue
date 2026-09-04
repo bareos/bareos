@@ -78,6 +78,21 @@
             :title="t('Delete dashboard')"
             @click="deleteDashboard"
           />
+          <q-btn
+            flat round dense icon="restore" color="negative" size="sm"
+            :title="t('Reset all dashboards')"
+            @click="resetAllDashboards"
+          />
+          <q-btn
+            flat round dense icon="file_download" size="sm"
+            :title="t('Backup dashboards and settings')"
+            @click="backupDashboards"
+          />
+          <q-btn
+            flat round dense icon="file_upload" size="sm"
+            :title="t('Restore dashboards and settings')"
+            @click="triggerRestoreFilePicker"
+          />
           <q-btn color="primary" dense no-caps size="sm" :label="t('Done')"
                  @click="editMode = false" />
         </template>
@@ -147,6 +162,34 @@
       </q-card>
     </q-dialog>
 
+    <!-- Hidden file input used to pick a backup JSON file to restore -->
+    <input
+      ref="restoreFileInput"
+      type="file"
+      accept="application/json,.json"
+      style="display:none"
+      @change="onRestoreFileSelected"
+    />
+
+    <!-- ── Reset all dashboards dialog ──────────────────────────────────────── -->
+    <q-dialog v-model="showResetDialog">
+      <q-card style="min-width:360px">
+        <q-card-section class="panel-header row items-center">
+          <span>{{ t('Reset All Dashboards') }}</span>
+          <q-space />
+          <q-btn flat round dense icon="close" color="white" @click="showResetDialog = false" />
+        </q-card-section>
+        <q-card-section>
+          {{ t('Delete all dashboards and widgets and restore the default Overview and Analytics dashboards? This cannot be undone.') }}
+        </q-card-section>
+        <q-card-actions align="right" class="q-pb-md q-pr-md q-gutter-xs">
+          <q-btn flat :label="t('Cancel')" @click="showResetDialog = false" />
+          <q-btn flat color="negative" :label="t('Reset without backup')" @click="confirmReset(false)" />
+          <q-btn color="negative" :label="t('Backup & Reset')" @click="confirmReset(true)" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
   </q-page>
 </template>
 
@@ -156,6 +199,7 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useDashboardStore } from '../stores/dashboards.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { useBackupRestore } from '../composables/useBackupRestore.js'
 import { useDirectorStore } from '../stores/director.js'
 import { getWidgetDefinition } from '../dashboard/widgetRegistry.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -316,6 +360,32 @@ function deleteDashboard() {
     dashStore.removeDashboard(activeDashboardId.value)
     editMode.value = false
   })
+}
+
+function resetAllDashboards() {
+  showResetDialog.value = true
+}
+
+const showResetDialog = ref(false)
+
+function confirmReset(withBackup) {
+  if (withBackup) downloadBackup()
+  dashStore.resetAllDashboards()
+  showResetDialog.value = false
+  editMode.value = false
+}
+
+// ── backup / restore ────────────────────────────────────────────────────────
+// Shared with the Settings page — see composables/useBackupRestore.js.
+const {
+  restoreFileInput,
+  downloadBackup,
+  triggerRestoreFilePicker,
+  onRestoreFileSelected,
+} = useBackupRestore({ t, $q, onRestored: () => { editMode.value = false } })
+
+function backupDashboards() {
+  downloadBackup()
 }
 
 // ── rename dashboard ───────────────────────────────────────────────────────
