@@ -156,6 +156,18 @@ if(ENABLE_JANSSON)
   find_package(Jansson REQUIRED)
 endif()
 
+if(lmdb)
+  option(USE_SYSTEM_LMDB
+         "Use the system LMDB library instead of the bundled version" OFF
+  )
+
+  if(USE_SYSTEM_LMDB)
+    find_package(LMDB REQUIRED)
+  else()
+    set(LMDB_VERSION "Bundled")
+  endif()
+endif()
+
 option(ENABLE_GRPC "Build with grpc support" OFF)
 
 if(ENABLE_GRPC)

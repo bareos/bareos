@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+message(STATUS "Using bundled LMDB library")
+
 include(BareosCompilerFlags)
 
 if(HAVE_FREEBSD_OS)
