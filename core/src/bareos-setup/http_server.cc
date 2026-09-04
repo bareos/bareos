@@ -26,6 +26,7 @@
 #include <cctype>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -35,6 +36,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <openssl/evp.h>
@@ -51,6 +53,8 @@ namespace {
 
 std::atomic_bool g_shutdown_requested{false};
 std::atomic_int g_server_fd{-1};
+constexpr int kMaxConcurrentWorkers = 64;
+constexpr int kHeaderReadTimeoutSeconds = 10;
 
 bool IsLoopbackPeer(const sockaddr_storage& peer)
 {
@@ -244,6 +248,7 @@ void RunHttpServer(const std::string& bind_address,
             << port << "/\n"
             << std::flush;
 
+  auto active_workers = std::make_shared<std::atomic_int>(0);
   while (!g_shutdown_requested) {
     sockaddr_storage peer{};
     socklen_t peer_len = sizeof(peer);
@@ -252,15 +257,35 @@ void RunHttpServer(const std::string& bind_address,
       if (g_shutdown_requested) break;
       continue;
     }
+    if (active_workers->fetch_add(1, std::memory_order_relaxed)
+        >= kMaxConcurrentWorkers) {
+      active_workers->fetch_sub(1, std::memory_order_relaxed);
+      constexpr char response[]
+          = "HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n"
+            "Content-Length: 19\r\n\r\nService Unavailable";
+      WriteAll(fd, response, sizeof(response) - 1);
+      close(fd);
+      continue;
+    }
 
     // Handle each connection in its own thread
     const bool peer_is_loopback = IsLoopbackPeer(peer);
-    std::thread([fd, setup_token, ws_handler, peer_is_loopback]() {
+    std::thread([fd, setup_token, ws_handler, peer_is_loopback,
+                 active_workers]() {
+      struct WorkerGuard {
+        int fd;
+        std::shared_ptr<std::atomic_int> active_workers;
+        ~WorkerGuard()
+        {
+          close(fd);
+          active_workers->fetch_sub(1, std::memory_order_relaxed);
+        }
+      } guard{fd, active_workers};
+      const timeval header_timeout{kHeaderReadTimeoutSeconds, 0};
+      setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &header_timeout,
+                 sizeof(header_timeout));
       std::string headers = ReadHttpHeaders(fd);
-      if (headers.empty()) {
-        close(fd);
-        return;
-      }
+      if (headers.empty()) { return; }
 
       std::string upgrade = GetHeader(headers, "Upgrade");
       bool is_ws = (upgrade.find("websocket") != std::string::npos
@@ -297,6 +322,9 @@ void RunHttpServer(const std::string& bind_address,
           close(fd);
           return;
         }
+        const timeval no_timeout{0, 0};
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &no_timeout,
+                   sizeof(no_timeout));
         // Send 101 Switching Protocols
         std::string key = GetHeader(headers, "Sec-WebSocket-Key");
         std::string accept = ComputeAcceptKey(key);
@@ -318,7 +346,6 @@ void RunHttpServer(const std::string& bind_address,
         if (q != std::string::npos) path = path.substr(0, q);
         ServeStaticFile(fd, path);
       }
-      close(fd);
     }).detach();
   }
 

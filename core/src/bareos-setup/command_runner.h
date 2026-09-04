@@ -44,7 +44,12 @@ int RunCommand(const std::vector<std::string>& argv,
                bool use_sudo,
                OutputCallback cb);
 
-/** Run an argv command while supplying a bounded string on stdin. */
+/**
+ * Run an argv command while supplying up to PIPE_BUF bytes on stdin.
+ *
+ * This limit guarantees that the complete input can be written before output
+ * draining begins, preventing a bidirectional pipe deadlock.
+ */
 int RunCommandWithInput(const std::vector<std::string>& argv,
                         const std::string& input,
                         bool use_sudo,

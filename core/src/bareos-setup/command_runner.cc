@@ -21,6 +21,7 @@
 #include "command_runner.h"
 
 #include <array>
+#include <cerrno>
 #include <chrono>
 #include <cstring>
 #include <sstream>
@@ -31,6 +32,7 @@
 #include <utility>
 
 #include <fcntl.h>
+#include <limits.h>
 #include <poll.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -96,8 +98,13 @@ static void DrainFd(int fd,
   // and the remaining bytes would be lost.
   for (;;) {
     const ssize_t n = read(fd, tmp.data(), tmp.size());
-    if (n <= 0) break;
-    buf.append(tmp.data(), static_cast<size_t>(n));
+    if (n > 0) {
+      buf.append(tmp.data(), static_cast<size_t>(n));
+      continue;
+    }
+    if (n < 0 && errno == EINTR) continue;
+    if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
+    break;
   }
   // Emit complete lines
   size_t pos;
@@ -130,6 +137,9 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
 
   // Create stdout, stderr, and (when requested) stdin pipes.
   int pipe_out[2], pipe_err[2], pipe_in[2] = {-1, -1};
+  if (input != nullptr && input->size() > PIPE_BUF) {
+    throw std::invalid_argument("command stdin exceeds PIPE_BUF");
+  }
   if (pipe(pipe_out) != 0 || pipe(pipe_err) != 0
       || (input != nullptr && pipe(pipe_in) != 0))
     throw std::runtime_error(std::string("pipe: ") + strerror(errno));
@@ -175,8 +185,13 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
     while (written < input->size()) {
       const ssize_t n
           = write(pipe_in[1], input->data() + written, input->size() - written);
-      if (n <= 0) break;
-      written += static_cast<size_t>(n);
+      if (n > 0) {
+        written += static_cast<size_t>(n);
+        continue;
+      }
+      if (n < 0 && errno == EINTR) continue;
+      close(pipe_in[1]);
+      throw std::runtime_error(std::string("write stdin: ") + strerror(errno));
     }
     close(pipe_in[1]);
   }
@@ -208,6 +223,8 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
       DrainFd(pipe_err[0], buf_err, "stderr", cb);
       err_open = false;
     }
+    if (fds[0].revents & (POLLERR | POLLNVAL)) out_open = false;
+    if (fds[1].revents & (POLLERR | POLLNVAL)) err_open = false;
   }
 
   // Flush any remaining partial lines

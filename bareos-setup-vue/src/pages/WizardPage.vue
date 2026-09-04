@@ -1,3 +1,23 @@
+<!--
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
+   License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+-->
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header class="bg-primary"><q-toolbar>
@@ -365,6 +385,7 @@ const step = ref('welcome')
 const busy = ref(false)
 const error = ref('')
 const failed = ref(false)
+const failedStep = ref('')
 const installStarted = ref(false)
 const installFinished = ref(false)
 const currentStepId = ref(null)
@@ -604,17 +625,20 @@ function payload() {
     repo_os_path: store.state.platform_supported ? '' : store.repoOsPath,
   }
 }
-function start() {
-  installStarted.value = true
-  installFinished.value = false
+function start(stepToRun = 'repository') {
+  if (stepToRun === 'repository') {
+    installStarted.value = true
+    installFinished.value = false
+    store.admin = null
+    installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
+  }
   busy.value = true; error.value = ''; failed.value = false
-  store.admin = null
-  installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
-  currentStepId.value = 'repository'
-  expandedSteps.repository = true
-  send({ action: 'run', step: 'repository', ...payload() })
+  failedStep.value = ''
+  currentStepId.value = stepToRun
+  expandedSteps[stepToRun] = true
+  send({ action: 'run', step: stepToRun, ...payload() })
 }
-function retry() { start() }
+function retry() { start(failedStep.value || 'repository') }
 function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false; currentStepId.value = null }
 async function copyCredential(field) {
   const text = field === 'username'
@@ -646,7 +670,12 @@ watch(messages, list => {
     }
   }
   if (message.type === 'output' && currentStepId.value) stepLogs[currentStepId.value] += `${message.line}\n`
-  if (message.type === 'error') { error.value = message.message; failed.value = true; busy.value = false }
+  if (message.type === 'error') {
+    error.value = message.message
+    failed.value = true
+    failedStep.value = message.step || currentStepId.value || 'repository'
+    busy.value = false
+  }
   if (message.type === 'admin_credentials') store.admin = message
   if (message.type === 'rollback_complete') store.state.completed = []
   if (message.type === 'closed') {
@@ -654,7 +683,12 @@ watch(messages, list => {
     store.admin = null
   }
   if (message.type === 'done') {
-    if (message.exit_code) { failed.value = true; busy.value = false; return }
+    if (message.exit_code) {
+      failed.value = true
+      failedStep.value = message.step || currentStepId.value || 'repository'
+      busy.value = false
+      return
+    }
     if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)
     expandedSteps[message.step] = false
     const nextStep = installSteps.find(item => !done(item.id))
