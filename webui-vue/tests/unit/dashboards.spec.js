@@ -34,9 +34,17 @@ describe('dashboards store', () => {
 
   it('seeds a default dashboard on first run', () => {
     const store = useDashboardStore()
-    expect(store.dashboards).toHaveLength(1)
+    expect(store.dashboards).toHaveLength(2)
     expect(store.dashboards[0].name).toBe('Overview')
     expect(store.dashboards[0].widgets.length).toBeGreaterThan(0)
+    expect(store.dashboards[1].name).toBe('Analytics')
+    expect(store.dashboards[1].widgets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'analytics-summary' }),
+      expect.objectContaining({ type: 'analytics-treemap' }),
+      expect.objectContaining({ type: 'analytics-status-breakdown' }),
+      expect.objectContaining({ type: 'analytics-client-bytes' }),
+      expect.objectContaining({ type: 'analytics-level-distribution' }),
+    ]))
   })
 
   it('sets the active dashboard to the first dashboard by default', () => {
@@ -81,18 +89,25 @@ describe('dashboards store', () => {
     setActivePinia(createPinia())
     const store = useDashboardStore()
 
-    expect(store.dashboards).toHaveLength(1)
+    expect(store.dashboards).toHaveLength(3)
     expect(store.dashboards[0].id).toBe('saved-1')
     expect(store.dashboards[0].name).toBe('Restored Board')
     expect(store.dashboards[0].widgets).toHaveLength(1)
     expect(store.dashboards[0].widgets[0].type).toBe('job-totals')
+    expect(store.dashboards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Overview' }),
+      expect.objectContaining({ name: 'Analytics' }),
+    ]))
   })
 
   it('falls back to the default dashboard when localStorage is corrupt', () => {
     localStorage.setItem('bareos_dashboards', 'not-valid-json{{')
     setActivePinia(createPinia())
     const store = useDashboardStore()
-    expect(store.dashboards[0].name).toBe('Overview')
+    expect(store.dashboards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: 'Overview' }),
+      expect.objectContaining({ name: 'Analytics' }),
+    ]))
   })
 
   it('falls back to default when localStorage contains an empty array', () => {
@@ -129,8 +144,8 @@ describe('dashboards store', () => {
     const store = useDashboardStore()
     const id = store.addDashboard('Ops Board')
 
-    expect(store.dashboards).toHaveLength(2)
-    expect(store.dashboards[1].name).toBe('Ops Board')
+    expect(store.dashboards).toHaveLength(3)
+    expect(store.dashboards[2].name).toBe('Ops Board')
     expect(store.activeDashboardId).toBe(id)
   })
 
@@ -149,7 +164,7 @@ describe('dashboards store', () => {
 
     store.removeDashboard(secondId)
 
-    expect(store.dashboards).toHaveLength(1)
+    expect(store.dashboards).toHaveLength(2)
     expect(store.activeDashboardId).toBe(firstId)
   })
 
