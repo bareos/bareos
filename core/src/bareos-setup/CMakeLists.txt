@@ -25,15 +25,17 @@ set(SETUP_VUE_BUILD_SCRIPT "${SETUP_VUE_SRC}/build-dist.cmake")
 set(SETUP_VUE_BUILD_STAMP
     "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue-build.stamp"
 )
+set(SETUP_VUE_NPM_MISSING_SCRIPT
+    "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue-npm-missing.cmake"
+)
 
 find_program(NPM_EXECUTABLE npm)
-if(NOT NPM_EXECUTABLE AND NOT EXISTS "${SETUP_VUE_SOURCE_DIST}/index.html")
-  message(
-    STATUS
-      "Skipping bareos-setup: npm not found and no prepared bareos-setup-vue/dist exists"
-  )
-  return()
-endif()
+file(
+  GENERATE
+  OUTPUT "${SETUP_VUE_NPM_MISSING_SCRIPT}"
+  CONTENT
+    "message(FATAL_ERROR \"npm executable not found. Install npm and re-run CMake to use bareos-setup-vue-build.\")\n"
+)
 
 file(GLOB_RECURSE SETUP_VUE_BUILD_INPUTS CONFIGURE_DEPENDS
      "${SETUP_VUE_SRC}/src/*" "${SETUP_VUE_SRC}/public/*"
@@ -43,16 +45,41 @@ list(APPEND SETUP_VUE_BUILD_INPUTS "${SETUP_VUE_SRC}/index.html"
      "${SETUP_VUE_PACKAGE_JSON}" "${SETUP_VUE_PACKAGE_LOCK}"
 )
 
-add_custom_command(
-  OUTPUT "${SETUP_VUE_BUILD_STAMP}" "${SETUP_VUE_DIST_INDEX}"
-  COMMAND ${CMAKE_COMMAND} -DDIST_DIR=${SETUP_VUE_DIST} -P
-          "${SETUP_VUE_BUILD_SCRIPT}"
-  COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_BUILD_STAMP}"
-  DEPENDS ${SETUP_VUE_BUILD_INPUTS}
-  COMMENT "Building bareos-setup-vue dist bundle"
-  USES_TERMINAL VERBATIM
-)
-add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_BUILD_STAMP}")
+# Keep the Vue build opt-in, the same way webui-vue/CMakeLists.txt does: a
+# generic configure does not require npm to be installed, but attempting to
+# actually build (or install) bareos-setup without it fails with a clear,
+# actionable error instead of leaving the "bareos-setup" target undefined.
+if(NPM_EXECUTABLE)
+  add_custom_command(
+    OUTPUT "${SETUP_VUE_BUILD_STAMP}" "${SETUP_VUE_DIST_INDEX}"
+    COMMAND ${CMAKE_COMMAND} -DDIST_DIR=${SETUP_VUE_DIST} -P
+            "${SETUP_VUE_BUILD_SCRIPT}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_BUILD_STAMP}"
+    DEPENDS ${SETUP_VUE_BUILD_INPUTS}
+    COMMENT "Building bareos-setup-vue dist bundle"
+    USES_TERMINAL VERBATIM
+  )
+  add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_BUILD_STAMP}")
+elseif(EXISTS "${SETUP_VUE_SOURCE_DIST}/index.html")
+  # Source archives may ship a prebuilt bareos-setup-vue/dist; use it directly
+  # without requiring npm.
+  add_custom_command(
+    OUTPUT "${SETUP_VUE_BUILD_STAMP}" "${SETUP_VUE_DIST_INDEX}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${SETUP_VUE_SOURCE_DIST}"
+            "${SETUP_VUE_DIST}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_BUILD_STAMP}"
+    DEPENDS "${SETUP_VUE_SOURCE_DIST}/index.html"
+    COMMENT "Using prepared bareos-setup-vue/dist bundle (npm not found)"
+    VERBATIM
+  )
+  add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_BUILD_STAMP}")
+else()
+  add_custom_target(
+    bareos-setup-vue-build
+    COMMAND ${CMAKE_COMMAND} -P "${SETUP_VUE_NPM_MISSING_SCRIPT}"
+    VERBATIM
+  )
+endif()
 
 # ---------------------------------------------------------------------------
 # Asset embedding
