@@ -1061,16 +1061,15 @@ bail_out:
   return retval;
 }
 
-static inline PyXattrPacket* NativeToPyXattrPacket(xattr_pkt* xp)
+static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
+                                                   xattr_pkt* xp)
 {
+  if (!fname) { return nullptr; }
+
   PyXattrPacket* pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
 
   if (pXattrPacket) {
-    pXattrPacket->fname = PyUnicode_FromString(xp->fname);
-    if (!pXattrPacket->fname) {
-      PyObject_Free(pXattrPacket);
-      return nullptr;
-    }
+    pXattrPacket->fname = fname;
 
     if (xp->name_length && xp->name) {
       pXattrPacket->name
@@ -1084,6 +1083,8 @@ static inline PyXattrPacket* NativeToPyXattrPacket(xattr_pkt* xp)
     } else {
       pXattrPacket->value = NULL;
     }
+  } else {
+    Py_DECREF(fname);
   }
 
   return pXattrPacket;
@@ -1137,6 +1138,13 @@ static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
+  PyObject* fname = plugin_priv_ctx->py_fname;
+  if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
+    fname = PyUnicode_FromString(xp->fname);
+  } else {
+    Py_INCREF(fname);
+  }
+
   // Lookup the get_xattr() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "get_xattr"); /* Borrowed reference */
@@ -1144,7 +1152,7 @@ static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
     PyXattrPacket* pXattrPkt;
     PyObject* pRetVal;
 
-    pXattrPkt = NativeToPyXattrPacket(xp);
+    pXattrPkt = NativeToPyXattrPacket(fname, xp);
     if (!pXattrPkt) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pXattrPkt, NULL);
@@ -1183,6 +1191,13 @@ static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
+  PyObject* fname = plugin_priv_ctx->py_fname;
+  if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
+    fname = PyUnicode_FromString(xp->fname);
+  } else {
+    Py_INCREF(fname);
+  }
+
   // Lookup the set_acl() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "set_xattr"); /* Borrowed reference */
@@ -1190,7 +1205,7 @@ static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
     PyXattrPacket* pXattrPkt;
     PyObject* pRetVal;
 
-    pXattrPkt = NativeToPyXattrPacket(xp);
+    pXattrPkt = NativeToPyXattrPacket(fname, xp);
     if (!pXattrPkt) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pXattrPkt, NULL);
