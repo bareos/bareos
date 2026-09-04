@@ -1,0 +1,18 @@
+SELECT DISTINCT ON (File.Name,
+                    File.PathId) Job.JobTDate,
+                                   File.JobId,
+                                   File.FileId,
+                                   File.FileIndex,
+                                   File.PathId,
+                                   File.Name,
+                                   File.LStat,
+                                   File.MD5,
+                                   File.DeltaSeq,
+                                   File.Fhinfo,
+                                   File.Fhnode
+FROM File
+JOIN Job USING (JobId)
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         Job.JobTDate DESC
