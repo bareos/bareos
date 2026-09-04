@@ -138,8 +138,7 @@ bool CheckResources()
     return false;
   }
 
-  CloseMsg(nullptr);              /* close temp message handler */
-  InitMsg(nullptr, me->messages); /* open daemon message handler */
+  CloseMsg(nullptr); /* close temp message handler */
   if (me->secure_erase_cmdline) {
     SetSecureEraseCmdline(me->secure_erase_cmdline);
   }
@@ -229,6 +228,7 @@ bool DoReloadConfig()
     assert(me);
     my_config->own_resource_ = me;
   }
+  InitMsg(me->messages);
   SetWorkingDirectory(me->working_directory);
   StartStatisticsThread();
   UnlockJobs();
