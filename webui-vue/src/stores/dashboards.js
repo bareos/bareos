@@ -35,7 +35,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { DEFAULT_DASHBOARD } from '../dashboard/defaultDashboard.js'
+import { PRECONFIGURED_DASHBOARDS } from '../dashboard/defaultDashboard.js'
 
 const LS_KEY = 'bareos_dashboards'
 
@@ -87,6 +87,27 @@ function normaliseLayout(raw, i) {
   }
 }
 
+function cloneDashboard(dashboard) {
+  return {
+    ...dashboard,
+    widgets: dashboard.widgets.map(widget => ({
+      ...widget,
+      props: { ...widget.props },
+      layout: { ...widget.layout },
+    })),
+  }
+}
+
+function addMissingPreconfiguredDashboards(dashboards) {
+  const names = new Set(dashboards.map(dashboard => dashboard.name))
+  return [
+    ...dashboards,
+    ...PRECONFIGURED_DASHBOARDS
+      .filter(dashboard => !names.has(dashboard.name))
+      .map(cloneDashboard),
+  ]
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(LS_KEY)
@@ -100,16 +121,22 @@ function loadFromStorage() {
         })
         if (dashboards.length > 0) {
           const savedActiveId = parsed?.activeDashboardId
-          const validActiveId = dashboards.find(d => d.id === savedActiveId)?.id
-          return { dashboards, activeDashboardId: validActiveId ?? dashboards[0].id }
+          const migratedDashboards = addMissingPreconfiguredDashboards(
+            dashboards
+          )
+          const validActiveId = migratedDashboards.find(d => d.id === savedActiveId)?.id
+          return {
+            dashboards: migratedDashboards,
+            activeDashboardId: validActiveId ?? migratedDashboards[0].id,
+          }
         }
       }
     }
   } catch { /* ignore */ }
 
-  // First run: seed with default dashboard.
+  // First run: seed the built-in editable dashboards.
   return {
-    dashboards: [{ ...DEFAULT_DASHBOARD, id: generateId() }],
+    dashboards: PRECONFIGURED_DASHBOARDS.map(cloneDashboard),
     activeDashboardId: null,
   }
 }

@@ -61,7 +61,7 @@
       >
         <component
           :is="resolveWidgetComponent(widget.type)"
-          :widget-props="widget.props"
+          :widget-props="{ ...widget.props, type: widget.type }"
         />
       </WidgetShell>
     </div>
@@ -106,7 +106,7 @@
         >
           <component
             :is="resolveWidgetComponent(widget.type)"
-            :widget-props="widget.props"
+            :widget-props="{ ...widget.props, type: widget.type }"
           />
         </WidgetShell>
       </GridItem>
@@ -139,6 +139,7 @@ import {
   aggregateDirectorDashboardSnapshots,
   fetchDirectorDashboardSnapshot,
 } from '../composables/directorAggregate.js'
+import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
 import WidgetShell from './WidgetShell.vue'
 import WidgetConfigDialog from './WidgetConfigDialog.vue'
 
@@ -166,9 +167,12 @@ const refreshToken = ref(0)
 const pools        = ref([])
 const poolLoading  = ref(false)
 const poolRefreshToken = ref(0)
+const analyticsJobs = ref([])
+const analyticsLoading = ref(false)
 let _latestFetchRequestId = 0
 let _dataRequestsInFlight = 0
 let _poolRequestsInFlight = 0
+let _analyticsRequestsInFlight = 0
 
 // Pool data changes infrequently — only re-fetch every POOL_REFRESH_EVERY
 // normal refresh cycles (≈ every 10 minutes at the default 60 s interval).
@@ -176,6 +180,30 @@ const POOL_REFRESH_EVERY = 10
 let _refreshCount = 0
 
 const aggregate = computed(() => aggregateDirectorDashboardSnapshots(snapshots.value))
+const hasAnalyticsWidgets = computed(() => props.dashboard.widgets.some(widget => (
+  widget.type.startsWith('analytics-')
+)))
+
+async function fetchAnalyticsData(credentials, requestId) {
+  if (!hasAnalyticsWidgets.value) {
+    if (requestId === _latestFetchRequestId) {
+      analyticsJobs.value = []
+    }
+    return
+  }
+
+  _analyticsRequestsInFlight += 1
+  analyticsLoading.value = true
+  try {
+    const result = await fetchAggregatedAnalytics(credentials, props.activeDirectors)
+    if (requestId === _latestFetchRequestId) {
+      analyticsJobs.value = result.jobs
+    }
+  } finally {
+    _analyticsRequestsInFlight = Math.max(0, _analyticsRequestsInFlight - 1)
+    analyticsLoading.value = _analyticsRequestsInFlight > 0
+  }
+}
 
 async function fetchData({ forcePools = false } = {}) {
   const requestId = ++_latestFetchRequestId
@@ -184,6 +212,8 @@ async function fetchData({ forcePools = false } = {}) {
     if (requestId === _latestFetchRequestId) {
       snapshots.value = []
       pools.value = []
+      analyticsJobs.value = []
+      analyticsLoading.value = false
     }
     return
   }
@@ -198,11 +228,14 @@ async function fetchData({ forcePools = false } = {}) {
     poolLoading.value = true
   }
   try {
-    const results = await Promise.allSettled(
-      props.activeDirectors.map(d =>
-        fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
-      )
-    )
+    const [results] = await Promise.all([
+      Promise.allSettled(
+        props.activeDirectors.map(d =>
+          fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
+        )
+      ),
+      fetchAnalyticsData(credentials, requestId),
+    ])
     const fresh = results
       .filter(r => r.status === 'fulfilled')
       .map(r => r.value)
@@ -238,6 +271,7 @@ async function fetchData({ forcePools = false } = {}) {
 function refresh() { fetchData() }
 
 watch(() => props.activeDirectors.join('\0'), () => fetchData({ forcePools: true }), { immediate: true })
+watch(hasAnalyticsWidgets, () => fetchData({ forcePools: true }))
 
 provide(DASHBOARD_CONTEXT_KEY, {
   aggregate,
@@ -247,6 +281,8 @@ provide(DASHBOARD_CONTEXT_KEY, {
   refresh,
   refreshToken,
   poolRefreshToken,
+  analyticsJobs,
+  analyticsLoading,
   activeDirectors: computed(() => props.activeDirectors),
   directorOptions: computed(() => props.directorOptions),
 })

@@ -80,6 +80,11 @@ describe('widgetRegistry', () => {
     expect(types.has('pool-bytes-chart')).toBe(true)
     expect(types.has('pool-volumes-chart')).toBe(true)
     expect(types.has('database-status')).toBe(true)
+    expect(types.has('analytics-summary')).toBe(true)
+    expect(types.has('analytics-treemap')).toBe(true)
+    expect(types.has('analytics-status-breakdown')).toBe(true)
+    expect(types.has('analytics-client-bytes')).toBe(true)
+    expect(types.has('analytics-level-distribution')).toBe(true)
   })
 
   it('pool chart widgets have appropriate default layout dimensions', () => {
