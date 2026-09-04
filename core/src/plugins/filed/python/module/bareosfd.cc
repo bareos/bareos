@@ -2448,7 +2448,7 @@ static void PyIoPacket_dealloc(PyObject* obj)
   auto* self = reinterpret_cast<PyIoPacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->buf);
-  C_CLEAR(self->fname);
+  Py_CLEAR(self->fname);
   PyObject_Del(obj);
 }
 
