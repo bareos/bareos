@@ -1162,19 +1162,19 @@ static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
-  PyObject* fname = plugin_priv_ctx->py_fname;
-  if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
-    fname = PyUnicode_FromString(xp->fname);
-  } else {
-    Py_INCREF(fname);
-  }
-
   // Lookup the get_xattr() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "get_xattr"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyXattrPacket* pXattrPkt;
     PyObject* pRetVal;
+
+    PyObject* fname = plugin_priv_ctx->py_fname;
+    if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
+      fname = PyUnicode_FromString(xp->fname);
+    } else {
+      Py_INCREF(fname);
+    }
 
     pXattrPkt = NativeToPyXattrPacket(fname, xp);
     if (!pXattrPkt) { goto bail_out; }
@@ -1215,19 +1215,19 @@ static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
-  PyObject* fname = plugin_priv_ctx->py_fname;
-  if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
-    fname = PyUnicode_FromString(xp->fname);
-  } else {
-    Py_INCREF(fname);
-  }
-
   // Lookup the set_acl() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "set_xattr"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyXattrPacket* pXattrPkt;
     PyObject* pRetVal;
+
+    PyObject* fname = plugin_priv_ctx->py_fname;
+    if (!fname || !bstrcmp(xp->fname, PyUnicode_AsUTF8(fname))) {
+      fname = PyUnicode_FromString(xp->fname);
+    } else {
+      Py_INCREF(fname);
+    }
 
     pXattrPkt = NativeToPyXattrPacket(fname, xp);
     if (!pXattrPkt) { goto bail_out; }
