@@ -297,20 +297,30 @@ class BareosFdPluginBaseclass(object):
                 "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
             )
             return bRC_OK
-        elif os.path.exists(self.FNAME) and stat.S_ISFIFO(os.stat(self.FNAME).st_mode):
-            self.fileType = "FT_FIFO"
-            bareosfd.DebugMessage(
-                100,
-                "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
-            )
-            return bRC_OK
-        else:
+        elif not (IOP.flags & (os.O_CREAT | os.O_WRONLY)):
+            try:
+                is_fifo = stat.S_ISFIFO(os.stat(self.FNAME).st_mode)
+            except FileNotFoundError:
+                bareosfd.JobMessage(
+                    M_WARNING,
+                    "File %s disappeared while being opened\n" % self.FNAME,
+                )
+                return bRC_Skip
+            if is_fifo:
+                self.fileType = "FT_FIFO"
+                bareosfd.DebugMessage(
+                    100,
+                    "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
+                )
+                return bRC_OK
             self.fileType = "FT_REG"
             bareosfd.DebugMessage(
                 150,
                 "file %s has type %s - trying to open it\n"
                 % (self.FNAME, self.fileType),
             )
+        else:
+            self.fileType = "FT_REG"
         try:
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                 bareosfd.DebugMessage(

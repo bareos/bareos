@@ -77,6 +77,7 @@ using EvpPkeyPtr = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
 using EvpPkeyCtxPtr
     = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
 using X509Ptr = std::unique_ptr<X509, decltype(&X509_free)>;
+using X509NamePtr = std::unique_ptr<X509_NAME, decltype(&X509_NAME_free)>;
 using X509CrlPtr = std::unique_ptr<X509_CRL, decltype(&X509_CRL_free)>;
 using X509RevokedPtr
     = std::unique_ptr<X509_REVOKED, decltype(&X509_REVOKED_free)>;
@@ -262,19 +263,20 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
     return {nullptr, X509_free};
   }
 
-  X509_NAME* subject = X509_get_subject_name(cert.get());
+  X509NamePtr subject(X509_NAME_new(), X509_NAME_free);
   if (!subject
       || X509_NAME_add_entry_by_txt(
-             subject, "CN", MBSTRING_ASC,
+             subject.get(), "CN", MBSTRING_ASC,
              reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
              0)
-             != 1) {
+             != 1
+      || X509_set_subject_name(cert.get(), subject.get()) != 1) {
     *error = "Could not set certificate subject: " + GetOpenSslError();
     return {nullptr, X509_free};
   }
 
-  X509_NAME* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
-                                       : X509_get_subject_name(cert.get());
+  auto* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
+                                  : X509_get_subject_name(cert.get());
   if (!issuer_name || X509_set_issuer_name(cert.get(), issuer_name) != 1) {
     *error = "Could not set certificate issuer: " + GetOpenSslError();
     return {nullptr, X509_free};

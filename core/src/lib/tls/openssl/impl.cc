@@ -142,6 +142,18 @@ class TlsOpenSsl : public Tls {
 constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
 
+std::optional<std::string> GetCommonName(const X509_NAME* subject, int index)
+{
+  const X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, index);
+  const ASN1_STRING* name = X509_NAME_ENTRY_get_data(entry);
+  const unsigned char* data = ASN1_STRING_get0_data(name);
+  const int length = ASN1_STRING_length(name);
+  if (!data || length <= 0) { return std::nullopt; }
+
+  return std::string{reinterpret_cast<const char*>(data),
+                     static_cast<size_t>(length)};
+}
+
 // report any errors that occurred
 int OpensslVerifyPeer(int preverify_ok, X509_STORE_CTX* store)
 {
@@ -811,7 +823,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
     const std::vector<std::string>& verify_list)
 {
   X509* cert;
-  X509_NAME* subject;
   bool auth_success = false;
 
   if (!(cert = SSL_get_peer_certificate(openssl_))) {
@@ -819,15 +830,21 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
     return false;
   }
 
-  if ((subject = X509_get_subject_name(cert)) != NULL) {
-    char data[256]; /* nullterminated by X509_NAME_get_text_by_NID */
-    if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data))
-        > 0) {
-      const std::string_view d(data);
-      for (const std::string& cn : verify_list) {
-        Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data,
-              cn.c_str());
-        if (d.compare(cn) == 0) { auth_success = true; }
+  /* auto: X509_get_subject_name() returns a non-const pointer on
+   * OpenSSL < 4.0 and a const pointer on OpenSSL >= 4.0 */
+  auto* subject = X509_get_subject_name(cert);
+  if (subject != NULL) {
+    const int common_name_index
+        = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
+    if (common_name_index != -1) {
+      const std::optional<std::string> common_name
+          = GetCommonName(subject, common_name_index);
+      if (common_name) {
+        for (const std::string& cn : verify_list) {
+          Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n",
+                common_name->c_str(), cn.c_str());
+          if (common_name->compare(cn) == 0) { auth_success = true; }
+        }
       }
     }
   }
@@ -850,9 +867,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   int extensions;
   int cnLastPos = -1;
   X509* cert;
-  X509_NAME* subject;
-  X509_NAME_ENTRY* neCN;
-  ASN1_STRING* asn1CN;
   bool auth_success = false;
   auto free_subject_alt_name_data
       = [](const X509V3_EXT_METHOD* method, void* extstr,
@@ -878,10 +892,11 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   // Check subjectAltName extensions first
   if ((extensions = X509_get_ext_count(cert)) > 0) {
     for (i = 0; i < extensions; i++) {
-      X509_EXTENSION* ext;
       const char* extname;
 
-      ext = X509_get_ext(cert, i);
+      /* auto: X509_get_ext() returns a non-const pointer on OpenSSL < 3.0
+       * and a const pointer on OpenSSL >= 4.0 */
+      auto* ext = X509_get_ext(cert, i);
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
       if (bstrcmp(extname, "subjectAltName")) {
@@ -893,17 +908,23 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
 
-        ext_value_data = X509_EXTENSION_get_data(ext)->data;
+        auto* ext_value = X509_EXTENSION_get_data(ext);
+        ext_value_data = ASN1_STRING_get0_data(
+            reinterpret_cast<const ASN1_STRING*>(ext_value));
 
         if (method->it) {
-          extstr = ASN1_item_d2i(NULL, &ext_value_data,
-                                 X509_EXTENSION_get_data(ext)->length,
-                                 ASN1_ITEM_ptr(method->it));
+          extstr = ASN1_item_d2i(
+              NULL, &ext_value_data,
+              ASN1_STRING_length(
+                  reinterpret_cast<const ASN1_STRING*>(ext_value)),
+              ASN1_ITEM_ptr(method->it));
         } else {
           /* Old style ASN1
            * Decode ASN1 item in data */
-          extstr = method->d2i(NULL, &ext_value_data,
-                               X509_EXTENSION_get_data(ext)->length);
+          extstr = method->d2i(
+              NULL, &ext_value_data,
+              ASN1_STRING_length(
+                  reinterpret_cast<const ASN1_STRING*>(ext_value)));
         }
 
         // Iterate through to find the dNSName field(s)
@@ -931,15 +952,18 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
   // Try verifying against the subject name
   if (!auth_success) {
-    if ((subject = X509_get_subject_name(cert)) != NULL) {
+    /* auto: X509_get_subject_name() returns a non-const pointer on
+     * OpenSSL < 4.0 and a const pointer on OpenSSL >= 4.0 */
+    auto* subject = X509_get_subject_name(cert);
+    if (subject != NULL) {
       // Loop through all CNs
       for (;;) {
         cnLastPos
             = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
         if (cnLastPos == -1) { break; }
-        neCN = X509_NAME_get_entry(subject, cnLastPos);
-        asn1CN = X509_NAME_ENTRY_get_data(neCN);
-        if (Bstrcasecmp((const char*)asn1CN->data, host)) {
+        const std::optional<std::string> common_name
+            = GetCommonName(subject, cnLastPos);
+        if (common_name && Bstrcasecmp(common_name->c_str(), host)) {
           auth_success = true;
           break;
         }
