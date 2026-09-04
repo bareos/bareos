@@ -15,6 +15,19 @@ categories:
   - backup
   - it-management
   - it-security
+usedBy:
+  - Staatliche Archive Bayerns
+  - Stadt Jena
+  - Die Französische Regierung (Empfohlen in der SILL Liste)
+  - Stadt Vera (Almería (Spanien))
+  - FSU Jena
+  - Universität Utah, Center for High Performance Computing
+  - Aristoteles-Universität Thessaloniki
+  - Consiglio Nazionale delle Ricerche (CNR) Italien
+  - Digital Repository of Ireland
+  - TU Darmstadt
+  - Jozef-Stefan-Institut Slowenien
+  - Hochschule Bremen
 developmentStatus: stable
 softwareType: standalone/backend
 description:
