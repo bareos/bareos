@@ -1,0 +1,1233 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+#include "setup_steps.h"
+
+#include <algorithm>
+#include <array>
+#include <climits>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <gtest/gtest.h>
+#include <stdexcept>
+#include <sys/socket.h>
+#include <thread>
+#include <unistd.h>
+
+#include "command_runner.h"
+#include "os_detector.h"
+#include "setup_session.h"
+#include "ws_codec.h"
+
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
+{
+  EXPECT_EQ(BuildDefaultPackageList("dnf"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils", "mod_ssl",
+                "postgresql-server"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
+{
+  EXPECT_EQ(BuildDefaultPackageList("apt"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils", "postgresql"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
+{
+  EXPECT_EQ(BuildDefaultPackageList("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils", "postgresql-server"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
+{
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("apt"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils"}));
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("dnf"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils", "mod_ssl"}));
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-tape", "bareos-storage-dedupable",
+                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
+{
+  EXPECT_EQ(BuildPackageListWithoutTapeStorage("zypper"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-dedupable", "bareos-database-tools",
+                "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
+                "policycoreutils", "postgresql-server"}));
+  EXPECT_EQ(BuildPackageListWithoutTapeStorage("dnf"),
+            (std::vector<std::string>{
+                "bareos-filedaemon", "bareos-director", "bareos-storage",
+                "bareos-storage-dedupable", "bareos-database-tools",
+                "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
+                "policycoreutils", "mod_ssl", "postgresql-server"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
+{
+  EXPECT_TRUE(BuildCatalogInitScripts("apt").empty());
+  EXPECT_EQ(BuildCatalogInitScripts("dnf"),
+            (std::vector<std::string>{
+                "/usr/lib/bareos/scripts/create_bareos_database",
+                "/usr/lib/bareos/scripts/make_bareos_tables",
+                "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
+  EXPECT_EQ(BuildCatalogInitScripts("yum"), BuildCatalogInitScripts("dnf"));
+  EXPECT_EQ(BuildCatalogInitScripts("zypper"), BuildCatalogInitScripts("dnf"));
+}
+
+namespace {
+
+// Prepends a temp directory of no-op shim executables (named after the
+// given tools) to PATH, so RunStep()'s real orchestration logic (which
+// commands to run, and in what order) can be exercised without touching
+// the real system. Each shim just appends its own invocation to a shared
+// log file and exits 0. The "sudo" shim is special: it passes through to
+// its argv so tests behave the same whether they run as root or not.
+class FakeToolPath {
+ public:
+  explicit FakeToolPath(const std::vector<std::string>& tools)
+  {
+    std::string pattern
+        = (std::filesystem::temp_directory_path() / "bareos-setup-test-XXXXXX")
+              .string();
+    std::vector<char> buffer(pattern.begin(), pattern.end());
+    buffer.push_back('\0');
+    if (mkdtemp(buffer.data()) == nullptr) {
+      throw std::runtime_error("mkdtemp failed");
+    }
+    dir_ = buffer.data();
+    log_path_ = dir_ / "log.txt";
+    for (const auto& tool : tools) {
+      const std::filesystem::path shim = dir_ / tool;
+      std::ofstream out(shim);
+      if (tool == "sudo") {
+        out << "#!/bin/sh\nexec \"$@\"\n";
+      } else {
+        out << "#!/bin/sh\necho \"" << tool << " $*\" >> '"
+            << log_path_.string() << "'\nexit 0\n";
+      }
+      out.close();
+      std::filesystem::permissions(shim,
+                                   std::filesystem::perms::owner_all
+                                       | std::filesystem::perms::group_read
+                                       | std::filesystem::perms::group_exec
+                                       | std::filesystem::perms::others_read
+                                       | std::filesystem::perms::others_exec);
+    }
+    const char* current = getenv("PATH");
+    old_path_ = current != nullptr ? current : "";
+    setenv("PATH", (dir_.string() + ":" + old_path_).c_str(), 1);
+  }
+
+  ~FakeToolPath()
+  {
+    setenv("PATH", old_path_.c_str(), 1);
+    std::error_code ec;
+    std::filesystem::remove_all(dir_, ec);
+  }
+
+  FakeToolPath(const FakeToolPath&) = delete;
+  FakeToolPath& operator=(const FakeToolPath&) = delete;
+
+  std::vector<std::string> LoggedCommands() const
+  {
+    std::vector<std::string> lines;
+    std::ifstream in(log_path_);
+    std::string line;
+    while (std::getline(in, line)) lines.push_back(line);
+    return lines;
+  }
+
+ private:
+  std::filesystem::path dir_;
+  std::filesystem::path log_path_;
+  std::string old_path_;
+};
+
+}  // namespace
+
+TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
+{
+  // "sh" is guaranteed to exist on every supported Linux platform.
+  EXPECT_TRUE(IsToolInPath("sh"));
+}
+
+TEST(BareosSetupCommandRunner, DoesNotFindNonexistentTool)
+{
+  EXPECT_FALSE(IsToolInPath("definitely-not-a-real-tool-xyz"));
+}
+
+TEST(BareosSetupCommandRunner, DeliversBoundedStandardInput)
+{
+  std::string output;
+  EXPECT_EQ(
+      RunCommandWithInput({"sh", "-c", "cat"}, "setup input", false,
+                          [&output](const std::string& line,
+                                    const std::string&) { output += line; }),
+      0);
+  EXPECT_EQ(output, "setup input");
+}
+
+TEST(BareosSetupCommandRunner, RejectsInputExceedingPipeBuf)
+{
+  EXPECT_THROW(
+      RunCommandWithInput({"sh", "-c", "cat"}, std::string(PIPE_BUF + 1, 'x'),
+                          false, [](const std::string&, const std::string&) {}),
+      std::invalid_argument);
+}
+
+TEST(WsCodec, RejectsOversizedFramesBeforePayloadAllocation)
+{
+  int sockets[2];
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  constexpr uint64_t oversized_payload = 16ULL * 1024 * 1024 + 1;
+  const std::array<unsigned char, 10> header{
+      0x81,
+      127,
+      static_cast<unsigned char>(oversized_payload >> 56),
+      static_cast<unsigned char>(oversized_payload >> 48),
+      static_cast<unsigned char>(oversized_payload >> 40),
+      static_cast<unsigned char>(oversized_payload >> 32),
+      static_cast<unsigned char>(oversized_payload >> 24),
+      static_cast<unsigned char>(oversized_payload >> 16),
+      static_cast<unsigned char>(oversized_payload >> 8),
+      static_cast<unsigned char>(oversized_payload),
+  };
+  ASSERT_EQ(write(sockets[1], header.data(), header.size()),
+            static_cast<ssize_t>(header.size()));
+  WsCodec codec(sockets[0]);
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
+
+  close(sockets[0]);
+  close(sockets[1]);
+}
+
+TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
+{
+  // "sh" is used here as a stand-in package manager name since it is
+  // always present, so this exercises the "all tools found" path.
+  FakeToolPath fake_tools(
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
+  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+}
+
+TEST(BareosSetupCommandRunner, ReportsMissingPackageManager)
+{
+  const auto missing = MissingRequiredTools("definitely-not-a-real-tool-xyz");
+  EXPECT_NE(std::find(missing.begin(), missing.end(),
+                      "definitely-not-a-real-tool-xyz"),
+            missing.end());
+}
+
+TEST(BareosSetupCommandRunner, RequiresSuForRunningCatalogScriptsAsPostgres)
+{
+  // "su" is required so the catalog scripts (which must run as the
+  // "postgres" OS user) can be started at all; verify it is part of the
+  // fixed required-tools set regardless of the detected package manager.
+  FakeToolPath fake_tools(
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
+  ASSERT_TRUE(IsToolInPath("su"));
+  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
+{
+  const auto init_cmd = BuildPostgresInitCmd();
+  if (IsToolInPath("postgresql-setup")) {
+    EXPECT_EQ(init_cmd,
+              (std::vector<std::string>{"postgresql-setup", "--initdb"}));
+  } else {
+    EXPECT_TRUE(init_cmd.empty());
+  }
+}
+
+TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
+{
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/create_bareos_database"),
+      (std::vector<std::string>{
+          "su", "postgres", "-c",
+          "/usr/lib/bareos/scripts/create_bareos_database"}));
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/make_bareos_tables"),
+      (std::vector<std::string>{"su", "postgres", "-c",
+                                "/usr/lib/bareos/scripts/make_bareos_tables"}));
+  EXPECT_EQ(
+      BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/grant_bareos_privileges"),
+      (std::vector<std::string>{
+          "su", "postgres", "-c",
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForCommunityRepo)
+{
+  const auto command = BuildNetworkCheckCmd("community");
+
+  // The URL must end in a slash so the check does not merely observe a
+  // redirect, and the response must be discarded rather than written to
+  // stdout: a reachability probe has no use for the body, and writing it
+  // made curl fail with "client returned ERROR on write" in the installer.
+  EXPECT_EQ(command.back(), "https://download.bareos.org/current/");
+  EXPECT_NE(std::find(command.begin(), command.end(), "--location"),
+            command.end());
+  const auto output = std::find(command.begin(), command.end(), "--output");
+  ASSERT_NE(output, command.end());
+  EXPECT_EQ(*(output + 1), "/dev/null");
+}
+
+TEST(BareosSetupStepsShared, BuildsNoUnauthenticatedSubscriptionNetworkCheck)
+{
+  EXPECT_TRUE(BuildNetworkCheckCmd("subscription").empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsMtxAvailabilityCheck)
+{
+  EXPECT_EQ(
+      BuildMtxAvailabilityCheckCmd(),
+      (std::vector<std::string>{"zypper", "--non-interactive", "search",
+                                "--match-exact", "--type", "package", "mtx"}));
+}
+
+TEST(BareosSetupStepsShared, BuildsOpenSuseRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("opensuse-leap", "15.6"), "SUSE_15");
+  EXPECT_EQ(BuildRepoOsPath("opensuse-tumbleweed", "20260828"),
+            "SUSE_20260828");
+}
+
+TEST(BareosSetupStepsShared, BuildsSlesRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("sles", "16.0"), "SUSE_16");
+}
+
+TEST(BareosSetupStepsShared, BuildsRhelRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("rhel", "9.6"), "EL_9");
+}
+
+TEST(BareosSetupStepsShared, BuildsUbuntuRepositoryPath)
+{
+  EXPECT_EQ(BuildRepoOsPath("ubuntu", "24.04"), "xUbuntu_24.04");
+}
+
+TEST(BareosSetupStepsShared, SupportsOpenSuseLeapPlatform)
+{
+  EXPECT_TRUE(IsSupportedSetupPlatform("opensuse-leap", "zypper"));
+  EXPECT_FALSE(IsSupportedSetupPlatform("opensuse", "zypper"));
+  EXPECT_TRUE(IsSupportedSetupPlatform("sles", "zypper"));
+}
+
+TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
+{
+  EXPECT_EQ(BuildWebServerServiceName("apt"), "apache2");
+  EXPECT_EQ(BuildWebServerServiceName("dnf"), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName("yum"), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName("zypper"), "apache2");
+}
+
+TEST(BareosSetupStepsShared, BuildsWebServerHttpsSetup)
+{
+  EXPECT_EQ(BuildWebServerHttpsSetupCmds("apt"),
+            (std::vector<std::vector<std::string>>{
+                {"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}}));
+  const auto zypper_cmds = BuildWebServerHttpsSetupCmds("zypper");
+  ASSERT_EQ(zypper_cmds.size(), 3U);
+  EXPECT_EQ(zypper_cmds[0], (std::vector<std::string>{"a2enmod", "ssl"}));
+  EXPECT_EQ(zypper_cmds[1], (std::vector<std::string>{"a2enflag", "SSL"}));
+  ASSERT_EQ(zypper_cmds[2].size(), 3U);
+  EXPECT_EQ(zypper_cmds[2][0], "sh");
+  EXPECT_EQ(zypper_cmds[2][1], "-c");
+  EXPECT_NE(zypper_cmds[2][2].find("bareos-setup-ssl.conf"), std::string::npos);
+  EXPECT_NE(zypper_cmds[2][2].find("SSLEngine on"), std::string::npos);
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("dnf").empty());
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("yum").empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsBareosDaemonServicesForPackageManager)
+{
+  EXPECT_EQ(BuildBareosDaemonServiceNames("apt"),
+            (std::vector<std::string>{"bareos-director", "bareos-storage",
+                                      "bareos-filedaemon"}));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("dnf"),
+            (std::vector<std::string>{"bareos-dir", "bareos-sd", "bareos-fd"}));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("yum"),
+            BuildBareosDaemonServiceNames("dnf"));
+  EXPECT_EQ(BuildBareosDaemonServiceNames("zypper"),
+            BuildBareosDaemonServiceNames("dnf"));
+}
+
+TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptAndZypper)
+{
+  EXPECT_EQ(BuildPackageCacheUpdateCmd("apt"),
+            (std::vector<std::string>{"apt-get", "update"}));
+  EXPECT_EQ(BuildPackageCacheUpdateCmd("zypper"),
+            (std::vector<std::string>{"zypper", "--non-interactive",
+                                      "--gpg-auto-import-keys", "refresh"}));
+  EXPECT_TRUE(BuildPackageCacheUpdateCmd("dnf").empty());
+  EXPECT_TRUE(BuildPackageCacheUpdateCmd("yum").empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsZypperInstallWithAutoKeyImport)
+{
+  EXPECT_EQ(BuildInstallCmd("zypper", {"bareos-director"}),
+            (std::vector<std::string>{"zypper", "--non-interactive",
+                                      "--gpg-auto-import-keys", "install",
+                                      "bareos-director"}));
+}
+
+TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
+{
+  EXPECT_EQ(
+      JoinCommandForDisplay({"systemctl", "enable", "--now", "bareos-dir"}),
+      "systemctl enable --now bareos-dir");
+}
+
+TEST(BareosSetupStepsShared, JoinsCommandForDisplayQuotingArgsWithSpaces)
+{
+  EXPECT_EQ(JoinCommandForDisplay({"echo", "hello world"}),
+            "echo 'hello world'");
+}
+
+TEST(BareosSetupStepsShared, JoinsCommandForDisplayEscapingEmbeddedQuotes)
+{
+  EXPECT_EQ(JoinCommandForDisplay({"su", "postgres", "-c", "it's fine"}),
+            "su postgres -c 'it'\\''s fine'");
+}
+
+TEST(BareosSetupStepsShared, BuildsSubscriptionRepoCommandWithoutCredentials)
+{
+  const auto command
+      = BuildAddRepoCmd("sles", "16.0", "subscription", true, "25");
+
+  EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
+            command.end() - 3);
+  EXPECT_EQ(std::find(command.begin(), command.end(), "-"), command.end() - 2);
+  EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
+            command.end());
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.com/bareos/release/25/SUSE_16/"
+            "add_bareos_repositories.sh");
+}
+
+TEST(BareosSetupStepsShared, BuildsCurlUserConfig)
+{
+  EXPECT_EQ(BuildCurlUserConfig("login", "hunter2"),
+            "user = \"login:hunter2\"\n");
+  EXPECT_EQ(BuildCurlUserConfig("login", "quote\"slash\\"),
+            "user = \"login:quote\\\"slash\\\\\"\n");
+}
+
+TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-existing-config-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path admin_path = fake_dir / "admin.conf";
+  const std::filesystem::path absent_path = fake_dir / "not-created.conf";
+  {
+    std::ofstream out(admin_path);
+    out << "preexisting\n";
+  }
+
+  // The check itself is a privileged shell command, because the wizard
+  // config directories are not readable for unprivileged users.
+  const auto existing_cmd = BuildFileAbsentCheckCmd(admin_path.string());
+  ASSERT_EQ(existing_cmd.size(), 5U);
+  EXPECT_EQ(existing_cmd[0], "sh");
+  EXPECT_EQ(existing_cmd[4], admin_path.string());
+  EXPECT_NE(RunCommand(existing_cmd, false,
+                       [](const std::string&, const std::string&) {}),
+            0);
+  EXPECT_EQ(RunCommand(BuildFileAbsentCheckCmd(absent_path.string()), false,
+                       [](const std::string&, const std::string&) {}),
+            0);
+
+  const std::string message
+      = BuildExistingSetupConfigError({admin_path.string()});
+  EXPECT_NE(message.find(admin_path.string()), std::string::npos);
+  EXPECT_EQ(message.find(absent_path.string()), std::string::npos);
+  EXPECT_NE(message.find("Refusing to continue"), std::string::npos);
+
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+}
+
+TEST(BareosSetupStepsShared, OwnsOnlyTheAdminConfigPath)
+{
+  // The WebUI proxy configuration is deliberately not setup-owned: setup
+  // never writes it, so an administrator's own file must not block setup.
+  EXPECT_EQ(SetupOwnedConfigPaths(),
+            (std::vector<std::string>{SetupAdminConfigPath()}));
+  EXPECT_EQ(SetupAdminConfigPath(),
+            "/etc/bareos/bareos-dir.d/console/admin.conf");
+}
+
+TEST(BareosSetupStepsShared, AcceptsSameOriginRequests)
+{
+  EXPECT_TRUE(IsValidSetupOrigin("http://127.0.0.1:19101", "127.0.0.1:19101"));
+  EXPECT_TRUE(IsValidSetupOrigin("http://localhost:19101", "localhost:19101"));
+  EXPECT_TRUE(IsValidSetupOrigin("http://[::1]:19101", "[::1]:19101"));
+  // An admin-chosen --listen address/port is accepted too, as long as
+  // Origin and Host agree.
+  EXPECT_TRUE(
+      IsValidSetupOrigin("http://192.168.1.5:19101", "192.168.1.5:19101"));
+}
+
+TEST(BareosSetupStepsShared, RejectsCrossOriginOrMissingHeaders)
+{
+  EXPECT_FALSE(
+      IsValidSetupOrigin("http://evil.example:19101", "127.0.0.1:19101"));
+  EXPECT_FALSE(IsValidSetupOrigin("http://127.0.0.1:19101", ""));
+  EXPECT_FALSE(IsValidSetupOrigin("", "127.0.0.1:19101"));
+  // Port mismatch between Origin and Host must be rejected too.
+  EXPECT_FALSE(IsValidSetupOrigin("http://127.0.0.1:19102", "127.0.0.1:19101"));
+}
+
+namespace {
+
+// Runs one setup step against a real (but unconnected-to-a-browser)
+// WsCodec so RunSetupStepForTests() has a valid fd to send "output"/"done"
+// messages to; the messages themselves are discarded since these tests
+// only assert on which commands were executed.
+int RunStepDiscardingOutput(const std::string& step,
+                            const std::string& json_message = "{}",
+                            bool peer_is_loopback = true,
+                            bool dry_run = false)
+{
+  int sockets[2];
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) != 0) {
+    throw std::runtime_error("socketpair failed");
+  }
+  std::thread drain([fd = sockets[1]]() {
+    char buffer[4096];
+    while (read(fd, buffer, sizeof(buffer)) > 0) {}
+    close(fd);
+  });
+  // Ensure the drain thread is always joined, even if RunSetupStepForTests()
+  // throws (e.g. an unsupported-platform check) -- otherwise a joinable
+  // std::thread destructing during stack unwinding calls std::terminate().
+  try {
+    const int result = RunSetupStepForTests(sockets[0], step, json_message,
+                                            peer_is_loopback, dry_run);
+    close(sockets[0]);
+    drain.join();
+    return result;
+  } catch (...) {
+    close(sockets[0]);
+    drain.join();
+    throw;
+  }
+}
+
+}  // namespace
+
+TEST(BareosSetupSessionOrchestration,
+     CatalogStepEnablesDaemonsAfterInitialization)
+{
+  // Regression test: InstallPackages() alone never enabled/started the
+  // bareos-dir/bareos-sd/bareos-fd services, so CreateAdmin()'s
+  // "systemctl restart bareos-dir" used to fail with "Unit cannot be
+  // restarted because it is inactive." This asserts the catalog step's
+  // command sequence still ends with enabling all three daemons.
+  // "sudo" is included as a fake shim too: every command Run() issues is
+  // wrapped with "sudo" unless already root (see command_runner.cc's
+  // IsRoot() check), so a real "sudo" would otherwise intercept these
+  // commands before they ever reach the other fake shims.
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools(
+      {"sudo", "postgresql-setup", "systemctl", "su", "install"});
+  ASSERT_EQ(RunStepDiscardingOutput("catalog"), 0);
+  const auto commands = fake_tools.LoggedCommands();
+  ASSERT_FALSE(commands.empty());
+  const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  const auto enable_it = std::find_if(
+      commands.begin(), commands.end(), [&](const auto& line) {
+        return line.find("systemctl enable --now") != std::string::npos
+               && std::all_of(daemon_services.begin(), daemon_services.end(),
+                              [&](const auto& service) {
+                                return line.find(service) != std::string::npos;
+                              });
+      });
+  ASSERT_NE(enable_it, commands.end());
+  // The daemons must be enabled only after the catalog scripts have run,
+  // not before.
+  if (BuildCatalogInitScripts(os.pkg_mgr).empty()) {
+    const auto marker_it
+        = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+            return line.find("/var/lib/bareos/.catalog-initialized")
+                   != std::string::npos;
+          });
+    ASSERT_NE(marker_it, commands.end());
+    EXPECT_LT(marker_it - commands.begin(), enable_it - commands.begin());
+  } else {
+    const auto grant_it
+        = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+            return line.find("grant_bareos_privileges") != std::string::npos;
+          });
+    ASSERT_NE(grant_it, commands.end());
+    EXPECT_LT(grant_it - commands.begin(), enable_it - commands.begin());
+  }
+}
+
+TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-admin-conf-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+  const std::filesystem::path resource_path = fake_dir / "admin.conf";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("install",
+             "echo \"install $*\" >> '" + log_path.string() + "'\n"
+             "cat > '" + resource_path.string() + "'\n"
+             "exit 0\n");
+  write_shim("chown",
+             "echo \"chown $*\" >> '" + log_path.string() + "'\nexit 0\n");
+  write_shim("systemctl",
+             "echo \"systemctl $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  const int result = RunStepDiscardingOutput("admin");
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::ifstream resource(resource_path);
+  const std::string content((std::istreambuf_iterator<char>(resource)),
+                            std::istreambuf_iterator<char>());
+  std::ifstream log(log_path);
+  const std::string commands((std::istreambuf_iterator<char>(log)),
+                             std::istreambuf_iterator<char>());
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  ASSERT_EQ(result, 0);
+  EXPECT_NE(content.find("Profile = \"webui-admin\""), std::string::npos);
+  EXPECT_NE(content.find("TLS Enable = No"), std::string::npos);
+  EXPECT_EQ(content.find("TLS Enable = yes"), std::string::npos);
+  EXPECT_NE(commands.find("systemctl restart bareos-dir"), std::string::npos);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     AdminStepAbortsBeforeOverwritingExistingConfig)
+{
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-existing-check-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("sh", "echo \"sh $*\" >> '" + log_path.string() + "'\nexit 1\n");
+  write_shim("install",
+             "echo \"install $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  EXPECT_THROW(RunStepDiscardingOutput("admin"), std::runtime_error);
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::ifstream log(log_path);
+  const std::string commands((std::istreambuf_iterator<char>(log)),
+                             std::istreambuf_iterator<char>());
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  EXPECT_NE(commands.find("sh -c test ! -e"), std::string::npos);
+  EXPECT_EQ(commands.find("install "), std::string::npos);
+}
+
+TEST(BareosSetupSessionOrchestration, ProxyStepWritesNoProxyConfiguration)
+{
+  // bareos-webui-proxy's built-in defaults already describe exactly the
+  // layout setup creates (loopback listener on 9104, bareos-dir on 9101),
+  // and the service falls back to them when no configuration file exists.
+  // Writing one would only restate the defaults -- and, because the
+  // service runs as User=bareos/Group=bareos rather than root, it would
+  // also need an easy-to-forget chown to stay readable. Not writing it at
+  // all avoids that class of bug and leaves an administrator's own
+  // configuration untouched.
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl", "a2enmod",
+                           "a2ensite", "a2enflag", "sh"});
+  ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
+  const auto commands = fake_tools.LoggedCommands();
+  ASSERT_FALSE(commands.empty());
+  for (const auto& line : commands) {
+    EXPECT_EQ(line.find("bareos-webui-proxy.ini"), std::string::npos) << line;
+  }
+  const auto enable_it
+      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+          return line.find("systemctl enable --now bareos-webui-proxy")
+                 != std::string::npos;
+        });
+  ASSERT_NE(enable_it, commands.end());
+  const auto selinux_it
+      = std::find_if(commands.begin(), commands.end(), [](const auto& line) {
+          return line.find("httpd_can_network_connect") != std::string::npos;
+        });
+  ASSERT_NE(selinux_it, commands.end());
+  const std::string web_server
+      = "systemctl enable --now " + BuildWebServerServiceName(os.pkg_mgr);
+  const auto web_server_it = std::find_if(
+      commands.begin(), commands.end(), [&web_server](const auto& line) {
+        return line.find(web_server) != std::string::npos;
+      });
+  ASSERT_NE(web_server_it, commands.end());
+  EXPECT_LT(enable_it - commands.begin(), web_server_it - commands.begin());
+  EXPECT_LT(selinux_it - commands.begin(), web_server_it - commands.begin());
+}
+
+TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  const auto install_cmd = BuildInstallCmd(os.pkg_mgr, {"bareos-filedaemon"});
+  ASSERT_FALSE(install_cmd.empty());
+  FakeToolPath fake_tools({"sudo", install_cmd.front(), "systemctl", "zypper"});
+  RunStepDiscardingOutput("packages");
+  const auto commands = fake_tools.LoggedCommands();
+  ASSERT_FALSE(commands.empty());
+  EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                         [&install_cmd](const auto& line) {
+                           return line.find(install_cmd.front())
+                                  != std::string::npos;
+                         }),
+            commands.end());
+}
+
+TEST(BareosSetupSessionOrchestration, StorageCustomizationStepIsRemoved)
+{
+  EXPECT_THROW(RunStepDiscardingOutput("storage"), std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepRejectsRemoteSubscriptionCredentials)
+{
+  const auto os = DetectOs();
+  const std::string json_message
+      = "{\"distro\":\"" + os.distro + "\",\"version\":\"" + os.version
+        + "\",\"repository\":\"subscription\",\"repository_login\":\"login\","
+          "\"repository_password\":\"hunter2\"}";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", json_message, false),
+               std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     DryRunRepositoryStepDoesNotExecuteCommands)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools(
+      {"sudo", "curl", "bash", os.pkg_mgr, "apt-get", "zypper", "dnf", "yum"});
+  const std::string json_message = "{\"distro\":\"" + os.distro
+                                   + "\",\"version\":\"" + os.version
+                                   + "\",\"repository\":\"subscription\"}";
+  EXPECT_EQ(RunStepDiscardingOutput("repository", json_message, false, true),
+            0);
+  EXPECT_TRUE(fake_tools.LoggedCommands().empty());
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepBlocksDownloadWhenNetworkCheckFails)
+{
+  // Regression test: the pre-flight reachability probe added to
+  // InstallRepository() must run before the real repository script
+  // download/run, and a failing probe must stop the step immediately.
+  // Unlike FakeToolPath's generic "sudo" shim (a no-op that always exits
+  // 0, used by the other orchestration tests that only care which
+  // commands were *attempted*), this test needs "sudo" to actually pass
+  // its arguments through to the fake tools below so that a failing
+  // "curl" shim's exit code genuinely propagates back to InstallRepository().
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  const std::string dir_path = (std::filesystem::temp_directory_path()
+                                / "bareos-setup-test-curl-fail-XXXXXX")
+                                   .string();
+  std::vector<char> buffer(dir_path.begin(), dir_path.end());
+  buffer.push_back('\0');
+  ASSERT_NE(mkdtemp(buffer.data()), nullptr);
+  const std::filesystem::path fake_dir = buffer.data();
+  const std::filesystem::path log_path = fake_dir / "log.txt";
+
+  const auto write_shim
+      = [&](const std::string& name, const std::string& body) {
+          const std::filesystem::path shim = fake_dir / name;
+          std::ofstream out(shim);
+          out << "#!/bin/sh\n" << body;
+          out.close();
+          std::filesystem::permissions(
+              shim, std::filesystem::perms::owner_all
+                        | std::filesystem::perms::group_read
+                        | std::filesystem::perms::group_exec
+                        | std::filesystem::perms::others_read
+                        | std::filesystem::perms::others_exec);
+        };
+  // "sudo" passes its argv straight through so the real (fake) subcommand's
+  // exit code is what InstallRepository() actually sees.
+  write_shim("sudo", "exec \"$@\"\n");
+  write_shim("curl",
+             "echo \"curl $*\" >> '" + log_path.string() + "'\nexit 1\n");
+  write_shim("bash",
+             "echo \"bash $*\" >> '" + log_path.string() + "'\nexit 0\n");
+
+  const char* current_path = getenv("PATH");
+  const std::string old_path = current_path != nullptr ? current_path : "";
+  setenv("PATH", (fake_dir.string() + ":" + old_path).c_str(), 1);
+
+  const std::string json_message = "{\"distro\":\"" + os.distro
+                                   + "\",\"version\":\"" + os.version
+                                   + "\",\"repository\":\"community\"}";
+  const int result = RunStepDiscardingOutput("repository", json_message);
+
+  setenv("PATH", old_path.c_str(), 1);
+  std::vector<std::string> commands;
+  {
+    std::ifstream in(log_path);
+    std::string line;
+    while (std::getline(in, line)) commands.push_back(line);
+  }
+  std::error_code ec;
+  std::filesystem::remove_all(fake_dir, ec);
+
+  EXPECT_NE(result, 0);
+  ASSERT_FALSE(commands.empty());
+  EXPECT_NE(commands[0].find("curl"), std::string::npos);
+  EXPECT_TRUE(
+      std::find_if(commands.begin(), commands.end(),
+                   [](const auto& line) { return line.rfind("bash ", 0) == 0; })
+      == commands.end());
+}
+
+TEST(BareosSetupSessionOrchestration,
+     SmokeTestOnlyChecksDaemonStatusNotConfigAsRoot)
+{
+  // Regression test: this step used to also run "bareos-dir -t"/
+  // "bareos-sd -t" directly (as root) to validate the config, which
+  // fails with "Peer authentication failed for user \"bareos\"" since
+  // these daemons connect to the catalog via PostgreSQL peer auth as
+  // their own systemd User= (not root). Since InitializeCatalog()
+  // already starts these daemons via "systemctl enable --now", a
+  // successful "systemctl is-active" already implies the config parsed
+  // and the daemon is running correctly -- so smoke_test must rely on
+  // is-active alone and never invoke the daemon binaries directly.
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
+  }
+  FakeToolPath fake_tools({"sudo", "systemctl"});
+  ASSERT_EQ(RunStepDiscardingOutput("smoke_test"), 0);
+  const auto commands = fake_tools.LoggedCommands();
+  auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
+  services.emplace_back("bareos-webui-proxy");
+  for (const auto& service : services) {
+    const std::string expected = std::string("systemctl is-active ") + service;
+    EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                           [&expected](const auto& line) {
+                             return line.find(expected) != std::string::npos;
+                           }),
+              commands.end());
+  }
+  const std::string web_server
+      = "systemctl is-active " + BuildWebServerServiceName(os.pkg_mgr);
+  EXPECT_NE(std::find_if(commands.begin(), commands.end(),
+                         [&web_server](const auto& line) {
+                           return line.find(web_server) != std::string::npos;
+                         }),
+            commands.end());
+}
+
+TEST(BareosSetupStepsShared, ParsesIdLikeFromOsRelease)
+{
+  const auto info = ParseOsRelease(
+      "ID=eurolinux\nID_LIKE=\"rhel centos fedora\"\nVERSION_ID=\"9.4\"\n"
+      "PRETTY_NAME=\"EuroLinux 9.4\"\n");
+
+  EXPECT_EQ(info.distro, "eurolinux");
+  EXPECT_EQ(info.version, "9.4");
+  EXPECT_EQ(info.pretty_name, "EuroLinux 9.4");
+  EXPECT_EQ(info.id_like,
+            (std::vector<std::string>{"rhel", "centos", "fedora"}));
+}
+
+TEST(BareosSetupStepsShared, ParsesOsReleaseWithoutIdLike)
+{
+  const auto info = ParseOsRelease("ID=debian\nVERSION_ID=\"13\"\n");
+
+  EXPECT_EQ(info.distro, "debian");
+  EXPECT_TRUE(info.id_like.empty());
+}
+
+TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
+{
+  // DetectOs() must never throw: the wizard has to stay usable on systems
+  // without /etc/os-release so it can offer a manual repository choice.
+  const auto info = DetectOs();
+  EXPECT_FALSE(info.arch.empty());
+  EXPECT_FALSE(info.pkg_mgr.empty());
+}
+
+TEST(BareosSetupStepsShared, ValidatesRepositoryOsPaths)
+{
+  for (const auto& path : KnownRepoOsPaths()) {
+    EXPECT_TRUE(IsValidRepoOsPath(path)) << path;
+  }
+
+  // IsSafeSetupIdentifier() permits '.', so ".." must be rejected explicitly
+  // or a manual entry could escape the release directory of the download URL.
+  EXPECT_FALSE(IsValidRepoOsPath(".."));
+  EXPECT_FALSE(IsValidRepoOsPath("EL_9/.."));
+  EXPECT_FALSE(IsValidRepoOsPath("../EL_9"));
+  EXPECT_FALSE(IsValidRepoOsPath("EL..9"));
+  EXPECT_FALSE(IsValidRepoOsPath("."));
+  EXPECT_FALSE(IsValidRepoOsPath(""));
+  EXPECT_FALSE(IsValidRepoOsPath("-EL_9"));
+  EXPECT_FALSE(IsValidRepoOsPath("EL_9."));
+  EXPECT_FALSE(IsValidRepoOsPath("EL 9"));
+  EXPECT_FALSE(IsValidRepoOsPath(std::string(65, 'a')));
+}
+
+TEST(BareosSetupStepsShared, SuggestsRepositoryPathsFromIdLike)
+{
+  OsInfo el;
+  el.distro = "eurolinux";
+  el.id_like = {"rhel", "centos", "fedora"};
+  el.version = "9.4";
+  const auto el_paths = SuggestRepoOsPaths(el);
+  ASSERT_FALSE(el_paths.empty());
+  EXPECT_EQ(el_paths.front(), "EL_9");
+
+  OsInfo debian;
+  debian.distro = "devuan";
+  debian.id_like = {"debian"};
+  debian.version = "13";
+  const auto debian_paths = SuggestRepoOsPaths(debian);
+  ASSERT_FALSE(debian_paths.empty());
+  EXPECT_EQ(debian_paths.front(), "Debian_13");
+
+  OsInfo ubuntu;
+  ubuntu.distro = "linuxmint";
+  ubuntu.id_like = {"ubuntu", "debian"};
+  ubuntu.version = "24.04";
+  const auto ubuntu_paths = SuggestRepoOsPaths(ubuntu);
+  ASSERT_FALSE(ubuntu_paths.empty());
+  EXPECT_EQ(ubuntu_paths.front(), "xUbuntu_24.04");
+
+  OsInfo suse;
+  suse.distro = "suse-derivative";
+  suse.id_like = {"suse"};
+  suse.version = "16.0";
+  const auto suse_paths = SuggestRepoOsPaths(suse);
+  ASSERT_FALSE(suse_paths.empty());
+  EXPECT_EQ(suse_paths.front(), "SUSE_16");
+}
+
+TEST(BareosSetupStepsShared, SuggestsFamilyPathsWhenTheVersionDoesNotMatch)
+{
+  // Amazon Linux 2023 declares ID_LIKE=fedora but VERSION_ID=2023, which is
+  // not a published Bareos repository. The guess must be dropped and only
+  // real family paths offered, so the user cannot be sent to a 404.
+  OsInfo amazon;
+  amazon.distro = "amzn";
+  amazon.id_like = {"fedora"};
+  amazon.version = "2023";
+  const auto paths = SuggestRepoOsPaths(amazon);
+
+  ASSERT_FALSE(paths.empty());
+  EXPECT_EQ(std::find(paths.begin(), paths.end(), "Fedora_2023"), paths.end());
+  for (const auto& path : paths) {
+    EXPECT_NE(
+        std::find(KnownRepoOsPaths().begin(), KnownRepoOsPaths().end(), path),
+        KnownRepoOsPaths().end())
+        << path;
+  }
+}
+
+TEST(BareosSetupStepsShared, SuggestsNothingForAnUnrelatedDistribution)
+{
+  OsInfo other;
+  other.distro = "nixos";
+  other.version = "25.05";
+  EXPECT_TRUE(SuggestRepoOsPaths(other).empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsAddRepoCommandForAnExplicitPath)
+{
+  const auto command = BuildAddRepoCmdForPath("EL_10", "community");
+
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.org/current/EL_10/"
+            "add_bareos_repositories.sh");
+  EXPECT_EQ(BuildAddRepoCmdForPath("EL_10", "community"),
+            BuildAddRepoCmd("rhel", "10.2", "community"));
+}
+
+TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
+{
+  const auto command
+      = BuildRepoPathProbeCmd("SUSE_16", "subscription", true, "25");
+
+  EXPECT_NE(std::find(command.begin(), command.end(), "--head"), command.end());
+  EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
+            command.end() - 3);
+  EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
+            command.end());
+  EXPECT_EQ(command.back(),
+            "https://download.bareos.com/bareos/release/25/SUSE_16/"
+            "add_bareos_repositories.sh");
+}
+
+TEST(BareosSetupStepsShared, SelectsLatestSubscriptionRelease)
+{
+  const std::string index = R"(
+    <a href="24/">24/</a>
+    <a href="25/">25/</a>
+    <a href="25.1/">25.1/</a>
+    <a href="100000000000000000000000000000000000000/">100000000000000000000000000000000000000/</a>
+    <a href="not-a-release/">not-a-release/</a>
+    <a href="26-rc1/">26-rc1/</a>
+  )";
+  EXPECT_EQ(ParseLatestSubscriptionRelease(index),
+            "100000000000000000000000000000000000000");
+}
+
+TEST(BareosSetupStepsShared, RejectsInvalidSubscriptionReleaseIndex)
+{
+  EXPECT_TRUE(
+      ParseLatestSubscriptionRelease(
+          R"(<a href="latest/">latest/</a><a href="25-rc1/">25-rc1</a>)")
+          .empty());
+}
+
+TEST(BareosSetupStepsShared, BuildsSubscriptionReleaseIndexCommand)
+{
+  const auto command = BuildSubscriptionReleaseIndexCmd(true);
+  EXPECT_EQ(command.back(), "https://download.bareos.com/bareos/release/");
+  EXPECT_NE(std::find(command.begin(), command.end(), "--config"),
+            command.end());
+}
+
+TEST(BareosSetupStepsShared, BuildsEnforcingSelinuxWebUiCommand)
+{
+  EXPECT_EQ(BuildWebUiSelinuxSetupCmd(),
+            (std::vector<std::string>{
+                "sh",
+                "-c",
+                "if command -v getenforce >/dev/null 2>&1 && "
+                "[ \"$(getenforce)\" = Enforcing ]; then "
+                "setsebool -P httpd_can_network_connect on; "
+                "fi",
+            }));
+}
+
+TEST(BareosSetupStepsShared, IdentifiesSuseRepositoryPaths)
+{
+  EXPECT_TRUE(IsSuseRepoOsPath("SUSE_16"));
+  EXPECT_TRUE(IsSuseRepoOsPath("SUSE_15"));
+  EXPECT_FALSE(IsSuseRepoOsPath("EL_9"));
+  EXPECT_FALSE(IsSuseRepoOsPath(""));
+}
+
+TEST(BareosSetupStepsShared, SeparatesPackageManagerFromDistributionSupport)
+{
+  // An unknown distribution can still be installed through a manual
+  // repository choice, but an unknown package manager cannot.
+  EXPECT_TRUE(IsSupportedPackageManager("apt"));
+  EXPECT_TRUE(IsSupportedPackageManager("zypper"));
+  EXPECT_FALSE(IsSupportedPackageManager("unknown"));
+  EXPECT_FALSE(IsSupportedPackageManager("pkg"));
+  EXPECT_FALSE(IsSupportedSetupPlatform("eurolinux", "dnf"));
+}
+
+TEST(BareosSetupSessionOrchestration, RepositoryStepRejectsOverrideWhenDetected)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires a recognised distribution";
+  }
+  // A recognised system must never be pointed at a mismatched repository.
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version
+                              + R"(","repository":"community",)"
+                                R"("repo_os_path":"Debian_13"})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepAcceptsTheDetectedPathAsOverride)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires a recognised distribution";
+  }
+  const std::string message
+      = R"({"distro":")" + os.distro + R"(","version":")" + os.version
+        + R"(","repository":"community",)"
+          R"("repo_os_path":")"
+        + BuildRepoOsPath(os.distro, os.version) + R"("})";
+
+  EXPECT_EQ(RunStepDiscardingOutput("repository", message, true, true), 0);
+}
+
+TEST(BareosSetupSessionOrchestration, RepositoryStepRejectsUnsafeOverridePaths)
+{
+  const auto os = DetectOs();
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    // On a recognised system any override is refused already, which is
+    // asserted separately; the traversal rejection itself is covered by
+    // IsValidRepoOsPath's unit test.
+    GTEST_SKIP() << "requires an unrecognised distribution";
+  }
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version
+                              + R"(","repository":"community",)"
+                                R"("repo_os_path":".."})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}
+
+TEST(BareosSetupSessionOrchestration,
+     RepositoryStepRequiresAChoiceOnUnknownDistributions)
+{
+  const auto os = DetectOs();
+  if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "requires an unrecognised distribution";
+  }
+  const std::string message = R"({"distro":")" + os.distro + R"(","version":")"
+                              + os.version + R"(","repository":"community"})";
+
+  EXPECT_THROW(RunStepDiscardingOutput("repository", message, true, true),
+               std::runtime_error);
+}
+
+TEST(BareosSetupStepsShared, DiscardsProbeResponseBodies)
+{
+  const auto command = BuildRepoPathProbeCmd("EL_10", "community");
+  const auto output = std::find(command.begin(), command.end(), "--output");
+  ASSERT_NE(output, command.end());
+  EXPECT_EQ(*(output + 1), "/dev/null");
+}
+
+TEST(BareosSetupStepsShared, CapturesCommandOutputLargerThanTheReadBuffer)
+{
+  // Regression test: the output drain used to issue a single 4096 byte
+  // read per poll wakeup, so anything still buffered when the pipe hung up
+  // was silently dropped.
+  constexpr int kLines = 4000;
+  std::string collected;
+  int lines = 0;
+  const int rc = RunCommand(
+      {"sh", "-c",
+       "i=0; while [ $i -lt " + std::to_string(kLines)
+           + " ]; do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
+             "i=$((i+1)); done"},
+      false, [&](const std::string& line, const std::string&) {
+        collected += line;
+        ++lines;
+      });
+
+  EXPECT_EQ(rc, 0);
+  EXPECT_EQ(lines, kLines);
+  EXPECT_EQ(collected.size(), static_cast<size_t>(kLines) * 40);
+}
