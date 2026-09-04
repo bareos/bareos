@@ -136,6 +136,46 @@
           </q-item-section>
         </q-item>
       </q-card-section>
+      <q-separator />
+
+      <q-card-section>
+        <!-- Backup & restore -->
+        <div class="text-subtitle2 q-mb-sm">{{ t('Backup & Restore') }}</div>
+        <q-item dense>
+          <q-item-section avatar>
+            <q-icon name="save_alt" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t('Dashboards & Settings') }}</q-item-label>
+            <q-item-label caption>
+              {{ t('Save or restore your dashboards, widgets, and other settings as a file.') }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <div class="row q-gutter-xs">
+              <q-btn
+                outline dense no-caps
+                icon="file_download"
+                :label="t('Backup')"
+                @click="downloadBackup"
+              />
+              <q-btn
+                outline dense no-caps
+                icon="file_upload"
+                :label="t('Restore')"
+                @click="triggerRestoreFilePicker"
+              />
+            </div>
+          </q-item-section>
+        </q-item>
+        <input
+          ref="restoreFileInput"
+          type="file"
+          accept="application/json,.json"
+          style="display:none"
+          @change="onRestoreFileSelected"
+        />
+      </q-card-section>
     </q-card>
   </q-page>
 </template>
@@ -145,10 +185,18 @@ import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import { useSettingsStore } from '../stores/settings.js'
+import { useBackupRestore } from '../composables/useBackupRestore.js'
 
 const $q       = useQuasar()
 const settings = useSettingsStore()
 const { t } = useI18n()
+
+const {
+  restoreFileInput,
+  downloadBackup,
+  triggerRestoreFilePicker,
+  onRestoreFileSelected,
+} = useBackupRestore({ t, $q })
 
 function applyDark(val) {
   $q.dark.set(val)
