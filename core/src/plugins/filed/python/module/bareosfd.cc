@@ -937,16 +937,14 @@ bail_out:
   return retval;
 }
 
-static inline PyAclPacket* NativeToPyAclPacket(acl_pkt* ap)
+static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
 {
+  if (!fname) { return nullptr; }
+
   PyAclPacket* pAclPacket = PyObject_New(PyAclPacket, &PyAclPacketType);
 
   if (pAclPacket) {
-    pAclPacket->fname = PyUnicode_FromString(ap->fname);
-    if (!pAclPacket->fname) {
-      PyObject_Free(pAclPacket);
-      return nullptr;
-    }
+    pAclPacket->fname = fname;
 
     if (ap->content_length && ap->content) {
       pAclPacket->content
@@ -954,6 +952,8 @@ static inline PyAclPacket* NativeToPyAclPacket(acl_pkt* ap)
     } else {
       pAclPacket->content = NULL;
     }
+  } else {
+    Py_DECREF(fname);
   }
 
   return pAclPacket;
@@ -1000,7 +1000,14 @@ static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
     PyAclPacket* pAclPkt;
     PyObject* pRetVal;
 
-    pAclPkt = NativeToPyAclPacket(ap);
+    PyObject* fname = plugin_priv_ctx->py_fname;
+    if (!fname || !bstrcmp(ap->fname, PyUnicode_AsUTF8(fname))) {
+      fname = PyUnicode_FromString(ap->fname);
+    } else {
+      Py_INCREF(fname);
+    }
+
+    pAclPkt = NativeToPyAclPacket(fname, ap);
     if (!pAclPkt) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pAclPkt, NULL);
@@ -1046,7 +1053,14 @@ static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
     PyAclPacket* pAclPkt;
     PyObject* pRetVal;
 
-    pAclPkt = NativeToPyAclPacket(ap);
+    PyObject* fname = plugin_priv_ctx->py_fname;
+    if (!fname || !bstrcmp(ap->fname, PyUnicode_AsUTF8(fname))) {
+      fname = PyUnicode_FromString(ap->fname);
+    } else {
+      Py_INCREF(fname);
+    }
+
+    pAclPkt = NativeToPyAclPacket(fname, ap);
     if (!pAclPkt) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pAclPkt, NULL);
