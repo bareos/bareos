@@ -42,7 +42,7 @@ class TlsVersionParser:
         # as this covers different protocol versions,
         # including all versions >= v1.3.
         # There will be no specific constant TLS >= 1.3.
-        self.tls_version_options = {
+        tls_version_options = {
             # "default": "PROTOCOL_TLS",
             "v1": "PROTOCOL_TLSv1",
             "v1.1": "PROTOCOL_TLSv1_1",
@@ -50,9 +50,11 @@ class TlsVersionParser:
         }
 
         # remove invalid options
-        for key, value in self.tls_version_options.items():
-            if not hasattr(ssl, value):
-                del self.tls_version_options[key]
+        self.tls_version_options = {
+            key: value
+            for key, value in tls_version_options.items()
+            if hasattr(ssl, value)
+        }
 
     def add_argument(self, argparser):
         argparser.add_argument(
