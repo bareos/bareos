@@ -56,7 +56,9 @@ if(NOT HAVE_WIN32
    AND NOT client-only
 )
   add_subdirectory(webui-proxy)
-  add_subdirectory(bareos-setup)
+  if(ENABLE_BAREOS_SETUP)
+    add_subdirectory(bareos-setup)
+  endif()
 endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
