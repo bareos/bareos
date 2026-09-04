@@ -99,6 +99,7 @@ description:
 
       - [Explore consulting, support, and funded development](https://www.bareos.com/services/)
 
+    documentation: https://docs.bareos.org
     features:
       - Cross-platform backup and restore
       - Storage on disk, tape and S3-compatible object storage
