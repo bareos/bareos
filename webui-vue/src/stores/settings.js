@@ -152,6 +152,69 @@ export const useSettingsStore = defineStore('settings', () => {
     restoreMergeFilesets.value = mergeFilesets
   }
 
+  // ── backup / restore ─────────────────────────────────────────────────────
+
+  /**
+   * Serialisable snapshot of user settings, suitable for JSON export.
+   * Excludes `loginUsername`: it is only a per-browser convenience default
+   * for the login form and should not be silently carried over when
+   * restoring a backup into a different browser/profile.
+   */
+  function exportSettings() {
+    return {
+      refreshInterval: refreshInterval.value,
+      darkMode: darkMode.value,
+      relativeTime: relativeTime.value,
+      locale: locale.value,
+      directorName: directorName.value,
+      selectedDirectors: selectedDirectors.value,
+      tableRowsPerPage: tableRowsPerPage.value,
+      restoreMergeJobs: restoreMergeJobsEnabled.value,
+      restoreMergeFilesets: restoreMergeFilesetsEnabled.value,
+    }
+  }
+
+  /**
+   * Apply a previously exported settings snapshot. Unknown/missing fields
+   * are left untouched; recognised fields are re-validated with the same
+   * normalisers used when loading from localStorage.
+   */
+  function importSettings(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('This file does not contain a settings backup.')
+    }
+    if ('refreshInterval' in data) {
+      const value = Number(data.refreshInterval)
+      if (Number.isInteger(value) && value > 0) refreshInterval.value = value
+    }
+    if ('darkMode' in data) {
+      darkMode.value = normalizeBoolean(data.darkMode, darkMode.value)
+    }
+    if ('relativeTime' in data) {
+      relativeTime.value = normalizeBoolean(data.relativeTime, relativeTime.value)
+    }
+    if ('locale' in data) {
+      locale.value = normalizeWebUiLocale(data.locale)
+    }
+    if ('directorName' in data && data.directorName != null) {
+      directorName.value = String(data.directorName)
+    }
+    if ('selectedDirectors' in data) {
+      selectedDirectors.value = normalizeSelectedDirectors(data.selectedDirectors)
+    }
+    if ('tableRowsPerPage' in data) {
+      tableRowsPerPage.value = normalizeTableRowsPerPage(data.tableRowsPerPage)
+    }
+    if ('restoreMergeJobs' in data) {
+      restoreMergeJobsEnabled.value = normalizeBoolean(data.restoreMergeJobs, restoreMergeJobsEnabled.value)
+    }
+    if ('restoreMergeFilesets' in data) {
+      restoreMergeFilesetsEnabled.value = normalizeBoolean(
+        data.restoreMergeFilesets, restoreMergeFilesetsEnabled.value
+      )
+    }
+  }
+
   watch(refreshInterval, save)
   watch(darkMode, save)
   watch(relativeTime, save)
@@ -183,5 +246,7 @@ export const useSettingsStore = defineStore('settings', () => {
     getTableRowsPerPage,
     setTableRowsPerPage,
     setRestoreMergeDefaults,
+    exportSettings,
+    importSettings,
   }
 })

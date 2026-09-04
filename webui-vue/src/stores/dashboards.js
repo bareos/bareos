@@ -191,6 +191,62 @@ export const useDashboardStore = defineStore('dashboards', () => {
     }
   }
 
+  /**
+   * Discard all custom dashboards/widgets and re-seed the built-in
+   * preconfigured dashboards (Overview + Analytics) from scratch.
+   */
+  function resetAllDashboards() {
+    dashboards.value = PRECONFIGURED_DASHBOARDS.map(cloneDashboard)
+    activeDashboardId.value = dashboards.value[0]?.id ?? null
+  }
+
+  // ── backup / restore ─────────────────────────────────────────────────────
+
+  /** Serialisable snapshot of all dashboards, suitable for JSON export. */
+  function exportDashboards() {
+    return {
+      bareosDashboardsBackup: 1,
+      exportedAt: new Date().toISOString(),
+      dashboards: dashboards.value,
+      activeDashboardId: activeDashboardId.value,
+    }
+  }
+
+  /**
+   * Replace all dashboards with the contents of a previously exported
+   * backup. Throws an Error with a user-facing message if the data is not
+   * a recognisable dashboards backup.
+   */
+  function importDashboards(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data) || data.bareosDashboardsBackup !== 1) {
+      throw new Error('This file does not contain a dashboards backup.')
+    }
+    if (!Array.isArray(data.dashboards)) {
+      throw new Error('This file does not contain a dashboards backup.')
+    }
+
+    const seenDashboardIds = new Set()
+    const imported = data.dashboards.flatMap(d => {
+      const nd = normaliseDashboard(d)
+      if (!nd || seenDashboardIds.has(nd.id)) return []
+      seenDashboardIds.add(nd.id)
+
+      const seenWidgetIds = new Set()
+      nd.widgets = nd.widgets.filter(w => {
+        if (seenWidgetIds.has(w.id)) return false
+        seenWidgetIds.add(w.id)
+        return true
+      })
+      return [nd]
+    })
+    if (imported.length === 0) {
+      throw new Error('This file does not contain any valid dashboards.')
+    }
+    const validActiveId = imported.find(d => d.id === data.activeDashboardId)?.id
+    dashboards.value = imported
+    activeDashboardId.value = validActiveId ?? imported[0].id
+  }
+
   // ── widget CRUD ──────────────────────────────────────────────────────────
 
   function addWidget(dashboardId, { type, title, props, layout }) {
@@ -276,6 +332,9 @@ export const useDashboardStore = defineStore('dashboards', () => {
     addDashboard,
     renameDashboard,
     removeDashboard,
+    resetAllDashboards,
+    exportDashboards,
+    importDashboards,
     addWidget,
     updateWidgetLayout,
     updateWidgetLayouts,
