@@ -2479,8 +2479,6 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
   self->fname = NULL;
   self->content = NULL;
 
-  const char* fname{};
-
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UO", kwlist, &self->fname,
                                    &self->content)) {
     return -1;
