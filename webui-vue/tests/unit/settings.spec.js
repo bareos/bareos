@@ -160,4 +160,53 @@ describe('settings store', () => {
 
     expect(settings.restoreMergeFilesets).toBe(false)
   })
+
+  it('exportSettings() excludes loginUsername', () => {
+    const settings = useSettingsStore()
+    settings.loginUsername = 'alice'
+
+    const snapshot = settings.exportSettings()
+
+    expect(snapshot).not.toHaveProperty('loginUsername')
+    expect(snapshot).toEqual(expect.objectContaining({
+      refreshInterval: settings.refreshInterval,
+      darkMode: settings.darkMode,
+      directorName: settings.directorName,
+    }))
+  })
+
+  it('importSettings() applies a previously exported snapshot', () => {
+    const settings = useSettingsStore()
+    settings.refreshInterval = 60
+    settings.darkMode = true
+    settings.setSelectedDirectors(['dir-a', 'dir-b'])
+    settings.setTableRowsPerPage('jobs.list', 42)
+    const snapshot = settings.exportSettings()
+
+    // Change everything, then restore from the snapshot.
+    settings.refreshInterval = 5
+    settings.darkMode = false
+    settings.setSelectedDirectors(['other-dir'])
+    settings.setTableRowsPerPage('jobs.list', 5)
+
+    settings.importSettings(snapshot)
+
+    expect(settings.refreshInterval).toBe(60)
+    expect(settings.darkMode).toBe(true)
+    expect(settings.selectedDirectors).toEqual(['dir-a', 'dir-b'])
+    expect(settings.getTableRowsPerPage('jobs.list', 0)).toBe(42)
+  })
+
+  it('importSettings() leaves unspecified fields untouched and rejects non-object data', () => {
+    const settings = useSettingsStore()
+    settings.darkMode = true
+
+    settings.importSettings({ refreshInterval: 45 })
+
+    expect(settings.refreshInterval).toBe(45)
+    expect(settings.darkMode).toBe(true)
+
+    expect(() => settings.importSettings(null)).toThrow()
+    expect(() => settings.importSettings(['not', 'an', 'object'])).toThrow()
+  })
 })
