@@ -51,6 +51,11 @@ if(CPM_ONLY)
   include(BareosCpmPackages)
   return()
 endif()
+option(
+  USE_SYSTEM_LMDB
+  "Use the system LMDB library instead of the bundled version"
+  OFF
+)
 
 include(BareosOSInfo)
 
