@@ -39,6 +39,7 @@
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
 #include "stored/device.h"
+#include "stored/device_init.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/job.h"
 #include "stored/label.h"
@@ -63,6 +64,8 @@
 #if !defined(HAVE_WIN32)
 #  include "lib/priv.h"
 #endif
+
+#include <vector>
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -482,13 +485,26 @@ get_out2:
  */
 extern "C" void* device_initialization(void*)
 {
-  DeviceResource* device_resource = nullptr;
   DeviceControlRecord* dcr;
   JobControlRecord* jcr;
   Device* dev;
   int errstat;
 
-  ResLocker _{my_config};
+  /* Take a snapshot of the configured devices instead of holding the
+   * configuration lock for the whole initialization. Opening, positioning or
+   * mounting a device may take a very long time and the configuration lock is
+   * also needed to authenticate incoming connections, so holding it here would
+   * make the storage daemon unreachable until all devices are ready.
+   * Holding on to the loaded configuration keeps the resources alive. */
+  auto loaded_configuration = my_config->GetCurrentConfiguration();
+  std::vector<DeviceResource*> device_resources;
+  {
+    ResLocker _{my_config};
+    DeviceResource* device_resource = nullptr;
+    foreach_res (device_resource, R_DEVICE) {
+      device_resources.push_back(device_resource);
+    }
+  }
 
   pthread_detach(pthread_self());
   jcr = NewStoredJcr();
@@ -504,7 +520,8 @@ extern "C" void* device_initialization(void*)
           be.bstrerror(errstat));
   }
 
-  foreach_res (device_resource, R_DEVICE) {
+  for (DeviceResource* device_resource : device_resources) {
+    device_resource->init_state.store(DeviceInitState::Initializing);
     Dmsg1(90, "calling FactoryCreateDevice %s\n",
           device_resource->archive_device_string);
     dev = FactoryCreateDevice(nullptr, device_resource);
@@ -512,6 +529,7 @@ extern "C" void* device_initialization(void*)
     if (!dev) {
       Jmsg1(nullptr, M_ERROR, 0, T_("Could not initialize %s\n"),
             device_resource->archive_device_string);
+      device_resource->init_state.store(DeviceInitState::Failed);
       continue;
     }
 
@@ -533,6 +551,7 @@ extern "C" void* device_initialization(void*)
         Dmsg1(20, "Could not open device %s\n", dev->print_name());
         FreeDeviceControlRecord(dcr);
         jcr->sd_impl->dcr = nullptr;
+        device_resource->init_state.store(DeviceInitState::Ready);
         continue;
       }
     }
@@ -551,6 +570,7 @@ extern "C" void* device_initialization(void*)
     }
     FreeDeviceControlRecord(dcr);
     jcr->sd_impl->dcr = nullptr;
+    device_resource->init_state.store(DeviceInitState::Ready);
   }
   FreeJcr(jcr);
   init_done = true;

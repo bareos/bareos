@@ -48,6 +48,7 @@
 #include "stored/blocksize_boundaries.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
+#include "stored/device_init.h"
 #include "stored/sd_device_control_record.h"
 #include "stored/fd_cmds.h"
 #include "stored/stored_jcr_impl.h"
@@ -187,6 +188,10 @@ struct s_sd_dir_cmds {
  *
  * Keywords are sorted first longest match when the keywords start with the same
  * string.
+ *
+ * Commands that do not touch a device are listed in
+ * kDeviceIndependentSdDirCommands (stored/device_init.h) and are answered
+ * even while background device initialization is still running.
  */
 static struct s_sd_dir_cmds cmds[] = {
     // { "action_on_purge",  ActionOnPurgeCmd, false },
@@ -290,9 +295,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
     Dmsg1(199, "<dird: %s", dir->msg);
 
-    // Ensure that device initialization is complete
-    while (!init_done) { Bmicrosleep(1, 0); }
-
     found = false;
     for (i = 0; cmds[i].cmd; i++) {
       if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
@@ -301,6 +303,11 @@ void* HandleDirectorConnection(BareosSocket* dir)
           dir->fsend(invalid_cmd);
           dir->signal(BNET_EOD);
           break;
+        }
+        /* Only commands that actually use a device have to wait until the
+         * background device initialization is complete. */
+        if (SdDirCommandNeedsDeviceInit(cmds[i].cmd)) {
+          while (!init_done) { Bmicrosleep(1, 0); }
         }
         Dmsg1(200, "Do command: %s\n", cmds[i].cmd);
         if (!cmds[i].func(jcr)) { /* do command */
