@@ -302,8 +302,14 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   Dmsg1(800, "read/write block size = %" PRIu32 "\n", block->buf_len);
   lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
 
-#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-  posix_fadvise(rdcr->spool_fd, 0, 0, POSIX_FADV_WILLNEED);
+#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_NOREUSE)
+  /* Avoid excessive thrashing of the host's page cache */
+  posix_fadvise(rdcr->spool_fd, 0, 0, POSIX_FADV_NOREUSE);
+#endif
+
+#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_SEQUENTIAL)
+  /* Increases the readahead on some filesystems */
+  posix_fadvise(rdcr->spool_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
 #endif
 
   /* Add run time, to get current wait time */
