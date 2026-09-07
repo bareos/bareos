@@ -109,9 +109,9 @@ if [ "$(file_size "storage/${volume_name}")" -le 0 ]; then
 fi
 
 second_jobid=$(
-  grep 'Job queued. JobId=' "${second_backup_log}" |
-    sed -n -e 's/^.*JobId=//p' |
-    tail -n1
+  grep 'Job queued. JobId=' "${second_backup_log}" \
+    | sed -n -e 's/^.*JobId=//p' \
+    | tail -n1
 )
 
 if [ -z "${second_jobid}" ]; then
