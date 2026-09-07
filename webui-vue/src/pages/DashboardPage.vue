@@ -38,15 +38,24 @@
           :name="db.id"
           :label="db.name"
         >
-          <!-- Rename button shown in edit mode -->
-          <q-btn
-            v-if="editMode && dashStore.dashboards.length > 1"
-            flat round dense
-            icon="edit"
-            size="xs"
-            class="q-ml-xs"
-            @click.stop="startRename(db)"
-          />
+          <!-- Rename / delete buttons shown in edit mode -->
+          <div v-if="editMode && dashStore.dashboards.length > 1" class="row items-center no-wrap q-ml-xs">
+            <q-btn
+              flat round dense
+              icon="edit"
+              size="xs"
+              :title="t('Rename dashboard')"
+              @click.stop="startRename(db)"
+            />
+            <q-btn
+              flat round dense
+              icon="delete_outline"
+              color="negative"
+              size="xs"
+              :title="t('Delete dashboard')"
+              @click.stop="deleteDashboard(db)"
+            />
+          </div>
         </q-tab>
 
         <!-- Add dashboard tab -->
@@ -57,6 +66,29 @@
           :title="t('Add dashboard')"
           @click="addDashboard"
         />
+
+        <template v-if="editMode">
+          <q-btn
+            flat dense icon="file_download" size="sm"
+            class="q-ml-xs"
+            :title="t('Backup dashboards and settings')"
+            @click="backupDashboards"
+          />
+          <q-btn
+            flat dense icon="file_upload" size="sm"
+            :title="t('Restore dashboards and settings')"
+            @click="triggerRestoreFilePicker"
+          />
+          <q-separator vertical inset class="q-mx-xs" />
+          <q-btn
+            flat dense
+            icon="delete_forever"
+            color="negative"
+            size="sm"
+            :title="t('Reset all dashboards')"
+            @click="resetAllDashboards"
+          />
+        </template>
       </q-tabs>
 
       <!-- Right side controls -->
@@ -71,27 +103,6 @@
         <template v-if="editMode">
           <q-btn flat round dense icon="add_circle_outline" color="primary" size="sm"
                  :title="t('Add widget')" @click="showPicker = true" />
-          <q-btn
-            v-if="dashStore.dashboards.length > 1"
-            flat round dense icon="delete_outline" color="negative" size="sm"
-            :title="t('Delete dashboard')"
-            @click="deleteDashboard"
-          />
-          <q-btn
-            flat round dense icon="restore" color="negative" size="sm"
-            :title="t('Reset all dashboards')"
-            @click="resetAllDashboards"
-          />
-          <q-btn
-            flat round dense icon="file_download" size="sm"
-            :title="t('Backup dashboards and settings')"
-            @click="backupDashboards"
-          />
-          <q-btn
-            flat round dense icon="file_upload" size="sm"
-            :title="t('Restore dashboards and settings')"
-            @click="triggerRestoreFilePicker"
-          />
           <q-btn color="primary" dense no-caps size="sm" :label="t('Done')"
                  @click="editMode = false" />
         </template>
@@ -347,16 +358,18 @@ function addDashboard() {
   })
 }
 
-function deleteDashboard() {
+function deleteDashboard(db) {
+  const target = db ?? currentDashboard.value
+  if (!target) return
   $q.dialog({
     title:   t('Delete Dashboard'),
     message: t('Delete dashboard "{name}"? This cannot be undone.', {
-      name: currentDashboard.value?.name,
+      name: target.name,
     }),
     ok:     { label: t('Delete'), color: 'negative', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(() => {
-    dashStore.removeDashboard(activeDashboardId.value)
+    dashStore.removeDashboard(target.id)
     editMode.value = false
   })
 }
