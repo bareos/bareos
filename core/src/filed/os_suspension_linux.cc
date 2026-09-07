@@ -21,14 +21,12 @@
 
 #include "filed/os_suspension.h"
 
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-#  include <fcntl.h>
-#  include <systemd/sd-bus.h>
-#  include <unistd.h>
+#include <fcntl.h>
+#include <systemd/sd-bus.h>
+#include <unistd.h>
 
-#  include "include/bareos.h"
-#  include "lib/berrno.h"
+#include "include/bareos.h"
+#include "lib/berrno.h"
 
 namespace filedaemon {
 
@@ -45,8 +43,8 @@ static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
   warning_logged = true;
 }
 
-void ActivateLinuxSleepPrevention(JobControlRecord* jcr,
-                                  SleepPrevention& sleep_prevention)
+void ActivateSleepPrevention(JobControlRecord* jcr,
+                             SleepPrevention& sleep_prevention)
 {
   if (sleep_prevention.linux_inhibitor_fd >= 0) { return; }
 
@@ -106,7 +104,7 @@ void ActivateLinuxSleepPrevention(JobControlRecord* jcr,
   cleanup();
 }
 
-void DeactivateLinuxSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 {
   if (sleep_prevention.linux_inhibitor_fd >= 0) {
     close(sleep_prevention.linux_inhibitor_fd);
@@ -115,5 +113,3 @@ void DeactivateLinuxSleepPrevention(SleepPrevention& sleep_prevention)
 }
 
 }  // namespace filedaemon
-
-#endif

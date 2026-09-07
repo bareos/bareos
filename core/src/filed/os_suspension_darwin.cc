@@ -21,11 +21,10 @@
 
 #include "filed/os_suspension.h"
 
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-#  include <CoreFoundation/CoreFoundation.h>
-#  include <IOKit/pwr_mgt/IOPMLib.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <IOKit/pwr_mgt/IOPMLib.h>
 
-#  include "include/bareos.h"
+#include "include/bareos.h"
 
 namespace filedaemon {
 
@@ -42,8 +41,8 @@ static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
   warning_logged = true;
 }
 
-void ActivateDarwinSleepPrevention(JobControlRecord* jcr,
-                                   SleepPrevention& sleep_prevention)
+void ActivateSleepPrevention(JobControlRecord* jcr,
+                             SleepPrevention& sleep_prevention)
 {
   IOPMAssertionID assertion_id
       = static_cast<IOPMAssertionID>(sleep_prevention.darwin_assertion_id);
@@ -62,7 +61,7 @@ void ActivateDarwinSleepPrevention(JobControlRecord* jcr,
   sleep_prevention.darwin_assertion_id = assertion_id;
 }
 
-void DeactivateDarwinSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 {
   IOPMAssertionID assertion_id
       = static_cast<IOPMAssertionID>(sleep_prevention.darwin_assertion_id);
@@ -73,5 +72,3 @@ void DeactivateDarwinSleepPrevention(SleepPrevention& sleep_prevention)
 }
 
 }  // namespace filedaemon
-
-#endif

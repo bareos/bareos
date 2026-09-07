@@ -64,7 +64,6 @@ target_sources(
           verify.cc
           accurate_htable.cc
           dir_cmd.cc
-          os_suspension.cc
           filed_globals.cc
           heartbeat.cc
           socket_server.cc
@@ -78,17 +77,18 @@ target_sources(
           filed_utils.cc
 )
 
-if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_WIN32)
-  target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
-endif()
-if(FD_CLIENT_SLEEP_INHIBITION
-   AND HAVE_LINUX_OS
-   AND HAVE_SYSTEMD
-)
-  target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
-endif()
-if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_DARWIN_OS)
-  target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
+if(FD_CLIENT_SLEEP_INHIBITION)
+  if(HAVE_WIN32)
+    target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
+  elseif(HAVE_LINUX_OS AND HAVE_SYSTEMD)
+    target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
+  elseif(HAVE_DARWIN_OS)
+    target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
+  else()
+    target_sources(fd_objects_common PRIVATE os_suspension.cc)
+  endif()
+else()
+  target_sources(fd_objects_common PRIVATE os_suspension.cc)
 endif()
 
 target_link_libraries(
@@ -99,7 +99,7 @@ if(FD_CLIENT_SLEEP_INHIBITION)
   target_compile_definitions(
     fd_objects_common PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
   )
-  if(HAVE_SYSTEMD)
+  if(HAVE_LINUX_OS AND HAVE_SYSTEMD)
     target_include_directories(
       fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
     )

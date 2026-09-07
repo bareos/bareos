@@ -21,12 +21,12 @@
 
 #include "filed/os_suspension.h"
 
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
-#  include "compat.h"
+#include "compat.h"
 
 namespace filedaemon {
 
-void ActivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
+void ActivateSleepPrevention(JobControlRecord*,
+                             SleepPrevention& sleep_prevention)
 {
   if (!sleep_prevention.windows_active) {
     PreventOsSuspensions();
@@ -34,7 +34,7 @@ void ActivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
   }
 }
 
-void DeactivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 {
   if (sleep_prevention.windows_active) {
     AllowOsSuspensions();
@@ -43,5 +43,3 @@ void DeactivateWindowsSleepPrevention(SleepPrevention& sleep_prevention)
 }
 
 }  // namespace filedaemon
-
-#endif

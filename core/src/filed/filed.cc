@@ -61,11 +61,18 @@ static bool use_signal_pipe_termination = false;
 #if !defined(HAVE_WIN32)
 static int termination_pipe_fds[2] = {-1, -1};
 static volatile sig_atomic_t termination_signal = 0;
+#else
+static HANDLE termination_event = nullptr;
 #endif
 
 static void CloseTerminationPipe()
 {
-#if !defined(HAVE_WIN32)
+#if defined(HAVE_WIN32)
+  if (termination_event != nullptr) {
+    CloseHandle(termination_event);
+    termination_event = nullptr;
+  }
+#else
   if (termination_pipe_fds[0] >= 0) {
     close(termination_pipe_fds[0]);
     termination_pipe_fds[0] = -1;
@@ -76,6 +83,20 @@ static void CloseTerminationPipe()
   }
 #endif
 }
+
+#if defined(HAVE_WIN32)
+static bool SetupTerminationEvent()
+{
+  termination_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+  if (termination_event == nullptr) {
+    BErrNo be;
+    Emsg1(M_ERROR, 0, T_("Failed to create termination event: %s\n"),
+          be.bstrerror());
+    return false;
+  }
+  return true;
+}
+#endif
 
 #if !defined(HAVE_WIN32)
 static bool SetupTerminationPipe()
@@ -132,8 +153,11 @@ static bool IsClientInitiatedOnlyModeConfigured()
 
 static void WaitUntilTerminated()
 {
-  // Without a listening socket server we still need to keep the daemon process
-  // alive until the process receives a termination signal.
+  // Without a listening socket server we still need to keep the daemon
+  // process alive until the process receives a termination signal. POSIX
+  // uses a self-pipe because signal handlers may only perform async-signal-
+  // safe operations. Windows uses its native shutdown path, so wait directly
+  // on a kernel event signaled by TerminateFiled.
 #if !defined(HAVE_WIN32)
   if (use_signal_pipe_termination && termination_pipe_fds[0] >= 0) {
     unsigned char signal_byte;
@@ -145,7 +169,7 @@ static void WaitUntilTerminated()
     for (;;) { pause(); }
   }
 #else
-  for (;;) { Bmicrosleep(30, 0); }
+  WaitForSingleObject(termination_event, INFINITE);
 #endif
 }
 
@@ -306,6 +330,12 @@ int main(int argc, char* argv[])
 
   const bool client_initiated_only_mode = IsClientInitiatedOnlyModeConfigured();
 
+#if defined(HAVE_WIN32)
+  if (client_initiated_only_mode && !SetupTerminationEvent()) {
+    TerminateFiled(BEXIT_FAILURE);
+  }
+#endif
+
   if (!no_signals) {
 #if !defined(HAVE_WIN32)
     if (client_initiated_only_mode && SetupTerminationPipe()) {
@@ -377,6 +407,10 @@ namespace filedaemon {
 void TerminateFiled(int sig)
 {
   static bool already_here = false;
+
+#if defined(HAVE_WIN32)
+  if (termination_event != nullptr) { SetEvent(termination_event); }
+#endif
 
   if (already_here) {
     Bmicrosleep(2, 0);   /* yield */

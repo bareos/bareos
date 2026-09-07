@@ -28,35 +28,11 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
 {
   (void)jcr;
   (void)sleep_prevention;
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION)
-#  if defined(HAVE_WIN32)
-  ActivateWindowsSleepPrevention(sleep_prevention);
-#  endif
-#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-  ActivateLinuxSleepPrevention(jcr, sleep_prevention);
-#  endif
-#  if defined(HAVE_DARWIN_OS)
-  ActivateDarwinSleepPrevention(jcr, sleep_prevention);
-#  endif
-#endif
 }
 
 void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
 {
   (void)sleep_prevention;
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION)
-#  if defined(HAVE_WIN32)
-  DeactivateWindowsSleepPrevention(sleep_prevention);
-#  endif
-#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
-  DeactivateLinuxSleepPrevention(sleep_prevention);
-#  endif
-#  if defined(HAVE_DARWIN_OS)
-  DeactivateDarwinSleepPrevention(sleep_prevention);
-#  endif
-#endif
 }
 
 }  // namespace filedaemon

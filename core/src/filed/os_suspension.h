@@ -31,41 +31,24 @@ class JobControlRecord;
 namespace filedaemon {
 
 struct SleepPrevention {
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
+#if defined(FILED_CLIENT_SLEEP_INHIBITION)
+#  if defined(HAVE_WIN32)
   bool windows_active = false;
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
+#  endif
+#  if defined(HAVE_LINUX_OS) && defined(HAVE_SYSTEMD)
   int linux_inhibitor_fd = -1;
   bool linux_warning_logged = false;
-#endif
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
+#  endif
+#  if defined(HAVE_DARWIN_OS)
   uintptr_t darwin_assertion_id = 0;
   bool darwin_warning_logged = false;
+#  endif
 #endif
 };
 
 void ActivateSleepPrevention(JobControlRecord* jcr,
                              SleepPrevention& sleep_prevention);
 void DeactivateSleepPrevention(SleepPrevention& sleep_prevention);
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_WIN32)
-void ActivateWindowsSleepPrevention(SleepPrevention& sleep_prevention);
-void DeactivateWindowsSleepPrevention(SleepPrevention& sleep_prevention);
-#endif
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_LINUX_OS) \
-    && defined(HAVE_SYSTEMD)
-void ActivateLinuxSleepPrevention(JobControlRecord* jcr,
-                                  SleepPrevention& sleep_prevention);
-void DeactivateLinuxSleepPrevention(SleepPrevention& sleep_prevention);
-#endif
-
-#if defined(FILED_CLIENT_SLEEP_INHIBITION) && defined(HAVE_DARWIN_OS)
-void ActivateDarwinSleepPrevention(JobControlRecord* jcr,
-                                   SleepPrevention& sleep_prevention);
-void DeactivateDarwinSleepPrevention(SleepPrevention& sleep_prevention);
-#endif
 
 }  // namespace filedaemon
 
