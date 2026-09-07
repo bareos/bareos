@@ -29,12 +29,12 @@
   <q-card flat bordered class="bareos-panel column" style="height:100%; overflow:hidden">
     <!-- Header -->
     <q-card-section
-      class="panel-header row items-start no-wrap"
+      class="panel-header row items-center no-wrap"
       :class="{ 'widget-drag-handle': editMode }"
       style="flex-shrink:0; cursor: default"
       :style="editMode ? 'cursor: grab' : ''"
     >
-      <q-icon v-if="icon" :name="icon" size="sm" class="q-mr-sm" style="margin-top:2px" />
+      <q-icon v-if="icon" :name="icon" size="xs" class="q-mr-sm" />
       <span class="panel-header__title" style="flex:1; min-width:0" :title="description || undefined">{{ title }}</span>
 
       <!-- Edit-mode controls -->
