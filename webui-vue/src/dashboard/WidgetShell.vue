@@ -29,17 +29,17 @@
   <q-card flat bordered class="bareos-panel column" style="height:100%; overflow:hidden">
     <!-- Header -->
     <q-card-section
-      class="panel-header row items-center no-wrap"
+      class="panel-header row items-start no-wrap"
       :class="{ 'widget-drag-handle': editMode }"
       style="flex-shrink:0; cursor: default"
       :style="editMode ? 'cursor: grab' : ''"
     >
-      <q-icon v-if="icon" :name="icon" size="sm" class="q-mr-sm" />
-      <span class="ellipsis" style="flex:1; min-width:0" :title="description || undefined">{{ title }}</span>
-      <q-space />
+      <q-icon v-if="icon" :name="icon" size="sm" class="q-mr-sm" style="margin-top:2px" />
+      <span class="panel-header__title" style="flex:1; min-width:0" :title="description || undefined">{{ title }}</span>
 
       <!-- Edit-mode controls -->
       <template v-if="editMode">
+        <q-space />
         <q-btn
           flat round dense
           icon="settings"
@@ -87,5 +87,14 @@ defineEmits(['configure', 'remove'])
 <style scoped>
 .widget-drag-handle {
   user-select: none;
+}
+
+.panel-header__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.2;
 }
 </style>
