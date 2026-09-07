@@ -669,6 +669,7 @@ SectionIn 1 2 3
   File "xxhash.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   !cd "C:\tools\MSYS2\ucrt64\bin"
   File "sed.exe"
@@ -869,6 +870,7 @@ SectionIn 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -1046,6 +1048,7 @@ SectionIn 1 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   # qt stuff, some of them may be empty
   SetOutPath "$INSTDIR\platforms"
@@ -1181,6 +1184,7 @@ SectionIn 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
