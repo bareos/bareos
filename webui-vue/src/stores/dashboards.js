@@ -99,11 +99,11 @@ function cloneDashboard(dashboard) {
 }
 
 function addMissingPreconfiguredDashboards(dashboards) {
-  const names = new Set(dashboards.map(dashboard => dashboard.name))
+  const ids = new Set(dashboards.map(dashboard => dashboard.id))
   return [
     ...dashboards,
     ...PRECONFIGURED_DASHBOARDS
-      .filter(dashboard => !names.has(dashboard.name))
+      .filter(dashboard => !ids.has(dashboard.id))
       .map(cloneDashboard),
   ]
 }
@@ -193,7 +193,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
 
   /**
    * Discard all custom dashboards/widgets and re-seed the built-in
-   * preconfigured dashboards (Overview + Analytics) from scratch.
+   * preconfigured dashboards (Operations + System Overview) from scratch.
    */
   function resetAllDashboards() {
     dashboards.value = PRECONFIGURED_DASHBOARDS.map(cloneDashboard)
