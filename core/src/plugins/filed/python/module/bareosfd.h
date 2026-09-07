@@ -59,7 +59,7 @@ namespace filedaemon {
 typedef struct {
   PyObject_HEAD PyObject* object_name; /* Object name */
   PyObject* object;                    /* Restore object data to restore */
-  char* plugin_name;                   /* Plugin name */
+  PyObject* plugin_name;               /* Plugin name */
   int32_t object_type;                 /* FT_xx for this file */
   int32_t object_len;                  /* restore object length */
   int32_t object_full_len;             /* restore object uncompressed length */
@@ -85,7 +85,7 @@ static PyMemberDef PyRestoreObject_members[]
         0, (char*)"Object Name"},
        {(char*)"object", T_OBJECT, offsetof(PyRestoreObject, object), 0,
         (char*)"Object Content"},
-       {(char*)"plugin_name", T_STRING, offsetof(PyRestoreObject, plugin_name),
+       {(char*)"plugin_name", T_OBJECT, offsetof(PyRestoreObject, plugin_name),
         0, (char*)"Plugin Name"},
        {(char*)"object_type", T_INT, offsetof(PyRestoreObject, object_type), 0,
         (char*)"Object Type"},

@@ -1266,7 +1266,7 @@ static inline PyRestoreObject* NativeToPyRestoreObject(restore_object_pkt* rop)
     pRestoreObject->object_name = PyUnicode_FromString(rop->object_name);
     pRestoreObject->object
         = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
-    pRestoreObject->plugin_name = dup_str(rop->plugin_name);
+    pRestoreObject->plugin_name = PyUnicode_FromString(rop->plugin_name);
     pRestoreObject->object_type = rop->object_type;
     pRestoreObject->object_len = rop->object_len;
     pRestoreObject->object_full_len = rop->object_full_len;
@@ -2019,7 +2019,7 @@ static PyObject* PyRestoreObject_repr(PyRestoreObject* self)
        "object_type=%d, object_len=%d, object_full_len=%d, "
        "object_index=%d, object_compression=%d, stream=%d, jobid=%u)",
        PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
-       self->plugin_name, self->object_type, self->object_len,
+       PyGetStringValue(self->plugin_name), self->object_type, self->object_len,
        self->object_full_len, self->object_index, self->object_compression,
        self->stream, self->JobId);
   s = PyUnicode_FromString(buf.c_str());
@@ -2055,17 +2055,15 @@ static int PyRestoreObject_init(PyRestoreObject* self,
   self->stream = 0;
   self->JobId = 0;
 
-  const char* plugin_name{};
-
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|UOsiiiiiiI", kwlist, &self->object_name, &self->object,
-          &plugin_name, &self->object_type, &self->object_len,
+          args, kwds, "|UOUiiiiiiI", kwlist, &self->object_name, &self->object,
+          &self->plugin_name, &self->object_type, &self->object_len,
           &self->object_full_len, &self->object_index,
           &self->object_compression, &self->stream, &self->JobId)) {
     return -1;
   }
   Py_XINCREF(self->object);
-  self->plugin_name = dup_str(plugin_name);
+  Py_XINCREF(self->plugin_name);
 
   return 0;
 }
@@ -2083,7 +2081,7 @@ static void PyRestoreObject_dealloc(PyObject* obj)
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->object_name);
   Py_CLEAR(self->object);
-  C_CLEAR(self->plugin_name);
+  Py_CLEAR(self->plugin_name);
   PyObject_Del(self);
 }
 
