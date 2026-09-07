@@ -153,12 +153,18 @@ std::optional<std::string> GetCommonName(const X509_NAME* subject, int index)
   const ASN1_STRING* name = X509_NAME_ENTRY_get_data(entry);
   if (!name) { return std::nullopt; }
 
-  const unsigned char* data = ASN1_STRING_get0_data(name);
-  const int length = ASN1_STRING_length(name);
-  if (!data || length <= 0) { return std::nullopt; }
+  unsigned char* raw_utf8_data = nullptr;
+  const int length = ASN1_STRING_to_UTF8(&raw_utf8_data, name);
+  using Utf8DataPtr
+      = std::unique_ptr<unsigned char, decltype([](unsigned char* data) {
+                          OPENSSL_free(data);
+                        })>;
+  Utf8DataPtr utf8_data(raw_utf8_data);
+  if (!utf8_data || length <= 0) { return std::nullopt; }
 
-  return std::string{reinterpret_cast<const char*>(data),
+  std::string result{reinterpret_cast<const char*>(utf8_data.get()),
                      static_cast<size_t>(length)};
+  return result;
 }
 
 // report any errors that occurred
