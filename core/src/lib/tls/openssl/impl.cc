@@ -172,9 +172,11 @@ std::optional<CommonName> GetCommonName(const X509_NAME* subject,
   Utf8DataPtr utf8_data(raw_utf8_data);
   if (!utf8_data || length <= 0) { return std::nullopt; }
 
-  return CommonName{index,
-                    std::string{reinterpret_cast<const char*>(utf8_data.get()),
-                                static_cast<size_t>(length)}};
+  std::string value{reinterpret_cast<const char*>(utf8_data.get()),
+                    static_cast<size_t>(length)};
+  if (value.find('\0') != std::string::npos) { return std::nullopt; }
+
+  return CommonName{index, std::move(value)};
 }
 
 // report any errors that occurred
