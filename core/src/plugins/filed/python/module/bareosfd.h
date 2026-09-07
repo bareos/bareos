@@ -290,9 +290,9 @@ typedef struct {
   int32_t LinkFI;               /* File index to data if hard link */
   uint32_t uid;                 /* Userid */
   PyObject* statp;              /* Decoded stat packet */
-  char* attrEx;                 /* Extended attributes if any */
-  char* ofname;                 /* Output filename */
-  char* olname;                 /* Output link name */
+  PyObject* attrEx;             /* Extended attributes if any */
+  PyObject* ofname;             /* Output filename */
+  PyObject* olname;             /* Output link name */
   char* where;                  /* Where */
   char* RegexWhere;             /* Regex where */
   int replace;                  /* Replace flag */
@@ -303,8 +303,8 @@ typedef struct {
   int filedes; /* filedescriptor for read/write in core */
 #  endif
 
-  char* original_file_name;
-  char* original_link_name;
+  PyObject* original_file_name;
+  PyObject* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -332,11 +332,11 @@ static PyMemberDef PyRestorePacket_members[] = {
     {(char*)"uid", T_UINT, offsetof(PyRestorePacket, uid), 0, (char*)"User Id"},
     {(char*)"statp", T_OBJECT, offsetof(PyRestorePacket, statp), 0,
      (char*)"Stat Packet"},
-    {(char*)"attrEX", T_STRING, offsetof(PyRestorePacket, attrEx), 0,
+    {(char*)"attrEX", T_OBJECT, offsetof(PyRestorePacket, attrEx), 0,
      (char*)"Extended attributes"},
-    {(char*)"ofname", T_STRING, offsetof(PyRestorePacket, ofname), 0,
+    {(char*)"ofname", T_OBJECT, offsetof(PyRestorePacket, ofname), 0,
      (char*)"Output filename"},
-    {(char*)"olname", T_STRING, offsetof(PyRestorePacket, olname), 0,
+    {(char*)"olname", T_OBJECT, offsetof(PyRestorePacket, olname), 0,
      (char*)"Output link name"},
     {(char*)"where", T_STRING, offsetof(PyRestorePacket, where), 0,
      (char*)"Where"},
@@ -352,10 +352,10 @@ static PyMemberDef PyRestorePacket_members[] = {
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
 #  endif
      (char*)"file descriptor of current file"},
-    {(char*)"original_file_name", T_STRING,
+    {(char*)"original_file_name", T_OBJECT,
      offsetof(PyRestorePacket, original_file_name), 0,
      (char*)"filename at backup time"},
-    {(char*)"original_link_name", T_STRING,
+    {(char*)"original_link_name", T_OBJECT,
      offsetof(PyRestorePacket, original_link_name), 0,
      (char*)"link name at backup time"},
     {}};

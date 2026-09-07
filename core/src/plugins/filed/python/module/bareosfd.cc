@@ -773,9 +773,9 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->LinkFI = rp->LinkFI;
     pRestorePacket->uid = rp->uid;
     pRestorePacket->statp = (PyObject*)NativeToPyStatPacket(&rp->statp);
-    pRestorePacket->attrEx = dup_str(rp->attrEx);
-    pRestorePacket->ofname = dup_str(rp->ofname);
-    pRestorePacket->olname = dup_str(rp->olname);
+    pRestorePacket->attrEx = PyUnicode_FromString(rp->attrEx);
+    pRestorePacket->ofname = PyUnicode_FromString(rp->ofname);
+    pRestorePacket->olname = PyUnicode_FromString(rp->olname);
     pRestorePacket->where = dup_str(rp->where);
     pRestorePacket->RegexWhere = dup_str(rp->RegexWhere);
     pRestorePacket->replace = rp->replace;
@@ -787,8 +787,10 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->filedes = rp->filedes;
 #endif
 
-    pRestorePacket->original_file_name = dup_str(rp->original_file_name);
-    pRestorePacket->original_link_name = dup_str(rp->original_link_name);
+    pRestorePacket->original_file_name
+        = PyUnicode_FromString(rp->original_file_name);
+    pRestorePacket->original_link_name
+        = PyUnicode_FromString(rp->original_link_name);
   }
 
   return pRestorePacket;
@@ -2302,9 +2304,12 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        ", create_status=%d, original_file_name=\"%s\""
        ", original_link_name=\"%s\")",
        self->stream, self->data_stream, self->type, self->file_index,
-       self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
-       self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
-       self->create_status, self->original_file_name, self->original_link_name);
+       self->LinkFI, self->uid, PyGetStringValue(stat_repr),
+       PyGetStringValue(self->attrEx), PyGetStringValue(self->ofname),
+       PyGetStringValue(self->olname), self->where, self->RegexWhere,
+       self->replace, self->create_status,
+       PyGetStringValue(self->original_file_name),
+       PyGetStringValue(self->original_link_name));
 
   s = PyUnicode_FromString(buf.c_str());
   Py_DECREF(stat_repr);
@@ -2370,21 +2375,22 @@ static int PyRestorePacket_init(PyRestorePacket* self,
           "|iiiiiIOsssssiiiss",
 #endif
           kwlist, &self->stream, &self->data_stream, &self->type,
-          &self->file_index, &self->LinkFI, &self->uid, &self->statp, &attrEx,
-          &ofname, &olname, &where, &RegexWhere, &self->replace,
-          &self->create_status, &self->filedes, &orig_fname, &orig_lname)) {
+          &self->file_index, &self->LinkFI, &self->uid, &self->statp,
+          &self->attrEx, &self->ofname, &self->olname, &where, &RegexWhere,
+          &self->replace, &self->create_status, &self->filedes,
+          &self->original_file_name, &self->original_link_name)) {
     return -1;
   }
 
   Py_XINCREF(self->statp);
+  Py_XINCREF(self->attrEx);
+  Py_XINCREF(self->ofname);
+  Py_XINCREF(self->olname);
+  Py_XINCREF(self->original_file_name);
+  Py_XINCREF(self->original_link_name);
 
-  self->attrEx = dup_str(attrEx);
-  self->ofname = dup_str(ofname);
-  self->olname = dup_str(olname);
   self->where = dup_str(where);
   self->RegexWhere = dup_str(RegexWhere);
-  self->original_file_name = dup_str(orig_fname);
-  self->original_link_name = dup_str(orig_lname);
 
   return 0;
 }
@@ -2396,14 +2402,14 @@ static void PyRestorePacket_dealloc(PyObject* obj)
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->statp);
 
-  C_CLEAR(self->attrEx);
-  C_CLEAR(self->ofname);
-  C_CLEAR(self->olname);
+  Py_CLEAR(self->attrEx);
+  Py_CLEAR(self->ofname);
+  Py_CLEAR(self->olname);
+  Py_CLEAR(self->original_file_name);
+  Py_CLEAR(self->original_link_name);
+
   C_CLEAR(self->where);
   C_CLEAR(self->RegexWhere);
-
-  C_CLEAR(self->original_file_name);
-  C_CLEAR(self->original_link_name);
 
   PyObject_Del(self);
 }
