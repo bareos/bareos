@@ -108,7 +108,6 @@
             </q-input>
             <div class="jobs-list-header__actions row items-center no-wrap">
               <span class="text-white text-caption jobs-list-header__countdown panel-refresh-countdown">
-                <span aria-hidden="true">↻</span>
                 <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
               </span>
               <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
