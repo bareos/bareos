@@ -66,15 +66,10 @@
             :min="5" :max="120" :step="5"
             label snap
             :label-value="settings.refreshInterval + 's'"
+            :marker-labels="refreshIntervalMarkerLabels"
             color="primary"
             class="q-mt-xs"
           />
-          <div class="row justify-between text-caption text-grey-6">
-            <span>5s</span>
-            <span>30s</span>
-            <span>60s</span>
-            <span>120s</span>
-          </div>
         </div>
       </q-card-section>
       <q-separator />
@@ -190,6 +185,13 @@ import { useBackupRestore } from '../composables/useBackupRestore.js'
 const $q       = useQuasar()
 const settings = useSettingsStore()
 const { t } = useI18n()
+
+// marker-labels positions each label at its actual value on the slider,
+// unlike a plain flex row which would space them evenly regardless of scale.
+const refreshIntervalMarkerLabels = [5, 30, 60, 90, 120].map((value) => ({
+  value,
+  label: `${value}s`,
+}))
 
 const {
   restoreFileInput,
