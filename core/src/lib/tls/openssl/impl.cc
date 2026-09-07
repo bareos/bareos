@@ -145,8 +145,14 @@ constexpr std::string_view tls_default_ciphers_{
 
 std::optional<std::string> GetCommonName(const X509_NAME* subject, int index)
 {
+  if (!subject) { return std::nullopt; }
+
   const X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, index);
+  if (!entry) { return std::nullopt; }
+
   const ASN1_STRING* name = X509_NAME_ENTRY_get_data(entry);
+  if (!name) { return std::nullopt; }
+
   const unsigned char* data = ASN1_STRING_get0_data(name);
   const int length = ASN1_STRING_length(name);
   if (!data || length <= 0) { return std::nullopt; }
