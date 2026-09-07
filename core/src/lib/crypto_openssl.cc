@@ -139,16 +139,6 @@ DEFINE_STACK_OF(RecipientInfo)
 IGNORE_UNREFERENCED_FUNCTION_OFF
 
 
-#define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
-#define M_ASN1_OCTET_STRING_cmp(a, b) \
-  ASN1_STRING_cmp((const ASN1_STRING*)a, (const ASN1_STRING*)b)
-#define M_ASN1_OCTET_STRING_dup(a) \
-  (ASN1_OCTET_STRING*)ASN1_STRING_dup((const ASN1_STRING*)a)
-#define M_ASN1_OCTET_STRING_set(a, b, c) ASN1_STRING_set((ASN1_STRING*)a, b, c)
-
-#define M_ASN1_STRING_length(x) ASN1_STRING_length((const ASN1_STRING*)x)
-#define M_ASN1_STRING_data(x) ASN1_STRING_get0_data((const ASN1_STRING*)x)
-
 #define d2i_ASN1_SET_OF_SignerInfo(st, pp, length, d2i_func, free_func, \
                                    ex_tag, ex_class)                    \
   SKM_ASN1_SET_OF_d2i(SignerInfo, (st), (pp), (length), (d2i_func),     \
@@ -240,7 +230,7 @@ typedef struct PEM_CB_Context {
 /*
  * Extract subjectKeyIdentifier from x509 certificate.
  * Returns: On success, an ASN1_OCTET_STRING that must be freed via
- * M_ASN1_OCTET_STRING_free(). NULL on failure.
+ * ASN1_STRING_free(). NULL on failure.
  */
 static ASN1_OCTET_STRING* openssl_cert_keyid(X509* cert)
 {
@@ -311,7 +301,7 @@ X509_KEYPAIR* crypto_keypair_dup(X509_KEYPAIR* keypair)
 
   /* Duplicate the keyid */
   if (keypair->keyid) {
-    newpair->keyid = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+    newpair->keyid = ASN1_STRING_dup(keypair->keyid);
     if (!newpair->keyid) {
       /* Allocation failed */
       CryptoKeypairFree(newpair);
@@ -475,7 +465,7 @@ void CryptoKeypairFree(X509_KEYPAIR* keypair)
 {
   if (keypair->pubkey) { EVP_PKEY_free(keypair->pubkey); }
   if (keypair->privkey) { EVP_PKEY_free(keypair->privkey); }
-  if (keypair->keyid) { M_ASN1_OCTET_STRING_free(keypair->keyid); }
+  if (keypair->keyid) { ASN1_STRING_free(keypair->keyid); }
   free(keypair);
 }
 
@@ -602,8 +592,7 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
 
   for (i = 0; i < sk_SignerInfo_num(signers); i++) {
     si = sk_SignerInfo_value(signers, i);
-    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier)
-        == 0) {
+    if (ASN1_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
       /* Get the digest algorithm and allocate a digest context */
       Dmsg1(150, "CryptoSignGetDigest jcr=%p\n", sig->jcr);
       switch (OBJ_obj2nid(si->digestAlgorithm)) {
@@ -671,11 +660,10 @@ crypto_error_t CryptoSignVerify(SIGNATURE* sig,
   /* Find the signer */
   for (i = 0; i < sk_SignerInfo_num(signers); i++) {
     si = sk_SignerInfo_value(signers, i);
-    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier)
-        == 0) {
+    if (ASN1_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) == 0) {
       /* Extract the signature data */
-      sigLen = M_ASN1_STRING_length(si->signature);
-      sigData = M_ASN1_STRING_data(si->signature);
+      sigLen = ASN1_STRING_length(si->signature);
+      sigData = ASN1_STRING_get0_data(si->signature);
 
       ok = EVP_VerifyFinal(&dynamic_cast<EvpDigest*>(digest)->get_ctx(),
                            sigData, sigLen, keypair->pubkey);
@@ -742,8 +730,8 @@ int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
   }
 
   /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier */
-  M_ASN1_OCTET_STRING_free(si->subjectKeyIdentifier);
-  si->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+  ASN1_STRING_free(si->subjectKeyIdentifier);
+  si->subjectKeyIdentifier = ASN1_STRING_dup(keypair->keyid);
 
 
   /* Set our signature algorithm. We currently require RSA */
@@ -763,7 +751,7 @@ int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
     }
   }
   /* Add the signature to the SignerInfo structure */
-  if (!M_ASN1_OCTET_STRING_set(si->signature, buf, len)) {
+  if (!ASN1_STRING_set(si->signature, buf, len)) {
     /* Allocation failed in OpenSSL */
     goto err;
   }
@@ -985,7 +973,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     }
 
     /* Store it in our ASN.1 structure */
-    if (!M_ASN1_OCTET_STRING_set(cs->cryptoData->iv, iv, iv_len)) {
+    if (!ASN1_STRING_set(cs->cryptoData->iv, iv, iv_len)) {
       /* Allocation failed in OpenSSL */
       CryptoSessionFree(cs);
       free(iv);
@@ -1013,8 +1001,8 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 
     /* Drop the string allocated by OpenSSL, and add our subjectKeyIdentifier
      */
-    M_ASN1_OCTET_STRING_free(ri->subjectKeyIdentifier);
-    ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
+    ASN1_STRING_free(ri->subjectKeyIdentifier);
+    ri->subjectKeyIdentifier = ASN1_STRING_dup(keypair->keyid);
 
     /* Set our key encryption algorithm. We currently require RSA */
     assert(keypair->pubkey
@@ -1036,7 +1024,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
     }
     IGNORE_DEPRECATED_OFF;
     /* Store it in our ASN.1 structure */
-    if (!M_ASN1_OCTET_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
+    if (!ASN1_STRING_set(ri->encryptedKey, ekey, ekey_len)) {
       /* Allocation failed in OpenSSL */
       RecipientInfo_free(ri);
       CryptoSessionFree(cs);
@@ -1126,8 +1114,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
       ri = sk_RecipientInfo_value(recipients, i);
 
       /* Match against the subjectKeyIdentifier */
-      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier)
-          == 0) {
+      if (ASN1_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier) == 0) {
         /* Match found, extract symmetric encryption session data */
 
         /* RSA is required. */
@@ -1147,8 +1134,8 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
             = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
         IGNORE_DEPRECATED_ON;
         cs->session_key_len = EVP_PKEY_decrypt(
-            cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
-            M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
+            cs->session_key, ASN1_STRING_get0_data(ri->encryptedKey),
+            ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
         IGNORE_DEPRECATED_OFF;
         if (cs->session_key_len <= 0) {
           OpensslPostErrors(M_ERROR, T_("Failure decrypting the session key"));
@@ -1225,14 +1212,14 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   }
 
   /* Validate the IV length */
-  if (EVP_CIPHER_iv_length(ec) != M_ASN1_STRING_length(cs->cryptoData->iv)) {
+  if (EVP_CIPHER_iv_length(ec) != ASN1_STRING_length(cs->cryptoData->iv)) {
     OpensslPostErrors(M_ERROR, T_("Encryption session provided an invalid IV"));
     goto err;
   }
 
   /* Add the key and IV to the cipher context */
   if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key,
-                         M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
+                         ASN1_STRING_get0_data(cs->cryptoData->iv), -1)) {
     OpensslPostErrors(
         M_ERROR, T_("OpenSSL cipher context key/IV initialization failed"));
     goto err;
