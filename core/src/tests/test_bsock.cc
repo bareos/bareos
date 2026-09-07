@@ -427,6 +427,28 @@ bool GenerateTlsArtifacts(GeneratedTlsArtifacts* artifacts,
          && WriteCertificatePem(artifacts->ca_cert, ca_cert.get(), error)
          && WriteCrlPem(artifacts->crl, crl.get(), error);
 }
+
+void ConfigureTlsForPeerVerification(
+    const GeneratedTlsArtifacts& artifacts,
+    const std::filesystem::path& server_crl,
+    const std::vector<std::string>& allowed_client_common_names)
+{
+  cons_dir_config->tls_enable_ = true;
+  cons_dir_config->tls_cert_.verify_peer_ = false;
+  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
+  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
+  cons_dir_config->tls_cert_.crlfile_.clear();
+
+  dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_cert_.verify_peer_ = true;
+  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
+  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
+  dir_cons_config->tls_cert_.crlfile_ = server_crl.string();
+  dir_cons_config->tls_cert_.allowed_certificate_common_names_
+      = allowed_client_common_names;
+}
 }  // namespace
 
 static void InitSignalHandler()
@@ -862,20 +884,7 @@ TEST(bsock, auth_fails_with_revoked_tls_cert)
   cipher_server.clear();
   cipher_client.clear();
 
-  cons_dir_config->tls_enable_ = true;
-  cons_dir_config->tls_cert_.verify_peer_ = false;
-  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
-  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
-  cons_dir_config->tls_cert_.crlfile_.clear();
-
-  dir_cons_config->tls_enable_ = true;
-  dir_cons_config->tls_cert_.verify_peer_ = true;
-  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
-  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
-  dir_cons_config->tls_cert_.crlfile_ = artifacts.crl.string();
-  dir_cons_config->tls_cert_.allowed_certificate_common_names_.clear();
+  ConfigureTlsForPeerVerification(artifacts, artifacts.crl, {});
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);
@@ -916,21 +925,7 @@ TEST(bsock, auth_works_with_utf8_tls_common_name)
   ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, client_common_name, &error))
       << error;
 
-  cons_dir_config->tls_enable_ = true;
-  cons_dir_config->tls_cert_.verify_peer_ = false;
-  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
-  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
-  cons_dir_config->tls_cert_.crlfile_.clear();
-
-  dir_cons_config->tls_enable_ = true;
-  dir_cons_config->tls_cert_.verify_peer_ = true;
-  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
-  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
-  dir_cons_config->tls_cert_.crlfile_.clear();
-  dir_cons_config->tls_cert_.allowed_certificate_common_names_
-      = {client_common_name};
+  ConfigureTlsForPeerVerification(artifacts, {}, {client_common_name});
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);
