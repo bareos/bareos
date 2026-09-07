@@ -970,29 +970,9 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
         const X509V3_EXT_METHOD* method;
         STACK_OF(CONF_VALUE)* val = nullptr;
         CONF_VALUE* nval;
-        void* extstr = nullptr;
-        const unsigned char* ext_value_data;
+        void* extstr = X509V3_EXT_d2i(ext);
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
-
-        auto* ext_value = X509_EXTENSION_get_data(ext);
-        ext_value_data = ASN1_STRING_get0_data(
-            reinterpret_cast<const ASN1_STRING*>(ext_value));
-
-        if (method->it) {
-          extstr = ASN1_item_d2i(
-              NULL, &ext_value_data,
-              ASN1_STRING_length(
-                  reinterpret_cast<const ASN1_STRING*>(ext_value)),
-              ASN1_ITEM_ptr(method->it));
-        } else {
-          /* Old style ASN1
-           * Decode ASN1 item in data */
-          extstr = method->d2i(
-              NULL, &ext_value_data,
-              ASN1_STRING_length(
-                  reinterpret_cast<const ASN1_STRING*>(ext_value)));
-        }
 
         // Iterate through to find the dNSName field(s)
         val = method->i2v(method, extstr, NULL);
