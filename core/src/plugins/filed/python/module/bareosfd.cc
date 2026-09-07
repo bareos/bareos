@@ -645,6 +645,7 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
     if (!io->fname) {
       // on some operations, the fname is just not set for some reason
       // e.g. read/write
+      Py_INCREF(Py_None);
       fname = Py_None;
     } else if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
       fname = PyUnicode_FromString(io->fname);
