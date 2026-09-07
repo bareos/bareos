@@ -270,7 +270,7 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
   X509NamePtr subject{X509_NAME_new()};
   if (!subject
       || X509_NAME_add_entry_by_txt(
-             subject.get(), "CN", MBSTRING_ASC,
+             subject.get(), "CN", MBSTRING_UTF8,
              reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
              0)
              != 1
@@ -372,8 +372,9 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
   return crl;
 }
 
-bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
-                                           std::string* error)
+bool GenerateTlsArtifacts(GeneratedTlsArtifacts* artifacts,
+                          std::string_view client_common_name,
+                          std::string* error)
 {
   char temp_directory[] = "/tmp/bsock-crl-XXXXXX";
   char* created_directory = mkdtemp(temp_directory);
@@ -409,9 +410,9 @@ bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
   auto client_key = GenerateRsaKey(error);
   if (!client_key) { return false; }
 
-  auto client_cert = GenerateCertificate(client_key.get(), "bareos-client", 3,
-                                         30, ca_key.get(), ca_cert.get(), false,
-                                         "clientAuth", error);
+  auto client_cert = GenerateCertificate(client_key.get(), client_common_name,
+                                         3, 30, ca_key.get(), ca_cert.get(),
+                                         false, "clientAuth", error);
   if (!client_cert) { return false; }
 
   auto crl = GenerateCrl(ca_cert.get(), ca_key.get(), 3, error);
@@ -855,7 +856,7 @@ TEST(bsock, auth_fails_with_revoked_tls_cert)
 
   GeneratedTlsArtifacts artifacts;
   std::string error;
-  ASSERT_TRUE(GenerateTlsArtifactsForRevocationTest(&artifacts, &error))
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, "bareos-client", &error))
       << error;
 
   cipher_server.clear();
@@ -889,6 +890,59 @@ TEST(bsock, auth_fails_with_revoked_tls_cert)
 
   server_thread.join();
   EXPECT_FALSE(future.get());
+}
+
+TEST(bsock, auth_works_with_utf8_tls_common_name)
+{
+  constexpr std::u8string_view client_common_name_utf8{u8"Bäreos Client"};
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+
+  std::string client_common_name{
+      reinterpret_cast<const char*>(client_common_name_utf8.data()),
+      client_common_name_utf8.size()};
+
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, client_common_name, &error))
+      << error;
+
+  cons_dir_config->tls_enable_ = true;
+  cons_dir_config->tls_cert_.verify_peer_ = false;
+  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
+  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
+  cons_dir_config->tls_cert_.crlfile_.clear();
+
+  dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_cert_.verify_peer_ = true;
+  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
+  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
+  dir_cons_config->tls_cert_.crlfile_.clear();
+  dir_cons_config->tls_cert_.allowed_certificate_common_names_
+      = {client_common_name};
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                ls->port));
+
+  server_thread.join();
+  EXPECT_TRUE(future.get());
 }
 
 class BareosSocketTCPMock : public BareosSocketTCP {
