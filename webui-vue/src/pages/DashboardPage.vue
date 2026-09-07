@@ -63,7 +63,6 @@
       <div class="row items-center q-gutter-xs no-wrap" style="flex-shrink:0">
         <!-- refresh countdown -->
         <span class="text-caption text-grey-6 panel-refresh-countdown">
-          <span aria-hidden="true">↻</span>
           <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
         </span>
         <q-btn flat round dense icon="refresh" size="sm" :loading="gridRef?.loading"
@@ -180,7 +179,7 @@
           <q-btn flat round dense icon="close" color="white" @click="showResetDialog = false" />
         </q-card-section>
         <q-card-section>
-          {{ t('Delete all dashboards and widgets and restore the default Overview and Analytics dashboards? This cannot be undone.') }}
+          {{ t('Delete all dashboards and widgets and restore the default Operations and System Overview dashboards? This cannot be undone.') }}
         </q-card-section>
         <q-card-actions align="right" class="q-pb-md q-pr-md q-gutter-xs">
           <q-btn flat :label="t('Cancel')" @click="showResetDialog = false" />
