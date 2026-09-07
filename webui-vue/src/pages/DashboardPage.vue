@@ -251,7 +251,10 @@ const editMode = ref(false)
 const gridRef = ref(null)
 
 function manualRefresh() {
-  gridRef.value?.refresh()
+  // An explicit user-triggered refresh should always fetch everything
+  // (including the throttled pool/analytics data), unlike the periodic
+  // auto-refresh tick which only re-fetches the fast-changing job data.
+  gridRef.value?.fetchData({ forcePools: true, forceAnalytics: true })
   countdown.value = settings.refreshInterval
 }
 
