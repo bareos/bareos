@@ -101,7 +101,9 @@
                   >{{ c.name }}</router-link>
                   <q-linear-progress :value="bytesGauge(c.bytes)" track-color="grey-3"
                                      :style="{ flex: 1, color: c.color }" size="10px" rounded />
-                  <span class="text-caption text-grey-6" style="width:60px;text-align:right">{{ fmtBytes(c.bytes) }}</span>
+                  <span
+                    class="text-caption text-grey-6 analytics-client-bytes__value"
+                  >{{ fmtBytes(c.bytes) }}</span>
                 </div>
               </div>
               <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
@@ -494,5 +496,12 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.82);
   padding: 3px;
+}
+
+.analytics-client-bytes__value {
+  width: 60px;
+  flex: 0 0 60px;
+  text-align: right;
+  white-space: nowrap;
 }
 </style>
