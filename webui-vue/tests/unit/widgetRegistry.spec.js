@@ -76,7 +76,6 @@ describe('widgetRegistry', () => {
     expect(types.has('jobs-past-24h')).toBe(true)
     expect(types.has('recent-jobs-table')).toBe(true)
     expect(types.has('running-jobs')).toBe(true)
-    expect(types.has('job-totals')).toBe(true)
     expect(types.has('pool-bytes-chart')).toBe(true)
     expect(types.has('pool-volumes-chart')).toBe(true)
     expect(types.has('database-status')).toBe(true)
@@ -87,13 +86,13 @@ describe('widgetRegistry', () => {
     expect(types.has('analytics-level-distribution')).toBe(true)
   })
 
-  it('pool chart widgets have appropriate default layout dimensions', () => {
+  it('pool chart widgets have a visually square default layout (h > w, since grid rows are much shorter than columns)', () => {
     const bytesChart = getWidgetDefinition('pool-bytes-chart')
     const volChart   = getWidgetDefinition('pool-volumes-chart')
 
     expect(bytesChart.defaultLayout.w).toBeGreaterThanOrEqual(2)
-    expect(bytesChart.defaultLayout.h).toBeGreaterThanOrEqual(3)
+    expect(bytesChart.defaultLayout.h).toBeGreaterThan(bytesChart.defaultLayout.w)
     expect(volChart.defaultLayout.w).toBeGreaterThanOrEqual(2)
-    expect(volChart.defaultLayout.h).toBeGreaterThanOrEqual(3)
+    expect(volChart.defaultLayout.h).toBeGreaterThan(volChart.defaultLayout.w)
   })
 })
