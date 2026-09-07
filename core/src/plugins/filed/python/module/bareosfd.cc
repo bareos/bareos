@@ -262,7 +262,7 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->no_read = sp->no_read;
     pSavePkt->portable = sp->portable;
     pSavePkt->accurate_found = sp->accurate_found;
-    pSavePkt->cmd = dup_str(sp->cmd);
+    pSavePkt->cmd = PyUnicode_FromString(sp->cmd);
     pSavePkt->save_time = sp->save_time;
     pSavePkt->delta_seq = sp->delta_seq;
     pSavePkt->object_name = NULL;
@@ -2210,9 +2210,9 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
        "object=\"%s\", object_len=%" PRId32 ", object_index=%" PRId32 ")",
        PyGetStringValue(self->fname), PyGetStringValue(self->link), self->type,
        print_flags_bitmap(self->flags), self->no_read, self->portable,
-       self->accurate_found, self->cmd, self->save_time, self->delta_seq,
-       PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
-       self->object_len, self->object_index);
+       self->accurate_found, PyGetStringValue(self->cmd), self->save_time,
+       self->delta_seq, PyGetStringValue(self->object_name),
+       PyGetByteArrayValue(self->object), self->object_len, self->object_index);
 
   s = PyUnicode_FromString(buf.c_str());
 
@@ -2247,12 +2247,10 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   int no_read{}, portable{}, accurate_found{}, save_time{};
   unsigned delta_seq{};
 
-  const char* cmd{};
-
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|OOiOpppsiIOOii", kwlist, &self->fname, &self->link,
-          &self->type, &self->flags, &no_read, &portable, &accurate_found, &cmd,
-          &save_time, &delta_seq, &self->object_name, &self->object,
+          args, kwds, "|OOiOpppUiIOOii", kwlist, &self->fname, &self->link,
+          &self->type, &self->flags, &no_read, &portable, &accurate_found,
+          &self->cmd, &save_time, &delta_seq, &self->object_name, &self->object,
           &self->object_len, &self->object_index)) {
     return -1;
   }
@@ -2261,12 +2259,12 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   Py_XINCREF(self->link);
   Py_XINCREF(self->object_name);
   Py_XINCREF(self->object);
+  Py_XINCREF(self->cmd);
 
   self->no_read = no_read;
   self->portable = portable;
   self->accurate_found = accurate_found;
   self->save_time = save_time;
-  self->cmd = dup_str(cmd);
   self->delta_seq = delta_seq;
   return 0;
 }
@@ -2282,7 +2280,7 @@ static void PySavePacket_dealloc(PyObject* obj)
   Py_CLEAR(self->object_name);
   Py_CLEAR(self->object);
   Py_CLEAR(self->statp);
-  C_CLEAR(self->cmd);
+  Py_CLEAR(self->cmd);
   PyObject_Del(self);
 }
 

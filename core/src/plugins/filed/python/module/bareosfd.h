@@ -213,7 +213,7 @@ typedef struct {
   bool no_read;        /* During the save, the file should not be saved */
   bool portable;       /* set if data format is portable */
   bool accurate_found; /* Found in accurate list (valid after CheckChanges()) */
-  char* cmd;           /* Command */
+  PyObject* cmd;       /* Command */
   time_t save_time;    /* Start of incremental time */
   uint32_t delta_seq;  /* Delta sequence number */
   PyObject* object_name; /* Object name to create */
@@ -249,7 +249,7 @@ static PyMemberDef PySavePacket_members[] = {
      (char*)"Portable"},
     {(char*)"accurate_found", T_BOOL, offsetof(PySavePacket, accurate_found), 0,
      (char*)"Accurate Found"},
-    {(char*)"cmd", T_STRING, offsetof(PySavePacket, cmd), 0, (char*)"Command"},
+    {(char*)"cmd", T_OBJECT, offsetof(PySavePacket, cmd), 0, (char*)"Command"},
     {(char*)"save_time", T_UINT, offsetof(PySavePacket, save_time), 0,
      (char*)"Save Time"},
     {(char*)"delta_seq", T_UINT, offsetof(PySavePacket, delta_seq), 0,
