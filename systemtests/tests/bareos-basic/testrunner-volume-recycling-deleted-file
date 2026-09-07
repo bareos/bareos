@@ -125,7 +125,7 @@ expect_grep "Recycled volume \"${volume_name}\"" \
   "${second_backup_log}" \
   "Recycled volume was not reused."
 
-expect_grep "Recreating file" \
+expect_grep "Missing volume file.*creating a new file" \
   "${second_backup_joblog}" \
   "Missing joblog message for recreated file."
 
