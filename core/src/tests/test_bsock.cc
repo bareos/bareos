@@ -77,19 +77,21 @@ static std::unique_ptr<console::DirectorResource> cons_dir_config;
 static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
 namespace {
-using EvpPkeyPtr = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
-using EvpPkeyCtxPtr
-    = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
-using X509Ptr = std::unique_ptr<X509, decltype(&X509_free)>;
-using X509NamePtr = std::unique_ptr<X509_NAME, decltype(&X509_NAME_free)>;
-using X509CrlPtr = std::unique_ptr<X509_CRL, decltype(&X509_CRL_free)>;
-using X509RevokedPtr
-    = std::unique_ptr<X509_REVOKED, decltype(&X509_REVOKED_free)>;
-using Asn1IntegerPtr
-    = std::unique_ptr<ASN1_INTEGER, decltype(&ASN1_INTEGER_free)>;
-using Asn1TimePtr = std::unique_ptr<ASN1_TIME, decltype(&ASN1_TIME_free)>;
-using X509ExtensionPtr
-    = std::unique_ptr<X509_EXTENSION, decltype(&X509_EXTENSION_free)>;
+
+#define UNIQUE_PTR(Type, Free) \
+  std::unique_ptr<Type, decltype([](Type* val) { Free(val); })>
+
+using EvpPkeyPtr = UNIQUE_PTR(EVP_PKEY, EVP_PKEY_free);
+using X509Ptr = UNIQUE_PTR(X509, X509_free);
+using EvpPkeyCtxPtr = UNIQUE_PTR(EVP_PKEY_CTX, EVP_PKEY_CTX_free);
+using X509NamePtr = UNIQUE_PTR(X509_NAME, X509_NAME_free);
+using X509CrlPtr = UNIQUE_PTR(X509_CRL, X509_CRL_free);
+using X509RevokedPtr = UNIQUE_PTR(X509_REVOKED, X509_REVOKED_free);
+using Asn1IntegerPtr = UNIQUE_PTR(ASN1_INTEGER, ASN1_INTEGER_free);
+using Asn1TimePtr = UNIQUE_PTR(ASN1_TIME, ASN1_TIME_free);
+using X509ExtensionPtr = UNIQUE_PTR(X509_EXTENSION, X509_EXTENSION_free);
+
+#undef UNIQUE_PTR
 
 struct GeneratedTlsArtifacts {
   std::filesystem::path directory;
@@ -191,26 +193,25 @@ bool WriteCrlPem(const std::filesystem::path& path,
 
 EvpPkeyPtr GenerateRsaKey(std::string* error)
 {
-  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr),
-                    EVP_PKEY_CTX_free);
+  EvpPkeyCtxPtr ctx{EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr)};
   if (!ctx) {
     *error = "Could not create key generation context: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
   if (EVP_PKEY_keygen_init(ctx.get()) <= 0
       || EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), 2048) <= 0) {
     *error = "Could not initialize RSA key generation: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
   EVP_PKEY* raw_key = nullptr;
   if (EVP_PKEY_keygen(ctx.get(), &raw_key) <= 0) {
     *error = "Could not generate RSA key: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
-  return EvpPkeyPtr(raw_key, EVP_PKEY_free);
+  return EvpPkeyPtr{raw_key};
 }
 
 bool AddExtension(X509* cert,
@@ -224,9 +225,8 @@ bool AddExtension(X509* cert,
   X509V3_set_ctx(&ctx, issuer_cert ? issuer_cert : cert, cert, nullptr, nullptr,
                  0);
 
-  X509ExtensionPtr extension(
-      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value)),
-      X509_EXTENSION_free);
+  X509ExtensionPtr extension{
+      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value))};
   if (!extension) {
     *error = "Could not create X509 extension: " + GetOpenSslError();
     return false;
@@ -250,10 +250,10 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                             const char* extended_key_usage,
                             std::string* error)
 {
-  X509Ptr cert(X509_new(), X509_free);
+  X509Ptr cert{X509_new()};
   if (!cert) {
     *error = "Could not create X509 certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   if (X509_set_version(cert.get(), 2) != 1
@@ -264,10 +264,10 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
              == nullptr
       || X509_set_pubkey(cert.get(), subject_key) != 1) {
     *error = "Could not initialize X509 certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
-  X509NamePtr subject(X509_NAME_new(), X509_NAME_free);
+  X509NamePtr subject{X509_NAME_new()};
   if (!subject
       || X509_NAME_add_entry_by_txt(
              subject.get(), "CN", MBSTRING_ASC,
@@ -276,14 +276,14 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
              != 1
       || X509_set_subject_name(cert.get(), subject.get()) != 1) {
     *error = "Could not set certificate subject: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   auto* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
                                   : X509_get_subject_name(cert.get());
   if (!issuer_name || X509_set_issuer_name(cert.get(), issuer_name) != 1) {
     *error = "Could not set certificate issuer: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   if (is_ca) {
@@ -291,7 +291,7 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                       "critical,CA:TRUE", error)
         || !AddExtension(cert.get(), issuer_cert, NID_key_usage,
                          "critical,keyCertSign,cRLSign", error)) {
-      return {nullptr, X509_free};
+      return nullptr;
     }
   } else {
     if (!AddExtension(cert.get(), issuer_cert, NID_basic_constraints,
@@ -300,14 +300,14 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                          "critical,digitalSignature,keyEncipherment", error)
         || !AddExtension(cert.get(), issuer_cert, NID_ext_key_usage,
                          extended_key_usage, error)) {
-      return {nullptr, X509_free};
+      return nullptr;
     }
   }
 
   if (X509_sign(cert.get(), issuer_key ? issuer_key : subject_key, EVP_sha256())
       <= 0) {
     *error = "Could not sign certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   return cert;
@@ -318,18 +318,18 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
                        long revoked_serial,
                        std::string* error)
 {
-  X509CrlPtr crl(X509_CRL_new(), X509_CRL_free);
+  X509CrlPtr crl{X509_CRL_new()};
   if (!crl) {
     *error = "Could not create X509 CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
-  Asn1TimePtr last_update(ASN1_TIME_new(), ASN1_TIME_free);
-  Asn1TimePtr next_update(ASN1_TIME_new(), ASN1_TIME_free);
-  Asn1TimePtr revocation_date(ASN1_TIME_new(), ASN1_TIME_free);
+  Asn1TimePtr last_update{ASN1_TIME_new()};
+  Asn1TimePtr next_update{ASN1_TIME_new()};
+  Asn1TimePtr revocation_date{ASN1_TIME_new()};
   if (!last_update || !next_update || !revocation_date) {
     *error = "Could not allocate ASN1_TIME objects";
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   if (X509_CRL_set_version(crl.get(), 1) != 1
@@ -341,14 +341,14 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
       || X509_CRL_set1_lastUpdate(crl.get(), last_update.get()) != 1
       || X509_CRL_set1_nextUpdate(crl.get(), next_update.get()) != 1) {
     *error = "Could not initialize CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
-  X509RevokedPtr revoked(X509_REVOKED_new(), X509_REVOKED_free);
-  Asn1IntegerPtr serial_number(ASN1_INTEGER_new(), ASN1_INTEGER_free);
+  X509RevokedPtr revoked{X509_REVOKED_new()};
+  Asn1IntegerPtr serial_number{ASN1_INTEGER_new()};
   if (!revoked || !serial_number) {
     *error = "Could not allocate revoked certificate entry";
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   if (ASN1_INTEGER_set(serial_number.get(), revoked_serial) != 1
@@ -357,14 +357,16 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
              != 1
       || X509_CRL_add0_revoked(crl.get(), revoked.get()) != 1) {
     *error = "Could not add revoked certificate to CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
+
+  // X509_CRL_add0_revoked() takes ownership of revoked on succes
   revoked.release();
 
   if (X509_CRL_sort(crl.get()) != 1
       || X509_CRL_sign(crl.get(), ca_key, EVP_sha256()) <= 0) {
     *error = "Could not sign CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   return crl;
