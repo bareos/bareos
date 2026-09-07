@@ -901,8 +901,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
     return false;
   }
 
-  /* auto: X509_get_subject_name() returns a non-const pointer on
-   * OpenSSL < 4.0 and a const pointer on OpenSSL >= 4.0 */
   auto* subject = X509_get_subject_name(cert);
   if (subject != NULL) {
     const int common_name_index
@@ -965,8 +963,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
     for (i = 0; i < extensions; i++) {
       const char* extname;
 
-      /* auto: X509_get_ext() returns a non-const pointer on OpenSSL < 3.0
-       * and a const pointer on OpenSSL >= 4.0 */
       auto* ext = X509_get_ext(cert, i);
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
@@ -1023,8 +1019,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
 
   // Try verifying against the subject name
   if (!auth_success) {
-    /* auto: X509_get_subject_name() returns a non-const pointer on
-     * OpenSSL < 4.0 and a const pointer on OpenSSL >= 4.0 */
     auto* subject = X509_get_subject_name(cert);
     if (subject != NULL) {
       // Loop through all CNs

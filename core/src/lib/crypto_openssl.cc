@@ -257,8 +257,6 @@ static ASN1_OCTET_STRING* openssl_cert_keyid(X509* cert)
   }
 
   /* Grab the extension */
-  /* auto: X509_get_ext() returns a non-const pointer on OpenSSL < 3.0
-   * and a const pointer on OpenSSL >= 4.0 */
   auto* ext = X509_get_ext(cert, i);
 
   /* Get x509 extension method structure */
