@@ -10,10 +10,11 @@ $bareos-blue-dark: #005a96;
   .q-card__section.panel-header {
     background-color: $bareos-blue;
     color: white;
-    padding: 10px 16px;
-    font-size: 0.9rem;
+    padding: 6px 12px;
+    font-size: 0.85rem;
     font-weight: 600;
     border-radius: 0;
+    min-height: 32px;
 
     .q-field {
       color: rgba(255, 255, 255, 0.95);
