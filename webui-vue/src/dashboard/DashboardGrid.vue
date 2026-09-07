@@ -177,6 +177,11 @@ let _analyticsRequestsInFlight = 0
 // Pool data changes infrequently — only re-fetch every POOL_REFRESH_EVERY
 // normal refresh cycles (≈ every 10 minutes at the default 60 s interval).
 const POOL_REFRESH_EVERY = 10
+// Analytics data (job/byte/file totals across all jobs) also changes slowly
+// compared to the live running-jobs/status data on the Operations dashboard,
+// and re-querying the full job history on every refresh tick is unnecessarily
+// expensive — throttle it to every ANALYTICS_REFRESH_EVERY cycles instead.
+const ANALYTICS_REFRESH_EVERY = 6
 let _refreshCount = 0
 
 const aggregate = computed(() => aggregateDirectorDashboardSnapshots(snapshots.value))
@@ -205,7 +210,7 @@ async function fetchAnalyticsData(credentials, requestId) {
   }
 }
 
-async function fetchData({ forcePools = false } = {}) {
+async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
   const requestId = ++_latestFetchRequestId
   const credentials = auth.getCredentials()
   if (!credentials || props.activeDirectors.length === 0) {
@@ -220,6 +225,7 @@ async function fetchData({ forcePools = false } = {}) {
 
   _refreshCount += 1
   const includePools = forcePools || _refreshCount % POOL_REFRESH_EVERY === 1
+  const includeAnalytics = forceAnalytics || _refreshCount % ANALYTICS_REFRESH_EVERY === 1
 
   _dataRequestsInFlight += 1
   loading.value = true
@@ -234,7 +240,7 @@ async function fetchData({ forcePools = false } = {}) {
           fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
         )
       ),
-      fetchAnalyticsData(credentials, requestId),
+      includeAnalytics ? fetchAnalyticsData(credentials, requestId) : Promise.resolve(),
     ])
     const fresh = results
       .filter(r => r.status === 'fulfilled')
@@ -270,8 +276,8 @@ async function fetchData({ forcePools = false } = {}) {
 
 function refresh() { fetchData() }
 
-watch(() => props.activeDirectors.join('\0'), () => fetchData({ forcePools: true }), { immediate: true })
-watch(hasAnalyticsWidgets, () => fetchData({ forcePools: true }))
+watch(() => props.activeDirectors.join('\0'), () => fetchData({ forcePools: true, forceAnalytics: true }), { immediate: true })
+watch(hasAnalyticsWidgets, () => fetchData({ forcePools: true, forceAnalytics: true }))
 
 provide(DASHBOARD_CONTEXT_KEY, {
   aggregate,
