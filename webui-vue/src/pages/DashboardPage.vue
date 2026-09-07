@@ -19,15 +19,15 @@
   02110-1301, USA.
 -->
 <template>
-  <q-page class="q-pa-md">
+  <q-page class="q-px-md q-pt-xs q-pb-md">
 
     <!-- ── Top toolbar ───────────────────────────────────────────────────── -->
-    <div class="row items-center q-mb-sm q-gutter-sm no-wrap">
+    <div class="row items-center q-mb-xs q-gutter-sm no-wrap">
 
       <!-- Dashboard tabs -->
       <q-tabs
         v-model="activeDashboardId"
-        dense no-caps
+        dense no-caps align="left"
         class="col"
         style="min-width:0"
         @update:model-value="dashStore.setActiveDashboard($event)"
@@ -62,20 +62,20 @@
         <q-btn
           flat dense
           icon="add"
-          size="sm"
+          size="xs"
           :title="t('Add dashboard')"
           @click="addDashboard"
         />
 
         <template v-if="editMode">
           <q-btn
-            flat dense icon="file_download" size="sm"
+            flat dense icon="file_download" size="xs"
             class="q-ml-xs"
             :title="t('Backup dashboards and settings')"
             @click="backupDashboards"
           />
           <q-btn
-            flat dense icon="file_upload" size="sm"
+            flat dense icon="file_upload" size="xs"
             :title="t('Restore dashboards and settings')"
             @click="triggerRestoreFilePicker"
           />
@@ -84,7 +84,7 @@
             flat dense
             icon="delete_forever"
             color="negative"
-            size="sm"
+            size="xs"
             :title="t('Reset all dashboards')"
             @click="resetAllDashboards"
           />
@@ -97,16 +97,16 @@
         <span class="text-caption text-grey-6 panel-refresh-countdown">
           <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
         </span>
-        <q-btn flat round dense icon="refresh" size="sm" :loading="gridRef?.loading"
+        <q-btn flat round dense icon="refresh" size="xs" :loading="gridRef?.loading"
                :title="t('Refresh')" @click="manualRefresh" />
 
         <template v-if="editMode">
-          <q-btn flat round dense icon="add_circle_outline" color="primary" size="sm"
+          <q-btn flat round dense icon="add_circle_outline" color="primary" size="xs"
                  :title="t('Add widget')" @click="showPicker = true" />
-          <q-btn color="primary" dense no-caps size="sm" :label="t('Done')"
+          <q-btn color="primary" dense no-caps size="xs" :label="t('Done')"
                  @click="editMode = false" />
         </template>
-        <q-btn v-else flat round dense icon="edit" size="sm"
+        <q-btn v-else flat round dense icon="edit" size="xs"
                :title="t('Edit layout')" @click="editMode = true" />
       </div>
     </div>
