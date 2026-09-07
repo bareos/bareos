@@ -143,9 +143,19 @@ class TlsOpenSsl : public Tls {
 constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
 
-std::optional<std::string> GetCommonName(const X509_NAME* subject, int index)
+struct CommonName {
+  int index;
+  std::string value;
+};
+
+std::optional<CommonName> GetCommonName(const X509_NAME* subject,
+                                        int previous_index)
 {
   if (!subject) { return std::nullopt; }
+
+  const int index
+      = X509_NAME_get_index_by_NID(subject, NID_commonName, previous_index);
+  if (index == -1) { return std::nullopt; }
 
   const X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, index);
   if (!entry) { return std::nullopt; }
@@ -162,9 +172,9 @@ std::optional<std::string> GetCommonName(const X509_NAME* subject, int index)
   Utf8DataPtr utf8_data(raw_utf8_data);
   if (!utf8_data || length <= 0) { return std::nullopt; }
 
-  std::string result{reinterpret_cast<const char*>(utf8_data.get()),
-                     static_cast<size_t>(length)};
-  return result;
+  return CommonName{index,
+                    std::string{reinterpret_cast<const char*>(utf8_data.get()),
+                                static_cast<size_t>(length)}};
 }
 
 // report any errors that occurred
@@ -915,17 +925,12 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
 
   auto* subject = X509_get_subject_name(cert);
   if (subject != NULL) {
-    const int common_name_index
-        = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
-    if (common_name_index != -1) {
-      const std::optional<std::string> common_name
-          = GetCommonName(subject, common_name_index);
-      if (common_name) {
-        for (const std::string& cn : verify_list) {
-          Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n",
-                common_name->c_str(), cn.c_str());
-          if (common_name->compare(cn) == 0) { auth_success = true; }
-        }
+    const std::optional<CommonName> common_name = GetCommonName(subject, -1);
+    if (common_name) {
+      for (const std::string& cn : verify_list) {
+        Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n",
+              common_name->value.c_str(), cn.c_str());
+        if (common_name->value.compare(cn) == 0) { auth_success = true; }
       }
     }
   }
@@ -1015,12 +1020,12 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
     if (subject != NULL) {
       // Loop through all CNs
       for (;;) {
-        cnLastPos
-            = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
-        if (cnLastPos == -1) { break; }
-        const std::optional<std::string> common_name
+        const std::optional<CommonName> common_name
             = GetCommonName(subject, cnLastPos);
-        if (common_name && Bstrcasecmp(common_name->c_str(), host)) {
+        if (!common_name) { break; }
+
+        cnLastPos = common_name->index;
+        if (Bstrcasecmp(common_name->value.c_str(), host)) {
           auth_success = true;
           break;
         }
