@@ -5,26 +5,27 @@
       {{ error }}
     </q-banner>
 
-    <div v-if="section === 'summary'" class="row q-col-gutter-md">
-      <div class="col-6 col-sm-3 col-md-2" v-for="s in overallStats" :key="s.label">
-        <q-card flat bordered class="bareos-panel text-center">
-          <q-card-section class="q-py-sm">
-            <div class="text-caption text-grey-6">{{ s.label }}</div>
-            <router-link
-              v-if="s.jobsQuery !== null"
-              :to="{ name: 'jobs', query: s.jobsQuery }"
-              style="color: inherit; text-decoration: none"
-            >
-              <div class="text-h6 text-weight-bold" :class="'text-' + s.color">{{ s.value }}</div>
-            </router-link>
-            <div v-else class="text-h6 text-weight-bold" :class="'text-' + s.color">{{ s.value }}</div>
-          </q-card-section>
-        </q-card>
+    <div v-if="section === 'summary'" class="row q-gutter-md items-stretch wrap analytics-summary-stats">
+      <div v-for="s in overallStats" :key="s.label" class="col-auto">
+        <div class="text-caption text-grey-6" style="white-space:nowrap">{{ s.label }}</div>
+        <router-link
+          v-if="s.jobsQuery !== null"
+          :to="{ name: 'jobs', query: s.jobsQuery }"
+          style="color: inherit; text-decoration: none"
+        >
+          <div class="text-h6 text-weight-bold" :class="'text-' + s.color" style="line-height:1.2">{{ s.value }}</div>
+        </router-link>
+        <div v-else class="text-h6 text-weight-bold" :class="'text-' + s.color" style="line-height:1.2">{{ s.value }}</div>
       </div>
     </div>
 
     <div v-if="section === 'treemap'" class="analytics-fill">
       <div ref="treemapEl" style="position:relative;width:100%;height:100%;overflow:hidden">
+        <q-btn-toggle
+          v-model="treemapMode" flat no-caps dense size="sm"
+          toggle-color="primary" class="analytics-treemap-toggle"
+          :options="[{ label: t('Bytes'), value: 'bytes' }, { label: t('Files'), value: 'files' }]"
+        />
         <div v-if="loading && !treemapTiles.length" class="flex flex-center" style="height:100%">
           <q-spinner size="40px" color="primary" />
         </div>
@@ -55,73 +56,58 @@
       </div>
     </div>
 
-    <q-table
-      v-if="section === 'status'"
-      :rows="statusRows"
-      :columns="statusCols"
-      row-key="label"
-      dense
-      flat
-      hide-bottom
-      :pagination="{ rowsPerPage: 0 }"
-      :loading="loading"
-    >
-      <template #body-cell-bar="tableProps">
-        <q-td :props="tableProps" style="width:200px">
-          <q-linear-progress :value="tableProps.row.count / maxStatusCount || 0"
-            :color="tableProps.row.color" track-color="grey-2" size="12px" rounded />
-        </q-td>
-      </template>
-      <template #body-cell-label="tableProps">
-        <q-td :props="tableProps">
-          <router-link
-            v-if="tableProps.row.jobsQuery !== null"
-            :to="{ name: 'jobs', query: tableProps.row.jobsQuery }"
-            style="text-decoration: none"
-          >
-            <q-badge :color="tableProps.row.color" :label="tableProps.row.label" />
-          </router-link>
-          <q-badge v-else :color="tableProps.row.color" :label="tableProps.row.label" />
-        </q-td>
-      </template>
-    </q-table>
-
-    <div v-if="section === 'client-bytes'" class="q-pa-sm q-gutter-xs analytics-fill" style="position:relative">
-            <div v-if="loading && !clientBytes.length" class="text-center q-py-md">
-              <q-spinner size="32px" color="primary" />
-            </div>
-            <template v-else>
-              <div v-for="c in clientBytes" :key="c.name" class="q-mb-xs">
-                <div class="row items-center q-mb-xs" style="gap:4px">
-                  <router-link
-                    :to="{ name: 'jobs', query: c.jobsQuery }"
-                    class="text-caption ellipsis"
-                    :style="{ width: '110px', minWidth: 0, textDecoration: 'none', color: c.color }"
-                    :title="c.name"
-                  >{{ c.name }}</router-link>
-                  <q-linear-progress :value="bytesGauge(c.bytes)" track-color="grey-3"
-                                     :style="{ flex: 1, color: c.color }" size="10px" rounded />
-                  <span
-                    class="text-caption text-grey-6 analytics-client-bytes__value"
-                  >{{ fmtBytes(c.bytes) }}</span>
-                </div>
-              </div>
-              <div v-if="!clientBytes.length" class="text-grey text-caption text-center q-py-md">{{ t('No data') }}</div>
-            </template>
-            <div v-if="loading && clientBytes.length" class="analytics-refresh-indicator">
-              <q-spinner size="14px" color="primary" />
-            </div>
+    <div v-if="section === 'status'" class="column items-center justify-center analytics-fill" style="padding:8px; box-sizing:border-box">
+      <div v-if="!statusChartData.labels.length" class="text-grey text-caption text-center">
+        {{ t('No data') }}
+      </div>
+      <div v-else style="position:relative; width:100%; flex:1; min-height:0">
+        <Doughnut :data="statusChartData" :options="statusChartOptions" />
+      </div>
     </div>
 
-    <div v-if="section === 'level-distribution'" class="q-pa-sm analytics-fill">
-            <div v-for="l in levelDist" :key="l.label" class="q-mb-sm">
-              <div class="row items-center q-mb-xs" style="gap:6px">
-                <span class="text-caption" style="width:90px">{{ l.label }}</span>
-                <q-linear-progress :value="l.count / totalJobs || 0"
-                  :color="l.color" track-color="grey-3" size="10px" rounded style="flex:1" />
-                <span class="text-caption text-grey-6" style="width:30px;text-align:right">{{ l.count }}</span>
+    <div v-if="section === 'client-bytes'" class="analytics-fill">
+      <div ref="clientTreemapEl" style="position:relative;width:100%;height:100%;overflow:hidden">
+        <q-btn-toggle
+          v-model="clientTreemapMode" flat no-caps dense size="sm"
+          toggle-color="primary" class="analytics-treemap-toggle"
+          :options="[{ label: t('Bytes'), value: 'bytes' }, { label: t('Files'), value: 'files' }]"
+        />
+        <div v-if="loading && !clientTreemapTiles.length" class="flex flex-center" style="height:100%">
+          <q-spinner size="40px" color="primary" />
+        </div>
+        <template v-else>
+          <router-link
+            v-for="tile in clientTreemapTiles" :key="tile.name"
+            :to="{ name: 'jobs', query: tile.jobsQuery }"
+            :style="tile.style"
+            style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
+            :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
+            <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
+              <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ tile.name }}
+              </div>
+              <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
+                {{ clientTreemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
               </div>
             </div>
+          </router-link>
+          <div v-if="!clientTreemapTiles.length" class="flex flex-center text-grey" style="height:100%">
+            <span>{{ t('No data') }}</span>
+          </div>
+        </template>
+        <div v-if="loading && clientTreemapTiles.length" class="analytics-refresh-indicator">
+          <q-spinner size="14px" color="primary" />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="section === 'level-distribution'" class="column items-center justify-center analytics-fill" style="padding:8px; box-sizing:border-box">
+      <div v-if="!levelChartData.labels.length" class="text-grey text-caption text-center">
+        {{ t('No data') }}
+      </div>
+      <div v-else style="position:relative; width:100%; flex:1; min-height:0">
+        <Doughnut :data="levelChartData" :options="levelChartOptions" />
+      </div>
     </div>
   </div>
 </template>
@@ -129,6 +115,15 @@
 <script setup>
 import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { Doughnut } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
@@ -143,6 +138,10 @@ import {
 import { formatNumber } from '../utils/locales.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboard/dashboardContext.js'
+import { getContrastTextColor } from '../dashboard/piePalette.js'
+import { CenterTextPlugin } from '../dashboard/centerTextPlugin.js'
+
+ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin, ChartDataLabels)
 
 const props = defineProps({
   widgetProps: { type: Object, default: () => ({}) },
@@ -152,6 +151,7 @@ const director = useDirectorStore()
 const settings = useSettingsStore()
 const fmtBytes = formatBytes
 const { t } = useI18n()
+const router = useRouter()
 const treemapMode = ref('bytes')
 const treemapEl = ref(null)
 const treemapW = ref(600)
@@ -231,7 +231,9 @@ const totalJobs = computed(() => jobs.value.length || 1)
 
 const overallStats = computed(() => {
   const j = jobs.value
-  return [
+  const clientCount = dashboardContext?.aggregate?.value?.clientCount
+  const storageCount = dashboardContext?.aggregate?.value?.storageCount
+  const stats = [
     { label: t('Total Jobs'), value: j.length, color: 'primary', jobsQuery: {} },
     {
       label: t('Successful'),
@@ -264,6 +266,13 @@ const overallStats = computed(() => {
       jobsQuery: null,
     },
   ]
+  if (clientCount !== undefined) {
+    stats.push({ label: t('Clients'), value: clientCount, color: 'purple-7', jobsQuery: null })
+  }
+  if (storageCount !== undefined) {
+    stats.push({ label: t('Storages'), value: storageCount, color: 'indigo-7', jobsQuery: null })
+  }
+  return stats
 })
 
 const statusRows = computed(() => {
@@ -272,42 +281,95 @@ const statusRows = computed(() => {
   return [
     {
       label: t('Successful'),
-      color: 'positive',
+      color: '#2eb87a',
       count: count('T'),
       jobsQuery: withJobsStatusFilterQuery({}, 'T'),
     },
     {
       label: t('Warning'),
-      color: 'warning',
+      color: '#b8b82e',
       count: count('W'),
       jobsQuery: withJobsStatusFilterQuery({}, 'W'),
     },
     {
       label: t('Failed'),
-      color: 'negative',
+      color: '#b82e2e',
       count: count('f') + count('E'),
       jobsQuery: withJobsStatusFilterQuery({}, ['f', 'E']),
     },
     {
       label: t('Canceled'),
-      color: 'grey',
+      color: '#888888',
       count: count('A'),
       jobsQuery: withJobsStatusFilterQuery({}, 'A'),
     },
     {
       label: t('Running'),
-      color: 'info',
+      color: '#0075be',
       count: count('R'),
       jobsQuery: withJobsStatusFilterQuery({}, 'R'),
     },
   ]
 })
-const maxStatusCount = computed(() => Math.max(1, ...statusRows.value.map(r => r.count)))
-const statusCols = [
-  { name: 'label', label: 'Status', field: 'label', align: 'left', style: 'width:100px', sortable: true },
-  { name: 'bar', label: '', field: 'bar', align: 'left' },
-  { name: 'count', label: '#', field: 'count', align: 'right', style: 'width:50px', sortable: true },
-].map(col => ({ ...col, label: col.label ? t(col.label) : col.label }))
+
+const statusRowsNonEmpty = computed(() => statusRows.value.filter(r => r.count > 0))
+const totalStatusJobs = computed(() => statusRows.value.reduce((s, r) => s + r.count, 0))
+
+const statusChartData = computed(() => ({
+  labels: statusRowsNonEmpty.value.map(r => r.label),
+  datasets: [{
+    data: statusRowsNonEmpty.value.map(r => r.count),
+    backgroundColor: statusRowsNonEmpty.value.map(r => r.color),
+    borderWidth: 1,
+  }],
+}))
+
+function handleStatusNavigation(index) {
+  const row = statusRowsNonEmpty.value[index]
+  if (!row) return
+  void router.push({ name: 'jobs', query: row.jobsQuery })
+}
+
+const statusChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '65%',
+  onClick(_event, elements) {
+    handleStatusNavigation(elements?.[0]?.index)
+  },
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { font: { size: 11 }, boxWidth: 12 },
+      onClick(_event, legendItem) {
+        handleStatusNavigation(legendItem.index)
+      },
+    },
+    tooltip: {
+      callbacks: {
+        label(context) {
+          return ` ${context.label}: ${context.raw}`
+        },
+      },
+    },
+    centerText: {
+      lines: [String(totalStatusJobs.value), t('Total')],
+      fonts: ['600 15px sans-serif', '11px sans-serif'],
+      colors: ['#333', '#888'],
+    },
+    datalabels: {
+      color: (context) => getContrastTextColor(
+        statusRowsNonEmpty.value[context.dataIndex]?.color ?? '#0075be'
+      ),
+      font: { weight: 'bold', size: 11 },
+      formatter: (value, context) => {
+        const total = context.dataset.data.reduce((a, b) => a + b, 0)
+        const percent = total > 0 ? (value / total) * 100 : 0
+        return percent >= 5 ? `${percent.toFixed(0)}%` : ''
+      },
+    },
+  },
+}))
 
 function prefixedLabel(directorName, baseName) {
   return isCommonAnalytics.value ? `${directorName} / ${baseName}` : baseName
@@ -326,10 +388,12 @@ const clientBytes = computed(() => {
       map[label] = {
         name: label,
         bytes: 0,
+        files: 0,
         jobsQuery: withJobsSearchQuery({}, j.client),
       }
     }
     map[label].bytes += j.bytes
+    map[label].files += j.files
   }
   return Object.values(map)
     .sort((a, b) => b.bytes - a.bytes)
@@ -337,18 +401,91 @@ const clientBytes = computed(() => {
     .map((c, i) => ({ ...c, color: PALETTE[i % PALETTE.length] }))
 })
 
-const maxBytes = computed(() => Math.max(1, ...clientBytes.value.map(c => c.bytes)))
-function bytesGauge(val) { return val / maxBytes.value }
+const clientTreemapMode = ref('bytes')
+const clientTreemapEl = ref(null)
+const clientTreemapW = ref(600)
+const clientTreemapH = ref(280)
+
+const clientTreemapTiles = computed(() => {
+  const W = clientTreemapW.value
+  const H = clientTreemapH.value
+  if (!W || !H) return []
+  const groups = clientBytes.value.filter(c => c[clientTreemapMode.value] > 0)
+  if (!groups.length) return []
+  const items = groups.map(g => ({ ...g, value: g[clientTreemapMode.value] }))
+  const tiles = squarify(items, 0, 0, W, H)
+  return tiles.map(t => ({
+    name: t.name,
+    bytes: t.bytes,
+    files: t.files,
+    h: t.h,
+    jobsQuery: t.jobsQuery,
+    style: {
+      left: `${t.x}px`,
+      top: `${t.y}px`,
+      width: `${t.w}px`,
+      height: `${t.h}px`,
+      backgroundColor: t.color,
+    },
+  }))
+})
 
 const levelDist = computed(() => {
   const j = jobs.value
   const count = code => j.filter(x => x.level === code).length
   return [
-    { label: t('Full'), color: 'primary', count: count('F') },
-    { label: t('Incremental'), color: 'teal', count: count('I') },
-    { label: t('Differential'), color: 'purple', count: count('D') },
+    { label: t('Full'), color: '#0075be', count: count('F') },
+    { label: t('Incremental'), color: '#2eb8b8', count: count('I') },
+    { label: t('Differential'), color: '#6c2eb8', count: count('D') },
   ]
 })
+
+const levelDistNonEmpty = computed(() => levelDist.value.filter(l => l.count > 0))
+const totalLevelJobs = computed(() => levelDist.value.reduce((s, l) => s + l.count, 0))
+
+const levelChartData = computed(() => ({
+  labels: levelDistNonEmpty.value.map(l => l.label),
+  datasets: [{
+    data: levelDistNonEmpty.value.map(l => l.count),
+    backgroundColor: levelDistNonEmpty.value.map(l => l.color),
+    borderWidth: 1,
+  }],
+}))
+
+const levelChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: '65%',
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { font: { size: 11 }, boxWidth: 12 },
+    },
+    tooltip: {
+      callbacks: {
+        label(context) {
+          return ` ${context.label}: ${context.raw}`
+        },
+      },
+    },
+    centerText: {
+      lines: [String(totalLevelJobs.value), t('Total')],
+      fonts: ['600 15px sans-serif', '11px sans-serif'],
+      colors: ['#333', '#888'],
+    },
+    datalabels: {
+      color: (context) => getContrastTextColor(
+        levelDistNonEmpty.value[context.dataIndex]?.color ?? '#0075be'
+      ),
+      font: { weight: 'bold', size: 11 },
+      formatter: (value, context) => {
+        const total = context.dataset.data.reduce((a, b) => a + b, 0)
+        const percent = total > 0 ? (value / total) * 100 : 0
+        return percent >= 5 ? `${percent.toFixed(0)}%` : ''
+      },
+    },
+  },
+}))
 
 const jobGroups = computed(() => {
   const map = {}
@@ -445,15 +582,27 @@ onMounted(() => {
   // The ResizeObserver must run in both standalone and dashboard-widget
   // mode: it sizes the treemap tiles to the widget's actual rendered
   // dimensions instead of the hardcoded fallback size.
-  if (!treemapEl.value) return
-  const ro = new ResizeObserver(entries => {
-    for (const e of entries) {
-      treemapW.value = e.contentRect.width
-      treemapH.value = e.contentRect.height
-    }
-  })
-  ro.observe(treemapEl.value)
-  onUnmounted(() => ro.disconnect())
+  if (treemapEl.value) {
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) {
+        treemapW.value = e.contentRect.width
+        treemapH.value = e.contentRect.height
+      }
+    })
+    ro.observe(treemapEl.value)
+    onUnmounted(() => ro.disconnect())
+  }
+
+  if (clientTreemapEl.value) {
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) {
+        clientTreemapW.value = e.contentRect.width
+        clientTreemapH.value = e.contentRect.height
+      }
+    })
+    ro.observe(clientTreemapEl.value)
+    onUnmounted(() => ro.disconnect())
+  }
 })
 
 watch(() => directorOptions.value, () => {
@@ -498,10 +647,12 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   padding: 3px;
 }
 
-.analytics-client-bytes__value {
-  width: 60px;
-  flex: 0 0 60px;
-  text-align: right;
-  white-space: nowrap;
+.analytics-treemap-toggle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 4px;
 }
 </style>

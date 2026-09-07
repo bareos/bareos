@@ -109,15 +109,10 @@ const reducedTableRows = computed(() => {
     return []
   }
 
-  const minBytes = Math.max(10 * 1024 * 1024, total * 0.01)
-  const kept = tableRows.value.filter(row => row.bytes >= minBytes)
-  const visible = kept.length >= 3
-    ? kept
-    : tableRows.value
-
-  const limited = visible.slice(0, 15).map(row => ({ ...row }))
-  const hiddenBytes = visible
-    .filter(row => !limited.some(entry => entry.name === row.name))
+  const maxSlices = 5
+  const limited = tableRows.value.slice(0, maxSlices).map(row => ({ ...row }))
+  const hiddenBytes = tableRows.value
+    .slice(maxSlices)
     .reduce((sum, row) => sum + row.bytes, 0)
 
   return hiddenBytes > 0

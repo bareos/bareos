@@ -35,21 +35,47 @@ describe('dashboards store', () => {
   it('seeds a default dashboard on first run', () => {
     const store = useDashboardStore()
     expect(store.dashboards).toHaveLength(2)
-    expect(store.dashboards[0].name).toBe('Overview')
-    expect(store.dashboards[0].widgets.length).toBeGreaterThan(0)
-    expect(store.dashboards[1].name).toBe('Analytics')
+    expect(store.dashboards[0].name).toBe('Operations')
+    expect(store.dashboards[0].widgets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'running-jobs' }),
+      expect.objectContaining({ type: 'running-jobs-status-chart' }),
+      expect.objectContaining({ type: 'running-jobs-treemap' }),
+      expect.objectContaining({ type: 'jobs-past-24h' }),
+      expect.objectContaining({ type: 'jobs-past-24h-chart' }),
+      expect.objectContaining({ type: 'trouble-view' }),
+      expect.objectContaining({ type: 'recent-jobs-table' }),
+    ]))
+    expect(store.dashboards[1].name).toBe('System Overview')
     expect(store.dashboards[1].widgets).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'analytics-summary' }),
       expect.objectContaining({ type: 'analytics-treemap' }),
       expect.objectContaining({ type: 'analytics-status-breakdown' }),
       expect.objectContaining({ type: 'analytics-client-bytes' }),
       expect.objectContaining({ type: 'analytics-level-distribution' }),
+      expect.objectContaining({ type: 'pool-bytes-chart' }),
+      expect.objectContaining({ type: 'pool-volumes-chart' }),
+      expect.objectContaining({ type: 'database-status' }),
     ]))
   })
 
   it('sets the active dashboard to the first dashboard by default', () => {
     const store = useDashboardStore()
     expect(store.activeDashboardId).toBe(store.dashboards[0].id)
+  })
+
+  it('does not duplicate built-in dashboards saved with their former names', () => {
+    localStorage.setItem('bareos_dashboards', JSON.stringify({
+      activeDashboardId: 'default',
+      dashboards: [
+        { id: 'default', name: 'Overview', widgets: [] },
+        { id: 'analytics', name: 'Analytics', widgets: [] },
+      ],
+    }))
+
+    const store = useDashboardStore()
+
+    expect(store.dashboards).toHaveLength(2)
+    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics'])
   })
 
   // ── persistence ────────────────────────────────────────────────────────────
@@ -95,8 +121,8 @@ describe('dashboards store', () => {
     expect(store.dashboards[0].widgets).toHaveLength(1)
     expect(store.dashboards[0].widgets[0].type).toBe('job-totals')
     expect(store.dashboards).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'Overview' }),
-      expect.objectContaining({ name: 'Analytics' }),
+      expect.objectContaining({ name: 'Operations' }),
+      expect.objectContaining({ name: 'System Overview' }),
     ]))
   })
 
@@ -105,8 +131,8 @@ describe('dashboards store', () => {
     setActivePinia(createPinia())
     const store = useDashboardStore()
     expect(store.dashboards).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'Overview' }),
-      expect.objectContaining({ name: 'Analytics' }),
+      expect.objectContaining({ name: 'Operations' }),
+      expect.objectContaining({ name: 'System Overview' }),
     ]))
   })
 
@@ -114,7 +140,7 @@ describe('dashboards store', () => {
     localStorage.setItem('bareos_dashboards', JSON.stringify({ dashboards: [], activeDashboardId: null }))
     setActivePinia(createPinia())
     const store = useDashboardStore()
-    expect(store.dashboards[0].name).toBe('Overview')
+    expect(store.dashboards[0].name).toBe('Operations')
   })
 
   it('discards widgets with missing id or type when restoring', () => {
@@ -179,14 +205,14 @@ describe('dashboards store', () => {
     const store = useDashboardStore()
     store.addDashboard('Custom')
     store.addWidget(store.dashboards[0].id, { type: 'analytics-summary', title: 'x', props: {}, layout: {} })
-    const defaultOverviewWidgetCount = store.dashboards[0].widgets.length - 1
+    const defaultOperationsWidgetCount = store.dashboards[0].widgets.length - 1
 
     store.resetAllDashboards()
 
     expect(store.dashboards).toHaveLength(2)
-    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics'])
+    expect(store.dashboards.map(d => d.name)).toEqual(['Operations', 'System Overview'])
     expect(store.activeDashboardId).toBe(store.dashboards[0].id)
-    expect(store.dashboards[0].widgets).toHaveLength(defaultOverviewWidgetCount)
+    expect(store.dashboards[0].widgets).toHaveLength(defaultOperationsWidgetCount)
   })
 
   it('exportDashboards() returns a snapshot that importDashboards() can restore', () => {
@@ -203,7 +229,7 @@ describe('dashboards store', () => {
 
     store.importDashboards(backup)
     expect(store.dashboards).toHaveLength(3)
-    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics', 'Custom'])
+    expect(store.dashboards.map(d => d.name)).toEqual(['Operations', 'System Overview', 'Custom'])
     expect(store.activeDashboardId).toBe(backup.activeDashboardId)
   })
 
