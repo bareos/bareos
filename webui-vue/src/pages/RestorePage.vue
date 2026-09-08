@@ -24,27 +24,62 @@
                   />
                   <q-select
                     v-model="sourceClientKey"
-                    :options="clientOptions"
+                    use-input
+                    fill-input
+                    hide-selected
+                    input-debounce="0"
+                    :options="filteredClientOptions"
                     :label="t('Backup Client')"
                     outlined dense emit-value map-options
                     :loading="loadingClients"
                     :hint="t('Select a client to browse its backups')"
                     data-testid="restore-source-client"
                     @update:model-value="onClientChange"
+                    @filter="filterClientOptions"
                   />
+                  <div class="row items-start no-wrap" style="column-gap: 8px">
+                    <div class="col">
+                      <q-select
+                        v-model="sourceFilesetFilter"
+                        use-input
+                        fill-input
+                        hide-selected
+                        input-debounce="0"
+                        :options="filteredFilesetOptions"
+                        :label="t('Fileset')"
+                        outlined dense clearable emit-value map-options
+                        :hint="t('Narrow backups to a fileset')"
+                        data-testid="restore-fileset-filter"
+                        @filter="filterFilesetOptions"
+                      />
+                    </div>
+                    <div class="col">
+                      <q-input
+                        v-model="sourceBeforeFilter"
+                        type="date"
+                        outlined dense clearable
+                        :label="t('Before')"
+                        :hint="t('Only show backups up to this date')"
+                        data-testid="restore-before-filter"
+                      />
+                    </div>
+                  </div>
                   <q-select
                     v-model="form.jobid"
-                    :options="backupOptions"
+                    use-input
+                    input-debounce="0"
+                    :options="filteredBackupOptions"
                     option-label="label"
                     option-value="value"
                     :label="t('Backup Job')"
                     outlined dense emit-value map-options
                     :loading="loadingBackups"
-                    :disable="!form.client || loadingBackups"
+                    :disable="loadingBackups"
                     no-error-icon
-                    :hint="t('Select a completed backup job')"
+                    :hint="form.client ? t('Select a completed backup job') : t('Select a completed backup job, or a client above first')"
                     data-testid="restore-backup-job"
-                    @update:model-value="initBrowser"
+                    @update:model-value="onBackupJobSelected"
+                    @filter="filterBackupOptions"
                   >
                     <template #selected-item="scope">
                       <div class="row items-center no-wrap restore-backup-option restore-backup-option--selected">
@@ -120,21 +155,31 @@
               <q-card-section class="q-pt-none q-gutter-sm">
                 <q-select
                   v-model="form.restoreclient"
-                  :options="restoreClientOptions"
+                  use-input
+                  fill-input
+                  hide-selected
+                  input-debounce="0"
+                  :options="filteredRestoreClientOptions"
                   :label="t('Restore to Client')"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
                   :disable="!sourceDirector"
                   data-testid="restore-target-client"
+                  @filter="filterRestoreClientOptions"
                 />
                 <q-select
                   v-model="form.restorejob"
-                  :options="restoreJobOptions"
+                  use-input
+                  fill-input
+                  hide-selected
+                  input-debounce="0"
+                  :options="filteredRestoreJobOptions"
                   :label="t('Restore Job')"
                   outlined dense emit-value map-options
                   :loading="loadingRestoreJobs"
                   :disable="!sourceDirector"
                   data-testid="restore-job"
+                  @filter="filterRestoreJobOptions"
                 />
                 <q-input
                   v-model="form.where"
@@ -577,11 +622,13 @@ import {
   buildRestoreBackupOption,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
+  buildRestoreFilesetOptions,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   buildRestorePluginFilesetMap,
   buildRestorePluginFilesetDetails,
   decorateRestoreBackupsWithPluginJobs,
+  filterRestoreBackupsByCriteria,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getRestoreVersionsLookupJobId,
@@ -596,7 +643,7 @@ import {
   shouldShowRestorePluginOptions,
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, buildListJobsCommand } from '../utils/jobs.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
@@ -674,9 +721,41 @@ const clientOptions = computed(() =>
   }))
 )
 
+const filteredClientOptions = ref([])
+watch(clientOptions, (options) => { filteredClientOptions.value = options }, { immediate: true })
+
+function filterClientOptions(value, update) {
+  update(() => {
+    if (!value) {
+      filteredClientOptions.value = clientOptions.value
+      return
+    }
+    const needle = value.toLowerCase()
+    filteredClientOptions.value = clientOptions.value.filter(option => (
+      option.label.toLowerCase().includes(needle)
+    ))
+  })
+}
+
 const restoreClientOptions = computed(() =>
   restoreClients.value.map(client => ({ label: client.name, value: client.name }))
 )
+
+const filteredRestoreClientOptions = ref([])
+watch(restoreClientOptions, (options) => { filteredRestoreClientOptions.value = options }, { immediate: true })
+
+function filterRestoreClientOptions(value, update) {
+  update(() => {
+    if (!value) {
+      filteredRestoreClientOptions.value = restoreClientOptions.value
+      return
+    }
+    const needle = value.toLowerCase()
+    filteredRestoreClientOptions.value = restoreClientOptions.value.filter(option => (
+      option.label.toLowerCase().includes(needle)
+    ))
+  })
+}
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
@@ -924,6 +1003,22 @@ const restoreJobOptions = computed(() =>
   restoreJobs.value.map(j => ({ label: j.name, value: j.name }))
 )
 
+const filteredRestoreJobOptions = ref([])
+watch(restoreJobOptions, (options) => { filteredRestoreJobOptions.value = options }, { immediate: true })
+
+function filterRestoreJobOptions(value, update) {
+  update(() => {
+    if (!value) {
+      filteredRestoreJobOptions.value = restoreJobOptions.value
+      return
+    }
+    const needle = value.toLowerCase()
+    filteredRestoreJobOptions.value = restoreJobOptions.value.filter(
+      opt => opt.label.toLowerCase().includes(needle)
+    )
+  })
+}
+
 async function loadRestoreJobs() {
   if (!sourceDirector.value) {
     restoreJobs.value = []
@@ -977,13 +1072,64 @@ async function loadRestoreClients() {
 }
 
 // ── Backups for selected client ──────────────────────────────────────────────
-const backups        = ref([])
-const loadingBackups = ref(false)
-const pluginFilesets = ref(new Map())
+const backups           = ref([])
+const allClientBackups  = ref([])
+const loadingBackups    = ref(false)
+const pluginFilesets    = ref(new Map())
+const filesetOptions    = ref([])
+const sourceFilesetFilter = ref('')
+const sourceBeforeFilter  = ref('')
 
-const backupOptions = computed(() =>
-  backups.value.map(backup => buildRestoreBackupOption(backup, { formatBytes }))
-)
+const filteredFilesetOptions = ref([])
+watch(filesetOptions, (options) => { filteredFilesetOptions.value = options }, { immediate: true })
+
+function filterFilesetOptions(value, update) {
+  update(() => {
+    if (!value) {
+      filteredFilesetOptions.value = filesetOptions.value
+      return
+    }
+    const needle = value.toLowerCase()
+    filteredFilesetOptions.value = filesetOptions.value.filter(option => (
+      option.label.toLowerCase().includes(needle)
+    ))
+  })
+}
+
+// The raw backup list to browse: per-client backups when a client is
+// selected, otherwise the client-agnostic "browse all clients" fallback
+// used to let users pick a job before narrowing down the client (Restore
+// workflow improvement: select a job without first selecting a client).
+const activeBackups = computed(() => (
+  form.value.client ? backups.value : allClientBackups.value
+))
+const backupOptions = computed(() => {
+  const beforeFilter = sourceBeforeFilter.value ? `${sourceBeforeFilter.value} 23:59:59` : ''
+  return filterRestoreBackupsByCriteria(activeBackups.value, {
+    filesetFilter: sourceFilesetFilter.value,
+    beforeFilter,
+  }).map(backup => buildRestoreBackupOption(backup, {
+    formatBytes,
+    showClient: !form.value.client,
+  }))
+})
+
+const filteredBackupOptions = ref([])
+watch(backupOptions, (options) => { filteredBackupOptions.value = options }, { immediate: true })
+
+function filterBackupOptions(value, update) {
+  update(() => {
+    if (!value) {
+      filteredBackupOptions.value = backupOptions.value
+      return
+    }
+    const needle = value.toLowerCase()
+    filteredBackupOptions.value = backupOptions.value.filter(option => (
+      (option.label ?? '').toLowerCase().includes(needle)
+      || (option.secondary ?? '').toLowerCase().includes(needle)
+    ))
+  })
+}
 const selectedBackupOption = computed(() => (
   resolveRestoreBackupOption(backupOptions.value, form.value.jobid)
 ))
@@ -1074,6 +1220,7 @@ async function loadBackups(client) {
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)
+    filesetOptions.value = buildRestoreFilesetOptions(filesets?.filesets)
     backups.value = decorateRestoreBackupsWithPluginJobs(
       directorCollection(r?.backups),
       pluginFilesetFlags
@@ -1085,6 +1232,82 @@ async function loadBackups(client) {
   } finally {
     loadingBackups.value = false
   }
+}
+
+// Loads recent completed backup jobs across all clients so the "Backup Job"
+// select can be used without first choosing a "Backup Client" (Restore
+// workflow improvement: select a job, then let the client be derived from
+// it automatically).
+const MAX_ALL_CLIENT_BACKUPS = 300
+
+async function loadAllClientBackups() {
+  loadingBackups.value = true
+  try {
+    await ensureSelectedSourceDirector()
+    const r = await director.call(buildListJobsCommand({
+      limit: MAX_ALL_CLIENT_BACKUPS,
+      statusFilter: 'T,W',
+      typeFilter: 'B',
+      sortColumn: 'starttime',
+      descending: true,
+    }))
+    allClientBackups.value = directorCollection(r?.jobs)
+      .sort((a, b) => Number(b.jobid) - Number(a.jobid))
+  } catch (_) {
+    allClientBackups.value = []
+  } finally {
+    loadingBackups.value = false
+  }
+}
+
+async function loadFilesetOptions() {
+  try {
+    await ensureSelectedSourceDirector()
+    const filesets = await director.call('list filesets')
+    filesetOptions.value = buildRestoreFilesetOptions(filesets?.filesets)
+  } catch (_) {
+    // keep whatever fileset options were already loaded
+  }
+}
+
+// Resolves and selects the source client that produced a backup job picked
+// while browsing across all clients, then loads that client's backups so
+// the rest of the restore flow (destination client/job, BVFS browser)
+// behaves exactly as if the client had been selected first.
+async function selectSourceClientByName(clientName) {
+  const match = resolveRestoreSourceClient(sourceClients.value, {
+    clientName,
+    currentDirector: isCommonRestore.value ? commonSourceDirector.value : sourceDirector.value,
+  })
+  if (!match) {
+    return
+  }
+
+  sourceClientKey.value = match.scopeKey
+  form.value.client = match.name
+  form.value.restoreclient = match.name
+  if (match.director && match.director !== commonSourceDirector.value) {
+    commonSourceDirector.value = match.director
+  }
+
+  await Promise.all([
+    loadRestoreClients(),
+    loadRestoreJobs(),
+  ])
+  await loadBackups(match)
+}
+
+// Handles a "Backup Job" selection made while browsing across all clients
+// (no "Backup Client" chosen yet): derive and select the client from the
+// picked job before initializing the BVFS browser.
+async function onBackupJobSelected(jobid) {
+  if (!form.value.client) {
+    const backup = allClientBackups.value.find(b => String(b.jobid) === String(jobid))
+    if (backup?.client) {
+      await selectSourceClientByName(backup.client)
+    }
+  }
+  await initBrowser()
 }
 
 // ── BVFS browser ─────────────────────────────────────────────────────────────
@@ -1860,6 +2083,10 @@ async function init() {
   syncSelectedDirectors()
   await loadClients()
   await applyRouteSourceSelection()
+  await Promise.all([
+    loadFilesetOptions(),
+    form.value.client ? Promise.resolve() : loadAllClientBackups(),
+  ])
 }
 
 onMounted(() => { if (director.isConnected) init() })
