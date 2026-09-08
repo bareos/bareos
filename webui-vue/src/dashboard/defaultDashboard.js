@@ -174,11 +174,11 @@ export const ANALYTICS_DASHBOARD = {
       layout: { x: 2, y: 13, w: 2, h: 8, i: 'w-pool-volumes', minW: 2, minH: 3 },
     },
     {
-      id: 'w-database-status',
-      type: 'database-status',
-      title: 'Database Table Sizes',
+      id: 'w-catalog-status',
+      type: 'catalog-status',
+      title: 'Catalog Table Sizes',
       props: {},
-      layout: { x: 8, y: 13, w: 4, h: 8, i: 'w-database-status', minW: 2, minH: 3 },
+      layout: { x: 8, y: 13, w: 4, h: 8, i: 'w-catalog-status', minW: 2, minH: 3 },
     },
   ],
 }

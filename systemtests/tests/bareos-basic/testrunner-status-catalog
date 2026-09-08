@@ -28,7 +28,7 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 
-JobName=bconsole-status-database
+JobName=bconsole-status-catalog
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
@@ -45,30 +45,32 @@ assert_contains()
 }
 
 cat <<END_OF_DATA >"$tmp"/bconcmds
-@$out $tmp/status-database-default.txt
-status database
+@$out $tmp/status-catalog-default.txt
+status catalog
 @$out ${NULL_DEV}
 .api 2
-@$out $tmp/status-database.json
-status database
+@$out $tmp/status-catalog.json
+status catalog
 @$out ${NULL_DEV}
 .api 0
 END_OF_DATA
 
 run_bconsole
 
-assert_contains "$tmp/status-database-default.txt" "^Database Status:"
-assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Status: (ok|warning|error|unavailable)$"
-assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Checked at: "
-assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Catalog: "
-assert_contains "$tmp/status-database-default.txt" "^[[:space:]]+Engine: postgresql$"
-assert_contains "$tmp/status-database-default.txt" "Largest tables:"
+assert_contains "$tmp/status-catalog-default.txt" "^Catalog Status:"
+assert_contains "$tmp/status-catalog-default.txt" "^[[:space:]]+Status: (ok|warning|error|unavailable)$"
+assert_contains "$tmp/status-catalog-default.txt" "^[[:space:]]+Checked at: "
+assert_contains "$tmp/status-catalog-default.txt" "^[[:space:]]+Catalog: "
+assert_contains "$tmp/status-catalog-default.txt" "^[[:space:]]+Engine: postgresql$"
+assert_contains "$tmp/status-catalog-default.txt" "Largest tables:"
+assert_contains "$tmp/status-catalog-default.txt" "Rows \(est\.\)"
 
-assert_contains "$tmp/status-database.json" "\"database_status\""
-assert_contains "$tmp/status-database.json" "\"status\"[[:space:]]*:[[:space:]]*\"(ok|warning|error|unavailable)\""
-assert_contains "$tmp/status-database.json" "\"checked_at\""
-assert_contains "$tmp/status-database.json" "\"database\""
-assert_contains "$tmp/status-database.json" "\"engine\"[[:space:]]*:[[:space:]]*\"postgresql\""
-assert_contains "$tmp/status-database.json" "\"tables\""
+assert_contains "$tmp/status-catalog.json" "\"catalog_status\""
+assert_contains "$tmp/status-catalog.json" "\"status\"[[:space:]]*:[[:space:]]*\"(ok|warning|error|unavailable)\""
+assert_contains "$tmp/status-catalog.json" "\"checked_at\""
+assert_contains "$tmp/status-catalog.json" "\"catalog\""
+assert_contains "$tmp/status-catalog.json" "\"engine\"[[:space:]]*:[[:space:]]*\"postgresql\""
+assert_contains "$tmp/status-catalog.json" "\"tables\""
+assert_contains "$tmp/status-catalog.json" "\"rows\""
 
 end_test
