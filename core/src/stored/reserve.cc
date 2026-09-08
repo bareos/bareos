@@ -36,6 +36,7 @@
 #include "stored/sd_device_control_record.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/device_wait_policy.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
@@ -240,17 +241,28 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     // during WaitForDevice()
     reservation_lock.unlock();
 
-    /* The idea of looping on repeat a few times it to ensure
-     * that if there is some subtle timing problem between two
-     * jobs, we will simply try again, and most likely succeed.
-     * This can happen if one job reserves a drive or finishes using
-     * a drive at the same time a second job wants it. */
-    if (repeat++ > 1) {   /* try algorithm 3 times */
+    if (!rctx.suitable_device) {
+      /* Not a single configured device can ever serve this job, so waiting
+       * for one to be released cannot help. */
+      Dmsg0(debuglevel, "Fail. !suitable_device\n");
+      fail = true;
+    } else if (repeat++ > 1) {
+      /* The idea of looping on repeat a few times it to ensure
+       * that if there is some subtle timing problem between two
+       * jobs, we will simply try again, and most likely succeed.
+       * This can happen if one job reserves a drive or finishes using
+       * a drive at the same time a second job wants it. */
       Bmicrosleep(30, 0); /* wait a bit */
       Dmsg0(debuglevel, "repeat reserve algorithm\n");
-    } else if (!rctx.suitable_device
-               || !WaitForDevice(jcr, wait_for_device_retries)) {
-      Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
+
+      /* This sleep also counts against the wait budget, otherwise repeating
+       * the algorithm would keep the job here forever. */
+      if (!ConsumeDeviceWaitTime(jcr->sd_impl->device_wait_times, 30)) {
+        Dmsg0(debuglevel, "Fail. wait budget exhausted\n");
+        fail = true;
+      }
+    } else if (!WaitForDevice(jcr, wait_for_device_retries)) {
+      Dmsg0(debuglevel, "Fail. !WaitForDevice\n");
       fail = true;
     }
     dir->signal(BNET_HEARTBEAT); /* Inform Dir that we are alive */

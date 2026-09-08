@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,8 @@
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/device_wait_policy.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
@@ -235,12 +237,28 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
 
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
+  time_t start = time(NULL);
+
   /* Wait required time */
   status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
                                   &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
 
   unlock_mutex(device_release_mutex);
+
+  /* Charge the time we actually spent here against the wait budget of the
+   * job, so a job that never gets a device gives up instead of waiting
+   * forever. */
+  time_t waited = time(NULL) - start;
+  ok = ConsumeDeviceWaitTime(jcr->sd_impl->device_wait_times,
+                             static_cast<int32_t>(waited));
+
+  if (!ok) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("JobId=%s, Job %s gave up waiting to reserve a device.\n"),
+         edit_uint64(jcr->JobId, ed1), jcr->Job);
+  }
+
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
   return ok;
 }
