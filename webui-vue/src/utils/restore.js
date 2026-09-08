@@ -116,17 +116,21 @@ export function filterRestoreSourceClients(clients, directorName) {
 export function buildRestoreSourceQuery(query, {
   clientName,
   directorName,
+  filesetName,
   jobid,
   mergeJobs,
   mergeFilesets,
+  sourceMode,
 } = {}) {
   const nextQuery = { ...query }
 
   delete nextQuery.client
   delete nextQuery.director
+  delete nextQuery.fileset
   delete nextQuery.jobid
   delete nextQuery.mergejobs
   delete nextQuery.mergefilesets
+  delete nextQuery.mode
 
   if (clientName) {
     nextQuery.client = clientName
@@ -134,6 +138,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (directorName) {
     nextQuery.director = directorName
+  }
+
+  if (filesetName) {
+    nextQuery.fileset = filesetName
   }
 
   if (jobid !== null && jobid !== undefined && jobid !== '') {
@@ -146,6 +154,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (typeof mergeFilesets === 'boolean') {
     nextQuery.mergefilesets = mergeFilesets ? '1' : '0'
+  }
+
+  if (sourceMode === 'latest' || sourceMode === 'browse') {
+    nextQuery.mode = sourceMode
   }
 
   return nextQuery
@@ -279,6 +291,91 @@ export function filterRestoreBackupsByCriteria(backups, {
 
     return true
   })
+}
+
+export function buildRestoreClientFilesetOptions(backups) {
+  const tuples = new Map()
+
+  for (const backup of Array.isArray(backups) ? backups : []) {
+    const client = String(backup?.client ?? '').trim()
+    const fileset = String(backup?.fileset ?? '').trim()
+    if (!client || !fileset) {
+      continue
+    }
+
+    const key = `${client}\u0000${fileset}`
+    const starttime = String(backup?.starttime ?? '')
+    const previous = tuples.get(key)
+    if (!previous || starttime > previous.latestStarttime) {
+      tuples.set(key, {
+        value: key,
+        label: `${client} / ${fileset}`,
+        client,
+        fileset,
+        latestStarttime: starttime,
+      })
+    }
+  }
+
+  return [...tuples.values()].sort((left, right) => (
+    left.client.localeCompare(right.client)
+    || left.fileset.localeCompare(right.fileset)
+  ))
+}
+
+// Resolves the newest backup job matching a client's already-loaded backup
+// list, narrowed to a specific fileset (required -- restoring "the latest
+// backup" only makes sense for a single client+fileset tuple) and an
+// optional "at or before" date, for the Restore page's "Latest Backup"
+// selection mode. Returns the jobid, or null if no fileset filter is given
+// or nothing matches. Backups are compared by starttime (falling back to
+// jobid as a tie-breaker), independent of any pre-existing sort order in
+// the input list.
+export function resolveLatestRestoreBackup(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  if (!normalizedFileset) {
+    return null
+  }
+
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter: normalizedFileset,
+    beforeFilter,
+  })
+
+  if (matches.length === 0) {
+    return null
+  }
+
+  const sortKey = backup => (
+    `${String(backup?.starttime ?? '')}#${String(backup?.jobid ?? '').padStart(12, '0')}`
+  )
+
+  const latest = matches.reduce((best, candidate) => (
+    sortKey(candidate) > sortKey(best) ? candidate : best
+  ))
+
+  return latest?.jobid ?? null
+}
+
+// True if a Full-level backup exists for the given fileset at or before the
+// given start time -- used by the Restore page's "Latest Backup" mode to
+// decide whether to show a "no Full backup found in this chain" warning.
+// The actual restore chain merging (.bvfs_get_jobids ... all) is still
+// performed server-side exactly as for a manually-picked job; this is only
+// a best-effort, client-side hint for the user.
+export function hasRestoreFullBackupInChain(backups, {
+  filesetFilter = '',
+  uptoStarttime = '',
+} = {}) {
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter,
+    beforeFilter: uptoStarttime,
+  })
+
+  return matches.some(backup => resolveJobLevelCode(backup?.level) === 'F')
 }
 
 // Builds the sorted, de-duplicated `{ label, value }` options for the
