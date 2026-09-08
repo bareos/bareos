@@ -24,6 +24,7 @@ import {
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
+  buildRestoreClientFilesetOptions,
   buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
@@ -39,9 +40,11 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  hasRestoreFullBackupInChain,
   normaliseRestoreToggle,
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
+  resolveLatestRestoreBackup,
   resolveRestoreSourceClient,
   resolveRestoreBackupOption,
   resolveRestorePluginHintId,
@@ -199,19 +202,25 @@ describe('restore browser placeholder', () => {
     expect(buildRestoreSourceQuery({
       foo: 'bar',
       jobid: 'old',
+      fileset: 'OldFS',
+      mode: 'browse',
     }, {
       clientName: 'bareos-fd',
       directorName: 'prod-a',
+      filesetName: 'SelfTest',
       jobid: 42,
       mergeJobs: true,
       mergeFilesets: false,
+      sourceMode: 'latest',
     })).toEqual({
       foo: 'bar',
       client: 'bareos-fd',
       director: 'prod-a',
+      fileset: 'SelfTest',
       jobid: '42',
       mergejobs: '1',
       mergefilesets: '0',
+      mode: 'latest',
     })
   })
 
@@ -302,6 +311,91 @@ describe('restore browser placeholder', () => {
       .toEqual([backups[0]])
     expect(filterRestoreBackupsByCriteria(backups)).toEqual(backups)
     expect(filterRestoreBackupsByCriteria(null)).toEqual([])
+  })
+
+  it('builds client/fileset tuple options only from real backup jobs', () => {
+    expect(buildRestoreClientFilesetOptions([
+      {
+        jobid: 1,
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-06-01 10:00:00',
+      },
+      {
+        jobid: 2,
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-06-02 10:00:00',
+      },
+      {
+        jobid: 3,
+        client: 'web01-fd',
+        fileset: 'WebFS',
+        starttime: '2026-06-03 10:00:00',
+      },
+      { jobid: 4, client: 'missing-fileset', starttime: '2026-06-04 10:00:00' },
+      { jobid: 5, fileset: 'missing-client', starttime: '2026-06-05 10:00:00' },
+    ])).toEqual([
+      {
+        value: 'bareos-fd\u0000SelfTest',
+        label: 'bareos-fd / SelfTest',
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        latestStarttime: '2026-06-02 10:00:00',
+      },
+      {
+        value: 'web01-fd\u0000WebFS',
+        label: 'web01-fd / WebFS',
+        client: 'web01-fd',
+        fileset: 'WebFS',
+        latestStarttime: '2026-06-03 10:00:00',
+      },
+    ])
+    expect(buildRestoreClientFilesetOptions(null)).toEqual([])
+  })
+
+  it('resolves the latest backup for a client+fileset tuple', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'FullFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+      { jobid: 3, fileset: 'OtherFS', level: 'F', starttime: '2026-06-20 10:00:00' },
+    ]
+
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'FullFS' })).toBe(2)
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'OtherFS' })).toBe(3)
+    expect(resolveLatestRestoreBackup(backups, {
+      filesetFilter: 'FullFS',
+      beforeFilter: '2026-06-05 10:00:00',
+    })).toBe(1)
+    // A fileset is required -- restoring "the latest backup" is only
+    // well-defined for a single client+fileset tuple.
+    expect(resolveLatestRestoreBackup(backups, {})).toBeNull()
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'NoMatch' })).toBeNull()
+    expect(resolveLatestRestoreBackup([], { filesetFilter: 'FullFS' })).toBeNull()
+  })
+
+  it('resolves the latest backup by starttime even if jobids are out of order', () => {
+    const backups = [
+      { jobid: 20, fileset: 'FullFS', level: 'I', starttime: '2026-06-01 10:00:00' },
+      { jobid: 10, fileset: 'FullFS', level: 'F', starttime: '2026-06-15 10:00:00' },
+    ]
+
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'FullFS' })).toBe(10)
+  })
+
+  it('detects whether a Full backup exists in the chain for a fileset', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'FullFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+      { jobid: 3, fileset: 'IncOnlyFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+    ]
+
+    expect(hasRestoreFullBackupInChain(backups, { filesetFilter: 'FullFS' })).toBe(true)
+    expect(hasRestoreFullBackupInChain(backups, { filesetFilter: 'IncOnlyFS' })).toBe(false)
+    expect(hasRestoreFullBackupInChain(backups, {
+      filesetFilter: 'FullFS',
+      uptoStarttime: '2026-05-01 00:00:00',
+    })).toBe(false)
   })
 
   it('builds sorted, de-duplicated fileset filter options', () => {
