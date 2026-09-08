@@ -43,35 +43,52 @@ inline constexpr std::chrono::seconds kDefaultDeviceWait{60};
  * forever. */
 inline constexpr std::chrono::seconds kMaxTotalDeviceWait{5 * 24 * 60 * 60};
 
+/* The least a single wait costs, so that every wait makes progress.
+ *
+ * A wait that is woken up by a released device may be arbitrarily short, and
+ * a wait that is granted no time at all does not sleep in the first place.
+ * Charging such waits a token amount keeps the budget strictly decreasing,
+ * which is what bounds the reservation loop. The amounts are far too small
+ * to shorten the wait of a job that makes any real progress. */
+inline constexpr std::chrono::milliseconds kMinSignalledWaitCharge{1};
+inline constexpr std::chrono::milliseconds kMinTimedOutWaitCharge{1000};
+
 /* What is left of the time a job may wait for a device.
  *
  * This is a plain remaining duration, without any backoff between the
  * individual waits. A job is woken up as soon as a device is released, so
  * waiting longer each time would not save any work: it would only delay the
- * job past the moment a device became free. */
+ * job past the moment a device became free.
+ *
+ * The budget is kept in milliseconds although it is configured in seconds,
+ * because waits that end on a signal are usually much shorter than a second
+ * and must not be charged as if they had taken no time at all. */
 struct DeviceWaitBudget {
-  std::chrono::seconds remaining{kMaxTotalDeviceWait};
+  std::chrono::milliseconds remaining{kMaxTotalDeviceWait};
 };
 
 // How long the next wait may last, never longer than what is left.
-constexpr std::chrono::seconds NextDeviceWait(const DeviceWaitBudget& budget,
-                                              std::chrono::seconds interval
-                                              = kDefaultDeviceWait)
+constexpr std::chrono::milliseconds NextDeviceWait(
+    const DeviceWaitBudget& budget,
+    std::chrono::milliseconds interval = kDefaultDeviceWait)
 {
   return std::min(budget.remaining, interval);
 }
 
 /* Charge time spent waiting against the budget.
  *
- * Returns whether the job may keep waiting. A wait that took no time does
- * not consume anything, so a job cannot be starved by spurious wakeups
- * either. */
+ * Returns whether the job may keep waiting. The charge is at least the
+ * given minimum, so that repeated wakeups cannot leave the budget untouched
+ * and keep the job in the reservation loop forever. */
 constexpr bool ConsumeDeviceWait(DeviceWaitBudget& budget,
-                                 std::chrono::seconds waited)
+                                 std::chrono::milliseconds waited,
+                                 std::chrono::milliseconds minimum
+                                 = kMinSignalledWaitCharge)
 {
-  constexpr std::chrono::seconds none{0};
+  constexpr std::chrono::milliseconds none{0};
 
-  if (waited > none) { budget.remaining -= std::min(waited, budget.remaining); }
+  const auto charge = std::max(waited, minimum);
+  budget.remaining -= std::min(charge, budget.remaining);
 
   return budget.remaining > none;
 }

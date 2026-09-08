@@ -333,7 +333,6 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
 void InitDeviceWaitTimers(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
-  JobControlRecord* jcr = dcr->jcr;
 
   /* ******FIXME******* put these on config variables */
   dev->min_wait = 60 * 60;
@@ -343,10 +342,11 @@ void InitDeviceWaitTimers(DeviceControlRecord* dcr)
   dev->rem_wait_sec = dev->wait_sec;
   dev->num_wait = 0;
   dev->poll = false;
-
-  jcr->sd_impl->device_wait_budget = DeviceWaitBudget{};
 }
 
+/* The job wide budget is deliberately not reset here. It bounds how long a
+ * job may wait for a device in total, so it is started once per reservation
+ * and must survive the device timer resets that acquiring and mounting do. */
 void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
 {
   jcr->sd_impl->device_wait_budget = DeviceWaitBudget{};

@@ -243,7 +243,7 @@ bool WaitForDevice(JobControlRecord* jcr,
 
   const auto wait_for = NextDeviceWait(budget, max_wait);
 
-  Dmsg1(debuglevel, "Going to wait %lld sec for a device.\n",
+  Dmsg1(debuglevel, "Going to wait %lld ms for a device.\n",
         static_cast<long long>(wait_for.count()));
 
   /* The wait may return earlier or later than asked, so measure how long it
@@ -251,19 +251,18 @@ bool WaitForDevice(JobControlRecord* jcr,
   const auto start = std::chrono::steady_clock::now();
   const bool signalled = wait_device_release.wait_for(lock, wait_for)
                          == std::cv_status::no_timeout;
-  const auto waited = std::chrono::duration_cast<std::chrono::seconds>(
+  const auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::steady_clock::now() - start);
 
   lock.unlock();
 
   if (signalled) {
-    /* A device was released, so the caller rescans. The time spent here still
-     * counts, but a signal on its own never ends the job. */
+    /* A device was released, so the caller rescans. The time spent here is
+     * charged, but a signal on its own never ends the job. */
     ConsumeDeviceWait(budget, waited);
   } else {
-    /* The granted time elapsed. Charge at least a second, so that a wait
-     * which measures as zero cannot keep the budget from running out. */
-    ok = ConsumeDeviceWait(budget, std::max(waited, std::chrono::seconds{1}));
+    // The granted time elapsed, so this wait counts as a full round.
+    ok = ConsumeDeviceWait(budget, waited, kMinTimedOutWaitCharge);
   }
 
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
