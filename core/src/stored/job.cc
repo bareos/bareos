@@ -32,6 +32,7 @@
 #include "stored/acquire.h"
 #include "stored/connect_wait.h"
 #include "stored/fd_cmds.h"
+#include "stored/ndmp_session_registry.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/ndmp_tape.h"
 #include "stored/read_record.h"
@@ -165,6 +166,13 @@ bool job_cmd(JobControlRecord* jcr)
     return false;
   }
   jcr->sd_auth_key = strdup(auth_key);
+
+  /* Let the NDMP data mover find this job by its authentication key. Native
+   * jobs authenticate over their own connection and are not registered. */
+  if (jcr->getJobProtocol() == PT_NDMP_BAREOS) {
+    RegisterNdmpSessionToken(jcr->sd_auth_key, jcr);
+  }
+
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
   Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
@@ -234,6 +242,9 @@ bool DoJobRun(JobControlRecord* jcr)
 
   Dmsg2(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
 
+  /* The key was either used by now or will never be used, so withdraw it
+   * before wiping it. */
+  UnregisterNdmpSessionToken(jcr->sd_auth_key);
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
@@ -290,8 +301,13 @@ bool nextRunCmd(JobControlRecord* jcr)
               auth_key);
         return false;
       }
-      if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
+      if (jcr->sd_auth_key) {
+        // The previous key must not stay usable once it got replaced.
+        UnregisterNdmpSessionToken(jcr->sd_auth_key);
+        free(jcr->sd_auth_key);
+      }
       jcr->sd_auth_key = strdup(auth_key);
+      RegisterNdmpSessionToken(jcr->sd_auth_key, jcr);
       dir->fsend(OK_nextrun, auth_key);
       memset(auth_key, 0, sizeof(auth_key));
       Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
@@ -383,6 +399,10 @@ void StoredFreeJcr(JobControlRecord* jcr)
 {
   Dmsg0(200, "Start stored FreeJcr\n");
   Dmsg2(800, "End Job JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
+
+  /* Make sure no NDMP session can bind to this job any more, even if it ended
+   * before the key was withdrawn regularly. */
+  if (jcr->sd_auth_key) { UnregisterNdmpSessionToken(jcr->sd_auth_key); }
 
   if (jcr->dir_bsock) {
     Dmsg2(800, "Send Terminate jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
