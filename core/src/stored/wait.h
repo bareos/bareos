@@ -22,6 +22,10 @@
 #ifndef BAREOS_STORED_WAIT_H_
 #define BAREOS_STORED_WAIT_H_
 
+#include <chrono>
+
+#include "stored/device_wait_policy.h"
+
 namespace storagedaemon {
 
 //  return values for WaitForSysop()
@@ -35,10 +39,15 @@ enum
 };
 
 int WaitForSysop(DeviceControlRecord* dcr);
-bool WaitForDevice(JobControlRecord* jcr, int& retries);
+
+/* Wait until a device is released, at most max_wait.
+ *
+ * Returns true if the caller should look for a device again, and false once
+ * the job used up the total time it may spend waiting. */
+bool WaitForDevice(JobControlRecord* jcr,
+                   int& retries,
+                   std::chrono::seconds max_wait = kDefaultDeviceWait);
 void ReleaseDeviceCond();
-void SetWaitForDeviceTimeoutForTesting(int timeout_in_seconds);
-void ResetWaitForDeviceTimeoutForTesting();
 
 } /* namespace storagedaemon */
 

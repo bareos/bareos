@@ -91,7 +91,7 @@ struct StoredJcrImpl {
   uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
 
   storagedaemon::ReadSession read_session;
-  storagedaemon::DeviceWaitTimes device_wait_times;
+  storagedaemon::DeviceWaitBudget device_wait_budget;
 };
 /* clang-format on */
 
