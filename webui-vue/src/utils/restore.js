@@ -217,6 +217,7 @@ export function buildRestoreBackupOption(
   {
     formatBytes = value => String(value),
     filesLabel = 'files',
+    showClient = false,
   } = {}
 ) {
   const jobid = backup?.jobid ?? ''
@@ -225,8 +226,11 @@ export function buildRestoreBackupOption(
   const starttime = backup?.starttime ?? ''
   const jobbytes = Number(backup?.jobbytes ?? 0)
   const jobfiles = Number(backup?.jobfiles ?? 0)
+  const client = backup?.client ?? ''
+  const fileset = backup?.fileset ?? ''
   const secondary = [
     jobid !== '' ? `#${jobid}` : '',
+    showClient && client ? client : '',
     starttime,
     Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
     Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
@@ -240,8 +244,59 @@ export function buildRestoreBackupOption(
     level,
     levelCode: resolveJobLevelCode(level),
     starttime,
+    client,
+    fileset,
     secondary,
   }
+}
+
+// Narrows a list of raw backup job records (as returned by either a
+// per-client `llist backups` call or the client-agnostic `llist jobs`
+// browse-all-clients fallback) down to the ones matching the optional
+// fileset name and "at or before" start-time filters used by the restore
+// Source panel. `beforeFilter` is compared as a string prefix against the
+// catalog's `YYYY-MM-DD HH:MM:SS` starttime so a plain date (`YYYY-MM-DD`)
+// or a full timestamp both work.
+export function filterRestoreBackupsByCriteria(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const list = Array.isArray(backups) ? backups : []
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  const normalizedBefore = typeof beforeFilter === 'string' ? beforeFilter.trim() : ''
+
+  return list.filter((backup) => {
+    if (normalizedFileset && String(backup?.fileset ?? '') !== normalizedFileset) {
+      return false
+    }
+
+    if (normalizedBefore) {
+      const starttime = String(backup?.starttime ?? '')
+      if (!starttime || starttime > normalizedBefore) {
+        return false
+      }
+    }
+
+    return true
+  })
+}
+
+// Builds the sorted, de-duplicated `{ label, value }` options for the
+// restore Source panel's fileset filter from the catalog's `list filesets`
+// response.
+export function buildRestoreFilesetOptions(filesets) {
+  const names = new Set()
+
+  for (const [, fileset] of normalizeRestoreFilesetEntries(filesets)) {
+    const filesetName = fileset?.name ?? ''
+    if (filesetName) {
+      names.add(filesetName)
+    }
+  }
+
+  return [...names]
+    .sort((left, right) => left.localeCompare(right))
+    .map(name => ({ label: name, value: name }))
 }
 
 export function resolveRestoreBackupOption(options, jobid) {
