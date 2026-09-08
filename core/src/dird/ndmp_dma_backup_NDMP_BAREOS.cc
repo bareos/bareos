@@ -51,8 +51,6 @@ namespace directordaemon {
 
 #if HAVE_NDMP
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 /* Imported variables */
 
 /* Forward referenced functions */
@@ -276,18 +274,6 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     // Loop over each file = entry of the fileset.
     for (j = 0; j < ie->name_list.size(); j++) {
       item = (char*)ie->name_list.get(j);
-
-      /* See if this is the first Backup run or not. For NDMP we can have
-       * multiple Backup runs as part of the same Job. When we are saving data
-       * to a Native Storage Daemon we let it know to expect a new backup
-       * session. It will generate a new authorization key so we wait for the
-       * nextrun_ready conditional variable to be raised by the msg_thread. */
-      if (jcr->store_bsock && cnt > 0) {
-        jcr->store_bsock->fsend("nextrun");
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->dir_impl->nextrun_ready, &mutex);
-        unlock_mutex(mutex);
-      }
 
       /* Perform the actual NDMP job.
        * Initialize a new NDMP session */
