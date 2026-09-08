@@ -30,13 +30,14 @@
         dense no-caps align="left"
         class="col"
         style="min-width:0"
-        @update:model-value="dashStore.setActiveDashboard($event)"
       >
-        <q-tab
+        <q-route-tab
           v-for="db in dashStore.dashboards"
           :key="db.id"
           :name="db.id"
           :label="db.name"
+          :to="{ path: `/dashboard/${slugFor(db.id)}` }"
+          replace
         >
           <!-- Rename / delete buttons shown in edit mode -->
           <div v-if="editMode && dashStore.dashboards.length > 1" class="row items-center no-wrap q-ml-xs">
@@ -56,7 +57,7 @@
               @click.stop="deleteDashboard(db)"
             />
           </div>
-        </q-tab>
+        </q-route-tab>
 
         <!-- Add dashboard tab -->
         <q-btn
@@ -207,18 +208,22 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
+import { useRoute, useRouter } from 'vue-router'
 import { useDashboardStore } from '../stores/dashboards.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useBackupRestore } from '../composables/useBackupRestore.js'
 import { useDirectorStore } from '../stores/director.js'
 import { getWidgetDefinition } from '../dashboard/widgetRegistry.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { dashboardSlugFor, resolveDashboardIdFromSlug } from '../utils/dashboardRoute.js'
 import DashboardGrid from '../dashboard/DashboardGrid.vue'
 import WidgetPickerDialog from '../dashboard/WidgetPickerDialog.vue'
 import WidgetConfigDialog from '../dashboard/WidgetConfigDialog.vue'
 
 const { t } = useI18n()
 const $q = useQuasar()
+const route = useRoute()
+const router = useRouter()
 const dashStore = useDashboardStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
@@ -243,6 +248,41 @@ const activeDashboardId = computed({
 })
 const currentDashboard = computed(() => dashStore.activeDashboard())
 const isMobile = computed(() => $q.screen.lt.sm)
+
+// ── URL <-> active dashboard sync ────────────────────────────────────────
+// The URL is the source of truth for which dashboard is shown: navigating
+// to /dashboard/<slug> selects that dashboard, while switching tabs (or
+// renaming/adding/deleting/resetting/importing dashboards) updates the URL
+// to match. An unknown or missing slug (including bare /dashboard) falls
+// back to the currently active dashboard, silently replacing the URL.
+const currentSlug = computed(() => dashboardSlugFor(dashStore.dashboards, activeDashboardId.value))
+
+function slugFor(id) {
+  return dashboardSlugFor(dashStore.dashboards, id)
+}
+
+function syncActiveDashboardFromRoute() {
+  const id = resolveDashboardIdFromSlug(dashStore.dashboards, route.params.slug)
+  if (id) {
+    if (id !== activeDashboardId.value) {
+      dashStore.setActiveDashboard(id)
+    }
+    return
+  }
+
+  if (route.params.slug !== currentSlug.value) {
+    router.replace({ path: `/dashboard/${currentSlug.value}` })
+  }
+}
+
+watch(() => route.params.slug, syncActiveDashboardFromRoute, { immediate: true })
+
+watch(currentSlug, (slug) => {
+  if (route.params.slug !== slug) {
+    router.replace({ path: `/dashboard/${slug}` })
+  }
+})
+
 
 // ── edit mode ──────────────────────────────────────────────────────────────
 const editMode = ref(false)
