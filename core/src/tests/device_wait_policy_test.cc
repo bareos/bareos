@@ -54,11 +54,42 @@ constexpr bool NeverGoesNegative()
   return !ConsumeDeviceWait(budget, 3600s) && budget.remaining == 0s;
 }
 
-constexpr bool WaitOfNoTimeCostsNothing()
+/* A wakeup shorter than a second must still cost what it took. Truncating it
+ * to zero would let repeated wakeups keep a job in the reservation loop for
+ * good. */
+constexpr bool SubSecondWaitIsNotTruncated()
 {
   DeviceWaitBudget budget{60s};
 
-  return ConsumeDeviceWait(budget, 0s) && budget.remaining == 60s;
+  return ConsumeDeviceWait(budget, 500ms) && budget.remaining == 59500ms;
+}
+
+// Even a wait that measures as no time at all has to make progress.
+constexpr bool WaitOfNoTimeStillCostsSomething()
+{
+  DeviceWaitBudget budget{60s};
+
+  return ConsumeDeviceWait(budget, 0ms) && budget.remaining < 60s;
+}
+
+// So that a job woken up over and over eventually gives up.
+constexpr bool RepeatedWakeupsExhaustBudget()
+{
+  DeviceWaitBudget budget{3 * kMinSignalledWaitCharge};
+
+  if (!ConsumeDeviceWait(budget, 0ms)) { return false; }
+  if (!ConsumeDeviceWait(budget, 0ms)) { return false; }
+
+  return !ConsumeDeviceWait(budget, 0ms) && budget.remaining == 0ms;
+}
+
+// A wait that ran out of its granted time counts as a full round.
+constexpr bool TimedOutWaitCostsAtLeastASecond()
+{
+  DeviceWaitBudget budget{60s};
+
+  return ConsumeDeviceWait(budget, 0ms, kMinTimedOutWaitCharge)
+         && budget.remaining == 59s;
 }
 
 constexpr bool NextWaitIsCappedByBudget()
@@ -92,7 +123,10 @@ constexpr bool DefaultBudgetIsPositive()
 static_assert(ConsumesWholeBudgetInOneWait());
 static_assert(ConsumesBudgetInSteps());
 static_assert(NeverGoesNegative());
-static_assert(WaitOfNoTimeCostsNothing());
+static_assert(SubSecondWaitIsNotTruncated());
+static_assert(WaitOfNoTimeStillCostsSomething());
+static_assert(RepeatedWakeupsExhaustBudget());
+static_assert(TimedOutWaitCostsAtLeastASecond());
 static_assert(NextWaitIsCappedByBudget());
 static_assert(NextWaitIsCappedByInterval());
 static_assert(ExhaustedBudgetGrantsNoWait());
@@ -111,9 +145,24 @@ TEST(DeviceWaitPolicy, ConsumesBudgetInSteps)
 
 TEST(DeviceWaitPolicy, NeverGoesNegative) { EXPECT_TRUE(NeverGoesNegative()); }
 
-TEST(DeviceWaitPolicy, WaitOfNoTimeCostsNothing)
+TEST(DeviceWaitPolicy, SubSecondWaitIsNotTruncated)
 {
-  EXPECT_TRUE(WaitOfNoTimeCostsNothing());
+  EXPECT_TRUE(SubSecondWaitIsNotTruncated());
+}
+
+TEST(DeviceWaitPolicy, WaitOfNoTimeStillCostsSomething)
+{
+  EXPECT_TRUE(WaitOfNoTimeStillCostsSomething());
+}
+
+TEST(DeviceWaitPolicy, RepeatedWakeupsExhaustBudget)
+{
+  EXPECT_TRUE(RepeatedWakeupsExhaustBudget());
+}
+
+TEST(DeviceWaitPolicy, TimedOutWaitCostsAtLeastASecond)
+{
+  EXPECT_TRUE(TimedOutWaitCostsAtLeastASecond());
 }
 
 TEST(DeviceWaitPolicy, NextWaitIsCappedByBudget)
