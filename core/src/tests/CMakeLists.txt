@@ -283,6 +283,9 @@ if(NOT client-only)
   bareos_add_test(
     ndmp_fileset_validation_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
+  bareos_add_test(
+    connect_wait_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(

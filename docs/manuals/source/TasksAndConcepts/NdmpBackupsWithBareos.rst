@@ -368,6 +368,19 @@ These are configured by adding a NDMP resource to |sd| configuration:
 
 Username and Password can be anything, but they will have to match the settings in the |dir| NDMP Storage resource we configure next.
 
+Connection timeout
+''''''''''''''''''
+
+The |sd| reserves the device before the NDMP Data Agent connects to it. If the Data Agent
+never connects, for example because the filer is unreachable, the device stays reserved until
+the |sd| gives up waiting. :config:option:`sd/storage/NdmpConnectWait`\  (default: 180 seconds)
+limits this wait for NDMP jobs, so the device becomes available again for other jobs.
+
+NDMP jobs do not use :config:option:`sd/storage/ClientConnectWait`\  (default: 1800 seconds),
+which still applies to jobs using the |fd|. Raise
+:config:option:`sd/storage/NdmpConnectWait`\  if a filer regularly needs longer than the
+default to start the data connection.
+
 Now restart the |sd|. If everything is correct, the |sd| starts and listens now on the usual port (9103) and additionally on port 10000 (ndmp).
 
 .. code-block:: shell-session

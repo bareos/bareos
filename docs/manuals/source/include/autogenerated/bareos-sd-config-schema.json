@@ -359,6 +359,14 @@
           "default_value": "4",
           "equals": true
         },
+        "NdmpConnectWait": {
+          "datatype": "TIME",
+          "code": 0,
+          "default_value": "180",
+          "equals": true,
+          "versions": "26.0.0-",
+          "description": "Time to wait for the NDMP data mover to connect to the storage daemon. A device reserved for an NDMP job is released when this time expires, so an unreachable data mover does not block the device for the much longer Client Connect Wait."
+        },
         "NdmpAddress": {
           "datatype": "ADDRESS",
           "code": 0,
