@@ -14,7 +14,7 @@
           <q-item-section>
             <q-item-label>{{ t('WebUI Language') }}</q-item-label>
             <q-item-label caption>
-              {{ t('Reuses the locale catalog from the legacy PHP WebUI.') }}
+              {{ t('Select the language used for the web interface.') }}
             </q-item-label>
           </q-item-section>
         </q-item>
