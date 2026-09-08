@@ -37,7 +37,7 @@
     <q-spinner v-if="loading && !chartData.labels.length" size="40px" />
     <div v-else-if="!chartData.labels.length" class="text-grey text-caption text-center">
       {{ summary.status === 'error' || summary.status === 'unavailable'
-        ? t('Database status unavailable')
+        ? t('Catalog status unavailable')
         : t('No table size data available') }}
     </div>
     <template v-else>
@@ -69,8 +69,8 @@ ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin, ChartDataLabels)
 const { t } = useI18n()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
-const rows = computed(() => ctx.aggregate.value.databaseStatuses ?? [])
-const summary = computed(() => ctx.aggregate.value.databaseStatusSummary ?? {
+const rows = computed(() => ctx.aggregate.value.catalogStatuses ?? [])
+const summary = computed(() => ctx.aggregate.value.catalogStatusSummary ?? {
   status: 'unavailable',
   totalBytes: 0,
 })
@@ -87,15 +87,20 @@ const tableRows = computed(() => {
     for (const table of row.tables ?? []) {
       const name = String(table.name ?? '')
       const bytes = Number(table.bytes ?? 0)
+      const tableRowCount = Number(table.rows ?? 0)
       if (!name || !Number.isFinite(bytes) || bytes <= 0) {
         continue
       }
-      merged.set(name, (merged.get(name) ?? 0) + bytes)
+      const existing = merged.get(name) ?? { bytes: 0, rows: 0 }
+      merged.set(name, {
+        bytes: existing.bytes + bytes,
+        rows: existing.rows + (Number.isFinite(tableRowCount) ? tableRowCount : 0),
+      })
     }
   }
 
   return [...merged.entries()]
-    .map(([name, bytes]) => ({ name, bytes }))
+    .map(([name, { bytes, rows: rowCount }]) => ({ name, bytes, rows: rowCount }))
     .sort((a, b) => b.bytes - a.bytes)
 })
 
@@ -114,9 +119,12 @@ const reducedTableRows = computed(() => {
   const hiddenBytes = tableRows.value
     .slice(maxSlices)
     .reduce((sum, row) => sum + row.bytes, 0)
+  const hiddenRows = tableRows.value
+    .slice(maxSlices)
+    .reduce((sum, row) => sum + (row.rows ?? 0), 0)
 
   return hiddenBytes > 0
-    ? [...limited, { name: 'Other', bytes: hiddenBytes }]
+    ? [...limited, { name: 'Other', bytes: hiddenBytes, rows: hiddenRows }]
     : limited
 })
 
@@ -144,7 +152,11 @@ const chartOptions = computed(() => ({
           const bytes = Number(context.raw ?? 0)
           const total = tableBytesTotal.value
           const percent = total > 0 ? (bytes / total) * 100 : 0
-          return ` ${context.label}: ${formatBytes(bytes)} (${percent.toFixed(1)}%)`
+          const rowCount = reducedTableRows.value[context.dataIndex]?.rows ?? 0
+          const rowsLabel = rowCount > 0
+            ? ` · ${rowCount.toLocaleString()} ${t('rows')}`
+            : ''
+          return ` ${context.label}: ${formatBytes(bytes)} (${percent.toFixed(1)}%)${rowsLabel}`
         },
       },
     },
