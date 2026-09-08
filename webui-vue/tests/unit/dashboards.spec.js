@@ -54,7 +54,7 @@ describe('dashboards store', () => {
       expect.objectContaining({ type: 'analytics-level-distribution' }),
       expect.objectContaining({ type: 'pool-bytes-chart' }),
       expect.objectContaining({ type: 'pool-volumes-chart' }),
-      expect.objectContaining({ type: 'database-status' }),
+      expect.objectContaining({ type: 'catalog-status' }),
     ]))
   })
 
