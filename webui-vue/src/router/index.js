@@ -17,7 +17,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: '/dashboard' },
-      { path: 'dashboard', name: 'dashboard', component: () => import('../pages/DashboardPage.vue'), meta: { title: 'Dashboard' } },
+      { path: 'dashboard/:slug?', name: 'dashboard', component: () => import('../pages/DashboardPage.vue'), meta: { title: 'Dashboard' } },
       { path: 'jobs', name: 'jobs', component: () => import('../pages/JobsPage.vue'), meta: { title: 'Jobs' } },
       { path: 'jobs/:id', name: 'job-details', component: () => import('../pages/JobDetailsPage.vue'), meta: { title: 'Job Details' } },
       { path: 'restore', name: 'restore', component: () => import('../pages/RestorePage.vue'), meta: { title: 'Restore' } },
