@@ -35,7 +35,8 @@ void RegisterNdmpSessionToken(const char* token, JobControlRecord* jcr);
 void UnregisterNdmpSessionToken(const char* token);
 
 /* Return the job registered for token with its use count incremented, or
- * nullptr if the token is unknown. The caller has to FreeJcr() the result. */
+ * nullptr if the token is unknown or the job has already ended. The caller
+ * has to FreeJcr() the result. */
 JobControlRecord* AcquireJcrByNdmpSessionToken(const char* token);
 
 }  // namespace storagedaemon

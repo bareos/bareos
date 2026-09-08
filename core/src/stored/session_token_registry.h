@@ -76,8 +76,10 @@ template <typename T> class SessionTokenRegistry {
   /* Look up token and call visitor with the registered value.
    *
    * The visitor runs while the registry is locked, so the entry cannot be
-   * removed concurrently and the visitor can safely take ownership, for
-   * example by incrementing a use count. Returns whether the token was
+   * removed concurrently. Note that this says nothing about the lifetime of
+   * whatever the value refers to: the registry does not keep the associated
+   * object alive, so a visitor must not use the value to resurrect an object
+   * that is released under a different lock. Returns whether the token was
    * found. */
   template <typename Visitor> bool Visit(std::string_view token, Visitor&& fn)
   {
