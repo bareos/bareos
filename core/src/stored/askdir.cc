@@ -46,13 +46,14 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/serial.h"
+#include <algorithm>
 #include <cinttypes>
 
 namespace storagedaemon {
 
 static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
-static constexpr std::size_t kMaxAppendVolumeLookups = 200;
+static constexpr std::size_t kMinAppendVolumeLookups = 200;
 static constexpr std::size_t kMaxUnwantedVolumesLength = 32 * 1024;
 
 /* Requests sent to the Director */
@@ -217,9 +218,9 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
 
-  /* Try the twenty oldest or most available volumes. Note,
-   * the most available could already be mounted on another
-   * drive, so we continue looking for a not in use Volume. */
+  /* Ask the director for append candidates, oldest or most available first.
+   * The most available one could already be mounted on another drive, so we
+   * keep asking for the next one until we find a volume we can use. */
   with_volume_lock([&] {
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
@@ -227,8 +228,42 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 
     PmStrcpy(unwanted_volumes, "");
 
-    for (std::size_t vol_index = 1; vol_index <= kMaxAppendVolumeLookups;
-         vol_index++) {
+    /* The scan normally ends when the director runs out of candidates. The
+     * bound below only keeps a pathological answer from looping forever, so
+     * it has to stay above every legitimate number of retries.
+     *
+     * Each device may hold one volume, so the number of devices is a lower
+     * bound for how many candidates a job might have to skip, and it has to
+     * be part of the limit: a big installation can legitimately skip a lot of
+     * volumes. It is not an upper bound though, because a volume can also be
+     * unusable for reasons that have nothing to do with the device count, for
+     * example while it is being read. A small installation with many volumes
+     * therefore needs a floor as well.
+     *
+     * Use whichever of the two is larger, so neither a large device count nor
+     * a large volume count can run into the limit. */
+    std::size_t device_count = 0;
+
+    {
+      ResLocker _{my_config};
+
+      BareosResource* found_dev = nullptr;
+      foreach_res (found_dev, R_DEVICE) { device_count += 1; }
+    }
+
+    if (device_count == 0) {
+      Emsg0(M_ERROR, 0,
+            "Trying to find a volume, but there are apparently no devices.");
+    }
+
+    // x >> 3 == x / 8 ~ 10% headroom, for devices switching volumes
+    const std::size_t ask_limit
+        = std::max(kMinAppendVolumeLookups, device_count + (device_count >> 3));
+
+    Dmsg2(debuglevel, "device count = %zu => ask limit = %zu\n", device_count,
+          ask_limit);
+
+    for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
       if (strlen(unwanted_volumes.c_str()) >= kMaxUnwantedVolumesLength) {
         Dmsg1(debuglevel,
               "Stopping append volume lookup after unwanted list reached %zu "
