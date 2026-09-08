@@ -24,6 +24,7 @@ import {
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
+  buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
   canNavigateRestoreBrowser,
@@ -31,6 +32,7 @@ import {
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
   getRestoreVersionsLookupJobId,
+  filterRestoreBackupsByCriteria,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getAllRestorePluginHints,
@@ -231,6 +233,8 @@ describe('restore browser placeholder', () => {
       level: 'I',
       levelCode: 'I',
       starttime: '2026-06-09 10:00:00',
+      client: '',
+      fileset: '',
       secondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
     })
   })
@@ -251,6 +255,8 @@ describe('restore browser placeholder', () => {
       level: 'F',
       levelCode: 'F',
       starttime: '2026-06-09 09:00:00',
+      client: '',
+      fileset: '',
       secondary: '#7 · 2026-06-09 09:00:00',
     })
   })
@@ -264,6 +270,51 @@ describe('restore browser placeholder', () => {
     expect(resolveRestoreBackupOption(options, '42')).toEqual(options[1])
     expect(resolveRestoreBackupOption(options, 7)).toEqual(options[0])
     expect(resolveRestoreBackupOption(options, '999')).toBeNull()
+  })
+
+  it('includes the client name in backup option labels when browsing across clients', () => {
+    const option = buildRestoreBackupOption({
+      jobid: 5,
+      name: 'backup-web01',
+      level: 'F',
+      starttime: '2026-06-09 08:00:00',
+      client: 'web01-fd',
+      fileset: 'WebFS',
+    }, { showClient: true })
+
+    expect(option.client).toBe('web01-fd')
+    expect(option.fileset).toBe('WebFS')
+    expect(option.secondary).toBe('#5 · web01-fd · 2026-06-09 08:00:00')
+  })
+
+  it('filters restore backups by fileset and before timestamp', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'PartialFS', starttime: '2026-06-05 10:00:00' },
+      { jobid: 3, fileset: 'FullFS', starttime: '2026-06-10 10:00:00' },
+    ]
+
+    expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS' }))
+      .toEqual([backups[0], backups[2]])
+    expect(filterRestoreBackupsByCriteria(backups, { beforeFilter: '2026-06-05 10:00:00' }))
+      .toEqual([backups[0], backups[1]])
+    expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS', beforeFilter: '2026-06-05 10:00:00' }))
+      .toEqual([backups[0]])
+    expect(filterRestoreBackupsByCriteria(backups)).toEqual(backups)
+    expect(filterRestoreBackupsByCriteria(null)).toEqual([])
+  })
+
+  it('builds sorted, de-duplicated fileset filter options', () => {
+    expect(buildRestoreFilesetOptions([
+      { name: 'WebFS' },
+      { fileset: 'DatabaseFS' },
+      { name: 'WebFS' },
+      { name: '' },
+    ])).toEqual([
+      { label: 'DatabaseFS', value: 'DatabaseFS' },
+      { label: 'WebFS', value: 'WebFS' },
+    ])
+    expect(buildRestoreFilesetOptions(null)).toEqual([])
   })
 
   it('normalizes restore merge toggle query values', () => {
@@ -573,9 +624,9 @@ describe('restore browser placeholder', () => {
     const hints = getAllRestorePluginHints()
 
     expect(hints[0]).toEqual(expect.objectContaining({
-      displayName: 'BPipe',
-      example: 'file=...:reader=...',
-      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#bpipe',
+      displayName: 'BARRI (Bareos Recovery Imager)',
+      example: 'save-unreferenced-disks=...:save-unreferenced-partitions=...',
+      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#barriplugin',
     }))
     expect(hints.at(-1)).toEqual(expect.objectContaining({
       displayName: 'VMware',
