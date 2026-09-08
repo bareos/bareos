@@ -68,7 +68,7 @@ static void DoDirectorStatus(UaContext* ua);
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
 static void DoConfigurationStatus(UaContext* ua);
-static void DoDatabaseStatus(UaContext* ua);
+static void DoCatalogStatus(UaContext* ua);
 static void DoAllStatus(UaContext* ua);
 static void StatusSlots(UaContext* ua, StorageResource* store);
 static void StatusContentApi(UaContext* ua, StorageResource* store);
@@ -196,8 +196,8 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
       return DoSubscriptionStatus(ua);
-    } else if (bstrncasecmp(ua->argk[i], NT_("data"), 4)) {
-      DoDatabaseStatus(ua);
+    } else if (bstrncasecmp(ua->argk[i], NT_("cata"), 4)) {
+      DoCatalogStatus(ua);
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("conf"), 4)) {
       DoConfigurationStatus(ua);
@@ -237,7 +237,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     AddPrompt(ua, NT_("Storage"));
     AddPrompt(ua, NT_("Client"));
     AddPrompt(ua, NT_("Scheduler"));
-    AddPrompt(ua, NT_("Database"));
+    AddPrompt(ua, NT_("Catalog"));
     AddPrompt(ua, NT_("All"));
     Dmsg0(20, "DoPrompt: select daemon\n");
     if ((item = DoPrompt(ua, "", T_("Select daemon type for status"), prmt,
@@ -262,7 +262,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
         DoSchedulerStatus(ua);
         break;
       case 4:
-        DoDatabaseStatus(ua);
+        DoCatalogStatus(ua);
         break;
       case 5:
         DoAllStatus(ua);
@@ -671,14 +671,15 @@ static void DoConfigurationStatus(UaContext* ua)
   }
 }
 
-struct DatabaseTableSize {
+struct CatalogTableSize {
   std::string name;
   uint64_t bytes = 0;
+  uint64_t rows = 0;
 };
 
-static bool QueryDatabaseTotalSize(UaContext* ua,
-                                   uint64_t& total_bytes,
-                                   std::vector<std::string>& errors)
+static bool QueryCatalogTotalSize(UaContext* ua,
+                                  uint64_t& total_bytes,
+                                  std::vector<std::string>& errors)
 {
   static const char* kTotalQuery
       = "SELECT pg_database_size(current_database())::bigint AS total_bytes";
@@ -697,12 +698,12 @@ static bool QueryDatabaseTotalSize(UaContext* ua,
   };
 
   if (!ua->db->SqlQuery(kTotalQuery, handler, &ctx)) {
-    errors.emplace_back(T_("Failed to query total database size."));
+    errors.emplace_back(T_("Failed to query total catalog size."));
     return false;
   }
 
   if (!ctx.has_row) {
-    errors.emplace_back(T_("Database size query returned no rows."));
+    errors.emplace_back(T_("Catalog size query returned no rows."));
     return false;
   }
 
@@ -711,21 +712,23 @@ static bool QueryDatabaseTotalSize(UaContext* ua,
 }
 
 static bool QueryLargestTables(UaContext* ua,
-                               std::vector<DatabaseTableSize>& tables,
+                               std::vector<CatalogTableSize>& tables,
                                std::vector<std::string>& errors)
 {
   PoolMem query(PM_MESSAGE);
   query.bsprintf(
       "SELECT schemaname || '.' || relname AS name,"
-      " pg_total_relation_size(relid)::bigint AS bytes "
-      "FROM pg_catalog.pg_statio_user_tables "
+      " pg_total_relation_size(relid)::bigint AS bytes,"
+      " GREATEST(n_live_tup, 0)::bigint AS rows "
+      "FROM pg_catalog.pg_stat_user_tables "
       "ORDER BY pg_total_relation_size(relid) DESC");
 
   auto handler = [](void* data, int, char** row) {
-    auto* table_rows = static_cast<std::vector<DatabaseTableSize>*>(data);
-    DatabaseTableSize entry;
+    auto* table_rows = static_cast<std::vector<CatalogTableSize>*>(data);
+    CatalogTableSize entry;
     entry.name = (row && row[0]) ? row[0] : "";
     entry.bytes = (row && row[1]) ? str_to_uint64(row[1]) : 0;
+    entry.rows = (row && row[2]) ? str_to_uint64(row[2]) : 0;
     table_rows->emplace_back(std::move(entry));
     return 0;
   };
@@ -737,27 +740,27 @@ static bool QueryLargestTables(UaContext* ua,
   return true;
 }
 
-static void EmitDatabaseStatusApi(UaContext* ua,
-                                  const char* status,
-                                  const char* checked_at,
-                                  bool total_available,
-                                  uint64_t total_bytes,
-                                  bool tables_available,
-                                  const std::vector<DatabaseTableSize>& tables,
-                                  const std::vector<std::string>& errors)
+static void EmitCatalogStatusApi(UaContext* ua,
+                                 const char* status,
+                                 const char* checked_at,
+                                 bool total_available,
+                                 uint64_t total_bytes,
+                                 bool tables_available,
+                                 const std::vector<CatalogTableSize>& tables,
+                                 const std::vector<std::string>& errors)
 {
-  ua->send->ObjectStart("database_status");
+  ua->send->ObjectStart("catalog_status");
   ua->send->ObjectKeyValue("status", status, "%s\n");
   ua->send->ObjectKeyValue("checked_at", checked_at, "%s\n");
 
-  ua->send->ObjectStart("database");
+  ua->send->ObjectStart("catalog");
   ua->send->ObjectKeyValue("engine", "postgresql", "%s\n");
   ua->send->ObjectKeyValue("name", ua->catalog->db_name, "%s\n");
   ua->send->ObjectKeyValueBool("total_bytes_available", total_available);
   if (total_available) {
     ua->send->ObjectKeyValue("total_bytes", total_bytes, "%" PRIu64 "\n");
   }
-  ua->send->ObjectEnd("database");
+  ua->send->ObjectEnd("catalog");
 
   ua->send->ObjectKeyValueBool("tables_available", tables_available);
   ua->send->ArrayStart("tables");
@@ -765,6 +768,7 @@ static void EmitDatabaseStatusApi(UaContext* ua,
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue("name", table.name.c_str(), "%s\n");
     ua->send->ObjectKeyValue("bytes", table.bytes, "%" PRIu64 "\n");
+    ua->send->ObjectKeyValue("rows", table.rows, "%" PRIu64 "\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("tables");
@@ -779,21 +783,22 @@ static void EmitDatabaseStatusApi(UaContext* ua,
     }
     ua->send->ArrayEnd("errors");
   }
-  ua->send->ObjectEnd("database_status");
+  ua->send->ObjectEnd("catalog_status");
 }
 
-static void EmitDatabaseStatusText(UaContext* ua,
-                                   const char* status,
-                                   const char* checked_at,
-                                   bool total_available,
-                                   uint64_t total_bytes,
-                                   const std::vector<DatabaseTableSize>& tables,
-                                   const std::vector<std::string>& errors)
+static void EmitCatalogStatusText(UaContext* ua,
+                                  const char* status,
+                                  const char* checked_at,
+                                  bool total_available,
+                                  uint64_t total_bytes,
+                                  const std::vector<CatalogTableSize>& tables,
+                                  const std::vector<std::string>& errors)
 {
   char bytes_with_commas[50];
   char bytes_with_suffix[50];
+  char rows_with_commas[50];
 
-  ua->SendMsg(T_("\nDatabase Status:\n"));
+  ua->SendMsg(T_("\nCatalog Status:\n"));
   ua->SendMsg(T_(" Status: %s\n"), status);
   ua->SendMsg(T_(" Checked at: %s\n"), checked_at);
   ua->SendMsg(T_(" Catalog: %s\n"), ua->catalog->db_name);
@@ -816,17 +821,20 @@ static void EmitDatabaseStatusText(UaContext* ua,
 
   if (!tables.empty()) {
     ua->SendMsg(T_("\n Largest tables:\n"));
-    ua->SendMsg(T_(" %-4s %-48s %18s  %12s\n"), "#", "Table", "Bytes", "Human");
+    ua->SendMsg(T_(" %-4s %-48s %18s  %12s  %14s\n"), "#", "Table", "Bytes",
+                "Human", "Rows (est.)");
     ua->SendMsg(
         T_("-------------------------------------------------------------------"
            "-------"
-           "--------\n"));
+           "-------------------------\n"));
 
     int index = 1;
     for (const auto& table : tables) {
-      ua->SendMsg(T_(" %-4d %-48s %18s  %12s\n"), index++, table.name.c_str(),
+      ua->SendMsg(T_(" %-4d %-48s %18s  %12s  %14s\n"), index++,
+                  table.name.c_str(),
                   edit_uint64_with_commas(table.bytes, bytes_with_commas),
-                  edit_uint64_with_suffix(table.bytes, bytes_with_suffix));
+                  edit_uint64_with_suffix(table.bytes, bytes_with_suffix),
+                  edit_uint64_with_commas(table.rows, rows_with_commas));
     }
   } else {
     ua->SendMsg(T_("\n Largest tables: unavailable\n"));
@@ -834,10 +842,10 @@ static void EmitDatabaseStatusText(UaContext* ua,
   ua->SendMsg("====\n");
 }
 
-static void DoDatabaseStatus(UaContext* ua)
+static void DoCatalogStatus(UaContext* ua)
 {
   std::vector<std::string> errors;
-  std::vector<DatabaseTableSize> tables;
+  std::vector<CatalogTableSize> tables;
   bool total_available = false;
   bool tables_available = false;
   uint64_t total_bytes = 0;
@@ -848,29 +856,29 @@ static void DoDatabaseStatus(UaContext* ua)
   if (!OpenDb(ua)) {
     errors.emplace_back(T_("Failed to open catalog database."));
     if (ua->api) {
-      EmitDatabaseStatusApi(ua, "unavailable", checked_at, false, 0, false,
-                            tables, errors);
+      EmitCatalogStatusApi(ua, "unavailable", checked_at, false, 0, false,
+                           tables, errors);
     } else {
-      EmitDatabaseStatusText(ua, "unavailable", checked_at, false, 0, tables,
-                             errors);
+      EmitCatalogStatusText(ua, "unavailable", checked_at, false, 0, tables,
+                            errors);
     }
     return;
   }
 
   if (ua->db->GetTypeIndex() != SQL_TYPE_POSTGRESQL) {
     errors.emplace_back(
-        T_("status database currently supports only PostgreSQL catalogs."));
+        T_("status catalog currently supports only PostgreSQL catalogs."));
     if (ua->api) {
-      EmitDatabaseStatusApi(ua, "unavailable", checked_at, false, 0, false,
-                            tables, errors);
+      EmitCatalogStatusApi(ua, "unavailable", checked_at, false, 0, false,
+                           tables, errors);
     } else {
-      EmitDatabaseStatusText(ua, "unavailable", checked_at, false, 0, tables,
-                             errors);
+      EmitCatalogStatusText(ua, "unavailable", checked_at, false, 0, tables,
+                            errors);
     }
     return;
   }
 
-  total_available = QueryDatabaseTotalSize(ua, total_bytes, errors);
+  total_available = QueryCatalogTotalSize(ua, total_bytes, errors);
   tables_available = QueryLargestTables(ua, tables, errors);
 
   const char* status = "ok";
@@ -881,11 +889,11 @@ static void DoDatabaseStatus(UaContext* ua)
   }
 
   if (ua->api) {
-    EmitDatabaseStatusApi(ua, status, checked_at, total_available, total_bytes,
-                          tables_available, tables, errors);
+    EmitCatalogStatusApi(ua, status, checked_at, total_available, total_bytes,
+                         tables_available, tables, errors);
   } else {
-    EmitDatabaseStatusText(ua, status, checked_at, total_available, total_bytes,
-                           tables, errors);
+    EmitCatalogStatusText(ua, status, checked_at, total_available, total_bytes,
+                          tables, errors);
   }
 }
 
