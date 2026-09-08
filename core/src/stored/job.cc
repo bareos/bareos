@@ -46,8 +46,6 @@
 
 namespace storagedaemon {
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 /* Requests from the Director daemon */
 inline constexpr const char jobcmd[]
     = "JobId=%d job=%127s job_name=%127s client_name=%127s "
@@ -187,6 +185,20 @@ static void WaitClient(JobControlRecord* jcr, utime_t wait_time)
   });
 }
 
+/* Wait until the NDMP session signalled that it is done.
+ *
+ * The flag is checked and reset under the same lock that the notifying side
+ * uses, so a notification that arrives before we start waiting is not lost. */
+static void WaitForJobEnd(JobControlRecord* jcr)
+{
+  auto locked = jcr->sd_impl->job_ended.lock();
+
+  locked.wait(jcr->sd_impl->job_end_wait, [](bool ended) { return ended; });
+
+  // Reset so a following NDMP session waits for its own notification.
+  *locked = false;
+}
+
 static void WaitFD(JobControlRecord* jcr)
 {
   jcr->sendJobStatus(JS_WaitFD); /* wait for FD to connect */
@@ -229,9 +241,7 @@ bool DoJobRun(JobControlRecord* jcr)
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
-        unlock_mutex(mutex);
+        WaitForJobEnd(jcr);
       } else {
         Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
               jcr);
@@ -292,9 +302,7 @@ bool nextRunCmd(JobControlRecord* jcr)
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
-        unlock_mutex(mutex);
+        WaitForJobEnd(jcr);
       } else {
         Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
               jcr);
@@ -427,8 +435,6 @@ void StoredFreeJcr(JobControlRecord* jcr)
   if (jcr->sd_impl->next_dev || jcr->sd_impl->prev_dev) {
     Emsg0(M_FATAL, 0, T_("In FreeJcr(), but still attached to device!!!!\n"));
   }
-
-  pthread_cond_destroy(&jcr->sd_impl->job_end_wait);
 
   // Avoid a double free
   if (jcr->sd_impl->dcr == jcr->sd_impl->read_dcr) {

@@ -244,7 +244,7 @@ static inline bool AreMaxConcurrentJobsExceeded()
 void* HandleDirectorConnection(BareosSocket* dir)
 {
   JobControlRecord* jcr;
-  int i, errstat;
+  int i;
   int bnet_stat = 0;
   bool found, quit;
 
@@ -261,15 +261,6 @@ void* HandleDirectorConnection(BareosSocket* dir)
   NewPlugins(jcr);      /* instantiate plugins */
   jcr->dir_bsock = dir; /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
-
-  // Initialize End Job condition variable
-  errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, NULL);
-  if (errstat != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_FATAL, 0, T_("Unable to init job end cond variable: ERR=%s\n"),
-          be.bstrerror(errstat));
-    goto bail_out;
-  }
 
   Dmsg0(1000, "stored in start_job\n");
 
@@ -540,7 +531,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
       }
   }
 
-  pthread_cond_signal(&jcr->sd_impl->job_end_wait); /* wake waiting job */
+  *jcr->sd_impl->job_ended.lock() = true;
+  jcr->sd_impl->job_end_wait.notify_one(); /* wake waiting job */
   jcr->MyThreadSendSignal(kTimeoutSignal);
 
   dir->fsend(T_("3000 JobId=%" PRIu32 " Job=\"%s\" marked to be %s.\n"),

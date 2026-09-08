@@ -752,8 +752,8 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
     }
   }
 
-  pthread_cond_signal(
-      &jcr->sd_impl->job_end_wait); /* wake any waiting thread */
+  *jcr->sd_impl->job_ended.lock() = true;
+  jcr->sd_impl->job_end_wait.notify_one(); /* wake any waiting thread */
 
   ndmos_tape_initialize(sess);
 
