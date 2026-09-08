@@ -280,6 +280,9 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+  bareos_add_test(
+    ndmp_fileset_validation_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(

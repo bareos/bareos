@@ -39,6 +39,7 @@
 #if HAVE_NDMP
 #  include "dird/ndmp_dma_backup_common.h"
 #  include "dird/ndmp_dma_generic.h"
+#  include "dird/ndmp_fileset_validation.h"
 
 #  define NDMP_NEED_ENV_KEYWORDS 1
 
@@ -200,6 +201,20 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     return false;
   }
 
+  /* An NDMP backup job saves exactly one filesystem. Reject an unsupported
+   * fileset before a device gets reserved, so a misconfigured job does not
+   * occupy a drive. */
+  fileset = jcr->dir_impl->res.fileset;
+  if (auto validation
+      = ValidateNdmpFileset(fileset->include_items.size(),
+                            fileset->include_items.size() > 0
+                                ? fileset->include_items[0]->name_list.size()
+                                : 0);
+      validation != NdmpFilesetValidation::kOk) {
+    Jmsg(jcr, M_FATAL, 0, "%s", NdmpFilesetValidationMessage(validation));
+    return false;
+  }
+
   /* If we have a paired storage definition create a native connection
    * to a Storage daemon and make it ready to receive a backup.
    * The setup is more or less the same as for a normal non NDMP backup
@@ -248,10 +263,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   memset(nis, 0, sizeof(NIS));
 
   /* Loop over each include set of the fileset and fire off a NDMP backup of the
-   * included fileset. */
+   * included fileset. The fileset was validated above, so this runs exactly
+   * one sub-backup for the single filesystem of this job. */
   cnt = 0;
-  fileset = jcr->dir_impl->res.fileset;
-
 
   for (i = 0; i < fileset->include_items.size(); i++) {
     int j;

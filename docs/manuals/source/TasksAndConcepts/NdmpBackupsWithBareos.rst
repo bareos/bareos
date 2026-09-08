@@ -488,9 +488,10 @@ The specified directory needs to be a filesystem or a subdirectory of a filesyst
 
 .. warning::
 
-   Avoid using multiple :config:option:`dir/fileset/Include`\  :strong:`File`\  directives.
-   The |dir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
-   Even if this is working fine during backup, restore jobs will cause trouble.
+   A NDMP fileset must contain exactly one :config:option:`dir/fileset/Include`\  :strong:`File`\  directive.
+   A NDMP job backs up exactly one filesystem, and jobs whose fileset names none or several
+   filesystems are rejected with a fatal error before any drive is reserved.
+   Use one job per filesystem instead.
 
 Some NDMP environment variables are set automatically by the DMA in the |dir|. The following environment variables are currently set automatically:
 
@@ -1951,11 +1952,16 @@ Bareos NDMP Common Limitations
 NDMP Fileset limitations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. limitation:: NDMP: A NDMP fileset should only contain a single File directive and Meta options.
+.. limitation:: NDMP: A NDMP fileset must contain a single File directive and Meta options.
 
-   Using multiple :config:option:`dir/fileset/Include`\  :strong:`File`\  directives should be avoided.
-   The |dir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
-   Even if this is working fine during backup, restore jobs will cause trouble.
+   A NDMP job backs up exactly one filesystem, so its fileset has to contain exactly one
+   :config:option:`dir/fileset/Include`\  block with exactly one :strong:`File`\  directive.
+   Filesets naming none or several filesystems are rejected with a fatal error before any
+   drive is reserved. Use one job per filesystem instead.
+
+   Earlier versions tried to handle several :strong:`File`\  directives by running multiple
+   NDMP jobs within a single Bareos job. While this worked during backup, it caused trouble
+   on restore.
 
    Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |fd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta`\  from :config:option:`dir/fileset/Include`\ .
 
