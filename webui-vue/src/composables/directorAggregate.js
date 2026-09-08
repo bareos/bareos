@@ -185,9 +185,9 @@ function stripDefaultSchemaPrefix(name) {
   return value.startsWith('public.') ? value.slice('public.'.length) : value
 }
 
-function normalizeDatabaseStatus(statusResult, director) {
-  const payload = statusResult?.database_status ?? statusResult ?? {}
-  const database = payload.database ?? {}
+function normalizeCatalogStatus(statusResult, director) {
+  const payload = statusResult?.catalog_status ?? statusResult ?? {}
+  const catalog = payload.catalog ?? {}
   const tableEntries = Array.isArray(payload.tables) ? payload.tables : []
   const errors = Array.isArray(payload.errors)
     ? payload.errors
@@ -199,16 +199,17 @@ function normalizeDatabaseStatus(statusResult, director) {
     director,
     status: payload.status ?? 'unavailable',
     checkedAt: payload.checked_at ?? '',
-    database: {
-      engine: database.engine ?? '',
-      name: database.name ?? '',
-      totalBytes: numberValue(database.total_bytes),
-      totalBytesAvailable: booleanValue(database.total_bytes_available),
+    catalog: {
+      engine: catalog.engine ?? '',
+      name: catalog.name ?? '',
+      totalBytes: numberValue(catalog.total_bytes),
+      totalBytesAvailable: booleanValue(catalog.total_bytes_available),
     },
     tablesAvailable: booleanValue(payload.tables_available, tableEntries.length > 0),
     tables: tableEntries.map((entry, index) => ({
       name: stripDefaultSchemaPrefix(entry?.name),
       bytes: numberValue(entry?.bytes),
+      rows: numberValue(entry?.rows),
       scopeKey: `${director}:table:${entry?.name ?? index}`,
     })),
     message: payload.message ?? '',
@@ -236,8 +237,8 @@ function severityFromRank(rank) {
   }
 }
 
-function aggregateDatabaseStatusSummary(databaseStatuses) {
-  const statuses = Array.isArray(databaseStatuses) ? databaseStatuses : []
+function aggregateCatalogStatusSummary(catalogStatuses) {
+  const statuses = Array.isArray(catalogStatuses) ? catalogStatuses : []
   if (!statuses.length) {
     return {
       status: 'unavailable',
@@ -262,7 +263,7 @@ function aggregateDatabaseStatusSummary(databaseStatuses) {
       .map(entry => entry.checkedAt ?? '')
       .sort((a, b) => String(b).localeCompare(String(a)))[0] ?? '',
     totalBytes: statuses.reduce(
-      (sum, entry) => sum + (entry.database?.totalBytesAvailable ? numberValue(entry.database.totalBytes) : 0),
+      (sum, entry) => sum + (entry.catalog?.totalBytesAvailable ? numberValue(entry.catalog.totalBytes) : 0),
       0
     ),
     directors: statuses.length,
@@ -291,7 +292,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       client.call('list clients'),
       client.call('list storages'),
       client.call('status director'),
-      client.call('status database'),
+      client.call('status catalog'),
     ]
 
     // Pool + volume data is expensive and changes infrequently.
@@ -307,7 +308,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       clientsResult,
       storagesResult,
       directorStatusResult,
-      databaseStatusResult,
+      catalogStatusResult,
       ...poolResults
     ] = results.slice(JOBS_PAST_24H_STATUSES.length)
 
@@ -352,12 +353,12 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       jobsPast24hStatusCounts,
       runningJobs,
       pools,
-      databaseStatus: databaseStatusResult.status === 'fulfilled'
-        ? normalizeDatabaseStatus(databaseStatusResult.value, credentials.director)
-        : normalizeDatabaseStatus({
+      catalogStatus: catalogStatusResult.status === 'fulfilled'
+        ? normalizeCatalogStatus(catalogStatusResult.value, credentials.director)
+        : normalizeCatalogStatus({
           status: 'unavailable',
-          message: 'Database status unavailable.',
-          errors: [databaseStatusResult.reason?.message ?? 'Database status unavailable.'],
+          message: 'Catalog status unavailable.',
+          errors: [catalogStatusResult.reason?.message ?? 'Catalog status unavailable.'],
         }, credentials.director),
       jobTotals: totalsResult.status === 'fulfilled'
         ? {
@@ -399,11 +400,11 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       ...combined.pools,
       ...(snapshot.pools ?? []),
     ].sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? ''))),
-    databaseStatuses: [
-      ...combined.databaseStatuses,
-      ...(Array.isArray(snapshot.databaseStatuses)
-        ? snapshot.databaseStatuses
-        : (snapshot.databaseStatus ? [snapshot.databaseStatus] : [])),
+    catalogStatuses: [
+      ...combined.catalogStatuses,
+      ...(Array.isArray(snapshot.catalogStatuses)
+        ? snapshot.catalogStatuses
+        : (snapshot.catalogStatus ? [snapshot.catalogStatus] : [])),
     ],
     clientCount: combined.clientCount + numberValue(snapshot.clientCount),
     storageCount: combined.storageCount + numberValue(snapshot.storageCount),
@@ -416,7 +417,7 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
     jobsPast24hStatusCounts: emptyJobsPast24hStatusCounts(),
     runningJobs: [],
     pools: [],
-    databaseStatuses: [],
+    catalogStatuses: [],
     clientCount: 0,
     storageCount: 0,
     jobTotals: {
@@ -426,11 +427,11 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
     },
   })
 
-  const databaseStatuses = [...aggregate.databaseStatuses]
+  const catalogStatuses = [...aggregate.catalogStatuses]
     .sort((left, right) => String(left.director ?? '').localeCompare(String(right.director ?? '')))
   return {
     ...aggregate,
-    databaseStatuses,
-    databaseStatusSummary: aggregateDatabaseStatusSummary(databaseStatuses),
+    catalogStatuses,
+    catalogStatusSummary: aggregateCatalogStatusSummary(catalogStatuses),
   }
 }

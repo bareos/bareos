@@ -170,12 +170,12 @@ describe('director aggregate dashboard helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandIds.get('status database'),
+        id: commandIds.get('status catalog'),
         data: {
-          database_status: {
+          catalog_status: {
             status: 'ok',
             checked_at: '2026-03-23 09:30:00',
-            database: {
+            catalog: {
               engine: 'postgresql',
               name: 'bareos',
               total_bytes_available: true,
@@ -183,8 +183,8 @@ describe('director aggregate dashboard helpers', () => {
             },
             tables_available: true,
             tables: [
-              { name: 'public.job', bytes: 2048 },
-              { name: 'public.file', bytes: 1024 },
+              { name: 'public.job', bytes: 2048, rows: 20 },
+              { name: 'public.file', bytes: 1024, rows: 512 },
             ],
           },
         },
@@ -235,16 +235,20 @@ describe('director aggregate dashboard helpers', () => {
         files: 1200,
         bytes: 40960,
       },
-      databaseStatus: {
+      catalogStatus: {
         status: 'ok',
         checkedAt: '2026-03-23 09:30:00',
-        database: {
+        catalog: {
           engine: 'postgresql',
           name: 'bareos',
           totalBytesAvailable: true,
           totalBytes: 4096,
         },
         tablesAvailable: true,
+        tables: [
+          expect.objectContaining({ name: 'job', bytes: 2048, rows: 20 }),
+          expect.objectContaining({ name: 'file', bytes: 1024, rows: 512 }),
+        ],
       },
     })
   })
@@ -255,11 +259,11 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-a',
         jobsPast24hStatusCounts: { R: 1, C: 2, T: 3, W: 4, f: 5 },
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
-        databaseStatus: {
+        catalogStatus: {
           director: 'prod-a',
           status: 'warning',
           checkedAt: '2026-03-23 10:00:00',
-          database: { totalBytesAvailable: true, totalBytes: 1000 },
+          catalog: { totalBytesAvailable: true, totalBytes: 1000 },
         },
         clientCount: 2,
         storageCount: 1,
@@ -269,11 +273,11 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-b',
         jobsPast24hStatusCounts: { R: 10, C: 20, T: 30, W: 40, f: 50 },
         runningJobs: [],
-        databaseStatus: {
+        catalogStatus: {
           director: 'prod-b',
           status: 'ok',
           checkedAt: '2026-03-23 12:00:00',
-          database: { totalBytesAvailable: true, totalBytes: 2000 },
+          catalog: { totalBytesAvailable: true, totalBytes: 2000 },
         },
         clientCount: 3,
         storageCount: 2,
@@ -295,8 +299,8 @@ describe('director aggregate dashboard helpers', () => {
       files: 300,
       bytes: 3000,
     })
-    expect(aggregate.databaseStatuses.map(s => s.director)).toEqual(['prod-a', 'prod-b'])
-    expect(aggregate.databaseStatusSummary).toEqual({
+    expect(aggregate.catalogStatuses.map(s => s.director)).toEqual(['prod-a', 'prod-b'])
+    expect(aggregate.catalogStatusSummary).toEqual({
       status: 'warning',
       checkedAt: '2026-03-23 12:00:00',
       totalBytes: 3000,
