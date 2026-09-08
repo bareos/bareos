@@ -35,6 +35,18 @@ function manualUrl(path) {
 }
 
 export const restorePluginHints = Object.freeze({
+  barri: {
+    displayName: 'BARRI (Bareos Recovery Imager)',
+    manualUrl: manualUrl('TasksAndConcepts/Plugins.html#barriplugin'),
+    optionSeparator: ':',
+    aliases: ['barri'],
+    options: [
+      option('save-unreferenced-disks', 'optional', 'Try to save disks that contain no snapshotted data. Default: yes.', 'plugin-doc'),
+      option('save-unreferenced-partitions', 'optional', 'Try to save partitions that contain no snapshotted data. Default: yes.', 'plugin-doc'),
+      option('save-unreferenced-extents', 'optional', 'Try to save even unsnapshotted parts of partitions. Default: yes.', 'plugin-doc'),
+      option('ignore-disks', 'optional', 'Comma-separated list of disks to ignore.', 'plugin-doc'),
+    ],
+  },
   bpipe: {
     displayName: 'BPipe',
     manualUrl: manualUrl('TasksAndConcepts/Plugins.html#bpipe'),
