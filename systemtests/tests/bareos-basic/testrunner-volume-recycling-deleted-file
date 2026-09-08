@@ -129,6 +129,10 @@ expect_grep "Missing volume file.*creating a new file" \
   "${second_backup_joblog}" \
   "Missing joblog message for recreated file."
 
+expect_grep "Termination:.*Backup OK -- with warnings" \
+  "${second_backup_log}" \
+  "Backup did not terminate with warnings after recreating the volume file."
+
 expect_not_grep "The sizes do not match!" \
   "${second_backup_log}" \
   "Catalog still reports the wrong volume size."

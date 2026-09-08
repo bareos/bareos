@@ -77,7 +77,7 @@ static bool TryOpenOrCreateVolumeFile(DeviceControlRecord* dcr)
       archive_name += '/';
     }
     archive_name += dcr->VolumeName;
-    Jmsg(jcr, M_WARNING, 0,
+    Jmsg(jcr, M_ERROR, 0,
          T_("Missing volume file %s for Volume %s; creating a new file.\n"),
          archive_name.c_str(), dcr->VolumeName);
   }
