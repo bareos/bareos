@@ -28,10 +28,13 @@
  * Code for WaitForSysop() pulled from askdir.c
  */
 
+#include <algorithm>
+
 #include "include/bareos.h" /* pull in global headers */
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/device_wait_policy.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
@@ -47,18 +50,6 @@ static constexpr int kDefaultWaitForDeviceTimeout = 60;
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 static int wait_for_device_timeout = kDefaultWaitForDeviceTimeout;
-
-static bool AdvanceWaitBudget(DeviceWaitTimes& wait_times)
-{
-  wait_times.wait_sec *= 2;
-  if (wait_times.wait_sec > wait_times.max_wait) {
-    wait_times.wait_sec = wait_times.max_wait;
-  }
-  wait_times.num_wait++;
-  wait_times.rem_wait_sec = wait_times.wait_sec;
-
-  return wait_times.num_wait < wait_times.max_num_wait;
-}
 
 void SetWaitForDeviceTimeoutForTesting(int timeout_in_seconds)
 {
@@ -267,22 +258,31 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
 
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
+  time_t start = time(NULL);
+
   /* Wait required time */
   status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
                                   &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
+
+  /* pthread_cond_timedwait() may return earlier or later than the timeout we
+   * asked for, so charge the time we really spent here instead of the time we
+   * intended to wait. */
+  auto waited = static_cast<int32_t>(time(NULL) - start);
+
   if (status == ETIMEDOUT) {
-    if (current_wait == 0 || wait_times.rem_wait_sec <= current_wait) {
-      wait_times.rem_wait_sec = 0;
-      ok = AdvanceWaitBudget(wait_times);
-    } else {
-      wait_times.rem_wait_sec -= current_wait;
-    }
+    /* The granted slice elapsed, so it has to count even if measuring it
+     * rounded down to zero. Otherwise the budget could never be used up. */
+    ok = ConsumeDeviceWaitTime(wait_times, std::max(waited, 1));
   } else if (status != 0) {
     BErrNo be;
     Dmsg2(debuglevel, "Device wait failed status=%d ERR=%s\n", status,
           be.bstrerror(status));
     ok = false;
+  } else {
+    /* A device changed state, so the caller rescans. The time spent waiting
+     * still counts against the budget. */
+    ConsumeDeviceWaitTime(wait_times, waited);
   }
 
   unlock_mutex(device_release_mutex);
