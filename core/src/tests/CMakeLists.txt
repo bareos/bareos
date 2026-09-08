@@ -276,6 +276,9 @@ if(NOT client-only)
   )
   bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(
+    device_wait_policy_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main
+  )
+  bareos_add_test(
     ndmp_address_translate_test
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
