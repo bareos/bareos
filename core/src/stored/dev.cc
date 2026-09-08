@@ -344,29 +344,12 @@ void InitDeviceWaitTimers(DeviceControlRecord* dcr)
   dev->num_wait = 0;
   dev->poll = false;
 
-  jcr->sd_impl->device_wait_times.min_wait = 60 * 60;
-  jcr->sd_impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->sd_impl->device_wait_times.max_num_wait
-      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->sd_impl->device_wait_times.wait_sec
-      = jcr->sd_impl->device_wait_times.min_wait;
-  jcr->sd_impl->device_wait_times.rem_wait_sec
-      = jcr->sd_impl->device_wait_times.wait_sec;
-  jcr->sd_impl->device_wait_times.num_wait = 0;
+  jcr->sd_impl->device_wait_budget = DeviceWaitBudget{};
 }
 
 void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
 {
-  /* ******FIXME******* put these on config variables */
-  jcr->sd_impl->device_wait_times.min_wait = 60 * 60;
-  jcr->sd_impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->sd_impl->device_wait_times.max_num_wait
-      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->sd_impl->device_wait_times.wait_sec
-      = jcr->sd_impl->device_wait_times.min_wait;
-  jcr->sd_impl->device_wait_times.rem_wait_sec
-      = jcr->sd_impl->device_wait_times.wait_sec;
-  jcr->sd_impl->device_wait_times.num_wait = 0;
+  jcr->sd_impl->device_wait_budget = DeviceWaitBudget{};
 }
 
 /**

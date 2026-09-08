@@ -85,7 +85,6 @@ void ReservationTest::SetUp()
 }
 void ReservationTest::TearDown()
 {
-  ResetWaitForDeviceTimeoutForTesting();
   FreeVolumeLists();
 
   {
@@ -327,12 +326,10 @@ TEST_F(ReservationTest, wait_for_device_times_out)
   auto job = std::make_unique<TestJob>(111u);
   int retries = 0;
 
-  job->jcr->sd_impl->device_wait_times.max_num_wait = 1;
-  job->jcr->sd_impl->device_wait_times.wait_sec = 0;
-  job->jcr->sd_impl->device_wait_times.rem_wait_sec = 0;
-  SetWaitForDeviceTimeoutForTesting(0);
+  // No budget left, so the job must not wait any longer.
+  job->jcr->sd_impl->device_wait_budget.remaining = std::chrono::seconds{0};
 
-  ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
+  ASSERT_EQ(WaitForDevice(job->jcr, retries, std::chrono::seconds{0}), false);
   ASSERT_EQ(retries, 1);
 }
 
@@ -341,13 +338,12 @@ TEST_F(ReservationTest, wait_for_device_uses_total_wait_budget)
   auto job = std::make_unique<TestJob>(111u);
   int retries = 0;
 
-  job->jcr->sd_impl->device_wait_times.max_num_wait = 2;
-  job->jcr->sd_impl->device_wait_times.wait_sec = 0;
-  job->jcr->sd_impl->device_wait_times.rem_wait_sec = 0;
-  SetWaitForDeviceTimeoutForTesting(0);
+  /* Two seconds of budget are spent by two waits that time out, because a
+   * wait that times out always costs at least a second. */
+  job->jcr->sd_impl->device_wait_budget.remaining = std::chrono::seconds{2};
 
-  ASSERT_EQ(WaitForDevice(job->jcr, retries), true);
-  ASSERT_EQ(WaitForDevice(job->jcr, retries), false);
+  ASSERT_EQ(WaitForDevice(job->jcr, retries, std::chrono::seconds{0}), true);
+  ASSERT_EQ(WaitForDevice(job->jcr, retries, std::chrono::seconds{0}), false);
   ASSERT_EQ(retries, 2);
 }
 
@@ -378,7 +374,6 @@ TEST_F(ReservationTest, use_cmd_reserve_read_retries_before_waiting)
   ASSERT_EQ(use_cmd(job1->jcr), true);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
 
-  SetWaitForDeviceTimeoutForTesting(0);
   bsock->recv();
   auto future
       = std::async(std::launch::async, [&job2] { return use_cmd(job2->jcr); });

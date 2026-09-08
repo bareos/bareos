@@ -22,52 +22,58 @@
 #ifndef BAREOS_STORED_DEVICE_WAIT_POLICY_H_
 #define BAREOS_STORED_DEVICE_WAIT_POLICY_H_
 
-#include <cstdint>
+#include <algorithm>
+#include <chrono>
 
 namespace storagedaemon {
 
-/* Budget for waiting until a device becomes available.
+/* How long a single wait for a device lasts.
  *
- * A job waits in rounds. Every round grants wait_sec seconds, of which
- * rem_wait_sec are still left. When a round is used up the next one lasts
- * twice as long, capped at max_wait, until max_num_wait rounds were spent. */
-struct DeviceWaitTimes {
-  int32_t min_wait{};
-  int32_t max_wait{};
-  int32_t max_num_wait{};
-  int32_t wait_sec{};
-  int32_t rem_wait_sec{};
-  int32_t num_wait{};
+ * Releasing a device signals the jobs that wait for one, so this is not a
+ * polling interval. It only bounds how long a job would sleep if such a
+ * signal was ever missed, and it decides how often the job reports that it
+ * is still waiting. */
+inline constexpr std::chrono::seconds kDefaultDeviceWait{60};
+
+/* How long a job may wait for a device in total before it gives up.
+ *
+ * Waiting is deliberately generous, because a job queued behind a long
+ * backup should not fail just for being patient. It is bounded so that a job
+ * which can never get a device does not stay in the reservation loop
+ * forever. */
+inline constexpr std::chrono::seconds kMaxTotalDeviceWait{5 * 24 * 60 * 60};
+
+/* What is left of the time a job may wait for a device.
+ *
+ * This is a plain remaining duration, without any backoff between the
+ * individual waits. A job is woken up as soon as a device is released, so
+ * waiting longer each time would not save any work: it would only delay the
+ * job past the moment a device became free. */
+struct DeviceWaitBudget {
+  std::chrono::seconds remaining{kMaxTotalDeviceWait};
 };
 
-/* Start a new waiting round with twice the length of the previous one.
- *
- * Returns whether another round may be started, so a job that can never get
- * a device stops waiting instead of retrying forever. */
-constexpr bool DoubleJobWaitTime(DeviceWaitTimes& times)
+// How long the next wait may last, never longer than what is left.
+constexpr std::chrono::seconds NextDeviceWait(const DeviceWaitBudget& budget,
+                                              std::chrono::seconds interval
+                                              = kDefaultDeviceWait)
 {
-  times.wait_sec *= 2;
-  if (times.wait_sec > times.max_wait) { times.wait_sec = times.max_wait; }
-
-  times.num_wait++;
-  times.rem_wait_sec = times.wait_sec;
-
-  return times.num_wait < times.max_num_wait;
+  return std::min(budget.remaining, interval);
 }
 
-/* Account for seconds spent waiting for a device.
+/* Charge time spent waiting against the budget.
  *
- * Returns whether the job may keep waiting. Once the current round is used
- * up the next one is started, and waiting ends when the budget is exhausted.
- * A round that cannot make progress, because it grants no time at all, does
- * not stall the budget either. */
-constexpr bool ConsumeDeviceWaitTime(DeviceWaitTimes& times, int32_t seconds)
+ * Returns whether the job may keep waiting. A wait that took no time does
+ * not consume anything, so a job cannot be starved by spurious wakeups
+ * either. */
+constexpr bool ConsumeDeviceWait(DeviceWaitBudget& budget,
+                                 std::chrono::seconds waited)
 {
-  if (seconds > 0) { times.rem_wait_sec -= seconds; }
+  constexpr std::chrono::seconds none{0};
 
-  if (times.rem_wait_sec > 0) { return true; }
+  if (waited > none) { budget.remaining -= std::min(waited, budget.remaining); }
 
-  return DoubleJobWaitTime(times);
+  return budget.remaining > none;
 }
 
 }  // namespace storagedaemon
