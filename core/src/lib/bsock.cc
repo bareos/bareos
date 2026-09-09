@@ -333,6 +333,9 @@ void BareosSocket::SetKillable(bool killable)
 ssize_t BareosSocket::peek(char* buffer, size_t count) const
 {
   if (errors || IsTerminated()) { return -1; }
+
+  if (tls_conn) { return tls_conn->TlsBsockPeekn(this, buffer, count); }
+
   return ::recv(fd_, buffer, count, MSG_PEEK);
 }
 
