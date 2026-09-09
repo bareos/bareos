@@ -80,6 +80,9 @@ class TlsOpenSsl : public Tls {
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) override;
+  int TlsBsockPeekn(const BareosSocket* bsock,
+                    char* ptr,
+                    int32_t nbytes) override;
   void TlsBsockShutdown(BareosSocket* bsock) override;
 
   std::string TlsCipherGetName() const override;
@@ -756,6 +759,16 @@ int TlsOpenSsl::TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
 int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
   return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
+}
+
+int TlsOpenSsl::TlsBsockPeekn(const BareosSocket*, char* ptr, int32_t nbytes)
+{
+  if (!openssl_) {
+    Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
+    return 0;
+  }
+
+  return SSL_peek(openssl_, ptr, nbytes);
 }
 
 bool TlsOpenSsl::KtlsSendStatus()
