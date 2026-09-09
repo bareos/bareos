@@ -323,6 +323,35 @@ export function buildRestoreClientFilesetOptions(backups) {
   ))
 }
 
+export function buildRestoreBackupChainOptions(
+  backups,
+  jobids,
+  {
+    formatBytes = value => String(value),
+  } = {}
+) {
+  const ids = Array.isArray(jobids)
+    ? jobids
+    : (typeof jobids === 'string' ? jobids.split(',') : [])
+  const wantedJobIds = new Set(
+    ids
+      .map(jobid => String(jobid ?? '').trim())
+      .filter(Boolean)
+  )
+
+  if (wantedJobIds.size === 0 || !Array.isArray(backups)) {
+    return []
+  }
+
+  return backups
+    .filter(backup => wantedJobIds.has(String(backup?.jobid ?? '').trim()))
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
 // Resolves the newest backup job matching a client's already-loaded backup
 // list, narrowed to a specific fileset (required -- restoring "the latest
 // backup" only makes sense for a single client+fileset tuple) and an
