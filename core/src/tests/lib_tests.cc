@@ -19,7 +19,6 @@
    02110-1301, USA.
 */
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "include/bareos.h"
 
 #include "include/version_numbers.h"
@@ -28,7 +27,6 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bareos_resource.h"
-#include "lib/try_tls_handshake_as_a_server.h"
 #include "stored/butil.h"
 #include "lib/util.h"
 #include "lib/version.h"
@@ -195,57 +193,6 @@ enum
   R_CONSOLE
 };
 
-static void do_get_name_from_hello_test(const char* client_string_fmt,
-                                        const char* client_name,
-                                        const std::string& r_type_test,
-                                        const BareosVersionNumber& version_test)
-{
-  char bashed_client_name[20];
-  assert(strlen(client_name) <= 19);
-  strncpy(bashed_client_name, client_name, 20);
-  bashed_client_name[19] = '\0';
-  BashSpaces(bashed_client_name);
-
-  char output_text[64];
-  sprintf(output_text, client_string_fmt, bashed_client_name);
-
-  std::string name;
-  std::string r_type_str;
-  BareosVersionNumber version = BareosVersionNumber::kUndefined;
-
-  bool ok = GetNameAndResourceTypeAndVersionFromHello(output_text, name,
-                                                      r_type_str, version);
-
-  EXPECT_TRUE(ok);
-  EXPECT_STREQ(name.c_str(), client_name);
-  EXPECT_STREQ(r_type_str.c_str(), r_type_test.c_str());
-  EXPECT_EQ(version, version_test);
-}
-
-TEST(Util, get_name_from_hello_test)
-{
-  // clang-format off
-  do_get_name_from_hello_test("Hello Client %s calling",
-                              "Test Client",        "R_CLIENT",   BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello Storage calling Start Job %s",
-                              "Test Client",        "R_JOB",      BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello %s",
-                              "Console Name",       "R_CONSOLE",  BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello %s",
-                              "*UserAgent*",        "R_CONSOLE",  BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello %s",
-                              "*UserAgent*",        "R_CONSOLE",  BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello %s calling version 18.2.4rc2",
-                              "Console",            "R_CONSOLE",  BareosVersionNumber::kRelease_18_2);
-  do_get_name_from_hello_test("Hello Director %s calling\n",
-                              "bareos dir",         "R_DIRECTOR", BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello Start Storage Job %s",
-                              "Test Job",           "R_JOB",      BareosVersionNumber::kUndefined);
-  do_get_name_from_hello_test("Hello Client %s FdProtocolVersion=123 calling\n",
-                              "Test Client again",  "R_CLIENT",    BareosVersionNumber::kUndefined);
-  // clang-format on
-}
-
 TEST(Util, version_number_test)
 {
   EXPECT_EQ(BareosVersionNumber::kRelease_18_2,
@@ -256,27 +203,6 @@ TEST(Util, version_number_test)
             static_cast<BareosVersionNumber>(1702));
   EXPECT_GT(BareosVersionNumber::kRelease_18_2,
             BareosVersionNumber::kUndefined);
-}
-
-namespace {
-struct TestUseConfigAndJcrs : UseConfigAndJcrs {
-  using UseConfigAndJcrs::found_jcr;
-  using UseConfigAndJcrs::UseConfigAndJcrs;
-};
-
-}  // namespace
-
-TEST(TlsPskAuth, JobPskCannotAuthenticateAsDirector)
-{
-  ConfigurationParser parser;
-  TestUseConfigAndJcrs provider(&parser);
-  provider.found_jcr
-      = storagedaemon::SetupDummyJcr("Test Job", nullptr, nullptr);
-
-  auto error = provider.is_resource_name_different_from_tls_name(
-      R_DIRECTOR, "Test Director");
-  ASSERT_TRUE(error.has_value());
-  EXPECT_NE(error->find("tried authenticating as resource"), std::string::npos);
 }
 
 TEST(Util, version_number_major_minor)
@@ -389,9 +315,8 @@ TEST(BareosVersion, try_parse)
   BAD("1.256.1");
   BAD("1.1.256");
 
-#define GOOD(Input, ...)                       \
-  EXPECT_THAT(BareosVersion::try_parse(Input), \
-              testing::Optional(BareosVersion __VA_ARGS__))
+#define GOOD(Input, ...) \
+  EXPECT_EQ(BareosVersion::try_parse(Input), (BareosVersion __VA_ARGS__))
 
   GOOD("1.2.3", {1, 2, 3});
   GOOD("1.2.3~preversion", {1, 2, 3, "version"});

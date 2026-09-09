@@ -46,6 +46,7 @@
 #include "lib/bstringlist.h"
 
 #include <netdb.h>
+#include "lib/mem_pool.h"
 #include "lib/tls.h"
 
 #ifndef INADDR_NONE
@@ -517,6 +518,31 @@ bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
   return EvaluateResponseMessageId(message, id_out, args_out);
 }
 
+bool SendResponseMessage(BareosSocket* socket, ResponseId id, const char* msg)
+{
+  socket->StartTimer(30);  // 30 seconds
+  bool ok = socket->fsend("%u%c%s", id,
+                          AsciiControlCharacters::RecordSeparator(), msg);
+  socket->StopTimer();
+  return ok;
+}
+
+bool FormatAndSendResponseMessage(BareosSocket* socket,
+                                  ResponseId id,
+                                  const char* fmt,
+                                  ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  PoolMem formatted;
+  formatted.Bvsprintf(fmt, args);
+
+  va_end(args);
+
+  return SendResponseMessage(socket, id, formatted.c_str());
+}
+
 bool BareosSocket::FormatAndSendResponseMessage(
     uint32_t id,
     const BStringList& list_of_arguments)
@@ -533,13 +559,4 @@ bool BareosSocket::FormatAndSendResponseMessage(
   }
   StopTimer();
   return true;
-}
-
-bool BareosSocket::FormatAndSendResponseMessage(uint32_t id,
-                                                const std::string& str)
-{
-  BStringList message;
-  message << str;
-
-  return FormatAndSendResponseMessage(id, message);
 }

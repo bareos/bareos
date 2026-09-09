@@ -49,6 +49,8 @@
 #include "lib/s_password.h"
 #include "lib/tls_conf.h"
 #include "include/version_numbers.h"
+#include "lib/global_resource.h"
+#include "lib/hello.h"
 
 #include <mutex>
 #include <functional>
@@ -84,35 +86,32 @@ class BareosSocket {
   int sleep_time_after_authentication_error;
   bool enable_ktls_{false};
 
-  unsigned remote_version{}; /* version hex of remote version; only for inbound;
+  uint32_t remote_version{}; /* version hex of remote version; only for inbound;
                                 0 if unknown */
 
   struct sockaddr_storage client_addr; /* Client's IP address */
   struct sockaddr_storage peer_addr;   /* Peer's IP address */
-  void SetTlsEstablished() { tls_established_ = true; }
-  bool TlsEstablished() const { return tls_established_; }
+  bool TlsEstablished() const { return tls_conn != nullptr; }
   std::shared_ptr<Tls> tls_conn; /* Associated tls connection */
-  BareosVersionNumber connected_daemon_version_;
 
  protected:
   JobControlRecord* jcr_; /* JobControlRecord or NULL for error msgs */
   std::shared_ptr<std::mutex> mutex_;
-  char* who_;            /* Name of daemon to which we are talking */
-  char* host_;           /* Host name/IP */
-  int port_;             /* Desired port */
-  btimer_t* tid_;        /* Timer id */
-  boffset_t data_end_;   /* Offset of last valid data written */
-  int32_t FileIndex_;    /* Last valid attr spool FI */
-  bool timed_out_;       /* Timed out in read/write */
-  bool terminated_;      /* Set when BNET_TERMINATE arrives */
-  bool cloned_;          /* Set if cloned BareosSocket */
-  bool spool_;           /* Set for spooling */
-  bool use_bursting_;    /* Set to use bandwidth bursting */
-  bool use_keepalive_;   /* Set to use keepalive on the socket */
-  int64_t bwlimit_;      /* Set to limit bandwidth */
-  int64_t nb_bytes_;     /* Bytes sent/recv since the last tick */
-  btime_t last_tick_;    /* Last tick used by bwlimit */
-  bool tls_established_; /* is true when tls connection is established */
+  char* who_;          /* Name of daemon to which we are talking */
+  char* host_;         /* Host name/IP */
+  int port_;           /* Desired port */
+  btimer_t* tid_;      /* Timer id */
+  boffset_t data_end_; /* Offset of last valid data written */
+  int32_t FileIndex_;  /* Last valid attr spool FI */
+  bool timed_out_;     /* Timed out in read/write */
+  bool terminated_;    /* Set when BNET_TERMINATE arrives */
+  bool cloned_;        /* Set if cloned BareosSocket */
+  bool spool_;         /* Set for spooling */
+  bool use_bursting_;  /* Set to use bandwidth bursting */
+  bool use_keepalive_; /* Set to use keepalive on the socket */
+  int64_t bwlimit_;    /* Set to limit bandwidth */
+  int64_t nb_bytes_;   /* Bytes sent/recv since the last tick */
+  btime_t last_tick_;  /* Last tick used by bwlimit */
   std::unique_ptr<BnetDump> bnet_dump_;
 
   virtual void FinInit(JobControlRecord* jcr,
@@ -183,49 +182,16 @@ class BareosSocket {
   bool signal(int signal);
   const char* bstrerror(); /* last error on socket */
   bool despool(void UpdateAttrSpoolSize(ssize_t size), ssize_t tsize);
-  bool ConsoleAuthenticateWithDirector(JobControlRecord* jcr,
-                                       const char* name,
-                                       s_password& password,
-                                       TlsResource* tls_resource,
-                                       const std::string& own_qualified_name,
-                                       BStringList& response_args,
-                                       uint32_t& response_id);
-  bool DoTlsHandshake(TlsPolicy remote_tls_policy,
-                      TlsResource* tls_resource,
-                      bool initiated_by_remote,
-                      const char* identity,
-                      const char* password,
-                      JobControlRecord* jcr);
-  bool DoTlsHandshakeAsAServer(TlsSecretProvider* data,
-                               TlsResource* tls_resource,
-                               JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
   void SetSourceAddress(dlist<IPADDR>* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
-  bool EvaluateCleartextBareosHello(bool& cleartext,
-                                    std::string& client_name_out,
-                                    std::string& r_code_str_out,
-                                    BareosVersionNumber& version_out) const;
-  void OutputCipherMessageString(std::function<void(const char*)>);
+  ssize_t peek(char* buffer, size_t count) const;
   std::string GetCipherMessageString() const;
   bool ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
                                          BStringList& args_out);
   bool FormatAndSendResponseMessage(uint32_t id,
                                     const BStringList& list_of_agruments);
-  bool FormatAndSendResponseMessage(uint32_t id, const std::string& str);
-
-  bool AuthenticateOutboundConnection(JobControlRecord* jcr,
-                                      const std::string own_qualified_name,
-                                      const char* identity,
-                                      s_password& password,
-                                      TlsResource* tls_resource);
-
-  bool AuthenticateInboundConnection(JobControlRecord* jcr,
-                                     ConfigurationParser* my_config,
-                                     const char* name,
-                                     s_password& password,
-                                     TlsResource* tls_resource);
 
   void SetJcr(JobControlRecord* jcr) { jcr_ = jcr; }
   void SetWho(char* who) { who_ = who; }
@@ -236,10 +202,10 @@ class BareosSocket {
   int port() { return port_; }
   JobControlRecord* jcr() { return jcr_; }
   JobControlRecord* get_jcr() { return jcr_; }
-  bool IsSpooling() { return spool_; }
-  bool IsTerminated() { return terminated_; }
-  bool IsTimedOut() { return timed_out_; }
-  bool IsStop() { return errors || IsTerminated(); }
+  bool IsSpooling() const { return spool_; }
+  bool IsTerminated() const { return terminated_; }
+  bool IsTimedOut() const { return timed_out_; }
+  bool IsStop() const { return errors || IsTerminated(); }
   bool IsError()
   {
     errno = b_errno;
@@ -291,5 +257,80 @@ enum
   BNET_HARDEOF = -2,
   BNET_ERROR = -3
 };
+
+struct Authenticator {
+  struct OutboundArgs {
+    JobControlRecord* jcr;
+    BareosSocket* socket;
+    const TlsResource* target;
+  };
+
+  struct InboundArgs {
+    BareosSocket* socket;
+    const TlsResource* target;
+  };
+
+  virtual bool authenticate_outbound(OutboundArgs args) = 0;
+  virtual bool authenticate_inbound(InboundArgs args) = 0;
+  virtual ~Authenticator() = default;
+};
+
+struct Md5Authenticator : Authenticator {
+  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args) override;
+
+  Md5Authenticator();
+  Md5Authenticator(std::string identity);
+
+  /* a cram-md5 challenge consists of three parts:
+   *  - a current timestamp,
+   *  - a random value, and
+   *  - some way to identify our own challenges
+   * cram_identity is used for the third part.  It makes sure
+   * that you cannot use us, to solve our own challenge.
+   * This value can be anything, but it should always be the same for the
+   * livetime of the program, otherwise it will not do its job!
+   * This string shall _NOT_ contain whitespace! */
+  std::string cram_identity;
+};
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   const std::string& qualified_name,
+                   const TlsResource* res,
+                   std::string_view hello_msg,
+                   Authenticator* auth,
+                   bool cleartext_authentication = false);
+
+template <global_resource::Type type, global_resource::Type target_type>
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string_view name,
+                   const TlsResource* res,
+                   bool cleartext_authentication = false)
+{
+  using formatter = hello_formatter<type, target_type>;
+  auto qualified_name
+      = global_resource::QualifiedName(formatter::auth_type, name);
+  auto hello = formatter::format(name);
+  Md5Authenticator auth{qualified_name};
+  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
+                       cleartext_authentication);
+}
+
+std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
+                                        global_resource::Type type,
+                                        const TlsResource* initial_tls,
+                                        TlsConfigProvider* provider,
+                                        Authenticator* auth);
+
+static inline auto BareosAccept(BareosSocket* socket,
+                                global_resource::Type type,
+                                const TlsResource* initial_tls,
+                                TlsConfigProvider* provider)
+{
+  Md5Authenticator auth{};
+  return BareosAccept(socket, type, initial_tls, provider, &auth);
+}
 
 #endif  // BAREOS_LIB_BSOCK_H_

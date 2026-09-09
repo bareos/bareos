@@ -2,7 +2,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,13 +22,50 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
+#include "lib/bsock.h"
+#include "include/jcr.h"
+#include "lib/parse_conf.h"
+#include "stored/stored_conf.h"
+
 namespace storagedaemon {
 
-bool AuthenticateDirector(JobControlRecord* jcr);
-bool AuthenticateStoragedaemon(JobControlRecord* jcr);
-bool AuthenticateWithStoragedaemon(JobControlRecord* jcr);
-bool AuthenticateFiledaemon(JobControlRecord* jcr);
-bool AuthenticateWithFiledaemon(JobControlRecord* jcr);
+struct Auth : ::TlsConfigProvider {
+  Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
+
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view name) override;
+
+  enum class inbound_type
+  {
+    Unknown,
+    Director,
+    Job,
+  };
+
+  struct director_data {
+    DirectorResource* res{};
+  };
+
+  struct job_data {
+    JobControlRecord* jcr{};
+    TlsResource job{};
+
+    ~job_data()
+    {
+      if (jcr) { FreeJcr(jcr); }
+    }
+  };
+
+  inbound_type GetType() const { return type; }
+
+  std::optional<director_data> director;
+  std::optional<job_data> job;
+
+ private:
+  std::shared_ptr<LoadedConfiguration> p;
+  inbound_type type{inbound_type::Unknown};
+};
+
 
 } /* namespace storagedaemon */
 

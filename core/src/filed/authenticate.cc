@@ -26,20 +26,19 @@
  * Authenticate Director who is attempting to connect.
  */
 
+#include "include/baconfig.h"
 #include "include/bareos.h"
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
+#include "filed/authenticate.h"
 #include "filed/restore.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
-#include "include/version_hex.h"
 
 namespace filedaemon {
-
-const int debuglevel = 50;
 
 /* Version at end of Hello
  *   prior to 10Mar08 no version
@@ -54,155 +53,98 @@ const int debuglevel = 50;
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
  */
-inline constexpr const char OK_hello[] = "2000 OK Hello 54\n";
 
-inline constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
-
-/**
- * To prevent DOS attacks,
- * wait a bit in case of an
- * authentication failure of a (remotely) initiated connection.
- */
-static inline void delay()
+const TlsResource* Auth::get(global_resource::Type auth_type,
+                             std::string_view name)
 {
-  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+  auto* myself
+      = dynamic_cast<ClientResource*>(p->GetNextRes(R_CLIENT, nullptr));
 
-  // Single thread all failures to avoid DOS
-  lock_mutex(mutex);
-  Bmicrosleep(6, 0);
-  unlock_mutex(mutex);
-}
-
-static inline void AuthenticateFailed(JobControlRecord* jcr,
-                                      const char* message)
-{
-  Dmsg0(debuglevel, "%s", message);
-  Jmsg0(jcr, M_FATAL, 0, "%s", message);
-  delay();
-}
-
-/**
- * Initiate the communications with the Director.
- * He has made a connection to our server.
- *
- * Basic tasks done here:
- * We read Director's initial message and authorize him.
- */
-bool AuthenticateDirector(JobControlRecord* jcr)
-{
-  BareosSocket* dir = jcr->dir_bsock;
-
-  PoolMem errormsg(PM_MESSAGE);
-  PoolMem dirname(PM_MESSAGE);
-  DirectorResource* director = NULL;
-
-  if (dir->message_length < 25 || dir->message_length > 500) {
-    char addr[64];
-    char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-    errormsg.bsprintf(T_("Bad Hello command from Director at %s. Len=%d.\n"),
-                      who, dir->message_length);
-    AuthenticateFailed(jcr, errormsg.c_str());
-    return false;
+  if (!myself) {
+    Emsg1(M_ERROR, 0, "Could not find myself during connection attempt.\n");
+    return nullptr;
   }
 
-  unsigned major = 0;
-  unsigned minor = 0;
-  unsigned patch = 0;
-  dirname.check_size(dir->message_length);
+  char tbuf[MAX_TIME_LENGTH];
 
-  if (bsscanf(dir->msg, "Hello Director %s calling Version=\"%u.%u.%u\"",
-              dirname.c_str(), &major, &minor, &patch)
-          != 4
-      && bsscanf(dir->msg, "Hello Director %s calling", dirname.c_str()) != 1) {
-    char addr[64];
-    char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-    dir->msg[100] = 0;
-    errormsg.bsprintf(T_("Bad Hello command from Director at %s: %s\n"), who,
-                      dir->msg);
-    AuthenticateFailed(jcr, errormsg.c_str());
-    return false;
+  int name_len = (int)std::min((size_t)INT_MAX, name.size());
+  const char* name_ptr = name.data();
+
+  switch (auth_type) {
+    case global_resource::Type::Director: {
+      auto* res = dynamic_cast<DirectorResource*>(
+          p->GetResWithName(R_DIRECTOR, name));
+      if (!res) {
+        Dmsg1(60, "Got a DIR connection at %s from unknown dir %.*s\n",
+              bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)), name_len,
+              name_ptr);
+        Emsg1(M_ERROR, 0,
+              T_("Connection from unknown Director %.*s rejected.\n"), name_len,
+              name_ptr);
+        return nullptr;
+      }
+
+      if (res->password_.encoding != p_encoding_md5) {
+        Emsg1(M_ERROR, 0, "Bad password type for dir %.*s\n", name_len,
+              name_ptr);
+        return nullptr;
+      }
+
+      if (!res->conn_from_dir_to_fd) {
+        Emsg2(M_ERROR, 0, "Connection from director %s is not allowed\n",
+              res->resource_name_);
+        return nullptr;
+      }
+
+      {
+        JobControlRecord* ojcr;
+        unsigned int cnt = 0;
+
+        foreach_jcr (ojcr) { cnt++; }
+        endeach_jcr(ojcr);
+
+        if (cnt >= myself->MaxConcurrentJobs) {
+          Emsg0(M_ERROR, 0,
+                T_("Number of Jobs exhausted, please increase "
+                   "MaximumConcurrentJobs\n"));
+          return nullptr;
+        }
+      }
+
+      auto& data = director.emplace();
+      data.res = res;
+
+      type = inbound_type::Director;
+      return data.res;
+    } break;
+    case global_resource::Type::Job: {
+      auto* jcr = get_jcr_for_authentication(name);
+      if (!jcr) {
+        Dmsg1(50, "Authentication for job %.*s not possible\n", name_len,
+              name_ptr);
+        Emsg1(M_ERROR, 0, T_("Connection for unknown job %.*s rejected.\n"),
+              name_len, name_ptr);
+        return nullptr;
+      }
+
+      Dmsg1(50, "Found Job %.*s\n", name_len, name_ptr);
+
+      auto& data = storage.emplace();
+      data.jcr = jcr;
+
+      data.job = *myself;
+      data.job.password_.value = jcr->sd_auth_key;
+
+      type = inbound_type::Storage;
+      return &data.job;
+    } break;
+    default: {
+    } break;
   }
 
-  dir->remote_version = VERSION_HEX(major, minor, patch);
-
-  UnbashSpaces(dirname.c_str());
-  director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR,
-                                                          dirname.c_str());
-
-  if (!director) {
-    char addr[64];
-    char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-    errormsg.bsprintf(
-        T_("Connection from unknown Director %s at %s rejected.\n"),
-        dirname.c_str(), who);
-    AuthenticateFailed(jcr, errormsg.c_str());
-    return false;
-  }
-
-  if (!director->conn_from_dir_to_fd) {
-    errormsg.bsprintf(T_("Connection from Director %s rejected.\n"),
-                      dirname.c_str());
-    AuthenticateFailed(jcr, errormsg.c_str());
-    return false;
-  }
-
-  if (!dir->AuthenticateInboundConnection(jcr, my_config, dirname.c_str(),
-                                          director->password_, director)) {
-    dir->fsend("%s", Dir_sorry);
-    errormsg.bsprintf(T_("Unable to authenticate Director %s.\n"),
-                      dirname.c_str());
-    AuthenticateFailed(jcr, errormsg.c_str());
-    return false;
-  }
-
-  jcr->fd_impl->director = director;
-
-  return dir->fsend("%s", OK_hello);
-}
-
-// Authenticate with a remote director.
-bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
-{
-  return jcr->dir_bsock->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
-      me->resource_name_, director->password_, director);
-}
-
-// Authenticate a remote storage daemon.
-bool AuthenticateStoragedaemon(JobControlRecord* jcr)
-{
-  bool result = false;
-  BareosSocket* sd = jcr->store_bsock;
-  s_password password;
-
-  password.encoding = p_encoding_md5;
-  password.value = jcr->sd_auth_key;
-  result = sd->AuthenticateInboundConnection(jcr, my_config, jcr->client_name,
-                                             password, me);
-
-  // Destroy session key
-  memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
-  if (!result) { delay(); }
-
-  return result;
-}
-
-// Authenticate with a remote storage daemon.
-bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
-{
-  bool result = false;
-  BareosSocket* sd = jcr->store_bsock;
-  s_password password;
-
-  password.encoding = p_encoding_md5;
-  password.value = jcr->sd_auth_key;
-  result = sd->AuthenticateOutboundConnection(
-      jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
-      (char*)jcr->client_name, password, me);
-
-  // Destroy session key
-  memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
-
-  return result;
+  auto type_name = global_resource::GetNameFromType(auth_type);
+  Dmsg1(60, "Unknown login: %.*s::%.*s\n", (int)type_name.size(),
+        type_name.data(), name_len, name_ptr);
+  return nullptr;
 }
 } /* namespace filedaemon */

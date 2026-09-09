@@ -86,6 +86,10 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${scriptdir})
   file(MAKE_DIRECTORY ${working})
   file(MAKE_DIRECTORY ${archivedir})
+
+  if(BSMTP_TO_TEST)
+    create_symlink(${BSMTP_TO_TEST} ${sbindir}/bsmtp)
+  endif()
 endmacro()
 
 # create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,16 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_
-#define BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_
+#ifndef BAREOS_LIB_DEFAULT_CONSOLE_H_
+#define BAREOS_LIB_DEFAULT_CONSOLE_H_
 
-#include <string>
+static constexpr const char* DEFAULT_CONSOLE_NAME = "*UserAgent*";
 
-class ConfigurationParser;
-
-typedef bool (*GetTlsPskByFullyQualifiedResourceNameCb_t)(
-    ConfigurationParser* config,
-    const char* fq_name_,
-    std::string& psk_return_value);
-
-#endif  // BAREOS_LIB_GET_TLS_PSK_BY_FQNAME_CALLBACK_H_
+#endif  // BAREOS_LIB_DEFAULT_CONSOLE_H_

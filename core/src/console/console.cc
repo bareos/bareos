@@ -817,8 +817,7 @@ static bool ExaminePamAuthentication(
     if (data.empty()) { return false; }
     g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, data);
   } else {
-    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
-                                            std::string());
+    SendResponseMessage(g_UA_sock, kMessageIdPamInteractive, "");
     if (!ConsolePamAuthenticate(stdin, g_UA_sock)) {
       TerminateConsole(0);
       return false;
@@ -1022,7 +1021,9 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  g_UA_sock->OutputCipherMessageString(ConsoleOutput);
+  auto cipher_str = g_UA_sock->GetCipherMessageString();
+  cipher_str += "\n";
+  ConsoleOutput(cipher_str.c_str());
 
   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)

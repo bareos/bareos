@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,7 +57,7 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd);
 void DoClientResolve(UaContext* ua, ClientResource* client);
 void* HandleFiledConnection(connection_pool& connections,
                             BareosSocket* fd,
-                            char* client_name,
+                            ClientResource* client_resource,
                             int fd_protocol_version);
 
 connection_pool& get_client_connections();

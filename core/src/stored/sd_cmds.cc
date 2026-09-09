@@ -93,52 +93,13 @@ inline constexpr const char Job_end[]
  * After receiving a connection (in socket_server.c) if it is
  * from the Storage daemon, this routine is called.
  */
-void* handle_stored_connection(BareosSocket* sd, char* job_name)
+void* handle_stored_connection(BareosSocket* sd, JobControlRecord* jcr)
 {
-  JobControlRecord* jcr;
-
-  /* With the following Bmicrosleep on, running the
-   * SD under the debugger fails. */
-  // Bmicrosleep(0, 50000);             /* wait 50 millisecs */
-  if (!(jcr = get_jcr_by_full_name(job_name))) {
-    Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
-          job_name);
-    Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
-    sd->close();
-    delete sd;
-    return NULL;
-  }
-
-  Dmsg1(50, "Found Job %s\n", job_name);
-
-  if (jcr->authenticated) {
-    Jmsg2(jcr, M_FATAL, 0,
-          T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
-          (uint32_t)jcr->JobId, jcr->Job);
-    Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
-          (uint32_t)jcr->JobId, jcr->Job);
-    sd->close();
-    delete sd;
-    FreeJcr(jcr);
-    return NULL;
-  }
-
   jcr->store_bsock = sd;
   jcr->store_bsock->SetJcr(jcr);
 
-  // Authenticate the Storage daemon
-  if (jcr->authenticated || !AuthenticateStoragedaemon(jcr)) {
-    Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
-  } else {
-    *jcr->sd_impl->client_available.lock() = true;
-    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
-          jcr->Job);
-  }
-
-  if (!jcr->authenticated) {
-    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  }
+  *jcr->sd_impl->client_available.lock() = true;
+  Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId, jcr->Job);
 
   jcr->sd_impl->job_start_wait.notify_one(); /* wake waiting job */
   FreeJcr(jcr);
