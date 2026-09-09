@@ -32,7 +32,6 @@
                     :hint="t('Restore jobs and destination clients come from the selected director')"
                   />
                   <q-select
-                    v-if="sourceMode === 'latest'"
                     v-model="sourceLatestTupleKey"
                     use-input
                     fill-input
@@ -43,142 +42,114 @@
                     outlined dense emit-value map-options
                     :loading="loadingBackups || loadingClients"
                     :disable="loadingBackups || loadingClients || !sourceDirector"
-                    :hint="t('Select a client/fileset pair that has backups')"
-                    data-testid="restore-latest-source"
+                    :hint="t('Select a backup source that has backups')"
+                    data-testid="restore-source-tuple"
                     @update:model-value="onLatestTupleSelected"
                     @filter="filterLatestSourceOptions"
                   />
-                  <q-select
-                    v-else
-                    v-model="sourceClientKey"
-                    use-input
-                    fill-input
-                    hide-selected
-                    input-debounce="0"
-                    :options="filteredClientOptions"
-                    :label="t('Backup Client')"
-                    outlined dense emit-value map-options
-                    :loading="loadingClients"
-                    :hint="t('Select a client to browse its backups')"
-                    data-testid="restore-source-client"
-                    @update:model-value="onClientChange"
-                    @filter="filterClientOptions"
-                  />
                   <div
                     v-if="sourceMode === 'browse'"
-                    class="row items-start no-wrap"
-                    style="column-gap: 8px"
+                    class="restore-timeline"
+                    data-testid="restore-timeline"
                   >
-                    <div class="col">
-                      <q-select
-                        v-model="sourceFilesetFilter"
-                        use-input
-                        fill-input
-                        hide-selected
-                        input-debounce="0"
-                        :options="filteredFilesetOptions"
-                        :label="t('Fileset')"
-                        outlined dense clearable emit-value map-options
-                        :hint="t('Narrow backups to a fileset')"
-                        data-testid="restore-fileset-filter"
-                        @filter="filterFilesetOptions"
-                      />
+                    <div class="row items-center justify-between q-mb-xs">
+                      <div class="text-subtitle2">{{ t('Restore chain') }}</div>
+                      <div
+                        v-if="selectedRestoreBackupChain"
+                        class="text-caption text-grey-6"
+                      >
+                        {{ restoreBackupChainPositionLabel }}
+                      </div>
                     </div>
-                    <div class="col">
-                      <q-input
-                        v-model="sourceBeforeFilter"
-                        type="date"
-                        outlined dense clearable
-                        :label="t('Before')"
-                        :hint="t('Only show backups up to this date')"
-                        data-testid="restore-before-filter"
-                      />
-                    </div>
-                  </div>
-                  <template v-if="sourceMode === 'browse'">
-                    <q-select
-                      v-model="form.jobid"
-                      use-input
-                      input-debounce="0"
-                      :options="filteredBackupOptions"
-                      option-label="label"
-                      option-value="value"
-                      :label="t('Backup Job')"
-                      outlined dense emit-value map-options
-                      :loading="loadingBackups"
-                      :disable="loadingBackups"
-                      no-error-icon
-                      :hint="form.client ? t('Select a completed backup job') : t('Select a completed backup job, or a client above first')"
-                      data-testid="restore-backup-job"
-                      @update:model-value="onBackupJobSelected"
-                      @filter="filterBackupOptions"
+                    <div
+                      v-if="!sourceLatestTupleKey"
+                      class="text-caption text-grey-6"
                     >
-                      <template #selected-item="scope">
-                        <div class="row items-center no-wrap restore-backup-option restore-backup-option--selected">
-                          <template v-if="selectedBackupOption || scope.opt">
-                            <JobLevelBadge
-                              v-if="(selectedBackupOption ?? scope.opt)?.levelCode"
-                              :level="(selectedBackupOption ?? scope.opt).levelCode"
-                              class="q-mr-sm"
-                            />
-                            <q-avatar
-                              v-else
-                              color="grey-6"
-                              text-color="white"
-                              size="24px"
-                              font-size="12px"
-                              class="q-mr-sm"
-                              style="font-weight:700; user-select:none"
-                            >
-                              {{ (selectedBackupOption ?? scope.opt)?.level || '?' }}
-                            </q-avatar>
-                            <div class="column">
-                              <span class="text-body2">{{ (selectedBackupOption ?? scope.opt)?.name || (selectedBackupOption ?? scope.opt)?.label || '' }}</span>
-                              <span class="text-caption text-grey-6">{{ (selectedBackupOption ?? scope.opt)?.secondary || '' }}</span>
-                            </div>
-                          </template>
-                          <span v-else>{{ scope.opt?.label || '' }}</span>
+                      {{ t('Select a backup source to see available restore points.') }}
+                    </div>
+                    <div
+                      v-else-if="loadingBackups"
+                      class="row items-center q-gutter-sm text-caption text-grey-6"
+                    >
+                      <q-spinner size="16px" color="primary" />
+                      <span>{{ t('Loading restore points...') }}</span>
+                    </div>
+                    <div
+                      v-else-if="restoreBackupChains.length === 0"
+                      class="text-caption text-grey-6"
+                    >
+                      {{ t('No restore points found for this backup source.') }}
+                    </div>
+                    <template v-else>
+                      <div class="row items-center justify-between q-mb-xs">
+                        <q-btn
+                          dense flat no-caps
+                          icon="chevron_left"
+                          :label="t('Older')"
+                          :disable="!olderRestoreBackupChain"
+                          data-testid="restore-chain-older"
+                          @click="selectRestoreBackupChain(olderRestoreBackupChain)"
+                        />
+                        <div class="text-caption text-grey-7 text-center">
+                          {{ restoreBackupChainSummaryLabel }}
                         </div>
-                      </template>
-                      <template #option="scope">
-                        <q-item v-bind="scope.itemProps">
-                          <q-item-section avatar>
-                            <JobLevelBadge
-                              v-if="scope.opt?.levelCode"
-                              :level="scope.opt.levelCode"
+                        <q-btn
+                          dense flat no-caps
+                          icon-right="chevron_right"
+                          :label="t('Newer')"
+                          :disable="!newerRestoreBackupChain"
+                          data-testid="restore-chain-newer"
+                          @click="selectRestoreBackupChain(newerRestoreBackupChain)"
+                        />
+                      </div>
+                      <div
+                        class="restore-chain__list"
+                        data-testid="restore-timeline-points"
+                      >
+                        <q-item
+                          v-for="(point, index) in visibleRestoreChainPoints"
+                          :key="point.jobid"
+                          clickable
+                          dense
+                          class="restore-chain__job"
+                          :active="isRestoreTimelinePointSelected(point)"
+                          active-class="restore-chain__job--selected"
+                          data-testid="restore-timeline-point"
+                          :data-jobid="point.jobid"
+                          @click="selectRestoreTimelinePoint(point)"
+                        >
+                          <q-item-section avatar class="restore-chain__marker">
+                            <span
+                              v-if="index > 0"
+                              class="restore-chain__connector restore-chain__connector--top"
                             />
-                            <q-avatar
-                              v-else
-                              color="grey-6"
-                              text-color="white"
-                              size="24px"
-                              font-size="12px"
-                              style="font-weight:700; user-select:none"
-                            >
-                              {{ scope.opt?.level || '?' }}
-                            </q-avatar>
+                            <JobLevelBadge
+                              v-if="point.levelCode"
+                              :level="point.levelCode"
+                            />
+                            <span
+                              v-if="index < visibleRestoreChainPoints.length - 1"
+                              class="restore-chain__connector restore-chain__connector--bottom"
+                            />
                           </q-item-section>
                           <q-item-section>
-                            <q-item-label>{{ scope.opt?.name || scope.opt?.label || '' }}</q-item-label>
-                            <q-item-label caption>{{ scope.opt?.secondary || '' }}</q-item-label>
+                            <q-item-label class="row items-center no-wrap q-gutter-sm">
+                              <span class="text-weight-medium">#{{ point.jobid }}</span>
+                              <span class="text-caption">{{ point.starttime }}</span>
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ restoreChainDependencyLabel(index) }}
+                            </q-item-label>
+                            <q-item-label v-if="restoreChainMetrics(point)" caption>
+                              {{ restoreChainMetrics(point) }}
+                            </q-item-label>
                           </q-item-section>
+                          <q-tooltip>{{ point.secondary }}</q-tooltip>
                         </q-item>
-                      </template>
-                    </q-select>
-                    <q-checkbox
-                      v-model="form.mergeJobs"
-                      :label="t('Include related jobs up to the last full backup')"
-                      dense
-                    />
-                    <q-checkbox
-                      v-model="form.mergeFilesets"
-                      :label="t('Include all client filesets')"
-                      dense
-                      :disable="!form.mergeJobs"
-                    />
-                  </template>
-
-                  <template v-else>
+                      </div>
+                    </template>
+                  </div>
+                  <template v-if="sourceMode !== 'browse'">
                     <div v-if="!sourceLatestTupleKey" class="text-caption text-grey-6 q-pa-sm">
                       {{ t('Select a backup source above to find its latest backup.') }}
                     </div>
@@ -716,16 +687,15 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
+  buildRestoreBackupChains,
   buildRestoreClientFilesetOptions,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
-  buildRestoreFilesetOptions,
   canNavigateRestoreBrowser,
   buildRestoreSourceQuery,
   buildRestorePluginFilesetMap,
   buildRestorePluginFilesetDetails,
   decorateRestoreBackupsWithPluginJobs,
-  filterRestoreBackupsByCriteria,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getRestoreVersionsLookupJobId,
@@ -733,9 +703,10 @@ import {
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
   hasRestoreFullBackupInChain,
-  normaliseRestoreToggle,
   pushRestoreBreadcrumb,
   resolveLatestRestoreBackup,
+  resolveAdjacentRestoreBackupChain,
+  resolveRestoreBackupChain,
   resolveRestoreBackupOption,
   resolveRestoreSourceClient,
   resolveRestoreSourceDirector,
@@ -764,8 +735,8 @@ const form = ref({
   where:         '/tmp/bareos-restores',
   replace:       'Always',
   pluginoptions: '',
-  mergeJobs:     settings.restoreMergeJobs,
-  mergeFilesets: settings.restoreMergeJobs && settings.restoreMergeFilesets,
+  mergeJobs:     true,
+  mergeFilesets: false,
 })
 
 const sourceClientKey = ref('')
@@ -983,13 +954,8 @@ async function applyRouteSourceSelection() {
     if (qMode && sourceMode.value !== qMode) {
       sourceMode.value = qMode
     }
-    if (sourceMode.value === 'latest') {
-      sourceBeforeFilter.value = ''
-    }
-    form.value.mergeJobs = normaliseRestoreToggle(route.query.mergejobs, settings.restoreMergeJobs)
-    form.value.mergeFilesets = form.value.mergeJobs
-      ? normaliseRestoreToggle(route.query.mergefilesets, settings.restoreMergeFilesets)
-      : false
+    form.value.mergeJobs = true
+    form.value.mergeFilesets = false
     const resolvedDirector = resolveRestoreSourceDirector(activeDirectors.value, qDirector)
 
     if (resolvedDirector) {
@@ -1013,7 +979,7 @@ async function applyRouteSourceSelection() {
         if (qFileset) {
           sourceFilesetFilter.value = qFileset
         }
-        if (sourceMode.value === 'latest' && sourceFilesetFilter.value) {
+        if (sourceFilesetFilter.value) {
           sourceLatestTupleKey.value = latestTupleKeyFor(
             resolvedClient.name,
             sourceFilesetFilter.value
@@ -1029,7 +995,7 @@ async function applyRouteSourceSelection() {
               String(backup?.jobid ?? '') === qJobid
             ))?.fileset ?? ''
           }
-          if (sourceMode.value === 'latest' && sourceFilesetFilter.value) {
+          if (sourceFilesetFilter.value) {
             sourceLatestTupleKey.value = latestTupleKeyFor(
               resolvedClient.name,
               sourceFilesetFilter.value
@@ -1245,26 +1211,7 @@ const backups           = ref([])
 const allClientBackups  = ref([])
 const loadingBackups    = ref(false)
 const pluginFilesets    = ref(new Map())
-const filesetOptions    = ref([])
 const sourceFilesetFilter = ref('')
-const sourceBeforeFilter  = ref('')
-
-const filteredFilesetOptions = ref([])
-watch(filesetOptions, (options) => { filteredFilesetOptions.value = options }, { immediate: true })
-
-function filterFilesetOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredFilesetOptions.value = filesetOptions.value
-      return
-    }
-    const needle = value.toLowerCase()
-    filteredFilesetOptions.value = filesetOptions.value.filter(option => (
-      option.label.toLowerCase().includes(needle)
-    ))
-  })
-}
-
 const latestSourceOptions = computed(() => (
   buildRestoreClientFilesetOptions(allClientBackups.value)
 ))
@@ -1305,38 +1252,6 @@ function latestTupleKeyFor(client, fileset) {
 // workflow improvement: select a job without first selecting a client).
 const activeBackups = computed(() => (
   form.value.client ? backups.value : allClientBackups.value
-))
-const normalizedBeforeFilter = computed(() => (
-  sourceBeforeFilter.value ? `${sourceBeforeFilter.value} 23:59:59` : ''
-))
-const backupOptions = computed(() => (
-  filterRestoreBackupsByCriteria(activeBackups.value, {
-    filesetFilter: sourceFilesetFilter.value,
-    beforeFilter: normalizedBeforeFilter.value,
-  }).map(backup => buildRestoreBackupOption(backup, {
-    formatBytes,
-    showClient: !form.value.client,
-  }))
-))
-
-const filteredBackupOptions = ref([])
-watch(backupOptions, (options) => { filteredBackupOptions.value = options }, { immediate: true })
-
-function filterBackupOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredBackupOptions.value = backupOptions.value
-      return
-    }
-    const needle = value.toLowerCase()
-    filteredBackupOptions.value = backupOptions.value.filter(option => (
-      (option.label ?? '').toLowerCase().includes(needle)
-      || (option.secondary ?? '').toLowerCase().includes(needle)
-    ))
-  })
-}
-const selectedBackupOption = computed(() => (
-  resolveRestoreBackupOption(backupOptions.value, form.value.jobid)
 ))
 
 // ── "Latest Backup" source mode ─────────────────────────────────────────────
@@ -1379,6 +1294,102 @@ const latestBackupChainLabel = computed(() => {
     ? t('Backup chain (1 job)')
     : t('Backup chain ({count} jobs)', { count })
 })
+const restoreBackupChains = computed(() => (
+  sourceMode.value === 'browse' && selectedLatestSourceOption.value
+    ? buildRestoreBackupChains(activeBackups.value, {
+      filesetFilter: sourceFilesetFilter.value,
+      formatBytes,
+    })
+    : []
+))
+const selectedRestoreBackupChain = computed(() => (
+  resolveRestoreBackupChain(restoreBackupChains.value, form.value.jobid)
+))
+const olderRestoreBackupChain = computed(() => (
+  resolveAdjacentRestoreBackupChain(
+    restoreBackupChains.value,
+    selectedRestoreBackupChain.value,
+    'older'
+  )
+))
+const newerRestoreBackupChain = computed(() => (
+  resolveAdjacentRestoreBackupChain(
+    restoreBackupChains.value,
+    selectedRestoreBackupChain.value,
+    'newer'
+  )
+))
+const visibleRestoreChainPoints = computed(() => (
+  selectedRestoreBackupChain.value?.jobs ?? []
+))
+const restoreBackupChainPositionLabel = computed(() => {
+  const chain = selectedRestoreBackupChain.value
+  const total = restoreBackupChains.value.length
+  if (!chain || total === 0) {
+    return ''
+  }
+
+  return t('Chain {current} of {total}', {
+    current: chain.index + 1,
+    total,
+  })
+})
+const restoreBackupChainSummaryLabel = computed(() => {
+  const chain = selectedRestoreBackupChain.value
+  if (!chain) {
+    return ''
+  }
+
+  return t('{count} jobs since Full #{jobid} from {starttime}', {
+    count: chain.jobCount,
+    jobid: chain.rootJobid,
+    starttime: chain.rootStarttime || '—',
+  })
+})
+
+function isRestoreTimelinePointSelected(point) {
+  return String(point?.jobid ?? '') === String(form.value.jobid ?? '')
+}
+
+function restoreChainDependencyLabel(index) {
+  const point = visibleRestoreChainPoints.value[index]
+  if (point?.levelCode === 'F' || index === 0) {
+    return t('Full backup')
+  }
+
+  if (point?.levelCode === 'D') {
+    return t('Differential based on Full #{jobid}', {
+      jobid: selectedRestoreBackupChain.value?.rootJobid ?? '',
+    })
+  }
+
+  const previous = visibleRestoreChainPoints.value[index - 1]
+  return t('Incremental after #{jobid}', {
+    jobid: previous?.jobid ?? '',
+  })
+}
+
+function restoreChainMetrics(point) {
+  return String(point?.secondary ?? '')
+    .split(' · ')
+    .slice(2)
+    .join(' · ')
+}
+
+async function selectRestoreTimelinePoint(point) {
+  form.value.jobid = point?.jobid ?? null
+  await onBackupJobSelected(form.value.jobid)
+}
+
+async function selectRestoreBackupChain(chain) {
+  const latestJobid = chain?.latestJobid ?? null
+  if (latestJobid === null) {
+    return
+  }
+  form.value.jobid = latestJobid
+  form.value.jobid = latestJobid
+  await onBackupJobSelected(latestJobid)
+}
 
 const showPluginOptions = computed(() => shouldShowRestorePluginOptions({
   backups: backups.value,
@@ -1467,7 +1478,6 @@ async function loadBackups(client) {
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)
-    filesetOptions.value = buildRestoreFilesetOptions(filesets?.filesets)
     backups.value = decorateRestoreBackupsWithPluginJobs(
       directorCollection(r?.backups),
       pluginFilesetFlags
@@ -1481,10 +1491,8 @@ async function loadBackups(client) {
   }
 }
 
-// Loads recent completed backup jobs across all clients so the "Backup Job"
-// select can be used without first choosing a "Backup Client" (Restore
-// workflow improvement: select a job, then let the client be derived from
-// it automatically).
+// Loads recent completed backup jobs across all clients so the tuple selector
+// can offer only backup sources that really exist in the catalog.
 const MAX_ALL_CLIENT_BACKUPS = 1000
 
 async function loadAllClientBackups() {
@@ -1504,16 +1512,6 @@ async function loadAllClientBackups() {
     allClientBackups.value = []
   } finally {
     loadingBackups.value = false
-  }
-}
-
-async function loadFilesetOptions() {
-  try {
-    await ensureSelectedSourceDirector()
-    const filesets = await director.call('list filesets')
-    filesetOptions.value = buildRestoreFilesetOptions(filesets?.filesets)
-  } catch (_) {
-    // keep whatever fileset options were already loaded
   }
 }
 
@@ -1556,11 +1554,14 @@ async function onLatestTupleSelected(value) {
   sourceLatestTupleKey.value = selected.value
   sourceFilesetFilter.value = selected.fileset
   await selectSourceClientByName(selected.client)
+  if (sourceMode.value === 'browse') {
+    await selectRestoreBackupChain(selectedRestoreBackupChain.value)
+  }
 }
 
-// Handles a "Backup Job" selection made while browsing across all clients
-// (no "Backup Client" chosen yet): derive and select the client from the
-// picked job before initializing the BVFS browser.
+// Handles a restore-point selection from the chain view. If the selected
+// point came from the all-client fallback, derive and select the source
+// client before initializing the BVFS browser.
 async function onBackupJobSelected(jobid) {
   if (!form.value.client) {
     const backup = allClientBackups.value.find(b => String(b.jobid) === String(jobid))
@@ -2344,12 +2345,7 @@ async function init() {
   syncSelectedDirectors()
   await loadClients()
   await applyRouteSourceSelection()
-  await Promise.all([
-    loadFilesetOptions(),
-    sourceMode.value === 'latest' || !form.value.client
-      ? loadAllClientBackups()
-      : Promise.resolve(),
-  ])
+  await loadAllClientBackups()
 
   if (sourceMode.value === 'latest') {
     form.value.mergeJobs = true
@@ -2374,10 +2370,12 @@ watch(() => activeDirectors.value.join('\u0000'), async () => {
   if (previousClientKey && sourceClients.value.some(client => client.scopeKey === previousClientKey)) {
     sourceClientKey.value = previousClientKey
     await onClientChange(previousClientKey)
+    await loadAllClientBackups()
     return
   }
 
   await applyRouteSourceSelection()
+  await loadAllClientBackups()
 })
 watch(() => commonSourceDirector.value, async (next, previous) => {
   if (!isCommonRestore.value || next === previous) {
@@ -2400,7 +2398,7 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
   await Promise.all([
     loadRestoreClients(),
     loadRestoreJobs(),
-    sourceMode.value === 'latest' ? loadAllClientBackups() : Promise.resolve(),
+    loadAllClientBackups(),
   ])
 })
 
@@ -2414,17 +2412,6 @@ watch(() => [
   form.value.mergeFilesets,
 ], () => {
   syncRouteToSourceSelection()
-})
-
-watch(() => form.value.mergeJobs, (enabled) => {
-  if (!enabled && form.value.mergeFilesets) {
-    form.value.mergeFilesets = false
-  }
-})
-
-// Remember the last checkbox state, so the next restore starts with it.
-watch(() => [form.value.mergeJobs, form.value.mergeFilesets], ([mergeJobs, mergeFilesets]) => {
-  settings.setRestoreMergeDefaults({ mergeJobs, mergeFilesets })
 })
 
 watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, nextFilesets], [previousJobs, previousFilesets]) => {
@@ -2457,7 +2444,6 @@ watch(sourceMode, async (mode) => {
   if (mode === 'latest') {
     form.value.mergeJobs = true
     form.value.mergeFilesets = false
-    sourceBeforeFilter.value = ''
     if (allClientBackups.value.length === 0) {
       await loadAllClientBackups()
     }
@@ -2472,8 +2458,11 @@ watch(sourceMode, async (mode) => {
       await initBrowser()
     }
   } else {
-    form.value.mergeJobs = settings.restoreMergeJobs
-    form.value.mergeFilesets = settings.restoreMergeJobs && settings.restoreMergeFilesets
+    form.value.mergeJobs = true
+    form.value.mergeFilesets = false
+    if (allClientBackups.value.length === 0) {
+      await loadAllClientBackups()
+    }
   }
 })
 
@@ -2538,6 +2527,52 @@ watch(() => [
 
 .restore-backup-option .column {
   min-width: 0;
+}
+
+.restore-timeline {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.restore-chain__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.restore-chain__job {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  min-height: 56px;
+}
+
+.restore-chain__job--selected {
+  background: rgba(25, 118, 210, 0.10);
+  color: inherit;
+}
+
+.restore-chain__marker {
+  align-items: center;
+  min-width: 42px;
+  position: relative;
+}
+
+.restore-chain__connector {
+  background: rgba(25, 118, 210, 0.35);
+  left: 20px;
+  position: absolute;
+  width: 2px;
+}
+
+.restore-chain__connector--top {
+  bottom: 50%;
+  top: -6px;
+}
+
+.restore-chain__connector--bottom {
+  bottom: -6px;
+  top: 50%;
 }
 
 .command-log-command,

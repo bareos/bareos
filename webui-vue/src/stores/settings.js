@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { DEFAULT_DIRECTOR_NAME } from './auth.js'
 import { setI18nLocale } from '../i18n/index.js'
 import {
@@ -19,8 +19,6 @@ const DEFAULTS = {
   directorName: DEFAULT_DIRECTOR_NAME,
   selectedDirectors: [],
   tableRowsPerPage: {},
-  restoreMergeJobs: true,
-  restoreMergeFilesets: true,
 }
 
 function normalizeBoolean(value, fallback) {
@@ -70,31 +68,6 @@ export const useSettingsStore = defineStore('settings', () => {
   const directorName    = ref(saved.directorName)
   const selectedDirectors = ref(normalizeSelectedDirectors(saved.selectedDirectors))
   const tableRowsPerPage = ref(normalizeTableRowsPerPage(saved.tableRowsPerPage))
-  const restoreMergeJobsEnabled = ref(
-    normalizeBoolean(saved.restoreMergeJobs, DEFAULTS.restoreMergeJobs)
-  )
-  const restoreMergeFilesetsEnabled = ref(
-    normalizeBoolean(saved.restoreMergeFilesets, DEFAULTS.restoreMergeFilesets)
-  )
-
-  const restoreMergeJobs = computed({
-    get: () => restoreMergeJobsEnabled.value,
-    set: (value) => {
-      restoreMergeJobsEnabled.value = normalizeBoolean(value, restoreMergeJobsEnabled.value)
-    },
-  })
-
-  // "include all client filesets" is only meaningful together with the
-  // related-jobs selection, so it is never reported as active on its own.
-  const restoreMergeFilesets = computed({
-    get: () => restoreMergeJobsEnabled.value && restoreMergeFilesetsEnabled.value,
-    set: (value) => {
-      restoreMergeFilesetsEnabled.value = normalizeBoolean(
-        value, restoreMergeFilesetsEnabled.value
-      )
-    },
-  })
-
   function save() {
     localStorage.setItem(LS_KEY, JSON.stringify({
       refreshInterval: refreshInterval.value,
@@ -105,8 +78,6 @@ export const useSettingsStore = defineStore('settings', () => {
       directorName:    directorName.value,
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
-      restoreMergeJobs: restoreMergeJobsEnabled.value,
-      restoreMergeFilesets: restoreMergeFilesetsEnabled.value,
     }))
   }
 
@@ -147,11 +118,6 @@ export const useSettingsStore = defineStore('settings', () => {
     tableRowsPerPage.value = rest
   }
 
-  function setRestoreMergeDefaults({ mergeJobs, mergeFilesets } = {}) {
-    restoreMergeJobs.value = mergeJobs
-    restoreMergeFilesets.value = mergeFilesets
-  }
-
   // ── backup / restore ─────────────────────────────────────────────────────
 
   /**
@@ -169,8 +135,6 @@ export const useSettingsStore = defineStore('settings', () => {
       directorName: directorName.value,
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
-      restoreMergeJobs: restoreMergeJobsEnabled.value,
-      restoreMergeFilesets: restoreMergeFilesetsEnabled.value,
     }
   }
 
@@ -205,14 +169,6 @@ export const useSettingsStore = defineStore('settings', () => {
     if ('tableRowsPerPage' in data) {
       tableRowsPerPage.value = normalizeTableRowsPerPage(data.tableRowsPerPage)
     }
-    if ('restoreMergeJobs' in data) {
-      restoreMergeJobsEnabled.value = normalizeBoolean(data.restoreMergeJobs, restoreMergeJobsEnabled.value)
-    }
-    if ('restoreMergeFilesets' in data) {
-      restoreMergeFilesetsEnabled.value = normalizeBoolean(
-        data.restoreMergeFilesets, restoreMergeFilesetsEnabled.value
-      )
-    }
   }
 
   watch(refreshInterval, save)
@@ -222,8 +178,6 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(directorName, save)
   watch(selectedDirectors, save, { deep: true })
   watch(tableRowsPerPage, save, { deep: true })
-  watch(restoreMergeJobsEnabled, save)
-  watch(restoreMergeFilesetsEnabled, save)
   watch(locale, (value) => {
     applyDocumentLocale(value)
     setI18nLocale(value)
@@ -239,13 +193,10 @@ export const useSettingsStore = defineStore('settings', () => {
     directorName,
     selectedDirectors,
     tableRowsPerPage,
-    restoreMergeJobs,
-    restoreMergeFilesets,
     setLocale,
     setSelectedDirectors,
     getTableRowsPerPage,
     setTableRowsPerPage,
-    setRestoreMergeDefaults,
     exportSettings,
     importSettings,
   }

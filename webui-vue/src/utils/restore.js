@@ -309,7 +309,7 @@ export function buildRestoreClientFilesetOptions(backups) {
     if (!previous || starttime > previous.latestStarttime) {
       tuples.set(key, {
         value: key,
-        label: `${client} / ${fileset}`,
+        label: `${fileset}@${client}`,
         client,
         fileset,
         latestStarttime: starttime,
@@ -350,6 +350,112 @@ export function buildRestoreBackupChainOptions(
       left.starttime.localeCompare(right.starttime)
       || Number(left.jobid) - Number(right.jobid)
     ))
+}
+
+export function buildRestoreTimelinePoints(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+  } = {}
+) {
+  return filterRestoreBackupsByCriteria(backups, { filesetFilter })
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
+export function resolveRestoreTimelineSelection(points, selectedJobid) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selected = points.find(point => (
+      String(point?.jobid ?? '') === String(selectedJobid)
+    ))
+    if (selected) {
+      return selected
+    }
+  }
+
+  return points[points.length - 1] ?? null
+}
+
+export function buildRestoreBackupChains(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+  } = {}
+) {
+  const points = buildRestoreTimelinePoints(backups, {
+    filesetFilter,
+    formatBytes,
+  })
+  const chains = []
+  let currentChain = null
+
+  for (const point of points) {
+    const startsChain = resolveJobLevelCode(point.level) === 'F' || !currentChain
+    if (startsChain) {
+      currentChain = {
+        value: String(point.jobid ?? `chain-${chains.length}`),
+        label: point.starttime ? `Full #${point.jobid} · ${point.starttime}` : `Full #${point.jobid}`,
+        rootJobid: point.jobid,
+        rootStarttime: point.starttime,
+        jobs: [],
+      }
+      chains.push(currentChain)
+    }
+
+    currentChain.jobs.push(point)
+  }
+
+  return chains.map((chain, index) => {
+    const latestJob = chain.jobs[chain.jobs.length - 1] ?? null
+    return {
+      ...chain,
+      index,
+      latestJobid: latestJob?.jobid ?? null,
+      latestStarttime: latestJob?.starttime ?? chain.rootStarttime,
+      jobCount: chain.jobs.length,
+    }
+  })
+}
+
+export function resolveRestoreBackupChain(chains, selectedJobid) {
+  if (!Array.isArray(chains) || chains.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selectedChain = chains.find(chain => (
+      Array.isArray(chain?.jobs)
+      && chain.jobs.some(job => String(job?.jobid ?? '') === String(selectedJobid))
+    ))
+    if (selectedChain) {
+      return selectedChain
+    }
+  }
+
+  return chains[chains.length - 1] ?? null
+}
+
+export function resolveAdjacentRestoreBackupChain(chains, currentChain, direction) {
+  if (!Array.isArray(chains) || chains.length === 0 || !currentChain) {
+    return null
+  }
+
+  const currentIndex = chains.findIndex(chain => chain?.value === currentChain?.value)
+  if (currentIndex === -1) {
+    return null
+  }
+
+  const offset = direction === 'older' ? -1 : 1
+  return chains[currentIndex + offset] ?? null
 }
 
 // Resolves the newest backup job matching a client's already-loaded backup
