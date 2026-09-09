@@ -205,6 +205,34 @@
                       <div class="text-caption text-grey-6 q-pl-sm">
                         {{ t('Includes all related jobs back to the last Full backup.') }}
                       </div>
+                      <q-expansion-item
+                        v-if="latestBackupChainOptions.length"
+                        dense
+                        expand-separator
+                        :label="latestBackupChainLabel"
+                        icon="account_tree"
+                        data-testid="restore-latest-chain"
+                      >
+                        <q-list dense>
+                          <q-item
+                            v-for="backup in latestBackupChainOptions"
+                            :key="backup.jobid"
+                            dense
+                            class="q-px-sm"
+                          >
+                            <q-item-section avatar>
+                              <JobLevelBadge
+                                v-if="backup.levelCode"
+                                :level="backup.levelCode"
+                              />
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>{{ backup.name || backup.label }}</q-item-label>
+                              <q-item-label caption>{{ backup.secondary }}</q-item-label>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-expansion-item>
                       <q-banner v-if="showNoFullBackupWarning" dense class="bg-warning text-black" data-testid="restore-no-full-warning">
                         <template #avatar><q-icon name="warning" /></template>
                         {{ t('No Full backup found for this fileset — restoring the latest available backup(s) anyway.') }}
@@ -687,6 +715,7 @@ import { formatBytes } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   buildRestoreBackupOption,
+  buildRestoreBackupChainOptions,
   buildRestoreClientFilesetOptions,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
@@ -751,8 +780,8 @@ let applyingRouteSourceSelection = false
 // additional options without restructuring the panel.
 const sourceMode = ref('latest')
 const sourceModeOptions = computed(() => [
-  { label: t('Latest Backup'), value: 'latest' },
-  { label: t('Browse'), value: 'browse' },
+  { label: t('Quick Restore'), value: 'latest' },
+  { label: t('Custom Selection'), value: 'browse' },
 ])
 
 const {
@@ -1339,6 +1368,17 @@ const showNoFullBackupWarning = computed(() => (
     uptoStarttime: latestBackupOption.value.starttime,
   })
 ))
+const latestBackupChainOptions = computed(() => (
+  sourceMode.value === 'latest'
+    ? buildRestoreBackupChainOptions(backups.value, mergedJobids.value, { formatBytes })
+    : []
+))
+const latestBackupChainLabel = computed(() => {
+  const count = latestBackupChainOptions.value.length
+  return count === 1
+    ? t('Backup chain (1 job)')
+    : t('Backup chain ({count} jobs)', { count })
+})
 
 const showPluginOptions = computed(() => shouldShowRestorePluginOptions({
   backups: backups.value,
