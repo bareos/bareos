@@ -24,6 +24,7 @@ import {
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
+  buildRestoreBackupChainOptions,
   buildRestoreClientFilesetOptions,
   buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
@@ -352,6 +353,67 @@ describe('restore browser placeholder', () => {
       },
     ])
     expect(buildRestoreClientFilesetOptions(null)).toEqual([])
+  })
+
+  it('builds backup chain options from merged job ids', () => {
+    const backups = [
+      {
+        jobid: 7,
+        name: 'backup-web',
+        level: 'I',
+        starttime: '2026-06-03 10:00:00',
+        jobbytes: 4096,
+        jobfiles: 8,
+      },
+      {
+        jobid: 5,
+        name: 'backup-web',
+        level: 'F',
+        starttime: '2026-06-01 10:00:00',
+        jobbytes: 2048,
+        jobfiles: 4,
+      },
+    ]
+
+    expect(buildRestoreBackupChainOptions(backups, '7,5', {
+      formatBytes: value => `${value} B`,
+    })).toEqual([
+      expect.objectContaining({
+        jobid: 5,
+        level: 'F',
+        levelCode: 'F',
+        secondary: '#5 · 2026-06-01 10:00:00 · 2048 B · 4 files',
+      }),
+      expect.objectContaining({
+        jobid: 7,
+        level: 'I',
+        levelCode: 'I',
+        secondary: '#7 · 2026-06-03 10:00:00 · 4096 B · 8 files',
+      }),
+    ])
+  })
+
+  it('ignores backup-chain job ids without loaded metadata', () => {
+    expect(buildRestoreBackupChainOptions([
+      { jobid: 5, name: 'backup-web', level: 'F', starttime: '2026-06-01 10:00:00' },
+    ], ['5', '7'])).toEqual([
+      expect.objectContaining({ jobid: 5 }),
+    ])
+  })
+
+  it('sorts backup-chain options oldest to newest', () => {
+    expect(buildRestoreBackupChainOptions([
+      { jobid: 30, name: 'backup-web', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 10, name: 'backup-web', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 20, name: 'backup-web', level: 'D', starttime: '2026-06-02 10:00:00' },
+    ], '30,10,20').map(option => option.jobid)).toEqual([10, 20, 30])
+  })
+
+  it('returns an empty backup-chain list for empty input', () => {
+    expect(buildRestoreBackupChainOptions([], '1,2')).toEqual([])
+    expect(buildRestoreBackupChainOptions(null, '1,2')).toEqual([])
+    expect(buildRestoreBackupChainOptions([{ jobid: 1 }], '')).toEqual([])
+    expect(buildRestoreBackupChainOptions([{ jobid: 1 }], null)).toEqual([])
   })
 
   it('resolves the latest backup for a client+fileset tuple', () => {
