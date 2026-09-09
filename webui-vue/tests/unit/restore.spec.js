@@ -25,7 +25,9 @@ import {
   buildRestoreBvfsJobidsCommand,
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
+  buildRestoreBackupChains,
   buildRestoreClientFilesetOptions,
+  buildRestoreTimelinePoints,
   buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
@@ -46,6 +48,9 @@ import {
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
   resolveLatestRestoreBackup,
+  resolveAdjacentRestoreBackupChain,
+  resolveRestoreBackupChain,
+  resolveRestoreTimelineSelection,
   resolveRestoreSourceClient,
   resolveRestoreBackupOption,
   resolveRestorePluginHintId,
@@ -339,14 +344,14 @@ describe('restore browser placeholder', () => {
     ])).toEqual([
       {
         value: 'bareos-fd\u0000SelfTest',
-        label: 'bareos-fd / SelfTest',
+        label: 'SelfTest@bareos-fd',
         client: 'bareos-fd',
         fileset: 'SelfTest',
         latestStarttime: '2026-06-02 10:00:00',
       },
       {
         value: 'web01-fd\u0000WebFS',
-        label: 'web01-fd / WebFS',
+        label: 'WebFS@web01-fd',
         client: 'web01-fd',
         fileset: 'WebFS',
         latestStarttime: '2026-06-03 10:00:00',
@@ -414,6 +419,116 @@ describe('restore browser placeholder', () => {
     expect(buildRestoreBackupChainOptions(null, '1,2')).toEqual([])
     expect(buildRestoreBackupChainOptions([{ jobid: 1 }], '')).toEqual([])
     expect(buildRestoreBackupChainOptions([{ jobid: 1 }], null)).toEqual([])
+  })
+
+  it('builds restore timeline points for a selected fileset', () => {
+    const backups = [
+      {
+        jobid: 12,
+        name: 'backup-web',
+        fileset: 'WebFS',
+        level: 'I',
+        starttime: '2026-06-03 10:00:00',
+        jobbytes: 4096,
+        jobfiles: 8,
+      },
+      {
+        jobid: 10,
+        name: 'backup-web',
+        fileset: 'WebFS',
+        level: 'F',
+        starttime: '2026-06-01 10:00:00',
+        jobbytes: 2048,
+        jobfiles: 4,
+      },
+      {
+        jobid: 11,
+        name: 'backup-db',
+        fileset: 'DbFS',
+        level: 'F',
+        starttime: '2026-06-02 10:00:00',
+      },
+    ]
+
+    expect(buildRestoreTimelinePoints(backups, {
+      filesetFilter: 'WebFS',
+      formatBytes: value => `${value} B`,
+    })).toEqual([
+      expect.objectContaining({
+        jobid: 10,
+        levelCode: 'F',
+        secondary: '#10 · 2026-06-01 10:00:00 · 2048 B · 4 files',
+      }),
+      expect.objectContaining({
+        jobid: 12,
+        levelCode: 'I',
+        secondary: '#12 · 2026-06-03 10:00:00 · 4096 B · 8 files',
+      }),
+    ])
+  })
+
+  it('resolves restore timeline selection or falls back to the latest point', () => {
+    const points = [
+      { jobid: 10, starttime: '2026-06-01 10:00:00' },
+      { jobid: 12, starttime: '2026-06-03 10:00:00' },
+    ]
+
+    expect(resolveRestoreTimelineSelection(points, '10')).toBe(points[0])
+    expect(resolveRestoreTimelineSelection(points, 99)).toBe(points[1])
+    expect(resolveRestoreTimelineSelection(points, null)).toBe(points[1])
+    expect(resolveRestoreTimelineSelection([], 10)).toBeNull()
+    expect(resolveRestoreTimelineSelection(null, 10)).toBeNull()
+  })
+
+  it('groups restore backups into Full-rooted chains', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, name: 'backup-web', fileset: 'WebFS', level: 'D', starttime: '2026-06-04 10:00:00' },
+      { jobid: 5, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-05 10:00:00' },
+      { jobid: 6, name: 'backup-db', fileset: 'DbFS', level: 'F', starttime: '2026-06-06 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(chains).toEqual([
+      expect.objectContaining({
+        rootJobid: 1,
+        latestJobid: 2,
+        jobCount: 2,
+        jobs: [
+          expect.objectContaining({ jobid: 1, levelCode: 'F' }),
+          expect.objectContaining({ jobid: 2, levelCode: 'I' }),
+        ],
+      }),
+      expect.objectContaining({
+        rootJobid: 3,
+        latestJobid: 5,
+        jobCount: 3,
+        jobs: [
+          expect.objectContaining({ jobid: 3, levelCode: 'F' }),
+          expect.objectContaining({ jobid: 4, levelCode: 'D' }),
+          expect.objectContaining({ jobid: 5, levelCode: 'I' }),
+        ],
+      }),
+    ])
+  })
+
+  it('resolves selected and adjacent restore backup chains', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, fileset: 'WebFS', level: 'I', starttime: '2026-06-04 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(resolveRestoreBackupChain(chains, 2)).toBe(chains[0])
+    expect(resolveRestoreBackupChain(chains, 4)).toBe(chains[1])
+    expect(resolveRestoreBackupChain(chains, null)).toBe(chains[1])
+    expect(resolveRestoreBackupChain([], 1)).toBeNull()
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[1], 'older')).toBe(chains[0])
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'newer')).toBe(chains[1])
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'older')).toBeNull()
+    expect(resolveAdjacentRestoreBackupChain(chains, null, 'older')).toBeNull()
   })
 
   it('resolves the latest backup for a client+fileset tuple', () => {
