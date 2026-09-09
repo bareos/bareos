@@ -153,8 +153,10 @@ std::optional<CommonName> GetCommonName(const X509_NAME* subject,
 {
   if (!subject) { return std::nullopt; }
 
-  const int index
-      = X509_NAME_get_index_by_NID(subject, NID_commonName, previous_index);
+  /* Pre OpenSSL 4.0, this function still required a non-const name.
+   * For compatibilities sake, we remove the const here. */
+  const int index = X509_NAME_get_index_by_NID(const_cast<X509_NAME*>(subject),
+                                               NID_commonName, previous_index);
   if (index == -1) { return std::nullopt; }
 
   const X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, index);
@@ -169,7 +171,7 @@ std::optional<CommonName> GetCommonName(const X509_NAME* subject,
       = std::unique_ptr<unsigned char, decltype([](unsigned char* data) {
                           OPENSSL_free(data);
                         })>;
-  Utf8DataPtr utf8_data(raw_utf8_data);
+  Utf8DataPtr utf8_data{raw_utf8_data};
   if (!utf8_data || length <= 0) { return std::nullopt; }
 
   std::string value{reinterpret_cast<const char*>(utf8_data.get()),
@@ -951,25 +953,9 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
 bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
                                           const char* host)
 {
-  int i, j;
-  int extensions;
   int cnLastPos = -1;
   X509* cert;
   bool auth_success = false;
-  auto free_subject_alt_name_data
-      = [](const X509V3_EXT_METHOD* method, void* extstr,
-           STACK_OF(CONF_VALUE) * val) {
-          if (val) { sk_CONF_VALUE_pop_free(val, X509V3_conf_free); }
-
-          if (!extstr) { return; }
-
-          if (method->it) {
-            ASN1_item_free(reinterpret_cast<ASN1_VALUE*>(extstr),
-                           ASN1_ITEM_ptr(method->it));
-          } else if (method->ext_free) {
-            method->ext_free(extstr);
-          }
-        };
 
   if (!(cert = SSL_get_peer_certificate(openssl_))) {
     Qmsg1(jcr, M_ERROR, 0, T_("Peer %s failed to present a TLS certificate\n"),
@@ -978,42 +964,28 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   }
 
   // Check subjectAltName extensions first
-  if ((extensions = X509_get_ext_count(cert)) > 0) {
-    for (i = 0; i < extensions; i++) {
-      const char* extname;
-
-      auto* ext = X509_get_ext(cert, i);
-      extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
-
-      if (bstrcmp(extname, "subjectAltName")) {
-        const X509V3_EXT_METHOD* method;
-        STACK_OF(CONF_VALUE)* val = nullptr;
-        CONF_VALUE* nval;
-        void* extstr = X509V3_EXT_d2i(ext);
-
-        if (!(method = X509V3_EXT_get(ext))) { break; }
-
-        // Iterate through to find the dNSName field(s)
-        val = method->i2v(method, extstr, NULL);
-        if (!val) {
-          free_subject_alt_name_data(method, extstr, val);
-          continue;
-        }
-
-        for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
-          nval = sk_CONF_VALUE_value(val, j);
-          if (bstrcmp(nval->name, "DNS")) {
-            if (Bstrcasecmp(nval->value, host)) {
-              auth_success = true;
-              break;
-            }
+  if (auto* sans = static_cast<GENERAL_NAMES*>(
+          X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr))) {
+    const int num = sk_GENERAL_NAME_num(sans);
+    for (int i = 0; i < num; ++i) {
+      const GENERAL_NAME* name = sk_GENERAL_NAME_value(sans, i);
+      if (name->type == GEN_DNS) {
+        const ASN1_IA5STRING* dns = name->d.dNSName;
+        const char* dns_data
+            = reinterpret_cast<const char*>(ASN1_STRING_get0_data(dns));
+        const int dns_len = ASN1_STRING_length(dns);
+        if (dns_data && dns_len > 0) {
+          std::string_view dns_view{dns_data, static_cast<size_t>(dns_len)};
+          if (dns_view.find('\0') == std::string_view::npos
+              && Bstrcasecmp(std::string(dns_view).c_str(), host)) {
+            auth_success = true;
+            break;
           }
         }
-
-        free_subject_alt_name_data(method, extstr, val);
-        if (auth_success) { goto success; }
       }
     }
+    GENERAL_NAMES_free(sans);
+    if (auth_success) { goto success; }
   }
 
   // Try verifying against the subject name

@@ -56,7 +56,7 @@ static int create_listening_server_socket(int port)
 
   int listen_file_descriptor;
 
-  if ((listen_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+  if ((listen_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("socket failed");
     return -2;
   }
