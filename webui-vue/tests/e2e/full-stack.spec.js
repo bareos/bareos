@@ -281,13 +281,14 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client', {
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  await page.getByText('Custom Selection', { exact: true }).click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectFirstQOption(page, 'restore-source-tuple', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
   })
-  await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
-  await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
+  await expect(page.locator('[data-testid="restore-backup-job"]')).toHaveCount(0)
+  await expect(page.getByTestId('restore-timeline-point').first()).toBeVisible()
+  await page.getByTestId('restore-timeline-point').last().click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
