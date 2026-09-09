@@ -272,8 +272,8 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
       || (!common_name.empty()
           && X509_NAME_add_entry_by_txt(
                  subject.get(), "CN", MBSTRING_UTF8,
-                 reinterpret_cast<const unsigned char*>(common_name.data()), -1,
-                 -1, 0)
+                 reinterpret_cast<const unsigned char*>(common_name.data()),
+                 static_cast<int>(common_name.size()), -1, 0)
                  != 1)
       || X509_set_subject_name(cert.get(), subject.get()) != 1) {
     *error = "Could not set certificate subject: " + GetOpenSslError();
@@ -959,6 +959,41 @@ TEST(bsock, auth_fails_with_missing_tls_common_name)
   ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, "", &error)) << error;
 
   ConfigureTlsForPeerVerification(artifacts, {}, {"bareos-client"});
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                 ls->port));
+
+  server_thread.join();
+  EXPECT_FALSE(future.get());
+}
+
+TEST(bsock, auth_fails_with_embedded_nul_tls_common_name)
+{
+  using namespace std::string_view_literals;
+  constexpr std::string_view client_common_name{"bareos\0client"sv};
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, client_common_name, &error))
+      << error;
+
+  ConfigureTlsForPeerVerification(artifacts, {}, {"bareos"});
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);
