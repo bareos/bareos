@@ -183,10 +183,6 @@ static void SendFilesetOptions(JobControlRecord* jcr,
                 file_option->wildbase.get(k));
     }
 
-    for (int k = 0; k < file_option->base.size(); k++) {
-      fd->fsend("B %s\n", file_option->base.get(k));
-    }
-
     for (int k = 0; k < file_option->fstype.size(); k++) {
       fd->fsend("X %s\n", file_option->fstype.get(k));
     }
