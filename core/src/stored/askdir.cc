@@ -46,12 +46,15 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/serial.h"
+#include <algorithm>
 #include <cinttypes>
 
 namespace storagedaemon {
 
 static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
+static constexpr std::size_t kMinAppendVolumeLookups = 200;
+static constexpr std::size_t kMaxUnwantedVolumesLength = 32 * 1024;
 
 /* Requests sent to the Director */
 inline constexpr const char Find_media[]
@@ -201,8 +204,8 @@ bool StorageDaemonDeviceControlRecord::DirGetVolumeInfo(
  * Returns: true  on success dcr->VolumeName is volume
  *                reserve_volume() called on Volume name
  *          false on failure dcr->VolumeName[0] == 0
- *                also sets dcr->FoundInUse if at least one
- *                in use volume was found.
+ *                also sets dcr->AppendVolumeBusy if at least one
+ *                appendable volume was found busy on another device.
  *
  * Volume information returned in dcr
  */
@@ -215,15 +218,30 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
 
-  /* Try the twenty oldest or most available volumes. Note,
-   * the most available could already be mounted on another
-   * drive, so we continue looking for a not in use Volume. */
+  /* Ask the director for append candidates, oldest or most available first.
+   * The most available one could already be mounted on another drive, so we
+   * keep asking for the next one until we find a volume we can use. */
   with_volume_lock([&] {
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
+    ClearAppendVolumeBusy();
 
     PmStrcpy(unwanted_volumes, "");
 
+    /* The scan normally ends when the director runs out of candidates. The
+     * bound below only keeps a pathological answer from looping forever, so
+     * it has to stay above every legitimate number of retries.
+     *
+     * Each device may hold one volume, so the number of devices is a lower
+     * bound for how many candidates a job might have to skip, and it has to
+     * be part of the limit: a big installation can legitimately skip a lot of
+     * volumes. It is not an upper bound though, because a volume can also be
+     * unusable for reasons that have nothing to do with the device count, for
+     * example while it is being read. A small installation with many volumes
+     * therefore needs a floor as well.
+     *
+     * Use whichever of the two is larger, so neither a large device count nor
+     * a large volume count can run into the limit. */
     std::size_t device_count = 0;
 
     {
@@ -236,24 +254,24 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     if (device_count == 0) {
       Emsg0(M_ERROR, 0,
             "Trying to find a volume, but there are apparently no devices.");
-      // not sure what happened here, but this should hopefully be enough
-      device_count = 100;
     }
 
-    // x >> 3 == x / 8 ~ 10% * x
-    // there should never be a need to ask for more volumes than there are
-    // devices because each device should only be allowed to reserve one volume,
-    // but we add some headroom here in case some recommended volume is broken
-    // or in case some devices are currently reserving multiple volumes (maybe
-    // they are currently switching volumes)
-    std::size_t ask_limit = device_count + (device_count >> 3);
+    // x >> 3 == x / 8 ~ 10% headroom, for devices switching volumes
+    const std::size_t ask_limit
+        = std::max(kMinAppendVolumeLookups, device_count + (device_count >> 3));
 
-    Dmsg0(400, "device count = %llu => ask limit = %llu\n",
-          static_cast<long long unsigned>(device_count),
-          static_cast<long long unsigned>(ask_limit));
+    Dmsg2(debuglevel, "device count = %zu => ask limit = %zu\n", device_count,
+          ask_limit);
 
-    // use <= because we start counting at 1
     for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
+      if (strlen(unwanted_volumes.c_str()) >= kMaxUnwantedVolumesLength) {
+        Dmsg1(debuglevel,
+              "Stopping append volume lookup after unwanted list reached %zu "
+              "bytes.\n",
+              strlen(unwanted_volumes.c_str()));
+        break;
+      }
+
       BashSpaces(media_type);
       BashSpaces(pool_name);
       BashSpaces(unwanted_volumes.c_str());
@@ -286,9 +304,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           goto get_out;
         } else {
           Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
-
-          // If volume is not usable, it is in use by someone else
-          SetFoundInUse();
+          if (IsAppendVolumeBusyOnAnotherDevice()) { SetAppendVolumeBusy(); }
           continue;
         }
       }
