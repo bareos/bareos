@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@ import time
 from collections import deque
 import bareosfd
 from bareosfd import *
+import traceback
 
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 from BareosFdWrapper import *  # noqa
@@ -448,6 +449,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
         # At this stage we have a list of what to backup contained in
         # self.cluster_configuration_parameters
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "cluster_configuration_parameters filtered: "
+            f"{str(self.cluster_configuration_parameters)}\n",
+        )
         bareosfd.DebugMessage(
             100,
             "cluster_configuration_parameters filtered: "
@@ -665,6 +671,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             # Split the 3 columns
             self.last_lsn, self.backup_label_data, self.tablespace_map_data = first_row
 
+            x = str(self.cluster_configuration_parameters["data_directory"])
+            bareosfd.JobMessage(bareosfd.M_INFO, f"::::: {x}\n")
+
             self.backup_label_filename = (
                 self.cluster_configuration_parameters["data_directory"] + "backup_label"
             )
@@ -731,7 +740,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
         except Exception as err:
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, f"__complete_backup_job unknown failure: {err}\n"
+                bareosfd.M_ERROR,
+                f"__complete_backup_job unknown failure: {traceback.format_exception(err)}\n",
             )
 
         self.is_backup_running = False
@@ -910,6 +920,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 if parameter.endswith("_directory"):
                     if not setting.endswith("/"):
                         setting = os.path.join(setting, "")
+                bareosfd.JobMessage(
+                    bareosfd.M_INFO, f"::::: setting {parameter} to {setting}\n"
+                )
                 self.cluster_configuration_parameters[parameter] = setting
                 bareosfd.DebugMessage(
                     150,
@@ -1756,11 +1769,16 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         empty and bareosfd.bRC_OK when we are done
         """
         bareosfd.DebugMessage(100, "end_backup_file() entry point in Python called\n")
+
+        x = str(self.cluster_configuration_parameters["data_directory"])
+        bareosfd.JobMessage(bareosfd.M_INFO, f"::::: end_file {x}\n")
         if self.paths_to_backup:
             return bareosfd.bRC_More
 
         if self.is_full_backup and self.is_backup_running:
+            bareosfd.JobMessage(bareosfd.M_INFO, f"::::: 1 {x}\n")
             self.__complete_backup_job()
+            bareosfd.JobMessage(bareosfd.M_INFO, f"::::: 2 {x}\n")
             # Now we can also create the Restore object with the right timestamp
             # We start by ROP so it is the last object in backup and first in restore
             self.virtual_files = [
@@ -1771,6 +1789,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             if self.tablespace_map_filename is not None:
                 self.virtual_files.append(self.tablespace_map_filename)
             self.paths_to_backup += self.virtual_files
+            bareosfd.JobMessage(bareosfd.M_INFO, f"::::: 3 {x}\n")
             return self.__check_for_wal_files()
 
         return bareosfd.bRC_OK
@@ -1782,6 +1801,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         especially when job was canceled
         """
         bareosfd.DebugMessage(100, "end_backup_job() entry point in Python called\n")
+        x = str(self.cluster_configuration_parameters["data_directory"])
+        bareosfd.JobMessage(bareosfd.M_INFO, f"::::: end_job {x}\n")
         # Execute pg_backup_stop() in case of incremental
         if self.is_backup_running:
             self.__complete_backup_job()

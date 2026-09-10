@@ -252,17 +252,21 @@ static inline PyObject* OwnedNone()
 
 static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
 {
+  PyObject* statp;
+  if (sp->statp.st_mode) {
+    statp = (PyObject*)NativeToPyStatPacket(&sp->statp);
+    if (!statp) { return nullptr; }
+  } else {
+    statp = OwnedNone();
+  }
+
+
   PySavePacket* pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
 
   if (pSavePkt) {
     pSavePkt->fname = PyUnicode_FromString(sp->fname ? sp->fname : "");
     pSavePkt->link = PyUnicode_FromString(sp->link ? sp->link : "");
-    if (sp->statp.st_mode) {
-      pSavePkt->statp = (PyObject*)NativeToPyStatPacket(&sp->statp);
-    } else {
-      pSavePkt->statp = OwnedNone();
-    }
-
+    pSavePkt->statp = statp;
     pSavePkt->type = sp->type;
     pSavePkt->flags
         = PyByteArray_FromStringAndSize(sp->flags, sizeof(sp->flags));
@@ -276,6 +280,8 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->object = OwnedNone();
     pSavePkt->object_len = sp->object_len;
     pSavePkt->object_index = sp->index;
+  } else {
+    Py_DECREF(statp);
   }
 
   return pSavePkt;
@@ -290,7 +296,7 @@ static inline bool PySavePacketToNative(
   // See if this is for an Options Plugin.
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
-    if (pSavePkt->fname) {
+    if (pSavePkt->fname || Py_IsNone(pSavePkt->fname)) {
       /* As this has to linger as long as the backup is running we save it in
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
@@ -327,10 +333,12 @@ static inline bool PySavePacketToNative(
     }
 
     // Handle the stat structure.
-    if (pSavePkt->statp) {
+    if (pSavePkt->statp
+        && PyObject_IsInstance(pSavePkt->statp, (PyObject*)&PyStatPacketType)) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
-      PyErr_SetString(PyExc_RuntimeError, "PyStatPacketToNative() failed");
+      PyErr_SetString(PyExc_RuntimeError,
+                      "PyStatPacketToNative() failed (bad statp)");
       return false;
     }
 
@@ -531,6 +539,7 @@ static bRC PyEndBackupFile(PluginContext* plugin_ctx)
       goto bail_out;
     } else {
       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+      Py_DECREF(pRetVal);
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
@@ -548,6 +557,20 @@ bail_out:
 static inline PyIoPacket* NativeToPyIoPacket(PyObject* fname, io_pkt* io)
 {
   if (!fname) { return nullptr; }
+
+  PyObject* buf;
+  if (io->func == IO_WRITE && io->count > 0) {
+    /* Only initialize the buffer with read data when we are writing and
+     * there is data.*/
+    buf = PyByteArray_FromStringAndSize(io->buf, io->count);
+    if (!buf) {
+      Py_DECREF(fname);
+      return nullptr;
+    }
+  } else {
+    buf = OwnedNone();
+  }
+
   PyIoPacket* pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
 
   if (pIoPkt) {
@@ -565,19 +588,7 @@ static inline PyIoPacket* NativeToPyIoPacket(PyObject* fname, io_pkt* io)
 #else
     pIoPkt->filedes = io->filedes;
 #endif
-
-    if (io->func == IO_WRITE && io->count > 0) {
-      /* Only initialize the buffer with read data when we are writing and
-       * there is data.*/
-      pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
-      if (!pIoPkt->buf) {
-        Py_DECREF(pIoPkt);
-        Py_DECREF(fname);
-        return nullptr;
-      }
-    } else {
-      pIoPkt->buf = OwnedNone();
-    }
+    pIoPkt->buf = buf;
     /* These must be set by the Python function but we initialize them to zero
      * to be sure they have some valid setting an not random data.  */
     pIoPkt->io_errno = 0;
@@ -586,6 +597,7 @@ static inline PyIoPacket* NativeToPyIoPacket(PyObject* fname, io_pkt* io)
     pIoPkt->status = 0;
   } else {
     Py_DECREF(fname);
+    Py_DECREF(buf);
   }
 
   return pIoPkt;
@@ -754,6 +766,7 @@ static bRC PyEndRestoreFile(PluginContext* plugin_ctx)
       goto bail_out;
     } else {
       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+      Py_DECREF(pRetVal);
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
@@ -770,6 +783,10 @@ bail_out:
 
 static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
 {
+  PyObject* statp
+      = reinterpret_cast<PyObject*>(NativeToPyStatPacket(&rp->statp));
+  if (!statp) { return nullptr; }
+
   PyRestorePacket* pRestorePacket
       = PyObject_New(PyRestorePacket, &PyRestorePacketType);
 
@@ -780,7 +797,7 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->file_index = rp->file_index;
     pRestorePacket->LinkFI = rp->LinkFI;
     pRestorePacket->uid = rp->uid;
-    pRestorePacket->statp = (PyObject*)NativeToPyStatPacket(&rp->statp);
+    pRestorePacket->statp = statp;
     pRestorePacket->attrEx
         = rp->attrEx ? PyUnicode_FromString(rp->attrEx) : OwnedNone();
     pRestorePacket->ofname
@@ -804,6 +821,8 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->original_link_name
         = rp->original_link_name ? PyUnicode_FromString(rp->original_link_name)
                                  : OwnedNone();
+  } else {
+    Py_DECREF(statp);
   }
 
   return pRestorePacket;
@@ -961,19 +980,25 @@ static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
 {
   if (!fname) { return nullptr; }
 
+  PyObject* content;
+  if (ap->content_length && ap->content) {
+    content = PyByteArray_FromStringAndSize(ap->content, ap->content_length);
+    if (!content) {
+      Py_DECREF(fname);
+      return nullptr;
+    }
+  } else {
+    content = OwnedNone();
+  }
+
   PyAclPacket* pAclPacket = PyObject_New(PyAclPacket, &PyAclPacketType);
 
   if (pAclPacket) {
     pAclPacket->fname = fname;
-
-    if (ap->content_length && ap->content) {
-      pAclPacket->content
-          = PyByteArray_FromStringAndSize(ap->content, ap->content_length);
-    } else {
-      pAclPacket->content = OwnedNone();
-    }
+    pAclPacket->content = content;
   } else {
     Py_DECREF(fname);
+    Py_DECREF(content);
   }
 
   return pAclPacket;
@@ -981,7 +1006,7 @@ static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
 
 static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket, acl_pkt* ap)
 {
-  if (!pAclPacket->content) { return true; }
+  if (!pAclPacket->content || Py_IsNone(pAclPacket->content)) { return true; }
 
   if (PyByteArray_Check(pAclPacket->content)) {
     char* buf;
@@ -994,7 +1019,8 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket, acl_pkt* ap)
 
     if (ap->content) { free(ap->content); }
     ap->content = (char*)malloc(ap->content_length + 1);
-    memcpy(ap->content, buf, ap->content_length + 1);
+    memcpy(ap->content, buf, ap->content_length);
+    ap->content[ap->content_length] = 0;
   } else {
     PyErr_SetString(PyExc_TypeError,
                     "acl packet content needs to be of bytearray type");
@@ -1110,25 +1136,40 @@ static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
 {
   if (!fname) { return nullptr; }
 
+  PyObject* name;
+  PyObject* value;
+
+  if (xp->name_length && xp->name) {
+    name = PyByteArray_FromStringAndSize(xp->name, xp->name_length);
+    if (!name) {
+      Py_DECREF(fname);
+      return nullptr;
+    }
+  } else {
+    name = OwnedNone();
+  }
+
+  if (xp->value_length && xp->value) {
+    value = PyByteArray_FromStringAndSize(xp->value, xp->value_length);
+    if (!value) {
+      Py_DECREF(fname);
+      Py_DECREF(name);
+      return nullptr;
+    }
+  } else {
+    value = OwnedNone();
+  }
+
   PyXattrPacket* pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
 
   if (pXattrPacket) {
     pXattrPacket->fname = fname;
-
-    if (xp->name_length && xp->name) {
-      pXattrPacket->name
-          = PyByteArray_FromStringAndSize(xp->name, xp->name_length);
-    } else {
-      pXattrPacket->name = OwnedNone();
-    }
-    if (xp->value_length && xp->value) {
-      pXattrPacket->value
-          = PyByteArray_FromStringAndSize(xp->value, xp->value_length);
-    } else {
-      pXattrPacket->value = OwnedNone();
-    }
+    pXattrPacket->name = name;
+    pXattrPacket->value = value;
   } else {
     Py_DECREF(fname);
+    Py_DECREF(value);
+    Py_DECREF(name);
   }
 
   return pXattrPacket;
@@ -1137,7 +1178,7 @@ static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
 static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
                                          xattr_pkt* xp)
 {
-  if (!pXattrPacket->name) { return true; }
+  if (!pXattrPacket->name || Py_IsNone(pXattrPacket->name)) { return true; }
 
   if (PyByteArray_Check(pXattrPacket->name)) {
     char* buf;
@@ -1450,6 +1491,7 @@ static PyObject* PyBareosGetValue(PyObject*, PyObject* args)
       if (bareos_core_functions->getBareosValue(plugin_ctx, var, &value)
           == bRC_OK) {
         pRetVal = value ? Py_True : Py_False;
+        Py_INCREF(pRetVal);
       }
       break;
     }
@@ -2071,17 +2113,16 @@ static int PyRestoreObject_init(PyRestoreObject* self,
   self->stream = 0;
   self->JobId = 0;
 
-  if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|UOUiiiiiiI", kwlist, &self->object_name, &self->object,
-          &self->plugin_name, &self->object_type, &self->object_len,
-          &self->object_full_len, &self->object_index,
-          &self->object_compression, &self->stream, &self->JobId)) {
-    return -1;
-  }
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds, "|UOUiiiiiiI", kwlist, &self->object_name, &self->object,
+      &self->plugin_name, &self->object_type, &self->object_len,
+      &self->object_full_len, &self->object_index, &self->object_compression,
+      &self->stream, &self->JobId);
   Py_INCREF(self->object);
   Py_INCREF(self->object_name);
   Py_INCREF(self->plugin_name);
 
+  if (!ok) { return -1; }
   return 0;
 }
 
@@ -2264,14 +2305,11 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   int no_read{}, portable{}, accurate_found{}, save_time{};
   unsigned delta_seq{};
 
-  if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|OOiOpppUiIOOii", kwlist, &self->fname, &self->link,
-          &self->type, &self->flags, &no_read, &portable, &accurate_found,
-          &self->cmd, &save_time, &delta_seq, &self->object_name, &self->object,
-          &self->object_len, &self->object_index)) {
-    return -1;
-  }
-
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds, "|OOiOpppUiIOOii", kwlist, &self->fname, &self->link,
+      &self->type, &self->flags, &no_read, &portable, &accurate_found,
+      &self->cmd, &save_time, &delta_seq, &self->object_name, &self->object,
+      &self->object_len, &self->object_index);
   Py_INCREF(self->fname);
   Py_INCREF(self->link);
   Py_INCREF(self->object_name);
@@ -2285,6 +2323,8 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->accurate_found = accurate_found;
   self->save_time = save_time;
   self->delta_seq = delta_seq;
+  if (!ok) { return -1; }
+
   return 0;
 }
 
@@ -2328,7 +2368,7 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        PyGetStringValue(self->original_link_name));
 
   s = PyUnicode_FromString(buf.c_str());
-  Py_DECREF(stat_repr);
+  Py_XDECREF(stat_repr);
 
   return s;
 }
@@ -2381,22 +2421,19 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   const char *attrEx{}, *ofname{}, *olname{}, *where{}, *RegexWhere{},
       *orig_fname{}, *orig_lname{};
 
-  if (!PyArg_ParseTupleAndKeywords(
-          args, kwds,
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds,
 #if HAVE_WIN32
-          /* filedes is long long */
-          "|iiiiiIOsssssiiLss",
+      /* filedes is long long */
+      "|iiiiiIOsssssiiLss",
 #else
-          /* filedes is int */
-          "|iiiiiIOsssssiiiss",
+      /* filedes is int */
+      "|iiiiiIOsssssiiiss",
 #endif
-          kwlist, &self->stream, &self->data_stream, &self->type,
-          &self->file_index, &self->LinkFI, &self->uid, &self->statp,
-          &self->attrEx, &self->ofname, &self->olname, &where, &RegexWhere,
-          &self->replace, &self->create_status, &self->filedes,
-          &self->original_file_name, &self->original_link_name)) {
-    return -1;
-  }
+      kwlist, &self->stream, &self->data_stream, &self->type, &self->file_index,
+      &self->LinkFI, &self->uid, &self->statp, &self->attrEx, &self->ofname,
+      &self->olname, &where, &RegexWhere, &self->replace, &self->create_status,
+      &self->filedes, &self->original_file_name, &self->original_link_name);
 
   Py_INCREF(self->statp);
   Py_INCREF(self->attrEx);
@@ -2407,6 +2444,8 @@ static int PyRestorePacket_init(PyRestorePacket* self,
 
   self->where = dup_str(where);
   self->RegexWhere = dup_str(RegexWhere);
+
+  if (!ok) { return -1; }
 
   return 0;
 }
@@ -2481,32 +2520,30 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   long long parsed_offset = static_cast<long long>(self->offset);
   int parsed_win32 = self->win32 ? 1 : 0;
   long long parsed_filedes = static_cast<long long>(self->filedes);
-  if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|HiiiUsiiiiLpL", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
-          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
-          &parsed_win32, &parsed_filedes)) {
-    return -1;
-  }
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds, "|HiiiUsiiiiLpL", kwlist, &self->func, &self->count,
+      &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+      &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+      &parsed_win32, &parsed_filedes);
   self->offset = static_cast<int64_t>(parsed_offset);
   self->win32 = parsed_win32 != 0;
   self->filedes = static_cast<intptr_t>(parsed_filedes);
 #else
   long long parsed_offset = static_cast<long long>(self->offset);
   int parsed_win32 = self->win32 ? 1 : 0;
-  if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|HiiiUsiiiiLpi", kwlist, &self->func, &self->count,
-          &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
-          &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
-          &parsed_win32, &self->filedes)) {
-    return -1;
-  }
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds, "|HiiiUsiiiiLpi", kwlist, &self->func, &self->count,
+      &self->flags, &self->mode, &self->buf, &self->fname, &self->status,
+      &self->io_errno, &self->lerror, &self->whence, &parsed_offset,
+      &parsed_win32, &self->filedes);
   self->offset = static_cast<int64_t>(parsed_offset);
   self->win32 = parsed_win32 != 0;
 #endif
 
   Py_INCREF(self->buf);
   Py_INCREF(self->fname);
+
+  if (!ok) { return -1; }
 
   return 0;
 }
@@ -2544,13 +2581,12 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
   self->fname = Py_None;
   self->content = Py_None;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UO", kwlist, &self->fname,
-                                   &self->content)) {
-    return -1;
-  }
-
+  bool ok = PyArg_ParseTupleAndKeywords(args, kwds, "|UO", kwlist, &self->fname,
+                                        &self->content);
   Py_INCREF(self->content);
   Py_INCREF(self->fname);
+
+  if (!ok) { return -1; }
 
   return 0;
 }
@@ -2592,14 +2628,13 @@ static int PyXattrPacket_init(PyXattrPacket* self,
   self->name = Py_None;
   self->value = Py_None;
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UOO", kwlist, &self->fname,
-                                   &self->name, &self->value)) {
-    return -1;
-  }
-
+  bool ok = PyArg_ParseTupleAndKeywords(
+      args, kwds, "|UOO", kwlist, &self->fname, &self->name, &self->value);
   Py_INCREF(self->name);
   Py_INCREF(self->value);
   Py_INCREF(self->fname);
+
+  if (!ok) { return -1; }
 
   return 0;
 }
