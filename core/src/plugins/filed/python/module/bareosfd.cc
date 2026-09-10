@@ -2065,8 +2065,9 @@ static int PyRestoreObject_init(PyRestoreObject* self,
           &self->object_compression, &self->stream, &self->JobId)) {
     return -1;
   }
-  Py_XINCREF(self->object);
-  Py_XINCREF(self->plugin_name);
+  Py_INCREF(self->object);
+  Py_INCREF(self->object_name);
+  Py_INCREF(self->plugin_name);
 
   return 0;
 }
