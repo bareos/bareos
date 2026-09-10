@@ -27,37 +27,6 @@
 #include "lib/bauth/cram_md5.h"
 #include "lib/tls.h"
 
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   const std::string& qualified_name,
-                   const TlsResource* res,
-                   std::string_view hello_msg,
-                   auth::Authenticator* auth,
-                   bool cleartext_authentication = false);
-
-template <global_resource::Type type, global_resource::Type target_type>
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   std::string_view name,
-                   const TlsResource* res,
-                   bool cleartext_authentication = false)
-{
-  using formatter = hello_formatter<type, target_type>;
-  auto qualified_name
-      = global_resource::QualifiedName(formatter::auth_type, name);
-  auto hello = formatter::format(name);
-  std::vector<std::unique_ptr<auth::Prover>> claims;
-  std::vector<std::unique_ptr<auth::Verifier>> verifiers;
-  claims.emplace_back(std::make_unique<auth::CramMd5::Prover>(
-      qualified_name, res->password_.value));
-  verifiers.emplace_back(std::make_unique<auth::CramMd5::Verifier>(
-      qualified_name, res->password_.value));
-  auth::DefaultAuthenticator auth{std::move(claims), std::move(verifiers)};
-
-  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
-                       cleartext_authentication);
-}
-
 enum class ConnectionType
 {
   /* This connection is insecure, we do not know who we are talking to */
@@ -78,6 +47,33 @@ struct ConnectionInfo {
       = 0;
   virtual ~ConnectionInfo() = default;
 };
+
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   const std::string& qualified_name,
+                   ConnectionInfo* info,
+                   std::string_view hello_msg,
+                   auth::Authenticator* auth,
+                   bool cleartext_authentication = false);
+
+template <global_resource::Type type,
+          global_resource::Type target_type,
+          typename Authenticator = auth::DefaultAuthenticator>
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string_view name,
+                   ConnectionInfo* info,
+                   bool cleartext_authentication = false)
+{
+  using formatter = hello_formatter<type, target_type>;
+  auto qualified_name
+      = global_resource::QualifiedName(formatter::auth_type, name);
+  auto hello = formatter::format(name);
+  Authenticator auth{};
+
+  return BareosConnect(jcr, socket, qualified_name, info, hello, &auth,
+                       cleartext_authentication);
+}
 
 struct DefaultConnectionInfo : ConnectionInfo {
   DefaultConnectionInfo(TlsResource res) : tls{std::move(res)} {}
