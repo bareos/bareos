@@ -133,6 +133,7 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
+    if (!value) { goto bail_out; }
     pPluginDefinition = PyUnicode_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
@@ -243,6 +244,12 @@ static inline void PyStatPacketToNative(PyStatPacket* pStatp,
   statp->st_blocks = pStatp->blocks;
 }
 
+static inline PyObject* OwnedNone()
+{
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
 {
   PySavePacket* pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
@@ -262,7 +269,7 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->no_read = sp->no_read;
     pSavePkt->portable = sp->portable;
     pSavePkt->accurate_found = sp->accurate_found;
-    pSavePkt->cmd = PyUnicode_FromString(sp->cmd);
+    pSavePkt->cmd = sp->cmd ? PyUnicode_FromString(sp->cmd) : OwnedNone();
     pSavePkt->save_time = sp->save_time;
     pSavePkt->delta_seq = sp->delta_seq;
     pSavePkt->object_name = NULL;
@@ -773,9 +780,12 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->LinkFI = rp->LinkFI;
     pRestorePacket->uid = rp->uid;
     pRestorePacket->statp = (PyObject*)NativeToPyStatPacket(&rp->statp);
-    pRestorePacket->attrEx = PyUnicode_FromString(rp->attrEx);
-    pRestorePacket->ofname = PyUnicode_FromString(rp->ofname);
-    pRestorePacket->olname = PyUnicode_FromString(rp->olname);
+    pRestorePacket->attrEx
+        = rp->attrEx ? PyUnicode_FromString(rp->attrEx) : OwnedNone();
+    pRestorePacket->ofname
+        = rp->attrEx ? PyUnicode_FromString(rp->ofname) : OwnedNone();
+    pRestorePacket->olname
+        = rp->attrEx ? PyUnicode_FromString(rp->olname) : OwnedNone();
     pRestorePacket->where = dup_str(rp->where);
     pRestorePacket->RegexWhere = dup_str(rp->RegexWhere);
     pRestorePacket->replace = rp->replace;
@@ -788,9 +798,11 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
 #endif
 
     pRestorePacket->original_file_name
-        = PyUnicode_FromString(rp->original_file_name);
+        = rp->original_file_name ? PyUnicode_FromString(rp->original_file_name)
+                                 : OwnedNone();
     pRestorePacket->original_link_name
-        = PyUnicode_FromString(rp->original_link_name);
+        = rp->original_link_name ? PyUnicode_FromString(rp->original_link_name)
+                                 : OwnedNone();
   }
 
   return pRestorePacket;
@@ -1995,16 +2007,16 @@ bail_out:
 }
 
 // Some helper functions.
-static inline char* PyGetStringValue(PyObject* object)
+static inline const char* PyGetStringValue(PyObject* object)
 {
-  if (!object || !PyUnicode_Check(object)) { return (char*)""; }
+  if (!object || !PyUnicode_Check(object)) { return ""; }
 
   return const_cast<char*>(PyUnicode_AsUTF8(object));
 }
 
-static inline char* PyGetByteArrayValue(PyObject* object)
+static inline const char* PyGetByteArrayValue(PyObject* object)
 {
-  if (!object || !PyByteArray_Check(object)) { return (char*)""; }
+  if (!object || !PyByteArray_Check(object)) { return ""; }
 
   return PyByteArray_AsString(object);
 }
@@ -2047,9 +2059,9 @@ static int PyRestoreObject_init(PyRestoreObject* self,
                            (char*)"jobid",
                            NULL};
 
-  self->object_name = NULL;
-  self->object = NULL;
-  self->plugin_name = NULL;
+  self->object_name = Py_None;
+  self->object = Py_None;
+  self->plugin_name = Py_None;
   self->object_type = 0;
   self->object_len = 0;
   self->object_full_len = 0;
@@ -2232,21 +2244,21 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
          (char*)"accurate_found", (char*)"cmd",          (char*)"save_time",
          (char*)"delta_seq",      (char*)"object_name",  (char*)"object",
          (char*)"object_len",     (char*)"object_index", NULL};
-  self->fname = NULL;
-  self->link = NULL;
+  self->fname = Py_None;
+  self->link = Py_None;
   self->type = 0;
   self->flags = NULL;
   self->no_read = false;
   self->portable = false;
   self->accurate_found = false;
-  self->cmd = NULL;
+  self->cmd = Py_None;
   self->save_time = 0;
   self->delta_seq = 0;
-  self->object_name = NULL;
-  self->object = NULL;
+  self->object_name = Py_None;
+  self->object = Py_None;
   self->object_len = 0;
   self->object_index = 0;
-  self->statp = NULL;
+  self->statp = Py_None;
 
   int no_read{}, portable{}, accurate_found{}, save_time{};
   unsigned delta_seq{};
@@ -2259,11 +2271,12 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
     return -1;
   }
 
-  Py_XINCREF(self->fname);
-  Py_XINCREF(self->link);
-  Py_XINCREF(self->object_name);
-  Py_XINCREF(self->object);
-  Py_XINCREF(self->cmd);
+  Py_INCREF(self->fname);
+  Py_INCREF(self->link);
+  Py_INCREF(self->object_name);
+  Py_INCREF(self->object);
+  Py_INCREF(self->cmd);
+  Py_INCREF(self->statp);
 
   self->no_read = no_read;
   self->portable = portable;
@@ -2350,18 +2363,18 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   self->file_index = 0;
   self->LinkFI = 0;
   self->uid = 0;
-  self->statp = NULL;
-  self->attrEx = NULL;
-  self->ofname = NULL;
-  self->olname = NULL;
+  self->statp = Py_None;
+  self->attrEx = Py_None;
+  self->ofname = Py_None;
+  self->olname = Py_None;
   self->where = NULL;
   self->RegexWhere = NULL;
   self->replace = 0;
   self->create_status = 0;
 
   self->filedes = kInvalidFiledescriptor;
-  self->original_file_name = nullptr;
-  self->original_link_name = nullptr;
+  self->original_file_name = Py_None;
+  self->original_link_name = Py_None;
 
   const char *attrEx{}, *ofname{}, *olname{}, *where{}, *RegexWhere{},
       *orig_fname{}, *orig_lname{};
@@ -2383,12 +2396,12 @@ static int PyRestorePacket_init(PyRestorePacket* self,
     return -1;
   }
 
-  Py_XINCREF(self->statp);
-  Py_XINCREF(self->attrEx);
-  Py_XINCREF(self->ofname);
-  Py_XINCREF(self->olname);
-  Py_XINCREF(self->original_file_name);
-  Py_XINCREF(self->original_link_name);
+  Py_INCREF(self->statp);
+  Py_INCREF(self->attrEx);
+  Py_INCREF(self->ofname);
+  Py_INCREF(self->olname);
+  Py_INCREF(self->original_file_name);
+  Py_INCREF(self->original_link_name);
 
   self->where = dup_str(where);
   self->RegexWhere = dup_str(RegexWhere);
@@ -2453,8 +2466,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->count = 0;
   self->flags = 0;
   self->mode = 0;
-  self->buf = NULL;
-  self->fname = NULL;
+  self->buf = Py_None;
+  self->fname = Py_None;
   self->status = 0;
   self->io_errno = 0;
   self->lerror = 0;
@@ -2491,8 +2504,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   self->win32 = parsed_win32 != 0;
 #endif
 
-  Py_XINCREF(self->buf);
-  Py_XINCREF(self->fname);
+  Py_INCREF(self->buf);
+  Py_INCREF(self->fname);
 
   return 0;
 }
@@ -2527,16 +2540,16 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
 {
   static char* kwlist[] = {(char*)"fname", (char*)"content", NULL};
 
-  self->fname = NULL;
-  self->content = NULL;
+  self->fname = Py_None;
+  self->content = Py_None;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UO", kwlist, &self->fname,
                                    &self->content)) {
     return -1;
   }
 
-  Py_XINCREF(self->content);
-  Py_XINCREF(self->fname);
+  Py_INCREF(self->content);
+  Py_INCREF(self->fname);
 
   return 0;
 }
@@ -2574,18 +2587,18 @@ static int PyXattrPacket_init(PyXattrPacket* self,
 {
   static char* kwlist[] = {(char*)"fname", (char*)"name", (char*)"value", NULL};
 
-  self->fname = NULL;
-  self->name = NULL;
-  self->value = NULL;
+  self->fname = Py_None;
+  self->name = Py_None;
+  self->value = Py_None;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|UOO", kwlist, &self->fname,
                                    &self->name, &self->value)) {
     return -1;
   }
 
-  Py_XINCREF(self->name);
-  Py_XINCREF(self->value);
-  Py_XINCREF(self->fname);
+  Py_INCREF(self->name);
+  Py_INCREF(self->value);
+  Py_INCREF(self->fname);
 
   return 0;
 }
