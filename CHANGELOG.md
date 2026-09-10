@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui-vue: update nanoid to patched version [PR #2772]
 - webui-vue: remove unneeded newlines in bareos-audit.log [PR #2761]
 - webui-proxy: fix not bashing console name [PR #2757]
+- matrix: add Fedora45 and fix OpenSSL 4 build errors in TLS/crypto code [PR #2797]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2390,5 +2391,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2777]: https://github.com/bareos/bareos/pull/2777
 [PR #2779]: https://github.com/bareos/bareos/pull/2779
 [PR #2785]: https://github.com/bareos/bareos/pull/2785
+[PR #2797]: https://github.com/bareos/bareos/pull/2797
 [PR #2799]: https://github.com/bareos/bareos/pull/2799
 [unreleased]: https://github.com/bareos/bareos/tree/master
