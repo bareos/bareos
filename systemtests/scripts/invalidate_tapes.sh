@@ -25,7 +25,10 @@ set -u
 
 . "${BAREOS_SCRIPTS_DIR}/redirect_output"
 
-echo "=== $0 Running ==="
+TestName="$(basename "$(pwd)")"
+export TestName
+
+echo "=== ${TestName} Running ==="
 
 invalidate_slots_on_autochanger()
 {
