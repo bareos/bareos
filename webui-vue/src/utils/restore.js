@@ -228,6 +228,7 @@ export function buildRestoreBackupOption(
   backup,
   {
     formatBytes = value => String(value),
+    formatTime = value => value,
     filesLabel = 'files',
     showClient = false,
   } = {}
@@ -240,10 +241,11 @@ export function buildRestoreBackupOption(
   const jobfiles = Number(backup?.jobfiles ?? 0)
   const client = backup?.client ?? ''
   const fileset = backup?.fileset ?? ''
+  const displayStarttime = formatTime(starttime)
   const secondary = [
     jobid !== '' ? `#${jobid}` : '',
     showClient && client ? client : '',
-    starttime,
+    displayStarttime,
     Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
     Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
   ].filter(Boolean).join(' · ')
@@ -256,9 +258,17 @@ export function buildRestoreBackupOption(
     level,
     levelCode: resolveJobLevelCode(level),
     starttime,
+    displayStarttime,
     client,
     fileset,
     secondary,
+    absoluteSecondary: [
+      jobid !== '' ? `#${jobid}` : '',
+      showClient && client ? client : '',
+      starttime,
+      Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
+      Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
+    ].filter(Boolean).join(' · '),
   }
 }
 
@@ -328,6 +338,7 @@ export function buildRestoreBackupChainOptions(
   jobids,
   {
     formatBytes = value => String(value),
+    formatTime = value => value,
   } = {}
 ) {
   const ids = Array.isArray(jobids)
@@ -345,7 +356,7 @@ export function buildRestoreBackupChainOptions(
 
   return backups
     .filter(backup => wantedJobIds.has(String(backup?.jobid ?? '').trim()))
-    .map(backup => buildRestoreBackupOption(backup, { formatBytes }))
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
     .sort((left, right) => (
       left.starttime.localeCompare(right.starttime)
       || Number(left.jobid) - Number(right.jobid)
@@ -357,10 +368,11 @@ export function buildRestoreTimelinePoints(
   {
     filesetFilter = '',
     formatBytes = value => String(value),
+    formatTime = value => value,
   } = {}
 ) {
   return filterRestoreBackupsByCriteria(backups, { filesetFilter })
-    .map(backup => buildRestoreBackupOption(backup, { formatBytes }))
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
     .sort((left, right) => (
       left.starttime.localeCompare(right.starttime)
       || Number(left.jobid) - Number(right.jobid)
@@ -389,11 +401,13 @@ export function buildRestoreBackupChains(
   {
     filesetFilter = '',
     formatBytes = value => String(value),
+    formatTime = value => value,
   } = {}
 ) {
   const points = buildRestoreTimelinePoints(backups, {
     filesetFilter,
     formatBytes,
+    formatTime,
   })
   const chains = []
   let currentChain = null
@@ -403,9 +417,12 @@ export function buildRestoreBackupChains(
     if (startsChain) {
       currentChain = {
         value: String(point.jobid ?? `chain-${chains.length}`),
-        label: point.starttime ? `Full #${point.jobid} · ${point.starttime}` : `Full #${point.jobid}`,
+        label: point.displayStarttime
+          ? `Full #${point.jobid} · ${point.displayStarttime}`
+          : `Full #${point.jobid}`,
         rootJobid: point.jobid,
         rootStarttime: point.starttime,
+        rootDisplayStarttime: point.displayStarttime,
         jobs: [],
       }
       chains.push(currentChain)
