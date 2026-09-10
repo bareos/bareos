@@ -88,5 +88,6 @@ const char *BareosDb::query_names[] = {
 "subscription_units_plugin_total_1",
 "subscription_client_detail_2",
 "list_jobs_count_last",
+"uar_sel_client_fileset_tuples_1",
 NULL
 };
