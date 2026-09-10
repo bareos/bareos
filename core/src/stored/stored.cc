@@ -486,7 +486,6 @@ extern "C" void* device_initialization(void*)
   DeviceControlRecord* dcr;
   JobControlRecord* jcr;
   Device* dev;
-  int errstat;
 
   ResLocker _{my_config};
 
@@ -494,15 +493,6 @@ extern "C" void* device_initialization(void*)
   jcr = NewStoredJcr();
   NewPlugins(jcr); /* instantiate plugins */
   jcr->setJobType(JT_SYSTEM);
-
-  // Initialize job end condition variable
-  errstat = pthread_cond_init(&jcr->sd_impl->job_end_wait, nullptr);
-  if (errstat != 0) {
-    BErrNo be;
-    Jmsg1(jcr, M_ABORT, 0,
-          T_("Unable to init job endstart cond variable: ERR=%s\n"),
-          be.bstrerror(errstat));
-  }
 
   foreach_res (device_resource, R_DEVICE) {
     Dmsg1(90, "calling FactoryCreateDevice %s\n",

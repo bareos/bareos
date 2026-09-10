@@ -138,8 +138,6 @@ JobId_t RunJob(JobControlRecord* jcr)
 
 bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 {
-  int errstat;
-
   {
     std::unique_lock l(jcr->mutex_guard());
 
@@ -149,17 +147,6 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     } else {
       jcr->suppress_output = true;
     }
-
-    // Initialize nextrun ready condition variable
-    if ((errstat = pthread_cond_init(&jcr->dir_impl->nextrun_ready, NULL))
-        != 0) {
-      BErrNo be;
-      Jmsg1(jcr, M_FATAL, 0,
-            T_("Unable to init job nextrun cond variable: ERR=%s\n"),
-            be.bstrerror(errstat));
-      goto bail_out;
-    }
-    jcr->dir_impl->nextrun_ready_inited = true;
 
     CreateUniqueJobName(jcr, jcr->dir_impl->res.job->resource_name_);
     jcr->setJobStatusWithPriorityCheck(JS_Created);
@@ -1564,11 +1551,6 @@ void DirdFreeJcr(JobControlRecord* jcr)
   }
 
   DirdFreeJcrPointers(jcr);
-
-  if (jcr->dir_impl->nextrun_ready_inited) {
-    pthread_cond_destroy(&jcr->dir_impl->nextrun_ready);
-    jcr->dir_impl->nextrun_ready_inited = false;
-  }
 
   if (jcr->db_batch) {
     DbSqlClosePooledConnection(jcr, jcr->db_batch);

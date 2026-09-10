@@ -39,6 +39,7 @@
 #if HAVE_NDMP
 #  include "dird/ndmp_dma_backup_common.h"
 #  include "dird/ndmp_dma_generic.h"
+#  include "dird/ndmp_fileset_validation.h"
 
 #  define NDMP_NEED_ENV_KEYWORDS 1
 
@@ -49,8 +50,6 @@
 namespace directordaemon {
 
 #if HAVE_NDMP
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
 
@@ -200,6 +199,20 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     return false;
   }
 
+  /* An NDMP backup job saves exactly one filesystem. Reject an unsupported
+   * fileset before a device gets reserved, so a misconfigured job does not
+   * occupy a drive. */
+  fileset = jcr->dir_impl->res.fileset;
+  if (auto validation
+      = ValidateNdmpFileset(fileset->include_items.size(),
+                            fileset->include_items.size() > 0
+                                ? fileset->include_items[0]->name_list.size()
+                                : 0);
+      validation != NdmpFilesetValidation::kOk) {
+    Jmsg(jcr, M_FATAL, 0, "%s", NdmpFilesetValidationMessage(validation));
+    return false;
+  }
+
   /* If we have a paired storage definition create a native connection
    * to a Storage daemon and make it ready to receive a backup.
    * The setup is more or less the same as for a normal non NDMP backup
@@ -248,10 +261,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   memset(nis, 0, sizeof(NIS));
 
   /* Loop over each include set of the fileset and fire off a NDMP backup of the
-   * included fileset. */
+   * included fileset. The fileset was validated above, so this runs exactly
+   * one sub-backup for the single filesystem of this job. */
   cnt = 0;
-  fileset = jcr->dir_impl->res.fileset;
-
 
   for (i = 0; i < fileset->include_items.size(); i++) {
     int j;
@@ -262,18 +274,6 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     // Loop over each file = entry of the fileset.
     for (j = 0; j < ie->name_list.size(); j++) {
       item = (char*)ie->name_list.get(j);
-
-      /* See if this is the first Backup run or not. For NDMP we can have
-       * multiple Backup runs as part of the same Job. When we are saving data
-       * to a Native Storage Daemon we let it know to expect a new backup
-       * session. It will generate a new authorization key so we wait for the
-       * nextrun_ready conditional variable to be raised by the msg_thread. */
-      if (jcr->store_bsock && cnt > 0) {
-        jcr->store_bsock->fsend("nextrun");
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->dir_impl->nextrun_ready, &mutex);
-        unlock_mutex(mutex);
-      }
 
       /* Perform the actual NDMP job.
        * Initialize a new NDMP session */
