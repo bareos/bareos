@@ -67,6 +67,9 @@ static int FilesetHandler(void* ctx, int num_fields, char** row);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     const char* date);
+static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
+                                               RestoreContext* rx,
+                                               const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
 static void SplitPathAndFilename(UaContext* ua,
@@ -558,6 +561,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       T_("Find the JobIds for a backup for a client before a specified time"),
       T_("Enter a list of directories to restore for found JobIds"),
       T_("Select full restore to a specified Job date"),
+      T_("Select a Client:FileSet combination (latest backup)"),
       T_("Cancel"),
       NULL};
 
@@ -571,26 +575,27 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "pool",      /* 6 */
                       "all",       /* 7 */
                       "fileregex", /* 8 */
+                      "latest",    /* 9 */
 
                       // The keyword below are handled by individual arg lookups
-                      "client",        /* 9 */
-                      "storage",       /* 10 */
-                      "fileset",       /* 11 */
-                      "where",         /* 12 */
-                      "yes",           /* 13 */
-                      "bootstrap",     /* 14 */
-                      "done",          /* 15 */
-                      "strip_prefix",  /* 16 */
-                      "add_prefix",    /* 17 */
-                      "add_suffix",    /* 18 */
-                      "regexwhere",    /* 19 */
-                      "restoreclient", /* 20 */
-                      "copies",        /* 21 */
-                      "comment",       /* 22 */
-                      "restorejob",    /* 23 */
-                      "replace",       /* 24 */
-                      "pluginoptions", /* 25 */
-                      "archive",       /* 26 */
+                      "client",        /* 10 */
+                      "storage",       /* 11 */
+                      "fileset",       /* 12 */
+                      "where",         /* 13 */
+                      "yes",           /* 14 */
+                      "bootstrap",     /* 15 */
+                      "done",          /* 16 */
+                      "strip_prefix",  /* 17 */
+                      "add_prefix",    /* 18 */
+                      "add_suffix",    /* 19 */
+                      "regexwhere",    /* 20 */
+                      "restoreclient", /* 21 */
+                      "copies",        /* 22 */
+                      "comment",       /* 23 */
+                      "restorejob",    /* 24 */
+                      "replace",       /* 25 */
+                      "pluginoptions", /* 26 */
+                      "archive",       /* 27 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -599,6 +604,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   std::vector<char*> dirs;
   bool use_select = false;
   bool use_fileregex = false;
+  bool use_latest = false;
 
   // these are just used to check if any option specifies them in some way
   // this way we can give the user some feedback.  I.e.
@@ -723,8 +729,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 8: /* fileregex */
         use_fileregex = true;
         break;
+      case 9: /* latest */
+        use_latest = true;
+        break;
       default:
-        // All keywords 7 or greater are ignored or handled by a select prompt
+        // All keywords 9 or greater are ignored or handled by a select
+        // prompt
         break;
     }
   }
@@ -758,6 +768,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     } else {
       if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
     }
+    done = true;
+  }
+
+  if (use_latest) {
+    decltype(date) current_date;
+    bstrutime(current_date, sizeof(current_date), current_time);
+    if (!SelectClientFilesetTupleAndRestore(ua, rx, current_date)) { return 0; }
     done = true;
   }
 
@@ -932,7 +949,14 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
       } break;
-      case 12: /* Cancel or quit */
+      case 12: /* Select a Client:FileSet combination (latest backup) */ {
+        decltype(date) current_date;
+        bstrutime(current_date, sizeof(current_date), current_time);
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, current_date)) {
+          return 0;
+        }
+      } break;
+      case 13: /* Cancel or quit */
         return 0;
     }
   }
@@ -1466,20 +1490,22 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
 }
 
 /**
- * This routine is used to get the current backup or a backup before the
- * specified date.
+ * This routine resolves the Full->Differential->Incremental backup chain
+ * for an already-known Client/FileSet pair and populates rx->JobIds
+ * accordingly. It is shared by the interactive "select Client, then
+ * FileSet" flow (SelectBackupsBeforeDate()) and the "pick a Client:FileSet
+ * tuple directly" quick-restore flow
+ * (SelectClientFilesetTupleAndRestore()).
  */
-static bool SelectBackupsBeforeDate(UaContext* ua,
-                                    RestoreContext* rx,
-                                    const char* date)
+static bool ResolveBackupChainForClientFileset(UaContext* ua,
+                                               RestoreContext* rx,
+                                               ClientDbRecord& cr,
+                                               FileSetDbRecord& fsr,
+                                               const char* date)
 {
-  int i;
-  ClientDbRecord cr;
-  FileSetDbRecord fsr;
   bool ok = false;
   char ed1[50], ed2[50];
   char pool_select[MAX_NAME_LENGTH];
-  char fileset_name[MAX_NAME_LENGTH];
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
@@ -1491,49 +1517,6 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
   if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_create_temp1>()) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
-  }
-  // Select Client from the Catalog
-  if (!GetClientDbr(ua, &cr)) { goto bail_out; }
-  if (rx->ClientName) { free(rx->ClientName); }
-  rx->ClientName = strdup(cr.Name);
-
-  // Get FileSet
-  i = FindArgWithValue(ua, "FileSet");
-
-  if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
-    bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
-    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
-                   ua->db->strerror());
-      i = -1;
-    }
-  } else if (i >= 0) { /* name is invalid */
-    ua->ErrorMsg(T_("FileSet argument: %s\n"), ua->errmsg.c_str());
-  }
-
-  if (i < 0) { /* fileset not found */
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_fileset>(
-        rx->query, edit_int64(cr.ClientId, ed1), ed1);
-
-    StartPrompt(ua, T_("The defined FileSet resources are:\n"));
-    if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-    }
-    if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), fileset_name,
-                 sizeof(fileset_name))
-        < 0) {
-      ua->ErrorMsg(T_("No FileSet found for client \"%s\".\n"), cr.Name);
-      goto bail_out;
-    }
-
-    bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
-    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
-                     ua->db->strerror());
-      ua->SendMsg(
-          T_("This probably means you modified the FileSet.\n"
-             "Continuing anyway.\n"));
-    }
   }
 
   // If Pool specified, add PoolId specification
@@ -1682,6 +1665,149 @@ bail_out:
   ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_del_temp1>();
 
   return ok;
+}
+
+/**
+ * This routine is used to get the current backup or a backup before the
+ * specified date. It first lets the user pick a Client, then a FileSet
+ * for that Client, and then resolves the Full->Differential->Incremental
+ * chain via ResolveBackupChainForClientFileset().
+ */
+static bool SelectBackupsBeforeDate(UaContext* ua,
+                                    RestoreContext* rx,
+                                    const char* date)
+{
+  int i;
+  ClientDbRecord cr;
+  FileSetDbRecord fsr;
+  char ed1[50];
+  char fileset_name[MAX_NAME_LENGTH];
+
+  // Select Client from the Catalog
+  if (!GetClientDbr(ua, &cr)) { return false; }
+  if (rx->ClientName) { free(rx->ClientName); }
+  rx->ClientName = strdup(cr.Name);
+
+  // Get FileSet
+  i = FindArgWithValue(ua, "FileSet");
+
+  if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
+    bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
+                   ua->db->strerror());
+      i = -1;
+    }
+  } else if (i >= 0) { /* name is invalid */
+    ua->ErrorMsg(T_("FileSet argument: %s\n"), ua->errmsg.c_str());
+  }
+
+  if (i < 0) { /* fileset not found */
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_fileset>(
+        rx->query, edit_int64(cr.ClientId, ed1), ed1);
+
+    StartPrompt(ua, T_("The defined FileSet resources are:\n"));
+    if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+    }
+    if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), fileset_name,
+                 sizeof(fileset_name))
+        < 0) {
+      ua->ErrorMsg(T_("No FileSet found for client \"%s\".\n"), cr.Name);
+      return false;
+    }
+
+    bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+      ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
+                     ua->db->strerror());
+      ua->SendMsg(
+          T_("This probably means you modified the FileSet.\n"
+             "Continuing anyway.\n"));
+    }
+  }
+
+  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, date);
+}
+
+// Callback handler build "FileSet@Client" tuple prompt list, restricted to
+// tuples the console's ACLs actually allow, and only for Client/FileSet
+// pairs that have at least one completed backup Job.
+static int ClientFilesetTupleHandler(void* ctx, int, char** row)
+{
+  /* row[0] = Client.Name, row[1] = FileSet.FileSet */
+  UaContext* ua = (UaContext*)ctx;
+  if (!row[0] || !row[1]) { return 0; }
+  if (!ua->AclAccessOk(Client_ACL, row[0])
+      || !ua->AclAccessOk(FileSet_ACL, row[1])) {
+    return 0;
+  }
+  PoolMem tuple(PM_NAME);
+  Mmsg(tuple, "%s@%s", row[1], row[0]);
+  AddPrompt(ua, tuple.c_str());
+  return 0;
+}
+
+/**
+ * Quick-restore entry point: presents a single list of "FileSet@Client"
+ * tuples derived from real completed backup Jobs (mirroring the WebUI's
+ * "Latest Backup" quick-restore mode), lets the user pick one, then
+ * resolves the newest Full->Differential->Incremental chain for it.
+ */
+static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
+                                               RestoreContext* rx,
+                                               const char* date)
+{
+  char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
+
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_tuples_1>(
+      rx->query, filter_name);
+
+  StartPrompt(ua,
+              T_("The following Client:FileSet combinations have backups:\n"));
+  if (!ua->db->SqlQuery(rx->query, ClientFilesetTupleHandler, (void*)ua)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+
+  char tuple[2 * MAX_NAME_LENGTH];
+  if (DoPrompt(ua, T_("Client:FileSet"),
+               T_("Select a Client:FileSet combination"), tuple, sizeof(tuple))
+      < 0) {
+    ua->ErrorMsg(T_("No Client:FileSet combination with backups found.\n"));
+    return false;
+  }
+
+  char* at_sign = strchr(tuple, '@');
+  if (!at_sign) {
+    ua->ErrorMsg(T_("Invalid Client:FileSet selection: %s\n"), tuple);
+    return false;
+  }
+  *at_sign = 0;
+  const char* fileset_name = tuple;
+  const char* client_name = at_sign + 1;
+
+  ClientDbRecord cr;
+  bstrncpy(cr.Name, client_name, sizeof(cr.Name));
+  if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+    ua->ErrorMsg(T_("Error getting Client \"%s\": ERR=%s\n"), client_name,
+                 ua->db->strerror());
+    return false;
+  }
+  if (rx->ClientName) { free(rx->ClientName); }
+  rx->ClientName = strdup(cr.Name);
+
+  FileSetDbRecord fsr;
+  bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
+  if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+    ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
+                   ua->db->strerror());
+    ua->SendMsg(
+        T_("This probably means you modified the FileSet.\n"
+           "Continuing anyway.\n"));
+  }
+
+  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, date);
 }
 
 static int RestoreCountHandler(void* ctx, int, char** row)

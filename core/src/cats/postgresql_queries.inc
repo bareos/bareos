@@ -1231,3 +1231,13 @@ INNER JOIN (
 ON Job.JobId = LastJob.MaxJobId
 ;
 )SQL",
+
+/* 0087_uar_sel_client_fileset_tuples_1 */
+R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet
+  FROM Job, Client, FileSet
+ WHERE Job.ClientId   = Client.ClientId
+   AND Job.FileSetId  = FileSet.FileSetId
+   AND Job.JobStatus IN ('T','W')
+   AND Job.Type       = '%c'
+ ORDER BY Client.Name, FileSet.FileSet
+)SQL",
