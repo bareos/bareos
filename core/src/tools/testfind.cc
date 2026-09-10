@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,7 @@ int main(int argc, char** argv)
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
       R_FILESET, filesetname.c_str());
 
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   if (!dir_fileset) {
     std::cerr << filesetname.c_str() << ": Fileset not found\n"

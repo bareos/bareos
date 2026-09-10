@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-sd");
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
   daemon_start_time = time(nullptr);
 
   // Sanity checks
@@ -377,8 +377,8 @@ static int CheckResources()
   if (OK) { OK = InitAutochangers(); }
 
   if (OK) {
-    CloseMsg(nullptr);              /* close temp message handler */
-    InitMsg(nullptr, me->messages); /* open daemon message handler */
+    CloseMsg(nullptr);     /* close temp message handler */
+    InitMsg(me->messages); /* open daemon message handler */
     SetWorkingDirectory(me->working_directory);
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
