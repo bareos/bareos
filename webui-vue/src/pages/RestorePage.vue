@@ -135,7 +135,7 @@
                           <q-item-section>
                             <q-item-label class="row items-center no-wrap q-gutter-sm">
                               <span class="text-weight-medium">#{{ point.jobid }}</span>
-                              <span class="text-caption">{{ point.starttime }}</span>
+                              <span class="text-caption">{{ point.displayStarttime }}</span>
                             </q-item-label>
                             <q-item-label caption>
                               {{ restoreChainDependencyLabel(index) }}
@@ -144,7 +144,7 @@
                               {{ restoreChainMetrics(point) }}
                             </q-item-label>
                           </q-item-section>
-                          <q-tooltip>{{ point.secondary }}</q-tooltip>
+                          <q-tooltip>{{ point.absoluteSecondary }}</q-tooltip>
                         </q-item>
                       </div>
                     </template>
@@ -683,6 +683,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
+import { formatSqlRelativeTime } from '../utils/locales.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   buildRestoreBackupOption,
@@ -742,6 +743,12 @@ const form = ref({
 const sourceClientKey = ref('')
 const sourceLatestTupleKey = ref('')
 let applyingRouteSourceSelection = false
+
+function formatRestoreTime(value) {
+  return settings.relativeTime
+    ? formatSqlRelativeTime(value, settings.locale)
+    : value
+}
 
 // ── Source selection mode ────────────────────────────────────────────────
 // "latest": pick a client+fileset and the newest matching backup (merged
@@ -1270,6 +1277,7 @@ const latestBackupOption = computed(() => (
   resolveRestoreBackupOption(
     activeBackups.value.map(backup => buildRestoreBackupOption(backup, {
       formatBytes,
+      formatTime: formatRestoreTime,
       showClient: !form.value.client,
     })),
     latestBackupJobid.value
@@ -1285,7 +1293,10 @@ const showNoFullBackupWarning = computed(() => (
 ))
 const latestBackupChainOptions = computed(() => (
   sourceMode.value === 'latest'
-    ? buildRestoreBackupChainOptions(backups.value, mergedJobids.value, { formatBytes })
+    ? buildRestoreBackupChainOptions(backups.value, mergedJobids.value, {
+      formatBytes,
+      formatTime: formatRestoreTime,
+    })
     : []
 ))
 const latestBackupChainLabel = computed(() => {
@@ -1299,6 +1310,7 @@ const restoreBackupChains = computed(() => (
     ? buildRestoreBackupChains(activeBackups.value, {
       filesetFilter: sourceFilesetFilter.value,
       formatBytes,
+      formatTime: formatRestoreTime,
     })
     : []
 ))
@@ -1343,7 +1355,7 @@ const restoreBackupChainSummaryLabel = computed(() => {
   return t('{count} jobs since Full #{jobid} from {starttime}', {
     count: chain.jobCount,
     jobid: chain.rootJobid,
-    starttime: chain.rootStarttime || '—',
+    starttime: chain.rootDisplayStarttime || '—',
   })
 })
 
