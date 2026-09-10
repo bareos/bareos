@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,12 @@
  * Kern Sibbald, November MMII
  */
 
+#include <algorithm>
+#include <fcntl.h>
+#include <spawn.h>
+#include <string>
 #include <sys/wait.h>
+#include <vector>
 #if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
@@ -37,6 +42,14 @@
 #include "lib/util.h"
 #include "lib/bpipe.h"
 
+extern char** environ;
+
+#if defined(__GLIBC__)
+#  if __GLIBC_PREREQ(2, 34)
+#    define HAVE_POSIX_SPAWN_CLOSEFROM_NP 1
+#  endif
+#endif
+
 int execvp_errors[] = {EACCES,       ENOEXEC, EFAULT,  EINTR, E2BIG,
                        ENAMETOOLONG, ENOMEM,  ETXTBSY, ENOENT};
 int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
@@ -46,13 +59,49 @@ int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
 static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
 
 namespace {
-// Convert errno into an exit code for later analysis
-int get_error_code()
+std::vector<char*> BuildEnvironment(
+    const std::unordered_map<std::string, std::string>& env_vars,
+    std::vector<std::string>& environment)
 {
-  for (int i = 0; i < num_execvp_errors; i++) {
-    if (execvp_errors[i] == errno) { return 200 + i; /* exit code => errno */ }
+  for (char** entry = environ; *entry; ++entry) {
+    environment.emplace_back(*entry);
   }
-  return 255;  // unknown errno
+
+  for (const auto& [var_name, var_value] : env_vars) {
+    const std::string variable = var_name + "=";
+    const auto entry = std::find_if(
+        environment.begin(), environment.end(),
+        [&](const std::string& value) { return value.starts_with(variable); });
+    const std::string value = variable + var_value;
+    if (entry == environment.end()) {
+      environment.emplace_back(value);
+    } else {
+      *entry = value;
+    }
+  }
+
+  std::vector<char*> environment_pointers;
+  environment_pointers.reserve(environment.size() + 1);
+  for (auto& entry : environment) {
+    environment_pointers.push_back(entry.data());
+  }
+  environment_pointers.push_back(nullptr);
+  return environment_pointers;
+}
+
+int MovePipeDescriptorsAboveStandardStreams(int pipe_descriptors[2])
+{
+  for (int i = 0; i < 2; ++i) {
+    int& descriptor = pipe_descriptors[i];
+    if (descriptor > STDERR_FILENO) { continue; }
+
+    const int replacement = fcntl(descriptor, F_DUPFD, STDERR_FILENO + 1);
+    if (replacement == -1) { return errno; }
+
+    close(descriptor);
+    descriptor = replacement;
+  }
+  return 0;
 }
 }  // namespace
 
@@ -75,6 +124,11 @@ Bpipe* OpenBpipe(const char* prog,
   int mode_read, mode_write;
   Bpipe* bpipe;
   int save_errno;
+  posix_spawn_file_actions_t file_actions;
+  bool file_actions_initialized = false;
+  std::vector<std::string> environment;
+  std::vector<char*> environment_pointers;
+  std::vector<char*> shell_arguments;
 
   bpipe = (Bpipe*)malloc(sizeof(Bpipe));
   memset(bpipe, 0, sizeof(Bpipe));
@@ -94,6 +148,15 @@ Bpipe* OpenBpipe(const char* prog,
     errno = save_errno;
     return NULL;
   }
+  if (mode_write
+      && (save_errno = MovePipeDescriptorsAboveStandardStreams(writep)) != 0) {
+    close(writep[0]);
+    close(writep[1]);
+    free(bpipe);
+    FreePoolMemory(tprog);
+    errno = save_errno;
+    return NULL;
+  }
   if (mode_read && pipe(readp) == -1) {
     save_errno = errno;
     if (mode_write) {
@@ -105,69 +168,89 @@ Bpipe* OpenBpipe(const char* prog,
     errno = save_errno;
     return NULL;
   }
-
-  // Start worker process
-  switch (bpipe->worker_pid = fork()) {
-    case -1: /* error */
-      save_errno = errno;
-      if (mode_write) {
-        close(writep[0]);
-        close(writep[1]);
-      }
-      if (mode_read) {
-        close(readp[0]);
-        close(readp[1]);
-      }
-      free(bpipe);
-      FreePoolMemory(tprog);
-      errno = save_errno;
-      return NULL;
-
-    case 0: /* child */
-      if (mode_write) {
-        close(writep[1]);
-        dup2(writep[0], 0); /* Dup our write to his stdin */
-      }
-      if (mode_read) {
-        close(readp[0]);   /* Close unused child fds */
-        dup2(readp[1], 1); /* dup our read to his stdout */
-        if (dup_stderr) { dup2(readp[1], 2); /*   and his stderr */ }
-      }
-
-#if defined(HAVE_FCNTL_F_CLOSEM)
-      // fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
-      fcntl(3, F_CLOSEM);
-#elif defined(HAVE_CLOSEFROM)
-      // closefrom needs the lowest filedescriptor to close.
-      closefrom(3);
-#else
-      for (int i = 3; i <= 32; i++) { /* close any open file descriptors */
-        close(i);
-      }
-#endif
-
-      // merge environment variables into our environment
-      for (auto& [var_name, var_value] : env_vars) {
-        setenv(var_name.c_str(), var_value.c_str(), 1);
-      }
-
-      execvp(bargv[0], bargv); /* call the program */
-
-      // execvp will only return on error
-      perror("Program execution failed");
-
-#if defined(HAVE_DARWIN_OS)
-      // MacOS does not like std::quick_exit()
-      std::_Exit(get_error_code());
-#else
-      std::quick_exit(get_error_code());
-#endif
-
-    default: /* parent */
-      break;
+  if (mode_read
+      && (save_errno = MovePipeDescriptorsAboveStandardStreams(readp)) != 0) {
+    close(readp[0]);
+    close(readp[1]);
+    if (mode_write) {
+      close(writep[0]);
+      close(writep[1]);
+    }
+    free(bpipe);
+    FreePoolMemory(tprog);
+    errno = save_errno;
+    return NULL;
   }
 
+  save_errno = posix_spawn_file_actions_init(&file_actions);
+  file_actions_initialized = save_errno == 0;
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, writep[1]);
+  }
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, writep[0], 0);
+  }
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, writep[0]);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, readp[0]);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, readp[1], 1);
+  }
+  if (save_errno == 0 && mode_read && dup_stderr) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, readp[1], 2);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, readp[1]);
+  }
+#if defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
+  if (save_errno == 0) {
+    save_errno = posix_spawn_file_actions_addclosefrom_np(&file_actions, 3);
+  }
+#elif defined(HAVE_CLOSEFROM)
+  const long open_max = sysconf(_SC_OPEN_MAX);
+  for (int fd = 3; save_errno == 0 && fd < open_max; ++fd) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, fd);
+  }
+#else
+  for (int fd = 3; save_errno == 0 && fd <= 32; ++fd) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, fd);
+  }
+#endif
+  if (save_errno == 0) {
+    environment_pointers = BuildEnvironment(env_vars, environment);
+    save_errno = posix_spawnp(&bpipe->worker_pid, bargv[0], &file_actions,
+                              nullptr, bargv, environment_pointers.data());
+  }
+  if (save_errno == ENOEXEC) {
+    shell_arguments.reserve(bargc + 2);
+    shell_arguments.push_back(const_cast<char*>("sh"));
+    for (int i = 0; i < bargc; ++i) { shell_arguments.push_back(bargv[i]); }
+    shell_arguments.push_back(nullptr);
+    save_errno
+        = posix_spawn(&bpipe->worker_pid, "/bin/sh", &file_actions, nullptr,
+                      shell_arguments.data(), environment_pointers.data());
+  }
+  if (file_actions_initialized) {
+    posix_spawn_file_actions_destroy(&file_actions);
+  }
   FreePoolMemory(tprog);
+
+  if (save_errno != 0) {
+    if (mode_write) {
+      close(writep[0]);
+      close(writep[1]);
+    }
+    if (mode_read) {
+      close(readp[0]);
+      close(readp[1]);
+    }
+    free(bpipe);
+    errno = save_errno;
+    return NULL;
+  }
 
   if (mode_read) {
     close(readp[1]);                    /* close unused parent fds */

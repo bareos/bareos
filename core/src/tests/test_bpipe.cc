@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,10 @@
 #include "include/bareos.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <sys/stat.h>
 #include <thread>
 #include <chrono>
+#include <unistd.h>
 using ::testing::IsNull;
 using ::testing::NotNull;
 
@@ -103,6 +105,59 @@ TEST(bpipe, failure)
   EXPECT_EQ(ferror(bp->rfd), 0);
   EXPECT_NE(fgetc(bp->rfd), 0);
   EXPECT_NE(CloseBpipe(bp), 0);
+}
+
+TEST(bpipe, program_not_found)
+{
+  errno = 0;
+  EXPECT_THAT(OpenBpipe("bareos-test-program-that-does-not-exist", 30, "r"),
+              IsNull());
+  EXPECT_EQ(errno, ENOENT);
+}
+
+TEST(bpipe, executable_script_without_shebang)
+{
+#if defined(HAVE_WIN32)
+  GTEST_SKIP();
+#else
+  char script[] = "/tmp/bareos-bpipe-script-XXXXXX";
+  const int script_fd = mkstemp(script);
+  ASSERT_NE(script_fd, -1);
+  constexpr char script_contents[] = "printf '%s' \"$1\"\n";
+  ASSERT_EQ(write(script_fd, script_contents, sizeof(script_contents) - 1),
+            sizeof(script_contents) - 1);
+  ASSERT_EQ(close(script_fd), 0);
+  ASSERT_EQ(chmod(script, S_IRUSR | S_IWUSR | S_IXUSR), 0);
+
+  const std::string command = std::string{script} + " bpipe-argument";
+  Bpipe* bp = OpenBpipe(command.c_str(), 30, "r");
+  ASSERT_THAT(bp, NotNull());
+
+  char result[100]{};
+  ASSERT_THAT(fgets(result, sizeof(result), bp->rfd), NotNull());
+  EXPECT_STREQ(result, "bpipe-argument");
+  EXPECT_EQ(CloseBpipe(bp), 0);
+  EXPECT_EQ(unlink(script), 0);
+#endif
+}
+
+TEST(bpipe, closed_standard_input)
+{
+#if defined(HAVE_WIN32)
+  GTEST_SKIP();
+#else
+  const int original_stdin = dup(STDIN_FILENO);
+  ASSERT_NE(original_stdin, -1);
+  ASSERT_EQ(close(STDIN_FILENO), 0);
+
+  Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 30, "w");
+  ASSERT_EQ(dup2(original_stdin, STDIN_FILENO), STDIN_FILENO);
+  ASSERT_EQ(close(original_stdin), 0);
+  ASSERT_THAT(bp, NotNull());
+  EXPECT_GE(fputs("Some String\n", bp->wfd), 0);
+  EXPECT_EQ(CloseWpipe(bp), 1);
+  EXPECT_EQ(CloseBpipe(bp), 0);
+#endif
 }
 
 /* Write data into a pipe */
