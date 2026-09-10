@@ -1089,6 +1089,23 @@ TEST(BareosSetupStepsShared, SelectsLatestSubscriptionRelease)
             "100000000000000000000000000000000000000");
 }
 
+TEST(BareosSetupStepsShared,
+     SelectsLatestSubscriptionReleaseWithMixedSegmentCounts)
+{
+  // Regression test: legacy multi-segment releases (e.g. "12.4") must not be
+  // mistaken for newer than later single-segment releases (e.g. "25") just
+  // because they sort later in the index and have more version segments.
+  const std::string index = R"(
+    <a href="25/">25/</a>
+    <a href="24/">24/</a>
+    <a href="20/">20/</a>
+    <a href="19.2/">19.2/</a>
+    <a href="13.2/">13.2/</a>
+    <a href="12.4/">12.4/</a>
+  )";
+  EXPECT_EQ(ParseLatestSubscriptionRelease(index), "25");
+}
+
 TEST(BareosSetupStepsShared, RejectsInvalidSubscriptionReleaseIndex)
 {
   EXPECT_TRUE(
