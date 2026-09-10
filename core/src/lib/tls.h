@@ -89,6 +89,14 @@ class Tls {
       = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
+  enum class PskIdentityStatus
+  {
+    IsInUse,
+    DifferentIdentityInUse,
+    NoIdentityInUse,
+  };
+  virtual PskIdentityStatus IsPskIdentityInUse(std::string_view identity) const
+      = 0;
   virtual bool KtlsSendStatus() = 0;
   virtual bool KtlsRecvStatus() = 0;
 };
