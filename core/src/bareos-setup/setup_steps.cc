@@ -80,8 +80,18 @@ bool IsNewerVersion(const std::string& candidate, const std::string& current)
   std::istringstream current_stream(current);
   std::string candidate_part;
   std::string current_part;
-  while (std::getline(candidate_stream, candidate_part, '.')
-         || std::getline(current_stream, current_part, '.')) {
+  for (;;) {
+    // Both streams must be advanced every iteration: using "||" here would
+    // short-circuit and skip reading the second stream whenever the first
+    // one still has segments left, comparing a stale (or empty) part
+    // against the wrong segment.
+    const bool have_candidate = static_cast<bool>(
+        std::getline(candidate_stream, candidate_part, '.'));
+    if (!have_candidate) candidate_part.clear();
+    const bool have_current
+        = static_cast<bool>(std::getline(current_stream, current_part, '.'));
+    if (!have_current) current_part.clear();
+    if (!have_candidate && !have_current) break;
     const auto first_significant = [](const std::string& part) {
       const auto first = part.find_first_not_of('0');
       return first == std::string::npos ? part.size() : first;
@@ -99,8 +109,6 @@ bool IsNewerVersion(const std::string& candidate, const std::string& current)
                                    current_part, current_first, current_length);
       if (comparison != 0) return comparison > 0;
     }
-    candidate_part.clear();
-    current_part.clear();
   }
   return false;
 }
