@@ -1422,10 +1422,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-incus-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-incus.py*
-
-%files barri-cli
-%defattr(-, root, root)
-%{_bindir}/barri-cli
 %endif
 
 %files director-python3-plugin
