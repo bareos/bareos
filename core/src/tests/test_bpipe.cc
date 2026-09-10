@@ -21,10 +21,12 @@
 #include "include/bareos.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#if !defined(HAVE_WIN32)
 #include <sys/stat.h>
+#include <unistd.h>
+#endif
 #include <thread>
 #include <chrono>
-#include <unistd.h>
 using ::testing::IsNull;
 using ::testing::NotNull;
 

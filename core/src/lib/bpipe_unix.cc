@@ -114,7 +114,7 @@ std::string ResolveAgainstPath(const std::string& name, const std::string& path)
     size_t colon = path.find(':', start);
     std::string dir = path.substr(
         start, colon == std::string::npos ? std::string::npos : colon - start);
-    if (dir.empty()) { dir = "."; }
+    if (dir.empty()) { dir.push_back('.'); }
 
     std::string candidate = dir + "/" + name;
     struct stat st;
