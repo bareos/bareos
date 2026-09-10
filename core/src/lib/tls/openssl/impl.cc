@@ -421,7 +421,7 @@ unsigned int psk_server_cb(SSL* ssl,
   }
 
   // , std::span<unsigned char>(psk_output, max_psk_len)
-  auto* tls_res = data->get(type, name);
+  auto* tls_res = data->get_tls_config_for(type, name);
 
   if (!tls_res) { return ERROR_RETURN; }
 
@@ -1073,7 +1073,6 @@ void print_options(const TlsResource* res)
   Dmsg1(100, "Set dhfile_:\t<%s>\n", cert.dhfile_.c_str());
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", as_str(cert.verify_peer_).c_str());
 }
-
 };  // namespace
 
 std::unique_ptr<Tls> make_openssl_server_tls(const TlsResource* res,

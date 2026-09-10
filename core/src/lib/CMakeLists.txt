@@ -187,4 +187,11 @@ set_target_properties(
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
+add_subdirectory(bauth)
+
+target_link_libraries(
+  bareos PUBLIC BAuth::Verifier::cram-md5 BAuth::Prover::cram-md5
+                BAuth::Verifier::trust BAuth::Prover::trust
+)
+
 include(DebugEdit)

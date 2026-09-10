@@ -116,7 +116,6 @@ bool CramMd5Handshake::CramMd5Challenge()
 
   InitRandom();
 
-
   /* Send challenge -- no hashing yet */
   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL),
        own_qualified_name_bashed_spaces_.c_str());
