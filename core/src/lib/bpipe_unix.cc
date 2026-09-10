@@ -26,9 +26,13 @@
  */
 
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <dirent.h>
 #include <fcntl.h>
 #include <spawn.h>
 #include <string>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <vector>
 #if !defined(HAVE_MSVC)
@@ -44,7 +48,7 @@
 
 extern char** environ;
 
-#if defined(__GLIBC__)
+#if defined(__GLIBC_PREREQ)
 #  if __GLIBC_PREREQ(2, 34)
 #    define HAVE_POSIX_SPAWN_CLOSEFROM_NP 1
 #  endif
@@ -88,6 +92,81 @@ std::vector<char*> BuildEnvironment(
   environment_pointers.push_back(nullptr);
   return environment_pointers;
 }
+
+/* Resolve `name` against the ':'-separated directories in `path`, mimicking
+ * the search execvp()/posix_spawnp() perform internally. If `name` already
+ * contains a slash it is returned unmodified (matching exec* semantics: no
+ * PATH search is done in that case). Returns an empty string if no
+ * executable, regular file was found, in which case the caller should fall
+ * back to using `name` unresolved.
+ *
+ * This is needed because posix_spawnp() searches the *calling* process's
+ * own PATH environment variable, not the (possibly overridden) PATH that
+ * is passed to the spawned process via envp. Without resolving the
+ * executable ourselves first, a caller-supplied PATH override (env_vars)
+ * would be ignored when locating the program to execute. */
+std::string ResolveAgainstPath(const std::string& name, const std::string& path)
+{
+  if (name.empty() || name.find('/') != std::string::npos) { return name; }
+
+  size_t start = 0;
+  while (start <= path.size()) {
+    size_t colon = path.find(':', start);
+    std::string dir = path.substr(
+        start, colon == std::string::npos ? std::string::npos : colon - start);
+    if (dir.empty()) { dir = "."; }
+
+    std::string candidate = dir + "/" + name;
+    struct stat st;
+    if (stat(candidate.c_str(), &st) == 0 && S_ISREG(st.st_mode)
+        && access(candidate.c_str(), X_OK) == 0) {
+      return candidate;
+    }
+
+    if (colon == std::string::npos) { break; }
+    start = colon + 1;
+  }
+  return {};
+}
+
+/* Return the file descriptors >= lowfd that are currently open in this
+ * process, by inspecting /proc/self/fd (Linux) or /dev/fd (most other Unix
+ * systems) if available.
+ *
+ * This is required because posix_spawn_file_actions_addclose() is, per
+ * POSIX, only portable for descriptors that are known to be open (closing
+ * an arbitrary, potentially-unopened, descriptor is explicitly called out
+ * as non-portable and can make the whole spawn fail). Blindly scheduling a
+ * close action for every number in a range therefore risks the child
+ * failing to start.
+ *
+ * Only needed on platforms without posix_spawn_file_actions_addclosefrom_np(),
+ * which handles this more efficiently in a single file action. */
+#if !defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
+std::vector<int> OpenDescriptorsFrom(int lowfd)
+{
+  std::vector<int> descriptors;
+
+  for (const char* dirname : {"/proc/self/fd", "/dev/fd"}) {
+    DIR* dir = opendir(dirname);
+    if (!dir) { continue; }
+
+    int dir_fd = dirfd(dir);
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+      char* end = nullptr;
+      long fd = strtol(entry->d_name, &end, 10);
+      if (end == entry->d_name || *end != '\0') { continue; }
+      if (fd < lowfd || fd == dir_fd) { continue; }
+      descriptors.push_back(static_cast<int>(fd));
+    }
+    closedir(dir);
+    break;
+  }
+
+  return descriptors;
+}
+#endif  // !defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
 
 int MovePipeDescriptorsAboveStandardStreams(int pipe_descriptors[2])
 {
@@ -209,29 +288,46 @@ Bpipe* OpenBpipe(const char* prog,
   if (save_errno == 0) {
     save_errno = posix_spawn_file_actions_addclosefrom_np(&file_actions, 3);
   }
-#elif defined(HAVE_CLOSEFROM)
-  const long open_max = sysconf(_SC_OPEN_MAX);
-  for (int fd = 3; save_errno == 0 && fd < open_max; ++fd) {
-    save_errno = posix_spawn_file_actions_addclose(&file_actions, fd);
-  }
 #else
-  for (int fd = 3; save_errno == 0 && fd <= 32; ++fd) {
+  /* Portable fallback: only schedule close actions for descriptors that
+   * are actually open. posix_spawn_file_actions_addclose() is only
+   * portably usable on descriptors known to be open; closing an
+   * arbitrary range risks making the whole spawn fail (see POSIX
+   * rationale for posix_spawn_file_actions_addclose()). */
+  for (int fd : OpenDescriptorsFrom(3)) {
+    if (save_errno != 0) { break; }
     save_errno = posix_spawn_file_actions_addclose(&file_actions, fd);
   }
 #endif
   if (save_errno == 0) {
     environment_pointers = BuildEnvironment(env_vars, environment);
+
+    /* posix_spawnp() searches for the executable using this process's
+     * own PATH, not the (possibly overridden) PATH we just merged into
+     * environment_pointers for the child. Resolve the executable
+     * ourselves against the merged PATH first, so a caller-supplied
+     * PATH override in env_vars is honored. */
+    std::string merged_path;
+    for (const auto& entry : environment) {
+      if (entry.starts_with("PATH=")) {
+        merged_path = entry.substr(5);
+        break;
+      }
+    }
+    const std::string resolved = ResolveAgainstPath(bargv[0], merged_path);
+    if (!resolved.empty()) { bargv[0] = const_cast<char*>(resolved.c_str()); }
+
     save_errno = posix_spawnp(&bpipe->worker_pid, bargv[0], &file_actions,
                               nullptr, bargv, environment_pointers.data());
-  }
-  if (save_errno == ENOEXEC) {
-    shell_arguments.reserve(bargc + 2);
-    shell_arguments.push_back(const_cast<char*>("sh"));
-    for (int i = 0; i < bargc; ++i) { shell_arguments.push_back(bargv[i]); }
-    shell_arguments.push_back(nullptr);
-    save_errno
-        = posix_spawn(&bpipe->worker_pid, "/bin/sh", &file_actions, nullptr,
-                      shell_arguments.data(), environment_pointers.data());
+    if (save_errno == ENOEXEC) {
+      shell_arguments.reserve(bargc + 2);
+      shell_arguments.push_back(const_cast<char*>("sh"));
+      for (int i = 0; i < bargc; ++i) { shell_arguments.push_back(bargv[i]); }
+      shell_arguments.push_back(nullptr);
+      save_errno
+          = posix_spawn(&bpipe->worker_pid, "/bin/sh", &file_actions, nullptr,
+                        shell_arguments.data(), environment_pointers.data());
+    }
   }
   if (file_actions_initialized) {
     posix_spawn_file_actions_destroy(&file_actions);
