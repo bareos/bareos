@@ -314,10 +314,11 @@ SELinux
 .. index::
    single: SELinux; bareos-webui
 
-To use the |webui| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
+On a system where SELinux is enforcing, HTTPD needs permission to make network
+connections. :program:`bareos-setup` configures this automatically. For manual
+installations, enable the required boolean:
 
 .. code-block:: shell-session
-   :caption: example of AppArmor php-fpm profile /etc/apparmor.d/local/php-fpm
 
    setsebool -P httpd_can_network_connect on
 
