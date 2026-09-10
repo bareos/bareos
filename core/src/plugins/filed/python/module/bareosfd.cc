@@ -260,7 +260,7 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     if (sp->statp.st_mode) {
       pSavePkt->statp = (PyObject*)NativeToPyStatPacket(&sp->statp);
     } else {
-      pSavePkt->statp = NULL;
+      pSavePkt->statp = OwnedNone();
     }
 
     pSavePkt->type = sp->type;
@@ -272,8 +272,8 @@ static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
     pSavePkt->cmd = sp->cmd ? PyUnicode_FromString(sp->cmd) : OwnedNone();
     pSavePkt->save_time = sp->save_time;
     pSavePkt->delta_seq = sp->delta_seq;
-    pSavePkt->object_name = NULL;
-    pSavePkt->object = NULL;
+    pSavePkt->object_name = OwnedNone();
+    pSavePkt->object = OwnedNone();
     pSavePkt->object_len = sp->object_len;
     pSavePkt->object_index = sp->index;
   }
@@ -571,11 +571,12 @@ static inline PyIoPacket* NativeToPyIoPacket(PyObject* fname, io_pkt* io)
        * there is data.*/
       pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
       if (!pIoPkt->buf) {
-        Py_DECREF((PyObject*)pIoPkt);
-        return (PyIoPacket*)NULL;
+        Py_DECREF(pIoPkt);
+        Py_DECREF(fname);
+        return nullptr;
       }
     } else {
-      pIoPkt->buf = NULL;
+      pIoPkt->buf = OwnedNone();
     }
     /* These must be set by the Python function but we initialize them to zero
      * to be sure they have some valid setting an not random data.  */
@@ -652,9 +653,9 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
     if (!io->fname) {
       // on some operations, the fname is just not set for some reason
       // e.g. read/write
-      Py_INCREF(Py_None);
-      fname = Py_None;
+      fname = OwnedNone();
     } else if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
+      Py_XDECREF(fname);
       fname = PyUnicode_FromString(io->fname);
     } else {
       Py_INCREF(fname);
@@ -783,9 +784,9 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
     pRestorePacket->attrEx
         = rp->attrEx ? PyUnicode_FromString(rp->attrEx) : OwnedNone();
     pRestorePacket->ofname
-        = rp->attrEx ? PyUnicode_FromString(rp->ofname) : OwnedNone();
+        = rp->ofname ? PyUnicode_FromString(rp->ofname) : OwnedNone();
     pRestorePacket->olname
-        = rp->attrEx ? PyUnicode_FromString(rp->olname) : OwnedNone();
+        = rp->olname ? PyUnicode_FromString(rp->olname) : OwnedNone();
     pRestorePacket->where = dup_str(rp->where);
     pRestorePacket->RegexWhere = dup_str(rp->RegexWhere);
     pRestorePacket->replace = rp->replace;
@@ -969,7 +970,7 @@ static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
       pAclPacket->content
           = PyByteArray_FromStringAndSize(ap->content, ap->content_length);
     } else {
-      pAclPacket->content = NULL;
+      pAclPacket->content = OwnedNone();
     }
   } else {
     Py_DECREF(fname);
@@ -1118,13 +1119,13 @@ static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
       pXattrPacket->name
           = PyByteArray_FromStringAndSize(xp->name, xp->name_length);
     } else {
-      pXattrPacket->name = NULL;
+      pXattrPacket->name = OwnedNone();
     }
     if (xp->value_length && xp->value) {
       pXattrPacket->value
           = PyByteArray_FromStringAndSize(xp->value, xp->value_length);
     } else {
-      pXattrPacket->value = NULL;
+      pXattrPacket->value = OwnedNone();
     }
   } else {
     Py_DECREF(fname);
@@ -2247,7 +2248,7 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->fname = Py_None;
   self->link = Py_None;
   self->type = 0;
-  self->flags = NULL;
+  self->flags = Py_None;
   self->no_read = false;
   self->portable = false;
   self->accurate_found = false;
@@ -2274,6 +2275,7 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   Py_INCREF(self->fname);
   Py_INCREF(self->link);
   Py_INCREF(self->object_name);
+  Py_INCREF(self->flags);
   Py_INCREF(self->object);
   Py_INCREF(self->cmd);
   Py_INCREF(self->statp);
@@ -2415,7 +2417,6 @@ static void PyRestorePacket_dealloc(PyObject* obj)
   auto* self = reinterpret_cast<PyRestorePacket*>(obj);
   PyObject_CallFinalizerFromDealloc(obj);
   Py_CLEAR(self->statp);
-
   Py_CLEAR(self->attrEx);
   Py_CLEAR(self->ofname);
   Py_CLEAR(self->olname);
