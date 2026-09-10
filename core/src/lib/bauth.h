@@ -21,82 +21,126 @@
 #ifndef BAREOS_LIB_BAUTH_H_
 #define BAREOS_LIB_BAUTH_H_
 
-#include "lib/bsock.h"
 #include "lib/hello.h"
+#include "lib/bsock.h"
 
-struct Authenticator {
-  struct OutboundArgs {
-    JobControlRecord* jcr;
-    BareosSocket* socket;
-    const TlsResource* target;
-  };
+#include <span>
+#include <type_traits>
+#include <vector>
+#include <string_view>
 
-  struct InboundArgs {
-    BareosSocket* socket;
-    const TlsResource* target;
-  };
-
-  virtual bool authenticate_outbound(OutboundArgs args) = 0;
-  virtual bool authenticate_inbound(InboundArgs args) = 0;
-  virtual ~Authenticator() = default;
+namespace auth {
+enum Status
+{
+  InProgress,
+  Done,
+  Error,
 };
 
-struct Md5Authenticator : Authenticator {
-  bool authenticate_outbound(OutboundArgs args) override;
-  bool authenticate_inbound(InboundArgs args) override;
+struct Verifier {
+  virtual std::string_view name() const = 0;
+  virtual std::vector<char> generate_challenge() = 0;
+  virtual Status step(std::vector<char>& request, std::span<const char> data)
+      = 0;
+  virtual const char* err() const = 0;
 
-  Md5Authenticator();
-  Md5Authenticator(std::string identity);
-
-  /* a cram-md5 challenge consists of three parts:
-   *  - a current timestamp,
-   *  - a random value, and
-   *  - some way to identify our own challenges
-   * cram_identity is used for the third part.  It makes sure
-   * that you cannot use us, to solve our own challenge.
-   * This value can be anything, but it should always be the same for the
-   * livetime of the program, otherwise it will not do its job!
-   * This string shall _NOT_ contain whitespace! */
-  std::string cram_identity;
+  virtual ~Verifier() = default;
 };
 
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   const std::string& qualified_name,
-                   const TlsResource* res,
-                   std::string_view hello_msg,
-                   Authenticator* auth,
-                   bool cleartext_authentication = false);
+struct Prover {
+  virtual std::string_view name() const = 0;
+  virtual bool step(std::vector<char>& response, std::span<const char> data)
+      = 0;
+  virtual const char* err() const = 0;
+  virtual bool done() const = 0;
 
-template <global_resource::Type type, global_resource::Type target_type>
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   std::string_view name,
-                   const TlsResource* res,
-                   bool cleartext_authentication = false)
-{
-  using formatter = hello_formatter<type, target_type>;
-  auto qualified_name
-      = global_resource::QualifiedName(formatter::auth_type, name);
-  auto hello = formatter::format(name);
-  Md5Authenticator auth{qualified_name};
-  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
-                       cleartext_authentication);
-}
+  virtual ~Prover() = default;
+};
+};  // namespace auth
 
-std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
-                                        global_resource::Type type,
-                                        const TlsResource* initial_tls,
-                                        TlsConfigProvider* provider,
-                                        Authenticator* auth);
+namespace auth {
+struct OutboundArgs {
+  JobControlRecord* jcr;
+  BareosSocket* socket;
+  const TlsResource* target;
+};
 
-static inline auto BareosAccept(BareosSocket* socket,
-                                global_resource::Type type,
-                                const TlsResource* initial_tls,
-                                TlsConfigProvider* provider)
-{
-  Md5Authenticator auth{};
-  return BareosAccept(socket, type, initial_tls, provider, &auth);
-}
+struct InboundArgs {
+  BareosSocket* socket;
+  uint32_t remote_version;
+  const TlsResource* target;
+};
+
+struct OutboundAuthenticator {
+  virtual bool authenticate(OutboundArgs args) = 0;
+};
+
+struct InboundAuthenticator {
+  virtual bool authenticate(InboundArgs args) = 0;
+  virtual const TlsResource* tls_settings() = 0;
+  virtual ~InboundAuthenticator() = default;
+};
+
+struct Algorithms {
+  std::vector<std::unique_ptr<Prover>> prover;
+  std::vector<std::unique_ptr<Verifier>> verifier;
+
+  template <typename T, typename... Args>
+    requires(std::is_base_of_v<Prover, T> != std::is_base_of_v<Verifier, T>)
+  T& add(Args&&... args)
+  {
+    if constexpr (std::is_base_of_v<Prover, T>) {
+      auto p = std::make_unique<T>(std::forward<Args>(args)...);
+      auto ptr = p.get();
+      prover.emplace_back(std::move(p));
+      return *ptr;
+    } else {
+      auto v = std::make_unique<T>(std::forward<Args>(args)...);
+      auto ptr = v.get();
+      verifier.emplace_back(std::move(v));
+      return *ptr;
+    }
+  }
+};
+
+namespace Version1 {
+/* a cram-md5 challenge consists of three parts:
+ *  - a current timestamp,
+ *  - a random value, and
+ *  - some way to identify our own challenges
+ * cram_identity is used for the third part.  It makes sure
+ * that you cannot use us, to solve our own challenge.
+ * This value can be anything, but it should always be the same for the
+ * livetime of the program, otherwise it will not do its job!
+ * This string shall _NOT_ contain whitespace! */
+bool authenticate_outbound(std::string_view identity, OutboundArgs args);
+bool authenticate_inbound(std::string_view identity, InboundArgs args);
+};  // namespace Version1
+
+namespace Version2 {
+// introduced in 26.0.0
+bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
+                           std::span<std::unique_ptr<Verifier>> verifiers,
+                           OutboundArgs args);
+bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
+                          std::span<std::unique_ptr<Verifier>> verifiers,
+                          InboundArgs args);
+
+};  // namespace Version2
+
+
+/* these will automatically use the correct one (Version1, Version2, ...)
+ * depending on the remote.  The identity for Version1 is taken from
+ * a cram-md5 prover/verifier pair.  If no such pair exists, then no fallback
+ * is used. */
+bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
+                          std::span<std::unique_ptr<Verifier>> verifiers,
+                          InboundArgs args);
+
+bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
+                           std::span<std::unique_ptr<Verifier>> verifiers,
+                           OutboundArgs args);
+
+};  // namespace auth
 
 #endif  // BAREOS_LIB_BAUTH_H_

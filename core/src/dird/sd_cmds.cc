@@ -44,6 +44,7 @@
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
+#include "lib/connect_accept.h"
 #include "lib/edit.h"
 #include "lib/global_resource.h"
 #include "lib/parse_conf.h"

@@ -41,8 +41,8 @@ class PskCredentials;
 class TlsResource;
 
 struct TlsConfigProvider {
-  virtual const TlsResource* get(global_resource::Type type,
-                                 std::string_view idenity)
+  virtual const TlsResource* get_tls_config_for(global_resource::Type type,
+                                                std::string_view idenity)
       = 0;
 };
 
