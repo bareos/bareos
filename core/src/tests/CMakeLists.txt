@@ -494,6 +494,13 @@ bareos_add_test(
 
 bareos_add_test(version_strings LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
+# the formatting logic is os independent, so it is tested on all platforms
+bareos_add_test(
+  windows_version_test
+  ADDITIONAL_SOURCES ../lib/windows_version.cc
+  LINK_LIBRARIES GTest::gtest_main
+)
+
 bareos_add_test(channel LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(
