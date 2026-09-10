@@ -248,10 +248,29 @@ describe('restore browser placeholder', () => {
       level: 'I',
       levelCode: 'I',
       starttime: '2026-06-09 10:00:00',
+      displayStarttime: '2026-06-09 10:00:00',
       client: '',
       fileset: '',
       secondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
+      absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
+      absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
     })
+  })
+
+  it('keeps raw restore timestamps for logic while formatting display labels', () => {
+    const option = buildRestoreBackupOption({
+      jobid: 42,
+      name: 'backup-bareos-fd',
+      level: 'I',
+      starttime: '2026-06-09 10:00:00',
+    }, {
+      formatTime: value => `relative:${value}`,
+    })
+
+    expect(option.starttime).toBe('2026-06-09 10:00:00')
+    expect(option.displayStarttime).toBe('relative:2026-06-09 10:00:00')
+    expect(option.secondary).toBe('#42 · relative:2026-06-09 10:00:00')
+    expect(option.absoluteSecondary).toBe('#42 · 2026-06-09 10:00:00')
   })
 
   it('omits zero-sized secondary restore backup metrics', () => {
@@ -270,9 +289,11 @@ describe('restore browser placeholder', () => {
       level: 'F',
       levelCode: 'F',
       starttime: '2026-06-09 09:00:00',
+      displayStarttime: '2026-06-09 09:00:00',
       client: '',
       fileset: '',
       secondary: '#7 · 2026-06-09 09:00:00',
+      absoluteSecondary: '#7 · 2026-06-09 09:00:00',
     })
   })
 
@@ -465,6 +486,21 @@ describe('restore browser placeholder', () => {
         secondary: '#12 · 2026-06-03 10:00:00 · 4096 B · 8 files',
       }),
     ])
+  })
+
+  it('formats restore chain display times without changing sort timestamps', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+    ], {
+      filesetFilter: 'WebFS',
+      formatTime: value => `relative:${value}`,
+    })
+
+    expect(chains[0].rootStarttime).toBe('2026-06-01 10:00:00')
+    expect(chains[0].rootDisplayStarttime).toBe('relative:2026-06-01 10:00:00')
+    expect(chains[0].label).toBe('Full #1 · relative:2026-06-01 10:00:00')
+    expect(chains[0].jobs[1].displayStarttime).toBe('relative:2026-06-02 10:00:00')
   })
 
   it('resolves restore timeline selection or falls back to the latest point', () => {
