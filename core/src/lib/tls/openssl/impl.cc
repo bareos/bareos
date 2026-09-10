@@ -85,6 +85,9 @@ class TlsOpenSsl : public Tls {
                     int32_t nbytes) override;
   void TlsBsockShutdown(BareosSocket* bsock) override;
 
+  PskIdentityStatus IsPskIdentityInUse(
+      std::string_view identity) const override;
+
   std::string TlsCipherGetName() const override;
   void TlsLogConninfo(JobControlRecord* jcr,
                       const char* host,
@@ -1074,6 +1077,17 @@ void print_options(const TlsResource* res)
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", as_str(cert.verify_peer_).c_str());
 }
 
+auto TlsOpenSsl::IsPskIdentityInUse(std::string_view identity) const
+    -> PskIdentityStatus
+{
+  auto* psk_used = SSL_get_psk_identity(openssl_);
+  if (!psk_used) { return PskIdentityStatus::NoIdentityInUse; }
+  if (identity != psk_used) {
+    return PskIdentityStatus::DifferentIdentityInUse;
+  }
+
+  return PskIdentityStatus::IsInUse;
+}
 };  // namespace
 
 std::unique_ptr<Tls> make_openssl_server_tls(const TlsResource* res,
