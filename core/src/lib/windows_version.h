@@ -191,6 +191,21 @@ constexpr bool IsServerCore(std::string_view installation_type)
   return installation_type.find("Core") != std::string_view::npos;
 }
 
+// Parses the leading run of ASCII digits in value, stopping at the first
+// non-digit character. Returns 0 if value does not start with a digit.
+// Used to turn registry string values such as CurrentBuildNumber or the
+// legacy "6.1"-style CurrentVersion into numbers without pulling in <charconv>
+// on platforms where it is unavailable.
+constexpr std::uint32_t ParseUint32(std::string_view value)
+{
+  std::uint32_t result = 0;
+  for (char c : value) {
+    if (c < '0' || c > '9') { break; }
+    result = (result * 10) + static_cast<std::uint32_t>(c - '0');
+  }
+  return result;
+}
+
 // Build the human readable description, e.g.
 // "Microsoft Windows 11 Pro 24H2 (build 26100.4652), 64-bit"
 std::string FormatVersion(const VersionInfo& info);

@@ -50,26 +50,21 @@
 #include "windows_version.h"
 
 static char win_os[300];
-static bool win_os_initialized = false;
-static std::mutex init_mutex;
+static std::once_flag win_os_once;
 
 static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz);
 
 const char* GetOsInfoString()
 {
-  if (!win_os_initialized) {
-    const std::lock_guard<std::mutex> lock(init_mutex);
-    if (!win_os_initialized) {
-      GetWindowsVersionString(win_os, sizeof(win_os) - 1);
-      win_os_initialized = true;
-    }
-  }
+  std::call_once(win_os_once,
+                 [] { GetWindowsVersionString(win_os, sizeof(win_os) - 1); });
   return win_os;
 }
 
 namespace {
 
 using windows_version::Architecture;
+using windows_version::ParseUint32;
 using windows_version::ProductType;
 using windows_version::VersionInfo;
 
@@ -141,16 +136,6 @@ std::uint32_t RegGetDword(HKEY key, const char* value)
     return 0;
   }
   return data;
-}
-
-std::uint32_t ParseUint32(std::string_view value)
-{
-  std::uint32_t result = 0;
-  for (char c : value) {
-    if (c < '0' || c > '9') { break; }
-    result = (result * 10) + static_cast<std::uint32_t>(c - '0');
-  }
-  return result;
 }
 
 Architecture ArchitectureFromProcessorArchitecture(WORD arch)

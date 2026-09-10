@@ -87,6 +87,13 @@ static_assert(IsServerCore("Server Core"));
 static_assert(!IsServerCore("Server"));
 static_assert(!IsServerCore("Client"));
 
+static_assert(ParseUint32("14393") == 14393);
+static_assert(ParseUint32("0") == 0);
+static_assert(ParseUint32("1.2") == 1);
+static_assert(ParseUint32("") == 0);
+static_assert(ParseUint32("abc") == 0);
+static_assert(ParseUint32("007") == 7);
+
 static_assert(EditionDisplayName("ServerStandard") == "Standard");
 static_assert(EditionDisplayName("ServerDatacenter") == "Datacenter");
 static_assert(EditionDisplayName("Professional") == "Professional");
@@ -108,8 +115,10 @@ constexpr VersionInfo MakeVersionInfo(std::uint32_t major,
                                       std::string_view edition_id = {},
                                       std::string_view installation_type = {},
                                       std::string_view csd_version = {},
-                                      ProductType product_type = ProductType::kUnknown,
-                                      Architecture arch = Architecture::kUnknown,
+                                      ProductType product_type
+                                      = ProductType::kUnknown,
+                                      Architecture arch
+                                      = Architecture::kUnknown,
                                       bool is_winpe = false)
 {
   return VersionInfo{.major = major,
