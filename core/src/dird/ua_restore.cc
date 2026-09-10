@@ -561,7 +561,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       T_("Find the JobIds for a backup for a client before a specified time"),
       T_("Enter a list of directories to restore for found JobIds"),
       T_("Select full restore to a specified Job date"),
-      T_("Select a Client:FileSet combination (latest backup)"),
+      T_("Select a FileSet@Client combination (latest backup)"),
       T_("Cancel"),
       NULL};
 
@@ -949,7 +949,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
       } break;
-      case 12: /* Select a Client:FileSet combination (latest backup) */ {
+      case 12: /* Select a FileSet@Client combination (latest backup) */ {
         decltype(date) current_date;
         bstrutime(current_date, sizeof(current_date), current_time);
         if (!SelectClientFilesetTupleAndRestore(ua, rx, current_date)) {
@@ -1493,7 +1493,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
  * This routine resolves the Full->Differential->Incremental backup chain
  * for an already-known Client/FileSet pair and populates rx->JobIds
  * accordingly. It is shared by the interactive "select Client, then
- * FileSet" flow (SelectBackupsBeforeDate()) and the "pick a Client:FileSet
+ * FileSet" flow (SelectBackupsBeforeDate()) and the "pick a FileSet@Client
  * tuple directly" quick-restore flow
  * (SelectClientFilesetTupleAndRestore()).
  */
@@ -1764,23 +1764,23 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       rx->query, filter_name);
 
   StartPrompt(ua,
-              T_("The following Client:FileSet combinations have backups:\n"));
+              T_("The following FileSet@Client combinations have backups:\n"));
   if (!ua->db->SqlQuery(rx->query, ClientFilesetTupleHandler, (void*)ua)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
 
   char tuple[2 * MAX_NAME_LENGTH];
-  if (DoPrompt(ua, T_("Client:FileSet"),
-               T_("Select a Client:FileSet combination"), tuple, sizeof(tuple))
+  if (DoPrompt(ua, T_("FileSet@Client"),
+               T_("Select a FileSet@Client combination"), tuple, sizeof(tuple))
       < 0) {
-    ua->ErrorMsg(T_("No Client:FileSet combination with backups found.\n"));
+    ua->ErrorMsg(T_("No FileSet@Client combination with backups found.\n"));
     return false;
   }
 
   char* at_sign = strchr(tuple, '@');
   if (!at_sign) {
-    ua->ErrorMsg(T_("Invalid Client:FileSet selection: %s\n"), tuple);
+    ua->ErrorMsg(T_("Invalid FileSet@Client selection: %s\n"), tuple);
     return false;
   }
   *at_sign = 0;
