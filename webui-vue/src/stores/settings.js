@@ -21,6 +21,7 @@ const DEFAULTS = {
   tableRowsPerPage: {},
   tableSort: {},
   tableFilter: {},
+  tableHiddenColumns: {},
   schedulesViewMode: 'week',
   clientBackupWarningDays: 2,
 }
@@ -85,6 +86,23 @@ function normalizeTableFilter(value) {
   )
 }
 
+function normalizeTableHiddenColumns(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, hidden]) => [
+        String(key).trim(),
+        Array.isArray(hidden)
+          ? [...new Set(hidden.map(name => String(name ?? '').trim()).filter(Boolean))]
+          : [],
+      ])
+      .filter(([key, hidden]) => key && hidden.length)
+  )
+}
+
 function normalizeSchedulesViewMode(value, fallback = DEFAULTS.schedulesViewMode) {
   return value === 'month' || value === 'week' ? value : fallback
 }
@@ -117,6 +135,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const tableRowsPerPage = ref(normalizeTableRowsPerPage(saved.tableRowsPerPage))
   const tableSort = ref(normalizeTableSort(saved.tableSort))
   const tableFilter = ref(normalizeTableFilter(saved.tableFilter))
+  const tableHiddenColumns = ref(normalizeTableHiddenColumns(saved.tableHiddenColumns))
   const schedulesViewMode = ref(normalizeSchedulesViewMode(saved.schedulesViewMode))
   const clientBackupWarningDays = ref(
     normalizeClientBackupWarningDays(saved.clientBackupWarningDays)
@@ -133,6 +152,7 @@ export const useSettingsStore = defineStore('settings', () => {
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
       tableFilter: tableFilter.value,
+      tableHiddenColumns: tableHiddenColumns.value,
       schedulesViewMode: schedulesViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }))
@@ -237,6 +257,35 @@ export const useSettingsStore = defineStore('settings', () => {
     schedulesViewMode.value = normalizeSchedulesViewMode(value, schedulesViewMode.value)
   }
 
+  function getTableHiddenColumns(key, fallback = []) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return fallback
+    }
+
+    return tableHiddenColumns.value[normalizedKey] ?? fallback
+  }
+
+  function setTableHiddenColumns(key, value) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return
+    }
+
+    const normalized = normalizeTableHiddenColumns({ [normalizedKey]: value })
+    const hidden = normalized[normalizedKey]
+    if (hidden?.length) {
+      tableHiddenColumns.value = {
+        ...tableHiddenColumns.value,
+        [normalizedKey]: hidden,
+      }
+      return
+    }
+
+    const { [normalizedKey]: _removed, ...rest } = tableHiddenColumns.value
+    tableHiddenColumns.value = rest
+  }
+
   // ── backup / restore ─────────────────────────────────────────────────────
 
   /**
@@ -255,6 +304,7 @@ export const useSettingsStore = defineStore('settings', () => {
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
+      tableHiddenColumns: tableHiddenColumns.value,
       schedulesViewMode: schedulesViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }
@@ -294,6 +344,9 @@ export const useSettingsStore = defineStore('settings', () => {
     if ('tableSort' in data) {
       tableSort.value = normalizeTableSort(data.tableSort)
     }
+    if ('tableHiddenColumns' in data) {
+      tableHiddenColumns.value = normalizeTableHiddenColumns(data.tableHiddenColumns)
+    }
     if ('schedulesViewMode' in data) {
       schedulesViewMode.value = normalizeSchedulesViewMode(
         data.schedulesViewMode,
@@ -317,6 +370,7 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(tableRowsPerPage, save, { deep: true })
   watch(tableSort, save, { deep: true })
   watch(tableFilter, save, { deep: true })
+  watch(tableHiddenColumns, save, { deep: true })
   watch(schedulesViewMode, save)
   watch(clientBackupWarningDays, (value) => {
     clientBackupWarningDays.value = normalizeClientBackupWarningDays(value)
@@ -339,6 +393,7 @@ export const useSettingsStore = defineStore('settings', () => {
     tableRowsPerPage,
     tableSort,
     tableFilter,
+    tableHiddenColumns,
     schedulesViewMode,
     clientBackupWarningDays,
     setLocale,
@@ -349,6 +404,8 @@ export const useSettingsStore = defineStore('settings', () => {
     setTableSort,
     getTableFilter,
     setTableFilter,
+    getTableHiddenColumns,
+    setTableHiddenColumns,
     setSchedulesViewMode,
     exportSettings,
     importSettings,
