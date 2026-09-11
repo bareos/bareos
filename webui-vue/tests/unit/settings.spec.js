@@ -189,6 +189,35 @@ describe('settings store', () => {
     expect(restored.schedulesViewMode).toBe('week')
   })
 
+  it('persists and restores hidden table columns', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableHiddenColumns('storages.pools', ['maxvoljobs', 'maxvolbytes'])
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableHiddenColumns: {
+          'storages.pools': ['maxvoljobs', 'maxvolbytes'],
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableHiddenColumns: {
+        'storages.pools': ['maxvoljobs'],
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableHiddenColumns('storages.pools', [])).toEqual(['maxvoljobs'])
+
+    restored.setTableHiddenColumns('storages.pools', [])
+    expect(restored.getTableHiddenColumns('storages.pools', [])).toEqual([])
+  })
+
   it('persists and restores the client backup warning threshold', async () => {
     const settings = useSettingsStore()
 
