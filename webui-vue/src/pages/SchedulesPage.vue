@@ -10,17 +10,48 @@
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <q-tab-panel name="status" class="q-pa-none">
         <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header">
+          <q-card-section class="panel-header row items-center">
             <span>{{ t('Scheduler Jobs') }}</span>
+            <q-space />
+            <q-input v-model="jobSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+          </q-card-section>
+          <q-card-section class="q-py-sm schedules-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip dense square outline color="grey-8" icon="event_note">
+                {{ t('Schedules') }}: {{ schedulerStatusStats.totalSchedules }}
+              </q-chip>
+              <q-chip dense square outline color="positive" icon="check_circle">
+                {{ t('Enabled') }}: {{ schedulerStatusStats.enabledSchedules }}
+              </q-chip>
+              <q-chip dense square outline color="grey-8" icon="work_outline">
+                {{ t('Jobs') }}: {{ schedulerStatusStats.totalJobs }}
+              </q-chip>
+              <q-chip v-if="schedulerStatusStats.nextRun" dense square outline color="primary" icon="schedule">
+                {{ t('Next run') }}: {{ schedulerStatusStats.nextRun.datetime }}
+                ({{ schedulerStatusStats.nextRun.schedule }})
+              </q-chip>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
-                <q-tr v-if="props.row._firstInGroup" class="sched-group-header">
+                <q-tr v-if="props.row._isGroupHeader" class="sched-group-header cursor-pointer"
+                      @click="toggleGroupCollapse(props.row.scheduleKey)">
                   <q-td key="job" class="q-pl-sm">
                     <div class="row items-center no-wrap q-gutter-xs">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        size="sm"
+                        :icon="props.row.collapsed ? 'chevron_right' : 'expand_more'"
+                        @click.stop="toggleGroupCollapse(props.row.scheduleKey)"
+                      />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
                       <q-chip
                         v-if="isCommonSchedules"
@@ -30,9 +61,12 @@
                         text-color="white"
                         :label="props.row.director"
                       />
+                      <q-chip dense square outline color="grey-7" icon="work_outline">
+                        {{ t('{n} jobs', { n: props.row.jobCount }) }}
+                      </q-chip>
                     </div>
                   </q-td>
-                  <q-td key="status" class="text-center">
+                  <q-td key="status" class="text-center" @click.stop>
                     <q-toggle
                       :model-value="props.row.schedEnabled"
                       :color="props.row.schedEnabled ? 'positive' : 'negative'"
@@ -48,7 +82,7 @@
                     />
                   </q-td>
                 </q-tr>
-                <q-tr :props="props">
+                <q-tr v-else :props="props">
                   <q-td key="job" style="padding-left: 48px">
                     <div v-if="props.row.job !== '—'" class="row items-center no-wrap q-gutter-xs">
                       <router-link
@@ -618,41 +652,97 @@ async function refreshStatus() {
 
 watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
 
+const jobSearch = usePersistedTableFilter('schedules.status')
+const expandedSchedules = ref(new Set())
+
+function toggleGroupCollapse(key) {
+  const next = new Set(expandedSchedules.value)
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  expandedSchedules.value = next
+}
+
 const scheduleJobRows = computed(() => {
+  const search = jobSearch.value.trim().toLowerCase()
   const rows = []
   for (const sched of schedulesData.value) {
-    const jobs = Array.isArray(sched.jobs) ? sched.jobs : []
+    const allJobs = Array.isArray(sched.jobs) ? sched.jobs : []
+    const scheduleMatches = sched.name.toLowerCase().includes(search)
+    const jobs = search
+      ? allJobs.filter(job => scheduleMatches || job.name.toLowerCase().includes(search))
+      : allJobs
+
+    if (search && !scheduleMatches && !jobs.length) {
+      continue
+    }
+
+    const collapsed = !search && !expandedSchedules.value.has(sched.scopeKey)
+
+    rows.push({
+      idx: rows.length,
+      director: sched.director,
+      schedule: sched.name,
+      scheduleKey: sched.scopeKey,
+      schedEnabled: sched.enabled,
+      jobCount: jobs.length,
+      collapsed,
+      _isGroupHeader: true,
+    })
+
+    if (collapsed) {
+      continue
+    }
+
     if (!jobs.length) {
       rows.push({
         idx: rows.length,
         director: sched.director,
         schedule: sched.name,
         scheduleKey: sched.scopeKey,
-          schedEnabled: sched.enabled,
-          job: '—',
-          jobEnabled: null,
-          jobScopeKey: `${sched.scopeKey}:—`,
-          jobsQuery: null,
-          _firstInGroup: true,
-        })
+        schedEnabled: sched.enabled,
+        job: '—',
+        jobEnabled: null,
+        jobScopeKey: `${sched.scopeKey}:—`,
+        jobsQuery: null,
+        _isGroupHeader: false,
+      })
     } else {
-      jobs.forEach((job, index) => {
+      jobs.forEach((job) => {
         rows.push({
           idx: rows.length,
           director: sched.director,
           schedule: sched.name,
           scheduleKey: sched.scopeKey,
-            schedEnabled: sched.enabled,
-            job: job.name,
-            jobEnabled: job.enabled,
-            jobScopeKey: `${sched.scopeKey}:${job.name}`,
-            jobsQuery: withJobsSearchQuery({}, job.name),
-            _firstInGroup: index === 0,
-          })
+          schedEnabled: sched.enabled,
+          job: job.name,
+          jobEnabled: job.enabled,
+          jobScopeKey: `${sched.scopeKey}:${job.name}`,
+          jobsQuery: withJobsSearchQuery({}, job.name),
+          _isGroupHeader: false,
+        })
       })
     }
   }
   return rows
+})
+
+const schedulerStatusStats = computed(() => {
+  const groups = schedulesData.value
+  const totalSchedules = groups.length
+  const enabledSchedules = groups.filter(sched => sched.enabled).length
+  const totalJobs = groups.reduce(
+    (sum, sched) => sum + (Array.isArray(sched.jobs) ? sched.jobs.length : 0),
+    0
+  )
+  const nowSeconds = Date.now() / 1000
+  const nextRun = previewData.value
+    .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
+    .sort((a, b) => a.runtime - b.runtime)[0] ?? null
+
+  return { totalSchedules, enabledSchedules, totalJobs, nextRun }
 })
 
 const scheduleJobCols = computed(() => [
