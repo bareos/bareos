@@ -41,6 +41,47 @@
             </q-input>
             <ColumnPickerMenu :columns="toggleableStorageCols" @toggle="toggleStorageCol" />
           </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8"
+                icon="dns"
+                clickable
+                :selected="deviceQuickFilter === 'all'"
+                @click="deviceQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ deviceStats.total }}
+              </q-chip>
+              <q-chip
+                dense square outline color="positive"
+                icon="check_circle"
+                clickable
+                :selected="deviceQuickFilter === 'enabled'"
+                @click="deviceQuickFilter = 'enabled'"
+              >
+                {{ t('Enabled') }}: {{ deviceStats.enabled }}
+              </q-chip>
+              <q-chip
+                dense square outline color="negative"
+                icon="pause_circle"
+                clickable
+                :selected="deviceQuickFilter === 'disabled'"
+                @click="deviceQuickFilter = 'disabled'"
+              >
+                {{ t('Disabled') }}: {{ deviceStats.disabled }}
+              </q-chip>
+              <q-chip
+                v-if="deviceStats.autochanger"
+                dense square outline color="info"
+                icon="view_carousel"
+                clickable
+                :selected="deviceQuickFilter === 'autochanger'"
+                @click="deviceQuickFilter = 'autochanger'"
+              >
+                {{ t('Autochanger') }}: {{ deviceStats.autochanger }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="storages"
@@ -99,6 +140,29 @@
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleablePoolCols" @toggle="togglePoolCol" />
+          </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8"
+                icon="inventory_2"
+                clickable
+                :selected="poolQuickFilter === 'all'"
+                @click="poolQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ poolStats.total }}
+              </q-chip>
+              <q-chip
+                v-for="(count, type) in poolStats.byType"
+                :key="type"
+                dense square outline color="primary"
+                clickable
+                :selected="poolQuickFilter === type"
+                @click="poolQuickFilter = type"
+              >
+                {{ type }}: {{ count }}
+              </q-chip>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -217,7 +281,12 @@
           </q-card-section>
           <q-card-section class="q-py-sm storages-list-stats">
             <div class="row items-center q-gutter-sm">
-              <q-chip dense square outline color="grey-8" icon="album">
+              <q-chip
+                dense square outline color="grey-8" icon="album"
+                clickable
+                :selected="volumeQuickFilter === 'all'"
+                @click="volumeQuickFilter = 'all'"
+              >
                 {{ t('Total') }}: {{ volumeStats.total }} ({{ formatBytes(volumeStats.totalBytes) }})
               </q-chip>
               <q-chip
@@ -226,6 +295,9 @@
                 dense square outline
                 :color="statusColor(status)"
                 :text-color="statusColor(status) === 'warning' ? 'black' : undefined"
+                clickable
+                :selected="volumeQuickFilter === status"
+                @click="volumeQuickFilter = status"
               >
                 {{ status }}: {{ count }}
               </q-chip>
@@ -407,6 +479,9 @@ const tab      = ref(normaliseTab(route.query.tab))
 const deviceSearch = usePersistedTableFilter('storages.devices')
 const poolSearch = usePersistedTableFilter('storages.pools')
 const volSearch = usePersistedTableFilter('storages.volumes')
+const deviceQuickFilter = ref('all')
+const poolQuickFilter = ref('all')
+const volumeQuickFilter = ref('all')
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
@@ -494,8 +569,23 @@ function reportRowError(row, reason) {
 }
 
 const pools = computed(() => {
-  return poolRows.value
+  return poolRows.value.filter(poolMatchesQuickFilter)
 })
+
+const poolStats = computed(() => {
+  const all = poolRows.value
+  const byType = {}
+  for (const pool of all) {
+    const type = pool.pooltype || t('Unknown')
+    byType[type] = (byType[type] ?? 0) + 1
+  }
+  return { total: all.length, byType }
+})
+
+function poolMatchesQuickFilter(pool) {
+  if (poolQuickFilter.value === 'all') return true
+  return (pool.pooltype || t('Unknown')) === poolQuickFilter.value
+}
 
 const maxPoolBytes = computed(() =>
   Math.max(1, ...pools.value.map(p => p.totalbytes))
@@ -503,7 +593,7 @@ const maxPoolBytes = computed(() =>
 function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
 
 const volumes = computed(() => {
-  return volumeRows.value
+  return volumeRows.value.filter(volumeMatchesQuickFilter)
 })
 
 const volumeStats = computed(() => {
@@ -520,7 +610,29 @@ const volumeStats = computed(() => {
   }
 })
 
-const storages = computed(() => storageRows.value)
+function volumeMatchesQuickFilter(vol) {
+  if (volumeQuickFilter.value === 'all') return true
+  return (vol.volstatus || t('Unknown')) === volumeQuickFilter.value
+}
+
+const storages = computed(() => storageRows.value.filter(deviceMatchesQuickFilter))
+
+const deviceStats = computed(() => {
+  const all = storageRows.value
+  return {
+    total: all.length,
+    enabled: all.filter(s => s.enabled).length,
+    disabled: all.filter(s => !s.enabled).length,
+    autochanger: all.filter(s => s.autochanger).length,
+  }
+})
+
+function deviceMatchesQuickFilter(storage) {
+  if (deviceQuickFilter.value === 'enabled') return storage.enabled
+  if (deviceQuickFilter.value === 'disabled') return !storage.enabled
+  if (deviceQuickFilter.value === 'autochanger') return !!storage.autochanger
+  return true
+}
 
 async function refresh() {
   loading.value = true
