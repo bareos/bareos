@@ -1,14 +1,7 @@
 <template>
   <q-page class="q-pa-md">
-    <!-- Back -->
-    <q-btn
-      flat
-      no-caps
-      icon="arrow_back"
-      :label="backLabel"
-      class="q-mb-md"
-      :to="backLocation"
-    />
+    <!-- Breadcrumbs -->
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- Loading / error -->
     <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
@@ -205,6 +198,7 @@ import {
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -251,14 +245,14 @@ const volumeOrigin = computed(() => resolvePoolDetailsVolumeOrigin(route.query))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const backLabel = computed(() => {
   if (volumeOrigin.value) {
-    return t('Back to Volume')
+    return t('Volume')
   }
 
   if (storagesOrigin.value) {
-    return t('Back to Storages')
+    return t('Storages')
   }
 
-  return autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
+  return autochangerOrigin.value ? t('Autochanger') : t('Pools')
 })
 const backLocation = computed(() => {
   if (volumeOrigin.value) {
@@ -293,6 +287,10 @@ const backLocation = computed(() => {
     query: { tab: 'pools' },
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: pool.value?.name ?? (typeof route.params.name === 'string' ? route.params.name : '') },
+])
 
 const pool    = ref(null)
 const volumes = ref([])
