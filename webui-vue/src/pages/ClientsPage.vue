@@ -121,6 +121,7 @@
               </q-chip>
             </div>
             <q-table
+              v-if="!(loading && !clients.length)"
               :rows="clients"
               :columns="columns"
               row-key="scopeKey"
@@ -271,6 +272,7 @@
                  </q-td>
                </template>
              </q-table>
+             <TableSkeleton v-else :columns="columns.length" :rows="8" />
           </q-card-section>
         </q-card>
 
@@ -358,6 +360,7 @@ import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route = useRoute()

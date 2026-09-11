@@ -37,7 +37,8 @@
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
+            <q-table v-if="!(statusLoading && !scheduleJobRows.length)"
+                     :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
@@ -117,6 +118,7 @@
                 </q-tr>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="scheduleJobCols.length" :rows="6" />
           </q-card-section>
         </q-card>
 
@@ -332,6 +334,7 @@ import {
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const auth = useAuthStore()
