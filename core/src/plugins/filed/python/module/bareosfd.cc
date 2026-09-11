@@ -954,6 +954,7 @@ static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname)
     PyObject *pFname, *pRetVal;
 
     pFname = PyUnicode_FromString(fname);
+    if (!pFname) { goto bail_out; }
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pFname, NULL);
     Py_DECREF(pFname);
 
@@ -2418,8 +2419,7 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   self->original_file_name = Py_None;
   self->original_link_name = Py_None;
 
-  const char *attrEx{}, *ofname{}, *olname{}, *where{}, *RegexWhere{},
-      *orig_fname{}, *orig_lname{};
+  const char *where{}, *RegexWhere{};
 
   bool ok = PyArg_ParseTupleAndKeywords(
       args, kwds,
