@@ -130,6 +130,8 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
                     10,
                     f"Failed mariadb command: '{showDbCommand}'"
                 )
+                showDb.stdout.close()
+                showDb.stderr.close()
                 return bRC_Error
             if returnCode != 0:
                 (stdOut, stdError) = showDb.communicate()
@@ -142,6 +144,9 @@ class BareosFdMariadbDump(BareosFdPluginBaseclass):  # noqa
                     f"Failed mariadb command: '{showDbCommand}'"
                 )
                 return bRC_Error
+
+            showDb.stdout.close()
+            showDb.stderr.close()
 
         if 'ignore_db' in self.options:
             DebugMessage(
