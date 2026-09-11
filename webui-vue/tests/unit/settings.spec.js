@@ -138,6 +138,57 @@ describe('settings store', () => {
       .toEqual({ sortBy: 'enabled', descending: false })
   })
 
+  it('persists and restores table filter (search) settings', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableFilter('storages.volumes', 'LTO-1')
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableFilter: {
+          'storages.volumes': 'LTO-1',
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableFilter: {
+        'storages.volumes': 'LTO-2',
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableFilter('storages.volumes', '')).toBe('LTO-2')
+
+    restored.setTableFilter('storages.volumes', '')
+    expect(restored.getTableFilter('storages.volumes', '')).toBe('')
+  })
+
+  it('persists and restores the schedules calendar view mode', async () => {
+    const settings = useSettingsStore()
+
+    settings.setSchedulesViewMode('month')
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        schedulesViewMode: 'month',
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      schedulesViewMode: 'invalid',
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.schedulesViewMode).toBe('week')
+  })
+
   it('persists and restores the client backup warning threshold', async () => {
     const settings = useSettingsStore()
 

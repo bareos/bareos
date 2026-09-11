@@ -20,6 +20,8 @@ const DEFAULTS = {
   selectedDirectors: [],
   tableRowsPerPage: {},
   tableSort: {},
+  tableFilter: {},
+  schedulesViewMode: 'week',
   clientBackupWarningDays: 2,
 }
 
@@ -71,6 +73,22 @@ function normalizeTableSort(value) {
   )
 }
 
+function normalizeTableFilter(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, filter]) => [String(key).trim(), String(filter ?? '')])
+      .filter(([key, filter]) => key && filter)
+  )
+}
+
+function normalizeSchedulesViewMode(value, fallback = DEFAULTS.schedulesViewMode) {
+  return value === 'month' || value === 'week' ? value : fallback
+}
+
 function normalizeClientBackupWarningDays(value, fallback = DEFAULTS.clientBackupWarningDays) {
   const normalized = Number(value)
   return Number.isInteger(normalized) && normalized > 0 && normalized <= 365
@@ -98,6 +116,8 @@ export const useSettingsStore = defineStore('settings', () => {
   const selectedDirectors = ref(normalizeSelectedDirectors(saved.selectedDirectors))
   const tableRowsPerPage = ref(normalizeTableRowsPerPage(saved.tableRowsPerPage))
   const tableSort = ref(normalizeTableSort(saved.tableSort))
+  const tableFilter = ref(normalizeTableFilter(saved.tableFilter))
+  const schedulesViewMode = ref(normalizeSchedulesViewMode(saved.schedulesViewMode))
   const clientBackupWarningDays = ref(
     normalizeClientBackupWarningDays(saved.clientBackupWarningDays)
   )
@@ -112,6 +132,8 @@ export const useSettingsStore = defineStore('settings', () => {
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
+      tableFilter: tableFilter.value,
+      schedulesViewMode: schedulesViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }))
   }
@@ -183,6 +205,38 @@ export const useSettingsStore = defineStore('settings', () => {
     tableSort.value = rest
   }
 
+  function getTableFilter(key, fallback = '') {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return fallback
+    }
+
+    return tableFilter.value[normalizedKey] ?? fallback
+  }
+
+  function setTableFilter(key, value) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return
+    }
+
+    const normalizedValue = String(value ?? '')
+    if (normalizedValue) {
+      tableFilter.value = {
+        ...tableFilter.value,
+        [normalizedKey]: normalizedValue,
+      }
+      return
+    }
+
+    const { [normalizedKey]: _removed, ...rest } = tableFilter.value
+    tableFilter.value = rest
+  }
+
+  function setSchedulesViewMode(value) {
+    schedulesViewMode.value = normalizeSchedulesViewMode(value, schedulesViewMode.value)
+  }
+
   // ── backup / restore ─────────────────────────────────────────────────────
 
   /**
@@ -201,6 +255,7 @@ export const useSettingsStore = defineStore('settings', () => {
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
+      schedulesViewMode: schedulesViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }
   }
@@ -239,6 +294,12 @@ export const useSettingsStore = defineStore('settings', () => {
     if ('tableSort' in data) {
       tableSort.value = normalizeTableSort(data.tableSort)
     }
+    if ('schedulesViewMode' in data) {
+      schedulesViewMode.value = normalizeSchedulesViewMode(
+        data.schedulesViewMode,
+        schedulesViewMode.value
+      )
+    }
     if ('clientBackupWarningDays' in data) {
       clientBackupWarningDays.value = normalizeClientBackupWarningDays(
         data.clientBackupWarningDays,
@@ -255,6 +316,8 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(selectedDirectors, save, { deep: true })
   watch(tableRowsPerPage, save, { deep: true })
   watch(tableSort, save, { deep: true })
+  watch(tableFilter, save, { deep: true })
+  watch(schedulesViewMode, save)
   watch(clientBackupWarningDays, (value) => {
     clientBackupWarningDays.value = normalizeClientBackupWarningDays(value)
     save()
@@ -275,6 +338,8 @@ export const useSettingsStore = defineStore('settings', () => {
     selectedDirectors,
     tableRowsPerPage,
     tableSort,
+    tableFilter,
+    schedulesViewMode,
     clientBackupWarningDays,
     setLocale,
     setSelectedDirectors,
@@ -282,6 +347,9 @@ export const useSettingsStore = defineStore('settings', () => {
     setTableRowsPerPage,
     getTableSort,
     setTableSort,
+    getTableFilter,
+    setTableFilter,
+    setSchedulesViewMode,
     exportSettings,
     importSettings,
   }
