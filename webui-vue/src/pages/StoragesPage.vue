@@ -84,6 +84,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !storages.length)"
               :rows="storages"
               :columns="visibleStorageCols"
               row-key="scopeKey"
@@ -126,6 +127,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleStorageCols.length" :rows="6" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -166,6 +168,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !pools.length)"
               :rows="pools"
               :columns="visiblePoolCols"
               row-key="scopeKey"
@@ -264,6 +267,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visiblePoolCols.length" :rows="6" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -305,6 +309,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !volumes.length)"
               :rows="volumes"
               :columns="visibleVolumeCols"
               row-key="scopeKey"
@@ -389,6 +394,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleVolumeCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -454,6 +460,7 @@ import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const route    = useRoute()
 const router   = useRouter()
