@@ -177,6 +177,10 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Schedules') }}</span>
             <q-space />
+            <q-input v-model="scheduleSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable class="q-mr-sm">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
             <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules(true)" />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -188,6 +192,7 @@
               dense
               flat
               :loading="schedLoading"
+              :filter="scheduleSearch"
               v-model:pagination="schedulesPagination"
             >
               <template #body-cell-director="props">
@@ -295,6 +300,7 @@ async function ensureScheduleActionDirector(targetDirector) {
 const schedLoading = ref(false)
 const schedError = ref(null)
 const shownSchedules = ref([])
+const scheduleSearch = ref('')
 const togglingName = ref(null)
 
 async function refreshSchedules(forceRefresh = false) {
