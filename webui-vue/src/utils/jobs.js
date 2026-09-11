@@ -455,6 +455,20 @@ export function buildJobDefaultsCommand(name) {
   return `.defaults job=${quoteDirectorString(name)}`
 }
 
+export function resolveConfiguredJobType(job, jobDefs) {
+  if (typeof job?.type === 'string' && job.type) {
+    return job.type
+  }
+
+  const jobDefName = job?.jobdefs
+  if (typeof jobDefName !== 'string' || !jobDefName) {
+    return ''
+  }
+
+  const jobDef = jobDefs?.[jobDefName]
+  return typeof jobDef?.type === 'string' ? jobDef.type : ''
+}
+
 export function resolvePermittedRunJobDefault(options, value) {
   if (typeof value !== 'string') {
     return null
