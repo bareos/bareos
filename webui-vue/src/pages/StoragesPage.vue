@@ -336,6 +336,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
@@ -382,9 +383,9 @@ function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
 }
 const tab      = ref(normaliseTab(route.query.tab))
-const deviceSearch = ref('')
-const poolSearch = ref('')
-const volSearch = ref('')
+const deviceSearch = usePersistedTableFilter('storages.devices')
+const poolSearch = usePersistedTableFilter('storages.pools')
+const volSearch = usePersistedTableFilter('storages.volumes')
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
