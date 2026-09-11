@@ -183,6 +183,19 @@
             </q-input>
             <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules(true)" />
           </q-card-section>
+          <q-card-section class="q-py-sm schedules-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip dense square outline color="grey-8" icon="event_note">
+                {{ t('Total') }}: {{ scheduleStats.total }}
+              </q-chip>
+              <q-chip dense square outline color="positive" icon="check_circle">
+                {{ t('Enabled') }}: {{ scheduleStats.enabled }}
+              </q-chip>
+              <q-chip v-if="scheduleStats.disabled" dense square outline color="negative" icon="pause_circle">
+                {{ t('Disabled') }}: {{ scheduleStats.disabled }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
             <q-table
@@ -343,6 +356,15 @@ async function refreshSchedules(forceRefresh = false) {
 }
 
 const schedules = computed(() => shownSchedules.value)
+
+const scheduleStats = computed(() => {
+  const all = shownSchedules.value
+  return {
+    total: all.length,
+    enabled: all.filter(sched => sched.enabled).length,
+    disabled: all.filter(sched => !sched.enabled).length,
+  }
+})
 
 const schedCols = computed(() => [
   ...(showDirectorColumn.value ? [{
@@ -808,6 +830,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.schedules-list-stats {
+  flex-wrap: wrap;
+}
+
+.schedules-list-stats :deep(.q-chip) {
+  font-weight: 600;
+}
+
 .sched-group-header td {
   background: rgba(0, 0, 0, 0.04);
   border-top: 2px solid rgba(0, 0, 0, 0.15) !important;
