@@ -33,21 +33,13 @@
                     </div>
                   </q-td>
                   <q-td key="status" class="text-center">
-                    <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                            :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')" />
-                  </q-td>
-                  <q-td key="actions" class="text-right">
-                    <q-btn
-                      flat
+                    <q-toggle
+                      :model-value="props.row.schedEnabled"
+                      :color="props.row.schedEnabled ? 'positive' : 'negative'"
                       dense
-                      size="sm"
-                      no-caps
-                      :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
-                      :color="props.row.schedEnabled ? 'orange-10' : 'positive'"
-                      :label="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
-                      :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
+                      :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')"
                       :loading="togglingName === props.row.scheduleKey"
-                      @click="toggleSchedule({
+                      @update:model-value="toggleSchedule({
                        name: props.row.schedule,
                        enabled: props.row.schedEnabled,
                        director: props.row.director,
@@ -68,30 +60,20 @@
                     <span v-else class="text-grey-5">{{ t('no jobs configured') }}</span>
                   </q-td>
                   <q-td key="status" class="text-center">
-                    <q-badge v-if="props.row.jobEnabled !== null"
-                             :color="jobStatusBadge(props.row).color"
-                             :label="jobStatusBadge(props.row).label">
+                    <q-toggle
+                      v-if="props.row.jobEnabled !== null"
+                      :model-value="props.row.jobEnabled"
+                      :color="jobStatusBadge(props.row).color"
+                      dense
+                      :label="jobStatusBadge(props.row).label"
+                      :loading="togglingJob === props.row.jobScopeKey"
+                      @update:model-value="toggleJob(props.row)"
+                    >
                       <q-tooltip v-if="jobStatusBadge(props.row).detail">
                         {{ jobStatusBadge(props.row).detail }}
                       </q-tooltip>
-                    </q-badge>
+                    </q-toggle>
                     <span v-else class="text-grey-5">—</span>
-                  </q-td>
-                  <q-td key="actions" class="text-right">
-                    <q-btn
-                      v-if="props.row.job !== '—'"
-                      flat
-                      dense
-                      size="sm"
-                      no-caps
-                      :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
-                      :color="props.row.jobEnabled ? 'orange-10' : 'positive'"
-                      :label="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
-                      :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
-                      :loading="togglingJob === props.row.jobScopeKey"
-                      @click="toggleJob(props.row)"
-                    />
-                    <template v-else>—</template>
                   </q-td>
                 </q-tr>
               </template>
@@ -215,29 +197,20 @@
               </template>
               <template #body-cell-enabled="props">
                 <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? t('Enabled') : t('Disabled')" />
+                  <q-toggle
+                    :model-value="props.value"
+                    :color="props.value ? 'positive' : 'negative'"
+                    dense
+                    :label="props.value ? t('Enabled') : t('Disabled')"
+                    :loading="togglingName === props.row.scopeKey"
+                    @update:model-value="toggleSchedule(props.row)"
+                  />
                 </q-td>
               </template>
               <template #body-cell-run="props">
                 <q-td :props="props">
                   <div v-for="(r, i) in props.value" :key="i" class="text-caption text-mono">{{ r }}</div>
                   <span v-if="!props.value?.length" class="text-grey-5">—</span>
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    size="sm"
-                    :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                    :color="props.row.enabled ? 'orange-10' : 'positive'"
-                    :title="props.row.enabled ? t('Disable') : t('Enable')"
-                    :loading="togglingName === props.row.scopeKey"
-                    @click="toggleSchedule(props.row)"
-                  />
                 </q-td>
               </template>
             </q-table>
@@ -371,9 +344,8 @@ const schedCols = computed(() => [
     name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name', label: t('Name'), field: 'name', align: 'left', sortable: true },
-  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center', sortable: true },
+  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center', sortable: true, style: 'width:140px' },
   { name: 'run', label: t('Run Directives'), field: 'run', align: 'left', sortable: true },
-  { name: 'actions', label: '', field: 'actions', align: 'center', style: 'width:60px' },
 ])
 
 async function toggleSchedule(row) {
@@ -685,8 +657,7 @@ const scheduleJobRows = computed(() => {
 
 const scheduleJobCols = computed(() => [
   { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px', sortable: true },
-  { name: 'status', label: t('Status'), field: 'status', align: 'center' },
-  { name: 'actions', label: t('Actions'), field: 'actions', align: 'right', style: 'width: 1%' },
+  { name: 'status', label: t('Status'), field: 'status', align: 'center', style: 'width:160px' },
 ])
 const viewModeOptions = computed(() => [
   { label: t('Month'), value: 'month', icon: 'calendar_month' },
