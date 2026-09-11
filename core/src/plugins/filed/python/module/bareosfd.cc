@@ -308,7 +308,9 @@ static inline bool PySavePacketToNative(
 
         Py_ssize_t size{};
         auto* str = PyUnicode_AsUTF8AndSize(pSavePkt->fname, &size);
-        sp->fname = plugin_priv_ctx->fname = strndup(str, size);
+        sp->fname = plugin_priv_ctx->fname = (char*)malloc(size + 1);
+        memcpy(sp->fname, str, size);
+        sp->fname[size] = 0;
       } else {
         PyErr_SetString(PyExc_TypeError,
                         "fname needs to be of type string \"utf-8\"");
