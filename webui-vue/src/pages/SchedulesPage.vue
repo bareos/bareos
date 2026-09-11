@@ -542,6 +542,51 @@ const statusLoading = ref(false)
 const statusError = ref(null)
 const schedulesData = ref([])
 const previewData = ref([])
+// Independent of the navigated calendar range, so "next run" info stays
+// anchored to "now" even while the user browses the calendar into the
+// future or past.
+const upcomingPreviewData = ref([])
+const UPCOMING_RANGE = { from: 0, to: 60 }
+
+async function refreshUpcomingPreview() {
+  try {
+    if (activeDirectors.value.length === 0) {
+      upcomingPreviewData.value = []
+      return
+    }
+
+    if (isCommonSchedules.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        return
+      }
+
+      const result = await fetchAggregatedSchedulesStatus(
+        credentials,
+        activeDirectors.value,
+        UPCOMING_RANGE
+      )
+      upcomingPreviewData.value = result.previewData
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    const statusResponse = await director.call(
+      `status scheduler days=${UPCOMING_RANGE.from},${UPCOMING_RANGE.to}`
+    )
+    upcomingPreviewData.value = (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
+      .map(item => ({
+        ...item,
+        director: currentDirector,
+        scheduleKey: `${currentDirector}:${item.schedule ?? ''}`,
+        scheduleDisplay: item.schedule ?? '',
+      }))
+  } catch {
+    // "Next run" info is a convenience add-on; a failure here should not
+    // surface as a page-level error (the calendar preview already reports
+    // fetch failures via statusError).
+  }
+}
 
 const viewMode = ref(settings.schedulesViewMode)
 
@@ -721,7 +766,7 @@ function toggleGroupCollapse(key) {
 const nextRunByScheduleKey = computed(() => {
   const nowSeconds = Date.now() / 1000
   const map = {}
-  for (const run of previewData.value) {
+  for (const run of upcomingPreviewData.value) {
     if (typeof run.runtime !== 'number' || run.runtime < nowSeconds) continue
     const existing = map[run.scheduleKey]
     if (!existing || run.runtime < existing.runtime) {
@@ -817,7 +862,7 @@ const schedulerStatusStats = computed(() => {
     0
   )
   const nowSeconds = Date.now() / 1000
-  const rawNextRun = previewData.value
+  const rawNextRun = upcomingPreviewData.value
     .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
     .sort((a, b) => a.runtime - b.runtime)[0] ?? null
   const nextRun = rawNextRun ? { ...rawNextRun, ...describeRunTime(rawNextRun) } : null
@@ -904,7 +949,7 @@ const nextUpcomingRuns = computed(() => {
   const nowSeconds = Date.now() / 1000
   const visible = visibleScheduleKeys.value
   const filterActive = scheduleSelectionInitialized.value
-  return previewData.value
+  return upcomingPreviewData.value
     .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
     .filter(run => !filterActive || visible.includes(run.scheduleKey))
     .sort((a, b) => a.runtime - b.runtime)
@@ -1025,11 +1070,13 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
     refreshSchedules()
   }
   refreshStatus()
+  refreshUpcomingPreview()
 })
 
 onMounted(() => {
   director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
+  refreshUpcomingPreview()
 })
 </script>
 
