@@ -39,11 +39,12 @@
             <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
+            <ColumnPickerMenu :columns="toggleableStorageCols" @toggle="toggleStorageCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="storages"
-              :columns="storageCols"
+              :columns="visibleStorageCols"
               row-key="scopeKey"
               dense
               flat
@@ -97,11 +98,12 @@
             <q-input v-model="poolSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
+            <ColumnPickerMenu :columns="toggleablePoolCols" @toggle="togglePoolCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="pools"
-              :columns="poolCols"
+              :columns="visiblePoolCols"
               row-key="scopeKey"
               dense
               flat
@@ -211,6 +213,7 @@
             <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
+            <ColumnPickerMenu :columns="toggleableVolumeCols" @toggle="toggleVolumeCol" />
           </q-card-section>
           <q-card-section class="q-py-sm storages-list-stats">
             <div class="row items-center q-gutter-sm">
@@ -231,7 +234,7 @@
           <q-card-section class="q-pa-none">
             <q-table
               :rows="volumes"
-              :columns="volumeCols"
+              :columns="visibleVolumeCols"
               row-key="scopeKey"
               dense
               flat
@@ -353,6 +356,7 @@ import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
@@ -377,6 +381,7 @@ import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -626,6 +631,24 @@ const storageCols = computed(() => [
   { name: 'enabled',     label: t('Status'),      field: 'enabled',     align: 'center', sortable: true },
   { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:110px' },
 ])
+
+const {
+  visibleColumns: visibleStorageCols,
+  toggleableColumns: toggleableStorageCols,
+  toggleColumn: toggleStorageCol,
+} = usePersistedTableColumns('storages.devices', storageCols, { essential: ['name', 'director', 'actions'] })
+
+const {
+  visibleColumns: visiblePoolCols,
+  toggleableColumns: toggleablePoolCols,
+  toggleColumn: togglePoolCol,
+} = usePersistedTableColumns('storages.pools', poolCols, { essential: ['name', 'director'] })
+
+const {
+  visibleColumns: visibleVolumeCols,
+  toggleableColumns: toggleableVolumeCols,
+  toggleColumn: toggleVolumeCol,
+} = usePersistedTableColumns('storages.volumes', volumeCols, { essential: ['volumename', 'director', 'actions'] })
 
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',

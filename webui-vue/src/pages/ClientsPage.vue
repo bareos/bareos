@@ -16,17 +16,6 @@
           <q-card-section class="panel-header clients-list-header row items-center">
             <span class="clients-list-header__title">{{ t('Client List') }}</span>
             <q-input
-              v-model="clientsSearch"
-              dense
-              outlined
-              clearable
-              :label="t('Search clients')"
-              class="clients-list-header__search"
-              data-testid="clients-search"
-            >
-              <template #prepend><q-icon name="search" /></template>
-            </q-input>
-            <q-input
               v-model.number="settings.clientBackupWarningDays"
               dense
               outlined
@@ -43,6 +32,17 @@
               </q-tooltip>
             </q-input>
             <q-space />
+            <q-input
+              v-model="clientsSearch"
+              dense
+              outlined
+              clearable
+              :placeholder="t('Search…')"
+              class="clients-list-header__search"
+              data-testid="clients-search"
+            >
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
             <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
           </q-card-section>
           <q-card-section class="q-py-sm clients-list-stats" data-testid="clients-quick-filter">
@@ -354,6 +354,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useReleaseInfoStore } from '../stores/releaseInfo.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
@@ -378,7 +379,7 @@ const clientsPagination = usePersistedTablePagination('clients.list', {
 const rawClients = ref([])
 const rawRecentBackups = ref([])
 const rawScheduledBackups = ref([])
-const clientsSearch = ref('')
+const clientsSearch = usePersistedTableFilter('clients.list')
 const clientsQuickFilter = ref('all')
 const loading    = ref(false)
 const error      = ref(null)
@@ -928,8 +929,7 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 }
 
 .clients-list-header__search {
-  min-width: 220px;
-  width: min(320px, 100%);
+  width: 200px;
 }
 
 .clients-list-header__threshold {
