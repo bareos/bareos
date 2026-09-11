@@ -33,7 +33,13 @@
       <!-- DEVICES -->
       <q-tab-panel name="storages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Storage Devices') }}</q-card-section>
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Storage Devices') }}</span>
+            <q-space />
+            <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="storages"
@@ -42,6 +48,7 @@
               dense
               flat
               :loading="loading"
+              :filter="deviceSearch"
               v-model:pagination="devicesPagination"
             >
               <template #body-cell-director="props">
@@ -84,7 +91,13 @@
       <!-- POOLS -->
       <q-tab-panel name="pools" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Pools') }}</q-card-section>
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Pools') }}</span>
+            <q-space />
+            <q-input v-model="poolSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="pools"
@@ -93,6 +106,7 @@
               dense
               flat
               :loading="loading"
+              :filter="poolSearch"
               v-model:pagination="poolsPagination"
             >
               <template #body-cell-name="props">
@@ -368,6 +382,8 @@ function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
 }
 const tab      = ref(normaliseTab(route.query.tab))
+const deviceSearch = ref('')
+const poolSearch = ref('')
 const volSearch = ref('')
 const loading = ref(false)
 const error = ref(null)
