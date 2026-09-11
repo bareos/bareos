@@ -242,6 +242,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import {
   buildShownSchedules,
   buildStatusSchedules,
@@ -251,6 +252,7 @@ import {
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
   withJobsSearchQuery,
@@ -261,6 +263,7 @@ import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 const schedulesPagination = usePersistedTablePagination('schedules.list', {
@@ -300,7 +303,7 @@ async function ensureScheduleActionDirector(targetDirector) {
 const schedLoading = ref(false)
 const schedError = ref(null)
 const shownSchedules = ref([])
-const scheduleSearch = ref('')
+const scheduleSearch = usePersistedTableFilter('schedules.show')
 const togglingName = ref(null)
 
 async function refreshSchedules(forceRefresh = false) {
@@ -459,7 +462,7 @@ const statusError = ref(null)
 const schedulesData = ref([])
 const previewData = ref([])
 
-const viewMode = ref('week')
+const viewMode = ref(settings.schedulesViewMode)
 
 function startOfToday() {
   const d = new Date()
@@ -477,7 +480,7 @@ function firstOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-const viewAnchor = ref(mondayOf(new Date()))
+const viewAnchor = ref(viewMode.value === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date()))
 
 const apiDaysRange = computed(() => {
   const today = startOfToday()
@@ -559,6 +562,7 @@ function goToday() {
 
 watch(viewMode, (mode) => {
   viewAnchor.value = mode === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date())
+  settings.setSchedulesViewMode(mode)
 })
 
 async function refreshStatus() {
