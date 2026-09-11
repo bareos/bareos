@@ -244,10 +244,13 @@ static inline void PyStatPacketToNative(PyStatPacket* pStatp,
   statp->st_blocks = pStatp->blocks;
 }
 
-static inline PyObject* OwnedNone()
+static inline PyObject* OwnedNone() { Py_RETURN_NONE; }
+
+static inline bool IsNone(PyObject* obj)
 {
-  Py_INCREF(Py_None);
-  return Py_None;
+  // according to the docs, this should be enough
+  // even though Py_IsNone exists from 3.12 onwards ...
+  return obj == Py_None;
 }
 
 static inline PySavePacket* NativeToPySavePacket(save_pkt* sp)
@@ -296,13 +299,12 @@ static inline bool PySavePacketToNative(
   // See if this is for an Options Plugin.
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
-    if (pSavePkt->fname || Py_IsNone(pSavePkt->fname)) {
+    if (pSavePkt->fname || IsNone(pSavePkt->fname)) {
       /* As this has to linger as long as the backup is running we save it in
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
         Py_XDECREF(plugin_priv_ctx->py_fname);
-        Py_INCREF(pSavePkt->fname);
-        plugin_priv_ctx->py_fname = pSavePkt->fname;
+        plugin_priv_ctx->py_fname = Py_NewRef(pSavePkt->fname);
 
         Py_ssize_t size{};
         auto* str = PyUnicode_AsUTF8AndSize(pSavePkt->fname, &size);
@@ -1006,7 +1008,7 @@ static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
 
 static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket, acl_pkt* ap)
 {
-  if (!pAclPacket->content || Py_IsNone(pAclPacket->content)) { return true; }
+  if (!pAclPacket->content || IsNone(pAclPacket->content)) { return true; }
 
   if (PyByteArray_Check(pAclPacket->content)) {
     char* buf;
@@ -1178,7 +1180,7 @@ static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
 static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
                                          xattr_pkt* xp)
 {
-  if (!pXattrPacket->name || Py_IsNone(pXattrPacket->name)) { return true; }
+  if (!pXattrPacket->name || IsNone(pXattrPacket->name)) { return true; }
 
   if (PyByteArray_Check(pXattrPacket->name)) {
     char* buf;
@@ -2230,7 +2232,7 @@ static void PyStatPacket_dealloc(PyObject* obj)
 static inline const char* print_flags_bitmap(PyObject* bitmap)
 {
   static char visual_bitmap[FO_MAX + 1];
-  if (!bitmap || Py_IsNone(bitmap)) { return "<NULL>"; }
+  if (!bitmap || IsNone(bitmap)) { return "<NULL>"; }
   if (PyByteArray_Check(bitmap)) {
     int cnt;
     char* flags;
