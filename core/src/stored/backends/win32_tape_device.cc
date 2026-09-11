@@ -519,8 +519,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       }
       break;
     case MTWEOF:
+    case MTWEOFI:
       result = WriteTapemark(pHandleInfo->OSHandle, TAPE_FILEMARKS,
-                             mt_com->mt_count, FALSE);
+                             mt_com->mt_count, mt_com->mt_op == MTWEOFI);
       if (result == NO_ERROR) {
         pHandleInfo->bEOF = true;
         pHandleInfo->bEOT = false;
