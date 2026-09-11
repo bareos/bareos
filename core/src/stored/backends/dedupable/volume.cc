@@ -90,6 +90,15 @@ std::uint32_t SafeCast(std::size_t size)
   return size;
 }
 
+std::int32_t UnfinishedStreamKey(std::int32_t stream)
+{
+  if (stream == std::numeric_limits<std::int32_t>::min()) {
+    throw std::invalid_argument("Cannot normalize stream id.");
+  }
+
+  return stream < 0 ? -stream : stream;
+}
+
 std::vector<char> LoadFile(int fd)
 {
   std::vector<char> loaded;
@@ -350,7 +359,7 @@ auto volume::reserve_parts(record_header header) -> std::vector<reserved_part>
         .VolSessionId = current_block->VolSessionId,
         .VolSessionTime = current_block->VolSessionTime,
         .FileIndex = header.FileIndex,
-        .Stream = -header.Stream,
+        .Stream = UnfinishedStreamKey(header.Stream),
     };
 
     if (auto found = unfinished.find(rec_id); found != unfinished.end()) {
@@ -440,10 +449,14 @@ void volume::PushRecord(record_header header,
         .VolSessionId = current_block->VolSessionId,
         .VolSessionTime = current_block->VolSessionTime,
         .FileIndex = header.FileIndex,
-        .Stream = header.Stream,
+        .Stream = UnfinishedStreamKey(header.Stream),
     };
 
-    unfinished.emplace(rec_id, std::move(reserved_parts));
+    if (auto [_, inserted]
+        = unfinished.emplace(rec_id, std::move(reserved_parts));
+        !inserted) {
+      throw std::runtime_error("Duplicate unfinished record reservation.");
+    }
   }
 }
 
