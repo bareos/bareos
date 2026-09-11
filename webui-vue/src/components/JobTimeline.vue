@@ -156,16 +156,22 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { buildTimelineGroups } from '../utils/jobTimeline.js'
 import { formatNumber } from '../utils/locales.js'
+import { quoteDirectorString } from '../utils/directorStrings.js'
 import { midEllipsis } from '../utils/strings.js'
 
 const {
   clientDetailsQuery = null,
+  clientFilter = '',
   jobDetailsQuery = null,
   directors = null,
 } = defineProps({
   clientDetailsQuery: {
     type: Object,
     default: null,
+  },
+  clientFilter: {
+    type: String,
+    default: '',
   },
   jobDetailsQuery: {
     type: Object,
@@ -214,6 +220,7 @@ const timelineRangeOptions = computed(() => [
   { label: t('7 days'), value: 7 },
   { label: t('30 days'), value: 30 },
 ])
+const normalizedClientFilter = computed(() => String(clientFilter ?? '').trim())
 // ── Computed geometry ─────────────────────────────────────────────────────────
 const tlStart  = computed(() => Date.now() - tlDays.value * 24 * 3600 * 1000)
 const tlRange  = computed(() => Date.now() - tlStart.value)
@@ -334,8 +341,11 @@ async function tlRefresh() {
       })
 
       try {
+        const clientClause = normalizedClientFilter.value
+          ? ` client=${quoteDirectorString(normalizedClientFilter.value)}`
+          : ''
         const [jobsResult, statusResult] = await Promise.all([
-          client.call(`llist jobs days=${tlDays.value}`),
+          client.call(`llist jobs days=${tlDays.value}${clientClause}`),
           client.call('status director'),
         ])
         const jobs = directorCollection(jobsResult?.jobs).map((job) => ({
@@ -377,6 +387,8 @@ watch(svgContainer, (el) => {
 })
 
 watch(tlDays, () => tlRefresh())
+
+watch(normalizedClientFilter, () => tlRefresh())
 
 watch(() => director.isConnected, (connected) => {
   if (connected) tlRefresh()
