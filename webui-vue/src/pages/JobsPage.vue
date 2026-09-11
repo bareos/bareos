@@ -192,6 +192,7 @@
               </q-chip>
             </div>
             <q-table
+              v-if="!(loading && !jobs.length)"
               :rows="jobs"
               :columns="columns"
               row-key="scopeKey"
@@ -394,6 +395,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="columns.length" :rows="10" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -707,6 +709,7 @@ import {
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
