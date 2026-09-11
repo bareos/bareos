@@ -81,7 +81,7 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
         )
         if os.path.exists(self.options["filename"]):
             try:
-                with open(config_filename, "r") as config_file:
+                with open(self.options["filename"], "r") as config_file:
                     lines = config_file.read().splitlines()
             except:
                 bareosfd.DebugMessage(

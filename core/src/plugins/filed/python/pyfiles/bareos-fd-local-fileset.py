@@ -85,9 +85,10 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             100,
             "Using %s to search for local files\n" % self.options["filename"],
         )
-        if os.path.exists(self.options["filename"]):
+        fname = self.options["filename"]
+        if os.path.exists(fname):
             try:
-                with open(self.options["filename"], "r") as config_file:
+                with open(fname, "r") as config_file:
                     lines = config_file.read().splitlines()
             except:
                 bareosfd.DebugMessage(
@@ -100,6 +101,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 100, "File %s does not exist\n" % (self.options["filename"])
             )
             return bareosfd.bRC_Error
+
         # Check, if we have allow or deny regular expressions defined
         if "allow" in self.options:
             self.allow = re.compile(self.options["allow"])
