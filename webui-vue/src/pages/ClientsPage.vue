@@ -26,19 +26,6 @@
             >
               <template #prepend><q-icon name="search" /></template>
             </q-input>
-            <q-btn-toggle
-              v-model="clientsQuickFilter"
-              dense
-              no-caps
-              unelevated
-              :options="clientsQuickFilterOptions"
-              color="grey-3"
-              text-color="grey-9"
-              toggle-color="primary"
-              toggle-text-color="white"
-              class="clients-list-header__filters"
-              data-testid="clients-quick-filter"
-            />
             <q-input
               v-model.number="settings.clientBackupWarningDays"
               dense
@@ -58,7 +45,7 @@
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
           </q-card-section>
-          <q-card-section class="q-py-sm clients-list-stats">
+          <q-card-section class="q-py-sm clients-list-stats" data-testid="clients-quick-filter">
             <div class="row items-center q-gutter-sm">
               <q-chip
                 dense square outline color="grey-8"
@@ -512,15 +499,6 @@ const clientStats = computed(() => {
   }
 })
 
-const clientsQuickFilterOptions = computed(() => [
-  { label: t('All'), value: 'all', icon: 'select_all' },
-  { label: t('Enabled'), value: 'enabled', icon: 'check_circle', toggleColor: 'positive' },
-  { label: t('Disabled'), value: 'disabled', icon: 'pause_circle', toggleColor: 'negative' },
-  { label: t('Outdated'), value: 'outdated', icon: 'system_update_alt', toggleColor: 'warning', toggleTextColor: 'black' },
-  { label: t('Stale backup'), value: 'stale_backup', icon: 'schedule', toggleColor: 'warning', toggleTextColor: 'black' },
-  { label: t('Backup errors'), value: 'backup_errors', icon: 'error', toggleColor: 'negative' },
-])
-
 const lastBackupByClient = computed(() => {
   const backupsByClient = new Map()
   for (const backup of directorCollection(rawRecentBackups.value)) {
@@ -956,19 +934,6 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 
 .clients-list-header__threshold {
   min-width: 190px;
-}
-
-.clients-list-header__filters {
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  max-width: 100%;
-  overflow: hidden;
-  overflow-x: auto;
-}
-
-.clients-list-header__filters :deep(.q-btn + .q-btn) {
-  border-left: 1px solid rgba(21, 101, 192, 0.16);
 }
 
 .clients-list-stats {
