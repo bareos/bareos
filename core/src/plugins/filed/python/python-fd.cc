@@ -148,9 +148,7 @@ class locked_threadstate {
  private:
   locked_threadstate(PyThreadState* t_ts, bool t_owns) : ts{t_ts}, owns{t_owns}
   {
-    // make the given thread state active
-    // we assume that we are currently holding the gil
-    (void)PyThreadState_Swap(t_ts);
+    PyEval_AcquireThread(t_ts);
   }
 
  public:
