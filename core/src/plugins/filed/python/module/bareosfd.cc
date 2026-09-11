@@ -244,6 +244,12 @@ static inline void PyStatPacketToNative(PyStatPacket* pStatp,
   statp->st_blocks = pStatp->blocks;
 }
 
+static inline PyObject* NewRef(PyObject* obj)
+{
+  Py_INCREF(obj);
+  return obj;
+}
+
 static inline PyObject* OwnedNone() { Py_RETURN_NONE; }
 
 static inline bool IsNone(PyObject* obj)
@@ -304,7 +310,7 @@ static inline bool PySavePacketToNative(
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
         Py_XDECREF(plugin_priv_ctx->py_fname);
-        plugin_priv_ctx->py_fname = Py_NewRef(pSavePkt->fname);
+        plugin_priv_ctx->py_fname = NewRef(pSavePkt->fname);
 
         Py_ssize_t size{};
         auto* str = PyUnicode_AsUTF8AndSize(pSavePkt->fname, &size);
