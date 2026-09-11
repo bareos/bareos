@@ -667,7 +667,6 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, io_pkt* io)
       // e.g. read/write
       fname = OwnedNone();
     } else if (!fname || !bstrcmp(io->fname, PyUnicode_AsUTF8(fname))) {
-      Py_XDECREF(fname);
       fname = PyUnicode_FromString(io->fname);
     } else {
       Py_INCREF(fname);
