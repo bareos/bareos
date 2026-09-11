@@ -50,6 +50,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <mutex>
 
 namespace filedaemon {
 
@@ -100,7 +101,13 @@ uint32_t PyVersion()
  * We use a vector instead of a set here since we expect that each thread
  * only accesses very few interpreters (<= 1) at the same time.
  */
-thread_local std::vector<PyThreadState*> tl_threadstates{};
+
+struct python_thread_state {
+  PyThreadState* main_ts;
+  PyThreadState* interp_ts;
+};
+
+thread_local std::vector<python_thread_state> tl_threadstates{};
 
 /**
  * We don't actually use this but we need it to tear down the
@@ -113,26 +120,27 @@ PyThreadState* mainThreadState{nullptr};
  * nullptr otherwise */
 PyThreadState* GetThreadStateForInterp(PyInterpreterState* interp)
 {
-  for (auto* thread : tl_threadstates) {
-    if (thread->interp == interp) { return thread; }
+  for (auto& thread : tl_threadstates) {
+    if (thread.interp_ts->interp == interp) { return thread.interp_ts; }
   }
   return nullptr;
 }
 
-PyThreadState* PopThreadStateForInterp(PyInterpreterState* interp)
+python_thread_state PopThreadStateForInterp(PyInterpreterState* interp)
 {
-  auto iter = std::find_if(
-      tl_threadstates.begin(), tl_threadstates.end(),
-      [interp](const auto& thread) { return thread->interp == interp; });
+  auto iter = std::find_if(tl_threadstates.begin(), tl_threadstates.end(),
+                           [interp](const auto& thread) {
+                             return thread.interp_ts->interp == interp;
+                           });
 
   if (iter != tl_threadstates.end()) {
-    auto* thread = *iter;
+    auto state{*iter};
 
     tl_threadstates.erase(iter);
 
-    return thread;
+    return state;
   } else {
-    return nullptr;
+    return {};
   }
 }
 
@@ -190,13 +198,14 @@ class locked_threadstate {
   bool owns{false};
 };
 
+static std::mutex finalize_lock;
+
 /* Acquire the gil for this thread.  If this thread does not have a thread
  * state for interp, a new one is created.  This newly created thread state
  * is destroyed by locked_threadstates destructor. */
 locked_threadstate AcquireLock(PyInterpreterState* interp)
 {
-  // we lock the gil here to synchronize potential calls to PyThreadState_New().
-  PyEval_RestoreThread(mainThreadState);
+  std::unique_lock _{finalize_lock};
   auto* ts = GetThreadStateForInterp(interp);
   if (!ts) {
     // create a new thread state
@@ -224,7 +233,8 @@ bRC newPlugin(PluginContext* plugin_ctx)
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
   /* For each plugin instance we instantiate a new Python interpreter. */
-  PyEval_AcquireThread(mainThreadState);
+  auto* main_ts = PyThreadState_New(mainThreadState->interp);
+  PyEval_AcquireThread(main_ts);
 
   /* set bareos_plugin_context inside of bareosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
@@ -232,7 +242,7 @@ bRC newPlugin(PluginContext* plugin_ctx)
   auto* ts = Py_NewInterpreter();
   plugin_priv_ctx->interp = ts->interp;
   // register ts
-  tl_threadstates.push_back(ts);
+  tl_threadstates.push_back({main_ts, ts});
   PyEval_ReleaseThread(ts);
 
   /* Always register some events the python plugin itself can register
@@ -257,30 +267,32 @@ extern "C" bRC freePlugin(PluginContext* plugin_ctx)
   if (!plugin_priv_ctx) { return bRC_Error; }
 
   // Stop any sub interpreter started per plugin instance.
-  auto* ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
-  if (!ts) {
+  auto ts = PopThreadStateForInterp(plugin_priv_ctx->interp);
+  if (!ts.interp_ts) {
     Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "No associated thread state found\n");
     free(plugin_priv_ctx);
     plugin_ctx->plugin_private_context = NULL;
     return bRC_Error;
   }
-  PyEval_AcquireThread(ts);
+  PyEval_AcquireThread(ts.interp_ts);
 
   Py_XDECREF(plugin_priv_ctx->pModule);
   Py_XDECREF(plugin_priv_ctx->py_fname);
 
-  Py_EndInterpreter(ts);
+  Py_EndInterpreter(ts.interp_ts);
 
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     // release gil a different way
-    PyThreadState_Swap(mainThreadState);
+    PyThreadState_Swap(ts.main_ts);
     // while we still have the gil, we need to make sure we clear the type cache
     // so that it does not contain outdated references
     if (PyVersion() < VERSION_HEX(3, 10, 0)) { PyType_ClearCache(); }
-    PyEval_ReleaseThread(mainThreadState);
   } else {
     // endinterpreter releases the gil for us since 3.12
+    PyEval_RestoreThread(ts.main_ts);
   }
+  PyThreadState_Clear(ts.main_ts);
+  PyThreadState_DeleteCurrent();
 
   free(plugin_priv_ctx->plugin_options);
   free(plugin_priv_ctx->module_path);
@@ -1012,6 +1024,7 @@ bRC unloadPlugin()
   /* Terminate Python if it was initialized correctly */
   if (mainThreadState) {
     PyEval_RestoreThread(mainThreadState);
+    std::unique_lock _{finalize_lock};
     Py_Finalize();
     mainThreadState = nullptr;
   }
