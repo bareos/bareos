@@ -199,29 +199,59 @@ export function formatLocalDateTime(value, locale, options = {}) {
   }).format(date)
 }
 
-function formatRelativeDiff(diffMs, locale) {
+const HOUR_MS = 60 * 60 * 1000
+
+function calendarDayDiff(from, to) {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate())
+  return Math.round((b.getTime() - a.getTime()) / (24 * HOUR_MS))
+}
+
+function formatRelativeDiff(date, now, locale) {
+  const diffMs = date.getTime() - now.getTime()
   const absDiffMs = Math.abs(diffMs)
   const formatter = new Intl.RelativeTimeFormat(localeToIntl(locale), {
     numeric: 'auto',
   })
-  const units = [
-    ['year',   365 * 24 * 60 * 60 * 1000],
-    ['month',   30 * 24 * 60 * 60 * 1000],
-    ['day',           24 * 60 * 60 * 1000],
-    ['hour',               60 * 60 * 1000],
-    ['minute',                  60 * 1000],
-    ['second',                       1000],
-  ]
 
-  for (const [unit, unitMs] of units) {
-    if (absDiffMs >= unitMs || unit === 'second') {
-      const delta = diffMs / unitMs
-      const rounded = diffMs < 0 ? Math.ceil(delta) : Math.floor(delta)
-      return formatter.format(rounded, unit)
+  // Below one hour, precise minute/second wording reads better than
+  // calendar-day wording ("in 2 minutes" vs. "today").
+  if (absDiffMs < HOUR_MS) {
+    const units = [
+      ['minute', 60 * 1000],
+      ['second', 1000],
+    ]
+    for (const [unit, unitMs] of units) {
+      if (absDiffMs >= unitMs || unit === 'second') {
+        const delta = diffMs / unitMs
+        const rounded = diffMs < 0 ? Math.ceil(delta) : Math.floor(delta)
+        return formatter.format(rounded, unit)
+      }
     }
   }
 
-  return formatter.format(0, 'second')
+  // From one hour up, use the calendar-day difference (based on local
+  // midnight boundaries) so a run at 03:00 the day after tomorrow is
+  // reported as "in 2 days" rather than "tomorrow" just because it is
+  // less than 24 raw hours away.
+  const dayDiff = calendarDayDiff(now, date)
+  const absDayDiff = Math.abs(dayDiff)
+
+  if (absDayDiff === 0) {
+    const hours = diffMs / HOUR_MS
+    const rounded = diffMs < 0 ? Math.ceil(hours) : Math.floor(hours)
+    return formatter.format(rounded, 'hour')
+  }
+
+  if (absDayDiff < 30) {
+    return formatter.format(dayDiff, 'day')
+  }
+
+  if (absDayDiff < 365) {
+    return formatter.format(Math.round(dayDiff / 30), 'month')
+  }
+
+  return formatter.format(Math.round(dayDiff / 365), 'year')
 }
 
 export function formatRelativeDate(date, locale) {
@@ -229,7 +259,7 @@ export function formatRelativeDate(date, locale) {
     return String(date ?? '')
   }
 
-  return formatRelativeDiff(date.getTime() - Date.now(), locale)
+  return formatRelativeDiff(date, new Date(), locale)
 }
 
 export function formatSqlRelativeTime(value, locale) {
