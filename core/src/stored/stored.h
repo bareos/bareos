@@ -31,23 +31,23 @@
 
 const int sd_debuglevel = 300;
 
+#include "include/config.h"
 #if __has_include(<mtio.h>)
 #  include <mtio.h>
-#else
-#  if __has_include(<sys/mtio.h>)
-#    ifdef HAVE_AIX_OS
-#      define _MTEXTEND_H 1
-#    endif
-#    include <sys/mtio.h>
-#  else
-#    if __has_include(<sys/tape.h>)
-#      include <sys/tape.h>
-#    else
-/* Needed for Mac 10.6 (Snow Leopard) */
-#      include "lib/bmtio.h"
-#    endif
+#elif defined(HAVE_LINUX_OS) && __has_include(<linux/mtio.h>)
+#  include <linux/mtio.h>
+#elif __has_include(<sys/mtio.h>)
+#  ifdef HAVE_AIX_OS
+#    define _MTEXTEND_H 1
 #  endif
+#  include <sys/mtio.h>
+#elif __has_include(<sys/tape.h>)
+#  include <sys/tape.h>
+#else
+/* Needed for Mac 10.6 (Snow Leopard) */
+#  include "lib/bmtio.h"
 #endif
+
 #include "stored/bsr.h"
 #include "include/ch.h"
 #include "lock.h"
