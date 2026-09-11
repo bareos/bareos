@@ -141,6 +141,16 @@ void WriteFile(int fd, const std::vector<char>& written)
   }
 }
 
+void SyncFile(int fd, const char* name)
+{
+  if (fsync(fd) < 0) {
+    std::string errctx = "while syncing '";
+    errctx += name;
+    errctx += "'";
+    throw std::system_error(errno, std::generic_category(), errctx);
+  }
+}
+
 raii_fd OpenRelative(open_context ctx, const char* path)
 {
   int fd = openat(ctx.dird, path, ctx.flags);
@@ -555,9 +565,17 @@ void volume::truncate()
 
 void volume::flush()
 {
-  backing->blocks.flush();
-  backing->parts.flush();
   for (auto& vec : backing->datafiles) { vec.flush(); }
+  backing->parts.flush();
+  backing->blocks.flush();
+
+  raii_fd conf_fd{openat(dird.fileno(), "config", O_RDONLY)};
+  if (!conf_fd) {
+    std::string errctx = "Could not open dedup config file";
+    throw std::system_error(errno, std::generic_category(), errctx);
+  }
+  SyncFile(conf_fd.fileno(), "config");
+  SyncFile(dird.fileno(), sys_path.c_str());
 }
 
 std::size_t volume::ReadBlock(std::size_t blocknum,
