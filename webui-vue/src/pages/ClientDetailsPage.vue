@@ -3,15 +3,8 @@
     <q-inner-loading :showing="loading" :label="t('Loading client…')" />
     <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
     <template v-else-if="!loading">
+    <Breadcrumbs :items="breadcrumbItems" />
     <div class="row items-center q-mb-md">
-      <q-btn
-        flat
-        icon="arrow_back"
-        :label="backLabel"
-        :to="backLocation"
-        no-caps
-        class="q-mr-md"
-      />
       <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="28px" class="q-mr-sm" />
       <div class="text-h6">{{ client?.name }}</div>
       <q-badge v-if="client?.version" color="grey-6" :label="'v' + client.version" class="q-ml-sm text-mono" />
@@ -135,6 +128,7 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const route         = useRoute()
 const router        = useRouter()
@@ -156,10 +150,10 @@ const hasJobsOrigin = computed(() => (
     || Object.keys(jobsOrigin.value).length > 0
 ))
 const dashboardOrigin = computed(() => resolveClientDetailsDashboardOrigin(route.query))
-const backLabel = computed(() => (
+const breadcrumbParentLabel = computed(() => (
   hasJobsOrigin.value
-    ? t('Back to Jobs')
-    : (dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients'))
+    ? t('Jobs')
+    : (dashboardOrigin.value ? t('Dashboard') : t('Clients'))
 ))
 const backLocation = computed(() => (
   hasJobsOrigin.value
@@ -170,6 +164,10 @@ const backLocation = computed(() => (
         : { name: 'clients', query: backToClientsQuery.value }
     )
 ))
+const breadcrumbItems = computed(() => [
+  { label: breadcrumbParentLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: client.value?.name ?? (typeof route.params.name === 'string' ? route.params.name : '') },
+])
 
 function buildClientJobDetailsQuery(job, logFocus) {
   return buildJobDetailsQuery({

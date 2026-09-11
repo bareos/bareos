@@ -6,17 +6,12 @@
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
-        <q-btn
-          flat
-          icon="arrow_back"
-          :label="backLabel"
-          :to="backLocation"
-          no-caps
-          class="q-mr-md"
-        />
-        <div class="row items-center q-gutter-sm">
-          <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
-          <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+        <div class="column">
+          <Breadcrumbs :items="breadcrumbItems" />
+          <div class="row items-center q-gutter-sm">
+            <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
+            <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+          </div>
         </div>
       </div>
 
@@ -187,6 +182,7 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -212,16 +208,16 @@ const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const currentJobDetailsQuery = computed(() => resolveJobDetailsQuery(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
-    ? t('Back to Client')
+    ? t('Client')
     : (dashboardOrigin.value
-      ? t('Back to Dashboard')
+      ? t('Dashboard')
       : (
         directorOrigin.value
-          ? t('Back to Director')
+          ? t('Director')
           : (
             restoreOrigin.value
-              ? t('Back to Restore')
-              : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+              ? t('Restore')
+              : (volumeOrigin.value ? t('Volume') : t('Jobs'))
           )
       ))
 ))
@@ -284,6 +280,10 @@ const backLocation = computed(() => {
     query: backToJobsQuery.value,
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: jobData.value ? `${t('Job')} #${jobData.value.id}` : `${t('Job')} #${currentJobId.value}` },
+])
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)

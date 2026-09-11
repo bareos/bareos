@@ -20,15 +20,8 @@
 -->
 <template>
   <q-page class="q-pa-md">
-    <!-- Back -->
-    <q-btn
-      flat
-      no-caps
-      icon="arrow_back"
-      :label="backLabel"
-      class="q-mb-md"
-      :to="backLocation"
-    />
+    <!-- Breadcrumbs -->
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- Loading / error -->
     <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
@@ -260,6 +253,7 @@ import {
   resolveVolumeDetailsStoragesOrigin,
   volumeHasEncryptionKey,
 } from '../utils/volumes.js'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const route      = useRoute()
 const auth       = useAuthStore()
@@ -285,22 +279,22 @@ const storagesOrigin = computed(() => resolveVolumeDetailsStoragesOrigin(route.q
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
 const backLabel = computed(() => {
   if (jobOrigin.value) {
-    return t('Back to Job')
+    return t('Job')
   }
 
   if (poolOrigin.value) {
-    return t('Back to Pool')
+    return t('Pool')
   }
 
   if (autochangerOrigin.value) {
-    return t('Back to Autochanger')
+    return t('Autochanger')
   }
 
   if (storagesOrigin.value) {
-    return t('Back to Storages')
+    return t('Storages')
   }
 
-  return directorOrigin.value ? t('Back to Director') : t('Volumes')
+  return directorOrigin.value ? t('Director') : t('Volumes')
 })
 const backLocation = computed(() => {
   if (jobOrigin.value) {
@@ -355,6 +349,10 @@ const backLocation = computed(() => {
     query: { tab: 'volumes' },
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: vol.value?.volumename ?? volumeName.value },
+])
 
 function buildVolumeJobDetailsQuery(jobDirector) {
   return buildJobDetailsQuery({
