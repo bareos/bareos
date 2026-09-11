@@ -22,6 +22,7 @@
 import {
   directorCollection,
   normaliseClient,
+  normaliseJob,
 } from './useDirectorFetch.js'
 import {
   directorAggregateErrors,
@@ -42,6 +43,49 @@ function decorateClients(entries, enabledMap, director) {
       scopeKey: `${director}:${client.name}`,
     }
   })
+}
+
+function decorateRecentBackups(entries, director) {
+  return directorCollection(entries).map((entry) => ({
+    ...normaliseJob(entry),
+    director,
+  }))
+}
+
+export function decorateScheduledBackups(response, director) {
+  const schedules = new Map(
+    (Array.isArray(response?.schedules) ? response.schedules : [])
+      .map(schedule => [schedule?.name, schedule])
+  )
+  const scheduled = []
+  const now = Math.floor(Date.now() / 1000)
+
+  for (const preview of Array.isArray(response?.preview) ? response.preview : []) {
+    const runtime = Number(preview?.runtime ?? 0)
+    if (!Number.isFinite(runtime) || runtime <= 0 || runtime > now) {
+      continue
+    }
+    const schedule = schedules.get(preview?.schedule)
+    const jobs = Array.isArray(schedule?.jobs) ? schedule.jobs : []
+    const previewJobs = preview?.client
+      ? [{ name: preview.job ?? '', client: preview.client, enabled: true }]
+      : jobs
+
+    for (const job of previewJobs) {
+      if (!job?.client || job.enabled === false || schedule?.enabled === false) {
+        continue
+      }
+      scheduled.push({
+        client: job.client,
+        job: job.name ?? preview.job ?? '',
+        schedule: preview.schedule ?? '',
+        runtime,
+        director,
+      })
+    }
+  }
+
+  return scheduled
 }
 
 function sortClients(clients) {
@@ -84,9 +128,11 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
   const fetchGeneration = clientsCache.beginFetch()
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const [listResult, dotResult] = await Promise.all([
+    const [listResult, dotResult, recentBackupsResult, schedulerResult] = await Promise.all([
       client.call('llist clients'),
       client.call('.clients'),
+      client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+      client.call('status scheduler days=-31,1'),
     ])
 
     const enabledMap = Object.fromEntries(
@@ -96,11 +142,15 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
     return {
       director,
       clients: decorateClients(listResult?.clients, enabledMap, director),
+      recentBackups: decorateRecentBackups(recentBackupsResult?.jobs, director),
+      scheduledBackups: decorateScheduledBackups(schedulerResult, director),
     }
   })
 
   const data = {
     clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
+    recentBackups: fulfilledDirectorValues(results).flatMap(value => value.recentBackups),
+    scheduledBackups: fulfilledDirectorValues(results).flatMap(value => value.scheduledBackups),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
   clientsCache.set(cacheKey, data, fetchGeneration)

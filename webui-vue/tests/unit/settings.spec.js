@@ -111,6 +111,55 @@ describe('settings store', () => {
     expect(restored.getTableRowsPerPage('storages.pools', 15)).toBe(11)
   })
 
+  it('persists and restores table sort settings', async () => {
+    const settings = useSettingsStore()
+
+    settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        tableSort: {
+          'jobs.defs': { sortBy: 'type', descending: true },
+        },
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      tableSort: {
+        'jobs.defs': { sortBy: 'enabled', descending: false },
+      },
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.getTableSort('jobs.defs', { sortBy: 'name', descending: true }))
+      .toEqual({ sortBy: 'enabled', descending: false })
+  })
+
+  it('persists and restores the client backup warning threshold', async () => {
+    const settings = useSettingsStore()
+
+    settings.clientBackupWarningDays = 3
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
+      expect.objectContaining({
+        clientBackupWarningDays: 3,
+      })
+    )
+
+    localStorage.setItem('bareos_settings', JSON.stringify({
+      clientBackupWarningDays: 7,
+    }))
+
+    setActivePinia(createPinia())
+    const restored = useSettingsStore()
+    expect(restored.clientBackupWarningDays).toBe(7)
+  })
+
   it('exportSettings() excludes login-only and obsolete restore defaults', () => {
     const settings = useSettingsStore()
     settings.loginUsername = 'alice'
@@ -124,6 +173,7 @@ describe('settings store', () => {
       refreshInterval: settings.refreshInterval,
       darkMode: settings.darkMode,
       directorName: settings.directorName,
+      clientBackupWarningDays: settings.clientBackupWarningDays,
     }))
   })
 
@@ -133,6 +183,8 @@ describe('settings store', () => {
     settings.darkMode = true
     settings.setSelectedDirectors(['dir-a', 'dir-b'])
     settings.setTableRowsPerPage('jobs.list', 42)
+    settings.setTableSort('jobs.defs', { sortBy: 'name', descending: false })
+    settings.clientBackupWarningDays = 4
     const snapshot = settings.exportSettings()
 
     // Change everything, then restore from the snapshot.
@@ -140,6 +192,8 @@ describe('settings store', () => {
     settings.darkMode = false
     settings.setSelectedDirectors(['other-dir'])
     settings.setTableRowsPerPage('jobs.list', 5)
+    settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
+    settings.clientBackupWarningDays = 9
 
     settings.importSettings(snapshot)
 
@@ -147,6 +201,9 @@ describe('settings store', () => {
     expect(settings.darkMode).toBe(true)
     expect(settings.selectedDirectors).toEqual(['dir-a', 'dir-b'])
     expect(settings.getTableRowsPerPage('jobs.list', 0)).toBe(42)
+    expect(settings.getTableSort('jobs.defs', {}))
+      .toEqual({ sortBy: 'name', descending: false })
+    expect(settings.clientBackupWarningDays).toBe(4)
   })
 
   it('importSettings() leaves unspecified fields untouched and rejects non-object data', () => {
