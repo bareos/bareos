@@ -58,6 +58,67 @@
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
           </q-card-section>
+          <q-card-section class="q-py-sm clients-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8"
+                icon="groups"
+                clickable
+                :selected="clientsQuickFilter === 'all'"
+                @click="clientsQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ clientStats.total }}
+              </q-chip>
+              <q-chip
+                dense square outline color="positive"
+                icon="check_circle"
+                clickable
+                :selected="clientsQuickFilter === 'enabled'"
+                @click="clientsQuickFilter = 'enabled'"
+              >
+                {{ t('Enabled') }}: {{ clientStats.enabled }}
+              </q-chip>
+              <q-chip
+                dense square outline color="negative"
+                icon="pause_circle"
+                clickable
+                :selected="clientsQuickFilter === 'disabled'"
+                @click="clientsQuickFilter = 'disabled'"
+              >
+                {{ t('Disabled') }}: {{ clientStats.disabled }}
+              </q-chip>
+              <q-chip
+                v-if="clientStats.staleBackup"
+                dense square outline color="warning" text-color="black"
+                icon="schedule"
+                clickable
+                :selected="clientsQuickFilter === 'stale_backup'"
+                @click="clientsQuickFilter = 'stale_backup'"
+              >
+                {{ t('Stale backup') }}: {{ clientStats.staleBackup }}
+              </q-chip>
+              <q-chip
+                v-if="clientStats.backupErrors"
+                dense square outline color="negative"
+                icon="error"
+                clickable
+                :selected="clientsQuickFilter === 'backup_errors'"
+                @click="clientsQuickFilter = 'backup_errors'"
+              >
+                {{ t('Backup errors') }}: {{ clientStats.backupErrors }}
+              </q-chip>
+              <q-chip
+                v-if="clientStats.outdated"
+                dense square outline color="warning" text-color="black"
+                icon="system_update_alt"
+                clickable
+                :selected="clientsQuickFilter === 'outdated'"
+                @click="clientsQuickFilter = 'outdated'"
+              >
+                {{ t('Outdated') }}: {{ clientStats.outdated }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
             <div v-if="clientsListScopeDirector" class="q-px-md q-pt-sm">
@@ -424,7 +485,7 @@ onMounted(() => {
   syncSelectedDirectors()
 })
 
-const clients = computed(() => directorCollection(rawClients.value).map((entry) => {
+const allClientsData = computed(() => directorCollection(rawClients.value).map((entry) => {
   const client = normaliseClient(entry)
   const lastBackup = lastBackupByClient.value.get(`${entry.director ?? ''}:${client.name}`) ?? null
   return {
@@ -433,7 +494,23 @@ const clients = computed(() => directorCollection(rawClients.value).map((entry) 
     scopeKey: entry.scopeKey ?? `${entry.director ?? ''}:${client.name}`,
     lastBackup,
   }
-}).filter(client => clientMatchesFilters(client)))
+}))
+
+const clients = computed(() => allClientsData.value.filter(client => clientMatchesFilters(client)))
+
+const clientStats = computed(() => {
+  const all = allClientsData.value
+  return {
+    total: all.length,
+    enabled: all.filter(client => client.enabled).length,
+    disabled: all.filter(client => !client.enabled).length,
+    outdated: all.filter(client => (
+      ['update_required', 'upgrade_required'].includes(clientVersionInfo(client).status)
+    )).length,
+    staleBackup: all.filter(client => !isFreshBackup(client.lastBackup)).length,
+    backupErrors: all.filter(client => clientHasLastBackupError(client)).length,
+  }
+})
 
 const clientsQuickFilterOptions = computed(() => [
   { label: t('All'), value: 'all', icon: 'select_all' },
@@ -892,6 +969,14 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 
 .clients-list-header__filters :deep(.q-btn + .q-btn) {
   border-left: 1px solid rgba(21, 101, 192, 0.16);
+}
+
+.clients-list-stats {
+  flex-wrap: wrap;
+}
+
+.clients-list-stats :deep(.q-chip) {
+  font-weight: 600;
 }
 
 .client-backup-age-bar {

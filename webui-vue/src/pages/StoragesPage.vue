@@ -212,6 +212,22 @@
               <template #prepend><q-icon name="search" /></template>
             </q-input>
           </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip dense square outline color="grey-8" icon="album">
+                {{ t('Total') }}: {{ volumeStats.total }} ({{ formatBytes(volumeStats.totalBytes) }})
+              </q-chip>
+              <q-chip
+                v-for="(count, status) in volumeStats.byStatus"
+                :key="status"
+                dense square outline
+                :color="statusColor(status)"
+                :text-color="statusColor(status) === 'warning' ? 'black' : undefined"
+              >
+                {{ status }}: {{ count }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               :rows="volumes"
@@ -485,6 +501,20 @@ const volumes = computed(() => {
   return volumeRows.value
 })
 
+const volumeStats = computed(() => {
+  const all = volumeRows.value
+  const byStatus = {}
+  for (const vol of all) {
+    const status = vol.volstatus || t('Unknown')
+    byStatus[status] = (byStatus[status] ?? 0) + 1
+  }
+  return {
+    total: all.length,
+    totalBytes: all.reduce((sum, vol) => sum + (Number(vol.volbytes) || 0), 0),
+    byStatus,
+  }
+})
+
 const storages = computed(() => storageRows.value)
 
 async function refresh() {
@@ -707,3 +737,13 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   refresh()
 })
 </script>
+
+<style scoped>
+.storages-list-stats {
+  flex-wrap: wrap;
+}
+
+.storages-list-stats :deep(.q-chip) {
+  font-weight: 600;
+}
+</style>
