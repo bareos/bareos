@@ -1047,6 +1047,13 @@ static void DoSchedulerStatus(UaContext* ua)
           ua->send->ObjectStart();
           ua->send->ObjectKeyValue("name", jname, "%s\n");
           ua->send->ObjectKeyValueBool("enabled", jenabled);
+          if (JobResource* scheduled_job
+              = ua->GetJobResWithName(jname, false, false)) {
+            if (scheduled_job->client) {
+              ua->send->ObjectKeyValue(
+                  "client", scheduled_job->client->resource_name_, "%s\n");
+            }
+          }
           ua->send->ObjectEnd();
         }
         ua->send->ArrayEnd("jobs");
@@ -1063,7 +1070,8 @@ static void DoSchedulerStatus(UaContext* ua)
           = json_now + (static_cast<time_t>(json_days_to) * seconds_per_day);
       ua->send->ArrayStart("preview");
       for (time_t t = preview_start; t < preview_stop; t += seconds_per_hour) {
-        auto emit_run = [&](ScheduleResource* s, RunResource* run) {
+        auto emit_run = [&](ScheduleResource* s, RunResource* run,
+                            JobResource* scheduled_job = nullptr) {
           if (!run->date_time_mask.TriggersOnDayAndHour(t)) { return; }
           struct tm tm_s;
           Blocaltime(&t, &tm_s);
@@ -1077,6 +1085,14 @@ static void DoSchedulerStatus(UaContext* ua)
           ua->send->ObjectKeyValueSignedInt(
               "runtime", static_cast<int64_t>(runtime), "%" PRId64 "\n");
           ua->send->ObjectKeyValue("schedule", s->resource_name_, "%s\n");
+          if (scheduled_job) {
+            ua->send->ObjectKeyValue("job", scheduled_job->resource_name_,
+                                     "%s\n");
+            if (scheduled_job->client) {
+              ua->send->ObjectKeyValue(
+                  "client", scheduled_job->client->resource_name_, "%s\n");
+            }
+          }
           if (run->level) {
             ua->send->ObjectKeyValue("level", JobLevelToString(run->level),
                                      "%s\n");
@@ -1109,7 +1125,7 @@ static void DoSchedulerStatus(UaContext* ua)
             if (!(job->client && !job->client->enabled)) {
               for (RunResource* run = job->schedule->run; run;
                    run = run->next) {
-                emit_run(job->schedule, run);
+                emit_run(job->schedule, run, job);
               }
             }
           }
@@ -1130,7 +1146,7 @@ static void DoSchedulerStatus(UaContext* ua)
             }
             for (RunResource* run = json_job->schedule->run; run;
                  run = run->next) {
-              emit_run(json_job->schedule, run);
+              emit_run(json_job->schedule, run, json_job);
             }
           }
         } else {

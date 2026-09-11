@@ -76,6 +76,7 @@ import {
   withJobsStatusFilterQuery,
   withJobsTypeFilterQuery,
   classifyLogLine,
+  resolveConfiguredJobType,
 } from '../../src/utils/jobs.js'
 
 describe('jobs filter helpers', () => {
@@ -342,6 +343,23 @@ describe('jobs filter helpers', () => {
       ['Nightly', 'RestoreCatalog', 'Weekly', 'nightly'],
       ['RestoreCatalog']
     )).toEqual(['Nightly', 'Weekly'])
+  })
+
+  it('resolves configured job types from direct and inherited config', () => {
+    const jobDefs = {
+      DefaultJob: { type: 'Backup' },
+      RestoreDefaults: { type: 'Restore' },
+    }
+
+    expect(resolveConfiguredJobType({ type: 'Verify', jobdefs: 'DefaultJob' }, jobDefs))
+      .toBe('Verify')
+    expect(resolveConfiguredJobType({ jobdefs: 'DefaultJob' }, jobDefs))
+      .toBe('Backup')
+    expect(resolveConfiguredJobType({ jobdefs: 'RestoreDefaults' }, jobDefs))
+      .toBe('Restore')
+    expect(resolveConfiguredJobType({ jobdefs: 'Missing' }, jobDefs))
+      .toBe('')
+    expect(resolveConfiguredJobType({}, jobDefs)).toBe('')
   })
 
   it('formats picker timestamps for the run when field', () => {

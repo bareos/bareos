@@ -21,6 +21,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { nextTick } from 'vue'
 import { usePersistedTablePagination } from '../../src/composables/usePersistedTablePagination.js'
 
 const LS_KEY = 'bareos_settings'
@@ -68,5 +69,36 @@ describe('usePersistedTablePagination', () => {
     })
 
     expect(pagination.value.rowsPerPage).toBe(0)
+  })
+
+  it('persists table sort state when enabled', async () => {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      tableSort: { 'jobs.defs': { sortBy: 'type', descending: true } },
+    }))
+
+    const pagination = usePersistedTablePagination('jobs.defs', {
+      rowsPerPage: 15,
+      sortBy: 'name',
+      descending: false,
+    }, { persistSort: true })
+
+    expect(pagination.value.sortBy).toBe('type')
+    expect(pagination.value.descending).toBe(true)
+
+    pagination.value = {
+      ...pagination.value,
+      sortBy: 'enabled',
+      descending: false,
+    }
+
+    await nextTick()
+
+    expect(JSON.parse(localStorage.getItem(LS_KEY))).toEqual(
+      expect.objectContaining({
+        tableSort: {
+          'jobs.defs': { sortBy: 'enabled', descending: false },
+        },
+      })
+    )
   })
 })
