@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -85,9 +85,11 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
             100,
             "Using %s to search for local files\n" % self.options["filename"],
         )
-        if os.path.exists(self.options["filename"]):
+        fname = self.options["filename"]
+        if os.path.exists(fname):
             try:
-                config_file = open(self.options["filename"], "r")
+                with open(fname, "r") as config_file:
+                    lines = config_file.read().splitlines()
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -99,13 +101,14 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 100, "File %s does not exist\n" % (self.options["filename"])
             )
             return bareosfd.bRC_Error
+
         # Check, if we have allow or deny regular expressions defined
         if "allow" in self.options:
             self.allow = re.compile(self.options["allow"])
         if "deny" in self.options:
             self.deny = re.compile(self.options["deny"])
 
-        for listItem in config_file.read().splitlines():
+        for listItem in lines:
             if os.path.isfile(listItem) and self.filename_is_allowed(
                 listItem, self.allow, self.deny
             ):

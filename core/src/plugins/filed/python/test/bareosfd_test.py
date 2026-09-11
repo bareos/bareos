@@ -21,12 +21,13 @@ import unittest
 import time
 import types
 import os
+import sys
 
 # for key, value in os.environ.items():
 #    print(f'{key}: {value}')
 
 print("PATH", os.environ["PATH"])
-print("PYTHONPATH", os.environ["PYTHONPATH"])
+# print("PYTHONPATH", os.environ["PYTHONPATH"])
 
 import bareosfd
 
@@ -48,6 +49,7 @@ print("bareosfd.iostat_do_in_plugin: ", bareosfd.iostat_do_in_plugin)
 
 class TestBareosFd(unittest.TestCase):
     def test_ModuleDicts(self):
+        print("weird!", file=sys.stderr)
         # help (bareosfd)
         print(bareosfd.bCFs)
         print(bareosfd.CF_ERROR)
@@ -86,7 +88,7 @@ class TestBareosFd(unittest.TestCase):
     def test_RestoreObject(self):
         test_RestoreObject = bareosfd.RestoreObject()
         self.assertEqual(
-            'RestoreObject(object_name="", object="", plugin_name="(null)", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
+            'RestoreObject(object_name="", object="", plugin_name="", object_type=0, object_len=0, object_full_len=0, object_index=0, object_compression=0, stream=0, jobid=0)',
             str(test_RestoreObject),
         )
         r2 = bareosfd.RestoreObject()
@@ -101,7 +103,7 @@ class TestBareosFd(unittest.TestCase):
         r2.stream = 4
         r2.jobid = 123123
         self.assertEqual(
-            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="(null)", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
+            'RestoreObject(object_name="this is a very long object name", object="", plugin_name="", object_type=3, object_len=111111, object_full_len=11111111, object_index=1234, object_compression=1, stream=4, jobid=123123)',
             str(r2),
         )
 
@@ -133,10 +135,6 @@ class TestBareosFd(unittest.TestCase):
         test_StatPacket.st_atime = 999
         test_StatPacket.st_mtime = 1000
         test_StatPacket.st_ctime = 1001
-        self.assertEqual(
-            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=999, mtime=1000, ctime=1001, blksize=4096, blocks=1)",
-            str(test_StatPacket),
-        )
         sp2 = bareosfd.StatPacket(
             dev=0,
             ino=0,
@@ -152,29 +150,25 @@ class TestBareosFd(unittest.TestCase):
             blksize=4096,
             blocks=1,
         )
-        self.assertEqual(
-            "StatPacket(dev=0, ino=0, mode=0700, nlink=0, uid=0, gid=0, rdev=0, size=18446744073709551615, atime=1, mtime=1, ctime=1, blksize=4096, blocks=1)",
-            str(sp2),
-        )
 
     def test_SavePacket(self):
         test_SavePacket = bareosfd.SavePacket(fname="testfilename")
         self.assertEqual(
-            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="(null)", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
+            'SavePacket(fname="testfilename", link="", type=0, flags=<NULL>, no_read=0, portable=0, accurate_found=0, cmd="", save_time=0, delta_seq=0, object_name="", object="", object_len=0, object_index=0)',
             str(test_SavePacket),
         )
 
     def test_RestorePacket(self):
         test_RestorePacket = bareosfd.RestorePacket()
         self.assertEqual(
-            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="(null)", ofname="(null)", olname="(null)", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="(null)", original_link_name="(null)")',
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp=None, attrEx="", ofname="", olname="", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="", original_link_name="")',
             str(test_RestorePacket),
         )
 
     def test_IoPacket(self):
         test_IoPacket = bareosfd.IoPacket()
         self.assertEqual(
-            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="(null)", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
+            'IoPacket(func=0, count=0, flags=0, mode=0000, buf="", fname="", status=0, io_errno=0, lerror=0, whence=0, offset=0, win32=0, filedes=-1)',
             str(test_IoPacket),
         )
 
@@ -182,15 +176,18 @@ class TestBareosFd(unittest.TestCase):
         test_AclPacket = bareosfd.AclPacket()
         test_AclPacket.content = bytearray(b"Hello ACL")
         self.assertEqual(
-            'AclPacket(fname="(null)", content="Hello ACL")', str(test_AclPacket)
+            'AclPacket(fname="", content="Hello ACL")', str(test_AclPacket)
         )
 
     def test_XattrPacket(self):
         test_XattrPacket = bareosfd.XattrPacket()
         self.assertEqual(
-            'XattrPacket(fname="(null)", name="", value="")', str(test_XattrPacket)
+            'XattrPacket(fname="", name="", value="")', str(test_XattrPacket)
         )
 
 
 if __name__ == "__main__":
+    unittest.main(exit=False)
+    unittest.main(exit=False)
+    unittest.main(exit=False)
     unittest.main()

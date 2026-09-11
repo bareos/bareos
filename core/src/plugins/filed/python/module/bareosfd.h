@@ -59,7 +59,7 @@ namespace filedaemon {
 typedef struct {
   PyObject_HEAD PyObject* object_name; /* Object name */
   PyObject* object;                    /* Restore object data to restore */
-  char* plugin_name;                   /* Plugin name */
+  PyObject* plugin_name;               /* Plugin name */
   int32_t object_type;                 /* FT_xx for this file */
   int32_t object_len;                  /* restore object length */
   int32_t object_full_len;             /* restore object uncompressed length */
@@ -70,7 +70,7 @@ typedef struct {
 } PyRestoreObject;
 
 // Forward declarations of type specific functions.
-static void PyRestoreObject_dealloc(PyRestoreObject* self);
+static void PyRestoreObject_dealloc(PyObject* self);
 static int PyRestoreObject_init(PyRestoreObject* self,
                                 PyObject* args,
                                 PyObject* kwds);
@@ -85,7 +85,7 @@ static PyMemberDef PyRestoreObject_members[]
         0, (char*)"Object Name"},
        {(char*)"object", T_OBJECT, offsetof(PyRestoreObject, object), 0,
         (char*)"Object Content"},
-       {(char*)"plugin_name", T_STRING, offsetof(PyRestoreObject, plugin_name),
+       {(char*)"plugin_name", T_OBJECT, offsetof(PyRestoreObject, plugin_name),
         0, (char*)"Plugin Name"},
        {(char*)"object_type", T_INT, offsetof(PyRestoreObject, object_type), 0,
         (char*)"Object Type"},
@@ -111,7 +111,7 @@ static PyTypeObject PyRestoreObjectType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_object",
     .tp_basicsize = sizeof(PyRestoreObject),
-    .tp_dealloc   = (destructor)PyRestoreObject_dealloc,
+    .tp_dealloc   = PyRestoreObject_dealloc,
     .tp_repr      = (reprfunc)PyRestoreObject_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -140,7 +140,7 @@ typedef struct {
 } PyStatPacket;
 
 // Forward declarations of type specific functions.
-static void PyStatPacket_dealloc(PyStatPacket* self);
+static void PyStatPacket_dealloc(PyObject* self);
 static int PyStatPacket_init(PyStatPacket* self,
                              PyObject* args,
                              PyObject* kwds);
@@ -192,7 +192,7 @@ static PyTypeObject PyStatPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "stat_pkt",
     .tp_basicsize = sizeof(PyStatPacket),
-    .tp_dealloc   = (destructor)PyStatPacket_dealloc,
+    .tp_dealloc   = PyStatPacket_dealloc,
     .tp_repr      = (reprfunc)PyStatPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -213,7 +213,7 @@ typedef struct {
   bool no_read;        /* During the save, the file should not be saved */
   bool portable;       /* set if data format is portable */
   bool accurate_found; /* Found in accurate list (valid after CheckChanges()) */
-  char* cmd;           /* Command */
+  PyObject* cmd;       /* Command */
   time_t save_time;    /* Start of incremental time */
   uint32_t delta_seq;  /* Delta sequence number */
   PyObject* object_name; /* Object name to create */
@@ -223,7 +223,7 @@ typedef struct {
 } PySavePacket;
 
 // Forward declarations of type specific functions.
-static void PySavePacket_dealloc(PySavePacket* self);
+static void PySavePacket_dealloc(PyObject* self);
 static int PySavePacket_init(PySavePacket* self,
                              PyObject* args,
                              PyObject* kwds);
@@ -249,7 +249,7 @@ static PyMemberDef PySavePacket_members[] = {
      (char*)"Portable"},
     {(char*)"accurate_found", T_BOOL, offsetof(PySavePacket, accurate_found), 0,
      (char*)"Accurate Found"},
-    {(char*)"cmd", T_STRING, offsetof(PySavePacket, cmd), 0, (char*)"Command"},
+    {(char*)"cmd", T_OBJECT, offsetof(PySavePacket, cmd), 0, (char*)"Command"},
     {(char*)"save_time", T_UINT, offsetof(PySavePacket, save_time), 0,
      (char*)"Save Time"},
     {(char*)"delta_seq", T_UINT, offsetof(PySavePacket, delta_seq), 0,
@@ -270,7 +270,7 @@ static PyTypeObject PySavePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "save_pkt",
     .tp_basicsize = sizeof(PySavePacket),
-    .tp_dealloc   = (destructor)PySavePacket_dealloc,
+    .tp_dealloc   = PySavePacket_dealloc,
     .tp_repr      = (reprfunc)PySavePacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "save_pkt object",
@@ -290,11 +290,11 @@ typedef struct {
   int32_t LinkFI;               /* File index to data if hard link */
   uint32_t uid;                 /* Userid */
   PyObject* statp;              /* Decoded stat packet */
-  const char* attrEx;           /* Extended attributes if any */
-  const char* ofname;           /* Output filename */
-  const char* olname;           /* Output link name */
-  const char* where;            /* Where */
-  const char* RegexWhere;       /* Regex where */
+  PyObject* attrEx;             /* Extended attributes if any */
+  PyObject* ofname;             /* Output filename */
+  PyObject* olname;             /* Output link name */
+  char* where;                  /* Where */
+  char* RegexWhere;             /* Regex where */
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
 #  if HAVE_WIN32
@@ -303,12 +303,12 @@ typedef struct {
   int filedes; /* filedescriptor for read/write in core */
 #  endif
 
-  const char* original_file_name;
-  const char* original_link_name;
+  PyObject* original_file_name;
+  PyObject* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
-static void PyRestorePacket_dealloc(PyRestorePacket* self);
+static void PyRestorePacket_dealloc(PyObject* self);
 static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
                                 PyObject* kwds);
@@ -332,11 +332,11 @@ static PyMemberDef PyRestorePacket_members[] = {
     {(char*)"uid", T_UINT, offsetof(PyRestorePacket, uid), 0, (char*)"User Id"},
     {(char*)"statp", T_OBJECT, offsetof(PyRestorePacket, statp), 0,
      (char*)"Stat Packet"},
-    {(char*)"attrEX", T_STRING, offsetof(PyRestorePacket, attrEx), 0,
+    {(char*)"attrEX", T_OBJECT, offsetof(PyRestorePacket, attrEx), 0,
      (char*)"Extended attributes"},
-    {(char*)"ofname", T_STRING, offsetof(PyRestorePacket, ofname), 0,
+    {(char*)"ofname", T_OBJECT, offsetof(PyRestorePacket, ofname), 0,
      (char*)"Output filename"},
-    {(char*)"olname", T_STRING, offsetof(PyRestorePacket, olname), 0,
+    {(char*)"olname", T_OBJECT, offsetof(PyRestorePacket, olname), 0,
      (char*)"Output link name"},
     {(char*)"where", T_STRING, offsetof(PyRestorePacket, where), 0,
      (char*)"Where"},
@@ -352,10 +352,10 @@ static PyMemberDef PyRestorePacket_members[] = {
     {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
 #  endif
      (char*)"file descriptor of current file"},
-    {(char*)"original_file_name", T_STRING,
+    {(char*)"original_file_name", T_OBJECT,
      offsetof(PyRestorePacket, original_file_name), 0,
      (char*)"filename at backup time"},
-    {(char*)"original_link_name", T_STRING,
+    {(char*)"original_link_name", T_OBJECT,
      offsetof(PyRestorePacket, original_link_name), 0,
      (char*)"link name at backup time"},
     {}};
@@ -366,7 +366,7 @@ static PyTypeObject PyRestorePacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "restore_pkt",
     .tp_basicsize = sizeof(PyRestorePacket),
-    .tp_dealloc   = (destructor)PyRestorePacket_dealloc,
+    .tp_dealloc   = PyRestorePacket_dealloc,
     .tp_repr      = (reprfunc)PyRestorePacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "restore_pkt object",
@@ -384,7 +384,7 @@ typedef struct {
   int32_t flags;               /* Open flags */
   int32_t mode;                /* Permissions for created files */
   PyObject* buf;               /* Read/Write buffer */
-  const char* fname;           /* Open filename */
+  PyObject* fname;             /* Open filename */
   int32_t status;              /* Return status */
   int32_t io_errno;            /* Errno code */
   int32_t lerror;              /* Win32 error code */
@@ -399,7 +399,7 @@ typedef struct {
 } PyIoPacket;
 
 // Forward declarations of type specific functions.
-static void PyIoPacket_dealloc(PyIoPacket* self);
+static void PyIoPacket_dealloc(PyObject* self);
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyIoPacket_repr(PyIoPacket* self);
 
@@ -418,7 +418,7 @@ static PyMemberDef PyIoPacket_members[]
         (char*)"Permissions for created files"},
        {(char*)"buf", T_OBJECT, offsetof(PyIoPacket, buf), 0,
         (char*)"Read/write buffer"},
-       {(char*)"fname", T_STRING, offsetof(PyIoPacket, fname), 0,
+       {(char*)"fname", T_OBJECT, offsetof(PyIoPacket, fname), 0,
         (char*)"Open filename"},
        {(char*)"status", T_INT, offsetof(PyIoPacket, status), 0,
         (char*)"Return status"},
@@ -446,7 +446,7 @@ static PyTypeObject PyIoPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "io_pkt",
     .tp_basicsize = sizeof(PyIoPacket),
-    .tp_dealloc   = (destructor)PyIoPacket_dealloc,
+    .tp_dealloc   = PyIoPacket_dealloc,
     .tp_repr      = (reprfunc)PyIoPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "io_pkt object",
@@ -459,12 +459,12 @@ IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyAclPacket type
 typedef struct {
-  PyObject_HEAD const char* fname; /* Filename */
-  PyObject* content;               /* ACL content */
+  PyObject_HEAD PyObject* fname; /* Filename */
+  PyObject* content;             /* ACL content */
 } PyAclPacket;
 
 // Forward declarations of type specific functions.
-static void PyAclPacket_dealloc(PyAclPacket* self);
+static void PyAclPacket_dealloc(PyObject* self);
 static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyAclPacket_repr(PyAclPacket* self);
 
@@ -473,7 +473,7 @@ static PyMethodDef PyAclPacket_methods[] = {
 };
 
 static PyMemberDef PyAclPacket_members[]
-    = {{(char*)"fname", T_STRING, offsetof(PyAclPacket, fname), 0,
+    = {{(char*)"fname", T_OBJECT, offsetof(PyAclPacket, fname), 0,
         (char*)"Filename"},
        {(char*)"content", T_OBJECT, offsetof(PyAclPacket, content), 0,
         (char*)"ACL content buffer"},
@@ -485,7 +485,7 @@ static PyTypeObject PyAclPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "acl_pkt",
     .tp_basicsize = sizeof(PyAclPacket),
-    .tp_dealloc   = (destructor)PyAclPacket_dealloc,
+    .tp_dealloc   = PyAclPacket_dealloc,
     .tp_repr      = (reprfunc)PyAclPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "acl_pkt object",
@@ -498,13 +498,13 @@ IGNORE_MISSING_INITIALIZERS_OFF
 
 // The PyXattrPacket type
 typedef struct {
-  PyObject_HEAD const char* fname; /* Filename */
-  PyObject* name;                  /* XATTR name */
-  PyObject* value;                 /* XATTR value */
+  PyObject_HEAD PyObject* fname; /* Filename */
+  PyObject* name;                /* XATTR name */
+  PyObject* value;               /* XATTR value */
 } PyXattrPacket;
 
 // Forward declarations of type specific functions.
-static void PyXattrPacket_dealloc(PyXattrPacket* self);
+static void PyXattrPacket_dealloc(PyObject* self);
 static int PyXattrPacket_init(PyXattrPacket* self,
                               PyObject* args,
                               PyObject* kwds);
@@ -515,7 +515,7 @@ static PyMethodDef PyXattrPacket_methods[] = {
 };
 
 static PyMemberDef PyXattrPacket_members[]
-    = {{(char*)"fname", T_STRING, offsetof(PyXattrPacket, fname), 0,
+    = {{(char*)"fname", T_OBJECT, offsetof(PyXattrPacket, fname), 0,
         (char*)"Filename"},
        {(char*)"name", T_OBJECT, offsetof(PyXattrPacket, name), 0,
         (char*)"XATTR name buffer"},
@@ -529,7 +529,7 @@ static PyTypeObject PyXattrPacketType = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name      = "xattr_pkt",
     .tp_basicsize = sizeof(PyXattrPacket),
-    .tp_dealloc   = (destructor)PyXattrPacket_dealloc,
+    .tp_dealloc   = PyXattrPacket_dealloc,
     .tp_repr      = (reprfunc)PyXattrPacket_repr,
     .tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_doc       = "xattr_pkt object",

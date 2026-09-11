@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -81,7 +81,8 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "r")
+                with open(self.options["filename"], "r") as config_file:
+                    lines = config_file.read().splitlines()
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -99,7 +100,7 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
         if "deny" in self.options:
             self.deny = re.compile(self.options["deny"])
 
-        for listItem in config_file.read().splitlines():
+        for listItem in lines:
             if os.path.isfile(listItem) and self.filename_is_allowed(
                 listItem, self.allow, self.deny
             ):
