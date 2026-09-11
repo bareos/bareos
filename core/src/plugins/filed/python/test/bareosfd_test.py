@@ -161,7 +161,7 @@ class TestBareosFd(unittest.TestCase):
     def test_RestorePacket(self):
         test_RestorePacket = bareosfd.RestorePacket()
         self.assertEqual(
-            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp="<NULL>", attrEx="", ofname="", olname="", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="", original_link_name="")',
+            'RestorePacket(stream=0, data_stream=0, type=0, file_index=0, linkFI=0, uid=0, statp=None, attrEx="", ofname="", olname="", where="(null)", RegexWhere="(null)", replace=0, create_status=0, original_file_name="", original_link_name="")',
             str(test_RestorePacket),
         )
 

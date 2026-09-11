@@ -2231,7 +2231,7 @@ static void PyStatPacket_dealloc(PyObject* obj)
 static inline const char* print_flags_bitmap(PyObject* bitmap)
 {
   static char visual_bitmap[FO_MAX + 1];
-  if (!bitmap) { return "<NULL>"; }
+  if (!bitmap || Py_IsNone(bitmap)) { return "<NULL>"; }
   if (PyByteArray_Check(bitmap)) {
     int cnt;
     char* flags;
@@ -2356,7 +2356,7 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
   Mmsg(buf,
        "RestorePacket(stream=%d, data_stream=%" PRId32 ", type=%" PRId32
        ", file_index=%" PRId32 ", linkFI=%" PRId32 ", uid=%" PRIu32
-       ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\""
+       ", statp=%s, attrEx=\"%s\", ofname=\"%s\""
        ", olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d"
        ", create_status=%d, original_file_name=\"%s\""
        ", original_link_name=\"%s\")",
