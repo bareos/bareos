@@ -2183,9 +2183,9 @@ watch(() => singletonTabDirector.value, async () => {
 }
 
 .jobs-list-header__search {
-  flex: 1 1 220px;
+  flex: 1 1 200px;
   min-width: 180px;
-  max-width: 260px;
+  max-width: 220px;
 }
 
 .jobs-list-header__countdown {
