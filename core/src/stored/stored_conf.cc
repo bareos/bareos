@@ -188,7 +188,7 @@ static const ResourceItem dev_items[] = {
   { "LabelBlockSize", CFG_TYPE_PINT32, ITEM(res_dev, label_block_size), {config::DefaultValue{"64512"}}},
   { "MinimumBlockSize", CFG_TYPE_PINT32, ITEM(res_dev, min_block_size), {}},
   { "MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, max_block_size), {config::DefaultValue{"1048576"}}},
-  { "MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), {config::DefaultValue{"1000000000"}}},
+  { "MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), {config::DefaultValue{"100000000000"}}},
   { "VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev, volume_capacity), {}},
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), {config::DefaultValue{"1"}}},
   { "SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev, spool_directory), {}},

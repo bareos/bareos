@@ -47,6 +47,7 @@
 #include <unistd.h>
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "stored/stored.h"
 #include "stored/sd_backends.h"
 #include "generic_tape_device.h"
@@ -106,6 +107,29 @@ ssize_t unix_tape_device::d_read(int t_fd, void* buffer, size_t count)
     }
   }
   return ret;
+}
+
+bool unix_tape_device::d_flush(DeviceControlRecord*)
+{
+  mtop mt_com{};
+
+  if (!IsOpen()) {
+    dev_errno = EBADF;
+    Mmsg1(errmsg, T_("Bad call to d_flush. Device %s not open\n"), prt_name);
+    return false;
+  }
+
+  mt_com.mt_op = MTNOP;
+  mt_com.mt_count = 1;
+  if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
+    BErrNo be;
+    clrerror(mt_com.mt_op);
+    Mmsg2(errmsg, T_("ioctl MTNOP error on %s. ERR=%s.\n"), prt_name,
+          be.bstrerror());
+    return false;
+  }
+
+  return true;
 }
 
 REGISTER_SD_BACKEND(tape, unix_tape_device)
