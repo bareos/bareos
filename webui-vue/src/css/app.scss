@@ -218,6 +218,18 @@ $bareos-blue-dark: #005a96;
   border-width: 2px;
 }
 
+.sched-cal-past {
+  background: #f5f5f5;
+  opacity: 0.65;
+}
+
+.sched-cal-run-more {
+  font-size: 0.6rem;
+  color: #666;
+  padding: 1px 4px;
+  cursor: default;
+}
+
 .sched-cal-day-num {
   font-size: 0.72rem;
   font-weight: 600;
@@ -334,4 +346,3 @@ body.body--dark {
     font-size: 10pt;
   }
 }
-

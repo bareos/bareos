@@ -30,8 +30,9 @@
                 {{ t('Jobs') }}: {{ schedulerStatusStats.totalJobs }}
               </q-chip>
               <q-chip v-if="schedulerStatusStats.nextRun" dense square outline color="primary" icon="schedule">
-                {{ t('Next run') }}: {{ schedulerStatusStats.nextRun.datetime }}
+                {{ t('Next run') }}: {{ schedulerStatusStats.nextRun.displayTime }}
                 ({{ schedulerStatusStats.nextRun.schedule }})
+                <q-tooltip>{{ schedulerStatusStats.nextRun.detailTime }}</q-tooltip>
               </q-chip>
             </div>
           </q-card-section>
@@ -63,6 +64,10 @@
                       />
                       <q-chip dense square outline color="grey-7" icon="work_outline">
                         {{ t('{n} jobs', { n: props.row.jobCount }) }}
+                      </q-chip>
+                      <q-chip v-if="props.row.nextRun" dense square outline color="primary" icon="schedule">
+                        {{ t('Next') }}: {{ props.row.nextRun.displayTime }}
+                        <q-tooltip>{{ props.row.nextRun.detailTime }}</q-tooltip>
                       </q-chip>
                     </div>
                   </q-td>
@@ -139,6 +144,27 @@
           <q-card-section v-if="allScheduleOptions.length" class="q-pb-none">
             <div class="row items-center q-gutter-sm">
               <span class="text-caption text-grey-7">{{ t('Show schedules:') }}</span>
+              <q-btn
+                dense
+                flat
+                no-caps
+                size="sm"
+                color="primary"
+                :label="t('All')"
+                :disable="allSchedulesSelected"
+                @click="selectAllSchedules"
+              />
+              <q-btn
+                dense
+                flat
+                no-caps
+                size="sm"
+                color="primary"
+                :label="t('None')"
+                :disable="noSchedulesSelected"
+                @click="selectNoSchedules"
+              />
+              <q-separator vertical inset />
               <q-checkbox
                 v-for="option in allScheduleOptions"
                 :key="option.key"
@@ -154,6 +180,23 @@
               </q-checkbox>
             </div>
           </q-card-section>
+          <q-card-section v-if="nextUpcomingRuns.length" class="q-pb-none">
+            <div class="row items-center q-gutter-sm sched-next-runs">
+              <span class="text-caption text-grey-7">{{ t('Next runs:') }}</span>
+              <q-chip
+                v-for="(run, i) in nextUpcomingRuns"
+                :key="i"
+                dense
+                square
+                outline
+                :style="{ color: scheduleColor(run.displaySchedule), borderColor: scheduleColor(run.displaySchedule) }"
+              >
+                <JobLevelBadge v-if="run.level" :level="run.level" class="q-mr-xs" />
+                {{ run.displayTime }} — {{ run.displaySchedule }}
+                <q-tooltip>{{ run.detailTime }}</q-tooltip>
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-sm" style="position:relative">
             <q-inner-loading :showing="statusLoading" />
             <div v-if="hasVisibleScheduleSelection && !hasPreviewRuns"
@@ -165,6 +208,7 @@
               <div v-for="(cell, i) in calendarCells" :key="i"
                    :class="['sched-cal-cell',
                             cell.isToday && 'sched-cal-today',
+                            cell.isPast && 'sched-cal-past',
                             !cell.day && 'sched-cal-empty',
                             viewMode === 'week' && 'sched-cal-cell--week']">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
@@ -180,6 +224,14 @@
                     <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
                     <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
                     <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                  </q-tooltip>
+                </div>
+                <div v-if="cell.overflowCount" class="sched-cal-run-more">
+                  {{ t('+{n} more', { n: cell.overflowCount }) }}
+                  <q-tooltip max-width="260px">
+                    <div v-for="(run, k) in runsByDate[cell.dateStr]?.slice(MAX_CELL_RUNS[viewMode] ?? 0)" :key="k">
+                      {{ run.time }} — {{ run.displaySchedule }}
+                    </div>
                   </q-tooltip>
                 </div>
               </div>
@@ -274,6 +326,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
+import { formatRelativeDate } from '../utils/locales.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
@@ -665,6 +718,30 @@ function toggleGroupCollapse(key) {
   expandedSchedules.value = next
 }
 
+const nextRunByScheduleKey = computed(() => {
+  const nowSeconds = Date.now() / 1000
+  const map = {}
+  for (const run of previewData.value) {
+    if (typeof run.runtime !== 'number' || run.runtime < nowSeconds) continue
+    const existing = map[run.scheduleKey]
+    if (!existing || run.runtime < existing.runtime) {
+      map[run.scheduleKey] = run
+    }
+  }
+  return map
+})
+
+function describeRunTime(run) {
+  if (!run) return null
+  const relative = typeof run.runtime === 'number'
+    ? formatRelativeDate(new Date(run.runtime * 1000), settings.locale)
+    : run.datetime
+  return {
+    displayTime: settings.relativeTime ? relative : run.datetime,
+    detailTime: settings.relativeTime ? run.datetime : relative,
+  }
+}
+
 const scheduleJobRows = computed(() => {
   const search = jobSearch.value.trim().toLowerCase()
   const rows = []
@@ -680,6 +757,7 @@ const scheduleJobRows = computed(() => {
     }
 
     const collapsed = !search && !expandedSchedules.value.has(sched.scopeKey)
+    const nextRun = describeRunTime(nextRunByScheduleKey.value[sched.scopeKey])
 
     rows.push({
       idx: rows.length,
@@ -688,6 +766,7 @@ const scheduleJobRows = computed(() => {
       scheduleKey: sched.scopeKey,
       schedEnabled: sched.enabled,
       jobCount: jobs.length,
+      nextRun,
       collapsed,
       _isGroupHeader: true,
     })
@@ -738,9 +817,10 @@ const schedulerStatusStats = computed(() => {
     0
   )
   const nowSeconds = Date.now() / 1000
-  const nextRun = previewData.value
+  const rawNextRun = previewData.value
     .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
     .sort((a, b) => a.runtime - b.runtime)[0] ?? null
+  const nextRun = rawNextRun ? { ...rawNextRun, ...describeRunTime(rawNextRun) } : null
 
   return { totalSchedules, enabledSchedules, totalJobs, nextRun }
 })
@@ -776,11 +856,25 @@ watch(allScheduleOptions, (options) => {
   visibleScheduleKeys.value = visibleScheduleKeys.value.filter(key => optionKeys.has(key))
 })
 
+const allSchedulesSelected = computed(
+  () => allScheduleOptions.value.length > 0
+    && visibleScheduleKeys.value.length === allScheduleOptions.value.length
+)
+const noSchedulesSelected = computed(() => visibleScheduleKeys.value.length === 0)
+
+function selectAllSchedules() {
+  visibleScheduleKeys.value = allScheduleOptions.value.map(option => option.key)
+}
+function selectNoSchedules() {
+  visibleScheduleKeys.value = []
+}
+
 const runsByDate = computed(() => {
   const visible = visibleScheduleKeys.value
+  const filterActive = scheduleSelectionInitialized.value
   const map = {}
   for (const run of previewData.value) {
-    if (visible.length && !visible.includes(run.scheduleKey)) continue
+    if (filterActive && !visible.includes(run.scheduleKey)) continue
     const ts = run.runtime
     if (!ts) continue
     const d = new Date(ts * 1000)
@@ -806,8 +900,41 @@ const hasVisibleScheduleSelection = computed(() => {
 
 const hasPreviewRuns = computed(() => Object.keys(runsByDate.value).length > 0)
 
+const nextUpcomingRuns = computed(() => {
+  const nowSeconds = Date.now() / 1000
+  const visible = visibleScheduleKeys.value
+  const filterActive = scheduleSelectionInitialized.value
+  return previewData.value
+    .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
+    .filter(run => !filterActive || visible.includes(run.scheduleKey))
+    .sort((a, b) => a.runtime - b.runtime)
+    .slice(0, 5)
+    .map(run => {
+      const relative = typeof run.runtime === 'number'
+        ? formatRelativeDate(new Date(run.runtime * 1000), settings.locale)
+        : run.datetime
+      return {
+        ...run,
+        displaySchedule: isCommonSchedules.value ? run.scheduleDisplay : run.schedule,
+        displayTime: settings.relativeTime ? relative : run.datetime,
+        detailTime: settings.relativeTime ? run.datetime : relative,
+      }
+    })
+})
+
+const MAX_CELL_RUNS = { month: 3, week: 6 }
+
 function makeDateStr(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+function buildCellRuns(dateStr) {
+  const all = runsByDate.value[dateStr] ?? []
+  const max = MAX_CELL_RUNS[viewMode.value] ?? all.length
+  return {
+    runs: all.slice(0, max),
+    overflowCount: Math.max(0, all.length - max),
+  }
 }
 
 const calendarCells = computed(() => {
@@ -819,7 +946,15 @@ const calendarCells = computed(() => {
       const day = new Date(viewAnchor.value)
       day.setDate(day.getDate() + i)
       const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
-      return { day: day.getDate(), dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] }
+      const { runs, overflowCount } = buildCellRuns(dateStr)
+      return {
+        day: day.getDate(),
+        dateStr,
+        isToday: dateStr === todayStr,
+        isPast: dateStr < todayStr,
+        runs,
+        overflowCount,
+      }
     })
   }
 
@@ -833,7 +968,15 @@ const calendarCells = computed(() => {
   for (let i = 0; i < startOffset; i++) cells.push({ day: 0, runs: [] })
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = makeDateStr(y, m, d)
-    cells.push({ day: d, dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] })
+    const { runs, overflowCount } = buildCellRuns(dateStr)
+    cells.push({
+      day: d,
+      dateStr,
+      isToday: dateStr === todayStr,
+      isPast: dateStr < todayStr,
+      runs,
+      overflowCount,
+    })
   }
   while (cells.length % 7 !== 0) cells.push({ day: 0, runs: [] })
   return cells
@@ -897,6 +1040,10 @@ onMounted(() => {
 
 .schedules-list-stats :deep(.q-chip) {
   font-weight: 600;
+}
+
+.sched-next-runs {
+  flex-wrap: wrap;
 }
 
 .sched-group-header td {
