@@ -31,6 +31,8 @@
 #include "cats.h"
 #include "lib/edit.h"
 
+#include <string>
+
 /* -----------------------------------------------------------------------
  *
  *   Generic Routines (or almost generic)
@@ -196,21 +198,26 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
 bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 {
   char ed1[50], ed2[50];
-  char esc_clientname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_uname[MAX_ESCAPE_NAME_LENGTH];
+  std::string esc_clientname;
+  std::string esc_uname;
+  size_t clientname_len = strlen(cr->Name);
+  size_t uname_len = strlen(cr->Uname);
   ClientDbRecord tcr;
 
   DbLocker _{this};
   tcr = *cr;
   if (!CreateClientRecord(jcr, &tcr)) { return false; }
 
-  EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
-  EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
+  esc_clientname.resize(clientname_len * 2 + 1);
+  esc_uname.resize(uname_len * 2 + 1);
+  EscapeString(jcr, esc_clientname.data(), cr->Name, clientname_len);
+  EscapeString(jcr, esc_uname.data(), cr->Uname, uname_len);
   Mmsg(cmd,
        "UPDATE Client SET AutoPrune=%d,FileRetention=%s,JobRetention=%s,"
        "Uname='%s' WHERE Name='%s'",
        cr->AutoPrune, edit_uint64(cr->FileRetention, ed1),
-       edit_uint64(cr->JobRetention, ed2), esc_uname, esc_clientname);
+       edit_uint64(cr->JobRetention, ed2), esc_uname.c_str(),
+       esc_clientname.c_str());
 
   return UpdateDb(jcr, cmd) > 0;
 }

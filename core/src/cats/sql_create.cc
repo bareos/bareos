@@ -35,6 +35,8 @@ static const int dbglevel = 100;
 #include "cats.h"
 #include "lib/edit.h"
 
+#include <string>
+
 /* -----------------------------------------------------------------------
  *
  *   Generic Routines (or almost generic)
@@ -482,14 +484,18 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   SQL_ROW row;
   char ed1[50], ed2[50];
   int num_rows;
-  char esc_clientname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_uname[MAX_ESCAPE_NAME_LENGTH];
+  std::string esc_clientname;
+  std::string esc_uname;
+  size_t clientname_len = strlen(cr->Name);
+  size_t uname_len = strlen(cr->Uname);
 
   DbLocker _{this};
-  EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
-  EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
+  esc_clientname.resize(clientname_len * 2 + 1);
+  esc_uname.resize(uname_len * 2 + 1);
+  EscapeString(jcr, esc_clientname.data(), cr->Name, clientname_len);
+  EscapeString(jcr, esc_uname.data(), cr->Uname, uname_len);
   Mmsg(cmd, "SELECT ClientId,Uname FROM Client WHERE Name='%s'",
-       esc_clientname);
+       esc_clientname.c_str());
 
   cr->ClientId = 0;
   if (QueryDb(jcr, cmd)) {
@@ -522,7 +528,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        "INSERT INTO Client (Name,Uname,AutoPrune,"
        "FileRetention,JobRetention) VALUES "
        "('%s','%s',%d,%s,%s)",
-       esc_clientname, esc_uname, cr->AutoPrune,
+       esc_clientname.c_str(), esc_uname.c_str(), cr->AutoPrune,
        edit_uint64(cr->FileRetention, ed1),
        edit_uint64(cr->JobRetention, ed2));
   /* clang-format on */
