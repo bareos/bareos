@@ -155,6 +155,46 @@ TEST(DirectorConnection, StreamsChunksWithoutAccumulatingInCallStreamed)
   connection.fd_ = -1;
 }
 
+TEST(DirectorConnection, ReportsSelectionStartWhileStreaming)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+  connection.json_mode_ = false;
+
+  std::thread director([peer = sockets[1]]() {
+    int32_t header = 0;
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto payload_size = static_cast<size_t>(ntohl(header));
+    std::string payload(payload_size, '\0');
+    ASSERT_EQ(read(peer, payload.data(), payload.size()),
+              static_cast<ssize_t>(payload.size()));
+
+    WriteFrame(peer, "prelude\n");
+    WriteSignal(peer, BNET_START_SELECT);
+    WriteFrame(peer, "> 1: first\n");
+    WriteSignal(peer, BNET_END_SELECT);
+    WriteSignal(peer, BNET_SELECT_INPUT);
+    close(peer);
+  });
+
+  bool selection_started = false;
+  std::string streamed;
+  const auto prompt = connection.CallStreamed(
+      "restore", [&](std::string_view chunk) { streamed.append(chunk); },
+      [&]() { selection_started = true; });
+
+  EXPECT_TRUE(selection_started);
+  EXPECT_EQ(streamed, "prelude\n> 1: first\n");
+  EXPECT_EQ(prompt, DirectorPrompt::Select);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
 TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
 {
   int sockets[2] = {-1, -1};

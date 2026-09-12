@@ -311,3 +311,69 @@ TEST_F(PromptsFormatting,
                "3:   \n");
   /* clang-format on */
 }
+
+TEST(InteractiveSelection, FiltersAndSelectsInDirector)
+{
+  std::vector<std::string> options{"Alpha", "Beta", "Gamma"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("key:text:b"),
+            SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.Format("Choices:\n", "Select"),
+            "Choices:\n"
+            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "Filter: b\n"
+            "  \033[7m2: Beta\033[0m\n");
+  EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 1);
+}
+
+TEST(InteractiveSelection, NavigatesVisibleOptions)
+{
+  std::vector<std::string> options{"first", "second", "third"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 1);
+  EXPECT_EQ(selection.ApplyInput("key:up"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 0);
+  EXPECT_EQ(selection.ApplyInput("key:cancel"),
+            SelectionInputResult::kCanceled);
+}
+
+TEST(InteractiveSelection, AcceptsExplicitSelection)
+{
+  std::vector<std::string> options{"first", "second", "third"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("key:select:3"),
+            SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 2);
+}
+
+TEST(InteractiveSelection, AcceptsPlainNumericSelection)
+{
+  std::vector<std::string> options{"first", "second", "third"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("2"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 1);
+}
+
+TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
+{
+  std::vector<std::string> options;
+  for (int i = 1; i <= 30; ++i) {
+    options.emplace_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  for (int i = 0; i < 25; ++i) {
+    EXPECT_EQ(selection.ApplyInput("key:down"),
+              SelectionInputResult::kContinue);
+  }
+
+  const auto output = selection.Format("", "Select");
+  EXPECT_NE(output.find("  \033[7m26: option 26\033[0m\n"), std::string::npos);
+  EXPECT_NE(output.find("  ...\n"), std::string::npos);
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
+}
