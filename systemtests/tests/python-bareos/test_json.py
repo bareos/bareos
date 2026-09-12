@@ -68,7 +68,7 @@ class PythonBareosJsonBackendTest(bareos_unittest.Json):
                 return
         self.fail('Failed to retrieve client {} from "list clients"'.format(client))
 
-    def test_list_client_rejects_sql_injection(self):
+    def test_list_jobs_rejects_sql_injection(self):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
 
@@ -79,10 +79,28 @@ class PythonBareosJsonBackendTest(bareos_unittest.Json):
             password=password,
             **self.director_extra_options
         )
-        payload = "x'/**/UNION/**/SELECT/**/" "1,current_user,version(),1,1,1--"
-        result = director.call('llist client="{}"'.format(payload))
+        payload = "x'/**/UNION/**/SELECT/**/" "1,current_user,version()--"
 
-        self.assertEqual(result["clients"], [])
+        for parameter in ("volume", "pool"):
+            result = director.call('llist jobs {}="{}"'.format(parameter, payload))
+            self.assertEqual(result["jobs"], [])
+
+    def test_list_client_filters_reject_invalid_names(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+        payload = "x'/**/UNION/**/SELECT/**/1,current_user,version()--"
+
+        for command in ("list jobs", "list log"):
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call('{} client="{}"'.format(command, payload))
 
     def test_json_with_invalid_command(self):
         logger = logging.getLogger()
