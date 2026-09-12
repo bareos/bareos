@@ -1369,8 +1369,8 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
       Jmsg(ctx, M_INFO, "%s", error_msg.data());
       Dmsg(ctx, debuglevel, "%s", error_msg.data());
     } else {
-      sprintf(error_msg.data(), fmt, "failed", static_cast<unsigned int>(hr),
-              err);
+      snprintf(error_msg.data(), error_msg.size(), fmt, "failed",
+               static_cast<unsigned int>(hr), err);
       Jmsg(ctx, M_FATAL, "%s", error_msg.data());
       Dmsg(ctx, debuglevel, "%s", error_msg.data());
       goto bail_out;
