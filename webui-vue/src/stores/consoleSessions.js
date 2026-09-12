@@ -78,6 +78,7 @@ function createSession(director) {
     outputLineOpen: false,
     selectionActive: false,
     selectionText: '',
+    selectionLines: [],
     cmd: '',
     cursorPos: 0,
     history: [],
@@ -166,6 +167,27 @@ function normalizeSelectionText(text) {
     .replace(/\r\n/g, '\n')
     .replace(ANSI_INVERSE_LINE_MARKER_RE, '$1> ')
     .replace(ANSI_ESCAPE_SEQUENCE_RE, '')
+}
+
+const ANSI_INVERSE_SELECTED_LINE_RE = /^([ \t]*)\x1B\[7m(.*)$/
+
+function parseSelectionLines(text) {
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(line => {
+      const match = line.match(ANSI_INVERSE_SELECTED_LINE_RE)
+      if (match) {
+        return {
+          text: match[2].replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+          selected: true,
+        }
+      }
+      return {
+        text: line.replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+        selected: false,
+      }
+    })
 }
 
 function parseHelpCompletionItems(text) {
@@ -306,6 +328,7 @@ function applyRawConsoleResponse(session, director, appendLines, message) {
   if (message.prompt === 'select') {
     session.selectionActive = true
     session.selectionText = normalizeSelectionText(message.text)
+    session.selectionLines = parseSelectionLines(message.text)
     session.currentPrompt = ''
     return {
       outputText: '',
@@ -315,6 +338,7 @@ function applyRawConsoleResponse(session, director, appendLines, message) {
 
   session.selectionActive = false
   session.selectionText = ''
+  session.selectionLines = []
   const isStreamingChunk = message.prompt === 'more'
   const {
     outputText,
@@ -482,6 +506,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     session.currentPrompt = '* '
     session.selectionActive = false
     session.selectionText = ''
+    session.selectionLines = []
     if (options.resetInitialized) {
       session.initialized = false
     }
@@ -596,6 +621,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         }
         session.selectionActive = false
         session.selectionText = ''
+        session.selectionLines = []
         appendErr(director, msg.message)
       }
     }
@@ -668,6 +694,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       runtime.pendingCmds.delete(id)
       session.selectionActive = false
       session.selectionText = ''
+      session.selectionLines = []
       appendErr(director, 'Command timed out.')
     }, timeoutMs)
 

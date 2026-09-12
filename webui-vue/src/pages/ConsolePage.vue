@@ -55,7 +55,11 @@
         <div
           v-if="currentSession.selectionActive"
           class="console-selection"
-        >{{ currentSession.selectionText }}</div>
+        ><div
+          v-for="(line, i) in currentSession.selectionLines"
+          :key="i"
+          :class="['console-selection-line', { 'console-selection-line--selected': line.selected }]"
+        >{{ line.text }}</div></div>
 
         <!-- live input line -->
         <div v-if="!currentSession.selectionActive" class="console-line console-input-line">
@@ -409,6 +413,14 @@ watch(() => currentSession.value.output.length, () => {
 }
 .console-selection {
   white-space: pre;
+}
+.console-selection-line {
+  display: block;
+  white-space: pre;
+}
+.console-selection-line--selected {
+  background: #e0e0e0;
+  color: #1a1a1a;
 }
 .console-output:focus {
   box-shadow: inset 0 0 0 2px #1976d2;
