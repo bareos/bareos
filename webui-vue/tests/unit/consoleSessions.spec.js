@@ -269,7 +269,7 @@ describe('console session store', () => {
       data: JSON.stringify({
         type: 'raw_response',
         id: '1',
-        text: 'Select:\n  \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
+        text: 'Select:\n> \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
         prompt: 'select',
       }),
     })

@@ -48,7 +48,6 @@ const RESTORE_TREE_COMPLETION_COMMANDS = {
   unmark: '.lsmark',
 }
 const ANSI_ESCAPE_SEQUENCE_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
-const ANSI_INVERSE_LINE_MARKER_RE = /(^|\n)[ \t]*\x1B\[7m/g
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -163,13 +162,24 @@ function filterConsoleNoiseText(text) {
 }
 
 function normalizeSelectionText(text) {
+  // The Director marks the selected line with a literal "> " prefix (in
+  // addition to the ANSI reverse-video escape codes) so that plain-text
+  // consumers — including screen readers and braille displays that don't
+  // render ANSI attributes — can tell which item is selected. Stripping
+  // the escape codes here is therefore sufficient to produce readable
+  // plain text; the marker itself is already part of the raw text.
   return String(text ?? '')
     .replace(/\r\n/g, '\n')
-    .replace(ANSI_INVERSE_LINE_MARKER_RE, '$1> ')
     .replace(ANSI_ESCAPE_SEQUENCE_RE, '')
 }
 
-const ANSI_INVERSE_SELECTED_LINE_RE = /^([ \t]*)\x1B\[7m(.*)$/
+// Matches the Director's per-line selection marker: an optional plain-text
+// indicator (e.g. "> ") immediately followed by the ANSI reverse-video
+// start code. Anything before the escape code is captured as the line's
+// indent so it can be re-applied without the raw ">" character, since the
+// WebUI conveys "selected" visually via full-row highlighting and via
+// aria-current instead of a text marker.
+const ANSI_INVERSE_SELECTED_LINE_RE = /^([^\x1B]*)\x1B\[7m(.*)$/
 
 function parseSelectionLines(text) {
   return String(text ?? '')
@@ -178,8 +188,9 @@ function parseSelectionLines(text) {
     .map(line => {
       const match = line.match(ANSI_INVERSE_SELECTED_LINE_RE)
       if (match) {
+        const indent = match[1].replace(/[^ \t]/g, ' ')
         return {
-          text: (match[1] + match[2]).replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+          text: (indent + match[2]).replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
           selected: true,
         }
       }
