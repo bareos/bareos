@@ -401,3 +401,26 @@ TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
 }
+
+TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
+{
+  /* Directors compute a smaller max_visible_options for clients that
+   * report a short terminal (see DoPrompt()'s use of
+   * ua->terminal_height), so the whole menu fits without scrolling its
+   * header/first options off-screen. */
+  std::vector<std::string> options;
+  for (int i = 1; i <= 30; ++i) {
+    options.emplace_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  for (int i = 0; i < 25; ++i) {
+    EXPECT_EQ(selection.ApplyInput("key:down"),
+              SelectionInputResult::kContinue);
+  }
+
+  const auto output = selection.Format("", "Select", /*max_visible_options=*/5);
+  EXPECT_NE(output.find("> \033[7m26: option 26\033[0m\n"), std::string::npos);
+  EXPECT_NE(output.find("  ...\n"), std::string::npos);
+  // header line + leading "..." + 5 option lines + trailing "..." = 8 lines
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 8);
+}
