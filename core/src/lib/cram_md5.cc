@@ -188,7 +188,6 @@ bool CramMd5Handshake::CramMd5Challenge()
 
 bool CramMd5Handshake::CramMd5Response()
 {
-  PoolMem chal(PM_NAME);
   uint8_t hmac[20];
 
   compatible_ = false;
@@ -199,55 +198,44 @@ bool CramMd5Handshake::CramMd5Response()
   }
 
   Dmsg1(100, "cram-get received: %s", bs_->msg);
-  chal.check_size(bs_->message_length);
-  if (bs_->IsBnetDumpEnabled()) {
-    std::vector<char> destination_qualified_name(bs_->message_length + 1);
-    if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
-                chal.c_str(), &remote_tls_policy_,
-                destination_qualified_name.data())
-        >= 2) {
+  const std::string_view message{bs_->msg,
+                                 static_cast<size_t>(bs_->message_length)};
+  auto challenge = GetProtocolToken(message, "auth cram-md5c ");
+  if (challenge) {
+    if (bsscanf(bs_->msg, "auth cram-md5c %*s ssl=%d", &remote_tls_policy_)
+        != 1) {
+      challenge.reset();
+    } else {
       compatible_ = true;
-    } else if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
-                       &remote_tls_policy_)
-               == 2) {
-      compatible_ = true;
-    } else if (bsscanf(bs_->msg, "auth cram-md5 %s ssl=%d qualified-name=%s",
-                       chal.c_str(), &remote_tls_policy_,
-                       destination_qualified_name.data())
-               < 2) {  // minimum 2
-      if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
-        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
-        bs_->fsend(T_("1999 Authorization failed.\n"));
-        Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
-        result = HandshakeResult::FORMAT_MISMATCH;
-        return false;
-      }
     }
-    bs_->SetBnetDumpDestinationQualifiedName(destination_qualified_name.data());
-  } else {  // network dump disabled
-    if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d", chal.c_str(),
-                &remote_tls_policy_)
-        == 2) {
-      compatible_ = true;
-    } else if (bsscanf(bs_->msg, "auth cram-md5 %s ssl=%d", chal.c_str(),
-                       &remote_tls_policy_)
-               != 2) {
-      if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
-        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
-        bs_->fsend(T_("1999 Authorization failed.\n"));
-        Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
-        result = HandshakeResult::FORMAT_MISMATCH;
-        return false;
-      }
+  } else {
+    challenge = GetProtocolToken(message, "auth cram-md5 ");
+    if (challenge) {
+      bsscanf(bs_->msg, "auth cram-md5 %*s ssl=%d", &remote_tls_policy_);
     }
   }
 
-  auto comparison_result = CompareChallengeWithOwnQualifiedName(chal.c_str());
+  if (!challenge) {
+    Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
+    bs_->fsend(T_("1999 Authorization failed.\n"));
+    Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+    result = HandshakeResult::FORMAT_MISMATCH;
+    return false;
+  }
+
+  if (bs_->IsBnetDumpEnabled()) {
+    const auto destination
+        = GetProtocolToken(message, "qualified-name=").value_or("");
+    bs_->SetBnetDumpDestinationQualifiedName(std::string{destination}.c_str());
+  }
+
+  const std::string challenge_string{*challenge};
+  auto comparison_result
+      = CompareChallengeWithOwnQualifiedName(challenge_string.c_str());
 
   if (comparison_result == ComparisonResult::IS_SAME) {
-    std::string c(chal.c_str());
     // same sd-sd connection should be possible i.e. for copy jobs
-    if (c.rfind("R_STORAGE") == std::string::npos) {
+    if (challenge_string.rfind("R_STORAGE") == std::string::npos) {
       result = HandshakeResult::REPLAY_ATTACK;
       return false;
     }
@@ -258,8 +246,8 @@ bool CramMd5Handshake::CramMd5Response()
     return false;
   }
 
-  hmac_md5((uint8_t*)chal.c_str(), strlen(chal.c_str()), (uint8_t*)password_,
-           strlen(password_), hmac);
+  hmac_md5((uint8_t*)challenge_string.c_str(), challenge_string.size(),
+           (uint8_t*)password_, strlen(password_), hmac);
   bs_->message_length
       = BinToBase64(bs_->msg, 50, (char*)hmac, 16, compatible_) + 1;
   if (!bs_->send()) {
