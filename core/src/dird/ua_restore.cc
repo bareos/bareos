@@ -1034,7 +1034,7 @@ std::string CompensateShortDate(const char* cmd)
        || bsscanf(cmd, "%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
                   trailinggarbage)
               == 3
-       || bsscanf(cmd, "%u%s", &datetime.tm_year, trailinggarbage) == 2)
+       || bsscanf(cmd, "%u%15s", &datetime.tm_year, trailinggarbage) == 2)
       && (trailinggarbage[0] == '\0')) {
     if (datetime.tm_mon == 0) { datetime.tm_mon = 1; }
     if (datetime.tm_mday == 0) { datetime.tm_mday = 1; }
