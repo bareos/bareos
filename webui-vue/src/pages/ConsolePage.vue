@@ -55,9 +55,14 @@
         <div
           v-if="currentSession.selectionActive"
           class="console-selection"
+          role="listbox"
+          :aria-label="t('Selection menu')"
         ><div
           v-for="(line, i) in currentSession.selectionLines"
           :key="i"
+          :role="line.selected ? 'option' : undefined"
+          :aria-selected="line.selected ? 'true' : undefined"
+          :aria-current="line.selected ? 'true' : undefined"
           :class="['console-selection-line', { 'console-selection-line--selected': line.selected }]"
         >{{ line.text }}</div></div>
 

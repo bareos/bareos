@@ -173,7 +173,13 @@ std::string InteractiveSelection::Format(const std::string& header,
   if (first > 0) { output.append("  ...\n"); }
   for (size_t position = first; position < last; ++position) {
     size_t i = matches[position];
-    output.append("  ");
+    /* Prefix the currently selected line with a plain-text marker, in
+     * addition to the ANSI reverse-video escape codes below. Screen
+     * readers and braille displays attached to a terminal generally read
+     * the character stream only; they do not surface ANSI attribute
+     * codes, so without a textual marker a blind user has no way to tell
+     * which item is currently selected. */
+    output.append(i == selected_index_ ? "> " : "  ");
     if (i == selected_index_) { output.append("\033[7m"); }
     output.append(std::to_string(i + 1));
     output.append(": ");
