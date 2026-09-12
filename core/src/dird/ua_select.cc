@@ -135,9 +135,15 @@ void InteractiveSelection::SelectAdjacentColumn(int direction)
 
 SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
 {
-  while (!input.empty() && (input.back() == '\r' || input.back() == '\n')) {
+  while (!input.empty()
+         && (input.back() == '\r' || input.back() == '\n' || input.back() == ' '
+             || input.back() == '\t')) {
     input.remove_suffix(1);
   }
+  while (!input.empty() && (input.front() == ' ' || input.front() == '\t')) {
+    input.remove_prefix(1);
+  }
+
   if (input == "key:cancel" || input == ".") {
     return SelectionInputResult::kCanceled;
   }
@@ -150,7 +156,7 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     // "." is treated as an ordinary filter character instead.
     return SelectionInputResult::kCanceled;
   }
-  if (input == "key:enter") {
+  if (input == "key:enter" || input.empty()) {
     return Matches(selected_index_) ? SelectionInputResult::kSelected
                                     : SelectionInputResult::kContinue;
   }
@@ -197,10 +203,21 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     selected_index_ = selected - 1;
     return SelectionInputResult::kSelected;
   } else if (!input.empty() && !input.starts_with("key:")) {
-    // Plain-text console input (for example a filter like "Makefile" from
-    // a non-TTY client) is just another text stream and must be handled in
-    // the same way as key:text:* events instead of being ignored.
-    filter_.append(input);
+    // Plain-text console input (for example a filter or option name from
+    // a non-TTY client or script).
+    filter_ = std::string(input);
+    bool found_match = false;
+    for (size_t i = 0; i < options_.size(); ++i) {
+      if (Matches(i)) {
+        if (!found_match) {
+          selected_index_ = i;
+          found_match = true;
+        }
+      }
+    }
+    if (found_match) { return SelectionInputResult::kSelected; }
+    filter_.clear();
+    return SelectionInputResult::kContinue;
   } else {
     return SelectionInputResult::kContinue;
   }
