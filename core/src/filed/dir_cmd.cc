@@ -48,6 +48,7 @@
 #include "lib/edit.h"
 #include "lib/hello.h"
 #include "lib/path_list.h"
+#include "lib/protocol_token.h"
 #include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
@@ -214,7 +215,6 @@ inline constexpr const char verifycmd[] = "verify level=%30s";
 inline constexpr const char Estimatecmd[] = "estimate listing=%d";
 inline constexpr const char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-inline constexpr const char resolvecmd[] = "resolve %s";
 
 // Responses sent to Director
 inline constexpr const char errmsg[] = "2999 Invalid command\n";
@@ -661,17 +661,18 @@ static bool ResolveCmd(JobControlRecord* jcr)
   dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
-  char hostname[2048];
+  const auto hostname_token = GetProtocolToken(dir->msg, "resolve ");
+  std::string hostname;
+  if (!hostname_token) { goto bail_out; }
+  hostname.assign(*hostname_token);
 
-  bsscanf(dir->msg, resolvecmd, &hostname);
-
-  if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
-    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
+  if ((addr_list = BnetHost2IpAddrs(hostname.c_str(), 0, &errstr)) == nullptr) {
+    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname.c_str());
     goto bail_out;
   }
 
   dir->fsend(
-      T_("%s resolves %s to %s\n"), my_name, hostname,
+      T_("%s resolves %s to %s\n"), my_name, hostname.c_str(),
       BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
   FreeAddresses(addr_list);
 
@@ -1394,17 +1395,19 @@ static bool StorageCmd(JobControlRecord* jcr)
 {
   int stored_port;      /* storage daemon port */
   TlsPolicy tls_policy; /* enable ssl to sd */
-  char stored_addr[MAX_NAME_LENGTH];
+  PoolMem stored_addr(PM_MESSAGE);
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* storage_daemon_socket = new BareosSocketTCP;
 
   Dmsg1(100, "StorageCmd: %s", dir->msg);
+  stored_addr.check_size(dir->message_length + 1);
   sd_auth_key.check_size(dir->message_length);
-  if (bsscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy,
-              sd_auth_key.c_str())
+  if (bsscanf(dir->msg, storaddrv1cmd, stored_addr.c_str(), &stored_port,
+              &tls_policy, sd_auth_key.c_str())
       != 4) {
-    if (bsscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy)
+    if (bsscanf(dir->msg, storaddrv0cmd, stored_addr.c_str(), &stored_port,
+                &tls_policy)
         != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, T_("Bad storage command: %s\n"), jcr->errmsg);
@@ -1414,7 +1417,7 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr.c_str(), stored_port,
         static_cast<unsigned int>(tls_policy));
 
   storage_daemon_socket->SetSourceAddress(me->FDsrc_addr);
@@ -1434,11 +1437,11 @@ static bool StorageCmd(JobControlRecord* jcr)
   // Open command communications with Storage daemon
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-          T_("Storage daemon"), stored_addr, nullptr, stored_port, 1)) {
+          T_("Storage daemon"), stored_addr.c_str(), nullptr, stored_port, 1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to Storage daemon: %s:%d\n"),
-         stored_addr, stored_port);
-    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr,
-          stored_port);
+         stored_addr.c_str(), stored_port);
+    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
+          stored_addr.c_str(), stored_port);
     goto bail_out;
   }
   Dmsg0(110, "Connection OK to SD.\n");

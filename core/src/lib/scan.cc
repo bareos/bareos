@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -327,27 +327,32 @@ int bsscanf(const char* buf, const char* fmt, ...)
   int64_t svalue;
   bool error = false;
   bool negative;
+  bool suppress_assignment;
 
   va_start(ap, fmt);
   while (*fmt && !error) {
     if (*fmt == '%') {
       fmt++;
+      suppress_assignment = *fmt == '*';
+      if (suppress_assignment) { fmt++; }
     switch_top:
       switch (*fmt++) {
         case 'u':
           value = 0;
           while (B_ISDIGIT(*buf)) { value = B_TIMES10(value) + *buf++ - '0'; }
-          vp = (void*)va_arg(ap, void*);
-          if (h == 1) {
-            *((uint16_t*)vp) = (int16_t)value;
-          } else if (l == 0) {
-            *((unsigned int*)vp) = (unsigned int)value;
-          } else if (l == 1) {
-            *((uint32_t*)vp) = (uint32_t)value;
-          } else {
-            *((uint64_t*)vp) = (uint64_t)value;
+          if (!suppress_assignment) {
+            vp = (void*)va_arg(ap, void*);
+            if (h == 1) {
+              *((uint16_t*)vp) = (int16_t)value;
+            } else if (l == 0) {
+              *((unsigned int*)vp) = (unsigned int)value;
+            } else if (l == 1) {
+              *((uint32_t*)vp) = (uint32_t)value;
+            } else {
+              *((uint64_t*)vp) = (uint64_t)value;
+            }
+            count++;
           }
-          count++;
           h = 0;
           l = 0;
           break;
@@ -361,17 +366,19 @@ int bsscanf(const char* buf, const char* fmt, ...)
           }
           while (B_ISDIGIT(*buf)) { svalue = B_TIMES10(svalue) + *buf++ - '0'; }
           if (negative) { svalue = -svalue; }
-          vp = (void*)va_arg(ap, void*);
-          if (h == 1) {
-            *((int16_t*)vp) = (int16_t)svalue;
-          } else if (l == 0) {
-            *((int*)vp) = (int)svalue;
-          } else if (l == 1) {
-            *((int32_t*)vp) = (int32_t)svalue;
-          } else {
-            *((int64_t*)vp) = (int64_t)svalue;
+          if (!suppress_assignment) {
+            vp = (void*)va_arg(ap, void*);
+            if (h == 1) {
+              *((int16_t*)vp) = (int16_t)svalue;
+            } else if (l == 0) {
+              *((int*)vp) = (int)svalue;
+            } else if (l == 1) {
+              *((int32_t*)vp) = (int32_t)svalue;
+            } else {
+              *((int64_t*)vp) = (int64_t)svalue;
+            }
+            count++;
           }
-          count++;
           h = 0;
           l = 0;
           break;
@@ -395,16 +402,26 @@ int bsscanf(const char* buf, const char* fmt, ...)
           error = true;
           break;
         case 's':
-          cp = (char*)va_arg(ap, char*);
-          while (*buf && !B_ISSPACE(*buf) && max_len-- > 0) { *cp++ = *buf++; }
-          *cp = 0;
-          count++;
+          if (suppress_assignment) {
+            while (*buf && !B_ISSPACE(*buf) && max_len-- > 0) { buf++; }
+          } else {
+            cp = (char*)va_arg(ap, char*);
+            while (*buf && !B_ISSPACE(*buf) && max_len-- > 0) {
+              *cp++ = *buf++;
+            }
+            *cp = 0;
+            count++;
+          }
           max_len = BIG;
           break;
         case 'c':
-          cp = (char*)va_arg(ap, char*);
-          *cp = *buf++;
-          count++;
+          if (suppress_assignment) {
+            buf++;
+          } else {
+            cp = (char*)va_arg(ap, char*);
+            *cp = *buf++;
+            count++;
+          }
           break;
         case '%':
           if (*buf++ != '%') { error = true; }

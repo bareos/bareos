@@ -47,6 +47,7 @@
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
 #include "stored/blocksize_boundaries.h"
+#include "lib/protocol_token.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
@@ -107,8 +108,7 @@ inline constexpr const char replicatecmd[]
       "Authorization=%100s";
 inline constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d";
-inline constexpr const char resolvecmd[] = "resolve %s";
-inline constexpr const char pluginoptionscmd[] = "pluginoptions %s";
+
 
 /* Responses sent to Director */
 inline constexpr const char derrmsg[] = "3900 Invalid command:";
@@ -555,17 +555,18 @@ static bool ResolveCmd(JobControlRecord* jcr)
   dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
-  char hostname[2048];
+  const auto hostname_token = GetProtocolToken(dir->msg, "resolve ");
+  std::string hostname;
+  if (!hostname_token) { goto bail_out; }
+  hostname.assign(*hostname_token);
 
-  bsscanf(dir->msg, resolvecmd, &hostname);
-
-  if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
-    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
+  if ((addr_list = BnetHost2IpAddrs(hostname.c_str(), 0, &errstr)) == NULL) {
+    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname.c_str());
     goto bail_out;
   }
 
   dir->fsend(
-      T_("%s resolves %s to %s\n"), my_name, hostname,
+      T_("%s resolves %s to %s\n"), my_name, hostname.c_str(),
       BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
   FreeAddresses(addr_list);
 
@@ -1604,7 +1605,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   int stored_port;      /* storage daemon port */
   TlsPolicy tls_policy; /* enable ssl to sd */
   char JobName[MAX_NAME_LENGTH];
-  char stored_addr[MAX_NAME_LENGTH];
+  PoolMem stored_addr(PM_MESSAGE);
   uint32_t JobId = 0;
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
@@ -1612,9 +1613,10 @@ static bool ReplicateCmd(JobControlRecord* jcr)
       = std::make_unique<BareosSocketTCP>();
 
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
+  stored_addr.check_size(dir->message_length + 1);
   sd_auth_key.check_size(dir->message_length);
 
-  if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr,
+  if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr.c_str(),
               &stored_port, &tls_policy, sd_auth_key.c_str())
       != 6) {
     std::string cpy{dir->msg};
@@ -1624,7 +1626,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr.c_str(), stored_port,
         tls_policy);
 
   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
@@ -1644,11 +1646,11 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-          T_("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
+          T_("Storage daemon"), stored_addr.c_str(), NULL, stored_port, 1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to Storage daemon: %s:%d\n"),
-         stored_addr, stored_port);
-    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr,
-          stored_port);
+         stored_addr.c_str(), stored_port);
+    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
+          stored_addr.c_str(), stored_port);
     connect_state(ReplicateCmdState::kError);
     return false;
   }
@@ -1721,13 +1723,14 @@ static bool PassiveCmd(JobControlRecord* jcr)
 {
   int filed_port;       /* file daemon port */
   TlsPolicy tls_policy; /* enable ssl to fd */
-  char filed_addr[MAX_NAME_LENGTH];
+  PoolMem filed_addr(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* fd{nullptr}; /* file daemon bsock */
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
-  if (bsscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
+  filed_addr.check_size(dir->message_length + 1);
+  if (bsscanf(cpy.c_str(), passiveclientcmd, filed_addr.c_str(), &filed_port,
               &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
@@ -1735,7 +1738,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr, filed_port,
+  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr.c_str(), filed_port,
         tls_policy);
 
   jcr->passive_client = true;
@@ -1745,10 +1748,11 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
   // Open command communications with passive filedaemon
   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
-                   T_("File Daemon"), filed_addr, NULL, filed_port, 1)) {
+                   T_("File Daemon"), filed_addr.c_str(), NULL, filed_port,
+                   1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to File daemon: %s:%d\n"),
-         filed_addr, filed_port);
-    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr,
+         filed_addr.c_str(), filed_port);
+    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr.c_str(),
           filed_port);
     goto bail_out;
   }
@@ -1815,21 +1819,23 @@ bail_out:
 static bool PluginoptionsCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  char plugin_options[2048];
   std::string cpy{dir->msg};
+  const auto plugin_options_token = GetProtocolToken(cpy, "pluginoptions ");
+  std::string plugin_options;
 
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
-  if (bsscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
+  if (!plugin_options_token) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
+  plugin_options.assign(*plugin_options_token);
 
-  UnbashSpaces(plugin_options);
+  UnbashSpaces(plugin_options.data());
   if (!jcr->sd_impl->plugin_options) {
     jcr->sd_impl->plugin_options = new alist<const char*>(10, owned_by_alist);
   }
-  jcr->sd_impl->plugin_options->append(strdup(plugin_options));
+  jcr->sd_impl->plugin_options->append(strdup(plugin_options.c_str()));
 
   // Send OK to Director
   return dir->fsend(OKpluginoptions);

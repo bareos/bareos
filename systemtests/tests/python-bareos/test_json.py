@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -67,6 +67,56 @@ class PythonBareosJsonBackendTest(bareos_unittest.Json):
             if i["name"] == client:
                 return
         self.fail('Failed to retrieve client {} from "list clients"'.format(client))
+
+    def test_list_client_rejects_sql_injection(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+        payload = "x'/**/UNION/**/SELECT/**/" "1,current_user,version(),1,1,1--"
+        result = director.call('llist client="{}"'.format(payload))
+
+        self.assertEqual(result["clients"], [])
+
+    def test_list_jobs_rejects_sql_injection(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+        payload = "x'/**/UNION/**/SELECT/**/" "1,current_user,version()--"
+
+        for parameter in ("volume", "pool"):
+            result = director.call('llist jobs {}="{}"'.format(parameter, payload))
+            self.assertEqual(result["jobs"], [])
+
+    def test_list_client_filters_reject_invalid_names(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+        payload = "x'/**/UNION/**/SELECT/**/1,current_user,version()--"
+
+        for command in ("list jobs", "list log"):
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call('{} client="{}"'.format(command, payload))
 
     def test_json_with_invalid_command(self):
         logger = logging.getLogger()

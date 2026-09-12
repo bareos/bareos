@@ -35,6 +35,8 @@ static const int dbglevel = 100;
 #include "cats.h"
 #include "lib/edit.h"
 
+#include <string>
+
 /* -----------------------------------------------------------------------
  *
  *   Generic Routines (or almost generic)
@@ -482,14 +484,18 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   SQL_ROW row;
   char ed1[50], ed2[50];
   int num_rows;
-  char esc_clientname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_uname[MAX_ESCAPE_NAME_LENGTH];
+  std::string esc_clientname;
+  std::string esc_uname;
+  size_t clientname_len = strlen(cr->Name);
+  size_t uname_len = strlen(cr->Uname);
 
   DbLocker _{this};
-  EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
-  EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
+  esc_clientname.resize(clientname_len * 2 + 1);
+  esc_uname.resize(uname_len * 2 + 1);
+  EscapeString(jcr, esc_clientname.data(), cr->Name, clientname_len);
+  EscapeString(jcr, esc_uname.data(), cr->Uname, uname_len);
   Mmsg(cmd, "SELECT ClientId,Uname FROM Client WHERE Name='%s'",
-       esc_clientname);
+       esc_clientname.c_str());
 
   cr->ClientId = 0;
   if (QueryDb(jcr, cmd)) {
@@ -522,7 +528,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        "INSERT INTO Client (Name,Uname,AutoPrune,"
        "FileRetention,JobRetention) VALUES "
        "('%s','%s',%d,%s,%s)",
-       esc_clientname, esc_uname, cr->AutoPrune,
+       esc_clientname.c_str(), esc_uname.c_str(), cr->AutoPrune,
        edit_uint64(cr->FileRetention, ed1),
        edit_uint64(cr->JobRetention, ed2));
   /* clang-format on */
@@ -1248,23 +1254,27 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
                                            char* value)
 {
   char ed1[50], ed2[50];
-  char esc_envname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_envvalue[MAX_ESCAPE_NAME_LENGTH];
+  std::string esc_envname;
+  std::string esc_envvalue;
+  size_t envname_len = strlen(name);
+  size_t envvalue_len = strlen(value);
 
   Jmsg(jcr, M_INFO, 0, "NDMP Environment: %s=%s\n", name, value);
 
   DbLocker _{this};
 
-  EscapeString(jcr, esc_envname, name, strlen(name));
-  EscapeString(jcr, esc_envvalue, value, strlen(value));
+  esc_envname.resize(envname_len * 2 + 1);
+  esc_envvalue.resize(envvalue_len * 2 + 1);
+  EscapeString(jcr, esc_envname.data(), name, envname_len);
+  EscapeString(jcr, esc_envvalue.data(), value, envvalue_len);
   Mmsg(cmd,
        "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
        " VALUES ('%s', '%s', '%s', '%s')"
        " ON CONFLICT (JobId, FileIndex, EnvName)"
        " DO UPDATE SET"
        " EnvValue='%s'",
-       edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
-       esc_envvalue, esc_envvalue);
+       edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2),
+       esc_envname.c_str(), esc_envvalue.c_str(), esc_envvalue.c_str());
   if (InsertDb(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           T_("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,

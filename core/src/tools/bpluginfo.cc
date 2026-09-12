@@ -228,12 +228,18 @@ void ParseArgs(progdata* pdata, int argc, char* argv[])
       ASSERT_MEMORY(dirtmp);
       progdir = MALLOC(PATH_MAX);
       ASSERT_MEMORY(progdir);
-      dirtmp = getcwd(dirtmp, PATH_MAX);
+      if (getcwd(dirtmp, PATH_MAX) == nullptr) {
+        FREE(dirtmp);
+        FREE(progdir);
+        pdata->pluginfile = strdup(plugin_file.c_str());
+        return;
+      }
 
-      strcat(dirtmp, "/");
-      strcat(dirtmp, plugin_file.c_str());
+      std::string plugin_path = dirtmp;
+      plugin_path += "/";
+      plugin_path += plugin_file;
 
-      if (realpath(dirtmp, progdir) == NULL) {
+      if (realpath(plugin_path.c_str(), progdir) == NULL) {
         // Error in resolving path
         FREE(progdir);
         progdir = strdup(plugin_file.c_str());
