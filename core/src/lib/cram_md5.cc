@@ -29,6 +29,7 @@
 #include "include/bareos.h"
 #include "lib/cram_md5.h"
 #include "lib/bsock.h"
+#include "lib/protocol_token.h"
 #include "lib/util.h"
 #include "lib/base64.h"
 
@@ -81,14 +82,13 @@ CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
     const char* challenge) const
 {
   uint32_t a, b;
-  std::vector<char> buffer(strlen(challenge) + 1);
-  buffer[0] = '?';  // at least one character
-
-  bool scan_success
-      = bsscanf(challenge, "<%u.%u@%s", &a, &b, buffer.data()) == 3;
-
-  // string contains the closing ">" of the challenge
-  std::string challenge_qualified_name(buffer.data(), strlen(buffer.data()) - 1);
+  const auto challenge_name = GetProtocolToken(challenge, "@");
+  const bool scan_success = bsscanf(challenge, "<%u.%u@%*s", &a, &b) == 2
+                            && challenge_name && challenge_name->ends_with('>');
+  const std::string challenge_qualified_name
+      = scan_success
+            ? std::string{challenge_name->substr(0, challenge_name->size() - 1)}
+            : std::string{};
 
   Dmsg1(debuglevel_, "my_name: <%s> - challenge_name: <%s>\n",
         own_qualified_name_bashed_spaces_.c_str(),
