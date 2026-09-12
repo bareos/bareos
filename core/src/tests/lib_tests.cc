@@ -27,6 +27,7 @@
 #include "lib/bstringlist.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bareos_resource.h"
+#include "lib/protocol_token.h"
 #include "stored/butil.h"
 #include "lib/util.h"
 #include "lib/version.h"
@@ -41,6 +42,13 @@ constexpr bool PrintfCheckAcceptsValidFormats()
 }
 
 static_assert(PrintfCheckAcceptsValidFormats());
+
+static_assert(GetProtocolToken("resolve host.example\n", "resolve ")
+              == "host.example");
+static_assert(GetProtocolToken("Device=Drive-1 Read=12", "Device=")
+              == "Drive-1");
+static_assert(!GetProtocolToken("resolve ", "resolve "));
+static_assert(!GetProtocolToken("other=value", "Device="));
 }  // namespace
 
 TEST(BStringList, ConstructorsTest)
