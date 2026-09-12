@@ -179,7 +179,7 @@ function parseSelectionLines(text) {
       const match = line.match(ANSI_INVERSE_SELECTED_LINE_RE)
       if (match) {
         return {
-          text: match[2].replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+          text: (match[1] + match[2]).replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
           selected: true,
         }
       }
