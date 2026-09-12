@@ -48,6 +48,12 @@
 #include <fstream>
 #include <string>
 
+#if !defined(HAVE_WIN32)
+#  include <sys/select.h>
+#  include <termios.h>
+#  include <unistd.h>
+#endif
+
 #if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
 // windows has its own isatty implemented, so
 // if we are compiling with msvc we can just use that
@@ -199,10 +205,114 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   return status;
 }
 
+static bool ReadSelectionInput(FILE* input,
+                               BareosSocket* socket,
+                               bool input_is_interactive_tty)
+{
+  if (!input_is_interactive_tty) {
+    if (GetCmd(input, T_("Select item: "), socket, 30) < 0) { return false; }
+    return true;
+  }
+
+#if !defined(HAVE_WIN32)
+  int input_fd = fileno(input);
+  termios original{};
+  if (tcgetattr(input_fd, &original) != 0) { return false; }
+  termios raw = original;
+  raw.c_lflag &= ~(ICANON | ECHO | ISIG);
+  raw.c_iflag &= ~(IXON | ICRNL);
+  raw.c_cc[VMIN] = 1;
+  raw.c_cc[VTIME] = 0;
+  if (tcsetattr(input_fd, TCSANOW, &raw) != 0) { return false; }
+
+  auto read_with_timeout = [&](unsigned char& value) {
+    for (;;) {
+      fd_set read_fds;
+      FD_ZERO(&read_fds);
+      FD_SET(input_fd, &read_fds);
+      timeval wait_time{0, 200000};
+      int status
+          = select(input_fd + 1, &read_fds, nullptr, nullptr, &wait_time);
+      if (status < 0 && errno == EINTR) { continue; }
+      if (status <= 0) { return false; }
+      ssize_t bytes_read = read(input_fd, &value, 1);
+      if (bytes_read < 0 && errno == EINTR) { continue; }
+      return bytes_read == 1;
+    }
+  };
+
+  unsigned char input_byte = 0;
+  ssize_t bytes_read;
+  do {
+    bytes_read = read(input_fd, &input_byte, 1);
+  } while (bytes_read < 0 && errno == EINTR);
+  bool read_ok = bytes_read == 1;
+  if (!read_ok) {
+    tcsetattr(input_fd, TCSANOW, &original);
+    return false;
+  }
+
+  std::string event;
+  if (input_byte == 3) {
+    event = "key:cancel";
+  } else if (input_byte == 27) {
+    unsigned char next = 0;
+    if (read_with_timeout(next) && next == '[') {
+      unsigned char final_byte = 0;
+      bool has_parameters = false;
+      for (int i = 0; i < 16; ++i) {
+        unsigned char byte = 0;
+        if (!read_with_timeout(byte)) { break; }
+        if (byte >= 0x40 && byte <= 0x7e) {
+          final_byte = byte;
+          break;
+        }
+        has_parameters = true;
+      }
+      if (!has_parameters && final_byte == 'A') {
+        event = "key:up";
+      } else if (!has_parameters && final_byte == 'B') {
+        event = "key:down";
+      } else if (!has_parameters && final_byte == 'C') {
+        event = "key:right";
+      } else if (!has_parameters && final_byte == 'D') {
+        event = "key:left";
+      } else {
+        event = "key:noop";
+      }
+    } else if (next == 0) {
+      event = "key:cancel";
+    } else {
+      event = "key:noop";
+    }
+  } else if (input_byte == '\r' || input_byte == '\n') {
+    event = "key:enter";
+  } else if (input_byte == 127 || input_byte == '\b') {
+    event = "key:backspace";
+  } else if (input_byte == ' ') {
+    event = "key:space";
+  } else if (input_byte >= 0x20 && input_byte != 0x7f) {
+    event = "key:text:";
+    event.push_back(static_cast<char>(input_byte));
+  }
+  tcsetattr(input_fd, TCSANOW, &original);
+  if (event.empty()) { event = "key:cancel"; }
+
+  PmStrcpy(socket->msg, event.c_str());
+  socket->message_length = event.size();
+  return true;
+#else
+  if (GetCmd(input, T_("Select item: "), socket, 30) < 0) { return false; }
+  return true;
+#endif
+}
+
 static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 {
   const char* prompt = "*";
   bool at_prompt = false;
+  bool collecting_selection = false;
+  std::string selection_output;
   int tty_input = isatty(fileno(input));
   int status;
   btimer_t* tid = NULL;
@@ -269,6 +379,17 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
           file_selection = true;
         } else if (UA_sock->message_length == BNET_END_RTREE) {
           file_selection = false;
+        } else if (UA_sock->message_length == BNET_START_SELECT) {
+          collecting_selection = true;
+          selection_output.clear();
+          if (tty_input) { ConsoleOutput("\033[2J\033[H"); }
+        } else if (UA_sock->message_length == BNET_END_SELECT) {
+          collecting_selection = false;
+          ConsoleOutput(selection_output.c_str());
+        } else if (UA_sock->message_length == BNET_SELECT_INPUT
+                   && collecting_selection == false) {
+          if (!ReadSelectionInput(input, UA_sock, tty_input != 0)) { break; }
+          if (!UA_sock->send()) { break; }
         }
         continue;
       }
@@ -281,7 +402,11 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       /* Suppress output if running
        * in background or user hit ctl-c */
       if (!stop) {
-        if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
+        if (collecting_selection) {
+          selection_output.append(UA_sock->msg);
+        } else if (UA_sock->msg) {
+          ConsoleOutput(UA_sock->msg);
+        }
       }
     }
     StopBsockTimer(tid);

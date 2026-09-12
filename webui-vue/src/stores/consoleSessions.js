@@ -74,6 +74,8 @@ function createSession(director) {
     currentPrompt: '* ',
     output: [],
     outputLineOpen: false,
+    selectionActive: false,
+    selectionText: '',
     cmd: '',
     cursorPos: 0,
     history: [],
@@ -292,6 +294,18 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
 }
 
 function applyRawConsoleResponse(session, director, appendLines, message) {
+  if (message.prompt === 'select') {
+    session.selectionActive = true
+    session.selectionText = String(message.text ?? '').replace(/\r\n/g, '\n')
+    session.currentPrompt = ''
+    return {
+      outputText: '',
+      promptText: '',
+    }
+  }
+
+  session.selectionActive = false
+  session.selectionText = ''
   const isStreamingChunk = message.prompt === 'more'
   const {
     outputText,
@@ -457,6 +471,8 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.ws = null
     session.status = 'disconnected'
     session.currentPrompt = '* '
+    session.selectionActive = false
+    session.selectionText = ''
     if (options.resetInitialized) {
       session.initialized = false
     }
@@ -569,6 +585,8 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           clearTimeout(entry.timer)
           runtime.pendingCmds.delete(msg.id)
         }
+        session.selectionActive = false
+        session.selectionText = ''
         appendErr(director, msg.message)
       }
     }
@@ -639,6 +657,8 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       }
 
       runtime.pendingCmds.delete(id)
+      session.selectionActive = false
+      session.selectionText = ''
       appendErr(director, 'Command timed out.')
     }, timeoutMs)
 
@@ -698,6 +718,14 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     return true
   }
 
+  function sendSelectionEvent(director, event) {
+    const session = getSession(director)
+    if (!session.selectionActive) {
+      return false
+    }
+    return sendCommand(director, event)
+  }
+
   function disconnectAll(options = {}) {
     for (const director of directors.value) {
       disconnectSession(director, options)
@@ -715,6 +743,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     disconnectAll,
     clearOutput,
     sendCommand,
+    sendSelectionEvent,
     requestCompletion,
   }
 })
