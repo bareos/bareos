@@ -156,9 +156,14 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     // "." is treated as an ordinary filter character instead.
     return SelectionInputResult::kCanceled;
   }
-  if (input == "key:enter" || input.empty()) {
+  if (input == "key:enter") {
     return Matches(selected_index_) ? SelectionInputResult::kSelected
                                     : SelectionInputResult::kContinue;
+  }
+  if (input.empty()) {
+    // An empty input line in non-interactive/scripting mode selects
+    // the currently highlighted default option (Option 1).
+    return SelectionInputResult::kSelected;
   }
   if (input == "key:up") {
     SelectNext(-1);
