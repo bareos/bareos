@@ -32,6 +32,7 @@
       row-key="scopeKey"
       dense flat
       :loading="loading"
+      color="primary"
       style="height:100%; width:100%"
       virtual-scroll
       :rows-per-page-options="recentJobsRowsPerPageOptions"
@@ -172,7 +173,7 @@ const auth = useAuthStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 const recentJobsLoading = ref(false)
-const loading = computed(() => ctx.loading.value || recentJobsLoading.value)
+const loading = computed(() => recentJobsLoading.value)
 const recentJobs = ref([])
 const totalJobs = ref(0)
 const truncated = ref(false)
