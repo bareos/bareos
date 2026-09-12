@@ -44,10 +44,13 @@
 #include "dird/ua_select.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
 #include "dird/jcr_util.h"
 
 #include <array>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace directordaemon {
 
@@ -523,6 +526,7 @@ bool show_cmd(UaContext* ua, const char*)
  *  list jobmedia ujobid=uname
  *  list joblog jobid=<nn>
  *  list joblog job=name
+ *  list joblog jobids=<nn,nn,...> - joblog rows for several jobs in one query
  *  list log [ limit=<number> [ offset=<number> ] ]
  *  list basefiles jobid=nnn    - list files saved for job nn
  *  list basefiles ujobid=uname
@@ -603,6 +607,73 @@ static int GetJobidFromCmdline(UaContext* ua)
   }
 
   return jr.JobId;
+}
+
+// Parses "jobids=<comma-list>" (used by the batch "list joblog jobids="
+// command) into ACL-filtered, existing JobIds. Unlike GetJobidFromCmdline(),
+// a single invalid, non-existent, or ACL-denied entry does not reject the
+// whole command -- it is silently skipped, matching how a caller (e.g. the
+// webui) would have simply received an empty joblog array for that one
+// jobid had it issued 200 individual "list joblog jobid=" commands instead.
+// Each candidate JobId still goes through the exact same per-job Job_ACL /
+// Client_ACL checks GetJobidFromCmdline() performs for the single-job
+// command, so a restricted console user cannot use jobids= to read logs for
+// jobs outside their allowed ACLs.
+// @return true if "jobids=" was present on the command line at all (whether
+// or not any jobid in it ultimately passed validation/ACL checks).
+static bool GetAclFilteredJobidsFromCmdline(UaContext* ua,
+                                            std::vector<JobId_t>* jobids)
+{
+  const char* jobids_arg = GetArgValue(ua, NT_("jobids"));
+  if (!jobids_arg) { return false; }
+
+  for (const std::string& token : split_string(jobids_arg, ',')) {
+    int64_t candidate = str_to_int64(token.c_str());
+    if (candidate <= 0) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Ignoring invalid jobid "
+            "'%s'.\n",
+            token.c_str());
+      continue;
+    }
+
+    JobDbRecord jr{};
+    jr.JobId = static_cast<JobId_t>(candidate);
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Failed to get job record for "
+            "jobid %" PRIu32 ".\n",
+            jr.JobId);
+      continue;
+    }
+
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Job %s\n",
+            jr.Name);
+      continue;
+    }
+
+    if (jr.ClientId) {
+      ClientDbRecord cr{};
+      cr.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+        Dmsg1(200,
+              "GetAclFilteredJobidsFromCmdline: Failed to get client record "
+              "for ClientId %" PRIdbid "\n",
+              jr.ClientId);
+        continue;
+      }
+      if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
+        Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Client %s\n",
+              cr.Name);
+        continue;
+      }
+    }
+
+    jobids->push_back(jr.JobId);
+  }
+
+  return true;
 }
 
 /**
@@ -718,6 +789,51 @@ struct ListCmdOptions {
     return true;
   }
 };
+
+namespace {
+/* The `current`/`enabled`/`disabled` keywords depend on whether a Job or
+ * Client *resource* currently exists in the live configuration and, for
+ * `enabled`/`disabled`, on its current enabled state -- properties that are
+ * not stored in the catalog and therefore can never be expressed as a plain
+ * catalog column. Historically these were applied as a post-fetch filter on
+ * the already-limited/offset SQL result, which silently broke pagination
+ * (rows removed after LIMIT/OFFSET already trimmed the page) and any COUNT()
+ * query (a COUNT result has a single column, so filtering on a Job/Client
+ * name column read past the end of the result row).
+ *
+ * Resolving the filter to the small, bounded set of matching resource names
+ * *before* the query runs lets it be pushed into SQL as a plain "Name IN
+ * (...)" clause, so range and count queries see exactly the same filtered
+ * dataset. Returns std::nullopt when the given options don't request any
+ * such filtering, i.e. "do not filter by name". */
+std::optional<std::vector<std::string>> JobNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current && !optionslist.enabled && !optionslist.disabled) {
+    return std::nullopt;
+  }
+
+  std::vector<std::string> names;
+  JobResource* job = nullptr;
+  foreach_res (job, R_JOB) {
+    if (optionslist.enabled && !job->enabled) { continue; }
+    if (optionslist.disabled && job->enabled) { continue; }
+    names.emplace_back(job->resource_name_);
+  }
+  return names;
+}
+
+std::optional<std::vector<std::string>> ClientNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current) { return std::nullopt; }
+
+  std::vector<std::string> names;
+  ClientResource* client = nullptr;
+  foreach_res (client, R_CLIENT) { names.emplace_back(client->resource_name_); }
+  return names;
+}
+}  // namespace
 
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
@@ -893,6 +1009,11 @@ static bool ListJobs(UaContext* ua,
   const char* volumename = GetArgValue(ua, NT_("volume"));
   const char* poolname = GetArgValue(ua, NT_("pool"));
 
+  /* Job/Client `current`/`enabled`/`disabled` filtering is resolved to a SQL
+   * "Name IN (...)" clause below (job_name_filter/client_name_filter) so it
+   * applies identically to range and count queries. Pool/FileSet `current`
+   * filtering (VERT_LIST only) stays a post-fetch filter -- it is not used
+   * by any count query and is out of scope for this fix. */
   switch (llist) {
     case VERT_LIST:
       if (!optionslist.count) {  // count result is one column, no filtering
@@ -901,39 +1022,45 @@ static bool ListJobs(UaContext* ua,
         SetAclFilter(ua, 22, Pool_ACL);
         SetAclFilter(ua, 25, FileSet_ACL);
         if (optionslist.current) {
-          SetResFilter(ua, 2, R_JOB);
-          SetResFilter(ua, 7, R_CLIENT);
           SetResFilter(ua, 22, R_POOL);
           SetResFilter(ua, 25, R_FILESET);
         }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
       break;
     default:
       if (!optionslist.count) {  // count result is one column, no filtering
         SetAclFilter(ua, 1, Job_ACL);
         SetAclFilter(ua, 2, Client_ACL);
-        if (optionslist.current) {
-          SetResFilter(ua, 1, R_JOB);
-          SetResFilter(ua, 2, R_CLIENT);
-        }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
       break;
   }
+
+  const std::optional<std::vector<std::string>> job_name_filter
+      = JobNameFilterFor(optionslist);
+  const std::optional<std::vector<std::string>> client_name_filter
+      = ClientNameFilterFor(optionslist);
 
   std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
   const bool descending = FindArg(ua, NT_("reverse")) >= 0;
 
-  ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                         optionslist.jobstatuslist, optionslist.joblevel_list,
-                         optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send.get(),
-                         llist, descending);
+  const char* sortby = GetArgValue(ua, NT_("sortby"));
+  if (sortby) {
+    std::string discard;
+    if (!ua->db->GetJobsSortColumn(sortby, discard)) {
+      ua->ErrorMsg(T_("invalid sortby parameter\n"));
+      return false;
+    }
+  }
+
+  const char* search = GetArgValue(ua, NT_("search"));
+
+  ua->db->ListJobRecords(
+      ua->jcr, &jr, query_range.c_str(), clientname, optionslist.jobstatuslist,
+      optionslist.joblevel_list, optionslist.jobtypes, volumename, poolname,
+      schedtime, optionslist.last, optionslist.count, ua->send.get(), llist,
+      descending, sortby, search, job_name_filter, client_name_filter);
 
   return true;
 }
@@ -1049,6 +1176,18 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
+    if (GetArgValue(ua, NT_("jobids"))) {
+      // Batch variant: one query for several JobIds instead of one
+      // "list joblog jobid=" round-trip per job. ACL filtering happens
+      // per-JobId inside GetAclFilteredJobidsFromCmdline(); an unauthorized
+      // or nonexistent jobid is simply omitted, not an error, since the
+      // caller already does not know in advance which of its requested
+      // jobids will be visible to it.
+      std::vector<JobId_t> jobids;
+      GetAclFilteredJobidsFromCmdline(ua, &jobids);
+      ua->db->ListJoblogRecordsForJobs(ua->jcr, jobids, ua->send.get(), llist);
+      return true;
+    }
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
                                 optionslist.count, ua->send.get(), llist);
@@ -1502,10 +1641,10 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   if (llist == VERT_LIST) {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs_long>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   } else {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   }
 
   return true;

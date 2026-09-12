@@ -552,7 +552,8 @@ void DirectorConnection::Disconnect()
 
 DirectorPrompt DirectorConnection::CallStreamed(
     const std::string& command,
-    const std::function<void(std::string_view)>& on_data)
+    const std::function<void(std::string_view)>& on_data,
+    const std::function<void()>& on_selection_start)
 {
   assert(fd_ >= 0);
   if (json_mode_) { DrainPendingInput(); }
@@ -584,7 +585,14 @@ DirectorPrompt DirectorConnection::CallStreamed(
       if (signal == BNET_MAIN_PROMPT) { return DirectorPrompt::Main; }
       if (signal == BNET_SUB_PROMPT) { return DirectorPrompt::Sub; }
       if (signal == BNET_SELECT_INPUT) { return DirectorPrompt::Select; }
-      if (signal == BNET_START_RTREE || signal == BNET_END_RTREE) { continue; }
+      if (signal == BNET_START_SELECT) {
+        if (on_selection_start) { on_selection_start(); }
+        continue;
+      }
+      if (signal == BNET_START_RTREE || signal == BNET_END_RTREE
+          || signal == BNET_END_SELECT) {
+        continue;
+      }
       if (signal == BNET_EOD || signal == BNET_EOD_POLL
           || signal == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the

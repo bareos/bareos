@@ -12,7 +12,7 @@
             <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
           </span>
           <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-            BAREOS
+            Bareos
           </span>
         </div>
         <q-separator dark />
@@ -113,7 +113,7 @@
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
         <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-          BAREOS
+          Bareos
         </span>
 
         <!-- Main nav tabs (desktop only) -->
@@ -474,7 +474,6 @@ const mainNavItems = computed(() => [
   { label: t('Schedules'), to: '/schedules', icon: 'schedule', testId: 'nav-schedules', drawerTestId: 'drawer-nav-schedules' },
   { label: t('Storages'), to: '/storages', icon: 'storage', testId: 'nav-storages', drawerTestId: 'drawer-nav-storages' },
   { label: t('Director'), to: '/director', icon: 'settings', testId: 'nav-director', drawerTestId: 'drawer-nav-director' },
-  { label: t('Analytics'), to: '/analytics', icon: 'bar_chart', testId: 'nav-analytics', drawerTestId: 'drawer-nav-analytics' },
 ])
 
 onMounted(() => {

@@ -25,10 +25,15 @@ import { resolveJobLevelCode } from './jobLevels.js'
 export function getRestoreBrowserPlaceholder({
   browserError,
   loadingBrowser,
+  buildingCache,
   hasSelectedJob,
 }) {
   if (browserError) {
     return 'error'
+  }
+
+  if (buildingCache && hasSelectedJob) {
+    return 'building-cache'
   }
 
   if (loadingBrowser && hasSelectedJob) {
@@ -111,17 +116,21 @@ export function filterRestoreSourceClients(clients, directorName) {
 export function buildRestoreSourceQuery(query, {
   clientName,
   directorName,
+  filesetName,
   jobid,
   mergeJobs,
   mergeFilesets,
+  sourceMode,
 } = {}) {
   const nextQuery = { ...query }
 
   delete nextQuery.client
   delete nextQuery.director
+  delete nextQuery.fileset
   delete nextQuery.jobid
   delete nextQuery.mergejobs
   delete nextQuery.mergefilesets
+  delete nextQuery.mode
 
   if (clientName) {
     nextQuery.client = clientName
@@ -129,6 +138,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (directorName) {
     nextQuery.director = directorName
+  }
+
+  if (filesetName) {
+    nextQuery.fileset = filesetName
   }
 
   if (jobid !== null && jobid !== undefined && jobid !== '') {
@@ -141,6 +154,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (typeof mergeFilesets === 'boolean') {
     nextQuery.mergefilesets = mergeFilesets ? '1' : '0'
+  }
+
+  if (sourceMode === 'latest' || sourceMode === 'browse') {
+    nextQuery.mode = sourceMode
   }
 
   return nextQuery
@@ -211,7 +228,9 @@ export function buildRestoreBackupOption(
   backup,
   {
     formatBytes = value => String(value),
+    formatTime = value => value,
     filesLabel = 'files',
+    showClient = false,
   } = {}
 ) {
   const jobid = backup?.jobid ?? ''
@@ -220,9 +239,13 @@ export function buildRestoreBackupOption(
   const starttime = backup?.starttime ?? ''
   const jobbytes = Number(backup?.jobbytes ?? 0)
   const jobfiles = Number(backup?.jobfiles ?? 0)
+  const client = backup?.client ?? ''
+  const fileset = backup?.fileset ?? ''
+  const displayStarttime = formatTime(starttime)
   const secondary = [
     jobid !== '' ? `#${jobid}` : '',
-    starttime,
+    showClient && client ? client : '',
+    displayStarttime,
     Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
     Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
   ].filter(Boolean).join(' · ')
@@ -235,8 +258,294 @@ export function buildRestoreBackupOption(
     level,
     levelCode: resolveJobLevelCode(level),
     starttime,
+    displayStarttime,
+    client,
+    fileset,
     secondary,
+    absoluteSecondary: [
+      jobid !== '' ? `#${jobid}` : '',
+      showClient && client ? client : '',
+      starttime,
+      Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
+      Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
+    ].filter(Boolean).join(' · '),
   }
+}
+
+// Narrows a list of raw backup job records (as returned by either a
+// per-client `llist backups` call or the client-agnostic `llist jobs`
+// browse-all-clients fallback) down to the ones matching the optional
+// fileset name and "at or before" start-time filters used by the restore
+// Source panel. `beforeFilter` is compared as a string prefix against the
+// catalog's `YYYY-MM-DD HH:MM:SS` starttime so a plain date (`YYYY-MM-DD`)
+// or a full timestamp both work.
+export function filterRestoreBackupsByCriteria(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const list = Array.isArray(backups) ? backups : []
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  const normalizedBefore = typeof beforeFilter === 'string' ? beforeFilter.trim() : ''
+
+  return list.filter((backup) => {
+    if (normalizedFileset && String(backup?.fileset ?? '') !== normalizedFileset) {
+      return false
+    }
+
+    if (normalizedBefore) {
+      const starttime = String(backup?.starttime ?? '')
+      if (!starttime || starttime > normalizedBefore) {
+        return false
+      }
+    }
+
+    return true
+  })
+}
+
+export function buildRestoreClientFilesetOptions(backups) {
+  const tuples = new Map()
+
+  for (const backup of Array.isArray(backups) ? backups : []) {
+    const client = String(backup?.client ?? '').trim()
+    const fileset = String(backup?.fileset ?? '').trim()
+    if (!client || !fileset) {
+      continue
+    }
+
+    const key = `${client}\u0000${fileset}`
+    const starttime = String(backup?.starttime ?? '')
+    const previous = tuples.get(key)
+    if (!previous || starttime > previous.latestStarttime) {
+      tuples.set(key, {
+        value: key,
+        label: `${fileset}@${client}`,
+        client,
+        fileset,
+        latestStarttime: starttime,
+      })
+    }
+  }
+
+  return [...tuples.values()].sort((left, right) => (
+    left.client.localeCompare(right.client)
+    || left.fileset.localeCompare(right.fileset)
+  ))
+}
+
+export function buildRestoreBackupChainOptions(
+  backups,
+  jobids,
+  {
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  const ids = Array.isArray(jobids)
+    ? jobids
+    : (typeof jobids === 'string' ? jobids.split(',') : [])
+  const wantedJobIds = new Set(
+    ids
+      .map(jobid => String(jobid ?? '').trim())
+      .filter(Boolean)
+  )
+
+  if (wantedJobIds.size === 0 || !Array.isArray(backups)) {
+    return []
+  }
+
+  return backups
+    .filter(backup => wantedJobIds.has(String(backup?.jobid ?? '').trim()))
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
+export function buildRestoreTimelinePoints(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  return filterRestoreBackupsByCriteria(backups, { filesetFilter })
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
+export function resolveRestoreTimelineSelection(points, selectedJobid) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selected = points.find(point => (
+      String(point?.jobid ?? '') === String(selectedJobid)
+    ))
+    if (selected) {
+      return selected
+    }
+  }
+
+  return points[points.length - 1] ?? null
+}
+
+export function buildRestoreBackupChains(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  const points = buildRestoreTimelinePoints(backups, {
+    filesetFilter,
+    formatBytes,
+    formatTime,
+  })
+  const chains = []
+  let currentChain = null
+
+  for (const point of points) {
+    const startsChain = resolveJobLevelCode(point.level) === 'F' || !currentChain
+    if (startsChain) {
+      currentChain = {
+        value: String(point.jobid ?? `chain-${chains.length}`),
+        label: point.displayStarttime
+          ? `Full #${point.jobid} · ${point.displayStarttime}`
+          : `Full #${point.jobid}`,
+        rootJobid: point.jobid,
+        rootStarttime: point.starttime,
+        rootDisplayStarttime: point.displayStarttime,
+        jobs: [],
+      }
+      chains.push(currentChain)
+    }
+
+    currentChain.jobs.push(point)
+  }
+
+  return chains.map((chain, index) => {
+    const latestJob = chain.jobs[chain.jobs.length - 1] ?? null
+    return {
+      ...chain,
+      index,
+      latestJobid: latestJob?.jobid ?? null,
+      latestStarttime: latestJob?.starttime ?? chain.rootStarttime,
+      jobCount: chain.jobs.length,
+    }
+  })
+}
+
+export function resolveRestoreBackupChain(chains, selectedJobid) {
+  if (!Array.isArray(chains) || chains.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selectedChain = chains.find(chain => (
+      Array.isArray(chain?.jobs)
+      && chain.jobs.some(job => String(job?.jobid ?? '') === String(selectedJobid))
+    ))
+    if (selectedChain) {
+      return selectedChain
+    }
+  }
+
+  return chains[chains.length - 1] ?? null
+}
+
+export function resolveAdjacentRestoreBackupChain(chains, currentChain, direction) {
+  if (!Array.isArray(chains) || chains.length === 0 || !currentChain) {
+    return null
+  }
+
+  const currentIndex = chains.findIndex(chain => chain?.value === currentChain?.value)
+  if (currentIndex === -1) {
+    return null
+  }
+
+  const offset = direction === 'older' ? -1 : 1
+  return chains[currentIndex + offset] ?? null
+}
+
+// Resolves the newest backup job matching a client's already-loaded backup
+// list, narrowed to a specific fileset (required -- restoring "the latest
+// backup" only makes sense for a single client+fileset tuple) and an
+// optional "at or before" date, for the Restore page's "Latest Backup"
+// selection mode. Returns the jobid, or null if no fileset filter is given
+// or nothing matches. Backups are compared by starttime (falling back to
+// jobid as a tie-breaker), independent of any pre-existing sort order in
+// the input list.
+export function resolveLatestRestoreBackup(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  if (!normalizedFileset) {
+    return null
+  }
+
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter: normalizedFileset,
+    beforeFilter,
+  })
+
+  if (matches.length === 0) {
+    return null
+  }
+
+  const sortKey = backup => (
+    `${String(backup?.starttime ?? '')}#${String(backup?.jobid ?? '').padStart(12, '0')}`
+  )
+
+  const latest = matches.reduce((best, candidate) => (
+    sortKey(candidate) > sortKey(best) ? candidate : best
+  ))
+
+  return latest?.jobid ?? null
+}
+
+// True if a Full-level backup exists for the given fileset at or before the
+// given start time -- used by the Restore page's "Latest Backup" mode to
+// decide whether to show a "no Full backup found in this chain" warning.
+// The actual restore chain merging (.bvfs_get_jobids ... all) is still
+// performed server-side exactly as for a manually-picked job; this is only
+// a best-effort, client-side hint for the user.
+export function hasRestoreFullBackupInChain(backups, {
+  filesetFilter = '',
+  uptoStarttime = '',
+} = {}) {
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter,
+    beforeFilter: uptoStarttime,
+  })
+
+  return matches.some(backup => resolveJobLevelCode(backup?.level) === 'F')
+}
+
+// Builds the sorted, de-duplicated `{ label, value }` options for the
+// restore Source panel's fileset filter from the catalog's `list filesets`
+// response.
+export function buildRestoreFilesetOptions(filesets) {
+  const names = new Set()
+
+  for (const [, fileset] of normalizeRestoreFilesetEntries(filesets)) {
+    const filesetName = fileset?.name ?? ''
+    if (filesetName) {
+      names.add(filesetName)
+    }
+  }
+
+  return [...names]
+    .sort((left, right) => left.localeCompare(right))
+    .map(name => ({ label: name, value: name }))
 }
 
 export function resolveRestoreBackupOption(options, jobid) {
@@ -380,6 +689,14 @@ export function resolveRestorePluginHintId(definition) {
   return null
 }
 
+// Resolves a human-readable plugin name for display, preferring the
+// module_name-derived hint (e.g. "VMware") over the generic plugin loader
+// name (e.g. "bpipe", "python-fd", "grpc") that the FileSet actually invokes.
+export function resolveRestorePluginDisplayName(definition) {
+  const hintId = resolveRestorePluginHintId(definition)
+  return (hintId && restorePluginHints[hintId]?.displayName) || definition?.pluginName || ''
+}
+
 export function buildRestorePluginOptionExample(pluginHint) {
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
   const preferredOptions = options.filter(option => option.status === 'required')
@@ -439,7 +756,7 @@ export function buildRestorePluginFilesetDetails(filesets) {
       description: fileset?.description ?? '',
       hasPlugin: definitions.length > 0,
       definitions,
-      pluginNames: [...new Set(definitions.map(definition => definition.pluginName).filter(Boolean))],
+      pluginNames: [...new Set(definitions.map(resolveRestorePluginDisplayName).filter(Boolean))],
       optionKeys: [...new Set(definitions.flatMap(definition => definition.optionKeys))],
     })
   }

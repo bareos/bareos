@@ -22,12 +22,14 @@
 import {
   directorCollection,
   normaliseClient,
+  normaliseJob,
 } from './useDirectorFetch.js'
 import {
   directorAggregateErrors,
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function decorateClients(entries, enabledMap, director) {
   return directorCollection(entries).map((entry) => {
@@ -43,6 +45,49 @@ function decorateClients(entries, enabledMap, director) {
   })
 }
 
+function decorateRecentBackups(entries, director) {
+  return directorCollection(entries).map((entry) => ({
+    ...normaliseJob(entry),
+    director,
+  }))
+}
+
+export function decorateScheduledBackups(response, director) {
+  const schedules = new Map(
+    (Array.isArray(response?.schedules) ? response.schedules : [])
+      .map(schedule => [schedule?.name, schedule])
+  )
+  const scheduled = []
+  const now = Math.floor(Date.now() / 1000)
+
+  for (const preview of Array.isArray(response?.preview) ? response.preview : []) {
+    const runtime = Number(preview?.runtime ?? 0)
+    if (!Number.isFinite(runtime) || runtime <= 0 || runtime > now) {
+      continue
+    }
+    const schedule = schedules.get(preview?.schedule)
+    const jobs = Array.isArray(schedule?.jobs) ? schedule.jobs : []
+    const previewJobs = preview?.client
+      ? [{ name: preview.job ?? '', client: preview.client, enabled: true }]
+      : jobs
+
+    for (const job of previewJobs) {
+      if (!job?.client || job.enabled === false || schedule?.enabled === false) {
+        continue
+      }
+      scheduled.push({
+        client: job.client,
+        job: job.name ?? preview.job ?? '',
+        schedule: preview.schedule ?? '',
+        runtime,
+        director,
+      })
+    }
+  }
+
+  return scheduled
+}
+
 function sortClients(clients) {
   return [...clients].sort((left, right) => {
     const nameCompare = String(left.name ?? '').localeCompare(String(right.name ?? ''))
@@ -54,11 +99,40 @@ function sortClients(clients) {
   })
 }
 
-export async function fetchAggregatedClients(credentials, directors) {
+const clientsCache = createTtlCache()
+const CACHE_TTL_MS = 60_000 // 60 seconds TTL
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    // Fold the session credential into the key so a re-login under the same
+    // username (but a different password/session) can't reuse another
+    // session's cached catalog data within the TTL window.
+    session: hashCacheFingerprint(credentials?.password),
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearClientsCache() {
+  clientsCache.clear()
+}
+
+export async function fetchAggregatedClients(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  if (!forceRefresh) {
+    const cached = clientsCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
+  }
+  const fetchGeneration = clientsCache.beginFetch()
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const [listResult, dotResult] = await Promise.all([
+    const [listResult, dotResult, recentBackupsResult, schedulerResult] = await Promise.all([
       client.call('llist clients'),
       client.call('.clients'),
+      client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+      client.call('status scheduler days=-31,1'),
     ])
 
     const enabledMap = Object.fromEntries(
@@ -68,11 +142,17 @@ export async function fetchAggregatedClients(credentials, directors) {
     return {
       director,
       clients: decorateClients(listResult?.clients, enabledMap, director),
+      recentBackups: decorateRecentBackups(recentBackupsResult?.jobs, director),
+      scheduledBackups: decorateScheduledBackups(schedulerResult, director),
     }
   })
 
-  return {
+  const data = {
     clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
+    recentBackups: fulfilledDirectorValues(results).flatMap(value => value.recentBackups),
+    scheduledBackups: fulfilledDirectorValues(results).flatMap(value => value.scheduledBackups),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
+  clientsCache.set(cacheKey, data, fetchGeneration)
+  return data
 }

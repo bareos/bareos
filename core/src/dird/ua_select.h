@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_UA_SELECT_H_
 
 #include "dird/ua.h"
+#include <string_view>
 template <typename T> class alist;
 
 struct PoolDbRecord;
@@ -32,6 +33,46 @@ struct ClientDbRecord;
 struct JobDbRecord;
 
 namespace directordaemon {
+
+enum class SelectionInputResult
+{
+  kContinue,
+  kSelected,
+  kCanceled,
+};
+
+class InteractiveSelection {
+ public:
+  explicit InteractiveSelection(const std::vector<std::string>& options);
+
+  SelectionInputResult ApplyInput(std::string_view input);
+  std::string Format(const std::string& header,
+                     const std::string& prompt,
+                     size_t max_visible_options = 20) const;
+  size_t selected_index() const { return selected_index_; }
+
+  /* Configure the grid layout used for rendering and for column-wise
+   * (left/right) navigation. rows_per_column mirrors the same value passed
+   * to Format() as max_visible_options; num_columns is the number of
+   * side-by-side columns to use when the terminal is wide enough (1 keeps
+   * the original single-column behavior). Must be called again whenever
+   * either value changes, e.g. after a terminal resize. */
+  void SetColumnLayout(size_t rows_per_column, size_t num_columns);
+
+ private:
+  bool Matches(size_t index) const;
+  void SelectNext(int direction);
+  void SelectAdjacentColumn(int direction);
+  size_t EffectiveColumns(size_t match_count,
+                          size_t rows_per_column,
+                          size_t max_columns) const;
+
+  const std::vector<std::string>& options_;
+  std::string filter_;
+  size_t selected_index_{0};
+  size_t rows_per_column_{0};
+  size_t num_columns_{1};
+};
 
 StorageResource* select_storage_resource(UaContext* ua,
                                          bool autochanger_only = false);

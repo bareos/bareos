@@ -33,15 +33,65 @@
       <!-- DEVICES -->
       <q-tab-panel name="storages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Storage Devices') }}</q-card-section>
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Storage Devices') }}</span>
+            <q-space />
+            <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableStorageCols" @toggle="toggleStorageCol" />
+          </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8"
+                icon="dns"
+                clickable
+                :selected="deviceQuickFilter === 'all'"
+                @click="deviceQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ deviceStats.total }}
+              </q-chip>
+              <q-chip
+                dense square outline color="positive"
+                icon="check_circle"
+                clickable
+                :selected="deviceQuickFilter === 'enabled'"
+                @click="deviceQuickFilter = 'enabled'"
+              >
+                {{ t('Enabled') }}: {{ deviceStats.enabled }}
+              </q-chip>
+              <q-chip
+                dense square outline color="negative"
+                icon="pause_circle"
+                clickable
+                :selected="deviceQuickFilter === 'disabled'"
+                @click="deviceQuickFilter = 'disabled'"
+              >
+                {{ t('Disabled') }}: {{ deviceStats.disabled }}
+              </q-chip>
+              <q-chip
+                v-if="deviceStats.autochanger"
+                dense square outline color="info"
+                icon="view_carousel"
+                clickable
+                :selected="deviceQuickFilter === 'autochanger'"
+                @click="deviceQuickFilter = 'autochanger'"
+              >
+                {{ t('Autochanger') }}: {{ deviceStats.autochanger }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !storages.length)"
               :rows="storages"
-              :columns="storageCols"
+              :columns="visibleStorageCols"
               row-key="scopeKey"
               dense
               flat
               :loading="loading"
+              :filter="deviceSearch"
               v-model:pagination="devicesPagination"
             >
               <template #body-cell-director="props">
@@ -77,6 +127,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleStorageCols.length" :rows="6" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -84,15 +135,47 @@
       <!-- POOLS -->
       <q-tab-panel name="pools" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Pools') }}</q-card-section>
+          <q-card-section class="panel-header row items-center">
+            <span>{{ t('Pools') }}</span>
+            <q-space />
+            <q-input v-model="poolSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleablePoolCols" @toggle="togglePoolCol" />
+          </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8"
+                icon="inventory_2"
+                clickable
+                :selected="poolQuickFilter === 'all'"
+                @click="poolQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ poolStats.total }}
+              </q-chip>
+              <q-chip
+                v-for="(count, type) in poolStats.byType"
+                :key="type"
+                dense square outline color="primary"
+                clickable
+                :selected="poolQuickFilter === type"
+                @click="poolQuickFilter = type"
+              >
+                {{ type }}: {{ count }}
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !pools.length)"
               :rows="pools"
-              :columns="poolCols"
+              :columns="visiblePoolCols"
               row-key="scopeKey"
               dense
               flat
               :loading="loading"
+              :filter="poolSearch"
               v-model:pagination="poolsPagination"
             >
               <template #body-cell-name="props">
@@ -184,6 +267,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visiblePoolCols.length" :rows="6" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -197,11 +281,37 @@
             <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
+            <ColumnPickerMenu :columns="toggleableVolumeCols" @toggle="toggleVolumeCol" />
+          </q-card-section>
+          <q-card-section class="q-py-sm storages-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip
+                dense square outline color="grey-8" icon="album"
+                clickable
+                :selected="volumeQuickFilter === 'all'"
+                @click="volumeQuickFilter = 'all'"
+              >
+                {{ t('Total') }}: {{ volumeStats.total }} ({{ formatBytes(volumeStats.totalBytes) }})
+              </q-chip>
+              <q-chip
+                v-for="(count, status) in volumeStats.byStatus"
+                :key="status"
+                dense square outline
+                :color="statusColor(status)"
+                :text-color="statusColor(status) === 'warning' ? 'black' : undefined"
+                clickable
+                :selected="volumeQuickFilter === status"
+                @click="volumeQuickFilter = status"
+              >
+                {{ status }}: {{ count }}
+              </q-chip>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(loading && !volumes.length)"
               :rows="volumes"
-              :columns="volumeCols"
+              :columns="visibleVolumeCols"
               row-key="scopeKey"
               dense
               flat
@@ -284,6 +394,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleVolumeCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -322,6 +433,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import {
   fetchAggregatedStoragesState,
   normaliseDirectorStoragesState,
@@ -346,6 +459,8 @@ import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -368,7 +483,12 @@ function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
 }
 const tab      = ref(normaliseTab(route.query.tab))
-const volSearch = ref('')
+const deviceSearch = usePersistedTableFilter('storages.devices')
+const poolSearch = usePersistedTableFilter('storages.pools')
+const volSearch = usePersistedTableFilter('storages.volumes')
+const deviceQuickFilter = ref('all')
+const poolQuickFilter = ref('all')
+const volumeQuickFilter = ref('all')
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
@@ -456,8 +576,23 @@ function reportRowError(row, reason) {
 }
 
 const pools = computed(() => {
-  return poolRows.value
+  return poolRows.value.filter(poolMatchesQuickFilter)
 })
+
+const poolStats = computed(() => {
+  const all = poolRows.value
+  const byType = {}
+  for (const pool of all) {
+    const type = pool.pooltype || t('Unknown')
+    byType[type] = (byType[type] ?? 0) + 1
+  }
+  return { total: all.length, byType }
+})
+
+function poolMatchesQuickFilter(pool) {
+  if (poolQuickFilter.value === 'all') return true
+  return (pool.pooltype || t('Unknown')) === poolQuickFilter.value
+}
 
 const maxPoolBytes = computed(() =>
   Math.max(1, ...pools.value.map(p => p.totalbytes))
@@ -465,10 +600,46 @@ const maxPoolBytes = computed(() =>
 function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
 
 const volumes = computed(() => {
-  return volumeRows.value
+  return volumeRows.value.filter(volumeMatchesQuickFilter)
 })
 
-const storages = computed(() => storageRows.value)
+const volumeStats = computed(() => {
+  const all = volumeRows.value
+  const byStatus = {}
+  for (const vol of all) {
+    const status = vol.volstatus || t('Unknown')
+    byStatus[status] = (byStatus[status] ?? 0) + 1
+  }
+  return {
+    total: all.length,
+    totalBytes: all.reduce((sum, vol) => sum + (Number(vol.volbytes) || 0), 0),
+    byStatus,
+  }
+})
+
+function volumeMatchesQuickFilter(vol) {
+  if (volumeQuickFilter.value === 'all') return true
+  return (vol.volstatus || t('Unknown')) === volumeQuickFilter.value
+}
+
+const storages = computed(() => storageRows.value.filter(deviceMatchesQuickFilter))
+
+const deviceStats = computed(() => {
+  const all = storageRows.value
+  return {
+    total: all.length,
+    enabled: all.filter(s => s.enabled).length,
+    disabled: all.filter(s => !s.enabled).length,
+    autochanger: all.filter(s => s.autochanger).length,
+  }
+})
+
+function deviceMatchesQuickFilter(storage) {
+  if (deviceQuickFilter.value === 'enabled') return storage.enabled
+  if (deviceQuickFilter.value === 'disabled') return !storage.enabled
+  if (deviceQuickFilter.value === 'autochanger') return !!storage.autochanger
+  return true
+}
 
 async function refresh() {
   loading.value = true
@@ -580,6 +751,24 @@ const storageCols = computed(() => [
   { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:110px' },
 ])
 
+const {
+  visibleColumns: visibleStorageCols,
+  toggleableColumns: toggleableStorageCols,
+  toggleColumn: toggleStorageCol,
+} = usePersistedTableColumns('storages.devices', storageCols, { essential: ['name', 'director', 'actions'] })
+
+const {
+  visibleColumns: visiblePoolCols,
+  toggleableColumns: toggleablePoolCols,
+  toggleColumn: togglePoolCol,
+} = usePersistedTableColumns('storages.pools', poolCols, { essential: ['name', 'director'] })
+
+const {
+  visibleColumns: visibleVolumeCols,
+  toggleableColumns: toggleableVolumeCols,
+  toggleColumn: toggleVolumeCol,
+} = usePersistedTableColumns('storages.volumes', volumeCols, { essential: ['volumename', 'director', 'actions'] })
+
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
            Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal' }[s] || 'info'
@@ -690,3 +879,13 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   refresh()
 })
 </script>
+
+<style scoped>
+.storages-list-stats {
+  flex-wrap: wrap;
+}
+
+.storages-list-stats :deep(.q-chip) {
+  font-weight: 600;
+}
+</style>

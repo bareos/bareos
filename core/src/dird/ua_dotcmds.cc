@@ -1020,6 +1020,28 @@ bool DotApiCmd(UaContext* ua, const char*)
   return true;
 }
 
+/**
+ * Hidden command, silently sent by bconsole (never by interactive users)
+ * right after connecting -- and again whenever the terminal is resized --
+ * to let the Director know the real terminal size. This is used to size
+ * interactive selection menus (see InteractiveSelection::Format()) so that
+ * their header and first options don't get scrolled off-screen on short
+ * terminals, and to lay them out in multiple columns when the terminal is
+ * wide enough to show more options at once despite limited height.
+ * Produces no output, since it is not meant to be user-visible.
+ */
+bool DotTerminalsizeCmd(UaContext* ua, const char*)
+{
+  if (ua->argc != 3) { return false; }
+
+  int height = atoi(ua->argk[1]);
+  int width = atoi(ua->argk[2]);
+  if (height > 0) { ua->terminal_height = height; }
+  if (width > 0) { ua->terminal_width = width; }
+
+  return true;
+}
+
 static int SqlHandler(void* ctx, int num_field, char** row)
 {
   UaContext* ua = (UaContext*)ctx;

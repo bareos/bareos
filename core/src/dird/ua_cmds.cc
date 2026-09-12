@@ -119,6 +119,7 @@ extern bool DotBvfsClearCacheCmd(UaContext* ua, const char* cmd);
 extern bool DotApiCmd(UaContext* ua, const char* cmd);
 extern bool DotSqlCmd(UaContext* ua, const char* cmd);
 extern bool DotAuthorizedCmd(UaContext* ua, const char* cmd);
+extern bool DotTerminalsizeCmd(UaContext* ua, const char* cmd);
 
 /* ua_status.c */
 extern bool DotStatusCmd(UaContext* ua, const char* cmd);
@@ -180,15 +181,19 @@ const char list_cmd_usage[] = NT_(
     "fileset [ ujobid=<complete_name> ] | "
     "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] "
     "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
-    "[pool=<pool>] "
+    "[pool=<pool>] [sortby=<jobid|name|client|type|level|starttime|jobfiles|"
+    "jobbytes|joberrors|jobstatus>] [reverse] [search=<text>] "
     "[days=<number>] [hours=<number>] [last] [count] | "
     "job=<job-name> [client=<client-name>] [jobstatus=<status>] "
     "[jobtype=<jobtype>] [joblevel=<joblevel>] [volume=<volumename>] "
+    "[sortby=<jobid|name|client|type|level|starttime|jobfiles|jobbytes|"
+    "joberrors|jobstatus>] [reverse] [search=<text>] "
     "[days=<number>] [hours=<number>] | "
     "jobid=<jobid> | "
     "ujobid=<complete_name> | "
     "joblog jobid=<jobid> [count] | "
     "joblog ujobid=<complete_name> [count] | "
+    "joblog jobids=<jobid,jobid,...> | "
     "jobmedia jobid=<jobid> | "
     "jobmedia ujobid=<complete_name> | "
     "jobtotals | "
@@ -221,6 +226,9 @@ static struct ua_cmdstruct commands[] = {
      NULL, true, false},
     {NT_(".api"), DotApiCmd, T_("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
+    {NT_(".terminalsize"), DotTerminalsizeCmd,
+     T_("Report the client's terminal size (internal use)"),
+     NT_("<lines> <columns>"), false, false},
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
          "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "
@@ -446,6 +454,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
+         "catalog | "
          "subscriptions [clients] [plugins] [all] [anonymize] "
          "[client=<client-name>] | "
          "configuration"),

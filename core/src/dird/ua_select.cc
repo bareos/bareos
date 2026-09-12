@@ -33,12 +33,15 @@
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
 #include <algorithm>
+#include <cctype>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace directordaemon {
@@ -46,6 +49,320 @@ namespace directordaemon {
 /* Imported variables */
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
+
+InteractiveSelection::InteractiveSelection(
+    const std::vector<std::string>& options)
+    : options_(options)
+{
+}
+
+bool InteractiveSelection::Matches(size_t index) const
+{
+  if (filter_.empty()) { return true; }
+  std::string text = std::to_string(index + 1) + ": " + options_[index];
+  std::string filter = filter_;
+  std::transform(text.begin(), text.end(), text.begin(),
+                 [](unsigned char value) { return std::tolower(value); });
+  std::transform(filter.begin(), filter.end(), filter.begin(),
+                 [](unsigned char value) { return std::tolower(value); });
+  return text.find(filter) != std::string::npos;
+}
+
+void InteractiveSelection::SelectNext(int direction)
+{
+  if (options_.empty()) { return; }
+  size_t index = selected_index_;
+  for (size_t count = 0; count < options_.size(); ++count) {
+    if (direction > 0) {
+      index = (index + 1) % options_.size();
+    } else {
+      index = index == 0 ? options_.size() - 1 : index - 1;
+    }
+    if (Matches(index)) {
+      selected_index_ = index;
+      return;
+    }
+  }
+}
+
+void InteractiveSelection::SetColumnLayout(size_t rows_per_column,
+                                           size_t num_columns)
+{
+  rows_per_column_ = rows_per_column;
+  num_columns_ = std::max<size_t>(1, num_columns);
+}
+
+size_t InteractiveSelection::EffectiveColumns(size_t match_count,
+                                              size_t rows_per_column,
+                                              size_t max_columns) const
+{
+  if (max_columns <= 1 || rows_per_column == 0) { return 1; }
+  size_t needed = (match_count + rows_per_column - 1) / rows_per_column;
+  return std::min(max_columns, std::max<size_t>(1, needed));
+}
+
+/**
+ * Jump to the item in the same row of the previous/next column, i.e. move
+ * selected_index_ by one "page" of rows_per_column_ matches. Used for
+ * left/right navigation once the menu is laid out in multiple columns; has
+ * no effect if there is no adjacent column in that direction.
+ */
+void InteractiveSelection::SelectAdjacentColumn(int direction)
+{
+  if (options_.empty()) { return; }
+  std::vector<size_t> matches;
+  for (size_t i = 0; i < options_.size(); ++i) {
+    if (Matches(i)) { matches.push_back(i); }
+  }
+  if (matches.empty()) { return; }
+  size_t columns
+      = EffectiveColumns(matches.size(), rows_per_column_, num_columns_);
+  if (columns <= 1 || rows_per_column_ == 0) { return; }
+
+  auto it = std::find(matches.begin(), matches.end(), selected_index_);
+  size_t position
+      = it == matches.end() ? 0 : std::distance(matches.begin(), it);
+
+  if (direction > 0) {
+    if (position + rows_per_column_ >= matches.size()) { return; }
+    position += rows_per_column_;
+  } else {
+    if (position < rows_per_column_) { return; }
+    position -= rows_per_column_;
+  }
+  selected_index_ = matches[position];
+}
+
+SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
+{
+  while (!input.empty()
+         && (input.back() == '\r' || input.back() == '\n' || input.back() == ' '
+             || input.back() == '\t')) {
+    input.remove_suffix(1);
+  }
+  while (!input.empty() && (input.front() == ' ' || input.front() == '\t')) {
+    input.remove_prefix(1);
+  }
+
+  if (input == "key:cancel" || input == ".") {
+    return SelectionInputResult::kCanceled;
+  }
+  if (input == "key:text:." && filter_.empty()) {
+    // A lone "." was always the classic shortcut to cancel a selection
+    // (see the "Enter a period (.) to cancel a command." hint used
+    // elsewhere). In raw/arrow-key mode every printable keystroke arrives
+    // as "key:text:<char>", so a bare "." has to be special-cased here to
+    // keep that shortcut working; once a filter is already being typed,
+    // "." is treated as an ordinary filter character instead.
+    return SelectionInputResult::kCanceled;
+  }
+  if (input == "key:enter") {
+    return Matches(selected_index_) ? SelectionInputResult::kSelected
+                                    : SelectionInputResult::kContinue;
+  }
+  if (input.empty()) {
+    // An empty input line in non-interactive/scripting mode selects
+    // the currently highlighted default option (Option 1).
+    return SelectionInputResult::kSelected;
+  }
+  if (input == "key:up") {
+    SelectNext(-1);
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:down") {
+    SelectNext(1);
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:left") {
+    if (num_columns_ > 1) {
+      SelectAdjacentColumn(-1);
+    } else {
+      SelectNext(-1);
+    }
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:right") {
+    if (num_columns_ > 1) {
+      SelectAdjacentColumn(1);
+    } else {
+      SelectNext(1);
+    }
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:backspace") {
+    if (!filter_.empty()) { filter_.pop_back(); }
+  } else if (input == "key:space") {
+    filter_.push_back(' ');
+  } else if (input.starts_with("key:text:")) {
+    filter_.append(input.substr(strlen("key:text:")));
+  } else if (input.starts_with("key:select:")
+             || Is_a_number(std::string(input).c_str())) {
+    std::string value(input.starts_with("key:select:")
+                          ? input.substr(strlen("key:select:"))
+                          : input);
+    if (!Is_a_number(value.c_str())) {
+      return input.starts_with("key:") ? SelectionInputResult::kContinue
+                                       : SelectionInputResult::kCanceled;
+    }
+    size_t selected = static_cast<size_t>(strtoul(value.c_str(), nullptr, 10));
+    if (selected < 1 || selected > options_.size()) {
+      return input.starts_with("key:") ? SelectionInputResult::kContinue
+                                       : SelectionInputResult::kCanceled;
+    }
+    selected_index_ = selected - 1;
+    return SelectionInputResult::kSelected;
+  } else if (!input.empty() && !input.starts_with("key:")) {
+    // Plain-text console input (for example a filter or option name from
+    // a non-TTY client or script).
+    std::string filter(input);
+    std::transform(filter.begin(), filter.end(), filter.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    bool found_match = false;
+    for (size_t i = 0; i < options_.size(); ++i) {
+      std::string text = std::to_string(i + 1) + ": " + options_[i];
+      std::transform(text.begin(), text.end(), text.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+      if (text.find(filter) != std::string::npos) {
+        if (!found_match) {
+          selected_index_ = i;
+          found_match = true;
+        }
+      }
+    }
+    if (found_match) { return SelectionInputResult::kSelected; }
+    return SelectionInputResult::kCanceled;
+  } else {
+    return SelectionInputResult::kContinue;
+  }
+
+  if (!Matches(selected_index_)) {
+    for (size_t i = 0; i < options_.size(); ++i) {
+      if (Matches(i)) {
+        selected_index_ = i;
+        break;
+      }
+    }
+  }
+  return SelectionInputResult::kContinue;
+}
+
+std::string InteractiveSelection::Format(const std::string& header,
+                                         const std::string& prompt,
+                                         size_t max_visible_options) const
+{
+  std::string output = header;
+  output.append(prompt);
+  output.append(
+      " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+      "filter):\n");
+  if (!filter_.empty()) {
+    output.append("Filter: ");
+    output.append(filter_);
+    output.push_back('\n');
+  }
+
+  std::vector<size_t> matches;
+  for (size_t i = 0; i < options_.size(); ++i) {
+    if (Matches(i)) { matches.push_back(i); }
+  }
+  if (matches.empty()) {
+    output.append("  (no options match)\n");
+    return output;
+  }
+
+  if (max_visible_options == 0) { max_visible_options = 1; }
+  size_t columns
+      = EffectiveColumns(matches.size(), max_visible_options, num_columns_);
+
+  auto selected = std::find(matches.begin(), matches.end(), selected_index_);
+  size_t selected_position = selected == matches.end()
+                                 ? 0
+                                 : std::distance(matches.begin(), selected);
+
+  auto append_entry = [&](size_t i) {
+    /* Prefix the currently selected line with a plain-text marker, in
+     * addition to the ANSI reverse-video escape codes below. Screen
+     * readers and braille displays attached to a terminal generally read
+     * the character stream only; they do not surface ANSI attribute
+     * codes, so without a textual marker a blind user has no way to tell
+     * which item is currently selected. */
+    output.append(i == selected_index_ ? "> " : "  ");
+    if (i == selected_index_) { output.append("\033[7m"); }
+    output.append(std::to_string(i + 1));
+    output.append(": ");
+    output.append(options_[i]);
+    if (i == selected_index_) { output.append("\033[0m"); }
+  };
+
+  if (columns <= 1) {
+    size_t first = selected_position > max_visible_options / 2
+                       ? selected_position - max_visible_options / 2
+                       : 0;
+    first = std::min(
+        first, matches.size() - std::min(matches.size(), max_visible_options));
+    size_t last = std::min(matches.size(), first + max_visible_options);
+    if (first > 0) { output.append("  ...\n"); }
+    for (size_t position = first; position < last; ++position) {
+      append_entry(matches[position]);
+      output.push_back('\n');
+    }
+    if (last < matches.size()) { output.append("  ...\n"); }
+  } else {
+    // Every match has a fixed global column/row position based purely on
+    // its index within `matches`: column = position / max_visible_options,
+    // row = position % max_visible_options. This exactly mirrors
+    // SelectAdjacentColumn()'s stride of rows_per_column_ (== the
+    // max_visible_options passed to this same call, see DoPrompt()), so
+    // rendering and Left/Right navigation always agree -- regardless of
+    // whether the last column happens to be only partially filled.
+    size_t columns_needed
+        = (matches.size() + max_visible_options - 1) / max_visible_options;
+    size_t selected_column = selected_position / max_visible_options;
+    size_t first_col
+        = selected_column > columns / 2 ? selected_column - columns / 2 : 0;
+    first_col = std::min(first_col,
+                         columns_needed - std::min(columns_needed, columns));
+    size_t last_col = std::min(columns_needed, first_col + columns);
+
+    size_t first = first_col * max_visible_options;
+    size_t last = std::min(matches.size(), last_col * max_visible_options);
+    if (first_col > 0) { output.append("  ...\n"); }
+
+    // Column width is based on the widest entry actually shown, so it
+    // adapts to the current filter/scroll window instead of reserving
+    // space for the single longest option overall.
+    size_t index_digits = std::to_string(options_.size()).length();
+    size_t max_entry_length = 0;
+    for (size_t position = first; position < last; ++position) {
+      size_t i = matches[position];
+      size_t entry_length
+          = 2 /* marker */ + index_digits + 2 /* ": " */ + options_[i].size();
+      max_entry_length = std::max(max_entry_length, entry_length);
+    }
+    constexpr size_t kColumnGap = 2;
+    size_t column_width = max_entry_length + kColumnGap;
+
+    for (size_t row = 0; row < max_visible_options; ++row) {
+      for (size_t col = first_col; col < last_col; ++col) {
+        size_t position = col * max_visible_options + row;
+        if (position < first || position >= last) { continue; }
+        size_t i = matches[position];
+        append_entry(i);
+        // Escape codes have no visible width, so pad based on the actual
+        // printable length rather than the appended string's byte length.
+        size_t printable_length = 2 + index_digits + 2 + options_[i].size();
+        bool is_last_column_entry
+            = (col == last_col - 1) || (position + max_visible_options >= last);
+        if (!is_last_column_entry && printable_length < column_width) {
+          output.append(column_width - printable_length, ' ');
+        }
+      }
+      output.push_back('\n');
+    }
+    if (last_col < columns_needed) { output.append("  ...\n"); }
+  }
+  return output;
+}
 
 // Confirm a retention period
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
@@ -1206,11 +1523,7 @@ int DoPrompt(UaContext* ua,
              int max_prompt)
 {
   int item;
-  PoolMem pmsg(PM_MESSAGE);
   BareosSocket* user = ua->UA_sock;
-
-  int window_width = 80;
-  int min_lines_threshold = 20;
 
   if (prompt) { *prompt = 0; }
   if (ua->prompts.size() == 1) {
@@ -1227,8 +1540,7 @@ int DoPrompt(UaContext* ua,
   if (ua->batch) {
     // First print the choices he wanted to make
     ua->SendMsg("%s", ua->prompt_header.c_str());
-    ua->SendMsg("%s",
-                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+    ua->SendMsg("%s", FormatPrompts(ua, 80, 20).c_str());
 
     // Now print error message
     ua->SendMsg(T_("Your request has multiple choices for \"%s\". Selection is "
@@ -1238,54 +1550,110 @@ int DoPrompt(UaContext* ua,
     goto done;
   }
 
-  if (ua->api) { user->signal(BNET_START_SELECT); }
-
-  ua->SendMsg("%s", ua->prompt_header.c_str());
-
-  if (ua->api) {
-    for (auto& candidate : ua->prompts) {
-      ua->SendMsg("%s", candidate.c_str());
-    }
-  } else {
-    ua->SendMsg("%s",
-                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+  if (ua->prompts.empty()) {
+    ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
+    item = -1;
+    goto done;
+  }
+  if (!user) {
+    item = -1;
+    goto done;
   }
 
+  {
+    // Reserve a few lines for the prompt/filter line and the leading and
+    // trailing truncation markers so the whole menu block fits within the
+    // client's real terminal height (when known) instead of scrolling the
+    // header/first options off-screen. Fall back to the historical fixed
+    // size of 20 when the client never reported its terminal height (e.g.
+    // the WebUI console, batch/API mode, or an older bconsole).
+    constexpr size_t kDefaultMaxVisibleOptions = 20;
+    constexpr size_t kMinVisibleOptions = 3;
+    constexpr size_t kChromeLines = 5;
+    auto compute_max_visible_options = [&] {
+      if (ua->terminal_height <= 0) { return kDefaultMaxVisibleOptions; }
+      size_t available
+          = static_cast<size_t>(ua->terminal_height) > kChromeLines
+                ? static_cast<size_t>(ua->terminal_height) - kChromeLines
+                : 0;
+      return std::max(kMinVisibleOptions, available);
+    };
+    size_t max_visible_options = compute_max_visible_options();
 
-  if (ua->api) { user->signal(BNET_END_SELECT); }
+    // When the client also reported its terminal width, and it is wide
+    // enough for more than one column of options, spread the menu across
+    // multiple side-by-side columns instead of a single vertical list, so
+    // a short-but-wide terminal can still show many (or all) options at
+    // once. rows_per_column stays whatever max_visible_options is, i.e.
+    // columns only add breadth, they never reduce the height budget.
+    auto compute_num_columns = [&] {
+      if (ua->terminal_width <= 0) { return size_t{1}; }
+      size_t index_digits = std::to_string(ua->prompts.size()).length();
+      size_t max_option_length = 1;
+      for (auto& option : ua->prompts) {
+        max_option_length = std::max(max_option_length, option.size());
+      }
+      // marker(2) + "N: "(index_digits + 2) + option text + column gap(2)
+      size_t column_width = 2 + index_digits + 2 + max_option_length + 2;
+      size_t columns_that_fit = std::max<size_t>(
+          1, static_cast<size_t>(ua->terminal_width) / column_width);
+      size_t needed_columns = (ua->prompts.size() + max_visible_options - 1)
+                              / max_visible_options;
+      return std::min(columns_that_fit, std::max<size_t>(1, needed_columns));
+    };
 
-  while (1) {
-    // First item is the prompt string, not the items
-    if (ua->prompts.empty()) {
-      ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
-      item = -1; /* list is empty ! */
-      break;
-    }
-    if (ua->prompts.size() == 1) {
-      item = 1;
-      ua->SendMsg(T_("Automatically selected: %s\n"), ua->prompts[0].c_str());
-      if (prompt) { bstrncpy(prompt, ua->prompts[0].c_str(), max_prompt); }
-      break;
-    } else {
-      Mmsg(pmsg, "%s (1-%zu): ", msg, ua->prompts.size());
-    }
+    InteractiveSelection selection(ua->prompts);
+    for (;;) {
+      selection.SetColumnLayout(max_visible_options, compute_num_columns());
+      user->signal(BNET_START_SELECT);
+      ua->SendMsg("%s",
+                  selection.Format(ua->prompt_header, msg, max_visible_options)
+                      .c_str());
+      user->signal(BNET_END_SELECT);
+      user->signal(BNET_SELECT_INPUT);
 
-    // Either a . or an @ will get you out of the loop
-    if (ua->api) { user->signal(BNET_SELECT_INPUT); }
+      int status = user->recv();
+      if (status == BNET_SIGNAL || IsBnetStop(user)) {
+        item = -1;
+        break;
+      }
 
-    if (!GetPint(ua, pmsg.c_str())) {
-      item = -1; /* error */
-      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
-      break;
+      // The console reports terminal resizes that happen while the
+      // selection menu is on screen as a "resize:<rows>:<cols>" pseudo-
+      // input (see console.cc's ReadSelectionInput()), so the menu can be
+      // reformatted to the new size on the very next redraw instead of
+      // staying stuck at whatever size it had when it was first shown.
+      std::string_view msg_view(user->msg, user->message_length);
+      if (msg_view.starts_with("resize:")) {
+        std::string_view size_view = msg_view.substr(strlen("resize:"));
+        size_t separator = size_view.find(':');
+        std::string rows_text(size_view.substr(0, separator));
+        int new_height = atoi(rows_text.c_str());
+        if (new_height > 0) { ua->terminal_height = new_height; }
+        if (separator != std::string_view::npos) {
+          std::string cols_text(size_view.substr(separator + 1));
+          int new_width = atoi(cols_text.c_str());
+          if (new_width > 0) { ua->terminal_width = new_width; }
+        }
+        max_visible_options = compute_max_visible_options();
+        continue;
+      }
+
+      auto result = selection.ApplyInput(user->msg);
+      if (result == SelectionInputResult::kCanceled) {
+        item = -1;
+        ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+        break;
+      }
+      if (result == SelectionInputResult::kSelected) {
+        item = static_cast<int>(selection.selected_index() + 1);
+        if (prompt) {
+          bstrncpy(prompt, ua->prompts[selection.selected_index()].c_str(),
+                   max_prompt);
+        }
+        break;
+      }
     }
-    item = ua->pint32_val;
-    if (item < 1 || static_cast<size_t>(item) > ua->prompts.size()) {
-      ua->WarningMsg(T_("Please enter a number between 1 and %zu\n"),
-                     ua->prompts.size());
-      continue;
-    }
-    if (prompt) { bstrncpy(prompt, ua->prompts[item - 1].c_str(), max_prompt); }
-    break;
   }
 
 done:

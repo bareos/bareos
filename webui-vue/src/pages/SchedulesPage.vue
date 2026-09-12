@@ -10,17 +10,50 @@
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
       <q-tab-panel name="status" class="q-pa-none">
         <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header">
+          <q-card-section class="panel-header row items-center">
             <span>{{ t('Scheduler Jobs') }}</span>
+            <q-space />
+            <q-input v-model="jobSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+          </q-card-section>
+          <q-card-section class="q-py-sm schedules-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip dense square outline color="grey-8" icon="event_note">
+                {{ t('Schedules') }}: {{ schedulerStatusStats.totalSchedules }}
+              </q-chip>
+              <q-chip dense square outline color="positive" icon="check_circle">
+                {{ t('Enabled') }}: {{ schedulerStatusStats.enabledSchedules }}
+              </q-chip>
+              <q-chip dense square outline color="grey-8" icon="work_outline">
+                {{ t('Jobs') }}: {{ schedulerStatusStats.totalJobs }}
+              </q-chip>
+              <q-chip v-if="schedulerStatusStats.nextRun" dense square outline color="primary" icon="schedule">
+                {{ t('Next run') }}: {{ schedulerStatusStats.nextRun.displayTime }}
+                ({{ schedulerStatusStats.nextRun.schedule }})
+                <q-tooltip>{{ schedulerStatusStats.nextRun.detailTime }}</q-tooltip>
+              </q-chip>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
+            <q-table v-if="!(statusLoading && !scheduleJobRows.length)"
+                     :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
-                <q-tr v-if="props.row._firstInGroup" class="sched-group-header">
+                <q-tr v-if="props.row._isGroupHeader" class="sched-group-header cursor-pointer"
+                      @click="toggleGroupCollapse(props.row.scheduleKey)">
                   <q-td key="job" class="q-pl-sm">
                     <div class="row items-center no-wrap q-gutter-xs">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        size="sm"
+                        :icon="props.row.collapsed ? 'chevron_right' : 'expand_more'"
+                        @click.stop="toggleGroupCollapse(props.row.scheduleKey)"
+                      />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
                       <q-chip
                         v-if="isCommonSchedules"
@@ -30,24 +63,23 @@
                         text-color="white"
                         :label="props.row.director"
                       />
+                      <q-chip dense square outline color="grey-7" icon="work_outline">
+                        {{ t('{n} jobs', { n: props.row.jobCount }) }}
+                      </q-chip>
+                      <q-chip v-if="props.row.nextRun" dense square outline color="primary" icon="schedule">
+                        {{ t('Next') }}: {{ props.row.nextRun.displayTime }}
+                        <q-tooltip>{{ props.row.nextRun.detailTime }}</q-tooltip>
+                      </q-chip>
                     </div>
                   </q-td>
-                  <q-td key="status" class="text-center">
-                    <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                            :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')" />
-                  </q-td>
-                  <q-td key="actions" class="text-right">
-                    <q-btn
-                      flat
+                  <q-td key="status" class="text-center" @click.stop>
+                    <q-toggle
+                      :model-value="props.row.schedEnabled"
+                      :color="props.row.schedEnabled ? 'positive' : 'negative'"
                       dense
-                      size="sm"
-                      no-caps
-                      :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
-                      :color="props.row.schedEnabled ? 'orange-10' : 'positive'"
-                      :label="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
-                      :title="props.row.schedEnabled ? t('Disable schedule') : t('Enable schedule')"
+                      :label="props.row.schedEnabled ? t('Enabled') : t('Disabled')"
                       :loading="togglingName === props.row.scheduleKey"
-                      @click="toggleSchedule({
+                      @update:model-value="toggleSchedule({
                        name: props.row.schedule,
                        enabled: props.row.schedEnabled,
                        director: props.row.director,
@@ -56,7 +88,7 @@
                     />
                   </q-td>
                 </q-tr>
-                <q-tr :props="props">
+                <q-tr v-else :props="props">
                   <q-td key="job" style="padding-left: 48px">
                     <div v-if="props.row.job !== '—'" class="row items-center no-wrap q-gutter-xs">
                       <router-link
@@ -68,34 +100,25 @@
                     <span v-else class="text-grey-5">{{ t('no jobs configured') }}</span>
                   </q-td>
                   <q-td key="status" class="text-center">
-                    <q-badge v-if="props.row.jobEnabled !== null"
-                             :color="jobStatusBadge(props.row).color"
-                             :label="jobStatusBadge(props.row).label">
+                    <q-toggle
+                      v-if="props.row.jobEnabled !== null"
+                      :model-value="props.row.jobEnabled"
+                      :color="jobStatusBadge(props.row).color"
+                      dense
+                      :label="jobStatusBadge(props.row).label"
+                      :loading="togglingJob === props.row.jobScopeKey"
+                      @update:model-value="toggleJob(props.row)"
+                    >
                       <q-tooltip v-if="jobStatusBadge(props.row).detail">
                         {{ jobStatusBadge(props.row).detail }}
                       </q-tooltip>
-                    </q-badge>
+                    </q-toggle>
                     <span v-else class="text-grey-5">—</span>
-                  </q-td>
-                  <q-td key="actions" class="text-right">
-                    <q-btn
-                      v-if="props.row.job !== '—'"
-                      flat
-                      dense
-                      size="sm"
-                      no-caps
-                      :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
-                      :color="props.row.jobEnabled ? 'orange-10' : 'positive'"
-                      :label="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
-                      :title="props.row.jobEnabled ? t('Disable job') : t('Enable job')"
-                      :loading="togglingJob === props.row.jobScopeKey"
-                      @click="toggleJob(props.row)"
-                    />
-                    <template v-else>—</template>
                   </q-td>
                 </q-tr>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="scheduleJobCols.length" :rows="6" />
           </q-card-section>
         </q-card>
 
@@ -123,6 +146,27 @@
           <q-card-section v-if="allScheduleOptions.length" class="q-pb-none">
             <div class="row items-center q-gutter-sm">
               <span class="text-caption text-grey-7">{{ t('Show schedules:') }}</span>
+              <q-btn
+                dense
+                flat
+                no-caps
+                size="sm"
+                color="primary"
+                :label="t('All')"
+                :disable="allSchedulesSelected"
+                @click="selectAllSchedules"
+              />
+              <q-btn
+                dense
+                flat
+                no-caps
+                size="sm"
+                color="primary"
+                :label="t('None')"
+                :disable="noSchedulesSelected"
+                @click="selectNoSchedules"
+              />
+              <q-separator vertical inset />
               <q-checkbox
                 v-for="option in allScheduleOptions"
                 :key="option.key"
@@ -138,6 +182,23 @@
               </q-checkbox>
             </div>
           </q-card-section>
+          <q-card-section v-if="nextUpcomingRuns.length" class="q-pb-none">
+            <div class="row items-center q-gutter-sm sched-next-runs">
+              <span class="text-caption text-grey-7">{{ t('Next runs:') }}</span>
+              <q-chip
+                v-for="(run, i) in nextUpcomingRuns"
+                :key="i"
+                dense
+                square
+                outline
+                :style="{ color: scheduleColor(run.displaySchedule), borderColor: scheduleColor(run.displaySchedule) }"
+              >
+                <JobLevelBadge v-if="run.level" :level="run.level" class="q-mr-xs" />
+                {{ run.displayTime }} — {{ run.displaySchedule }}
+                <q-tooltip>{{ run.detailTime }}</q-tooltip>
+              </q-chip>
+            </div>
+          </q-card-section>
           <q-card-section class="q-pa-sm" style="position:relative">
             <q-inner-loading :showing="statusLoading" />
             <div v-if="hasVisibleScheduleSelection && !hasPreviewRuns"
@@ -149,6 +210,7 @@
               <div v-for="(cell, i) in calendarCells" :key="i"
                    :class="['sched-cal-cell',
                             cell.isToday && 'sched-cal-today',
+                            cell.isPast && 'sched-cal-past',
                             !cell.day && 'sched-cal-empty',
                             viewMode === 'week' && 'sched-cal-cell--week']">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
@@ -166,6 +228,14 @@
                     <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
                   </q-tooltip>
                 </div>
+                <div v-if="cell.overflowCount" class="sched-cal-run-more">
+                  {{ t('+{n} more', { n: cell.overflowCount }) }}
+                  <q-tooltip max-width="260px">
+                    <div v-for="(run, k) in runsByDate[cell.dateStr]?.slice(MAX_CELL_RUNS[viewMode] ?? 0)" :key="k">
+                      {{ run.time }} — {{ run.displaySchedule }}
+                    </div>
+                  </q-tooltip>
+                </div>
               </div>
             </div>
           </q-card-section>
@@ -177,7 +247,24 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Schedules') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules" />
+            <q-input v-model="scheduleSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable class="q-mr-sm">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules(true)" />
+          </q-card-section>
+          <q-card-section class="q-py-sm schedules-list-stats">
+            <div class="row items-center q-gutter-sm">
+              <q-chip dense square outline color="grey-8" icon="event_note">
+                {{ t('Total') }}: {{ scheduleStats.total }}
+              </q-chip>
+              <q-chip dense square outline color="positive" icon="check_circle">
+                {{ t('Enabled') }}: {{ scheduleStats.enabled }}
+              </q-chip>
+              <q-chip v-if="scheduleStats.disabled" dense square outline color="negative" icon="pause_circle">
+                {{ t('Disabled') }}: {{ scheduleStats.disabled }}
+              </q-chip>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
@@ -188,6 +275,7 @@
               dense
               flat
               :loading="schedLoading"
+              :filter="scheduleSearch"
               v-model:pagination="schedulesPagination"
             >
               <template #body-cell-director="props">
@@ -197,29 +285,20 @@
               </template>
               <template #body-cell-enabled="props">
                 <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? t('Enabled') : t('Disabled')" />
+                  <q-toggle
+                    :model-value="props.value"
+                    :color="props.value ? 'positive' : 'negative'"
+                    dense
+                    :label="props.value ? t('Enabled') : t('Disabled')"
+                    :loading="togglingName === props.row.scopeKey"
+                    @update:model-value="toggleSchedule(props.row)"
+                  />
                 </q-td>
               </template>
               <template #body-cell-run="props">
                 <q-td :props="props">
                   <div v-for="(r, i) in props.value" :key="i" class="text-caption text-mono">{{ r }}</div>
                   <span v-if="!props.value?.length" class="text-grey-5">—</span>
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn
-                    flat
-                    round
-                    dense
-                    size="sm"
-                    :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                    :color="props.row.enabled ? 'orange-10' : 'positive'"
-                    :title="props.row.enabled ? t('Disable') : t('Enable')"
-                    :loading="togglingName === props.row.scopeKey"
-                    @click="toggleSchedule(props.row)"
-                  />
                 </q-td>
               </template>
             </q-table>
@@ -237,6 +316,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import {
   buildShownSchedules,
   buildStatusSchedules,
@@ -246,16 +326,20 @@ import {
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
+import { formatRelativeDate } from '../utils/locales.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 const schedulesPagination = usePersistedTablePagination('schedules.list', {
@@ -295,9 +379,10 @@ async function ensureScheduleActionDirector(targetDirector) {
 const schedLoading = ref(false)
 const schedError = ref(null)
 const shownSchedules = ref([])
+const scheduleSearch = usePersistedTableFilter('schedules.show')
 const togglingName = ref(null)
 
-async function refreshSchedules() {
+async function refreshSchedules(forceRefresh = false) {
   schedLoading.value = true
   schedError.value = null
   directorErrors.value = []
@@ -313,7 +398,7 @@ async function refreshSchedules() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedSchedulesShow(credentials, activeDirectors.value)
+      const result = await fetchAggregatedSchedulesShow(credentials, activeDirectors.value, { forceRefresh })
       shownSchedules.value = result.schedules
       directorErrors.value = result.directorErrors
       return
@@ -335,14 +420,22 @@ async function refreshSchedules() {
 
 const schedules = computed(() => shownSchedules.value)
 
+const scheduleStats = computed(() => {
+  const all = shownSchedules.value
+  return {
+    total: all.length,
+    enabled: all.filter(sched => sched.enabled).length,
+    disabled: all.filter(sched => !sched.enabled).length,
+  }
+})
+
 const schedCols = computed(() => [
   ...(showDirectorColumn.value ? [{
     name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
   }] : []),
   { name: 'name', label: t('Name'), field: 'name', align: 'left', sortable: true },
-  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center', sortable: true },
+  { name: 'enabled', label: t('Status'), field: 'enabled', align: 'center', sortable: true, style: 'width:140px' },
   { name: 'run', label: t('Run Directives'), field: 'run', align: 'left', sortable: true },
-  { name: 'actions', label: '', field: 'actions', align: 'center', style: 'width:60px' },
 ])
 
 async function toggleSchedule(row) {
@@ -351,7 +444,7 @@ async function toggleSchedule(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${quoteDirectorString(row.name)}`)
-    await Promise.all([refreshSchedules(), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus()])
     $q.notify({
       type: 'positive',
       message: row.enabled
@@ -373,7 +466,7 @@ async function toggleJob(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${quoteDirectorString(row.job)}`)
-    await Promise.all([refreshSchedules(), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus()])
     await nextTick()
 
     const updatedRow = scheduleJobRows.value.find(candidate => candidate.jobScopeKey === row.jobScopeKey)
@@ -452,8 +545,53 @@ const statusLoading = ref(false)
 const statusError = ref(null)
 const schedulesData = ref([])
 const previewData = ref([])
+// Independent of the navigated calendar range, so "next run" info stays
+// anchored to "now" even while the user browses the calendar into the
+// future or past.
+const upcomingPreviewData = ref([])
+const UPCOMING_RANGE = { from: 0, to: 60 }
 
-const viewMode = ref('week')
+async function refreshUpcomingPreview() {
+  try {
+    if (activeDirectors.value.length === 0) {
+      upcomingPreviewData.value = []
+      return
+    }
+
+    if (isCommonSchedules.value) {
+      const credentials = auth.getCredentials()
+      if (!credentials?.password) {
+        return
+      }
+
+      const result = await fetchAggregatedSchedulesStatus(
+        credentials,
+        activeDirectors.value,
+        UPCOMING_RANGE
+      )
+      upcomingPreviewData.value = result.previewData
+      return
+    }
+
+    const currentDirector = activeDirectors.value[0]
+    const statusResponse = await director.call(
+      `status scheduler days=${UPCOMING_RANGE.from},${UPCOMING_RANGE.to}`
+    )
+    upcomingPreviewData.value = (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
+      .map(item => ({
+        ...item,
+        director: currentDirector,
+        scheduleKey: `${currentDirector}:${item.schedule ?? ''}`,
+        scheduleDisplay: item.schedule ?? '',
+      }))
+  } catch {
+    // "Next run" info is a convenience add-on; a failure here should not
+    // surface as a page-level error (the calendar preview already reports
+    // fetch failures via statusError).
+  }
+}
+
+const viewMode = ref(settings.schedulesViewMode)
 
 function startOfToday() {
   const d = new Date()
@@ -471,7 +609,7 @@ function firstOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-const viewAnchor = ref(mondayOf(new Date()))
+const viewAnchor = ref(viewMode.value === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date()))
 
 const apiDaysRange = computed(() => {
   const today = startOfToday()
@@ -553,6 +691,7 @@ function goToday() {
 
 watch(viewMode, (mode) => {
   viewAnchor.value = mode === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date())
+  settings.setSchedulesViewMode(mode)
 })
 
 async function refreshStatus() {
@@ -614,47 +753,129 @@ async function refreshStatus() {
 
 watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
 
+const jobSearch = usePersistedTableFilter('schedules.status')
+const expandedSchedules = ref(new Set())
+
+function toggleGroupCollapse(key) {
+  const next = new Set(expandedSchedules.value)
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  expandedSchedules.value = next
+}
+
+const nextRunByScheduleKey = computed(() => {
+  const nowSeconds = Date.now() / 1000
+  const map = {}
+  for (const run of upcomingPreviewData.value) {
+    if (typeof run.runtime !== 'number' || run.runtime < nowSeconds) continue
+    const existing = map[run.scheduleKey]
+    if (!existing || run.runtime < existing.runtime) {
+      map[run.scheduleKey] = run
+    }
+  }
+  return map
+})
+
+function describeRunTime(run) {
+  if (!run) return null
+  const relative = typeof run.runtime === 'number'
+    ? formatRelativeDate(new Date(run.runtime * 1000), settings.locale)
+    : run.datetime
+  return {
+    displayTime: settings.relativeTime ? relative : run.datetime,
+    detailTime: settings.relativeTime ? run.datetime : relative,
+  }
+}
+
 const scheduleJobRows = computed(() => {
+  const search = jobSearch.value.trim().toLowerCase()
   const rows = []
   for (const sched of schedulesData.value) {
-    const jobs = Array.isArray(sched.jobs) ? sched.jobs : []
+    const allJobs = Array.isArray(sched.jobs) ? sched.jobs : []
+    const scheduleMatches = sched.name.toLowerCase().includes(search)
+    const jobs = search
+      ? allJobs.filter(job => scheduleMatches || job.name.toLowerCase().includes(search))
+      : allJobs
+
+    if (search && !scheduleMatches && !jobs.length) {
+      continue
+    }
+
+    const collapsed = !search && !expandedSchedules.value.has(sched.scopeKey)
+    const nextRun = describeRunTime(nextRunByScheduleKey.value[sched.scopeKey])
+
+    rows.push({
+      idx: rows.length,
+      director: sched.director,
+      schedule: sched.name,
+      scheduleKey: sched.scopeKey,
+      schedEnabled: sched.enabled,
+      jobCount: jobs.length,
+      nextRun,
+      collapsed,
+      _isGroupHeader: true,
+    })
+
+    if (collapsed) {
+      continue
+    }
+
     if (!jobs.length) {
       rows.push({
         idx: rows.length,
         director: sched.director,
         schedule: sched.name,
         scheduleKey: sched.scopeKey,
-          schedEnabled: sched.enabled,
-          job: '—',
-          jobEnabled: null,
-          jobScopeKey: `${sched.scopeKey}:—`,
-          jobsQuery: null,
-          _firstInGroup: true,
-        })
+        schedEnabled: sched.enabled,
+        job: '—',
+        jobEnabled: null,
+        jobScopeKey: `${sched.scopeKey}:—`,
+        jobsQuery: null,
+        _isGroupHeader: false,
+      })
     } else {
-      jobs.forEach((job, index) => {
+      jobs.forEach((job) => {
         rows.push({
           idx: rows.length,
           director: sched.director,
           schedule: sched.name,
           scheduleKey: sched.scopeKey,
-            schedEnabled: sched.enabled,
-            job: job.name,
-            jobEnabled: job.enabled,
-            jobScopeKey: `${sched.scopeKey}:${job.name}`,
-            jobsQuery: withJobsSearchQuery({}, job.name),
-            _firstInGroup: index === 0,
-          })
+          schedEnabled: sched.enabled,
+          job: job.name,
+          jobEnabled: job.enabled,
+          jobScopeKey: `${sched.scopeKey}:${job.name}`,
+          jobsQuery: withJobsSearchQuery({}, job.name),
+          _isGroupHeader: false,
+        })
       })
     }
   }
   return rows
 })
 
+const schedulerStatusStats = computed(() => {
+  const groups = schedulesData.value
+  const totalSchedules = groups.length
+  const enabledSchedules = groups.filter(sched => sched.enabled).length
+  const totalJobs = groups.reduce(
+    (sum, sched) => sum + (Array.isArray(sched.jobs) ? sched.jobs.length : 0),
+    0
+  )
+  const nowSeconds = Date.now() / 1000
+  const rawNextRun = upcomingPreviewData.value
+    .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
+    .sort((a, b) => a.runtime - b.runtime)[0] ?? null
+  const nextRun = rawNextRun ? { ...rawNextRun, ...describeRunTime(rawNextRun) } : null
+
+  return { totalSchedules, enabledSchedules, totalJobs, nextRun }
+})
+
 const scheduleJobCols = computed(() => [
   { name: 'job', label: t('Job'), field: 'job', align: 'left', headerStyle: 'padding-left: 48px', sortable: true },
-  { name: 'status', label: t('Status'), field: 'status', align: 'center' },
-  { name: 'actions', label: t('Actions'), field: 'actions', align: 'right', style: 'width: 1%' },
+  { name: 'status', label: t('Status'), field: 'status', align: 'center', style: 'width:160px' },
 ])
 const viewModeOptions = computed(() => [
   { label: t('Month'), value: 'month', icon: 'calendar_month' },
@@ -683,11 +904,25 @@ watch(allScheduleOptions, (options) => {
   visibleScheduleKeys.value = visibleScheduleKeys.value.filter(key => optionKeys.has(key))
 })
 
+const allSchedulesSelected = computed(
+  () => allScheduleOptions.value.length > 0
+    && visibleScheduleKeys.value.length === allScheduleOptions.value.length
+)
+const noSchedulesSelected = computed(() => visibleScheduleKeys.value.length === 0)
+
+function selectAllSchedules() {
+  visibleScheduleKeys.value = allScheduleOptions.value.map(option => option.key)
+}
+function selectNoSchedules() {
+  visibleScheduleKeys.value = []
+}
+
 const runsByDate = computed(() => {
   const visible = visibleScheduleKeys.value
+  const filterActive = scheduleSelectionInitialized.value
   const map = {}
   for (const run of previewData.value) {
-    if (visible.length && !visible.includes(run.scheduleKey)) continue
+    if (filterActive && !visible.includes(run.scheduleKey)) continue
     const ts = run.runtime
     if (!ts) continue
     const d = new Date(ts * 1000)
@@ -713,8 +948,41 @@ const hasVisibleScheduleSelection = computed(() => {
 
 const hasPreviewRuns = computed(() => Object.keys(runsByDate.value).length > 0)
 
+const nextUpcomingRuns = computed(() => {
+  const nowSeconds = Date.now() / 1000
+  const visible = visibleScheduleKeys.value
+  const filterActive = scheduleSelectionInitialized.value
+  return upcomingPreviewData.value
+    .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
+    .filter(run => !filterActive || visible.includes(run.scheduleKey))
+    .sort((a, b) => a.runtime - b.runtime)
+    .slice(0, 5)
+    .map(run => {
+      const relative = typeof run.runtime === 'number'
+        ? formatRelativeDate(new Date(run.runtime * 1000), settings.locale)
+        : run.datetime
+      return {
+        ...run,
+        displaySchedule: isCommonSchedules.value ? run.scheduleDisplay : run.schedule,
+        displayTime: settings.relativeTime ? relative : run.datetime,
+        detailTime: settings.relativeTime ? run.datetime : relative,
+      }
+    })
+})
+
+const MAX_CELL_RUNS = { month: 3, week: 6 }
+
 function makeDateStr(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+}
+
+function buildCellRuns(dateStr) {
+  const all = runsByDate.value[dateStr] ?? []
+  const max = MAX_CELL_RUNS[viewMode.value] ?? all.length
+  return {
+    runs: all.slice(0, max),
+    overflowCount: Math.max(0, all.length - max),
+  }
 }
 
 const calendarCells = computed(() => {
@@ -726,7 +994,15 @@ const calendarCells = computed(() => {
       const day = new Date(viewAnchor.value)
       day.setDate(day.getDate() + i)
       const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
-      return { day: day.getDate(), dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] }
+      const { runs, overflowCount } = buildCellRuns(dateStr)
+      return {
+        day: day.getDate(),
+        dateStr,
+        isToday: dateStr === todayStr,
+        isPast: dateStr < todayStr,
+        runs,
+        overflowCount,
+      }
     })
   }
 
@@ -740,7 +1016,15 @@ const calendarCells = computed(() => {
   for (let i = 0; i < startOffset; i++) cells.push({ day: 0, runs: [] })
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = makeDateStr(y, m, d)
-    cells.push({ day: d, dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] })
+    const { runs, overflowCount } = buildCellRuns(dateStr)
+    cells.push({
+      day: d,
+      dateStr,
+      isToday: dateStr === todayStr,
+      isPast: dateStr < todayStr,
+      runs,
+      overflowCount,
+    })
   }
   while (cells.length % 7 !== 0) cells.push({ day: 0, runs: [] })
   return cells
@@ -789,15 +1073,29 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
     refreshSchedules()
   }
   refreshStatus()
+  refreshUpcomingPreview()
 })
 
 onMounted(() => {
   director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
+  refreshUpcomingPreview()
 })
 </script>
 
 <style scoped>
+.schedules-list-stats {
+  flex-wrap: wrap;
+}
+
+.schedules-list-stats :deep(.q-chip) {
+  font-weight: 600;
+}
+
+.sched-next-runs {
+  flex-wrap: wrap;
+}
+
 .sched-group-header td {
   background: rgba(0, 0, 0, 0.04);
   border-top: 2px solid rgba(0, 0, 0, 0.15) !important;

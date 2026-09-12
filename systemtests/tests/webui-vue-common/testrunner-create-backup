@@ -29,6 +29,16 @@ export TestName
 JobNames=(
   backup-bareos-fd
   backup-bareos-fd-pluginoptions
+  backup-bareos-fd-plugin-vmware
+  backup-bareos-fd-plugin-postgresql
+  backup-bareos-fd-plugin-proxmox
+  backup-bareos-fd-plugin-mariabackup
+  backup-bareos-fd-plugin-percona-xtrabackup
+  backup-bareos-fd-plugin-ldap
+  backup-bareos-fd-plugin-libcloud
+  backup-bareos-fd-plugin-hyperv
+  backup-bareos-fd-plugin-grpc
+  backup-bareos-fd-plugin-barri
 )
 
 . ./environment
@@ -40,10 +50,10 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out ${tmp}/webui-vue-create-backup.out
-run job=${JobNames[0]} yes
-wait
-run job=${JobNames[1]} yes
-wait
+$(for job in "${JobNames[@]}"; do
+  echo "run job=${job} yes"
+  echo "wait"
+done)
 messages
 quit
 END_OF_DATA
@@ -53,8 +63,33 @@ run_bconsole
 expect_grep 'Termination:.*Backup OK' \
   "${tmp}/webui-vue-create-backup.out" \
   "Backup did not succeed."
-expect_grep 'backup-bareos-fd-pluginoptions' \
-  "${tmp}/webui-vue-create-backup.out" \
-  "Plugin backup job did not run."
+for job in "${JobNames[@]}"; do
+  expect_grep "${job}" \
+    "${tmp}/webui-vue-create-backup.out" \
+    "Plugin backup job ${job} did not run."
+done
+
+# The demo FileSets above all actually run through the stock bpipe plugin
+# (see webui-vue-common/etc/bareos/bareos-dir.d/fileset/PluginOptionsTest-*),
+# since the real integrations (VMware, PostgreSQL, ...) are not available in
+# this test environment. To let the webui-vue restore page (and the
+# subscription-info catalog queries, which use the same detection) correctly
+# recognize which plugin each demo backup is simulating, rewrite the
+# catalog's stored FileSet.FileSetText for each demo FileSet so it carries
+# the same "module_name=" marker a real python-fd plugin invocation would
+# use (see core/src/cats/dml/0080_subscription_with_clause_0), or -- for
+# grpc/barri, which are not python-fd modules -- the real plugin name itself
+# as the Plugin prefix. This only rewrites descriptive catalog metadata; it
+# does not change the live FileSet resource or which plugin actually runs.
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/vmware-demo/vmware-backup.vmdk:reader=', 'Plugin = \"python:module_name=bareos-fd-vmware:file=/vmware-demo/vmware-backup.vmdk:reader=') WHERE FileSet = 'PluginOptionsTest-vmware'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/postgresql-demo/dump.sql:reader=', 'Plugin = \"python:module_name=bareos-fd-postgresql:file=/postgresql-demo/dump.sql:reader=') WHERE FileSet = 'PluginOptionsTest-postgresql'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/proxmox-demo/100.vma:reader=', 'Plugin = \"python:module_name=bareos-fd-proxmox:file=/proxmox-demo/100.vma:reader=') WHERE FileSet = 'PluginOptionsTest-proxmox'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/mariabackup-demo/xbstream:reader=', 'Plugin = \"python:module_name=bareos-fd-mariabackup:file=/mariabackup-demo/xbstream:reader=') WHERE FileSet = 'PluginOptionsTest-mariabackup'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/percona-xtrabackup-demo/stream:reader=', 'Plugin = \"python:module_name=bareos-fd-percona-xtrabackup:file=/percona-xtrabackup-demo/stream:reader=') WHERE FileSet = 'PluginOptionsTest-percona-xtrabackup'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/ldap-demo/directory.ldif:reader=', 'Plugin = \"python:module_name=bareos-fd-ldap:file=/ldap-demo/directory.ldif:reader=') WHERE FileSet = 'PluginOptionsTest-ldap'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/libcloud-demo/objects.tar:reader=', 'Plugin = \"python:module_name=bareos-fd-libcloud:file=/libcloud-demo/objects.tar:reader=') WHERE FileSet = 'PluginOptionsTest-libcloud'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/hyperv-demo/vm.vhdx:reader=', 'Plugin = \"python:module_name=hyper-v:file=/hyperv-demo/vm.vhdx:reader=') WHERE FileSet = 'PluginOptionsTest-hyperv'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/grpc-demo/stream.bin:reader=', 'Plugin = \"grpc:file=/grpc-demo/stream.bin:reader=') WHERE FileSet = 'PluginOptionsTest-grpc'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/barri-demo/barri-image.dd:reader=', 'Plugin = \"barri:file=/barri-demo/barri-image.dd:reader=') WHERE FileSet = 'PluginOptionsTest-barri'"
 
 end_test

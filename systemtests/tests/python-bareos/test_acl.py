@@ -88,12 +88,32 @@ class PythonBareosAclTest(bareos_unittest.Json):
         logger.debug(str(result))
 
         #
-        # restore: 1: List last 20 Jobs run
+        # restore: 1: Select a FileSet@Client combination (latest backup)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected.
+        #
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        # Select the latest restore point anchor (option 1)
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 13: List last 20 Jobs run
         #
         # This requires access to the "sqlquery" command,
         # which this console does not have.
         #
-        result = console_bareos_fd.call("1")
+        result = console_bareos_fd.call("13")
         logger.debug(str(result))
         self.assertEqual(b"SQL query not authorized.", result.strip())
 

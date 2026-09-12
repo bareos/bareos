@@ -204,6 +204,86 @@ describe('console session store', () => {
     expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list clients ')
   })
 
+  it('replaces Director-owned selection snapshots and sends key events', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionText).toContain('> 1: Alpha')
+
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(true)
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'key:down',
+      stream: true,
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n  1: Alpha\n> 2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+    expect(session.selectionText).toContain('> 2: Beta')
+    expect(session.output.map(line => line.text)).not.toContain('> 1: Alpha')
+  })
+
+  it('normalizes terminal inverse selection markers for browser display', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const selectionText = consoleSessions.getSession('bareos-dir').selectionText
+    expect(selectionText).toContain('> 1: Alpha')
+    expect(selectionText).toContain('  2: Beta')
+    expect(selectionText).not.toMatch(/\x1B/)
+
+    const selectionLines = consoleSessions.getSession('bareos-dir').selectionLines
+    expect(selectionLines).toContainEqual({ text: '  1: Alpha', selected: true })
+    expect(selectionLines).toContainEqual({ text: '  2: Beta', selected: false })
+  })
+
   it('uses value completion commands for known argument keywords', () => {
     const consoleSessions = useConsoleSessionsStore()
 

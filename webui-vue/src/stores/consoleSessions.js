@@ -47,6 +47,7 @@ const RESTORE_TREE_COMPLETION_COMMANDS = {
   delete: '.lsmark',
   unmark: '.lsmark',
 }
+const ANSI_ESCAPE_SEQUENCE_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -74,6 +75,9 @@ function createSession(director) {
     currentPrompt: '* ',
     output: [],
     outputLineOpen: false,
+    selectionActive: false,
+    selectionText: '',
+    selectionLines: [],
     cmd: '',
     cursorPos: 0,
     history: [],
@@ -155,6 +159,46 @@ function filterConsoleNoiseText(text) {
     .filter(line => !CONSOLE_NOISE_LINES.has(line))
 
   return filteredLines.join('\n')
+}
+
+function normalizeSelectionText(text) {
+  // The Director marks the selected line with a literal "> " prefix (in
+  // addition to the ANSI reverse-video escape codes) so that plain-text
+  // consumers — including screen readers and braille displays that don't
+  // render ANSI attributes — can tell which item is selected. Stripping
+  // the escape codes here is therefore sufficient to produce readable
+  // plain text; the marker itself is already part of the raw text.
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(ANSI_ESCAPE_SEQUENCE_RE, '')
+}
+
+// Matches the Director's per-line selection marker: an optional plain-text
+// indicator (e.g. "> ") immediately followed by the ANSI reverse-video
+// start code. Anything before the escape code is captured as the line's
+// indent so it can be re-applied without the raw ">" character, since the
+// WebUI conveys "selected" visually via full-row highlighting and via
+// aria-current instead of a text marker.
+const ANSI_INVERSE_SELECTED_LINE_RE = /^([^\x1B]*)\x1B\[7m(.*)$/
+
+function parseSelectionLines(text) {
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(line => {
+      const match = line.match(ANSI_INVERSE_SELECTED_LINE_RE)
+      if (match) {
+        const indent = match[1].replace(/[^ \t]/g, ' ')
+        return {
+          text: (indent + match[2]).replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+          selected: true,
+        }
+      }
+      return {
+        text: line.replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+        selected: false,
+      }
+    })
 }
 
 function parseHelpCompletionItems(text) {
@@ -292,6 +336,20 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
 }
 
 function applyRawConsoleResponse(session, director, appendLines, message) {
+  if (message.prompt === 'select') {
+    session.selectionActive = true
+    session.selectionText = normalizeSelectionText(message.text)
+    session.selectionLines = parseSelectionLines(message.text)
+    session.currentPrompt = ''
+    return {
+      outputText: '',
+      promptText: '',
+    }
+  }
+
+  session.selectionActive = false
+  session.selectionText = ''
+  session.selectionLines = []
   const isStreamingChunk = message.prompt === 'more'
   const {
     outputText,
@@ -457,6 +515,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.ws = null
     session.status = 'disconnected'
     session.currentPrompt = '* '
+    session.selectionActive = false
+    session.selectionText = ''
+    session.selectionLines = []
     if (options.resetInitialized) {
       session.initialized = false
     }
@@ -569,6 +630,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           clearTimeout(entry.timer)
           runtime.pendingCmds.delete(msg.id)
         }
+        session.selectionActive = false
+        session.selectionText = ''
+        session.selectionLines = []
         appendErr(director, msg.message)
       }
     }
@@ -639,6 +703,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       }
 
       runtime.pendingCmds.delete(id)
+      session.selectionActive = false
+      session.selectionText = ''
+      session.selectionLines = []
       appendErr(director, 'Command timed out.')
     }, timeoutMs)
 
@@ -698,6 +765,14 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     return true
   }
 
+  function sendSelectionEvent(director, event) {
+    const session = getSession(director)
+    if (!session.selectionActive) {
+      return false
+    }
+    return sendCommand(director, event)
+  }
+
   function disconnectAll(options = {}) {
     for (const director of directors.value) {
       disconnectSession(director, options)
@@ -715,6 +790,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     disconnectAll,
     clearOutput,
     sendCommand,
+    sendSelectionEvent,
     requestCompletion,
   }
 })

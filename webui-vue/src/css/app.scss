@@ -10,10 +10,11 @@ $bareos-blue-dark: #005a96;
   .q-card__section.panel-header {
     background-color: $bareos-blue;
     color: white;
-    padding: 10px 16px;
-    font-size: 0.9rem;
+    padding: 6px 12px;
+    font-size: 0.85rem;
     font-weight: 600;
     border-radius: 0;
+    min-height: 32px;
 
     .q-field {
       color: rgba(255, 255, 255, 0.95);
@@ -97,13 +98,27 @@ $bareos-blue-dark: #005a96;
 }
 
 .q-table thead th {
-  background-color: $bareos-blue;
-  color: white;
+  background-color: #eef3f8;
+  color: #33475b;
   font-weight: 600;
+  border-bottom: 2px solid #d6e2ec;
 }
 
 .q-table tbody tr:hover {
   background-color: #f0f7fd;
+}
+
+.q-table__bottom--nodata {
+  color: #90a4ae;
+  font-size: 0.95rem;
+  padding: 32px 16px;
+  justify-content: center;
+}
+
+.q-table__bottom-nodata-icon {
+  font-size: 2rem;
+  margin-right: 8px;
+  opacity: 0.7;
 }
 
 .bareos-toolbar {
@@ -217,6 +232,18 @@ $bareos-blue-dark: #005a96;
   border-width: 2px;
 }
 
+.sched-cal-past {
+  background: #f5f5f5;
+  opacity: 0.65;
+}
+
+.sched-cal-run-more {
+  font-size: 0.6rem;
+  color: #666;
+  padding: 1px 4px;
+  cursor: default;
+}
+
 .sched-cal-day-num {
   font-size: 0.72rem;
   font-weight: 600;
@@ -304,11 +331,17 @@ body.body--dark {
   }
 
   .q-table thead th {
-    background-color: $bareos-blue-dark;
+    background-color: #263238;
+    color: #eceff1;
+    border-bottom: 2px solid #37474f;
   }
 
   .q-table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .q-table__bottom--nodata {
+    color: #78909c;
   }
 
   .job-log {

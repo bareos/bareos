@@ -141,6 +141,18 @@ export function isWaitingJobStatus(status) {
   return typeof status === 'string' && status.toLowerCase().includes('is waiting')
 }
 
+export function isErrorJobStatus(status) {
+  return status === 'E' || status === 'f'
+}
+
+export function isWarningJobStatus(status) {
+  return status === 'W'
+}
+
+export function isOkJobStatus(status) {
+  return status === 'T' || status === 'OK'
+}
+
 /**
  * Normalise a raw director client record (from "list clients").
  */

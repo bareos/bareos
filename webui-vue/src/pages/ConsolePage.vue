@@ -52,9 +52,22 @@
         @click="focusConsole"
       >
         <div v-for="(line, i) in currentSession.output" :key="i" :class="['console-line', line.cls]">{{ line.text }}</div>
+        <div
+          v-if="currentSession.selectionActive"
+          class="console-selection"
+          role="listbox"
+          :aria-label="t('Selection menu')"
+        ><div
+          v-for="(line, i) in currentSession.selectionLines"
+          :key="i"
+          :role="line.selected ? 'option' : undefined"
+          :aria-selected="line.selected ? 'true' : undefined"
+          :aria-current="line.selected ? 'true' : undefined"
+          :class="['console-selection-line', { 'console-selection-line--selected': line.selected }]"
+        >{{ line.text }}</div></div>
 
         <!-- live input line -->
-        <div class="console-line console-input-line">
+        <div v-if="!currentSession.selectionActive" class="console-line console-input-line">
           <span class="console-prompt">{{ currentSession.currentPrompt }}</span>
           <span>{{ currentSession.cmd.slice(0, currentSession.cursorPos) }}</span><span :class="['console-cursor', { blink: focused }]"></span><span>{{ currentSession.cmd.slice(currentSession.cursorPos) }}</span>
         </div>
@@ -274,6 +287,31 @@ function sendTab() {
 function onKeyDown(event) {
   const session = currentSession.value
 
+  if (session.selectionActive) {
+    const selectionEvents = {
+      ArrowUp: 'key:up',
+      ArrowDown: 'key:down',
+      ArrowLeft: 'key:left',
+      ArrowRight: 'key:right',
+      Enter: 'key:enter',
+      Escape: 'key:cancel',
+      Backspace: 'key:backspace',
+      ' ': 'key:space',
+    }
+    let selectionEvent = selectionEvents[event.key]
+    if (event.ctrlKey && event.key === 'c') {
+      selectionEvent = 'key:cancel'
+    } else if (!selectionEvent && event.key.length === 1
+      && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      selectionEvent = `key:text:${event.key}`
+    }
+    if (selectionEvent) {
+      event.preventDefault()
+      consoleSessions.sendSelectionEvent(selectedDirector.value, selectionEvent)
+    }
+    return
+  }
+
   // Don't interfere with unhandled browser shortcuts
   if (event.ctrlKey && !['c', 'l', 'a', 'e', 'k', 'u'].includes(event.key)) return
 
@@ -353,9 +391,16 @@ watch(() => auth.user?.director, (directorName) => {
   }
 })
 
-watch(() => currentSession.value.output.length, () => {
-  scrollBottom()
-})
+watch(
+  () => [
+    currentSession.value.output.length,
+    currentSession.value.output[currentSession.value.output.length - 1]?.text,
+    currentSession.value.selectionText,
+  ],
+  () => {
+    scrollBottom()
+  }
+)
 </script>
 
 <style scoped>
@@ -377,6 +422,17 @@ watch(() => currentSession.value.output.length, () => {
 .console-output-popup {
   min-height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
+}
+.console-selection {
+  white-space: pre;
+}
+.console-selection-line {
+  display: block;
+  white-space: pre;
+}
+.console-selection-line--selected {
+  background: #e0e0e0;
+  color: #1a1a1a;
 }
 .console-output:focus {
   box-shadow: inset 0 0 0 2px #1976d2;

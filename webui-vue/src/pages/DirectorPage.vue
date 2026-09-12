@@ -48,17 +48,23 @@
             <!-- Scheduled Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">{{ t('Scheduled Jobs') }}</q-card-section>
+                <q-card-section class="panel-header row items-center">
+                  <span>{{ t('Scheduled Jobs') }}</span>
+                  <q-space />
+                  <q-input v-model="scheduledJobsSearch" dense outlined :placeholder="t('Search…')"
+                           style="width:200px" clearable>
+                    <template #prepend><q-icon name="search" /></template>
+                  </q-input>
+                  <ColumnPickerMenu :columns="toggleableScheduledJobCols" @toggle="toggleScheduledJobCol" />
+                </q-card-section>
                 <q-card-section class="q-pa-none">
-                  <div v-if="!scheduledJobs.length" class="q-pa-md text-grey">
-                    {{ t('No scheduled jobs.') }}
-                  </div>
-                  <q-table v-else flat dense
+                  <q-table flat dense
                     :rows="scheduledJobs"
-                    :columns="scheduledJobCols"
+                    :columns="visibleScheduledJobCols"
                     row-key="scopeKey"
-                    hide-pagination
-                    :rows-per-page-options="[0]"
+                    :filter="scheduledJobsSearch"
+                    v-model:pagination="scheduledJobsPagination"
+                    :no-data-label="t('No scheduled jobs.')"
                   >
                     <template #body-cell-director="props">
                       <td>
@@ -107,17 +113,53 @@
             <!-- Running Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">{{ t('Running Jobs') }}</q-card-section>
-                <q-card-section class="q-pa-none">
-                  <div v-if="!runningJobs.length" class="q-pa-md text-grey">
-                    {{ t('No jobs running.') }}
+                <q-card-section class="panel-header row items-center">
+                  <span>{{ t('Running Jobs') }}</span>
+                  <q-space />
+                  <q-input v-model="runningJobsSearch" dense outlined :placeholder="t('Search…')"
+                           style="width:200px" clearable>
+                    <template #prepend><q-icon name="search" /></template>
+                  </q-input>
+                  <ColumnPickerMenu :columns="toggleableRunningJobCols" @toggle="toggleRunningJobCol" />
+                </q-card-section>
+                <q-card-section v-if="runningJobsStats.total" class="q-py-sm director-jobs-stats">
+                  <div class="row items-center q-gutter-sm">
+                    <q-chip
+                      dense square outline color="grey-8" icon="list"
+                      clickable
+                      :selected="runningJobsQuickFilter === 'all'"
+                      @click="runningJobsQuickFilter = 'all'"
+                    >
+                      {{ t('Total') }}: {{ runningJobsStats.total }}
+                    </q-chip>
+                    <q-chip
+                      v-if="runningJobsStats.running"
+                      dense square outline color="info" icon="play_circle"
+                      clickable
+                      :selected="runningJobsQuickFilter === 'running'"
+                      @click="runningJobsQuickFilter = 'running'"
+                    >
+                      {{ t('Running') }}: {{ runningJobsStats.running }}
+                    </q-chip>
+                    <q-chip
+                      v-if="runningJobsStats.waiting"
+                      dense square outline color="orange-7" text-color="black" icon="hourglass_empty"
+                      clickable
+                      :selected="runningJobsQuickFilter === 'waiting'"
+                      @click="runningJobsQuickFilter = 'waiting'"
+                    >
+                      {{ t('Waiting') }}: {{ runningJobsStats.waiting }}
+                    </q-chip>
                   </div>
-                  <q-table v-else flat dense
+                </q-card-section>
+                <q-card-section class="q-pa-none">
+                  <q-table flat dense
                     :rows="runningJobs"
-                    :columns="runningJobCols"
+                    :columns="visibleRunningJobCols"
                     row-key="scopeKey"
-                    hide-pagination
-                    :rows-per-page-options="[0]"
+                    :filter="runningJobsSearch"
+                    v-model:pagination="runningJobsPagination"
+                    :no-data-label="t('No jobs running.')"
                   >
                     <template #body-cell-director="props">
                       <td>
@@ -188,17 +230,47 @@
             <!-- Terminated Jobs card -->
             <div class="col-12">
               <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">{{ t('Terminated Jobs') }}</q-card-section>
-                <q-card-section class="q-pa-none">
-                  <div v-if="!terminatedJobs.length" class="q-pa-md text-grey">
-                    {{ t('No terminated jobs.') }}
+                <q-card-section class="panel-header row items-center">
+                  <span>{{ t('Terminated Jobs') }}</span>
+                  <q-space />
+                  <q-input v-model="terminatedJobsSearch" dense outlined :placeholder="t('Search…')"
+                           style="width:200px" clearable>
+                    <template #prepend><q-icon name="search" /></template>
+                  </q-input>
+                  <ColumnPickerMenu :columns="toggleableTerminatedJobCols" @toggle="toggleTerminatedJobCol" />
+                </q-card-section>
+                <q-card-section v-if="terminatedJobsStats.total" class="q-py-sm director-jobs-stats">
+                  <div class="row items-center q-gutter-sm">
+                    <q-chip
+                      dense square outline color="grey-8" icon="list"
+                      clickable
+                      :selected="terminatedJobsQuickFilter === 'all'"
+                      @click="terminatedJobsQuickFilter = 'all'"
+                    >
+                      {{ t('Total') }}: {{ terminatedJobsStats.total }}
+                    </q-chip>
+                    <q-chip
+                      v-for="(count, status) in terminatedJobsStats.byStatus"
+                      :key="status"
+                      dense square outline
+                      :color="jobStatusColor(status)"
+                      :text-color="['orange-7','warning'].includes(jobStatusColor(status)) ? 'black' : undefined"
+                      clickable
+                      :selected="terminatedJobsQuickFilter === status"
+                      @click="terminatedJobsQuickFilter = status"
+                    >
+                      {{ jobStatusLabel(status) }}: {{ count }}
+                    </q-chip>
                   </div>
-                  <q-table v-else flat dense
+                </q-card-section>
+                <q-card-section class="q-pa-none">
+                  <q-table flat dense
                     :rows="terminatedJobs"
-                    :columns="terminatedJobCols"
+                    :columns="visibleTerminatedJobCols"
                     row-key="scopeKey"
-                    hide-pagination
-                    :rows-per-page-options="[0]"
+                    :filter="terminatedJobsSearch"
+                    v-model:pagination="terminatedJobsPagination"
+                    :no-data-label="t('No terminated jobs.')"
                   >
                     <template #body-cell-director="props">
                       <td>
@@ -590,6 +662,8 @@ import {
   normaliseDirectorStatusSnapshot,
 } from '../composables/directorPageAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { formatBytes } from '../mock/index.js'
 import {
@@ -612,6 +686,7 @@ import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorInfoCard from '../components/DirectorInfoCard.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'
@@ -635,6 +710,20 @@ const tr = (msgid, values) => translate(settings.locale, msgid, values)
 const statusPagination = usePersistedTablePagination('director.status', {
   rowsPerPage: 20,
 })
+const scheduledJobsPagination = usePersistedTablePagination('director.scheduledJobs', {
+  rowsPerPage: 10,
+})
+const runningJobsPagination = usePersistedTablePagination('director.runningJobs', {
+  rowsPerPage: 10,
+})
+const terminatedJobsPagination = usePersistedTablePagination('director.terminatedJobs', {
+  rowsPerPage: 10,
+})
+const scheduledJobsSearch = usePersistedTableFilter('director.scheduledJobs')
+const runningJobsSearch = usePersistedTableFilter('director.runningJobs')
+const terminatedJobsSearch = usePersistedTableFilter('director.terminatedJobs')
+const runningJobsQuickFilter = ref('all')
+const terminatedJobsQuickFilter = ref('all')
 
 const {
   directorOptions,
@@ -781,8 +870,36 @@ const statusCards = computed(() => (
   )
 ))
 const scheduledJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.scheduledJobs))
-const runningJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
-const terminatedJobs = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.terminatedJobs))
+const runningJobsAll = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.runningJobs))
+const terminatedJobsAll = computed(() => statusSnapshots.value.flatMap(snapshot => snapshot.terminatedJobs))
+
+const runningJobsStats = computed(() => {
+  const all = runningJobsAll.value
+  return {
+    total: all.length,
+    running: all.filter(j => !isWaiting(j.status)).length,
+    waiting: all.filter(j => isWaiting(j.status)).length,
+  }
+})
+const runningJobs = computed(() => runningJobsAll.value.filter((job) => {
+  if (runningJobsQuickFilter.value === 'running') return !isWaiting(job.status)
+  if (runningJobsQuickFilter.value === 'waiting') return isWaiting(job.status)
+  return true
+}))
+
+const terminatedJobsStats = computed(() => {
+  const all = terminatedJobsAll.value
+  const byStatus = {}
+  for (const job of all) {
+    const status = job.status || t('Unknown')
+    byStatus[status] = (byStatus[status] ?? 0) + 1
+  }
+  return { total: all.length, byStatus }
+})
+const terminatedJobs = computed(() => terminatedJobsAll.value.filter((job) => {
+  if (terminatedJobsQuickFilter.value === 'all') return true
+  return job.status === terminatedJobsQuickFilter.value
+}))
 
 const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
 const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
@@ -793,6 +910,19 @@ const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j =>
 function levelCode(v) { return resolveJobLevelCode(v) }
 function typeCode(v)  { return resolveJobTypeCode(v) }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
+
+const JOB_STATUS_INFO = {
+  T:  { label: 'OK', color: 'positive' },
+  OK: { label: 'OK', color: 'positive' },
+  W:  { label: 'Warning', color: 'warning' },
+  f:  { label: 'Failed', color: 'negative' },
+  A:  { label: 'Canceled', color: 'grey' },
+  R:  { label: 'Running', color: 'info' },
+  C:  { label: 'Waiting', color: 'grey' },
+  E:  { label: 'Error', color: 'negative' },
+}
+function jobStatusColor(status) { return JOB_STATUS_INFO[status]?.color ?? 'grey' }
+function jobStatusLabel(status) { return t(JOB_STATUS_INFO[status]?.label ?? status) }
 
 const scheduledJobCols = computed(() => [
   ...(showDirectorColumn.value
@@ -840,6 +970,24 @@ const terminatedJobCols = computed(() => [
   { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right', sortable: true,
     sort: (a, b) => Number(a ?? 0) - Number(b ?? 0) },
 ].map((col) => ({ ...col, label: t(col.label) })))
+
+const {
+  visibleColumns: visibleScheduledJobCols,
+  toggleableColumns: toggleableScheduledJobCols,
+  toggleColumn: toggleScheduledJobCol,
+} = usePersistedTableColumns('director.scheduledJobs', scheduledJobCols, { essential: ['name'] })
+
+const {
+  visibleColumns: visibleRunningJobCols,
+  toggleableColumns: toggleableRunningJobCols,
+  toggleColumn: toggleRunningJobCol,
+} = usePersistedTableColumns('director.runningJobs', runningJobCols, { essential: ['jobid', 'name'] })
+
+const {
+  visibleColumns: visibleTerminatedJobCols,
+  toggleableColumns: toggleableTerminatedJobCols,
+  toggleColumn: toggleTerminatedJobCol,
+} = usePersistedTableColumns('director.terminatedJobs', terminatedJobCols, { essential: ['jobid', 'name'] })
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const messagesLoading = ref(false)
@@ -1274,6 +1422,9 @@ async function showConfigStatus(targetDirector = activeDirectors.value[0]) {
 </script>
 
 <style scoped>
+.director-jobs-stats :deep(.q-chip) {
+  font-weight: 600;
+}
 .config-status-output {
   background: #1e1e1e;
   color: #d4d4d4;

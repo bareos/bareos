@@ -20,9 +20,18 @@
  */
 
 export function directorListLoadErrorMessage(error, t) {
-  return t('Director list request failed: {message}', {
-    message: error?.message || t('Unknown error'),
-  })
+  const message = String(error?.message ?? '').trim()
+  const normalized = message.toLowerCase()
+  if (
+    !message
+    || normalized === 'failed to load directors'
+    || normalized.includes('cannot connect to proxy')
+    || normalized.includes('timed out while loading directors')
+  ) {
+    return t('Could not load the configured directors. Check that the webui proxy is running and reachable.')
+  }
+
+  return t('Director list request failed: {message}', { message })
 }
 
 export function shouldAutoLoginAllDirectors({

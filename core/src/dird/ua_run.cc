@@ -26,6 +26,7 @@
  */
 #include "dird/dird_globals.h"
 #include "include/bareos.h"
+#include "include/job_types.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
@@ -76,7 +77,6 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
   PoolMem cmdline(PM_MESSAGE);
 
   jr.JobId = JobId;
-  ua->SendMsg("rerunning jobid %" PRIu32 "\n", jr.JobId);
   if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
     Jmsg(ua->jcr, M_WARNING, 0,
          T_("Error getting Job record for Job rerun: ERR=%s\n"),
@@ -84,15 +84,17 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     return false;
   }
 
-  // Only perform rerun on JobTypes where it makes sense.
-  switch (jr.JobType) {
-    case JT_BACKUP:
-    case JT_COPY:
-    case JT_MIGRATE:
-      break;
-    default:
-      return true;
+  /* Only perform rerun on JobTypes where it makes sense. Skipping is not an
+   * error, so that a rerun over a selection of failed jobs continues with the
+   * remaining jobids. */
+  if (!IsRerunableJobType(static_cast<JobTypes>(jr.JobType))) {
+    ua->SendMsg(T_("Cannot rerun jobid %" PRIu32 ": %s jobs cannot be "
+                   "rerun.\n"),
+                jr.JobId, job_type_to_str(jr.JobType));
+    return true;
   }
+
+  ua->SendMsg("rerunning jobid %" PRIu32 "\n", jr.JobId);
 
   if (jr.JobLevel == L_NONE) {
     Mmsg(cmdline, "run job=\"%s\"", jr.Name);

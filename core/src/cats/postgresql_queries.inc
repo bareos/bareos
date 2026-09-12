@@ -63,7 +63,7 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0007_list_jobs_long */
@@ -85,16 +85,14 @@ LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
 LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
 WHERE Job.JobId > 0
 %s
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0008_list_jobs_count */
 R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+%s
 WHERE Job.JobId > 0
 %s
 %s;
@@ -126,7 +124,7 @@ INNER JOIN (
    GROUP BY Job.Name
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0010_list_jobs_long_last */
@@ -159,7 +157,7 @@ INNER JOIN (
    GROUP BY Job.Name
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
+ORDER BY %s%s;
 )SQL",
 
 /* 0011_sel_JobMedia */
@@ -1213,4 +1211,63 @@ WHERE
   client_name = '%s'
 ORDER BY
   fileset;
+)SQL",
+
+/* 0086_list_jobs_count_last */
+R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
+FROM Job
+INNER JOIN (
+   SELECT MAX(Job.JobId) as MaxJobId
+   FROM Job
+   LEFT JOIN Client ON Client.ClientId=Job.ClientId
+   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+   WHERE Job.JobId > 0
+   %s
+   GROUP BY Job.Name
+) LastJob
+ON Job.JobId = LastJob.MaxJobId
+;
+)SQL",
+
+/* 0087_uar_sel_client_fileset_tuples_1 */
+R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet
+  FROM Job, Client, FileSet
+ WHERE Job.ClientId   = Client.ClientId
+   AND Job.FileSetId  = FileSet.FileSetId
+   AND Job.JobStatus IN ('T','W')
+   AND Job.Type       = '%c'
+ ORDER BY Client.Name, FileSet.FileSet
+)SQL",
+
+/* 0088_uar_sel_client_fileset_fulls_3 */
+R"SQL(WITH completed_jobs AS (
+  SELECT JobId, Name, Level, StartTime
+    FROM Job
+   WHERE ClientId = %s
+     AND FileSetId = %s
+     AND JobStatus IN ('T','W')
+     AND Type = '%c'
+),
+full_backups AS (
+  SELECT JobId,
+         StartTime AS FullStartTime,
+         LEAD(StartTime) OVER (ORDER BY StartTime) AS NextFullStartTime
+    FROM completed_jobs
+   WHERE Level = 'F'
+)
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames
+  FROM full_backups
+  JOIN completed_jobs
+    ON completed_jobs.StartTime >= full_backups.FullStartTime
+   AND (full_backups.NextFullStartTime IS NULL
+        OR completed_jobs.StartTime < full_backups.NextFullStartTime)
+ GROUP BY full_backups.JobId, full_backups.FullStartTime
+ ORDER BY full_backups.FullStartTime DESC
 )SQL",

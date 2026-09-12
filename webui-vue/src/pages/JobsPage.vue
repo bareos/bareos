@@ -3,11 +3,9 @@
     <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="list"     :label="t('Show')"     no-caps />
-      <q-tab name="actions"  :label="t('Actions')"  no-caps data-testid="jobs-tab-actions" />
-      <q-tab name="run"      :label="t('Run')"      no-caps data-testid="jobs-tab-run" />
-      <q-tab name="rerun"    :label="t('Rerun')"    no-caps />
-      <q-tab name="timeline" :label="t('Timeline')" no-caps />
+      <q-tab name="list"     :label="t('Job History')"  no-caps />
+      <q-tab name="timeline" :label="t('Job Timeline')" no-caps />
+      <q-tab name="run"      :label="t('Start Job')"    no-caps data-testid="jobs-tab-run" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
@@ -108,14 +106,20 @@
             </q-input>
             <div class="jobs-list-header__actions row items-center no-wrap">
               <span class="text-white text-caption jobs-list-header__countdown panel-refresh-countdown">
-                <span aria-hidden="true">↻</span>
                 <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
               </span>
+              <q-btn flat dense no-caps icon="restart_alt" color="white"
+                     :label="$q.screen.gt.sm ? t('Rerun by Job ID') : undefined"
+                     :title="t('Rerun by Job ID')"
+                     @click="openRerunJobIdDialog" />
               <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <q-banner v-if="jobsTruncated" dense class="bg-warning text-white">
+              {{ t('Showing the first {limit} of {total} matching jobs. Narrow your filter to see the rest.', { limit: formatNumber(maxJobsFetchLimit), total: formatNumber(totalJobs) }) }}
+            </q-banner>
             <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
               <q-chip
                 v-if="search"
@@ -188,11 +192,15 @@
               </q-chip>
             </div>
             <q-table
+              v-if="!(loading && !jobs.length)"
               :rows="jobs"
               :columns="columns"
               row-key="scopeKey"
               binary-state-sort
               dense flat
+              virtual-scroll
+              style="max-height: 70vh"
+              :rows-per-page-options="jobsRowsPerPageOptions"
               :loading="loading"
               v-model:pagination="pagination"
               @request="onRequest"
@@ -223,22 +231,29 @@
               </template>
               <template #body-cell-status="props">
                 <q-td :props="props" class="text-center">
-                  <a
-                    v-if="props.row.status"
-                    href="#"
-                    class="inline-job-filter justify-center"
-                    :title="`${t('Status')}: ${jobStatusLabel(props.row.status)}`"
-                    @click.prevent="applyStatusFilter(props.row.status)"
-                  >
+                  <span v-if="props.row.status" class="row items-center no-wrap q-gutter-x-xs justify-center">
                     <span
                       v-if="isWaitingStatus(displayJobStatus(props.row))"
-                      class="row items-center no-wrap q-gutter-x-xs justify-center"
+                      class="row items-center no-wrap q-gutter-x-xs justify-center cursor-pointer"
+                      :title="t('Jump to log')"
+                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
                     >
                       <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                       <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
                     </span>
-                    <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
-                  </a>
+                    <JobStatusBadge
+                      v-else
+                      clickable
+                      :status="displayJobStatus(props.row)"
+                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+                    />
+                    <q-btn
+                      flat round dense size="sm"
+                      icon="filter_alt"
+                      :title="`${t('Filter by status')}: ${jobStatusLabel(props.row.status)}`"
+                      @click="applyStatusFilter(props.row.status)"
+                    />
+                  </span>
                   <span v-else>—</span>
                 </q-td>
               </template>
@@ -364,7 +379,8 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
-                   <q-btn flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
+                   <q-btn v-if="canRerunJob(props.row)"
+                         flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
                          @click="confirmRerun(props.row)" class="q-mr-xs" />
                   <q-btn v-if="isRunning(props.row.status)"
                          flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')"
@@ -379,270 +395,19 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="columns.length" :rows="10" />
           </q-card-section>
         </q-card>
-      </q-tab-panel>
-
-      <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
-      <q-tab-panel name="actions" class="q-pa-none q-gutter-md">
-        <!-- Enable / Disable jobs -->
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-             <span>{{ t('Enable / Disable Jobs') }}</span>
-            <q-space />
-            <q-btn flat round dense icon="refresh" color="white" @click="loadJobDefs" />
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="jobDefs"
-              :columns="defsColumns"
-              row-key="scopeKey"
-              dense flat
-              :loading="loadingDefs"
-              v-model:pagination="jobDefsPagination"
-            >
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <DirectorLabel :director="props.row.director || props.value || ''" />
-                </q-td>
-              </template>
-              <template #body-cell-enabled="props">
-                <q-td :props="props" class="text-center">
-                  <q-chip dense square
-                    :color="props.value ? 'positive' : 'grey'"
-                    text-color="white"
-                    :label="props.value ? t('enabled') : t('disabled')"
-                    style="font-size:0.7rem" />
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center" style="white-space:nowrap">
-                  <q-btn flat dense no-caps size="sm" icon="play_arrow" color="positive"
-                         :label="t('Enable')"  class="q-mr-xs"
-                         :disable="props.row.enabled"
-                         @click="enableJob(props.row)" />
-                  <q-btn flat dense no-caps size="sm" icon="pause" color="orange-10"
-                         :label="t('Disable')" class="q-mr-xs"
-                         :disable="!props.row.enabled"
-                         @click="disableJob(props.row)" />
-                   <q-btn flat dense no-caps size="sm" icon="send" color="primary"
-                          :data-testid="`jobdef-run-${props.row.name}`"
-                          :label="t('Run')"
-                          @click="runThisJob(props.row)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
-      <!-- ── RUN ───────────────────────────────────────────────────────────── -->
-      <q-tab-panel name="run">
-        <q-card
-          v-if="isCommonJobs"
-          flat
-          bordered
-          class="q-mb-md bareos-panel"
-          style="max-width:800px"
-        >
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Run Job Target') }}</span>
-          </q-card-section>
-          <q-card-section>
-             <q-select
-               v-model="singletonTabDirector"
-               :options="singletonTabDirectorOptions"
-               option-label="label"
-               option-value="value"
-              emit-value
-              map-options
-               outlined
-               dense
-               :label="t('Director')"
-             >
-               <template #selected-item="scope">
-                 <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
-               </template>
-               <template #option="scope">
-                 <q-item v-bind="scope.itemProps">
-                   <q-item-section>
-                     <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
-                   </q-item-section>
-                 </q-item>
-               </template>
-             </q-select>
-            <div class="text-caption text-grey-6 q-mt-sm">
-              {{ t('Run and defaults lookups in this tab use the selected director while the jobs list stays aggregated.') }}
-            </div>
-          </q-card-section>
-        </q-card>
-        <q-card flat bordered class="bareos-panel" style="max-width:640px">
-          <q-card-section class="panel-header">{{ t('Run Job') }}</q-card-section>
-          <q-card-section>
-            <q-form @submit.prevent="runJob" class="q-gutter-md">
-               <q-select v-model="runForm.job"     data-testid="run-job-field" :options="dotJobs"     :label="t('Job *')"     outlined dense
-                         @update:model-value="onJobSelected" />
-              <q-select v-model="runForm.client"  :options="dotClients"  :label="t('Client')"    outlined dense clearable />
-              <q-select v-model="runForm.fileset" :options="dotFilesets" :label="t('Fileset')"   outlined dense clearable />
-              <q-select v-model="runForm.pool"    :options="dotPools"    :label="t('Pool')"      outlined dense clearable />
-              <q-select v-model="runForm.storage" :options="dotStorages" :label="t('Storage')"   outlined dense clearable />
-              <q-select v-model="runForm.level"   :options="levels"      :label="t('Level')"     outlined dense />
-              <q-input  v-model="runForm.when"                           :label="t('When (optional)')" outlined dense
-                        :placeholder="t('YYYY-MM-DD HH:MM:SS')">
-                <template #append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy @before-show="prepareRunWhenPicker">
-                      <div class="q-pa-md column q-gutter-md">
-                        <q-date v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" />
-                        <q-time v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" format24h with-seconds />
-                        <div class="row justify-end q-gutter-sm">
-                          <q-btn flat no-caps :label="t('Clear')" v-close-popup @click="clearRunWhen" />
-                          <q-btn flat no-caps :label="t('Cancel')" v-close-popup />
-                          <q-btn color="primary" no-caps :label="t('OK')" v-close-popup @click="applyRunWhenPicker" />
-                        </div>
-                      </div>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-              <q-input  v-model.number="runForm.priority" type="number" :label="t('Priority')" outlined dense style="max-width:140px" />
-              <div>
-                 <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Run Job')" icon="play_arrow"
-                        no-caps :loading="runLoading" :disable="!runForm.job" />
-              </div>
-            </q-form>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
-      <!-- ── RERUN ─────────────────────────────────────────────────────────── -->
-      <q-tab-panel name="rerun" class="q-pa-none q-gutter-md">
-
-        <!-- Completed jobs table -->
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-             <span>{{ t('Completed Jobs') }}</span>
-            <q-space />
-            <q-input v-model="rerunSearch" dense outlined :placeholder="t('Search…')" class="q-mr-sm"
-                     style="width:200px" clearable>
-              <template #prepend><q-icon name="search" /></template>
-            </q-input>
-            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="rerunableJobs"
-              :columns="rerunColumns"
-              row-key="scopeKey"
-              dense flat
-              :pagination="{ rowsPerPage: 15, sortBy: 'id', descending: true }"
-            >
-              <template #body-cell-status="props">
-                <q-td :props="props" class="text-center">
-                  <JobStatusBadge :status="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-client="props">
-                <q-td :props="props">
-                  <span v-if="props.value" class="row inline items-center no-wrap q-gutter-x-xs">
-                    <a
-                      href="#"
-                      class="text-primary inline-job-filter"
-                      :title="`${t('Client')}: ${props.value}`"
-                      @click.prevent="rerunSearch = props.value ?? ''"
-                    >
-                      {{ props.value }}
-                    </a>
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      size="sm"
-                      icon="info"
-                      :title="t('Client details')"
-                      @click="openClientDetails(props.row)"
-                    />
-                  </span>
-                  <span v-else>—</span>
-                </q-td>
-              </template>
-              <template #body-cell-level="props">
-                <q-td :props="props" class="text-center">
-                  <JobLevelBadge v-if="props.value" :level="props.value" />
-                  <span v-else>—</span>
-                </q-td>
-              </template>
-              <template #body-cell-id="props">
-                <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openJobDetails(props.row)">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <DirectorLabel :director="props.row.director || props.value || ''" />
-                </q-td>
-              </template>
-              <template #body-cell-bytes="props">
-                <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
-              </template>
-              <template #body-cell-speed="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
-                  <q-linear-progress
-                    :value="speedGauge(props.row)"
-                    color="cyan-7" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                   <q-btn flat round dense size="sm" icon="restart_alt" color="primary" :title="t('Rerun')"
-                         @click="confirmRerun(props.row)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-
-        <!-- Manual ID fallback -->
-        <q-card flat bordered class="bareos-panel" style="max-width:520px">
-          <q-card-section class="panel-header">{{ t('Rerun by Job ID') }}</q-card-section>
-          <q-card-section>
-            <q-form @submit.prevent="submitRerun" class="q-gutter-md">
-              <q-input
-                v-model="rerunJobId"
-                :label="t('Job ID *')"
-                outlined
-                dense
-                type="number"
-                min="1"
-                step="1"
-                style="max-width:180px"
-                :hint="t('Enter the ID of any completed job from the selected directors')"
-                :error="Boolean(rerunJobIdError)"
-                :error-message="rerunJobIdError"
-              />
-              <div>
-                <q-btn type="submit" color="primary" :label="t('Rerun')" icon="restart_alt"
-                        no-caps :loading="rerunLoading" :disable="!rerunJobIdValue" />
-              </div>
-            </q-form>
-          </q-card-section>
-        </q-card>
-
       </q-tab-panel>
 
       <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
       <q-tab-panel name="timeline" class="q-pa-none">
         <JobTimeline
-          :key="activeDirectors.join('\u0000') || 'jobs-timeline'"
+          :key="`${activeDirectors.join('\u0000') || 'jobs-timeline'}:${clientFilter}`"
           :directors="activeDirectors"
+          :client-filter="clientFilter"
           :client-details-query="buildClientDetailsQuery({
             jobsOrigin: true,
-            clientsTab: 'timeline',
             jobsAction: tab,
             jobsStatus: statusFilters,
             jobsLevel: encodeJobsLevelFilters(levelFilters),
@@ -654,7 +419,223 @@
           :job-details-query="timelineJobDetailsQuery"
         />
       </q-tab-panel>
+
+      <!-- ── RUN ───────────────────────────────────────────────────────────── -->
+      <q-tab-panel name="run" class="q-pa-none">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header available-jobs-header row items-center">
+            <span class="available-jobs-header__title">{{ t('Available Jobs') }}</span>
+            <q-space />
+            <q-input
+              v-model="jobDefsSearch"
+              dense
+              outlined
+              clearable
+              dark
+              standout
+              :placeholder="t('Search jobs')"
+              class="available-jobs-header__search"
+            >
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <q-btn flat round dense icon="refresh" color="white" @click="loadJobDefs" />
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="filteredJobDefs"
+              :columns="defsColumns"
+              row-key="scopeKey"
+              dense flat
+              :loading="loadingDefs"
+              v-model:pagination="jobDefsPagination"
+              :rows-per-page-options="jobDefsRowsPerPageOptions"
+              @row-click="openConfigureStartJobFromRow"
+            >
+              <template #body-cell-name="props">
+                <q-td :props="props">
+                  <span :class="{ 'text-grey-6': !props.row.enabled }">{{ props.value }}</span>
+                </q-td>
+              </template>
+              <template #body-cell-director="props">
+                <q-td :props="props">
+                  <DirectorLabel :director="props.row.director || props.value || ''" />
+                </q-td>
+              </template>
+              <template #body-cell-type="props">
+                <q-td :props="props" class="text-center">
+                  <JobTypeBadge v-if="props.value" :type="props.value" />
+                  <span v-else>—</span>
+                </q-td>
+              </template>
+              <template #body-cell-enabled="props">
+                <q-td :props="props" class="text-center" @click.stop>
+                  <q-toggle
+                    :model-value="props.value"
+                    :label="props.value ? t('enabled') : t('disabled')"
+                    :disable="isJobEnabledSwitchLoading(props.row)"
+                    color="positive"
+                    dense
+                    keep-color
+                    @update:model-value="setJobEnabled(props.row, $event)"
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center" style="white-space:nowrap" @click.stop>
+                  <q-btn flat dense no-caps size="sm" icon="tune" color="primary"
+                         :round="$q.screen.lt.md"
+                         :label="$q.screen.lt.md ? undefined : t('Customize & Start')" class="q-mr-xs"
+                         @click.stop="openConfigureStartJob(props.row)">
+                    <q-tooltip>{{ t('Customize & Start') }}</q-tooltip>
+                  </q-btn>
+                  <span>
+                    <q-btn flat dense no-caps size="sm" icon="rocket_launch"
+                         :color="props.row.enabled ? 'positive' : 'grey-6'"
+                         :round="$q.screen.lt.md"
+                         :label="$q.screen.lt.md ? undefined : t('Quick start')" class="q-mr-xs"
+                         :disable="!props.row.enabled"
+                         @click.stop="confirmQuickStartJob(props.row)" />
+                    <q-tooltip>
+                      {{ props.row.enabled ? t('Quick start') : t('Enable this job first.') }}
+                    </q-tooltip>
+                  </span>
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+          <q-card-section class="text-caption text-grey-7">
+            {{ t('Restore job templates are handled by the Restore workflow.') }}
+            <a href="#" class="text-primary" @click.prevent="openRestorePage">
+              {{ t('Open Restore') }}
+            </a>
+          </q-card-section>
+        </q-card>
+      </q-tab-panel>
+
     </q-tab-panels>
+
+    <q-dialog v-model="rerunJobIdDialogOpen">
+      <q-card class="rerun-job-id-dialog">
+        <q-card-section class="panel-header row items-center">
+          <span>{{ t('Rerun by Job ID') }}</span>
+          <q-space />
+          <q-btn v-close-popup flat round dense icon="close" color="white" />
+        </q-card-section>
+        <q-card-section>
+          <q-form @submit.prevent="submitRerun" class="q-gutter-md">
+            <q-input
+              v-model="rerunJobId"
+              :label="t('Job ID *')"
+              outlined
+              dense
+              type="number"
+              min="1"
+              step="1"
+              :hint="t('Enter the ID of any completed job from the selected directors')"
+              :error="Boolean(rerunJobIdError)"
+              :error-message="rerunJobIdError"
+            />
+            <div class="row justify-end q-gutter-sm">
+              <q-btn v-close-popup flat no-caps :label="t('Cancel')" />
+              <q-btn type="submit" color="primary" :label="t('Rerun')" icon="restart_alt"
+                     no-caps :loading="rerunLoading" :disable="!rerunJobIdValue" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="configureStartDialogOpen">
+      <q-card class="configure-start-dialog">
+        <q-card-section class="panel-header row items-center">
+          <span>{{ t('Customize & Start') }}</span>
+          <q-space />
+          <q-btn v-close-popup flat round dense icon="close" color="white" />
+        </q-card-section>
+
+        <q-card-section v-if="isCommonJobs" class="q-pb-none">
+          <q-select
+            v-model="singletonTabDirector"
+            :options="visibleSingletonTabDirectorOptions"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            use-input
+            fill-input
+            hide-selected
+            input-debounce="0"
+            outlined
+            dense
+            :label="t('Director')"
+            @filter="filterSingletonTabDirectorOptions"
+          >
+            <template #selected-item="scope">
+              <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+            </template>
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+          <div class="text-caption text-grey-6 q-mt-sm">
+            {{ t('The start form and defaults lookups in this tab use the selected director while the jobs list stays aggregated.') }}
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none q-pb-none">
+          <div class="text-subtitle2">{{ t('Effective defaults') }}</div>
+          <q-markup-table flat bordered dense class="q-mt-sm">
+            <tbody>
+              <tr v-for="row in runFormSummaryRows" :key="row.label">
+                <td class="text-grey-7">{{ row.label }}</td>
+                <td>{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </q-markup-table>
+        </q-card-section>
+
+        <q-card-section>
+          <q-form @submit.prevent="runJob" class="q-gutter-md">
+            <q-select v-model="runForm.job"     data-testid="run-job-field" :options="visibleDotJobs"     :label="t('Job *')"     outlined dense use-input fill-input hide-selected input-debounce="0"
+                      @filter="filterRunJobs"
+                      @update:model-value="onJobSelected" />
+            <q-select v-model="runForm.client"  :options="visibleDotClients"  :label="t('Client')"  outlined dense clearable use-input fill-input hide-selected input-debounce="0" @filter="filterRunClients" />
+            <q-select v-model="runForm.fileset" :options="visibleDotFilesets" :label="t('Fileset')" outlined dense clearable use-input fill-input hide-selected input-debounce="0" @filter="filterRunFilesets" />
+            <q-select v-model="runForm.pool"    :options="visibleDotPools"    :label="t('Pool')"    outlined dense clearable use-input fill-input hide-selected input-debounce="0" @filter="filterRunPools" />
+            <q-select v-model="runForm.storage" :options="visibleDotStorages" :label="t('Storage')" outlined dense clearable use-input fill-input hide-selected input-debounce="0" @filter="filterRunStorages" />
+            <q-select v-model="runForm.level"   :options="visibleLevels"      :label="t('Level')"   outlined dense use-input fill-input hide-selected input-debounce="0" @filter="filterRunLevels" />
+            <q-input  v-model="runForm.when"                           :label="t('When (optional)')" outlined dense
+                      :placeholder="t('YYYY-MM-DD HH:MM:SS')">
+              <template #append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy @before-show="prepareRunWhenPicker">
+                    <div class="q-pa-md column q-gutter-md">
+                      <q-date v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" />
+                      <q-time v-model="runWhenPickerValue" mask="YYYY-MM-DD HH:mm:ss" format24h with-seconds />
+                      <div class="row justify-end q-gutter-sm">
+                        <q-btn flat no-caps :label="t('Clear')" v-close-popup @click="clearRunWhen" />
+                        <q-btn flat no-caps :label="t('Cancel')" v-close-popup />
+                        <q-btn color="primary" no-caps :label="t('OK')" v-close-popup @click="applyRunWhenPicker" />
+                      </div>
+                    </div>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+            <q-input  v-model.number="runForm.priority" type="number" :label="t('Priority')" outlined dense style="max-width:140px" />
+            <div class="row justify-end q-gutter-sm">
+              <q-btn v-close-popup flat no-caps :label="t('Cancel')" />
+              <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Start Job')" icon="play_arrow"
+                     no-caps :loading="runLoading" :disable="!runForm.job" />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -675,7 +656,6 @@ import { createDirectorCommandClient } from '../composables/directorAggregate.js
 import {
   fetchAggregatedJobsPage,
   sortJobsByPagination,
-  usesDefaultJobsSorting,
 } from '../composables/jobsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
@@ -696,18 +676,20 @@ import {
   buildRerunJobCommand,
   buildRunJobCommand,
   buildSetJobEnabledCommand,
+  canRerunJob,
   encodeJobsLevelFilters,
   encodeJobsStatusFilters,
   encodeJobsTypeFilters,
   filterRunnableJobOptions,
-  filterJobsBySearch,
   filterJobsTextOptions,
   formatRunWhenPickerDate,
+  MAX_JOBS_FETCH_LIMIT,
   normaliseJobId,
   normaliseJobsSearchTerm,
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
+  resolveJobsSortColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   resolveJobsClientQuery,
@@ -716,6 +698,8 @@ import {
   resolveJobsSearchQuery,
   resolveJobsStatusFilters,
   resolveJobsTypeFilters,
+  resolveConfiguredJobType,
+  resolveJobLogFocus,
   withJobsClientQuery,
   withJobsJobQuery,
   withJobsSearchQuery,
@@ -725,6 +709,7 @@ import {
 } from '../utils/jobs.js'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -737,7 +722,7 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const { t } = useI18n()
-const validTabs = new Set(['list', 'actions', 'run', 'rerun', 'timeline'])
+const validTabs = new Set(['list', 'run', 'timeline'])
 function normaliseTab(value) {
   return validTabs.has(value) ? value : 'list'
 }
@@ -771,16 +756,25 @@ const jobFilterOptions = ref([])
 const clientFilterOptions = ref([])
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
+const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 const fmtSpeed  = formatSpeed
+const jobsRowsPerPageOptions = [10, 25, 50]
+const jobDefsRowsPerPageOptions = [10, 15, 25, 50]
 const pagination = usePersistedTablePagination('jobs.list', {
   page: 1,
   rowsPerPage: 25,
   sortBy: 'id',
   descending: true,
   rowsNumber: 0,
-})
+}, { allowedRowsPerPage: jobsRowsPerPageOptions })
 const jobDefsPagination = usePersistedTablePagination('jobs.defs', {
+  page: 1,
   rowsPerPage: 15,
+  sortBy: 'name',
+  descending: false,
+}, {
+  allowedRowsPerPage: jobDefsRowsPerPageOptions,
+  persistSort: true,
 })
 const jobStatusOptions = computed(() => Object.entries(jobStatusMap).map(([value, meta]) => ({
   value,
@@ -861,6 +855,7 @@ const singletonTabDirector = ref('')
 const singletonTabDirectorOptions = computed(() => (
   activeDirectors.value.map(value => ({ label: value, value }))
 ))
+const visibleSingletonTabDirectorOptions = ref([])
 const currentSingletonDirector = computed(() => (
   isCommonJobs.value
     ? (singletonTabDirector.value || activeDirectors.value[0] || '')
@@ -878,6 +873,7 @@ const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
 
 function syncSingletonTabDirector() {
   const validDirectors = activeDirectors.value
+  visibleSingletonTabDirectorOptions.value = [...singletonTabDirectorOptions.value]
   if (!validDirectors.length) {
     singletonTabDirector.value = ''
     return
@@ -888,6 +884,15 @@ function syncSingletonTabDirector() {
   }
 
   singletonTabDirector.value = validDirectors[0]
+}
+
+function filterSingletonTabDirectorOptions(value, update) {
+  const needle = String(value ?? '').trim().toLowerCase()
+  update(() => {
+    visibleSingletonTabDirectorOptions.value = singletonTabDirectorOptions.value.filter(
+      option => !needle || option.label.toLowerCase().includes(needle)
+    )
+  })
 }
 
 async function ensureSingletonTabDirector() {
@@ -905,6 +910,14 @@ function syncJobsScopeDirectorQuery() {
     return
   }
 
+  const requestedDirector = route.query.scopeDirector
+  const requestedDirectorIsAvailable = directorOptions.value.some(
+    option => option.value === requestedDirector
+  )
+  if (requestedDirectorIsAvailable) {
+    settings.setSelectedDirectors([requestedDirector])
+  }
+
   const query = { ...route.query }
   delete query.scopeDirector
   router.replace({ path: route.path, query })
@@ -913,6 +926,7 @@ function syncJobsScopeDirectorQuery() {
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
 const totalJobs  = ref(0)
+const jobsTruncated = ref(false)
 const loading    = ref(false)
 const error      = ref(null)
 async function fetchPage() {
@@ -920,16 +934,25 @@ async function fetchPage() {
   error.value   = null
   directorErrors.value = []
   const currentPagination = pagination.value
-  const { page, rowsPerPage } = currentPagination
+  const { page, rowsPerPage, sortBy, descending } = currentPagination
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
-  const useDefaultSorting = usesDefaultJobsSorting(currentPagination)
   const normalizedSearchTerm = normaliseJobsSearchTerm(search.value)
-  const fetchAllJobs = rowsPerPage === 0 || !useDefaultSorting || normalizedSearchTerm !== ''
+  // Sorting and searching are resolved on the director whenever the sort
+  // column has a real catalog equivalent (see the `sortby=` whitelist in
+  // core/src/cats/sql_list.cc), so the browser only ever fetches
+  // `rowsPerPage` rows. `duration`/`speed` (derived client-side) and
+  // `director` (n/a for a single director) have no server-side
+  // equivalent, and `rowsPerPage === 0` ("All", no longer reachable from
+  // the UI but still defended against) has no bounded page to request in
+  // the first place -- both fall back to a capped, client-sorted fetch
+  // further down.
+  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
   try {
     if (activeDirectors.value.length === 0) {
       jobs.value = []
       totalJobs.value = 0
+      jobsTruncated.value = false
       pagination.value = { ...pagination.value, rowsNumber: 0 }
       return
     }
@@ -954,144 +977,66 @@ async function fetchPage() {
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
       totalJobs.value = result.totalJobs
+      jobsTruncated.value = result.truncated
       pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
       return
     }
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
-    if (!encodedStatusFilters.includes(',')) {
-      const countResult = await director.call(buildListJobsCountCommand({
+    // A single combined query is used regardless of how many statuses are
+    // selected: `jobstatus=T,E,f` is sent as-is and the director resolves it
+    // natively via `Job.JobStatus IN (...)` (see sql_list.cc). Splitting this
+    // into one director call per status used to multiply catalog/director
+    // load for no benefit.
+    const countResult = await director.call(buildListJobsCountCommand({
+      statusFilter: encodedStatusFilters,
+      levelFilter: levelFilters.value,
+      typeFilter: typeFilters.value,
+      jobFilter: jobFilter.value,
+      clientFilter: clientFilter.value,
+      searchTerm: normalizedSearchTerm,
+    }))
+    const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
+    if (count === 0) {
+      jobs.value = []
+      totalJobs.value = 0
+      jobsTruncated.value = false
+      pagination.value = { ...pagination.value, rowsNumber: 0 }
+      return
+    }
+    // "Fetch everything" is now limited to the rare columns without a
+    // server-side sort (duration/speed): those are still capped so a very
+    // large job history never ships its entire table to the browser.
+    const truncated = !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT
+    const limit = serverSortColumn
+      ? rowsPerPage
+      : Math.min(count, MAX_JOBS_FETCH_LIMIT)
+    const pageResult = await director.call(
+      buildListJobsCommand({
+        limit,
+        offset: serverSortColumn ? offset : 0,
         statusFilter: encodedStatusFilters,
         levelFilter: levelFilters.value,
         typeFilter: typeFilters.value,
         jobFilter: jobFilter.value,
         clientFilter: clientFilter.value,
-      }))
-      const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
-      if (count === 0) {
-        jobs.value = []
-        totalJobs.value = 0
-        pagination.value = { ...pagination.value, rowsNumber: 0 }
-        return
-      }
-      const limit = fetchAllJobs
-        ? Math.max(count, 1)
-        : rowsPerPage
-      const pageResult = await director.call(
-        buildListJobsCommand({
-          limit,
-          offset: fetchAllJobs ? 0 : offset,
-          statusFilter: encodedStatusFilters,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        })
-      )
-      const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
-        const normalized = normaliseJob(job)
-        return {
-          ...normalized,
-          director: currentDirector,
-          scopeKey: `${currentDirector}:${normalized.id}`,
-        }
+        sortColumn: serverSortColumn ?? '',
+        descending,
+        searchTerm: normalizedSearchTerm,
       })
-      const sortedJobs = useDefaultSorting
-        ? fetchedJobs
-        : sortJobsByPagination(fetchedJobs, currentPagination)
-      const matchingJobs = filterJobsBySearch(sortedJobs, normalizedSearchTerm)
-      const visibleJobs = fetchAllJobs
-        ? paginateJobs(matchingJobs, currentPagination)
-        : matchingJobs
-      const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
-      if (runningJobIds.length > 0) {
-        const runtimeStatus = await Promise.allSettled([director.call('status director')])
-        jobs.value = runtimeStatus[0].status === 'fulfilled'
-          ? overlayRuntimeStatuses(visibleJobs, runtimeStatus[0].value?.running)
-          : visibleJobs
-      } else {
-        jobs.value = visibleJobs
+    )
+    const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
+      const normalized = normaliseJob(job)
+      return {
+        ...normalized,
+        director: currentDirector,
+        scopeKey: `${currentDirector}:${normalized.id}`,
       }
-      const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
-      totalJobs.value = filteredCount
-      pagination.value = { ...pagination.value, rowsNumber: filteredCount }
-      return
-    }
-
-    const filters = resolveJobsStatusFilters({ status: encodedStatusFilters })
-    const countResults = await Promise.allSettled(filters.map(status => (
-      director.call(buildListJobsCountCommand({
-        statusFilter: status,
-        levelFilter: levelFilters.value,
-        typeFilter: typeFilters.value,
-        jobFilter: jobFilter.value,
-        clientFilter: clientFilter.value,
-      }))
-    )))
-    const pageResults = await Promise.allSettled(filters.map((status, index) => {
-      if (useDefaultSorting && !fetchAllJobs) {
-        return director.call(
-          buildListJobsCommand({
-            limit: offset + rowsPerPage,
-            offset: 0,
-            statusFilter: status,
-            levelFilter: levelFilters.value,
-            typeFilter: typeFilters.value,
-            jobFilter: jobFilter.value,
-            clientFilter: clientFilter.value,
-          })
-        )
-      }
-
-      const countResult = countResults[index]
-      if (countResult?.status === 'fulfilled') {
-        const count = Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
-        if (count === 0) {
-          return Promise.resolve({ jobs: [] })
-        }
-
-        return director.call(buildListJobsCommand({
-          limit: count,
-          offset: 0,
-          statusFilter: status,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        }))
-      }
-
-      return director.call(
-        buildListJobsCommand({
-          limit: offset + rowsPerPage,
-          offset: 0,
-          statusFilter: status,
-          levelFilter: levelFilters.value,
-          typeFilter: typeFilters.value,
-          jobFilter: jobFilter.value,
-          clientFilter: clientFilter.value,
-        })
-      )
-    }))
-    const rejectedPageResult = pageResults.find(result => result.status === 'rejected')
-    if (rejectedPageResult?.status === 'rejected') {
-      throw rejectedPageResult.reason
-    }
-    const mergedJobs = sortJobsByPagination([...pageResults.flatMap((result) => (
-      result.status === 'fulfilled'
-        ? directorCollection(result.value?.jobs).map((job) => {
-          const normalized = normaliseJob(job)
-          return {
-            ...normalized,
-            director: currentDirector,
-            scopeKey: `${currentDirector}:${normalized.id}`,
-          }
-        })
-        : []
-    ))], currentPagination)
-    const matchingJobs = filterJobsBySearch(mergedJobs, normalizedSearchTerm)
-    const visibleJobs = paginateJobs(matchingJobs, currentPagination)
+    })
+    const visibleJobs = serverSortColumn
+      ? fetchedJobs
+      : paginateJobs(sortJobsByPagination(fetchedJobs, currentPagination), currentPagination)
     const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
     if (runningJobIds.length > 0) {
       const runtimeStatus = await Promise.allSettled([director.call('status director')])
@@ -1101,29 +1046,14 @@ async function fetchPage() {
     } else {
       jobs.value = visibleJobs
     }
-    const count = countResults.reduce((sum, result, index) => (
-      sum + (
-        result.status === 'fulfilled'
-          ? Number(directorCollection(result.value?.jobs)[0]?.count ?? 0)
-          : numberOfJobsFromResult(pageResults[index])
-      )
-    ), 0)
-    const filteredCount = normalizedSearchTerm !== '' ? matchingJobs.length : count
-    totalJobs.value = filteredCount
-    pagination.value = { ...pagination.value, rowsNumber: filteredCount }
+    totalJobs.value = count
+    jobsTruncated.value = truncated
+    pagination.value = { ...pagination.value, rowsNumber: count }
   } catch (e) {
     error.value = e.message
   } finally {
     loading.value = false
   }
-}
-
-function numberOfJobsFromResult(result) {
-  if (result?.status !== 'fulfilled') {
-    return 0
-  }
-
-  return directorCollection(result.value?.jobs).length
 }
 
 function refresh() { fetchPage() }
@@ -1133,9 +1063,13 @@ function onRequest(props) {
   fetchPage()
 }
 
-const maxBytes    = computed(() => Math.max(1, ...jobs.value.map(j => j.bytes)))
-const maxFiles    = computed(() => Math.max(1, ...jobs.value.map(j => j.files)))
-const maxDuration = computed(() => Math.max(1, ...jobs.value.map(j => parseDurationSecs(j.duration))))
+function maxOf(values) {
+  return values.reduce((max, value) => (value > max ? value : max), 1)
+}
+
+const maxBytes    = computed(() => maxOf(jobs.value.map(j => j.bytes)))
+const maxFiles    = computed(() => maxOf(jobs.value.map(j => j.files)))
+const maxDuration = computed(() => maxOf(jobs.value.map(j => parseDurationSecs(j.duration))))
 
 function bytesGauge(val)    { return (val || 0) / maxBytes.value }
 function filesGauge(val)    { return (val || 0) / maxFiles.value }
@@ -1147,7 +1081,7 @@ function jobSpeedBps(row) {
   const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
   return bytes / secs
 }
-const maxSpeed = computed(() => Math.max(1, ...jobs.value
+const maxSpeed = computed(() => maxOf(jobs.value
   .filter(j => !isRunning(j.status))
   .map(j => jobSpeedBps(j))))
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeed.value }
@@ -1246,19 +1180,6 @@ function jobStatusLabel(status) {
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
-// Rerunable = any finished job (not currently running)
-const rerunSearch  = ref('')
-const rerunableJobs = computed(() => {
-  const base = jobs.value.filter(j => !isRunning(j.status))
-  if (!rerunSearch.value) return base
-  const q = rerunSearch.value.toLowerCase()
-  return base.filter(j =>
-    j.name.toLowerCase().includes(q) ||
-    j.client.toLowerCase().includes(q) ||
-    String(j.id).includes(q)
-  )
-})
-
 function isRunning(status) {
   // R = Running, l = data saved (still active)
   return status === 'R' || status === 'l'
@@ -1297,22 +1218,6 @@ const runningColumns = computed(() => [
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:90px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
-const rerunColumns = computed(() => [
-  { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
-  ...(showDirectorColumn.value ? [{
-    name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
-  }] : []),
-  { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
-  { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
-  { name: 'level',     label: 'Level',    field: 'level',     align: 'center', sortable: true },
-  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
-  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
-  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
-  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
-    sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
-  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
-].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
-
 const defsColumns = computed(() => [
   ...(showDirectorColumn.value ? [{
     name: 'director', label: 'Director', field: 'director', align: 'left', sortable: true,
@@ -1320,12 +1225,28 @@ const defsColumns = computed(() => [
   { name: 'name',    label: 'Job Name', field: 'name',    align: 'left',   sortable: true },
   { name: 'type',    label: 'Type',     field: 'type',    align: 'center', sortable: true },
   { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center', sortable: true },
-  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:220px' },
+  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:260px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
 
-// ── job definitions (for enable/disable) ──────────────────────────────────────
+// ── job definitions (for start and enable/disable) ────────────────────────────
 const jobDefs       = ref([])
 const loadingDefs   = ref(false)
+const enabledSwitchLoadingScopeKeys = ref(new Set())
+const jobDefsSearch = ref('')
+const filteredJobDefs = computed(() => {
+  const needle = normaliseJobsSearchTerm(jobDefsSearch.value).toLowerCase()
+  if (!needle) {
+    return jobDefs.value
+  }
+
+  return jobDefs.value.filter((job) => [
+    job.name,
+    job.director,
+    job.type,
+    jobTypeLabel(job.type),
+    job.enabled ? t('enabled') : t('disabled'),
+  ].some(value => String(value ?? '').toLowerCase().includes(needle)))
+})
 
 async function loadJobDefs() {
   loadingDefs.value = true
@@ -1341,16 +1262,25 @@ async function loadJobDefs() {
         director: directorName,
       })
       try {
-        const res = await client.call('show jobs')
+        const [res, jobDefsResponse] = await Promise.all([
+          client.call('show jobs'),
+          client.call('show jobdefs'),
+        ])
         const raw = res?.jobs ?? {}
         const list = Array.isArray(raw) ? raw : Object.values(raw)
-        return list.map(j => ({
-          name: j.name,
-          type: j.type ?? '',
-          enabled: j.enabled !== false,
-          director: directorName,
-          scopeKey: `${directorName}:${j.name}`,
-        }))
+        const jobDefs = jobDefsResponse?.jobdefs ?? {}
+        return list
+          .map((job) => {
+            const type = resolveConfiguredJobType(job, jobDefs)
+            return {
+              name: job.name,
+              type,
+              enabled: job.enabled !== false,
+              director: directorName,
+              scopeKey: `${directorName}:${job.name}`,
+            }
+          })
+          .filter(job => resolveJobTypeCode(job.type) !== 'R')
       } finally {
         client.disconnect()
       }
@@ -1420,7 +1350,7 @@ async function switchToJobDirector(job) {
   await switchActiveDirector(job.director)
 }
 
-async function openJobDetails(job) {
+async function openJobDetails(job, logFocus) {
   await router.push({
     name: 'job-details',
     params: { id: job.id },
@@ -1433,6 +1363,7 @@ async function openJobDetails(job) {
       jobsJob: jobFilter.value,
       jobsClient: clientFilter.value,
       jobsSearch: search.value,
+      logFocus,
     }),
   })
 }
@@ -1464,6 +1395,10 @@ async function openClientDetails(job) {
       }),
     })
   }
+}
+
+async function openRestorePage() {
+  await router.push({ name: 'restore' })
 }
 
 async function openRestoreDetails(job) {
@@ -1539,8 +1474,10 @@ async function doRerun(job) {
     $q.notify({ type: 'positive', message: `${t('Job restarted as ID')} ${newId}.` })
     tab.value = 'list'
     refresh()
+    return true
   } catch (e) {
     $q.notify({ type: 'negative', message: `${t('Rerun failed')}: ${e.message}` })
+    return false
   }
 }
 
@@ -1570,40 +1507,98 @@ function cancelAll() {
   })
 }
 
-// ── enable / disable ──────────────────────────────────────────────────────────
-async function enableJob(job) {
+function isJobEnabledSwitchLoading(job) {
+  return enabledSwitchLoadingScopeKeys.value.has(job?.scopeKey)
+}
+
+async function setJobEnabled(job, enabled) {
+  const scopeKey = job?.scopeKey
+  if (!scopeKey || isJobEnabledSwitchLoading(job) || job.enabled === enabled) {
+    return
+  }
+
+  enabledSwitchLoadingScopeKeys.value = new Set([
+    ...enabledSwitchLoadingScopeKeys.value,
+    scopeKey,
+  ])
+
   try {
     await switchToJobDirector(job)
-    await director.call(buildSetJobEnabledCommand(job.name, true))
-    $q.notify({ type: 'positive', message: `Job "${job.name}" enabled.` })
+    await director.call(buildSetJobEnabledCommand(job.name, enabled))
     const j = jobDefs.value.find(d => d.scopeKey === job.scopeKey)
-    if (j) j.enabled = true
+    if (j) j.enabled = enabled
+    $q.notify({
+      type: 'positive',
+      message: enabled
+        ? `Job "${job.name}" enabled.`
+        : `Job "${job.name}" disabled.`,
+    })
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Enable failed: ${e.message}` })
+    $q.notify({
+      type: 'negative',
+      message: `${enabled ? 'Enable' : 'Disable'} failed: ${e.message}`,
+    })
+  } finally {
+    const nextLoadingScopeKeys = new Set(enabledSwitchLoadingScopeKeys.value)
+    nextLoadingScopeKeys.delete(scopeKey)
+    enabledSwitchLoadingScopeKeys.value = nextLoadingScopeKeys
   }
 }
 
-async function disableJob(job) {
-  try {
-    await switchToJobDirector(job)
-    await director.call(buildSetJobEnabledCommand(job.name, false))
-    $q.notify({ type: 'positive', message: `Job "${job.name}" disabled.` })
-    const j = jobDefs.value.find(d => d.scopeKey === job.scopeKey)
-    if (j) j.enabled = false
-  } catch (e) {
-    $q.notify({ type: 'negative', message: `Disable failed: ${e.message}` })
+function defaultRunForm(jobName = null) {
+  return {
+    job: jobName,
+    client: null,
+    fileset: null,
+    pool: null,
+    storage: null,
+    level: 'Incremental',
+    when: '',
+    priority: 10,
   }
 }
 
-async function runThisJob(job) {
+async function prepareRunFormForJob(job) {
+  selectedConfiguredJob.value = job ?? null
   if (job?.director && activeDirectors.value.includes(job.director)) {
     singletonTabDirector.value = job.director
   }
   await switchToJobDirector(job)
-  if (dotJobs.value.length === 0) await loadRunOptions()
-  runForm.value = { job: job.name, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 }
-  await onJobSelected(job.name)
-  tab.value = 'run'
+  await loadRunOptions({ throwOnError: true })
+  runForm.value = defaultRunForm(job.name)
+  await applyJobDefaults(job.name, { throwOnError: true })
+  return { ...runForm.value }
+}
+
+async function openConfigureStartJob(job) {
+  try {
+    await prepareRunFormForJob(job)
+    configureStartDialogOpen.value = true
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
+  }
+}
+
+function openConfigureStartJobFromRow(_event, row) {
+  openConfigureStartJob(row)
+}
+
+async function confirmQuickStartJob(job) {
+  let preparedForm
+  try {
+    preparedForm = await prepareRunFormForJob(job)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
+    return
+  }
+
+  $q.dialog({
+    title: t('Quick Start Job'),
+    message: `${t('Start job')} <b>${escapeHtml(job.name)}</b>?${runFormSummaryHtml(preparedForm)}`,
+    html: true,
+    ok:     { label: t('Start Job'), color: 'primary', flat: true },
+    cancel: { label: t('Cancel'), flat: true },
+  }).onOk(() => submitRunJob(preparedForm))
 }
 
 // ── run form ──────────────────────────────────────────────────────────────────
@@ -1613,10 +1608,47 @@ const dotFilesets = ref([])
 const dotPools    = ref([])
 const dotStorages = ref([])
 const levels      = ['Full', 'Incremental', 'Differential']
+const visibleDotJobs = ref([])
+const visibleDotClients = ref([])
+const visibleDotFilesets = ref([])
+const visibleDotPools = ref([])
+const visibleDotStorages = ref([])
+const visibleLevels = ref([...levels])
 const runLoading  = ref(false)
 
-const runForm = ref({ job: null, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 })
+const runForm = ref(defaultRunForm())
+const configureStartDialogOpen = ref(false)
+const selectedConfiguredJob = ref(null)
 const runWhenPickerValue = ref(formatRunWhenPickerDate(new Date()))
+const runFormSummaryRows = computed(() => runFormSummary(runForm.value))
+
+function displayRunFormValue(value) {
+  const normalized = String(value ?? '').trim()
+  return normalized || '—'
+}
+
+function runFormSummary(form, job = selectedConfiguredJob.value) {
+  return [
+    { label: t('Director'), value: displayRunFormValue(currentSingletonDirector.value) },
+    { label: t('Job'), value: displayRunFormValue(form?.job) },
+    { label: t('Type'), value: displayRunFormValue(jobTypeLabel(job?.type)) },
+    { label: t('Status'), value: displayRunFormValue(job ? (job.enabled ? t('enabled') : t('disabled')) : '') },
+    { label: t('Client'), value: displayRunFormValue(form?.client) },
+    { label: t('Fileset'), value: displayRunFormValue(form?.fileset) },
+    { label: t('Pool'), value: displayRunFormValue(form?.pool) },
+    { label: t('Storage'), value: displayRunFormValue(form?.storage) },
+    { label: t('Level'), value: displayRunFormValue(form?.level) },
+    { label: t('When'), value: displayRunFormValue(form?.when) },
+    { label: t('Priority'), value: displayRunFormValue(form?.priority) },
+  ]
+}
+
+function runFormSummaryHtml(form) {
+  const rows = runFormSummary(form)
+    .map(row => `<tr><td>${escapeHtml(row.label)}</td><td>${escapeHtml(row.value)}</td></tr>`)
+    .join('')
+  return `<div class="q-mt-md"><b>${escapeHtml(t('Effective defaults'))}</b><table>${rows}</table></div>`
+}
 
 function prepareRunWhenPicker() {
   runWhenPickerValue.value = resolveRunWhenPickerValue(runForm.value.when)
@@ -1630,7 +1662,46 @@ function clearRunWhen() {
   runForm.value.when = ''
 }
 
-async function loadRunOptions() {
+function matchingRunOptions(options, value) {
+  const needle = String(value ?? '').trim().toLowerCase()
+  if (!needle) {
+    return [...options]
+  }
+
+  return options.filter(option => String(option).toLowerCase().includes(needle))
+}
+
+function filterRunOptions(options, visibleOptions, value, update) {
+  update(() => {
+    visibleOptions.value = matchingRunOptions(options, value)
+  })
+}
+
+function filterRunJobs(value, update) {
+  filterRunOptions(dotJobs.value, visibleDotJobs, value, update)
+}
+
+function filterRunClients(value, update) {
+  filterRunOptions(dotClients.value, visibleDotClients, value, update)
+}
+
+function filterRunFilesets(value, update) {
+  filterRunOptions(dotFilesets.value, visibleDotFilesets, value, update)
+}
+
+function filterRunPools(value, update) {
+  filterRunOptions(dotPools.value, visibleDotPools, value, update)
+}
+
+function filterRunStorages(value, update) {
+  filterRunOptions(dotStorages.value, visibleDotStorages, value, update)
+}
+
+function filterRunLevels(value, update) {
+  filterRunOptions(levels, visibleLevels, value, update)
+}
+
+async function loadRunOptions({ throwOnError = false } = {}) {
   try {
     await ensureSingletonTabDirector()
     const [j, restoreJobs, c, f, p, s] = await Promise.all([
@@ -1649,13 +1720,26 @@ async function loadRunOptions() {
     dotFilesets.value = directorCollection(f?.filesets).map(x => x.name).sort()
     dotPools.value = directorCollection(p?.pools).map(x => x.name).sort()
     dotStorages.value = directorCollection(s?.storages).map(x => x.name).sort()
+    visibleDotJobs.value = [...dotJobs.value]
+    visibleDotClients.value = [...dotClients.value]
+    visibleDotFilesets.value = [...dotFilesets.value]
+    visibleDotPools.value = [...dotPools.value]
+    visibleDotStorages.value = [...dotStorages.value]
+    visibleLevels.value = [...levels]
   } catch (e) {
+    if (throwOnError) {
+      throw e
+    }
     // non-fatal — user can still type values
     console.warn('Could not load run form options:', e.message)
   }
 }
 
 async function onJobSelected(name) {
+  await applyJobDefaults(name)
+}
+
+async function applyJobDefaults(name, { throwOnError = false } = {}) {
   if (!name) return
   try {
     await ensureSingletonTabDirector()
@@ -1675,11 +1759,15 @@ async function onJobSelected(name) {
     }
     if (d.level)    runForm.value.level    = d.level
     if (d.priority) runForm.value.priority = Number(d.priority)
-  } catch { /* ignore */ }
+  } catch (e) {
+    if (throwOnError) {
+      throw e
+    }
+  }
 }
 
-async function runJob() {
-  const f = runForm.value
+async function submitRunJob(form) {
+  const f = form
   if (!f.job) return
   runLoading.value = true
   try {
@@ -1687,6 +1775,7 @@ async function runJob() {
     const res = await director.call(buildRunJobCommand(f))
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
+    configureStartDialogOpen.value = false
     tab.value = 'list'
     refresh()
   } catch (e) {
@@ -1696,9 +1785,14 @@ async function runJob() {
   }
 }
 
-// ── rerun tab ─────────────────────────────────────────────────────────────────
+async function runJob() {
+  await submitRunJob({ ...runForm.value })
+}
+
+// ── manual rerun dialog ───────────────────────────────────────────────────────
 const rerunJobId   = ref('')
 const rerunLoading = ref(false)
+const rerunJobIdDialogOpen = ref(false)
 const rerunJobIdValue = computed(() => normaliseJobId(rerunJobId.value))
 const rerunJobIdError = computed(() => {
   if (rerunJobId.value === '' || rerunJobId.value === null) {
@@ -1708,6 +1802,10 @@ const rerunJobIdError = computed(() => {
   return rerunJobIdValue.value === null ? t('Enter a positive Job ID.') : ''
 })
 
+function openRerunJobIdDialog() {
+  rerunJobIdDialogOpen.value = true
+}
+
 async function submitRerun() {
   if (rerunJobIdValue.value === null) {
     $q.notify({ type: 'negative', message: t('Enter a positive Job ID.') })
@@ -1716,10 +1814,14 @@ async function submitRerun() {
 
   rerunLoading.value = true
   try {
-    const listedMatches = rerunableJobs.value.filter(job => Number(job.id) === rerunJobIdValue.value)
+    const listedMatches = jobs.value.filter(job => (
+      Number(job.id) === rerunJobIdValue.value && canRerunJob(job)
+    ))
     if (listedMatches.length === 1) {
-      await doRerun(listedMatches[0])
-      rerunJobId.value = ''
+      if (await doRerun(listedMatches[0])) {
+        rerunJobId.value = ''
+        rerunJobIdDialogOpen.value = false
+      }
       return
     }
     if (listedMatches.length > 1) {
@@ -1758,8 +1860,10 @@ async function submitRerun() {
       throw new Error(`Job ID ${rerunJobIdValue.value} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
     }
 
-    await doRerun(matches[0])
-    rerunJobId.value = ''
+    if (await doRerun(matches[0])) {
+      rerunJobId.value = ''
+      rerunJobIdDialogOpen.value = false
+    }
   } catch (error) {
     $q.notify({
       type: 'negative',
@@ -1787,6 +1891,12 @@ function startAutoRefresh() {
   stopAutoRefresh()
   countdown.value = settings.refreshInterval
   _timer = setInterval(() => {
+    // Skip the tick while a fetch is already in flight or the tab isn't
+    // visible, so a slow response can't overlap with the next auto-refresh
+    // and the page doesn't keep polling in the background.
+    if (loading.value || document.hidden) {
+      return
+    }
     countdown.value -= 1
     if (countdown.value <= 0) {
       refresh()
@@ -1812,7 +1922,7 @@ onMounted(() => {
   syncSingletonTabDirector()
   loadFilterOptions()
   fetchPage()
-  if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'actions')) {
+  if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'run')) {
     loadJobDefs()
   }
   if (director.isConnected && (isSingleDirectorScope.value || tab.value === 'run')) {
@@ -1831,7 +1941,7 @@ watch(() => director.isConnected, (connected) => {
   if (connected) {
     loadFilterOptions()
     fetchPage()
-    if (isSingleDirectorScope.value || tab.value === 'actions') {
+    if (isSingleDirectorScope.value || tab.value === 'run') {
       loadJobDefs()
     }
     if (isSingleDirectorScope.value || tab.value === 'run') {
@@ -2010,7 +2120,7 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   pagination.value = { ...pagination.value, page: 1 }
    loadFilterOptions()
   fetchPage()
-  if (tab.value === 'actions') {
+  if (tab.value === 'run') {
     loadJobDefs()
   }
   if (tab.value === 'run') {
@@ -2029,8 +2139,8 @@ watch(tab, async (t) => {
     router.replace({ path: route.path, query })
   }
 
-  if (t === 'actions'  && jobDefs.value.length === 0) loadJobDefs()
-  if (t === 'run'      && dotJobs.value.length === 0)  loadRunOptions()
+  if (t === 'run' && jobDefs.value.length === 0) loadJobDefs()
+  if (t === 'run' && dotJobs.value.length === 0)  loadRunOptions()
 })
 
 watch(() => singletonTabDirector.value, async () => {
@@ -2038,12 +2148,9 @@ watch(() => singletonTabDirector.value, async () => {
     return
   }
 
-  if (tab.value === 'actions') {
-    await ensureSingletonTabDirector()
-    await loadJobDefs()
-  }
   if (tab.value === 'run') {
     await ensureSingletonTabDirector()
+    await loadJobDefs()
     await loadRunOptions()
   }
 })
@@ -2079,13 +2186,18 @@ watch(() => singletonTabDirector.value, async () => {
 }
 
 .jobs-list-header__search {
-  flex: 1 1 220px;
+  flex: 1 1 200px;
   min-width: 180px;
-  max-width: 260px;
+  max-width: 220px;
 }
 
 .jobs-list-header__countdown {
   opacity: 0.7;
+}
+
+.configure-start-dialog {
+  width: 640px;
+  max-width: 95vw;
 }
 
 .animated-spin {
