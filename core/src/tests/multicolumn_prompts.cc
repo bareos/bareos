@@ -323,9 +323,33 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
             "Choices:\n"
             "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
             "Filter: b\n"
-            "  \033[7m2: Beta\033[0m\n");
+            "> \033[7m2: Beta\033[0m\n");
   EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
   EXPECT_EQ(selection.selected_index(), 1);
+}
+
+TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
+{
+  /* The selected line must carry a plain-text marker ("> ") in addition to
+   * the ANSI reverse-video escape codes, since screen readers and braille
+   * displays attached to a terminal read the character stream only and do
+   * not surface ANSI attribute codes. Without this marker, a blind user
+   * has no way to tell which item is currently selected. */
+  std::vector<std::string> options{"Alpha", "Beta", "Gamma"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.Format("", "Select"),
+            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "> \033[7m1: Alpha\033[0m\n"
+            "  2: Beta\n"
+            "  3: Gamma\n");
+
+  EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.Format("", "Select"),
+            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "  1: Alpha\n"
+            "> \033[7m2: Beta\033[0m\n"
+            "  3: Gamma\n");
 }
 
 TEST(InteractiveSelection, NavigatesVisibleOptions)
@@ -373,7 +397,7 @@ TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
   }
 
   const auto output = selection.Format("", "Select");
-  EXPECT_NE(output.find("  \033[7m26: option 26\033[0m\n"), std::string::npos);
+  EXPECT_NE(output.find("> \033[7m26: option 26\033[0m\n"), std::string::npos);
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
 }
