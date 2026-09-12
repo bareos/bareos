@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -162,14 +162,19 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
 }
 
 void BareosDb::ListClientRecords(JobControlRecord* jcr,
-                                 char* clientname,
+                                 const char* clientname,
                                  OutputFormatter* sendit,
                                  e_list_type type)
 {
   DbLocker _{this};
   PoolMem clientfilter(PM_MESSAGE);
 
-  if (clientname) { clientfilter.bsprintf("WHERE Name = '%s'", clientname); }
+  if (clientname) {
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    clientfilter.bsprintf("WHERE Name = '%s'", escaped_clientname.data());
+  }
   if (type == VERT_LIST) {
     Mmsg(cmd,
          "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
