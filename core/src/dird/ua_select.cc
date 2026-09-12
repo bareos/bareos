@@ -196,6 +196,11 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     }
     selected_index_ = selected - 1;
     return SelectionInputResult::kSelected;
+  } else if (!input.empty() && !input.starts_with("key:")) {
+    // Plain-text console input (for example a filter like "Makefile" from
+    // a non-TTY client) is just another text stream and must be handled in
+    // the same way as key:text:* events instead of being ignored.
+    filter_.append(input);
   } else {
     return SelectionInputResult::kContinue;
   }
