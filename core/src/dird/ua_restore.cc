@@ -915,6 +915,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (len == 0) { break; }
           /* Add trailing slash to end of directory names */
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
+            ua->cmd = CheckPoolMemorySize(ua->cmd, len + 2);
             strcat(ua->cmd, "/");
           }
           InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
