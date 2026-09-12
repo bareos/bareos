@@ -1254,23 +1254,27 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
                                            char* value)
 {
   char ed1[50], ed2[50];
-  char esc_envname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_envvalue[MAX_ESCAPE_NAME_LENGTH];
+  std::string esc_envname;
+  std::string esc_envvalue;
+  size_t envname_len = strlen(name);
+  size_t envvalue_len = strlen(value);
 
   Jmsg(jcr, M_INFO, 0, "NDMP Environment: %s=%s\n", name, value);
 
   DbLocker _{this};
 
-  EscapeString(jcr, esc_envname, name, strlen(name));
-  EscapeString(jcr, esc_envvalue, value, strlen(value));
+  esc_envname.resize(envname_len * 2 + 1);
+  esc_envvalue.resize(envvalue_len * 2 + 1);
+  EscapeString(jcr, esc_envname.data(), name, envname_len);
+  EscapeString(jcr, esc_envvalue.data(), value, envvalue_len);
   Mmsg(cmd,
        "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
        " VALUES ('%s', '%s', '%s', '%s')"
        " ON CONFLICT (JobId, FileIndex, EnvName)"
        " DO UPDATE SET"
        " EnvValue='%s'",
-       edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
-       esc_envvalue, esc_envvalue);
+       edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2),
+       esc_envname.c_str(), esc_envvalue.c_str(), esc_envvalue.c_str());
   if (InsertDb(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           T_("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
