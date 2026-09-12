@@ -51,13 +51,27 @@ class InteractiveSelection {
                      size_t max_visible_options = 20) const;
   size_t selected_index() const { return selected_index_; }
 
+  /* Configure the grid layout used for rendering and for column-wise
+   * (left/right) navigation. rows_per_column mirrors the same value passed
+   * to Format() as max_visible_options; num_columns is the number of
+   * side-by-side columns to use when the terminal is wide enough (1 keeps
+   * the original single-column behavior). Must be called again whenever
+   * either value changes, e.g. after a terminal resize. */
+  void SetColumnLayout(size_t rows_per_column, size_t num_columns);
+
  private:
   bool Matches(size_t index) const;
   void SelectNext(int direction);
+  void SelectAdjacentColumn(int direction);
+  size_t EffectiveColumns(size_t match_count,
+                          size_t rows_per_column,
+                          size_t max_columns) const;
 
   const std::vector<std::string>& options_;
   std::string filter_;
   size_t selected_index_{0};
+  size_t rows_per_column_{0};
+  size_t num_columns_{1};
 };
 
 StorageResource* select_storage_resource(UaContext* ua,
