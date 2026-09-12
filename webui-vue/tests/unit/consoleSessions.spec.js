@@ -280,7 +280,7 @@ describe('console session store', () => {
     expect(selectionText).not.toMatch(/\x1B/)
 
     const selectionLines = consoleSessions.getSession('bareos-dir').selectionLines
-    expect(selectionLines).toContainEqual({ text: '1: Alpha', selected: true })
+    expect(selectionLines).toContainEqual({ text: '  1: Alpha', selected: true })
     expect(selectionLines).toContainEqual({ text: '  2: Beta', selected: false })
   })
 
