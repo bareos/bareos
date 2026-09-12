@@ -48,6 +48,7 @@
 #include "lib/edit.h"
 #include "lib/hello.h"
 #include "lib/path_list.h"
+#include "lib/protocol_token.h"
 #include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
@@ -661,10 +662,10 @@ static bool ResolveCmd(JobControlRecord* jcr)
   dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
-  PoolMem hostname(PM_MESSAGE);
-
-  hostname.check_size(dir->message_length + 1);
-  bsscanf(dir->msg, resolvecmd, hostname.c_str());
+  const auto hostname_token = GetProtocolToken(dir->msg, "resolve ");
+  std::string hostname;
+  if (!hostname_token) { goto bail_out; }
+  hostname.assign(*hostname_token);
 
   if ((addr_list = BnetHost2IpAddrs(hostname.c_str(), 0, &errstr)) == nullptr) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname.c_str());

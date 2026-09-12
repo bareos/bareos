@@ -47,6 +47,7 @@
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"
 #include "stored/blocksize_boundaries.h"
+#include "lib/protocol_token.h"
 #include "stored/bsr.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
@@ -555,10 +556,10 @@ static bool ResolveCmd(JobControlRecord* jcr)
   dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
-  PoolMem hostname(PM_MESSAGE);
-
-  hostname.check_size(dir->message_length + 1);
-  bsscanf(dir->msg, resolvecmd, hostname.c_str());
+  const auto hostname_token = GetProtocolToken(dir->msg, "resolve ");
+  std::string hostname;
+  if (!hostname_token) { goto bail_out; }
+  hostname.assign(*hostname_token);
 
   if ((addr_list = BnetHost2IpAddrs(hostname.c_str(), 0, &errstr)) == NULL) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname.c_str());
@@ -1752,8 +1753,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
                    1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to File daemon: %s:%d\n"),
          filed_addr.c_str(), filed_port);
-    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n",
-          filed_addr.c_str(), filed_port);
+    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr.c_str(),
+          filed_port);
     goto bail_out;
   }
 
