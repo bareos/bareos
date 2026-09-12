@@ -1618,10 +1618,19 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   if (selected_date[0] == 0) {
     bstrncpy(selected_date, date, sizeof(selected_date));
   } else {
-    char* details = strchr(selected_date, ' ');
-    if (details) {
-      details = strchr(details + 1, ' ');
-      if (details) { *details = 0; }
+    // The prompt string formatted in ClientFilesetFullHandler is:
+    // "<RestorePoint> (<job_count> jobs since Full #<JobId> from
+    // <FullStartTime>)" e.g. "2026-09-12 14:33:21 (1 job since Full #1 from
+    // 2026-09-12 14:33:21)" Extract the leading timestamp "YYYY-MM-DD HH:MM:SS"
+    // (first 19 characters).
+    if (strlen(selected_date) >= 19) {
+      selected_date[19] = '\0';
+    } else {
+      char* details = strchr(selected_date, ' ');
+      if (details) {
+        details = strchr(details + 1, ' ');
+        if (details) { *details = 0; }
+      }
     }
   }
   utime_t inclusive_date = StrToUtime(selected_date);
