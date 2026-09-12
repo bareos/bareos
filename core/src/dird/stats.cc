@@ -36,6 +36,7 @@
 #include "include/auth_protocol_types.h"
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
+#include "lib/protocol_token.h"
 #include "lib/util.h"
 #include "lib/berrno.h"
 
@@ -43,15 +44,15 @@ namespace directordaemon {
 
 // Commands received from storage daemon that need scanning
 inline constexpr const char DevStats[]
-    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
+    = "Devicestats [%lld]: Device=%*s Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu";
 inline constexpr const char TapeAlerts[]
-    = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
+    = "Tapealerts [%lld]: Device=%*s TapeAlert=%llu";
 inline constexpr const char JobStats[]
-    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
+    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%*s";
 
 static bool quit = false;
 static bool statistics_initialized = false;
@@ -199,20 +200,21 @@ extern "C" void* statistics_thread(void*)
         while (BnetRecv(sd) >= 0) {
           Dmsg1(200, "<stored: %s", sd->msg);
           if (bstrncmp(sd->msg, "Devicestats", 10)) {
-            PoolMem DevName(PM_NAME);
             DeviceStatisticsDbRecord dsr;
 
             int64_t sample_time = 0;
             uint32_t num_waiting = 0;
             uint32_t num_writers = 0;
             DBId_t media_id = 0;
-            DevName.check_size(sd->message_length + 1);
-            if (bsscanf(sd->msg, DevStats, &sample_time, DevName.c_str(),
-                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
-                        &num_waiting, &num_writers, &dsr.ReadTime,
-                        &dsr.WriteTime, &media_id, &dsr.VolCatBytes,
-                        &dsr.VolCatFiles, &dsr.VolCatBlocks)
-                == 13) {
+            const auto device_name = GetProtocolToken(sd->msg, "Device=");
+            if (device_name
+                && bsscanf(sd->msg, DevStats, &sample_time, &dsr.ReadBytes,
+                           &dsr.WriteBytes, &dsr.SpoolSize, &num_waiting,
+                           &num_writers, &dsr.ReadTime, &dsr.WriteTime,
+                           &media_id, &dsr.VolCatBytes, &dsr.VolCatFiles,
+                           &dsr.VolCatBlocks)
+                       == 12) {
+              const std::string DevName{*device_name};
               dsr.SampleTime = static_cast<time_t>(sample_time);
               dsr.NumWaiting = num_waiting;
               dsr.NumWriters = num_writers;
@@ -243,16 +245,16 @@ extern "C" void* statistics_thread(void*)
               Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), sd->msg);
             }
           } else if (bstrncmp(sd->msg, "Tapealerts", 10)) {
-            PoolMem DevName(PM_NAME);
             TapealertStatsDbRecord tsr;
 
             int64_t sample_time = 0;
-            DevName.check_size(sd->message_length + 1);
-            if (bsscanf(sd->msg, TapeAlerts, &sample_time, DevName.c_str(),
-                        &tsr.AlertFlags)
-                == 3) {
+            const auto device_name = GetProtocolToken(sd->msg, "Device=");
+            if (device_name
+                && bsscanf(sd->msg, TapeAlerts, &sample_time, &tsr.AlertFlags)
+                       == 2) {
+              std::string DevName{*device_name};
               tsr.SampleTime = static_cast<time_t>(sample_time);
-              UnbashSpaces(DevName);
+              UnbashSpaces(DevName.data());
 
               Dmsg3(200,
                     "New stats [%" PRId64 "]: Device %s TapeAlert %" PRIu64
@@ -269,20 +271,21 @@ extern "C" void* statistics_thread(void*)
               Jmsg1(jcr, M_ERROR, 0, T_("Malformed message: %s\n"), sd->msg);
             }
           } else if (bstrncmp(sd->msg, "Jobstats", 8)) {
-            PoolMem DevName(PM_NAME);
             JobStatisticsDbRecord jsr;
 
             int64_t sample_time = 0;
             JobId_t job_id = 0;
             uint32_t job_files = 0;
-            DevName.check_size(sd->message_length + 1);
+            const auto device_name = GetProtocolToken(sd->msg, "DevName=");
             if (bsscanf(sd->msg, JobStats, &sample_time, &job_id, &job_files,
-                        &jsr.JobBytes, DevName.c_str())
-                == 5) {
+                        &jsr.JobBytes)
+                    == 4
+                && device_name) {
+              std::string DevName{*device_name};
               jsr.SampleTime = static_cast<time_t>(sample_time);
               jsr.JobId = job_id;
               jsr.JobFiles = job_files;
-              UnbashSpaces(DevName);
+              UnbashSpaces(DevName.data());
 
               Dmsg5(200,
                     "New Jobstats [%" PRId64 "]: JobId %" PRIu32
