@@ -505,3 +505,29 @@ TEST(InteractiveSelection, LeftRightFallBackToUpDownInSingleColumn)
   EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
   EXPECT_EQ(selection.selected_index(), 0u);
 }
+
+TEST(InteractiveSelection, LoneDotCancelsBeforeAnyFilterTyped)
+{
+  // "." has always been the classic shortcut to cancel a selection. In
+  // raw/arrow-key mode a typed "." arrives as "key:text:.", so this must be
+  // special-cased to keep the shortcut working.
+  std::vector<std::string> options{"a", "b", "c"};
+  InteractiveSelection selection(options);
+  EXPECT_EQ(selection.ApplyInput("key:text:."),
+            SelectionInputResult::kCanceled);
+}
+
+TEST(InteractiveSelection, DotIsAnOrdinaryFilterCharacterOnceTyping)
+{
+  // Once the user has already started typing a filter, "." should behave
+  // like any other filter character instead of canceling.
+  std::vector<std::string> options{"alpha", "a.b", "gamma"};
+  InteractiveSelection selection(options);
+  EXPECT_EQ(selection.ApplyInput("key:text:a"),
+            SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.ApplyInput("key:text:."),
+            SelectionInputResult::kContinue);
+  const auto output = selection.Format("", "Select");
+  EXPECT_NE(output.find("2: a.b"), std::string::npos);
+  EXPECT_EQ(output.find("1: alpha"), std::string::npos);
+}
