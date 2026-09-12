@@ -108,7 +108,6 @@ inline constexpr const char replicatecmd[]
       "Authorization=%100s";
 inline constexpr const char passiveclientcmd[]
     = "passive client address=%s port=%d ssl=%d";
-inline constexpr const char resolvecmd[] = "resolve %s";
 
 
 /* Responses sent to Director */

@@ -215,7 +215,6 @@ inline constexpr const char verifycmd[] = "verify level=%30s";
 inline constexpr const char Estimatecmd[] = "estimate listing=%d";
 inline constexpr const char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-inline constexpr const char resolvecmd[] = "resolve %s";
 
 // Responses sent to Director
 inline constexpr const char errmsg[] = "2999 Invalid command\n";
