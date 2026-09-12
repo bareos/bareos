@@ -1258,7 +1258,10 @@ full_backups AS (
     FROM completed_jobs
    WHERE Level = 'F'
 )
-SELECT full_backups.JobId, MAX(completed_jobs.StartTime) AS RestorePoint
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount
   FROM full_backups
   JOIN completed_jobs
     ON completed_jobs.StartTime >= full_backups.FullStartTime
