@@ -139,7 +139,8 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
 }
 
 std::string InteractiveSelection::Format(const std::string& header,
-                                         const std::string& prompt) const
+                                         const std::string& prompt,
+                                         size_t max_visible_options) const
 {
   std::string output = header;
   output.append(prompt);
@@ -159,7 +160,7 @@ std::string InteractiveSelection::Format(const std::string& header,
     return output;
   }
 
-  constexpr size_t max_visible_options = 20;
+  if (max_visible_options == 0) { max_visible_options = 1; }
   auto selected = std::find(matches.begin(), matches.end(), selected_index_);
   size_t selected_position = selected == matches.end()
                                  ? 0
@@ -1388,10 +1389,30 @@ int DoPrompt(UaContext* ua,
   }
 
   {
+    // Reserve a few lines for the prompt/filter line and the leading and
+    // trailing truncation markers so the whole menu block fits within the
+    // client's real terminal height (when known) instead of scrolling the
+    // header/first options off-screen. Fall back to the historical fixed
+    // size of 20 when the client never reported its terminal height (e.g.
+    // the WebUI console, batch/API mode, or an older bconsole).
+    constexpr size_t kDefaultMaxVisibleOptions = 20;
+    constexpr size_t kMinVisibleOptions = 3;
+    constexpr size_t kChromeLines = 5;
+    size_t max_visible_options = kDefaultMaxVisibleOptions;
+    if (ua->terminal_height > 0) {
+      size_t available
+          = static_cast<size_t>(ua->terminal_height) > kChromeLines
+                ? static_cast<size_t>(ua->terminal_height) - kChromeLines
+                : 0;
+      max_visible_options = std::max(kMinVisibleOptions, available);
+    }
+
     InteractiveSelection selection(ua->prompts);
     for (;;) {
       user->signal(BNET_START_SELECT);
-      ua->SendMsg("%s", selection.Format(ua->prompt_header, msg).c_str());
+      ua->SendMsg("%s",
+                  selection.Format(ua->prompt_header, msg, max_visible_options)
+                      .c_str());
       user->signal(BNET_END_SELECT);
       user->signal(BNET_SELECT_INPUT);
 
