@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,11 +53,10 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 {
   SQL_ROW row;
   int num_rows;
-  char esc[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc, pr->Name, strlen(pr->Name));
-  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
+  auto esc = EscapeString(jcr, pr->Name);
+  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc.c_str());
   Dmsg1(10, "selectpool: %s\n", cmd);
 
   pr->PoolId = pr->NumVols = 0;

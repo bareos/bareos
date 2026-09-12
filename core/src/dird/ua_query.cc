@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,8 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "lib/berrno.h"
+
+#include <string_view>
 
 namespace directordaemon {
 
@@ -189,8 +191,9 @@ static POOLMEM* substitute_prompts(UaContext* ua,
               }
             }
             len = strlen(ua->cmd);
-            p = (char*)malloc(len * 2 + 1);
-            ua->db->EscapeString(ua->jcr, p, ua->cmd, len);
+            auto escaped = ua->db->EscapeString(
+                ua->jcr, std::string_view{ua->cmd, static_cast<size_t>(len)});
+            p = strdup(escaped.c_str());
             subst[n] = p;
             olen = o - new_query;
             new_query = CheckPoolMemorySize(new_query, olen + strlen(p) + 10);

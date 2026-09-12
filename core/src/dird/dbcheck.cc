@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,9 @@
 #include "lib/util.h"
 
 #include "dbcheck_utils.h"
+
+#include <string>
+#include <string_view>
 
 using namespace directordaemon;
 
@@ -222,7 +225,7 @@ static int DeleteIdList(const char* query, ID_LIST* t_id_list)
 static void eliminate_duplicate_paths()
 {
   const char* query;
-  char esc_name[5000];
+  std::string esc_name;
 
   printf(T_("Checking for duplicate Path entries.\n"));
   fflush(stdout);
@@ -243,10 +246,11 @@ static void eliminate_duplicate_paths()
     // Loop through list of duplicate names
     for (int i = 0; i < name_list.num_ids; i++) {
       // Get all the Ids of each name
-      db->EscapeString(nullptr, esc_name, name_list.name[i],
-                       strlen(name_list.name[i]));
+      size_t name_len = strlen(name_list.name[i]);
+      esc_name = db->EscapeString(
+          nullptr, std::string_view{name_list.name[i], name_len});
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
-                esc_name);
+                esc_name.c_str());
       if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
       if (g_verbose) {
         printf(T_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
@@ -632,7 +636,7 @@ static void repair_bad_filenames()
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
     POOLMEM* name = GetPoolMemory(PM_FNAME);
-    char esc_name[5000];
+    std::string esc_name;
     printf(T_("Reparing %d bad Filename records.\n"), id_list.num_ids);
     fflush(stdout);
     for (i = 0; i < id_list.num_ids; i++) {
@@ -648,14 +652,14 @@ static void repair_bad_filenames()
            len--) {}
       if (len == 0) {
         len = 1;
-        esc_name[0] = ' ';
-        esc_name[1] = 0;
+        esc_name = " ";
       } else {
         name[len - 1] = 0;
-        db->EscapeString(nullptr, esc_name, name, len);
+        esc_name = db->EscapeString(
+            nullptr, std::string_view{name, static_cast<size_t>(len)});
       }
       Bsnprintf(buf, sizeof(buf), "UPDATE File SET Name='%s' WHERE FileId=%s",
-                esc_name, edit_int64(id_list.Id[i], ed1));
+                esc_name.c_str(), edit_int64(id_list.Id[i], ed1));
       db->SqlQuery(buf, nullptr, nullptr);
     }
     FreePoolMemory(name);
@@ -688,7 +692,7 @@ static void repair_bad_paths()
   if (quit) { return; }
   if (fix && id_list.num_ids > 0) {
     POOLMEM* name = GetPoolMemory(PM_FNAME);
-    char esc_name[5000];
+    std::string esc_name;
     printf(T_("Reparing %d bad Filename records.\n"), id_list.num_ids);
     fflush(stdout);
     for (i = 0; i < id_list.num_ids; i++) {
@@ -705,9 +709,10 @@ static void repair_bad_paths()
       }
       // Add trailing slash
       len = PmStrcat(name, "/");
-      db->EscapeString(nullptr, esc_name, name, len);
+      esc_name = db->EscapeString(
+          nullptr, std::string_view{name, static_cast<size_t>(len)});
       Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
-                esc_name, edit_int64(id_list.Id[i], ed1));
+                esc_name.c_str(), edit_int64(id_list.Id[i], ed1));
       db->SqlQuery(buf, nullptr, nullptr);
     }
     fflush(stdout);
