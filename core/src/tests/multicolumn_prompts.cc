@@ -414,6 +414,22 @@ TEST(InteractiveSelection, AcceptsPlainTextFiltersFromLineBasedClients)
   EXPECT_EQ(selection.selected_index(), 1);
 }
 
+TEST(InteractiveSelection, CancelsNonMatchingPlainTextLineInput)
+{
+  std::vector<std::string> options{"Alpha", "Makefile", "Gamma"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("y"), SelectionInputResult::kCanceled);
+}
+
+TEST(InteractiveSelection, CancelsOutOfRangeNumericLineInput)
+{
+  std::vector<std::string> options{"Alpha", "Makefile", "Gamma"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("99"), SelectionInputResult::kCanceled);
+}
+
 TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
 {
   std::vector<std::string> options;

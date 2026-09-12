@@ -195,20 +195,29 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     std::string value(input.starts_with("key:select:")
                           ? input.substr(strlen("key:select:"))
                           : input);
-    if (!Is_a_number(value.c_str())) { return SelectionInputResult::kContinue; }
+    if (!Is_a_number(value.c_str())) {
+      return input.starts_with("key:") ? SelectionInputResult::kContinue
+                                       : SelectionInputResult::kCanceled;
+    }
     size_t selected = static_cast<size_t>(strtoul(value.c_str(), nullptr, 10));
     if (selected < 1 || selected > options_.size()) {
-      return SelectionInputResult::kContinue;
+      return input.starts_with("key:") ? SelectionInputResult::kContinue
+                                       : SelectionInputResult::kCanceled;
     }
     selected_index_ = selected - 1;
     return SelectionInputResult::kSelected;
   } else if (!input.empty() && !input.starts_with("key:")) {
     // Plain-text console input (for example a filter or option name from
     // a non-TTY client or script).
-    filter_ = std::string(input);
+    std::string filter(input);
+    std::transform(filter.begin(), filter.end(), filter.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
     bool found_match = false;
     for (size_t i = 0; i < options_.size(); ++i) {
-      if (Matches(i)) {
+      std::string text = std::to_string(i + 1) + ": " + options_[i];
+      std::transform(text.begin(), text.end(), text.begin(),
+                     [](unsigned char c) { return std::tolower(c); });
+      if (text.find(filter) != std::string::npos) {
         if (!found_match) {
           selected_index_ = i;
           found_match = true;
@@ -216,8 +225,7 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
       }
     }
     if (found_match) { return SelectionInputResult::kSelected; }
-    filter_.clear();
-    return SelectionInputResult::kContinue;
+    return SelectionInputResult::kCanceled;
   } else {
     return SelectionInputResult::kContinue;
   }
