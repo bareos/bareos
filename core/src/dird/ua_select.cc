@@ -85,6 +85,54 @@ void InteractiveSelection::SelectNext(int direction)
   }
 }
 
+void InteractiveSelection::SetColumnLayout(size_t rows_per_column,
+                                           size_t num_columns)
+{
+  rows_per_column_ = rows_per_column;
+  num_columns_ = std::max<size_t>(1, num_columns);
+}
+
+size_t InteractiveSelection::EffectiveColumns(size_t match_count,
+                                              size_t rows_per_column,
+                                              size_t max_columns) const
+{
+  if (max_columns <= 1 || rows_per_column == 0) { return 1; }
+  size_t needed = (match_count + rows_per_column - 1) / rows_per_column;
+  return std::min(max_columns, std::max<size_t>(1, needed));
+}
+
+/**
+ * Jump to the item in the same row of the previous/next column, i.e. move
+ * selected_index_ by one "page" of rows_per_column_ matches. Used for
+ * left/right navigation once the menu is laid out in multiple columns; has
+ * no effect if there is no adjacent column in that direction.
+ */
+void InteractiveSelection::SelectAdjacentColumn(int direction)
+{
+  if (options_.empty()) { return; }
+  std::vector<size_t> matches;
+  for (size_t i = 0; i < options_.size(); ++i) {
+    if (Matches(i)) { matches.push_back(i); }
+  }
+  if (matches.empty()) { return; }
+  size_t columns
+      = EffectiveColumns(matches.size(), rows_per_column_, num_columns_);
+  if (columns <= 1 || rows_per_column_ == 0) { return; }
+
+  auto it = std::find(matches.begin(), matches.end(), selected_index_);
+  size_t position
+      = it == matches.end() ? 0 : std::distance(matches.begin(), it);
+
+  if (direction > 0) {
+    if (position + rows_per_column_ >= matches.size()) { return; }
+    position += rows_per_column_;
+  } else {
+    if (position < rows_per_column_) { return; }
+    position -= rows_per_column_;
+  }
+  selected_index_ = matches[position];
+}
+
 SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
 {
   while (!input.empty() && (input.back() == '\r' || input.back() == '\n')) {
@@ -97,12 +145,28 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     return Matches(selected_index_) ? SelectionInputResult::kSelected
                                     : SelectionInputResult::kContinue;
   }
-  if (input == "key:up" || input == "key:left") {
+  if (input == "key:up") {
     SelectNext(-1);
     return SelectionInputResult::kContinue;
   }
-  if (input == "key:down" || input == "key:right") {
+  if (input == "key:down") {
     SelectNext(1);
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:left") {
+    if (num_columns_ > 1) {
+      SelectAdjacentColumn(-1);
+    } else {
+      SelectNext(-1);
+    }
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:right") {
+    if (num_columns_ > 1) {
+      SelectAdjacentColumn(1);
+    } else {
+      SelectNext(1);
+    }
     return SelectionInputResult::kContinue;
   }
   if (input == "key:backspace") {
@@ -144,7 +208,9 @@ std::string InteractiveSelection::Format(const std::string& header,
 {
   std::string output = header;
   output.append(prompt);
-  output.append(" (Up/Down, Enter, Esc, type a number or text to filter):\n");
+  output.append(
+      " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+      "filter):\n");
   if (!filter_.empty()) {
     output.append("Filter: ");
     output.append(filter_);
@@ -161,19 +227,23 @@ std::string InteractiveSelection::Format(const std::string& header,
   }
 
   if (max_visible_options == 0) { max_visible_options = 1; }
+  size_t columns
+      = EffectiveColumns(matches.size(), max_visible_options, num_columns_);
+  size_t total_visible = max_visible_options * columns;
+
   auto selected = std::find(matches.begin(), matches.end(), selected_index_);
   size_t selected_position = selected == matches.end()
                                  ? 0
                                  : std::distance(matches.begin(), selected);
-  size_t first = selected_position > max_visible_options / 2
-                     ? selected_position - max_visible_options / 2
+  size_t first = selected_position > total_visible / 2
+                     ? selected_position - total_visible / 2
                      : 0;
-  first = std::min(
-      first, matches.size() - std::min(matches.size(), max_visible_options));
-  size_t last = std::min(matches.size(), first + max_visible_options);
+  first = std::min(first,
+                   matches.size() - std::min(matches.size(), total_visible));
+  size_t last = std::min(matches.size(), first + total_visible);
   if (first > 0) { output.append("  ...\n"); }
-  for (size_t position = first; position < last; ++position) {
-    size_t i = matches[position];
+
+  auto append_entry = [&](size_t i) {
     /* Prefix the currently selected line with a plain-text marker, in
      * addition to the ANSI reverse-video escape codes below. Screen
      * readers and braille displays attached to a terminal generally read
@@ -186,7 +256,52 @@ std::string InteractiveSelection::Format(const std::string& header,
     output.append(": ");
     output.append(options_[i]);
     if (i == selected_index_) { output.append("\033[0m"); }
-    output.push_back('\n');
+  };
+
+  if (columns <= 1) {
+    for (size_t position = first; position < last; ++position) {
+      append_entry(matches[position]);
+      output.push_back('\n');
+    }
+  } else {
+    // Lay the visible window out column-major (like `ls`'s column mode):
+    // the first column takes the first rows_in_window matches, the second
+    // column the next batch, and so on, so up/down navigation moves within
+    // a column while left/right jumps sideways by a full column.
+    size_t window_size = last - first;
+    size_t rows_in_window = (window_size + columns - 1) / columns;
+
+    // Column width is based on the widest entry actually shown, so it
+    // adapts to the current filter/scroll window instead of reserving
+    // space for the single longest option overall.
+    size_t index_digits = std::to_string(options_.size()).length();
+    size_t max_entry_length = 0;
+    for (size_t position = first; position < last; ++position) {
+      size_t i = matches[position];
+      size_t entry_length
+          = 2 /* marker */ + index_digits + 2 /* ": " */ + options_[i].size();
+      max_entry_length = std::max(max_entry_length, entry_length);
+    }
+    constexpr size_t kColumnGap = 2;
+    size_t column_width = max_entry_length + kColumnGap;
+
+    for (size_t row = 0; row < rows_in_window; ++row) {
+      for (size_t col = 0; col < columns; ++col) {
+        size_t position = first + col * rows_in_window + row;
+        if (position >= last) { continue; }
+        size_t i = matches[position];
+        append_entry(i);
+        // Escape codes have no visible width, so pad based on the actual
+        // printable length rather than the appended string's byte length.
+        size_t printable_length = 2 + index_digits + 2 + options_[i].size();
+        bool is_last_column_entry
+            = (col == columns - 1) || (position + rows_in_window >= last);
+        if (!is_last_column_entry && printable_length < column_width) {
+          output.append(column_width - printable_length, ' ');
+        }
+      }
+      output.push_back('\n');
+    }
   }
   if (last < matches.size()) { output.append("  ...\n"); }
   return output;
@@ -1408,8 +1523,31 @@ int DoPrompt(UaContext* ua,
     };
     size_t max_visible_options = compute_max_visible_options();
 
+    // When the client also reported its terminal width, and it is wide
+    // enough for more than one column of options, spread the menu across
+    // multiple side-by-side columns instead of a single vertical list, so
+    // a short-but-wide terminal can still show many (or all) options at
+    // once. rows_per_column stays whatever max_visible_options is, i.e.
+    // columns only add breadth, they never reduce the height budget.
+    auto compute_num_columns = [&] {
+      if (ua->terminal_width <= 0) { return size_t{1}; }
+      size_t index_digits = std::to_string(ua->prompts.size()).length();
+      size_t max_option_length = 1;
+      for (auto& option : ua->prompts) {
+        max_option_length = std::max(max_option_length, option.size());
+      }
+      // marker(2) + "N: "(index_digits + 2) + option text + column gap(2)
+      size_t column_width = 2 + index_digits + 2 + max_option_length + 2;
+      size_t columns_that_fit = std::max<size_t>(
+          1, static_cast<size_t>(ua->terminal_width) / column_width);
+      size_t needed_columns = (ua->prompts.size() + max_visible_options - 1)
+                              / max_visible_options;
+      return std::min(columns_that_fit, std::max<size_t>(1, needed_columns));
+    };
+
     InteractiveSelection selection(ua->prompts);
     for (;;) {
+      selection.SetColumnLayout(max_visible_options, compute_num_columns());
       user->signal(BNET_START_SELECT);
       ua->SendMsg("%s",
                   selection.Format(ua->prompt_header, msg, max_visible_options)
@@ -1424,14 +1562,22 @@ int DoPrompt(UaContext* ua,
       }
 
       // The console reports terminal resizes that happen while the
-      // selection menu is on screen as a "resize:<rows>" pseudo-input
-      // (see console.cc's ReadSelectionInput()), so the menu can be
-      // reformatted to the new height on the very next redraw instead of
+      // selection menu is on screen as a "resize:<rows>:<cols>" pseudo-
+      // input (see console.cc's ReadSelectionInput()), so the menu can be
+      // reformatted to the new size on the very next redraw instead of
       // staying stuck at whatever size it had when it was first shown.
       std::string_view msg_view(user->msg, user->message_length);
       if (msg_view.starts_with("resize:")) {
-        int new_height = atoi(std::string(msg_view.substr(7)).c_str());
+        std::string_view size_view = msg_view.substr(strlen("resize:"));
+        size_t separator = size_view.find(':');
+        std::string rows_text(size_view.substr(0, separator));
+        int new_height = atoi(rows_text.c_str());
         if (new_height > 0) { ua->terminal_height = new_height; }
+        if (separator != std::string_view::npos) {
+          std::string cols_text(size_view.substr(separator + 1));
+          int new_width = atoi(cols_text.c_str());
+          if (new_width > 0) { ua->terminal_width = new_width; }
+        }
         max_visible_options = compute_max_visible_options();
         continue;
       }
