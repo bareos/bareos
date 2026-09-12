@@ -1398,14 +1398,15 @@ int DoPrompt(UaContext* ua,
     constexpr size_t kDefaultMaxVisibleOptions = 20;
     constexpr size_t kMinVisibleOptions = 3;
     constexpr size_t kChromeLines = 5;
-    size_t max_visible_options = kDefaultMaxVisibleOptions;
-    if (ua->terminal_height > 0) {
+    auto compute_max_visible_options = [&] {
+      if (ua->terminal_height <= 0) { return kDefaultMaxVisibleOptions; }
       size_t available
           = static_cast<size_t>(ua->terminal_height) > kChromeLines
                 ? static_cast<size_t>(ua->terminal_height) - kChromeLines
                 : 0;
-      max_visible_options = std::max(kMinVisibleOptions, available);
-    }
+      return std::max(kMinVisibleOptions, available);
+    };
+    size_t max_visible_options = compute_max_visible_options();
 
     InteractiveSelection selection(ua->prompts);
     for (;;) {
@@ -1420,6 +1421,19 @@ int DoPrompt(UaContext* ua,
       if (status == BNET_SIGNAL || IsBnetStop(user)) {
         item = -1;
         break;
+      }
+
+      // The console reports terminal resizes that happen while the
+      // selection menu is on screen as a "resize:<rows>" pseudo-input
+      // (see console.cc's ReadSelectionInput()), so the menu can be
+      // reformatted to the new height on the very next redraw instead of
+      // staying stuck at whatever size it had when it was first shown.
+      std::string_view msg_view(user->msg, user->message_length);
+      if (msg_view.starts_with("resize:")) {
+        int new_height = atoi(std::string(msg_view.substr(7)).c_str());
+        if (new_height > 0) { ua->terminal_height = new_height; }
+        max_visible_options = compute_max_visible_options();
+        continue;
       }
 
       auto result = selection.ApplyInput(user->msg);
