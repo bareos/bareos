@@ -207,6 +207,21 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   return status;
 }
 
+#if !defined(HAVE_WIN32)
+static volatile std::sig_atomic_t terminal_resized = 0;
+
+static void HandleSigwinch(int) { terminal_resized = 1; }
+
+static bool TerminalWasResized()
+{
+  if (!terminal_resized) { return false; }
+  terminal_resized = 0;
+  return true;
+}
+#else
+static bool TerminalWasResized() { return false; }
+#endif
+
 static bool ReadSelectionInput(FILE* input,
                                BareosSocket* socket,
                                bool input_is_interactive_tty)
@@ -244,18 +259,38 @@ static bool ReadSelectionInput(FILE* input,
   };
 
   unsigned char input_byte = 0;
-  ssize_t bytes_read;
-  do {
-    bytes_read = read(input_fd, &input_byte, 1);
-  } while (bytes_read < 0 && errno == EINTR);
-  bool read_ok = bytes_read == 1;
-  if (!read_ok) {
-    tcsetattr(input_fd, TCSANOW, &original);
-    return false;
+  bool resized = false;
+  for (;;) {
+    if (TerminalWasResized()) {
+      resized = true;
+      break;
+    }
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(input_fd, &read_fds);
+    timeval wait_time{0, 200000};
+    int select_status
+        = select(input_fd + 1, &read_fds, nullptr, nullptr, &wait_time);
+    if (select_status < 0 && errno == EINTR) { continue; }
+    if (select_status <= 0) { continue; /* timeout: re-check for resize */ }
+    ssize_t bytes_read = read(input_fd, &input_byte, 1);
+    if (bytes_read < 0 && errno == EINTR) { continue; }
+    if (bytes_read != 1) {
+      tcsetattr(input_fd, TCSANOW, &original);
+      return false;
+    }
+    break;
   }
 
   std::string event;
-  if (input_byte == 3) {
+  if (resized) {
+    struct winsize ws{};
+    if (ioctl(input_fd, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0) {
+      event = "resize:" + std::to_string(ws.ws_row);
+    } else {
+      event = "key:noop";
+    }
+  } else if (input_byte == 3) {
     event = "key:cancel";
   } else if (input_byte == 27) {
     unsigned char next = 0;
@@ -308,21 +343,6 @@ static bool ReadSelectionInput(FILE* input,
   return true;
 #endif
 }
-
-#if !defined(HAVE_WIN32)
-static volatile std::sig_atomic_t terminal_resized = 0;
-
-static void HandleSigwinch(int) { terminal_resized = 1; }
-
-static bool TerminalWasResized()
-{
-  if (!terminal_resized) { return false; }
-  terminal_resized = 0;
-  return true;
-}
-#else
-static bool TerminalWasResized() { return false; }
-#endif
 
 /**
  * Silently tell the Director how tall our terminal is, so that interactive
