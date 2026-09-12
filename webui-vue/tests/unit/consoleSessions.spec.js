@@ -251,6 +251,35 @@ describe('console session store', () => {
     expect(session.output.map(line => line.text)).not.toContain('> 1: Alpha')
   })
 
+  it('normalizes terminal inverse selection markers for browser display', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n  \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const selectionText = consoleSessions.getSession('bareos-dir').selectionText
+    expect(selectionText).toContain('> 1: Alpha')
+    expect(selectionText).toContain('  2: Beta')
+    expect(selectionText).not.toMatch(/\x1B/)
+  })
+
   it('uses value completion commands for known argument keywords', () => {
     const consoleSessions = useConsoleSessionsStore()
 
