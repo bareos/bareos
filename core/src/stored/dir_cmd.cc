@@ -1818,21 +1818,22 @@ bail_out:
 static bool PluginoptionsCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  char plugin_options[2048];
+  PoolMem plugin_options(PM_MESSAGE);
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
-  if (bsscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
+  plugin_options.check_size(dir->message_length + 1);
+  if (bsscanf(cpy.c_str(), pluginoptionscmd, plugin_options.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
   }
 
-  UnbashSpaces(plugin_options);
+  UnbashSpaces(plugin_options.c_str());
   if (!jcr->sd_impl->plugin_options) {
     jcr->sd_impl->plugin_options = new alist<const char*>(10, owned_by_alist);
   }
-  jcr->sd_impl->plugin_options->append(strdup(plugin_options));
+  jcr->sd_impl->plugin_options->append(strdup(plugin_options.c_str()));
 
   // Send OK to Director
   return dir->fsend(OKpluginoptions);
