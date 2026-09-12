@@ -175,6 +175,7 @@ bool ReserveReadDevice(JobControlRecord* jcr,
     if (BgetDirmsg(sd_socket) > 0) {
       Dmsg1(100, "<stored: %s", sd_socket->msg);
       // ****FIXME**** save actual device name
+      device_name.check_size(sd_socket->message_length + 1);
       ok = bsscanf(sd_socket->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
@@ -251,6 +252,7 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
     if (BgetDirmsg(jcr->store_bsock) > 0) {
       Dmsg1(100, "<stored: %s", jcr->store_bsock->msg);
       // ****FIXME**** save actual device name
+      device_name.check_size(jcr->store_bsock->message_length + 1);
       ok = bsscanf(jcr->store_bsock->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
