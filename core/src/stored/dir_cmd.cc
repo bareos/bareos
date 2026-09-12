@@ -1722,13 +1722,14 @@ static bool PassiveCmd(JobControlRecord* jcr)
 {
   int filed_port;       /* file daemon port */
   TlsPolicy tls_policy; /* enable ssl to fd */
-  char filed_addr[MAX_NAME_LENGTH];
+  PoolMem filed_addr(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* fd{nullptr}; /* file daemon bsock */
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
-  if (bsscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
+  filed_addr.check_size(dir->message_length + 1);
+  if (bsscanf(cpy.c_str(), passiveclientcmd, filed_addr.c_str(), &filed_port,
               &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
@@ -1736,7 +1737,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr, filed_port,
+  Dmsg3(110, "PassiveClientCmd: %s:%d ssl=%u\n", filed_addr.c_str(), filed_port,
         tls_policy);
 
   jcr->passive_client = true;
@@ -1746,11 +1747,12 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
   // Open command communications with passive filedaemon
   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
-                   T_("File Daemon"), filed_addr, NULL, filed_port, 1)) {
+                   T_("File Daemon"), filed_addr.c_str(), NULL, filed_port,
+                   1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to File daemon: %s:%d\n"),
-         filed_addr, filed_port);
-    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n", filed_addr,
-          filed_port);
+         filed_addr.c_str(), filed_port);
+    Dmsg2(100, "Failed to connect to File daemon: %s:%d\n",
+          filed_addr.c_str(), filed_port);
     goto bail_out;
   }
 
