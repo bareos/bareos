@@ -813,32 +813,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           return 0;
         }
       } break;
-      case 11: /* Choose a jobid and select jobs */ {
-        if (!GetCmd(ua, T_("Enter JobId to get the state to restore: "))
-            || !IsAnInteger(ua->cmd)) {
-          return 0;
-        }
-        std::optional jobids = FindJobDependencies(ua, ua->cmd);
-        if (!jobids) { return 0; }
-        PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
-        Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
-      } break;
-      case 12: /* list last 20 Jobs run */
-      {
-        PoolMem query;
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs>(query,
-                                                              filter_name);
-        if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
-          ua->ErrorMsg(T_("SQL query not authorized.\n"));
-          return 0;
-        }
-        gui_save = ua->jcr->gui;
-        ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                             true);
-        ua->jcr->gui = gui_save;
-        done = false;
-      } break;
       case 1: /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
         if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
@@ -960,6 +934,32 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         }
         return 2;
 
+      case 11: /* Choose a jobid and select jobs */ {
+        if (!GetCmd(ua, T_("Enter JobId to get the state to restore: "))
+            || !IsAnInteger(ua->cmd)) {
+          return 0;
+        }
+        std::optional jobids = FindJobDependencies(ua, ua->cmd);
+        if (!jobids) { return 0; }
+        PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
+        Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
+      } break;
+      case 12: /* list last 20 Jobs run */
+      {
+        PoolMem query;
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs>(query,
+                                                              filter_name);
+        if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
+          ua->ErrorMsg(T_("SQL query not authorized.\n"));
+          return 0;
+        }
+        gui_save = ua->jcr->gui;
+        ua->jcr->gui = true;
+        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                             true);
+        ua->jcr->gui = gui_save;
+        done = false;
+      } break;
       case 13: /* Cancel or quit */
         return 0;
       default:
@@ -1524,9 +1524,14 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   UaContext* ua = (UaContext*)ctx;
   POOLMEM* job_names = GetPoolMemory(PM_FNAME);
   PmStrcpy(job_names, row[4]);
+#if defined(_WIN32)
+  for (char* job_name = strtok(job_names, "\n"); job_name;
+       job_name = strtok(nullptr, "\n")) {
+#else
   char* saveptr = nullptr;
   for (char* job_name = strtok_r(job_names, "\n", &saveptr); job_name;
        job_name = strtok_r(NULL, "\n", &saveptr)) {
+#endif
     if (!ua->AclAccessOk(Job_ACL, job_name)) {
       FreePoolMemory(job_names);
       return 0;
