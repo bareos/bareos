@@ -262,7 +262,7 @@ async function fetchRecentJobs() {
     recentJobs.value = []
     totalJobs.value = 0
     truncated.value = false
-    pagination.value = { ...pagination.value, rowsNumber: 0 }
+    pagination.value.rowsNumber = 0
     return
   }
 
@@ -279,14 +279,19 @@ async function fetchRecentJobs() {
     recentJobs.value = result.jobs
     totalJobs.value = result.totalJobs
     truncated.value = result.truncated
-    pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
+    // Mutate rowsNumber in place rather than replacing pagination.value:
+    // reassigning the whole ref would retrigger the watch below (it always
+    // fires on ref replacement, even when page/rowsPerPage/sortBy/descending
+    // are unchanged), causing an infinite re-fetch loop and a permanently
+    // spinning loading indicator.
+    pagination.value.rowsNumber = result.totalJobs
     error.value = result.directorErrors.map(entry => entry.message).join(' ')
   } catch (fetchError) {
     if (requestId !== latestRequestId) return
     recentJobs.value = []
     totalJobs.value = 0
     truncated.value = false
-    pagination.value = { ...pagination.value, rowsNumber: 0 }
+    pagination.value.rowsNumber = 0
     error.value = fetchError.message
   } finally {
     if (requestId === latestRequestId) {
