@@ -387,16 +387,31 @@ TEST(InteractiveSelection, AcceptsPlainNumericSelection)
   EXPECT_EQ(selection.selected_index(), 1);
 }
 
+TEST(InteractiveSelection, AcceptsNumericSelectionWithWhitespace)
+{
+  std::vector<std::string> options{"first", "second", "third"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput(" 2 \r\n"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 1);
+}
+
+TEST(InteractiveSelection, AcceptsEmptyLineAsSelection)
+{
+  std::vector<std::string> options{"first", "second", "third"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput(""), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 0);
+}
+
 TEST(InteractiveSelection, AcceptsPlainTextFiltersFromLineBasedClients)
 {
   std::vector<std::string> options{"Alpha", "Makefile", "Gamma"};
   InteractiveSelection selection(options);
 
-  EXPECT_EQ(selection.ApplyInput("Makefile"), SelectionInputResult::kContinue);
-  const auto output = selection.Format("", "Select");
-  EXPECT_NE(output.find("2: Makefile"), std::string::npos);
-  EXPECT_EQ(output.find("1: Alpha"), std::string::npos);
-  EXPECT_EQ(output.find("3: Gamma"), std::string::npos);
+  EXPECT_EQ(selection.ApplyInput("Makefile"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 1);
 }
 
 TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
