@@ -1520,7 +1520,12 @@ static int ClientFilesetTupleHandler(void* ctx, int, char** row)
 
 static int ClientFilesetFullHandler(void* ctx, int, char** row)
 {
-  if (row[1]) { AddPrompt((UaContext*)ctx, row[1]); }
+  if (!row[0] || !row[1] || !row[2] || !row[3]) { return 0; }
+  PoolMem chain(PM_MESSAGE);
+  int64_t job_count = str_to_int64(row[3]);
+  Mmsg(chain, "%s (%" PRId64 " %s since Full #%s from %s)", row[2], job_count,
+       job_count == 1 ? T_("job") : T_("jobs"), row[0], row[1]);
+  AddPrompt((UaContext*)ctx, chain.c_str());
   return 0;
 }
 
@@ -1592,6 +1597,12 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   }
   if (selected_date[0] == 0) {
     bstrncpy(selected_date, date, sizeof(selected_date));
+  } else {
+    char* details = strchr(selected_date, ' ');
+    if (details) {
+      details = strchr(details + 1, ' ');
+      if (details) { *details = 0; }
+    }
   }
   utime_t inclusive_date = StrToUtime(selected_date);
   if (inclusive_date == 0) {
