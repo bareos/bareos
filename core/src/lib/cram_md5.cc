@@ -201,7 +201,7 @@ bool CramMd5Handshake::CramMd5Response()
   Dmsg1(100, "cram-get received: %s", bs_->msg);
   chal.check_size(bs_->message_length);
   if (bs_->IsBnetDumpEnabled()) {
-    std::vector<char> destination_qualified_name(256);
+    std::vector<char> destination_qualified_name(bs_->message_length + 1);
     if (bsscanf(bs_->msg, "auth cram-md5c %s ssl=%d qualified-name=%s",
                 chal.c_str(), &remote_tls_policy_,
                 destination_qualified_name.data())
