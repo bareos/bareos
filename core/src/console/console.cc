@@ -54,12 +54,11 @@
 #  include <termios.h>
 #  include <unistd.h>
 #  include <csignal>
-#endif
-
-#if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
-// windows has its own isatty implemented, so
-// if we are compiling with msvc we can just use that
-#  define isatty(fd) ((fd) == 0)
+#else
+#  include <io.h>
+#  if !defined(isatty)
+#    define isatty(fd) _isatty(fd)
+#  endif
 #endif
 
 using namespace console;
