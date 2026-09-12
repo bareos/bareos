@@ -111,6 +111,8 @@ class UaContext {
   int api{0};                         /**< For programs want an API */
   int terminal_height{
       0}; /**< Client-reported terminal height (rows), 0 = unknown */
+  int terminal_width{
+      0}; /**< Client-reported terminal width (columns), 0 = unknown */
   bool auto_display_messages{false};     /**< If set, display messages */
   bool user_notified_msg_pending{false}; /**< Set when user notified */
   bool automount{true};                  /**< If set, mount after label */

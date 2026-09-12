@@ -286,7 +286,8 @@ static bool ReadSelectionInput(FILE* input,
   if (resized) {
     struct winsize ws{};
     if (ioctl(input_fd, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0) {
-      event = "resize:" + std::to_string(ws.ws_row);
+      event = "resize:" + std::to_string(ws.ws_row) + ":"
+              + std::to_string(ws.ws_col);
     } else {
       event = "key:noop";
     }
@@ -345,14 +346,15 @@ static bool ReadSelectionInput(FILE* input,
 }
 
 /**
- * Silently tell the Director how tall our terminal is, so that interactive
+ * Silently tell the Director how big our terminal is, so that interactive
  * selection menus (see InteractiveSelection::Format() on the Director side)
  * can size themselves to fit without scrolling their header/first options
- * off-screen. This is only meaningful for a real, interactive terminal; the
- * reply is drained without being shown to the user, since it is not a
- * user-facing command.
+ * off-screen, and lay options out in multiple columns when the terminal is
+ * wide enough to show more of them at once despite limited height. This is
+ * only meaningful for a real, interactive terminal; the reply is drained
+ * without being shown to the user, since it is not a user-facing command.
  */
-static void SendTerminalHeight(FILE* input, BareosSocket* UA_sock)
+static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
 {
 #if !defined(HAVE_WIN32)
   static bool sigwinch_installed = false;
@@ -364,7 +366,8 @@ static void SendTerminalHeight(FILE* input, BareosSocket* UA_sock)
   struct winsize ws{};
   if (ioctl(fileno(input), TIOCGWINSZ, &ws) != 0 || ws.ws_row == 0) { return; }
 
-  std::string cmd = ".terminalheight " + std::to_string(ws.ws_row);
+  std::string cmd = ".terminalsize " + std::to_string(ws.ws_row) + " "
+                    + std::to_string(ws.ws_col);
   PmStrcpy(UA_sock->msg, cmd.c_str());
   UA_sock->message_length = static_cast<int32_t>(cmd.size());
   if (!UA_sock->send()) { return; }
@@ -395,7 +398,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
   int status;
   btimer_t* tid = NULL;
 
-  if (tty_input) { SendTerminalHeight(input, UA_sock); }
+  if (tty_input) { SendTerminalSize(input, UA_sock); }
 
   while (1) {
     if (at_prompt) { /* don't prompt multiple times */
@@ -404,9 +407,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       prompt = "*";
       at_prompt = true;
     }
-    if (tty_input && TerminalWasResized()) {
-      SendTerminalHeight(input, UA_sock);
-    }
+    if (tty_input && TerminalWasResized()) { SendTerminalSize(input, UA_sock); }
     if (tty_input) {
       status = GetCmd(input, prompt, UA_sock, 30);
     } else {

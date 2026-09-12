@@ -321,7 +321,8 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
             SelectionInputResult::kContinue);
   EXPECT_EQ(selection.Format("Choices:\n", "Select"),
             "Choices:\n"
-            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+            "filter):\n"
             "Filter: b\n"
             "> \033[7m2: Beta\033[0m\n");
   EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
@@ -339,14 +340,16 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
   InteractiveSelection selection(options);
 
   EXPECT_EQ(selection.Format("", "Select"),
-            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+            "filter):\n"
             "> \033[7m1: Alpha\033[0m\n"
             "  2: Beta\n"
             "  3: Gamma\n");
 
   EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
   EXPECT_EQ(selection.Format("", "Select"),
-            "Select (Up/Down, Enter, Esc, type a number or text to filter):\n"
+            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+            "filter):\n"
             "  1: Alpha\n"
             "> \033[7m2: Beta\033[0m\n"
             "  3: Gamma\n");
@@ -423,4 +426,82 @@ TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
   // header line + leading "..." + 5 option lines + trailing "..." = 8 lines
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 8);
+}
+
+TEST(InteractiveSelection, RendersMultipleColumnsWhenWideEnough)
+{
+  /* Directors compute a column count from the client's reported terminal
+   * width (see DoPrompt()'s use of ua->terminal_width) so a short-but-wide
+   * terminal can show many options at once, spread across columns, instead
+   * of only a handful in a single vertical list. */
+  std::vector<std::string> options;
+  for (int i = 1; i <= 12; ++i) {
+    options.emplace_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  selection.SetColumnLayout(/*rows_per_column=*/4, /*num_columns=*/3);
+
+  const auto output = selection.Format("", "Select", /*max_visible_options=*/4);
+
+  // All 12 options fit exactly into 3 columns of 4 rows, so nothing is
+  // truncated.
+  EXPECT_EQ(output.find("  ...\n"), std::string::npos);
+  // Column-major layout: the first row holds options 1, 5, and 9.
+  auto first_option = output.find("1: option 1");
+  auto second_option = output.find("5: option 5");
+  auto third_option = output.find("9: option 9");
+  ASSERT_NE(first_option, std::string::npos);
+  ASSERT_NE(second_option, std::string::npos);
+  ASSERT_NE(third_option, std::string::npos);
+  EXPECT_LT(first_option, second_option);
+  EXPECT_LT(second_option, third_option);
+  auto first_newline = output.find('\n', first_option);
+  EXPECT_GT(first_newline, third_option);
+
+  // header line + 4 option rows = 5 lines
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 5);
+}
+
+TEST(InteractiveSelection, LeftRightNavigateBetweenColumns)
+{
+  std::vector<std::string> options;
+  for (int i = 1; i <= 12; ++i) {
+    options.emplace_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  selection.SetColumnLayout(/*rows_per_column=*/4, /*num_columns=*/3);
+
+  EXPECT_EQ(selection.selected_index(), 0u);
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 4u);
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 8u);
+  // Already in the last column: no adjacent column to the right.
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 8u);
+
+  EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 4u);
+  EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 0u);
+  // Already in the first column: no adjacent column to the left.
+  EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 0u);
+
+  // Up/down still move within a single option at a time, unaffected by the
+  // column layout.
+  EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 1u);
+}
+
+TEST(InteractiveSelection, LeftRightFallBackToUpDownInSingleColumn)
+{
+  // Without an explicit multi-column layout (the default), left/right keep
+  // their historical behavior of being synonyms for up/down.
+  std::vector<std::string> options{"a", "b", "c"};
+  InteractiveSelection selection(options);
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 1u);
+  EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 0u);
 }
