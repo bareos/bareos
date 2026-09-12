@@ -157,8 +157,8 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     std::string client_name,
     std::vector<char>& stime_out)
 {
-  std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
-  std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
+  std::vector<char> esc_jobname(job_basename.size() * 2 + 1);
+  std::vector<char> esc_clientname(client_name.size() * 2 + 1);
 
   DbLocker _{this};
   EscapeString(nullptr, esc_jobname.data(), job_basename.c_str(),
