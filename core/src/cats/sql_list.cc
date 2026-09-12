@@ -369,7 +369,10 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   PoolMem client_filter(PM_MESSAGE);
 
   if (clientname) {
-    Mmsg(client_filter, "AND Client.Name = '%s' ", clientname);
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    Mmsg(client_filter, "AND Client.Name = '%s' ", escaped_clientname.data());
   }
 
   if (reverse) {
