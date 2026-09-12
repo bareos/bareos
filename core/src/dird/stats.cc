@@ -206,6 +206,7 @@ extern "C" void* statistics_thread(void*)
             uint32_t num_waiting = 0;
             uint32_t num_writers = 0;
             DBId_t media_id = 0;
+            DevName.check_size(sd->message_length + 1);
             if (bsscanf(sd->msg, DevStats, &sample_time, DevName.c_str(),
                         &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
                         &num_waiting, &num_writers, &dsr.ReadTime,
@@ -246,6 +247,7 @@ extern "C" void* statistics_thread(void*)
             TapealertStatsDbRecord tsr;
 
             int64_t sample_time = 0;
+            DevName.check_size(sd->message_length + 1);
             if (bsscanf(sd->msg, TapeAlerts, &sample_time, DevName.c_str(),
                         &tsr.AlertFlags)
                 == 3) {
@@ -273,6 +275,7 @@ extern "C" void* statistics_thread(void*)
             int64_t sample_time = 0;
             JobId_t job_id = 0;
             uint32_t job_files = 0;
+            DevName.check_size(sd->message_length + 1);
             if (bsscanf(sd->msg, JobStats, &sample_time, &job_id, &job_files,
                         &jsr.JobBytes, DevName.c_str())
                 == 5) {
