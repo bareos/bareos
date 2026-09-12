@@ -47,7 +47,8 @@ class InteractiveSelection {
 
   SelectionInputResult ApplyInput(std::string_view input);
   std::string Format(const std::string& header,
-                     const std::string& prompt) const;
+                     const std::string& prompt,
+                     size_t max_visible_options = 20) const;
   size_t selected_index() const { return selected_index_; }
 
  private:
