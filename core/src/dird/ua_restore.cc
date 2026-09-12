@@ -1468,6 +1468,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 
   i = FindArgWithValue(ua, "FileSet");
   if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
+    if (!ua->AclAccessOk(FileSet_ACL, ua->argv[i])) { return false; }
     bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
     if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
       ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
@@ -1588,6 +1589,7 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
 
   FileSetDbRecord fsr;
   bstrncpy(fsr.FileSet, tuple, sizeof(fsr.FileSet));
+  if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) { return false; }
   if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
     ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
                    ua->db->strerror());
@@ -1715,6 +1717,7 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
                                                FileSetDbRecord& fsr,
                                                const char* date)
 {
+  if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) { return false; }
   bool ok = false;
   char ed1[50], ed2[50];
   char pool_select[MAX_NAME_LENGTH];
@@ -1944,8 +1947,9 @@ static int LastFullHandler(void* ctx, int, char** row)
 // Callback handler build FileSet name prompt list
 static int FilesetHandler(void* ctx, int, char** row)
 {
+  UaContext* ua = (UaContext*)ctx;
   /* row[0] = FileSet (name) */
-  if (row[0]) { AddPrompt((UaContext*)ctx, row[0]); }
+  if (row[0] && ua->AclAccessOk(FileSet_ACL, row[0])) { AddPrompt(ua, row[0]); }
   return 0;
 }
 
