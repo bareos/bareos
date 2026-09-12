@@ -95,7 +95,8 @@ class BareosDbQueryEnum {
     subscription_client_detail_2 = 84,
     list_jobs_count_last = 85,
     uar_sel_client_fileset_tuples_1 = 86,
-    SQL_QUERY_NUMBER = 87
+    uar_sel_client_fileset_fulls_3 = 87,
+    SQL_QUERY_NUMBER = 88
   };
 };
 

@@ -33,12 +33,15 @@
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
 #include <algorithm>
+#include <cctype>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace directordaemon {
@@ -46,6 +49,141 @@ namespace directordaemon {
 /* Imported variables */
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
+
+InteractiveSelection::InteractiveSelection(
+    const std::vector<std::string>& options)
+    : options_(options)
+{
+}
+
+bool InteractiveSelection::Matches(size_t index) const
+{
+  if (filter_.empty()) { return true; }
+  std::string text = std::to_string(index + 1) + ": " + options_[index];
+  std::string filter = filter_;
+  std::transform(text.begin(), text.end(), text.begin(),
+                 [](unsigned char value) { return std::tolower(value); });
+  std::transform(filter.begin(), filter.end(), filter.begin(),
+                 [](unsigned char value) { return std::tolower(value); });
+  return text.find(filter) != std::string::npos;
+}
+
+void InteractiveSelection::SelectNext(int direction)
+{
+  if (options_.empty()) { return; }
+  size_t index = selected_index_;
+  for (size_t count = 0; count < options_.size(); ++count) {
+    if (direction > 0) {
+      index = (index + 1) % options_.size();
+    } else {
+      index = index == 0 ? options_.size() - 1 : index - 1;
+    }
+    if (Matches(index)) {
+      selected_index_ = index;
+      return;
+    }
+  }
+}
+
+SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
+{
+  while (!input.empty() && (input.back() == '\r' || input.back() == '\n')) {
+    input.remove_suffix(1);
+  }
+  if (input == "key:cancel" || input == ".") {
+    return SelectionInputResult::kCanceled;
+  }
+  if (input == "key:enter") {
+    return Matches(selected_index_) ? SelectionInputResult::kSelected
+                                    : SelectionInputResult::kContinue;
+  }
+  if (input == "key:up" || input == "key:left") {
+    SelectNext(-1);
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:down" || input == "key:right") {
+    SelectNext(1);
+    return SelectionInputResult::kContinue;
+  }
+  if (input == "key:backspace") {
+    if (!filter_.empty()) { filter_.pop_back(); }
+  } else if (input == "key:space") {
+    filter_.push_back(' ');
+  } else if (input.starts_with("key:text:")) {
+    filter_.append(input.substr(strlen("key:text:")));
+  } else if (input.starts_with("key:select:")
+             || Is_a_number(std::string(input).c_str())) {
+    std::string value(input.starts_with("key:select:")
+                          ? input.substr(strlen("key:select:"))
+                          : input);
+    if (!Is_a_number(value.c_str())) { return SelectionInputResult::kContinue; }
+    size_t selected = static_cast<size_t>(strtoul(value.c_str(), nullptr, 10));
+    if (selected < 1 || selected > options_.size()) {
+      return SelectionInputResult::kContinue;
+    }
+    selected_index_ = selected - 1;
+    return SelectionInputResult::kSelected;
+  } else {
+    return SelectionInputResult::kContinue;
+  }
+
+  if (!Matches(selected_index_)) {
+    for (size_t i = 0; i < options_.size(); ++i) {
+      if (Matches(i)) {
+        selected_index_ = i;
+        break;
+      }
+    }
+  }
+  return SelectionInputResult::kContinue;
+}
+
+std::string InteractiveSelection::Format(const std::string& header,
+                                         const std::string& prompt) const
+{
+  std::string output = header;
+  output.append(prompt);
+  output.append(" (Up/Down, Enter, Esc, type a number or text to filter):\n");
+  if (!filter_.empty()) {
+    output.append("Filter: ");
+    output.append(filter_);
+    output.push_back('\n');
+  }
+
+  std::vector<size_t> matches;
+  for (size_t i = 0; i < options_.size(); ++i) {
+    if (Matches(i)) { matches.push_back(i); }
+  }
+  if (matches.empty()) {
+    output.append("  (no options match)\n");
+    return output;
+  }
+
+  constexpr size_t max_visible_options = 20;
+  auto selected = std::find(matches.begin(), matches.end(), selected_index_);
+  size_t selected_position = selected == matches.end()
+                                 ? 0
+                                 : std::distance(matches.begin(), selected);
+  size_t first = selected_position > max_visible_options / 2
+                     ? selected_position - max_visible_options / 2
+                     : 0;
+  first = std::min(
+      first, matches.size() - std::min(matches.size(), max_visible_options));
+  size_t last = std::min(matches.size(), first + max_visible_options);
+  if (first > 0) { output.append("  ...\n"); }
+  for (size_t position = first; position < last; ++position) {
+    size_t i = matches[position];
+    output.append("  ");
+    if (i == selected_index_) { output.append("\033[7m"); }
+    output.append(std::to_string(i + 1));
+    output.append(": ");
+    output.append(options_[i]);
+    if (i == selected_index_) { output.append("\033[0m"); }
+    output.push_back('\n');
+  }
+  if (last < matches.size()) { output.append("  ...\n"); }
+  return output;
+}
 
 // Confirm a retention period
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
@@ -1206,11 +1344,7 @@ int DoPrompt(UaContext* ua,
              int max_prompt)
 {
   int item;
-  PoolMem pmsg(PM_MESSAGE);
   BareosSocket* user = ua->UA_sock;
-
-  int window_width = 80;
-  int min_lines_threshold = 20;
 
   if (prompt) { *prompt = 0; }
   if (ua->prompts.size() == 1) {
@@ -1227,8 +1361,7 @@ int DoPrompt(UaContext* ua,
   if (ua->batch) {
     // First print the choices he wanted to make
     ua->SendMsg("%s", ua->prompt_header.c_str());
-    ua->SendMsg("%s",
-                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+    ua->SendMsg("%s", FormatPrompts(ua, 80, 20).c_str());
 
     // Now print error message
     ua->SendMsg(T_("Your request has multiple choices for \"%s\". Selection is "
@@ -1238,54 +1371,45 @@ int DoPrompt(UaContext* ua,
     goto done;
   }
 
-  if (ua->api) { user->signal(BNET_START_SELECT); }
-
-  ua->SendMsg("%s", ua->prompt_header.c_str());
-
-  if (ua->api) {
-    for (auto& candidate : ua->prompts) {
-      ua->SendMsg("%s", candidate.c_str());
-    }
-  } else {
-    ua->SendMsg("%s",
-                FormatPrompts(ua, window_width, min_lines_threshold).c_str());
+  if (ua->prompts.empty()) {
+    ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
+    item = -1;
+    goto done;
+  }
+  if (!user) {
+    item = -1;
+    goto done;
   }
 
+  {
+    InteractiveSelection selection(ua->prompts);
+    for (;;) {
+      user->signal(BNET_START_SELECT);
+      ua->SendMsg("%s", selection.Format(ua->prompt_header, msg).c_str());
+      user->signal(BNET_END_SELECT);
+      user->signal(BNET_SELECT_INPUT);
 
-  if (ua->api) { user->signal(BNET_END_SELECT); }
+      int status = user->recv();
+      if (status == BNET_SIGNAL || IsBnetStop(user)) {
+        item = -1;
+        break;
+      }
 
-  while (1) {
-    // First item is the prompt string, not the items
-    if (ua->prompts.empty()) {
-      ua->ErrorMsg(T_("Selection list for \"%s\" is empty!\n"), automsg);
-      item = -1; /* list is empty ! */
-      break;
+      auto result = selection.ApplyInput(user->msg);
+      if (result == SelectionInputResult::kCanceled) {
+        item = -1;
+        ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+        break;
+      }
+      if (result == SelectionInputResult::kSelected) {
+        item = static_cast<int>(selection.selected_index() + 1);
+        if (prompt) {
+          bstrncpy(prompt, ua->prompts[selection.selected_index()].c_str(),
+                   max_prompt);
+        }
+        break;
+      }
     }
-    if (ua->prompts.size() == 1) {
-      item = 1;
-      ua->SendMsg(T_("Automatically selected: %s\n"), ua->prompts[0].c_str());
-      if (prompt) { bstrncpy(prompt, ua->prompts[0].c_str(), max_prompt); }
-      break;
-    } else {
-      Mmsg(pmsg, "%s (1-%zu): ", msg, ua->prompts.size());
-    }
-
-    // Either a . or an @ will get you out of the loop
-    if (ua->api) { user->signal(BNET_SELECT_INPUT); }
-
-    if (!GetPint(ua, pmsg.c_str())) {
-      item = -1; /* error */
-      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
-      break;
-    }
-    item = ua->pint32_val;
-    if (item < 1 || static_cast<size_t>(item) > ua->prompts.size()) {
-      ua->WarningMsg(T_("Please enter a number between 1 and %zu\n"),
-                     ua->prompts.size());
-      continue;
-    }
-    if (prompt) { bstrncpy(prompt, ua->prompts[item - 1].c_str(), max_prompt); }
-    break;
   }
 
 done:
