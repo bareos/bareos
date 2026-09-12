@@ -1244,7 +1244,7 @@ R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet
 
 /* 0088_uar_sel_client_fileset_fulls_3 */
 R"SQL(WITH completed_jobs AS (
-  SELECT JobId, Level, StartTime
+  SELECT JobId, Name, Level, StartTime
     FROM Job
    WHERE ClientId = %s
      AND FileSetId = %s
@@ -1261,7 +1261,8 @@ full_backups AS (
 SELECT full_backups.JobId,
        full_backups.FullStartTime,
        MAX(completed_jobs.StartTime) AS RestorePoint,
-       COUNT(*) AS JobCount
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames
   FROM full_backups
   JOIN completed_jobs
     ON completed_jobs.StartTime >= full_backups.FullStartTime

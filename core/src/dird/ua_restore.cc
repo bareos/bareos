@@ -1520,12 +1520,25 @@ static int ClientFilesetTupleHandler(void* ctx, int, char** row)
 
 static int ClientFilesetFullHandler(void* ctx, int, char** row)
 {
-  if (!row[0] || !row[1] || !row[2] || !row[3]) { return 0; }
+  if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4]) { return 0; }
+  UaContext* ua = (UaContext*)ctx;
+  POOLMEM* job_names = GetPoolMemory(PM_FNAME);
+  PmStrcpy(job_names, row[4]);
+  char* saveptr = nullptr;
+  for (char* job_name = strtok_r(job_names, "\n", &saveptr); job_name;
+       job_name = strtok_r(NULL, "\n", &saveptr)) {
+    if (!ua->AclAccessOk(Job_ACL, job_name)) {
+      FreePoolMemory(job_names);
+      return 0;
+    }
+  }
+  FreePoolMemory(job_names);
+
   PoolMem chain(PM_MESSAGE);
   int64_t job_count = str_to_int64(row[3]);
   Mmsg(chain, "%s (%" PRId64 " %s since Full #%s from %s)", row[2], job_count,
        job_count == 1 ? T_("job") : T_("jobs"), row[0], row[1]);
-  AddPrompt((UaContext*)ctx, chain.c_str());
+  AddPrompt(ua, chain.c_str());
   return 0;
 }
 
@@ -1654,6 +1667,37 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
   }
 
   return true;
+}
+
+static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua, const char* jobids)
+{
+  char ed1[50];
+  POOLMEM* filtered_jobids = GetPoolMemory(PM_FNAME);
+  *filtered_jobids = 0;
+  JobDbRecord jr;
+
+  for (const char* current = jobids;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      break;
+    }
+    if (status == 0) { break; }
+
+    jr = JobDbRecord{};
+    jr.JobId = jobid;
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->WarningMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                     edit_int64(jobid, ed1), ua->db->strerror());
+      continue;
+    }
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) { continue; }
+    if (*filtered_jobids != 0) { PmStrcat(filtered_jobids, ","); }
+    PmStrcat(filtered_jobids, edit_int64(jobid, ed1));
+  }
+
+  return filtered_jobids;
 }
 
 /**
@@ -1785,31 +1829,46 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
   }
 
   if (rx->JobIds[0] != 0) {
-    if (FindArg(ua, NT_("copies")) > 0) {
-      // Display a list of all copies
-      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send.get(),
-                                HORZ_LIST);
+    POOLMEM* filtered_jobids = FilterJobIdsByJobAcl(ua, rx->JobIds);
+    FreePoolMemory(rx->JobIds);
+    rx->JobIds = filtered_jobids;
+  }
 
-      if (FindArg(ua, NT_("yes")) > 0) {
-        ua->pint32_val = 1;
-      } else {
-        GetYesno(ua,
-                 T_("\nDo you want to restore from these copies? (yes|no): "));
+  if (rx->JobIds[0] != 0) {
+    if (FindArg(ua, NT_("copies")) > 0) {
+      POOLMEM* original_jobids = GetPoolMemory(PM_FNAME);
+      PmStrcpy(original_jobids, rx->JobIds);
+      rx->last_jobid[0] = rx->JobIds[0] = 0;
+      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
+          rx->query, original_jobids);
+      if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
+        ua->WarningMsg("%s\n", ua->db->strerror());
       }
 
-      if (ua->pint32_val) {
-        PoolMem JobIds(PM_FNAME);
+      POOLMEM* copy_jobids = FilterJobIdsByJobAcl(ua, rx->JobIds);
+      FreePoolMemory(rx->JobIds);
+      rx->JobIds = original_jobids;
 
-        /* Change the list of jobs needed to do the restore to the copies of the
-         * Job. */
-        PmStrcpy(JobIds, rx->JobIds);
-        rx->last_jobid[0] = rx->JobIds[0] = 0;
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
-            rx->query, JobIds.c_str());
-        if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
-          ua->WarningMsg("%s\n", ua->db->strerror());
+      if (*copy_jobids != 0) {
+        // Display only copies whose Copy Job resource is allowed.
+        ua->db->ListCopiesRecords(ua->jcr, "", copy_jobids, ua->send.get(),
+                                  HORZ_LIST);
+
+        if (FindArg(ua, NT_("yes")) > 0) {
+          ua->pint32_val = 1;
+        } else {
+          GetYesno(
+              ua, T_("\nDo you want to restore from these copies? (yes|no): "));
+        }
+
+        if (ua->pint32_val) {
+          FreePoolMemory(rx->JobIds);
+          rx->JobIds = copy_jobids;
+          copy_jobids = nullptr;
         }
       }
+
+      if (copy_jobids) { FreePoolMemory(copy_jobids); }
     }
 
     // Display a list of Jobs selected for this restore
