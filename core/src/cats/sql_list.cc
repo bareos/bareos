@@ -545,14 +545,20 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (volumename) {
-    temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
+    const auto volumename_len = strlen(volumename);
+    std::vector<char> escaped_volumename(volumename_len * 2 + 1);
+    EscapeString(jcr, escaped_volumename.data(), volumename, volumename_len);
+    temp.bsprintf("AND Media.Volumename = '%s' ", escaped_volumename.data());
     PmStrcat(selection, temp.c_str());
   }
 
   if (poolname) {
+    const auto poolname_len = strlen(poolname);
+    std::vector<char> escaped_poolname(poolname_len * 2 + 1);
+    EscapeString(jcr, escaped_poolname.data(), poolname, poolname_len);
     temp.bsprintf(
         "AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ",
-        poolname);
+        escaped_poolname.data());
     PmStrcat(selection, temp.c_str());
   }
 
