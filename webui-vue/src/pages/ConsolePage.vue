@@ -386,9 +386,16 @@ watch(() => auth.user?.director, (directorName) => {
   }
 })
 
-watch(() => currentSession.value.output.length, () => {
-  scrollBottom()
-})
+watch(
+  () => [
+    currentSession.value.output.length,
+    currentSession.value.output[currentSession.value.output.length - 1]?.text,
+    currentSession.value.selectionText,
+  ],
+  () => {
+    scrollBottom()
+  }
+)
 </script>
 
 <style scoped>
