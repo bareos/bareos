@@ -238,19 +238,11 @@ std::string InteractiveSelection::Format(const std::string& header,
   if (max_visible_options == 0) { max_visible_options = 1; }
   size_t columns
       = EffectiveColumns(matches.size(), max_visible_options, num_columns_);
-  size_t total_visible = max_visible_options * columns;
 
   auto selected = std::find(matches.begin(), matches.end(), selected_index_);
   size_t selected_position = selected == matches.end()
                                  ? 0
                                  : std::distance(matches.begin(), selected);
-  size_t first = selected_position > total_visible / 2
-                     ? selected_position - total_visible / 2
-                     : 0;
-  first = std::min(first,
-                   matches.size() - std::min(matches.size(), total_visible));
-  size_t last = std::min(matches.size(), first + total_visible);
-  if (first > 0) { output.append("  ...\n"); }
 
   auto append_entry = [&](size_t i) {
     /* Prefix the currently selected line with a plain-text marker, in
@@ -268,17 +260,38 @@ std::string InteractiveSelection::Format(const std::string& header,
   };
 
   if (columns <= 1) {
+    size_t first = selected_position > max_visible_options / 2
+                       ? selected_position - max_visible_options / 2
+                       : 0;
+    first = std::min(
+        first, matches.size() - std::min(matches.size(), max_visible_options));
+    size_t last = std::min(matches.size(), first + max_visible_options);
+    if (first > 0) { output.append("  ...\n"); }
     for (size_t position = first; position < last; ++position) {
       append_entry(matches[position]);
       output.push_back('\n');
     }
+    if (last < matches.size()) { output.append("  ...\n"); }
   } else {
-    // Lay the visible window out column-major (like `ls`'s column mode):
-    // the first column takes the first rows_in_window matches, the second
-    // column the next batch, and so on, so up/down navigation moves within
-    // a column while left/right jumps sideways by a full column.
-    size_t window_size = last - first;
-    size_t rows_in_window = (window_size + columns - 1) / columns;
+    // Every match has a fixed global column/row position based purely on
+    // its index within `matches`: column = position / max_visible_options,
+    // row = position % max_visible_options. This exactly mirrors
+    // SelectAdjacentColumn()'s stride of rows_per_column_ (== the
+    // max_visible_options passed to this same call, see DoPrompt()), so
+    // rendering and Left/Right navigation always agree -- regardless of
+    // whether the last column happens to be only partially filled.
+    size_t columns_needed
+        = (matches.size() + max_visible_options - 1) / max_visible_options;
+    size_t selected_column = selected_position / max_visible_options;
+    size_t first_col
+        = selected_column > columns / 2 ? selected_column - columns / 2 : 0;
+    first_col = std::min(first_col,
+                         columns_needed - std::min(columns_needed, columns));
+    size_t last_col = std::min(columns_needed, first_col + columns);
+
+    size_t first = first_col * max_visible_options;
+    size_t last = std::min(matches.size(), last_col * max_visible_options);
+    if (first_col > 0) { output.append("  ...\n"); }
 
     // Column width is based on the widest entry actually shown, so it
     // adapts to the current filter/scroll window instead of reserving
@@ -294,25 +307,25 @@ std::string InteractiveSelection::Format(const std::string& header,
     constexpr size_t kColumnGap = 2;
     size_t column_width = max_entry_length + kColumnGap;
 
-    for (size_t row = 0; row < rows_in_window; ++row) {
-      for (size_t col = 0; col < columns; ++col) {
-        size_t position = first + col * rows_in_window + row;
-        if (position >= last) { continue; }
+    for (size_t row = 0; row < max_visible_options; ++row) {
+      for (size_t col = first_col; col < last_col; ++col) {
+        size_t position = col * max_visible_options + row;
+        if (position < first || position >= last) { continue; }
         size_t i = matches[position];
         append_entry(i);
         // Escape codes have no visible width, so pad based on the actual
         // printable length rather than the appended string's byte length.
         size_t printable_length = 2 + index_digits + 2 + options_[i].size();
         bool is_last_column_entry
-            = (col == columns - 1) || (position + rows_in_window >= last);
+            = (col == last_col - 1) || (position + max_visible_options >= last);
         if (!is_last_column_entry && printable_length < column_width) {
           output.append(column_width - printable_length, ' ');
         }
       }
       output.push_back('\n');
     }
+    if (last_col < columns_needed) { output.append("  ...\n"); }
   }
-  if (last < matches.size()) { output.append("  ...\n"); }
   return output;
 }
 
