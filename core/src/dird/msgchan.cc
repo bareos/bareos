@@ -371,7 +371,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   Dmsg1(100, ">stored: %s", sd_socket->msg);
   if (BgetDirmsg(sd_socket) > 0) {
     Dmsg1(100, "<stored: %s", sd_socket->msg);
-    char auth_key[100];
+    char auth_key[101];
     if (bsscanf(sd_socket->msg, OK_job, &jcr->VolSessionId,
                 &jcr->VolSessionTime, auth_key)
         != 3) {
@@ -465,7 +465,7 @@ extern "C" void* msg_thread(void* arg)
   BareosSocket* sd;
   int JobStatus;
   int n;
-  char auth_key[100];
+  char auth_key[101];
   char Job[MAX_NAME_LENGTH];
   uint32_t JobFiles, JobErrors;
   uint64_t JobBytes;
