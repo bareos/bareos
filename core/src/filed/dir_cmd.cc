@@ -661,17 +661,18 @@ static bool ResolveCmd(JobControlRecord* jcr)
   dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
-  char hostname[2048];
+  PoolMem hostname(PM_MESSAGE);
 
-  bsscanf(dir->msg, resolvecmd, &hostname);
+  hostname.check_size(dir->message_length + 1);
+  bsscanf(dir->msg, resolvecmd, hostname.c_str());
 
-  if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
-    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
+  if ((addr_list = BnetHost2IpAddrs(hostname.c_str(), 0, &errstr)) == nullptr) {
+    dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname.c_str());
     goto bail_out;
   }
 
   dir->fsend(
-      T_("%s resolves %s to %s\n"), my_name, hostname,
+      T_("%s resolves %s to %s\n"), my_name, hostname.c_str(),
       BuildAddressesString(addr_list, addresses, sizeof(addresses), false));
   FreeAddresses(addr_list);
 
