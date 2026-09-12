@@ -494,6 +494,42 @@ TEST(InteractiveSelection, LeftRightNavigateBetweenColumns)
   EXPECT_EQ(selection.selected_index(), 1u);
 }
 
+TEST(InteractiveSelection, LeftRightAlignsWithRenderedColumnsWhenNotFull)
+{
+  // Regression test: with 6 matches, 4 rows per column, and 2 columns, the
+  // second column only has 2 entries (not a full 4), so a stale
+  // recomputed-from-window-size row count would misalign rendering with
+  // Left/Right navigation. Format() and SelectAdjacentColumn() must agree
+  // on the same fixed rows_per_column_ (4) stride regardless of how many
+  // entries actually land in the last column.
+  std::vector<std::string> options;
+  for (int i = 1; i <= 6; ++i) {
+    options.emplace_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  selection.SetColumnLayout(/*rows_per_column=*/4, /*num_columns=*/2);
+
+  const auto output = selection.Format("", "Select", /*max_visible_options=*/4);
+  // Row 0 must pair option 1 (column 0, row 0) with option 5 (column 1,
+  // row 0 == global position 4), not option 4 (which a
+  // recomputed-from-window-size rows-per-column of 3 would wrongly pick).
+  auto row0_option1 = output.find("1: option 1");
+  auto row0_option5 = output.find("5: option 5");
+  ASSERT_NE(row0_option1, std::string::npos);
+  ASSERT_NE(row0_option5, std::string::npos);
+  auto first_newline = output.find('\n', row0_option1);
+  EXPECT_LT(row0_option5, first_newline);
+
+  EXPECT_EQ(selection.selected_index(), 0u);
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 4u);  // option 5, not option 4
+  EXPECT_EQ(selection.ApplyInput("key:right"), SelectionInputResult::kContinue);
+  // Already in the last (2nd) column: no adjacent column to the right.
+  EXPECT_EQ(selection.selected_index(), 4u);
+  EXPECT_EQ(selection.ApplyInput("key:left"), SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.selected_index(), 0u);
+}
+
 TEST(InteractiveSelection, LeftRightFallBackToUpDownInSingleColumn)
 {
   // Without an explicit multi-column layout (the default), left/right keep
