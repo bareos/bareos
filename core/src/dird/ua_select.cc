@@ -141,6 +141,15 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
   if (input == "key:cancel" || input == ".") {
     return SelectionInputResult::kCanceled;
   }
+  if (input == "key:text:." && filter_.empty()) {
+    // A lone "." was always the classic shortcut to cancel a selection
+    // (see the "Enter a period (.) to cancel a command." hint used
+    // elsewhere). In raw/arrow-key mode every printable keystroke arrives
+    // as "key:text:<char>", so a bare "." has to be special-cased here to
+    // keep that shortcut working; once a filter is already being typed,
+    // "." is treated as an ordinary filter character instead.
+    return SelectionInputResult::kCanceled;
+  }
   if (input == "key:enter") {
     return Matches(selected_index_) ? SelectionInputResult::kSelected
                                     : SelectionInputResult::kContinue;
