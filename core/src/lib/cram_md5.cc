@@ -81,12 +81,14 @@ CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
     const char* challenge) const
 {
   uint32_t a, b;
-  char buffer[MAXHOSTNAMELEN]{"?"};  // at least one character
+  std::vector<char> buffer(strlen(challenge) + 1);
+  buffer[0] = '?';  // at least one character
 
-  bool scan_success = bsscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
+  bool scan_success
+      = bsscanf(challenge, "<%u.%u@%s", &a, &b, buffer.data()) == 3;
 
   // string contains the closing ">" of the challenge
-  std::string challenge_qualified_name(buffer, strlen(buffer) - 1);
+  std::string challenge_qualified_name(buffer.data(), strlen(buffer.data()) - 1);
 
   Dmsg1(debuglevel_, "my_name: <%s> - challenge_name: <%s>\n",
         own_qualified_name_bashed_spaces_.c_str(),
