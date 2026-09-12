@@ -34,6 +34,8 @@
 #include "dird/ua_select.h"
 #include "lib/berrno.h"
 
+#include <string_view>
+
 namespace directordaemon {
 
 extern DirectorResource* director;
@@ -189,8 +191,9 @@ static POOLMEM* substitute_prompts(UaContext* ua,
               }
             }
             len = strlen(ua->cmd);
-            p = (char*)malloc(len * 2 + 1);
-            ua->db->EscapeString(ua->jcr, p, ua->cmd, len);
+            auto escaped = ua->db->EscapeString(
+                ua->jcr, std::string_view{ua->cmd, static_cast<size_t>(len)});
+            p = strdup(escaped.c_str());
             subst[n] = p;
             olen = o - new_query;
             new_query = CheckPoolMemorySize(new_query, olen + strlen(p) + 10);

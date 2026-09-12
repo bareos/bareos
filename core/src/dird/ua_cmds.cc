@@ -1973,7 +1973,6 @@ static bool TruncateCmd(UaContext* ua, const char*)
 {
   bool result = false;
   int parsed_args = 1; /* start at 1, as command itself is also counted */
-  char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem tmp(PM_MESSAGE);
   PoolMem volumes(PM_MESSAGE);
   dbid_list mediaIds;
@@ -2040,11 +2039,11 @@ static bool TruncateCmd(UaContext* ua, const char*)
    * but this causes problems with parsing and ACL handling). */
   if (int i = FindArgWithValue(ua, "volume"); i >= 0) {
     if (IsNameValid(ua->argv[i])) {
-      ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
+      auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
       if (!*volumes.c_str()) {
-        Mmsg(tmp, "'%s'", esc);
+        Mmsg(tmp, "'%s'", esc.c_str());
       } else {
-        Mmsg(tmp, ",'%s'", esc);
+        Mmsg(tmp, ",'%s'", esc.c_str());
       }
       volumes.strcat(tmp.c_str());
       parsed_args++;

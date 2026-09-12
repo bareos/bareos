@@ -684,7 +684,6 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
   MediaDbRecord mr;
   PoolDbRecord pr;
   BareosSocket* sd = NULL;
-  char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE), volumes(PM_MESSAGE);
 
   PmStrcpy(volumes, "");
@@ -695,11 +694,11 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
       allpools = true;
     } else if (Bstrcasecmp(ua->argk[i], NT_("volume"))
                && IsNameValid(ua->argv[i])) {
-      ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
+      auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
       if (!*volumes.c_str()) {
-        Mmsg(buf, "'%s'", esc);
+        Mmsg(buf, "'%s'", esc.c_str());
       } else {
-        Mmsg(buf, ",'%s'", esc);
+        Mmsg(buf, ",'%s'", esc.c_str());
       }
       PmStrcat(volumes, buf.c_str());
     } else if (Bstrcasecmp(ua->argk[i], NT_("devicetype")) && ua->argv[i]) {
