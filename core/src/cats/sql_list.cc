@@ -518,7 +518,10 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (clientname) {
-    temp.bsprintf("AND Client.Name = '%s' ", clientname);
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    temp.bsprintf("AND Client.Name = '%s' ", escaped_clientname.data());
     PmStrcat(selection, temp.c_str());
   }
 
