@@ -47,6 +47,8 @@ const RESTORE_TREE_COMPLETION_COMMANDS = {
   delete: '.lsmark',
   unmark: '.lsmark',
 }
+const ANSI_ESCAPE_SEQUENCE_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
+const ANSI_INVERSE_LINE_MARKER_RE = /(^|\n)[ \t]*\x1B\[7m/g
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -157,6 +159,13 @@ function filterConsoleNoiseText(text) {
     .filter(line => !CONSOLE_NOISE_LINES.has(line))
 
   return filteredLines.join('\n')
+}
+
+function normalizeSelectionText(text) {
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(ANSI_INVERSE_LINE_MARKER_RE, '$1> ')
+    .replace(ANSI_ESCAPE_SEQUENCE_RE, '')
 }
 
 function parseHelpCompletionItems(text) {
@@ -296,7 +305,7 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
 function applyRawConsoleResponse(session, director, appendLines, message) {
   if (message.prompt === 'select') {
     session.selectionActive = true
-    session.selectionText = String(message.text ?? '').replace(/\r\n/g, '\n')
+    session.selectionText = normalizeSelectionText(message.text)
     session.currentPrompt = ''
     return {
       outputText: '',
