@@ -1604,7 +1604,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   int stored_port;      /* storage daemon port */
   TlsPolicy tls_policy; /* enable ssl to sd */
   char JobName[MAX_NAME_LENGTH];
-  char stored_addr[MAX_NAME_LENGTH];
+  PoolMem stored_addr(PM_MESSAGE);
   uint32_t JobId = 0;
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
@@ -1612,9 +1612,10 @@ static bool ReplicateCmd(JobControlRecord* jcr)
       = std::make_unique<BareosSocketTCP>();
 
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
+  stored_addr.check_size(dir->message_length + 1);
   sd_auth_key.check_size(dir->message_length);
 
-  if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr,
+  if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr.c_str(),
               &stored_port, &tls_policy, sd_auth_key.c_str())
       != 6) {
     std::string cpy{dir->msg};
@@ -1624,7 +1625,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   SetStorageAuthKeyAndTlsPolicy(jcr, sd_auth_key.c_str(), tls_policy);
 
-  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr, stored_port,
+  Dmsg3(110, "Open storage: %s:%d ssl=%u\n", stored_addr.c_str(), stored_port,
         tls_policy);
 
   storage_daemon_socket->SetSourceAddress(me->SDsrc_addr);
@@ -1644,11 +1645,11 @@ static bool ReplicateCmd(JobControlRecord* jcr)
 
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
-          T_("Storage daemon"), stored_addr, NULL, stored_port, 1)) {
+          T_("Storage daemon"), stored_addr.c_str(), NULL, stored_port, 1)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to connect to Storage daemon: %s:%d\n"),
-         stored_addr, stored_port);
-    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n", stored_addr,
-          stored_port);
+         stored_addr.c_str(), stored_port);
+    Dmsg2(100, "Failed to connect to Storage daemon: %s:%d\n",
+          stored_addr.c_str(), stored_port);
     connect_state(ReplicateCmdState::kError);
     return false;
   }
