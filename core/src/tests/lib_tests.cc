@@ -51,6 +51,20 @@ static_assert(!GetProtocolToken("resolve ", "resolve "));
 static_assert(!GetProtocolToken("other=value", "Device="));
 }  // namespace
 
+TEST(Bsscanf, SuppressesStringAssignment)
+{
+  unsigned int value = 0;
+  EXPECT_EQ(bsscanf("name=ignored value=42", "name=%*s value=%u", &value), 1);
+  EXPECT_EQ(value, 42);
+}
+
+TEST(Bsscanf, SuppressesWidthLimitedStringAssignment)
+{
+  unsigned int value = 0;
+  EXPECT_EQ(bsscanf("name=abc value=42", "name=%*3s value=%u", &value), 1);
+  EXPECT_EQ(value, 42);
+}
+
 TEST(BStringList, ConstructorsTest)
 {
   BStringList list1;
