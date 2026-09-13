@@ -50,6 +50,41 @@ std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
     return "key:cancel";
   }
 
+  if (ctrl_pressed) {
+    switch (unicode_char) {
+      case L'j':
+      case L'J':
+      case L'n':
+      case L'N':
+      case 10:
+      case 14:
+        return "key:down";
+      case L'k':
+      case L'K':
+      case L'p':
+      case L'P':
+      case 11:
+      case 16:
+        return "key:up";
+      case L'h':
+      case L'H':
+      case L'b':
+      case L'B':
+      case 2:
+      case 8:
+        return "key:left";
+      case L'l':
+      case L'L':
+      case L'f':
+      case L'F':
+      case 12:
+      case 6:
+        return "key:right";
+      default:
+        break;
+    }
+  }
+
   switch (virtual_key_code) {
     case kVkUp:
       return "key:up";

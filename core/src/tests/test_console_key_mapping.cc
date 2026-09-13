@@ -70,6 +70,34 @@ TEST(ConsoleKeyMapping, CtrlCCancelsEitherWay)
             "key:cancel");
 }
 
+TEST(ConsoleKeyMapping, VimControlKeyBindings)
+{
+  // Ctrl-J / Ctrl-N map to down
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'j', true),
+            "key:down");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'n', true),
+            "key:down");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 10, true), "key:down");
+
+  // Ctrl-K / Ctrl-P map to up
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'k', true), "key:up");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'p', true), "key:up");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 11, true), "key:up");
+
+  // Ctrl-H / Ctrl-B map to left
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'h', true),
+            "key:left");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'b', true),
+            "key:left");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 8, true), "key:left");
+
+  // Ctrl-L / Ctrl-F map to right
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'l', true),
+            "key:right");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'f', true),
+            "key:right");
+}
+
 TEST(ConsoleKeyMapping, SpaceAndPrintableText)
 {
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L' ', false),
