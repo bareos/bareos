@@ -46,9 +46,17 @@ class InteractiveSelection {
   explicit InteractiveSelection(const std::vector<std::string>& options);
 
   SelectionInputResult ApplyInput(std::string_view input);
+  /* supports_cursor_selection should be false for clients that cannot move
+   * the highlighted entry with the cursor keys (currently: any bconsole
+   * without a known terminal size, e.g. on Windows -- see the
+   * ua->terminal_height check at the call site in DoPrompt()). In that
+   * case the "> " marker and reverse-video escape codes are omitted, since
+   * a highlight that can never move to a different entry would just be
+   * confusing rather than helpful. */
   std::string Format(const std::string& header,
                      const std::string& prompt,
-                     size_t max_visible_options = 20) const;
+                     size_t max_visible_options = 20,
+                     bool supports_cursor_selection = true) const;
   size_t selected_index() const { return selected_index_; }
 
   /* Configure the grid layout used for rendering and for column-wise
