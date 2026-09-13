@@ -417,6 +417,10 @@ if(ENABLE_BCONSOLE)
     test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
                                               Bareos::Findlib GTest::gtest_main
   )
+  bareos_add_test(
+    test_console_key_mapping LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                            GTest::gtest_main
+  )
 endif()
 
 # Keep alphabetically ordered
