@@ -341,6 +341,14 @@ static bool ReadSelectionInput(FILE* input,
     }
   } else if (input_byte == 3) {
     event = "key:cancel";
+  } else if (input_byte == 10 || input_byte == 14) {
+    event = "key:down"; /* Ctrl-J, Ctrl-N */
+  } else if (input_byte == 11 || input_byte == 16) {
+    event = "key:up"; /* Ctrl-K, Ctrl-P */
+  } else if (input_byte == 2 || input_byte == 8) {
+    event = "key:left"; /* Ctrl-B, Ctrl-H */
+  } else if (input_byte == 6 || input_byte == 12) {
+    event = "key:right"; /* Ctrl-F, Ctrl-L */
   } else if (input_byte == 27) {
     unsigned char next = 0;
     if (read_with_timeout(next) && next == '[') {
@@ -371,9 +379,9 @@ static bool ReadSelectionInput(FILE* input,
     } else {
       event = "key:noop";
     }
-  } else if (input_byte == '\r' || input_byte == '\n') {
+  } else if (input_byte == '\r') {
     event = "key:enter";
-  } else if (input_byte == 127 || input_byte == '\b') {
+  } else if (input_byte == 127) {
     event = "key:backspace";
   } else if (input_byte == ' ') {
     event = "key:space";
