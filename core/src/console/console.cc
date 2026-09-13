@@ -226,7 +226,18 @@ static bool ReadSelectionInput(FILE* input,
                                bool input_is_interactive_tty)
 {
   if (!input_is_interactive_tty) {
-    if (GetCmd(input, T_("Select item: "), socket, 30) < 0) { return false; }
+    // Reading from a file/pipe (e.g. scripted bconcmds input): read a plain
+    // line the same way the main command loop does for non-tty input (see
+    // ReadAndProcessInput() above). GetCmd()/readline() must not be used
+    // here: on Windows, the readline-win32 port ignores redirected stdin
+    // and blocks waiting for real console input instead of consuming the
+    // next scripted line, hanging any restore that reaches this selection
+    // menu.
+    int len = SizeofPoolMemory(socket->msg) - 1;
+    if (fgets(socket->msg, len, input) == NULL) { return false; }
+    ConsoleOutput(socket->msg); /* echo to terminal */
+    StripTrailingJunk(socket->msg);
+    socket->message_length = strlen(socket->msg);
     return true;
   }
 
