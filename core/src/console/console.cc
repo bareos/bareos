@@ -33,6 +33,7 @@
 #include "console/auth_pam.h"
 #include "console/console_output.h"
 #include "console/connect_to_director.h"
+#include "console/console_key_mapping.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
@@ -219,6 +220,43 @@ static bool TerminalWasResized()
 }
 #else
 static bool TerminalWasResized() { return false; }
+
+/**
+ * Try to enable ANSI/VT100 escape sequence interpretation on the console
+ * we are attached to (available on Windows 10 and later). If it sticks,
+ * tell console_output.cc to stop stripping escape sequences, so the
+ * reverse-video highlighting used by the interactive restore selection
+ * menu (see InteractiveSelection::Format() in dird/ua_select.cc) renders
+ * properly instead of being stripped to plain text. Older consoles, or
+ * output that has been redirected to a file, are left alone: stripping
+ * stays enabled (the default) in that case.
+ */
+static void EnableWindowsAnsiConsoleIfPossible()
+{
+  if (!isatty(fileno(stdout))) { return; }
+
+  HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (output_handle == INVALID_HANDLE_VALUE) { return; }
+
+  DWORD original_mode = 0;
+  if (!GetConsoleMode(output_handle, &original_mode)) { return; }
+
+  if (!SetConsoleMode(output_handle,
+                      original_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+    return;
+  }
+
+  // Some older Windows builds silently ignore unsupported mode bits
+  // instead of failing, so read the mode back to confirm it actually took
+  // effect before relying on it.
+  DWORD confirmed_mode = 0;
+  if (GetConsoleMode(output_handle, &confirmed_mode)
+      && (confirmed_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+    ConsoleSetAnsiPassthrough(true);
+  } else {
+    SetConsoleMode(output_handle, original_mode);
+  }
+}
 #endif
 
 static bool ReadSelectionInput(FILE* input,
@@ -350,7 +388,74 @@ static bool ReadSelectionInput(FILE* input,
   socket->message_length = event.size();
   return true;
 #else
-  if (GetCmd(input, T_("Select item: "), socket, 30) < 0) { return false; }
+  // Raw single-keystroke reader using the Windows Console API, mirroring
+  // the POSIX branch above: read one key/resize event at a time and
+  // translate it to the same "key:..." protocol understood by
+  // InteractiveSelection::ApplyInput() (see dird/ua_select.cc), instead of
+  // falling back to GetCmd()/readline() (which does full line editing, not
+  // single-keystroke navigation, and would never send arrow keys through).
+  HANDLE input_handle = GetStdHandle(STD_INPUT_HANDLE);
+  if (input_handle == INVALID_HANDLE_VALUE) { return false; }
+
+  DWORD original_mode = 0;
+  if (!GetConsoleMode(input_handle, &original_mode)) { return false; }
+
+  // Always restore the original console mode before returning, even on an
+  // early/error return, so a crash or unexpected disconnect while the
+  // selection menu is on screen doesn't leave the user's terminal stuck in
+  // raw mode (no line editing/echo) for the rest of their session.
+  struct ConsoleModeGuard {
+    HANDLE handle;
+    DWORD mode;
+    ~ConsoleModeGuard() { SetConsoleMode(handle, mode); }
+  } restore_mode{input_handle, original_mode};
+
+  DWORD raw_mode = original_mode
+                   & ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
+                              | ENABLE_PROCESSED_INPUT);
+  raw_mode |= ENABLE_WINDOW_INPUT; /* to receive resize events below */
+  if (!SetConsoleMode(input_handle, raw_mode)) { return false; }
+
+  std::string event;
+  for (;;) {
+    INPUT_RECORD record{};
+    DWORD events_read = 0;
+    if (!ReadConsoleInputW(input_handle, &record, 1, &events_read)
+        || events_read == 0) {
+      return false;
+    }
+
+    if (record.EventType == WINDOW_BUFFER_SIZE_EVENT) {
+      HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+      CONSOLE_SCREEN_BUFFER_INFO info{};
+      if (output_handle != INVALID_HANDLE_VALUE
+          && GetConsoleScreenBufferInfo(output_handle, &info)) {
+        int rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+        int cols = info.srWindow.Right - info.srWindow.Left + 1;
+        if (rows > 0 && cols > 0) {
+          event = "resize:" + std::to_string(rows) + ":" + std::to_string(cols);
+          break;
+        }
+      }
+      continue; /* couldn't determine the new size: ignore this event */
+    }
+
+    if (record.EventType != KEY_EVENT || !record.Event.KeyEvent.bKeyDown) {
+      continue; /* ignore key-up, mouse, focus, menu events */
+    }
+
+    bool ctrl_pressed = (record.Event.KeyEvent.dwControlKeyState
+                         & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED))
+                        != 0;
+    event = console::MapConsoleKeyEventToSelectionEvent(
+        record.Event.KeyEvent.wVirtualKeyCode,
+        record.Event.KeyEvent.uChar.UnicodeChar, ctrl_pressed);
+    if (event.empty()) { event = "key:noop"; }
+    break;
+  }
+
+  PmStrcpy(socket->msg, event.c_str());
+  socket->message_length = event.size();
   return true;
 #endif
 }
@@ -366,6 +471,9 @@ static bool ReadSelectionInput(FILE* input,
  */
 static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
 {
+  int rows = 0;
+  int cols = 0;
+
 #if !defined(HAVE_WIN32)
   static bool sigwinch_installed = false;
   if (!sigwinch_installed) {
@@ -374,10 +482,24 @@ static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
   }
 
   struct winsize ws{};
-  if (ioctl(fileno(input), TIOCGWINSZ, &ws) != 0 || ws.ws_row == 0) { return; }
+  if (ioctl(fileno(input), TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0) {
+    rows = ws.ws_row;
+    cols = ws.ws_col;
+  }
+#else
+  (void)input;
+  HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  CONSOLE_SCREEN_BUFFER_INFO info{};
+  if (output_handle != INVALID_HANDLE_VALUE
+      && GetConsoleScreenBufferInfo(output_handle, &info)) {
+    rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+    cols = info.srWindow.Right - info.srWindow.Left + 1;
+  }
+#endif
+  if (rows <= 0 || cols <= 0) { return; }
 
-  std::string cmd = ".terminalsize " + std::to_string(ws.ws_row) + " "
-                    + std::to_string(ws.ws_col);
+  std::string cmd
+      = ".terminalsize " + std::to_string(rows) + " " + std::to_string(cols);
   PmStrcpy(UA_sock->msg, cmd.c_str());
   UA_sock->message_length = static_cast<int32_t>(cmd.size());
   if (!UA_sock->send()) { return; }
@@ -392,10 +514,6 @@ static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
     if (status == BNET_SIGNAL) { continue; }
     // Discard any unexpected output instead of showing it to the user.
   }
-#else
-  (void)input;
-  (void)UA_sock;
-#endif
 }
 
 static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
@@ -1053,6 +1171,9 @@ int main(int argc, char* argv[])
   InitStackDump();
   MyNameIs(argc, argv, "bconsole");
   InitMsg(NULL, NULL);
+#if defined(HAVE_WIN32)
+  EnableWindowsAnsiConsoleIfPossible();
+#endif
   working_directory = "/tmp";
   g_args = GetPoolMemory(PM_FNAME);
 
