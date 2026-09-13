@@ -248,13 +248,21 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
 
 std::string InteractiveSelection::Format(const std::string& header,
                                          const std::string& prompt,
-                                         size_t max_visible_options) const
+                                         size_t max_visible_options,
+                                         bool supports_cursor_selection) const
 {
   std::string output = header;
   output.append(prompt);
-  output.append(
-      " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
-      "filter):\n");
+  if (supports_cursor_selection) {
+    output.append(
+        " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
+        "filter):\n");
+  } else {
+    // The client cannot move the highlight with the cursor keys (see the
+    // supports_cursor_selection doc comment in ua_select.h), so don't
+    // advertise keys that will not do anything.
+    output.append(" (Enter, type a number or text to filter):\n");
+  }
   if (!filter_.empty()) {
     output.append("Filter: ");
     output.append(filter_);
@@ -285,13 +293,20 @@ std::string InteractiveSelection::Format(const std::string& header,
      * readers and braille displays attached to a terminal generally read
      * the character stream only; they do not surface ANSI attribute
      * codes, so without a textual marker a blind user has no way to tell
-     * which item is currently selected. */
-    output.append(i == selected_index_ ? "> " : "  ");
-    if (i == selected_index_) { output.append("\033[7m"); }
+     * which item is currently selected. Omit both entirely when the
+     * client can't move the highlight (supports_cursor_selection ==
+     * false): a highlight that is permanently stuck on the first entry
+     * would just be confusing, not helpful. */
+    if (supports_cursor_selection) {
+      output.append(i == selected_index_ ? "> " : "  ");
+      if (i == selected_index_) { output.append("\033[7m"); }
+    }
     output.append(std::to_string(i + 1));
     output.append(": ");
     output.append(options_[i]);
-    if (i == selected_index_) { output.append("\033[0m"); }
+    if (supports_cursor_selection && i == selected_index_) {
+      output.append("\033[0m");
+    }
   };
 
   if (columns <= 1) {
@@ -1605,10 +1620,19 @@ int DoPrompt(UaContext* ua,
     InteractiveSelection selection(ua->prompts);
     for (;;) {
       selection.SetColumnLayout(max_visible_options, compute_num_columns());
+      // A client only ever reports a terminal size (see
+      // DotTerminalsizeCmd()/console.cc's SendTerminalSize()) when it also
+      // implements the raw-mode cursor-key reader in
+      // ReadSelectionInput() -- both are gated behind the same
+      // "#if !defined(HAVE_WIN32)" on the bconsole side. So the absence of
+      // a known terminal size is used here as a proxy for "this client
+      // cannot move the selection highlight with the cursor keys".
+      bool supports_cursor_selection = ua->terminal_height > 0;
       user->signal(BNET_START_SELECT);
-      ua->SendMsg("%s",
-                  selection.Format(ua->prompt_header, msg, max_visible_options)
-                      .c_str());
+      ua->SendMsg("%s", selection
+                            .Format(ua->prompt_header, msg, max_visible_options,
+                                    supports_cursor_selection)
+                            .c_str());
       user->signal(BNET_END_SELECT);
       user->signal(BNET_SELECT_INPUT);
 
