@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,5 +31,18 @@ void EnableTeeOut();
 void DisableTeeOut();
 void SetTeeFile(FILE* f);
 void CloseTeeFile();
+
+#if defined(HAVE_WIN32)
+/**
+ * Controls whether ConsoleOutput() strips ANSI/VT100 escape sequences
+ * before writing to the console (the default, since most Windows consoles
+ * do not interpret them and would otherwise show raw control characters).
+ * Call with enable=true once the console has been confirmed to support
+ * ENABLE_VIRTUAL_TERMINAL_PROCESSING, so escape sequences (e.g. the
+ * reverse-video highlighting used by the interactive restore selection
+ * menu) are passed through and rendered instead of stripped.
+ */
+void ConsoleSetAnsiPassthrough(bool enable);
+#endif
 
 #endif  // BAREOS_CONSOLE_CONSOLE_OUTPUT_H_

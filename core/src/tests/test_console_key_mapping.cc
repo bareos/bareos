@@ -1,0 +1,92 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
+#include "console/console_key_mapping.h"
+
+#include "gtest/gtest.h"
+
+using console::MapConsoleKeyEventToSelectionEvent;
+
+// Virtual-key-code constants mirrored from winuser.h (see the comment in
+// console_key_mapping.cc for why this file avoids depending on
+// <windows.h>).
+namespace {
+constexpr int kVkBack = 0x08;
+constexpr int kVkReturn = 0x0D;
+constexpr int kVkEscape = 0x1B;
+constexpr int kVkLeft = 0x25;
+constexpr int kVkUp = 0x26;
+constexpr int kVkRight = 0x27;
+constexpr int kVkDown = 0x28;
+constexpr int kVkNone = 0; /* no virtual key, e.g. a plain character event */
+}  // namespace
+
+TEST(ConsoleKeyMapping, ArrowKeysMapToNavigation)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkUp, 0, false), "key:up");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkDown, 0, false), "key:down");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkLeft, 0, false), "key:left");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkRight, 0, false),
+            "key:right");
+}
+
+TEST(ConsoleKeyMapping, EnterBackspaceEscape)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkReturn, L'\r', false),
+            "key:enter");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkBack, L'\b', false),
+            "key:backspace");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkEscape, 0x1B, false),
+            "key:cancel");
+}
+
+TEST(ConsoleKeyMapping, CtrlCCancelsEitherWay)
+{
+  // Some consoles report Ctrl-C as a virtual key + ctrl modifier ...
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'c', true),
+            "key:cancel");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'C', true),
+            "key:cancel");
+  // ... others as a plain 0x03 (ETX) character.
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 3, false),
+            "key:cancel");
+}
+
+TEST(ConsoleKeyMapping, SpaceAndPrintableText)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L' ', false),
+            "key:space");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'a', false),
+            "key:text:a");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'9', false),
+            "key:text:9");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'~', false),
+            "key:text:~");
+}
+
+TEST(ConsoleKeyMapping, UnmappedKeyReturnsEmpty)
+{
+  // Function keys, modifier-only presses, non-printable control
+  // characters, etc. don't map to any selection-menu event; the caller is
+  // expected to keep waiting for the next key in that case.
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(0x70 /* VK_F1 */, 0, false), "");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 0x01, false), "");
+}
