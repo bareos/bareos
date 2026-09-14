@@ -45,7 +45,7 @@
               flat round dense
               icon="edit"
               size="xs"
-              :title="t('Rename dashboard')"
+              :title="t('Rename dashboard')" :aria-label="t('Rename dashboard')"
               @click.stop="startRename(db)"
             />
             <q-btn
@@ -53,7 +53,7 @@
               icon="delete_outline"
               color="negative"
               size="xs"
-              :title="t('Delete dashboard')"
+              :title="t('Delete dashboard')" :aria-label="t('Delete dashboard')"
               @click.stop="deleteDashboard(db)"
             />
           </div>
@@ -64,7 +64,7 @@
           flat dense
           icon="add"
           size="xs"
-          :title="t('Add dashboard')"
+          :title="t('Add dashboard')" :aria-label="t('Add dashboard')"
           @click="addDashboard"
         />
 
@@ -72,12 +72,12 @@
           <q-btn
             flat dense icon="file_download" size="xs"
             class="q-ml-xs"
-            :title="t('Backup dashboards and settings')"
+            :title="t('Backup dashboards and settings')" :aria-label="t('Backup dashboards and settings')"
             @click="backupDashboards"
           />
           <q-btn
             flat dense icon="file_upload" size="xs"
-            :title="t('Restore dashboards and settings')"
+            :title="t('Restore dashboards and settings')" :aria-label="t('Restore dashboards and settings')"
             @click="triggerRestoreFilePicker"
           />
           <q-separator vertical inset class="q-mx-xs" />
@@ -86,7 +86,7 @@
             icon="delete_forever"
             color="negative"
             size="xs"
-            :title="t('Reset all dashboards')"
+            :title="t('Reset all dashboards')" :aria-label="t('Reset all dashboards')"
             @click="resetAllDashboards"
           />
         </template>
@@ -99,16 +99,16 @@
           <span class="panel-refresh-countdown__value">{{ countdown }}s</span>
         </span>
         <q-btn flat round dense icon="refresh" size="xs" :loading="gridRef?.loading"
-               :title="t('Refresh')" @click="manualRefresh" />
+               :title="t('Refresh')" :aria-label="t('Refresh')" @click="manualRefresh" />
 
         <template v-if="editMode">
           <q-btn flat round dense icon="add_circle_outline" color="primary" size="xs"
-                 :title="t('Add widget')" @click="showPicker = true" />
+                 :title="t('Add widget')" :aria-label="t('Add widget')" @click="showPicker = true" />
           <q-btn color="primary" dense no-caps size="xs" :label="t('Done')"
                  @click="editMode = false" />
         </template>
         <q-btn v-else flat round dense icon="edit" size="xs"
-               :title="t('Edit layout')" @click="editMode = true" />
+               :title="t('Edit layout')" :aria-label="t('Edit layout')" @click="editMode = true" />
       </div>
     </div>
 
@@ -156,7 +156,7 @@
         <q-card-section class="panel-header row items-center">
           <span>{{ t('Rename Dashboard') }}</span>
           <q-space />
-          <q-btn flat round dense icon="close" color="white" @click="showRenameDialog = false" />
+          <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" @click="showRenameDialog = false" />
         </q-card-section>
         <q-card-section>
           <q-input
@@ -188,7 +188,7 @@
         <q-card-section class="panel-header row items-center">
           <span>{{ t('Reset All Dashboards') }}</span>
           <q-space />
-          <q-btn flat round dense icon="close" color="white" @click="showResetDialog = false" />
+          <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" @click="showResetDialog = false" />
         </q-card-section>
         <q-card-section>
           {{ t('Delete all dashboards and widgets and restore the default Operations and System Overview dashboards? This cannot be undone.') }}

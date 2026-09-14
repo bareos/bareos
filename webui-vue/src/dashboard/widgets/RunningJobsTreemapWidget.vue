@@ -29,6 +29,9 @@
       :title="includeWaiting
         ? t('Showing active and queued jobs (click to show active only)')
         : t('Showing active jobs only (click to include queued jobs)')"
+      :aria-label="includeWaiting
+        ? t('Showing active and queued jobs (click to show active only)')
+        : t('Showing active jobs only (click to include queued jobs)')"
       @click="includeWaiting = !includeWaiting"
     />
     <div v-if="!displayJobs.length" class="running-jobs-treemap-empty text-grey text-caption text-center">

@@ -45,7 +45,7 @@
           icon="settings"
           color="white"
           size="sm"
-          :title="t('Configure widget')"
+          :title="t('Configure widget')" :aria-label="t('Configure widget')"
           @click.stop="$emit('configure')"
         />
         <q-btn
@@ -53,7 +53,7 @@
           icon="close"
           color="white"
           size="sm"
-          :title="t('Remove widget')"
+          :title="t('Remove widget')" :aria-label="t('Remove widget')"
           @click.stop="$emit('remove')"
         />
       </template>

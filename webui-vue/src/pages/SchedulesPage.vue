@@ -52,6 +52,8 @@
                         dense
                         size="sm"
                         :icon="props.row.collapsed ? 'chevron_right' : 'expand_more'"
+                        :title="props.row.collapsed ? t('Expand group') : t('Collapse group')"
+                        :aria-label="props.row.collapsed ? t('Expand group') : t('Collapse group')"
                         @click.stop="toggleGroupCollapse(props.row.scheduleKey)"
                       />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
@@ -134,11 +136,11 @@
                           toggle-text-color="white"
                           class="q-mr-sm sched-view-toggle" />
             <div class="row items-center no-wrap sched-period-nav">
-              <q-btn flat round dense icon="chevron_left" color="white" @click="prevPeriod" />
+              <q-btn flat round dense icon="chevron_left" color="white" :title="t('Previous period')" :aria-label="t('Previous period')" @click="prevPeriod" />
               <span class="text-white sched-period-label">{{ periodLabel }}</span>
-              <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
+              <q-btn flat round dense icon="chevron_right" color="white" :title="t('Next period')" :aria-label="t('Next period')" @click="nextPeriod" />
             </div>
-            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" @click="goToday" />
+            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" :aria-label="t('Go to today')" @click="goToday" />
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
             <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
@@ -251,7 +253,7 @@
                      style="width:200px" clearable class="q-mr-sm">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
-            <q-btn flat round dense icon="refresh" color="white" @click="refreshSchedules(true)" />
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refreshSchedules(true)" />
           </q-card-section>
           <q-card-section class="q-py-sm schedules-list-stats">
             <div class="row items-center q-gutter-sm">
