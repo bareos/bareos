@@ -1,15 +1,15 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading job…')" />
+    <Breadcrumbs :items="breadcrumbItems" />
     <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
         <div class="column">
-          <Breadcrumbs :items="breadcrumbItems" />
           <div class="row items-center q-gutter-sm">
-            <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
+            <div class="text-h5">Job #{{ job.id }} — {{ job.name }}</div>
             <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
           </div>
         </div>
