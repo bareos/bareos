@@ -298,6 +298,9 @@
                   :icon="versionCheckEnabled ? 'history' : 'history_toggle_off'"
                   color="white"
                   :style="versionCheckEnabled ? '' : 'opacity:0.45'"
+                  :aria-label="versionCheckEnabled
+                    ? t('Version check enabled – click to disable (improves performance)')
+                    : t('Version check disabled – click to enable')"
                   @click="toggleVersionCheck"
                 >
                   <q-tooltip>{{
@@ -380,12 +383,15 @@
                         :color="hasVersionOverride(props.row.fileId) ? 'orange' : 'grey-5'"
                         icon="history"
                         class="q-ml-xs"
+                        :aria-label="hasVersionOverride(props.row.fileId)
+                          ? t('Specific version selected – click to change')
+                          : t('Browse file versions – {count} available', { count: versionCount(props.row.fileId) })"
                         @click.stop="openVersions(props.row)"
                       >
                         <q-tooltip>{{
                           hasVersionOverride(props.row.fileId)
-                            ? 'Specific version selected – click to change'
-                            : `Browse file versions – ${versionCount(props.row.fileId)} available`
+                            ? t('Specific version selected – click to change')
+                            : t('Browse file versions – {count} available', { count: versionCount(props.row.fileId) })
                         }}</q-tooltip>
                       </q-btn>
                     </template>
@@ -503,7 +509,7 @@
               dense
               icon="delete_sweep"
               :disable="commandRunning"
-              :title="t('Clear')"
+              :title="t('Clear')" :aria-label="t('Clear')"
               @click="clearCommandLog"
             />
           </q-card-section>
@@ -569,7 +575,7 @@
       <q-card-section class="panel-header row items-center">
         <span class="versions-dialog__title">{{ t('Versions of') }} {{ versionsDialog.fname }}</span>
         <q-space />
-        <q-btn flat round dense icon="close" color="white" v-close-popup />
+        <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" v-close-popup />
       </q-card-section>
       <q-card-section>
         <div v-if="versionsDialog.error" class="text-negative">{{ versionsDialog.error }}</div>

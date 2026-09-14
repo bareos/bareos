@@ -48,10 +48,7 @@
       </template>
       <template #body-cell-director="props">
         <q-td :props="props">
-          <div class="row items-center q-gutter-sm no-wrap">
-            <span :style="directorSwatchStyle(props.row.director || props.value || '', directorOptions)" />
-            <span>{{ props.row.director || props.value || '—' }}</span>
-          </div>
+          <DirectorLabel :director="props.row.director || props.value || ''" />
         </q-td>
       </template>
       <template #body-cell-status="props">
@@ -152,7 +149,6 @@ import { formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../../mock
 import { buildJobDetailsQuery, withJobsStatusFilterQuery, resolveJobLogFocus } from '../../utils/jobs.js'
 import { formatNumber } from '../../utils/locales.js'
 import { buildClientDetailsQuery } from '../../utils/clients.js'
-import { resolveDirectorColors } from '../../utils/directorColors.js'
 import { useSettingsStore } from '../../stores/settings.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
@@ -162,8 +158,10 @@ import {
   MAX_JOBS_FETCH_LIMIT,
 } from '../../composables/jobsAggregate.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
+import { useDashboardDirectorScope } from '../useDashboardDirectorScope.js'
 import JobStatusBadge from '../../components/JobStatusBadge.vue'
 import JobLevelBadge from '../../components/JobLevelBadge.vue'
+import DirectorLabel from '../../components/DirectorLabel.vue'
 
 const { t } = useI18n()
 const $q = useQuasar()
@@ -178,7 +176,7 @@ const recentJobs = ref([])
 const totalJobs = ref(0)
 const truncated = ref(false)
 const error = ref('')
-const directorOptions = computed(() => ctx.directorOptions.value)
+const { showDirectorColumn } = useDashboardDirectorScope(ctx)
 const recentJobsRowsPerPageOptions = [10, 25, 50]
 const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 
@@ -192,7 +190,6 @@ const pagination = usePersistedTablePagination('dashboard.recentJobs', {
   allowedRowsPerPage: recentJobsRowsPerPageOptions,
 })
 
-const showDirectorColumn = computed(() => directorOptions.value.length > 1)
 
 const recentCols = computed(() => {
   const columns = [
@@ -323,18 +320,6 @@ function isWaitingStatus(status) {
 }
 function isRunningJob(row) { return row?.status === 'R' || row?.runtimeStatus != null }
 
-function directorSwatchStyle(name, options) {
-  const colors = resolveDirectorColors(name, options.map(o => o.value))
-  return {
-    display: 'inline-block',
-    width: '10px',
-    height: '10px',
-    borderRadius: '999px',
-    backgroundColor: colors.background,
-    border: `1px solid ${colors.border}`,
-    flexShrink: 0,
-  }
-}
 
 async function openJobDetails(row, logFocus) {
   try {

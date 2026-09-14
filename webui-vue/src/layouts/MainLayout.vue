@@ -108,6 +108,7 @@
 
         <!-- Hamburger (mobile / tablet) -->
         <q-btn v-if="$q.screen.lt.md" flat round dense icon="menu" color="white"
+               :title="t('Open navigation menu')" :aria-label="t('Open navigation menu')"
                class="q-mr-sm" @click="drawerOpen = !drawerOpen" />
 
         <!-- Logo -->
@@ -140,6 +141,7 @@
           dense
           :icon="directorUpdateAlert.icon"
           :color="directorUpdateAlert.color"
+          :aria-label="directorUpdateAlert.message"
           :href="RELEASE_INFO_PAGE_URL"
           target="_blank"
           rel="noopener noreferrer"

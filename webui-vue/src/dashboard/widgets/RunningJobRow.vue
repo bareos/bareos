@@ -66,7 +66,7 @@
       <q-btn
         flat round dense
         icon="cancel" color="negative" size="sm"
-        :title="t('Cancel Job')"
+        :title="t('Cancel Job')" :aria-label="t('Cancel Job')"
         @click="$emit('cancel', job)"
       />
     </q-item-section>
