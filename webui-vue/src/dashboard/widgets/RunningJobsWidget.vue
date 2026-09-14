@@ -49,6 +49,7 @@
             flat round dense size="sm"
             :icon="row.toggleIcon"
             :title="row.toggleTitle"
+            :aria-label="row.toggleTitle"
             @click="toggleQueuedViewMode"
           />
         </q-item-section>
@@ -83,7 +84,7 @@
             flat round dense size="sm"
             icon="cancel"
             color="negative"
-            :title="t('Cancel all in group')"
+            :title="t('Cancel all in group')" :aria-label="t('Cancel all in group')"
             @click.stop="confirmCancelGroup(row.group)"
           />
         </q-item-section>
@@ -127,6 +128,7 @@ import {
 import { useDirectorStore } from '../../stores/director.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
+import { useDashboardDirectorScope } from '../useDashboardDirectorScope.js'
 import RunningJobRow from './RunningJobRow.vue'
 
 const { t } = useI18n()
@@ -136,8 +138,7 @@ const director = useDirectorStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 const runningJobs = computed(() => ctx.aggregate.value.runningJobs)
-const directorOptions = computed(() => ctx.directorOptions.value)
-const showDirectorColumn = computed(() => directorOptions.value.length > 1)
+const { showDirectorColumn } = useDashboardDirectorScope(ctx)
 
 const queuedViewModeOverride = ref(null)
 const expandedQueuedGroupKeys = ref([])

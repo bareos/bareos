@@ -33,7 +33,7 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Configure Widget') }}</span>
         <q-space />
-        <q-btn flat round dense icon="close" color="white" @click="cancel" />
+        <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" @click="cancel" />
       </q-card-section>
 
       <q-card-section class="q-pt-md">

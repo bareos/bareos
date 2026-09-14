@@ -43,7 +43,7 @@
             >
               <template #prepend><q-icon name="search" /></template>
             </q-input>
-            <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refresh(true)" />
           </q-card-section>
           <q-card-section class="q-py-sm clients-list-stats" data-testid="clients-quick-filter">
             <div class="row items-center q-gutter-sm">
@@ -243,7 +243,7 @@
                     dense
                     size="sm"
                     dropdown-icon="more_vert"
-                    :title="t('Actions')"
+                    :title="t('Actions')" :aria-label="t('Actions')"
                     @click.stop
                   >
                     <q-list dense style="min-width: 190px">
@@ -288,7 +288,7 @@
             dense
             icon="close"
             color="white"
-            :title="t('Close')"
+            :title="t('Close')" :aria-label="t('Close')"
             data-testid="client-status-close"
             v-close-popup
           />

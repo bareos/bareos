@@ -15,10 +15,10 @@
           style="font-size:0.72rem"
         />
         <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatusLabel" class="q-mr-sm" style="font-size:0.72rem" />
-        <q-btn flat round dense icon="refresh" color="white" :title="t('Reconnect')" @click="reconnectSelectedSession" />
-        <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" :title="t('Open in new window')" @click="popOut" />
-        <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" :title="t('Close window')"       @click="closePopup" />
-        <q-btn flat round dense icon="delete_sweep" color="white" :title="t('Clear')" @click="clearOutput" />
+        <q-btn flat round dense icon="refresh" color="white" :title="t('Reconnect')" :aria-label="t('Reconnect')" @click="reconnectSelectedSession" />
+        <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" :title="t('Open in new window')" :aria-label="t('Open in new window')" @click="popOut" />
+        <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" :title="t('Close window')" :aria-label="t('Close window')"       @click="closePopup" />
+        <q-btn flat round dense icon="delete_sweep" color="white" :title="t('Clear')" :aria-label="t('Clear')" @click="clearOutput" />
       </q-card-section>
 
       <q-tabs
