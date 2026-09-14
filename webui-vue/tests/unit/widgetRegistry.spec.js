@@ -76,6 +76,7 @@ describe('widgetRegistry', () => {
     expect(types.has('jobs-past-24h')).toBe(true)
     expect(types.has('recent-jobs-table')).toBe(true)
     expect(types.has('running-jobs')).toBe(true)
+    expect(types.has('upcoming-schedules')).toBe(true)
     expect(types.has('pool-bytes-chart')).toBe(true)
     expect(types.has('pool-volumes-chart')).toBe(true)
     expect(types.has('catalog-status')).toBe(true)
