@@ -291,6 +291,7 @@ test('loads the restore workflow selections', async ({ page }) => {
   await page.getByTestId('restore-timeline-point').last().click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
   await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
 })
