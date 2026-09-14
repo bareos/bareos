@@ -263,7 +263,7 @@ const director   = useDirectorStore()
 const settings   = useSettingsStore()
 const { t } = useI18n()
 const jobsPagination = usePersistedTablePagination('volume-details.jobs', {
-  rowsPerPage: 15,
+  rowsPerPage: 10,
   sortBy: 'jobid',
   descending: true,
 })

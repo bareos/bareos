@@ -372,7 +372,7 @@ const router = useRouter()
 const $q = useQuasar()
 const { t } = useI18n()
 const clientsPagination = usePersistedTablePagination('clients.list', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
   sortBy: 'name',
   descending: false,
 }, {
