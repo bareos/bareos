@@ -708,7 +708,7 @@ const settings  = useSettingsStore()
 const { t } = useI18n()
 const tr = (msgid, values) => translate(settings.locale, msgid, values)
 const statusPagination = usePersistedTablePagination('director.status', {
-  rowsPerPage: 20,
+  rowsPerPage: 10,
 })
 const scheduledJobsPagination = usePersistedTablePagination('director.scheduledJobs', {
   rowsPerPage: 10,

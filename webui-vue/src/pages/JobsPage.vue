@@ -763,14 +763,14 @@ const jobsRowsPerPageOptions = [10, 25, 50]
 const jobDefsRowsPerPageOptions = [10, 15, 25, 50]
 const pagination = usePersistedTablePagination('jobs.list', {
   page: 1,
-  rowsPerPage: 25,
+  rowsPerPage: 20,
   sortBy: 'id',
   descending: true,
   rowsNumber: 0,
 }, { allowedRowsPerPage: jobsRowsPerPageOptions })
 const jobDefsPagination = usePersistedTablePagination('jobs.defs', {
   page: 1,
-  rowsPerPage: 15,
+  rowsPerPage: 20,
   sortBy: 'name',
   descending: false,
 }, {
