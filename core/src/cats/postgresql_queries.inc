@@ -535,10 +535,7 @@ R"SQL(CREATE TABLE %s AS
    WHERE FileIndex > 0)
 )SQL",
 
-/* 0048_bvfs_list_files
- * Keep FileIndex filtering outside DISTINCT ON so an older file is not
- * exposed when the latest entry is a directory.
- */
+/* 0048_bvfs_list_files */
 R"SQL(SELECT TYPE,
        PathId,
        Name,
