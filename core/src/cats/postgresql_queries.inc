@@ -506,7 +506,7 @@ WHERE Job.JobId IN (%s)
   AND Path.Path = '%s'
   AND Client.Name = '%s'
 ORDER BY File.Name,
-         Job.StartTime DESC,
+         Job.JobTDate DESC,
          Job.JobId DESC
 )SQL",
 
