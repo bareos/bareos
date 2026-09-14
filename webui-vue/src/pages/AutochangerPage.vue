@@ -101,6 +101,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !storageSlots.length)"
               :rows="storageSlots"
               :columns="slotCols"
               row-key="slotnr"
@@ -215,6 +216,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="slotCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </div>
@@ -229,6 +231,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !drives.length)"
               :rows="drives"
               :columns="driveCols"
               row-key="slotnr"
@@ -300,6 +303,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="driveCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
@@ -314,6 +318,7 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !importSlots.length)"
               :rows="importSlots"
               :columns="ieSlotCols"
               row-key="slotnr"
@@ -364,6 +369,7 @@
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="ieSlotCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
@@ -570,6 +576,7 @@ import {
 import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const { embedded } = defineProps({
   embedded: {
