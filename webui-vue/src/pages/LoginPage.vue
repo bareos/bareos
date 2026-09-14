@@ -151,6 +151,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import {
   directorListLoadErrorMessage,
+  planMultiDirectorLoginOutcome,
   shouldAutoLoginAllDirectors,
 } from '../utils/directorLogin.js'
 import { toUserVisibleDirectorError } from '../utils/directorErrors.js'
@@ -377,7 +378,10 @@ function finishLoginRedirect() {
   router.push(returnTo.value || { name: 'dashboard' })
 }
 
-async function finalizeSuccessfulLogin(targetDirector = primaryDirector.value || auth.authenticatedDirectors[0]) {
+async function finalizeSuccessfulLogin(
+  targetDirector = primaryDirector.value || auth.authenticatedDirectors[0],
+  { redirect = true } = {}
+) {
   if (!targetDirector) {
     errorMsg.value = t('Authentication failed')
     loading.value = false
@@ -392,9 +396,11 @@ async function finalizeSuccessfulLogin(targetDirector = primaryDirector.value ||
     return false
   }
 
-  remainingDirectorFailures.value = []
   loading.value = false
-  finishLoginRedirect()
+  if (redirect) {
+    remainingDirectorFailures.value = []
+    finishLoginRedirect()
+  }
   return true
 }
 
@@ -442,9 +448,14 @@ async function doMultiDirectorLogin() {
     successfulDirectors,
     failedAttempts,
   } = await attemptDirectorLogins(targetDirectors)
-  const finalDirector = successfulDirectors.at(-1) ?? ''
+  const {
+    finalDirector,
+    remainingDirectorFailures: nextRemainingDirectorFailures,
+    allFailed,
+    shouldRedirect,
+  } = planMultiDirectorLoginOutcome({ successfulDirectors, failedAttempts })
 
-  if (successfulDirectors.length === 0) {
+  if (allFailed) {
     errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
     password.value = ''
     loading.value = false
@@ -458,8 +469,8 @@ async function doMultiDirectorLogin() {
   }
 
   primaryDirector.value = finalDirector
-  remainingDirectorFailures.value = failedAttempts
-  await finalizeSuccessfulLogin(finalDirector)
+  remainingDirectorFailures.value = nextRemainingDirectorFailures
+  await finalizeSuccessfulLogin(finalDirector, { redirect: shouldRedirect })
 }
 
 async function doLogin() {
