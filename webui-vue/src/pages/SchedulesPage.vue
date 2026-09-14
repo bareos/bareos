@@ -43,7 +43,12 @@
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
                 <q-tr v-if="props.row._isGroupHeader" class="sched-group-header cursor-pointer"
-                      @click="toggleGroupCollapse(props.row.scheduleKey)">
+                      tabindex="0"
+                      role="button"
+                      :aria-label="props.row.collapsed ? t('Expand group') : t('Collapse group')"
+                      @click="toggleGroupCollapse(props.row.scheduleKey)"
+                      @keydown.enter.prevent="toggleGroupCollapse(props.row.scheduleKey)"
+                      @keydown.space.prevent="toggleGroupCollapse(props.row.scheduleKey)">
                   <q-td key="job" class="q-pl-sm">
                     <div class="row items-center no-wrap q-gutter-xs">
                       <q-btn
@@ -1103,6 +1108,11 @@ onMounted(() => {
   border-top: 2px solid rgba(0, 0, 0, 0.15) !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
+}
+
+.sched-group-header:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: -2px;
 }
 
 .sched-view-toggle {
