@@ -108,18 +108,6 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
-            <div v-if="clientsListScopeDirector" class="q-px-md q-pt-sm">
-              <q-chip
-                removable
-                color="blue-7"
-                text-color="white"
-                icon="dns"
-                class="q-mb-xs"
-                @remove="router.replace({ path: '/clients', query: withClientsScopeDirectorQuery(route.query, '') })"
-              >
-                {{ t('Director') }}: {{ clientsListScopeDirector }}
-              </q-chip>
-            </div>
             <q-table
               v-if="!(loading && !clients.length)"
               :rows="clients"
