@@ -113,12 +113,12 @@
                   {{ t('Issue {current} of {total}', { current: currentIssueDisplay, total: issueLineIndexes.length }) }}
                 </span>
                 <q-btn flat round dense icon="arrow_upward" size="sm" color="white"
-                       :title="t('Previous issue')" @click="jumpToIssue(-1)" />
+                       :title="t('Previous issue')" :aria-label="t('Previous issue')" @click="jumpToIssue(-1)" />
                 <q-btn flat round dense icon="arrow_downward" size="sm" color="white"
-                       :title="t('Next issue')" @click="jumpToIssue(1)" />
+                       :title="t('Next issue')" :aria-label="t('Next issue')" @click="jumpToIssue(1)" />
               </template>
               <q-btn flat round dense icon="content_copy" size="sm" color="white"
-                     :title="t('Copy log')" @click="copyLog" />
+                     :title="t('Copy log')" :aria-label="t('Copy log')" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
               <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">

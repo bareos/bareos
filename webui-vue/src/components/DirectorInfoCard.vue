@@ -32,6 +32,8 @@
         dense
         icon="refresh"
         color="white"
+        :title="t('Refresh')"
+        :aria-label="t('Refresh')"
         :loading="statusLoading"
         @click="emit('refresh')"
       />

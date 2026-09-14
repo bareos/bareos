@@ -6,7 +6,7 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Filesets') }}</span>
         <q-space />
-        <q-btn flat round dense icon="refresh" color="white" @click="refresh(true)" />
+        <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refresh(true)" />
       </q-card-section>
       <q-card-section class="q-pa-none">
         <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>

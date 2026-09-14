@@ -112,7 +112,7 @@
                      :label="$q.screen.gt.sm ? t('Rerun by Job ID') : undefined"
                      :title="t('Rerun by Job ID')"
                      @click="openRerunJobIdDialog" />
-              <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
+              <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="manualRefresh" />
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -251,6 +251,7 @@
                       flat round dense size="sm"
                       icon="filter_alt"
                       :title="`${t('Filter by status')}: ${jobStatusLabel(props.row.status)}`"
+                      :aria-label="`${t('Filter by status')}: ${jobStatusLabel(props.row.status)}`"
                       @click="applyStatusFilter(props.row.status)"
                     />
                   </span>
@@ -274,7 +275,7 @@
                       dense
                       size="sm"
                       icon="info"
-                      :title="t('Client details')"
+                      :title="t('Client details')" :aria-label="t('Client details')"
                       @click="openClientDetails(props.row)"
                     />
                   </span>
@@ -380,17 +381,17 @@
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
                    <q-btn v-if="canRerunJob(props.row)"
-                         flat round dense size="sm" icon="restart_alt" :title="t('Rerun')"
+                         flat round dense size="sm" icon="restart_alt" :title="t('Rerun')" :aria-label="t('Rerun')"
                          @click="confirmRerun(props.row)" class="q-mr-xs" />
                   <q-btn v-if="isRunning(props.row.status)"
-                         flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')"
+                         flat round dense size="sm" icon="cancel" color="negative" :title="t('Cancel')" :aria-label="t('Cancel')"
                          @click="confirmCancel(props.row)" class="q-mr-xs" />
                   <q-btn v-if="canRestoreFromJob(props.row)"
                          flat round dense size="sm" icon="restore" color="teal"
-                         :title="t('Restore this job')"
+                         :title="t('Restore this job')" :aria-label="t('Restore this job')"
                          @click="openRestoreDetails(props.row)"
                          class="q-mr-xs" />
-                   <q-btn flat round dense size="sm" icon="info" :title="t('Details')"
+                   <q-btn flat round dense size="sm" icon="info" :title="t('Details')" :aria-label="t('Details')"
                          @click="openJobDetails(props.row)" />
                 </q-td>
               </template>
@@ -438,7 +439,7 @@
             >
               <template #prepend><q-icon name="search" /></template>
             </q-input>
-            <q-btn flat round dense icon="refresh" color="white" @click="loadJobDefs" />
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="loadJobDefs" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -519,7 +520,7 @@
         <q-card-section class="panel-header row items-center">
           <span>{{ t('Rerun by Job ID') }}</span>
           <q-space />
-          <q-btn v-close-popup flat round dense icon="close" color="white" />
+          <q-btn v-close-popup flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" />
         </q-card-section>
         <q-card-section>
           <q-form @submit.prevent="submitRerun" class="q-gutter-md">
@@ -550,7 +551,7 @@
         <q-card-section class="panel-header row items-center">
           <span>{{ t('Customize & Start') }}</span>
           <q-space />
-          <q-btn v-close-popup flat round dense icon="close" color="white" />
+          <q-btn v-close-popup flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" />
         </q-card-section>
 
         <q-card-section v-if="isCommonJobs" class="q-pb-none">

@@ -118,11 +118,11 @@
                     dense
                     size="sm"
                     icon="view_carousel"
-                    :title="t('Open Autochanger')"
+                    :title="t('Open Autochanger')" :aria-label="t('Open Autochanger')"
                     @click="openAutochanger(props.row)"
                   />
                   <q-btn flat round dense size="sm" icon="monitor_heart"
-                         :title="t('Storage Status')"
+                         :title="t('Storage Status')" :aria-label="t('Storage Status')"
                           @click="showStorageStatus(props.row)" />
                 </q-td>
               </template>
@@ -411,10 +411,10 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white"
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')"
                  @click="reloadStorageStatus(storageStatusDlg)"
                  :loading="storageStatusDlg.loading" />
-            <q-btn flat round dense icon="close" color="white" v-close-popup class="q-ml-xs" />
+            <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" v-close-popup class="q-ml-xs" />
           </q-card-section>
         <q-card-section>
           <q-inner-loading :showing="storageStatusDlg.loading" />

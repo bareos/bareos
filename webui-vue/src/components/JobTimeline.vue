@@ -13,7 +13,7 @@
         toggle-text-color="white"
         class="q-mr-sm job-timeline-range-toggle"
       />
-      <q-btn flat round dense icon="refresh" color="white" @click="tlRefresh" />
+      <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="tlRefresh" />
     </q-card-section>
 
     <!-- Status legend -->

@@ -1,5 +1,5 @@
 <template>
-  <q-btn flat round dense icon="view_column" :title="t('Choose columns')">
+  <q-btn flat round dense icon="view_column" :title="t('Choose columns')" :aria-label="t('Choose columns')">
     <q-menu anchor="bottom right" self="top right">
       <q-list dense style="min-width:200px">
         <q-item-label header>{{ t('Show columns') }}</q-item-label>
