@@ -344,7 +344,7 @@
             <q-space />
             <q-select v-model="messagesLimit" :options="[50,100,250,500]" dense outlined dark
                       style="width:80px" class="q-mr-sm" />
-            <q-btn flat round dense icon="refresh" color="white" @click="refreshMessages" :loading="messagesLoading" />
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refreshMessages" :loading="messagesLoading" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner
@@ -441,7 +441,7 @@
               <q-card-section class="panel-header row items-center">
                 <span>{{ t('Jobs With No Data') }}</span>
                 <q-space />
-                <q-btn flat round dense icon="refresh" color="white"
+                <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')"
                        @click="loadEmptyJobs" :loading="emptyJobsLoading" />
               </q-card-section>
               <q-card-section class="q-pa-none">
@@ -551,7 +551,7 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Subscription') }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white"
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')"
                    @click="refreshSubscription" :loading="subscriptionLoading" />
           </q-card-section>
           <q-card-section>
@@ -620,7 +620,7 @@
       <q-card-section class="panel-header row items-center q-py-sm">
         <span>{{ t('Configuration Status') }}</span>
         <q-space />
-        <q-btn flat round dense icon="close" color="white" v-close-popup />
+        <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" v-close-popup />
       </q-card-section>
       <q-card-section class="q-pa-none">
         <q-inner-loading :showing="configStatusDlg.loading" />

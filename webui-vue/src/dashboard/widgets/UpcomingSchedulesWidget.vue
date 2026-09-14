@@ -50,10 +50,7 @@
 
       <template #body-cell-director="props">
         <q-td :props="props">
-          <div class="row items-center q-gutter-xs no-wrap">
-            <span :style="directorSwatchStyle(props.row.director || props.value || '', directorOptions)" />
-            <span>{{ props.row.director || props.value || '—' }}</span>
-          </div>
+          <DirectorLabel :director="props.row.director || props.value || ''" />
         </q-td>
       </template>
 
@@ -106,7 +103,7 @@
 import { inject, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
-import { resolveDirectorColors } from '../../utils/directorColors.js'
+import { useDashboardDirectorScope } from '../useDashboardDirectorScope.js'
 import {
   formatRelativeDate,
   formatLocalDateTime,
@@ -114,6 +111,7 @@ import {
 } from '../../utils/locales.js'
 import { useSettingsStore } from '../../stores/settings.js'
 import JobLevelBadge from '../../components/JobLevelBadge.vue'
+import DirectorLabel from '../../components/DirectorLabel.vue'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
@@ -123,9 +121,7 @@ const scheduledJobs = computed(() => (
   ctx?.aggregate?.value?.scheduledJobs ?? []
 ))
 
-const directorOptions = computed(() => ctx?.directorOptions?.value ?? [])
-const activeDirectors = computed(() => ctx?.activeDirectors?.value ?? [])
-const showDirectorColumn = computed(() => activeDirectors.value.length > 1)
+const { showDirectorColumn } = useDashboardDirectorScope(ctx)
 
 function parseScheduledDate(value) {
   if (!value) return null
@@ -160,18 +156,6 @@ function formatScheduleTooltip(value) {
     dateStyle: 'full',
     timeStyle: 'medium',
   })
-}
-
-function directorSwatchStyle(name, knownDirectors) {
-  const { background, border } = resolveDirectorColors(name, knownDirectors)
-  return {
-    display: 'inline-block',
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor: background,
-    border: `1px solid ${border}`,
-  }
 }
 
 const columns = computed(() => {

@@ -25,7 +25,7 @@
         dense flat round
         icon="refresh"
         :loading="loading"
-        :title="t('Refresh')"
+        :title="t('Refresh')" :aria-label="t('Refresh')"
         @click="loadTroubleLines"
       />
     </div>

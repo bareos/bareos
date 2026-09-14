@@ -34,7 +34,7 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Add Widget') }}</span>
         <q-space />
-        <q-btn flat round dense icon="close" color="white" @click="$emit('update:modelValue', false)" />
+        <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" @click="$emit('update:modelValue', false)" />
       </q-card-section>
 
       <q-card-section>
