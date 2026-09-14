@@ -164,6 +164,16 @@ describe('director aggregate dashboard helpers', () => {
             bytes: '2048',
             status: 'Is waiting for a mount request',
           }],
+          scheduled: [{
+            name: 'BackupClient1',
+            level: 'Incremental',
+            type: 'Backup',
+            priority: '10',
+            scheduled: '23-Mar-26 21:00',
+            volume: 'Vol-0001',
+            pool: 'Default',
+            storage: 'File',
+          }],
         },
       }),
     })
@@ -228,6 +238,15 @@ describe('director aggregate dashboard helpers', () => {
           runtimeStatus: 'Is waiting for a mount request',
         }),
       ],
+      scheduledJobs: [
+        expect.objectContaining({
+          director: 'prod-dir',
+          name: 'BackupClient1',
+          level: 'Incremental',
+          scheduled: '23-Mar-26 21:00',
+          pool: 'Default',
+        }),
+      ],
       clientCount: 2,
       storageCount: 1,
       jobTotals: {
@@ -259,6 +278,7 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-a',
         jobsPast24hStatusCounts: { R: 1, C: 2, T: 3, W: 4, f: 5 },
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
+        scheduledJobs: [{ scopeKey: 'prod-a:scheduled:JobA', director: 'prod-a', name: 'JobA', scheduled: '2026-03-23 21:00' }],
         catalogStatus: {
           director: 'prod-a',
           status: 'warning',
@@ -273,6 +293,7 @@ describe('director aggregate dashboard helpers', () => {
         director: 'prod-b',
         jobsPast24hStatusCounts: { R: 10, C: 20, T: 30, W: 40, f: 50 },
         runningJobs: [],
+        scheduledJobs: [{ scopeKey: 'prod-b:scheduled:JobB', director: 'prod-b', name: 'JobB', scheduled: '2026-03-23 20:00' }],
         catalogStatus: {
           director: 'prod-b',
           status: 'ok',
@@ -292,6 +313,7 @@ describe('director aggregate dashboard helpers', () => {
       W: 44,
       f: 55,
     })
+    expect(aggregate.scheduledJobs.map(j => j.name)).toEqual(['JobB', 'JobA'])
     expect(aggregate.clientCount).toBe(5)
     expect(aggregate.storageCount).toBe(3)
     expect(aggregate.jobTotals).toEqual({
