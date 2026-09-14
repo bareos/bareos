@@ -34,6 +34,7 @@ import {
 import { useAuthStore } from '../stores/auth.js'
 import { SESSION_AUTH_PASSWORD } from '../utils/sessionApi.js'
 import { buildListJobsCountCommand } from '../utils/jobs.js'
+import { parseDirectorDate } from '../utils/locales.js'
 
 const JOBS_PAST_24H_STATUSES = ['R', 'C', 'T', 'W', 'f']
 
@@ -125,7 +126,9 @@ function sortJobsByStartTime(jobs) {
 
 function sortScheduledJobs(jobs) {
   return [...jobs].sort((left, right) => {
-    const timeCompare = String(left.scheduled ?? '').localeCompare(String(right.scheduled ?? ''))
+    const leftDate = parseDirectorDate(left.scheduled)?.getTime() ?? Number.POSITIVE_INFINITY
+    const rightDate = parseDirectorDate(right.scheduled)?.getTime() ?? Number.POSITIVE_INFINITY
+    const timeCompare = leftDate - rightDate
     if (timeCompare !== 0) {
       return timeCompare
     }
