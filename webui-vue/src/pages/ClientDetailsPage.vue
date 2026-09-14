@@ -1,12 +1,12 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading client…')" />
+    <Breadcrumbs :items="breadcrumbItems" />
     <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
     <template v-else-if="!loading">
-    <Breadcrumbs :items="breadcrumbItems" />
     <div class="row items-center q-mb-md">
-      <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="28px" class="q-mr-sm" />
-      <div class="text-h6">{{ client?.name }}</div>
+      <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="2rem" class="q-mr-sm" />
+      <div class="text-h5">{{ client?.name }}</div>
       <q-badge v-if="client?.version" color="grey-6" :label="'v' + client.version" class="q-ml-sm text-mono" />
     </div>
     <div v-if="client" class="row q-col-gutter-md">
