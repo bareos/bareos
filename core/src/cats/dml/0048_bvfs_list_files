@@ -22,7 +22,8 @@ FROM (
       AND File.Name != ''
       %s
    ORDER BY File.Name,
-            Job.StartTime DESC
+            Job.JobTDate DESC,
+            Job.JobId DESC
 ) AS A
 WHERE A.FileIndex > 0
 LIMIT %)SQL" PRId64 R"SQL(
