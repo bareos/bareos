@@ -84,6 +84,17 @@ const WIDGETS = [
     optionalProps: [],
   },
   {
+    type: 'upcoming-schedules',
+    label: 'Upcoming Schedules',
+    description: 'Compact list of upcoming scheduled jobs and start trigger times.',
+    icon: 'mdi-calendar-clock',
+    component: defineAsyncComponent(() => import('./widgets/UpcomingSchedulesWidget.vue')),
+    defaultTitle: 'Upcoming Schedules',
+    defaultLayout: { w: 4, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
     type: 'running-jobs-status-chart',
     label: 'Running Jobs by Status',
     description: 'Doughnut chart of currently running and queued jobs by status.',

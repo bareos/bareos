@@ -123,6 +123,31 @@ function sortJobsByStartTime(jobs) {
   })
 }
 
+function sortScheduledJobs(jobs) {
+  return [...jobs].sort((left, right) => {
+    const timeCompare = String(left.scheduled ?? '').localeCompare(String(right.scheduled ?? ''))
+    if (timeCompare !== 0) {
+      return timeCompare
+    }
+
+    const directorCompare = String(left.director ?? '').localeCompare(String(right.director ?? ''))
+    if (directorCompare !== 0) {
+      return directorCompare
+    }
+
+    return String(left.name ?? '').localeCompare(String(right.name ?? ''))
+  })
+}
+
+function decorateScheduledJobs(entries, director) {
+  return directorCollection(entries).map((entry, index) => ({
+    ...entry,
+    priority: optionalNumberValue(entry.priority),
+    director,
+    scopeKey: `${director}:scheduled:${entry.jobid ?? entry.name ?? index}:${entry.scheduled ?? index}`,
+  }))
+}
+
 function decorateRuntimeJobs(entries, director) {
   return directorCollection(entries).map((entry, index) => {
     const id = optionalNumberValue(entry.jobid ?? entry.id)
@@ -315,6 +340,9 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
     const runningJobs = directorStatusResult.status === 'fulfilled'
       ? sortJobsByStartTime(decorateRuntimeJobs(directorStatusResult.value?.running, credentials.director))
       : []
+    const scheduledJobs = directorStatusResult.status === 'fulfilled'
+      ? sortScheduledJobs(decorateScheduledJobs(directorStatusResult.value?.scheduled, credentials.director))
+      : []
     const jobsPast24hStatusCounts = jobsPast24hStatusCountsFromResults(past24hCountResults)
 
     const poolsResult  = includePools ? poolResults[0] : null
@@ -352,6 +380,7 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
       transport: client.transport,
       jobsPast24hStatusCounts,
       runningJobs,
+      scheduledJobs,
       pools,
       catalogStatus: catalogStatusResult.status === 'fulfilled'
         ? normalizeCatalogStatus(catalogStatusResult.value, credentials.director)
@@ -396,6 +425,10 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
       ...combined.runningJobs,
       ...(snapshot.runningJobs ?? []),
     ]),
+    scheduledJobs: sortScheduledJobs([
+      ...(combined.scheduledJobs ?? []),
+      ...(snapshot.scheduledJobs ?? []),
+    ]),
     pools: [
       ...combined.pools,
       ...(snapshot.pools ?? []),
@@ -416,6 +449,7 @@ export function aggregateDirectorDashboardSnapshots(snapshots) {
   }), {
     jobsPast24hStatusCounts: emptyJobsPast24hStatusCounts(),
     runningJobs: [],
+    scheduledJobs: [],
     pools: [],
     catalogStatuses: [],
     clientCount: 0,
