@@ -16,28 +16,11 @@ JobName=backup-bareos-fd
 . "${BAREOS_SCRIPTS_DIR}"/functions
 "${BAREOS_SCRIPTS_DIR}"/cleanup
 
+export SQL_DDL_DIR="${current_test_directory}/bareos_25_db_2250_ddl"
 "${BAREOS_SCRIPTS_DIR}"/setup
+unset SQL_DDL_DIR
 
-# Recreate the schema elements that existed in version 2250 so this test
-# exercises the 2250 -> 2260 migration without depending on another test.
 "${POSTGRES_BIN_PATH}/psql" -v ON_ERROR_STOP=1 "${db_name}" <<'SQL'
-UPDATE public.Version SET VersionId = 2250;
-
-ALTER TABLE public.Job ADD COLUMN HasBase SMALLINT DEFAULT 0;
-ALTER TABLE public.JobHisto ADD COLUMN HasBase SMALLINT DEFAULT 0;
-
-CREATE TABLE public.basefiles
-(
-    BaseId            SERIAL      NOT NULL,
-    JobId             INTEGER     NOT NULL,
-    FileId            BIGINT      NOT NULL,
-    FileIndex         INTEGER,
-    BaseJobId         INTEGER,
-    PRIMARY KEY (BaseId)
-);
-
-CREATE INDEX basefiles_jobid_idx ON public.basefiles (JobId);
-
 INSERT INTO public.basefiles (JobId, FileId, FileIndex, BaseJobId)
 VALUES (1, 1, 1, 1);
 SQL
