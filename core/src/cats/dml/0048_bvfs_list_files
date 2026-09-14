@@ -1,5 +1,7 @@
 # DISTINCT ON keeps a single visible entry per filename. The ORDER BY must keep
 # the newest job first so .bvfs_lsfiles exposes the latest version.
+# Keep the FileIndex filter outside the subquery: filtering before DISTINCT ON
+# could expose an older file when the latest entry is a directory.
 SELECT TYPE,
        PathId,
        Name,
