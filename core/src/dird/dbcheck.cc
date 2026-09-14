@@ -38,6 +38,7 @@
 #include "dbcheck_utils.h"
 
 #include <string>
+#include <string_view>
 
 using namespace directordaemon;
 
@@ -255,8 +256,8 @@ static void eliminate_duplicate_paths()
     for (int i = 0; i < name_list.num_ids; i++) {
       // Get all the Ids of each name
       size_t name_len = strlen(name_list.name[i]);
-      esc_name.resize(name_len * 2 + 1);
-      db->EscapeString(nullptr, esc_name.data(), name_list.name[i], name_len);
+      esc_name = db->EscapeString(
+          nullptr, std::string_view{name_list.name[i], name_len});
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name.c_str());
       if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
@@ -663,8 +664,8 @@ static void repair_bad_filenames()
         esc_name = " ";
       } else {
         name[len - 1] = 0;
-        esc_name.resize(static_cast<size_t>(len) * 2 + 1);
-        db->EscapeString(nullptr, esc_name.data(), name, len);
+        esc_name = db->EscapeString(
+            nullptr, std::string_view{name, static_cast<size_t>(len)});
       }
       Bsnprintf(buf, sizeof(buf), "UPDATE File SET Name='%s' WHERE FileId=%s",
                 esc_name.c_str(), edit_int64(id_list.Id[i], ed1));
@@ -717,8 +718,8 @@ static void repair_bad_paths()
       }
       // Add trailing slash
       len = PmStrcat(name, "/");
-      esc_name.resize(static_cast<size_t>(len) * 2 + 1);
-      db->EscapeString(nullptr, esc_name.data(), name, len);
+      esc_name = db->EscapeString(
+          nullptr, std::string_view{name, static_cast<size_t>(len)});
       Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
                 esc_name.c_str(), edit_int64(id_list.Id[i], ed1));
       db->SqlQuery(buf, nullptr, nullptr);

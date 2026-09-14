@@ -46,6 +46,7 @@
 
 #include <bitset>
 #include <string>
+#include <string_view>
 #include <stdexcept>
 #include <system_error>
 #include <vector>

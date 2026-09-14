@@ -56,6 +56,7 @@
 
 #include "lib/bregex.h"
 #include <dirent.h>
+#include <string_view>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
@@ -112,12 +113,12 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
   int length;
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
-  PoolMem query(PM_MESSAGE), esc_msg(PM_MESSAGE);
+  PoolMem query(PM_MESSAGE);
 
   if (!jcr || !jcr->db || !jcr->db->IsConnected()) { return false; }
   length = strlen(msg);
-  esc_msg.check_size(length * 2 + 1);
-  jcr->db->EscapeString(jcr, esc_msg.c_str(), msg, length);
+  auto esc_msg = jcr->db->EscapeString(
+      jcr, std::string_view{msg, static_cast<size_t>(length)});
 
   bstrutime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",

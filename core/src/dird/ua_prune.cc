@@ -43,6 +43,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -685,7 +686,6 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
 {
   int i, len;
   ClientDbRecord cr;
-  char* prune_topdir = NULL;
   PoolMem query(PM_MESSAGE), temp(PM_MESSAGE);
   bool recursive = false;
 
@@ -727,8 +727,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     PmStrcat(temp, "/");
     len++;
   }
-  prune_topdir = (char*)malloc(len * 2 + 1);
-  ua->db->EscapeString(ua->jcr, prune_topdir, temp.c_str(), len);
+  auto prune_topdir = ua->db->EscapeString(
+      ua->jcr, std::string_view{temp.c_str(), static_cast<size_t>(len)});
 
   // Remove all files in particular directory.
   if (recursive) {
@@ -737,24 +737,21 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
          "SELECT pathid FROM path "
          "WHERE path LIKE '%s%%'"
          ")",
-         prune_topdir);
+         prune_topdir.c_str());
   } else {
     Mmsg(query,
          "DELETE FROM file WHERE pathid IN ("
          "SELECT pathid FROM path "
          "WHERE path LIKE '%s'"
          ")",
-         prune_topdir);
+         prune_topdir.c_str());
   }
 
   if (client) {
     char ed1[50];
     cr = ClientDbRecord{};
     bstrncpy(cr.Name, client->resource_name_, sizeof(cr.Name));
-    if (!ua->db->CreateClientRecord(ua->jcr, &cr)) {
-      if (prune_topdir) { free(prune_topdir); }
-      return false;
-    }
+    if (!ua->db->CreateClientRecord(ua->jcr, &cr)) { return false; }
 
     Mmsg(temp,
          " AND JobId IN ("
@@ -776,7 +773,6 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   if (!client) {
     if (!GetYesno(ua, T_("Cleanup orphaned path records (yes/no):"))
         || !ua->pint32_val) {
-      if (prune_topdir) { free(prune_topdir); }
       return true;
     }
 
@@ -784,12 +780,12 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
       Mmsg(query,
            "DELETE FROM path "
            "WHERE path LIKE '%s%%'",
-           prune_topdir);
+           prune_topdir.c_str());
     } else {
       Mmsg(query,
            "DELETE FROM path "
            "WHERE path LIKE '%s'",
-           prune_topdir);
+           prune_topdir.c_str());
     }
     {
       DbLocker _{ua->db};
@@ -797,7 +793,6 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     }
   }
 
-  if (prune_topdir) { free(prune_topdir); }
   return true;
 }
 
@@ -850,7 +845,7 @@ static bool prune_set_filter(UaContext* ua,
                              PoolMem* add_where)
 {
   utime_t now;
-  char ed1[50], ed2[MAX_ESCAPE_NAME_LENGTH];
+  char ed1[50];
   PoolMem tmp(PM_MESSAGE);
 
   now = (utime_t)time(NULL);
@@ -862,17 +857,15 @@ static bool prune_set_filter(UaContext* ua,
 
   DbLocker _{ua->db};
   if (client) {
-    ua->db->EscapeString(ua->jcr, ed2, client->resource_name_,
-                         strlen(client->resource_name_));
-    Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
+    auto escaped_client = ua->db->EscapeString(ua->jcr, client->resource_name_);
+    Mmsg(tmp, " AND Client.Name = '%s' ", escaped_client.c_str());
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Client USING (ClientId) ");
   }
 
   if (pool) {
-    ua->db->EscapeString(ua->jcr, ed2, pool->resource_name_,
-                         strlen(pool->resource_name_));
-    Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
+    auto escaped_pool = ua->db->EscapeString(ua->jcr, pool->resource_name_);
+    Mmsg(tmp, " AND Pool.Name = '%s' ", escaped_pool.c_str());
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Pool USING(PoolId) ");
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
 #define BAREOS_CATS_BVFS_H_
 
 #include "lib/attr.h"
+
+#include <string_view>
 /*
  * This object can be use to browse the catalog
  *
@@ -74,8 +76,9 @@ class Bvfs {
   void SetPattern(char* p)
   {
     uint32_t len = strlen(p);
-    pattern = CheckPoolMemorySize(pattern, len * 2 + 1);
-    db->EscapeString(jcr, pattern, p, len);
+    auto escaped_pattern = db->EscapeString(jcr, std::string_view{p, len});
+    pattern = CheckPoolMemorySize(pattern, escaped_pattern.size() + 1);
+    PmStrcpy(pattern, escaped_pattern.c_str());
   }
 
   /* Get the root point */

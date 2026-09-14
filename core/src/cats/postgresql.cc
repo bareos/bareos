@@ -359,6 +359,12 @@ std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
   int error;
 
   std::string result{};
+  if (str.size() > (result.max_size() - 1) / 2) {
+    Jmsg(jcr, M_FATAL, 0, T_("String too long to escape for PostgreSQL.\n"));
+    Dmsg0(500, "PQescapeStringConn input too large\n");
+    return result;
+  }
+
   result.resize(str.size() * 2 + 1);
 
   std::size_t byte_count = PQescapeStringConn(db_handle_, result.data(),
