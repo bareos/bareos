@@ -43,7 +43,7 @@
             </q-icon>
           </div>
           <div class="row q-gutter-xs q-mt-xs">
-            <q-badge :color="statusColor(vol.volstatus)" :label="vol.volstatus" />
+            <VolumeStatusBadge :status="vol.volstatus" />
             <q-badge :color="vol.enabled !== '0' && vol.enabled !== false ? 'positive' : 'grey'">
                {{ vol.enabled !== '0' && vol.enabled !== false ? t('Enabled') : t('Disabled') }}
             </q-badge>
@@ -208,7 +208,7 @@
                 </template>
                 <template #body-cell-jobstatus="props">
                   <q-td :props="props" class="text-center">
-                    <q-badge :color="jobStatusColor(props.value)" :label="props.value" />
+                    <JobStatusBadge :status="props.value" />
                   </q-td>
                 </template>
                 <template #body-cell-jobbytes="props">
@@ -254,6 +254,8 @@ import {
   volumeHasEncryptionKey,
 } from '../utils/volumes.js'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
+import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route      = useRoute()
 const auth       = useAuthStore()
@@ -560,20 +562,4 @@ const jobCols = computed(() => [
   { name: 'jobstatus',  label: t('Status'),   field: 'jobstatus',  align: 'center', sortable: true },
   { name: 'jobbytes',   label: t('Bytes'),    field: 'jobbytes',   align: 'right',  sortable: true },
 ])
-
-// ── Color helpers ─────────────────────────────────────────────────────────────
-
-function statusColor(s) {
-  return {
-    Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
-    Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal',
-  }[s] ?? 'info'
-}
-
-function jobStatusColor(s) {
-  return {
-    T: 'positive', W: 'warning', E: 'negative', f: 'negative',
-    R: 'blue', C: 'blue', A: 'warning', e: 'negative',
-  }[s] ?? 'grey'
-}
 </script>
