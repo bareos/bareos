@@ -581,19 +581,17 @@ static void build_ls_files_query(JobControlRecord*,
                                  PoolMem& query,
                                  const char* JobId,
                                  const char* PathId,
-                                 const char* filter,
                                  int64_t limit,
                                  int64_t offset)
 {
   db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(query, JobId, PathId,
-                                                      filter, limit, offset);
+                                                      limit, offset);
 }
 
 // Returns true if we have files to read
 bool Bvfs::ls_files()
 {
   char pathid[50];
-  PoolMem filter(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
   Dmsg1(dbglevel, "ls_files(%" PRIdbid ")\n", pwd_id);
@@ -602,12 +600,7 @@ bool Bvfs::ls_files()
   if (!pwd_id) { ChDir(get_root()); }
 
   edit_uint64(pwd_id, pathid);
-  if (*pattern) {
-    db->FillQuery<BareosDb::SQL_QUERY::match_query2>(filter, pattern);
-  }
-
-  build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit,
-                       offset);
+  build_ls_files_query(jcr, db, query, jobids, pathid, limit, offset);
   nb_record = db->BvfsBuildLsFileQuery(query, list_entries, user_data);
 
   return nb_record == limit;

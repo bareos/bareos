@@ -556,9 +556,9 @@ FROM (
       File.JobId IN (%s)
       AND File.PathId = %s
       AND File.Name != ''
-      %s
    ORDER BY File.Name,
-            Job.StartTime DESC
+            Job.JobTDate DESC,
+            Job.JobId DESC
 ) AS A
 WHERE A.FileIndex > 0
 LIMIT %)SQL" PRId64 R"SQL(
@@ -589,10 +589,6 @@ SELECT a.Path
 
 /* 0054_match_query */
 R"SQL( AND Path2.Path ~ '%s'
-)SQL",
-
-/* 0055_match_query2 */
-R"SQL( AND File.Name LIKE '%s' ESCAPE '\'
 )SQL",
 
 /* 0056_insert_counter_values */
