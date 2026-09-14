@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   directorListLoadErrorMessage,
   getLastSuccessfulDirector,
+  planMultiDirectorLoginOutcome,
   shouldAutoLoginAllDirectors,
   summarizeDirectorLoginAttempts,
 } from '../../src/utils/directorLogin.js'
@@ -93,5 +94,59 @@ describe('director login helpers', () => {
       { director: 'bareos-dir', success: false, message: 'Connection error' },
       { director: 'site-b', success: false, message: 'Connection error' },
     ])).toBe('')
+  })
+
+  describe('planMultiDirectorLoginOutcome', () => {
+    it('redirects immediately once every configured director succeeds', () => {
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: ['bareos-dir', 'site-b'],
+        failedAttempts: [],
+      })).toEqual({
+        finalDirector: 'site-b',
+        remainingDirectorFailures: [],
+        allFailed: false,
+        shouldRedirect: true,
+      })
+    })
+
+    it('does not redirect while some directors in the batch still failed', () => {
+      const failedAttempts = [{ director: 'site-c', message: 'Authentication failed' }]
+
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: ['bareos-dir'],
+        failedAttempts,
+      })).toEqual({
+        finalDirector: 'bareos-dir',
+        remainingDirectorFailures: failedAttempts,
+        allFailed: false,
+        shouldRedirect: false,
+      })
+    })
+
+    it('reports allFailed and skips redirect when every director failed', () => {
+      const failedAttempts = [
+        { director: 'bareos-dir', message: 'Connection error' },
+        { director: 'site-b', message: 'Connection error' },
+      ]
+
+      expect(planMultiDirectorLoginOutcome({
+        successfulDirectors: [],
+        failedAttempts,
+      })).toEqual({
+        finalDirector: '',
+        remainingDirectorFailures: failedAttempts,
+        allFailed: true,
+        shouldRedirect: false,
+      })
+    })
+
+    it('defaults to empty inputs without throwing', () => {
+      expect(planMultiDirectorLoginOutcome()).toEqual({
+        finalDirector: '',
+        remainingDirectorFailures: [],
+        allFailed: true,
+        shouldRedirect: false,
+      })
+    })
   })
 })
