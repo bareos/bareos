@@ -116,7 +116,7 @@
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
             <q-banner v-if="jobsTruncated" dense class="bg-warning text-white">
               {{ t('Showing the first {limit} of {total} matching jobs. Narrow your filter to see the rest.', { limit: formatNumber(maxJobsFetchLimit), total: formatNumber(totalJobs) }) }}
             </q-banner>

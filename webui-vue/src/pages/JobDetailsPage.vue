@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading job…')" />
-    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <div v-else-if="!loading && job">
       <!-- Header row -->

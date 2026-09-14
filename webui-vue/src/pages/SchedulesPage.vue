@@ -143,7 +143,7 @@
             <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" :aria-label="t('Go to today')" @click="goToday" />
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
-            <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
+            <q-banner dense rounded class="bg-negative text-white q-mb-md">{{ statusError }}</q-banner>
           </q-card-section>
           <q-card-section v-if="allScheduleOptions.length" class="q-pb-none">
             <div class="row items-center q-gutter-sm">
@@ -269,7 +269,7 @@
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="schedError" dense class="bg-negative text-white">{{ schedError }}</q-banner>
+            <q-banner v-if="schedError" dense rounded class="bg-negative text-white q-mb-md">{{ schedError }}</q-banner>
             <q-table
               :rows="schedules"
               :columns="schedCols"
