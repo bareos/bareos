@@ -107,27 +107,25 @@ import { inject, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { resolveDirectorColors } from '../../utils/directorColors.js'
-import { formatRelativeDate, formatLocalDateTime } from '../../utils/locales.js'
+import {
+  formatRelativeDate,
+  formatLocalDateTime,
+  parseDirectorDate,
+} from '../../utils/locales.js'
 import { useSettingsStore } from '../../stores/settings.js'
-import { useAuthStore } from '../../stores/auth.js'
 import JobLevelBadge from '../../components/JobLevelBadge.vue'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
-const auth = useAuthStore()
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 
 const scheduledJobs = computed(() => (
   ctx?.aggregate?.value?.scheduledJobs ?? []
 ))
 
-const directorOptions = computed(() => auth.authenticatedDirectors)
-const showDirectorColumn = computed(() => directorOptions.value.length > 1)
-
-const MONTH_NAMES = {
-  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
-  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
-}
+const directorOptions = computed(() => ctx?.directorOptions?.value ?? [])
+const activeDirectors = computed(() => ctx?.activeDirectors?.value ?? [])
+const showDirectorColumn = computed(() => activeDirectors.value.length > 1)
 
 function parseScheduledDate(value) {
   if (!value) return null
@@ -136,20 +134,7 @@ function parseScheduledDate(value) {
 
   const direct = new Date(str.replace(' ', 'T'))
   if (!Number.isNaN(direct.getTime())) return direct
-
-  const match = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/)
-  if (match) {
-    const day = parseInt(match[1], 10)
-    const month = MONTH_NAMES[match[2].toLowerCase()] ?? 0
-    let year = parseInt(match[3], 10)
-    if (year < 100) year += 2000
-    const hour = parseInt(match[4], 10)
-    const min = parseInt(match[5], 10)
-    const sec = match[6] ? parseInt(match[6], 10) : 0
-    const d = new Date(year, month, day, hour, min, sec)
-    if (!Number.isNaN(d.getTime())) return d
-  }
-  return null
+  return parseDirectorDate(str)
 }
 
 function formatScheduleDisplay(value) {
