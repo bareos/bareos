@@ -322,7 +322,7 @@ static inline bool PySavePacketToNative(
 
         sp->fname = (char*)malloc(size + 1);
         if (!sp->fname) {
-          PyErr_SetString(PyExc_TypeError,
+          PyErr_SetString(PyExc_RuntimeError,
                           "could not allocate memory for string");
           return false;
         }
@@ -2020,16 +2020,24 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
   if (!IsNone(pSavePkt->fname)) {
     if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
+      if (!sp.fname) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "could not read utf8 data out of fname");
+        goto bail_out;
+      }
     } else {
+      PyErr_SetString(PyExc_TypeError, "fname needs to be a utf8 string");
       goto bail_out;
     }
   } else {
     goto bail_out;
   }
 
-  if (!IsNone(pSavePkt->statp)) {
+  if (!IsNone(pSavePkt->statp)
+      && (PyObject_TypeCheck(pSavePkt->fname, &PyStatPacketType) != 0)) {
     PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp.statp);
   } else {
+    PyErr_SetString(PyExc_TypeError, "statp needs to be a PyStatPacket");
     goto bail_out;
   }
 
