@@ -25,11 +25,13 @@ FROM (
     WHERE  PathId = %s
 ) AS SpecialDir
 LEFT JOIN (
-    SELECT PathId, JobId, JobTDate, LStat, FileId
+    SELECT File.PathId AS PathId, File.JobId AS JobId, Job.JobTDate AS JobTDate,
+           File.LStat AS LStat, File.FileId AS FileId
     FROM File
+    JOIN Job ON (File.JobId = Job.JobId)
     WHERE File.Name = ''
       AND File.JobId IN (%s)
-    ORDER BY PathId ASC, JobTDate DESC, JobId DESC
+    ORDER BY File.PathId ASC, Job.JobTDate DESC, File.JobId DESC
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)
 ORDER BY SpecialDir.PathId ASC, JobTDate DESC, JobId DESC
