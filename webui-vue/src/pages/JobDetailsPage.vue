@@ -296,7 +296,7 @@ const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
 const volumesPagination = usePersistedTablePagination('job-details.volumes', {
-  rowsPerPage: 15,
+  rowsPerPage: 10,
   sortBy: 'volumename',
   descending: false,
 })

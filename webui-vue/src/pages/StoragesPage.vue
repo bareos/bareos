@@ -470,13 +470,13 @@ const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 const devicesPagination = usePersistedTablePagination('storages.devices', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
 const poolsPagination = usePersistedTablePagination('storages.pools', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
 const volumesPagination = usePersistedTablePagination('storages.volumes', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
