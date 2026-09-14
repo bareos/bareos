@@ -25,7 +25,7 @@
       />
     </q-tabs>
 
-    <q-banner v-if="error" dense class="bg-negative text-white q-mb-md">
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">
       {{ error }}
     </q-banner>
 

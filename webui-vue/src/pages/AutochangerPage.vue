@@ -66,7 +66,7 @@
              :disable="!selectedStorageName || commandRunning" @click="showStatus" />
     </div>
 
-    <q-banner v-if="loadError" class="bg-negative text-white q-mb-md" rounded>
+    <q-banner v-if="loadError" dense rounded class="bg-negative text-white q-mb-md">
       {{ loadError }}
     </q-banner>
 
