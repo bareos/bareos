@@ -6,11 +6,24 @@
       <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
       <q-card-section>
 
-        <!-- Source + Destination -->
-        <div class="row q-col-gutter-md q-mb-md">
-
-          <!-- Source -->
-          <div class="col-12 col-md-6">
+        <!-- Restore wizard -->
+        <q-stepper
+          v-model="activeStep"
+          flat bordered
+          color="primary"
+          animated
+          header-nav
+          done-color="positive"
+          class="q-mb-md"
+          data-testid="restore-stepper"
+        >
+          <q-step
+            :name="1"
+            :title="t('Source')"
+            icon="source"
+            :done="sourceStepDone"
+            :header-nav="true"
+          >
             <q-card flat bordered>
                 <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
                 <q-card-section class="q-pt-none q-gutter-sm">
@@ -212,10 +225,24 @@
                   </template>
               </q-card-section>
             </q-card>
-          </div>
+            <q-stepper-navigation>
+              <q-btn
+                color="primary" no-caps
+                :label="t('Continue to Destination')"
+                :disable="!sourceStepDone"
+                data-testid="restore-step-1-continue"
+                @click="activeStep = 2"
+              />
+            </q-stepper-navigation>
+          </q-step>
 
-          <!-- Destination -->
-          <div class="col-12 col-md-6">
+          <q-step
+            :name="2"
+            :title="t('Destination')"
+            icon="place"
+            :done="destinationStepDone"
+            :header-nav="sourceStepDone"
+          >
             <q-card flat bordered>
               <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Destination') }}</q-card-section>
               <q-card-section class="q-pt-none q-gutter-sm">
@@ -278,8 +305,30 @@
                 />
               </q-card-section>
             </q-card>
-          </div>
-        </div>
+            <q-stepper-navigation>
+              <q-btn
+                color="primary" no-caps
+                :label="t('Continue to Browse Files')"
+                :disable="!destinationStepDone"
+                data-testid="restore-step-2-continue"
+                @click="activeStep = 3"
+              />
+              <q-btn
+                flat no-caps
+                :label="t('Back')"
+                class="q-ml-sm"
+                @click="activeStep = 1"
+              />
+            </q-stepper-navigation>
+          </q-step>
+
+          <q-step
+            :name="3"
+            :title="t('Browse & Restore')"
+            icon="folder_open"
+            :done="canRestore"
+            :header-nav="destinationStepDone"
+          >
 
         <!-- File Browser -->
         <q-card flat bordered class="q-mb-md">
@@ -453,6 +502,17 @@
             {{ t('Select at least one file or folder to restore') }}
           </span>
         </div>
+
+            <q-stepper-navigation>
+              <q-btn
+                flat no-caps
+                :label="t('Back')"
+                data-testid="restore-step-3-back"
+                @click="activeStep = 2"
+              />
+            </q-stepper-navigation>
+          </q-step>
+        </q-stepper>
 
         <!-- Result banner -->
         <q-banner
@@ -1864,6 +1924,31 @@ const canRestore = computed(() =>
   (selectedFiles.value.size > 0 || selectedDirs.value.size > 0)
 )
 
+// Restore wizard step state: the stepper walks Source -> Destination ->
+// Browse & Restore, each step gated on the previous one's data being set,
+// so users can't reach the file browser before a source/destination job
+// is actually selected.
+const activeStep = ref(1)
+const sourceStepDone = computed(() => !!form.value.jobid)
+const destinationStepDone = computed(() => (
+  sourceStepDone.value && !!form.value.restoreclient && !!form.value.restorejob
+))
+
+// Auto-advance the wizard when a step's prerequisite becomes satisfied
+// (e.g. a deep link pre-fills the source/destination), but only while the
+// user is still sitting on that step — this never overrides a manual
+// "Back" click since the watched value won't have changed at that point.
+watch(sourceStepDone, (done) => {
+  if (done && activeStep.value === 1) {
+    activeStep.value = 2
+  }
+})
+watch(destinationStepDone, (done) => {
+  if (done && activeStep.value === 2) {
+    activeStep.value = 3
+  }
+})
+
 const restoreSelectedFilesCount = computed(() => selectedFiles.value.size)
 const restoreSelectedDirectoriesCount = computed(() => selectedDirs.value.size)
 const restoreVersionOverridesCount = computed(() => (
@@ -2148,6 +2233,7 @@ function resetAll() {
   clearBrowserState()
   backups.value = []
   pluginFilesets.value = new Map()
+  activeStep.value = 1
 }
 
 function formatMtime(ts) {
