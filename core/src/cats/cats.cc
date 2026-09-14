@@ -135,43 +135,6 @@ void BareosDb::PrintLockInfo(FILE* fp)
 }
 
 /**
- * Escape strings so that database engine is happy.
- *
- * NOTE! len is the length of the old string. Your new
- *       string must be long enough (max 2*old+1) to hold
- *       the escaped output.
- */
-void BareosDb::EscapeString(JobControlRecord*,
-                            char* snew,
-                            const char* old,
-                            int len)
-{
-  char* n;
-  const char* o;
-
-  n = snew;
-  o = old;
-  while (len--) {
-    switch (*o) {
-      case '\'':
-        *n++ = '\'';
-        *n++ = '\'';
-        o++;
-        break;
-      case 0:
-        *n++ = '\\';
-        *n++ = 0;
-        o++;
-        break;
-      default:
-        *n++ = *o++;
-        break;
-    }
-  }
-  *n = 0;
-}
-
-/**
  * Escape binary object.
  * We base64 encode the data so its normal ASCII
  * Memory is stored in BareosDb struct, no need to free it.

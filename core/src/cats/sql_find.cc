@@ -58,11 +58,9 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 char* job)
 {
   SQL_ROW row;
-  char ed1[50], ed2[50];
-  char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
+  auto esc_jobname = EscapeString(jcr, jr->Name);
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
 
@@ -72,10 +70,9 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
     Mmsg(cmd,
          "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
          "Type='%c' AND "
-         "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-         "ORDER BY StartTime DESC LIMIT 1",
-         jr->JobType, L_FULL, esc_jobname, edit_int64(jr->ClientId, ed1),
-         edit_int64(jr->FileSetId, ed2));
+         "Level='%c' AND Name='%s' AND ClientId=%" PRIdbid
+         " AND FileSetId=%" PRIdbid " ORDER BY StartTime DESC LIMIT 1",
+         jr->JobType, L_FULL, esc_jobname.c_str(), jr->ClientId, jr->FileSetId);
 
     if (jr->JobLevel == L_DIFFERENTIAL) {
       /* SQL cmd for Differential backup already edited above */
@@ -102,18 +99,18 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
       Mmsg(cmd,
            "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
            "Type='%c' AND "
-           "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%s "
-           "AND FileSetId=%s ORDER BY StartTime DESC LIMIT 1",
-           jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL, esc_jobname,
-           edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
+           "Level IN ('%c','%c','%c') AND Name='%s' AND ClientId=%" PRIdbid
+           " AND FileSetId=%" PRIdbid " ORDER BY StartTime DESC LIMIT 1",
+           jr->JobType, L_INCREMENTAL, L_DIFFERENTIAL, L_FULL,
+           esc_jobname.c_str(), jr->ClientId, jr->FileSetId);
     } else {
       Mmsg1(errmsg, T_("Unknown level=%d\n"), jr->JobLevel);
       return false;
     }
   } else {
     Dmsg1(100, "Submitting: %s\n", cmd);
-    Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%s",
-         edit_int64(jr->JobId, ed1));
+    Mmsg(cmd, "SELECT StartTime, Job FROM Job WHERE Job.JobId=%" PRIdbid,
+         jr->JobId);
   }
 
   if (!QueryDb(jcr, cmd)) {
@@ -153,18 +150,13 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
  */
 BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     JobControlRecord* jcr,
-    std::string job_basename,
-    std::string client_name,
+    std::string_view job_basename,
+    std::string_view client_name,
     std::vector<char>& stime_out)
 {
-  std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
-  std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
-
   DbLocker _{this};
-  EscapeString(nullptr, esc_jobname.data(), job_basename.c_str(),
-               job_basename.size());
-  EscapeString(nullptr, esc_clientname.data(), client_name.c_str(),
-               client_name.size());
+  auto esc_jobname = EscapeString(nullptr, job_basename);
+  auto esc_clientname = EscapeString(nullptr, client_name);
 
   constexpr const char* default_time{"0000-00-00 00:00:00"};
   stime_out.resize(strlen(default_time) + 1);
@@ -226,21 +218,18 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
                                     int JobLevel)
 {
   SQL_ROW row;
-  char ed1[50], ed2[50];
-  char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
+  auto esc_jobname = EscapeString(jcr, jr->Name);
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
 
   Mmsg(cmd,
        "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "
        "Type='%c' AND "
-       "Level='%c' AND Name='%s' AND ClientId=%s AND FileSetId=%s "
-       "ORDER BY StartTime DESC LIMIT 1",
-       jr->JobType, JobLevel, esc_jobname, edit_int64(jr->ClientId, ed1),
-       edit_int64(jr->FileSetId, ed2));
+       "Level='%c' AND Name='%s' AND ClientId=%" PRIdbid
+       " AND FileSetId=%" PRIdbid " ORDER BY StartTime DESC LIMIT 1",
+       jr->JobType, JobLevel, esc_jobname.c_str(), jr->ClientId, jr->FileSetId);
   if (!QueryDb(jcr, cmd)) {
     Mmsg2(errmsg, T_("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
@@ -275,10 +264,9 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
 {
   SQL_ROW row;
   char ed1[50], ed2[50];
-  char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
+  auto esc_jobname = EscapeString(jcr, jr->Name);
 
   /* Differential is since last Full backup */
   Mmsg(cmd,
@@ -286,7 +274,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
        "Type='%c' AND Level IN ('%c','%c') AND Name='%s' AND ClientId=%s "
        "AND FileSetId=%s AND StartTime>'%s' "
        "ORDER BY StartTime DESC LIMIT 1",
-       jr->JobType, L_FULL, L_DIFFERENTIAL, esc_jobname,
+       jr->JobType, L_FULL, L_DIFFERENTIAL, esc_jobname.c_str(),
        edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2), stime);
   if (!QueryDb(jcr, cmd)) { return false; }
 

@@ -52,14 +52,10 @@ bool BareosDb::AddDigestToFileRecord(JobControlRecord* jcr,
                                      char* digest,
                                      int)
 {
-  char ed1[50];
-  int len = strlen(digest);
-
   DbLocker _{this};
-  esc_name = CheckPoolMemorySize(esc_name, len * 2 + 1);
-  EscapeString(jcr, esc_name, digest, len);
-  Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%s", esc_name,
-       edit_int64(FileId, ed1));
+  auto esc_digest = EscapeString(jcr, digest);
+  Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%" PRIu64,
+       esc_digest.c_str(), FileId);
 
   return UpdateDb(jcr, cmd) > 0;
 }
@@ -71,11 +67,9 @@ bool BareosDb::MarkFileRecord(JobControlRecord* jcr,
                               FileId_t FileId,
                               JobId_t JobId)
 {
-  char ed1[50], ed2[50];
-
   DbLocker _{this};
-  Mmsg(cmd, "UPDATE File SET MarkId=%s WHERE FileId=%s", edit_int64(JobId, ed1),
-       edit_int64(FileId, ed2));
+  Mmsg(cmd, "UPDATE File SET MarkId=%" PRIu32 " WHERE FileId=%" PRIu64, JobId,
+       FileId);
 
   return UpdateDb(jcr, cmd) > 0;
 }
@@ -197,26 +191,20 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
  */
 bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 {
-  char ed1[50], ed2[50];
-  std::string esc_clientname;
-  std::string esc_uname;
-  size_t clientname_len = strlen(cr->Name);
-  size_t uname_len = strlen(cr->Uname);
   ClientDbRecord tcr;
 
   DbLocker _{this};
   tcr = *cr;
   if (!CreateClientRecord(jcr, &tcr)) { return false; }
 
-  esc_clientname.resize(clientname_len * 2 + 1);
-  esc_uname.resize(uname_len * 2 + 1);
-  EscapeString(jcr, esc_clientname.data(), cr->Name, clientname_len);
-  EscapeString(jcr, esc_uname.data(), cr->Uname, uname_len);
+  auto esc_clientname = EscapeString(jcr, cr->Name);
+  auto esc_uname = EscapeString(jcr, cr->Uname);
   Mmsg(cmd,
-       "UPDATE Client SET AutoPrune=%d,FileRetention=%s,JobRetention=%s,"
+       "UPDATE Client SET AutoPrune=%d,FileRetention=%" PRIu64
+       ",JobRetention=%" PRIu64
+       ","
        "Uname='%s' WHERE Name='%s'",
-       cr->AutoPrune, edit_uint64(cr->FileRetention, ed1),
-       edit_uint64(cr->JobRetention, ed2), esc_uname.c_str(),
+       cr->AutoPrune, cr->FileRetention, cr->JobRetention, esc_uname.c_str(),
        esc_clientname.c_str());
 
   return UpdateDb(jcr, cmd) > 0;
@@ -229,15 +217,13 @@ bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
  */
 bool BareosDb::UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
 {
-  bool retval;
-  char esc[MAX_ESCAPE_NAME_LENGTH];
-
   DbLocker _{this};
 
-  EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
-  FillQuery<SQL_QUERY::update_counter_values>(
-      cmd, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
-  retval = UpdateDb(jcr, cmd) > 0;
+  auto esc = EscapeString(jcr, cr->Counter);
+  FillQuery<SQL_QUERY::update_counter_values>(cmd, cr->MinValue, cr->MaxValue,
+                                              cr->CurrentValue, cr->WrapCounter,
+                                              esc.c_str());
+  bool retval = UpdateDb(jcr, cmd) > 0;
 
   return retval;
 }

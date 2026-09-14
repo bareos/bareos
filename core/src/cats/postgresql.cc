@@ -351,28 +351,29 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
   unlock_mutex(db_list_mutex);
 }
 
-/**
- * Escape strings so that PostgreSQL is happy
- *
- *   NOTE! len is the length of the old string. Your new
- *         string must be long enough (max 2*old+1) to hold
- *         the escaped output.
- */
-void BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
-                                      char* snew,
-                                      const char* old,
-                                      int len)
+// Escape strings so that PostgreSQL is happy
+std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
+                                             std::string_view str)
 {
   DbLocker _{this};
   int error;
 
-  PQescapeStringConn(db_handle_, snew, old, len, &error);
+  std::string result{};
+  result.resize(str.size() * 2 + 1);
+
+  std::size_t byte_count = PQescapeStringConn(db_handle_, result.data(),
+                                              str.data(), str.size(), &error);
   if (error) {
     Jmsg(jcr, M_FATAL, 0, T_("PQescapeStringConn returned non-zero.\n"));
     /* error on encoding, probably invalid multibyte encoding in the source
       string see PQescapeStringConn documentation for details. */
     Dmsg0(500, "PQescapeStringConn failed\n");
+
+    return {};
   }
+
+  result.resize(byte_count);
+  return result;
 }
 
 /**

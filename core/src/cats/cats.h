@@ -674,8 +674,8 @@ class BareosDb : public BareosDbQueryEnum {
 
   virtual SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* jcr,
-      std::string job_basename,
-      std::string client_name,
+      std::string_view job_basename,
+      std::string_view client_name,
       std::vector<char>& stime_out);
 
   bool FindLastJobStartTime(JobControlRecord* jcr,
@@ -972,10 +972,8 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
-  virtual void EscapeString(JobControlRecord* jcr,
-                            char* snew,
-                            const char* old,
-                            int len);
+  virtual std::string EscapeString(JobControlRecord* jcr, std::string_view old)
+      = 0;
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,

@@ -52,14 +52,9 @@ static const int dbglevel = 100;
  */
 bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 {
-  PoolMem buf;
   char dt[MAX_TIME_LENGTH];
   time_t stime;
-  int len;
   utime_t JobTDate;
-  char ed1[30], ed2[30];
-  char esc_ujobname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
 
@@ -69,21 +64,17 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   bstrutime(dt, sizeof(dt), stime);
   JobTDate = (utime_t)stime;
 
-  len = strlen(jcr->comment); /* TODO: use jr instead of jcr to get comment */
-  buf.check_size(len * 2 + 1);
-
-  EscapeString(jcr, buf.c_str(), jcr->comment, len);
-  EscapeString(jcr, esc_ujobname, jr->Job, strlen(jr->Job));
-  EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
+  auto buf = EscapeString(jcr, jcr->comment);
+  auto esc_ujobname = EscapeString(jcr, jr->Job);
+  auto esc_jobname = EscapeString(jcr, jr->Name);
 
   /* clang-format off */
   Mmsg(cmd,
        "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
        "ClientId,Comment) "
-       "VALUES ('%s','%s','%c','%c','%c','%s',%s,%s,'%s')",
-       esc_ujobname, esc_jobname, (char)(jr->JobType), (char)(jr->JobLevel),
-       (char)(jr->JobStatus), dt, edit_uint64(JobTDate, ed1),
-       edit_int64(jr->ClientId, ed2), buf.c_str());
+       "VALUES ('%s','%s','%c','%c','%c','%s',%" PRIu64 ",%" PRIdbid ",'%s')",
+       esc_ujobname.c_str(), esc_jobname.c_str(), (char)(jr->JobType), (char)(jr->JobLevel),
+       (char)(jr->JobStatus), dt, JobTDate, jr->ClientId, buf.c_str());
   /* clang-format on */
 
   jr->JobId = SqlInsertAutokeyRecord(cmd, NT_("Job"));
@@ -155,15 +146,14 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 {
   bool retval = false;
   char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50];
-  char esc_poolname[MAX_ESCAPE_NAME_LENGTH];
-  char esc_lf[MAX_ESCAPE_NAME_LENGTH];
   int num_rows;
 
   Dmsg0(200, "In create pool\n");
   DbLocker _{this};
-  EscapeString(jcr, esc_poolname, pr->Name, strlen(pr->Name));
-  EscapeString(jcr, esc_lf, pr->LabelFormat, strlen(pr->LabelFormat));
-  Mmsg(cmd, "SELECT PoolId,Name FROM Pool WHERE Name='%s'", esc_poolname);
+  auto esc_poolname = EscapeString(jcr, pr->Name);
+  auto esc_lf = EscapeString(jcr, pr->LabelFormat);
+  Mmsg(cmd, "SELECT PoolId,Name FROM Pool WHERE Name='%s'",
+       esc_poolname.c_str());
   Dmsg1(200, "selectpool: %s\n", cmd);
 
   if (QueryDb(jcr, cmd)) {
@@ -184,7 +174,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
        "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
        "RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
        "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%u,%u,%u)",
-       esc_poolname,
+       esc_poolname.c_str(),
        pr->NumVols, pr->MaxVols,
        pr->UseOnce, pr->UseCatalog,
        pr->AcceptAnyVolume,
@@ -193,7 +183,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
        edit_uint64(pr->VolUseDuration, ed2),
        pr->MaxVolJobs, pr->MaxVolFiles,
        edit_uint64(pr->MaxVolBytes, ed3),
-       pr->PoolType, pr->LabelType, esc_lf,
+       pr->PoolType, pr->LabelType, esc_lf.c_str(),
        edit_int64(pr->RecyclePoolId,ed4),
        edit_int64(pr->ScratchPoolId,ed5),
        pr->ActionOnPurge,
