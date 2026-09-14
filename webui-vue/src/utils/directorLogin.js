@@ -102,3 +102,19 @@ export function getLastSuccessfulDirector(attempts = []) {
 
   return lastSuccessfulDirector
 }
+
+// After a batch of per-director login attempts (one HTTP login call each),
+// decide what the multi-director login flow should do next: which
+// director to activate, whether any failures remain to retry/skip, and
+// crucially whether it's safe to redirect away from the login page yet.
+// Redirecting must wait until every director in the batch has succeeded,
+// otherwise the "Retry remaining directors" / "Skip failed directors"
+// controls (only shown while failures remain) would never be reachable.
+export function planMultiDirectorLoginOutcome({ successfulDirectors = [], failedAttempts = [] } = {}) {
+  return {
+    finalDirector: successfulDirectors.at(-1) ?? '',
+    remainingDirectorFailures: failedAttempts,
+    allFailed: successfulDirectors.length === 0,
+    shouldRedirect: successfulDirectors.length > 0 && failedAttempts.length === 0,
+  }
+}
