@@ -210,7 +210,7 @@ $bareos-blue-dark: #005a96;
 }
 
 .sched-cal-cell {
-  min-height: 72px;
+  min-height: 88px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 3px;
@@ -219,7 +219,7 @@ $bareos-blue-dark: #005a96;
 }
 
 .sched-cal-cell--week {
-  min-height: 200px;
+  min-height: 220px;
 }
 
 .sched-cal-empty {
@@ -237,13 +237,6 @@ $bareos-blue-dark: #005a96;
   opacity: 0.65;
 }
 
-.sched-cal-run-more {
-  font-size: 0.6rem;
-  color: #666;
-  padding: 1px 4px;
-  cursor: default;
-}
-
 .sched-cal-day-num {
   font-size: 0.72rem;
   font-weight: 600;
@@ -251,35 +244,79 @@ $bareos-blue-dark: #005a96;
   margin-bottom: 2px;
 }
 
-.sched-cal-run {
-  font-size: 0.62rem;
-  color: #fff;
-  border-radius: 3px;
-  padding: 1px 4px;
-  margin-bottom: 2px;
+// A fixed 24h axis (00:00 → 24:00) drawn per day cell. Month cells are wide
+// and short, so the axis runs left-to-right; week cells are tall, so the
+// axis runs top-to-bottom to better show clustering (e.g. overnight jobs).
+.sched-cal-timeline {
+  position: relative;
+}
+
+.sched-cal-timeline--horizontal {
+  height: 22px;
+  margin-top: 4px;
+}
+
+.sched-cal-timeline--vertical {
+  height: calc(100% - 22px);
+  width: 100%;
+}
+
+.sched-cal-timeline-grid {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.sched-cal-timeline--horizontal .sched-cal-timeline-grid {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.sched-cal-timeline--vertical .sched-cal-timeline-grid {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.sched-cal-tick {
+  position: absolute;
+  background: var(--q-primary);
+  border-radius: 50%;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 3px;
-  overflow: hidden;
-  cursor: default;
+  justify-content: center;
 }
 
-.sched-cal-run-level {
-  flex-shrink: 0;
-  transform: scale(0.78);
-  transform-origin: left center;
-  margin-right: -2px;
+.sched-cal-timeline--horizontal .sched-cal-tick {
+  top: 2px;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%);
 }
 
-.sched-cal-run-time {
-  flex-shrink: 0;
-  opacity: 0.9;
+.sched-cal-timeline--vertical .sched-cal-tick {
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%);
 }
 
-.sched-cal-run-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.sched-cal-tick--multi {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.sched-cal-tick-count {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.sched-cal-tick:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: 2px;
 }
 
 .sched-group-header td {
