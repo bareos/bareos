@@ -419,7 +419,7 @@
         </q-card>
         <div class="row q-col-gutter-md">
           <div class="col-12" v-if="catalogAclError">
-            <q-banner dense rounded class="bg-negative text-white">
+            <q-banner dense rounded class="bg-negative text-white q-mb-md">
               {{ t('Could not determine catalog-maintenance permissions') }}: {{ catalogAclError }}
             </q-banner>
           </div>

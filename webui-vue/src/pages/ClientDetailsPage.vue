@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading client…')" />
-    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
     <template v-else-if="!loading">
     <Breadcrumbs :items="breadcrumbItems" />
     <div class="row items-center q-mb-md">
