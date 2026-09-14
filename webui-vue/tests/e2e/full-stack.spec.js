@@ -60,11 +60,11 @@ async function login(
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
     await page.goto('/')
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-form"]')
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       if (!shouldSucceed) {
         throw new Error('Invalid credentials unexpectedly restored a session')
       }
@@ -78,7 +78,7 @@ async function login(
     await page.getByRole('button', { name: 'Login' }).click()
 
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-error"]')?.textContent?.trim()
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
@@ -88,7 +88,7 @@ async function login(
       return
     }
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       await expectConnected(page)
       return
     }
