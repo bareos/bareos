@@ -13,8 +13,9 @@
         <q-icon name="mdi-database" size="2rem" color="primary" />
         <div>
           <div class="text-h5">{{ pool.name }}</div>
-          <q-badge :color="poolTypeColor(pool.pooltype)" class="q-mt-xs">{{ pool.pooltype }}</q-badge>
-          <q-badge :color="pool.enabled !== '0' ? 'positive' : 'grey'" class="q-mt-xs q-ml-xs">
+          <PoolTypeBadge :type="pool.pooltype" class="q-mt-xs" />
+          <span class="q-ml-xs text-body2">{{ pool.pooltype }}</span>
+          <q-badge :color="pool.enabled !== '0' ? 'positive' : 'grey'" class="q-mt-xs q-ml-sm">
             {{ pool.enabled !== '0' ? t('Enabled') : t('Disabled') }}
           </q-badge>
         </div>
@@ -61,7 +62,7 @@
                 </template>
                 <template #body-cell-volstatus="props">
                   <q-td :props="props">
-                    <q-badge :color="statusColor(props.value)" :label="props.value" />
+                    <VolumeStatusBadge :status="props.value" />
                   </q-td>
                 </template>
                 <template #body-cell-volbytes="props">
@@ -147,7 +148,7 @@
                 </template>
                 <template #body-cell-status="props">
                   <q-td :props="props">
-                    <q-badge :color="statusColor(props.value)" :label="props.value" />
+                    <VolumeStatusBadge :status="props.value" />
                   </q-td>
                 </template>
                 <template #body-cell-prunablebytes="props">
@@ -199,6 +200,8 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -488,11 +491,4 @@ function findVolume(name) {
   return volumes.value.find(volume => volume.volumename === name) ?? { volumename: name }
 }
 
-function statusColor(s) {
-  return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative', Purged: 'grey', Used: 'info' }[s] || 'info'
-}
-
-function poolTypeColor(t) {
-  return { Backup: 'primary', Scratch: 'grey', Archive: 'deep-purple', Copy: 'teal', Migration: 'orange' }[t] || 'primary'
-}
 </script>
