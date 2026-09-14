@@ -96,17 +96,24 @@
       <!-- Storage Slots (left, wide) -->
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(storageSlots.length, t('Slots')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(storageSlots.length, t('Slots')) }}</span>
+            <q-space />
+            <q-input v-model="slotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableSlotCols" @toggle="toggleSlotCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               v-if="!(slotsLoading && !storageSlots.length)"
               :rows="storageSlots"
-              :columns="slotCols"
+              :columns="visibleSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="slotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
               virtual-scroll
@@ -216,7 +223,7 @@
                 </q-td>
               </template>
             </q-table>
-            <TableSkeleton v-else :columns="slotCols.length" :rows="8" />
+            <TableSkeleton v-else :columns="visibleSlotCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </div>
@@ -226,17 +233,24 @@
 
         <!-- Drives -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(drives.length, t('Drives')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(drives.length, t('Drives')) }}</span>
+            <q-space />
+            <q-input v-model="drivesSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:160px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableDriveCols" @toggle="toggleDriveCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
               v-if="!(slotsLoading && !drives.length)"
               :rows="drives"
-              :columns="driveCols"
+              :columns="visibleDriveCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="drivesSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -303,16 +317,21 @@
                 </q-td>
               </template>
             </q-table>
-            <TableSkeleton v-else :columns="driveCols.length" :rows="4" />
+            <TableSkeleton v-else :columns="visibleDriveCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
         <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center no-wrap">
+          <q-card-section class="panel-header row items-center no-wrap q-gutter-xs">
             <span class="col">
               {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
             </span>
+            <q-input v-model="ieSlotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:140px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableIeSlotCols" @toggle="toggleIeSlotCol" />
              <q-btn flat round dense size="sm" icon="download"
                    :title="t('Import all')" :aria-label="t('Import all')" :disable="commandRunning" @click="doImportAll" />
           </q-card-section>
@@ -320,10 +339,11 @@
             <q-table
               v-if="!(slotsLoading && !importSlots.length)"
               :rows="importSlots"
-              :columns="ieSlotCols"
+              :columns="visibleIeSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="ieSlotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -369,7 +389,7 @@
                 </q-td>
               </template>
             </q-table>
-            <TableSkeleton v-else :columns="ieSlotCols.length" :rows="4" />
+            <TableSkeleton v-else :columns="visibleIeSlotCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
@@ -574,9 +594,12 @@ import {
   resolveStoragesScopeDirector,
 } from '../utils/storagesRoute.js'
 import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 
 const { embedded } = defineProps({
   embedded: {
@@ -842,6 +865,29 @@ const slotCols = [
   { name: 'pr_name',     label: 'Pool',      field: 'pr_name',     align: 'left', sortable: true },
   { name: 'actions',     label: '',          field: 'actions',     align: 'right' },
 ]
+
+const {
+  visibleColumns: visibleSlotCols,
+  toggleableColumns: toggleableSlotCols,
+  toggleColumn: toggleSlotCol,
+} = usePersistedTableColumns('autochanger.slots', slotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleDriveCols,
+  toggleableColumns: toggleableDriveCols,
+  toggleColumn: toggleDriveCol,
+} = usePersistedTableColumns('autochanger.drives', driveCols, { essential: ['slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleIeSlotCols,
+  toggleableColumns: toggleableIeSlotCols,
+  toggleColumn: toggleIeSlotCol,
+} = usePersistedTableColumns('autochanger.ieSlots', ieSlotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const slotsSearch = usePersistedTableFilter('autochanger.slots')
+const drivesSearch = usePersistedTableFilter('autochanger.drives')
+const ieSlotsSearch = usePersistedTableFilter('autochanger.ieSlots')
+
 
 // ── Helpers ───────────────────────────────────────────────────
 
