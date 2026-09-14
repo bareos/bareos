@@ -82,7 +82,7 @@ const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
 const filesetsPagination = usePersistedTablePagination('filesets.list', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
 
 const {
