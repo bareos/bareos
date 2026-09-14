@@ -251,6 +251,8 @@ static inline PyObject* OwnedNone() { Py_RETURN_NONE; }
 
 static inline bool IsNone(PyObject* obj)
 {
+  // nullptr also count as none
+  if (!obj) { return true; }
   // according to the docs, this should be enough
   // even though Py_IsNone exists from 3.12 onwards ...
   return obj == Py_None;
@@ -302,7 +304,7 @@ static inline bool PySavePacketToNative(
   // See if this is for an Options Plugin.
   if (!is_options_plugin) {
     // Only copy back the arguments that are allowed to change.
-    if (pSavePkt->fname || IsNone(pSavePkt->fname)) {
+    if (!IsNone(pSavePkt->fname)) {
       /* As this has to linger as long as the backup is running we save it in
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->fname)) {
@@ -339,7 +341,7 @@ static inline bool PySavePacketToNative(
     }
 
     // Optional field.
-    if (pSavePkt->link) {
+    if (!IsNone(pSavePkt->link)) {
       /* As this has to linger as long as the backup is running we save it in
        * our plugin context. */
       if (PyUnicode_Check(pSavePkt->link)) {
@@ -1008,7 +1010,7 @@ static inline PyAclPacket* NativeToPyAclPacket(PyObject* fname, acl_pkt* ap)
 
 static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket, acl_pkt* ap)
 {
-  if (!pAclPacket->content || IsNone(pAclPacket->content)) { return true; }
+  if (IsNone(pAclPacket->content)) { return true; }
 
   if (PyByteArray_Check(pAclPacket->content)) {
     char* buf;
@@ -1180,7 +1182,7 @@ static inline PyXattrPacket* NativeToPyXattrPacket(PyObject* fname,
 static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
                                          xattr_pkt* xp)
 {
-  if (!pXattrPacket->name || IsNone(pXattrPacket->name)) { return true; }
+  if (IsNone(pXattrPacket->name)) { return true; }
 
   if (PyByteArray_Check(pXattrPacket->name)) {
     char* buf;
@@ -1880,7 +1882,7 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
   /* CheckFile only has a need for a limited version of the PySavePacket so we
    * handle that here separately and don't call PySavePacketToNative(). */
   sp.type = pSavePkt->type;
-  if (pSavePkt->fname) {
+  if (!IsNone(pSavePkt->fname)) {
     if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
@@ -1889,7 +1891,7 @@ static PyObject* PyBareosCheckChanges(PyObject*, PyObject* args)
   } else {
     goto bail_out;
   }
-  if (pSavePkt->link) {
+  if (!IsNone(pSavePkt->link)) {
     if (PyUnicode_Check(pSavePkt->link)) {
       sp.link = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->link));
     } else {
@@ -1929,7 +1931,7 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
 
   /* Acceptfile only needs fname and statp from PySavePacket so we handle
    * that here separately and don't call PySavePacketToNative(). */
-  if (pSavePkt->fname) {
+  if (!IsNone(pSavePkt->fname)) {
     if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
@@ -1939,7 +1941,7 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
     goto bail_out;
   }
 
-  if (pSavePkt->statp) {
+  if (!IsNone(pSavePkt->statp)) {
     PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp.statp);
   } else {
     goto bail_out;
@@ -2183,7 +2185,7 @@ static void PyStatPacket_dealloc(PyObject* obj)
 static inline const char* print_flags_bitmap(PyObject* bitmap)
 {
   static char visual_bitmap[FO_MAX + 1];
-  if (!bitmap || IsNone(bitmap)) { return "<NULL>"; }
+  if (IsNone(bitmap)) { return "<NULL>"; }
   if (PyByteArray_Check(bitmap)) {
     int cnt;
     char* flags;
