@@ -96,7 +96,7 @@
             >
               <template #prepend><q-icon name="dns" /></template>
             </q-input>
-            <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
+            <q-banner v-if="errorMsg" data-testid="login-error" dense rounded class="bg-negative text-white q-mb-md">
               <template #avatar><q-icon name="error" /></template>
               {{ errorMsg }}
             </q-banner>

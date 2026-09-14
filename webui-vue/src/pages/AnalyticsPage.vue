@@ -1,7 +1,7 @@
 <template>
   <div class="q-pa-sm" :class="{ 'analytics-widget': isDashboardWidget }">
     <DirectorErrorsBanner v-if="section === 'summary'" :errors="directorErrors" />
-    <q-banner v-if="section === 'summary' && error" dense class="bg-negative text-white q-mb-md">
+    <q-banner v-if="section === 'summary' && error" dense rounded class="bg-negative text-white q-mb-md">
       {{ error }}
     </q-banner>
 

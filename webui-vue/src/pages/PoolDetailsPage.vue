@@ -4,8 +4,8 @@
     <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- Loading / error -->
-    <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
-    <q-banner v-else-if="error" class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
+    <q-inner-loading :showing="loading" :label="t('Loading pool…')" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <template v-else-if="pool">
       <!-- Header -->

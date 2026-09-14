@@ -107,7 +107,7 @@
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
             <div v-if="clientsListScopeDirector" class="q-px-md q-pt-sm">
               <q-chip
                 removable
