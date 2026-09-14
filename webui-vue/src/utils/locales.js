@@ -114,6 +114,21 @@ const DIRECTOR_MONTHS = Object.freeze({
   Dec: 11,
 })
 
+const DIRECTOR_MONTH_ALIASES = Object.freeze({
+  jan: 0, janv: 0, enero: 0, janeiro: 0, januar: 0,
+  feb: 1, févr: 1, febrero: 1, fevereiro: 1, februar: 1,
+  mar: 2, mär: 2, mars: 2, marzo: 2, março: 2, märz: 2,
+  apr: 3, avr: 3, abril: 3, aprile: 3, april: 3,
+  may: 4, mai: 4, mayo: 4, maggio: 4,
+  jun: 5, juin: 5, junio: 5, junho: 5, juni: 5,
+  jul: 6, juil: 6, julio: 6, julho: 6, juli: 6,
+  aug: 7, août: 7, agosto: 7, augustus: 7,
+  sep: 8, sept: 8, septiembre: 8, setembro: 8, september: 8,
+  oct: 9, okt: 9, octobre: 9, octubre: 9, outubro: 9, oktober: 9,
+  nov: 10, noviembre: 10, novembro: 10,
+  dec: 11, dez: 11, déc: 11, diciembre: 11, dezembro: 11, dezember: 11,
+})
+
 export function localeFlagEmoji(locale) {
   return LOCALE_TO_FLAG[normalizeWebUiLocale(locale)] ?? '🏳️'
 }
@@ -274,20 +289,28 @@ export function formatSqlRelativeTime(value, locale) {
 export function parseDirectorDate(value) {
   if (!value) return null
 
+  const direct = new Date(String(value).replace(' ', 'T'))
+  if (!Number.isNaN(direct.getTime())) return direct
+
   const match = String(value).match(
-    /^(\d{1,2})-([A-Za-z]{3})-(\d{2})\s+(\d{2}):(\d{2})/,
+    /^(\d{1,2})-([A-Za-zÀ-ÿ]{3,9})-(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/i,
   )
   if (!match) return null
 
   const month = DIRECTOR_MONTHS[match[2]]
+    ?? DIRECTOR_MONTH_ALIASES[match[2].toLocaleLowerCase()]
   if (month === undefined) return null
 
+  let year = parseInt(match[3], 10)
+  if (year < 100) year += 2000
+
   return new Date(
-    2000 + parseInt(match[3], 10),
+    year,
     month,
     parseInt(match[1], 10),
     parseInt(match[4], 10),
     parseInt(match[5], 10),
+    match[6] ? parseInt(match[6], 10) : 0,
   )
 }
 
