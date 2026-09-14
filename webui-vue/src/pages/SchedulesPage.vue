@@ -221,27 +221,29 @@
                             !cell.day && 'sched-cal-empty',
                             viewMode === 'week' && 'sched-cal-cell--week']">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
-                <div v-for="(run, j) in cell.runs" :key="j" class="sched-cal-run"
-                     :style="{ background: scheduleColor(run.displaySchedule) }">
-                  <JobLevelBadge v-if="run.level" :level="run.level" class="sched-cal-run-level" />
-                  <span class="sched-cal-run-time">{{ run.time }}</span>
-                  <span class="sched-cal-run-name">{{ run.displaySchedule }}</span>
-                  <q-tooltip max-width="260px">
-                    <div class="text-weight-bold q-mb-xs">{{ run.displaySchedule }}</div>
-                    <div>{{ run.datetime }}</div>
-                    <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
-                    <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
-                    <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
-                    <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
-                  </q-tooltip>
-                </div>
-                <div v-if="cell.overflowCount" class="sched-cal-run-more">
-                  {{ t('+{n} more', { n: cell.overflowCount }) }}
-                  <q-tooltip max-width="260px">
-                    <div v-for="(run, k) in runsByDate[cell.dateStr]?.slice(MAX_CELL_RUNS[viewMode] ?? 0)" :key="k">
-                      {{ run.time }} — {{ run.displaySchedule }}
-                    </div>
-                  </q-tooltip>
+                <div v-if="cell.day" class="sched-cal-timeline"
+                     :class="viewMode === 'week' ? 'sched-cal-timeline--vertical' : 'sched-cal-timeline--horizontal'">
+                  <div v-for="hm in TIMELINE_HOUR_MARKS" :key="hm" class="sched-cal-timeline-grid"
+                       :style="viewMode === 'week' ? { top: `${hm}%` } : { left: `${hm}%` }" />
+                  <div v-for="(marker, mi) in cell.timeline" :key="mi"
+                       class="sched-cal-tick"
+                       :class="{ 'sched-cal-tick--multi': marker.count > 1 }"
+                       :style="tickStyle(marker)"
+                       tabindex="0"
+                       role="button"
+                       :aria-label="tickAriaLabel(marker)">
+                    <span v-if="marker.count > 1" class="sched-cal-tick-count">{{ marker.count }}</span>
+                    <q-tooltip max-width="260px">
+                      <div v-for="(run, ri) in marker.runs" :key="ri" class="q-mb-xs">
+                        <div class="text-weight-bold">{{ run.time }} — {{ run.displaySchedule }}</div>
+                        <div>{{ run.datetime }}</div>
+                        <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
+                        <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
+                        <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
+                        <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                      </div>
+                    </q-tooltip>
+                  </div>
                 </div>
               </div>
             </div>
@@ -977,19 +979,39 @@ const nextUpcomingRuns = computed(() => {
     })
 })
 
-const MAX_CELL_RUNS = { month: 3, week: 6 }
+function timeToMinutes(time) {
+  const [h, m] = String(time ?? '0:0').split(':').map(Number)
+  return (h || 0) * 60 + (m || 0)
+}
+
+// Bucket runs that are close together in time so their timeline ticks don't
+// visually overlap; week cells have more room so use a finer bucket.
+const TIMELINE_BUCKET_MINUTES = { month: 60, week: 30 }
+
+function buildCellTimeline(dateStr) {
+  const all = runsByDate.value[dateStr] ?? []
+  if (all.length === 0) return []
+
+  const bucketMinutes = TIMELINE_BUCKET_MINUTES[viewMode.value] ?? 60
+  const buckets = new Map()
+  for (const run of all) {
+    const minutes = timeToMinutes(run.time)
+    const bucketKey = Math.floor(minutes / bucketMinutes)
+    if (!buckets.has(bucketKey)) buckets.set(bucketKey, [])
+    buckets.get(bucketKey).push(run)
+  }
+
+  return Array.from(buckets.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([bucketKey, runs]) => ({
+      percent: ((bucketKey * bucketMinutes + bucketMinutes / 2) / 1440) * 100,
+      runs,
+      count: runs.length,
+    }))
+}
 
 function makeDateStr(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-}
-
-function buildCellRuns(dateStr) {
-  const all = runsByDate.value[dateStr] ?? []
-  const max = MAX_CELL_RUNS[viewMode.value] ?? all.length
-  return {
-    runs: all.slice(0, max),
-    overflowCount: Math.max(0, all.length - max),
-  }
 }
 
 const calendarCells = computed(() => {
@@ -1001,14 +1023,12 @@ const calendarCells = computed(() => {
       const day = new Date(viewAnchor.value)
       day.setDate(day.getDate() + i)
       const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
-      const { runs, overflowCount } = buildCellRuns(dateStr)
       return {
         day: day.getDate(),
         dateStr,
         isToday: dateStr === todayStr,
         isPast: dateStr < todayStr,
-        runs,
-        overflowCount,
+        timeline: buildCellTimeline(dateStr),
       }
     })
   }
@@ -1020,20 +1040,18 @@ const calendarCells = computed(() => {
   const startOffset = (firstWeekday + 6) % 7
 
   const cells = []
-  for (let i = 0; i < startOffset; i++) cells.push({ day: 0, runs: [] })
+  for (let i = 0; i < startOffset; i++) cells.push({ day: 0, timeline: [] })
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = makeDateStr(y, m, d)
-    const { runs, overflowCount } = buildCellRuns(dateStr)
     cells.push({
       day: d,
       dateStr,
       isToday: dateStr === todayStr,
       isPast: dateStr < todayStr,
-      runs,
-      overflowCount,
+      timeline: buildCellTimeline(dateStr),
     })
   }
-  while (cells.length % 7 !== 0) cells.push({ day: 0, runs: [] })
+  while (cells.length % 7 !== 0) cells.push({ day: 0, timeline: [] })
   return cells
 })
 
@@ -1046,6 +1064,26 @@ function scheduleColor(name) {
   const saturation = 60 + ((unsigned >>> 9) % 20)
   const lightness = 35 + ((unsigned >>> 17) % 20)
   return `hsl(${hue} ${saturation}% ${lightness}%)`
+}
+
+// Faint reference gridlines drawn across the 24h timeline (as % of the axis).
+const TIMELINE_HOUR_MARKS = [0, 25, 50, 75]
+
+function tickStyle(marker) {
+  const axisProp = viewMode.value === 'week' ? 'top' : 'left'
+  const style = { [axisProp]: `${marker.percent}%` }
+  if (marker.count === 1) {
+    style.background = scheduleColor(marker.runs[0].displaySchedule)
+  }
+  return style
+}
+
+function tickAriaLabel(marker) {
+  if (marker.count === 1) {
+    const run = marker.runs[0]
+    return `${run.time} — ${run.displaySchedule}`
+  }
+  return t('{n} jobs around {time}', { n: marker.count, time: marker.runs[0].time })
 }
 
 watch(tab, (value) => {
