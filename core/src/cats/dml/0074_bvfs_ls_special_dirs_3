@@ -1,8 +1,8 @@
 #
 # for .bvfs_lsdir
 #
-# Retrieve special directors "." and "..".
-# If attributes of this paths are known, include them,
+# Retrieve special directories "." and "..".
+# If attributes of these paths are known, include them,
 # otherwise result for extra columns will be empty.
 #
 # parameter:
@@ -10,22 +10,36 @@
 #   %s PathId
 #   %s JobIds ("1,2,...")
 #
-# row                       0    1                  2                3      4      5
-SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
-FROM (
+# DISTINCT ON keeps the first row for each SpecialDir.PathId, so that key must
+# lead the outer ORDER BY. JobTDate DESC puts the newest attributes first, and
+# JobId DESC orders rows with the same JobTDate.
+SELECT DISTINCT ON (SpecialDir.PathId)
+       'D',                     /* 0 */
+       SpecialDir.PathId,       /* 1 */
+       SpecialDir.Path,         /* 2 */
+       JobId,                   /* 3 */
+       LStat,                   /* 4 */
+       FileId                   /* 5 */
+  FROM (
     SELECT %s AS PathId, '.' AS Path
 
     UNION
 
     SELECT PPathId AS PathId, '..' AS Path
-    FROM   PathHierarchy
-    WHERE  PathId = %s
-) AS SpecialDir
-LEFT JOIN (
-    SELECT PathId, JobId, LStat, FileId
-    FROM File
-    WHERE File.Name = ''
-      AND File.JobId IN (%s)
-    ORDER BY PathId ASC, JobId DESC
-) AS DirAttribute
-ON (SpecialDir.PathId = DirAttribute.PathId)
+      FROM PathHierarchy
+     WHERE PathId = %s
+  ) AS SpecialDir
+  LEFT JOIN (
+    SELECT File.PathId AS PathId,
+           File.JobId AS JobId,
+           Job.JobTDate AS JobTDate,
+           File.LStat AS LStat,
+           File.FileId AS FileId
+      FROM File
+      JOIN Job ON (File.JobId = Job.JobId)
+     WHERE File.Name = ''
+       AND File.JobId IN (%s)
+     ORDER BY File.PathId ASC, Job.JobTDate DESC, File.JobId DESC
+  ) AS DirAttribute
+    ON (SpecialDir.PathId = DirAttribute.PathId)
+ORDER BY SpecialDir.PathId ASC, JobTDate DESC, JobId DESC

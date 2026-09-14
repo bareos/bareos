@@ -668,9 +668,9 @@ OFFSET %u
 )SQL",
 
 /* 0064_bvfs_lsdirs_4 */
-R"SQL(%s
+R"SQL((%s)
 UNION
-%s
+(%s)
 ORDER BY Path ASC,JobId DESC
 LIMIT %u
 OFFSET %u
@@ -744,27 +744,38 @@ WHERE  Path != ''
 )SQL",
 
 /* 0074_bvfs_ls_special_dirs_3 */
-R"SQL(SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
-FROM (
+R"SQL(SELECT DISTINCT ON (SpecialDir.PathId)
+       'D',                     /* 0 */
+       SpecialDir.PathId,       /* 1 */
+       SpecialDir.Path,         /* 2 */
+       JobId,                   /* 3 */
+       LStat,                   /* 4 */
+       FileId                   /* 5 */
+  FROM (
     SELECT %s AS PathId, '.' AS Path
     UNION
     SELECT PPathId AS PathId, '..' AS Path
-    FROM   PathHierarchy
-    WHERE  PathId = %s
-) AS SpecialDir
-LEFT JOIN (
-    SELECT PathId, JobId, LStat, FileId
-    FROM File
-    WHERE File.Name = ''
-      AND File.JobId IN (%s)
-    ORDER BY PathId ASC, JobId DESC
-) AS DirAttribute
-ON (SpecialDir.PathId = DirAttribute.PathId)
+      FROM PathHierarchy
+     WHERE PathId = %s
+  ) AS SpecialDir
+  LEFT JOIN (
+    SELECT File.PathId AS PathId,
+           File.JobId AS JobId,
+           Job.JobTDate AS JobTDate,
+           File.LStat AS LStat,
+           File.FileId AS FileId
+      FROM File
+      JOIN Job ON (File.JobId = Job.JobId)
+     WHERE File.Name = ''
+       AND File.JobId IN (%s)
+     ORDER BY File.PathId ASC, Job.JobTDate DESC, File.JobId DESC
+  ) AS DirAttribute
+    ON (SpecialDir.PathId = DirAttribute.PathId)
+ORDER BY SpecialDir.PathId ASC, JobTDate DESC, JobId DESC
 )SQL",
 
 /* 0075_bvfs_ls_sub_dirs_5 */
-R"SQL((
-SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
+R"SQL(SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
 FROM (
    SELECT
       Path1.PathId AS PathId,
@@ -808,7 +819,6 @@ FROM (
    ON (listpath3.PathId = listfile1.PathId)
 ) AS A
 ORDER BY Path ASC, JobId DESC
-)
 )SQL",
 
 /* 0076_list_volumes_select_0 */

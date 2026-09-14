@@ -13,9 +13,9 @@
 #
 # row: 0    1       2     3      4      5
 # row: 'D', PathId, Path, JobId, LStat, FileId
-%s
+(%s)
 UNION
-%s
+(%s)
 ORDER BY Path ASC,JobId DESC
 LIMIT %u
 OFFSET %u
