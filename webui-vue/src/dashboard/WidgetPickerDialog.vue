@@ -59,8 +59,13 @@
             <q-card
               flat bordered
               clickable
+              tabindex="0"
+              role="button"
               class="widget-picker-card q-pa-sm"
+              :aria-label="t('{label} – {description}', { label: t(def.label), description: t(def.description) })"
               @click="pick(def)"
+              @keydown.enter.prevent="pick(def)"
+              @keydown.space.prevent="pick(def)"
             >
               <div class="row items-center no-wrap q-gutter-sm">
                 <q-icon :name="def.icon" size="28px" color="primary" />
@@ -124,5 +129,9 @@ function pick(def) {
 .widget-picker-card:hover {
   border-color: var(--q-primary);
   box-shadow: 0 2px 8px rgba(0, 117, 190, 0.18);
+}
+.widget-picker-card:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: 2px;
 }
 </style>
