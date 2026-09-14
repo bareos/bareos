@@ -59,6 +59,7 @@
                 </q-card-section>
                 <q-card-section class="q-pa-none">
                   <q-table flat dense
+                    v-if="!(statusLoading && !scheduledJobs.length)"
                     :rows="scheduledJobs"
                     :columns="visibleScheduledJobCols"
                     row-key="scopeKey"
@@ -106,6 +107,7 @@
                       </td>
                     </template>
                   </q-table>
+                  <TableSkeleton v-else :columns="visibleScheduledJobCols.length" :rows="6" />
                 </q-card-section>
               </q-card>
             </div>
@@ -154,6 +156,7 @@
                 </q-card-section>
                 <q-card-section class="q-pa-none">
                   <q-table flat dense
+                    v-if="!(statusLoading && !runningJobs.length)"
                     :rows="runningJobs"
                     :columns="visibleRunningJobCols"
                     row-key="scopeKey"
@@ -223,6 +226,7 @@
                       </td>
                     </template>
                   </q-table>
+                  <TableSkeleton v-else :columns="visibleRunningJobCols.length" :rows="6" />
                 </q-card-section>
               </q-card>
             </div>
@@ -265,6 +269,7 @@
                 </q-card-section>
                 <q-card-section class="q-pa-none">
                   <q-table flat dense
+                    v-if="!(statusLoading && !terminatedJobs.length)"
                     :rows="terminatedJobs"
                     :columns="visibleTerminatedJobCols"
                     row-key="scopeKey"
@@ -328,6 +333,7 @@
                       <td><JobStatusBadge :status="props.value" /></td>
                     </template>
                   </q-table>
+                  <TableSkeleton v-else :columns="visibleTerminatedJobCols.length" :rows="6" />
                 </q-card-section>
               </q-card>
             </div>
@@ -466,6 +472,7 @@
                     />
                   </div>
                   <q-table
+                    v-if="!(emptyJobsLoading && !emptyJobs.length)"
                     :rows="emptyJobs"
                     :columns="emptyJobCols"
                     row-key="id"
@@ -497,6 +504,7 @@
                       </q-td>
                     </template>
                   </q-table>
+                  <TableSkeleton v-else :columns="emptyJobCols.length" :rows="6" />
                   <div v-if="deleteResult" class="q-pa-sm">
                     <q-banner
                       :class="deleteResult.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
@@ -691,6 +699,7 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const validTabs = new Set(['status', 'messages', 'catalog', 'subscription'])
 function normaliseTab(value) {
