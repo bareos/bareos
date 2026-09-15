@@ -20,15 +20,16 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildDailyRunSummary, buildTimelineGroups, distinctJobNames } from '../../src/utils/jobTimeline.js'
+import { buildTimelineLanes, distinctFilesetClientOptions } from '../../src/utils/jobTimeline.js'
 
-describe('job timeline helpers', () => {
-  it('groups multi-director timelines by director without prefixing each client label', () => {
-    const groups = buildTimelineGroups([
+describe('buildTimelineLanes', () => {
+  it('groups multi-director timelines by director without prefixing each lane label', () => {
+    const groups = buildTimelineLanes([
       {
         id: 1,
         name: 'BackupCatalog',
         client: 'bareos-fd',
+        fileset: 'SelfTest',
         director: 'prod-a',
         starttime: '2026-05-27 10:00:00',
         endtime: '2026-05-27 10:01:00',
@@ -37,6 +38,7 @@ describe('job timeline helpers', () => {
         id: 2,
         name: 'BackupCatalog',
         client: 'bareos-fd',
+        fileset: 'SelfTest',
         director: 'prod-b',
         starttime: '2026-05-27 11:00:00',
         endtime: '2026-05-27 11:01:00',
@@ -49,20 +51,21 @@ describe('job timeline helpers', () => {
 
     expect(groups).toHaveLength(2)
     expect(groups.map(group => group.director)).toEqual(['prod-a', 'prod-b'])
-    expect(groups[0].clientSpans).toEqual([
-      { client: 'bareos-fd', director: 'prod-a', label: 'bareos-fd', startRow: 0, rowCount: 1 },
+    expect(groups[0].lanes).toEqual([
+      expect.objectContaining({ client: 'bareos-fd', fileset: 'SelfTest', director: 'prod-a' }),
     ])
-    expect(groups[1].clientSpans).toEqual([
-      { client: 'bareos-fd', director: 'prod-b', label: 'bareos-fd', startRow: 0, rowCount: 1 },
+    expect(groups[1].lanes).toEqual([
+      expect.objectContaining({ client: 'bareos-fd', fileset: 'SelfTest', director: 'prod-b' }),
     ])
   })
 
-  it('keeps single-director timelines as one grouped section and sorts rows', () => {
-    const groups = buildTimelineGroups([
+  it('keeps single-director timelines as one grouped section, sorted by client then fileset', () => {
+    const groups = buildTimelineLanes([
       {
         id: 2,
         name: 'ZBackup',
         client: 'client-b',
+        fileset: 'FilesetZ',
         director: 'prod-a',
         starttime: '2026-05-27 11:00:00',
         endtime: '2026-05-27 11:01:00',
@@ -71,6 +74,7 @@ describe('job timeline helpers', () => {
         id: 1,
         name: 'ABackup',
         client: 'client-a',
+        fileset: 'FilesetA',
         director: 'prod-a',
         starttime: '2026-05-27 10:00:00',
         endtime: '2026-05-27 10:01:00',
@@ -82,63 +86,61 @@ describe('job timeline helpers', () => {
     })
 
     expect(groups).toHaveLength(1)
-    expect(groups[0].rows.map(row => `${row.client}:${row.name}`)).toEqual([
-      'client-a:ABackup',
-      'client-b:ZBackup',
-    ])
-    expect(groups[0].clientSpans).toEqual([
-      { client: 'client-a', director: 'prod-a', label: 'client-a', startRow: 0, rowCount: 1 },
-      { client: 'client-b', director: 'prod-a', label: 'client-b', startRow: 1, rowCount: 1 },
-    ])
-  })
-})
-
-describe('buildDailyRunSummary', () => {
-  const jobs = [
-    { id: 1, name: 'BackupA', client: 'c1', status: 'T', starttime: '2026-05-27 10:00:00' },
-    { id: 2, name: 'BackupB', client: 'c1', status: 'f', starttime: '2026-05-27 11:00:00' },
-    { id: 3, name: 'BackupC', client: 'c2', status: 'T', starttime: '2026-05-27 12:00:00' },
-    { id: 4, name: 'BackupD', client: 'c2', status: 'T', starttime: '2026-05-28 01:00:00' },
-  ]
-
-  it('buckets jobs by their local start date and counts statuses worst-first', () => {
-    const summary = buildDailyRunSummary(jobs, '2026-05-27')
-    expect(summary.total).toBe(3)
-    expect(summary.statuses).toEqual([
-      { status: 'f', count: 1 },
-      { status: 'T', count: 2 },
+    expect(groups[0].lanes.map(lane => `${lane.client}:${lane.fileset}`)).toEqual([
+      'client-a:FilesetA',
+      'client-b:FilesetZ',
     ])
   })
 
-  it('ignores jobs on other days', () => {
-    const summary = buildDailyRunSummary(jobs, '2026-05-28')
-    expect(summary.total).toBe(1)
-    expect(summary.statuses).toEqual([{ status: 'T', count: 1 }])
-  })
-
-  it('honours a visibleJobNames filter', () => {
-    const summary = buildDailyRunSummary(jobs, '2026-05-27', {
-      visibleJobNames: new Set(['BackupA', 'BackupC']),
+  it('merges different job names sharing a fileset+client into a single lane', () => {
+    const groups = buildTimelineLanes([
+      {
+        id: 1,
+        name: 'Full-Backup',
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-05-27 08:00:00',
+        endtime: '2026-05-27 08:01:00',
+      },
+      {
+        id: 2,
+        name: 'Incremental-Backup',
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-05-27 09:00:00',
+        endtime: '2026-05-27 09:01:00',
+      },
+    ], {
+      start: Date.parse('2026-05-27T00:00:00'),
+      now: Date.parse('2026-05-27T23:59:59'),
+      multiDirectorTimeline: false,
     })
-    expect(summary.total).toBe(2)
-    expect(summary.statuses).toEqual([{ status: 'T', count: 2 }])
-  })
 
-  it('returns an empty summary when nothing ran that day', () => {
-    expect(buildDailyRunSummary(jobs, '2026-06-01')).toEqual({ total: 0, statuses: [] })
+    expect(groups).toHaveLength(1)
+    expect(groups[0].lanes).toHaveLength(1)
+    expect(groups[0].lanes[0].runs.map(run => run.name)).toEqual([
+      'Full-Backup',
+      'Incremental-Backup',
+    ])
   })
 })
 
-describe('distinctJobNames', () => {
-  it('returns sorted, de-duplicated job names', () => {
+describe('distinctFilesetClientOptions', () => {
+  it('returns one option per fileset@client tuple, sorted by label', () => {
     const jobs = [
-      { name: 'ZJob' }, { name: 'AJob' }, { name: 'ZJob' }, { name: '' }, { name: null },
+      { name: 'Full', client: 'client-b', fileset: 'FilesetZ' },
+      { name: 'Incr', client: 'client-a', fileset: 'FilesetA' },
+      { name: 'Full', client: 'client-b', fileset: 'FilesetZ' },
+      { name: 'Full', client: '', fileset: '' },
     ]
-    expect(distinctJobNames(jobs)).toEqual(['AJob', 'ZJob'])
+    expect(distinctFilesetClientOptions(jobs)).toEqual([
+      { key: 'FilesetA\u0000client-a', fileset: 'FilesetA', client: 'client-a', label: 'FilesetA@client-a' },
+      { key: 'FilesetZ\u0000client-b', fileset: 'FilesetZ', client: 'client-b', label: 'FilesetZ@client-b' },
+    ])
   })
 
   it('returns an empty array for no jobs', () => {
-    expect(distinctJobNames([])).toEqual([])
-    expect(distinctJobNames(null)).toEqual([])
+    expect(distinctFilesetClientOptions([])).toEqual([])
+    expect(distinctFilesetClientOptions(null)).toEqual([])
   })
 })

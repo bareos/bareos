@@ -82,11 +82,11 @@
           </div>
           <div v-for="lane in group.lanes" :key="lane.key" class="sched-day-lane">
             <div class="sched-day-lane-label">
+              <span :title="lane.fileset">{{ midEllipsis(lane.fileset, 20) }}</span>
+              <span>@</span>
               <span class="text-primary cursor-pointer" style="text-decoration:underline"
                     :title="lane.client"
                     @click="router.push(clientDetailsRoute(lane))">{{ midEllipsis(lane.client, 14) }}</span>
-              <span> / </span>
-              <span :title="lane.name">{{ midEllipsis(lane.name, 18) }}</span>
             </div>
             <div class="sched-day-lane-axis">
               <div v-for="hm in DAY_VIEW_HOUR_MARKS" :key="hm.pct" class="sched-day-hour-mark"
@@ -112,6 +112,7 @@
                   <div class="text-weight-bold q-mb-xs">{{ run.name }}</div>
                   <div v-if="multiDirectorTimeline">{{ t('Director') }}: {{ run.director }}</div>
                   <div>{{ t('Client') }}: {{ run.client }}</div>
+                  <div>{{ t('Fileset') }}: {{ run.fileset }}</div>
                   <div>{{ t('ID') }}: {{ run.id }}</div>
                   <div>{{ t('Status') }}: {{ displayJobStatus(run) }}</div>
                   <div>{{ t('Start') }}: {{ run.starttime }}</div>
@@ -125,28 +126,68 @@
           </div>
         </div>
       </div>
-      <div v-else ref="calendarRef" class="sched-calendar" :class="calendarMode === 'week' ? 'sched-calendar--week' : ''">
-        <div v-for="(h, hi) in calendarHeaders" :key="hi" class="sched-cal-header">{{ h }}</div>
-        <div v-for="(cell, i) in calendarCells" :key="i"
-             :class="['sched-cal-cell',
-                      cell.isToday && 'sched-cal-today',
-                      cell.isPast && 'sched-cal-past',
-                      !cell.day && 'sched-cal-empty',
-                      calendarMode === 'week' && 'sched-cal-cell--week']"
-             :data-date="cell.dateStr"
-             :tabindex="cell.day ? 0 : -1"
-             :role="cell.day ? 'button' : undefined"
-             :aria-label="cell.day ? t('View job runs for {date}', { date: cell.dateStr }) : undefined"
-             @click="cell.day && openDayView(cell.dateStr)"
-             @keydown.enter="cell.day && openDayView(cell.dateStr)"
-             @keydown.space.prevent="cell.day && openDayView(cell.dateStr)">
-          <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
-          <div v-if="cell.day && cell.summary.total" class="tl-cal-summary">
-            <span v-for="s in cell.summary.statuses" :key="s.status" class="tl-cal-dot"
-                  :style="{ background: tlColorOf(s.status) }">
-              <q-tooltip>{{ jobStatusMap[s.status]?.label ?? s.status }}: {{ s.count }}</q-tooltip>
-            </span>
-            <span class="tl-cal-count">{{ cell.summary.total }}</span>
+      <div v-else ref="calendarRef" class="sched-day-view sched-period-view">
+        <div class="sched-period-ticks">
+          <div class="sched-period-tick-axis">
+            <div v-for="tick in periodDayTicks" :key="tick.dateStr"
+                 class="sched-period-tick"
+                 :class="{ 'sched-period-tick--today': tick.isToday }"
+                 :style="{ left: `${tick.pct}%` }"
+                 :data-date="tick.dateStr"
+                 tabindex="0"
+                 role="button"
+                 :aria-label="t('View job runs for {date}', { date: tick.dateStr })"
+                 @click="openDayView(tick.dateStr)"
+                 @keydown.enter="openDayView(tick.dateStr)">
+              <span v-if="tick.label" class="sched-period-tick-label">{{ tick.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-for="group in periodViewGroups" :key="`pgroup-${group.director ?? 'single'}`">
+          <div v-if="multiDirectorTimeline" class="text-caption text-weight-bold text-primary q-mb-xs">
+            {{ group.director }}
+          </div>
+          <div v-for="lane in group.lanes" :key="lane.key" class="sched-day-lane">
+            <div class="sched-day-lane-label">
+              <span :title="lane.fileset">{{ midEllipsis(lane.fileset, 20) }}</span>
+              <span>@</span>
+              <span class="text-primary cursor-pointer" style="text-decoration:underline"
+                    :title="lane.client"
+                    @click="router.push(clientDetailsRoute(lane))">{{ midEllipsis(lane.client, 14) }}</span>
+            </div>
+            <div class="sched-day-lane-axis">
+              <div v-for="tick in periodDayTicks" :key="tick.dateStr" class="sched-period-gridline"
+                   :style="{ left: `${tick.pct}%` }" />
+              <div v-if="periodNowPercent !== null" class="sched-now-line sched-day-now-line"
+                   :style="{ left: `${periodNowPercent}%` }"
+                   tabindex="0"
+                   :aria-label="nowLineLabel">
+                <q-tooltip>{{ nowLineLabel }}</q-tooltip>
+              </div>
+              <div v-for="run in lane.runs" :key="run.id"
+                   class="tl-day-bar"
+                   :style="periodBarStyle(run)"
+                   :class="{ 'tl-day-bar--running': isRunningJobStatus(run.status) }"
+                   tabindex="0"
+                   role="img"
+                   :aria-label="runAriaLabel(run)"
+                   @click="router.push(jobDetailsRoute(run))"
+                   @keydown.enter="router.push(jobDetailsRoute(run))">
+                <q-tooltip max-width="260px">
+                  <div class="text-weight-bold q-mb-xs">{{ run.name }}</div>
+                  <div v-if="multiDirectorTimeline">{{ t('Director') }}: {{ run.director }}</div>
+                  <div>{{ t('Client') }}: {{ run.client }}</div>
+                  <div>{{ t('Fileset') }}: {{ run.fileset }}</div>
+                  <div>{{ t('ID') }}: {{ run.id }}</div>
+                  <div>{{ t('Status') }}: {{ displayJobStatus(run) }}</div>
+                  <div>{{ t('Start') }}: {{ run.starttime }}</div>
+                  <div v-if="run.endtime">{{ t('End') }}: {{ run.endtime }}</div>
+                  <div>{{ t('Duration') }}: {{ run.duration || '—' }}</div>
+                  <div>{{ t('Files') }}: {{ formatNumber(run.files ?? 0, settings.locale) }}</div>
+                  <div>{{ t('Bytes') }}: {{ fmtBytes(run.bytes ?? 0) }}</div>
+                </q-tooltip>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -172,19 +213,16 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import {
-  buildTimelineGroups,
-  distinctJobNames,
-  buildDailyRunSummary,
+  buildTimelineLanes,
+  distinctFilesetClientOptions,
   parseTimelineTimestamp,
 } from '../utils/jobTimeline.js'
 import {
   firstOfMonth,
   makeDateStr,
   mondayOf,
-  monthGridDates,
   parseDateStr,
   startOfToday,
-  weekDates,
 } from '../utils/calendarGrid.js'
 import { formatNumber } from '../utils/locales.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
@@ -303,15 +341,6 @@ const periodLabel = computed(() => {
   return `${fmt(mon)} – ${fmt(sun)} ${sun.getFullYear()}`
 })
 
-const calendarHeaders = computed(() => {
-  if (calendarMode.value === 'month') return DAY_ABBR.value
-  return DAY_ABBR.value.map((d, i) => {
-    const day = new Date(viewAnchor.value)
-    day.setDate(day.getDate() + i)
-    return `${d} ${day.getDate()}`
-  })
-})
-
 function prevPeriod() {
   const a = new Date(viewAnchor.value)
   if (calendarMode.value === 'month') {
@@ -393,8 +422,8 @@ watch(calendarMode, (mode) => {
   settings.setJobsTimelineViewMode(mode)
 })
 
-// ── "Show jobs" filter ──────────────────────────────────────────────────────
-const allJobOptions = computed(() => distinctJobNames(tlRawJobs.value).map(name => ({ key: name, label: name })))
+// ── "Show jobs" filter (one checkbox per fileset@client lane) ────────────────
+const allJobOptions = computed(() => distinctFilesetClientOptions(tlRawJobs.value))
 const jobFilterInitialized = ref(false)
 const visibleJobNames = ref([])
 
@@ -421,7 +450,7 @@ function selectNoJobs() { visibleJobNames.value = [] }
 const visibleJobNameSet = computed(() => new Set(visibleJobNames.value))
 const visibleJobs = computed(() => (
   jobFilterInitialized.value
-    ? tlRawJobs.value.filter(job => visibleJobNameSet.value.has(job.name))
+    ? tlRawJobs.value.filter(job => visibleJobNameSet.value.has(`${job.fileset ?? ''}\u0000${job.client ?? ''}`))
     : tlRawJobs.value
 ))
 
@@ -432,10 +461,10 @@ const hasVisibleRuns = computed(() => visibleJobs.value.length > 0)
 const periodHasVisibleRuns = computed(() => (
   inDayView.value
     ? dayViewGroups.value.some(group => group.lanes.length > 0)
-    : calendarCells.value.some(cell => cell.summary.total > 0)
+    : periodViewGroups.value.some(group => group.lanes.length > 0)
 ))
 
-// ── Day view lanes (one per director/client/job, duration bars) ───────────────
+// ── Day view lanes (one per director/fileset/client, duration bars) ──────────
 const DAY_MS = 86_400_000
 function dayBounds(dateStr) {
   const start = parseDateStr(dateStr).getTime()
@@ -446,17 +475,7 @@ const dayViewGroups = computed(() => {
   if (!dayViewDate.value) return []
   const { start, end } = dayBounds(dayViewDate.value)
   const now = Math.min(Date.now(), end)
-  const groups = buildTimelineGroups(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
-  return groups.map(group => ({
-    director: group.director,
-    lanes: group.rows.map(row => ({
-      key: `${row.director ?? ''}:${row.client}:${row.name}`,
-      client: row.client,
-      name: row.name,
-      director: row.director,
-      runs: row.runs,
-    })),
-  }))
+  return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
 })
 
 function dayBarStyle(run) {
@@ -475,29 +494,72 @@ function runAriaLabel(run) {
   return `${run.name} — ${displayJobStatus(run)} — ${run.starttime}`
 }
 
-// ── Month/Week calendar grid (compact per-day run-status summary) ────────────
-const calendarCells = computed(() => {
-  const today = startOfToday()
-  const todayStr = makeDateStr(today.getFullYear(), today.getMonth(), today.getDate())
-  const jobNameSet = jobFilterInitialized.value ? visibleJobNameSet.value : null
-
-  function buildCell(day) {
-    if (!day) return { day: 0, summary: { total: 0, statuses: [] } }
-    const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
-    return {
-      day: day.getDate(),
-      dateStr,
-      isToday: dateStr === todayStr,
-      isPast: dateStr < todayStr,
-      summary: buildDailyRunSummary(tlRawJobs.value, dateStr, { visibleJobNames: jobNameSet }),
-    }
+// ── Week/Month period view (continuous timeline spanning the full period,
+// same lane/bar visual language as the Day view above, just scaled) ──────────
+// Week always starts on the Monday held in viewAnchor; month always starts
+// on the 1st (also held in viewAnchor) and runs up to (but excluding) the
+// 1st of the following month.
+const periodBounds = computed(() => {
+  const start = viewAnchor.value.getTime()
+  if (calendarMode.value === 'month') {
+    const next = new Date(viewAnchor.value.getFullYear(), viewAnchor.value.getMonth() + 1, 1)
+    return { start, end: next.getTime() }
   }
-
-  if (calendarMode.value === 'week') {
-    return weekDates(viewAnchor.value).map(buildCell)
-  }
-  return monthGridDates(viewAnchor.value).map(buildCell)
+  return { start, end: start + 7 * DAY_MS }
 })
+
+// One tick per calendar day in the period, used both for the header row of
+// clickable day labels and as gridlines inside each lane. Month view only
+// labels the 1st and each Monday to avoid crowding ~30 ticks; week view
+// labels every day.
+const periodDayTicks = computed(() => {
+  const { start, end } = periodBounds.value
+  const total = end - start
+  const todayStr = todayDateStr.value
+  const ticks = []
+  const cursor = new Date(start)
+  while (cursor.getTime() < end) {
+    const dateStr = makeDateStr(cursor.getFullYear(), cursor.getMonth(), cursor.getDate())
+    const showLabel = calendarMode.value === 'week' || cursor.getDate() === 1 || cursor.getDay() === 1
+    ticks.push({
+      dateStr,
+      pct: ((cursor.getTime() - start) / total) * 100,
+      isToday: dateStr === todayStr,
+      label: showLabel
+        ? (calendarMode.value === 'week' ? `${DAY_ABBR.value[(cursor.getDay() + 6) % 7]} ${cursor.getDate()}` : String(cursor.getDate()))
+        : '',
+    })
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return ticks
+})
+
+const periodNowPercent = computed(() => {
+  const { start, end } = periodBounds.value
+  const now = Date.now()
+  if (now < start || now > end) return null
+  return ((now - start) / (end - start)) * 100
+})
+
+const periodViewGroups = computed(() => {
+  if (inDayView.value) return []
+  const { start, end } = periodBounds.value
+  const now = Math.min(Date.now(), end)
+  return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
+})
+
+function periodBarStyle(run) {
+  const { start, end } = periodBounds.value
+  const total = end - start
+  const now = Math.min(Date.now(), end)
+  const sRaw = parseTimelineTimestamp(run.starttime) ?? start
+  const eRaw = parseTimelineTimestamp(run.endtime) ?? now
+  const s = Math.max(sRaw, start)
+  const e = Math.min(eRaw, now)
+  const leftPct = ((s - start) / total) * 100
+  const widthPct = Math.max(0.3, ((e - s) / total) * 100)
+  return { left: `${leftPct}%`, width: `${widthPct}%`, background: tlColorOf(run.status) }
+}
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 const tlStatusColors = {
@@ -545,7 +607,7 @@ const DAY_VIEW_HOUR_MARKS = [0, 6, 12, 18].map(h => ({
 
 const showNowLineLegend = computed(() => {
   if (inDayView.value) return dayViewDate.value === todayDateStr.value
-  return calendarCells.value.some(cell => cell.isToday)
+  return periodNowPercent.value !== null
 })
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -637,8 +699,8 @@ watch(() => director.isConnected, (connected) => {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  height: 22px;
-  border-radius: 4px;
+  height: 14px;
+  border-radius: 3px;
   cursor: pointer;
 }
 
