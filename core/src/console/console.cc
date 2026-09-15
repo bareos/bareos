@@ -353,7 +353,7 @@ static bool ReadSelectionInput(FILE* input,
     unsigned char next = 0;
     if (read_with_timeout(next) && next == '[') {
       unsigned char final_byte = 0;
-      bool has_parameters = false;
+      std::string parameters;
       for (int i = 0; i < 16; ++i) {
         unsigned char byte = 0;
         if (!read_with_timeout(byte)) { break; }
@@ -361,16 +361,33 @@ static bool ReadSelectionInput(FILE* input,
           final_byte = byte;
           break;
         }
-        has_parameters = true;
+        parameters.push_back(static_cast<char>(byte));
       }
-      if (!has_parameters && final_byte == 'A') {
+      if (parameters.empty() && final_byte == 'A') {
         event = "key:up";
-      } else if (!has_parameters && final_byte == 'B') {
+      } else if (parameters.empty() && final_byte == 'B') {
         event = "key:down";
-      } else if (!has_parameters && final_byte == 'C') {
+      } else if (parameters.empty() && final_byte == 'C') {
         event = "key:right";
-      } else if (!has_parameters && final_byte == 'D') {
+      } else if (parameters.empty() && final_byte == 'D') {
         event = "key:left";
+      } else if (final_byte == 'H'
+                 || (final_byte == '~'
+                     && (parameters == "1" || parameters == "7"))) {
+        event = "key:home";
+      } else if (final_byte == 'F'
+                 || (final_byte == '~'
+                     && (parameters == "4" || parameters == "8"))) {
+        event = "key:end";
+      } else {
+        event = "key:noop";
+      }
+    } else if (next == 'O') {
+      unsigned char final_byte = 0;
+      if (read_with_timeout(final_byte) && final_byte == 'H') {
+        event = "key:home";
+      } else if (final_byte == 'F') {
+        event = "key:end";
       } else {
         event = "key:noop";
       }
@@ -385,6 +402,23 @@ static bool ReadSelectionInput(FILE* input,
     event = "key:backspace";
   } else if (input_byte == ' ') {
     event = "key:space";
+  } else if (input_byte >= 0x80) {
+    size_t length = 0;
+    if ((input_byte & 0xe0) == 0xc0) {
+      length = 2;
+    } else if ((input_byte & 0xf0) == 0xe0) {
+      length = 3;
+    } else if ((input_byte & 0xf8) == 0xf0) {
+      length = 4;
+    }
+
+    std::string utf8_character(1, static_cast<char>(input_byte));
+    while (utf8_character.size() < length) {
+      unsigned char continuation = 0;
+      if (!read_with_timeout(continuation)) { break; }
+      utf8_character.push_back(static_cast<char>(continuation));
+    }
+    event = console::MapUtf8InputToSelectionEvent(utf8_character);
   } else if (input_byte >= 0x20 && input_byte != 0x7f) {
     event = "key:text:";
     event.push_back(static_cast<char>(input_byte));
@@ -425,6 +459,7 @@ static bool ReadSelectionInput(FILE* input,
   if (!SetConsoleMode(input_handle, raw_mode)) { return false; }
 
   std::string event;
+  wchar_t pending_high_surrogate = 0;
   for (;;) {
     INPUT_RECORD record{};
     DWORD events_read = 0;
@@ -455,9 +490,22 @@ static bool ReadSelectionInput(FILE* input,
     bool ctrl_pressed = (record.Event.KeyEvent.dwControlKeyState
                          & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED))
                         != 0;
+    wchar_t unicode_char = record.Event.KeyEvent.uChar.UnicodeChar;
+    if (unicode_char >= 0xd800 && unicode_char <= 0xdbff) {
+      pending_high_surrogate = unicode_char;
+      continue;
+    }
+    if (pending_high_surrogate != 0 && unicode_char >= 0xdc00
+        && unicode_char <= 0xdfff) {
+      event = console::MapUtf16InputToSelectionEvent(pending_high_surrogate,
+                                                     unicode_char);
+      pending_high_surrogate = 0;
+      if (event.empty()) { event = "key:noop"; }
+      break;
+    }
+    pending_high_surrogate = 0;
     event = console::MapConsoleKeyEventToSelectionEvent(
-        record.Event.KeyEvent.wVirtualKeyCode,
-        record.Event.KeyEvent.uChar.UnicodeChar, ctrl_pressed);
+        record.Event.KeyEvent.wVirtualKeyCode, unicode_char, ctrl_pressed);
     if (event.empty()) { event = "key:noop"; }
     break;
   }
