@@ -216,6 +216,11 @@ struct TreeContext {
   uint32_t LastCount = 0;    /**< Last count of files */
   uint32_t DeltaCount = 0;   /**< Trigger for printing */
 
+  /** Set by the "browse" classic-mode command to request switching (back)
+   * into the full-screen interactive tree browser. Cleared as soon as the
+   * request has been picked up by UserSelectFilesFromTree(). */
+  bool switch_to_browser = false;
+
   TreeContext() = default;
   ~TreeContext() = default;
 };
