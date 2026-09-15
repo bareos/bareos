@@ -15,6 +15,7 @@
           standout
           :placeholder="t('Search…')"
           style="width:200px"
+          data-testid="filesets-search"
         >
           <template #prepend><q-icon name="search" /></template>
         </q-input>

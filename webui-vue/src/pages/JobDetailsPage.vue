@@ -60,11 +60,11 @@
             <q-card-section class="panel-header">{{ t('Actions') }}</q-card-section>
             <q-card-section class="q-gutter-sm">
               <q-btn v-if="canRerunCurrentJob" icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
-                     :loading="rerunLoading" @click="confirmRerun" />
+                     :loading="rerunLoading" @click="confirmRerun" data-testid="job-details-rerun" />
               <q-btn v-if="!isRestoreJob" icon="restore" :label="t('Restore Job')" color="secondary" no-caps
-                     @click="openRestoreDetails" />
+                     @click="openRestoreDetails" data-testid="job-details-restore" />
               <q-btn v-if="isRunning" icon="cancel" :label="t('Cancel Job')" color="negative" no-caps
-                     :loading="cancelLoading" @click="confirmCancel" />
+                     :loading="cancelLoading" @click="confirmCancel" data-testid="job-details-cancel" />
             </q-card-section>
           </q-card>
 
