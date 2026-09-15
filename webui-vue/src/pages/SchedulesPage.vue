@@ -40,7 +40,8 @@
             <q-table v-if="!(statusLoading && !scheduleJobRows.length)"
                      :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
-                     :pagination="{ rowsPerPage: 50 }">
+                     :rows-per-page-options="statusRowsPerPageOptions"
+                     v-model:pagination="statusPagination">
               <template #body="props">
                 <q-tr v-if="props.row._isGroupHeader" class="sched-group-header cursor-pointer"
                       tabindex="0"
@@ -448,6 +449,10 @@ const settings = useSettingsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 const schedulesPagination = usePersistedTablePagination('schedules.list', {
+  rowsPerPage: 20,
+})
+const statusRowsPerPageOptions = [10, 25, 50, 100]
+const statusPagination = usePersistedTablePagination('schedules.status', {
   rowsPerPage: 20,
 })
 
