@@ -25,6 +25,7 @@
           v-model="treemapMode" flat no-caps dense size="sm"
           toggle-color="primary" class="analytics-treemap-toggle"
           :options="[{ label: t('Bytes'), value: 'bytes' }, { label: t('Files'), value: 'files' }]"
+          data-testid="analytics-treemap-mode"
         />
         <div v-if="loading && !treemapTiles.length" class="flex flex-center" style="height:100%">
           <q-spinner size="40px" color="primary" />
@@ -71,6 +72,7 @@
           v-model="clientTreemapMode" flat no-caps dense size="sm"
           toggle-color="primary" class="analytics-treemap-toggle"
           :options="[{ label: t('Bytes'), value: 'bytes' }, { label: t('Files'), value: 'files' }]"
+          data-testid="analytics-client-treemap-mode"
         />
         <div v-if="loading && !clientTreemapTiles.length" class="flex flex-center" style="height:100%">
           <q-spinner size="40px" color="primary" />

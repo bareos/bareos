@@ -125,6 +125,7 @@
                 :loading="pruneSelectedLoading"
                 :disable="pruneSelectedDisabled"
                 @click="confirmPruneSelectedVolumes"
+                data-testid="pool-details-prune-selected"
               />
             </q-card-section>
             <q-card-section v-if="pruneReport.volumes.length === 0" class="text-grey-6">
