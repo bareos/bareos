@@ -215,6 +215,12 @@ $bareos-blue-dark: #005a96;
   border-radius: 4px;
   padding: 3px;
   position: relative;
+  cursor: pointer;
+}
+
+.sched-cal-cell:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: -2px;
 }
 
 .sched-cal-cell--week {
@@ -224,6 +230,7 @@ $bareos-blue-dark: #005a96;
 .sched-cal-empty {
   background: #fafafa;
   border-color: transparent;
+  cursor: default;
 }
 
 .sched-cal-today {
@@ -287,6 +294,58 @@ $bareos-blue-dark: #005a96;
   background: rgba(0, 0, 0, 0.08);
 }
 
+// Live indicator of the current time-of-day, positioned by JS-computed
+// percent (see nowLinePercent) — shown only on today's axis/lane(s). The
+// element itself is a wider invisible hit target (centered on the exact
+// time via translateX) so it's easy to hover/focus for the tooltip; the
+// thin visible line is drawn via ::before.
+.sched-now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  transform: translateX(-50%);
+  z-index: 1;
+  cursor: pointer;
+}
+
+.sched-now-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--q-negative);
+}
+
+.sched-now-line:focus-visible {
+  outline: 2px solid var(--q-negative);
+  outline-offset: 1px;
+}
+
+.sched-cal-now-line {
+  top: -1px;
+  bottom: -1px;
+}
+
+.sched-now-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: #fff;
+  opacity: 0.85;
+}
+
+.sched-now-legend-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  background: var(--q-negative);
+}
+
 .sched-cal-tick {
   position: absolute;
   top: 50%;
@@ -316,6 +375,63 @@ $bareos-blue-dark: #005a96;
 .sched-cal-tick:focus-visible {
   outline: 2px solid var(--q-primary);
   outline-offset: 2px;
+}
+
+// ── Scheduler Day view (drill-down from a calendar cell) ──────────────────────
+.sched-day-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px 18px;
+}
+
+.sched-day-lane {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px 14px 28px;
+}
+
+.sched-day-lane-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.sched-day-lane-axis {
+  position: relative;
+  height: 44px;
+  border-bottom: 1px solid #ddd;
+}
+
+.sched-day-hour-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sched-day-hour-label {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.sched-day-tick {
+  width: 16px;
+  height: 16px;
+  top: 50%;
+}
+
+.sched-day-lane-times {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .sched-group-header td {
