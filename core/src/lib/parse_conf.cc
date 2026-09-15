@@ -66,6 +66,7 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
+#include "lib/alist.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
 
@@ -544,13 +545,16 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   int rindex = rcode;
   BareosResource* last;
 
-  /* Remove resource from list.
+  /* Remove resource from list and free it.
    *
-   * Note: this is intended for removing a resource that has just been added,
-   * but proven to be incorrect (added by console command "configure add").
-   * For a general approach, a check if this resource is referenced by other
-   * resource_definitions must be added. If it is referenced, don't remove it.
-   */
+   * This is only safe for rolling back a resource that was just added and
+   * has not been visible to anything else yet. It must not be used to delete
+   * a resource from the running configuration: the config graph is not the
+   * only holder of pointers to a resource -- a running job keeps raw
+   * pointers to the resources it was started with -- so freeing it here
+   * would leave those dangling. Removing a resource from a live
+   * configuration is done by reloading into a fresh configuration instead,
+   * see directordaemon::ConfigureDeleteResource(). */
   last = nullptr;
   for (BareosResource* res
        = loaded_configuration->configuration_resources_[rindex];
@@ -575,6 +579,76 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 
   // Resource with this name not found
   return false;
+}
+
+std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
+    int rcode,
+    const BareosResource* target)
+{
+  std::vector<ResourceReference> references;
+
+  if (!target) { return references; }
+
+  for (int t = 0; t < r_num_; t++) {
+    const ResourceTable& table = resource_definitions_[t];
+    if (!table.items) { continue; }
+
+    for (BareosResource* res
+         = loaded_configuration->configuration_resources_[t];
+         res; res = res->next_) {
+      if (res == target) { continue; }
+
+      for (int i = 0; table.items[i].name; i++) {
+        const ResourceItem& item = table.items[i];
+        if (item.code != rcode) { continue; }
+
+        /* Skip a value the resource did not set itself. A Job that takes
+         * its Client from a JobDefs holds the same pointer as that JobDefs,
+         * but its own configuration file has no Client directive, so naming
+         * it would send whoever has to remove the reference to a file that
+         * cannot be edited to remove it. The JobDefs that does hold the
+         * directive is reported in its own right, since nothing was
+         * inherited there. */
+        if (BitIsSet(i, res->inherit_content_)) { continue; }
+
+        /* Name the resource to read the member from explicitly. The
+         * single-argument GetItemVariable() would resolve the address
+         * through the item's allocated_resource pointer instead, which is
+         * the static the parser uses to track the resource it is currently
+         * filling in -- scanning through it would leave that pointer at
+         * whichever resource this loop happened to visit last. */
+        switch (item.type) {
+          case CFG_TYPE_RES: {
+            BareosResource* referenced
+                = GetItemVariable<BareosResource*>(item, res);
+            if (referenced == target) {
+              references.push_back({static_cast<int>(table.rcode),
+                                    res->resource_name_, item.name});
+            }
+            break;
+          }
+          case CFG_TYPE_ALIST_RES: {
+            alist<BareosResource*>* list
+                = GetItemVariable<alist<BareosResource*>*>(item, res);
+            if (list) {
+              for (auto* referenced : *list) {
+                if (referenced == target) {
+                  references.push_back({static_cast<int>(table.rcode),
+                                        res->resource_name_, item.name});
+                  break;
+                }
+              }
+            }
+            break;
+          }
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  return references;
 }
 
 bool ConfigurationParser::DumpResources(bool sendit(void* sock,

@@ -84,6 +84,24 @@ class Json(PythonBareosBase):
                 "Failed to find resource {} in {}.".format(resourcename, resourcesname),
             )
 
+    def configure_delete(self, director, resourcesname, resourcename, cmd):
+        """
+        Deletes a resource added via configure_add.
+
+        If the resource is still referenced by another loaded resource,
+        "configure delete" refuses to delete it; there is no override. The
+        referencing resource(s) must be removed or updated first.
+        """
+        result = director.call("configure delete {}".format(cmd))
+        self.assertEqual(result["configure"]["delete"]["name"], resourcename)
+        self.assertFalse(
+            self.check_resource(director, resourcesname, resourcename),
+            "Resource {} in {} should have been removed.".format(
+                resourcename, resourcesname
+            ),
+        )
+        return result
+
     def wait_job(self, director, jobId, expected_status="OK"):
         result = director.call("wait jobid={}".format(jobId))
         # "result": {
