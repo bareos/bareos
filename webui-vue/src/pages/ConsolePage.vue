@@ -435,7 +435,7 @@ watch(
   color: #1a1a1a;
 }
 .console-output:focus {
-  box-shadow: inset 0 0 0 2px #1976d2;
+  box-shadow: inset 0 0 0 2px var(--q-primary);
 }
 .console-line         { display: block; }
 .console-input-line   { display: block; }

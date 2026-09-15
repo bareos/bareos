@@ -136,7 +136,7 @@
                   <span>{{ formatJobCount(jobUsageSegments.length) }}</span>
                 </div>
                 <!-- stacked bar -->
-                <div style="height:14px; display:flex; overflow:hidden; background:#e0e0e0; border-radius:4px">
+                <div class="bg-grey-4" style="height:14px; display:flex; overflow:hidden; border-radius:4px">
                   <q-tooltip>
                     <div v-for="seg in jobUsageSegments" :key="seg.jobid" class="text-caption">
                       #{{ seg.jobid }} {{ seg.name }}: {{ formatBytes(seg.jobbytes) }} ({{ seg.pct.toFixed(1) }}%)
