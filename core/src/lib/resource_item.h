@@ -228,12 +228,9 @@ struct ResourceItem {
   }
 };
 
-/* The resource the item's member is read from or written to. The parser
- * keeps it in a static per-resource-table pointer that it updates as it
- * works its way through the configuration, which is what the overloads
- * without an explicit resource use. Code that inspects a resource outside
- * of parsing should name the resource instead, so that it does not have to
- * steer -- and thereby clobber -- the parser's notion of where it is. */
+// Code inspecting a resource outside of parsing should name it explicitly
+// rather than use the no-res overloads below, which read the parser's own
+// "currently filling in" pointer and would otherwise be steered by this call.
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item,
                                                      BareosResource* res)
 {

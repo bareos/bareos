@@ -263,6 +263,23 @@ static inline bool ConfigureCreateFdResourceString(UaContext* ua,
  * Create a bareos-fd director resource file
  * that corresponds to our client definition.
  */
+// Shared by ConfigureCreateFdResource() and ConfigureRemoveFdExport().
+// clientname must be a single path component: it lands as its own segment
+// here, so a '/' in it (e.g. "a/../victim") can alias another client's
+// directory without ever escaping config_dir_, and a bare "." or ".."
+// isn't neutralized by anything after it the way name in
+// config_include_naming_format_ is.
+static inline bool GetFdExportBasedir(PoolMem& basedir,
+                                      const char* clientname)
+{
+  if (strchr(clientname, '/') || strcmp(clientname, ".") == 0
+      || strcmp(clientname, "..") == 0) {
+    return false;
+  }
+  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
+  return true;
+}
+
 static inline bool ConfigureCreateFdResource(UaContext* ua,
                                              const char* clientname)
 {
@@ -280,14 +297,15 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
     return false;
   }
 
-  /* Get the path where the resource should get stored.
-   *
-   * Use me rather than GetNextRes(R_DIRECTOR, NULL): GetNextRes() does not
-   * take the resource lock, and this runs unlocked (both from
-   * ConfigureAddResource() and from "configure export"). me is guaranteed
-   * non-null by CheckResources() and is swapped as a plain pointer, so
-   * reading it here does not race on the loaded_configuration shared_ptr. */
-  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
+  // Use me, not GetNextRes(R_DIRECTOR, NULL): this runs unlocked and
+  // GetNextRes() doesn't take the resource lock.
+  if (!GetFdExportBasedir(basedir, clientname)) {
+    ua->ErrorMsg(
+        T_("Client name \"%s\" cannot be used to build a filedaemon export "
+           "path.\n"),
+        clientname);
+    return false;
+  }
   dirname = me->resource_name_;
   if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(),
                                        "director", dirname, error_if_exists,
@@ -317,30 +335,23 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
   return true;
 }
 
-/**
- * "configure add client" writes a File Daemon export file containing a
- * plaintext copy of the Director's password (see
- * ConfigureCreateFdResource() above) to
- * bareos-dir-export/client/<clientname>/bareos-fd.d/director/<dirname>.conf.
- * Deleting the Client resource must also remove this file: otherwise it is
- * left behind as a stale, credential-bearing artifact (CWE-459). Removal is
- * best-effort and does not fail the delete: the Client resource itself is
- * already gone by the time this is called, so there is nothing left to roll
- * back, and a leftover export file is reported to the user instead.
- */
+// Removes the FD export file "configure add client" writes (plaintext
+// Director password, CWE-459 if left behind). Best-effort: the Client
+// resource is already gone by the time this runs, so there's nothing to
+// roll back.
 static inline void ConfigureRemoveFdExport(UaContext* ua,
                                            const char* clientname)
 {
   PoolMem basedir(PM_FNAME);
   PoolMem path(PM_FNAME);
 
-  /* me is set and non-null by CheckResources(), which the reload that just
-   * succeeded had to pass. */
+  // me is set by CheckResources(), which the preceding reload had to pass.
   const char* dirname = me->resource_name_;
 
-  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-  if (!my_config->GetPathOfResource(path, basedir.c_str(), "director", dirname,
-                                    false)) {
+  // GetPathOfResource() catches escapes GetFdExportBasedir() itself doesn't.
+  if (!GetFdExportBasedir(basedir, clientname)
+      || !my_config->GetPathOfResource(path, basedir.c_str(), "director",
+                                       dirname, false)) {
     Dmsg1(200,
          "Could not determine filedaemon export file path for client "
          "\"%s\"; skipping export removal.\n",
@@ -357,16 +368,8 @@ static inline void ConfigureRemoveFdExport(UaContext* ua,
     return;
   }
 
-  /* Prune the three directory levels that exist only to hold this client's
-   * export: .../<clientname>/bareos-fd.d/director, .../bareos-fd.d and
-   * .../<clientname>. std::filesystem::remove() refuses to remove a
-   * non-empty directory, so this can never take anything that is still in
-   * use with it.
-   *
-   * A "director" directory that is not empty means an export written under
-   * a previous Director resource name is still sitting there. That file
-   * holds a plaintext copy of a Director password, so point at it rather
-   * than leave it behind silently. */
+  // Prune the three now-possibly-empty directory levels above; remove()
+  // refuses non-empty ones, so this can't touch anything still in use.
   std::filesystem::path dir = export_file.parent_path();
   for (int level = 0; level < 3; level++) {
     ec.clear();
@@ -375,9 +378,7 @@ static inline void ConfigureRemoveFdExport(UaContext* ua,
       continue;
     }
 
-    /* remove() reports a non-empty directory as an error; it returns false
-     * with ec clear only when the path was not there to begin with, which
-     * is nothing to report. */
+    // ec stays clear when the path was already gone -- nothing to report.
     if (ec == std::errc::directory_not_empty) {
       if (level == 0) {
         ua->WarningMsg(
@@ -387,8 +388,6 @@ static inline void ConfigureRemoveFdExport(UaContext* ua,
                "remove it manually.\n"),
             dir.c_str());
       }
-      /* Higher up, a non-empty directory just means something else lives
-       * there. Stop pruning, but there is nothing to warn about. */
     } else if (ec) {
       ua->WarningMsg(
           T_("failed to remove filedaemon export directory \"%s\": %s\n"),
@@ -424,33 +423,14 @@ static inline bool ConfigureAddResource(UaContext* ua,
   PoolMem temp(PM_FNAME);
   JobResource* res = NULL;
 
-  /* Scoped deliberately. The lock is needed for the check-then-mutate
-   * sequence below, since ParseConfigFile() -> SaveResource() ->
-   * AppendToResourcesChain() and RemoveResource() do not lock the resource
-   * tree themselves. The underlying rwlock is re-entrant for the locking
-   * thread, so nesting with the locking the called functions (e.g.
-   * GetResWithName()) do themselves is safe.
-   *
-   * It must not be held any longer than that, though: b_LockRes() takes a
-   * *write* lock, so for as long as it is held every foreach_res() and
-   * GetResWithName() in every other thread blocks. Writing the export file
-   * and the command's output to the console socket below therefore happens
-   * unlocked -- a slow or wedged console must not be able to stall config
-   * access director-wide.
-   *
-   * The failure paths inside the scope do write to the console, and cannot
-   * be moved out of it without restructuring how the parser reports errors:
-   * configure_create_resource_string() writes to ua itself, and
-   * ParseConfigFile() below is handed ua so that lexer errors reach the
-   * console at all. What is bounded here is the bulk of the writing and the
-   * successful path; an error ends the command right after the message.
-   *
-   * Note that the RemoveResource() calls below only ever free a resource
-   * that this function just added and that failed validation, i.e. one that
-   * was never visible to anything else. Freeing a resource that has been
-   * part of the running configuration is not safe and is not done here; see
-   * ConfigureDeleteResource() for why deletion goes through a reload
-   * instead. */
+  /* Holds the write lock for the check-then-mutate sequence below (the
+   * parser calls don't lock themselves), but scoped tightly since a write
+   * lock blocks every foreach_res()/GetResWithName() director-wide: console
+   * output happens after release, except on error paths, which still write
+   * to ua from inside the lock since configure_create_resource_string() and
+   * ParseConfigFile() need that. RemoveResource() below only ever frees a
+   * resource this call just added, never one visible elsewhere -- see
+   * ConfigureDeleteResource() for why a live resource can't just be freed. */
   {
     ResLocker _{my_config};
 
@@ -554,16 +534,11 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
 }
 
 /**
- * FindResourceReferences() only scans directives of type CFG_TYPE_RES and
- * CFG_TYPE_ALIST_RES, which covers plain resource-pointer directives. A
- * Schedule's "Run" directive is of type CFG_TYPE_RUN instead: it can carry
- * its own Pool/Storage/Messages overrides via a chain of RunResource
- * records that live only in the dird-specific ScheduleResource, so the
- * generic (daemon-agnostic) FindResourceReferences() in lib/parse_conf.cc
- * cannot inspect them. Scan those overrides here instead, at the dird
- * level where RunResource is visible, and append any matches so a
- * resource still referenced only via a Run override is not deleted out
- * from under a Schedule.
+ * FindResourceReferences() can't see a Schedule's per-Run Pool/Storage/
+ * Messages overrides (CFG_TYPE_RUN, not CFG_TYPE_RES); scan those here so a
+ * resource referenced only via a Run override isn't deleted from under a
+ * Schedule. Also enumerated in dird_conf.cc's PrintConfigRun() and in
+ * ua_status.cc; update all three if RunResource gains an override field.
  */
 static inline void FindRunResourceReferences(
     int rcode,
@@ -600,25 +575,13 @@ static inline void FindRunResourceReferences(
   }
 }
 
-/**
- * ConfigureDeleteResource() enacts a deletion by reloading the whole
- * configuration; see the comment there for why that is the only safe way to
- * do it. DoReloadConfig() does more than swap the configuration though: it
- * also flushes and re-checks the catalog, restarts the statistics thread and
- * clears the scheduler queue, none of which a unit test can provide. The
- * call therefore goes through this pointer, which the tests in
- * core/src/tests/configure.cc replace with a reload that performs the
- * configuration swap only. The director itself never reassigns it.
- */
+// Indirection so tests (core/src/tests/configure.cc) can substitute a
+// reload that only swaps the configuration, skipping DoReloadConfig()'s
+// catalog/statistics/scheduler side effects. The director never reassigns it.
 static bool (*ConfigureReloadConfig)() = DoReloadConfig;
 
-/**
- * A Schedule with several "Run" lines that all override the same Pool
- * reports that Pool once per line, and a resource can in principle be
- * reached by both the generic and the Run scan. Collapse identical
- * (resource type, resource name, directive) triples so the user is told
- * once per place they actually have to go and edit.
- */
+// Collapses identical (type, name, directive) triples: a resource can be
+// reached by both the generic scan and the Run scan, or by several Run lines.
 static inline void ConfigureDedupReferences(
     std::vector<ResourceReference>* references)
 {
@@ -654,19 +617,9 @@ static inline void ConfigureSendReferences(
 
 using ResourceKey = std::pair<int, std::string>;
 
-/**
- * Every resource in the running configuration, as (resource type, name)
- * pairs.
- *
- * Deleting works on whole configuration files, but nothing requires a
- * configuration file to define only the one resource its name suggests --
- * that is a convention "configure add" follows, not a rule the parser
- * enforces on hand-written files. Comparing this before and after the
- * reload is what turns a resource that was removed as collateral from a
- * silent loss into a reported one.
- *
- * The caller must hold the resource lock: GetNextRes() does not take it.
- */
+// Every loaded resource as (type, name) pairs, so a before/after compare
+// around the reload can report collateral removals from a shared file
+// instead of losing them silently. Caller must hold the resource lock.
 static std::set<ResourceKey> ConfigureResourceNames()
 {
   std::set<ResourceKey> names;
@@ -696,34 +649,17 @@ static inline void ConfigureSendAlsoRemoved(
 }
 
 /**
- * To delete a resource during runtime, the following approach is used:
- *
- * - Look up the resource and refuse to proceed if any other loaded
- *   resource still references it. The caller must remove or update the
- *   referencing resource(s) first.
- * - Move the resource's on-disk config file out of the way.
- * - Reload the whole configuration from disk.
- *
- * The resource is deliberately *not* removed from the live configuration
- * in place. The invariant that forbids it: raw resource pointers outlive
- * the config graph. A job started with "run job=<job> client=<client>"
- * keeps a raw ClientResource* in its JobControlRecord for its whole
- * runtime even when no other resource references that Client, so freeing
- * it would leave the running job with a dangling pointer. Deletion must
- * therefore go through a configuration generation swap, never a free.
- *
- * DoReloadConfig() is exactly that swap, and jobs pin the generation they
- * were started with in DirectorJcrImpl::used_config_for_job, so a deleted
- * resource stays valid for as long as some job can still reach it. See
- * dird/reload.cc for how that is arranged; "configure delete" ends up with
- * the same safety properties as the "reload" command, which is the only
- * reason it is safe at all.
- *
- * Because the reload re-reads everything from disk, it is also the real
- * validator: if a resource added concurrently references the one being
- * deleted, the parse fails and the previous configuration is restored. The
- * reference check below is therefore an early, friendly error rather than
- * the thing that makes this correct.
+ * Deletion moves the resource's file aside and reloads the whole
+ * configuration; it never frees the live resource in place. A running job
+ * keeps raw pointers into the config graph (e.g. JobControlRecord's
+ * ClientResource*) for its whole runtime, so freeing a resource still
+ * reachable from a job would leave it dangling. DoReloadConfig() performs
+ * the generation swap that keeps old resources alive for jobs still using
+ * them (DirectorJcrImpl::used_config_for_job, dird/reload.cc), giving this
+ * the same safety properties as "reload". The reference check below is
+ * only an early, friendlier error -- the reload itself is what actually
+ * validates the deletion, by failing to parse if a concurrently added
+ * resource still references the one being removed.
  */
 static inline bool ConfigureDeleteResource(UaContext* ua,
                                            const ResourceTable* res_table,
@@ -731,16 +667,10 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
 {
   PoolMem path(PM_FNAME);
   PoolMem stashed_path(PM_FNAME);
-  std::string target_name;
   std::set<ResourceKey> names_before;
 
-  /* Scoped deliberately: the lock must be released before DoReloadConfig()
-   * is called below. DoReloadConfig() acquires LockJobs() and only then the
-   * resource lock, so holding the resource lock across the call would
-   * invert the lock order. Nothing here needs to stay locked afterwards:
-   * the reload re-reads and re-validates the whole configuration from disk
-   * and rolls back on failure, so it, not this check, is what makes the
-   * delete safe. */
+  // Released before DoReloadConfig(): it takes LockJobs() then the resource
+  // lock, so holding this across the call would invert that order.
   {
     ResLocker _{my_config};
 
@@ -748,6 +678,19 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     if (!res) {
       ua->ErrorMsg(T_("Resource \"%s\" with name \"%s\" does not exist.\n"),
                    res_table->name, name);
+      return false;
+    }
+
+    // name is the last, ".conf"-suffixed component of
+    // config_include_naming_format_, so a bare ".." in it is harmless, but
+    // an embedded '/' (e.g. "a/../victim") can still alias another
+    // resource's file -- landing inside config_dir_, so GetPathOfResource()'s
+    // containment check below does not see it as an escape.
+    if (strchr(name, '/')) {
+      ua->ErrorMsg(
+          T_("Resource \"%s\" with name \"%s\" cannot be deleted: its name "
+             "contains a \"/\".\n"),
+          res_table->name, name);
       return false;
     }
 
@@ -776,53 +719,23 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
       return false;
     }
 
-    /* Key the snapshot below off the resource's own name rather than the
-     * command line. GetResWithName() matches exactly, so the two are the
-     * same string today; taking it from the resource is what keeps them the
-     * same if that ever stops being true. */
-    target_name = res->resource_name_;
     names_before = ConfigureResourceNames();
   }
 
-  /* Removal is enacted by reloading the configuration without this file, so
-   * the resource must actually live in its own file below the config
-   * include dir. If it does not -- e.g. it is defined inline in
-   * bareos-dir.conf -- there is nothing to remove and the reload would
-   * simply load it again. Say so instead of reporting a delete that did not
-   * happen.
+  /* The resource must live in its own file under the config include dir --
+   * if not (e.g. defined inline in bareos-dir.conf), there's nothing to
+   * remove and the reload would just load it again.
    *
-   * Move the file aside rather than delete it outright. The reload can
-   * fail, and renaming it back is atomic, cannot itself fail for lack of
-   * space or permissions, and preserves the file's mode, ownership and
-   * timestamps -- none of which is true of reading the contents into memory
-   * and writing them out again. Capturing the contents and removing the
-   * file is also a single operation this way, where reading and unlinking
-   * would leave a window in which a concurrent "configure add" of the same
-   * name could create the file between the two and have it unlinked with
-   * contents that were never read, and therefore cannot be restored.
-   *
-   * Note that the rename frees the path just as an unlink would, so the
-   * window between it and the rollback below is not closed by any of this:
-   * a concurrent "configure add" that gets far enough to see the name as
-   * absent can write the path in that window, and the rollback then
-   * overwrites what it wrote. That needs the reload to fail because another
-   * one was already in flight and removed the resource, since a reload that
-   * fails to parse restores a configuration that still holds the name, and
-   * ConfigureAddResource() refuses a name it can still see.
-   *
-   * The ".deleted" suffix keeps the stashed file out of the config include
-   * dir's "*.conf" glob, so the reload below does not pick it up again.
-   * This mirrors the ".tmp" suffix ConfigureAddResource() uses. */
+   * Move the file aside rather than delete it: renaming it back on failure
+   * is atomic and keeps mode/ownership/timestamps, unlike rewriting the
+   * contents. ".deleted" keeps it out of the "*.conf" include glob,
+   * mirroring ConfigureAddResource()'s ".tmp". A concurrent "configure add"
+   * of the same name can still race into the window this opens, but the
+   * reload below then fails to parse and rolls back. */
   stashed_path.bsprintf("%s.deleted", path.c_str());
 
-  /* A stash left behind by an earlier delete (see the "also_removed" handling
-   * below) is the only remaining copy of whatever else that removed file
-   * defined. rename() below would silently replace it -- POSIX rename()
-   * overwrites an existing destination -- losing that copy for good. This
-   * can only happen if a "configure add" recreated the same path in between,
-   * since GetResWithName() above already confirms a resource is currently
-   * loaded at this name. Refuse rather than clobber; the stash must be
-   * recovered or removed manually first. */
+  // rename() would silently replace a stash kept by an earlier collateral
+  // removal (see "also_removed" below); refuse instead of losing it.
   if (std::filesystem::exists(stashed_path.c_str())) {
     ua->ErrorMsg(
         T_("A stashed copy of a previously removed configuration file "
@@ -846,18 +759,12 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     return false;
   }
 
-  /* The reload builds a new configuration generation from disk and swaps it
-   * in; running jobs keep the old generation, and with it this resource,
-   * alive until they finish. On failure DoReloadConfig() has already
-   * restored the previous generation, so only the file has to be moved back
-   * to leave on-disk and in-memory config consistent again. */
+  // On failure DoReloadConfig() already restored the previous generation;
+  // only the file needs moving back to leave disk and memory consistent.
   if (!ConfigureReloadConfig()) {
-    /* Check before restoring the file, so that what is reported below is
-     * what actually happened. A failed reload usually means the remaining
-     * configuration did not parse and DoReloadConfig() put the previous
-     * generation back, but it also returns false when a reload was already
-     * running (see the is_reloading guard in DoReloadConfig()) -- and that
-     * other reload may well have enacted the removal in the meantime. */
+    // Checked before restoring: DoReloadConfig() also returns false when a
+    // reload was already running (its is_reloading guard), which may have
+    // enacted this removal already, not just on a parse failure.
     bool still_loaded
         = my_config->GetResWithName(res_table->rcode, name) != nullptr;
 
@@ -870,10 +777,7 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     }
 
     if (still_loaded) {
-      /* The reload's own diagnostics (the parse errors, naming file and
-       * line) go to the Director's Messages resource via Jmsg(), not to this
-       * console -- same as for the "reload" command. Say where to find
-       * them rather than leave the user with just "it failed". */
+      // Parse errors go to the Director log via Jmsg(), same as "reload".
       ua->ErrorMsg(
           T_("Reloading the configuration without resource \"%s\" with name "
              "\"%s\" failed, the deletion was rolled back. See the Director "
@@ -893,11 +797,9 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     return false;
   }
 
-  /* The new configuration is live and does not contain the resource
-   * anymore. Whatever else the removed file defined is gone from it too,
-   * though, and the reference check above only looked at the resource that
-   * was asked for. Find out what else went missing before the stashed file
-   * -- the only remaining copy of those definitions -- is unlinked. */
+  // The removed file may have defined more than the requested resource;
+  // find what else went missing before the stash -- its only copy -- is
+  // unlinked.
   std::vector<ResourceKey> also_removed;
   {
     ResLocker _{my_config};
@@ -905,7 +807,7 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     std::set<ResourceKey> names_after = ConfigureResourceNames();
     for (const auto& before : names_before) {
       if (before.first == static_cast<int>(res_table->rcode)
-          && before.second == target_name) {
+          && before.second == name) {
         continue;
       }
       if (!names_after.count(before)) { also_removed.push_back(before); }
@@ -918,10 +820,8 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
                      stashed_path.c_str(), strerror(errno));
     }
   } else {
-    /* Keep the stashed file instead of unlinking it, so that what it
-     * defined can be recovered. Not rolling the delete back: the new
-     * configuration is already live, and a second reload to undo it could
-     * fail on its own or race with another one. */
+    // Kept for recovery rather than unlinked; not rolling back since the
+    // new configuration is already live and a second reload could itself fail.
     ua->WarningMsg(
         T_("Removing config resource file \"%s\" also removed the following "
            "resource(s) from the configuration:\n"),
@@ -947,13 +847,8 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
         path.c_str(), res_table->name, name);
   }
 
-  /* Also remove the credential-bearing File Daemon export files created by
-   * "configure add client", if any. A client that went with the file needs
-   * this just as much as the one that was asked for: its export holds a
-   * plaintext copy of the Director password and there is no longer a client
-   * it belongs to. For a client that never had an export this does nothing
-   * and says nothing -- removing a path that is not there is not an error.
-   */
+  // Also remove any FD export file(s) "configure add client" created --
+  // for the requested client and any collaterally removed one.
   if (res_table->rcode == R_CLIENT) { ConfigureRemoveFdExport(ua, name); }
   for (const auto& [rcode, resource_name] : also_removed) {
     if (rcode == R_CLIENT) {
@@ -966,9 +861,8 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
   ua->send->ObjectKeyValue("name", name);
   ua->send->ObjectKeyValue("filename", path.c_str(),
                            "Removed resource config file \"%s\".\n");
-  /* Emitted even when empty, so that a caller reading the output does not
-   * have to tell "nothing else was removed" from "this version does not
-   * report it". */
+  // Emitted even when empty, so callers can tell "nothing else removed"
+  // from "this version doesn't report it".
   ConfigureSendAlsoRemoved(ua, also_removed);
   ua->send->ObjectEnd("delete");
 
@@ -982,13 +876,9 @@ static inline void ConfigureDeleteUsage(UaContext* ua)
          "       configure delete <resourcetype>=<name>\n"));
 }
 
-/**
- * The ACL that governs access to an individual resource of this type, or
- * Num_ACL if there is none. Only a subset of the resource types has a
- * matching ACL (see the ACL enum in dird_conf.h); for the rest, access to
- * the "configure" command itself is all that gates this, which is the same
- * as for "configure add".
- */
+// The ACL for an individual resource of this type, or Num_ACL if none exists
+// (dird_conf.h); for those, "configure" command access is all that gates
+// this, same as "configure add".
 static inline int ConfigureAclForResource(int rcode)
 {
   switch (rcode) {
@@ -1030,11 +920,8 @@ static inline bool ConfigureDelete(UaContext* ua, int resource_type_parameter)
     return false;
   }
 
-  /* Take the name from a "name=" argument, or, failing that, from the value
-   * of the resource type itself. "configure add" accepts both spellings --
-   * "configure add client=foo address=..." as well as "configure add client
-   * name=foo address=..." -- and there is no reason for deleting to be
-   * stricter about how the same resource is named. */
+  // Accept both "delete client=foo" and "delete client name=foo", matching
+  // how "configure add" accepts the name.
   const char* name = nullptr;
   int name_index = FindArgWithValue(ua, NT_("name"));
   if (name_index >= 0) {
@@ -1047,10 +934,8 @@ static inline bool ConfigureDelete(UaContext* ua, int resource_type_parameter)
     return false;
   }
 
-  /* Deleting a resource is destructive, so unlike "configure add" it is not
-   * enough for the console to have access to the "configure" command: it
-   * also has to have access to this particular resource. This mirrors what
-   * "configure export" does via ua->GetClientResWithName(). */
+  // Deleting also needs access to the specific resource, not just the
+  // "configure" command (unlike "configure add"); mirrors "configure export".
   int acl = ConfigureAclForResource(res_table->rcode);
   if (acl != Num_ACL && !ua->AclAccessOk(acl, name, true)) {
     ua->ErrorMsg(T_("No access to %s \"%s\".\n"), res_table->name, name);

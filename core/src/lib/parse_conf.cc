@@ -52,6 +52,7 @@
  */
 
 #include <algorithm>
+#include <filesystem>
 #include <string_view>
 
 #include "include/bareos.h"
@@ -545,16 +546,10 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   int rindex = rcode;
   BareosResource* last;
 
-  /* Remove resource from list and free it.
-   *
-   * This is only safe for rolling back a resource that was just added and
-   * has not been visible to anything else yet. It must not be used to delete
-   * a resource from the running configuration: the config graph is not the
-   * only holder of pointers to a resource -- a running job keeps raw
-   * pointers to the resources it was started with -- so freeing it here
-   * would leave those dangling. Removing a resource from a live
-   * configuration is done by reloading into a fresh configuration instead,
-   * see directordaemon::ConfigureDeleteResource(). */
+  // Only safe for rolling back a resource just added and not yet visible
+  // elsewhere: a running job keeps raw pointers to resources, so freeing a
+  // live one here would dangle them. See
+  // directordaemon::ConfigureDeleteResource().
   last = nullptr;
   for (BareosResource* res
        = loaded_configuration->configuration_resources_[rindex];
@@ -602,21 +597,12 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
         const ResourceItem& item = table.items[i];
         if (item.code != rcode) { continue; }
 
-        /* Skip a value the resource did not set itself. A Job that takes
-         * its Client from a JobDefs holds the same pointer as that JobDefs,
-         * but its own configuration file has no Client directive, so naming
-         * it would send whoever has to remove the reference to a file that
-         * cannot be edited to remove it. The JobDefs that does hold the
-         * directive is reported in its own right, since nothing was
-         * inherited there. */
+        // Skip a value inherited (not set) by this resource, e.g. a Job's
+        // Client from a JobDefs -- the JobDefs itself is reported instead.
         if (BitIsSet(i, res->inherit_content_)) { continue; }
 
-        /* Name the resource to read the member from explicitly. The
-         * single-argument GetItemVariable() would resolve the address
-         * through the item's allocated_resource pointer instead, which is
-         * the static the parser uses to track the resource it is currently
-         * filling in -- scanning through it would leave that pointer at
-         * whichever resource this loop happened to visit last. */
+        // Pass res explicitly: the single-argument GetItemVariable() reads
+        // through the parser's "currently filling in" pointer instead.
         switch (item.type) {
           case CFG_TYPE_RES: {
             BareosResource* referenced
@@ -734,6 +720,18 @@ bool ConfigurationParser::GetPathOfResource(PoolMem& path,
   rel_path.bsprintf(config_include_naming_format_.c_str(), component,
                     resourcetype_lowercase.c_str(), name);
   PathAppend(path, rel_path);
+
+  // IsNameValid() permits '.' and '/' in component/resourcetype/name, and
+  // PathAppend() does no ".." handling; refuse a result that escapes
+  // config_dir_ (lexically -- the path need not exist yet).
+  std::filesystem::path resolved
+      = std::filesystem::path(path.c_str()).lexically_normal();
+  std::filesystem::path base
+      = std::filesystem::path(config_dir_).lexically_normal();
+  std::filesystem::path relative_to_base = resolved.lexically_relative(base);
+  if (relative_to_base.empty() || *relative_to_base.begin() == "..") {
+    return false;
+  }
 
   return true;
 }

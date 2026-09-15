@@ -31,15 +31,9 @@
 #include <iterator>
 
 namespace {
-/**
- * Stand-in for DoReloadConfig(), installed via ConfigureReloadConfig by the
- * fixture below. The real one also flushes and re-checks the catalog,
- * restarts the statistics thread and clears the scheduler queue, none of
- * which exists in a unit test. This keeps the part that "configure delete"
- * actually depends on and that these tests need to observe: parse into a
- * *fresh* LoadedConfiguration, swap it in, keep the previous generation
- * alive, and restore it if the parse fails.
- */
+// Stand-in for DoReloadConfig() (installed via ConfigureReloadConfig by the
+// fixture below): just the configuration swap/rollback, without the
+// catalog/statistics/scheduler side effects a unit test can't provide.
 bool TestReloadConfig()
 {
   using namespace directordaemon;
@@ -71,12 +65,8 @@ class TempConfigureDeleteConfig {
  public:
   TempConfigureDeleteConfig()
   {
-    /* Deleting goes through a configuration reload, which in the director is
-     * DoReloadConfig(). Substitute the lightweight stand-in below for the
-     * duration of the test, and put back whatever was there when the fixture
-     * goes out of scope. Restoring matters: a test that installs its own
-     * stand-in (see RestoresConfigFileWhenReloadFails) must not leave it
-     * behind for whichever test happens to run next. */
+    // Restored on destruction so a test that installs its own stand-in
+    // (see RestoresConfigFileWhenReloadFails) doesn't leak it to the next one.
     saved_reload_config_ = directordaemon::ConfigureReloadConfig;
     directordaemon::ConfigureReloadConfig = TestReloadConfig;
 
@@ -112,10 +102,8 @@ class TempConfigureDeleteConfig {
   bool (*saved_reload_config_)() = nullptr;
 };
 
-// Fills in ua->cmd/argc/argk/argv the way bconsole would for a typed
-// command, so tests can exercise ConfigureCmd()'s own argument parsing
-// (subcommand dispatch, resource-type lookup, "name=" parsing) instead of
-// calling ConfigureDeleteResource() directly.
+// Fills in ua->cmd/argc/argk/argv the way bconsole would, so tests can
+// exercise ConfigureCmd()'s own argument parsing.
 void FakeConfigureCmd(directordaemon::UaContext* ua, const std::string& cmd)
 {
   PmStrcpy(ua->cmd, cmd.c_str());
@@ -140,13 +128,8 @@ bool CaptureSend(void* ctx, const char* fmt, ...)
   return true;
 }
 
-/**
- * Swaps the UaContext's output formatter for one that appends to a string,
- * so a test can assert on what the command actually told the user. Needed
- * wherever the on-disk effect alone does not distinguish the branch under
- * test -- the warning about a leftover export file is the whole point of
- * that branch, and skipping past it is otherwise invisible.
- */
+// Swaps in an output formatter that appends to a string, so a test can
+// assert on console output where the on-disk effect alone isn't enough.
 class CapturedConsole {
  public:
   explicit CapturedConsole(directordaemon::UaContext* ua) : ua_{ua}
@@ -226,17 +209,10 @@ TEST(ConfigureDelete, DeletesUnreferencedResource)
 
 TEST(ConfigureDelete, KeepsDeletedResourceAliveForRunningJob)
 {
-  /* Holds a configuration generation and a pointer into it the way a
-   * running job does (DirectorJcrImpl::used_config_for_job), deletes the
-   * resource, and checks the pointer is still usable while the live
-   * configuration no longer offers it to anything new. See
-   * ConfigureDeleteResource() for why that has to hold.
-   *
-   * A regression to removing the resource in place fails the EXPECT_EQ
-   * below outright, without needing a sanitizer: RemoveResource() unlinks
-   * it from the chain that GetResWithName() walks, so the lookup returns
-   * nullptr. The EXPECT_STREQ additionally catches the use-after-free, but
-   * only under AddressSanitizer. */
+  // Holds a resource pointer the way a running job does
+  // (DirectorJcrImpl::used_config_for_job); a regression to removing it in
+  // place fails EXPECT_EQ outright, and EXPECT_STREQ catches the
+  // use-after-free under AddressSanitizer.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -276,17 +252,10 @@ TEST(ConfigureDelete, KeepsDeletedResourceAliveForRunningJob)
 
 TEST(ConfigureDelete, RestoresConfigFileWhenReloadFails)
 {
-  /* The delete is enacted by a reload, and that reload can fail -- most
-   * obviously when the configuration that remains does not parse. The
-   * resource file then has to come back exactly as it was, so that the
-   * on-disk configuration still matches the one the director kept running
-   * with.
-   *
-   * "Exactly as it was" includes the file mode: the file is moved aside and
-   * moved back rather than read and rewritten, so a hand-set mode survives.
-   * The mode is deliberately changed to something other than the 0640 that
-   * configure_write_resource() would produce, so that a regression back to
-   * rewriting the contents fails here. */
+  // A failed reload must restore the resource file exactly, mode included --
+  // moved aside and back rather than read and rewritten. The mode is set to
+  // something other than configure_write_resource()'s 0640, so a regression
+  // to rewriting the contents fails here.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -360,6 +329,103 @@ TEST(ConfigureDelete, ErrorsOnUnknownResource)
   EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "does-not-exist"));
 
   delete ua;
+}
+
+TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInName)
+{
+  // IsNameValid() permits '.' and '/' in a resource name; a name that
+  // embeds ".." must not let GetPathOfResource() escape config_dir_.
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  ASSERT_TRUE(client_config);
+
+  PoolMem path(PM_FNAME);
+  EXPECT_FALSE(directordaemon::my_config->GetPathOfResource(
+      path, NULL, "client", "../../../../../../../../etc/cron.d/evil",
+      false));
+}
+
+TEST(ConfigureDelete, RefusesToDeleteResourceNameAliasingAnotherResource)
+{
+  // "a/../unreferenced-fd" is a distinct loaded resource (its own literal
+  // name), but as the last component of config_include_naming_format_ it
+  // resolves to the same file as the real "unreferenced-fd" -- still inside
+  // config_dir_, so GetPathOfResource()'s containment check alone would not
+  // catch it. ConfigureDeleteResource() must refuse a name containing '/'
+  // before ever computing that path.
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  ASSERT_TRUE(client_config);
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
+
+  const ResourceTable* res_table
+      = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
+
+  ASSERT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                       "a/../unreferenced-fd"),
+           nullptr);
+
+  EXPECT_FALSE(
+      ConfigureDeleteResource(ua, res_table, "a/../unreferenced-fd"));
+
+  // The aliased, real resource and its file must be untouched.
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                       "unreferenced-fd"),
+           nullptr);
+  PoolMem path(PM_FNAME);
+  ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
+      path, NULL, res_table->name, "unreferenced-fd", false));
+  EXPECT_TRUE(std::filesystem::exists(path.c_str()));
+
+  delete ua;
+}
+
+TEST(ConfigureDelete, GetFdExportBasedirRejectsDotAndDotDot)
+{
+  // clientname sits as its own path segment here, so a bare ".." isn't
+  // caught by GetPathOfResource()'s containment check (it never leaves
+  // config_dir_); GetFdExportBasedir() must refuse it directly.
+  PoolMem basedir(PM_FNAME);
+  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, ".."));
+  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, "."));
+
+  EXPECT_TRUE(directordaemon::GetFdExportBasedir(basedir, "some-client"));
+  EXPECT_STREQ(basedir.c_str(),
+              "bareos-dir-export/client/some-client/bareos-fd.d");
+}
+
+TEST(ConfigureDelete, GetFdExportBasedirRejectsEmbeddedSlash)
+{
+  // "a/../victim" stays inside config_dir_ (containment check passes) but
+  // aliases the real "victim" client's export directory. clientname must be
+  // rejected outright, not just checked for escaping.
+  PoolMem basedir(PM_FNAME);
+  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, "a/../victim"));
+}
+
+TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInComponent)
+{
+  // GetFdExportBasedir() now rejects any '/' in clientname outright, so a
+  // component built from it can no longer carry an escape in practice, but
+  // GetPathOfResource() must still refuse one on its own component
+  // argument, as a caller-independent backstop.
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  ASSERT_TRUE(client_config);
+
+  PoolMem path(PM_FNAME);
+  EXPECT_FALSE(directordaemon::my_config->GetPathOfResource(
+      path, "bareos-dir-export/client/../../../../../../../../etc/cron.d",
+      "director", "bareos-dir", false));
 }
 
 TEST(ConfigureDelete, RefusesToDeleteReferencedResource)
@@ -459,11 +525,8 @@ TEST(ConfigureDelete, FindsResourceReferences)
 
 TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
 {
-  // "configure add client" also writes a File Daemon export file
-  // containing a plaintext copy of the Director's password (see
-  // ConfigureCreateFdResource()). Deleting the client must also remove
-  // that file, so it is not left behind as a stale, credential-bearing
-  // artifact.
+  // Deleting a client must also remove the FD export file "configure add
+  // client" writes (see ConfigureCreateFdResource()), not leave it behind.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -494,9 +557,8 @@ TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
                                                       "unreferenced-fd"));
   EXPECT_FALSE(std::filesystem::exists(export_path.c_str()));
 
-  /* The three directory levels that existed only to hold this client's
-   * export go with it: .../<client>/bareos-fd.d/director, .../bareos-fd.d
-   * and .../<client>. The shared parent must survive. */
+  // All three levels that existed only for this client's export go too;
+  // the shared parent must survive.
   const std::filesystem::path director_dir
       = std::filesystem::path{export_path.c_str()}.parent_path();
   const std::filesystem::path fd_dir = director_dir.parent_path();
@@ -512,15 +574,10 @@ TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
 
 TEST(ConfigureDelete, KeepsForeignFileInFiledaemonExportDirectory)
 {
-  /* The export directory can hold an export written under a previous
-   * Director resource name, whose path this Director can no longer compute.
-   * That file holds a plaintext copy of a Director password, so the pruning
-   * must stop rather than take it with the rest of the tree, and the user
-   * must be told it is there.
-   *
-   * The warning is the part that has to be asserted: stopping the prune
-   * happens either way, so the on-disk state alone does not distinguish
-   * warning from silently walking away. */
+  // A stale export left under a previous Director name (plaintext password)
+  // must stop the prune and warn -- the warning is what needs asserting,
+  // since the on-disk state alone doesn't distinguish that from silently
+  // walking away.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -574,11 +631,8 @@ TEST(ConfigureDelete, KeepsForeignFileInFiledaemonExportDirectory)
 
 TEST(ConfigureDelete, NamesTheJobdefsThatHoldsAnInheritedReference)
 {
-  /* A Job that takes its Client from a JobDefs ends up holding the same
-   * pointer, but its own file has no Client directive. Naming the Job would
-   * send whoever has to remove the reference to a file where there is
-   * nothing to remove; the JobDefs, which does hold the directive, is what
-   * has to be reported. */
+  // A Job inheriting Client from a JobDefs has no Client directive of its
+  // own to remove; the JobDefs that holds it must be reported instead.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -631,14 +685,9 @@ TEST(ConfigureDelete, NamesTheJobdefsThatHoldsAnInheritedReference)
 
 TEST(ConfigureDelete, ReportsResourcesRemovedAsCollateral)
 {
-  /* Deleting removes a whole configuration file, and only "configure add"
-   * keeps to one resource per file -- a hand-written file can define
-   * several. Deleting one of them takes the others with it, and since
-   * nothing references them the reference check does not object and the
-   * reload succeeds. Whether that is reported is the difference between a
-   * noticed and a silent configuration loss, so it is what is asserted
-   * here, along with the stashed file being kept so the definitions that
-   * went with it can be recovered. */
+  // A hand-written file can define more than one resource, unlike
+  // "configure add"'s one-per-file convention; deleting one takes the
+  // others with it, and that must be reported, not lost silently.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -712,10 +761,8 @@ TEST(ConfigureDelete, ReportsResourcesRemovedAsCollateral)
 
 TEST(ConfigureDelete, RemovesFiledaemonExportOfCollaterallyRemovedClient)
 {
-  /* A Client that goes with the file is as gone from the configuration as
-   * the one that was named, so its export -- which holds a plaintext copy
-   * of the Director password -- must go too. Leaving it behind is the
-   * CWE-459 case the export removal exists for in the first place. */
+  // A client collaterally removed is as gone as the one that was named, so
+  // its export (plaintext Director password, CWE-459) must go too.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -776,10 +823,8 @@ TEST(ConfigureDelete, RemovesFiledaemonExportOfCollaterallyRemovedClient)
 
 TEST(ConfigureDelete, RemovesStashedFileWhenNothingElseWasLost)
 {
-  /* The counterpart to the test above: deleting a resource that really does
-   * have its own file must not leave a ".deleted" copy of it behind -- that
-   * copy would otherwise accumulate, and for a Client it holds a password.
-   */
+  // Counterpart to the test above: nothing else lost means no ".deleted"
+  // copy should be left behind either.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -805,11 +850,9 @@ TEST(ConfigureDelete, RemovesStashedFileWhenNothingElseWasLost)
   delete ua;
 }
 
-// The tests above call ConfigureDeleteResource() directly. The tests below
-// instead go through ConfigureCmd(), the console command entry point, to
-// also cover its own argument parsing: resourcetype/"name=" lookup, the
-// Director-cannot-be-deleted rejection, and the "configure" output object
-// wrapping that ConfigureDeleteResource() alone does not produce.
+// The tests below go through ConfigureCmd() rather than
+// ConfigureDeleteResource() directly, to also cover its argument parsing
+// and "configure" output wrapping.
 
 TEST(ConfigureDelete, CmdDeletesUnreferencedResource)
 {
@@ -833,9 +876,8 @@ TEST(ConfigureDelete, CmdDeletesUnreferencedResource)
 
 TEST(ConfigureDelete, CmdAcceptsNameAsResourceTypeValue)
 {
-  /* "configure add" takes the name either way, so deleting has to as well:
-   * "configure delete client=foo" is the same request as
-   * "configure delete client name=foo". */
+  // "configure delete client=foo" must be the same request as
+  // "configure delete client name=foo".
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -896,10 +938,8 @@ TEST(ConfigureDelete, CmdRefusesReferencedResource)
 
 TEST(ConfigureDelete, CmdRejectsDirectorResource)
 {
-  // Only one Director resource is allowed and it cannot be deleted; this is
-  // checked in ConfigureDelete() itself, before any "name=" lookup, so it is
-  // only reachable through ConfigureCmd()/ConfigureDelete(), never through
-  // ConfigureDeleteResource() directly.
+  // Checked in ConfigureDelete() itself, so only reachable through
+  // ConfigureCmd(), never through ConfigureDeleteResource() directly.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
