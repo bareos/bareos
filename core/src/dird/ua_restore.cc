@@ -68,7 +68,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     const char* date);
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
-                                               RestoreContext* rx);
+                                               RestoreContext* rx,
+                                               bool auto_select_latest);
 static bool ResolveBackupChainForClientFileset(UaContext* ua,
                                                RestoreContext* rx,
                                                ClientDbRecord& cr,
@@ -554,7 +555,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   int i, j;
   const char* list[] = {
       T_("Select a FileSet@Client combination (latest backup)"),
-      T_("List Jobs where a given File is saved"),
+      T_("Select a FileSet@Client combination (custom restore point)"),
       T_("Enter list of comma separated JobIds to select"),
       T_("Enter SQL list command"),
       T_("Select the most recent backup for a client"),
@@ -566,6 +567,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       T_("Enter a list of directories to restore for found JobIds"),
       T_("Select full restore to a specified Job date"),
       T_("List last 20 Jobs run"),
+      T_("List Jobs where a given File is saved"),
       T_("Cancel"),
       NULL};
 
@@ -775,7 +777,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (use_latest) {
-    if (!SelectClientFilesetTupleAndRestore(ua, rx)) { return 0; }
+    if (!SelectClientFilesetTupleAndRestore(ua, rx, true)) { return 0; }
     done = true;
   }
 
@@ -804,24 +806,12 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 0;
       case 0: /* FileSet@Client latest restore */
       {
-        if (!SelectClientFilesetTupleAndRestore(ua, rx)) { return 0; }
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, true)) { return 0; }
       } break;
-      case 1: /* list where a file is saved */
-        if (!GetClientName(ua, rx)) { return 0; }
-        if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
-        len = strlen(ua->cmd);
-        fname = (char*)malloc(len * 2 + 1);
-        ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(rx->query,
-                                                         rx->ClientName, fname);
-        free(fname);
-        gui_save = ua->jcr->gui;
-        ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
-                             true);
-        ua->jcr->gui = gui_save;
-        done = false;
-        break;
+      case 1: /* FileSet@Client custom restore point */
+      {
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, false)) { return 0; }
+      } break;
       case 2: /* enter a list of JobIds */
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
           return 0;
@@ -953,7 +943,23 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->jcr->gui = gui_save;
         done = false;
       } break;
-      case 13: /* Cancel or quit */
+      case 13: /* list where a file is saved */
+        if (!GetClientName(ua, rx)) { return 0; }
+        if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
+        len = strlen(ua->cmd);
+        fname = (char*)malloc(len * 2 + 1);
+        ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(rx->query,
+                                                         rx->ClientName, fname);
+        free(fname);
+        gui_save = ua->jcr->gui;
+        ua->jcr->gui = true;
+        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
+                             true);
+        ua->jcr->gui = gui_save;
+        done = false;
+        break;
+      case 14: /* Cancel or quit */
         return 0;
       default:
         return 0;
@@ -1512,6 +1518,35 @@ static int ClientFilesetTupleHandler(void* ctx, int, char** row)
   return 0;
 }
 
+/**
+ * Format a duration (in seconds, always >= 0) as a human readable age,
+ * e.g. "3 days ago", "1 hour ago", "just now".
+ */
+static std::string FormatHumanReadableAge(utime_t seconds_ago)
+{
+  struct Unit {
+    int64_t seconds;
+    const char* singular;
+    const char* plural;
+  };
+  static const Unit units[] = {
+      {31536000, "year", "years"}, {2592000, "month", "months"},
+      {604800, "week", "weeks"},   {86400, "day", "days"},
+      {3600, "hour", "hours"},     {60, "minute", "minutes"},
+  };
+  if (seconds_ago < 0) { seconds_ago = 0; }
+  for (const auto& unit : units) {
+    if (seconds_ago >= unit.seconds) {
+      int64_t count = seconds_ago / unit.seconds;
+      PoolMem age(PM_NAME);
+      Mmsg(age, "%" PRId64 " %s ago", count,
+           count == 1 ? T_(unit.singular) : T_(unit.plural));
+      return std::string(age.c_str());
+    }
+  }
+  return T_("just now");
+}
+
 static int ClientFilesetFullHandler(void* ctx, int, char** row)
 {
   if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4]) { return 0; }
@@ -1534,15 +1569,16 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   FreePoolMemory(job_names);
 
   PoolMem chain(PM_MESSAGE);
-  int64_t job_count = str_to_int64(row[3]);
-  Mmsg(chain, "%s (%" PRId64 " %s since Full #%s from %s)", row[2], job_count,
-       job_count == 1 ? T_("job") : T_("jobs"), row[0], row[1]);
+  utime_t restore_point = StrToUtime(row[2]);
+  std::string age = FormatHumanReadableAge(time(NULL) - restore_point);
+  Mmsg(chain, "%s (%s)", row[2], age.c_str());
   AddPrompt(ua, chain.c_str());
   return 0;
 }
 
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
-                                               RestoreContext* rx)
+                                               RestoreContext* rx,
+                                               bool auto_select_latest)
 {
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_tuples_1>(
@@ -1594,31 +1630,50 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_fulls_3>(
       rx->query, edit_int64(cr.ClientId, ed1), edit_int64(fsr.FileSetId, ed2),
       filter_name);
-  /* Query is ordered newest-first, so the "(latest backup)" quick restore
-   * just takes the first chain and resolves it directly -- no further
-   * question is asked here, matching what the menu/command label promises. */
-  ua->prompts.clear();
-  if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
-    ua->ErrorMsg("%s\n", ua->db->strerror());
-    return false;
-  }
-  if (ua->prompts.empty()) {
-    ua->ErrorMsg(T_("No backup found for FileSet \"%s\" and Client \"%s\".\n"),
-                 fsr.FileSet, cr.Name);
-    return false;
-  }
+
   char selected_date[MAX_TIME_LENGTH];
-  bstrncpy(selected_date, ua->prompts[0].c_str(), sizeof(selected_date));
-  ua->prompts.clear();
-  if (!ua->api && !ua->runscript) {
-    ua->SendMsg(T_("Automatically selected restore point: %s\n"),
-                selected_date);
+  if (auto_select_latest) {
+    /* Query is ordered newest-first, so the "(latest backup)" quick restore
+     * just takes the first chain and resolves it directly -- no further
+     * question is asked here, matching what the menu/command label
+     * promises. */
+    ua->prompts.clear();
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+    if (ua->prompts.empty()) {
+      ua->ErrorMsg(
+          T_("No backup found for FileSet \"%s\" and Client \"%s\".\n"),
+          fsr.FileSet, cr.Name);
+      return false;
+    }
+    bstrncpy(selected_date, ua->prompts[0].c_str(), sizeof(selected_date));
+    ua->prompts.clear();
+    if (!ua->api && !ua->runscript) {
+      ua->SendMsg(T_("Automatically selected restore point: %s\n"),
+                  selected_date);
+    }
+  } else {
+    /* Let the user pick which restore point to use. The interactive
+     * prompt itself already appends its own selection/navigation hints,
+     * so the header here only needs to describe the list. */
+    StartPrompt(ua, T_("The following restore points are available "
+                       "(newest first):\n"));
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+    if (DoPrompt(ua, T_("restore point"), T_("Select restore point"),
+                 selected_date, sizeof(selected_date))
+        < 0) {
+      return false;
+    }
   }
   /* The prompt string formatted in ClientFilesetFullHandler is:
-   * "<RestorePoint> (<job_count> jobs since Full #<JobId> from
-   * <FullStartTime>)" e.g. "2026-09-12 14:33:21 (1 job since Full #1 from
-   * 2026-09-12 14:33:21)" Extract the leading timestamp "YYYY-MM-DD HH:MM:SS"
-   * (first 19 characters). */
+   * "<RestorePoint> (<human readable age> ago)" e.g.
+   * "2026-09-12 14:33:21 (3 days ago)". Extract the leading timestamp
+   * "YYYY-MM-DD HH:MM:SS" (first 19 characters). */
   if (strlen(selected_date) >= 19) {
     selected_date[19] = '\0';
   } else {
