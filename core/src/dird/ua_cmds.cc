@@ -228,7 +228,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
     {NT_(".terminalsize"), DotTerminalsizeCmd,
      T_("Report the client's terminal size (internal use)"),
-     NT_("<lines> <columns>"), false, false},
+     NT_("<lines> <columns> [color]"), false, false},
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
          "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "

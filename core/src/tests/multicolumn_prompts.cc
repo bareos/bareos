@@ -319,12 +319,12 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
 
   EXPECT_EQ(selection.ApplyInput("key:text:b"),
             SelectionInputResult::kContinue);
-  EXPECT_EQ(selection.Format("Choices:\n", "Select"),
+  EXPECT_EQ(selection.Format("Choices:\n", "Select", 20, true, true),
             "Choices:\n"
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
             "Filter: b\n"
-            "> \033[7m2: Beta\033[0m\n");
+            "> \033[7;36m2: Beta\033[0m\n");
   EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
   EXPECT_EQ(selection.selected_index(), 1);
 }
@@ -339,20 +339,34 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
   std::vector<std::string> options{"Alpha", "Beta", "Gamma"};
   InteractiveSelection selection(options);
 
-  EXPECT_EQ(selection.Format("", "Select"),
+  EXPECT_EQ(selection.Format("", "Select", 20, true, true),
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
-            "> \033[7m1: Alpha\033[0m\n"
+            "> \033[7;36m1: Alpha\033[0m\n"
             "  2: Beta\n"
             "  3: Gamma\n");
 
   EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
-  EXPECT_EQ(selection.Format("", "Select"),
+  EXPECT_EQ(selection.Format("", "Select", 20, true, true),
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
             "  1: Alpha\n"
-            "> \033[7m2: Beta\033[0m\n"
+            "> \033[7;36m2: Beta\033[0m\n"
             "  3: Gamma\n");
+}
+
+TEST(InteractiveSelection, SanitizesTerminalControls)
+{
+  std::vector<std::string> options{"unsafe\033]52;c;Y2xpcGJvYXJk\a\302\23331m"};
+  InteractiveSelection selection(options);
+
+  const std::string output
+      = selection.Format("Header\033[2J\n", "Select\a", 20, true, true);
+  EXPECT_EQ(output,
+            "Header?[2J\n"
+            "Select? (Up/Down/Left/Right, Enter, Esc, type a number or text "
+            "to filter):\n"
+            "> \033[7;36m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
 }
 
 TEST(InteractiveSelection, NavigatesVisibleOptions)
@@ -443,7 +457,7 @@ TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
   }
 
   const auto output = selection.Format("", "Select");
-  EXPECT_NE(output.find("> \033[7m26: option 26\033[0m\n"), std::string::npos);
+  EXPECT_NE(output.find("> 26: option 26\n"), std::string::npos);
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
 }
@@ -465,7 +479,7 @@ TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
   }
 
   const auto output = selection.Format("", "Select", /*max_visible_options=*/5);
-  EXPECT_NE(output.find("> \033[7m26: option 26\033[0m\n"), std::string::npos);
+  EXPECT_NE(output.find("> 26: option 26\n"), std::string::npos);
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
   // header line + leading "..." + 5 option lines + trailing "..." = 8 lines
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 8);

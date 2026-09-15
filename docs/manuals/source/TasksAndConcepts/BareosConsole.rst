@@ -54,6 +54,14 @@ asterisk (*). Generally, for all commands, you can simply enter the command name
 program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter
 the command followed by arguments. The general format is:
 
+When standard output is a capable terminal, :command:`bconsole` uses color to
+distinguish prompts, selections, informational messages, warnings, and errors.
+Set the :envvar:`NO_COLOR` environment variable to disable color. Color is also
+disabled for terminals that identify themselves as ``dumb`` and on Windows
+consoles without virtual-terminal support. Redirected output and files written
+by ``@output`` or ``@tee`` do not contain terminal color sequences. Textual
+selection markers remain present when color is enabled.
+
 
 
 ::
