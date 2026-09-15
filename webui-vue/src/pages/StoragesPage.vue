@@ -330,6 +330,8 @@
                       name="vpn_key"
                       size="xs"
                       color="amber-8"
+                      role="img"
+                      :aria-label="t('Encryption key stored in catalog')"
                     >
                       <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
                     </q-icon>

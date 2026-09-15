@@ -38,6 +38,8 @@
               v-if="hasEncryptionKey"
               name="vpn_key"
               color="amber-8"
+              role="img"
+              :aria-label="t('Encryption key stored in catalog')"
             >
               <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
             </q-icon>

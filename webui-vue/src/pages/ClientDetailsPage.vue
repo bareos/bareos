@@ -59,8 +59,13 @@
                   <span
                     v-if="isWaitingJobStatus(displayJobStatus(props.row))"
                     class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+                    tabindex="0"
+                    role="button"
                     :title="t('Jump to log')"
+                    :aria-label="t('Jump to log')"
                     @click="openJobLog(props.row)"
+                    @keydown.enter="openJobLog(props.row)"
+                    @keydown.space.prevent="openJobLog(props.row)"
                   >
                     <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                     <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>

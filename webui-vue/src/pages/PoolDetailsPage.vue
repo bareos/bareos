@@ -98,7 +98,8 @@
                 <template #body-cell-inchanger="props">
                   <q-td :props="props" class="text-center">
                     <q-icon :name="props.value ? 'check' : 'remove'"
-                            :color="props.value ? 'positive' : 'grey'" size="xs" />
+                            :color="props.value ? 'positive' : 'grey'" size="xs"
+                            role="img" :aria-label="props.value ? t('Yes') : t('No')" />
                   </q-td>
                 </template>
               </q-table>
