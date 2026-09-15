@@ -464,31 +464,41 @@ $bareos-blue-dark: #005a96;
 }
 
 // ── Timeline ──────────────────────────────────────────────────────────────────
-.tl-container {
-  position: relative;
-  overflow-x: auto;
-}
-
-.tl-tooltip {
-  position: fixed;
-  background: rgba(30, 30, 30, 0.92);
-  color: #eee;
-  font-size: 0.78rem;
-  line-height: 1.6;
-  padding: 8px 12px;
-  border-radius: 6px;
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
 .tl-legend-dot {
   display: inline-block;
   width: 12px;
   height: 12px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+// Compact per-day run-status summary shown in the Job Timeline's Month/Week
+// calendar cells (one dot per distinct status that day, worst status first,
+// plus a total-run count) — the Job Timeline equivalent of the Scheduler
+// Preview's per-schedule tick markers, but collapsed since a day can easily
+// have dozens of distinct job names (too many for individual lanes at this
+// zoom level; see the Day view for the full per-job breakdown).
+.tl-cal-summary {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tl-cal-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tl-cal-count {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #777;
+  margin-left: 2px;
 }
 
 // ── Dark mode overrides ───────────────────────────────────────────────────────

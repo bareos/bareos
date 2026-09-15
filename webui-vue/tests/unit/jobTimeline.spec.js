@@ -20,7 +20,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildTimelineGroups } from '../../src/utils/jobTimeline.js'
+import { buildDailyRunSummary, buildTimelineGroups, distinctJobNames } from '../../src/utils/jobTimeline.js'
 
 describe('job timeline helpers', () => {
   it('groups multi-director timelines by director without prefixing each client label', () => {
@@ -90,5 +90,55 @@ describe('job timeline helpers', () => {
       { client: 'client-a', director: 'prod-a', label: 'client-a', startRow: 0, rowCount: 1 },
       { client: 'client-b', director: 'prod-a', label: 'client-b', startRow: 1, rowCount: 1 },
     ])
+  })
+})
+
+describe('buildDailyRunSummary', () => {
+  const jobs = [
+    { id: 1, name: 'BackupA', client: 'c1', status: 'T', starttime: '2026-05-27 10:00:00' },
+    { id: 2, name: 'BackupB', client: 'c1', status: 'f', starttime: '2026-05-27 11:00:00' },
+    { id: 3, name: 'BackupC', client: 'c2', status: 'T', starttime: '2026-05-27 12:00:00' },
+    { id: 4, name: 'BackupD', client: 'c2', status: 'T', starttime: '2026-05-28 01:00:00' },
+  ]
+
+  it('buckets jobs by their local start date and counts statuses worst-first', () => {
+    const summary = buildDailyRunSummary(jobs, '2026-05-27')
+    expect(summary.total).toBe(3)
+    expect(summary.statuses).toEqual([
+      { status: 'f', count: 1 },
+      { status: 'T', count: 2 },
+    ])
+  })
+
+  it('ignores jobs on other days', () => {
+    const summary = buildDailyRunSummary(jobs, '2026-05-28')
+    expect(summary.total).toBe(1)
+    expect(summary.statuses).toEqual([{ status: 'T', count: 1 }])
+  })
+
+  it('honours a visibleJobNames filter', () => {
+    const summary = buildDailyRunSummary(jobs, '2026-05-27', {
+      visibleJobNames: new Set(['BackupA', 'BackupC']),
+    })
+    expect(summary.total).toBe(2)
+    expect(summary.statuses).toEqual([{ status: 'T', count: 2 }])
+  })
+
+  it('returns an empty summary when nothing ran that day', () => {
+    expect(buildDailyRunSummary(jobs, '2026-06-01')).toEqual({ total: 0, statuses: [] })
+  })
+})
+
+describe('distinctJobNames', () => {
+  it('returns sorted, de-duplicated job names', () => {
+    const jobs = [
+      { name: 'ZJob' }, { name: 'AJob' }, { name: 'ZJob' }, { name: '' }, { name: null },
+    ]
+    expect(distinctJobNames(jobs)).toEqual(['AJob', 'ZJob'])
+  })
+
+  it('returns an empty array for no jobs', () => {
+    expect(distinctJobNames([])).toEqual([])
+    expect(distinctJobNames(null)).toEqual([])
   })
 })

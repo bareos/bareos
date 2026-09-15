@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-function parseTimelineTimestamp(str) {
+export function parseTimelineTimestamp(str) {
   if (!str || str.startsWith('0000')) return null
   return new Date(str.replace(' ', 'T')).getTime()
 }
@@ -105,4 +105,47 @@ export function buildTimelineGroups(jobs, { start, now, multiDirectorTimeline })
       }
     })
     .filter(group => group.rows.length > 0)
+}
+
+// Worst-first ordering used when summarising a day's runs into a compact
+// dot row (Month/Week calendar cells) — a day that had any failure should
+// visually read as "bad" before a day that only had successes.
+export const JOB_STATUS_SEVERITY_ORDER = ['f', 'E', 'W', 'A', 'C', 'R', 'T']
+
+function localDateStrOf(ms) {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Buckets jobs that *started* on `dateStr` (local calendar day) by status,
+// for the compact Month/Week calendar-cell summary. `visibleJobNames`, when
+// given, restricts the summary to jobs whose name is in the set (mirrors
+// the "Show jobs" filter).
+export function buildDailyRunSummary(jobs, dateStr, { visibleJobNames = null } = {}) {
+  const counts = new Map()
+  let total = 0
+
+  for (const job of jobs ?? []) {
+    if (visibleJobNames && !visibleJobNames.has(job.name)) continue
+    const startedAt = parseTimelineTimestamp(job.starttime)
+    if (startedAt === null || localDateStrOf(startedAt) !== dateStr) continue
+    const status = job.status ?? ''
+    counts.set(status, (counts.get(status) ?? 0) + 1)
+    total++
+  }
+
+  const statuses = JOB_STATUS_SEVERITY_ORDER
+    .filter(status => counts.has(status))
+    .map(status => ({ status, count: counts.get(status) }))
+  for (const [status, count] of counts) {
+    if (!JOB_STATUS_SEVERITY_ORDER.includes(status)) statuses.push({ status, count })
+  }
+
+  return { total, statuses }
+}
+
+// Distinct job names present across `jobs`, sorted alphabetically — used to
+// build the "Show jobs" filter checkbox list.
+export function distinctJobNames(jobs) {
+  return [...new Set((jobs ?? []).map(job => job.name).filter(Boolean))].sort((a, b) => a.localeCompare(b))
 }
