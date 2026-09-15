@@ -221,28 +221,35 @@
                             !cell.day && 'sched-cal-empty',
                             viewMode === 'week' && 'sched-cal-cell--week']">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
-                <div v-if="cell.day" class="sched-cal-timeline"
-                     :class="viewMode === 'week' ? 'sched-cal-timeline--vertical' : 'sched-cal-timeline--horizontal'">
-                  <div v-for="hm in TIMELINE_HOUR_MARKS" :key="hm" class="sched-cal-timeline-grid"
-                       :style="viewMode === 'week' ? { top: `${hm}%` } : { left: `${hm}%` }" />
-                  <div v-for="(marker, mi) in cell.timeline" :key="mi"
-                       class="sched-cal-tick"
-                       :class="{ 'sched-cal-tick--multi': marker.count > 1 }"
-                       :style="tickStyle(marker)"
-                       tabindex="0"
-                       role="button"
-                       :aria-label="tickAriaLabel(marker)">
-                    <span v-if="marker.count > 1" class="sched-cal-tick-count">{{ marker.count }}</span>
-                    <q-tooltip max-width="260px">
-                      <div v-for="(run, ri) in marker.runs" :key="ri" class="q-mb-xs">
-                        <div class="text-weight-bold">{{ run.time }} — {{ run.displaySchedule }}</div>
-                        <div>{{ run.datetime }}</div>
-                        <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
-                        <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
-                        <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
-                        <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                <div v-if="cell.day && cell.lanes.length" class="sched-cal-lanes"
+                     :style="{ maxHeight: `${MAX_VISIBLE_LANES * 18}px` }">
+                  <div v-for="lane in cell.lanes" :key="lane.scheduleKey" class="sched-cal-lane">
+                    <span class="sched-cal-lane-label" :style="{ color: lane.color }" :title="lane.label">
+                      {{ lane.label }}
+                    </span>
+                    <div class="sched-cal-lane-axis">
+                      <div v-for="hm in TIMELINE_HOUR_MARKS" :key="hm" class="sched-cal-timeline-grid"
+                           :style="{ left: `${hm}%` }" />
+                      <div v-for="(marker, mi) in lane.markers" :key="mi"
+                           class="sched-cal-tick"
+                           :class="{ 'sched-cal-tick--multi': marker.count > 1 }"
+                           :style="tickStyle(lane, marker)"
+                           tabindex="0"
+                           role="button"
+                           :aria-label="tickAriaLabel(lane, marker)">
+                        <span v-if="marker.count > 1" class="sched-cal-tick-count">{{ marker.count }}</span>
+                        <q-tooltip max-width="260px">
+                          <div class="text-weight-bold q-mb-xs">{{ lane.label }}</div>
+                          <div v-for="(run, ri) in marker.runs" :key="ri" class="q-mb-xs">
+                            <div>{{ run.time }} — {{ run.datetime }}</div>
+                            <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
+                            <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
+                            <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
+                            <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                          </div>
+                        </q-tooltip>
                       </div>
-                    </q-tooltip>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -984,30 +991,55 @@ function timeToMinutes(time) {
   return (h || 0) * 60 + (m || 0)
 }
 
-// Bucket runs that are close together in time so their timeline ticks don't
-// visually overlap; week cells have more room so use a finer bucket.
-const TIMELINE_BUCKET_MINUTES = { month: 60, week: 30 }
+// Runs within this many minutes of each other, within the same schedule's
+// lane, are merged into a single "N runs" marker so ticks don't overlap.
+const LANE_BUCKET_MINUTES = 30
 
-function buildCellTimeline(dateStr) {
+// Cap how many schedule lanes are shown per day before the cell scrolls
+// internally, so a handful of very active schedules doesn't blow up every
+// other cell in the same calendar row (CSS grid rows share a common height).
+const MAX_VISIBLE_LANES = 6
+
+const activeScheduleOrder = computed(() => {
+  const visible = visibleScheduleKeys.value
+  const filterActive = scheduleSelectionInitialized.value
+  return allScheduleOptions.value.filter(option => !filterActive || visible.includes(option.key))
+})
+
+function buildCellLanes(dateStr) {
   const all = runsByDate.value[dateStr] ?? []
   if (all.length === 0) return []
 
-  const bucketMinutes = TIMELINE_BUCKET_MINUTES[viewMode.value] ?? 60
-  const buckets = new Map()
+  const runsByScheduleKey = new Map()
   for (const run of all) {
-    const minutes = timeToMinutes(run.time)
-    const bucketKey = Math.floor(minutes / bucketMinutes)
-    if (!buckets.has(bucketKey)) buckets.set(bucketKey, [])
-    buckets.get(bucketKey).push(run)
+    if (!runsByScheduleKey.has(run.scheduleKey)) runsByScheduleKey.set(run.scheduleKey, [])
+    runsByScheduleKey.get(run.scheduleKey).push(run)
   }
 
-  return Array.from(buckets.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([bucketKey, runs]) => ({
-      percent: ((bucketKey * bucketMinutes + bucketMinutes / 2) / 1440) * 100,
-      runs,
-      count: runs.length,
-    }))
+  return activeScheduleOrder.value
+    .filter(option => runsByScheduleKey.has(option.key))
+    .map(option => {
+      const buckets = new Map()
+      for (const run of runsByScheduleKey.get(option.key)) {
+        const minutes = timeToMinutes(run.time)
+        const bucketKey = Math.floor(minutes / LANE_BUCKET_MINUTES)
+        if (!buckets.has(bucketKey)) buckets.set(bucketKey, [])
+        buckets.get(bucketKey).push(run)
+      }
+      const markers = Array.from(buckets.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([bucketKey, runs]) => ({
+          percent: ((bucketKey * LANE_BUCKET_MINUTES + LANE_BUCKET_MINUTES / 2) / 1440) * 100,
+          runs,
+          count: runs.length,
+        }))
+      return {
+        scheduleKey: option.key,
+        label: option.label,
+        color: scheduleColor(option.label),
+        markers,
+      }
+    })
 }
 
 function makeDateStr(y, m, d) {
@@ -1028,7 +1060,7 @@ const calendarCells = computed(() => {
         dateStr,
         isToday: dateStr === todayStr,
         isPast: dateStr < todayStr,
-        timeline: buildCellTimeline(dateStr),
+        lanes: buildCellLanes(dateStr),
       }
     })
   }
@@ -1040,7 +1072,7 @@ const calendarCells = computed(() => {
   const startOffset = (firstWeekday + 6) % 7
 
   const cells = []
-  for (let i = 0; i < startOffset; i++) cells.push({ day: 0, timeline: [] })
+  for (let i = 0; i < startOffset; i++) cells.push({ day: 0, lanes: [] })
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = makeDateStr(y, m, d)
     cells.push({
@@ -1048,10 +1080,10 @@ const calendarCells = computed(() => {
       dateStr,
       isToday: dateStr === todayStr,
       isPast: dateStr < todayStr,
-      timeline: buildCellTimeline(dateStr),
+      lanes: buildCellLanes(dateStr),
     })
   }
-  while (cells.length % 7 !== 0) cells.push({ day: 0, timeline: [] })
+  while (cells.length % 7 !== 0) cells.push({ day: 0, lanes: [] })
   return cells
 })
 
@@ -1066,24 +1098,18 @@ function scheduleColor(name) {
   return `hsl(${hue} ${saturation}% ${lightness}%)`
 }
 
-// Faint reference gridlines drawn across the 24h timeline (as % of the axis).
+// Faint reference gridlines drawn across each lane's 24h axis (as % of the axis).
 const TIMELINE_HOUR_MARKS = [0, 25, 50, 75]
 
-function tickStyle(marker) {
-  const axisProp = viewMode.value === 'week' ? 'top' : 'left'
-  const style = { [axisProp]: `${marker.percent}%` }
-  if (marker.count === 1) {
-    style.background = scheduleColor(marker.runs[0].displaySchedule)
-  }
-  return style
+function tickStyle(lane, marker) {
+  return { left: `${marker.percent}%`, background: lane.color }
 }
 
-function tickAriaLabel(marker) {
+function tickAriaLabel(lane, marker) {
   if (marker.count === 1) {
-    const run = marker.runs[0]
-    return `${run.time} — ${run.displaySchedule}`
+    return `${lane.label} — ${marker.runs[0].time}`
   }
-  return t('{n} jobs around {time}', { n: marker.count, time: marker.runs[0].time })
+  return t('{label} — {n} runs around {time}', { label: lane.label, n: marker.count, time: marker.runs[0].time })
 }
 
 watch(tab, (value) => {
