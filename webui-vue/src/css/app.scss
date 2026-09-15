@@ -367,6 +367,21 @@ $bareos-blue-dark: #005a96;
   background: var(--q-negative);
 }
 
+// Fixed-width period/date label so the surrounding Previous/Next buttons
+// stay put as the text changes length (e.g. "Monday" vs "Wednesday",
+// "May" vs "September") — without this the whole nav block reflows and
+// the Previous button visibly jumps left/right on every navigation.
+.sched-period-label {
+  display: inline-block;
+  min-width: 21ch;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.sched-day-period-label {
+  min-width: 29ch;
+}
+
 .sched-cal-tick {
   position: absolute;
   top: 50%;
