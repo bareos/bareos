@@ -270,10 +270,14 @@ $bareos-blue-dark: #005a96;
   flex-shrink: 0;
 }
 
+// Fixed (not max-) width: every lane's axis must start at the same x
+// offset regardless of schedule-name length, otherwise the "now" line
+// (positioned as a % of each lane's own axis) would land at a different
+// pixel position per lane instead of forming one straight vertical line.
 .sched-cal-lane-label {
   font-size: 0.55rem;
   font-weight: 600;
-  max-width: 44px;
+  width: 44px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
