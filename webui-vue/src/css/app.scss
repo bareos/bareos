@@ -402,25 +402,25 @@ $bareos-blue-dark: #005a96;
 .sched-day-view {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   padding: 4px 2px 18px;
 }
 
 .sched-day-lane {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  padding: 10px 14px 28px;
+  padding: 4px 10px 12px;
 }
 
 .sched-day-lane-label {
   font-weight: 600;
-  font-size: 0.85rem;
-  margin-bottom: 10px;
+  font-size: 0.78rem;
+  margin-bottom: 3px;
 }
 
 .sched-day-lane-axis {
   position: relative;
-  height: 44px;
+  height: 24px;
   border-bottom: 1px solid #ddd;
 }
 
@@ -434,10 +434,10 @@ $bareos-blue-dark: #005a96;
 
 .sched-day-hour-label {
   position: absolute;
-  bottom: -20px;
+  bottom: -15px;
   left: 0;
   transform: translateX(-50%);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   color: #888;
   white-space: nowrap;
 }
@@ -455,6 +455,57 @@ $bareos-blue-dark: #005a96;
   gap: 4px;
 }
 
+// ── Job Timeline Week/Month period view (continuous timeline, same visual
+// language as the Day view above, scaled to a 7-day/N-day axis) ──────────────
+.sched-period-view {
+  gap: 0;
+}
+
+.sched-period-ticks {
+  position: relative;
+  height: 16px;
+  margin: 0 0 4px;
+}
+
+.sched-period-tick-axis {
+  position: relative;
+  height: 100%;
+}
+
+.sched-period-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  cursor: pointer;
+}
+
+.sched-period-tick--today {
+  background: rgba(25, 118, 210, 0.4);
+}
+
+.sched-period-tick-label {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  font-size: 0.68rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.sched-period-tick:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: 1px;
+}
+
+.sched-period-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
 .sched-group-header td {
   background: rgba(0, 0, 0, 0.04);
   font-size: 0.8rem;
@@ -470,35 +521,6 @@ $bareos-blue-dark: #005a96;
   height: 12px;
   border-radius: 2px;
   flex-shrink: 0;
-}
-
-// Compact per-day run-status summary shown in the Job Timeline's Month/Week
-// calendar cells (one dot per distinct status that day, worst status first,
-// plus a total-run count) — the Job Timeline equivalent of the Scheduler
-// Preview's per-schedule tick markers, but collapsed since a day can easily
-// have dozens of distinct job names (too many for individual lanes at this
-// zoom level; see the Day view for the full per-job breakdown).
-.tl-cal-summary {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  flex-wrap: wrap;
-  margin-top: 2px;
-}
-
-.tl-cal-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.tl-cal-count {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: #777;
-  margin-left: 2px;
 }
 
 // ── Dark mode overrides ───────────────────────────────────────────────────────

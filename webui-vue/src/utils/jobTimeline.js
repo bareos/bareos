@@ -24,28 +24,13 @@ export function parseTimelineTimestamp(str) {
   return new Date(str.replace(' ', 'T')).getTime()
 }
 
-function buildClientSpans(rows) {
-  const spans = []
-  let i = 0
-  while (i < rows.length) {
-    const client = rows[i].client
-    const director = rows[i].director ?? null
-    const label = rows[i].clientLabel ?? client
-    let count = 0
-    while (
-      i + count < rows.length
-      && rows[i + count].client === client
-      && (rows[i + count].director ?? null) === director
-    ) {
-      count++
-    }
-    spans.push({ client, director, label, startRow: i, rowCount: count })
-    i += count
-  }
-  return spans
-}
-
-export function buildTimelineGroups(jobs, { start, now, multiDirectorTimeline }) {
+// Groups jobs into one timeline lane per <fileset>@<client> tuple (matching
+// the tuple used for quick-restore selection elsewhere in the app), each
+// holding the individual job runs (of any job name) that share that
+// fileset+client, sorted chronologically. Used for the Day, Week, and
+// Month views alike — only the caller-supplied [start, now) window and the
+// resulting bar geometry differ between them.
+export function buildTimelineLanes(jobs, { start, now, multiDirectorTimeline }) {
   const directorGroups = new Map()
 
   for (const job of jobs ?? []) {
@@ -57,95 +42,55 @@ export function buildTimelineGroups(jobs, { start, now, multiDirectorTimeline })
     if (!directorGroups.has(directorKey)) {
       directorGroups.set(directorKey, {
         director: job.director ?? null,
-        clients: new Map(),
+        lanes: new Map(),
       })
     }
 
     const directorGroup = directorGroups.get(directorKey)
-    if (!directorGroup.clients.has(job.client)) {
-      directorGroup.clients.set(job.client, {
-        client: job.client,
-        label: job.client,
-        jobs: new Map(),
-      })
-    }
-
-    const clientGroup = directorGroup.clients.get(job.client)
-    if (!clientGroup.jobs.has(job.name)) {
-      clientGroup.jobs.set(job.name, {
-        name: job.name,
-        client: job.client,
-        clientLabel: clientGroup.label,
+    const client = job.client ?? ''
+    const fileset = job.fileset ?? ''
+    const laneKey = `${client}\u0000${fileset}`
+    if (!directorGroup.lanes.has(laneKey)) {
+      directorGroup.lanes.set(laneKey, {
+        key: `${directorKey}\u0000${laneKey}`,
+        client,
+        fileset,
         director: job.director ?? null,
         runs: [],
       })
     }
-    clientGroup.jobs.get(job.name).runs.push(job)
+    directorGroup.lanes.get(laneKey).runs.push(job)
   }
 
   return [...directorGroups.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([, directorGroup]) => {
-      const rows = [...directorGroup.clients.entries()]
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .flatMap(([, clientGroup]) => [...clientGroup.jobs.values()]
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map(row => ({
-            ...row,
-            runs: row.runs.sort(
-              (a, b) => (parseTimelineTimestamp(a.starttime) ?? 0)
-                - (parseTimelineTimestamp(b.starttime) ?? 0)
-            ),
-          })))
-
-      return {
-        director: directorGroup.director,
-        rows,
-        clientSpans: buildClientSpans(rows),
-      }
-    })
-    .filter(group => group.rows.length > 0)
+    .map(([, directorGroup]) => ({
+      director: directorGroup.director,
+      lanes: [...directorGroup.lanes.values()]
+        .sort((a, b) => a.client.localeCompare(b.client) || a.fileset.localeCompare(b.fileset))
+        .map(lane => ({
+          ...lane,
+          runs: lane.runs.sort(
+            (a, b) => (parseTimelineTimestamp(a.starttime) ?? 0)
+              - (parseTimelineTimestamp(b.starttime) ?? 0)
+          ),
+        })),
+    }))
+    .filter(group => group.lanes.length > 0)
 }
 
-// Worst-first ordering used when summarising a day's runs into a compact
-// dot row (Month/Week calendar cells) — a day that had any failure should
-// visually read as "bad" before a day that only had successes.
-export const JOB_STATUS_SEVERITY_ORDER = ['f', 'E', 'W', 'A', 'C', 'R', 'T']
-
-function localDateStrOf(ms) {
-  const d = new Date(ms)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-// Buckets jobs that *started* on `dateStr` (local calendar day) by status,
-// for the compact Month/Week calendar-cell summary. `visibleJobNames`, when
-// given, restricts the summary to jobs whose name is in the set (mirrors
-// the "Show jobs" filter).
-export function buildDailyRunSummary(jobs, dateStr, { visibleJobNames = null } = {}) {
-  const counts = new Map()
-  let total = 0
-
+// Distinct fileset@client tuples present across `jobs`, sorted by label —
+// used to build the "Show jobs" filter checkbox list (matches the lane
+// grouping used by the timeline itself, so ticking a box shows/hides one
+// whole lane at a time).
+export function distinctFilesetClientOptions(jobs) {
+  const seen = new Map()
   for (const job of jobs ?? []) {
-    if (visibleJobNames && !visibleJobNames.has(job.name)) continue
-    const startedAt = parseTimelineTimestamp(job.starttime)
-    if (startedAt === null || localDateStrOf(startedAt) !== dateStr) continue
-    const status = job.status ?? ''
-    counts.set(status, (counts.get(status) ?? 0) + 1)
-    total++
+    const client = job.client ?? ''
+    const fileset = job.fileset ?? ''
+    if (!client && !fileset) continue
+    const key = `${fileset}\u0000${client}`
+    if (!seen.has(key)) seen.set(key, { key, fileset, client, label: `${fileset}@${client}` })
   }
-
-  const statuses = JOB_STATUS_SEVERITY_ORDER
-    .filter(status => counts.has(status))
-    .map(status => ({ status, count: counts.get(status) }))
-  for (const [status, count] of counts) {
-    if (!JOB_STATUS_SEVERITY_ORDER.includes(status)) statuses.push({ status, count })
-  }
-
-  return { total, statuses }
-}
-
-// Distinct job names present across `jobs`, sorted alphabetically — used to
-// build the "Show jobs" filter checkbox list.
-export function distinctJobNames(jobs) {
-  return [...new Set((jobs ?? []).map(job => job.name).filter(Boolean))].sort((a, b) => a.localeCompare(b))
+  return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label))
 }

@@ -100,6 +100,7 @@ export function normaliseJob(j) {
     id:        Number(j.jobid ?? j.id),
     name:      j.name       ?? '',
     client:    j.client     ?? j.clientname ?? '',
+    fileset:   j.fileset    ?? '',
     type:      j.jobtype    ?? j.type       ?? '',
     level:     j.joblevel   ?? j.level      ?? '',
     status:    j.jobstatus  ?? j.status     ?? '',
