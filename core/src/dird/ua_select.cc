@@ -46,6 +46,34 @@
 
 namespace directordaemon {
 
+namespace {
+
+std::string SanitizeSelectionText(std::string_view text, bool allow_newlines)
+{
+  std::string sanitized;
+  sanitized.reserve(text.size());
+  for (size_t i = 0; i < text.size(); ++i) {
+    unsigned char value = static_cast<unsigned char>(text[i]);
+    if (value == 0xc2 && i + 1 < text.size()) {
+      unsigned char next = static_cast<unsigned char>(text[i + 1]);
+      if (next >= 0x80 && next <= 0x9f) {
+        sanitized.push_back('?');
+        ++i;
+        continue;
+      }
+    }
+    if ((value < 0x20 && !(allow_newlines && value == '\n')) || value == 0x7f
+        || (value >= 0x80 && value <= 0x9f)) {
+      sanitized.push_back('?');
+    } else {
+      sanitized.push_back(text[i]);
+    }
+  }
+  return sanitized;
+}
+
+}  // namespace
+
 /* Imported variables */
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
@@ -249,10 +277,11 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
 std::string InteractiveSelection::Format(const std::string& header,
                                          const std::string& prompt,
                                          size_t max_visible_options,
-                                         bool supports_cursor_selection) const
+                                         bool supports_cursor_selection,
+                                         bool supports_color) const
 {
-  std::string output = header;
-  output.append(prompt);
+  std::string output = SanitizeSelectionText(header, true);
+  output.append(SanitizeSelectionText(prompt, false));
   if (supports_cursor_selection) {
     output.append(
         " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
@@ -265,7 +294,7 @@ std::string InteractiveSelection::Format(const std::string& header,
   }
   if (!filter_.empty()) {
     output.append("Filter: ");
-    output.append(filter_);
+    output.append(SanitizeSelectionText(filter_, false));
     output.push_back('\n');
   }
 
@@ -299,12 +328,14 @@ std::string InteractiveSelection::Format(const std::string& header,
      * would just be confusing, not helpful. */
     if (supports_cursor_selection) {
       output.append(i == selected_index_ ? "> " : "  ");
-      if (i == selected_index_) { output.append("\033[7m"); }
+      if (i == selected_index_ && supports_color) {
+        output.append("\033[7;36m");
+      }
     }
     output.append(std::to_string(i + 1));
     output.append(": ");
-    output.append(options_[i]);
-    if (supports_cursor_selection && i == selected_index_) {
+    output.append(SanitizeSelectionText(options_[i], false));
+    if (supports_cursor_selection && supports_color && i == selected_index_) {
       output.append("\033[0m");
     }
   };
@@ -1629,10 +1660,11 @@ int DoPrompt(UaContext* ua,
       // cannot move the selection highlight with the cursor keys".
       bool supports_cursor_selection = ua->terminal_height > 0;
       user->signal(BNET_START_SELECT);
-      ua->SendMsg("%s", selection
-                            .Format(ua->prompt_header, msg, max_visible_options,
-                                    supports_cursor_selection)
-                            .c_str());
+      ua->SendMsg("%s",
+                  selection
+                      .Format(ua->prompt_header, msg, max_visible_options,
+                              supports_cursor_selection, ua->supports_color)
+                      .c_str());
       user->signal(BNET_END_SELECT);
       user->signal(BNET_SELECT_INPUT);
 

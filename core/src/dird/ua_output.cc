@@ -2001,7 +2001,7 @@ void UaContext::vSendMsg(int signal,
   PoolMem message;
   send->SendBuffer();
   if (signal) {
-    if (UA_sock && api) UA_sock->signal(signal);
+    if (UA_sock && (api || supports_color)) UA_sock->signal(signal);
   }
   message.Bvsprintf(fmt, arg_ptr);
   if (console_is_connected) {

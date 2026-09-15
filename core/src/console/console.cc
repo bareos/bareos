@@ -231,19 +231,19 @@ static bool TerminalWasResized() { return false; }
  * output that has been redirected to a file, are left alone: stripping
  * stays enabled (the default) in that case.
  */
-static void EnableWindowsAnsiConsoleIfPossible()
+static bool EnableWindowsAnsiConsoleIfPossible()
 {
-  if (!isatty(fileno(stdout))) { return; }
+  if (!isatty(fileno(stdout))) { return false; }
 
   HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (output_handle == INVALID_HANDLE_VALUE) { return; }
+  if (output_handle == INVALID_HANDLE_VALUE) { return false; }
 
   DWORD original_mode = 0;
-  if (!GetConsoleMode(output_handle, &original_mode)) { return; }
+  if (!GetConsoleMode(output_handle, &original_mode)) { return false; }
 
   if (!SetConsoleMode(output_handle,
                       original_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
-    return;
+    return false;
   }
 
   // Some older Windows builds silently ignore unsupported mode bits
@@ -253,8 +253,10 @@ static void EnableWindowsAnsiConsoleIfPossible()
   if (GetConsoleMode(output_handle, &confirmed_mode)
       && (confirmed_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
     ConsoleSetAnsiPassthrough(true);
+    return true;
   } else {
     SetConsoleMode(output_handle, original_mode);
+    return false;
   }
 }
 #endif
@@ -556,6 +558,7 @@ static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
 
   std::string cmd
       = ".terminalsize " + std::to_string(rows) + " " + std::to_string(cols);
+  if (ConsoleColorEnabled()) { cmd += " color"; }
   PmStrcpy(UA_sock->msg, cmd.c_str());
   UA_sock->message_length = static_cast<int32_t>(cmd.size());
   if (!UA_sock->send()) { return; }
@@ -578,6 +581,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
   bool at_prompt = false;
   bool collecting_selection = false;
   std::string selection_output;
+  ConsoleOutputStyle pending_style = ConsoleOutputStyle::kDefault;
   int tty_input = isatty(fileno(input));
   int status;
   btimer_t* tid = NULL;
@@ -658,6 +662,12 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
                    && collecting_selection == false) {
           if (!ReadSelectionInput(input, UA_sock, tty_input != 0)) { break; }
           if (!UA_sock->send()) { break; }
+        } else if (UA_sock->message_length == BNET_INFO_MSG) {
+          pending_style = ConsoleOutputStyle::kInfo;
+        } else if (UA_sock->message_length == BNET_WARNING_MSG) {
+          pending_style = ConsoleOutputStyle::kWarning;
+        } else if (UA_sock->message_length == BNET_ERROR_MSG) {
+          pending_style = ConsoleOutputStyle::kError;
         }
         continue;
       }
@@ -673,7 +683,8 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
         if (collecting_selection) {
           selection_output.append(UA_sock->msg);
         } else if (UA_sock->msg) {
-          ConsoleOutput(UA_sock->msg);
+          ConsoleOutputStyled(UA_sock->msg, pending_style);
+          pending_style = ConsoleOutputStyle::kDefault;
         }
       }
     }
@@ -987,7 +998,9 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int)
   do_history = 0;
   rl_catch_signals = 0; /* do it ourselves */
 
-  line = readline((char*)prompt); /* cast needed for old readlines */
+  std::string styled_prompt
+      = console::ReadlinePrompt(prompt, ConsoleColorEnabled());
+  line = readline(styled_prompt.data());
   if (!line) { return -1; }
   StripTrailingJunk(line);
   command = line;
@@ -1228,8 +1241,14 @@ int main(int argc, char* argv[])
   MyNameIs(argc, argv, "bconsole");
   InitMsg(NULL, NULL);
 #if defined(HAVE_WIN32)
-  EnableWindowsAnsiConsoleIfPossible();
+  bool ansi_supported = EnableWindowsAnsiConsoleIfPossible();
+#else
+  bool ansi_supported = true;
 #endif
+  bool color_enabled
+      = console::ShouldUseColor(isatty(fileno(stdout)), ansi_supported,
+                                getenv("TERM"), getenv("NO_COLOR"));
+  ConsoleSetColorEnabled(color_enabled);
   working_directory = "/tmp";
   g_args = GetPoolMemory(PM_FNAME);
 
@@ -1524,6 +1543,7 @@ static void TerminateConsole(int sig)
     exit(BEXIT_FAILURE);
   }
   already_here = true;
+  if (ConsoleColorEnabled()) { ConsoleOutput("\033[0m"); }
   StopWatchdog();
   delete my_config;
   my_config = NULL;

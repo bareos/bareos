@@ -421,6 +421,10 @@ if(ENABLE_BCONSOLE)
     test_console_key_mapping LINK_LIBRARIES Bareos::Console Bareos::Lib
                                             GTest::gtest_main
   )
+  bareos_add_test(
+    test_console_output LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                       GTest::gtest_main
+  )
   bareos_add_test(test_tree_browser_rendering LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
 

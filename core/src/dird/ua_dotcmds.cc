@@ -1032,12 +1032,13 @@ bool DotApiCmd(UaContext* ua, const char*)
  */
 bool DotTerminalsizeCmd(UaContext* ua, const char*)
 {
-  if (ua->argc != 3) { return false; }
+  if (ua->argc != 3 && ua->argc != 4) { return false; }
 
   int height = atoi(ua->argk[1]);
   int width = atoi(ua->argk[2]);
   if (height > 0) { ua->terminal_height = height; }
   if (width > 0) { ua->terminal_width = width; }
+  ua->supports_color = ua->argc == 4 && Bstrcasecmp(ua->argk[3], "color");
 
   return true;
 }
