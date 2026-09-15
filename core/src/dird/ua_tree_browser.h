@@ -23,18 +23,18 @@
 
 namespace directordaemon {
 
-struct UaContext;
+class UaContext;
 struct TreeContext;
 
 // Why the interactive tree browser stopped running.
 enum class TreeBrowserExit
 {
   kDone,            /**< User chose to leave file selection entirely
-                      *  (same as the classic "done" command). */
+                     *  (same as the classic "done" command). */
   kQuit,            /**< User aborted the restore ("quit"/"abort"). */
   kSwitchToClassic, /**< User pressed 'c': switch (back) to the classic
-                      *  line-mode "$ " prompt for the rest of the
-                      *  session. */
+                     *  line-mode "$ " prompt for the rest of the
+                     *  session. */
 };
 
 /**
