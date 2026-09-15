@@ -47,7 +47,7 @@ describe('webui i18n generation', () => {
     const vueMessageIds = collectVueMessageIds()
 
     expect(vueMessageIds).toContain('All known plugin hints')
-    expect(vueMessageIds).toContain('Catalog Maintenance')
+    expect(vueMessageIds).toContain('Catalog')
     expect(vueMessageIds).toContain('Configuration Status')
   })
 })

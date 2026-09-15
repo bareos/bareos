@@ -3,9 +3,9 @@
     <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="list"     :label="t('Job History')"  no-caps />
-      <q-tab name="timeline" :label="t('Job Timeline')" no-caps />
-      <q-tab name="run"      :label="t('Start Job')"    no-caps data-testid="jobs-tab-run" />
+      <q-tab name="list"     :label="t('History')"  no-caps />
+      <q-tab name="timeline" :label="t('Timeline')" no-caps />
+      <q-tab name="run"      :label="t('Run Job')"    no-caps data-testid="jobs-tab-run" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
@@ -630,7 +630,7 @@
             <q-input  v-model.number="runForm.priority" type="number" :label="t('Priority')" outlined dense style="max-width:140px" />
             <div class="row justify-end q-gutter-sm">
               <q-btn v-close-popup flat no-caps :label="t('Cancel')" />
-              <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Start Job')" icon="play_arrow"
+              <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Run Job')" icon="play_arrow"
                      no-caps :loading="runLoading" :disable="!runForm.job" />
             </div>
           </q-form>
@@ -1597,7 +1597,7 @@ async function confirmQuickStartJob(job) {
     title: t('Quick Start Job'),
     message: `${t('Start job')} <b>${escapeHtml(job.name)}</b>?${runFormSummaryHtml(preparedForm)}`,
     html: true,
-    ok:     { label: t('Start Job'), color: 'primary', flat: true },
+    ok:     { label: t('Run Job'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(() => submitRunJob(preparedForm))
 }
