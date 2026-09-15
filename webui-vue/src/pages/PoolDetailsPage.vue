@@ -45,7 +45,8 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="volumes" :columns="volumeCols" row-key="volumename"
-                       dense flat v-model:pagination="volumesPagination">
+                       dense flat v-model:pagination="volumesPagination"
+                       :rows-per-page-options="volumesRowsPerPageOptions">
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -132,7 +133,8 @@
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.volumes" :columns="prunableVolumeCols" row-key="name"
                        dense flat selection="multiple" v-model:selected="selectedPrunableVolumes"
-                       v-model:pagination="prunableVolumesPagination">
+                       v-model:pagination="prunableVolumesPagination"
+                       :rows-per-page-options="prunableVolumesRowsPerPageOptions">
                 <template #body-cell-name="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -198,7 +200,10 @@ import {
   normaliseVolume,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import {
+  usePersistedTablePagination,
+  UNBOUNDED_TABLE_ROWS_PER_PAGE,
+} from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
@@ -229,10 +234,12 @@ const settings  = useSettingsStore()
 const { t } = useI18n()
 const volumesPagination = usePersistedTablePagination('pool-details.volumes', {
   rowsPerPage: 10,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const volumesRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const prunableVolumesPagination = usePersistedTablePagination('pool-details.prunable', {
   rowsPerPage: 10,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const prunableVolumesRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const prunableJobsPagination = usePersistedTablePagination('pool-details.prunable-jobs', {
   rowsPerPage: 10,
 })
