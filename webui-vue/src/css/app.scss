@@ -90,6 +90,23 @@ $bareos-blue-dark: #005a96;
   color: #666;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  // Long translated labels (e.g. German "Fehlgeschlagen") can exceed the
+  // narrow column width used when several stats sit side-by-side on small
+  // screens; wrap onto multiple lines instead of overflowing into
+  // neighboring columns.
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+@media (max-width: 599px) {
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.02em;
+  }
 }
 
 .page-tabs .q-tab {
