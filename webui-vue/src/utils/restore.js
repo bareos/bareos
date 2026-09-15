@@ -396,6 +396,46 @@ export function resolveRestoreTimelineSelection(points, selectedJobid) {
   return points[points.length - 1] ?? null
 }
 
+// Steps to the previous/next individual restore point (backup job) in the
+// chronologically-sorted `points` list (as returned by
+// buildRestoreTimelinePoints), regardless of which restore chain each point
+// belongs to. Used for the "Older"/"Newer" navigation in the Restore
+// wizard's Custom source view, so those buttons walk backup jobs one at a
+// time instead of jumping whole restore chains.
+export function resolveAdjacentRestoreTimelinePoint(points, currentJobid, direction) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  const currentIndex = points.findIndex(point => (
+    String(point?.jobid ?? '') === String(currentJobid ?? '')
+  ))
+  if (currentIndex === -1) {
+    return null
+  }
+
+  const offset = direction === 'older' ? -1 : 1
+  return points[currentIndex + offset] ?? null
+}
+
+// 1-based position of `currentJobid` within the chronologically-sorted
+// `points` list, alongside the total count — e.g. to show "Restore point 3
+// of 12". Returns null if the job isn't found (or there are no points).
+export function resolveRestoreTimelinePointPosition(points, currentJobid) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  const currentIndex = points.findIndex(point => (
+    String(point?.jobid ?? '') === String(currentJobid ?? '')
+  ))
+  if (currentIndex === -1) {
+    return null
+  }
+
+  return { current: currentIndex + 1, total: points.length }
+}
+
 export function buildRestoreBackupChains(
   backups,
   {
