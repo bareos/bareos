@@ -39,6 +39,13 @@ std::string FitText(std::string_view text,
                     size_t horizontal_offset = 0,
                     bool ellipsis = true);
 
+std::string AlignTextColumns(std::string_view left,
+                             std::string_view right,
+                             size_t width);
+
+std::string FormatDetailColumns(std::string_view size,
+                                std::string_view modified);
+
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
   return text_width > viewport_width ? text_width - viewport_width : 0;

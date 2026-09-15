@@ -68,6 +68,8 @@ constexpr size_t kDefaultTerminalWidth = 80;
 constexpr size_t kMinTerminalWidth = 2;
 constexpr size_t kMaxSearchMatches = 2000;
 constexpr size_t kHorizontalScrollColumns = 8;
+constexpr size_t kDetailSizeWidth = 8;
+constexpr size_t kDetailTimeWidth = 19;
 
 struct Utf8Character {
   char32_t codepoint;
@@ -296,12 +298,43 @@ std::string FitText(std::string_view text,
   return fitted;
 }
 
+std::string AlignTextColumns(std::string_view left,
+                             std::string_view right,
+                             size_t width)
+{
+  constexpr size_t kColumnGap = 2;
+  size_t right_width = TextCellWidth(right);
+  if (right.empty() || right_width + kColumnGap >= width) {
+    return FitText(left, width);
+  }
+
+  size_t left_width = width - right_width - kColumnGap;
+  return FitText(left, left_width) + std::string(kColumnGap, ' ')
+         + FitText(right, right_width, 0, false);
+}
+
+std::string FormatDetailColumns(std::string_view size,
+                                std::string_view modified)
+{
+  size_t size_width = TextCellWidth(size);
+  std::string size_column;
+  if (size_width < kDetailSizeWidth) {
+    size_column.append(kDetailSizeWidth - size_width, ' ');
+    size_column.append(size);
+  } else {
+    size_column = FitText(size, kDetailSizeWidth);
+  }
+  return size_column + "  " + FitText(modified, kDetailTimeWidth, 0, false);
+}
+
 }  // namespace tree_browser_internal
 
 namespace {
 
+using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::CaseFoldForSearch;
 using tree_browser_internal::FitText;
+using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::MaxHorizontalOffset;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::TextCellWidth;
@@ -389,7 +422,7 @@ std::vector<tree_node*> ChildRows(tree_node* dir)
   return rows;
 }
 
-// One-line "  <size>  <date>" detail suffix for node, fetched from the
+// One-line "<size>  <date>" detail text for node, fetched from the
 // catalog on demand. Only ever called for rows actually on screen -- never
 // for a whole directory or the whole tree -- so it stays responsive.
 std::string NodeDetail(UaContext* ua, tree_node* node)
@@ -433,11 +466,8 @@ std::string NodeDetail(UaContext* ua, tree_node* node)
   char time_str[22];
   encode_time(mtime, time_str);
 
-  std::string detail = "  ";
-  detail += SizeAsSiPrefixFormat(static_cast<uint64_t>(statp.st_size));
-  detail += "  ";
-  detail += time_str;
-  return detail;
+  return FormatDetailColumns(
+      SizeAsSiPrefixFormat(static_cast<uint64_t>(statp.st_size)), time_str);
 }
 
 // Whole-tree, case-insensitive substring search against each node's own
@@ -510,7 +540,7 @@ class TreeBrowser {
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
   size_t SearchHorizontalLimit() const;
-  size_t MaxVisibleRows() const;
+  size_t MaxVisibleRows(bool detail_header = false) const;
   std::string RenderPanel() const;
   std::string RenderSearchInput() const;
   std::string RenderSearchResults() const;
@@ -640,12 +670,13 @@ void TreeBrowser::ClampSearchHorizontalOffset()
       = std::min(search_horizontal_offset_, SearchHorizontalLimit());
 }
 
-size_t TreeBrowser::MaxVisibleRows() const
+size_t TreeBrowser::MaxVisibleRows(bool detail_header) const
 {
   if (ua_->terminal_height <= 0) { return kDefaultVisibleRows; }
+  size_t chrome_lines = kChromeLines + (detail_header ? 1 : 0);
   size_t available
-      = static_cast<size_t>(ua_->terminal_height) > kChromeLines
-            ? static_cast<size_t>(ua_->terminal_height) - kChromeLines
+      = static_cast<size_t>(ua_->terminal_height) > chrome_lines
+            ? static_cast<size_t>(ua_->terminal_height) - chrome_lines
             : 0;
   return std::max(kMinVisibleRows, available);
 }
@@ -683,6 +714,11 @@ std::string TreeBrowser::RenderPanel() const
   path += cwd ? cwd : "/";
   out += FrameLine(width, path, color);
   if (cwd) { FreePoolMemory(cwd); }
+  if (detail_view_) {
+    std::string headings = AlignTextColumns(
+        "    Name", FormatDetailColumns("Size", "Modified"), width - 2);
+    out += FrameLine(width, headings, color);
+  }
   out += FrameBorder(width, color);
 
   size_t marked = 0;
@@ -690,7 +726,7 @@ std::string TreeBrowser::RenderPanel() const
     if (node->extract || node->extract_descendant) { marked++; }
   }
 
-  size_t max_visible = MaxVisibleRows();
+  size_t max_visible = MaxVisibleRows(detail_view_);
   size_t first = cursor_ > max_visible / 2 ? cursor_ - max_visible / 2 : 0;
   if (!rows_.empty()) {
     first = std::min(first, rows_.size() - std::min(rows_.size(), max_visible));
@@ -706,7 +742,9 @@ std::string TreeBrowser::RenderPanel() const
       entry += MarkTag(node);
       entry += TreeNodeHasChild(node) ? "/" : " ";
       entry += node->fname ? node->fname : "";
-      if (detail_view_) { entry += NodeDetail(ua_, node); }
+      if (detail_view_) {
+        entry = AlignTextColumns(entry, NodeDetail(ua_, node), width - 2);
+      }
       out += FrameLine(width, entry, color, highlighted, MarkTag(node)[0]);
     } else if (rows_.empty() && row == 0) {
       out += FrameLine(width, "  (empty directory)", color);
