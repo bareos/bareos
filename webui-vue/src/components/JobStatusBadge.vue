@@ -3,8 +3,13 @@
     :color="info.color"
     :label="info.label"
     :class="{ 'cursor-pointer': clickable }"
+    :tabindex="clickable ? 0 : undefined"
+    :role="clickable ? 'button' : undefined"
+    :aria-label="clickable ? t('Jump to log') : undefined"
     :title="clickable ? t('Jump to log') : undefined"
     @click="clickable && $emit('click', $event)"
+    @keydown.enter="clickable && $emit('click', $event)"
+    @keydown.space.prevent="clickable && $emit('click', $event)"
   />
 </template>
 
