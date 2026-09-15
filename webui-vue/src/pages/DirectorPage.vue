@@ -3,7 +3,7 @@
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       :label="t('Status')"       no-caps data-testid="director-tab-status" />
       <q-tab name="messages"     :label="t('Messages')"     no-caps data-testid="director-tab-messages" />
-      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps data-testid="director-tab-catalog" />
+      <q-tab name="catalog"      :label="t('Catalog')" no-caps data-testid="director-tab-catalog" />
       <q-tab name="subscription" :label="t('Subscription')" no-caps data-testid="director-tab-subscription" />
     </q-tabs>
 

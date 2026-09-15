@@ -4,7 +4,7 @@
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status" :label="t('Status')" no-caps data-testid="schedules-tab-status" />
-      <q-tab name="show" :label="t('Show')" no-caps data-testid="schedules-tab-show" />
+      <q-tab name="show" :label="t('Definitions')" no-caps data-testid="schedules-tab-show" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
