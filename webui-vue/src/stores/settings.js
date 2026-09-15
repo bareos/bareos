@@ -23,6 +23,7 @@ const DEFAULTS = {
   tableFilter: {},
   tableHiddenColumns: {},
   schedulesViewMode: 'week',
+  jobsTimelineViewMode: 'week',
   clientBackupWarningDays: 2,
 }
 
@@ -107,6 +108,10 @@ function normalizeSchedulesViewMode(value, fallback = DEFAULTS.schedulesViewMode
   return value === 'month' || value === 'week' ? value : fallback
 }
 
+function normalizeJobsTimelineViewMode(value, fallback = DEFAULTS.jobsTimelineViewMode) {
+  return value === 'month' || value === 'week' ? value : fallback
+}
+
 function normalizeClientBackupWarningDays(value, fallback = DEFAULTS.clientBackupWarningDays) {
   const normalized = Number(value)
   return Number.isInteger(normalized) && normalized > 0 && normalized <= 365
@@ -137,6 +142,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const tableFilter = ref(normalizeTableFilter(saved.tableFilter))
   const tableHiddenColumns = ref(normalizeTableHiddenColumns(saved.tableHiddenColumns))
   const schedulesViewMode = ref(normalizeSchedulesViewMode(saved.schedulesViewMode))
+  const jobsTimelineViewMode = ref(normalizeJobsTimelineViewMode(saved.jobsTimelineViewMode))
   const clientBackupWarningDays = ref(
     normalizeClientBackupWarningDays(saved.clientBackupWarningDays)
   )
@@ -154,6 +160,7 @@ export const useSettingsStore = defineStore('settings', () => {
       tableFilter: tableFilter.value,
       tableHiddenColumns: tableHiddenColumns.value,
       schedulesViewMode: schedulesViewMode.value,
+      jobsTimelineViewMode: jobsTimelineViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }))
   }
@@ -257,6 +264,10 @@ export const useSettingsStore = defineStore('settings', () => {
     schedulesViewMode.value = normalizeSchedulesViewMode(value, schedulesViewMode.value)
   }
 
+  function setJobsTimelineViewMode(value) {
+    jobsTimelineViewMode.value = normalizeJobsTimelineViewMode(value, jobsTimelineViewMode.value)
+  }
+
   function getTableHiddenColumns(key, fallback = []) {
     const normalizedKey = String(key ?? '').trim()
     if (!normalizedKey) {
@@ -306,6 +317,7 @@ export const useSettingsStore = defineStore('settings', () => {
       tableSort: tableSort.value,
       tableHiddenColumns: tableHiddenColumns.value,
       schedulesViewMode: schedulesViewMode.value,
+      jobsTimelineViewMode: jobsTimelineViewMode.value,
       clientBackupWarningDays: clientBackupWarningDays.value,
     }
   }
@@ -353,6 +365,12 @@ export const useSettingsStore = defineStore('settings', () => {
         schedulesViewMode.value
       )
     }
+    if ('jobsTimelineViewMode' in data) {
+      jobsTimelineViewMode.value = normalizeJobsTimelineViewMode(
+        data.jobsTimelineViewMode,
+        jobsTimelineViewMode.value
+      )
+    }
     if ('clientBackupWarningDays' in data) {
       clientBackupWarningDays.value = normalizeClientBackupWarningDays(
         data.clientBackupWarningDays,
@@ -372,6 +390,7 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(tableFilter, save, { deep: true })
   watch(tableHiddenColumns, save, { deep: true })
   watch(schedulesViewMode, save)
+  watch(jobsTimelineViewMode, save)
   watch(clientBackupWarningDays, (value) => {
     clientBackupWarningDays.value = normalizeClientBackupWarningDays(value)
     save()
@@ -395,6 +414,7 @@ export const useSettingsStore = defineStore('settings', () => {
     tableFilter,
     tableHiddenColumns,
     schedulesViewMode,
+    jobsTimelineViewMode,
     clientBackupWarningDays,
     setLocale,
     setSelectedDirectors,
@@ -407,6 +427,7 @@ export const useSettingsStore = defineStore('settings', () => {
     getTableHiddenColumns,
     setTableHiddenColumns,
     setSchedulesViewMode,
+    setJobsTimelineViewMode,
     exportSettings,
     importSettings,
   }
