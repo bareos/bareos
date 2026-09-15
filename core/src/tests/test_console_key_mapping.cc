@@ -24,6 +24,8 @@
 #include "gtest/gtest.h"
 
 using console::MapConsoleKeyEventToSelectionEvent;
+using console::MapUtf16InputToSelectionEvent;
+using console::MapUtf8InputToSelectionEvent;
 
 // Virtual-key-code constants mirrored from winuser.h (see the comment in
 // console_key_mapping.cc for why this file avoids depending on
@@ -32,6 +34,8 @@ namespace {
 constexpr int kVkBack = 0x08;
 constexpr int kVkReturn = 0x0D;
 constexpr int kVkEscape = 0x1B;
+constexpr int kVkEnd = 0x23;
+constexpr int kVkHome = 0x24;
 constexpr int kVkLeft = 0x25;
 constexpr int kVkUp = 0x26;
 constexpr int kVkRight = 0x27;
@@ -46,6 +50,12 @@ TEST(ConsoleKeyMapping, ArrowKeysMapToNavigation)
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkLeft, 0, false), "key:left");
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkRight, 0, false),
             "key:right");
+}
+
+TEST(ConsoleKeyMapping, HomeAndEndMapToHorizontalExtremes)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkHome, 0, false), "key:home");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkEnd, 0, false), "key:end");
 }
 
 TEST(ConsoleKeyMapping, EnterBackspaceEscape)
@@ -108,6 +118,26 @@ TEST(ConsoleKeyMapping, SpaceAndPrintableText)
             "key:text:9");
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'~', false),
             "key:text:~");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'ü', false),
+            "key:text:ü");
+}
+
+TEST(ConsoleKeyMapping, Utf8InputMapsAsOneCharacter)
+{
+  EXPECT_EQ(MapUtf8InputToSelectionEvent("ü"), "key:text:ü");
+  EXPECT_EQ(MapUtf8InputToSelectionEvent("界"), "key:text:界");
+  EXPECT_EQ(MapUtf8InputToSelectionEvent("\xc2\x9b"), "");
+  EXPECT_EQ(MapUtf8InputToSelectionEvent("\xc0\xaf"), "");
+  EXPECT_EQ(MapUtf8InputToSelectionEvent("\xff"), "");
+}
+
+TEST(ConsoleKeyMapping, Utf16SurrogatePairMapsAsOneCharacter)
+{
+  EXPECT_EQ(MapUtf16InputToSelectionEvent(0xd83d, 0xde00),
+            "key:text:\xf0\x9f\x98\x80");
+  EXPECT_EQ(MapUtf16InputToSelectionEvent(0xd83d), "");
+  EXPECT_EQ(MapUtf16InputToSelectionEvent(0xde00), "");
+  EXPECT_EQ(MapUtf16InputToSelectionEvent(L'ü'), "key:text:ü");
 }
 
 TEST(ConsoleKeyMapping, UnmappedKeyReturnsEmpty)
