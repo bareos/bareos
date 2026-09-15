@@ -275,6 +275,7 @@
                     row-key="scopeKey"
                     :filter="terminatedJobsSearch"
                     v-model:pagination="terminatedJobsPagination"
+                    :rows-per-page-options="terminatedJobsRowsPerPageOptions"
                     :no-data-label="t('No terminated jobs.')"
                   >
                     <template #body-cell-director="props">
@@ -672,7 +673,10 @@ import {
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import {
+  usePersistedTablePagination,
+  UNBOUNDED_TABLE_ROWS_PER_PAGE,
+} from '../composables/usePersistedTablePagination.js'
 import { formatBytes } from '../mock/index.js'
 import {
   buildDirectorPageQuery,
@@ -727,7 +731,8 @@ const runningJobsPagination = usePersistedTablePagination('director.runningJobs'
 })
 const terminatedJobsPagination = usePersistedTablePagination('director.terminatedJobs', {
   rowsPerPage: 10,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const terminatedJobsRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const scheduledJobsSearch = usePersistedTableFilter('director.scheduledJobs')
 const runningJobsSearch = usePersistedTableFilter('director.runningJobs')
 const terminatedJobsSearch = usePersistedTableFilter('director.terminatedJobs')

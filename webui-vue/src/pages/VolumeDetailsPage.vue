@@ -193,7 +193,8 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="jobs" :columns="jobCols" row-key="jobid"
-                       dense flat v-model:pagination="jobsPagination">
+                       dense flat v-model:pagination="jobsPagination"
+                       :rows-per-page-options="jobsRowsPerPageOptions">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
                     <router-link
@@ -235,7 +236,10 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import {
+  usePersistedTablePagination,
+  UNBOUNDED_TABLE_ROWS_PER_PAGE,
+} from '../composables/usePersistedTablePagination.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
@@ -268,7 +272,8 @@ const jobsPagination = usePersistedTablePagination('volume-details.jobs', {
   rowsPerPage: 10,
   sortBy: 'jobid',
   descending: true,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const jobsRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const volumeName = computed(() => route.params.name)
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director : ''
