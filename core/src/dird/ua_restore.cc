@@ -69,8 +69,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     const char* date);
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
-                                               RestoreContext* rx,
-                                               const char* date);
+                                               RestoreContext* rx);
 static bool ResolveBackupChainForClientFileset(UaContext* ua,
                                                RestoreContext* rx,
                                                ClientDbRecord& cr,
@@ -777,9 +776,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (use_latest) {
-    decltype(date) current_date;
-    bstrutime(current_date, sizeof(current_date), current_time);
-    if (!SelectClientFilesetTupleAndRestore(ua, rx, current_date)) { return 0; }
+    if (!SelectClientFilesetTupleAndRestore(ua, rx)) { return 0; }
     done = true;
   }
 
@@ -807,11 +804,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 0;
       case 0: /* FileSet@Client latest restore */
       {
-        decltype(date) current_date;
-        bstrutime(current_date, sizeof(current_date), current_time);
-        if (!SelectClientFilesetTupleAndRestore(ua, rx, current_date)) {
-          return 0;
-        }
+        if (!SelectClientFilesetTupleAndRestore(ua, rx)) { return 0; }
       } break;
       case 1: { /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
@@ -1555,8 +1548,7 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
 }
 
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
-                                               RestoreContext* rx,
-                                               const char* date)
+                                               RestoreContext* rx)
 {
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_tuples_1>(
@@ -1608,35 +1600,38 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_fulls_3>(
       rx->query, edit_int64(cr.ClientId, ed1), edit_int64(fsr.FileSetId, ed2),
       filter_name);
-  StartPrompt(ua,
-              T_("Select the restore chain anchor (newest first; use arrows to "
-                 "move older or newer):\n"));
+  /* Query is ordered newest-first, so the "(latest backup)" quick restore
+   * just takes the first chain and resolves it directly -- no further
+   * question is asked here, matching what the menu/command label promises. */
+  ua->prompts.clear();
   if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
-  char selected_date[MAX_TIME_LENGTH];
-  if (DoPrompt(ua, T_("restore point"), T_("Select restore chain"),
-               selected_date, sizeof(selected_date))
-      < 0) {
+  if (ua->prompts.empty()) {
+    ua->ErrorMsg(T_("No backup found for FileSet \"%s\" and Client \"%s\".\n"),
+                 fsr.FileSet, cr.Name);
     return false;
   }
-  if (selected_date[0] == 0) {
-    bstrncpy(selected_date, date, sizeof(selected_date));
+  char selected_date[MAX_TIME_LENGTH];
+  bstrncpy(selected_date, ua->prompts[0].c_str(), sizeof(selected_date));
+  ua->prompts.clear();
+  if (!ua->api && !ua->runscript) {
+    ua->SendMsg(T_("Automatically selected restore point: %s\n"),
+                selected_date);
+  }
+  /* The prompt string formatted in ClientFilesetFullHandler is:
+   * "<RestorePoint> (<job_count> jobs since Full #<JobId> from
+   * <FullStartTime>)" e.g. "2026-09-12 14:33:21 (1 job since Full #1 from
+   * 2026-09-12 14:33:21)" Extract the leading timestamp "YYYY-MM-DD HH:MM:SS"
+   * (first 19 characters). */
+  if (strlen(selected_date) >= 19) {
+    selected_date[19] = '\0';
   } else {
-    // The prompt string formatted in ClientFilesetFullHandler is:
-    // "<RestorePoint> (<job_count> jobs since Full #<JobId> from
-    // <FullStartTime>)" e.g. "2026-09-12 14:33:21 (1 job since Full #1 from
-    // 2026-09-12 14:33:21)" Extract the leading timestamp "YYYY-MM-DD HH:MM:SS"
-    // (first 19 characters).
-    if (strlen(selected_date) >= 19) {
-      selected_date[19] = '\0';
-    } else {
-      char* details = strchr(selected_date, ' ');
-      if (details) {
-        details = strchr(details + 1, ' ');
-        if (details) { *details = 0; }
-      }
+    char* details = strchr(selected_date, ' ');
+    if (details) {
+      details = strchr(details + 1, ' ');
+      if (details) { *details = 0; }
     }
   }
   utime_t inclusive_date = StrToUtime(selected_date);
