@@ -39,7 +39,7 @@
             <q-item-label caption>{{ t('Switch between light and dark theme') }}</q-item-label>
           </q-item-section>
           <q-item-section side>
-            <q-toggle v-model="settings.darkMode" @update:model-value="applyDark" />
+            <q-toggle v-model="settings.darkMode" @update:model-value="applyDark" data-testid="settings-dark-mode" />
           </q-item-section>
         </q-item>
       </q-card-section>
@@ -90,7 +90,7 @@
             </q-item-label>
           </q-item-section>
           <q-item-section side>
-            <q-toggle v-model="settings.relativeTime" />
+            <q-toggle v-model="settings.relativeTime" data-testid="settings-relative-time" />
           </q-item-section>
         </q-item>
       </q-card-section>
@@ -116,12 +116,14 @@
                 icon="file_download"
                 :label="t('Backup')"
                 @click="downloadBackup"
+                data-testid="settings-backup"
               />
               <q-btn
                 outline dense no-caps
                 icon="file_upload"
                 :label="t('Restore')"
                 @click="triggerRestoreFilePicker"
+                data-testid="settings-restore"
               />
             </div>
           </q-item-section>
