@@ -98,7 +98,30 @@ class PythonBareosAclTest(bareos_unittest.Json):
         self.assertIn(
             b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
         )
-        # Select the latest restore point anchor (option 1)
+        # The latest restore point is now selected automatically,
+        # without any further interactive prompt.
+        self.assertIn(b"Automatically selected restore point:", result)
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 2: Select a FileSet@Client combination (custom restore
+        # point)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected. Since more than one restore
+        # chain exists, the interactive restore chain picker is shown
+        # and we select the first (newest) one manually.
+        #
+        result = console_bareos_fd.call("2")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        self.assertIn(b"Select restore point", result)
         result = console_bareos_fd.call("1")
         logger.debug(str(result))
         # Exit the file tree selection
@@ -120,12 +143,12 @@ class PythonBareosAclTest(bareos_unittest.Json):
         result = console_bareos_fd.call("restore")
 
         #
-        # restore: 2: List Jobs where a given File is saved
+        # restore: 14: List Jobs where a given File is saved
         #
         # Only the bareos-fd client should be accessable
         # and is therefore autoselected.
         #
-        result = console_bareos_fd.call("2")
+        result = console_bareos_fd.call("14")
         logger.debug(str(result))
         self.assertIn(b"Automatically selected Client: bareos-fd", result)
         result = console_bareos_fd.call("Makefile")
