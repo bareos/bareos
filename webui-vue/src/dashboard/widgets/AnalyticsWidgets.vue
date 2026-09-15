@@ -124,22 +124,22 @@ import {
   Legend,
 } from 'chart.js'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
-import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
-import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
-import { useDirectorScope } from '../composables/useDirectorScope.js'
-import { formatBytes } from '../mock/index.js'
-import { useAuthStore } from '../stores/auth.js'
-import { useDirectorStore } from '../stores/director.js'
-import { useSettingsStore } from '../stores/settings.js'
+import { fetchAggregatedAnalytics } from '../../composables/analyticsAggregate.js'
+import { directorCollection, normaliseJob } from '../../composables/useDirectorFetch.js'
+import { useDirectorScope } from '../../composables/useDirectorScope.js'
+import { formatBytes } from '../../mock/index.js'
+import { useAuthStore } from '../../stores/auth.js'
+import { useDirectorStore } from '../../stores/director.js'
+import { useSettingsStore } from '../../stores/settings.js'
 import {
   withJobsSearchQuery,
   withJobsStatusFilterQuery,
-} from '../utils/jobs.js'
-import { formatNumber } from '../utils/locales.js'
-import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
-import { DASHBOARD_CONTEXT_KEY } from '../dashboard/dashboardContext.js'
-import { getContrastTextColor } from '../dashboard/piePalette.js'
-import { CenterTextPlugin } from '../dashboard/centerTextPlugin.js'
+} from '../../utils/jobs.js'
+import { formatNumber } from '../../utils/locales.js'
+import DirectorErrorsBanner from '../../components/DirectorErrorsBanner.vue'
+import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
+import { getContrastTextColor } from '../piePalette.js'
+import { CenterTextPlugin } from '../centerTextPlugin.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CenterTextPlugin, ChartDataLabels)
 
