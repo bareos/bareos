@@ -342,7 +342,7 @@ test('covers schedules and director tabs through the director connection', async
   await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
   await expect(page.getByText('Scheduler Preview', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Show' }).click()
+  await page.getByRole('tab', { name: 'Definitions' }).click()
   await expect(
     page.locator('.q-tab-panel:visible').getByText('Schedules', { exact: true })
   ).toBeVisible()
@@ -354,7 +354,7 @@ test('covers schedules and director tabs through the director connection', async
   await page.getByRole('tab', { name: 'Messages' }).click()
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
+  await page.getByRole('tab', { name: 'Catalog' }).click()
   await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
   await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
