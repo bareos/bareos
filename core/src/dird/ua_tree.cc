@@ -132,14 +132,16 @@ ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
   int found, len, i;
   bool status;
 
-  if (!GetCmd(ua, "$ ", true)) { return ClassicCommandOutcome::kLeaveSelection; }
+  if (!GetCmd(ua, "$ ", true)) {
+    return ClassicCommandOutcome::kLeaveSelection;
+  }
 
   if (ua->api) { user->signal(BNET_CMD_BEGIN); }
 
   ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
   if (ua->argc == 0) {
     ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                  ua->cmd);
+                   ua->cmd);
     if (ua->api) { user->signal(BNET_CMD_FAILED); }
     return ClassicCommandOutcome::kContinue;
   }
@@ -165,7 +167,7 @@ ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
       return ClassicCommandOutcome::kContinue;
     }
     ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                  ua->cmd);
+                   ua->cmd);
     if (ua->api) { user->signal(BNET_CMD_FAILED); }
     return ClassicCommandOutcome::kContinue;
   }
@@ -183,7 +185,8 @@ ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
 
 // Runs the classic line-mode "$ " prompt until the user leaves file
 // selection entirely, or asks to switch (back) into the browser.
-static ClassicCommandOutcome RunClassicTreeLoop(UaContext* ua, TreeContext* tree)
+static ClassicCommandOutcome RunClassicTreeLoop(UaContext* ua,
+                                                TreeContext* tree)
 {
   for (;;) {
     ClassicCommandOutcome outcome = RunOneClassicTreeCommand(ua, tree);
@@ -215,6 +218,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   ua.batch = tree->ua->batch;     /* keep batch flag too */
   ua.terminal_height = tree->ua->terminal_height;
   ua.terminal_width = tree->ua->terminal_width;
+  ua.supports_color = tree->ua->supports_color;
   user = ua.UA_sock;
 
   ua.SendMsg(
@@ -262,6 +266,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
 
   tree->ua->terminal_height = ua.terminal_height;
   tree->ua->terminal_width = ua.terminal_width;
+  tree->ua->supports_color = ua.supports_color;
 
   user->signal(BNET_END_RTREE);
 
@@ -419,10 +424,7 @@ int InsertTreeHandler(void* ctx, int, char** row)
  * the classic commands and the browser's Space-key/search actions -- see
  * ua_tree_internal.h.
  */
-int SetExtract(UaContext* ua,
-                tree_node* node,
-                TreeContext* tree,
-                bool extract)
+int SetExtract(UaContext* ua, tree_node* node, TreeContext* tree, bool extract)
 {
   tree_node* n;
   int count = 0;
