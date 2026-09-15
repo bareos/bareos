@@ -132,20 +132,35 @@
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Scheduler Preview') }}</span>
-            <q-space />
-            <q-btn-toggle v-model="viewMode" dense unelevated no-caps
-                          :options="viewModeOptions"
-                          text-color="grey-9"
-                          color="grey-3"
-                          toggle-color="primary"
-                          toggle-text-color="white"
-                          class="q-mr-sm sched-view-toggle" />
-            <div class="row items-center no-wrap sched-period-nav">
-              <q-btn flat round dense icon="chevron_left" color="white" :title="t('Previous period')" :aria-label="t('Previous period')" @click="prevPeriod" />
-              <span class="text-white sched-period-label">{{ periodLabel }}</span>
-              <q-btn flat round dense icon="chevron_right" color="white" :title="t('Next period')" :aria-label="t('Next period')" @click="nextPeriod" />
+            <div v-if="showNowLineLegend" class="sched-now-legend q-ml-md">
+              <span class="sched-now-legend-swatch" /> {{ t('Now') }}
             </div>
-            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" :aria-label="t('Go to today')" @click="goToday" />
+            <q-space />
+            <template v-if="inDayView">
+              <q-btn ref="backBtnRef" flat dense no-caps icon="arrow_back" color="white" :label="t('Back')"
+                     class="q-mr-sm" @click="closeDayView" />
+              <div class="row items-center no-wrap sched-period-nav">
+                <q-btn flat round dense icon="chevron_left" color="white" :title="t('Previous day')" :aria-label="t('Previous day')" @click="prevDay" />
+                <span class="text-white sched-period-label sched-day-period-label">{{ dayViewLabel }}</span>
+                <q-btn flat round dense icon="chevron_right" color="white" :title="t('Next day')" :aria-label="t('Next day')" @click="nextDay" />
+              </div>
+              <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" :aria-label="t('Go to today')" @click="goToday" />
+            </template>
+            <template v-else>
+              <q-btn-toggle v-model="viewMode" dense unelevated no-caps
+                            :options="viewModeOptions"
+                            text-color="grey-9"
+                            color="grey-3"
+                            toggle-color="primary"
+                            toggle-text-color="white"
+                            class="q-mr-sm sched-view-toggle" />
+              <div class="row items-center no-wrap sched-period-nav">
+                <q-btn flat round dense icon="chevron_left" color="white" :title="t('Previous period')" :aria-label="t('Previous period')" @click="prevPeriod" />
+                <span class="text-white sched-period-label">{{ periodLabel }}</span>
+                <q-btn flat round dense icon="chevron_right" color="white" :title="t('Next period')" :aria-label="t('Next period')" @click="nextPeriod" />
+              </div>
+              <q-btn flat round dense icon="today" color="white" class="q-ml-sm" :title="t('Go to today')" :aria-label="t('Go to today')" @click="goToday" />
+            </template>
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
             <q-banner dense rounded class="bg-negative text-white q-mb-md">{{ statusError }}</q-banner>
@@ -212,14 +227,73 @@
                  class="text-grey-7 text-center q-py-xl">
               {{ t('No runs are scheduled in the selected time range.') }}
             </div>
-            <div v-else class="sched-calendar" :class="viewMode === 'week' ? 'sched-calendar--week' : ''">
+            <div v-else-if="inDayView" class="sched-day-view">
+              <div v-if="!dayViewLanes.length" class="text-grey-7 text-center q-py-xl">
+                {{ t('No runs are scheduled on this day.') }}
+              </div>
+              <div v-for="lane in dayViewLanes" :key="lane.scheduleKey" class="sched-day-lane">
+                <div class="sched-day-lane-label" :style="{ color: lane.color }">{{ lane.label }}</div>
+                <div class="sched-day-lane-axis">
+                  <div v-for="hm in DAY_VIEW_HOUR_MARKS" :key="hm.pct" class="sched-day-hour-mark"
+                       :style="{ left: `${hm.pct}%` }">
+                    <span class="sched-day-hour-label">{{ hm.label }}</span>
+                  </div>
+                  <div v-if="dayViewDate === todayDateStr" class="sched-now-line sched-day-now-line"
+                       :style="{ left: `${nowLinePercent}%` }"
+                       tabindex="0"
+                       :aria-label="nowLineLabel">
+                    <q-tooltip>{{ nowLineLabel }}</q-tooltip>
+                  </div>
+                  <div v-for="(marker, mi) in lane.markers" :key="mi"
+                       class="sched-cal-tick sched-day-tick"
+                       :class="{ 'sched-cal-tick--multi': marker.count > 1 }"
+                       :style="tickStyle(lane, marker)"
+                       tabindex="0"
+                       role="img"
+                       :aria-label="tickAriaLabel(lane, marker)">
+                    <span v-if="marker.count > 1" class="sched-cal-tick-count">{{ marker.count }}</span>
+                    <q-tooltip max-width="260px">
+                      <div class="text-weight-bold q-mb-xs">{{ lane.label }}</div>
+                      <div v-for="(run, ri) in marker.runs" :key="ri" class="q-mb-xs">
+                        <div>{{ run.time }} — {{ run.datetime }}</div>
+                        <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
+                        <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
+                        <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
+                        <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                      </div>
+                    </q-tooltip>
+                  </div>
+                </div>
+                <div class="sched-day-lane-times">
+                  <q-chip v-for="(run, ri) in lane.runs" :key="ri" dense square outline
+                          :style="{ color: lane.color, borderColor: lane.color }">
+                    {{ run.time }}
+                    <q-tooltip max-width="260px">
+                      <div>{{ run.datetime }}</div>
+                      <div v-if="run.level">{{ t('Level') }}: {{ run.level }}</div>
+                      <div v-if="run.pool">{{ t('Pool') }}: {{ run.pool }}</div>
+                      <div v-if="run.storage">{{ t('Storage') }}: {{ run.storage }}</div>
+                      <div v-if="run.priority">{{ t('Priority') }}: {{ run.priority }}</div>
+                    </q-tooltip>
+                  </q-chip>
+                </div>
+              </div>
+            </div>
+            <div v-else ref="calendarRef" class="sched-calendar" :class="viewMode === 'week' ? 'sched-calendar--week' : ''">
               <div v-for="(h, hi) in calendarHeaders" :key="hi" class="sched-cal-header">{{ h }}</div>
               <div v-for="(cell, i) in calendarCells" :key="i"
                    :class="['sched-cal-cell',
                             cell.isToday && 'sched-cal-today',
                             cell.isPast && 'sched-cal-past',
                             !cell.day && 'sched-cal-empty',
-                            viewMode === 'week' && 'sched-cal-cell--week']">
+                            viewMode === 'week' && 'sched-cal-cell--week']"
+                   :data-date="cell.dateStr"
+                   :tabindex="cell.day ? 0 : -1"
+                   :role="cell.day ? 'button' : undefined"
+                   :aria-label="cell.day ? t('View schedule details for {date}', { date: cell.dateStr }) : undefined"
+                   @click="cell.day && openDayView(cell.dateStr)"
+                   @keydown.enter="cell.day && openDayView(cell.dateStr)"
+                   @keydown.space.prevent="cell.day && openDayView(cell.dateStr)">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
                 <div v-if="cell.day && cell.lanes.length" class="sched-cal-lanes"
                      :style="{ maxHeight: `${MAX_VISIBLE_LANES * 18}px` }">
@@ -230,12 +304,17 @@
                     <div class="sched-cal-lane-axis">
                       <div v-for="hm in TIMELINE_HOUR_MARKS" :key="hm" class="sched-cal-timeline-grid"
                            :style="{ left: `${hm}%` }" />
+                      <div v-if="cell.isToday" class="sched-now-line sched-cal-now-line"
+                           :style="{ left: `${nowLinePercent}%` }"
+                           tabindex="-1"
+                           :aria-label="nowLineLabel">
+                        <q-tooltip>{{ nowLineLabel }}</q-tooltip>
+                      </div>
                       <div v-for="(marker, mi) in lane.markers" :key="mi"
                            class="sched-cal-tick"
                            :class="{ 'sched-cal-tick--multi': marker.count > 1 }"
                            :style="tickStyle(lane, marker)"
-                           tabindex="0"
-                           role="button"
+                           tabindex="-1"
                            :aria-label="tickAriaLabel(lane, marker)">
                         <span v-if="marker.count > 1" class="sched-cal-tick-count">{{ marker.count }}</span>
                         <q-tooltip max-width="260px">
@@ -326,7 +405,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
@@ -700,10 +779,91 @@ function nextPeriod() {
   }
 }
 function goToday() {
+  const todayDate = startOfToday()
+  if (inDayView.value) {
+    dayViewDate.value = makeDateStr(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate())
+    return
+  }
   viewAnchor.value = viewMode.value === 'month'
     ? firstOfMonth(new Date())
     : mondayOf(new Date())
 }
+
+// Drill-down "Day view": clicking a calendar cell zooms into that single day
+// with a full-width, larger-scale lane per schedule (instead of the compact
+// thumbnail lanes shown in the Month/Week grid), which stays readable even
+// when many runs land on the same day.
+const dayViewDate = ref(null)
+const inDayView = computed(() => dayViewDate.value !== null)
+// Refs used purely to manage keyboard/screen-reader focus across the
+// grid <-> Day view transition (see openDayView/closeDayView below) —
+// otherwise focus would be left on a DOM node that gets removed when the
+// view switches, stranding keyboard users.
+const backBtnRef = ref(null)
+const calendarRef = ref(null)
+
+function parseDateStr(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+const WEEKDAY_NAMES = computed(() => [
+  t('Sunday'), t('Monday'), t('Tuesday'), t('Wednesday'), t('Thursday'), t('Friday'), t('Saturday'),
+])
+
+const dayViewLabel = computed(() => {
+  if (!dayViewDate.value) return ''
+  const d = parseDateStr(dayViewDate.value)
+  return `${WEEKDAY_NAMES.value[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES.value[d.getMonth()]} ${d.getFullYear()}`
+})
+
+const dayViewLanes = computed(() => (dayViewDate.value ? buildCellLanes(dayViewDate.value) : []))
+
+function openDayView(dateStr) {
+  dayViewDate.value = dateStr
+  nextTick(() => {
+    // q-btn exposes its native element as $el; fall back defensively in
+    // case the component API differs across Quasar versions.
+    const el = backBtnRef.value?.$el ?? backBtnRef.value
+    el?.focus?.()
+  })
+}
+function closeDayView() {
+  const returningToDate = dayViewDate.value
+  dayViewDate.value = null
+  nextTick(() => {
+    const selector = returningToDate
+      ? `[data-date="${returningToDate}"]`
+      : null
+    const cell = selector ? calendarRef.value?.querySelector(selector) : null
+    cell?.focus?.()
+  })
+}
+function prevDay() {
+  if (!dayViewDate.value) return
+  const d = parseDateStr(dayViewDate.value)
+  d.setDate(d.getDate() - 1)
+  dayViewDate.value = makeDateStr(d.getFullYear(), d.getMonth(), d.getDate())
+}
+function nextDay() {
+  if (!dayViewDate.value) return
+  const d = parseDateStr(dayViewDate.value)
+  d.setDate(d.getDate() + 1)
+  dayViewDate.value = makeDateStr(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+// previewData only covers the Month/Week window currently loaded via
+// apiDaysRange (which is derived from viewAnchor). Day view navigation
+// (prevDay/nextDay/goToday) can walk past that window's edges, so keep
+// viewAnchor tracking the viewed day — this keeps the underlying grid in
+// sync for when the user goes Back, and (via the apiDaysRange watcher)
+// triggers a re-fetch whenever the day being viewed falls outside the
+// currently loaded range instead of silently showing stale/empty data.
+watch(dayViewDate, (dateStr) => {
+  if (!dateStr) return
+  const d = parseDateStr(dateStr)
+  viewAnchor.value = viewMode.value === 'month' ? firstOfMonth(d) : mondayOf(d)
+})
 
 watch(viewMode, (mode) => {
   viewAnchor.value = mode === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date())
@@ -1019,8 +1179,9 @@ function buildCellLanes(dateStr) {
   return activeScheduleOrder.value
     .filter(option => runsByScheduleKey.has(option.key))
     .map(option => {
+      const scheduleRuns = runsByScheduleKey.get(option.key)
       const buckets = new Map()
-      for (const run of runsByScheduleKey.get(option.key)) {
+      for (const run of scheduleRuns) {
         const minutes = timeToMinutes(run.time)
         const bucketKey = Math.floor(minutes / LANE_BUCKET_MINUTES)
         if (!buckets.has(bucketKey)) buckets.set(bucketKey, [])
@@ -1038,6 +1199,9 @@ function buildCellLanes(dateStr) {
         label: option.label,
         color: scheduleColor(option.label),
         markers,
+        // Full per-run list in chronological order, used by the Day view to
+        // show exact run times inline instead of relying on tick tooltips.
+        runs: [...scheduleRuns].sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)),
       }
     })
 }
@@ -1101,6 +1265,12 @@ function scheduleColor(name) {
 // Faint reference gridlines drawn across each lane's 24h axis (as % of the axis).
 const TIMELINE_HOUR_MARKS = [0, 25, 50, 75]
 
+// Labeled gridlines for the enlarged Day view axis (every 6 hours).
+const DAY_VIEW_HOUR_MARKS = [0, 6, 12, 18].map(h => ({
+  pct: (h / 24) * 100,
+  label: `${String(h).padStart(2, '0')}:00`,
+}))
+
 function tickStyle(lane, marker) {
   return { left: `${marker.percent}%`, background: lane.color }
 }
@@ -1151,6 +1321,36 @@ onMounted(() => {
   director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
   refreshUpcomingPreview()
+})
+
+// Live "now" indicator line drawn across today's 24h axis (both the
+// compact Month/Week cell and the enlarged Day view). Updated once a
+// minute — fine-grained enough for a schedule preview without the
+// overhead of a per-second re-render.
+const nowTick = ref(Date.now())
+let nowTimer = null
+onMounted(() => {
+  nowTimer = setInterval(() => { nowTick.value = Date.now() }, 60_000)
+})
+onBeforeUnmount(() => {
+  if (nowTimer) clearInterval(nowTimer)
+})
+const nowLinePercent = computed(() => {
+  const d = new Date(nowTick.value)
+  return ((d.getHours() * 60 + d.getMinutes()) / 1440) * 100
+})
+const nowLineLabel = computed(() => {
+  const d = new Date(nowTick.value)
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return t('Now — {time}', { time })
+})
+const todayDateStr = computed(() => {
+  const d = new Date(nowTick.value)
+  return makeDateStr(d.getFullYear(), d.getMonth(), d.getDate())
+})
+const showNowLineLegend = computed(() => {
+  if (inDayView.value) return dayViewDate.value === todayDateStr.value
+  return calendarCells.value.some(cell => cell.isToday)
 })
 </script>
 
@@ -1212,5 +1412,18 @@ onMounted(() => {
   padding: 0 0.125rem;
   text-align: center;
   white-space: nowrap;
+}
+
+/* Fixed (not min-) width so the day label's length — which varies
+   noticeably between weekday names like "Monday" vs "Wednesday" — never
+   changes this element's box size. Otherwise, since this toolbar block is
+   right-aligned via q-space, a growing/shrinking label shifts the
+   prev/next arrows left/right on every click, making it hard to click
+   repeatedly. */
+.sched-day-period-label {
+  min-width: 0;
+  width: 15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
