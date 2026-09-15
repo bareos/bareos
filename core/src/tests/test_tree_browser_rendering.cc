@@ -27,16 +27,40 @@
 
 namespace {
 
+using directordaemon::tree_browser_internal::AlignTextColumns;
+using directordaemon::tree_browser_internal::CaseFoldForSearch;
 using directordaemon::tree_browser_internal::FitText;
+using directordaemon::tree_browser_internal::FormatDetailColumns;
 using directordaemon::tree_browser_internal::MaxHorizontalOffset;
 using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
 using directordaemon::tree_browser_internal::TextCellWidth;
-using directordaemon::tree_browser_internal::CaseFoldForSearch;
 
 TEST(TreeBrowserRendering, FitsAndPadsAscii)
 {
   EXPECT_EQ(FitText("abcdef", 5), "ab...");
   EXPECT_EQ(FitText("abc", 5), "abc  ");
+}
+
+TEST(TreeBrowserRendering, AlignsDetailsAtRightEdge)
+{
+  EXPECT_EQ(AlignTextColumns(">  /directory", "4.0 kB  2026-09-15 22:30", 48),
+            ">  /directory           4.0 kB  2026-09-15 22:30");
+  EXPECT_EQ(AlignTextColumns("   filename", "12 B  2026-09-15 22:30", 48),
+            "   filename               12 B  2026-09-15 22:30");
+  EXPECT_EQ(TextCellWidth(AlignTextColumns("  /界", "1 kB  date", 20)), 20);
+}
+
+TEST(TreeBrowserRendering, FormatsStableSizeAndTimeColumns)
+{
+  EXPECT_EQ(FormatDetailColumns("12 B", "2026-09-15 22:30:00"),
+            "    12 B  2026-09-15 22:30:00");
+  EXPECT_EQ(FormatDetailColumns("Size", "Modified"),
+            "    Size  Modified           ");
+}
+
+TEST(TreeBrowserRendering, OmitsDetailsWhenThePanelIsTooNarrow)
+{
+  EXPECT_EQ(AlignTextColumns("long filename", "1 kB  date", 10), "long fi...");
 }
 
 TEST(TreeBrowserRendering, PreservesUtf8Boundaries)
@@ -61,8 +85,14 @@ TEST(TreeBrowserRendering, AccountsForWideAndCombiningCharacters)
 TEST(TreeBrowserRendering, SanitizesTerminalControlsAndInvalidUtf8)
 {
   EXPECT_EQ(FitText("a\x1b[31m", 6, 0, false), "a?[31m");
-  EXPECT_EQ(FitText("a\xc2\x9b" "31m", 5, 0, false), "a?31m");
-  EXPECT_EQ(FitText("a\xff" "b", 3, 0, false), "a?b");
+  EXPECT_EQ(FitText("a\xc2\x9b"
+                    "31m",
+                    5, 0, false),
+            "a?31m");
+  EXPECT_EQ(FitText("a\xff"
+                    "b",
+                    3, 0, false),
+            "a?b");
 }
 
 TEST(TreeBrowserRendering, CaseFoldsUtf8SearchText)
