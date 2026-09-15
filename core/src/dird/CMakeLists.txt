@@ -115,6 +115,7 @@ target_sources(
           ua_server.cc
           ua_status.cc
           ua_tree.cc
+          ua_tree_browser.cc
           ua_update.cc
           vbackup.cc
           verify.cc
