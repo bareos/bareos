@@ -56,7 +56,8 @@ class InteractiveSelection {
   std::string Format(const std::string& header,
                      const std::string& prompt,
                      size_t max_visible_options = 20,
-                     bool supports_cursor_selection = true) const;
+                     bool supports_cursor_selection = true,
+                     bool supports_color = false) const;
   size_t selected_index() const { return selected_index_; }
 
   /* Configure the grid layout used for rendering and for column-wise
