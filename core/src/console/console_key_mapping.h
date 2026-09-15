@@ -23,6 +23,7 @@
 #define BAREOS_CONSOLE_CONSOLE_KEY_MAPPING_H_
 
 #include <string>
+#include <string_view>
 
 namespace console {
 
@@ -46,6 +47,18 @@ namespace console {
 std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
                                                wchar_t unicode_char,
                                                bool ctrl_pressed);
+
+/**
+ * Maps exactly one UTF-8 encoded printable character to a key:text event.
+ * Invalid encodings and C0/C1 control characters return an empty string.
+ */
+std::string MapUtf8InputToSelectionEvent(std::string_view input);
+
+/**
+ * Maps one UTF-16 code unit, or a high/low surrogate pair, to a key:text
+ * event. Invalid scalar values and terminal controls return an empty string.
+ */
+std::string MapUtf16InputToSelectionEvent(wchar_t first, wchar_t second = 0);
 
 }  // namespace console
 
