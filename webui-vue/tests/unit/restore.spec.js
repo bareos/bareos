@@ -49,6 +49,8 @@ import {
   pushRestoreBreadcrumb,
   resolveLatestRestoreBackup,
   resolveAdjacentRestoreBackupChain,
+  resolveAdjacentRestoreTimelinePoint,
+  resolveRestoreTimelinePointPosition,
   resolveRestoreBackupChain,
   resolveRestoreTimelineSelection,
   resolveRestoreSourceClient,
@@ -565,6 +567,39 @@ describe('restore browser placeholder', () => {
     expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'newer')).toBe(chains[1])
     expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'older')).toBeNull()
     expect(resolveAdjacentRestoreBackupChain(chains, null, 'older')).toBeNull()
+  })
+
+  it('steps to the previous/next restore point across chain boundaries', () => {
+    const points = buildRestoreTimelinePoints([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, fileset: 'WebFS', level: 'I', starttime: '2026-06-04 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    // Older/Newer walk individual jobs, including across the Full-backup
+    // boundary between jobid 2 (end of the first chain) and jobid 3 (start
+    // of the second chain) — this must NOT jump straight from job 2 to the
+    // *last* job of the next chain (job 4).
+    expect(resolveAdjacentRestoreTimelinePoint(points, 2, 'newer')).toBe(points[2])
+    expect(resolveAdjacentRestoreTimelinePoint(points, 3, 'older')).toBe(points[1])
+    expect(resolveAdjacentRestoreTimelinePoint(points, 1, 'older')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint(points, 4, 'newer')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint(points, 99, 'newer')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint([], 1, 'newer')).toBeNull()
+  })
+
+  it('resolves the 1-based position of a restore point among all points', () => {
+    const points = buildRestoreTimelinePoints([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(resolveRestoreTimelinePointPosition(points, 1)).toEqual({ current: 1, total: 3 })
+    expect(resolveRestoreTimelinePointPosition(points, 3)).toEqual({ current: 3, total: 3 })
+    expect(resolveRestoreTimelinePointPosition(points, 99)).toBeNull()
+    expect(resolveRestoreTimelinePointPosition([], 1)).toBeNull()
   })
 
   it('resolves the latest backup for a client+fileset tuple', () => {

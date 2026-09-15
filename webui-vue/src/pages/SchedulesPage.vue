@@ -422,8 +422,18 @@ import {
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { useNowLine } from '../composables/useNowLine.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { formatRelativeDate } from '../utils/locales.js'
+import {
+  firstOfMonth,
+  makeDateStr,
+  mondayOf,
+  monthGridDates,
+  parseDateStr,
+  startOfToday,
+  weekDates,
+} from '../utils/calendarGrid.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
@@ -688,22 +698,6 @@ async function refreshUpcomingPreview() {
 
 const viewMode = ref(settings.schedulesViewMode)
 
-function startOfToday() {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-function mondayOf(date) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  const dow = d.getDay()
-  d.setDate(d.getDate() - ((dow + 6) % 7))
-  return d
-}
-function firstOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
-}
-
 const viewAnchor = ref(viewMode.value === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date()))
 
 const apiDaysRange = computed(() => {
@@ -801,11 +795,6 @@ const inDayView = computed(() => dayViewDate.value !== null)
 // view switches, stranding keyboard users.
 const backBtnRef = ref(null)
 const calendarRef = ref(null)
-
-function parseDateStr(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
 
 const WEEKDAY_NAMES = computed(() => [
   t('Sunday'), t('Monday'), t('Tuesday'), t('Wednesday'), t('Thursday'), t('Friday'), t('Saturday'),
@@ -1206,18 +1195,12 @@ function buildCellLanes(dateStr) {
     })
 }
 
-function makeDateStr(y, m, d) {
-  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-}
-
 const calendarCells = computed(() => {
   const today = startOfToday()
   const todayStr = makeDateStr(today.getFullYear(), today.getMonth(), today.getDate())
 
   if (viewMode.value === 'week') {
-    return DAY_ABBR.value.map((_, i) => {
-      const day = new Date(viewAnchor.value)
-      day.setDate(day.getDate() + i)
+    return weekDates(viewAnchor.value).map((day) => {
       const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
       return {
         day: day.getDate(),
@@ -1229,26 +1212,17 @@ const calendarCells = computed(() => {
     })
   }
 
-  const y = viewAnchor.value.getFullYear()
-  const m = viewAnchor.value.getMonth()
-  const firstWeekday = new Date(y, m, 1).getDay()
-  const daysInMonth = new Date(y, m + 1, 0).getDate()
-  const startOffset = (firstWeekday + 6) % 7
-
-  const cells = []
-  for (let i = 0; i < startOffset; i++) cells.push({ day: 0, lanes: [] })
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = makeDateStr(y, m, d)
-    cells.push({
-      day: d,
+  return monthGridDates(viewAnchor.value).map((day) => {
+    if (!day) return { day: 0, lanes: [] }
+    const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
+    return {
+      day: day.getDate(),
       dateStr,
       isToday: dateStr === todayStr,
       isPast: dateStr < todayStr,
       lanes: buildCellLanes(dateStr),
-    })
-  }
-  while (cells.length % 7 !== 0) cells.push({ day: 0, lanes: [] })
-  return cells
+    }
+  })
 })
 
 function scheduleColor(name) {
@@ -1324,30 +1298,9 @@ onMounted(() => {
 })
 
 // Live "now" indicator line drawn across today's 24h axis (both the
-// compact Month/Week cell and the enlarged Day view). Updated once a
-// minute — fine-grained enough for a schedule preview without the
-// overhead of a per-second re-render.
-const nowTick = ref(Date.now())
-let nowTimer = null
-onMounted(() => {
-  nowTimer = setInterval(() => { nowTick.value = Date.now() }, 60_000)
-})
-onBeforeUnmount(() => {
-  if (nowTimer) clearInterval(nowTimer)
-})
-const nowLinePercent = computed(() => {
-  const d = new Date(nowTick.value)
-  return ((d.getHours() * 60 + d.getMinutes()) / 1440) * 100
-})
-const nowLineLabel = computed(() => {
-  const d = new Date(nowTick.value)
-  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-  return t('Now — {time}', { time })
-})
-const todayDateStr = computed(() => {
-  const d = new Date(nowTick.value)
-  return makeDateStr(d.getFullYear(), d.getMonth(), d.getDate())
-})
+// compact Month/Week cell and the enlarged Day view). Shared with the Job
+// Timeline via useNowLine so both calendars tick in sync.
+const { nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
 const showNowLineLegend = computed(() => {
   if (inDayView.value) return dayViewDate.value === todayDateStr.value
   return calendarCells.value.some(cell => cell.isToday)
