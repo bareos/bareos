@@ -1,6 +1,15 @@
 import { ref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings.js'
 
+// Shared `rows-per-page-options` for tables backed by catalog data that
+// grows continuously with backup activity (job history, media/volumes),
+// where the "All" option (row count 0) could otherwise force q-table to
+// render thousands of rows at once. Config/hardware-bounded tables
+// (schedules, filesets, pools, devices, clients, currently running/
+// scheduled jobs) are inherently capped in size and can keep Quasar's
+// default options, including "All".
+export const UNBOUNDED_TABLE_ROWS_PER_PAGE = [10, 25, 50, 100]
+
 export function usePersistedTablePagination(key, defaults = {}, options = {}) {
   const settings = useSettingsStore()
   const fallbackRowsPerPage = Number.isInteger(defaults.rowsPerPage) && defaults.rowsPerPage >= 0
