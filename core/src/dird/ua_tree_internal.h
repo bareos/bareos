@@ -33,7 +33,7 @@ struct tree_node;
 
 namespace directordaemon {
 
-struct UaContext;
+class UaContext;
 struct TreeContext;
 
 /**
@@ -48,9 +48,9 @@ enum class ClassicCommandOutcome
 {
   kContinue,        /**< Stay in the classic command loop. */
   kLeaveSelection,  /**< "done"/"exit"/"quit"/"abort" or EOF: leave file
-                      *  selection entirely (same as today). */
+                     *  selection entirely (same as today). */
   kSwitchToBrowser, /**< The "browse" command was used: switch (back) into
-                      *  the full-screen interactive tree browser. */
+                     *  the full-screen interactive tree browser. */
 };
 
 /**
