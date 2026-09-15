@@ -318,6 +318,7 @@
               :loading="loading"
               :filter="volSearch"
               v-model:pagination="volumesPagination"
+              :rows-per-page-options="volumesRowsPerPageOptions"
             >
               <template #body-cell-volumename="props">
                 <q-td :props="props">
@@ -434,7 +435,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTablePagination, UNBOUNDED_TABLE_ROWS_PER_PAGE } from '../composables/usePersistedTablePagination.js'
 import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import {
@@ -479,7 +480,8 @@ const poolsPagination = usePersistedTablePagination('storages.pools', {
 })
 const volumesPagination = usePersistedTablePagination('storages.volumes', {
   rowsPerPage: 20,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const volumesRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
