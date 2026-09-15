@@ -341,6 +341,10 @@ static inline void ConfigureRemoveFdExport(UaContext* ua,
   basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
   if (!my_config->GetPathOfResource(path, basedir.c_str(), "director", dirname,
                                     false)) {
+    Dmsg1(200,
+         "Could not determine filedaemon export file path for client "
+         "\"%s\"; skipping export removal.\n",
+         clientname);
     return;
   }
 
@@ -810,6 +814,24 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
    * dir's "*.conf" glob, so the reload below does not pick it up again.
    * This mirrors the ".tmp" suffix ConfigureAddResource() uses. */
   stashed_path.bsprintf("%s.deleted", path.c_str());
+
+  /* A stash left behind by an earlier delete (see the "also_removed" handling
+   * below) is the only remaining copy of whatever else that removed file
+   * defined. rename() below would silently replace it -- POSIX rename()
+   * overwrites an existing destination -- losing that copy for good. This
+   * can only happen if a "configure add" recreated the same path in between,
+   * since GetResWithName() above already confirms a resource is currently
+   * loaded at this name. Refuse rather than clobber; the stash must be
+   * recovered or removed manually first. */
+  if (std::filesystem::exists(stashed_path.c_str())) {
+    ua->ErrorMsg(
+        T_("A stashed copy of a previously removed configuration file "
+           "already exists at \"%s\". It was kept because removing it had "
+           "also removed other resources from the configuration. Recover or "
+           "remove it manually before deleting \"%s\" again.\n"),
+        stashed_path.c_str(), path.c_str());
+    return false;
+  }
 
   if (rename(path.c_str(), stashed_path.c_str()) != 0) {
     if (errno == ENOENT) {

@@ -623,7 +623,7 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
                 = GetItemVariable<BareosResource*>(item, res);
             if (referenced == target) {
               references.push_back({static_cast<int>(table.rcode),
-                                    res->resource_name_, item.name});
+                                    res->resource_name_, item.name, &item});
             }
             break;
           }
@@ -634,7 +634,8 @@ std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
               for (auto* referenced : *list) {
                 if (referenced == target) {
                   references.push_back({static_cast<int>(table.rcode),
-                                        res->resource_name_, item.name});
+                                        res->resource_name_, item.name,
+                                        &item});
                   break;
                 }
               }

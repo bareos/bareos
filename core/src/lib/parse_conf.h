@@ -196,6 +196,14 @@ struct ResourceReference {
   int rcode{};
   std::string resource_name;
   std::string directive_name;
+
+  /* The item the reference was found through, so callers other than the
+   * ones that only display directive_name have something to work with too
+   * (its type, offset, default value, ...). Null for references that do not
+   * come from a resource-table item at all -- e.g. a director's per-Run
+   * Pool/Storage/Messages overrides, which live in a ScheduleResource's
+   * RunResource chain rather than behind any ResourceItem. */
+  const ResourceItem* item{};
 };
 
 class ConfigurationParser {

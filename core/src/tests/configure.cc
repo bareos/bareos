@@ -444,6 +444,8 @@ TEST(ConfigureDelete, FindsResourceReferences)
   EXPECT_EQ(references[0].rcode, directordaemon::R_JOB);
   EXPECT_STREQ(references[0].resource_name.c_str(), "testjob");
   EXPECT_STREQ(references[0].directive_name.c_str(), "Client");
+  ASSERT_NE(references[0].item, nullptr);
+  EXPECT_STREQ(references[0].item->name, "Client");
 
   BareosResource* unreferenced_client
       = directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
