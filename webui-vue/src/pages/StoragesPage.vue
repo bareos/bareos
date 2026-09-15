@@ -14,14 +14,15 @@
 
     <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
-      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
-      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
+      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" data-testid="storages-tab-devices" />
+      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" data-testid="storages-tab-pools" />
+      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" data-testid="storages-tab-volumes" />
       <q-route-tab
         name="autochangers"
         :label="t('Autochangers')"
         no-caps
         :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }"
+        data-testid="storages-tab-autochangers"
       />
     </q-tabs>
 
@@ -36,7 +37,7 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Storage Devices') }}</span>
             <q-space />
-            <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+            <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable data-testid="storages-device-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleableStorageCols" @toggle="toggleStorageCol" />
@@ -138,7 +139,7 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Pools') }}</span>
             <q-space />
-            <q-input v-model="poolSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+            <q-input v-model="poolSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable data-testid="storages-pool-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleablePoolCols" @toggle="togglePoolCol" />
@@ -278,7 +279,7 @@
           <q-card-section class="panel-header row items-center">
               <span>{{ t('Volumes') }}</span>
             <q-space />
-            <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
+            <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable data-testid="storages-volume-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleableVolumeCols" @toggle="toggleVolumeCol" />

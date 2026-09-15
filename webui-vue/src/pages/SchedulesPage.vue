@@ -3,8 +3,8 @@
     <DirectorErrorsBanner :errors="directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="status" :label="t('Status')" no-caps />
-      <q-tab name="show" :label="t('Show')" no-caps />
+      <q-tab name="status" :label="t('Status')" no-caps data-testid="schedules-tab-status" />
+      <q-tab name="show" :label="t('Show')" no-caps data-testid="schedules-tab-show" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
@@ -14,7 +14,7 @@
             <span>{{ t('Scheduler Jobs') }}</span>
             <q-space />
             <q-input v-model="jobSearch" dense outlined :placeholder="t('Search…')"
-                     style="width:200px" clearable>
+                     style="width:200px" clearable data-testid="schedules-job-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
           </q-card-section>
@@ -343,7 +343,7 @@
             <span>{{ t('Schedules') }}</span>
             <q-space />
             <q-input v-model="scheduleSearch" dense outlined :placeholder="t('Search…')"
-                     style="width:200px" clearable class="q-mr-sm">
+                     style="width:200px" clearable class="q-mr-sm" data-testid="schedules-schedule-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refreshSchedules(true)" />

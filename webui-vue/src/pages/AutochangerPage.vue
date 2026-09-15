@@ -57,13 +57,13 @@
       <q-space />
 
       <q-btn outline color="primary" icon="sync_alt" :label="t('Update Slots')"
-             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" />
+             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" data-testid="autochanger-update-slots" />
 
       <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
-             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" />
+             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" data-testid="autochanger-label-barcodes" />
 
       <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
-             :disable="!selectedStorageName || commandRunning" @click="showStatus" />
+             :disable="!selectedStorageName || commandRunning" @click="showStatus" data-testid="autochanger-status" />
     </div>
 
     <q-banner v-if="loadError" dense rounded class="bg-negative text-white q-mb-md">
@@ -100,7 +100,7 @@
             <span>{{ formatCountLabel(storageSlots.length, t('Slots')) }}</span>
             <q-space />
             <q-input v-model="slotsSearch" dense outlined :placeholder="t('Search…')"
-                     style="width:200px" clearable>
+                     style="width:200px" clearable data-testid="autochanger-slots-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleableSlotCols" @toggle="toggleSlotCol" />
@@ -237,7 +237,7 @@
             <span>{{ formatCountLabel(drives.length, t('Drives')) }}</span>
             <q-space />
             <q-input v-model="drivesSearch" dense outlined :placeholder="t('Search…')"
-                     style="width:160px" clearable>
+                     style="width:160px" clearable data-testid="autochanger-drives-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleableDriveCols" @toggle="toggleDriveCol" />
@@ -328,7 +328,7 @@
               {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
             </span>
             <q-input v-model="ieSlotsSearch" dense outlined :placeholder="t('Search…')"
-                     style="width:140px" clearable>
+                     style="width:140px" clearable data-testid="autochanger-ieslots-search">
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <ColumnPickerMenu :columns="toggleableIeSlotCols" @toggle="toggleIeSlotCol" />

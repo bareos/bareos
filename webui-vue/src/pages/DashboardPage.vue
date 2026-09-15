@@ -66,6 +66,7 @@
           size="xs"
           :title="t('Add dashboard')" :aria-label="t('Add dashboard')"
           @click="addDashboard"
+          data-testid="dashboard-add"
         />
 
         <template v-if="editMode">
@@ -103,12 +104,12 @@
 
         <template v-if="editMode">
           <q-btn flat round dense icon="add_circle_outline" color="primary" size="xs"
-                 :title="t('Add widget')" :aria-label="t('Add widget')" @click="showPicker = true" />
+                 :title="t('Add widget')" :aria-label="t('Add widget')" @click="showPicker = true" data-testid="dashboard-add-widget" />
           <q-btn color="primary" dense no-caps size="xs" :label="t('Done')"
-                 @click="editMode = false" />
+                 @click="editMode = false" data-testid="dashboard-edit-done" />
         </template>
         <q-btn v-else flat round dense icon="edit" size="xs"
-               :title="t('Edit layout')" :aria-label="t('Edit layout')" @click="editMode = true" />
+               :title="t('Edit layout')" :aria-label="t('Edit layout')" @click="editMode = true" data-testid="dashboard-edit-layout" />
       </div>
     </div>
 
@@ -164,11 +165,12 @@
             dense outlined autofocus
             :label="t('Dashboard name')"
             @keyup.enter="confirmRename"
+            data-testid="dashboard-rename-input"
           />
         </q-card-section>
         <q-card-actions align="right" class="q-pb-md q-pr-md">
           <q-btn flat :label="t('Cancel')" @click="showRenameDialog = false" />
-          <q-btn color="primary" :label="t('Rename')" :disable="!renameValue.trim()" @click="confirmRename" />
+          <q-btn color="primary" :label="t('Rename')" :disable="!renameValue.trim()" @click="confirmRename" data-testid="dashboard-rename-confirm" />
         </q-card-actions>
       </q-card>
     </q-dialog>

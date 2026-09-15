@@ -1,10 +1,10 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="status"       :label="t('Status')"       no-caps />
-      <q-tab name="messages"     :label="t('Messages')"     no-caps />
-      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps />
-      <q-tab name="subscription" :label="t('Subscription')" no-caps />
+      <q-tab name="status"       :label="t('Status')"       no-caps data-testid="director-tab-status" />
+      <q-tab name="messages"     :label="t('Messages')"     no-caps data-testid="director-tab-messages" />
+      <q-tab name="catalog"      :label="t('Catalog Maintenance')" no-caps data-testid="director-tab-catalog" />
+      <q-tab name="subscription" :label="t('Subscription')" no-caps data-testid="director-tab-subscription" />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
@@ -52,7 +52,7 @@
                   <span>{{ t('Scheduled Jobs') }}</span>
                   <q-space />
                   <q-input v-model="scheduledJobsSearch" dense outlined :placeholder="t('Search…')"
-                           style="width:200px" clearable>
+                           style="width:200px" clearable data-testid="director-scheduled-jobs-search">
                     <template #prepend><q-icon name="search" /></template>
                   </q-input>
                   <ColumnPickerMenu :columns="toggleableScheduledJobCols" @toggle="toggleScheduledJobCol" />
@@ -119,7 +119,7 @@
                   <span>{{ t('Running Jobs') }}</span>
                   <q-space />
                   <q-input v-model="runningJobsSearch" dense outlined :placeholder="t('Search…')"
-                           style="width:200px" clearable>
+                           style="width:200px" clearable data-testid="director-running-jobs-search">
                     <template #prepend><q-icon name="search" /></template>
                   </q-input>
                   <ColumnPickerMenu :columns="toggleableRunningJobCols" @toggle="toggleRunningJobCol" />
