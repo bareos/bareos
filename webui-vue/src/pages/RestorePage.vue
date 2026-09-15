@@ -66,9 +66,9 @@
                     data-testid="restore-timeline"
                   >
                     <div class="row items-center justify-between q-mb-xs">
-                      <div class="text-subtitle2">{{ t('Restore chain') }}</div>
+                      <div class="text-subtitle2">{{ t('Restore points') }}</div>
                       <div
-                        v-if="selectedRestoreBackupChain"
+                        v-if="restoreBackupChainPositionLabel"
                         class="text-caption text-grey-6"
                       >
                         {{ restoreBackupChainPositionLabel }}
@@ -99,9 +99,9 @@
                           dense flat no-caps
                           icon="chevron_left"
                           :label="t('Older')"
-                          :disable="!olderRestoreBackupChain"
+                          :disable="!olderRestoreTimelinePoint"
                           data-testid="restore-chain-older"
-                          @click="selectRestoreBackupChain(olderRestoreBackupChain)"
+                          @click="selectRestoreTimelinePoint(olderRestoreTimelinePoint)"
                         />
                         <div class="text-caption text-grey-7 text-center">
                           {{ restoreBackupChainSummaryLabel }}
@@ -110,9 +110,9 @@
                           dense flat no-caps
                           icon-right="chevron_right"
                           :label="t('Newer')"
-                          :disable="!newerRestoreBackupChain"
+                          :disable="!newerRestoreTimelinePoint"
                           data-testid="restore-chain-newer"
-                          @click="selectRestoreBackupChain(newerRestoreBackupChain)"
+                          @click="selectRestoreTimelinePoint(newerRestoreTimelinePoint)"
                         />
                       </div>
                       <div
@@ -755,6 +755,7 @@ import {
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
   buildRestoreBackupChains,
+  buildRestoreTimelinePoints,
   buildRestoreClientFilesetOptions,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
@@ -772,7 +773,8 @@ import {
   hasRestoreFullBackupInChain,
   pushRestoreBreadcrumb,
   resolveLatestRestoreBackup,
-  resolveAdjacentRestoreBackupChain,
+  resolveAdjacentRestoreTimelinePoint,
+  resolveRestoreTimelinePointPosition,
   resolveRestoreBackupChain,
   resolveRestoreBackupOption,
   resolveRestoreSourceClient,
@@ -781,6 +783,7 @@ import {
   truncateRestoreBreadcrumbs,
 } from '../utils/restore.js'
 import { buildJobDetailsQuery, buildListJobsCommand } from '../utils/jobs.js'
+import { resolveInitialRestoreStep } from '../utils/restoreStepper.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
@@ -1383,17 +1386,29 @@ const restoreBackupChains = computed(() => (
 const selectedRestoreBackupChain = computed(() => (
   resolveRestoreBackupChain(restoreBackupChains.value, form.value.jobid)
 ))
-const olderRestoreBackupChain = computed(() => (
-  resolveAdjacentRestoreBackupChain(
-    restoreBackupChains.value,
-    selectedRestoreBackupChain.value,
+// Flat, chronologically-sorted list of every individual restore point
+// (backup job) for the selected source, independent of restore-chain
+// grouping — this is what "Older"/"Newer" step through, one job at a time.
+const allRestoreTimelinePoints = computed(() => (
+  sourceMode.value === 'browse' && selectedLatestSourceOption.value
+    ? buildRestoreTimelinePoints(activeBackups.value, {
+      filesetFilter: sourceFilesetFilter.value,
+      formatBytes,
+      formatTime: formatRestoreTime,
+    })
+    : []
+))
+const olderRestoreTimelinePoint = computed(() => (
+  resolveAdjacentRestoreTimelinePoint(
+    allRestoreTimelinePoints.value,
+    form.value.jobid,
     'older'
   )
 ))
-const newerRestoreBackupChain = computed(() => (
-  resolveAdjacentRestoreBackupChain(
-    restoreBackupChains.value,
-    selectedRestoreBackupChain.value,
+const newerRestoreTimelinePoint = computed(() => (
+  resolveAdjacentRestoreTimelinePoint(
+    allRestoreTimelinePoints.value,
+    form.value.jobid,
     'newer'
   )
 ))
@@ -1401,16 +1416,15 @@ const visibleRestoreChainPoints = computed(() => (
   selectedRestoreBackupChain.value?.jobs ?? []
 ))
 const restoreBackupChainPositionLabel = computed(() => {
-  const chain = selectedRestoreBackupChain.value
-  const total = restoreBackupChains.value.length
-  if (!chain || total === 0) {
+  const position = resolveRestoreTimelinePointPosition(
+    allRestoreTimelinePoints.value,
+    form.value.jobid
+  )
+  if (!position) {
     return ''
   }
 
-  return t('Chain {current} of {total}', {
-    current: chain.index + 1,
-    total,
-  })
+  return t('Restore point {current} of {total}', position)
 })
 const restoreBackupChainSummaryLabel = computed(() => {
   const chain = selectedRestoreBackupChain.value
@@ -1927,27 +1941,18 @@ const canRestore = computed(() =>
 // Restore wizard step state: the stepper walks Source -> Destination ->
 // Browse & Restore, each step gated on the previous one's data being set,
 // so users can't reach the file browser before a source/destination job
-// is actually selected.
+// is actually selected. `activeStep` only changes via the explicit
+// "Continue"/"Back" buttons, the step-header click-to-navigate
+// (`header-nav`, gated on the previous step being done), or — once, on
+// initial load — `resolveInitialRestoreStep()` below for deep links.
+// It must never auto-advance in response to later interactive changes
+// (e.g. selecting a source job also auto-defaults the destination
+// client/job, but that alone must not skip the Destination step).
 const activeStep = ref(1)
 const sourceStepDone = computed(() => !!form.value.jobid)
 const destinationStepDone = computed(() => (
   sourceStepDone.value && !!form.value.restoreclient && !!form.value.restorejob
 ))
-
-// Auto-advance the wizard when a step's prerequisite becomes satisfied
-// (e.g. a deep link pre-fills the source/destination), but only while the
-// user is still sitting on that step — this never overrides a manual
-// "Back" click since the watched value won't have changed at that point.
-watch(sourceStepDone, (done) => {
-  if (done && activeStep.value === 1) {
-    activeStep.value = 2
-  }
-})
-watch(destinationStepDone, (done) => {
-  if (done && activeStep.value === 2) {
-    activeStep.value = 3
-  }
-})
 
 const restoreSelectedFilesCount = computed(() => selectedFiles.value.size)
 const restoreSelectedDirectoriesCount = computed(() => selectedDirs.value.size)
@@ -2444,6 +2449,7 @@ function applyVersion() {
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+let initialStepApplied = false
 async function init() {
   await director.fetchAvailableDirectors().catch(() => {})
   syncSelectedDirectors()
@@ -2458,6 +2464,19 @@ async function init() {
       form.value.jobid = latestBackupJobid.value
       await initBrowser()
     }
+  }
+
+  // One-time only: a true deep link (page opened with ?jobid=... from e.g.
+  // a job's "Restore" action) may land past whichever steps its pre-filled
+  // data already satisfies. This must never re-run on later director
+  // reconnects/interactive changes — see resolveInitialRestoreStep().
+  if (!initialStepApplied) {
+    initialStepApplied = true
+    activeStep.value = resolveInitialRestoreStep({
+      hasDeepLinkJobid: !!route.query.jobid,
+      sourceStepDone: sourceStepDone.value,
+      destinationStepDone: destinationStepDone.value,
+    })
   }
 }
 
