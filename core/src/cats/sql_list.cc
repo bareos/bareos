@@ -144,7 +144,10 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
   DbLocker _{this};
   PoolMem clientfilter(PM_MESSAGE);
 
-  if (clientname) { clientfilter.bsprintf("WHERE Name = '%s'", clientname); }
+  if (clientname) {
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    clientfilter.bsprintf("WHERE Name = '%s'", escaped_clientname.c_str());
+  }
   if (type == VERT_LIST) {
     Mmsg(cmd,
          "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
@@ -361,7 +364,9 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   PoolMem client_filter(PM_MESSAGE);
 
   if (clientname) {
-    Mmsg(client_filter, "AND Client.Name = '%s' ", clientname);
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    Mmsg(client_filter, "AND Client.Name = '%s' ",
+         escaped_clientname.c_str());
   }
 
   if (reverse) {
@@ -506,7 +511,8 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (clientname) {
-    temp.bsprintf("AND Client.Name = '%s' ", clientname);
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    temp.bsprintf("AND Client.Name = '%s' ", escaped_clientname.c_str());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -530,14 +536,17 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (volumename) {
-    temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
+    const auto escaped_volumename = EscapeString(jcr, volumename);
+    temp.bsprintf("AND Media.Volumename = '%s' ",
+                  escaped_volumename.c_str());
     PmStrcat(selection, temp.c_str());
   }
 
   if (poolname) {
+    const auto escaped_poolname = EscapeString(jcr, poolname);
     temp.bsprintf(
         "AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ",
-        poolname);
+        escaped_poolname.c_str());
     PmStrcat(selection, temp.c_str());
   }
 
