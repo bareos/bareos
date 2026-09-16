@@ -16,19 +16,19 @@
           <q-card-section class="panel-header clients-list-header row items-center">
             <span class="clients-list-header__title">{{ t('Client List') }}</span>
             <q-input
-              v-model.number="settings.clientBackupWarningDays"
+              v-model.number="settings.clientBackupWarningFailedJobs"
               dense
               outlined
               type="number"
               min="1"
-              max="365"
-              :label="t('Backup warning after days')"
+              max="1000"
+              :label="t('Warn after N consecutive failures')"
               class="clients-list-header__threshold"
-              data-testid="clients-backup-warning-days"
+              data-testid="clients-backup-warning-failed-jobs"
             >
-              <template #prepend><q-icon name="schedule" /></template>
+              <template #prepend><q-icon name="repeat" /></template>
               <q-tooltip>
-                {{ t('Backups older than this threshold are shown as stale.') }}
+                {{ t('Clients with at least this many consecutive failed backups since their last successful backup are shown as warning.') }}
               </q-tooltip>
             </q-input>
             <q-space />
@@ -75,14 +75,14 @@
                 {{ t('Disabled') }}: {{ clientStats.disabled }}
               </q-chip>
               <q-chip
-                v-if="clientStats.staleBackup"
+                v-if="clientStats.consecutiveFailures"
                 dense square outline color="warning" text-color="black"
-                icon="schedule"
+                icon="repeat"
                 clickable
-                :selected="clientsQuickFilter === 'stale_backup'"
-                @click="clientsQuickFilter = 'stale_backup'"
+                :selected="clientsQuickFilter === 'consecutive_failures'"
+                @click="clientsQuickFilter = 'consecutive_failures'"
               >
-                {{ t('Stale backup') }}: {{ clientStats.staleBackup }}
+                {{ t('Consecutive failures') }}: {{ clientStats.consecutiveFailures }}
               </q-chip>
               <q-chip
                 v-if="clientStats.backupErrors"
@@ -179,8 +179,8 @@
                       {{ formatClientBackupTime(props.row.lastBackup.starttime) }}
                     </div>
                     <div
-                      class="client-backup-age-bar q-mt-xs"
-                      :style="clientBackupAgeBarStyle(props.row)"
+                      class="client-failure-bar q-mt-xs"
+                      :style="clientFailureBarStyle(props.row)"
                     />
                   </template>
                   <span v-else class="text-grey-5">—</span>
@@ -325,7 +325,6 @@ import {
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
 import {
-  decorateScheduledBackups,
   fetchAggregatedClients,
 } from '../composables/clientsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
@@ -336,7 +335,7 @@ import {
   withClientsScopeDirectorQuery,
 } from '../utils/clients.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, consecutiveFailedJobsSinceSuccess } from '../utils/jobs.js'
 import { formatSqlRelativeTime } from '../utils/locales.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -369,7 +368,6 @@ const clientsPagination = usePersistedTablePagination('clients.list', {
 
 const rawClients = ref([])
 const rawRecentBackups = ref([])
-const rawScheduledBackups = ref([])
 const clientsSearch = usePersistedTableFilter('clients.list')
 const clientsQuickFilter = ref('all')
 const loading    = ref(false)
@@ -410,7 +408,6 @@ async function refresh(forceRefresh = false) {
     if (clientsPageDirectors.value.length === 0) {
       rawClients.value = []
       rawRecentBackups.value = []
-      rawScheduledBackups.value = []
       return
     }
 
@@ -423,18 +420,16 @@ async function refresh(forceRefresh = false) {
       const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value, { forceRefresh })
       rawClients.value = result.clients
       rawRecentBackups.value = result.recentBackups
-      rawScheduledBackups.value = result.scheduledBackups
       directorErrors.value = result.directorErrors
       return
     }
 
     const currentDirector = clientsPageDirectors.value[0]
     await ensureSingleScopeDirector()
-    const [listResult, dotResult, recentBackupsResult, schedulerResult] = await Promise.all([
+    const [listResult, dotResult, recentBackupsResult] = await Promise.all([
       director.call('llist clients'),
       director.call('.clients'),
       director.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
-      director.call('status scheduler days=-31,1'),
     ])
     const list = directorCollection(listResult?.clients)
     const dot = directorCollection(dotResult?.clients)
@@ -449,7 +444,6 @@ async function refresh(forceRefresh = false) {
       ...normaliseJob(job),
       director: currentDirector,
     }))
-    rawScheduledBackups.value = decorateScheduledBackups(schedulerResult, currentDirector)
   } catch (e) {
     error.value = e.message ?? String(e)
   } finally {
@@ -466,12 +460,15 @@ onMounted(() => {
 
 const allClientsData = computed(() => directorCollection(rawClients.value).map((entry) => {
   const client = normaliseClient(entry)
-  const lastBackup = lastBackupByClient.value.get(`${entry.director ?? ''}:${client.name}`) ?? null
+  const key = `${entry.director ?? ''}:${client.name}`
+  const lastBackup = lastBackupByClient.value.get(key) ?? null
+  const failureStreak = failureStreakByClient.value.get(key) ?? 0
   return {
     ...client,
     director: entry.director,
-    scopeKey: entry.scopeKey ?? `${entry.director ?? ''}:${client.name}`,
+    scopeKey: entry.scopeKey ?? key,
     lastBackup,
+    failureStreak,
   }
 }))
 
@@ -486,13 +483,13 @@ const clientStats = computed(() => {
     outdated: all.filter(client => (
       ['update_required', 'upgrade_required'].includes(clientVersionInfo(client).status)
     )).length,
-    staleBackup: all.filter(client => !isFreshBackup(client.lastBackup)).length,
+    consecutiveFailures: all.filter(client => hasFailureStreakWarning(client)).length,
     backupErrors: all.filter(client => clientHasLastBackupError(client)).length,
   }
 })
 
-const lastBackupByClient = computed(() => {
-  const backupsByClient = new Map()
+const jobsByClient = computed(() => {
+  const jobsByClientKey = new Map()
   for (const backup of directorCollection(rawRecentBackups.value)) {
     const job = {
       ...normaliseJob(backup),
@@ -502,27 +499,37 @@ const lastBackupByClient = computed(() => {
       continue
     }
     const key = `${job.director ?? ''}:${job.client}`
-    const current = backupsByClient.get(key)
-    if (!current || String(job.starttime ?? '') > String(current.starttime ?? '')) {
-      backupsByClient.set(key, job)
+    if (!jobsByClientKey.has(key)) {
+      jobsByClientKey.set(key, [])
+    }
+    jobsByClientKey.get(key).push(job)
+  }
+  // Sort each client's jobs newest-first explicitly: the underlying
+  // "llist jobs reverse sortby=starttime" query is already newest-first,
+  // but the aggregated-directors path merges multiple directors' results
+  // without re-sorting, so this must not be assumed here.
+  for (const jobs of jobsByClientKey.values()) {
+    jobs.sort((a, b) => String(b.starttime ?? '').localeCompare(String(a.starttime ?? '')))
+  }
+  return jobsByClientKey
+})
+
+const lastBackupByClient = computed(() => {
+  const backupsByClient = new Map()
+  for (const [key, jobs] of jobsByClient.value) {
+    if (jobs.length) {
+      backupsByClient.set(key, jobs[0])
     }
   }
   return backupsByClient
 })
 
-const expectedBackupByClient = computed(() => {
-  const expectedByClient = new Map()
-  for (const expected of directorCollection(rawScheduledBackups.value)) {
-    if (!expected.client || !Number.isFinite(expected.runtime) || expected.runtime <= 0) {
-      continue
-    }
-    const key = `${expected.director ?? ''}:${expected.client}`
-    const current = expectedByClient.get(key)
-    if (!current || expected.runtime > current.runtime) {
-      expectedByClient.set(key, expected)
-    }
+const failureStreakByClient = computed(() => {
+  const streakByClient = new Map()
+  for (const [key, jobs] of jobsByClient.value) {
+    streakByClient.set(key, consecutiveFailedJobsSinceSuccess(jobs))
   }
-  return expectedByClient
+  return streakByClient
 })
 
 function normalizedClientSearchText(client) {
@@ -544,61 +551,35 @@ function normalizedClientSearchText(client) {
   ].filter(Boolean).join(' ').toLowerCase()
 }
 
-function lastBackupAgeDays(job, now = Date.now()) {
-  if (!job?.starttime) {
-    return null
-  }
-
-  const timestamp = Date.parse(String(job.starttime).replace(' ', 'T'))
-  if (!Number.isFinite(timestamp)) {
-    return null
-  }
-
-  return Math.max(0, (now - timestamp) / (24 * 60 * 60 * 1000))
-}
-
-function backupWarningDays() {
-  const normalized = Number(settings.clientBackupWarningDays)
+function backupWarningFailedJobs() {
+  const normalized = Number(settings.clientBackupWarningFailedJobs)
   return Number.isInteger(normalized) && normalized > 0 ? normalized : 2
 }
 
-function backupAgeRatio(job) {
-  const ageDays = lastBackupAgeDays(job)
-  if (ageDays === null) {
-    return 1
-  }
-
-  return Math.min(ageDays / backupWarningDays(), 1)
+function hasFailureStreakWarning(client) {
+  return (client.failureStreak ?? 0) >= backupWarningFailedJobs()
 }
 
-function backupAgeColor(job) {
-  const hue = Math.round(120 - backupAgeRatio(job) * 120)
+function failureStreakRatio(client) {
+  const streak = client.failureStreak ?? 0
+  if (streak <= 0) {
+    return 0
+  }
+
+  return Math.min(streak / backupWarningFailedJobs(), 1)
+}
+
+function failureStreakColor(client) {
+  const hue = Math.round(120 - failureStreakRatio(client) * 120)
   return `hsl(${hue}, 75%, 42%)`
 }
 
-function clientBackupAgeBarStyle(client) {
-  const ratio = backupAgeRatio(client.lastBackup)
+function clientFailureBarStyle(client) {
+  const ratio = failureStreakRatio(client)
   return {
-    '--client-backup-age-width': `${Math.max(8, Math.round(ratio * 100))}%`,
-    '--client-backup-age-color': backupAgeColor(client.lastBackup),
+    '--client-failure-bar-width': `${Math.max(8, Math.round(ratio * 100))}%`,
+    '--client-failure-bar-color': failureStreakColor(client),
   }
-}
-
-function isFreshBackup(job) {
-  if (!job) {
-    return false
-  }
-
-  const clientKey = `${job.director ?? ''}:${job.client ?? ''}`
-  const expected = expectedBackupByClient.value.get(clientKey)
-  if (expected?.runtime) {
-    const backupTimestamp = Date.parse(String(job.starttime ?? '').replace(' ', 'T'))
-    return Number.isFinite(backupTimestamp)
-      && backupTimestamp >= expected.runtime * 1000
-  }
-
-  const ageDays = lastBackupAgeDays(job)
-  return ageDays !== null && ageDays <= backupWarningDays()
 }
 
 function clientHasLastBackupError(client) {
@@ -612,8 +593,8 @@ function clientMatchesQuickFilter(client) {
   if (clientsQuickFilter.value === 'outdated') {
     return ['update_required', 'upgrade_required'].includes(versionStatus)
   }
-  if (clientsQuickFilter.value === 'stale_backup') {
-    return !isFreshBackup(client.lastBackup)
+  if (clientsQuickFilter.value === 'consecutive_failures') {
+    return hasFailureStreakWarning(client)
   }
   if (clientsQuickFilter.value === 'backup_errors') {
     return clientHasLastBackupError(client)
@@ -680,8 +661,11 @@ function clientBackupStatusItems(client) {
     return [{ label: t('Last backup failed'), color: 'negative' }]
   }
 
-  if (!isFreshBackup(client.lastBackup)) {
-    return [{ label: t('Stale backup'), color: 'warning' }]
+  if (hasFailureStreakWarning(client)) {
+    return [{
+      label: t('{n} consecutive failures', { n: client.failureStreak }),
+      color: 'warning',
+    }]
   }
 
   return [{ label: t('Backup OK'), color: 'positive' }]
@@ -935,7 +919,7 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   font-weight: 600;
 }
 
-.client-backup-age-bar {
+.client-failure-bar {
   background: rgba(0, 0, 0, 0.12);
   border-radius: 999px;
   height: 4px;
@@ -943,14 +927,14 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   width: 120px;
 }
 
-.client-backup-age-bar::before {
-  background: var(--client-backup-age-color);
+.client-failure-bar::before {
+  background: var(--client-failure-bar-color);
   border-radius: inherit;
   content: '';
   display: block;
   height: 100%;
   transition: background-color 0.2s ease, width 0.2s ease;
-  width: var(--client-backup-age-width);
+  width: var(--client-failure-bar-width);
 }
 
 .client-status-output {
