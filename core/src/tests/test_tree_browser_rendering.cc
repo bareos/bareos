@@ -321,4 +321,33 @@ TEST(TreeBrowserRendering, BuildsPluginOptionsAdvertisementWithPlugins)
   EXPECT_NE(advertisement.find('o'), std::string::npos);
 }
 
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsHandlesZero)
+{
+  EXPECT_EQ(directordaemon::tree_browser_internal::SplitTreeAndPluginRows(0),
+            std::make_pair(size_t{0}, size_t{0}));
+}
+
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsSplitsEvenTotalInHalf)
+{
+  EXPECT_EQ(directordaemon::tree_browser_internal::SplitTreeAndPluginRows(10),
+            std::make_pair(size_t{5}, size_t{5}));
+}
+
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsGivesTreeTheExtraRow)
+{
+  // Odd totals give the file tree (top pane) the extra row, since
+  // browsing the tree is the primary task.
+  EXPECT_EQ(directordaemon::tree_browser_internal::SplitTreeAndPluginRows(11),
+            std::make_pair(size_t{6}, size_t{5}));
+}
+
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsAddsUpToTheTotal)
+{
+  for (size_t total : {1, 2, 3, 7, 20, 99}) {
+    auto [tree_rows, plugin_rows]
+        = directordaemon::tree_browser_internal::SplitTreeAndPluginRows(total);
+    EXPECT_EQ(tree_rows + plugin_rows, total) << "total=" << total;
+  }
+}
+
 }  // namespace
