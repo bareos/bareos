@@ -116,6 +116,13 @@ std::string BuildPluginOptionsAdvertisement(
 // a second pane (total_rows == 0).
 std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows);
 
+// Decides what plain text (no ANSI styling) the Plugin Options input
+// line should display: the current input value, or -- when it's empty
+// -- a placeholder hinting that the field is editable and giving an
+// example, so the field's purpose is obvious even before the user
+// types anything.
+std::string PluginOptionsInputDisplayText(std::string_view input);
+
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
   return text_width > viewport_width ? text_width - viewport_width : 0;

@@ -530,6 +530,12 @@ std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows)
   return {tree_rows, plugin_rows};
 }
 
+std::string PluginOptionsInputDisplayText(std::string_view input)
+{
+  if (!input.empty()) { return std::string(input); }
+  return "(type plugin options, e.g. verbose=1)";
+}
+
 
 }  // namespace tree_browser_internal
 
@@ -546,6 +552,7 @@ using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
 using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::MaxHorizontalOffset;
+using tree_browser_internal::PluginOptionsInputDisplayText;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::SplitTreeAndPluginRows;
@@ -564,10 +571,12 @@ std::string MenuBar(size_t width, bool color)
 std::string FrameBorder(size_t width,
                         bool color,
                         FrameBorderStyle style,
-                        std::string_view title = {})
+                        std::string_view title = {},
+                        bool focused = false)
 {
   std::string line = RenderFrameBorder(width, style, title);
-  return color ? "\033[2;36m" + line + "\033[0m\n" : line + "\n";
+  if (!color) { return line + "\n"; }
+  return (focused ? "\033[1;36m" : "\033[2;36m") + line + "\033[0m\n";
 }
 
 std::string FrameLine(size_t width,
@@ -580,6 +589,47 @@ std::string FrameLine(size_t width,
 
   std::string content = FitText(text, width - 2);
   content = StyleFrameContent(std::move(content), mark, highlighted, color);
+
+  std::string border = color ? "\033[2;36m│\033[0m" : "│";
+  return border + content + border + "\n";
+}
+
+// Renders the " Options: <value>" line, adding a reverse-video "cursor"
+// glyph right after the text when the pane is focused, and dimming the
+// placeholder text (shown when the input is empty) so it reads as a
+// hint rather than a real value. Kept separate from FrameLine()'s
+// generic mark/highlighted styling because the cursor glyph needs to be
+// inserted at the text's own end, not at a fixed offset or applied to
+// the whole line.
+std::string PluginOptionsLine(size_t width,
+                              std::string_view input,
+                              bool focused,
+                              bool color)
+{
+  bool is_placeholder = input.empty();
+  std::string text = " Options: " + PluginOptionsInputDisplayText(input);
+
+  if (width < 2) { return FitText(text, width) + "\n"; }
+
+  size_t inner_width = width - 2;
+  size_t text_width = TextCellWidth(text);
+  std::string content = FitText(text, inner_width);
+
+  if (color) {
+    if (is_placeholder) {
+      content = "\033[2m" + content + "\033[0m";
+    } else if (focused && text_width < inner_width
+               && text.size() < content.size()) {
+      // text_width is a display-cell count, not a byte offset, so it
+      // must not be used to index into content when text may contain
+      // multi-byte UTF-8 characters. Since text_width < inner_width
+      // means FitText() rendered the whole (untruncated) text
+      // byte-for-byte before appending plain ASCII padding, text.size()
+      // -- the original string's byte length -- is the correct offset
+      // of the first padding space, regardless of encoding.
+      content.replace(text.size(), 1, "\033[7m \033[0m");
+    }
+  }
 
   std::string border = color ? "\033[2;36m│\033[0m" : "│";
   return border + content + border + "\n";
@@ -1119,7 +1169,9 @@ std::string TreeBrowser::RenderPanel() const
 
   std::string tree_title = "Restore selection";
   if (split) { tree_title = (plugin_pane_focused_ ? "  " : "> ") + tree_title; }
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, tree_title);
+  bool tree_focused = split && !plugin_pane_focused_;
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, tree_title,
+                     tree_focused);
 
   POOLMEM* cwd = tree_getpath(tree_->node);
   std::string path = " Path: ";
@@ -1131,7 +1183,7 @@ std::string TreeBrowser::RenderPanel() const
         "    Name", FormatDetailColumns("Size", "Modified"), width - 2);
     out += FrameLine(width, headings, color);
   }
-  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle, {}, tree_focused);
 
   size_t marked = 0;
   for (const tree_node* node : rows_) {
@@ -1169,10 +1221,11 @@ std::string TreeBrowser::RenderPanel() const
   } else {
     std::string plugin_title = "Plugin Options";
     plugin_title = (plugin_pane_focused_ ? "> " : "  ") + plugin_title;
-    out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title);
+    out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title,
+                       plugin_pane_focused_);
 
-    out += FrameLine(width, " Options: " + plugin_options_input_, color,
-                     plugin_pane_focused_);
+    out += PluginOptionsLine(width, plugin_options_input_, plugin_pane_focused_,
+                             color);
 
     std::vector<std::string> hint_lines = DetectedPluginHintLines();
     size_t hint_rows = plugin_rows > 0 ? plugin_rows - 1 : 0;
