@@ -56,6 +56,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace directordaemon {
@@ -63,6 +64,10 @@ namespace directordaemon {
 namespace {
 
 constexpr size_t kChromeLines = 8;
+// Extra chrome lines needed when the split-screen Plugin Options pane is
+// shown below the file tree: one additional frame border separating the
+// two panes, plus the fixed Plugin Options input line.
+constexpr size_t kPluginPaneChromeLines = 2;
 constexpr size_t kMinVisibleRows = 3;
 constexpr size_t kDefaultVisibleRows = 20;
 constexpr size_t kDefaultTerminalWidth = 80;
@@ -513,8 +518,16 @@ std::string BuildPluginOptionsAdvertisement(
   if (plugin_names_summary.empty()) { return ""; }
   std::string out = "Plugin backup detected (";
   out += plugin_names_summary;
-  out += ") -- Tab Set Plugin Options  p Hints";
+  out += ") -- Tab Plugin Options pane  p Hints";
   return out;
+}
+
+std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows)
+{
+  if (total_rows == 0) { return {0, 0}; }
+  size_t plugin_rows = total_rows / 2;
+  size_t tree_rows = total_rows - plugin_rows;
+  return {tree_rows, plugin_rows};
 }
 
 
@@ -535,6 +548,7 @@ using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::MaxHorizontalOffset;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::SplitTreeAndPluginRows;
 using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::SummarizePluginNames;
 using tree_browser_internal::TextCellWidth;
@@ -704,14 +718,15 @@ class TreeBrowser {
   {
     RebuildRows();
     // Gathered eagerly (rather than lazily on first 'p' press) so the
-    // main browser view can immediately advertise the plugin hints panel
-    // and Plugin Options entry when this restore involves plugin(s).
+    // main browser view can immediately show the split-screen Plugin
+    // Options pane when this restore involves plugin(s).
     GatherPluginHints();
-    // If this restore involves a plugin, offer to set Plugin Options right
-    // away (with the relevant hints shown for reference) instead of only
-    // advertising it and waiting for the user to notice/press 'o'.
+    // If this restore involves a plugin, put keyboard focus on the
+    // Plugin Options pane right away (it's rendered below the file tree
+    // regardless) so the user is prompted for it instead of having to
+    // notice/press Tab first.
     if (HasDetectedPlugins() && tree_->plugin_options_out) {
-      StartEnteringPluginOptions();
+      FocusPluginOptionsPane();
     }
   }
 
@@ -733,21 +748,28 @@ class TreeBrowser {
   void ClampPluginHintsOffset();
   void CalculateEstimate();
   void InvalidateEstimate();
-  void StartEnteringPluginOptions();
-  void CommitPluginOptions();
+  void FocusPluginOptionsPane();
+  void TogglePluginPaneFocus();
+  bool CommitPluginOptions();
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
   size_t SearchHorizontalLimit() const;
   size_t SelectedHorizontalLimit() const;
-  size_t MaxVisibleRows(bool detail_header = false) const;
+  size_t MaxVisibleRows(bool detail_header = false,
+                        bool plugin_split = false) const;
+  // Row budget for the tree pane (top) and Plugin Options pane (bottom)
+  // of the split-screen layout, valid only while HasDetectedPlugins().
+  std::pair<size_t, size_t> SplitPanelRows() const
+  {
+    return SplitTreeAndPluginRows(MaxVisibleRows(detail_view_, true));
+  }
   std::string RenderPanel() const;
   std::string RenderSearchInput() const;
   std::string RenderSearchResults() const;
   std::string RenderSelectedFiles() const;
   std::string RenderHelp() const;
   std::string RenderPluginHints() const;
-  std::string RenderPluginOptionsInput() const;
 
   // Handles one "key:*" event. Sets *exit_reason and returns true when the
   // browser loop should stop (the user left the browser entirely).
@@ -757,7 +779,7 @@ class TreeBrowser {
   void HandleSelectedFilesKey(std::string_view key);
   void HandleHelpKey(std::string_view key);
   void HandlePluginHintsKey(std::string_view key);
-  void HandlePluginOptionsInputKey(std::string_view key);
+  void HandlePluginOptionsPaneKey(std::string_view key);
   void GatherPluginHints();
   bool HasDetectedPlugins() const { return !plugin_hint_definitions_.empty(); }
   std::vector<std::string> DetectedPluginHintLines() const
@@ -801,8 +823,12 @@ class TreeBrowser {
       plugin_hint_resolved_;
   bool plugin_hints_gathered_ = false;
 
-  bool entering_plugin_options_ = false;
+  // When a plugin is detected, the Plugin Options pane is always shown
+  // (split-screen, below the tree); this only tracks which pane
+  // currently has keyboard focus.
+  bool plugin_pane_focused_ = false;
   std::string plugin_options_input_;
+  size_t plugin_options_hint_offset_ = 0;
 
   bool estimate_calculated_ = false;
   bool estimate_stale_ = false;
@@ -992,37 +1018,51 @@ void TreeBrowser::InvalidateEstimate()
   if (estimate_calculated_) { estimate_stale_ = true; }
 }
 
-void TreeBrowser::StartEnteringPluginOptions()
+void TreeBrowser::FocusPluginOptionsPane()
 {
-  entering_plugin_options_ = true;
-  plugin_hints_offset_ = 0;
+  plugin_pane_focused_ = true;
+  plugin_options_hint_offset_ = 0;
   plugin_options_input_
       = tree_->plugin_options_out && !tree_->plugin_options_out->empty()
             ? *tree_->plugin_options_out
             : "";
 }
 
-void TreeBrowser::CommitPluginOptions()
+void TreeBrowser::TogglePluginPaneFocus()
+{
+  if (plugin_pane_focused_) {
+    // Only leave the pane once the value was actually committed; on ACL
+    // rejection, stay focused so the user's edit isn't silently
+    // discarded and they can adjust it (status_line_ explains why).
+    if (CommitPluginOptions()) { plugin_pane_focused_ = false; }
+  } else {
+    FocusPluginOptionsPane();
+  }
+}
+
+bool TreeBrowser::CommitPluginOptions()
 {
   if (!tree_->plugin_options_out) {
     status_line_ = "Plugin Options are not supported in this context.";
-    return;
+    return false;
   }
   if (!plugin_options_input_.empty()
       && !ua_->AclAccessOk(PluginOptions_ACL, plugin_options_input_.c_str(),
                            true)) {
     status_line_ = "No authorization for \"PluginOptions\" specification.";
-    return;
+    return false;
   }
   *tree_->plugin_options_out = plugin_options_input_;
   status_line_ = plugin_options_input_.empty() ? "Plugin Options cleared."
                                                : "Plugin Options saved.";
+  return true;
 }
 
-size_t TreeBrowser::MaxVisibleRows(bool detail_header) const
+size_t TreeBrowser::MaxVisibleRows(bool detail_header, bool plugin_split) const
 {
   if (ua_->terminal_height <= 0) { return kDefaultVisibleRows; }
-  size_t chrome_lines = kChromeLines + (detail_header ? 1 : 0);
+  size_t chrome_lines = kChromeLines + (detail_header ? 1 : 0)
+                        + (plugin_split ? kPluginPaneChromeLines : 0);
   size_t available
       = static_cast<size_t>(ua_->terminal_height) > chrome_lines
             ? static_cast<size_t>(ua_->terminal_height) - chrome_lines
@@ -1063,7 +1103,23 @@ std::string TreeBrowser::RenderPanel() const
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
   std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Restore selection");
+
+  // Once a plugin backup is detected, the screen is split: the file tree
+  // keeps the top half and a Plugin Options pane (input line + scrollable
+  // hint reference) occupies the bottom half, so the user can set/see
+  // plugin options without leaving the file browser.
+  bool split = HasDetectedPlugins();
+  size_t max_visible = MaxVisibleRows(detail_view_, split);
+  size_t plugin_rows = 0;
+  if (split) {
+    auto [tree_rows, bottom_rows] = SplitTreeAndPluginRows(max_visible);
+    max_visible = tree_rows;
+    plugin_rows = bottom_rows;
+  }
+
+  std::string tree_title = "Restore selection";
+  if (split) { tree_title = (plugin_pane_focused_ ? "  " : "> ") + tree_title; }
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, tree_title);
 
   POOLMEM* cwd = tree_getpath(tree_->node);
   std::string path = " Path: ";
@@ -1082,7 +1138,6 @@ std::string TreeBrowser::RenderPanel() const
     if (node->extract || node->extract_descendant) { marked++; }
   }
 
-  size_t max_visible = MaxVisibleRows(detail_view_);
   size_t first = cursor_ > max_visible / 2 ? cursor_ - max_visible / 2 : 0;
   if (!rows_.empty()) {
     first = std::min(first, rows_.size() - std::min(rows_.size(), max_visible));
@@ -1108,7 +1163,29 @@ std::string TreeBrowser::RenderPanel() const
       out += FrameLine(width, "", color);
     }
   }
-  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+
+  if (!split) {
+    out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+  } else {
+    std::string plugin_title = "Plugin Options";
+    plugin_title = (plugin_pane_focused_ ? "> " : "  ") + plugin_title;
+    out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title);
+
+    out += FrameLine(width, " Options: " + plugin_options_input_, color,
+                     plugin_pane_focused_);
+
+    std::vector<std::string> hint_lines = DetectedPluginHintLines();
+    size_t hint_rows = plugin_rows > 0 ? plugin_rows - 1 : 0;
+    size_t max_offset
+        = hint_lines.size() > hint_rows ? hint_lines.size() - hint_rows : 0;
+    size_t offset = std::min(plugin_options_hint_offset_, max_offset);
+    for (size_t row = 0; row < hint_rows; ++row) {
+      size_t i = offset + row;
+      out += FrameLine(width, i < hint_lines.size() ? hint_lines[i] : "",
+                       color);
+    }
+    out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+  }
 
   std::string status;
   if (!status_line_.empty()) { status = " " + status_line_ + " | "; }
@@ -1122,17 +1199,29 @@ std::string TreeBrowser::RenderPanel() const
     status += " | Showing " + std::to_string(first + 1) + "-"
               + std::to_string(last) + " of " + std::to_string(rows_.size());
   }
+  if (split) {
+    status += plugin_pane_focused_ ? " | Focus: Plugin Options"
+                                   : " | Focus: Files";
+  }
   out += StatusBar(width, status, color);
-  std::string first_help_line
-      = " Enter Open  Space/m Mark  a All  u None  e Estimate";
-  if (HasDetectedPlugins()) {
-    first_help_line += "  |  "
-                       + BuildPluginOptionsAdvertisement(
-                           SummarizePluginNames(plugin_hint_definitions_));
+
+  std::string first_help_line;
+  std::string second_help_line;
+  if (split && plugin_pane_focused_) {
+    first_help_line
+        = " Type Plugin Options  Backspace Delete  Up/Down Scroll hints";
+    second_help_line = " Tab/Enter Save & switch to Files  Esc Discard edits";
+  } else {
+    first_help_line = " Enter Open  Space/m Mark  a All  u None  e Estimate";
+    if (split) {
+      first_help_line += "  |  "
+                         + BuildPluginOptionsAdvertisement(
+                             SummarizePluginNames(plugin_hint_definitions_));
+    }
+    second_help_line = " i Info  l List  / Search  h Help  c Classic  q Done";
   }
   out += HelpLine(width, first_help_line, color);
-  out += HelpLine(width, " i Info  l List  / Search  h Help  c Classic  q Done",
-                  color);
+  out += HelpLine(width, second_help_line, color);
   return out;
 }
 
@@ -1300,7 +1389,8 @@ std::string TreeBrowser::RenderHelp() const
       "   :                Run one classic selection command",
       "   c                Switch to classic selection mode",
       "   p                Show restore plugin hints",
-      "   o, Tab           Set Plugin Options (when a plugin is detected)",
+      "   o                Focus the Plugin Options pane (if shown)",
+      "   Tab              Switch focus: file tree <-> Plugin Options",
       "",
       " Exit",
       "   q                Finish file selection",
@@ -1396,44 +1486,10 @@ std::string TreeBrowser::RenderPluginHints() const
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Restore plugin hints", color);
   out += HelpLine(width,
-                  " Up/Down Scroll  a Toggle all/detected  o Set Options"
+                  " Up/Down Scroll  a Toggle all/detected  o Options"
                   "  p/Esc Return",
                   color);
   out += HelpLine(width, "", color);
-  return out;
-}
-
-std::string TreeBrowser::RenderPluginOptionsInput() const
-{
-  size_t width = ScreenWidth();
-  bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-
-  std::vector<std::string> hint_lines = DetectedPluginHintLines();
-
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Plugin Options");
-  out += FrameLine(width, " Options: " + plugin_options_input_, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
-
-  // The input line is fixed at the top (just below the frame's top
-  // border), so the reference/hint text below it can scroll freely
-  // without ever obscuring the field the user is filling in.
-  size_t visible_rows = MaxVisibleRows();
-  size_t hint_rows = visible_rows > 1 ? visible_rows - 1 : 0;
-  size_t max_offset
-      = hint_lines.size() > hint_rows ? hint_lines.size() - hint_rows : 0;
-  size_t offset = std::min(plugin_hints_offset_, max_offset);
-  for (size_t row = 0; row < hint_rows; ++row) {
-    size_t i = offset + row;
-    out += FrameLine(width, i < hint_lines.size() ? hint_lines[i] : "", color);
-  }
-  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
-  out += StatusBar(width, " Reference: this restore's detected plugin hints",
-                   color);
-  out += HelpLine(
-      width, " Type Plugin Options  Backspace Delete  Up/Down Scroll", color);
-  out += HelpLine(width, " Enter/Tab Save & continue  Esc Skip (keeps current)",
-                  color);
   return out;
 }
 
@@ -1454,14 +1510,16 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
   return false;
 }
 
-void TreeBrowser::HandlePluginOptionsInputKey(std::string_view key)
+void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
 {
-  if (key == "key:enter" || key == "key:tab") {
-    entering_plugin_options_ = false;
-    CommitPluginOptions();
+  if (key == "key:enter") {
+    // Commits the current input and hands focus back to the file tree,
+    // mirroring Tab (see HandleKey()).
+    TogglePluginPaneFocus();
   } else if (key == "key:cancel") {
-    entering_plugin_options_ = false;
-    plugin_options_input_.clear();
+    plugin_pane_focused_ = false;
+    plugin_options_input_
+        = tree_->plugin_options_out ? *tree_->plugin_options_out : "";
   } else if (key == "key:backspace") {
     if (!plugin_options_input_.empty()) {
       RemoveLastUtf8Character(&plugin_options_input_);
@@ -1469,14 +1527,16 @@ void TreeBrowser::HandlePluginOptionsInputKey(std::string_view key)
   } else if (key == "key:space") {
     plugin_options_input_.push_back(' ');
   } else if (key == "key:up") {
-    if (plugin_hints_offset_ > 0) { plugin_hints_offset_--; }
+    if (plugin_options_hint_offset_ > 0) { plugin_options_hint_offset_--; }
   } else if (key == "key:down") {
-    size_t visible_rows = MaxVisibleRows();
-    size_t hint_rows = visible_rows > 1 ? visible_rows - 1 : 0;
+    size_t hint_rows = SplitPanelRows().second;
+    hint_rows = hint_rows > 0 ? hint_rows - 1 : 0;
     std::vector<std::string> hint_lines = DetectedPluginHintLines();
     size_t max_offset
         = hint_lines.size() > hint_rows ? hint_lines.size() - hint_rows : 0;
-    if (plugin_hints_offset_ < max_offset) { plugin_hints_offset_++; }
+    if (plugin_options_hint_offset_ < max_offset) {
+      plugin_options_hint_offset_++;
+    }
   } else if (key.starts_with("key:text:")) {
     plugin_options_input_.append(key.substr(strlen("key:text:")));
   }
@@ -1587,7 +1647,7 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
     plugin_hints_offset_ = 0;
   } else if (key == "key:text:o" || key == "key:tab") {
     showing_plugin_hints_ = false;
-    StartEnteringPluginOptions();
+    FocusPluginOptionsPane();
   } else if (key == "key:text:p" || key == "key:cancel") {
     showing_plugin_hints_ = false;
   }
@@ -1629,8 +1689,16 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
   if (entering_search_term_) { return HandleSearchInputKey(key); }
-  if (entering_plugin_options_) {
-    HandlePluginOptionsInputKey(key);
+
+  // Tab always toggles which half of the split screen has keyboard focus
+  // (only meaningful once a plugin backup was detected, since that's the
+  // only time the Plugin Options pane is shown at all).
+  if (key == "key:tab" && HasDetectedPlugins()) {
+    TogglePluginPaneFocus();
+    return false;
+  }
+  if (plugin_pane_focused_) {
+    HandlePluginOptionsPaneKey(key);
     return false;
   }
 
@@ -1660,9 +1728,9 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     if (!plugin_hints_gathered_) { GatherPluginHints(); }
     plugin_hints_offset_ = 0;
     showing_plugin_hints_ = true;
-  } else if (key == "key:text:o" || key == "key:tab") {
+  } else if (key == "key:text:o") {
     if (HasDetectedPlugins()) {
-      StartEnteringPluginOptions();
+      FocusPluginOptionsPane();
     } else {
       status_line_ = "No plugin detected for this restore.";
     }
@@ -1698,13 +1766,12 @@ TreeBrowserExit TreeBrowser::Run()
   TreeBrowserExit exit_reason = TreeBrowserExit::kDone;
 
   for (;;) {
-    std::string screen = showing_help_              ? RenderHelp()
-                         : showing_plugin_hints_    ? RenderPluginHints()
-                         : showing_selected_files_  ? RenderSelectedFiles()
-                         : showing_search_results_  ? RenderSearchResults()
-                         : entering_search_term_    ? RenderSearchInput()
-                         : entering_plugin_options_ ? RenderPluginOptionsInput()
-                                                    : RenderPanel();
+    std::string screen = showing_help_             ? RenderHelp()
+                         : showing_plugin_hints_   ? RenderPluginHints()
+                         : showing_selected_files_ ? RenderSelectedFiles()
+                         : showing_search_results_ ? RenderSearchResults()
+                         : entering_search_term_   ? RenderSearchInput()
+                                                   : RenderPanel();
 
     user->signal(BNET_START_SELECT);
     ua_->SendMsg("%s", screen.c_str());
