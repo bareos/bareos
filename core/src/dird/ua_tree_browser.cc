@@ -385,7 +385,8 @@ std::string StyleFrameContent(std::string content,
 
 bool IsTopLevelSelection(const tree_node* node)
 {
-  if (!node || !node->extract || node->type == tree_node_type::Root) {
+  if (!node || !node->extract || node->type == tree_node_type::Root
+      || node->type == tree_node_type::NewDir) {
     return false;
   }
   for (const tree_node* parent = node->parent; parent;
@@ -395,12 +396,20 @@ bool IsTopLevelSelection(const tree_node* node)
   return true;
 }
 
+std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes)
+{
+  if (!calculated) { return "not calculated"; }
+  if (stale) { return "stale"; }
+  return SizeAsSiPrefixFormat(bytes);
+}
+
 }  // namespace tree_browser_internal
 
 namespace {
 
 using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::CaseFoldForSearch;
+using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
@@ -592,6 +601,8 @@ class TreeBrowser {
   void OpenSelectedFiles();
   void RebuildSelectedFiles();
   void ClampSelectedHorizontalOffset();
+  void CalculateEstimate();
+  void InvalidateEstimate();
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
@@ -602,6 +613,7 @@ class TreeBrowser {
   std::string RenderSearchInput() const;
   std::string RenderSearchResults() const;
   std::string RenderSelectedFiles() const;
+  std::string RenderHelp() const;
 
   // Handles one "key:*" event. Sets *exit_reason and returns true when the
   // browser loop should stop (the user left the browser entirely).
@@ -609,6 +621,7 @@ class TreeBrowser {
   bool HandleSearchInputKey(std::string_view key);
   void HandleSearchResultsKey(std::string_view key);
   void HandleSelectedFilesKey(std::string_view key);
+  void HandleHelpKey(std::string_view key);
 
   UaContext* ua_;
   TreeContext* tree_;
@@ -635,6 +648,10 @@ class TreeBrowser {
   size_t selected_cursor_ = 0;
   size_t selected_horizontal_offset_ = 0;
 
+  bool showing_help_ = false;
+  bool estimate_calculated_ = false;
+  bool estimate_stale_ = false;
+  uint64_t estimated_bytes_ = 0;
   std::string status_line_;
 };
 
@@ -658,6 +675,7 @@ void TreeBrowser::SyncAfterClassicCommand()
       cursor_ = rows_.empty() ? 0 : rows_.size() - 1;
     }
   }
+  InvalidateEstimate();
 }
 
 void TreeBrowser::EnterDirectory(tree_node* node)
@@ -687,6 +705,7 @@ void TreeBrowser::ToggleMarkCurrent()
   status_line_ = extract ? "Marked " : "Unmarked ";
   status_line_ += std::to_string(changed);
   status_line_ += changed == 1 ? " entry" : " entries";
+  if (changed > 0) { InvalidateEstimate(); }
 }
 
 void TreeBrowser::MarkAllInDirectory(bool extract)
@@ -698,6 +717,7 @@ void TreeBrowser::MarkAllInDirectory(bool extract)
   status_line_ = extract ? "Marked " : "Unmarked ";
   status_line_ += std::to_string(changed);
   status_line_ += changed == 1 ? " entry" : " entries";
+  if (changed > 0) { InvalidateEstimate(); }
 }
 
 void TreeBrowser::JumpToSearchMatch(tree_node* node)
@@ -779,6 +799,42 @@ void TreeBrowser::ClampSelectedHorizontalOffset()
 {
   selected_horizontal_offset_
       = std::min(selected_horizontal_offset_, SelectedHorizontalLimit());
+}
+
+void TreeBrowser::CalculateEstimate()
+{
+  estimated_bytes_ = 0;
+  if (!ua_->db) {
+    status_line_ = "Cannot calculate estimate without a catalog";
+    return;
+  }
+
+  FileDbRecord fdbr;
+  struct stat statp;
+  for (tree_node* node = FirstTreeNode(tree_->root); node;
+       node = NextTreeNode(node)) {
+    if (!node->extract || node->type != tree_node_type::File) { continue; }
+
+    POOLMEM* path = tree_getpath(node);
+    fdbr.FileId = 0;
+    fdbr.JobId = node->JobId;
+    if (ua_->db->GetFileAttributesRecord(ua_->jcr, path, NULL, &fdbr)) {
+      int32_t LinkFI;
+      DecodeStat(fdbr.LStat, &statp, sizeof(statp), &LinkFI);
+      if (S_ISREG(statp.st_mode) && statp.st_size > 0) {
+        estimated_bytes_ += static_cast<uint64_t>(statp.st_size);
+      }
+    }
+    FreePoolMemory(path);
+  }
+  estimate_calculated_ = true;
+  estimate_stale_ = false;
+  status_line_ = "Estimated selected data";
+}
+
+void TreeBrowser::InvalidateEstimate()
+{
+  if (estimate_calculated_) { estimate_stale_ = true; }
 }
 
 size_t TreeBrowser::MaxVisibleRows(bool detail_header) const
@@ -877,16 +933,18 @@ std::string TreeBrowser::RenderPanel() const
   status += " Entries: " + std::to_string(rows_.size());
   status += " | Marked: " + std::to_string(marked);
   status += detail_view_ ? " | Detail: on" : " | Detail: off";
+  status += " | Estimate: "
+            + EstimateStatus(estimate_calculated_, estimate_stale_,
+                             estimated_bytes_);
   if (!rows_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
               + std::to_string(last) + " of " + std::to_string(rows_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width,
-                  " Enter Open  Space Mark  a All  u None  i Info  m Selected",
+  out += HelpLine(width, " Enter Open  Space/m Mark  a All  u None  e Estimate",
                   color);
-  out += HelpLine(
-      width, " Arrows Move  Left Parent  / Search  c Classic  q Done", color);
+  out += HelpLine(width, " i Info  l List  / Search  h Help  c Classic  q Done",
+                  color);
   return out;
 }
 
@@ -954,6 +1012,9 @@ std::string TreeBrowser::RenderSearchResults() const
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
 
   std::string status = " Matches: " + std::to_string(search_matches_.size());
+  status += " | Estimate: "
+            + EstimateStatus(estimate_calculated_, estimate_stale_,
+                             estimated_bytes_);
   status += " | Column: " + std::to_string(search_horizontal_offset_ + 1);
   if (!search_matches_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
@@ -1008,6 +1069,9 @@ std::string TreeBrowser::RenderSelectedFiles() const
 
   std::string status
       = " Top-level selections: " + std::to_string(selected_nodes_.size());
+  status += " | Estimate: "
+            + EstimateStatus(estimate_calculated_, estimate_stale_,
+                             estimated_bytes_);
   status += " | Column: " + std::to_string(selected_horizontal_offset_ + 1);
   if (!selected_nodes_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
@@ -1017,8 +1081,50 @@ std::string TreeBrowser::RenderSelectedFiles() const
   out += StatusBar(width, status, color);
   out += HelpLine(width, " Up/Down Move  Left/Right Scroll  Home/End Edges",
                   color);
-  out += HelpLine(width, " Space Unmark  Enter Go to file  m/Esc Return",
+  out += HelpLine(width, " Space Unmark  Enter Go to file  l/Esc Return",
                   color);
+  return out;
+}
+
+std::string TreeBrowser::RenderHelp() const
+{
+  size_t width = ScreenWidth();
+  bool color = ua_->supports_color;
+  std::string out = MenuBar(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Help");
+
+  constexpr std::string_view lines[] = {
+      " Navigation",
+      "   Up/Down          Move selection",
+      "   Enter/Right      Open directory or jump to selected path",
+      "   Left/Backspace   Go to parent directory",
+      "",
+      " Selection",
+      "   Space or m       Mark/unmark current file or directory",
+      "   a                Mark all entries in current directory",
+      "   u                Unmark all entries in current directory",
+      "   l                List top-level selected paths",
+      "   e                Calculate selected data size",
+      "",
+      " Views and commands",
+      "   i                Toggle Size and Modified columns",
+      "   /                Search the entire restore tree",
+      "   :                Run one classic selection command",
+      "   c                Switch to classic selection mode",
+      "",
+      " Exit",
+      "   q                Finish file selection",
+      "   h, ?, or Esc     Close this help panel",
+  };
+
+  size_t visible_rows = MaxVisibleRows();
+  for (size_t row = 0; row < visible_rows; ++row) {
+    out += FrameLine(width, row < std::size(lines) ? lines[row] : "", color);
+  }
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+  out += StatusBar(width, " Restore browser help", color);
+  out += HelpLine(width, " h/?/Esc Return", color);
+  out += HelpLine(width, "", color);
   return out;
 }
 
@@ -1067,8 +1173,12 @@ void TreeBrowser::HandleSearchResultsKey(std::string_view key)
   } else if (key == "key:space") {
     if (search_cursor_ < search_matches_.size()) {
       tree_node* node = search_matches_[search_cursor_];
-      SetExtract(ua_, node, tree_, !node->extract);
+      if (SetExtract(ua_, node, tree_, !node->extract) > 0) {
+        InvalidateEstimate();
+      }
     }
+  } else if (key == "key:text:e") {
+    CalculateEstimate();
   } else if (key == "key:enter") {
     if (search_cursor_ < search_matches_.size()) {
       JumpToSearchMatch(search_matches_[search_cursor_]);
@@ -1100,15 +1210,25 @@ void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
   } else if (key == "key:space") {
     if (selected_cursor_ < selected_nodes_.size()) {
       SetExtract(ua_, selected_nodes_[selected_cursor_], tree_, false);
+      InvalidateEstimate();
       RebuildSelectedFiles();
     }
+  } else if (key == "key:text:e") {
+    CalculateEstimate();
   } else if (key == "key:enter") {
     if (selected_cursor_ < selected_nodes_.size()) {
       JumpToSearchMatch(selected_nodes_[selected_cursor_]);
       showing_selected_files_ = false;
     }
-  } else if (key == "key:text:m" || key == "key:cancel") {
+  } else if (key == "key:text:l" || key == "key:cancel") {
     showing_selected_files_ = false;
+  }
+}
+
+void TreeBrowser::HandleHelpKey(std::string_view key)
+{
+  if (key == "key:text:h" || key == "key:text:?" || key == "key:cancel") {
+    showing_help_ = false;
   }
 }
 
@@ -1116,6 +1236,10 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
 {
   status_line_.clear();
 
+  if (showing_help_) {
+    HandleHelpKey(key);
+    return false;
+  }
   if (showing_selected_files_) {
     HandleSelectedFilesKey(key);
     return false;
@@ -1134,7 +1258,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     if (cursor_ < rows_.size()) { EnterDirectory(rows_[cursor_]); }
   } else if (key == "key:left" || key == "key:backspace") {
     GoToParent();
-  } else if (key == "key:space") {
+  } else if (key == "key:space" || key == "key:text:m") {
     ToggleMarkCurrent();
   } else if (key == "key:text:a") {
     MarkAllInDirectory(true);
@@ -1142,8 +1266,12 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     MarkAllInDirectory(false);
   } else if (key == "key:text:i") {
     detail_view_ = !detail_view_;
-  } else if (key == "key:text:m") {
+  } else if (key == "key:text:e") {
+    CalculateEstimate();
+  } else if (key == "key:text:l") {
     OpenSelectedFiles();
+  } else if (key == "key:text:h" || key == "key:text:?") {
+    showing_help_ = true;
   } else if (key == "key:text:/") {
     entering_search_term_ = true;
     search_term_.clear();
@@ -1176,7 +1304,8 @@ TreeBrowserExit TreeBrowser::Run()
   TreeBrowserExit exit_reason = TreeBrowserExit::kDone;
 
   for (;;) {
-    std::string screen = showing_selected_files_   ? RenderSelectedFiles()
+    std::string screen = showing_help_             ? RenderHelp()
+                         : showing_selected_files_ ? RenderSelectedFiles()
                          : showing_search_results_ ? RenderSearchResults()
                          : entering_search_term_   ? RenderSearchInput()
                                                    : RenderPanel();
