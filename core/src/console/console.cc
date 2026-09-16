@@ -343,6 +343,8 @@ static bool ReadSelectionInput(FILE* input,
     }
   } else if (input_byte == 3) {
     event = "key:cancel";
+  } else if (input_byte == 9) {
+    event = "key:tab";
   } else if (input_byte == 10 || input_byte == 14) {
     event = "key:down"; /* Ctrl-J, Ctrl-N */
   } else if (input_byte == 11 || input_byte == 16) {

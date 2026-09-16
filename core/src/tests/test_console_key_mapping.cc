@@ -68,6 +68,17 @@ TEST(ConsoleKeyMapping, EnterBackspaceEscape)
             "key:cancel");
 }
 
+TEST(ConsoleKeyMapping, TabSwitchesPanel)
+{
+  constexpr int kVkTab = 0x09;
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkTab, L'\t', false),
+            "key:tab");
+  // Some consoles only report the character, without a distinct virtual
+  // key code.
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'\t', false),
+            "key:tab");
+}
+
 TEST(ConsoleKeyMapping, CtrlCCancelsEitherWay)
 {
   // Some consoles report Ctrl-C as a virtual key + ctrl modifier ...
