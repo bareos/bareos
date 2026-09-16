@@ -34,7 +34,8 @@
 #include "dird/ua_select.h"
 #include "lib/berrno.h"
 
-#include <string_view>
+#include <optional>
+#include <string>
 
 namespace directordaemon {
 
@@ -156,12 +157,10 @@ static POOLMEM* substitute_prompts(UaContext* ua,
 {
   char *p, *q, *o;
   POOLMEM* new_query;
-  int i, n, len, olen;
-  char* subst[9];
+  int n, olen;
+  std::optional<std::string> subst[9];
 
   if (nprompt == 0) { return query; }
-
-  for (i = 0; i < 9; i++) { subst[i] = NULL; }
 
   new_query = GetPoolMemory(PM_FNAME);
   o = new_query;
@@ -192,15 +191,14 @@ static POOLMEM* substitute_prompts(UaContext* ua,
                 break;
               }
             }
-            len = strlen(ua->cmd);
-            auto escaped = ua->db->EscapeString(
-                ua->jcr, std::string_view{ua->cmd, static_cast<size_t>(len)});
-            p = strdup(escaped.c_str());
-            subst[n] = p;
+            if (!subst[n]) {
+              subst[n] = ua->db->EscapeString(ua->jcr, ua->cmd);
+            }
             olen = o - new_query;
-            new_query = CheckPoolMemorySize(new_query, olen + strlen(p) + 10);
+            new_query
+                = CheckPoolMemorySize(new_query, olen + subst[n]->size() + 10);
             o = new_query + olen;
-            while (*p) { *o++ = *p++; }
+            for (const char c : *subst[n]) { *o++ = c; }
           } else {
             ua->ErrorMsg(T_("Warning prompt %d missing.\n"), n + 1);
           }
@@ -222,9 +220,6 @@ static POOLMEM* substitute_prompts(UaContext* ua,
   o = new_query + olen;
   while (*q) { *o++ = *q++; }
   *o = 0;
-  for (i = 0; i < 9; i++) {
-    if (subst[i]) { free(subst[i]); }
-  }
   FreePoolMemory(query);
   return new_query;
 }
