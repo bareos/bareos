@@ -350,4 +350,22 @@ TEST(TreeBrowserRendering, SplitTreeAndPluginRowsAddsUpToTheTotal)
   }
 }
 
+TEST(TreeBrowserRendering, PluginOptionsInputDisplayTextShowsRealValue)
+{
+  EXPECT_EQ(
+      directordaemon::tree_browser_internal::PluginOptionsInputDisplayText(
+          "verbose=1"),
+      "verbose=1");
+}
+
+TEST(TreeBrowserRendering,
+     PluginOptionsInputDisplayTextShowsPlaceholderWhenEmpty)
+{
+  std::string placeholder
+      = directordaemon::tree_browser_internal::PluginOptionsInputDisplayText(
+          "");
+  EXPECT_FALSE(placeholder.empty());
+  EXPECT_NE(placeholder.find("verbose=1"), std::string::npos);
+}
+
 }  // namespace
