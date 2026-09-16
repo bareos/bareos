@@ -144,6 +144,7 @@ static bool GetApplicationName(const char* cmdline,
 
   if (pExtension == NULL) {
     // Try appending extensions
+    bool found = false;
     for (int index = 0;
          index < (int)(sizeof(ExtensionList) / sizeof(ExtensionList[0]));
          index++) {
@@ -154,14 +155,22 @@ static bool GetApplicationName(const char* cmdline,
         if (dwAltNameLength > 0 && dwAltNameLength <= MAX_PATHLENGTH) {
           memcpy(pPathname, pAltPathname, dwAltNameLength);
           pPathname[dwAltNameLength] = '\0';
+          found = true;
           break;
         }
       } else {
         bstrncpy(&pPathname[dwBasePathLength], ExtensionList[index],
                  MAX_PATHLENGTH - dwBasePathLength);
-        if (GetFileAttributes(pPathname) != INVALID_FILE_ATTRIBUTES) { break; }
+        if (GetFileAttributes(pPathname) != INVALID_FILE_ATTRIBUTES) {
+          found = true;
+          break;
+        }
         pPathname[dwBasePathLength] = '\0';
       }
+    }
+    if (!found) {
+      SetLastError(ERROR_FILE_NOT_FOUND);
+      return false;
     }
   } else if (!bHasPathSeparators) {
     // There are no path separators, search in the standard locations
@@ -171,6 +180,13 @@ static bool GetApplicationName(const char* cmdline,
       memcpy(pPathname, pAltPathname, dwAltNameLength);
       pPathname[dwAltNameLength] = '\0';
     }
+    if (GetFileAttributes(pPathname) == INVALID_FILE_ATTRIBUTES) {
+      SetLastError(ERROR_FILE_NOT_FOUND);
+      return false;
+    }
+  } else if (GetFileAttributes(pPathname) == INVALID_FILE_ATTRIBUTES) {
+    SetLastError(ERROR_FILE_NOT_FOUND);
+    return false;
   }
 
   if (strchr(pPathname, ' ') != NULL) {
@@ -514,6 +530,7 @@ Bpipe* OpenBpipe(const char* prog,
   return bpipe;
 
 cleanup:
+  const DWORD last_error = GetLastError();
 
   CloseHandleIfValid(hChildStdoutRd);
   CloseHandleIfValid(hChildStdoutWr);
@@ -523,7 +540,9 @@ cleanup:
   CloseHandleIfValid(hChildStdinWrDup);
 
   free((void*)bpipe);
-  errno = b_errno_win32; /* Do GetLastError() for error code */
+  errno = last_error == ERROR_FILE_NOT_FOUND || last_error == ERROR_PATH_NOT_FOUND
+              ? ENOENT
+              : b_errno_win32;
   return NULL;
 }
 
