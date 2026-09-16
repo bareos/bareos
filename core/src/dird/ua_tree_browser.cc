@@ -685,6 +685,7 @@ class TreeBrowser {
   void OpenSelectedFiles();
   void RebuildSelectedFiles();
   void ClampSelectedHorizontalOffset();
+  void ClampPluginHintsOffset();
   void CalculateEstimate();
   void InvalidateEstimate();
 
@@ -1437,6 +1438,21 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
   }
 }
 
+void TreeBrowser::ClampPluginHintsOffset()
+{
+  // A terminal resize can shrink the visible row count (or the list of
+  // rendered lines itself changes when toggling all/detected), so the
+  // current scroll offset may end up past the end of the content --
+  // clamp it back into range instead of leaving the panel blank.
+  std::vector<std::string> lines = plugin_hints_show_all_
+                                       ? BuildAllKnownPluginHintLines()
+                                       : DetectedPluginHintLines();
+  size_t visible_rows = MaxVisibleRows();
+  size_t max_offset
+      = lines.size() > visible_rows ? lines.size() - visible_rows : 0;
+  plugin_hints_offset_ = std::min(plugin_hints_offset_, max_offset);
+}
+
 bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
 {
   status_line_.clear();
@@ -1547,6 +1563,7 @@ TreeBrowserExit TreeBrowser::Run()
         if (new_width > 0) { ua_->terminal_width = new_width; }
       }
       ClampSearchHorizontalOffset();
+      ClampPluginHintsOffset();
       continue;
     }
 
