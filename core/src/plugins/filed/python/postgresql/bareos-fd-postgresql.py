@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 """
 bareos-fd-postgresql is a plugin to backup PostgreSQL clusters via non-exclusive backup mode
 """
+
 import os
 import io
 import json
@@ -38,7 +39,6 @@ from bareosfd import *
 
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 from BareosFdWrapper import *  # noqa
-
 
 try:
     import pg8000
@@ -427,7 +427,10 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.cluster_configuration_parameters["pg_ctl"] = os.path.join(
                 conf_dir, "pg_ctl.conf"
             )
-            self.cluster_configuration_parameters["environment"] = os.path.join(
+
+            # Note: pg_hba and pg_ident are already provided from pg_settings
+
+            self.cluster_configuration_parameters["start"] = os.path.join(
                 conf_dir, "start.conf"
             )
             # Also conf files present in config_dir/conf.d
@@ -440,7 +443,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                         os.path.join(conf_d_dir, item)
                     )
             # and finally the subdir & dir
-            self.cluster_configuration_parameters["conf_dir"] = os.path.join(
+            self.cluster_configuration_parameters["conf_d"] = os.path.join(
                 conf_dir, "conf.d"
             )
             self.cluster_configuration_parameters["conf_dir"] = os.path.join(
