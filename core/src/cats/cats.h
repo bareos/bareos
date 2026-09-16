@@ -44,6 +44,7 @@
 #include "lib/source_location.h"
 #include "lib/util.h"
 
+#include <algorithm>
 #include <bitset>
 #include <string>
 #include <string_view>
@@ -982,6 +983,18 @@ class BareosDb : public BareosDbQueryEnum {
     std::string output;
     if (!EscapeString(jcr, input, output)) { return {}; }
     return output;
+  }
+  void EscapeString(JobControlRecord* jcr,
+                    char* output,
+                    const char* input,
+                    int length)
+  {
+    std::string escaped;
+    if (!EscapeString(jcr, std::string_view(input, length), escaped)) {
+      output[0] = '\0';
+      return;
+    }
+    std::copy(escaped.c_str(), escaped.c_str() + escaped.size() + 1, output);
   }
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
