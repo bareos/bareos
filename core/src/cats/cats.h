@@ -530,6 +530,8 @@ class BareosDb : public BareosDbQueryEnum {
   }; /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
   int num_rows_ = 0; /**< Number of rows returned by last query */
+  bool sql_escape_failed_ = false;
+
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
@@ -971,8 +973,16 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
-  virtual std::string EscapeString(JobControlRecord* jcr, std::string_view old)
+  virtual bool EscapeString(JobControlRecord* jcr,
+                            std::string_view input,
+                            std::string& output)
       = 0;
+  std::string EscapeString(JobControlRecord* jcr, std::string_view input)
+  {
+    std::string output;
+    if (!EscapeString(jcr, input, output)) { return {}; }
+    return output;
+  }
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,
@@ -1002,6 +1012,13 @@ class BareosDb : public BareosDbQueryEnum {
   virtual SQL_ROW SqlFetchRow(void) = 0;
 
  protected:
+  bool ConsumeSqlEscapeError()
+  {
+    const bool failed = sql_escape_failed_;
+    sql_escape_failed_ = false;
+    return failed;
+  }
+
   enum class query_flag : size_t
   {
     DiscardResult,

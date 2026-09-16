@@ -53,7 +53,11 @@ bool BareosDb::AddDigestToFileRecord(JobControlRecord* jcr,
                                      int)
 {
   DbLocker _{this};
-  auto esc_digest = EscapeString(jcr, digest);
+  std::string esc_digest;
+  if (!EscapeString(jcr, digest, esc_digest)) {
+    ConsumeSqlEscapeError();
+    return false;
+  }
   Mmsg(cmd, "UPDATE File SET MD5='%s' WHERE FileId=%" PRIu64,
        esc_digest.c_str(), FileId);
 

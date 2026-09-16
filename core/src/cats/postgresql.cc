@@ -348,17 +348,19 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
 }
 
 // Escape strings so that PostgreSQL is happy
-std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
-                                             std::string_view str)
+bool BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
+                                      std::string_view str,
+                                      std::string& result)
 {
   DbLocker _{this};
   int error;
 
-  std::string result{};
+  result.clear();
   if (str.size() > (result.max_size() - 1) / 2) {
     Jmsg(jcr, M_FATAL, 0, T_("String too long to escape for PostgreSQL.\n"));
     Dmsg0(500, "PQescapeStringConn input too large\n");
-    return result;
+    sql_escape_failed_ = true;
+    return false;
   }
 
   result.resize(str.size() * 2 + 1);
@@ -371,11 +373,13 @@ std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
       string see PQescapeStringConn documentation for details. */
     Dmsg0(500, "PQescapeStringConn failed\n");
 
-    return {};
+    sql_escape_failed_ = true;
+    result.clear();
+    return false;
   }
 
   result.resize(byte_count);
-  return result;
+  return true;
 }
 
 /**
@@ -615,6 +619,11 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
                                                 query_flags flags)
 {
   CheckOwnership();
+  if (ConsumeSqlEscapeError()) {
+    Mmsg(errmsg, T_("Query skipped because SQL string escaping failed.\n"));
+    return false;
+  }
+
   auto result
       = postgres::try_query(db_handle_, try_reconnect_ && !transaction_, query);
   if (result) {
