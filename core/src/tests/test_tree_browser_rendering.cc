@@ -277,4 +277,48 @@ TEST(TreeBrowserRendering,
   EXPECT_TRUE(saw_unknown_hint_note);
 }
 
+TEST(TreeBrowserRendering, SummarizesPluginNamesEmptyWhenNoDefinitions)
+{
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions;
+  EXPECT_EQ(
+      directordaemon::tree_browser_internal::SummarizePluginNames(definitions),
+      "");
+}
+
+TEST(TreeBrowserRendering, SummarizesPluginNamesDeduplicatedAndJoined)
+{
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition bpipe1;
+  bpipe1.plugin_name = "bpipe";
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition bpipe2;
+  bpipe2.plugin_name = "bpipe";
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition python;
+  python.plugin_name = "python";
+
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions = {bpipe1, python, bpipe2};
+
+  EXPECT_EQ(
+      directordaemon::tree_browser_internal::SummarizePluginNames(definitions),
+      "bpipe, python");
+}
+
+TEST(TreeBrowserRendering, BuildsEmptyPluginOptionsAdvertisementWithoutPlugins)
+{
+  EXPECT_EQ(
+      directordaemon::tree_browser_internal::BuildPluginOptionsAdvertisement(
+          ""),
+      "");
+}
+
+TEST(TreeBrowserRendering, BuildsPluginOptionsAdvertisementWithPlugins)
+{
+  std::string advertisement
+      = directordaemon::tree_browser_internal::BuildPluginOptionsAdvertisement(
+          "bpipe");
+  EXPECT_NE(advertisement.find("bpipe"), std::string::npos);
+  EXPECT_NE(advertisement.find('p'), std::string::npos);
+  EXPECT_NE(advertisement.find('o'), std::string::npos);
+}
+
 }  // namespace
