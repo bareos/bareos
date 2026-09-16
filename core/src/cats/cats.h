@@ -873,7 +873,7 @@ class BareosDb : public BareosDbQueryEnum {
                     const CollapseMode collapse = CollapseMode::NoCollapse);
 
   void ListClientRecords(JobControlRecord* jcr,
-                         char* clientname,
+                         const char* clientname,
                          OutputFormatter* sendit,
                          e_list_type type);
   void ListCopiesRecords(JobControlRecord* jcr,
