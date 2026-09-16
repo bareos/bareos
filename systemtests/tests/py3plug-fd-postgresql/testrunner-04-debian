@@ -62,6 +62,8 @@ chown postgres:postgres /var/tmp/postgresql/wal_archives
   echo "log_statement = 'all'"
   echo "log_temp_files = 0"
 } >>/etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
+chown postgres: /etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
+chmod 0644 /etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
 pg_ctlcluster ${PG_VERSION} regress start
 
 # setup local database server
@@ -197,6 +199,8 @@ if ((${PG_VERSION} < 12)); then
   echo "${restore_command}" >>"${recovery_file}"
 else
   echo "${restore_command}" >>"/etc/postgresql/${PG_VERSION}/regress/conf.d/restore.conf"
+  # if the file is created 640 root:root then pg will complain it can't read it and will stop starting
+  chown postgres: "/etc/postgresql/${PG_VERSION}/regress/conf.d/restore.conf"
 fi
 
 pg_lsclusters ${PG_VERSION} regress
