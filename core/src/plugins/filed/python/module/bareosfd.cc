@@ -2034,7 +2034,7 @@ static PyObject* PyBareosAcceptFile(PyObject*, PyObject* args)
   }
 
   if (!IsNone(pSavePkt->statp)
-      && (PyObject_TypeCheck(pSavePkt->fname, &PyStatPacketType) != 0)) {
+      && (PyObject_TypeCheck(pSavePkt->statp, &PyStatPacketType) != 0)) {
     PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp.statp);
   } else {
     PyErr_SetString(PyExc_TypeError, "statp needs to be a PyStatPacket");
