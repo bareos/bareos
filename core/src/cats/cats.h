@@ -522,8 +522,6 @@ class BareosDb : public BareosDbQueryEnum {
   POOLMEM* fname = nullptr;    /**< Filename only */
   POOLMEM* path = nullptr;     /**< Path only */
   POOLMEM* cached_path = nullptr; /**< Cached path name */
-  POOLMEM* esc_name = nullptr;    /**< Escaped file name */
-  POOLMEM* esc_path = nullptr;    /**< Escaped path name */
   POOLMEM* esc_obj = nullptr;     /**< Escaped restore object */
   POOLMEM* cmd = nullptr;         /**< SQL command string */
   POOLMEM* errmsg = nullptr;      /**< Nicely edited error message */

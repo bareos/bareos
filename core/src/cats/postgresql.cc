@@ -152,8 +152,6 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   ref_count_ = 1;
   fname = GetPoolMemory(PM_FNAME);
   path = GetPoolMemory(PM_FNAME);
-  esc_name = GetPoolMemory(PM_FNAME);
-  esc_path = GetPoolMemory(PM_FNAME);
   esc_obj = GetPoolMemory(PM_FNAME);
   buf_ = GetPoolMemory(PM_FNAME);
   allow_transactions_ = mult_db_connections;
@@ -332,8 +330,6 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
     FreePoolMemory(cached_path);
     FreePoolMemory(fname);
     FreePoolMemory(path);
-    FreePoolMemory(esc_name);
-    FreePoolMemory(esc_path);
     FreePoolMemory(esc_obj);
     FreePoolMemory(buf_);
     if (db_driver_) { free(db_driver_); }
@@ -1044,9 +1040,12 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
+static std::string pgsql_copy_escape(const char* src, size_t len)
 {
   char c = '\0';
+
+  std::string result;
+  result.reserve(len);  // we will need at least len bytes
 
   while (len > 0 && *src) {
     switch (*src) {
@@ -1080,20 +1079,17 @@ static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
     }
 
     if (c) {
-      *dest = '\\';
-      dest++;
-      *dest = c;
+      result.push_back('\\');
+      result.push_back(c);
     } else {
-      *dest = *src;
+      result.push_back(*src);
     }
 
     len--;
     src++;
-    dest++;
   }
 
-  *dest = '\0';
-  return dest;
+  return result;
 }
 
 bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
@@ -1106,11 +1102,8 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   char ed1[50], ed2[50], ed3[50];
 
   CheckOwnership();
-  esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
-  pgsql_copy_escape(esc_name, fname, fnl);
-
-  esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
-  pgsql_copy_escape(esc_path, path, pnl);
+  auto esc_name = pgsql_copy_escape(fname, fnl);
+  auto esc_path = pgsql_copy_escape(path, pnl);
 
   if (ar->Digest == NULL || ar->Digest[0] == 0) {
     digest = "0";
@@ -1119,8 +1112,8 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   }
 
   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\t%s\t%s\n", ar->FileIndex,
-             edit_int64(ar->JobId, ed1), esc_path, esc_name, ar->attr, digest,
-             ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
+             edit_int64(ar->JobId, ed1), esc_path.c_str(), esc_name.c_str(),
+             ar->attr, digest, ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
              edit_uint64(ar->Fhnode, ed3));
 
   do {
