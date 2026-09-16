@@ -110,8 +110,8 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "r")
-                # config_file = open(self.options["filename"], "rb")
+                with open(self.options["filename"], "r") as config_file:
+                    lines = config_file.read().splitlines()
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -129,7 +129,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         if "deny" in self.options:
             self.deny = re.compile(self.options["deny"])
 
-        for listItem in config_file.read().splitlines():
+        for listItem in lines:
             if os.path.isfile(listItem) and self.filename_is_allowed(
                 listItem, self.allow, self.deny
             ):

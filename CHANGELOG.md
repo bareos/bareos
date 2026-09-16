@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui-vue: remove unneeded newlines in bareos-audit.log [PR #2761]
 - webui-proxy: fix not bashing console name [PR #2757]
 - matrix: add Fedora45 and fix OpenSSL 4 build errors in TLS/crypto code [PR #2797]
+- cats: escape client list filter [PR #2814]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -101,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: script btraceback support environment variable [PR #2771]
 - stored: fix segfault on missing Changer Command" [PR #2763]
 - hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2777]
+- bareosfd: fix misusing the python api [PR #2810]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2393,4 +2395,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2785]: https://github.com/bareos/bareos/pull/2785
 [PR #2797]: https://github.com/bareos/bareos/pull/2797
 [PR #2799]: https://github.com/bareos/bareos/pull/2799
+[PR #2810]: https://github.com/bareos/bareos/pull/2810
+[PR #2814]: https://github.com/bareos/bareos/pull/2814
 [unreleased]: https://github.com/bareos/bareos/tree/master
