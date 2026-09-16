@@ -28,6 +28,8 @@
 #include <string_view>
 #include <vector>
 
+#include "dird/restore_plugin_hints.h"
+
 struct tree_node;
 
 namespace directordaemon::tree_browser_internal {
@@ -71,6 +73,23 @@ bool IsTopLevelSelection(const tree_node* node);
 void SortDirectoriesFirst(std::vector<tree_node*>* nodes);
 
 std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes);
+
+// Renders detected "Plugin = ..." FileSet definitions (and their resolved
+// hints, if any) as plain text lines for the tree browser's plugin hints
+// panel. definitions and resolved_hints must be the same size (parallel
+// vectors, as produced by GatherPluginHints()).
+std::vector<std::string> BuildDetectedPluginHintLines(
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions,
+    const std::vector<
+        const directordaemon::restore_plugin_hints::PluginRestoreHint*>&
+        resolved_hints);
+
+// Renders every known plugin restore hint (sorted by display name) as
+// plain text lines -- the "show all known plugin hints" view.
+std::vector<std::string> BuildAllKnownPluginHintLines();
+
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {

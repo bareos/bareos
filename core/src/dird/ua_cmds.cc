@@ -91,6 +91,7 @@ extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
+extern bool DotPluginhintsCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotConsolesCmd(UaContext* ua, const char* cmd);
 extern bool DotUsersCmd(UaContext* ua, const char* cmd);
@@ -266,6 +267,9 @@ static struct ua_cmdstruct commands[] = {
      true, false},
     {NT_(".msgs"), DotMsgsCmd, T_("List all message resources"), NULL, false,
      false},
+    {NT_(".pluginhints"), DotPluginhintsCmd,
+     T_("List restore plugin option hints"),
+     NT_("[ fileset=<fileset-name> | jobid=<jobid> ]"), false, false},
     {NT_(".pools"), DotPoolsCmd, T_("List all pool resources"),
      NT_("type=<pooltype>"), true, false},
     {NT_(".profiles"), DotProfilesCmd, T_("List all profile resources"), NULL,
