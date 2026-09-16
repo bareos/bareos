@@ -63,7 +63,7 @@ namespace directordaemon {
 
 namespace {
 
-constexpr size_t kChromeLines = 8;
+constexpr size_t kChromeLines = 7;
 // Extra chrome lines needed when the split-screen Plugin Options pane is
 // shown below the file tree: one additional frame border separating the
 // two panes, plus the fixed Plugin Options input line.
@@ -559,14 +559,6 @@ using tree_browser_internal::SplitTreeAndPluginRows;
 using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::SummarizePluginNames;
 using tree_browser_internal::TextCellWidth;
-
-std::string MenuBar(size_t width, bool color)
-{
-  constexpr std::string_view menu
-      = " Restore  Mark  View  Search  Command  Help";
-  std::string line = FitText(menu, width);
-  return color ? "\033[1;36m" + line + "\033[0m\n" : line + "\n";
-}
 
 std::string FrameBorder(size_t width,
                         bool color,
@@ -1152,7 +1144,6 @@ std::string TreeBrowser::RenderPanel() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
 
   // Once a plugin backup is detected, the screen is split: the file tree
   // keeps the top half and a Plugin Options pane (input line + scrollable
@@ -1170,8 +1161,8 @@ std::string TreeBrowser::RenderPanel() const
   std::string tree_title = "Restore selection";
   if (split) { tree_title = (plugin_pane_focused_ ? "  " : "> ") + tree_title; }
   bool tree_focused = split && !plugin_pane_focused_;
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, tree_title,
-                     tree_focused);
+  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop,
+                                tree_title, tree_focused);
 
   POOLMEM* cwd = tree_getpath(tree_->node);
   std::string path = " Path: ";
@@ -1282,8 +1273,7 @@ std::string TreeBrowser::RenderSearchInput() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Search");
+  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, "Search");
   out += FrameLine(width, " Fulltext substring search of the restore tree",
                    color);
   out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
@@ -1303,8 +1293,8 @@ std::string TreeBrowser::RenderSearchResults() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Search results");
+  std::string out
+      = FrameBorder(width, color, FrameBorderStyle::kTop, "Search results");
 
   std::string query = " Search: \"" + search_term_ + "\"";
   if (search_truncated_) {
@@ -1362,8 +1352,8 @@ std::string TreeBrowser::RenderSelectedFiles() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Selected files");
+  std::string out
+      = FrameBorder(width, color, FrameBorderStyle::kTop, "Selected files");
   out += FrameLine(
       width,
       " Top-level selections; marked directories include their descendants",
@@ -1420,8 +1410,7 @@ std::string TreeBrowser::RenderHelp() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Help");
+  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, "Help");
 
   constexpr std::string_view lines[] = {
       " Navigation",
@@ -1522,10 +1511,10 @@ std::string TreeBrowser::RenderPluginHints() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, FrameBorderStyle::kTop,
-                     plugin_hints_show_all_ ? "All known plugin hints"
-                                            : "Plugin hints for this restore");
+  std::string out
+      = FrameBorder(width, color, FrameBorderStyle::kTop,
+                    plugin_hints_show_all_ ? "All known plugin hints"
+                                           : "Plugin hints for this restore");
 
   std::vector<std::string> lines = plugin_hints_show_all_
                                        ? BuildAllKnownPluginHintLines()
