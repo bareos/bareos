@@ -319,10 +319,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
              || jr->JobLevel == L_VERIFY_DISK_TO_CATALOG
              || jr->JobType == JT_BACKUP) {
     if (Name) {
-      auto esc_jobname = EscapeString(
-          jcr,
-          std::string_view{Name, static_cast<size_t>(MIN(
-                                     strlen(Name), MAX_ESCAPE_NAME_LENGTH))});
+      auto esc_jobname = EscapeString(jcr, Name);
       Mmsg(
           cmd,
           "SELECT JobId FROM Job WHERE Type='B' AND JobStatus IN ('T','W') AND "

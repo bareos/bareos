@@ -234,7 +234,6 @@ static int DeleteIdList(const char* query, ID_LIST* t_id_list)
 static void eliminate_duplicate_paths()
 {
   const char* query;
-  std::string esc_name;
 
   printf(T_("Checking for duplicate Path entries.\n"));
   fflush(stdout);
@@ -255,9 +254,7 @@ static void eliminate_duplicate_paths()
     // Loop through list of duplicate names
     for (int i = 0; i < name_list.num_ids; i++) {
       // Get all the Ids of each name
-      size_t name_len = strlen(name_list.name[i]);
-      esc_name = db->EscapeString(
-          nullptr, std::string_view{name_list.name[i], name_len});
+      auto esc_name = db->EscapeString(nullptr, name_list.name[i]);
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name.c_str());
       if (!MakeIdList(db, buf, &id_list)) { exit(BEXIT_FAILURE); }
