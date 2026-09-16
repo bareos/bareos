@@ -50,6 +50,32 @@ export function resolveJobLogFocus(status) {
   return ''
 }
 
+// A backup is considered "successful" for the purpose of a client's
+// failure streak when it completed OK or completed with warnings -- both
+// stop the streak count, since a warning-only backup is still a usable
+// restore point, unlike an Error/Fatal/Canceled/unknown-status job.
+export function isStreakSuccessJobStatus(status) {
+  return isOkJobStatus(status) || isWarningJobStatus(status)
+}
+
+// Counts how many of a single client's backup jobs, ordered newest first,
+// failed in a row since (i.e. more recent than) its last successful
+// backup. Stops counting at -- and does not include -- the first job
+// that isStreakSuccessJobStatus(). If no successful job is found at all
+// in the given (newest-first) list, every job in it is counted as part
+// of the streak: this is a lower bound (the real streak may be longer
+// than what was fetched), but it's still a failure, never "unknown".
+export function consecutiveFailedJobsSinceSuccess(jobsNewestFirst) {
+  if (!Array.isArray(jobsNewestFirst)) return 0
+
+  let count = 0
+  for (const job of jobsNewestFirst) {
+    if (isStreakSuccessJobStatus(job?.status)) break
+    count++
+  }
+  return count
+}
+
 // Classify a single job log line by severity, for highlighting and for
 // extracting error/warning lines (e.g. Trouble View widget, Job Details
 // log highlighting). Order matters: the "0 errors/warnings" summary guard
