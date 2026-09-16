@@ -221,23 +221,23 @@ describe('settings store', () => {
   it('persists and restores the client backup warning threshold', async () => {
     const settings = useSettingsStore()
 
-    settings.clientBackupWarningDays = 3
+    settings.clientBackupWarningFailedJobs = 3
 
     await nextTick()
 
     expect(JSON.parse(localStorage.getItem('bareos_settings'))).toEqual(
       expect.objectContaining({
-        clientBackupWarningDays: 3,
+        clientBackupWarningFailedJobs: 3,
       })
     )
 
     localStorage.setItem('bareos_settings', JSON.stringify({
-      clientBackupWarningDays: 7,
+      clientBackupWarningFailedJobs: 7,
     }))
 
     setActivePinia(createPinia())
     const restored = useSettingsStore()
-    expect(restored.clientBackupWarningDays).toBe(7)
+    expect(restored.clientBackupWarningFailedJobs).toBe(7)
   })
 
   it('exportSettings() excludes login-only and obsolete restore defaults', () => {
@@ -253,7 +253,7 @@ describe('settings store', () => {
       refreshInterval: settings.refreshInterval,
       darkMode: settings.darkMode,
       directorName: settings.directorName,
-      clientBackupWarningDays: settings.clientBackupWarningDays,
+      clientBackupWarningFailedJobs: settings.clientBackupWarningFailedJobs,
     }))
   })
 
@@ -264,7 +264,7 @@ describe('settings store', () => {
     settings.setSelectedDirectors(['dir-a', 'dir-b'])
     settings.setTableRowsPerPage('jobs.list', 42)
     settings.setTableSort('jobs.defs', { sortBy: 'name', descending: false })
-    settings.clientBackupWarningDays = 4
+    settings.clientBackupWarningFailedJobs = 4
     const snapshot = settings.exportSettings()
 
     // Change everything, then restore from the snapshot.
@@ -273,7 +273,7 @@ describe('settings store', () => {
     settings.setSelectedDirectors(['other-dir'])
     settings.setTableRowsPerPage('jobs.list', 5)
     settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
-    settings.clientBackupWarningDays = 9
+    settings.clientBackupWarningFailedJobs = 9
 
     settings.importSettings(snapshot)
 
@@ -283,7 +283,7 @@ describe('settings store', () => {
     expect(settings.getTableRowsPerPage('jobs.list', 0)).toBe(42)
     expect(settings.getTableSort('jobs.defs', {}))
       .toEqual({ sortBy: 'name', descending: false })
-    expect(settings.clientBackupWarningDays).toBe(4)
+    expect(settings.clientBackupWarningFailedJobs).toBe(4)
   })
 
   it('importSettings() leaves unspecified fields untouched and rejects non-object data', () => {

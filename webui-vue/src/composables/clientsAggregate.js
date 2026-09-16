@@ -132,7 +132,11 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
       client.call('llist clients'),
       client.call('.clients'),
       client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
-      client.call('status scheduler days=-31,1'),
+      // Scheduler preview data is only needed by callers that still consume
+      // `scheduledBackups` (e.g. RestorePage.vue); a failure here (e.g. an
+      // ACL restriction) must not fail the whole director's clients/recent
+      // backups aggregate for callers that don't need it (e.g. ClientsPage.vue).
+      client.call('status scheduler days=-31,1').catch(() => null),
     ])
 
     const enabledMap = Object.fromEntries(
