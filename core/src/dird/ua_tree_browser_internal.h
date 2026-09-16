@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "dird/restore_plugin_hints.h"
@@ -107,6 +108,13 @@ std::string SummarizePluginNames(
 std::string BuildPluginOptionsAdvertisement(
     std::string_view plugin_names_summary);
 
+// Splits the body's line budget (as returned by the browser's
+// MaxVisibleRows()) between the file tree (top) and the Plugin Options
+// pane (bottom) for the split-screen layout shown once a plugin backup
+// is detected. Returns {tree_rows, plugin_rows}; the tree gets the
+// extra row on an odd split. plugin_rows is 0 when there's no room for
+// a second pane (total_rows == 0).
+std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows);
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
