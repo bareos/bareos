@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 struct tree_node;
 
@@ -66,6 +67,8 @@ std::string StyleFrameContent(std::string content,
                               bool color);
 
 bool IsTopLevelSelection(const tree_node* node);
+
+void SortDirectoriesFirst(std::vector<tree_node*>* nodes);
 
 std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes);
 
