@@ -23,6 +23,23 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useDirectorStore } from './director.js'
 
+// The Bareos documentation base URL. dird's ".pluginhints" emits
+// manual paths relative to this (e.g. "TasksAndConcepts/Plugins.html#..."),
+// matching the pre-refactor static data/restorePluginHints.js dataset.
+const manualBaseUrl = 'https://docs.bareos.org/master'
+
+function resolveManualUrl(manualUrl) {
+  const path = String(manualUrl ?? '').trim()
+  if (!path) {
+    return ''
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    // Already an absolute URL (e.g. a custom http(s):// link).
+    return path
+  }
+  return `${manualBaseUrl}/${path}`
+}
+
 // Converts one ".pluginhints" hint object (as emitted by dird's
 // EmitPluginRestoreHintFields(), all-lowercase JSON keys) into the
 // camelCase shape the frontend (restore.js / PluginRestoreInfoPanel.vue)
@@ -36,7 +53,7 @@ function normalizeHint(rawHint) {
 
   return [id, {
     displayName: rawHint?.displayname ?? '',
-    manualUrl: rawHint?.manualurl ?? '',
+    manualUrl: resolveManualUrl(rawHint?.manualurl),
     optionSeparator: rawHint?.optionseparator || ':',
     note: rawHint?.note ?? '',
     supportLevel: rawHint?.supportlevel || 'bareos',
@@ -70,7 +87,15 @@ export const usePluginHintsStore = defineStore('pluginHints', () => {
   const loading = ref(false)
   const error = ref(null)
 
+  // Bumped on every reset()/disconnect so a stale in-flight refresh()
+  // (from a request started before a reset or director switch) can
+  // detect it is no longer current and avoid clobbering newer state.
+  let requestToken = 0
+  let pendingRefresh = null
+
   function reset() {
+    requestToken += 1
+    pendingRefresh = null
     hintsById.value = null
     loading.value = false
     error.value = null
@@ -83,24 +108,46 @@ export const usePluginHintsStore = defineStore('pluginHints', () => {
       return null
     }
 
+    const token = ++requestToken
     loading.value = true
     error.value = null
-    try {
-      const response = await director.call('.pluginhints')
-      hintsById.value = normalizePluginHintsResponse(response)
-      return hintsById.value
-    } catch (e) {
-      hintsById.value = null
-      error.value = e.message
-      return null
-    } finally {
-      loading.value = false
-    }
+    const promise = (async () => {
+      try {
+        const response = await director.call('.pluginhints')
+        if (token !== requestToken) {
+          // A reset/disconnect happened while this request was in
+          // flight; discard the result instead of overwriting newer
+          // (or reset) state.
+          return hintsById.value
+        }
+        hintsById.value = normalizePluginHintsResponse(response)
+        return hintsById.value
+      } catch (e) {
+        if (token !== requestToken) {
+          return hintsById.value
+        }
+        hintsById.value = null
+        error.value = e.message
+        return null
+      } finally {
+        if (token === requestToken) {
+          loading.value = false
+        }
+        if (pendingRefresh === promise) {
+          pendingRefresh = null
+        }
+      }
+    })()
+    pendingRefresh = promise
+    return promise
   }
 
   async function ensureLoaded() {
-    if (hintsById.value || loading.value) {
+    if (hintsById.value) {
       return hintsById.value
+    }
+    if (pendingRefresh) {
+      return pendingRefresh
     }
     return refresh()
   }
