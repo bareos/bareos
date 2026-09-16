@@ -327,6 +327,74 @@ std::string FormatDetailColumns(std::string_view size,
   return size_column + "  " + FitText(modified, kDetailTimeWidth, 0, false);
 }
 
+std::string RenderFrameBorder(size_t width,
+                              FrameBorderStyle style,
+                              std::string_view title)
+{
+  std::string_view left;
+  std::string_view right;
+  switch (style) {
+    case FrameBorderStyle::kTop:
+      left = "┌";
+      right = "┐";
+      break;
+    case FrameBorderStyle::kMiddle:
+      left = "├";
+      right = "┤";
+      break;
+    case FrameBorderStyle::kBottom:
+      left = "└";
+      right = "┘";
+      break;
+  }
+
+  if (width == 0) { return {}; }
+  if (width == 1) { return std::string(left); }
+
+  size_t inner_width = width - 2;
+  std::string content;
+  if (!title.empty() && TextCellWidth(title) + 3 <= inner_width) {
+    content = "─ ";
+    content += title;
+    content += " ";
+  }
+  while (TextCellWidth(content) < inner_width) { content += "─"; }
+  return std::string(left) + FitText(content, inner_width, 0, false)
+         + std::string(right);
+}
+
+std::string StyleFrameContent(std::string content,
+                              char mark,
+                              bool highlighted,
+                              bool color)
+{
+  if (!color) { return content; }
+  if (highlighted) { return "\033[7;36m" + content + "\033[0m"; }
+
+  if (mark == '*' && content.size() > 2) {
+    content.insert(3, "\033[39m");
+    content.insert(2, "\033[32m");
+    return "\033[1m" + content + "\033[0m";
+  }
+  if (mark == '+' && content.size() > 2) {
+    content.insert(3, "\033[0m");
+    content.insert(2, "\033[1;33m");
+  }
+  return content;
+}
+
+bool IsTopLevelSelection(const tree_node* node)
+{
+  if (!node || !node->extract || node->type == tree_node_type::Root) {
+    return false;
+  }
+  for (const tree_node* parent = node->parent; parent;
+       parent = parent->parent) {
+    if (parent->extract) { return false; }
+  }
+  return true;
+}
+
 }  // namespace tree_browser_internal
 
 namespace {
@@ -335,8 +403,12 @@ using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::CaseFoldForSearch;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
+using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::MaxHorizontalOffset;
 using tree_browser_internal::RemoveLastUtf8Character;
+using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::TextCellWidth;
 
 std::string MenuBar(size_t width, bool color)
@@ -349,20 +421,10 @@ std::string MenuBar(size_t width, bool color)
 
 std::string FrameBorder(size_t width,
                         bool color,
-                        char fill = '-',
+                        FrameBorderStyle style,
                         std::string_view title = {})
 {
-  if (width < 2) { return std::string(width, fill) + "\n"; }
-
-  std::string content(width - 2, fill);
-  if (!title.empty() && content.size() >= 4) {
-    std::string label = " " + std::string(title) + " ";
-    label = FitText(label, content.size());
-    size_t label_length
-        = std::min(label.find_last_not_of(' ') + 1, content.size());
-    content.replace(1, label_length, label, 0, label_length);
-  }
-  std::string line = "+" + content + "+";
+  std::string line = RenderFrameBorder(width, style, title);
   return color ? "\033[2;36m" + line + "\033[0m\n" : line + "\n";
 }
 
@@ -375,19 +437,10 @@ std::string FrameLine(size_t width,
   if (width < 2) { return FitText(text, width) + "\n"; }
 
   std::string content = FitText(text, width - 2);
-  if (color && !highlighted && mark != ' ' && content.size() > 2) {
-    const char* mark_color = mark == '*' ? "\033[32m" : "\033[1;33m";
-    content.insert(3, "\033[0m");
-    content.insert(2, mark_color);
-  }
+  content = StyleFrameContent(std::move(content), mark, highlighted, color);
 
-  std::string border = color ? "\033[2;36m|\033[0m" : "|";
-  std::string line = border;
-  if (highlighted && color) { line += "\033[7;36m"; }
-  line += content;
-  if (highlighted && color) { line += "\033[0m"; }
-  line += border + "\n";
-  return line;
+  std::string border = color ? "\033[2;36m│\033[0m" : "│";
+  return border + content + border + "\n";
 }
 
 std::string StatusBar(size_t width, std::string_view text, bool color)
@@ -536,20 +589,26 @@ class TreeBrowser {
   void JumpToSearchMatch(tree_node* node);
   void RunSearch();
   void ClampSearchHorizontalOffset();
+  void OpenSelectedFiles();
+  void RebuildSelectedFiles();
+  void ClampSelectedHorizontalOffset();
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
   size_t SearchHorizontalLimit() const;
+  size_t SelectedHorizontalLimit() const;
   size_t MaxVisibleRows(bool detail_header = false) const;
   std::string RenderPanel() const;
   std::string RenderSearchInput() const;
   std::string RenderSearchResults() const;
+  std::string RenderSelectedFiles() const;
 
   // Handles one "key:*" event. Sets *exit_reason and returns true when the
   // browser loop should stop (the user left the browser entirely).
   bool HandleKey(std::string_view key, TreeBrowserExit* exit_reason);
   bool HandleSearchInputKey(std::string_view key);
   void HandleSearchResultsKey(std::string_view key);
+  void HandleSelectedFilesKey(std::string_view key);
 
   UaContext* ua_;
   TreeContext* tree_;
@@ -568,6 +627,13 @@ class TreeBrowser {
   bool search_truncated_ = false;
   size_t search_cursor_ = 0;
   size_t search_horizontal_offset_ = 0;
+
+  bool showing_selected_files_ = false;
+  std::vector<tree_node*> selected_nodes_;
+  std::vector<std::string> selected_paths_;
+  size_t selected_max_path_length_ = 0;
+  size_t selected_cursor_ = 0;
+  size_t selected_horizontal_offset_ = 0;
 
   std::string status_line_;
 };
@@ -670,6 +736,51 @@ void TreeBrowser::ClampSearchHorizontalOffset()
       = std::min(search_horizontal_offset_, SearchHorizontalLimit());
 }
 
+void TreeBrowser::OpenSelectedFiles()
+{
+  RebuildSelectedFiles();
+  showing_selected_files_ = true;
+}
+
+void TreeBrowser::RebuildSelectedFiles()
+{
+  tree_node* previous = selected_cursor_ < selected_nodes_.size()
+                            ? selected_nodes_[selected_cursor_]
+                            : nullptr;
+  selected_nodes_.clear();
+  selected_paths_.clear();
+  selected_max_path_length_ = 0;
+
+  for (tree_node* node = FirstTreeNode(tree_->root); node;
+       node = NextTreeNode(node)) {
+    if (!IsTopLevelSelection(node)) { continue; }
+
+    POOLMEM* path = tree_getpath(node);
+    selected_nodes_.push_back(node);
+    selected_paths_.emplace_back(path ? path
+                                      : (node->fname ? node->fname : ""));
+    selected_max_path_length_ = std::max(selected_max_path_length_,
+                                         TextCellWidth(selected_paths_.back()));
+    if (path) { FreePoolMemory(path); }
+  }
+
+  auto previous_it
+      = std::find(selected_nodes_.begin(), selected_nodes_.end(), previous);
+  if (previous_it != selected_nodes_.end()) {
+    selected_cursor_
+        = static_cast<size_t>(previous_it - selected_nodes_.begin());
+  } else if (selected_cursor_ >= selected_nodes_.size()) {
+    selected_cursor_ = selected_nodes_.empty() ? 0 : selected_nodes_.size() - 1;
+  }
+  ClampSelectedHorizontalOffset();
+}
+
+void TreeBrowser::ClampSelectedHorizontalOffset()
+{
+  selected_horizontal_offset_
+      = std::min(selected_horizontal_offset_, SelectedHorizontalLimit());
+}
+
 size_t TreeBrowser::MaxVisibleRows(bool detail_header) const
 {
   if (ua_->terminal_height <= 0) { return kDefaultVisibleRows; }
@@ -702,12 +813,19 @@ size_t TreeBrowser::SearchHorizontalLimit() const
   return MaxHorizontalOffset(search_max_path_length_, path_width);
 }
 
+size_t TreeBrowser::SelectedHorizontalLimit() const
+{
+  size_t path_width = SearchPathWidth();
+  if (path_width == 0 || selected_paths_.empty()) { return 0; }
+  return MaxHorizontalOffset(selected_max_path_length_, path_width);
+}
+
 std::string TreeBrowser::RenderPanel() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
   std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, '-', "Restore selection");
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Restore selection");
 
   POOLMEM* cwd = tree_getpath(tree_->node);
   std::string path = " Path: ";
@@ -719,7 +837,7 @@ std::string TreeBrowser::RenderPanel() const
         "    Name", FormatDetailColumns("Size", "Modified"), width - 2);
     out += FrameLine(width, headings, color);
   }
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
 
   size_t marked = 0;
   for (const tree_node* node : rows_) {
@@ -752,7 +870,7 @@ std::string TreeBrowser::RenderPanel() const
       out += FrameLine(width, "", color);
     }
   }
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
 
   std::string status;
   if (!status_line_.empty()) { status = " " + status_line_ + " | "; }
@@ -764,10 +882,11 @@ std::string TreeBrowser::RenderPanel() const
               + std::to_string(last) + " of " + std::to_string(rows_.size());
   }
   out += StatusBar(width, status, color);
+  out += HelpLine(width,
+                  " Enter Open  Space Mark  a All  u None  i Info  m Selected",
+                  color);
   out += HelpLine(
-      width, " Enter Open  Space Mark  a All  u None  i Info  / Search", color);
-  out += HelpLine(
-      width, " Arrows Move  Left Parent  : Command  c Classic  q Done", color);
+      width, " Arrows Move  Left Parent  / Search  c Classic  q Done", color);
   return out;
 }
 
@@ -776,15 +895,15 @@ std::string TreeBrowser::RenderSearchInput() const
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
   std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, '-', "Search");
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Search");
   out += FrameLine(width, " Fulltext substring search of the restore tree",
                    color);
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
   out += FrameLine(width, " Search: " + search_term_, color);
   for (size_t row = 1; row < MaxVisibleRows(); ++row) {
     out += FrameLine(width, "", color);
   }
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Enter starts search | Esc returns to files", color);
   out += HelpLine(width, " Type search text  Backspace Delete  Enter Search",
                   color);
@@ -797,14 +916,14 @@ std::string TreeBrowser::RenderSearchResults() const
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
   std::string out = MenuBar(width, color);
-  out += FrameBorder(width, color, '-', "Search results");
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Search results");
 
   std::string query = " Search: \"" + search_term_ + "\"";
   if (search_truncated_) {
     query += " (first " + std::to_string(kMaxSearchMatches) + " matches)";
   }
   out += FrameLine(width, query, color);
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
 
   size_t max_visible = MaxVisibleRows();
   size_t first
@@ -832,7 +951,7 @@ std::string TreeBrowser::RenderSearchResults() const
       out += FrameLine(width, "", color);
     }
   }
-  out += FrameBorder(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
 
   std::string status = " Matches: " + std::to_string(search_matches_.size());
   status += " | Column: " + std::to_string(search_horizontal_offset_ + 1);
@@ -845,6 +964,61 @@ std::string TreeBrowser::RenderSearchResults() const
   out += HelpLine(width, " Up/Down Move  Left/Right Scroll  Home/End Edges",
                   color);
   out += HelpLine(width, " Space Mark  Enter Go to file  Esc Return", color);
+  return out;
+}
+
+std::string TreeBrowser::RenderSelectedFiles() const
+{
+  size_t width = ScreenWidth();
+  bool color = ua_->supports_color;
+  std::string out = MenuBar(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Selected files");
+  out += FrameLine(
+      width,
+      " Top-level selections; marked directories include their descendants",
+      color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
+
+  size_t max_visible = MaxVisibleRows();
+  size_t first = selected_cursor_ > max_visible / 2
+                     ? selected_cursor_ - max_visible / 2
+                     : 0;
+  if (!selected_nodes_.empty()) {
+    first
+        = std::min(first, selected_nodes_.size()
+                              - std::min(selected_nodes_.size(), max_visible));
+  }
+  size_t last = std::min(selected_nodes_.size(), first + max_visible);
+
+  for (size_t row = 0; row < max_visible; ++row) {
+    size_t i = first + row;
+    if (i < last) {
+      bool highlighted = i == selected_cursor_;
+      std::string entry = highlighted ? "> *" : "  *";
+      entry += FitText(selected_paths_[i], SearchPathWidth(),
+                       selected_horizontal_offset_, false);
+      out += FrameLine(width, entry, color, highlighted, '*');
+    } else if (selected_nodes_.empty() && row == 0) {
+      out += FrameLine(width, "  (no files selected)", color);
+    } else {
+      out += FrameLine(width, "", color);
+    }
+  }
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+
+  std::string status
+      = " Top-level selections: " + std::to_string(selected_nodes_.size());
+  status += " | Column: " + std::to_string(selected_horizontal_offset_ + 1);
+  if (!selected_nodes_.empty()) {
+    status += " | Showing " + std::to_string(first + 1) + "-"
+              + std::to_string(last) + " of "
+              + std::to_string(selected_nodes_.size());
+  }
+  out += StatusBar(width, status, color);
+  out += HelpLine(width, " Up/Down Move  Left/Right Scroll  Home/End Edges",
+                  color);
+  out += HelpLine(width, " Space Unmark  Enter Go to file  m/Esc Return",
+                  color);
   return out;
 }
 
@@ -904,10 +1078,48 @@ void TreeBrowser::HandleSearchResultsKey(std::string_view key)
   }
 }
 
+void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
+{
+  if (key == "key:up") {
+    if (selected_cursor_ > 0) { selected_cursor_--; }
+  } else if (key == "key:down") {
+    if (selected_cursor_ + 1 < selected_nodes_.size()) { selected_cursor_++; }
+  } else if (key == "key:left") {
+    selected_horizontal_offset_
+        = selected_horizontal_offset_ > kHorizontalScrollColumns
+              ? selected_horizontal_offset_ - kHorizontalScrollColumns
+              : 0;
+  } else if (key == "key:right") {
+    selected_horizontal_offset_
+        = std::min(SelectedHorizontalLimit(),
+                   selected_horizontal_offset_ + kHorizontalScrollColumns);
+  } else if (key == "key:home") {
+    selected_horizontal_offset_ = 0;
+  } else if (key == "key:end") {
+    selected_horizontal_offset_ = SelectedHorizontalLimit();
+  } else if (key == "key:space") {
+    if (selected_cursor_ < selected_nodes_.size()) {
+      SetExtract(ua_, selected_nodes_[selected_cursor_], tree_, false);
+      RebuildSelectedFiles();
+    }
+  } else if (key == "key:enter") {
+    if (selected_cursor_ < selected_nodes_.size()) {
+      JumpToSearchMatch(selected_nodes_[selected_cursor_]);
+      showing_selected_files_ = false;
+    }
+  } else if (key == "key:text:m" || key == "key:cancel") {
+    showing_selected_files_ = false;
+  }
+}
+
 bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
 {
   status_line_.clear();
 
+  if (showing_selected_files_) {
+    HandleSelectedFilesKey(key);
+    return false;
+  }
   if (showing_search_results_) {
     HandleSearchResultsKey(key);
     return false;
@@ -930,6 +1142,8 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     MarkAllInDirectory(false);
   } else if (key == "key:text:i") {
     detail_view_ = !detail_view_;
+  } else if (key == "key:text:m") {
+    OpenSelectedFiles();
   } else if (key == "key:text:/") {
     entering_search_term_ = true;
     search_term_.clear();
@@ -962,9 +1176,10 @@ TreeBrowserExit TreeBrowser::Run()
   TreeBrowserExit exit_reason = TreeBrowserExit::kDone;
 
   for (;;) {
-    std::string screen = showing_search_results_ ? RenderSearchResults()
-                         : entering_search_term_ ? RenderSearchInput()
-                                                 : RenderPanel();
+    std::string screen = showing_selected_files_   ? RenderSelectedFiles()
+                         : showing_search_results_ ? RenderSearchResults()
+                         : entering_search_term_   ? RenderSearchInput()
+                                                   : RenderPanel();
 
     user->signal(BNET_START_SELECT);
     ua_->SendMsg("%s", screen.c_str());
