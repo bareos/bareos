@@ -302,6 +302,7 @@
                 <PluginRestoreInfoPanel
                   :plugin-restore-info="pluginRestoreInfo"
                   :plugin-hints="pluginHints"
+                  :all-plugin-hints="allPluginHints"
                 />
               </q-card-section>
             </q-card>
@@ -747,6 +748,7 @@ import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { usePluginHintsStore } from '../stores/pluginHints.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes } from '../mock/index.js'
 import { formatSqlRelativeTime } from '../utils/locales.js'
@@ -769,6 +771,7 @@ import {
   getRestoreVersionsLookupJobId,
   getRestorePluginInfo,
   getRestorePluginHints,
+  getAllRestorePluginHints,
   getRestoreBrowserPlaceholder,
   hasRestoreFullBackupInChain,
   pushRestoreBreadcrumb,
@@ -790,6 +793,7 @@ import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
+const pluginHintsStore = usePluginHintsStore()
 const settings = useSettingsStore()
 const route    = useRoute()
 const router   = useRouter()
@@ -1496,7 +1500,8 @@ const pluginRestoreInfo = computed(() => getRestorePluginInfo({
   mergedJobids: mergedJobids.value,
   mergeJobs: form.value.mergeJobs,
 }))
-const pluginHints = computed(() => getRestorePluginHints(pluginRestoreInfo.value))
+const pluginHints = computed(() => getRestorePluginHints(pluginRestoreInfo.value, pluginHintsStore.hints))
+const allPluginHints = computed(() => getAllRestorePluginHints(pluginHintsStore.hints))
 const pluginOptionsPlaceholder = computed(() => {
   const example = pluginHints.value[0]?.example
   if (example) {
@@ -1567,9 +1572,10 @@ async function loadBackups(client) {
     const [r, filesets] = await Promise.all([
       director.call(`llist backups client=${quoteDirectorString(client.name)}`),
       director.call('list filesets').catch(() => null),
+      pluginHintsStore.ensureLoaded().catch(() => null),
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
-    pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)
+    pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets, pluginHintsStore.hints)
     backups.value = decorateRestoreBackupsWithPluginJobs(
       directorCollection(r?.backups),
       pluginFilesetFlags
