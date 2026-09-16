@@ -37,6 +37,7 @@ constexpr int kVkLeft = 0x25;
 constexpr int kVkUp = 0x26;
 constexpr int kVkRight = 0x27;
 constexpr int kVkDown = 0x28;
+constexpr int kVkTab = 0x09;
 
 std::string EncodeUtf8(char32_t codepoint)
 {
@@ -188,11 +189,15 @@ std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
       return "key:backspace";
     case kVkEscape:
       return "key:cancel";
+    case kVkTab:
+      return "key:tab";
     default:
       break;
   }
 
   if (unicode_char == L' ') { return "key:space"; }
+
+  if (unicode_char == L'\t') { return "key:tab"; }
 
   if (unicode_char >= 0x20 && unicode_char <= 0x7e) {
     std::string event = "key:text:";

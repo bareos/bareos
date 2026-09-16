@@ -513,7 +513,7 @@ std::string BuildPluginOptionsAdvertisement(
   if (plugin_names_summary.empty()) { return ""; }
   std::string out = "Plugin backup detected (";
   out += plugin_names_summary;
-  out += ") -- p Hints  o Set Plugin Options";
+  out += ") -- Tab Set Plugin Options  p Hints";
   return out;
 }
 
@@ -1300,7 +1300,7 @@ std::string TreeBrowser::RenderHelp() const
       "   :                Run one classic selection command",
       "   c                Switch to classic selection mode",
       "   p                Show restore plugin hints",
-      "   o                Set Plugin Options (when a plugin is detected)",
+      "   o, Tab           Set Plugin Options (when a plugin is detected)",
       "",
       " Exit",
       "   q                Finish file selection",
@@ -1412,15 +1412,12 @@ std::string TreeBrowser::RenderPluginOptionsInput() const
   std::vector<std::string> hint_lines = DetectedPluginHintLines();
 
   out += FrameBorder(width, color, FrameBorderStyle::kTop, "Plugin Options");
-  out += FrameLine(width,
-                   " This restore uses a plugin -- reference below, "
-                   "enter Plugin Options if needed",
-                   color);
+  out += FrameLine(width, " Options: " + plugin_options_input_, color);
   out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
 
-  // Reserve the last row of the body for the (fixed, non-scrolling) input
-  // line, so the hint/reference text above it stays visible together with
-  // the field the user is filling in.
+  // The input line is fixed at the top (just below the frame's top
+  // border), so the reference/hint text below it can scroll freely
+  // without ever obscuring the field the user is filling in.
   size_t visible_rows = MaxVisibleRows();
   size_t hint_rows = visible_rows > 1 ? visible_rows - 1 : 0;
   size_t max_offset
@@ -1430,13 +1427,13 @@ std::string TreeBrowser::RenderPluginOptionsInput() const
     size_t i = offset + row;
     out += FrameLine(width, i < hint_lines.size() ? hint_lines[i] : "", color);
   }
-  out += FrameLine(width, " Options: " + plugin_options_input_, color);
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
-  out += StatusBar(
-      width, " Enter saves | Esc skip (keeps current) | Up/Down scroll", color);
-  out += HelpLine(width, " Type Plugin Options  Backspace Delete  Enter Save",
+  out += StatusBar(width, " Reference: this restore's detected plugin hints",
+                   color);
+  out += HelpLine(
+      width, " Type Plugin Options  Backspace Delete  Up/Down Scroll", color);
+  out += HelpLine(width, " Enter/Tab Save & continue  Esc Skip (keeps current)",
                   color);
-  out += HelpLine(width, " Esc Skip", color);
   return out;
 }
 
@@ -1459,7 +1456,7 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
 
 void TreeBrowser::HandlePluginOptionsInputKey(std::string_view key)
 {
-  if (key == "key:enter") {
+  if (key == "key:enter" || key == "key:tab") {
     entering_plugin_options_ = false;
     CommitPluginOptions();
   } else if (key == "key:cancel") {
@@ -1588,7 +1585,7 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
   } else if (key == "key:text:a") {
     plugin_hints_show_all_ = !plugin_hints_show_all_;
     plugin_hints_offset_ = 0;
-  } else if (key == "key:text:o") {
+  } else if (key == "key:text:o" || key == "key:tab") {
     showing_plugin_hints_ = false;
     StartEnteringPluginOptions();
   } else if (key == "key:text:p" || key == "key:cancel") {
@@ -1663,7 +1660,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     if (!plugin_hints_gathered_) { GatherPluginHints(); }
     plugin_hints_offset_ = 0;
     showing_plugin_hints_ = true;
-  } else if (key == "key:text:o") {
+  } else if (key == "key:text:o" || key == "key:tab") {
     if (HasDetectedPlugins()) {
       StartEnteringPluginOptions();
     } else {
