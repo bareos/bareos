@@ -205,4 +205,76 @@ TEST(TreeBrowserRendering, ComputesGlobalHorizontalLimitInCells)
   EXPECT_EQ(MaxHorizontalOffset(TextCellWidth("short"), 10), 0);
 }
 
+TEST(TreeBrowserRendering, BuildsAllKnownPluginHintLinesNonEmpty)
+{
+  std::vector<std::string> lines
+      = directordaemon::tree_browser_internal::BuildAllKnownPluginHintLines();
+  EXPECT_FALSE(lines.empty());
+  // Every known hint contributes at least one non-blank display-name line.
+  bool has_non_blank = false;
+  for (const auto& line : lines) {
+    if (!line.empty()) {
+      has_non_blank = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(has_non_blank);
+}
+
+TEST(TreeBrowserRendering, BuildsDetectedPluginHintLinesForEmptyInput)
+{
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions;
+  std::vector<const directordaemon::restore_plugin_hints::PluginRestoreHint*>
+      resolved;
+
+  std::vector<std::string> lines
+      = directordaemon::tree_browser_internal::BuildDetectedPluginHintLines(
+          definitions, resolved);
+
+  ASSERT_EQ(lines.size(), 1u);
+  EXPECT_NE(lines[0].find("No restore plugins"), std::string::npos);
+}
+
+TEST(TreeBrowserRendering,
+     BuildsDetectedPluginHintLinesForKnownAndUnknownPlugins)
+{
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition known;
+  known.raw = "python:module_name=bareos-fd-vmware:...";
+  known.plugin_name = "python";
+  known.option_keys = {"module_name"};
+
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition unknown;
+  unknown.raw = "does-not-exist:foo=bar";
+  unknown.plugin_name = "does-not-exist";
+
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions = {known, unknown};
+  std::vector<const directordaemon::restore_plugin_hints::PluginRestoreHint*>
+      resolved
+      = {directordaemon::restore_plugin_hints::ResolvePluginRestoreHint(known),
+         directordaemon::restore_plugin_hints::ResolvePluginRestoreHint(
+             unknown)};
+
+  std::vector<std::string> lines
+      = directordaemon::tree_browser_internal::BuildDetectedPluginHintLines(
+          definitions, resolved);
+
+  ASSERT_FALSE(resolved[0] == nullptr);
+  EXPECT_EQ(resolved[1], nullptr);
+
+  bool saw_known_plugin_line = false;
+  bool saw_unknown_hint_note = false;
+  for (const auto& line : lines) {
+    if (line.find("Plugin: python") != std::string::npos) {
+      saw_known_plugin_line = true;
+    }
+    if (line.find("no known hints for this plugin") != std::string::npos) {
+      saw_unknown_hint_note = true;
+    }
+  }
+  EXPECT_TRUE(saw_known_plugin_line);
+  EXPECT_TRUE(saw_unknown_hint_note);
+}
+
 }  // namespace

@@ -109,6 +109,7 @@ target_sources(
           ua_purge.cc
           ua_query.cc
           ua_restore.cc
+          restore_plugin_hints.cc
           ua_run.cc
           ua_select.cc
           ua_server.cc
