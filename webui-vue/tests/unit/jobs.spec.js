@@ -77,7 +77,65 @@ import {
   withJobsTypeFilterQuery,
   classifyLogLine,
   resolveConfiguredJobType,
+  isStreakSuccessJobStatus,
+  consecutiveFailedJobsSinceSuccess,
 } from '../../src/utils/jobs.js'
+
+describe('isStreakSuccessJobStatus', () => {
+  it('treats OK and Warning statuses as success', () => {
+    expect(isStreakSuccessJobStatus('T')).toBe(true)
+    expect(isStreakSuccessJobStatus('OK')).toBe(true)
+    expect(isStreakSuccessJobStatus('W')).toBe(true)
+  })
+
+  it('treats error, fatal, canceled and unknown statuses as failure', () => {
+    expect(isStreakSuccessJobStatus('E')).toBe(false)
+    expect(isStreakSuccessJobStatus('f')).toBe(false)
+    expect(isStreakSuccessJobStatus('A')).toBe(false)
+    expect(isStreakSuccessJobStatus('')).toBe(false)
+    expect(isStreakSuccessJobStatus(undefined)).toBe(false)
+  })
+})
+
+describe('consecutiveFailedJobsSinceSuccess', () => {
+  it('returns 0 when the newest job already succeeded', () => {
+    expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'T' },
+      { status: 'E' },
+    ])).toBe(0)
+  })
+
+  it('counts failures up to (but excluding) the first success', () => {
+    expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'E' },
+      { status: 'A' },
+      { status: 'W' },
+      { status: 'E' },
+    ])).toBe(2)
+  })
+
+  it('a Warning status stops the streak just like an OK status', () => {
+    expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'E' },
+      { status: 'W' },
+      { status: 'E' },
+    ])).toBe(1)
+  })
+
+  it('counts every job as failed when no success is found in the window', () => {
+    expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'E' },
+      { status: 'A' },
+      { status: 'f' },
+    ])).toBe(3)
+  })
+
+  it('returns 0 for an empty or non-array input', () => {
+    expect(consecutiveFailedJobsSinceSuccess([])).toBe(0)
+    expect(consecutiveFailedJobsSinceSuccess(null)).toBe(0)
+    expect(consecutiveFailedJobsSinceSuccess(undefined)).toBe(0)
+  })
+})
 
 describe('jobs filter helpers', () => {
   it('accepts supported job status filters only', () => {
