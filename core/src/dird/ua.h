@@ -222,6 +222,15 @@ struct TreeContext {
    * request has been picked up by UserSelectFilesFromTree(). */
   bool switch_to_browser = false;
 
+  /** When set (by BuildDirectoryTree()), the interactive tree browser's
+   * 'o' (Set Plugin Options) action writes the user-entered Plugin
+   * Options string here, so it can be threaded into the generated
+   * "run ... pluginoptions=..." command without a separate, context-free
+   * prompt later in the run-confirmation menu. Left nullptr (and thus
+   * unused) by callers that don't support this, e.g. classic-mode-only
+   * InsertTreeHandler() callers. */
+  std::string* plugin_options_out = nullptr;
+
   TreeContext() = default;
   ~TreeContext() = default;
 };
@@ -253,7 +262,18 @@ struct RestoreContext {
   char* where = nullptr;
   char* RegexWhere = nullptr;
   char* replace = nullptr;
-  char* plugin_options = nullptr;
+  /** Plugin Options supplied via the "restore ... pluginoptions=" command
+   * line argument. Copied into an owning std::string (rather than kept
+   * as a pointer into ua->argv[]/ua->args) because the interactive tree
+   * browser invoked further below re-parses ua->cmd/ua->args for its
+   * classic-mode passthrough commands, which can reallocate that pool
+   * memory and would otherwise leave a dangling pointer here. */
+  std::string plugin_options;
+  /** Plugin Options entered interactively via the tree browser's 'o' key
+   * (see TreeContext::plugin_options_out). Used to build the "run ..."
+   * command only when \ref plugin_options wasn't already supplied via
+   * the "restore ... pluginoptions=" command-line argument. */
+  std::string interactive_plugin_options;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
   POOLMEM* fname = nullptr; /**< Filename only */
   POOLMEM* path = nullptr;  /**< Path only */

@@ -485,6 +485,39 @@ std::vector<std::string> BuildAllKnownPluginHintLines()
   return lines;
 }
 
+std::string SummarizePluginNames(
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions)
+{
+  std::vector<std::string> names;
+  for (const auto& definition : definitions) {
+    if (definition.plugin_name.empty()) { continue; }
+    if (std::find(names.begin(), names.end(), definition.plugin_name)
+        == names.end()) {
+      names.push_back(definition.plugin_name);
+    }
+  }
+
+  std::string summary;
+  for (size_t i = 0; i < names.size(); ++i) {
+    if (i > 0) { summary += ", "; }
+    summary += names[i];
+  }
+  return summary;
+}
+
+std::string BuildPluginOptionsAdvertisement(
+    std::string_view plugin_names_summary)
+{
+  if (plugin_names_summary.empty()) { return ""; }
+  std::string out = "Plugin backup detected (";
+  out += plugin_names_summary;
+  out += ") -- p Hints  o Set Plugin Options";
+  return out;
+}
+
+
 }  // namespace tree_browser_internal
 
 namespace {
@@ -492,6 +525,7 @@ namespace {
 using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::BuildAllKnownPluginHintLines;
 using tree_browser_internal::BuildDetectedPluginHintLines;
+using tree_browser_internal::BuildPluginOptionsAdvertisement;
 using tree_browser_internal::CaseFoldForSearch;
 using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
@@ -502,6 +536,7 @@ using tree_browser_internal::MaxHorizontalOffset;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::StyleFrameContent;
+using tree_browser_internal::SummarizePluginNames;
 using tree_browser_internal::TextCellWidth;
 
 std::string MenuBar(size_t width, bool color)
@@ -668,6 +703,10 @@ class TreeBrowser {
   TreeBrowser(UaContext* ua, TreeContext* tree) : ua_(ua), tree_(tree)
   {
     RebuildRows();
+    // Gathered eagerly (rather than lazily on first 'p' press) so the
+    // main browser view can immediately advertise the plugin hints panel
+    // and Plugin Options entry when this restore involves plugin(s).
+    GatherPluginHints();
   }
 
   TreeBrowserExit Run();
@@ -688,6 +727,8 @@ class TreeBrowser {
   void ClampPluginHintsOffset();
   void CalculateEstimate();
   void InvalidateEstimate();
+  void StartEnteringPluginOptions();
+  void CommitPluginOptions();
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
@@ -700,6 +741,7 @@ class TreeBrowser {
   std::string RenderSelectedFiles() const;
   std::string RenderHelp() const;
   std::string RenderPluginHints() const;
+  std::string RenderPluginOptionsInput() const;
 
   // Handles one "key:*" event. Sets *exit_reason and returns true when the
   // browser loop should stop (the user left the browser entirely).
@@ -709,7 +751,9 @@ class TreeBrowser {
   void HandleSelectedFilesKey(std::string_view key);
   void HandleHelpKey(std::string_view key);
   void HandlePluginHintsKey(std::string_view key);
+  void HandlePluginOptionsInputKey(std::string_view key);
   void GatherPluginHints();
+  bool HasDetectedPlugins() const { return !plugin_hint_definitions_.empty(); }
   std::vector<std::string> DetectedPluginHintLines() const
   {
     return BuildDetectedPluginHintLines(plugin_hint_definitions_,
@@ -750,6 +794,10 @@ class TreeBrowser {
   std::vector<const restore_plugin_hints::PluginRestoreHint*>
       plugin_hint_resolved_;
   bool plugin_hints_gathered_ = false;
+
+  bool entering_plugin_options_ = false;
+  std::string plugin_options_input_;
+
   bool estimate_calculated_ = false;
   bool estimate_stale_ = false;
   uint64_t estimated_bytes_ = 0;
@@ -938,6 +986,32 @@ void TreeBrowser::InvalidateEstimate()
   if (estimate_calculated_) { estimate_stale_ = true; }
 }
 
+void TreeBrowser::StartEnteringPluginOptions()
+{
+  entering_plugin_options_ = true;
+  plugin_options_input_
+      = tree_->plugin_options_out && !tree_->plugin_options_out->empty()
+            ? *tree_->plugin_options_out
+            : "";
+}
+
+void TreeBrowser::CommitPluginOptions()
+{
+  if (!tree_->plugin_options_out) {
+    status_line_ = "Plugin Options are not supported in this context.";
+    return;
+  }
+  if (!plugin_options_input_.empty()
+      && !ua_->AclAccessOk(PluginOptions_ACL, plugin_options_input_.c_str(),
+                           true)) {
+    status_line_ = "No authorization for \"PluginOptions\" specification.";
+    return;
+  }
+  *tree_->plugin_options_out = plugin_options_input_;
+  status_line_ = plugin_options_input_.empty() ? "Plugin Options cleared."
+                                               : "Plugin Options saved.";
+}
+
 size_t TreeBrowser::MaxVisibleRows(bool detail_header) const
 {
   if (ua_->terminal_height <= 0) { return kDefaultVisibleRows; }
@@ -1042,8 +1116,14 @@ std::string TreeBrowser::RenderPanel() const
               + std::to_string(last) + " of " + std::to_string(rows_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, " Enter Open  Space/m Mark  a All  u None  e Estimate",
-                  color);
+  std::string first_help_line
+      = " Enter Open  Space/m Mark  a All  u None  e Estimate";
+  if (HasDetectedPlugins()) {
+    first_help_line += "  |  "
+                       + BuildPluginOptionsAdvertisement(
+                           SummarizePluginNames(plugin_hint_definitions_));
+  }
+  out += HelpLine(width, first_help_line, color);
   out += HelpLine(width, " i Info  l List  / Search  h Help  c Classic  q Done",
                   color);
   return out;
@@ -1213,6 +1293,7 @@ std::string TreeBrowser::RenderHelp() const
       "   :                Run one classic selection command",
       "   c                Switch to classic selection mode",
       "   p                Show restore plugin hints",
+      "   o                Set Plugin Options (when a plugin is detected)",
       "",
       " Exit",
       "   q                Finish file selection",
@@ -1307,9 +1388,32 @@ std::string TreeBrowser::RenderPluginHints() const
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Restore plugin hints", color);
-  out += HelpLine(width, " Up/Down Scroll  a Toggle all/detected  p/Esc Return",
+  out += HelpLine(width,
+                  " Up/Down Scroll  a Toggle all/detected  o Set Options"
+                  "  p/Esc Return",
                   color);
   out += HelpLine(width, "", color);
+  return out;
+}
+
+std::string TreeBrowser::RenderPluginOptionsInput() const
+{
+  size_t width = ScreenWidth();
+  bool color = ua_->supports_color;
+  std::string out = MenuBar(width, color);
+  out += FrameBorder(width, color, FrameBorderStyle::kTop, "Plugin Options");
+  out += FrameLine(
+      width, " Enter the Plugin Options string used for the restore", color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
+  out += FrameLine(width, " Options: " + plugin_options_input_, color);
+  for (size_t row = 1; row < MaxVisibleRows(); ++row) {
+    out += FrameLine(width, "", color);
+  }
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+  out += StatusBar(width, " Enter saves | Esc returns without saving", color);
+  out += HelpLine(width, " Type Plugin Options  Backspace Delete  Enter Save",
+                  color);
+  out += HelpLine(width, " Esc Cancel", color);
   return out;
 }
 
@@ -1328,6 +1432,25 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
     search_term_.append(key.substr(strlen("key:text:")));
   }
   return false;
+}
+
+void TreeBrowser::HandlePluginOptionsInputKey(std::string_view key)
+{
+  if (key == "key:enter") {
+    entering_plugin_options_ = false;
+    CommitPluginOptions();
+  } else if (key == "key:cancel") {
+    entering_plugin_options_ = false;
+    plugin_options_input_.clear();
+  } else if (key == "key:backspace") {
+    if (!plugin_options_input_.empty()) {
+      RemoveLastUtf8Character(&plugin_options_input_);
+    }
+  } else if (key == "key:space") {
+    plugin_options_input_.push_back(' ');
+  } else if (key.starts_with("key:text:")) {
+    plugin_options_input_.append(key.substr(strlen("key:text:")));
+  }
 }
 
 void TreeBrowser::HandleSearchResultsKey(std::string_view key)
@@ -1433,6 +1556,9 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
   } else if (key == "key:text:a") {
     plugin_hints_show_all_ = !plugin_hints_show_all_;
     plugin_hints_offset_ = 0;
+  } else if (key == "key:text:o") {
+    showing_plugin_hints_ = false;
+    StartEnteringPluginOptions();
   } else if (key == "key:text:p" || key == "key:cancel") {
     showing_plugin_hints_ = false;
   }
@@ -1474,6 +1600,10 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
   if (entering_search_term_) { return HandleSearchInputKey(key); }
+  if (entering_plugin_options_) {
+    HandlePluginOptionsInputKey(key);
+    return false;
+  }
 
   if (key == "key:up") {
     if (cursor_ > 0) { cursor_--; }
@@ -1501,6 +1631,12 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     if (!plugin_hints_gathered_) { GatherPluginHints(); }
     plugin_hints_offset_ = 0;
     showing_plugin_hints_ = true;
+  } else if (key == "key:text:o") {
+    if (HasDetectedPlugins()) {
+      StartEnteringPluginOptions();
+    } else {
+      status_line_ = "No plugin detected for this restore.";
+    }
   } else if (key == "key:text:/") {
     entering_search_term_ = true;
     search_term_.clear();
@@ -1533,12 +1669,13 @@ TreeBrowserExit TreeBrowser::Run()
   TreeBrowserExit exit_reason = TreeBrowserExit::kDone;
 
   for (;;) {
-    std::string screen = showing_help_             ? RenderHelp()
-                         : showing_plugin_hints_   ? RenderPluginHints()
-                         : showing_selected_files_ ? RenderSelectedFiles()
-                         : showing_search_results_ ? RenderSearchResults()
-                         : entering_search_term_   ? RenderSearchInput()
-                                                   : RenderPanel();
+    std::string screen = showing_help_              ? RenderHelp()
+                         : showing_plugin_hints_    ? RenderPluginHints()
+                         : showing_selected_files_  ? RenderSelectedFiles()
+                         : showing_search_results_  ? RenderSearchResults()
+                         : entering_search_term_    ? RenderSearchInput()
+                         : entering_plugin_options_ ? RenderPluginOptionsInput()
+                                                    : RenderPanel();
 
     user->signal(BNET_START_SELECT);
     ua_->SendMsg("%s", screen.c_str());
