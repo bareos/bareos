@@ -19,7 +19,6 @@
    02110-1301, USA.
  */
 
-import { restorePluginHints } from '../data/restorePluginHints.js'
 import { resolveJobLevelCode } from './jobLevels.js'
 
 export function getRestoreBrowserPlaceholder({
@@ -704,24 +703,43 @@ function extractRestorePluginDefinitionOption(definition, key) {
   return match?.[1]?.trim() ?? ''
 }
 
-const restorePluginHintAliases = new Map(
-  Object.entries(restorePluginHints).flatMap(([hintId, hint]) => ([
-    [normalizeRestorePluginHintAlias(hintId), hintId],
-    ...(hint.aliases ?? []).map(alias => [normalizeRestorePluginHintAlias(alias), hintId]),
-  ]))
-)
+// Builds { normalizedAlias -> hintId } for a { id: hint } dataset (as
+// fetched from the director's ".pluginhints" command, or an injected test
+// fixture with the same shape). Memoized per dataset object identity since
+// callers (Vue computed properties) may re-invoke resolution functions on
+// every render with the same, unchanged dataset reference.
+const restorePluginHintAliasesByDataset = new WeakMap()
 
-export function resolveRestorePluginHintId(definition) {
-  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
-  const moduleMatch = restorePluginHintAliases.get(
-    normalizeRestorePluginHintAlias(moduleName)
+function getRestorePluginHintAliases(hintsById) {
+  const hints = hintsById ?? {}
+  const cached = restorePluginHintAliasesByDataset.get(hints)
+  if (cached) {
+    return cached
+  }
+
+  const aliases = new Map(
+    Object.entries(hints).flatMap(([hintId, hint]) => ([
+      [normalizeRestorePluginHintAlias(hintId), hintId],
+      ...(hint?.aliases ?? []).map(alias => [normalizeRestorePluginHintAlias(alias), hintId]),
+    ]))
   )
+  restorePluginHintAliasesByDataset.set(hints, aliases)
+  return aliases
+}
+
+// hintsById is the { id: hint } dataset fetched from the director's
+// ".pluginhints" command (see stores/pluginHints.js) -- the single source
+// of truth for plugin restore hints. Pass an explicit fixture in tests.
+export function resolveRestorePluginHintId(definition, hintsById) {
+  const aliases = getRestorePluginHintAliases(hintsById)
+  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
+  const moduleMatch = aliases.get(normalizeRestorePluginHintAlias(moduleName))
   if (moduleMatch) {
     return moduleMatch
   }
 
   const directPluginName = normalizeRestorePluginHintAlias(definition?.pluginName)
-  const directMatch = restorePluginHintAliases.get(directPluginName)
+  const directMatch = aliases.get(directPluginName)
   if (directMatch) {
     return directMatch
   }
@@ -732,9 +750,9 @@ export function resolveRestorePluginHintId(definition) {
 // Resolves a human-readable plugin name for display, preferring the
 // module_name-derived hint (e.g. "VMware") over the generic plugin loader
 // name (e.g. "bpipe", "python-fd", "grpc") that the FileSet actually invokes.
-export function resolveRestorePluginDisplayName(definition) {
-  const hintId = resolveRestorePluginHintId(definition)
-  return (hintId && restorePluginHints[hintId]?.displayName) || definition?.pluginName || ''
+export function resolveRestorePluginDisplayName(definition, hintsById) {
+  const hintId = resolveRestorePluginHintId(definition, hintsById)
+  return (hintId && hintsById?.[hintId]?.displayName) || definition?.pluginName || ''
 }
 
 export function buildRestorePluginOptionExample(pluginHint) {
@@ -747,26 +765,26 @@ export function buildRestorePluginOptionExample(pluginHint) {
   return exampleOptions.join(pluginHint?.optionSeparator ?? ':')
 }
 
-export function getRestorePluginHints(pluginInfo) {
+export function getRestorePluginHints(pluginInfo, hintsById) {
   if (!pluginInfo) {
     return []
   }
 
   const hintIds = [...new Set(
     (pluginInfo.definitions ?? [])
-      .map(resolveRestorePluginHintId)
+      .map(definition => resolveRestorePluginHintId(definition, hintsById))
       .filter(Boolean)
   )]
 
   return hintIds.map((hintId) => ({
     id: hintId,
-    ...restorePluginHints[hintId],
-    example: buildRestorePluginOptionExample(restorePluginHints[hintId]),
+    ...hintsById[hintId],
+    example: buildRestorePluginOptionExample(hintsById[hintId]),
   }))
 }
 
-export function getAllRestorePluginHints() {
-  return Object.entries(restorePluginHints)
+export function getAllRestorePluginHints(hintsById) {
+  return Object.entries(hintsById ?? {})
     .map(([hintId, hint]) => ({
       id: hintId,
       ...hint,
@@ -775,7 +793,7 @@ export function getAllRestorePluginHints() {
     .sort((left, right) => left.displayName.localeCompare(right.displayName))
 }
 
-export function buildRestorePluginFilesetDetails(filesets) {
+export function buildRestorePluginFilesetDetails(filesets, hintsById) {
   const pluginFilesets = new Map()
 
   for (const [name, fileset] of normalizeRestoreFilesetEntries(filesets)) {
@@ -796,13 +814,18 @@ export function buildRestorePluginFilesetDetails(filesets) {
       description: fileset?.description ?? '',
       hasPlugin: definitions.length > 0,
       definitions,
-      pluginNames: [...new Set(definitions.map(resolveRestorePluginDisplayName).filter(Boolean))],
+      pluginNames: [...new Set(
+        definitions
+          .map(definition => resolveRestorePluginDisplayName(definition, hintsById))
+          .filter(Boolean)
+      )],
       optionKeys: [...new Set(definitions.flatMap(definition => definition.optionKeys))],
     })
   }
 
   return pluginFilesets
 }
+
 
 export function restoreBackupHasPluginOptions(backup) {
   return backup?.pluginjob === true

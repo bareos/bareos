@@ -279,9 +279,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getAllRestorePluginHints } from '../utils/restore.js'
 
 defineProps({
   pluginRestoreInfo: {
@@ -292,12 +291,15 @@ defineProps({
     type: Array,
     default: () => [],
   },
+  allPluginHints: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const { t } = useI18n()
 const showDetails = ref(false)
 const allPluginHintsDialog = ref(false)
-const allPluginHints = computed(() => getAllRestorePluginHints())
 
 function pluginOptionStatusLabel(status) {
   if (status === 'required') {
