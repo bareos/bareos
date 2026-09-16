@@ -39,6 +39,7 @@ using directordaemon::tree_browser_internal::IsTopLevelSelection;
 using directordaemon::tree_browser_internal::MaxHorizontalOffset;
 using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
 using directordaemon::tree_browser_internal::RenderFrameBorder;
+using directordaemon::tree_browser_internal::SortDirectoriesFirst;
 using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
 
@@ -111,6 +112,25 @@ TEST(TreeBrowserRendering, CollapsesSelectionsBelowMarkedDirectories)
   synthetic_directory.parent = &root;
   synthetic_directory.extract = true;
   EXPECT_FALSE(IsTopLevelSelection(&synthetic_directory));
+}
+
+TEST(TreeBrowserRendering, SortsDirectoriesBeforeFiles)
+{
+  tree_node file_a;
+  tree_node directory_a;
+  tree_node file_b;
+  tree_node directory_b;
+  file_a.type = tree_node_type::File;
+  directory_a.type = tree_node_type::Dir;
+  file_b.type = tree_node_type::File;
+  directory_b.type = tree_node_type::DirWin;
+
+  std::vector<tree_node*> nodes
+      = {&file_a, &directory_a, &file_b, &directory_b};
+  SortDirectoriesFirst(&nodes);
+
+  EXPECT_EQ(nodes, (std::vector<tree_node*>{&directory_a, &directory_b, &file_a,
+                                            &file_b}));
 }
 
 TEST(TreeBrowserRendering, FormatsEstimateStatus)
