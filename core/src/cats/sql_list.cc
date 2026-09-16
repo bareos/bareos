@@ -97,7 +97,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
   PoolMem select(PM_MESSAGE);
 
   DbLocker _{this};
-  auto escaped_pool_name = EscapeString(jcr, pdbr->Name);
+  const auto escaped_pool_name = EscapeString(jcr, pdbr->Name);
 
   if (type == VERT_LIST) {
     Mmsg(select,
@@ -137,7 +137,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
 }
 
 void BareosDb::ListClientRecords(JobControlRecord* jcr,
-                                 char* clientname,
+                                 const char* clientname,
                                  OutputFormatter* sendit,
                                  e_list_type type)
 {
@@ -181,7 +181,7 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
   PoolMem select(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
-  auto esc = EscapeString(jcr, mdbr->VolumeName);
+  const auto esc = EscapeString(jcr, mdbr->VolumeName);
 
   /* There is one case where ListMediaRecords() is called from SelectMediaDbr()
    * with the range argument set to NULL. To avoid problems, we set the range to
@@ -500,7 +500,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (jr->Name[0] != 0) {
-    auto esc = EscapeString(jcr, jr->Name);
+    const auto esc = EscapeString(jcr, jr->Name);
     temp.bsprintf("AND Job.Name = '%s' ", esc.c_str());
     PmStrcat(selection, temp.c_str());
   }
