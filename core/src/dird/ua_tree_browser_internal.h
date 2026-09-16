@@ -26,7 +26,16 @@
 #include <string>
 #include <string_view>
 
+struct tree_node;
+
 namespace directordaemon::tree_browser_internal {
+
+enum class FrameBorderStyle
+{
+  kTop,
+  kMiddle,
+  kBottom,
+};
 
 size_t TextCellWidth(std::string_view text);
 
@@ -45,6 +54,17 @@ std::string AlignTextColumns(std::string_view left,
 
 std::string FormatDetailColumns(std::string_view size,
                                 std::string_view modified);
+
+std::string RenderFrameBorder(size_t width,
+                              FrameBorderStyle style,
+                              std::string_view title = {});
+
+std::string StyleFrameContent(std::string content,
+                              char mark,
+                              bool highlighted,
+                              bool color);
+
+bool IsTopLevelSelection(const tree_node* node);
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
