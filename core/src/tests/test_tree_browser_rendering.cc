@@ -24,6 +24,8 @@
 #include <clocale>
 
 #include "gtest/gtest.h"
+#include "include/bareos.h"
+#include "lib/tree.h"
 
 namespace {
 
@@ -31,8 +33,12 @@ using directordaemon::tree_browser_internal::AlignTextColumns;
 using directordaemon::tree_browser_internal::CaseFoldForSearch;
 using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
+using directordaemon::tree_browser_internal::FrameBorderStyle;
+using directordaemon::tree_browser_internal::IsTopLevelSelection;
 using directordaemon::tree_browser_internal::MaxHorizontalOffset;
 using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
+using directordaemon::tree_browser_internal::RenderFrameBorder;
+using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
 
 TEST(TreeBrowserRendering, FitsAndPadsAscii)
@@ -56,6 +62,48 @@ TEST(TreeBrowserRendering, FormatsStableSizeAndTimeColumns)
             "    12 B  2026-09-15 22:30:00");
   EXPECT_EQ(FormatDetailColumns("Size", "Modified"),
             "    Size  Modified           ");
+}
+
+TEST(TreeBrowserRendering, RendersMcStyleFrameBorders)
+{
+  EXPECT_EQ(RenderFrameBorder(24, FrameBorderStyle::kTop, "Restore"),
+            "┌─ Restore ────────────┐");
+  EXPECT_EQ(RenderFrameBorder(24, FrameBorderStyle::kMiddle),
+            "├──────────────────────┤");
+  EXPECT_EQ(RenderFrameBorder(24, FrameBorderStyle::kBottom),
+            "└──────────────────────┘");
+  EXPECT_EQ(
+      TextCellWidth(RenderFrameBorder(24, FrameBorderStyle::kTop, "Restore")),
+      24);
+}
+
+TEST(TreeBrowserRendering, EmphasizesMarkedEntriesWithoutFixedForeground)
+{
+  EXPECT_EQ(StyleFrameContent("  * filename", '*', false, true),
+            "\033[1m  \033[32m*\033[39m filename\033[0m");
+  EXPECT_EQ(StyleFrameContent("> * filename", '*', true, true),
+            "\033[7;36m> * filename\033[0m");
+  EXPECT_EQ(StyleFrameContent("  * filename", '*', false, false),
+            "  * filename");
+}
+
+TEST(TreeBrowserRendering, CollapsesSelectionsBelowMarkedDirectories)
+{
+  tree_node root;
+  tree_node directory;
+  tree_node file;
+  directory.type = tree_node_type::Dir;
+  directory.parent = &root;
+  directory.extract = true;
+  file.type = tree_node_type::File;
+  file.parent = &directory;
+  file.extract = true;
+
+  EXPECT_TRUE(IsTopLevelSelection(&directory));
+  EXPECT_FALSE(IsTopLevelSelection(&file));
+  directory.extract = false;
+  EXPECT_TRUE(IsTopLevelSelection(&file));
+  EXPECT_FALSE(IsTopLevelSelection(&root));
 }
 
 TEST(TreeBrowserRendering, OmitsDetailsWhenThePanelIsTooNarrow)
