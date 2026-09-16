@@ -396,6 +396,15 @@ bool IsTopLevelSelection(const tree_node* node)
   return true;
 }
 
+void SortDirectoriesFirst(std::vector<tree_node*>* nodes)
+{
+  std::stable_partition(nodes->begin(), nodes->end(),
+                        [](const tree_node* node) {
+                          return node->type == tree_node_type::Dir
+                                 || node->type == tree_node_type::DirWin;
+                        });
+}
+
 std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes)
 {
   if (!calculated) { return "not calculated"; }
@@ -474,13 +483,13 @@ const char* MarkTag(const tree_node* node)
   return " ";
 }
 
-// Children of dir, in the exact same (alphabetical) order foreach_child
-// already yields them (see NodeCompare()/insert_tree_node() in tree.cc).
+// Children of dir are alphabetical within each directory/file group.
 std::vector<tree_node*> ChildRows(tree_node* dir)
 {
   std::vector<tree_node*> rows;
   tree_node* node;
   foreach_child (node, dir) { rows.push_back(node); }
+  tree_browser_internal::SortDirectoriesFirst(&rows);
   return rows;
 }
 
