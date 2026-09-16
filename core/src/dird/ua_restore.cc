@@ -145,7 +145,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (i >= 0) { rx.replace = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "pluginoptions");
-  if (i >= 0) { rx.plugin_options = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.plugin_options = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "strip_prefix");
   if (i >= 0) { strip_prefix = ua->argv[i]; }
@@ -324,9 +324,21 @@ bool RestoreCmd(UaContext* ua, const char*)
     PmStrcat(ua->cmd, buf);
   }
 
-  if (rx.plugin_options) {
-    Mmsg(buf, " pluginoptions=%s", rx.plugin_options);
+  if (!rx.plugin_options.empty()) {
+    char* escaped_plugin_options = escape_filename(rx.plugin_options.c_str());
+    Mmsg(buf, " pluginoptions=\"%s\"",
+         escaped_plugin_options ? escaped_plugin_options
+                                : rx.plugin_options.c_str());
     PmStrcat(ua->cmd, buf);
+    if (escaped_plugin_options) { free(escaped_plugin_options); }
+  } else if (!rx.interactive_plugin_options.empty()) {
+    char* escaped_plugin_options
+        = escape_filename(rx.interactive_plugin_options.c_str());
+    Mmsg(buf, " pluginoptions=\"%s\"",
+         escaped_plugin_options ? escaped_plugin_options
+                                : rx.interactive_plugin_options.c_str());
+    PmStrcat(ua->cmd, buf);
+    if (escaped_plugin_options) { free(escaped_plugin_options); }
   }
 
   if (rx.comment) {
@@ -1426,6 +1438,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
     if (FindArg(ua, NT_("done")) < 0) {
       // Let the user interact in selecting which files to restore
+      tree.plugin_options_out = &rx->interactive_plugin_options;
       OK = UserSelectFilesFromTree(&tree);
     }
 
