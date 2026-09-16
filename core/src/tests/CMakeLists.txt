@@ -426,6 +426,7 @@ if(ENABLE_BCONSOLE)
                                        GTest::gtest_main
   )
   bareos_add_test(test_tree_browser_rendering LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_plugin_hints LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
 
 # Keep alphabetically ordered

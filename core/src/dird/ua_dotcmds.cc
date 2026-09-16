@@ -42,6 +42,7 @@
 #include "findlib/find.h"
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
+#include "dird/restore_plugin_hints.h"
 #include "dird/storage.h"
 #include "include/auth_protocol_types.h"
 #include "lib/attribs.h"
@@ -785,6 +786,176 @@ bool DotFilesetsCmd(UaContext* ua, const char*)
     }
   }
   ua->send->ArrayEnd("filesets");
+
+  return true;
+}
+
+namespace {
+
+void EmitPluginRestoreHintFields(
+    UaContext* ua,
+    const restore_plugin_hints::PluginRestoreHint& hint)
+{
+  ua->send->ObjectKeyValue("id", std::string(hint.id).c_str(), "%s\n");
+  ua->send->ObjectKeyValue("displayname",
+                           std::string(hint.display_name).c_str(), "%s\n");
+  ua->send->ObjectKeyValue("manualurl", std::string(hint.manual_url).c_str(),
+                           "%s\n");
+  ua->send->ObjectKeyValue("optionseparator",
+                           std::string(hint.option_separator).c_str(), "%s\n");
+  ua->send->ObjectKeyValue("note", std::string(hint.note).c_str(), "%s\n");
+  ua->send->ObjectKeyValue("supportlevel",
+                           std::string(hint.support_level).c_str(), "%s\n");
+  ua->send->ObjectKeyValue(
+      "example", restore_plugin_hints::BuildPluginOptionExample(hint).c_str(),
+      "%s\n");
+
+  ua->send->ArrayStart("aliases");
+  for (auto alias : hint.aliases) {
+    ua->send->ArrayItem(std::string(alias).c_str(), "%s\n");
+  }
+  ua->send->ArrayEnd("aliases");
+
+  ua->send->ArrayStart("options");
+  for (const auto& option : hint.options) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", std::string(option.name).c_str(), "%s\n");
+    ua->send->ObjectKeyValue("status", std::string(option.status).c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("description",
+                             std::string(option.description).c_str(), "%s\n");
+    ua->send->ObjectKeyValue("source", std::string(option.source).c_str(),
+                             "%s\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("options");
+}
+
+void EmitPluginRestoreHint(UaContext* ua,
+                           const restore_plugin_hints::PluginRestoreHint& hint)
+{
+  ua->send->ObjectStart();
+  EmitPluginRestoreHintFields(ua, hint);
+  ua->send->ObjectEnd();
+}
+
+void EmitFileSetPluginDefinitions(
+    UaContext* ua,
+    const std::vector<restore_plugin_hints::FileSetPluginDefinition>&
+        definitions)
+{
+  ua->send->ArrayStart("plugins");
+  for (const auto& definition : definitions) {
+    const auto* hint
+        = restore_plugin_hints::ResolvePluginRestoreHint(definition);
+
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("pluginname", definition.plugin_name.c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("definition", definition.raw.c_str(), "%s\n");
+
+    ua->send->ArrayStart("optionkeys");
+    for (const auto& key : definition.option_keys) {
+      ua->send->ArrayItem(key.c_str(), "%s\n");
+    }
+    ua->send->ArrayEnd("optionkeys");
+
+    ua->send->ObjectKeyValueBool("hintfound", hint != nullptr);
+    if (hint) {
+      ua->send->ObjectStart("hint");
+      EmitPluginRestoreHintFields(ua, *hint);
+      ua->send->ObjectEnd("hint");
+    }
+
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("plugins");
+}
+
+}  // namespace
+
+/**
+ * .pluginhints [ fileset=<fileset-name> | jobid=<jobid> ]
+ *
+ * Without any argument: lists every known restore plugin hint (matches
+ * the webui's "Show all known plugin hints" dialog).
+ *
+ * With fileset= or jobid=: resolves the plugin hints for the "Plugin =
+ * ..." definitions found in that FileSet's text (matches the webui's
+ * per-restore hint banner).
+ */
+bool DotPluginhintsCmd(UaContext* ua, const char*)
+{
+  int pos;
+
+  if ((pos = FindArgWithValue(ua, "fileset")) >= 0) {
+    FileSetDbRecord fsr;
+
+    if (!ua->AclAccessOk(FileSet_ACL, ua->argv[pos])) {
+      ua->ErrorMsg(T_("Access to FileSet \"%s\" not allowed.\n"),
+                   ua->argv[pos]);
+      return false;
+    }
+    if (!OpenClientDb(ua, true)) { return false; }
+
+    bstrncpy(fsr.FileSet, ua->argv[pos], sizeof(fsr.FileSet));
+    std::string fileset_text;
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)
+        || !restore_plugin_hints::GetFileSetTextByFileSetId(
+            ua->db, fsr.FileSetId, &fileset_text)) {
+      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), ua->argv[pos],
+                   ua->db->strerror());
+      return false;
+    }
+
+    EmitFileSetPluginDefinitions(
+        ua,
+        restore_plugin_hints::ExtractFileSetPluginDefinitions(fileset_text));
+    return true;
+  }
+
+  if ((pos = FindArgWithValue(ua, "jobid")) >= 0) {
+    JobDbRecord jr;
+
+    jr.JobId = str_to_int64(ua->argv[pos]);
+    if (!OpenClientDb(ua, true)) { return false; }
+    if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                   ua->argv[pos], ua->db->strerror());
+      return false;
+    }
+
+    FileSetDbRecord fsr;
+    fsr.FileSetId = jr.FileSetId;
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+      ua->ErrorMsg(T_("Error getting FileSet for JobId=%s: ERR=%s\n"),
+                   ua->argv[pos], ua->db->strerror());
+      return false;
+    }
+    if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) {
+      ua->ErrorMsg(T_("Access to FileSet \"%s\" not allowed.\n"), fsr.FileSet);
+      return false;
+    }
+
+    std::string fileset_text;
+    if (!restore_plugin_hints::GetFileSetTextByFileSetId(ua->db, jr.FileSetId,
+                                                         &fileset_text)) {
+      ua->ErrorMsg(T_("Error getting FileSet text for JobId=%s: ERR=%s\n"),
+                   ua->argv[pos], ua->db->strerror());
+      return false;
+    }
+
+    EmitFileSetPluginDefinitions(
+        ua,
+        restore_plugin_hints::ExtractFileSetPluginDefinitions(fileset_text));
+    return true;
+  }
+
+  ua->send->ArrayStart("hints");
+  for (const auto* hint : restore_plugin_hints::SortedPluginRestoreHints()) {
+    EmitPluginRestoreHint(ua, *hint);
+  }
+  ua->send->ArrayEnd("hints");
 
   return true;
 }
