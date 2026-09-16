@@ -26,7 +26,6 @@
 
 #include "lib/attr.h"
 
-#include <string_view>
 /*
  * This object can be use to browse the catalog
  *
@@ -75,8 +74,7 @@ class Bvfs {
 
   void SetPattern(char* p)
   {
-    uint32_t len = strlen(p);
-    auto escaped_pattern = db->EscapeString(jcr, std::string_view{p, len});
+    auto escaped_pattern = db->EscapeString(jcr, p);
     pattern = CheckPoolMemorySize(pattern, escaped_pattern.size() + 1);
     PmStrcpy(pattern, escaped_pattern.c_str());
   }
