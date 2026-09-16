@@ -932,7 +932,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
 
       ar->DigestType = CryptoDigestStreamType(stream);
       auto escaped_digest = jcr->db->EscapeString(jcr, Digest.c_str());
-      PmStrcpy(digest, escaped_digest.c_str());
+      if (!escaped_digest) { return 0; }
+      PmStrcpy(digest, escaped_digest->c_str());
       ar->Digest = digest.c_str();
       Dmsg4(debuglevel, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
             strlen(digest.c_str()), digest.c_str(), ar->DigestType);
