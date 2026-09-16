@@ -929,7 +929,8 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
-  virtual std::string EscapeString(JobControlRecord* jcr, std::string_view old)
+  virtual std::optional<std::string> EscapeString(JobControlRecord* jcr,
+                                                  std::string_view input)
       = 0;
   virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
   virtual unsigned char* EscapeObject(const unsigned char*,

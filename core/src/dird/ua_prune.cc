@@ -332,6 +332,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   }
   auto prune_topdir = ua->db->EscapeString(
       ua->jcr, std::string_view{temp.c_str(), static_cast<size_t>(len)});
+  if (!prune_topdir) { return false; }
 
   // Remove all files in particular directory.
   if (recursive) {
@@ -340,14 +341,14 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
          "SELECT pathid FROM path "
          "WHERE path LIKE '%s%%'"
          ")",
-         prune_topdir.c_str());
+         prune_topdir->c_str());
   } else {
     Mmsg(query,
          "DELETE FROM file WHERE pathid IN ("
          "SELECT pathid FROM path "
          "WHERE path LIKE '%s'"
          ")",
-         prune_topdir.c_str());
+         prune_topdir->c_str());
   }
 
   if (client) {
@@ -383,12 +384,12 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
       Mmsg(query,
            "DELETE FROM path "
            "WHERE path LIKE '%s%%'",
-           prune_topdir.c_str());
+           prune_topdir->c_str());
     } else {
       Mmsg(query,
            "DELETE FROM path "
            "WHERE path LIKE '%s'",
-           prune_topdir.c_str());
+           prune_topdir->c_str());
     }
     {
       DbLocker _{ua->db};
@@ -460,14 +461,16 @@ static bool prune_set_filter(UaContext* ua,
   DbLocker _{ua->db};
   if (client) {
     auto escaped_client = ua->db->EscapeString(ua->jcr, client->resource_name_);
-    Mmsg(tmp, " AND Client.Name = '%s' ", escaped_client.c_str());
+    if (!escaped_client) { return false; }
+    Mmsg(tmp, " AND Client.Name = '%s' ", escaped_client->c_str());
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Client USING (ClientId) ");
   }
 
   if (pool) {
     auto escaped_pool = ua->db->EscapeString(ua->jcr, pool->resource_name_);
-    Mmsg(tmp, " AND Pool.Name = '%s' ", escaped_pool.c_str());
+    if (!escaped_pool) { return false; }
+    Mmsg(tmp, " AND Pool.Name = '%s' ", escaped_pool->c_str());
     PmStrcat(*add_where, tmp.c_str());
     PmStrcat(*add_from, " JOIN Pool USING(PoolId) ");
   }

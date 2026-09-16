@@ -108,19 +108,17 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
                            utime_t mtime,
                            const char* msg)
 {
-  int length;
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
   PoolMem query(PM_MESSAGE);
 
   if (!jcr || !jcr->db || !jcr->db->IsConnected()) { return false; }
-  length = strlen(msg);
-  auto esc_msg = jcr->db->EscapeString(
-      jcr, std::string_view{msg, static_cast<size_t>(length)});
+  auto esc_msg = jcr->db->EscapeString(jcr, msg);
+  if (!esc_msg) { return false; }
 
   bstrutime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-       edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
+       edit_int64(jcr->JobId, ed1), dt, esc_msg->c_str());
 
   return jcr->db->SqlQuery(query.c_str());
 }
