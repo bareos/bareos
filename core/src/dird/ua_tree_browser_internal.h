@@ -23,6 +23,7 @@
 #define BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -65,6 +66,8 @@ std::string StyleFrameContent(std::string content,
                               bool color);
 
 bool IsTopLevelSelection(const tree_node* node);
+
+std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes);
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {

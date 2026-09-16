@@ -31,6 +31,7 @@ namespace {
 
 using directordaemon::tree_browser_internal::AlignTextColumns;
 using directordaemon::tree_browser_internal::CaseFoldForSearch;
+using directordaemon::tree_browser_internal::EstimateStatus;
 using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
 using directordaemon::tree_browser_internal::FrameBorderStyle;
@@ -104,6 +105,20 @@ TEST(TreeBrowserRendering, CollapsesSelectionsBelowMarkedDirectories)
   directory.extract = false;
   EXPECT_TRUE(IsTopLevelSelection(&file));
   EXPECT_FALSE(IsTopLevelSelection(&root));
+
+  tree_node synthetic_directory;
+  synthetic_directory.type = tree_node_type::NewDir;
+  synthetic_directory.parent = &root;
+  synthetic_directory.extract = true;
+  EXPECT_FALSE(IsTopLevelSelection(&synthetic_directory));
+}
+
+TEST(TreeBrowserRendering, FormatsEstimateStatus)
+{
+  EXPECT_EQ(EstimateStatus(false, false, 0), "not calculated");
+  EXPECT_EQ(EstimateStatus(true, true, 1024), "stale");
+  EXPECT_FALSE(EstimateStatus(true, false, 0).empty());
+  EXPECT_NE(EstimateStatus(true, false, 1024), "stale");
 }
 
 TEST(TreeBrowserRendering, OmitsDetailsWhenThePanelIsTooNarrow)
