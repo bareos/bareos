@@ -16,4 +16,5 @@ lib/bareos/scripts/ddl/updates/postgresql.2192_2210.sql
 lib/bareos/scripts/ddl/updates/postgresql.2210_2230.sql
 lib/bareos/scripts/ddl/updates/postgresql.2230_2240.sql
 lib/bareos/scripts/ddl/updates/postgresql.2240_2250.sql
+lib/bareos/scripts/ddl/updates/postgresql.2250_2260.sql
 lib/bareos/scripts/ddl/updates/postgresql.bee.1017_2004.sql

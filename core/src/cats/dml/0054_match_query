@@ -1,1 +1,4 @@
- AND Path2.Path LIKE '%s'
+# .bvfs_lsdirs treats the user pattern as a PostgreSQL regex. SetPattern() has
+# already SQL-escaped the literal, so no additional LIKE-style ESCAPE clause is
+# needed here.
+ AND Path2.Path ~ '%s'
