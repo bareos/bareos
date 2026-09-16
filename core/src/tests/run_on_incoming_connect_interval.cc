@@ -195,8 +195,8 @@ class MockDatabase : public BareosDb {
 
   const char* OpenDatabase() override { return "bad"; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
-  std::string EscapeString(JobControlRecord* /*jcr*/,
-                           std::string_view old) override
+  std::optional<std::string> EscapeString(JobControlRecord* /*jcr*/,
+                                          std::string_view old) override
   {
     std::string escaped;
     escaped.reserve(old.size() * 2);

@@ -348,17 +348,18 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
 }
 
 // Escape strings so that PostgreSQL is happy
-std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
-                                             std::string_view str)
+std::optional<std::string> BareosDbPostgresql::EscapeString(
+    JobControlRecord* jcr,
+    std::string_view str)
 {
   DbLocker _{this};
   int error;
 
-  std::string result{};
+  std::string result;
   if (str.size() > (result.max_size() - 1) / 2) {
     Jmsg(jcr, M_FATAL, 0, T_("String too long to escape for PostgreSQL.\n"));
     Dmsg0(500, "PQescapeStringConn input too large\n");
-    return result;
+    return std::nullopt;
   }
 
   result.resize(str.size() * 2 + 1);
@@ -371,7 +372,7 @@ std::string BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
       string see PQescapeStringConn documentation for details. */
     Dmsg0(500, "PQescapeStringConn failed\n");
 
-    return {};
+    return std::nullopt;
   }
 
   result.resize(byte_count);

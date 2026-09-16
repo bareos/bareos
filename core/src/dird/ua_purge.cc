@@ -693,10 +693,11 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
     } else if (Bstrcasecmp(ua->argk[i], NT_("volume"))
                && IsNameValid(ua->argv[i])) {
       auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
+      if (!esc) { goto bail_out; }
       if (!*volumes.c_str()) {
-        Mmsg(buf, "'%s'", esc.c_str());
+        Mmsg(buf, "'%s'", esc->c_str());
       } else {
-        Mmsg(buf, ",'%s'", esc.c_str());
+        Mmsg(buf, ",'%s'", esc->c_str());
       }
       PmStrcat(volumes, buf.c_str());
     } else if (Bstrcasecmp(ua->argk[i], NT_("devicetype")) && ua->argv[i]) {

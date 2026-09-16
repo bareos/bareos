@@ -530,6 +530,7 @@ class BareosDb : public BareosDbQueryEnum {
   }; /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
   int num_rows_ = 0; /**< Number of rows returned by last query */
+
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
@@ -971,7 +972,8 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
-  virtual std::string EscapeString(JobControlRecord* jcr, std::string_view old)
+  virtual std::optional<std::string> EscapeString(JobControlRecord* jcr,
+                                                  std::string_view input)
       = 0;
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,

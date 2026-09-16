@@ -70,7 +70,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
-static void SplitPathAndFilename(UaContext* ua,
+static bool SplitPathAndFilename(UaContext* ua,
                                  RestoreContext* rx,
                                  char* fname);
 static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
@@ -803,11 +803,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 1: { /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
         if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
-        len = strlen(ua->cmd);
-        auto fname = ua->db->EscapeString(
-            ua->jcr, std::string_view{ua->cmd, static_cast<size_t>(len)});
+        std::string_view cmd_view{ua->cmd};
+        auto fname = ua->db->EscapeString(ua->jcr, cmd_view);
+        if (!fname) { return 0; }
         ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(
-            rx->query, rx->ClientName, fname.c_str());
+            rx->query, rx->ClientName, fname->c_str());
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
         ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
@@ -1112,7 +1112,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      const char* date)
 {
   StripTrailingNewline(file);
-  SplitPathAndFilename(ua, rx, file);
+  if (!SplitPathAndFilename(ua, rx, file)) { return false; }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
@@ -1190,7 +1190,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   return true;
 }
 
-static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
+static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
 {
   char *p, *f;
 
@@ -1218,8 +1218,9 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   if (rx->fnl > 0) {
     auto escaped_fname = ua->db->EscapeString(
         ua->jcr, std::string_view{f, static_cast<size_t>(rx->fnl)});
-    rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname.size() + 1);
-    PmStrcpy(rx->fname, escaped_fname.c_str());
+    if (!escaped_fname) { return false; }
+    rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
+    PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
     rx->fnl = 0;
@@ -1229,14 +1230,16 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   if (rx->pnl > 0) {
     auto escaped_path = ua->db->EscapeString(
         ua->jcr, std::string_view{name, static_cast<size_t>(rx->pnl)});
-    rx->path = CheckPoolMemorySize(rx->path, escaped_path.size() + 1);
-    PmStrcpy(rx->path, escaped_path.c_str());
+    if (!escaped_path) { return false; }
+    rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
+    PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
     rx->pnl = 0;
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
+  return true;
 }
 
 static bool CheckAndSetFileregex(UaContext* ua,

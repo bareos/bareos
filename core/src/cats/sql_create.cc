@@ -68,14 +68,15 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   auto buf = EscapeString(jcr, jcr->comment);
   auto esc_ujobname = EscapeString(jcr, jr->Job);
   auto esc_jobname = EscapeString(jcr, jr->Name);
+  if (!buf || !esc_ujobname || !esc_jobname) { return false; }
 
   /* clang-format off */
   Mmsg(cmd,
        "INSERT INTO Job (Job,Name,Type,Level,JobStatus,SchedTime,JobTDate,"
        "ClientId,Comment) "
        "VALUES ('%s','%s','%c','%c','%c','%s',%" PRIu64 ",%" PRIdbid ",'%s')",
-       esc_ujobname.c_str(), esc_jobname.c_str(), (char)(jr->JobType), (char)(jr->JobLevel),
-       (char)(jr->JobStatus), dt, JobTDate, jr->ClientId, buf.c_str());
+       esc_ujobname->c_str(), esc_jobname->c_str(), (char)(jr->JobType), (char)(jr->JobLevel),
+       (char)(jr->JobStatus), dt, JobTDate, jr->ClientId, buf->c_str());
   /* clang-format on */
 
   jr->JobId = SqlInsertAutokeyRecord(cmd, NT_("Job"));
@@ -153,8 +154,9 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   DbLocker _{this};
   auto esc_poolname = EscapeString(jcr, pr->Name);
   auto esc_lf = EscapeString(jcr, pr->LabelFormat);
+  if (!esc_poolname || !esc_lf) { return retval; }
   Mmsg(cmd, "SELECT PoolId,Name FROM Pool WHERE Name='%s'",
-       esc_poolname.c_str());
+       esc_poolname->c_str());
   Dmsg1(200, "selectpool: %s\n", cmd);
 
   if (QueryDb(jcr, cmd)) {
@@ -175,7 +177,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
        "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
        "RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
        "VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%u,%u,%u)",
-       esc_poolname.c_str(),
+       esc_poolname->c_str(),
        pr->NumVols, pr->MaxVols,
        pr->UseOnce, pr->UseCatalog,
        pr->AcceptAnyVolume,
@@ -184,7 +186,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
        edit_uint64(pr->VolUseDuration, ed2),
        pr->MaxVolJobs, pr->MaxVolFiles,
        edit_uint64(pr->MaxVolBytes, ed3),
-       pr->PoolType, pr->LabelType, esc_lf.c_str(),
+       pr->PoolType, pr->LabelType, esc_lf->c_str(),
        edit_int64(pr->RecyclePoolId,ed4),
        edit_int64(pr->ScratchPoolId,ed5),
        pr->ActionOnPurge,
@@ -219,9 +221,10 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
   Dmsg0(200, "In create Device\n");
   DbLocker _{this};
   auto esc = EscapeString(jcr, dr->Name);
+  if (!esc) { return false; }
   Mmsg(cmd,
        "SELECT DeviceId,Name FROM Device WHERE Name='%s' AND StorageId = %s",
-       esc.c_str(), edit_int64(dr->StorageId, ed1));
+       esc->c_str(), edit_int64(dr->StorageId, ed1));
   Dmsg1(200, "selectdevice: %s\n", cmd);
 
   if (QueryDb(jcr, cmd)) {
@@ -252,7 +255,7 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
 
   Mmsg(cmd,
        "INSERT INTO Device (Name,MediaTypeId,StorageId) VALUES ('%s',%s,%s)",
-       esc.c_str(), edit_uint64(dr->MediaTypeId, ed1),
+       esc->c_str(), edit_uint64(dr->MediaTypeId, ed1),
        edit_int64(dr->StorageId, ed2));
   Dmsg1(200, "Create Device: %s\n", cmd);
   dr->DeviceId = SqlInsertAutokeyRecord(cmd, NT_("Device"));
@@ -278,8 +281,9 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
 
   DbLocker _{this};
   auto esc = EscapeString(jcr, sr->Name);
+  if (!esc) { return false; }
   Mmsg(cmd, "SELECT StorageId,AutoChanger FROM Storage WHERE Name='%s'",
-       esc.c_str());
+       esc->c_str());
 
   sr->StorageId = 0;
   sr->created = false;
@@ -308,7 +312,7 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
   Mmsg(cmd,
        "INSERT INTO Storage (Name,AutoChanger)"
        " VALUES ('%s',%d)",
-       esc.c_str(), sr->AutoChanger);
+       esc->c_str(), sr->AutoChanger);
 
   sr->StorageId = SqlInsertAutokeyRecord(cmd, NT_("Storage"));
   if (sr->StorageId == 0) {
@@ -336,8 +340,9 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
   Dmsg0(200, "In create mediatype\n");
   DbLocker _{this};
   auto esc = EscapeString(jcr, mr->MediaType);
+  if (!esc) { return false; }
   Mmsg(cmd, "SELECT MediaTypeId,MediaType FROM MediaType WHERE MediaType='%s'",
-       esc.c_str());
+       esc->c_str());
   Dmsg1(200, "selectmediatype: %s\n", cmd);
 
   if (QueryDb(jcr, cmd)) {
@@ -354,7 +359,7 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO MediaType (MediaType,ReadOnly) "
        "VALUES ('%s',%d)",
-       esc.c_str(),
+       esc->c_str(),
        mr->ReadOnly);
   /* clang-format on */
 
@@ -385,9 +390,10 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   auto esc_medianame = EscapeString(jcr, mr->VolumeName);
   auto esc_mtype = EscapeString(jcr, mr->MediaType);
   auto esc_status = EscapeString(jcr, mr->VolStatus);
+  if (!esc_medianame || !esc_mtype || !esc_status) { return retval; }
 
   Mmsg(cmd, "SELECT MediaId FROM Media WHERE VolumeName='%s'",
-       esc_medianame.c_str());
+       esc_medianame->c_str());
   Dmsg1(500, "selectpool: %s\n", cmd);
 
   if (QueryDb(jcr, cmd)) {
@@ -410,8 +416,8 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "MinBlocksize,MaxBlocksize,VolFiles) "
        "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
        "%s,%s,%s,%s,%d,%u,'%s',%u,%u,%u)",
-       esc_medianame.c_str(),
-       esc_mtype.c_str(), mr->PoolId,
+       esc_medianame->c_str(),
+       esc_mtype->c_str(), mr->PoolId,
        edit_uint64(mr->MaxVolBytes,ed1),
        edit_uint64(mr->VolCapacityBytes, ed2),
        mr->Recycle,
@@ -419,7 +425,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        edit_uint64(mr->VolUseDuration, ed4),
        mr->MaxVolJobs,
        mr->MaxVolFiles,
-       esc_status.c_str(),
+       esc_status->c_str(),
        mr->Slot,
        edit_uint64(mr->VolBytes, ed5),
        mr->InChanger,
@@ -476,8 +482,9 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   DbLocker _{this};
   auto esc_clientname = EscapeString(jcr, cr->Name);
   auto esc_uname = EscapeString(jcr, cr->Uname);
+  if (!esc_clientname || !esc_uname) { return false; }
   Mmsg(cmd, "SELECT ClientId,Uname FROM Client WHERE Name='%s'",
-       esc_clientname.c_str());
+       esc_clientname->c_str());
 
   cr->ClientId = 0;
   if (QueryDb(jcr, cmd)) {
@@ -510,7 +517,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        "INSERT INTO Client (Name,Uname,AutoPrune,"
        "FileRetention,JobRetention) VALUES "
        "('%s','%s',%d,%s,%s)",
-       esc_clientname.c_str(), esc_uname.c_str(), cr->AutoPrune,
+       esc_clientname->c_str(), esc_uname->c_str(), cr->AutoPrune,
        edit_uint64(cr->FileRetention, ed1),
        edit_uint64(cr->JobRetention, ed2));
   /* clang-format on */
@@ -541,6 +548,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   errmsg[0] = 0;
   auto escaped_path
       = EscapeString(jcr, std::string_view{path, static_cast<size_t>(pnl)});
+  if (!escaped_path) { return false; }
 
   if (cached_path_id != 0 && cached_path_len == pnl
       && bstrcmp(cached_path, path)) {
@@ -548,7 +556,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
     return true;
   }
 
-  Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", escaped_path.c_str());
+  Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", escaped_path->c_str());
 
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -582,7 +590,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
     SqlFreeResult();
   }
 
-  Mmsg(cmd, "INSERT INTO Path (Path) VALUES ('%s')", escaped_path.c_str());
+  Mmsg(cmd, "INSERT INTO Path (Path) VALUES ('%s')", escaped_path->c_str());
 
   ar->PathId = SqlInsertAutokeyRecord(cmd, NT_("Path"));
   if (ar->PathId == 0) {
@@ -620,8 +628,9 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
     return true;
   }
   auto esc = EscapeString(jcr, cr->Counter);
+  if (!esc) { return false; }
 
-  FillQuery<SQL_QUERY::insert_counter_values>(cmd, esc.c_str(), cr->MinValue,
+  FillQuery<SQL_QUERY::insert_counter_values>(cmd, esc->c_str(), cr->MinValue,
                                               cr->MaxValue, cr->CurrentValue,
                                               cr->WrapCounter);
 
@@ -645,23 +654,24 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
 bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 {
   SQL_ROW row;
-  int num_rows, len;
+  int num_rows;
 
   DbLocker _{this};
   fsr->created = false;
   auto esc_fs = EscapeString(jcr, fsr->FileSet);
   auto esc_md5 = EscapeString(jcr, fsr->MD5);
+  if (!esc_fs || !esc_md5) { return false; }
   Mmsg(cmd,
        "SELECT FileSetId,CreateTime FROM FileSet WHERE "
        "FileSet='%s' AND MD5='%s'",
-       esc_fs.c_str(), esc_md5.c_str());
+       esc_fs->c_str(), esc_md5->c_str());
 
   fsr->FileSetId = 0;
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
 
     if (num_rows > 1) {
-      Mmsg2(errmsg, T_("More than one FileSet! %s: %d\n"), esc_fs.c_str(),
+      Mmsg2(errmsg, T_("More than one FileSet! %s: %d\n"), esc_fs->c_str(),
             num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     }
@@ -682,15 +692,21 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
       }
       // Update existing fileset record to make sure the fileset text is
       // inserted
-      len = strlen(fsr->FileSetText);
-      auto esc_filesettext = EscapeString(
-          jcr, std::string_view{fsr->FileSetText, static_cast<size_t>(len)});
+
+      std::optional<std::string> esc_filesettext;
+      const char* escaped_fs_text = "";
+      if (fsr->FileSetText) {
+        esc_filesettext = EscapeString(jcr, fsr->FileSetText);
+        if (!esc_filesettext) { return false; }
+
+        escaped_fs_text = esc_filesettext->c_str();
+      }
 
       Mmsg(cmd,
            "UPDATE FileSet SET (FileSet,MD5,CreateTime,FileSetText) "
            "= ('%s','%s','%s','%s') WHERE FileSet='%s' AND MD5='%s' ",
-           esc_fs.c_str(), esc_md5.c_str(), fsr->cCreateTime,
-           esc_filesettext.c_str(), esc_fs.c_str(), esc_md5.c_str());
+           esc_fs->c_str(), esc_md5->c_str(), fsr->cCreateTime, escaped_fs_text,
+           esc_fs->c_str(), esc_md5->c_str());
       if (!QueryDb(jcr, cmd)) {
         Mmsg1(errmsg, T_("error updating FileSet row: ERR=%s\n"),
               sql_strerror());
@@ -711,19 +727,18 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 
   bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
   if (fsr->FileSetText) {
-    len = strlen(fsr->FileSetText);
-    auto esc_filesettext = EscapeString(
-        jcr, std::string_view{fsr->FileSetText, static_cast<size_t>(len)});
+    auto esc_filesettext = EscapeString(jcr, fsr->FileSetText);
+    if (!esc_filesettext) { return false; }
     Mmsg(cmd,
          "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
          "VALUES ('%s','%s','%s','%s')",
-         esc_fs.c_str(), esc_md5.c_str(), fsr->cCreateTime,
-         esc_filesettext.c_str());
+         esc_fs->c_str(), esc_md5->c_str(), fsr->cCreateTime,
+         esc_filesettext->c_str());
   } else {
     Mmsg(cmd,
          "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
          "VALUES ('%s','%s','%s','')",
-         esc_fs.c_str(), esc_md5.c_str(), fsr->cCreateTime);
+         esc_fs->c_str(), esc_md5->c_str(), fsr->cCreateTime);
   }
 
   fsr->FileSetId = SqlInsertAutokeyRecord(cmd, NT_("FileSet"));
@@ -912,6 +927,7 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
 
   auto esc_filename
       = EscapeString(jcr, std::string_view{fname, static_cast<size_t>(fnl)});
+  if (!esc_filename) { return false; }
 
   if (ar->Digest == NULL || ar->Digest[0] == 0) {
     digest = no_digest;
@@ -923,7 +939,7 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   Mmsg(cmd,
        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
        "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%" PRIu64 ",%" PRIu64 ")",
-       ar->FileIndex, ar->JobId, ar->PathId, esc_filename.c_str(),
+       ar->FileIndex, ar->JobId, ar->PathId, esc_filename->c_str(),
        ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
   /* clang-format on */
 
@@ -1006,9 +1022,10 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
 
   auto esc_base_path
       = EscapeString(jcr, std::string_view{path, static_cast<size_t>(pnl)});
+  if (!esc_filename || !esc_base_path) { return false; }
 
   Mmsg(cmd, "INSERT INTO basefile%" PRIu32 " (Path, Name) VALUES ('%s','%s')",
-       jcr->JobId, esc_base_path.c_str(), esc_filename.c_str());
+       jcr->JobId, esc_base_path->c_str(), esc_filename->c_str());
 
   return InsertDb(jcr, cmd) == 1;
 }
@@ -1103,10 +1120,12 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
   fnl = strlen(ro->object_name);
   auto esc_object_name = EscapeString(
       jcr, std::string_view{ro->object_name, static_cast<size_t>(fnl)});
+  if (!esc_object_name) { return false; }
 
   EscapeObject(jcr, ro->object, ro->object_len);
 
   auto esc_plug_name = EscapeString(jcr, ro->plugin_name);
+  if (!esc_plug_name) { return false; }
 
   /* clang-format off */
   Mmsg(cmd,
@@ -1115,7 +1134,7 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
        "ObjectCompression,FileIndex,JobId) "
        "VALUES ('%s','%s','%s',%" PRIu32 ",%" PRIu32 ",%" PRIi32 ",%" PRIu32
        ",%d,%" PRIu32 ",%" PRIu32 ")",
-        esc_object_name.c_str(), esc_plug_name.c_str(), esc_obj,
+        esc_object_name->c_str(), esc_plug_name->c_str(), esc_obj,
         ro->object_len, ro->object_full_len, ro->object_index,
         ro->FileType, ro->object_compression, ro->FileIndex, ro->JobId);
   /* clang-format on */
@@ -1184,12 +1203,13 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
   DbLocker _{this};
 
   auto esc_filesystem = EscapeString(jcr, filesystem);
+  if (!esc_filesystem) { return false; }
 
   Mmsg(cmd,
        "SELECT ClientId FROM NDMPLevelMap WHERE "
        "ClientId='%s' AND FileSetId='%s' AND FileSystem='%s'",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
-       esc_filesystem.c_str());
+       esc_filesystem->c_str());
 
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -1204,7 +1224,7 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        "INSERT INTO NDMPLevelMap (ClientId, FilesetId, FileSystem, DumpLevel)"
        " VALUES ('%s', '%s', '%s', %s)",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
-       esc_filesystem.c_str(), "0");
+       esc_filesystem->c_str(), "0");
   if (InsertDb(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB NDMP Level Map record %s failed. ERR=%s\n"),
           cmd, sql_strerror());
@@ -1233,6 +1253,7 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
 
   auto esc_envname = EscapeString(jcr, name);
   auto esc_envvalue = EscapeString(jcr, value);
+  if (!esc_envname || !esc_envvalue) { return false; }
   Mmsg(cmd,
        "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
        " VALUES ('%s', '%s', '%s', '%s')"
@@ -1240,7 +1261,7 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
        " DO UPDATE SET"
        " EnvValue='%s'",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2),
-       esc_envname.c_str(), esc_envvalue.c_str(), esc_envvalue.c_str());
+       esc_envname->c_str(), esc_envvalue->c_str(), esc_envvalue->c_str());
   if (InsertDb(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           T_("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
