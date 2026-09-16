@@ -90,6 +90,23 @@ std::vector<std::string> BuildDetectedPluginHintLines(
 // plain text lines -- the "show all known plugin hints" view.
 std::vector<std::string> BuildAllKnownPluginHintLines();
 
+// Builds a short, deduplicated, comma-joined summary of the plugin names
+// used by the FileSet(s) backing this restore (e.g. "bpipe" or
+// "bpipe, python"), for display in the browser's persistent status bar.
+// Returns an empty string when definitions is empty.
+std::string SummarizePluginNames(
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions);
+
+// Builds the advertisement shown in the main browser's help footer when
+// at least one plugin was detected in the FileSet(s) backing this
+// restore, prompting the user towards the plugin hints panel ('p') and
+// the Plugin Options entry ('o'). Returns an empty string when no
+// plugin was detected (plugin_names_summary empty).
+std::string BuildPluginOptionsAdvertisement(
+    std::string_view plugin_names_summary);
+
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
