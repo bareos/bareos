@@ -107,6 +107,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
 
   auto esc_filename
       = EscapeString(jcr, std::string_view{fname, static_cast<size_t>(fnl)});
+  if (!esc_filename) { return false; }
 
   if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
     Mmsg(cmd,
@@ -114,7 +115,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
          "File.JobId=Job.JobId AND File.PathId=%s AND "
          "File.Name='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
          "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
-         edit_int64(fdbr->PathId, ed1), esc_filename.c_str(),
+         edit_int64(fdbr->PathId, ed1), esc_filename->c_str(),
          edit_int64(jr->ClientId, ed3));
   } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
     Mmsg(cmd,
@@ -122,17 +123,17 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
          "File.JobId=%s AND File.PathId=%s AND "
          "File.Name='%s' AND File.FileIndex=%u",
          edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2),
-         esc_filename.c_str(), jr->FileIndex);
+         esc_filename->c_str(), jr->FileIndex);
   } else {
     Mmsg(cmd,
          "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE "
          "File.JobId=%s AND File.PathId=%s AND "
          "File.Name='%s'",
          edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2),
-         esc_filename.c_str());
+         esc_filename->c_str());
   }
   Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n", fdbr->JobId,
-        esc_filename.c_str(), fdbr->PathId);
+        esc_filename->c_str(), fdbr->PathId);
 
   Dmsg1(100, "Query=%s\n", cmd);
 
@@ -150,13 +151,13 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
         if (num_rows > 1) {
           Mmsg3(errmsg,
                 T_("GetFileRecord want 1 got rows=%d PathId=%s Filename=%s\n"),
-                num_rows, edit_int64(fdbr->PathId, ed1), esc_filename.c_str());
+                num_rows, edit_int64(fdbr->PathId, ed1), esc_filename->c_str());
           Dmsg1(000, "=== Problem!  %s", errmsg);
         }
       }
     } else {
       Mmsg2(errmsg, T_("File record for PathId=%s Filename=%s not found.\n"),
-            edit_int64(fdbr->PathId, ed1), esc_filename.c_str());
+            edit_int64(fdbr->PathId, ed1), esc_filename->c_str());
     }
     SqlFreeResult();
   } else {
@@ -181,13 +182,14 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
   auto escaped_path
       = EscapeString(jcr, std::string_view{path, static_cast<size_t>(pnl)});
+  if (!escaped_path) { return 0; }
 
   if (cached_path_id != 0 && cached_path_len == pnl
       && bstrcmp(cached_path, path)) {
     return cached_path_id;
   }
 
-  Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", escaped_path.c_str());
+  Mmsg(cmd, "SELECT PathId FROM Path WHERE Path='%s'", escaped_path->c_str());
   if (QueryDb(jcr, cmd)) {
     char ed1[30];
     num_rows = SqlNumRows();
@@ -242,17 +244,18 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   SQL_ROW row;
   char ed1[50];
   bool search_by_jobname = (jr->JobId == 0);
-  std::string esc;
+  std::optional<std::string> esc;
   DbLocker _{this};
   if (search_by_jobname) {
     esc = EscapeString(jcr, jr->Job);
+    if (!esc) { return false; }
     Mmsg(cmd,
          "SELECT VolSessionId,VolSessionTime,"
          "PoolId,StartTime,EndTime,JobFiles,JobBytes,JobTDate,Job,JobStatus,"
          "Type,Level,ClientId,Name,PriorJobId,RealEndTime,JobId,FileSetId,"
          "SchedTime,RealEndTime,ReadBytes,HasBase,PurgedFiles "
          "FROM Job WHERE Job='%s'",
-         esc.c_str());
+         esc->c_str());
   } else {
     Mmsg(cmd,
          "SELECT VolSessionId,VolSessionTime,"
@@ -267,7 +270,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
   if ((row = SqlFetchRow()) == NULL) {
     if (search_by_jobname) {
-      Mmsg1(errmsg, T_("No Job found for JobName '%s'\n"), esc.c_str());
+      Mmsg1(errmsg, T_("No Job found for JobName '%s'\n"), esc->c_str());
     } else {
       Mmsg1(errmsg, T_("No Job found for JobId %s\n"),
             edit_int64(jr->JobId, ed1));
@@ -596,6 +599,7 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
         edit_int64(pdbr->PoolId, ed1));
   } else { /* find by name */
     auto esc = EscapeString(jcr, pdbr->Name);
+    if (!esc) { return false; }
     Mmsg(
         cmd,
         "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
@@ -604,7 +608,7 @@ bool BareosDb::GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr)
         "ScratchPoolId,"
         "ActionOnPurge,MinBlocksize,MaxBlocksize FROM Pool WHERE "
         "Pool.Name='%s'",
-        esc.c_str());
+        esc->c_str());
   }
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -689,10 +693,11 @@ bool BareosDb::GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr)
          edit_int64(sdbr->StorageId, ed1));
   } else { /* find by name */
     auto esc = EscapeString(jcr, sdbr->Name);
+    if (!esc) { return false; }
     Mmsg(cmd,
          "SELECT StorageId,Name,Autochanger FROM Storage WHERE "
          "Storage.Name='%s'",
-         esc.c_str());
+         esc->c_str());
   }
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -741,10 +746,11 @@ bool BareosDb::GetClientRecord(JobControlRecord* jcr, ClientDbRecord* cdbr)
          edit_int64(cdbr->ClientId, ed1));
   } else { /* find by name */
     auto esc = EscapeString(jcr, cdbr->Name);
+    if (!esc) { return false; }
     Mmsg(cmd,
          "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
          "FROM Client WHERE Client.Name='%s'",
-         esc.c_str());
+         esc->c_str());
   }
 
   if (QueryDb(jcr, cmd)) {
@@ -793,8 +799,9 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
 
   DbLocker _{this};
   auto esc = EscapeString(jcr, cr->Counter);
+  if (!esc) { return false; }
 
-  FillQuery(SQL_QUERY::select_counter_values, esc.c_str());
+  FillQuery(SQL_QUERY::select_counter_values, esc->c_str());
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
 
@@ -852,10 +859,11 @@ int BareosDb::GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
          edit_int64(fsr->FileSetId, ed1));
   } else { /* find by name */
     auto esc = EscapeString(jcr, fsr->FileSet);
+    if (!esc) { return false; }
     Mmsg(cmd,
          "SELECT FileSetId,FileSet,MD5,CreateTime FROM FileSet "
          "WHERE FileSet='%s' ORDER BY CreateTime DESC LIMIT 1",
-         esc.c_str());
+         esc->c_str());
   }
 
   if (QueryDb(jcr, cmd)) {
@@ -898,7 +906,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
 
   if (*mr->MediaType) {
     auto esc = EscapeString(jcr, mr->MediaType);
-    Mmsg(buf, "AND MediaType='%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND MediaType='%s' ", esc->c_str());
     PmStrcat(cmd, buf.c_str());
   }
 
@@ -919,7 +928,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
 
   if (*mr->VolStatus) {
     auto esc = EscapeString(jcr, mr->VolStatus);
-    Mmsg(buf, "AND VolStatus = '%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND VolStatus = '%s' ", esc->c_str());
     PmStrcat(cmd, buf.c_str());
   }
 
@@ -930,7 +940,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   } else if (*mr->VolumeName) {
     /* single volume given in media record */
     auto esc = EscapeString(jcr, mr->VolumeName);
-    Mmsg(buf, "AND VolumeName = '%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND VolumeName = '%s' ", esc->c_str());
     PmStrcat(cmd, buf.c_str());
   }
 
@@ -1078,6 +1089,7 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          edit_int64(mr->MediaId, ed1));
   } else { /* find by name */
     auto esc = EscapeString(jcr, mr->VolumeName);
+    if (!esc) { return false; }
     Mmsg(cmd,
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
@@ -1088,7 +1100,7 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
          "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE VolumeName='%s'",
-         esc.c_str());
+         esc->c_str());
   }
 
   if (QueryDb(jcr, cmd)) {
@@ -1418,6 +1430,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
   StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
   bstrutime(date, sizeof(date), StartTime + 1);
   auto esc = EscapeString(jcr, jr->Name);
+  if (!esc) { return false; }
 
   /* we can take also client name, fileset, etc... */
 
@@ -1431,7 +1444,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
        //    "AND Client.Name = '%s' "
        "AND StartTime<'%s' "
        "ORDER BY Job.JobTDate DESC LIMIT 1",
-       esc.c_str(),
+       esc->c_str(),
        //      edit_uint64(jr->ClientId, clientid),
        //      edit_uint64(jr->FileSetId, filesetid));
        date);
@@ -1626,12 +1639,13 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
   DbLocker _{this};
 
   auto esc_filesystem = EscapeString(jcr, filesystem);
+  if (!esc_filesystem) { return false; }
 
   Mmsg(cmd,
        "SELECT DumpLevel FROM NDMPLevelMap WHERE "
        "ClientId='%s' AND FileSetId='%s' AND FileSystem='%s'",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
-       esc_filesystem.c_str());
+       esc_filesystem->c_str());
 
   if (QueryDb(jcr, cmd)) {
     num_rows = SqlNumRows();
@@ -1812,7 +1826,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
 
   if (*mr->MediaType) {
     auto esc = EscapeString(jcr, mr->MediaType);
-    Mmsg(buf, "AND Media.MediaType='%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND Media.MediaType='%s' ", esc->c_str());
     PmStrcat(querystring, buf.c_str());
   }
 
@@ -1833,7 +1848,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
 
   if (*mr->VolStatus) {
     auto esc = EscapeString(jcr, mr->VolStatus);
-    Mmsg(buf, "AND Media.VolStatus = '%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND Media.VolStatus = '%s' ", esc->c_str());
     PmStrcat(querystring, buf.c_str());
   }
 
@@ -1844,7 +1860,8 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   } else if (*mr->VolumeName) {
     /* single volume given in media record */
     auto esc = EscapeString(jcr, mr->VolumeName);
-    Mmsg(buf, "AND Media.VolumeName = '%s' ", esc.c_str());
+    if (!esc) { return false; }
+    Mmsg(buf, "AND Media.VolumeName = '%s' ", esc->c_str());
     PmStrcat(querystring, buf.c_str());
   }
 

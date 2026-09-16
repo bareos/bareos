@@ -26,7 +26,6 @@
 
 #include "lib/attr.h"
 
-#include <string_view>
 /*
  * This object can be use to browse the catalog
  *
@@ -73,12 +72,15 @@ class Bvfs {
 
   void SetOffset(uint32_t nb) { offset = nb; }
 
-  void SetPattern(char* p)
+  void SetPattern(const char* p)
   {
-    uint32_t len = strlen(p);
-    auto escaped_pattern = db->EscapeString(jcr, std::string_view{p, len});
-    pattern = CheckPoolMemorySize(pattern, escaped_pattern.size() + 1);
-    PmStrcpy(pattern, escaped_pattern.c_str());
+    auto escaped_pattern = db->EscapeString(jcr, p);
+    if (!escaped_pattern) {
+      pattern[0] = 0;
+      return;
+    }
+    pattern = CheckPoolMemorySize(pattern, escaped_pattern->size() + 1);
+    PmStrcpy(pattern, escaped_pattern->c_str());
   }
 
   /* Get the root point */

@@ -62,8 +62,8 @@ class BareosDbPostgresql : public BareosDb {
   int SqlNumFields(void) override { return num_fields_; }
   const char* OpenDatabase() override;
   void CloseDatabase(JobControlRecord* jcr) override;
-  std::string EscapeString(JobControlRecord* jcr,
-                           std::string_view str) override;
+  std::optional<std::string> EscapeString(JobControlRecord* jcr,
+                                          std::string_view str) override;
   char* EscapeObject(JobControlRecord* jcr, char* old, int len) override;
   void UnescapeObject(JobControlRecord* jcr,
                       char* from,
