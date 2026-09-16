@@ -20,6 +20,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { restorePluginHints as pluginHintsFixture } from '../../src/data/restorePluginHints.js'
 import {
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
@@ -740,7 +741,7 @@ describe('restore browser placeholder', () => {
       PlainFS: {
         include: [{ file: '/etc' }],
       },
-    })).toEqual(new Map([
+    }, pluginHintsFixture)).toEqual(new Map([
       ['PluginFS', {
         filesetName: 'PluginFS',
         description: 'Plugin backup',
@@ -774,7 +775,7 @@ describe('restore browser placeholder', () => {
         fileset: 'PlainFS',
         filesettext: 'FileSet {\n  Name = "PlainFS"\n}\n',
       },
-    ])).toEqual(new Map([
+    ], pluginHintsFixture)).toEqual(new Map([
       ['PluginOptionsTest', {
         filesetName: 'PluginOptionsTest',
         description: 'Plugin backup',
@@ -881,7 +882,7 @@ describe('restore browser placeholder', () => {
       raw: 'bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out',
       pluginName: 'bpipe',
       optionKeys: ['file', 'reader', 'writer'],
-    })).toBe('bpipe')
+    }, pluginHintsFixture)).toBe('bpipe')
   })
 
   it('resolves python module names to specific plugin hint entries', () => {
@@ -889,7 +890,7 @@ describe('restore browser placeholder', () => {
       raw: 'python:module_path=/tmp/plugins:module_name=bareos-fd-vmware:config_file=/tmp/vmware.ini',
       pluginName: 'python',
       optionKeys: ['module_path', 'module_name', 'config_file'],
-    })).toBe('vmware')
+    }, pluginHintsFixture)).toBe('vmware')
   })
 
   it('builds static plugin hints for the selected restore plugin', () => {
@@ -899,7 +900,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_path', 'module_name', 'config_file'],
       }],
-    })).toEqual([
+    }, pluginHintsFixture)).toEqual([
       expect.objectContaining({
         id: 'vmware',
         displayName: 'VMware',
@@ -916,7 +917,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_name', 'config_file'],
       }],
-    })[0]?.options).toContainEqual(expect.objectContaining({
+    }, pluginHintsFixture)[0]?.options).toContainEqual(expect.objectContaining({
       name: 'buckets_exclude',
       description: 'Comma-separated list of buckets to exclude.',
       source: 'plugin-doc',
@@ -930,7 +931,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_name', 'databases'],
       }],
-    })).toEqual([
+    }, pluginHintsFixture)).toEqual([
       expect.objectContaining({
         id: 'tasksPgsql',
         displayName: 'Tasks PostgreSQL',
@@ -944,7 +945,7 @@ describe('restore browser placeholder', () => {
       raw: 'python:module_name=bareos_tasks.pgsql:databases=db001,db002',
       pluginName: 'python',
       optionKeys: ['module_name', 'databases'],
-    })).toBe('tasksPgsql')
+    }, pluginHintsFixture)).toBe('tasksPgsql')
   })
 
   it('resolves qumulo plugin names to the documented third-party hint entry', () => {
@@ -954,7 +955,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'qumulo',
         optionKeys: ['cluster', 'path'],
       }],
-    })).toContainEqual(expect.objectContaining({
+    }, pluginHintsFixture)).toContainEqual(expect.objectContaining({
       id: 'qumulo',
       displayName: 'Qumulo by Yuzuy',
       supportLevel: 'third-party',
@@ -963,7 +964,7 @@ describe('restore browser placeholder', () => {
   })
 
   it('lists all known plugin hints in display-name order', () => {
-    const hints = getAllRestorePluginHints()
+    const hints = getAllRestorePluginHints(pluginHintsFixture)
 
     expect(hints[0]).toEqual(expect.objectContaining({
       displayName: 'BARRI (Bareos Recovery Imager)',
