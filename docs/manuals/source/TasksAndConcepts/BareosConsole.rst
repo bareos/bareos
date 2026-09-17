@@ -1328,6 +1328,19 @@ restore
    specifications, multiple restore jobs may be configured.
    The restorejob argument allows the selection of one of these jobs.
 
+   When selecting a restore point via the guided FileSet@Client picker, each candidate restore
+   point is shown with its timestamp/age, JobId, the distinct job name(s) that make up its backup
+   chain, and the anchor Full job's own file count and size. By default, restoring a selected
+   restore point uses the whole resolved backup chain (Full plus any Differential/Incremental
+   jobs up to that point). The **restorepointmode** argument controls this:
+
+   restorepointmode=chain
+      Restore the whole resolved backup chain up to the selected restore point (default).
+
+   restorepointmode=job
+      Restore only the anchor Full job of the selected restore point, bypassing chain/dependency
+      resolution entirely.
+
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
 run
