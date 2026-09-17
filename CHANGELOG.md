@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - plugins: (debian) add missing data from /etc/postgresql [PR #2828]
+- bareosfd: fix misusing the python api [PR #2817]
 
 ### Changed
 - cats: escape client list filter [PR #2822]
@@ -2368,6 +2369,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2789]: https://github.com/bareos/bareos/pull/2789
 [PR #2791]: https://github.com/bareos/bareos/pull/2791
 [PR #2794]: https://github.com/bareos/bareos/pull/2794
+[PR #2817]: https://github.com/bareos/bareos/pull/2817
 [PR #2822]: https://github.com/bareos/bareos/pull/2822
 [PR #2828]: https://github.com/bareos/bareos/pull/2828
 [unreleased]: https://github.com/bareos/bareos/tree/master
