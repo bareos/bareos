@@ -86,6 +86,7 @@ target_sources(
           recycle.cc
           reload.cc
           restore.cc
+          restore_options.cc
           run_conf.cc
           run_on_incoming_connect_interval.cc
           sd_cmds.cc
