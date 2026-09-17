@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   InitStackDump();
 
   MyNameIs(argc, argv, "bcopy");
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   CLI::App bcopy_app;
   InitCLIApp(bcopy_app, "The Bareos Volume Copy tool.", 2002);

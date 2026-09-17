@@ -70,7 +70,7 @@ TEST(ConfigParser_SD, CFG_TYPE_STR_VECTOR_OF_DIRS)
   WSA_Init();
 #  endif
 
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   std::string path_to_config_file
       = std::string("configs/bareos-configparser-tests/bareos-sd-") + test_name

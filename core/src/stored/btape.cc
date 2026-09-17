@@ -238,7 +238,7 @@ int main(int margc, char* margv[])
 
   working_directory = "/tmp";
   MyNameIs(margc, margv, "btape");
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   OSDependentInit();
 

@@ -53,7 +53,7 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
       = std::string("configs/dir_fd_connection/dir_fd_no_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
       director_config->GetCurrentConfiguration());
 
@@ -76,7 +76,7 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
       = std::string("configs/dir_fd_connection/dir_fd_allow_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
       director_config->GetCurrentConfiguration());
 

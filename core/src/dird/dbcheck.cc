@@ -791,7 +791,7 @@ int main(int argc, char* argv[])
   textdomain("bareos");
 
   MyNameIs(argc, argv, "dbcheck");
-  InitMsg(nullptr, nullptr); /* setup message handler */
+  InitMsg(nullptr); /* setup message handler */
 
   OSDependentInit();
 
