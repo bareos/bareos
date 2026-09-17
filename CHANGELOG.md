@@ -103,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix segfault on missing Changer Command" [PR #2763]
 - hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2777]
 - bareosfd: fix misusing the python api [PR #2810]
+- plugins: (debian) add missing data from /etc/postgresql [PR #2827]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2397,4 +2398,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2799]: https://github.com/bareos/bareos/pull/2799
 [PR #2810]: https://github.com/bareos/bareos/pull/2810
 [PR #2814]: https://github.com/bareos/bareos/pull/2814
+[PR #2827]: https://github.com/bareos/bareos/pull/2827
 [unreleased]: https://github.com/bareos/bareos/tree/master
