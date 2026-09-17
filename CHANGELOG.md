@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- cats: escape client list filter [PR #2824]
+
 ## [23.1.8] - 2026-09-03
 
 ### Documentation
@@ -1790,4 +1793,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2675]: https://github.com/bareos/bareos/pull/2675
 [PR #2709]: https://github.com/bareos/bareos/pull/2709
 [PR #2788]: https://github.com/bareos/bareos/pull/2788
+[PR #2824]: https://github.com/bareos/bareos/pull/2824
 [unreleased]: https://github.com/bareos/bareos/tree/master
