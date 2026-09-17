@@ -297,6 +297,25 @@ struct TerminalRawModeGuard {
   TerminalRawModeGuard(const TerminalRawModeGuard&) = delete;
   TerminalRawModeGuard& operator=(const TerminalRawModeGuard&) = delete;
 };
+
+struct TerminalSelectionScreenGuard {
+  bool active = false;
+
+  TerminalSelectionScreenGuard()
+  {
+    ConsoleOutput("\033[?1049h\033[H");
+    active = true;
+  }
+
+  ~TerminalSelectionScreenGuard()
+  {
+    if (active) { ConsoleOutput("\033[?1049l"); }
+  }
+
+  TerminalSelectionScreenGuard(const TerminalSelectionScreenGuard&) = delete;
+  TerminalSelectionScreenGuard& operator=(const TerminalSelectionScreenGuard&)
+      = delete;
+};
 #endif
 
 static bool ReadSelectionInput(FILE* input,
@@ -382,50 +401,48 @@ static bool ReadSelectionInput(FILE* input,
     event = "key:up"; /* Ctrl-K, Ctrl-P */
   } else if (input_byte == 2 || input_byte == 8) {
     event = "key:left"; /* Ctrl-B, Ctrl-H */
+  } else if (input_byte == 4) {
+    event = "key:pagedown"; /* Ctrl-D */
+  } else if (input_byte == 21) {
+    event = "key:pageup"; /* Ctrl-U */
   } else if (input_byte == 6 || input_byte == 12) {
     event = "key:right"; /* Ctrl-F, Ctrl-L */
-  } else if (input_byte == 27) {
+  } else if (input_byte == 27 || input_byte == 0x9b) {
+    std::string sequence;
     unsigned char next = 0;
-    if (read_with_timeout(next) && next == '[') {
+    if (input_byte == 0x9b) {
+      sequence = "\x1b[";
+      next = '[';
+    } else {
+      sequence.assign(1, '\x1b');
+    }
+
+    if ((input_byte == 0x9b || read_with_timeout(next)) && next == '[') {
+      if (input_byte != 0x9b) { sequence.push_back(static_cast<char>(next)); }
       unsigned char final_byte = 0;
-      std::string parameters;
       for (int i = 0; i < 16; ++i) {
         unsigned char byte = 0;
         if (!read_with_timeout(byte)) { break; }
+        sequence.push_back(static_cast<char>(byte));
         if (byte >= 0x40 && byte <= 0x7e) {
           final_byte = byte;
           break;
         }
-        parameters.push_back(static_cast<char>(byte));
       }
-      if (parameters.empty() && final_byte == 'A') {
-        event = "key:up";
-      } else if (parameters.empty() && final_byte == 'B') {
-        event = "key:down";
-      } else if (parameters.empty() && final_byte == 'C') {
-        event = "key:right";
-      } else if (parameters.empty() && final_byte == 'D') {
-        event = "key:left";
-      } else if (final_byte == 'H'
-                 || (final_byte == '~'
-                     && (parameters == "1" || parameters == "7"))) {
-        event = "key:home";
-      } else if (final_byte == 'F'
-                 || (final_byte == '~'
-                     && (parameters == "4" || parameters == "8"))) {
-        event = "key:end";
-      } else {
-        event = "key:noop";
-      }
+      event = final_byte == 0
+                  ? "key:noop"
+                  : console::MapAnsiEscapeSequenceToSelectionEvent(sequence);
+      if (event.empty()) { event = "key:noop"; }
     } else if (next == 'O') {
+      sequence.push_back(static_cast<char>(next));
       unsigned char final_byte = 0;
-      if (read_with_timeout(final_byte) && final_byte == 'H') {
-        event = "key:home";
-      } else if (final_byte == 'F') {
-        event = "key:end";
-      } else {
-        event = "key:noop";
+      if (read_with_timeout(final_byte)) {
+        sequence.push_back(static_cast<char>(final_byte));
       }
+      event = final_byte == 0
+                  ? "key:noop"
+                  : console::MapAnsiEscapeSequenceToSelectionEvent(sequence);
+      if (event.empty()) { event = "key:noop"; }
     } else if (next == 0) {
       event = "key:cancel";
     } else {
@@ -681,6 +698,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
     // touch this, so their normal ISIG/echo terminal behavior (e.g.
     // Ctrl-C aborting a long-running command) is unaffected.
     std::optional<TerminalRawModeGuard> raw_mode_guard;
+    std::optional<TerminalSelectionScreenGuard> selection_screen_guard;
 #endif
 
     tid = StartBsockTimer(UA_sock, timeout);
@@ -700,6 +718,9 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 #if !defined(HAVE_WIN32)
           if (tty_input && !raw_mode_guard) {
             raw_mode_guard.emplace(fileno(input));
+          }
+          if (tty_input && !selection_screen_guard) {
+            selection_screen_guard.emplace();
           }
 #endif
           if (tty_input) { ConsoleOutput("\033[2J\033[H"); }
@@ -725,6 +746,12 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
           pending_style = ConsoleOutputStyle::kError;
         }
         continue;
+      }
+
+      if (!collecting_selection) {
+#if !defined(HAVE_WIN32)
+        selection_screen_guard.reset();
+#endif
       }
 
       if (at_prompt) {

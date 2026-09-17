@@ -92,6 +92,7 @@ extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
 extern bool DotPluginhintsCmd(UaContext* ua, const char* cmd);
+extern bool DotClientbrowseCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotConsolesCmd(UaContext* ua, const char* cmd);
 extern bool DotUsersCmd(UaContext* ua, const char* cmd);
@@ -239,6 +240,9 @@ static struct ua_cmdstruct commands[] = {
      false, false},
     {NT_(".clients"), DotClientsCmd, T_("List all client resources"),
      NT_("[enabled | disabled]"), true, false},
+    {NT_(".clientbrowse"), DotClientbrowseCmd,
+     T_("List a client directory for restore destination browsing"),
+     NT_("client=<client-name> path=<path>"), true, false},
     {NT_(".consoles"), DotConsolesCmd, T_("List all console resources"), NULL,
      true, false},
     {NT_(".users"), DotUsersCmd, T_("List all user resources"), NULL, true,
