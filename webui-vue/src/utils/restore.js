@@ -697,7 +697,7 @@ function normalizeRestorePluginHintAlias(value) {
   return String(value ?? '').trim().toLowerCase()
 }
 
-function extractRestorePluginDefinitionOption(definition, key) {
+export function extractRestorePluginDefinitionOption(definition, key) {
   const raw = String(definition?.raw ?? '')
   const match = raw.match(new RegExp(`:${key}=([^:]+)`, 'i'))
   return match?.[1]?.trim() ?? ''
@@ -845,6 +845,40 @@ export function findRestorePluginHintIdForBlockName(pluginName, hintsById) {
   return resolveRestorePluginHintId({ pluginName }, hintsById)
 }
 
+// Resolves the hint for a whole plugin options block (name + options),
+// preferring a "module_name=" option row over the bare plugin name --
+// the same module_name-aware resolution resolveRestorePluginHintId()
+// already does for FileSet plugin definitions. Mirrors
+// ResolvePluginOptionsBlockHint() in dird/restore_plugin_hints.cc.
+// Fixes a bug where python-wrapped plugin blocks (module_name stored
+// as a row, not baked into pluginName) resolved to the generic
+// "python" loader hint instead of their real, curated hint.
+export function resolveBlockPluginHintId(block, hintsById) {
+  const raw = buildPluginOptionsBlock(block, ':')
+  return resolveRestorePluginHintId({ raw, pluginName: block?.pluginName }, hintsById)
+}
+
+// Finds, among a FileSet's detected plugin definitions, the one (if
+// any) whose resolved hint id matches the given hintId -- mirrors
+// FindMatchingPluginDefinition() in dird/restore_plugin_hints.cc. Used
+// to source the "already in FileSet" option group's current values for
+// a Plugin Options editor block.
+//
+// Note: matching is purely by resolved hint identity, so if the
+// FileSet contains more than one definition of the same plugin type,
+// the first one found is used regardless of which block is being
+// edited. This is acceptable since the group is purely informational
+// (an example of already-configured values for that plugin type).
+export function findMatchingRestorePluginDefinition(hintId, definitions, hintsById) {
+  if (!hintId) {
+    return null
+  }
+  return (definitions ?? []).find(
+    definition => resolveRestorePluginHintId(definition, hintsById) === hintId
+  ) ?? null
+}
+
+
 export function buildRestorePluginOptionExample(pluginHint) {
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
   const preferredOptions = options.filter(option => option.status === 'required')
@@ -853,6 +887,46 @@ export function buildRestorePluginOptionExample(pluginHint) {
     .map(option => `${option.name}=...`)
 
   return exampleOptions.join(pluginHint?.optionSeparator ?? ':')
+}
+
+// Buckets a hint's known options into three groups, mirroring
+// CategorizePluginOptions() in dird/restore_plugin_hints.cc:
+// - alreadyInFileset: options whose key is already present in the
+//   FileSet's own detected plugin definition (filesetOptionKeys) --
+//   shown read-only with their current FileSet value elsewhere.
+// - required: status === "required" options not already in the
+//   FileSet.
+// - optional: everything else, not already in the FileSet.
+// An option present in the FileSet is never also listed as required
+// or optional (already-in-fileset takes priority).
+export function categorizePluginOptions(pluginHint, filesetOptionKeys = []) {
+  const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
+  const filesetKeys = new Set(filesetOptionKeys ?? [])
+
+  const alreadyInFileset = []
+  const required = []
+  const optional = []
+
+  for (const option of options) {
+    if (filesetKeys.has(option.name)) {
+      alreadyInFileset.push(option)
+    } else if (option.status === 'required') {
+      required.push(option)
+    } else {
+      optional.push(option)
+    }
+  }
+
+  return { alreadyInFileset, required, optional }
+}
+
+// True when any of the hint's options is itself a config/defaults-file
+// path that can already supply other options' values (e.g.
+// "config_file", "mycnf", "defaultsfile"), mirroring
+// HintProvidesDefaultsElsewhere() in dird/restore_plugin_hints.cc.
+export function hintProvidesDefaultsElsewhere(pluginHint) {
+  const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
+  return options.some(option => option.providesDefaults === true)
 }
 
 export function getRestorePluginHints(pluginInfo, hintsById) {

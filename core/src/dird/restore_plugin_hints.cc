@@ -34,6 +34,9 @@ namespace {
 
 // clang-format off
 constexpr PluginOptionHint kBarriOptions[] = {
+    {"files", "required", "Comma-separated target devices or files to restore the BARRI image to; mutually exclusive with directory and copy.", "plugin-doc", PluginOptionType::kPath},
+    {"directory", "optional", "Restore disks into generated files below this directory; mutually exclusive with files and copy.", "plugin-doc", PluginOptionType::kPath},
+    {"copy", "optional", "Copy the BARRI image to this file for manual recovery with barri-cli; mutually exclusive with files and directory.", "plugin-doc", PluginOptionType::kPath},
     {"save-unreferenced-disks", "optional", "Try to save disks that contain no snapshotted data. Default: yes.", "plugin-doc", PluginOptionType::kBoolean},
     {"save-unreferenced-partitions", "optional", "Try to save partitions that contain no snapshotted data. Default: yes.", "plugin-doc", PluginOptionType::kBoolean},
     {"save-unreferenced-extents", "optional", "Try to save even unsnapshotted parts of partitions. Default: yes.", "plugin-doc", PluginOptionType::kBoolean},
@@ -54,7 +57,32 @@ constexpr PluginOptionHint kGrpcOptions[] = {
 };
 
 constexpr PluginOptionHint kHyperVOptions[] = {
-    {"config_file", "known", "Path to the Hyper-V plugin configuration file.", "plugin-example", PluginOptionType::kPath},
+    {"config_file", "known", "Path to the Hyper-V plugin configuration file.", "plugin-example", PluginOptionType::kPath, true},
+};
+
+constexpr PluginOptionHint kIncusOptions[] = {
+    {"instance", "required", "Instance name to back up; can be overridden on restore with restore_instance.", "plugin-doc"},
+    {"project", "optional", "Incus project containing the instance.", "plugin-doc"},
+    {"remote", "optional", "Incus remote containing the instance.", "plugin-doc"},
+    {"allow_disk_resize", "optional", "Reserved option that currently must stay unset or no.", "plugin-doc", PluginOptionType::kBoolean},
+    {"chunk_size", "optional", "Virtual-machine disk chunk size, e.g. 64MiB.", "plugin-doc"},
+    {"chunk_id_length", "optional", "Number of digits used for chunk identifiers.", "plugin-doc", PluginOptionType::kInteger},
+    {"compression", "optional", "Tarball compression algorithm, e.g. none, lzma, gzip, bzip2, or zstd where supported.", "plugin-doc"},
+    {"path_prefix", "optional", "Bareos storage path prefix for backup files.", "plugin-doc"},
+    {"queue_depth", "optional", "Maximum number of chunks buffered in RAM during backup.", "plugin-doc", PluginOptionType::kInteger},
+    {"max_file_size", "optional", "Maximum file size allowed in the backup buffer.", "plugin-doc"},
+    {"backup_poll_timeout", "optional", "Delay after which a quiet Incus export is considered stalled.", "plugin-doc"},
+    {"hash", "optional", "Hash algorithm used to detect changes in each chunk.", "plugin-doc"},
+    {"hijacked_stat_fields", "optional", "Comma-separated stat fields used to store chunk digests.", "plugin-doc"},
+    {"restore_buffer_depth", "optional", "Maximum number of restore chunks buffered in RAM.", "plugin-doc", PluginOptionType::kInteger},
+    {"restore_config_override", "optional", "Repeatable <key>=<value> configuration override applied on restore.", "plugin-doc"},
+    {"restore_device_override", "optional", "Repeatable <device>,<key>=<value> device override applied on restore.", "plugin-doc"},
+    {"restore_instance", "optional", "Target instance name for restore; defaults to instance.", "plugin-doc"},
+    {"restore_path", "optional", "Write the restore tarball to this filesystem path instead of importing it.", "plugin-doc", PluginOptionType::kPath},
+    {"restore_project", "optional", "Target project for restore; defaults to project.", "plugin-doc"},
+    {"restore_remote", "optional", "Target remote for restore; defaults to remote.", "plugin-doc"},
+    {"restore_storage", "optional", "Target storage pool for restore.", "plugin-doc"},
+    {"temp_dir", "optional", "Temporary directory used for restore chunks.", "plugin-doc", PluginOptionType::kPath},
 };
 
 constexpr PluginOptionHint kLdapOptions[] = {
@@ -68,7 +96,7 @@ constexpr PluginOptionHint kLdapOptions[] = {
 constexpr PluginOptionHint kLibcloudOptions[] = {
     {"module_path", "known", "Optional path to Bareos plugin modules.", "plugin-doc", PluginOptionType::kPath},
     {"module_name", "known", "Plugin module name, usually bareos-fd-libcloud.", "plugin-doc"},
-    {"config_file", "optional", "Path to the libcloud configuration file.", "plugin-doc", PluginOptionType::kPath},
+    {"config_file", "optional", "Path to the libcloud configuration file.", "plugin-doc", PluginOptionType::kPath, true},
     {"buckets_include", "optional", "Comma-separated list of buckets to include.", "plugin-doc"},
     {"buckets_exclude", "optional", "Comma-separated list of buckets to exclude.", "plugin-doc"},
     {"hostname", "required", "Hostname or IP address of the storage backend.", "plugin-doc"},
@@ -89,7 +117,7 @@ constexpr PluginOptionHint kLibcloudOptions[] = {
 };
 
 constexpr PluginOptionHint kMariabackupOptions[] = {
-    {"mycnf", "optional", "Path to the my.cnf file containing connection credentials.", "plugin-doc", PluginOptionType::kPath},
+    {"mycnf", "optional", "Path to the my.cnf file containing connection credentials.", "plugin-doc", PluginOptionType::kPath, true},
     {"dumpbinary", "known", "Override the mariabackup command binary.", "plugin-doc", PluginOptionType::kPath},
     {"dumpoptions", "known", "Override the mariabackup backup command options.", "plugin-doc"},
     {"restorecommand", "known", "Override the restore command, defaulting to mbstream extraction.", "plugin-doc"},
@@ -105,7 +133,7 @@ constexpr PluginOptionHint kMariadbDumpOptions[] = {
     {"host", "known", "MariaDB host name, defaulting to localhost.", "plugin-readme"},
     {"dumpoptions", "known", "Override the mariadb-dump option string.", "plugin-readme"},
     {"drop_and_recreate", "known", "Disable drop/create statements when set to false.", "plugin-readme", PluginOptionType::kBoolean},
-    {"defaultsfile", "known", "Path to a MariaDB defaults file for client utilities.", "plugin-readme", PluginOptionType::kPath},
+    {"defaultsfile", "known", "Path to a MariaDB defaults file for client utilities.", "plugin-readme", PluginOptionType::kPath, true},
     {"user", "known", "Database user for backup access.", "plugin-readme"},
     {"password", "known", "Password for the configured database user.", "plugin-readme"},
     {"dumpbinary", "known", "Override the mariadb-dump binary path.", "plugin-readme", PluginOptionType::kPath},
@@ -117,14 +145,14 @@ constexpr PluginOptionHint kMysqlDumpOptions[] = {
     {"mysqlhost", "known", "MySQL host name, defaulting to localhost.", "plugin-readme"},
     {"dumpoptions", "known", "Override the mysqldump option string.", "plugin-readme"},
     {"drop_and_recreate", "known", "Disable drop/create statements when set to false.", "plugin-readme", PluginOptionType::kBoolean},
-    {"defaultsfile", "known", "Path to a defaults file for mysql and mysqldump.", "plugin-readme", PluginOptionType::kPath},
+    {"defaultsfile", "known", "Path to a defaults file for mysql and mysqldump.", "plugin-readme", PluginOptionType::kPath, true},
     {"mysqluser", "known", "Database user for backup access.", "plugin-readme"},
     {"mysqlpassword", "known", "Password for the configured database user.", "plugin-readme"},
     {"dumpbinary", "known", "Override the mysqldump binary path.", "plugin-readme", PluginOptionType::kPath},
 };
 
 constexpr PluginOptionHint kPerconaXtrabackupOptions[] = {
-    {"mycnf", "optional", "Path to the my.cnf file containing connection credentials.", "plugin-doc", PluginOptionType::kPath},
+    {"mycnf", "optional", "Path to the my.cnf file containing connection credentials.", "plugin-doc", PluginOptionType::kPath, true},
     {"dumpbinary", "known", "Override the XtraBackup command binary.", "plugin-doc", PluginOptionType::kPath},
     {"dumpoptions", "known", "Override the XtraBackup backup command options.", "plugin-doc"},
     {"restorecommand", "known", "Override the restore command, defaulting to xbstream extraction.", "plugin-doc"},
@@ -150,7 +178,7 @@ constexpr PluginOptionHint kPostgresqlOptions[] = {
 };
 
 constexpr PluginOptionHint kProxmoxOptions[] = {
-    {"guestid", "required", "Guest ID to back up or recreate during restore.", "plugin-doc", PluginOptionType::kInteger},
+    {"guestid", "optional", "Guest ID to create or restore; required when restoring directly into Proxmox.", "plugin-doc", PluginOptionType::kInteger},
     {"force", "optional", "Overwrite an existing guest with the same ID during restore.", "plugin-doc", PluginOptionType::kBoolean},
     {"restoretodisk", "optional", "Restore to a local .vma dump file instead of directly restoring a guest.", "plugin-doc", PluginOptionType::kBoolean},
     {"restorepath", "optional", "Filesystem path used for local .vma restores.", "plugin-doc", PluginOptionType::kPath},
@@ -158,19 +186,30 @@ constexpr PluginOptionHint kProxmoxOptions[] = {
 };
 
 constexpr PluginOptionHint kQumuloOptions[] = {
-    {"cluster", "known", "Qumulo cluster host name or address.", "plugin-doc"},
-    {"apikeyfile", "known", "Path to the Qumulo API key file.", "plugin-doc", PluginOptionType::kPath},
-    {"secretfile", "known", "Path to the Qumulo API secret file.", "plugin-doc", PluginOptionType::kPath},
-    {"snapdir", "known", "Snapshot directory or snapshot handling path.", "plugin-doc", PluginOptionType::kPath},
-    {"path", "known", "Qumulo path to back up or restore.", "plugin-doc", PluginOptionType::kPath},
-    {"exclude", "optional", "Exclude pattern or path filter.", "plugin-doc"},
+    {"host", "required", "Qumulo cluster host name or address.", "plugin-source"},
+    {"port", "required", "Qumulo API TCP port.", "plugin-source", PluginOptionType::kInteger},
+    {"user", "required", "Qumulo API user name.", "plugin-source"},
+    {"password", "required", "Qumulo API password.", "plugin-source"},
+    {"mount_point", "required", "Local mount point used by the plugin.", "plugin-source", PluginOptionType::kPath},
+    {"snapshot_name", "required", "Qumulo snapshot name used for the backup.", "plugin-source"},
+    {"share_name", "optional", "Qumulo share to back up; either share_name or path must be set.", "plugin-source"},
+    {"path", "optional", "Qumulo filesystem path to back up; either share_name or path must be set.", "plugin-source", PluginOptionType::kPath},
+    {"config_file", "optional", "Path to a Qumulo plugin configuration file.", "plugin-source", PluginOptionType::kPath, true},
+    {"api_limit", "optional", "Maximum number of entries requested per Qumulo API call.", "plugin-source", PluginOptionType::kInteger},
+    {"max_workers", "optional", "Maximum number of worker processes.", "plugin-source", PluginOptionType::kInteger},
+    {"exclusions", "optional", "Path to a file containing glob patterns to exclude.", "plugin-source", PluginOptionType::kPath},
+    {"exclusions_report", "optional", "Whether to report excluded objects.", "plugin-source", PluginOptionType::kBoolean},
+    {"injections", "optional", "Path to a file containing objects to inject into the backup.", "plugin-source", PluginOptionType::kPath},
+    {"timeout", "optional", "Qumulo API request timeout in seconds.", "plugin-source", PluginOptionType::kInteger},
+    {"perf_interval", "optional", "Performance logging interval; 0 disables reporting.", "plugin-source", PluginOptionType::kInteger},
+    {"io_type", "optional", "Where file I/O is performed: core or plugin.", "plugin-source"},
 };
 
 constexpr PluginOptionHint kPythonOptions[] = {
     {"module_name", "known", "Plugin module name without the .py suffix.", "plugin-doc"},
     {"module_path", "known", "Optional path to a non-default plugin directory.", "plugin-doc", PluginOptionType::kPath},
-    {"defaults_file", "known", "Configuration file whose values act as defaults.", "plugin-doc", PluginOptionType::kPath},
-    {"overrides_file", "known", "Configuration file whose values override Fileset options.", "plugin-doc", PluginOptionType::kPath},
+    {"defaults_file", "known", "Configuration file whose values act as defaults.", "plugin-doc", PluginOptionType::kPath, true},
+    {"overrides_file", "known", "Configuration file whose values override Fileset options.", "plugin-doc", PluginOptionType::kPath, true},
 };
 
 constexpr PluginOptionHint kTasksMariadbOptions[] = {
@@ -179,7 +218,7 @@ constexpr PluginOptionHint kTasksMariadbOptions[] = {
     {"mariadb_dump", "known", "Command used to run mariadb-dump.", "plugin-readme", PluginOptionType::kPath},
     {"mariadb_dump_options", "known", "Options passed to mariadb-dump.", "plugin-readme"},
     {"user", "known", "System user running mariadb and mariadb-dump.", "plugin-readme"},
-    {"defaultsfile", "known", "Defaults file used by mariadb client utilities.", "plugin-readme", PluginOptionType::kPath},
+    {"defaultsfile", "known", "Defaults file used by mariadb client utilities.", "plugin-readme", PluginOptionType::kPath, true},
     {"databases", "known", "Comma-separated list of databases to include.", "plugin-readme"},
     {"exclude", "known", "Comma-separated list of databases to exclude.", "plugin-readme"},
 };
@@ -190,7 +229,7 @@ constexpr PluginOptionHint kTasksMysqlOptions[] = {
     {"mysql_dump", "known", "Command used to run mysqldump.", "plugin-readme", PluginOptionType::kPath},
     {"mysql_dump_options", "known", "Options passed to mysqldump.", "plugin-readme"},
     {"user", "known", "System user running mysql and mysqldump.", "plugin-readme"},
-    {"defaultsfile", "known", "Defaults file used by MySQL client utilities.", "plugin-readme", PluginOptionType::kPath},
+    {"defaultsfile", "known", "Defaults file used by MySQL client utilities.", "plugin-readme", PluginOptionType::kPath, true},
     {"databases", "known", "Comma-separated list of databases to include.", "plugin-readme"},
     {"exclude", "known", "Comma-separated list of databases to exclude.", "plugin-readme"},
 };
@@ -237,7 +276,7 @@ constexpr PluginOptionHint kVmwareOptions[] = {
     {"restore_cluster", "optional", "Restore a recreated VM into the given cluster.", "plugin-doc"},
     {"restore_datastore", "optional", "Restore a recreated VM into the given datastore.", "plugin-doc"},
     {"restore_resourcepool", "optional", "Restore a recreated VM into the given resource pool.", "plugin-doc"},
-    {"restore_powerstate", "optional", "Force the restored VM to stay off or power on after restore.", "plugin-doc"},
+    {"restore_powerstate", "optional", "Power state after restore: on, off, or previous.", "plugin-doc"},
     {"snapshot_retries", "optional", "Retry count for snapshot creation failures.", "plugin-doc", PluginOptionType::kInteger},
     {"snapshot_retry_wait", "optional", "Delay between snapshot retries in seconds.", "plugin-doc", PluginOptionType::kInteger},
     {"poweron_timeout", "optional", "Timeout waiting for the VM to power on after restore.", "plugin-doc", PluginOptionType::kInteger},
@@ -250,7 +289,7 @@ constexpr PluginOptionHint kVmwareOptions[] = {
     {"restore_allow_disks_mismatch", "optional", "Allow disk backing-path mismatches when recreating a VM.", "plugin-doc", PluginOptionType::kBoolean},
     {"nvram_connect_timeout", "optional", "HTTPS connect timeout for NVRAM backup and restore.", "plugin-doc", PluginOptionType::kInteger},
     {"nvram_readwrite_timeout", "optional", "HTTPS read/write timeout for NVRAM backup and restore.", "plugin-doc", PluginOptionType::kInteger},
-    {"config_file", "optional", "Path to a configuration file with shared VMware plugin options.", "plugin-doc", PluginOptionType::kPath},
+    {"config_file", "optional", "Path to a configuration file with shared VMware plugin options.", "plugin-doc", PluginOptionType::kPath, true},
     {"uuid", "known", "Deprecated VM identifier that only supports restore to the same VM.", "plugin-doc"},
 };
 
@@ -258,6 +297,7 @@ constexpr std::string_view kBarriAliases[] = {"barri"};
 constexpr std::string_view kBpipeAliases[] = {"bpipe"};
 constexpr std::string_view kGrpcAliases[] = {"grpc", "bareos-grpc-fd-plugin-bridge"};
 constexpr std::string_view kHyperVAliases[] = {"hyper-v"};
+constexpr std::string_view kIncusAliases[] = {"incus", "bareos-fd-incus"};
 constexpr std::string_view kLdapAliases[] = {"ldap", "bareos-fd-ldap"};
 constexpr std::string_view kLibcloudAliases[] = {"libcloud", "bareos-fd-libcloud"};
 constexpr std::string_view kMariabackupAliases[] = {"mariabackup", "bareos-fd-mariabackup"};
@@ -287,6 +327,9 @@ constexpr PluginRestoreHint kPluginRestoreHints[] = {
     {"hyperV", "Hyper-V", "TasksAndConcepts/Plugins.html#hypervplugin",
      ":", "", "bareos",
      kHyperVAliases, kHyperVOptions},
+    {"incus", "Incus", "TasksAndConcepts/Plugins.html#incusplugin",
+     ":", "Options used at backup time are passed back on restore; restore_* options override the backup-time values.", "bareos",
+     kIncusAliases, kIncusOptions},
     {"ldap", "LDAP", "TasksAndConcepts/Plugins.html#ldap-plugin",
      ":", "The shipped example documents the LDAP option names more explicitly than the manual page.", "bareos",
      kLdapAliases, kLdapOptions},
@@ -312,7 +355,7 @@ constexpr PluginRestoreHint kPluginRestoreHints[] = {
      ":", "pctstorage is required when restoring a container guest directly back into Proxmox.", "bareos",
      kProxmoxAliases, kProxmoxOptions},
     {"qumulo", "Qumulo by Yuzuy", "TasksAndConcepts/Plugins.html#section-yuzuy-qumulo-plugin",
-     ":", "This is a third-party plugin. Bareos documents it, but the implementation and feature details come from Yuzuy.", "third-party",
+     ":", "This is a third-party plugin. Either share_name or path must be set; config_file can provide the same values.", "third-party",
      kQumuloAliases, kQumuloOptions},
     {"python", "Python plugin wrapper", "TasksAndConcepts/Plugins.html#section-python-fd-plugin",
      ":", "defaults_file provides defaults and overrides_file takes precedence over Fileset options.", "bareos",
@@ -558,6 +601,20 @@ const PluginRestoreHint* ResolvePluginRestoreHint(
   return FindPluginRestoreHint(definition.plugin_name);
 }
 
+const FileSetPluginDefinition* FindMatchingPluginDefinition(
+    const PluginRestoreHint& hint,
+    const std::vector<FileSetPluginDefinition>& definitions)
+{
+  for (const FileSetPluginDefinition& definition : definitions) {
+    if (const PluginRestoreHint* resolved
+        = ResolvePluginRestoreHint(definition);
+        resolved && resolved->id == hint.id) {
+      return &definition;
+    }
+  }
+  return nullptr;
+}
+
 PluginOptionsBlock BuildInitialPluginOptionsBlock(
     const FileSetPluginDefinition& definition)
 {
@@ -569,6 +626,43 @@ PluginOptionsBlock BuildInitialPluginOptionsBlock(
     block.options.emplace_back("module_name", *module_name);
   }
   return block;
+}
+
+const PluginRestoreHint* ResolvePluginOptionsBlockHint(
+    const PluginOptionsBlock& block)
+{
+  FileSetPluginDefinition definition;
+  definition.plugin_name = block.plugin_name;
+  definition.raw = BuildPluginOptionsBlock(block, ":");
+  return ResolvePluginRestoreHint(definition);
+}
+
+CategorizedPluginOptions CategorizePluginOptions(
+    const PluginRestoreHint& hint,
+    const std::vector<std::string>& fileset_option_keys)
+{
+  CategorizedPluginOptions result;
+  for (const PluginOptionHint& option : hint.options) {
+    bool already_in_fileset = std::find(fileset_option_keys.begin(),
+                                        fileset_option_keys.end(), option.name)
+                              != fileset_option_keys.end();
+    if (already_in_fileset) {
+      result.already_in_fileset.push_back(&option);
+    } else if (option.status == "required") {
+      result.required.push_back(&option);
+    } else {
+      result.optional.push_back(&option);
+    }
+  }
+  return result;
+}
+
+bool HintProvidesDefaultsElsewhere(const PluginRestoreHint& hint)
+{
+  for (const PluginOptionHint& option : hint.options) {
+    if (option.provides_defaults) { return true; }
+  }
+  return false;
 }
 
 std::string BuildPluginOptionExample(const PluginRestoreHint& hint)

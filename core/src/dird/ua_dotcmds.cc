@@ -831,6 +831,7 @@ void EmitPluginRestoreHintFields(
         std::string(restore_plugin_hints::PluginOptionTypeName(option.type))
             .c_str(),
         "%s\n");
+    ua->send->ObjectKeyValueBool("providesdefaults", option.provides_defaults);
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("options");
