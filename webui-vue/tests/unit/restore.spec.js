@@ -24,6 +24,9 @@ import { restorePluginHints as pluginHintsFixture } from '../../src/data/restore
 import {
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
+  buildRestoreCommand,
+  buildRestoreRunCommand,
+  buildRegexWhereFromRelocationRules,
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
   buildRestoreBackupChains,
@@ -40,7 +43,9 @@ import {
   findMatchingRestorePluginDefinition,
   findRestorePluginHintIdForBlockName,
   hintProvidesDefaultsElsewhere,
+  previewRelocatedPath,
   resolveBlockPluginHintId,
+  resolveRestoreRegexWhere,
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
@@ -705,6 +710,126 @@ describe('restore browser placeholder', () => {
       dirids: '42',
       path: '"b2000298"',
     })).toBe('.bvfs_restore jobid=1,14,17 dirid=42 path="b2000298"')
+  })
+
+  it('builds the final restore run command from structured options', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      storage: 'File',
+      bootstrap: '/tmp/restore.bsr',
+      files: 2,
+      catalog: 'MyCatalog',
+      where: '/tmp/bareos-restores',
+      replace: 'IfNewer',
+      yes: true,
+    })).toBe(
+      'run job="RestoreFiles" client="backup-fd" restoreclient="target-fd" ' +
+      'storage="File" bootstrap="/tmp/restore.bsr" files=2 ' +
+      'catalog="MyCatalog" where="/tmp/bareos-restores" replace=IfNewer yes'
+    )
+  })
+
+  it('prefers regexwhere over where in the final restore run command', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/out',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('run job="RestoreFiles" regexwhere="!^/home/!/restore/home/!"')
+  })
+
+  it('builds advanced final restore run command options', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      backupFormat: 'Native',
+      pluginOptions: 'python:module_name=bareos-fd-vmware\nbarri:files=/dev/null',
+      comment: 'operator said "restore"',
+      when: '2026-09-17 18:30:00',
+      priority: 42,
+    })).toBe(
+      'run job="RestoreFiles" backupformat="Native" ' +
+      'pluginoptions="python:module_name=bareos-fd-vmware\n' +
+      'barri:files=/dev/null" comment="operator said \\"restore\\"" ' +
+      'when="2026-09-17 18:30:00" priority=42'
+    )
+  })
+
+  it('builds the webui restore command from structured options', () => {
+    expect(buildRestoreCommand({
+      bvfsPath: 'b2000123',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/bareos-restores',
+      replace: 'Always',
+      pluginOptions: 'python:module_name=bareos-fd-vmware',
+      yes: true,
+    })).toBe(
+      'restore file=?b2000123 client="backup-fd" restoreclient="target-fd" ' +
+      'restorejob="RestoreFiles" where="/tmp/bareos-restores" ' +
+      'replace="Always" pluginoptions="python:module_name=bareos-fd-vmware" yes'
+    )
+  })
+
+  it('builds webui restore command with regex relocation and advanced options', () => {
+    expect(buildRestoreCommand({
+      bvfsPath: 'b2000123',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/out',
+      regexWhere: '!^/home/!/restore/home/!',
+      replace: 'IfNewer',
+      when: '2026-09-17 18:30:00',
+      priority: 42,
+      yes: true,
+    })).toBe(
+      'restore file=?b2000123 client="backup-fd" restoreclient="target-fd" ' +
+      'restorejob="RestoreFiles" regexwhere="!^/home/!/restore/home/!" ' +
+      'replace="IfNewer" when="2026-09-17 18:30:00" priority=42 yes'
+    )
+  })
+
+  it('builds regexwhere from relocation rules', () => {
+    expect(buildRegexWhereFromRelocationRules({
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+      addSuffix: '.restored',
+    })).toBe('!/home!!i,!([^/])$!$1.restored!,!^!/restore!')
+  })
+
+  it('escapes regexwhere separators in relocation rules', () => {
+    expect(buildRegexWhereFromRelocationRules({
+      stripPrefix: '/a!b\\c',
+      addPrefix: '/target!',
+    })).toBe('!/a\\!b\\\\c!!i,!^!/target\\!!')
+  })
+
+  it('resolves restore regexwhere from relocation mode', () => {
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'where',
+      stripPrefix: '/home',
+    })).toBe('')
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'regex',
+      regexWhere: '!^/!/restore/!',
+    })).toBe('!^/!/restore/!')
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'rules',
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+    })).toBe('!/home!!i,!^!/restore!')
+  })
+
+  it('previews relocation rules for a sample path', () => {
+    expect(previewRelocatedPath({
+      samplePath: '/home/user/file.txt',
+      relocationMode: 'rules',
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+      addSuffix: '.restored',
+    })).toBe('/restore/user/file.txt.restored')
   })
 
   it('clears restore source query fields when no source is selected', () => {
