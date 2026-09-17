@@ -423,6 +423,7 @@ static struct ua_cmdstruct commands[] = {
          "pool=<pool-name> file=<filename> directory=<directory> "
          "before=<date> "
          "strip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix> "
+         "restorepointmode=<chain|job> "
          "select=<date> select before current copies done all"),
      false, true},
     {NT_("relabel"), RelabelCmd, T_("Relabel a tape"),
