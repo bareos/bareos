@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/berrno.h"
 #include "stored/stored.h"
 #include "stored/sd_backends.h"
 #include "generic_tape_device.h"
@@ -383,6 +384,26 @@ ssize_t win32_tape_device::d_write(int t_fd, const void* buffer, size_t count)
   }
 }
 
+bool win32_tape_device::d_flush(DeviceControlRecord*)
+{
+  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+    dev_errno = EBADF;
+    Mmsg1(errmsg, T_("Bad call to d_flush. Device %s not open\n"), prt_name);
+    return false;
+  }
+
+  if (!FlushFileBuffers(TapeHandleTable[fd - 3].OSHandle)) {
+    BErrNo be;
+    dev_errno = GetLastError();
+    Mmsg2(errmsg, T_("FlushFileBuffers error on %s. ERR=%s.\n"), prt_name,
+          be.bstrerror(dev_errno));
+    return false;
+  }
+
+  return true;
+}
+
 int win32_tape_device::d_close(int t_fd)
 {
   if (t_fd < 3 || t_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
@@ -498,8 +519,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       }
       break;
     case MTWEOF:
+    case MTWEOFI:
       result = WriteTapemark(pHandleInfo->OSHandle, TAPE_FILEMARKS,
-                             mt_com->mt_count, FALSE);
+                             mt_com->mt_count, mt_com->mt_op == MTWEOFI);
       if (result == NO_ERROR) {
         pHandleInfo->bEOF = true;
         pHandleInfo->bEOT = false;
