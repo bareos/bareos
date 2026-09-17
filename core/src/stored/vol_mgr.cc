@@ -796,6 +796,49 @@ bool DeviceControlRecord::Can_i_write_volume()
   return Can_i_use_volume();
 }
 
+/* Answer whether VolumeName is an append volume that some other device
+ * currently owns.
+ *
+ * This is deliberately narrower than "the volume is unavailable". The only
+ * caller uses the answer to decide whether to retry the reservation with
+ * PreferMountedVols, which makes the job go to the device that already holds
+ * the volume. That retry can only succeed if the volume is held for append
+ * somewhere else, so the question is not "is the volume busy" but "would
+ * moving to the owning device help".
+ *
+ * A volume that is being read is therefore not reported: a reader never turns
+ * into an append owner, so retrying against it would wait for a condition
+ * that cannot happen. Same for a volume nobody has mounted, or one that this
+ * very device already owns. */
+bool DeviceControlRecord::IsAppendVolumeBusyOnAnotherDevice()
+{
+  VolumeReservationItem* vol = nullptr;
+  bool busy = false;
+
+  // A read-held volume never becomes appendable by switching devices.
+  if (find_read_volume(VolumeName)) { return false; }
+
+  with_volume_lock([&] {
+    vol = find_volume(VolumeName);
+    // Not reserved anywhere, or already ours, so there is nowhere to move to.
+    if (!vol || !vol->dev || dev == vol->dev) { return; }
+
+    /* The reservation may still name a volume the device has since replaced,
+     * so only trust it when the device really has this volume. */
+    const bool volume_mounted_elsewhere
+        = bstrcmp(vol->dev->VolHdr.VolumeName, VolumeName)
+          || (vol->dev->vol && bstrcmp(vol->dev->vol->vol_name, VolumeName));
+    if (!volume_mounted_elsewhere) { return; }
+
+    /* Only an append-capable owner is worth waiting for: it can hand the
+     * volume over once it is done writing. */
+    busy = vol->dev->CanAppend() || vol->dev->num_writers > 0
+           || vol->dev->NumReserved() > 0;
+  });
+
+  return busy;
+}
+
 // Determine if caller can read or write volume
 bool DeviceControlRecord::Can_i_use_volume()
 {
