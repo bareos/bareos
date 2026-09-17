@@ -259,7 +259,7 @@
                   :fileset-definitions="pluginRestoreInfo?.definitions"
                   :filter-restore-client-options="filterRestoreClientOptions"
                   :filter-restore-job-options="filterRestoreJobOptions"
-                  @browse-destination="showDestinationBrowseUnavailable"
+                  @browse-destination="openDestinationBrowse"
                 />
                 <PluginRestoreInfoPanel
                   :plugin-restore-info="pluginRestoreInfo"
@@ -587,6 +587,68 @@
     </q-card>
   </q-dialog>
 
+  <q-dialog v-model="destinationBrowseDialog.open">
+    <q-card style="min-width: min(760px, 95vw);">
+      <q-card-section class="row items-center">
+        <div>
+          <div class="text-h6">{{ t('Browse destination client') }}</div>
+          <div class="text-caption text-grey-7">
+            {{ destinationBrowseClient }} · {{ destinationBrowseDialog.path }}
+          </div>
+        </div>
+        <q-space />
+        <q-btn flat round dense icon="close" v-close-popup />
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <div v-if="destinationBrowseDialog.error" class="text-negative">
+          {{ destinationBrowseDialog.error }}
+        </div>
+        <div
+          v-else-if="destinationBrowseDialog.loading"
+          class="text-center text-grey q-py-xl"
+        >
+          <q-spinner size="48px" color="primary" /><br />
+          <span class="text-caption q-mt-sm">{{ t('Loading directory...') }}</span>
+        </div>
+        <q-list v-else bordered separator>
+          <q-item clickable @click="useDestinationBrowsePath(destinationBrowseDialog.path)">
+            <q-item-section avatar><q-icon name="check" color="primary" /></q-item-section>
+            <q-item-section>
+              <q-item-label>{{ t('Use this directory') }}</q-item-label>
+              <q-item-label caption>{{ destinationBrowseDialog.path }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item clickable @click="loadDestinationBrowsePath(parentDestinationBrowsePath)">
+            <q-item-section avatar><q-icon name="drive_folder_upload" /></q-item-section>
+            <q-item-section>
+              <q-item-label>../</q-item-label>
+              <q-item-label caption>{{ parentDestinationBrowsePath }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item
+            v-for="entry in destinationBrowseDialog.entries"
+            :key="entry.path"
+            :clickable="entry.type === 'directory'"
+            :disable="entry.type !== 'directory'"
+            @click="entry.type === 'directory' && loadDestinationBrowsePath(entry.path)"
+          >
+            <q-item-section avatar>
+              <q-icon :name="entry.type === 'directory' ? 'folder' : 'description'" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ entry.name }}</q-item-label>
+              <q-item-label caption>{{ entry.path }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat :label="t('Cancel')" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
   <!-- File Versions Dialog -->
   <q-dialog
     v-model="versionsDialog.open"
@@ -888,6 +950,22 @@ function filterRestoreClientOptions(value, update) {
     ))
   })
 }
+
+const destinationBrowseDialog = ref({
+  open:    false,
+  loading: false,
+  error:   '',
+  path:    '/',
+  entries: [],
+})
+
+const destinationBrowseClient = computed(() => (
+  form.value.restoreclient || sourceClientName.value
+))
+
+const parentDestinationBrowsePath = computed(() => (
+  parentClientBrowsePath(destinationBrowseDialog.value.path)
+))
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
@@ -1988,11 +2066,64 @@ function openRestoreConfirmDialog() {
   confirmRestoreDialog.value = true
 }
 
-function showDestinationBrowseUnavailable() {
-  $q.notify({
-    type: 'info',
-    message: t('Browsing the destination client is not implemented yet. Enter the Where path manually for now.'),
-  })
+function normalizeClientBrowsePath(path) {
+  const value = String(path || '/')
+  const trimmed = value.replace(/[\\/]+$/, '')
+  return trimmed || '/'
+}
+
+function parentClientBrowsePath(path) {
+  const normalized = normalizeClientBrowsePath(path)
+  if (normalized === '/') {
+    return '/'
+  }
+  const separator = Math.max(normalized.lastIndexOf('/'), normalized.lastIndexOf('\\'))
+  return separator <= 0 ? '/' : normalized.slice(0, separator)
+}
+
+async function openDestinationBrowse() {
+  if (!destinationBrowseClient.value) {
+    $q.notify({
+      type: 'warning',
+      message: t('Select a restore client first.'),
+    })
+    return
+  }
+  destinationBrowseDialog.value.open = true
+  await loadDestinationBrowsePath(form.value.where || '/')
+}
+
+async function loadDestinationBrowsePath(path) {
+  destinationBrowseDialog.value.loading = true
+  destinationBrowseDialog.value.error = ''
+  destinationBrowseDialog.value.path = normalizeClientBrowsePath(path)
+  try {
+    await ensureSelectedSourceDirector()
+    const response = await director.call(
+      `.clientbrowse client=${quoteDirectorString(destinationBrowseClient.value)} path=${quoteDirectorString(destinationBrowseDialog.value.path)}`
+    )
+    const browseResult = response?.entries
+      ? response
+      : (response?.['.clientbrowse'] ?? response?.clientbrowse ?? {})
+    destinationBrowseDialog.value.entries = directorCollection(browseResult.entries)
+      .map(entry => ({
+        name: String(entry.name ?? ''),
+        path: String(entry.path ?? ''),
+        type: String(entry.type ?? 'file'),
+      }))
+  } catch (error) {
+    destinationBrowseDialog.value.entries = []
+    destinationBrowseDialog.value.error = error.message || t('Unable to browse destination client.')
+  } finally {
+    destinationBrowseDialog.value.loading = false
+  }
+}
+
+function useDestinationBrowsePath(path) {
+  form.value.where = normalizeClientBrowsePath(path)
+  form.value.relocationMode = 'where'
+  form.value.regexWhere = ''
+  destinationBrowseDialog.value.open = false
 }
 
 async function confirmRestoreAndRun() {
