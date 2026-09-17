@@ -804,6 +804,24 @@ export function buildPluginOptionsBlock(block, separator = ':') {
   return result
 }
 
+// Builds a starting { pluginName, options } block for a freshly-opened
+// Plugin Options editor, seeded from a FileSet's detected plugin
+// definition: the plugin loader name (e.g. "python"), plus -- if
+// present -- its "module_name=" option as a pre-filled row (e.g. for
+// "python:module_name=bareos-fd-vmware:file=...", this returns
+// { pluginName: "python", options: [{ key: "module_name",
+// value: "bareos-fd-vmware" }] }). Mirrors
+// BuildInitialPluginOptionsBlock() in dird/restore_plugin_hints.cc.
+// Other backup-only options (file=, reader=, ...) are intentionally
+// not copied, since they describe the backup source rather than
+// restore options.
+export function buildInitialPluginOptionsBlock(definition) {
+  const pluginName = definition?.pluginName ?? ''
+  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
+  const options = moduleName ? [{ key: 'module_name', value: moduleName }] : []
+  return { pluginName, options }
+}
+
 // Parses a full interactive "pluginoptions" document: one or more
 // blocks separated by newlines. Empty lines are skipped.
 export function parsePluginOptionsDocument(document) {
