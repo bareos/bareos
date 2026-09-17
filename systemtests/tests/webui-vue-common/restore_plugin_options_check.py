@@ -46,6 +46,7 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 # core/src/dird/restore_plugin_hints.cc).
 CASES = [
     ("PluginOptionsTest-qumulo", "Qumulo by Yuzuy"),
+    ("PluginOptionsTest-incus", "Incus"),
     ("PluginOptionsTest-tasks-oracle", "Tasks Oracle"),
     ("PluginOptionsTest-python", "Python plugin wrapper"),
 ]
@@ -65,12 +66,35 @@ def connect():
     )
 
 
+def connect_unrestricted():
+    return bareos.bsock.DirectorConsole(
+        address="127.0.0.1",
+        port=int(os.environ["BAREOS_DIRECTOR_PORT"]),
+        password=bareos.bsock.Password(os.environ["dir_password"]),
+    )
+
+
+def check_restore_menu_output_pause(director):
+    tb = TreeBrowserConsole(director, lines=45, columns=140)
+    screen = tb.run("restore")
+    if "Select item" not in screen:
+        fail("restore did not enter the selection menu: {}".format(screen))
+
+    screen = tb.press("select:13")
+    if "Press Enter to return to the restore menu:" not in screen:
+        fail("last-jobs output was redrawn before it could be read: {}".format(screen))
+    if "| jobid | client" not in screen:
+        fail("last-jobs table was not displayed: {}".format(screen))
+
+    screen = tb.submit_line()
+    if "Select item" not in screen:
+        fail("restore menu did not return after acknowledgement: {}".format(screen))
+
+
 def check_one_fileset(director, fileset, expected_hint_text):
     tb = TreeBrowserConsole(director, lines=45, columns=140)
 
-    screen = tb.run(
-        "restore client=bareos-fd fileset={}".format(fileset)
-    )
+    screen = tb.run("restore client=bareos-fd fileset={}".format(fileset))
     if "Select item" not in screen:
         fail(
             "restore did not enter the interactive selection menu for "
@@ -79,11 +103,7 @@ def check_one_fileset(director, fileset, expected_hint_text):
 
     screen = tb.press("select:1")  # "Select a FileSet@Client combination ..."
     if "FileSet@Client" not in screen:
-        fail(
-            "did not get the FileSet@Client picker for {}: {}".format(
-                fileset, screen
-            )
-        )
+        fail("did not get the FileSet@Client picker for {}: {}".format(fileset, screen))
 
     # The picker supports incremental text filtering; narrow down to our
     # FileSet by typing its name, then confirm the (only) remaining match.
@@ -98,6 +118,11 @@ def check_one_fileset(director, fileset, expected_hint_text):
     if "Plugin Options" not in screen:
         fail(
             "split screen is missing the Plugin Options pane for "
+            "{}: {}".format(fileset, screen)
+        )
+    if "Resulting Plugin Options:" not in screen:
+        fail(
+            "plugin options string preview is missing for "
             "{}: {}".format(fileset, screen)
         )
 
@@ -127,12 +152,27 @@ def check_one_fileset(director, fileset, expected_hint_text):
             "pane for {}: {}".format(fileset, screen)
         )
 
-    screen = tb.press("enter")  # open "+ add option" row for editing
-    screen = tb.type_text("module_path=/opt/{}-demo".format(fileset))
-    screen = tb.press("enter")  # confirm row
-    if "module_path=/opt/{}-demo".format(fileset) not in screen:
+    # Move to the final "+ add option" row. Extra Down presses clamp at
+    # the bottom, regardless of whether module_name was auto-prefilled.
+    for _ in range(10):
+        screen = tb.press("down")
+    screen = tb.press("enter")
+    if "Choose option" not in screen:
+        fail("known-option chooser did not open for {}: {}".format(fileset, screen))
+
+    # Typing while the chooser is open retains free-form custom options.
+    screen = tb.type_text("module_path")
+    screen = tb.press("enter")
+    screen = tb.type_text("/opt/{}-demo".format(fileset))
+    screen = tb.press("enter")
+    if "module_path = /opt/{}-demo".format(fileset) not in screen:
         fail(
             "added plugin option is missing from the pane for "
+            "{}: {}".format(fileset, screen)
+        )
+    if "module_path=/opt/{}-demo".format(fileset) not in screen:
+        fail(
+            "added plugin option is missing from the string preview for "
             "{}: {}".format(fileset, screen)
         )
 
@@ -151,11 +191,28 @@ def check_one_fileset(director, fileset, expected_hint_text):
             "Tab did not move focus back to the Plugin Options pane for "
             "{}: {}".format(fileset, screen)
         )
-    if "module_path=/opt/{}-demo".format(fileset) not in screen:
+    if "module_path = /opt/{}-demo".format(fileset) not in screen:
         fail(
             "plugin option was lost after tabbing away and back for "
             "{}: {}".format(fileset, screen)
         )
+
+    # Select the first documented option from the chooser and give it a
+    # value, proving that known options no longer have to be typed manually.
+    for _ in range(10):
+        screen = tb.press("down")
+    screen = tb.press("enter")
+    if "Choose option" not in screen or (
+        "[Required]" not in screen
+        and "[Optional]" not in screen
+        and "[Already in FileSet]" not in screen
+    ):
+        fail("grouped known options are missing for {}: {}".format(fileset, screen))
+    screen = tb.press("enter")
+    screen = tb.type_text("selected-value")
+    screen = tb.press("enter")
+    if "selected-value" not in screen:
+        fail("selected known option was not added for {}: {}".format(fileset, screen))
 
     # Leave the browser without marking any files or confirming a
     # restore: this must not queue a restore job.
@@ -172,6 +229,7 @@ def check_one_fileset(director, fileset, expected_hint_text):
 
 def main():
     director = connect()
+    check_restore_menu_output_pause(connect_unrestricted())
     for fileset, expected_hint_text in CASES:
         check_one_fileset(director, fileset, expected_hint_text)
     print("All restore-selection Plugin Options editor checks passed.")

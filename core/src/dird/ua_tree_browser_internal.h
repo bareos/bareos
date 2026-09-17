@@ -111,9 +111,8 @@ std::string BuildPluginOptionsAdvertisement(
 // Splits the body's line budget (as returned by the browser's
 // MaxVisibleRows()) between the file tree (top) and the Plugin Options
 // pane (bottom) for the split-screen layout shown once a plugin backup
-// is detected. Returns {tree_rows, plugin_rows}; the tree gets the
-// extra row on an odd split. plugin_rows is 0 when there's no room for
-// a second pane (total_rows == 0).
+// is detected. Returns {tree_rows, plugin_rows}, using roughly 25% for
+// the tree and 75% for the options editor.
 std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows);
 
 // Decides what plain text (no ANSI styling) the Plugin Options input
@@ -140,11 +139,35 @@ std::string BuildPluginOptionsTabBar(
         blocks,
     size_t active_block);
 
-// Builds a single-line hint listing the known option names (from the
-// curated hint database) for the given plugin name, marking required
-// ones with a "*". Returns an empty string when the plugin is unknown
-// or has no documented options.
-std::string BuildKnownOptionsHintLine(std::string_view plugin_name);
+// Builds a single-line hint summarizing the known options (from the
+// curated hint database) for the given plugin options block, resolving
+// the block's hint the same module_name-aware way FileSet-level
+// resolution does. Groups options into "already in FileSet" (with
+// their current FileSet value, sourced from the matching detected
+// definition, if any), "required" (marked "*"), and a count of
+// remaining "optional" options. Returns an empty string when the
+// block's plugin is unknown or has no documented options.
+std::string BuildKnownOptionsHintLine(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block,
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions);
+
+struct PluginOptionChoice {
+  std::string key;
+  std::string group;
+  std::string description;
+  directordaemon::restore_plugin_hints::PluginOptionType type;
+};
+
+// Builds the selectable known-option list for "+ add option", ordered by
+// options already present in the FileSet, required options, then optional
+// options. Keys already present in the editor block are omitted.
+std::vector<PluginOptionChoice> BuildPluginOptionChoices(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block,
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions);
 
 // Decides how many of a plugin block's editor rows can be shown given
 // the pane's row budget, and whether there's still room for one extra

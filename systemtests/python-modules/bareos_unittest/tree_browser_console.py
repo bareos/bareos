@@ -104,6 +104,10 @@ class TreeBrowserConsole:
             return screen
         return self._call("key:" + key_event)
 
+    def submit_line(self, text=""):
+        """Submit one ordinary line-input response outside raw selection."""
+        return self._call(text)
+
     def type_text(self, text):
         """Convenience helper: send one "key:text:<char>" command per
         character, matching how a real interactive client sends typed
