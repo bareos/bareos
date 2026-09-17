@@ -47,6 +47,7 @@ JobNames=(
   backup-bareos-fd-plugin-ldap
   backup-bareos-fd-plugin-libcloud
   backup-bareos-fd-plugin-hyperv
+  backup-bareos-fd-plugin-incus
   backup-bareos-fd-plugin-grpc
   backup-bareos-fd-plugin-barri
   backup-bareos-fd-plugin-qumulo
@@ -107,6 +108,7 @@ run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpi
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/ldap-demo/directory.ldif:reader=', 'Plugin = \"python:module_name=bareos-fd-ldap:file=/ldap-demo/directory.ldif:reader=') WHERE FileSet = 'PluginOptionsTest-ldap'"
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/libcloud-demo/objects.tar:reader=', 'Plugin = \"python:module_name=bareos-fd-libcloud:file=/libcloud-demo/objects.tar:reader=') WHERE FileSet = 'PluginOptionsTest-libcloud'"
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/hyperv-demo/vm.vhdx:reader=', 'Plugin = \"python:module_name=hyper-v:file=/hyperv-demo/vm.vhdx:reader=') WHERE FileSet = 'PluginOptionsTest-hyperv'"
+run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/incus-demo/instance.tar:reader=', 'Plugin = \"python:module_name=bareos-fd-incus:file=/incus-demo/instance.tar:reader=') WHERE FileSet = 'PluginOptionsTest-incus'"
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/grpc-demo/stream.bin:reader=', 'Plugin = \"grpc:file=/grpc-demo/stream.bin:reader=') WHERE FileSet = 'PluginOptionsTest-grpc'"
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/barri-demo/barri-image.dd:reader=', 'Plugin = \"barri:file=/barri-demo/barri-image.dd:reader=') WHERE FileSet = 'PluginOptionsTest-barri'"
 run_query "UPDATE FileSet SET FileSetText = REPLACE(FileSetText, 'Plugin = \"bpipe:file=/qumulo-demo/snapshot.qfsd:reader=', 'Plugin = \"python:module_name=yuzuy-qumulo:file=/qumulo-demo/snapshot.qfsd:reader=') WHERE FileSet = 'PluginOptionsTest-qumulo'"

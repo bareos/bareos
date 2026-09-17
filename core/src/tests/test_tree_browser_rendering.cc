@@ -21,6 +21,7 @@
 
 #include "dird/ua_tree_browser_internal.h"
 
+#include <algorithm>
 #include <clocale>
 
 #include "gtest/gtest.h"
@@ -32,6 +33,7 @@ namespace {
 using directordaemon::restore_plugin_hints::PluginOptionsBlock;
 using directordaemon::tree_browser_internal::AlignTextColumns;
 using directordaemon::tree_browser_internal::BuildKnownOptionsHintLine;
+using directordaemon::tree_browser_internal::BuildPluginOptionChoices;
 using directordaemon::tree_browser_internal::BuildPluginOptionsRowLabels;
 using directordaemon::tree_browser_internal::BuildPluginOptionsTabBar;
 using directordaemon::tree_browser_internal::CaseFoldForSearch;
@@ -89,7 +91,7 @@ TEST(TreeBrowserRendering, EmphasizesMarkedEntriesWithoutFixedForeground)
   EXPECT_EQ(StyleFrameContent("  * filename", '*', false, true),
             "\033[1m  \033[32m*\033[39m filename\033[0m");
   EXPECT_EQ(StyleFrameContent("> * filename", '*', true, true),
-            "\033[7;36m> * filename\033[0m");
+            "\033[97;44m> * filename\033[0m");
   EXPECT_EQ(StyleFrameContent("  * filename", '*', false, false),
             "  * filename");
 }
@@ -332,18 +334,16 @@ TEST(TreeBrowserRendering, SplitTreeAndPluginRowsHandlesZero)
             std::make_pair(size_t{0}, size_t{0}));
 }
 
-TEST(TreeBrowserRendering, SplitTreeAndPluginRowsSplitsEvenTotalInHalf)
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsUsesQuarterForTree)
 {
   EXPECT_EQ(directordaemon::tree_browser_internal::SplitTreeAndPluginRows(10),
-            std::make_pair(size_t{5}, size_t{5}));
+            std::make_pair(size_t{3}, size_t{7}));
 }
 
-TEST(TreeBrowserRendering, SplitTreeAndPluginRowsGivesTreeTheExtraRow)
+TEST(TreeBrowserRendering, SplitTreeAndPluginRowsUsesRestForOptions)
 {
-  // Odd totals give the file tree (top pane) the extra row, since
-  // browsing the tree is the primary task.
   EXPECT_EQ(directordaemon::tree_browser_internal::SplitTreeAndPluginRows(11),
-            std::make_pair(size_t{6}, size_t{5}));
+            std::make_pair(size_t{3}, size_t{8}));
 }
 
 TEST(TreeBrowserRendering, SplitTreeAndPluginRowsAddsUpToTheTotal)
@@ -404,15 +404,91 @@ TEST(PluginOptionsEditorRendering, TabBarShowsPlaceholderForUnnamedBlock)
 
 TEST(PluginOptionsEditorRendering, KnownOptionsHintListsNamesWithRequiredMark)
 {
-  std::string line = BuildKnownOptionsHintLine("vmware");
-  EXPECT_NE(line.find("Known: "), std::string::npos);
+  PluginOptionsBlock block;
+  block.plugin_name = "vmware";
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions;
+  std::string line = BuildKnownOptionsHintLine(block, definitions);
+  EXPECT_NE(line.find("Required:"), std::string::npos);
   EXPECT_NE(line.find("vcserver*"), std::string::npos);
-  EXPECT_NE(line.find("(*=required)"), std::string::npos);
 }
 
 TEST(PluginOptionsEditorRendering, KnownOptionsHintEmptyForUnknownPlugin)
 {
-  EXPECT_EQ(BuildKnownOptionsHintLine("does-not-exist"), "");
+  PluginOptionsBlock block;
+  block.plugin_name = "does-not-exist";
+  std::vector<directordaemon::restore_plugin_hints::FileSetPluginDefinition>
+      definitions;
+  EXPECT_EQ(BuildKnownOptionsHintLine(block, definitions), "");
+}
+
+TEST(PluginOptionsEditorRendering,
+     OptionChoicesAreGroupedAndExcludeOptionsAlreadyAdded)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "python";
+  block.options.emplace_back("module_name", "bareos-fd-vmware");
+  block.options.emplace_back("vcuser", "restore-user");
+
+  directordaemon::restore_plugin_hints::FileSetPluginDefinition definition;
+  definition.plugin_name = "python";
+  definition.raw = "python:module_name=bareos-fd-vmware:vcserver=fileset-host";
+  definition.option_keys = {"module_name", "vcserver"};
+
+  auto choices = BuildPluginOptionChoices(block, {definition});
+  ASSERT_FALSE(choices.empty());
+  EXPECT_EQ(choices.front().key, "vcserver");
+  EXPECT_EQ(choices.front().group, "Already in FileSet");
+  EXPECT_EQ(
+      std::find_if(choices.begin(), choices.end(),
+                   [](const auto& choice) { return choice.key == "vcuser"; }),
+      choices.end());
+
+  auto required = std::find_if(
+      choices.begin(), choices.end(),
+      [](const auto& choice) { return choice.group == "Required"; });
+  auto optional = std::find_if(
+      choices.begin(), choices.end(),
+      [](const auto& choice) { return choice.group == "Optional"; });
+  ASSERT_NE(required, choices.end());
+  ASSERT_NE(optional, choices.end());
+  EXPECT_LT(required, optional);
+  EXPECT_NE(std::find_if(choices.begin(), choices.end(),
+                         [](const auto& choice) {
+                           return choice.type
+                                  == directordaemon::restore_plugin_hints::
+                                      PluginOptionType::kBoolean;
+                         }),
+            choices.end());
+}
+
+TEST(PluginOptionsEditorRendering, BarriOptionChoicesStartWithRestoreTarget)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "barri";
+
+  auto choices = BuildPluginOptionChoices(block, {});
+  ASSERT_FALSE(choices.empty());
+  EXPECT_EQ(choices.front().key, "files");
+  EXPECT_EQ(choices.front().group, "Required");
+  EXPECT_EQ(choices.front().type,
+            directordaemon::restore_plugin_hints::PluginOptionType::kPath);
+}
+
+TEST(PluginOptionsEditorRendering, IncusOptionChoicesIncludeRestorePath)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "python";
+  block.options.emplace_back("module_name", "bareos-fd-incus");
+
+  auto choices = BuildPluginOptionChoices(block, {});
+  auto restore_path = std::find_if(
+      choices.begin(), choices.end(),
+      [](const auto& choice) { return choice.key == "restore_path"; });
+  ASSERT_NE(restore_path, choices.end());
+  EXPECT_EQ(restore_path->group, "Optional");
+  EXPECT_EQ(restore_path->type,
+            directordaemon::restore_plugin_hints::PluginOptionType::kPath);
 }
 
 TEST(PluginOptionsEditorRendering, RowWindowShowsAllRowsAndHintWhenRoomy)

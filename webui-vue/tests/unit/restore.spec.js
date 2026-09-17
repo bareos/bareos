@@ -36,7 +36,11 @@ import {
   buildPluginOptionsDocument,
   buildInitialPluginOptionsBlock,
   canNavigateRestoreBrowser,
+  categorizePluginOptions,
+  findMatchingRestorePluginDefinition,
   findRestorePluginHintIdForBlockName,
+  hintProvidesDefaultsElsewhere,
+  resolveBlockPluginHintId,
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
@@ -955,17 +959,32 @@ describe('restore browser placeholder', () => {
   })
 
   it('resolves qumulo plugin names to the documented third-party hint entry', () => {
-    expect(getRestorePluginHints({
+    const hints = getRestorePluginHints({
       definitions: [{
-        raw: 'qumulo:cluster=qumulo.example.test:path=/data',
+        raw: 'qumulo:host=qumulo.example.test:path=/data',
         pluginName: 'qumulo',
-        optionKeys: ['cluster', 'path'],
+        optionKeys: ['host', 'path'],
       }],
-    }, pluginHintsFixture)).toContainEqual(expect.objectContaining({
+    }, pluginHintsFixture)
+
+    expect(hints).toContainEqual(expect.objectContaining({
       id: 'qumulo',
       displayName: 'Qumulo by Yuzuy',
       supportLevel: 'third-party',
       manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#section-yuzuy-qumulo-plugin',
+    }))
+    expect(hints[0].options).toContainEqual(expect.objectContaining({
+      name: 'host',
+      status: 'required',
+      source: 'plugin-source',
+    }))
+    expect(hints[0].options).toContainEqual(expect.objectContaining({
+      name: 'config_file',
+      type: 'path',
+      providesDefaults: true,
+    }))
+    expect(hints[0].options).not.toContainEqual(expect.objectContaining({
+      name: 'cluster',
     }))
   })
 
@@ -974,8 +993,29 @@ describe('restore browser placeholder', () => {
 
     expect(hints[0]).toEqual(expect.objectContaining({
       displayName: 'BARRI (Bareos Recovery Imager)',
-      example: 'save-unreferenced-disks=...:save-unreferenced-partitions=...',
+      example: 'files=...',
       manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#barriplugin',
+    }))
+    expect(hints[0].options[0]).toEqual(expect.objectContaining({
+      name: 'files',
+      status: 'required',
+      type: 'path',
+    }))
+    expect(hints).toContainEqual(expect.objectContaining({
+      id: 'incus',
+      displayName: 'Incus',
+      options: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'restore_path',
+          status: 'optional',
+          type: 'path',
+        }),
+        expect.objectContaining({
+          name: 'restore_buffer_depth',
+          status: 'optional',
+          type: 'integer',
+        }),
+      ]),
     }))
     expect(hints.at(-1)).toEqual(expect.objectContaining({
       displayName: 'VMware',
@@ -1164,5 +1204,42 @@ describe('plugin options editor model', () => {
   it('resolves the known hint id for a block name via alias/id match', () => {
     expect(findRestorePluginHintIdForBlockName('bpipe', pluginHintsFixture)).toBe('bpipe')
     expect(findRestorePluginHintIdForBlockName('unknown-plugin', pluginHintsFixture)).toBeNull()
+  })
+
+  it('resolves a whole block, preferring its module_name option over the bare plugin name', () => {
+    const block = {
+      pluginName: 'python',
+      options: [{ key: 'module_name', value: 'bareos-fd-vmware' }, { key: 'vcserver', value: 'host' }],
+    }
+    expect(resolveBlockPluginHintId(block, pluginHintsFixture)).toBe('vmware')
+  })
+
+  it('resolves a whole block by its bare plugin name when there is no module_name option', () => {
+    const block = { pluginName: 'bpipe', options: [{ key: 'file', value: '/a' }] }
+    expect(resolveBlockPluginHintId(block, pluginHintsFixture)).toBe('bpipe')
+  })
+
+  it('finds the FileSet definition matching a resolved hint id', () => {
+    const definitions = [parseRestorePluginDefinition(
+      'python:module_name=bareos-fd-vmware:vcserver=host'
+    )]
+    expect(findMatchingRestorePluginDefinition('vmware', definitions, pluginHintsFixture))
+      .toEqual(definitions[0])
+    expect(findMatchingRestorePluginDefinition('bpipe', definitions, pluginHintsFixture)).toBeNull()
+    expect(findMatchingRestorePluginDefinition(null, definitions, pluginHintsFixture)).toBeNull()
+  })
+
+  it('categorizes options into already-in-fileset/required/optional', () => {
+    const hint = pluginHintsFixture.vmware
+    const { alreadyInFileset, required, optional } = categorizePluginOptions(hint, ['vcserver'])
+    expect(alreadyInFileset.map(o => o.name)).toEqual(['vcserver'])
+    expect(required.some(o => o.name === 'vcserver')).toBe(false)
+    expect(optional.some(o => o.name === 'vcserver')).toBe(false)
+    expect(required.every(o => o.status === 'required')).toBe(true)
+  })
+
+  it('detects whether a hint provides defaults via a config/defaults-file option', () => {
+    expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.vmware)).toBe(true)
+    expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.bpipe)).toBe(false)
   })
 })

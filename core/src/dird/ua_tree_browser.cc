@@ -375,7 +375,7 @@ std::string StyleFrameContent(std::string content,
                               bool color)
 {
   if (!color) { return content; }
-  if (highlighted) { return "\033[7;36m" + content + "\033[0m"; }
+  if (highlighted) { return "\033[97;44m" + content + "\033[0m"; }
 
   if (mark == '*' && content.size() > 2) {
     content.insert(3, "\033[39m");
@@ -457,10 +457,37 @@ std::vector<std::string> BuildDetectedPluginHintLines(
     std::string example
         = directordaemon::restore_plugin_hints::BuildPluginOptionExample(*hint);
     if (!example.empty()) { lines.push_back("    Example: " + example); }
-    for (const auto& option : hint->options) {
-      lines.push_back("      " + std::string(option.name) + " ("
-                      + std::string(option.status)
-                      + "): " + std::string(option.description));
+
+    auto categorized
+        = directordaemon::restore_plugin_hints::CategorizePluginOptions(
+            *hint, definition.option_keys);
+
+    if (!categorized.already_in_fileset.empty()) {
+      lines.push_back("    Already in FileSet:");
+      for (const auto* option : categorized.already_in_fileset) {
+        lines.push_back("      " + std::string(option->name)
+                        + " (from FileSet): "
+                        + std::string(option->description));
+      }
+    }
+    if (!categorized.required.empty()) {
+      std::string heading = "    Required:";
+      if (directordaemon::restore_plugin_hints::HintProvidesDefaultsElsewhere(
+              *hint)) {
+        heading += " (can also be preset via a config/defaults file option)";
+      }
+      lines.push_back(heading);
+      for (const auto* option : categorized.required) {
+        lines.push_back("      " + std::string(option->name) + ": "
+                        + std::string(option->description));
+      }
+    }
+    if (!categorized.optional.empty()) {
+      lines.push_back("    Optional:");
+      for (const auto* option : categorized.optional) {
+        lines.push_back("      " + std::string(option->name) + ": "
+                        + std::string(option->description));
+      }
     }
     lines.emplace_back("");
   }
@@ -524,9 +551,9 @@ std::string BuildPluginOptionsAdvertisement(
 
 std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows)
 {
-  if (total_rows == 0) { return {0, 0}; }
-  size_t plugin_rows = total_rows / 2;
-  size_t tree_rows = total_rows - plugin_rows;
+  if (total_rows < 2) { return {total_rows, 0}; }
+  size_t tree_rows = std::max(size_t{1}, (total_rows + 3) / 4);
+  size_t plugin_rows = total_rows - tree_rows;
   return {tree_rows, plugin_rows};
 }
 
@@ -565,21 +592,106 @@ std::string BuildPluginOptionsTabBar(
   return out;
 }
 
-std::string BuildKnownOptionsHintLine(std::string_view plugin_name)
+std::string BuildKnownOptionsHintLine(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block,
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions)
 {
   const auto* hint
-      = directordaemon::restore_plugin_hints::FindPluginRestoreHint(
-          plugin_name);
+      = directordaemon::restore_plugin_hints::ResolvePluginOptionsBlockHint(
+          block);
   if (!hint || hint->options.empty()) { return ""; }
 
-  std::string out = "Known: ";
-  for (size_t i = 0; i < hint->options.size(); ++i) {
-    if (i > 0) { out += ", "; }
-    out += hint->options[i].name;
-    if (hint->options[i].status == "required") { out += "*"; }
+  const auto* matching_definition
+      = directordaemon::restore_plugin_hints::FindMatchingPluginDefinition(
+          *hint, definitions);
+  std::vector<std::string> fileset_option_keys;
+  if (matching_definition) {
+    fileset_option_keys = matching_definition->option_keys;
   }
-  out += " (*=required)";
+
+  auto categorized
+      = directordaemon::restore_plugin_hints::CategorizePluginOptions(
+          *hint, fileset_option_keys);
+
+  std::string out = "Known:";
+  if (!categorized.already_in_fileset.empty()) {
+    out += " In FileSet:";
+    for (size_t i = 0; i < categorized.already_in_fileset.size(); ++i) {
+      out += (i == 0 ? " " : ", ");
+      out += categorized.already_in_fileset[i]->name;
+    }
+    out += " |";
+  }
+  if (!categorized.required.empty()) {
+    out += " Required:";
+    for (size_t i = 0; i < categorized.required.size(); ++i) {
+      out += (i == 0 ? " " : ", ");
+      out += categorized.required[i]->name;
+      out += "*";
+    }
+    if (directordaemon::restore_plugin_hints::HintProvidesDefaultsElsewhere(
+            *hint)) {
+      out += " (or via config file)";
+    }
+    out += " |";
+  }
+  if (!categorized.optional.empty()) {
+    out += " Optional: " + std::to_string(categorized.optional.size())
+           + " more (press p)";
+  } else if (out.back() == '|') {
+    out.pop_back();
+  }
+  if (!out.empty() && out.back() == ' ') { out.pop_back(); }
   return out;
+}
+
+std::vector<PluginOptionChoice> BuildPluginOptionChoices(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block,
+    const std::vector<
+        directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
+        definitions)
+{
+  const auto* hint
+      = directordaemon::restore_plugin_hints::ResolvePluginOptionsBlockHint(
+          block);
+  if (!hint) { return {}; }
+
+  const auto* matching_definition
+      = directordaemon::restore_plugin_hints::FindMatchingPluginDefinition(
+          *hint, definitions);
+  std::vector<std::string> fileset_option_keys;
+  if (matching_definition) {
+    fileset_option_keys = matching_definition->option_keys;
+  }
+
+  auto categorized
+      = directordaemon::restore_plugin_hints::CategorizePluginOptions(
+          *hint, fileset_option_keys);
+  std::vector<PluginOptionChoice> choices;
+  auto append =
+      [&block, &choices](
+          std::string_view group,
+          const std::vector<
+              const directordaemon::restore_plugin_hints::PluginOptionHint*>&
+              options) {
+        for (const auto* option : options) {
+          bool already_added
+              = std::any_of(block.options.begin(), block.options.end(),
+                            [option](const auto& item) {
+                              return item.first == option->name;
+                            });
+          if (!already_added) {
+            choices.push_back({std::string(option->name), std::string(group),
+                               std::string(option->description), option->type});
+          }
+        }
+      };
+  append("Already in FileSet", categorized.already_in_fileset);
+  append("Required", categorized.required);
+  append("Optional", categorized.optional);
+  return choices;
 }
 
 PluginOptionsRowWindow ComputePluginOptionsRowWindow(size_t plugin_rows,
@@ -601,6 +713,7 @@ using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::BuildAllKnownPluginHintLines;
 using tree_browser_internal::BuildDetectedPluginHintLines;
 using tree_browser_internal::BuildKnownOptionsHintLine;
+using tree_browser_internal::BuildPluginOptionChoices;
 using tree_browser_internal::BuildPluginOptionsAdvertisement;
 using tree_browser_internal::BuildPluginOptionsRowLabels;
 using tree_browser_internal::BuildPluginOptionsTabBar;
@@ -628,7 +741,7 @@ std::string FrameBorder(size_t width,
 {
   std::string line = RenderFrameBorder(width, style, title);
   if (!color) { return line + "\n"; }
-  return (focused ? "\033[1;36m" : "\033[2;36m") + line + "\033[0m\n";
+  return (focused ? "\033[1;34m" : "\033[34m") + line + "\033[0m\n";
 }
 
 std::string FrameLine(size_t width,
@@ -642,7 +755,25 @@ std::string FrameLine(size_t width,
   std::string content = FitText(text, width - 2);
   content = StyleFrameContent(std::move(content), mark, highlighted, color);
 
-  std::string border = color ? "\033[2;36m│\033[0m" : "│";
+  std::string border = color ? "\033[34m│\033[0m" : "│";
+  return border + content + border + "\n";
+}
+
+std::string PluginOptionsResultLine(size_t width,
+                                    std::string_view value,
+                                    bool color)
+{
+  constexpr std::string_view label = " Resulting Plugin Options: ";
+  std::string text = std::string(label) + "[" + std::string(value) + "]";
+  if (width < 2) { return FitText(text, width) + "\n"; }
+
+  std::string content = FitText(text, width - 2);
+  if (color && content.size() > label.size()) {
+    content.insert(label.size(), "\033[1m");
+    content += "\033[0m";
+  }
+
+  std::string border = color ? "\033[34m│\033[0m" : "│";
   return border + content + border + "\n";
 }
 
@@ -682,20 +813,20 @@ std::string PluginOptionsRowLine(size_t width,
         content.replace(text.size(), 1, "\033[7m \033[0m");
       }
     } else if (selected) {
-      content = "\033[7;36m" + content + "\033[0m";
+      content = "\033[97;44m" + content + "\033[0m";
     } else if (is_placeholder) {
       content = "\033[2m" + content + "\033[0m";
     }
   }
 
-  std::string border = color ? "\033[2;36m│\033[0m" : "│";
+  std::string border = color ? "\033[34m│\033[0m" : "│";
   return border + content + border + "\n";
 }
 
 std::string StatusBar(size_t width, std::string_view text, bool color)
 {
   std::string line = FitText(text, width);
-  return color ? "\033[7;36m" + line + "\033[0m\n" : line + "\n";
+  return color ? "\033[97;44m" + line + "\033[0m\n" : line + "\n";
 }
 
 std::string HelpLine(size_t width, std::string_view text, bool color)
@@ -872,6 +1003,12 @@ class TreeBrowser {
   {
     return ActivePluginBlock().options.size() + 2;
   }
+  std::vector<tree_browser_internal::PluginOptionChoice>
+  AvailablePluginOptionChoices() const
+  {
+    return BuildPluginOptionChoices(ActivePluginBlock(),
+                                    plugin_hint_definitions_);
+  }
   void ClampPluginOptionsCursor();
 
   size_t ScreenWidth() const;
@@ -957,6 +1094,8 @@ class TreeBrowser {
   enum class PluginOptionsEditMode
   {
     kBrowsing,  // Up/Down/Left/Right move the cursor; Enter opens a row.
+    kChoosingNewRowKey,
+    kChoosingBooleanValue,
     kEditingBlockName,
     kEditingNewRowKey,  // Typing the key for a brand-new option row.
     kEditingRowValue,   // Typing a value, either for a new or existing row.
@@ -966,8 +1105,12 @@ class TreeBrowser {
   size_t plugin_options_active_block_ = 0;
   size_t plugin_options_cursor_ = 0;
   size_t plugin_options_row_offset_ = 0;
+  size_t plugin_options_choice_cursor_ = 0;
+  bool plugin_options_boolean_value_ = true;
   std::string plugin_options_edit_buffer_;
   std::string plugin_options_pending_key_;
+  restore_plugin_hints::PluginOptionType plugin_options_pending_type_
+      = restore_plugin_hints::PluginOptionType::kString;
   // True while kEditingRowValue is for a brand-new row (cursor_ already
   // points past the last existing option, at the "+ add option" row);
   // false when editing an existing row's value in place.
@@ -1181,6 +1324,7 @@ void TreeBrowser::FocusPluginOptionsPane()
   }
   plugin_options_active_block_ = 0;
   plugin_options_cursor_ = 0;
+  plugin_options_choice_cursor_ = 0;
 }
 
 void TreeBrowser::TogglePluginPaneFocus()
@@ -1236,6 +1380,7 @@ void TreeBrowser::ClampPluginOptionsCursor()
   plugin_options_cursor_ = std::min(plugin_options_cursor_, max_row);
 
   size_t reserved_top = plugin_options_blocks_.size() > 1 ? 1 : 0;
+  reserved_top += 1;  // current plugin-options string preview
   PluginOptionsRowWindow layout = ComputePluginOptionsRowWindow(
       SplitPanelRows().second, reserved_top, row_count);
   size_t max_offset = row_count > layout.window ? row_count - layout.window : 0;
@@ -1364,11 +1509,36 @@ std::string TreeBrowser::RenderPanel() const
     out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title,
                        plugin_pane_focused_);
 
-    std::vector<std::string> display_rows
-        = BuildPluginOptionsRowLabels(ActivePluginBlock());
+    bool choosing_option
+        = plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey;
+    bool choosing_boolean
+        = plugin_options_mode_ == PluginOptionsEditMode::kChoosingBooleanValue;
+    std::vector<std::string> display_rows;
+    size_t visual_cursor = plugin_options_cursor_;
+    if (choosing_option) {
+      display_rows.emplace_back(
+          " Choose option (Enter select, type for custom):");
+      for (const auto& choice : AvailablePluginOptionChoices()) {
+        display_rows.push_back(
+            "  [" + choice.group + "] " + choice.key + " ("
+            + std::string(
+                restore_plugin_hints::PluginOptionTypeName(choice.type))
+            + ") - " + choice.description);
+      }
+      visual_cursor = plugin_options_choice_cursor_ + 1;
+    } else if (choosing_boolean) {
+      display_rows.push_back(" Choose value for " + plugin_options_pending_key_
+                             + ":");
+      display_rows.emplace_back("  yes");
+      display_rows.emplace_back("  no");
+      visual_cursor = plugin_options_boolean_value_ ? 1 : 2;
+    } else {
+      display_rows = BuildPluginOptionsRowLabels(ActivePluginBlock());
+    }
     size_t row_count = display_rows.size();
     bool editing = plugin_pane_focused_
-                   && plugin_options_mode_ != PluginOptionsEditMode::kBrowsing;
+                   && plugin_options_mode_ != PluginOptionsEditMode::kBrowsing
+                   && !choosing_option && !choosing_boolean;
     bool editing_is_placeholder = false;
     if (editing) {
       // plugin_options_cursor_ always points at the row currently being
@@ -1397,7 +1567,17 @@ std::string TreeBrowser::RenderPanel() const
               = plugin_options_adding_new_row_
                     ? plugin_options_pending_key_
                     : ActivePluginBlock().options[idx - 1].first;
-          display_rows[idx] = "  " + key + " = " + plugin_options_edit_buffer_;
+          std::string type;
+          if (plugin_options_adding_new_row_
+              && plugin_options_pending_type_
+                     != restore_plugin_hints::PluginOptionType::kString) {
+            type = " ("
+                   + std::string(restore_plugin_hints::PluginOptionTypeName(
+                       plugin_options_pending_type_))
+                   + ")";
+          }
+          display_rows[idx]
+              = "  " + key + type + " = " + plugin_options_edit_buffer_;
           break;
         }
         default:
@@ -1405,19 +1585,53 @@ std::string TreeBrowser::RenderPanel() const
       }
     }
 
+    restore_plugin_hints::PluginOptionsBlock preview_block
+        = ActivePluginBlock();
+    if (editing) {
+      switch (plugin_options_mode_) {
+        case PluginOptionsEditMode::kEditingBlockName:
+          preview_block.plugin_name = plugin_options_edit_buffer_;
+          break;
+        case PluginOptionsEditMode::kEditingRowValue:
+          if (plugin_options_adding_new_row_) {
+            preview_block.options.emplace_back(plugin_options_pending_key_,
+                                               plugin_options_edit_buffer_);
+          } else if (plugin_options_cursor_ > 0
+                     && plugin_options_cursor_
+                            <= preview_block.options.size()) {
+            preview_block.options[plugin_options_cursor_ - 1].second
+                = plugin_options_edit_buffer_;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    std::string current_string
+        = restore_plugin_hints::BuildPluginOptionsBlock(preview_block);
+    if (current_string.empty()) { current_string = "(empty)"; }
+
     std::string tab_bar = BuildPluginOptionsTabBar(
         plugin_options_blocks_, plugin_options_active_block_);
-    size_t reserved_top = tab_bar.empty() ? 0 : 1;
+    size_t reserved_top = (tab_bar.empty() ? 0 : 1) + 1;
     PluginOptionsRowWindow layout
         = ComputePluginOptionsRowWindow(plugin_rows, reserved_top, row_count);
+    if (choosing_option || choosing_boolean) { layout.show_hint = false; }
     size_t max_offset
         = row_count > layout.window ? row_count - layout.window : 0;
     size_t offset = std::min(plugin_options_row_offset_, max_offset);
+    if (choosing_option || choosing_boolean) {
+      offset = visual_cursor > layout.window / 2
+                   ? visual_cursor - layout.window / 2
+                   : 0;
+      offset = std::min(offset, max_offset);
+    }
 
     if (!tab_bar.empty()) { out += FrameLine(width, tab_bar, color); }
+    out += PluginOptionsResultLine(width, current_string, color);
     for (size_t row = 0; row < layout.window; ++row) {
       size_t i = offset + row;
-      bool selected = plugin_pane_focused_ && i == plugin_options_cursor_;
+      bool selected = plugin_pane_focused_ && i == visual_cursor;
       bool editing_this_row = editing && i == plugin_options_cursor_;
       out += PluginOptionsRowLine(
           width, i < display_rows.size() ? display_rows[i] : "",
@@ -1426,10 +1640,11 @@ std::string TreeBrowser::RenderPanel() const
     }
     size_t used_rows = reserved_top + layout.window;
     if (layout.show_hint) {
-      out += FrameLine(
-          width,
-          "  " + BuildKnownOptionsHintLine(ActivePluginBlock().plugin_name),
-          color);
+      out += FrameLine(width,
+                       "  "
+                           + BuildKnownOptionsHintLine(
+                               ActivePluginBlock(), plugin_hint_definitions_),
+                       color);
       used_rows++;
     }
     for (; used_rows < plugin_rows; ++used_rows) {
@@ -1459,7 +1674,14 @@ std::string TreeBrowser::RenderPanel() const
   std::string first_help_line;
   std::string second_help_line;
   if (split && plugin_pane_focused_) {
-    if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
+    if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey) {
+      first_help_line = " Up/Down Option  Enter Select";
+      second_help_line = " Type name for custom option  Esc Back";
+    } else if (plugin_options_mode_
+               == PluginOptionsEditMode::kChoosingBooleanValue) {
+      first_help_line = " Up/Down Choose yes/no  Enter Confirm";
+      second_help_line = " Esc Back to option list";
+    } else if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
       first_help_line = " Up/Down Row  Left/Right Tab  Enter Edit  d Delete";
       second_help_line
           = " n New tab  Tab Save & switch to Files  Esc Discard edits";
@@ -1773,6 +1995,60 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
 
 void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
 {
+  if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey) {
+    std::vector<tree_browser_internal::PluginOptionChoice> choices
+        = AvailablePluginOptionChoices();
+    if (key == "key:enter" && !choices.empty()) {
+      plugin_options_choice_cursor_
+          = std::min(plugin_options_choice_cursor_, choices.size() - 1);
+      const auto& choice = choices[plugin_options_choice_cursor_];
+      plugin_options_pending_key_ = choice.key;
+      plugin_options_pending_type_ = choice.type;
+      plugin_options_edit_buffer_.clear();
+      plugin_options_adding_new_row_ = true;
+      if (choice.type == restore_plugin_hints::PluginOptionType::kBoolean) {
+        plugin_options_boolean_value_ = true;
+        plugin_options_mode_ = PluginOptionsEditMode::kChoosingBooleanValue;
+      } else {
+        plugin_options_mode_ = PluginOptionsEditMode::kEditingRowValue;
+      }
+    } else if (key == "key:cancel") {
+      plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+    } else if (key == "key:up") {
+      if (plugin_options_choice_cursor_ > 0) {
+        plugin_options_choice_cursor_--;
+      }
+    } else if (key == "key:down") {
+      if (plugin_options_choice_cursor_ + 1 < choices.size()) {
+        plugin_options_choice_cursor_++;
+      }
+    } else if (key == "key:space") {
+      plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
+      plugin_options_edit_buffer_ = " ";
+    } else if (key.starts_with("key:text:")) {
+      plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
+      plugin_options_edit_buffer_
+          = std::string(key.substr(strlen("key:text:")));
+    }
+    return;
+  }
+
+  if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingBooleanValue) {
+    if (key == "key:enter") {
+      ActivePluginBlock().options.emplace_back(
+          plugin_options_pending_key_,
+          plugin_options_boolean_value_ ? "yes" : "no");
+      plugin_options_cursor_ = ActivePluginBlock().options.size();
+      plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+    } else if (key == "key:cancel") {
+      plugin_options_mode_ = PluginOptionsEditMode::kChoosingNewRowKey;
+    } else if (key == "key:up" || key == "key:down" || key == "key:left"
+               || key == "key:right") {
+      plugin_options_boolean_value_ = !plugin_options_boolean_value_;
+    }
+    return;
+  }
+
   if (plugin_options_mode_ != PluginOptionsEditMode::kBrowsing) {
     if (key == "key:enter") {
       switch (plugin_options_mode_) {
@@ -1785,6 +2061,8 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
             break;
           }
           plugin_options_pending_key_ = plugin_options_edit_buffer_;
+          plugin_options_pending_type_
+              = restore_plugin_hints::PluginOptionType::kString;
           plugin_options_edit_buffer_.clear();
           plugin_options_mode_ = PluginOptionsEditMode::kEditingRowValue;
           return;
@@ -1822,7 +2100,12 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
       plugin_options_mode_ = PluginOptionsEditMode::kEditingBlockName;
       plugin_options_edit_buffer_ = ActivePluginBlock().plugin_name;
     } else if (plugin_options_cursor_ == PluginOptionsRowCount() - 1) {
-      plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
+      std::vector<tree_browser_internal::PluginOptionChoice> choices
+          = AvailablePluginOptionChoices();
+      plugin_options_mode_ = choices.empty()
+                                 ? PluginOptionsEditMode::kEditingNewRowKey
+                                 : PluginOptionsEditMode::kChoosingNewRowKey;
+      plugin_options_choice_cursor_ = 0;
       plugin_options_edit_buffer_.clear();
       plugin_options_pending_key_.clear();
       plugin_options_adding_new_row_ = true;

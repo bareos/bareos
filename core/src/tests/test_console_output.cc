@@ -40,7 +40,7 @@ TEST(ConsoleOutput, StylesSemanticMessages)
       console::ApplyStyle("warning\n", ConsoleOutputStyle::kWarning, true),
       "\033[1;33mwarning\n\033[0m");
   EXPECT_EQ(console::ApplyStyle("info\n", ConsoleOutputStyle::kInfo, true),
-            "\033[36minfo\n\033[0m");
+            "\033[34minfo\n\033[0m");
   EXPECT_EQ(console::ApplyStyle("plain", ConsoleOutputStyle::kError, false),
             "plain");
 }
@@ -48,7 +48,7 @@ TEST(ConsoleOutput, StylesSemanticMessages)
 TEST(ConsoleOutput, StylesReadlinePromptWithoutChangingDisplayWidth)
 {
   EXPECT_EQ(console::ReadlinePrompt("*", true),
-            "\001\033[1;36m\002*\001\033[0m\002");
+            "\001\033[1;34m\002*\001\033[0m\002");
   EXPECT_EQ(console::ReadlinePrompt("*", false), "*");
   EXPECT_EQ(console::ReadlinePrompt("", true), "");
 }
@@ -56,16 +56,16 @@ TEST(ConsoleOutput, StylesReadlinePromptWithoutChangingDisplayWidth)
 TEST(ConsoleOutput, StripsAnsiForPlainSinks)
 {
   EXPECT_EQ(console::StripAnsiEscapeSequences(
-                "\033[1;31merror\033[0m \033[7;36mselected\033[0m"),
+                "\033[1;31merror\033[0m \033[7;34mselected\033[0m"),
             "error selected");
   EXPECT_EQ(console::StripAnsiEscapeSequences(
                 "before\033]52;c;Y2xpcGJvYXJkBw==\aafter"),
             "beforeafter");
-  EXPECT_EQ(console::StripAnsiEscapeSequences(
-                "before\033Pmalicious\033\\after"),
-            "beforeafter");
-  EXPECT_EQ(console::StripAnsiEscapeSequences(
-                "line\r\b\a\x7f C1:\xc2\x9b" "31mred"),
+  EXPECT_EQ(
+      console::StripAnsiEscapeSequences("before\033Pmalicious\033\\after"),
+      "beforeafter");
+  EXPECT_EQ(console::StripAnsiEscapeSequences("line\r\b\a\x7f C1:\xc2\x9b"
+                                              "31mred"),
             "line C1:31mred");
   EXPECT_EQ(console::StripAnsiEscapeSequences("plain"), "plain");
 }
