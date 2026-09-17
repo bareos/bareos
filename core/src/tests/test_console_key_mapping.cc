@@ -23,6 +23,7 @@
 
 #include "gtest/gtest.h"
 
+using console::MapAnsiEscapeSequenceToSelectionEvent;
 using console::MapConsoleKeyEventToSelectionEvent;
 using console::MapUtf16InputToSelectionEvent;
 using console::MapUtf8InputToSelectionEvent;
@@ -34,6 +35,8 @@ namespace {
 constexpr int kVkBack = 0x08;
 constexpr int kVkReturn = 0x0D;
 constexpr int kVkEscape = 0x1B;
+constexpr int kVkPageUp = 0x21;
+constexpr int kVkPageDown = 0x22;
 constexpr int kVkEnd = 0x23;
 constexpr int kVkHome = 0x24;
 constexpr int kVkLeft = 0x25;
@@ -56,6 +59,39 @@ TEST(ConsoleKeyMapping, HomeAndEndMapToHorizontalExtremes)
 {
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkHome, 0, false), "key:home");
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkEnd, 0, false), "key:end");
+}
+
+TEST(ConsoleKeyMapping, PageUpAndPageDownMapToPageNavigation)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkPageUp, 0, false),
+            "key:pageup");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkPageDown, 0, false),
+            "key:pagedown");
+}
+
+TEST(ConsoleKeyMapping, AnsiPageKeysMapToPageNavigation)
+{
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5~"), "key:pageup");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[6~"), "key:pagedown");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5;2~"), "key:pageup");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[6;5~"), "key:pagedown");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5^"), "key:pageup");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[6$"), "key:pagedown");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5@"), "key:pageup");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5u"), "key:pageup");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[6;1u"), "key:pagedown");
+}
+
+TEST(ConsoleKeyMapping, AnsiCursorKeysMapToNavigation)
+{
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[A"), "key:up");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[B"), "key:down");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[C"), "key:right");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[D"), "key:left");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[H"), "key:home");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[F"), "key:end");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[1~"), "key:home");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[4~"), "key:end");
 }
 
 TEST(ConsoleKeyMapping, EnterBackspaceEscape)
@@ -117,6 +153,24 @@ TEST(ConsoleKeyMapping, VimControlKeyBindings)
             "key:right");
   EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'f', true),
             "key:right");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 12, true), "key:right");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 6, true), "key:right");
+}
+
+TEST(ConsoleKeyMapping, ControlPageNavigation)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'u', true),
+            "key:pageup");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'U', true),
+            "key:pageup");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 21, true),
+            "key:pageup");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'd', true),
+            "key:pagedown");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, L'D', true),
+            "key:pagedown");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkNone, 4, true),
+            "key:pagedown");
 }
 
 TEST(ConsoleKeyMapping, SpaceAndPrintableText)
