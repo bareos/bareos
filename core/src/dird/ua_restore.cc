@@ -43,6 +43,7 @@
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
 #include "dird/ua_restore.h"
+#include "dird/ua_restore_point_display.h"
 #include "dird/bsr.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
@@ -163,6 +164,20 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (i >= 0) {
     if (!CheckAndSetFileregex(ua, &rx, ua->argv[i])) {
       ua->ErrorMsg(T_("Invalid \"FileRegex\" value.\n"));
+      goto bail_out;
+    }
+  }
+
+  i = FindArgWithValue(ua, "restorepointmode");
+  if (i >= 0) {
+    if (Bstrcasecmp(ua->argv[i], "chain")) {
+      rx.restore_point_mode = RestoreContext::RestorePointMode::Chain;
+    } else if (Bstrcasecmp(ua->argv[i], "job")) {
+      rx.restore_point_mode = RestoreContext::RestorePointMode::Job;
+    } else {
+      ua->ErrorMsg(T_("Invalid \"restorepointmode\" value \"%s\"; "
+                      "expected \"chain\" or \"job\".\n"),
+                   ua->argv[i]);
       goto bail_out;
     }
   }
@@ -597,24 +612,25 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "latest",    /* 9 */
 
                       // The keyword below are handled by individual arg lookups
-                      "client",        /* 10 */
-                      "storage",       /* 11 */
-                      "fileset",       /* 12 */
-                      "where",         /* 13 */
-                      "yes",           /* 14 */
-                      "bootstrap",     /* 15 */
-                      "done",          /* 16 */
-                      "strip_prefix",  /* 17 */
-                      "add_prefix",    /* 18 */
-                      "add_suffix",    /* 19 */
-                      "regexwhere",    /* 20 */
-                      "restoreclient", /* 21 */
-                      "copies",        /* 22 */
-                      "comment",       /* 23 */
-                      "restorejob",    /* 24 */
-                      "replace",       /* 25 */
-                      "pluginoptions", /* 26 */
-                      "archive",       /* 27 */
+                      "client",           /* 10 */
+                      "storage",          /* 11 */
+                      "fileset",          /* 12 */
+                      "where",            /* 13 */
+                      "yes",              /* 14 */
+                      "bootstrap",        /* 15 */
+                      "done",             /* 16 */
+                      "strip_prefix",     /* 17 */
+                      "add_prefix",       /* 18 */
+                      "add_suffix",       /* 19 */
+                      "regexwhere",       /* 20 */
+                      "restoreclient",    /* 21 */
+                      "copies",           /* 22 */
+                      "comment",          /* 23 */
+                      "restorejob",       /* 24 */
+                      "replace",          /* 25 */
+                      "pluginoptions",    /* 26 */
+                      "archive",          /* 27 */
+                      "restorepointmode", /* 28 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -1538,40 +1554,28 @@ static int ClientFilesetTupleHandler(void* ctx, int, char** row)
 }
 
 /**
- * Format a duration (in seconds, always >= 0) as a human readable age,
- * e.g. "3 days ago", "1 hour ago", "just now".
+ * Context threaded through ClientFilesetFullHandler() via the SqlQuery()
+ * callback's void* ctx: the UaContext (for ACL checks/messages) plus the
+ * candidate list being built up, kept index-aligned with ua->prompts so
+ * DoPrompt()'s returned index can be used directly against \p candidates.
  */
-static std::string FormatHumanReadableAge(utime_t seconds_ago)
-{
-  struct Unit {
-    int64_t seconds;
-    const char* singular;
-    const char* plural;
-  };
-  static const Unit units[] = {
-      {31536000, "year", "years"}, {2592000, "month", "months"},
-      {604800, "week", "weeks"},   {86400, "day", "days"},
-      {3600, "hour", "hours"},     {60, "minute", "minutes"},
-  };
-  if (seconds_ago < 0) { seconds_ago = 0; }
-  for (const auto& unit : units) {
-    if (seconds_ago >= unit.seconds) {
-      int64_t count = seconds_ago / unit.seconds;
-      PoolMem age(PM_NAME);
-      Mmsg(age, "%" PRId64 " %s ago", count,
-           count == 1 ? T_(unit.singular) : T_(unit.plural));
-      return std::string(age.c_str());
-    }
-  }
-  return T_("just now");
-}
+struct ClientFilesetFullHandlerCtx {
+  UaContext* ua = nullptr;
+  std::vector<RestorePointCandidate>* candidates = nullptr;
+};
 
 static int ClientFilesetFullHandler(void* ctx, int, char** row)
 {
-  if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4]) { return 0; }
-  UaContext* ua = (UaContext*)ctx;
+  if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4] || !row[5]
+      || !row[6]) {
+    return 0;
+  }
+  auto* handler_ctx = static_cast<ClientFilesetFullHandlerCtx*>(ctx);
+  UaContext* ua = handler_ctx->ua;
+
   POOLMEM* job_names = GetPoolMemory(PM_FNAME);
   PmStrcpy(job_names, row[4]);
+  std::string display_names;
 #if defined(_WIN32)
   for (char* job_name = strtok(job_names, "\n"); job_name;
        job_name = strtok(nullptr, "\n")) {
@@ -1584,14 +1588,22 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
       FreePoolMemory(job_names);
       return 0;
     }
+    if (!display_names.empty()) { display_names += ", "; }
+    display_names += job_name;
   }
   FreePoolMemory(job_names);
 
-  PoolMem chain(PM_MESSAGE);
-  utime_t restore_point = StrToUtime(row[2]);
-  std::string age = FormatHumanReadableAge(time(NULL) - restore_point);
-  Mmsg(chain, "%s (%s)", row[2], age.c_str());
-  AddPrompt(ua, chain.c_str());
+  RestorePointCandidate candidate;
+  candidate.JobId = str_to_int64(row[0]);
+  candidate.RestorePoint = StrToUtime(row[2]);
+  candidate.JobCount = str_to_int64(row[3]);
+  candidate.JobNames = std::move(display_names);
+  candidate.JobFiles = str_to_uint64(row[5]);
+  candidate.JobBytes = str_to_uint64(row[6]);
+
+  std::string line = FormatRestorePointCandidate(candidate, time(NULL));
+  handler_ctx->candidates->push_back(std::move(candidate));
+  AddPrompt(ua, line.c_str());
   return 0;
 }
 
@@ -1650,6 +1662,9 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       rx->query, edit_int64(cr.ClientId, ed1), edit_int64(fsr.FileSetId, ed2),
       filter_name);
 
+  std::vector<RestorePointCandidate> candidates;
+  ClientFilesetFullHandlerCtx handler_ctx{ua, &candidates};
+  const RestorePointCandidate* selected = nullptr;
   char selected_date[MAX_TIME_LENGTH];
   if (auto_select_latest) {
     /* Query is ordered newest-first, so the "(latest backup)" quick restore
@@ -1657,21 +1672,22 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
      * question is asked here, matching what the menu/command label
      * promises. */
     ua->prompts.clear();
-    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler,
+                          (void*)&handler_ctx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
     }
-    if (ua->prompts.empty()) {
+    if (candidates.empty()) {
       ua->ErrorMsg(
           T_("No backup found for FileSet \"%s\" and Client \"%s\".\n"),
           fsr.FileSet, cr.Name);
       return false;
     }
-    bstrncpy(selected_date, ua->prompts[0].c_str(), sizeof(selected_date));
+    selected = &candidates.front();
     ua->prompts.clear();
     if (!ua->api && !ua->runscript) {
       ua->SendMsg(T_("Automatically selected restore point: %s\n"),
-                  selected_date);
+                  FormatRestorePointCandidate(*selected, time(NULL)).c_str());
     }
   } else {
     /* Let the user pick which restore point to use. The interactive
@@ -1679,35 +1695,30 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
      * so the header here only needs to describe the list. */
     StartPrompt(ua, T_("The following restore points are available "
                        "(newest first):\n"));
-    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler, (void*)ua)) {
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler,
+                          (void*)&handler_ctx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       return false;
     }
-    if (DoPrompt(ua, T_("restore point"), T_("Select restore point"),
-                 selected_date, sizeof(selected_date))
-        < 0) {
+    char selection[MAX_TIME_LENGTH];
+    int index = DoPrompt(ua, T_("restore point"), T_("Select restore point"),
+                         selection, sizeof(selection));
+    if (index < 0 || static_cast<size_t>(index) >= candidates.size()) {
       return false;
     }
+    selected = &candidates[index];
   }
-  /* The prompt string formatted in ClientFilesetFullHandler is:
-   * "<RestorePoint> (<human readable age> ago)" e.g.
-   * "2026-09-12 14:33:21 (3 days ago)". Extract the leading timestamp
-   * "YYYY-MM-DD HH:MM:SS" (first 19 characters). */
-  if (strlen(selected_date) >= 19) {
-    selected_date[19] = '\0';
-  } else {
-    char* details = strchr(selected_date, ' ');
-    if (details) {
-      details = strchr(details + 1, ' ');
-      if (details) { *details = 0; }
-    }
+
+  if (rx->restore_point_mode == RestoreContext::RestorePointMode::Job) {
+    /* Bypass chain/dependency resolution entirely: restore only the
+     * anchor Full job the user picked. */
+    rx->last_jobid[0] = rx->JobIds[0] = 0;
+    char ed3[50];
+    PmStrcpy(rx->JobIds, edit_int64(selected->JobId, ed3));
+    return true;
   }
-  utime_t inclusive_date = StrToUtime(selected_date);
-  if (inclusive_date == 0) {
-    ua->ErrorMsg(T_("Invalid restore point: %s\n"), selected_date);
-    return false;
-  }
-  bstrutime(selected_date, sizeof(selected_date), inclusive_date + 1);
+
+  bstrutime(selected_date, sizeof(selected_date), selected->RestorePoint + 1);
   return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, selected_date);
 }
 
