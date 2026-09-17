@@ -45,6 +45,24 @@ class BareosDb;
 
 namespace directordaemon::restore_plugin_hints {
 
+// The kind of value an option expects, so an editor (bconsole's row
+// editor, webui-vue's PluginOptionsEditor.vue) can offer an
+// appropriate input widget (a toggle for kBoolean, a number input for
+// kInteger, a file/dir picker affordance for kPath) instead of a plain
+// text field for every option.
+enum class PluginOptionType
+{
+  kString,   // Free-form text (the default -- most options).
+  kBoolean,  // "yes"/"no" (or "true"/"false") toggle.
+  kInteger,  // A plain number (port, timeout, retry count, ...).
+  kPath,     // A local filesystem path.
+};
+
+// Short machine-readable name for PluginOptionType, used by the
+// ".pluginhints" dot command's JSON/API output (and mirrored by
+// webui-vue's restorePluginHints.js fallback dataset).
+std::string_view PluginOptionTypeName(PluginOptionType type);
+
 // One documented (or reverse-engineered) restore plugin option.
 struct PluginOptionHint {
   std::string_view name;
@@ -52,6 +70,7 @@ struct PluginOptionHint {
   std::string_view description;
   std::string_view source;  // "plugin-doc" | "plugin-readme" |
                             // "plugin-source" | "plugin-example"
+  PluginOptionType type = PluginOptionType::kString;
 };
 
 // All known hints for one restore plugin.
@@ -115,6 +134,20 @@ struct PluginOptionsBlock {
 // Parses one "pluginname:key1=value1:key2=value2:..." block. Options
 // without an "=" are kept as flag-style options with an empty value.
 PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block);
+
+// Builds a starting PluginOptionsBlock for a freshly-opened Plugin
+// Options editor, seeded from a FileSet's already-configured
+// "Plugin = ..." definition: the plugin loader name (e.g. "python"),
+// plus -- if present -- its "module_name=" option as a pre-filled row
+// (e.g. for "python:module_name=bareos-fd-vmware:file=...", this
+// returns {plugin_name: "python", options: [{"module_name",
+// "bareos-fd-vmware"}]}), since the wire string is only valid restore
+// input once the identity of the wrapped module is known. Other
+// backup-only options (file=, reader=, ...) are intentionally not
+// copied, since they describe the backup source rather than restore
+// options.
+PluginOptionsBlock BuildInitialPluginOptionsBlock(
+    const FileSetPluginDefinition& definition);
 
 // Inverse of ParsePluginOptionsBlock(): joins the plugin name and
 // options back into a single "pluginname:key=value:..." string, using
