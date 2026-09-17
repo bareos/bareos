@@ -47,6 +47,7 @@
 #include "lib/bpipe.h"
 #include <stdio.h>
 #include <fstream>
+#include <optional>
 #include <string>
 
 #if !defined(HAVE_WIN32)
@@ -261,6 +262,43 @@ static bool EnableWindowsAnsiConsoleIfPossible()
 }
 #endif
 
+#if !defined(HAVE_WIN32)
+// Puts the given tty into raw, no-echo mode for as long as this guard is
+// alive, restoring the original termios settings on destruction (including
+// on early/exceptional return paths). This must span the *entire*
+// interactive selection session (i.e. every round trip while the tree
+// browser/selection menu is on screen), not just a single keystroke read:
+// toggling raw mode on and off around each individual key event leaves a
+// window, while waiting for the Director's response, where the terminal is
+// back in echo mode. If the user holds a key down, OS keyboard auto-repeat
+// then gets echoed straight to the screen by the tty driver itself,
+// corrupting the just-cleared selection screen.
+struct TerminalRawModeGuard {
+  int fd = -1;
+  termios original{};
+  bool active = false;
+
+  explicit TerminalRawModeGuard(int input_fd) : fd(input_fd)
+  {
+    if (tcgetattr(fd, &original) != 0) { return; }
+    termios raw = original;
+    raw.c_lflag &= ~(ICANON | ECHO | ISIG);
+    raw.c_iflag &= ~(IXON | ICRNL);
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    active = (tcsetattr(fd, TCSANOW, &raw) == 0);
+  }
+
+  ~TerminalRawModeGuard()
+  {
+    if (active) { tcsetattr(fd, TCSANOW, &original); }
+  }
+
+  TerminalRawModeGuard(const TerminalRawModeGuard&) = delete;
+  TerminalRawModeGuard& operator=(const TerminalRawModeGuard&) = delete;
+};
+#endif
+
 static bool ReadSelectionInput(FILE* input,
                                BareosSocket* socket,
                                bool input_is_interactive_tty)
@@ -282,15 +320,11 @@ static bool ReadSelectionInput(FILE* input,
   }
 
 #if !defined(HAVE_WIN32)
+  // Raw, no-echo mode is expected to already be active on `input_fd` for
+  // the whole interactive selection session -- see TerminalRawModeGuard,
+  // constructed once by the caller (ReadAndProcessInput()) around the
+  // entire receive loop, not per keystroke here.
   int input_fd = fileno(input);
-  termios original{};
-  if (tcgetattr(input_fd, &original) != 0) { return false; }
-  termios raw = original;
-  raw.c_lflag &= ~(ICANON | ECHO | ISIG);
-  raw.c_iflag &= ~(IXON | ICRNL);
-  raw.c_cc[VMIN] = 1;
-  raw.c_cc[VTIME] = 0;
-  if (tcsetattr(input_fd, TCSANOW, &raw) != 0) { return false; }
 
   auto read_with_timeout = [&](unsigned char& value) {
     for (;;) {
@@ -325,10 +359,7 @@ static bool ReadSelectionInput(FILE* input,
     if (select_status <= 0) { continue; /* timeout: re-check for resize */ }
     ssize_t bytes_read = read(input_fd, &input_byte, 1);
     if (bytes_read < 0 && errno == EINTR) { continue; }
-    if (bytes_read != 1) {
-      tcsetattr(input_fd, TCSANOW, &original);
-      return false;
-    }
+    if (bytes_read != 1) { return false; }
     break;
   }
 
@@ -427,7 +458,6 @@ static bool ReadSelectionInput(FILE* input,
     event = "key:text:";
     event.push_back(static_cast<char>(input_byte));
   }
-  tcsetattr(input_fd, TCSANOW, &original);
   if (event.empty()) { event = "key:cancel"; }
 
   PmStrcpy(socket->msg, event.c_str());
@@ -642,6 +672,17 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       break;
     }
 
+#if !defined(HAVE_WIN32)
+    // Only enabled lazily, the first time this receive loop actually enters
+    // an interactive selection session (BNET_START_SELECT/BNET_SELECT_INPUT
+    // below) -- see TerminalRawModeGuard's comment for why it must then stay
+    // active across every round trip of that session instead of being
+    // toggled per keystroke. Ordinary (non-interactive) commands never
+    // touch this, so their normal ISIG/echo terminal behavior (e.g.
+    // Ctrl-C aborting a long-running command) is unaffected.
+    std::optional<TerminalRawModeGuard> raw_mode_guard;
+#endif
+
     tid = StartBsockTimer(UA_sock, timeout);
     while ((status = UA_sock->recv()) >= 0
            || ((status == BNET_SIGNAL)
@@ -656,12 +697,24 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
         } else if (UA_sock->message_length == BNET_START_SELECT) {
           collecting_selection = true;
           selection_output.clear();
+#if !defined(HAVE_WIN32)
+          if (tty_input && !raw_mode_guard) {
+            raw_mode_guard.emplace(fileno(input));
+          }
+#endif
           if (tty_input) { ConsoleOutput("\033[2J\033[H"); }
         } else if (UA_sock->message_length == BNET_END_SELECT) {
           collecting_selection = false;
           ConsoleOutput(selection_output.c_str());
         } else if (UA_sock->message_length == BNET_SELECT_INPUT
                    && collecting_selection == false) {
+#if !defined(HAVE_WIN32)
+          // Safety net in case a selection flow ever sends
+          // BNET_SELECT_INPUT without a preceding BNET_START_SELECT.
+          if (tty_input && !raw_mode_guard) {
+            raw_mode_guard.emplace(fileno(input));
+          }
+#endif
           if (!ReadSelectionInput(input, UA_sock, tty_input != 0)) { break; }
           if (!UA_sock->send()) { break; }
         } else if (UA_sock->message_length == BNET_INFO_MSG) {
