@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -83,10 +83,7 @@ int main(int argc, char* const* argv)
   char drive = 'A';
   char buf[16];
 
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   while ((ch = getopt(argc, argv, "alv?")) != -1) {
     switch (ch) {

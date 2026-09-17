@@ -185,10 +185,7 @@ int GetCmd(const char* prompt);
  */
 int main(int margc, char* margv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
   InitStackDump();
 
   /* Sanity checks */

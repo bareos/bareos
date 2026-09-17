@@ -86,10 +86,7 @@ static BootStrapRecord* bsr = nullptr;
 int main(int argc, char* argv[])
 {
   DirectorResource* director = nullptr;
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
   InitStackDump();
 
   working_directory = "/tmp";
