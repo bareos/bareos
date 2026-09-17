@@ -569,6 +569,92 @@ std::string BuildPluginOptionExample(const PluginRestoreHint& hint)
   return example;
 }
 
+PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block)
+{
+  PluginOptionsBlock result;
+
+  size_t separator = block.find(':');
+  std::string_view name_part = separator == std::string_view::npos
+                                   ? block
+                                   : block.substr(0, separator);
+  result.plugin_name = std::string(name_part);
+  if (separator == std::string_view::npos) { return result; }
+
+  std::string_view rest = block.substr(separator + 1);
+  size_t pos = 0;
+  while (pos <= rest.size()) {
+    size_t next = rest.find(':', pos);
+    std::string_view part
+        = rest.substr(pos, next == std::string_view::npos ? next : next - pos);
+    if (!part.empty()) {
+      size_t eq = part.find('=');
+      if (eq == std::string_view::npos) {
+        result.options.emplace_back(std::string(part), std::string());
+      } else {
+        result.options.emplace_back(std::string(part.substr(0, eq)),
+                                    std::string(part.substr(eq + 1)));
+      }
+    }
+    if (next == std::string_view::npos) { break; }
+    pos = next + 1;
+  }
+  return result;
+}
+
+std::string BuildPluginOptionsBlock(const PluginOptionsBlock& block,
+                                    std::string_view separator)
+{
+  std::string out = block.plugin_name;
+  for (const auto& [key, value] : block.options) {
+    out += separator;
+    out += key;
+    if (!value.empty()) {
+      out += '=';
+      out += value;
+    }
+  }
+  return out;
+}
+
+std::vector<PluginOptionsBlock> ParsePluginOptionsDocument(
+    std::string_view document)
+{
+  std::vector<PluginOptionsBlock> blocks;
+  size_t line_start = 0;
+  while (line_start <= document.size()) {
+    size_t line_end = document.find('\n', line_start);
+    std::string_view line = document.substr(
+        line_start,
+        line_end == std::string_view::npos ? line_end : line_end - line_start);
+    if (!line.empty()) { blocks.push_back(ParsePluginOptionsBlock(line)); }
+    if (line_end == std::string_view::npos) { break; }
+    line_start = line_end + 1;
+  }
+  return blocks;
+}
+
+std::string BuildPluginOptionsDocument(
+    const std::vector<PluginOptionsBlock>& blocks,
+    std::string_view separator)
+{
+  std::string out;
+  for (size_t i = 0; i < blocks.size(); ++i) {
+    if (i > 0) { out += '\n'; }
+    out += BuildPluginOptionsBlock(blocks[i], separator);
+  }
+  return out;
+}
+
+bool AllPluginOptionsBlocksAuthorized(
+    std::string_view document,
+    const std::function<bool(const std::string&)>& is_block_authorized)
+{
+  for (const PluginOptionsBlock& block : ParsePluginOptionsDocument(document)) {
+    if (!is_block_authorized(BuildPluginOptionsBlock(block))) { return false; }
+  }
+  return true;
+}
+
 namespace {
 int FileSetTextHandler(void* ctx, int, char** row)
 {
