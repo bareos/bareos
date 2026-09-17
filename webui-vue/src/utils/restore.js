@@ -19,6 +19,7 @@
    02110-1301, USA.
  */
 
+import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobLevelCode } from './jobLevels.js'
 
 export function getRestoreBrowserPlaceholder({
@@ -221,6 +222,189 @@ export function buildRestoreBvfsRestoreCommand({
   parts.push(`path=${path}`)
 
   return parts.join(' ')
+}
+
+export function buildRestoreRunCommand({
+  restoreJob,
+  backupClient,
+  restoreClient,
+  storage,
+  bootstrap,
+  files,
+  catalog,
+  backupFormat,
+  where,
+  regexWhere,
+  replace,
+  pluginOptions,
+  comment,
+  when,
+  priority,
+  yes = false,
+} = {}) {
+  let command = `run job=${quoteDirectorString(restoreJob ?? '')}`
+
+  const appendQuoted = (key, value) => {
+    if (value === null || value === undefined || value === '') {
+      return
+    }
+    command += ` ${key}=${quoteDirectorString(value)}`
+  }
+
+  appendQuoted('client', backupClient)
+  appendQuoted('restoreclient', restoreClient)
+  appendQuoted('storage', storage)
+  appendQuoted('bootstrap', bootstrap)
+
+  if (Number.isInteger(files) && files > 0) {
+    command += ` files=${files}`
+  }
+
+  appendQuoted('catalog', catalog)
+  appendQuoted('backupformat', backupFormat)
+
+  if (regexWhere) {
+    appendQuoted('regexwhere', regexWhere)
+  } else {
+    appendQuoted('where', where)
+  }
+
+  if (replace) {
+    command += ` replace=${replace}`
+  }
+
+  appendQuoted('pluginoptions', pluginOptions)
+  appendQuoted('comment', comment)
+  appendQuoted('when', when)
+
+  if (Number.isInteger(priority) && priority > 0) {
+    command += ` priority=${priority}`
+  }
+
+  if (yes) {
+    command += ' yes'
+  }
+
+  return command
+}
+
+export function buildRestoreCommand({
+  bvfsPath,
+  backupClient,
+  restoreClient,
+  restoreJob,
+  where,
+  regexWhere,
+  replace,
+  pluginOptions,
+  when,
+  priority,
+  yes = false,
+} = {}) {
+  let command = `restore file=?${bvfsPath ?? ''}`
+
+  const appendQuoted = (key, value) => {
+    if (value === null || value === undefined || value === '') {
+      return
+    }
+    command += ` ${key}=${quoteDirectorString(value)}`
+  }
+
+  appendQuoted('client', backupClient)
+  appendQuoted('restoreclient', restoreClient)
+  appendQuoted('restorejob', restoreJob)
+
+  if (regexWhere) {
+    appendQuoted('regexwhere', regexWhere)
+  } else {
+    appendQuoted('where', where)
+  }
+
+  appendQuoted('replace', replace)
+  appendQuoted('pluginoptions', pluginOptions)
+  appendQuoted('when', when)
+
+  if (Number.isInteger(priority) && priority > 0) {
+    command += ` priority=${priority}`
+  }
+
+  if (yes) {
+    command += ' yes'
+  }
+
+  return command
+}
+
+function escapeRegexWherePart(value) {
+  return String(value ?? '').replace(/[!\\]/g, '\\$&')
+}
+
+export function buildRegexWhereFromRelocationRules({
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+} = {}) {
+  const parts = []
+  if (stripPrefix) {
+    parts.push(`!${escapeRegexWherePart(stripPrefix)}!!i`)
+  }
+  if (addSuffix) {
+    parts.push(`!([^/])$!$1${escapeRegexWherePart(addSuffix)}!`)
+  }
+  if (addPrefix) {
+    parts.push(`!^!${escapeRegexWherePart(addPrefix)}!`)
+  }
+  return parts.join(',')
+}
+
+export function resolveRestoreRegexWhere({
+  relocationMode = 'where',
+  regexWhere = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+} = {}) {
+  if (relocationMode === 'regex') {
+    return regexWhere
+  }
+  if (relocationMode === 'rules') {
+    return buildRegexWhereFromRelocationRules({
+      stripPrefix,
+      addPrefix,
+      addSuffix,
+    })
+  }
+  return ''
+}
+
+export function previewRelocatedPath({
+  samplePath = '',
+  relocationMode = 'where',
+  where = '',
+  regexWhere = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+} = {}) {
+  if (relocationMode === 'where') {
+    return where || samplePath || ''
+  }
+
+  if (relocationMode === 'rules') {
+    let result = String(samplePath ?? '')
+    if (stripPrefix && result.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
+      result = result.slice(stripPrefix.length)
+    }
+    if (addSuffix && result.length > 0) {
+      result += addSuffix
+    }
+    if (addPrefix) {
+      result = `${addPrefix}${result}`
+    }
+    return result
+  }
+
+  return regexWhere || samplePath || ''
 }
 
 export function buildRestoreBackupOption(

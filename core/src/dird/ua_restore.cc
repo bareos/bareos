@@ -43,6 +43,7 @@
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
 #include "dird/ua_restore.h"
+#include "dird/restore_options.h"
 #include "dird/ua_restore_point_display.h"
 #include "dird/bsr.h"
 #include "lib/breg.h"
@@ -112,12 +113,10 @@ static bool AddAllFindex(RestoreContext* rx);
 bool RestoreCmd(UaContext* ua, const char*)
 {
   RestoreContext rx; /* restore context */
-  PoolMem buf;
+  restore_options::RestoreRunOptions run_options;
   JobResource* job;
   int i;
   JobControlRecord* jcr = ua->jcr;
-  char* escaped_bsr_name = NULL;
-  char* escaped_where_name = NULL;
   char *strip_prefix, *add_prefix, *add_suffix, *regexp;
   strip_prefix = add_prefix = add_suffix = regexp = NULL;
 
@@ -304,71 +303,25 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!GetRestoreClientName(ua, rx)) { goto bail_out; }
 
-  escaped_bsr_name = escape_filename(jcr->RestoreBootstrap);
+  run_options.restore_job = job->resource_name_;
+  run_options.backup_client = rx.ClientName ? rx.ClientName : "";
+  run_options.restore_client = rx.RestoreClientName ? rx.RestoreClientName : "";
+  run_options.storage = rx.store ? rx.store->resource_name_ : "";
+  run_options.bootstrap = jcr->RestoreBootstrap ? jcr->RestoreBootstrap : "";
+  run_options.files = rx.selected_files;
+  run_options.catalog = ua->catalog ? ua->catalog->resource_name_ : "";
+  run_options.backup_format = rx.backup_format ? rx.backup_format : "";
+  run_options.regex_where = rx.RegexWhere ? rx.RegexWhere : "";
+  run_options.where = rx.where ? rx.where : "";
+  run_options.replace = rx.replace ? rx.replace : "";
+  run_options.plugin_options = !rx.plugin_options.empty()
+                                   ? rx.plugin_options
+                                   : rx.interactive_plugin_options;
+  run_options.comment = rx.comment ? rx.comment : "";
+  run_options.yes = FindArg(ua, NT_("yes")) > 0;
 
-  Mmsg(ua->cmd,
-       "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
-       " bootstrap=\"%s\" files=%u catalog=\"%s\"",
-       job->resource_name_, rx.ClientName, rx.RestoreClientName,
-       rx.store ? rx.store->resource_name_ : "",
-       escaped_bsr_name ? escaped_bsr_name : jcr->RestoreBootstrap,
-       rx.selected_files, ua->catalog->resource_name_);
-
-  // Build run command
-  if (rx.backup_format) {
-    Mmsg(buf, " backupformat=%s", rx.backup_format);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  PmStrcpy(buf, "");
-  if (rx.RegexWhere) {
-    escaped_where_name = escape_filename(rx.RegexWhere);
-    Mmsg(buf, " regexwhere=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.RegexWhere);
-
-  } else if (rx.where) {
-    escaped_where_name = escape_filename(rx.where);
-    Mmsg(buf, " where=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.where);
-  }
-  PmStrcat(ua->cmd, buf);
-
-  if (rx.replace) {
-    Mmsg(buf, " replace=%s", rx.replace);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  if (!rx.plugin_options.empty()) {
-    char* escaped_plugin_options = escape_filename(rx.plugin_options.c_str());
-    Mmsg(buf, " pluginoptions=\"%s\"",
-         escaped_plugin_options ? escaped_plugin_options
-                                : rx.plugin_options.c_str());
-    PmStrcat(ua->cmd, buf);
-    if (escaped_plugin_options) { free(escaped_plugin_options); }
-  } else if (!rx.interactive_plugin_options.empty()) {
-    char* escaped_plugin_options
-        = escape_filename(rx.interactive_plugin_options.c_str());
-    Mmsg(buf, " pluginoptions=\"%s\"",
-         escaped_plugin_options ? escaped_plugin_options
-                                : rx.interactive_plugin_options.c_str());
-    PmStrcat(ua->cmd, buf);
-    if (escaped_plugin_options) { free(escaped_plugin_options); }
-  }
-
-  if (rx.comment) {
-    Mmsg(buf, " comment=\"%s\"", rx.comment);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
-  if (regexp) { free(regexp); }
-
-  if (FindArg(ua, NT_("yes")) > 0) {
-    PmStrcat(ua->cmd, " yes"); /* pass it on to the run command */
-  }
+  PmStrcpy(ua->cmd,
+           restore_options::BuildRestoreRunCommand(run_options).c_str());
 
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
 
@@ -382,10 +335,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   return true;
 
 bail_out:
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
   if (regexp) { free(regexp); }
 
   /* restore_tree_root only gets freed if either the backup starts

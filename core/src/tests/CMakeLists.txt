@@ -427,6 +427,7 @@ if(ENABLE_BCONSOLE)
   )
   bareos_add_test(test_tree_browser_rendering LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_restore_plugin_hints LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_options LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(
     test_ua_restore_point_display LINK_LIBRARIES ${LINK_LIBRARIES}
   )
