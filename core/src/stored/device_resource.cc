@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,6 +99,7 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   multiplied_device_resource = other.multiplied_device_resource;
   dev = other.dev;
   changer_res = other.changer_res;
+  init_state.store(other.init_state.load());
 }
 
 DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
@@ -151,6 +152,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   multiplied_device_resource = rhs.multiplied_device_resource;
   dev = rhs.dev;
   changer_res = rhs.changer_res;
+  init_state.store(rhs.init_state.load());
 
   return *this;
 }
