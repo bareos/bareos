@@ -225,6 +225,7 @@ locked_threadstate AcquireLock(PyInterpreterState* interp)
  */
 bRC newPlugin(PluginContext* plugin_ctx)
 {
+  std::unique_lock lock{finalize_lock};
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)malloc(
           sizeof(struct plugin_private_context));
@@ -262,6 +263,7 @@ bRC newPlugin(PluginContext* plugin_ctx)
  */
 extern "C" bRC freePlugin(PluginContext* plugin_ctx)
 {
+  std::unique_lock lock{finalize_lock};
   struct plugin_private_context* plugin_priv_ctx
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
 
