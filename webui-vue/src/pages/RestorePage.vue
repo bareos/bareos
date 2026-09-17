@@ -768,6 +768,8 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getAllRestorePluginHints,
+  buildInitialPluginOptionsBlock,
+  buildPluginOptionsDocument,
   getRestoreBrowserPlaceholder,
   hasRestoreFullBackupInChain,
   pushRestoreBreadcrumb,
@@ -1498,6 +1500,17 @@ const pluginRestoreInfo = computed(() => getRestorePluginInfo({
   mergeJobs: form.value.mergeJobs,
 }))
 const pluginHints = computed(() => getRestorePluginHints(pluginRestoreInfo.value, pluginHintsStore.hints))
+// The identity of the plugin the FileSet actually invokes (e.g. its
+// "module_name=") is only known once the backup is detected -- seed the
+// editor with it so the user never has to type "python:module_name=..."
+// by hand for python-wrapped plugins.
+const defaultPluginOptionsDocument = computed(() => {
+  const definition = pluginRestoreInfo.value?.definitions?.[0]
+  if (!definition) {
+    return ''
+  }
+  return buildPluginOptionsDocument([buildInitialPluginOptionsBlock(definition)])
+})
 const allPluginHints = computed(() => getAllRestorePluginHints(pluginHintsStore.hints))
 const pluginOptionsHint = computed(() => {
   if (!pluginRestoreInfo.value) {
@@ -2542,6 +2555,18 @@ watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, 
 watch(showPluginOptions, (visible) => {
   if (!visible) {
     form.value.pluginoptions = ''
+  } else if (!form.value.pluginoptions && defaultPluginOptionsDocument.value) {
+    form.value.pluginoptions = defaultPluginOptionsDocument.value
+  }
+})
+
+// If the detected plugin definition changes (e.g. the user switches
+// which backup job is selected) while the panel is already open and the
+// user hasn't typed anything yet, keep the prefill in sync rather than
+// leaving a stale or empty field.
+watch(defaultPluginOptionsDocument, (doc) => {
+  if (showPluginOptions.value && !form.value.pluginoptions && doc) {
+    form.value.pluginoptions = doc
   }
 })
 

@@ -826,6 +826,11 @@ void EmitPluginRestoreHintFields(
                              std::string(option.description).c_str(), "%s\n");
     ua->send->ObjectKeyValue("source", std::string(option.source).c_str(),
                              "%s\n");
+    ua->send->ObjectKeyValue(
+        "type",
+        std::string(restore_plugin_hints::PluginOptionTypeName(option.type))
+            .c_str(),
+        "%s\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("options");
