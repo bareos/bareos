@@ -32,7 +32,10 @@ import {
   buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
+  buildPluginOptionsBlock,
+  buildPluginOptionsDocument,
   canNavigateRestoreBrowser,
+  findRestorePluginHintIdForBlockName,
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
@@ -46,6 +49,8 @@ import {
   getRestoreBrowserPlaceholder,
   hasRestoreFullBackupInChain,
   normaliseRestoreToggle,
+  parsePluginOptionsBlock,
+  parsePluginOptionsDocument,
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
   resolveLatestRestoreBackup,
@@ -1058,5 +1063,87 @@ describe('restore browser placeholder', () => {
 
   it('uses zero for version lookups when no job ids are available', () => {
     expect(getRestoreVersionsLookupJobId('', '')).toBe('0')
+  })
+})
+
+describe('plugin options editor model', () => {
+  it('round-trips a single block with several options', () => {
+    const block = parsePluginOptionsBlock('bpipe:verbose=1:command=/bin/true')
+    expect(block).toEqual({
+      pluginName: 'bpipe',
+      options: [
+        { key: 'verbose', value: '1' },
+        { key: 'command', value: '/bin/true' },
+      ],
+    })
+    expect(buildPluginOptionsBlock(block)).toBe('bpipe:verbose=1:command=/bin/true')
+  })
+
+  it('parses a plugin name with no options', () => {
+    expect(parsePluginOptionsBlock('bpipe')).toEqual({ pluginName: 'bpipe', options: [] })
+    expect(buildPluginOptionsBlock({ pluginName: 'bpipe', options: [] })).toBe('bpipe')
+  })
+
+  it('treats options without "=" as flag-style options', () => {
+    const block = parsePluginOptionsBlock('vmware:verbose')
+    expect(block).toEqual({ pluginName: 'vmware', options: [{ key: 'verbose', value: '' }] })
+    expect(buildPluginOptionsBlock(block)).toBe('vmware:verbose')
+  })
+
+  it('skips empty segments between colons', () => {
+    expect(parsePluginOptionsBlock('bpipe::verbose=1::command=/bin/true:')).toEqual({
+      pluginName: 'bpipe',
+      options: [
+        { key: 'verbose', value: '1' },
+        { key: 'command', value: '/bin/true' },
+      ],
+    })
+  })
+
+  it('returns an empty block for an empty string', () => {
+    expect(parsePluginOptionsBlock('')).toEqual({ pluginName: '', options: [] })
+    expect(parsePluginOptionsBlock(undefined)).toEqual({ pluginName: '', options: [] })
+  })
+
+  it('builds using a custom separator', () => {
+    expect(buildPluginOptionsBlock({
+      pluginName: 'bpipe',
+      options: [{ key: 'verbose', value: '1' }],
+    }, ';')).toBe('bpipe;verbose=1')
+  })
+
+  it('round-trips a multi-block document separated by newlines', () => {
+    const document = 'bpipe:verbose=1\nvmware:host=esx01:user=root'
+    const blocks = parsePluginOptionsDocument(document)
+    expect(blocks).toEqual([
+      { pluginName: 'bpipe', options: [{ key: 'verbose', value: '1' }] },
+      {
+        pluginName: 'vmware',
+        options: [{ key: 'host', value: 'esx01' }, { key: 'user', value: 'root' }],
+      },
+    ])
+    expect(buildPluginOptionsDocument(blocks)).toBe(document)
+  })
+
+  it('skips empty lines when parsing a document', () => {
+    expect(parsePluginOptionsDocument('bpipe:verbose=1\n\n\nvmware:host=esx01')).toEqual([
+      { pluginName: 'bpipe', options: [{ key: 'verbose', value: '1' }] },
+      { pluginName: 'vmware', options: [{ key: 'host', value: 'esx01' }] },
+    ])
+  })
+
+  it('returns an empty document for an empty/blank string', () => {
+    expect(parsePluginOptionsDocument('')).toEqual([])
+    expect(parsePluginOptionsDocument(undefined)).toEqual([])
+  })
+
+  it('builds an empty document from an empty block list', () => {
+    expect(buildPluginOptionsDocument([])).toBe('')
+    expect(buildPluginOptionsDocument(undefined)).toBe('')
+  })
+
+  it('resolves the known hint id for a block name via alias/id match', () => {
+    expect(findRestorePluginHintIdForBlockName('bpipe', pluginHintsFixture)).toBe('bpipe')
+    expect(findRestorePluginHintIdForBlockName('unknown-plugin', pluginHintsFixture)).toBeNull()
   })
 })

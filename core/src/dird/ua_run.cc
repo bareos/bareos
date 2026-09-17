@@ -31,6 +31,7 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/migration.h"
+#include "dird/restore_plugin_hints.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
@@ -1153,7 +1154,16 @@ bail_out_reg:
 static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr)
 {
   if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
-    if (!ua->AclAccessOk(PluginOptions_ACL, ua->cmd, true)) {
+    // Authorize every "pluginname:key=value:..." block individually,
+    // since SendPluginOptions() (dird/fd_cmds.cc) sends one
+    // "pluginoptions" protocol command per newline-separated block --
+    // checking only the whole string would let an allowed block
+    // smuggle an otherwise-denied block past a single-block ACL
+    // pattern.
+    if (!restore_plugin_hints::AllPluginOptionsBlocksAuthorized(
+            ua->cmd, [ua](const std::string& block) {
+              return ua->AclAccessOk(PluginOptions_ACL, block.c_str(), true);
+            })) {
       ua->SendMsg(
           T_("No authorization for \"PluginOptions\" specification.\n"));
       return false;
@@ -2012,7 +2022,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               return false;
             }
             rc.plugin_options = ua->argv[i];
-            if (!ua->AclAccessOk(PluginOptions_ACL, rc.plugin_options, true)) {
+            // See GetPluginOptions() above: authorize every block
+            // individually, not the whole (possibly multi-block)
+            // string at once.
+            if (!restore_plugin_hints::AllPluginOptionsBlocksAuthorized(
+                    rc.plugin_options, [ua](const std::string& block) {
+                      return ua->AclAccessOk(PluginOptions_ACL, block.c_str(),
+                                             true);
+                    })) {
               ua->SendMsg(T_(
                   "No authorization for \"PluginOptions\" specification.\n"));
               return false;
