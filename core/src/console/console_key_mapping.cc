@@ -31,6 +31,8 @@ namespace {
 constexpr int kVkBack = 0x08;
 constexpr int kVkReturn = 0x0D;
 constexpr int kVkEscape = 0x1B;
+constexpr int kVkPageUp = 0x21;
+constexpr int kVkPageDown = 0x22;
 constexpr int kVkEnd = 0x23;
 constexpr int kVkHome = 0x24;
 constexpr int kVkLeft = 0x25;
@@ -122,6 +124,65 @@ std::string MapUtf16InputToSelectionEvent(wchar_t first, wchar_t second)
   return "key:text:" + EncodeUtf8(codepoint);
 }
 
+std::string MapAnsiEscapeSequenceToSelectionEvent(std::string_view sequence)
+{
+  if (sequence.size() < 2 || sequence.front() != '\x1b') { return ""; }
+
+  if (sequence[1] == 'O') {
+    if (sequence.size() != 3) { return ""; }
+    switch (sequence[2]) {
+      case 'H':
+        return "key:home";
+      case 'F':
+        return "key:end";
+      case 'I':
+        return "key:pageup";
+      case 'G':
+        return "key:pagedown";
+      default:
+        return "";
+    }
+  }
+
+  if (sequence[1] != '[' || sequence.size() < 3) { return ""; }
+
+  char final_byte = sequence.back();
+  std::string_view parameters = sequence.substr(2, sequence.size() - 3);
+  if (parameters.empty()) {
+    switch (final_byte) {
+      case 'A':
+        return "key:up";
+      case 'B':
+        return "key:down";
+      case 'C':
+        return "key:right";
+      case 'D':
+        return "key:left";
+      case 'H':
+        return "key:home";
+      case 'F':
+        return "key:end";
+      default:
+        return "";
+    }
+  }
+
+  size_t separator = parameters.find(';');
+  std::string_view first_parameter = separator == std::string_view::npos
+                                         ? parameters
+                                         : parameters.substr(0, separator);
+
+  if (final_byte == '~' || final_byte == 'u' || final_byte == '^'
+      || final_byte == '$' || final_byte == '@') {
+    if (first_parameter == "1" || first_parameter == "7") { return "key:home"; }
+    if (first_parameter == "4" || first_parameter == "8") { return "key:end"; }
+    if (first_parameter == "5") { return "key:pageup"; }
+    if (first_parameter == "6") { return "key:pagedown"; }
+  }
+
+  return "";
+}
+
 std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
                                                wchar_t unicode_char,
                                                bool ctrl_pressed)
@@ -165,12 +226,24 @@ std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
       case 12:
       case 6:
         return "key:right";
+      case L'u':
+      case L'U':
+      case 21:
+        return "key:pageup";
+      case L'd':
+      case L'D':
+      case 4:
+        return "key:pagedown";
       default:
         break;
     }
   }
 
   switch (virtual_key_code) {
+    case kVkPageUp:
+      return "key:pageup";
+    case kVkPageDown:
+      return "key:pagedown";
     case kVkHome:
       return "key:home";
     case kVkEnd:

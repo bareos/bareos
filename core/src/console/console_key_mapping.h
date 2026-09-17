@@ -49,6 +49,13 @@ std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
                                                bool ctrl_pressed);
 
 /**
+ * Maps one complete ANSI/VT escape sequence to a selection event. This covers
+ * the cursor/navigation escape sequences emitted by POSIX terminals in raw
+ * mode, including common xterm and modified-key variants.
+ */
+std::string MapAnsiEscapeSequenceToSelectionEvent(std::string_view sequence);
+
+/**
  * Maps exactly one UTF-8 encoded printable character to a key:text event.
  * Invalid encodings and C0/C1 control characters return an empty string.
  */
