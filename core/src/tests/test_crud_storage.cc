@@ -21,10 +21,23 @@
 
 #include "stored/backends/crud_storage.h"
 
+#include <algorithm>
 #include <chrono>
+#include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+namespace {
+std::string BackendProgram()
+{
+  std::string program{TEST_PROGRAM};
+#if defined(HAVE_WIN32)
+  std::replace(program.begin(), program.end(), '/', '\\');
+#endif
+  return program;
+}
+}  // namespace
 
 TEST(crud_storage, list_keeps_backend_alive_while_reading)
 {
@@ -32,7 +45,7 @@ TEST(crud_storage, list_keeps_backend_alive_while_reading)
   exit(77);
 #else
   CrudStorage storage;
-  ASSERT_TRUE(storage.set_program(TEST_PROGRAM).has_value());
+  ASSERT_TRUE(storage.set_program(BackendProgram()).has_value());
   storage.set_program_timeout(std::chrono::seconds{4});
 
   auto result = storage.list("delayed");
@@ -47,7 +60,7 @@ TEST(crud_storage, list_keeps_backend_alive_while_reading)
 TEST(crud_storage, list_rejects_trailing_record_data)
 {
   CrudStorage storage;
-  ASSERT_TRUE(storage.set_program(TEST_PROGRAM).has_value());
+  ASSERT_TRUE(storage.set_program(BackendProgram()).has_value());
 
   auto result = storage.list("trailing-data");
 
