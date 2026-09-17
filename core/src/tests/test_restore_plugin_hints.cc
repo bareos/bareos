@@ -21,6 +21,8 @@
 
 #include "dird/restore_plugin_hints.h"
 
+#include <algorithm>
+
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 
@@ -32,20 +34,26 @@ using directordaemon::restore_plugin_hints::BuildInitialPluginOptionsBlock;
 using directordaemon::restore_plugin_hints::BuildPluginOptionExample;
 using directordaemon::restore_plugin_hints::BuildPluginOptionsBlock;
 using directordaemon::restore_plugin_hints::BuildPluginOptionsDocument;
+using directordaemon::restore_plugin_hints::CategorizedPluginOptions;
+using directordaemon::restore_plugin_hints::CategorizePluginOptions;
 using directordaemon::restore_plugin_hints::ExtractFileSetPluginDefinitions;
+using directordaemon::restore_plugin_hints::FileSetPluginDefinition;
+using directordaemon::restore_plugin_hints::FindMatchingPluginDefinition;
 using directordaemon::restore_plugin_hints::FindPluginRestoreHint;
+using directordaemon::restore_plugin_hints::HintProvidesDefaultsElsewhere;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsBlock;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsDocument;
 using directordaemon::restore_plugin_hints::PluginOptionsBlock;
 using directordaemon::restore_plugin_hints::PluginOptionType;
 using directordaemon::restore_plugin_hints::PluginOptionTypeName;
 using directordaemon::restore_plugin_hints::PluginRestoreHint;
+using directordaemon::restore_plugin_hints::ResolvePluginOptionsBlockHint;
 using directordaemon::restore_plugin_hints::ResolvePluginRestoreHint;
 using directordaemon::restore_plugin_hints::SortedPluginRestoreHints;
 
 TEST(RestorePluginHints, KnowsAllCuratedPlugins)
 {
-  EXPECT_EQ(AllPluginRestoreHints().size(), 19u);
+  EXPECT_EQ(AllPluginRestoreHints().size(), 20u);
 }
 
 TEST(RestorePluginHints, FindsHintByIdAndAliasCaseInsensitively)
@@ -140,6 +148,69 @@ TEST(RestorePluginHints, BuildsExamplePreferringRequiredOptions)
   EXPECT_EQ(BuildPluginOptionExample(*hint), "vcserver=...:vcuser=...");
 }
 
+TEST(RestorePluginHints, BarriIncludesRequiredRestoreTarget)
+{
+  const PluginRestoreHint* hint = FindPluginRestoreHint("barri");
+  ASSERT_NE(hint, nullptr);
+  ASSERT_FALSE(hint->options.empty());
+  EXPECT_EQ(hint->options.front().name, "files");
+  EXPECT_EQ(hint->options.front().status, "required");
+  EXPECT_EQ(hint->options.front().type, PluginOptionType::kPath);
+  EXPECT_EQ(BuildPluginOptionExample(*hint), "files=...");
+}
+
+TEST(RestorePluginHints, IncusIncludesRestoreOptions)
+{
+  const PluginRestoreHint* hint = FindPluginRestoreHint("bareos-fd-incus");
+  ASSERT_NE(hint, nullptr);
+  EXPECT_EQ(hint->id, "incus");
+
+  auto restore_path = std::find_if(
+      hint->options.begin(), hint->options.end(),
+      [](const auto& option) { return option.name == "restore_path"; });
+  ASSERT_NE(restore_path, hint->options.end());
+  EXPECT_EQ(restore_path->status, "optional");
+  EXPECT_EQ(restore_path->type, PluginOptionType::kPath);
+
+  auto restore_buffer_depth = std::find_if(
+      hint->options.begin(), hint->options.end(),
+      [](const auto& option) { return option.name == "restore_buffer_depth"; });
+  ASSERT_NE(restore_buffer_depth, hint->options.end());
+  EXPECT_EQ(restore_buffer_depth->type, PluginOptionType::kInteger);
+}
+
+TEST(RestorePluginHints, QumuloOptionsMatchPluginSource)
+{
+  const PluginRestoreHint* hint = FindPluginRestoreHint("yuzuy-qumulo");
+  ASSERT_NE(hint, nullptr);
+  EXPECT_EQ(hint->id, "qumulo");
+
+  auto host
+      = std::find_if(hint->options.begin(), hint->options.end(),
+                     [](const auto& option) { return option.name == "host"; });
+  ASSERT_NE(host, hint->options.end());
+  EXPECT_EQ(host->status, "required");
+  EXPECT_EQ(host->source, "plugin-source");
+
+  auto port
+      = std::find_if(hint->options.begin(), hint->options.end(),
+                     [](const auto& option) { return option.name == "port"; });
+  ASSERT_NE(port, hint->options.end());
+  EXPECT_EQ(port->type, PluginOptionType::kInteger);
+
+  auto config_file = std::find_if(
+      hint->options.begin(), hint->options.end(),
+      [](const auto& option) { return option.name == "config_file"; });
+  ASSERT_NE(config_file, hint->options.end());
+  EXPECT_EQ(config_file->type, PluginOptionType::kPath);
+  EXPECT_TRUE(config_file->provides_defaults);
+
+  EXPECT_EQ(
+      std::find_if(hint->options.begin(), hint->options.end(),
+                   [](const auto& option) { return option.name == "cluster"; }),
+      hint->options.end());
+}
+
 TEST(RestorePluginHints, BuildsExampleFromKnownOptionsWhenNoneRequired)
 {
   const PluginRestoreHint* hint = FindPluginRestoreHint("bpipe");
@@ -170,6 +241,87 @@ TEST(RestorePluginHints, BuildsInitialBlockWithoutModuleNameOption)
   PluginOptionsBlock block = BuildInitialPluginOptionsBlock(definitions[0]);
   EXPECT_EQ(block.plugin_name, "bpipe");
   EXPECT_TRUE(block.options.empty());
+}
+
+TEST(RestorePluginHints, ResolvesBlockHintPreferringModuleNameOption)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "python";
+  block.options.emplace_back("module_name", "bareos-fd-vmware");
+  block.options.emplace_back("vcserver", "host");
+
+  const PluginRestoreHint* hint = ResolvePluginOptionsBlockHint(block);
+  ASSERT_NE(hint, nullptr);
+  EXPECT_EQ(hint->id, "vmware");
+}
+
+TEST(RestorePluginHints, ResolvesBlockHintByDirectPluginNameFallback)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "bpipe";
+  block.options.emplace_back("file", "/a");
+
+  const PluginRestoreHint* hint = ResolvePluginOptionsBlockHint(block);
+  ASSERT_NE(hint, nullptr);
+  EXPECT_EQ(hint->id, "bpipe");
+}
+
+TEST(RestorePluginHints, FindsMatchingDefinitionByResolvedHintId)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = "
+      "\"python:module_name=bareos-fd-vmware:vcserver=host\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  const PluginRestoreHint* hint = FindPluginRestoreHint("vmware");
+  ASSERT_NE(hint, nullptr);
+
+  const FileSetPluginDefinition* match
+      = FindMatchingPluginDefinition(*hint, definitions);
+  ASSERT_NE(match, nullptr);
+  EXPECT_EQ(match->plugin_name, "python");
+}
+
+TEST(RestorePluginHints, FindMatchingDefinitionReturnsNullptrWhenNoMatch)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = \"bpipe:file=/a:reader=cat /a\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  const PluginRestoreHint* hint = FindPluginRestoreHint("vmware");
+  ASSERT_NE(hint, nullptr);
+  EXPECT_EQ(FindMatchingPluginDefinition(*hint, definitions), nullptr);
+}
+
+TEST(RestorePluginHints, CategorizesOptionsIntoFilesetRequiredOptional)
+{
+  const PluginRestoreHint* hint = FindPluginRestoreHint("vmware");
+  ASSERT_NE(hint, nullptr);
+
+  CategorizedPluginOptions categorized
+      = CategorizePluginOptions(*hint, {"vcserver"});
+
+  EXPECT_EQ(categorized.already_in_fileset.size(), 1u);
+  EXPECT_EQ(categorized.already_in_fileset[0]->name, "vcserver");
+  for (const auto* option : categorized.required) {
+    EXPECT_EQ(option->status, "required");
+    EXPECT_NE(option->name, "vcserver");
+  }
+  for (const auto* option : categorized.optional) {
+    EXPECT_NE(option->status, "required");
+    EXPECT_NE(option->name, "vcserver");
+  }
+}
+
+TEST(RestorePluginHints, HintProvidesDefaultsElsewhereDetectsConfigFileOption)
+{
+  const PluginRestoreHint* vmware_hint = FindPluginRestoreHint("vmware");
+  ASSERT_NE(vmware_hint, nullptr);
+  EXPECT_TRUE(HintProvidesDefaultsElsewhere(*vmware_hint));
+
+  const PluginRestoreHint* bpipe_hint = FindPluginRestoreHint("bpipe");
+  ASSERT_NE(bpipe_hint, nullptr);
+  EXPECT_FALSE(HintProvidesDefaultsElsewhere(*bpipe_hint));
 }
 
 TEST(RestorePluginHints, PluginOptionTypeNameReturnsExpectedStrings)

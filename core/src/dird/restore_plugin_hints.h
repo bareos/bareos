@@ -71,6 +71,13 @@ struct PluginOptionHint {
   std::string_view source;  // "plugin-doc" | "plugin-readme" |
                             // "plugin-source" | "plugin-example"
   PluginOptionType type = PluginOptionType::kString;
+  // True for options that are themselves a config/defaults-file path
+  // (e.g. "config_file", "mycnf", "defaultsfile") through which other
+  // options -- including required ones -- can already be supplied,
+  // instead of being typed at restore time. Used only to decide
+  // whether to show a "may already be preset" note next to the
+  // Required group; does not change categorization otherwise.
+  bool provides_defaults = false;
 };
 
 // All known hints for one restore plugin.
@@ -118,6 +125,25 @@ std::vector<FileSetPluginDefinition> ExtractFileSetPluginDefinitions(
 const PluginRestoreHint* ResolvePluginRestoreHint(
     const FileSetPluginDefinition& definition);
 
+// Finds, among a list of already-resolved FileSet plugin definitions,
+// the one (if any) whose resolved hint matches the given hint's id --
+// used to source the "already in FileSet" option group's keys/values
+// for an editor block, matching the block's plugin identity back to
+// the FileSet it was originally detected from (works whether the
+// block was auto-seeded from a definition or is a manually-added new
+// tab with no matching definition, in which case nullptr is returned).
+//
+// Note: matching is purely by plugin/hint identity, so if the FileSet
+// contains more than one definition of the same plugin type (e.g. two
+// separate "vmware" Plugin = ... lines for different VMs), the first
+// one found is used for every block of that type. This is acceptable
+// since the group is purely informational (showing an example of
+// already-configured values for that plugin type), not an attempt to
+// track which specific FileSet entry a block originated from.
+const FileSetPluginDefinition* FindMatchingPluginDefinition(
+    const PluginRestoreHint& hint,
+    const std::vector<FileSetPluginDefinition>& definitions);
+
 // Builds a short "key=... :key2=..." usage example from a hint's
 // options, preferring required options.
 std::string BuildPluginOptionExample(const PluginRestoreHint& hint);
@@ -148,6 +174,39 @@ PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block);
 // options.
 PluginOptionsBlock BuildInitialPluginOptionsBlock(
     const FileSetPluginDefinition& definition);
+
+// Resolves the hint (if any) matching an editor block's own plugin
+// identity, the same module_name-preferring way FileSet-level
+// definitions are resolved (reusing ResolvePluginRestoreHint() via a
+// synthetic FileSetPluginDefinition built from the block itself).
+// Needed because a block's plugin_name field alone (e.g. "python") is
+// only the generic loader name -- the real, richer hint (e.g.
+// "vmware") is only found once the block's own "module_name=" option
+// row is taken into account, exactly like the FileSet text is.
+const PluginRestoreHint* ResolvePluginOptionsBlockHint(
+    const PluginOptionsBlock& block);
+
+// One curated option, bucketed by CategorizePluginOptions().
+struct CategorizedPluginOptions {
+  std::vector<const PluginOptionHint*> already_in_fileset;
+  std::vector<const PluginOptionHint*> required;
+  std::vector<const PluginOptionHint*> optional;
+};
+
+// Splits hint.options into three groups for display in an options
+// editor: options already present in the FileSet's plugin definition
+// (fileset_option_keys, typically from the matching
+// FileSetPluginDefinition::option_keys) take priority over the
+// required/optional split of the remaining options.
+CategorizedPluginOptions CategorizePluginOptions(
+    const PluginRestoreHint& hint,
+    const std::vector<std::string>& fileset_option_keys);
+
+// True if any of the hint's options is a config/defaults-file style
+// option (PluginOptionHint::provides_defaults) -- i.e. required
+// options may already be satisfiable without typing them at restore
+// time.
+bool HintProvidesDefaultsElsewhere(const PluginRestoreHint& hint);
 
 // Inverse of ParsePluginOptionsBlock(): joins the plugin name and
 // options back into a single "pluginname:key=value:..." string, using

@@ -649,23 +649,13 @@ else()
     )
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 TIMEOUT 240 COST 2.0
-    )
-    add_systemtest(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
-    )
-    set_tests_properties(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      PROPERTIES FIXTURES_REQUIRED
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 FIXTURES_SETUP
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
-                 TIMEOUT
-                 120
-                 COST
-                 1.0
+      PROPERTIES
+        FIXTURES_SETUP
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+        TIMEOUT
+        240
+        COST
+        3.0
     )
     # Drives the interactive split-screen restore tree browser and Plugin
     # Options editor purely over the console wire protocol (no PTY required, see
@@ -716,7 +706,6 @@ else()
     # Keep the complete profile lifecycle exclusive on shared CI workers.
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
       PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
