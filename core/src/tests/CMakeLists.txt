@@ -447,16 +447,22 @@ target_compile_definitions(
   test_bpipe PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:test_bpipe_prog>\""
 )
 
-bareos_add_test(
-  test_crud_storage
-  LINK_LIBRARIES Bareos::LibSD backend-utils Microsoft.GSL::GSL fmt::fmt
-                 tl::expected GTest::gtest_main
-  ADDITIONAL_SOURCES ../stored/backends/crud_storage.cc
-)
-add_dependencies(test_crud_storage test_bpipe_prog)
-target_compile_definitions(
-  test_crud_storage PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:test_bpipe_prog>\""
-)
+if(NOT client-only)
+  bareos_add_test(
+    test_crud_storage
+    LINK_LIBRARIES Bareos::LibSD backend-utils Microsoft.GSL::GSL fmt::fmt
+                   tl::expected GTest::gtest_main
+    ADDITIONAL_SOURCES ../stored/backends/crud_storage.cc
+  )
+  add_dependencies(test_crud_storage test_bpipe_prog)
+  target_compile_definitions(
+    test_crud_storage
+    PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:test_bpipe_prog>\""
+  )
+  if(HAVE_WIN32)
+    target_link_libraries(test_crud_storage shlwapi)
+  endif()
+endif()
 
 bareos_add_test(
   test_config_parser_fd LINK_LIBRARIES Bareos::FD Bareos::Lib Bareos::Findlib
