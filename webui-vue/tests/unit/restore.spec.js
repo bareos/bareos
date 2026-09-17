@@ -34,6 +34,7 @@ import {
   buildRestorePluginFilesetMap,
   buildPluginOptionsBlock,
   buildPluginOptionsDocument,
+  buildInitialPluginOptionsBlock,
   canNavigateRestoreBrowser,
   findRestorePluginHintIdForBlockName,
   buildRestoreSourceQuery,
@@ -1110,6 +1111,24 @@ describe('plugin options editor model', () => {
       pluginName: 'bpipe',
       options: [{ key: 'verbose', value: '1' }],
     }, ';')).toBe('bpipe;verbose=1')
+  })
+
+  it('builds an initial block prefilled with module_name for python-wrapped plugins', () => {
+    const definition = parseRestorePluginDefinition(
+      'python:module_name=bareos-fd-vmware:vcserver=host'
+    )
+    expect(buildInitialPluginOptionsBlock(definition)).toEqual({
+      pluginName: 'python',
+      options: [{ key: 'module_name', value: 'bareos-fd-vmware' }],
+    })
+  })
+
+  it('builds an initial block without options when there is no module_name', () => {
+    const definition = parseRestorePluginDefinition('bpipe:file=/a:reader=cat /a')
+    expect(buildInitialPluginOptionsBlock(definition)).toEqual({
+      pluginName: 'bpipe',
+      options: [],
+    })
   })
 
   it('round-trips a multi-block document separated by newlines', () => {

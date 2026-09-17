@@ -1174,7 +1174,8 @@ void TreeBrowser::FocusPluginOptionsPane()
   if (plugin_options_blocks_.empty()) {
     restore_plugin_hints::PluginOptionsBlock block;
     if (!plugin_hint_definitions_.empty()) {
-      block.plugin_name = plugin_hint_definitions_.front().plugin_name;
+      block = restore_plugin_hints::BuildInitialPluginOptionsBlock(
+          plugin_hint_definitions_.front());
     }
     plugin_options_blocks_.push_back(std::move(block));
   }

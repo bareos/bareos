@@ -28,6 +28,7 @@ namespace {
 
 using directordaemon::restore_plugin_hints::AllPluginOptionsBlocksAuthorized;
 using directordaemon::restore_plugin_hints::AllPluginRestoreHints;
+using directordaemon::restore_plugin_hints::BuildInitialPluginOptionsBlock;
 using directordaemon::restore_plugin_hints::BuildPluginOptionExample;
 using directordaemon::restore_plugin_hints::BuildPluginOptionsBlock;
 using directordaemon::restore_plugin_hints::BuildPluginOptionsDocument;
@@ -36,6 +37,8 @@ using directordaemon::restore_plugin_hints::FindPluginRestoreHint;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsBlock;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsDocument;
 using directordaemon::restore_plugin_hints::PluginOptionsBlock;
+using directordaemon::restore_plugin_hints::PluginOptionType;
+using directordaemon::restore_plugin_hints::PluginOptionTypeName;
 using directordaemon::restore_plugin_hints::PluginRestoreHint;
 using directordaemon::restore_plugin_hints::ResolvePluginRestoreHint;
 using directordaemon::restore_plugin_hints::SortedPluginRestoreHints;
@@ -142,6 +145,39 @@ TEST(RestorePluginHints, BuildsExampleFromKnownOptionsWhenNoneRequired)
   const PluginRestoreHint* hint = FindPluginRestoreHint("bpipe");
   ASSERT_NE(hint, nullptr);
   EXPECT_EQ(BuildPluginOptionExample(*hint), "file=...:reader=...");
+}
+
+TEST(RestorePluginHints, BuildsInitialBlockWithModuleNamePrefilled)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = "
+      "\"python:module_name=bareos-fd-vmware:vcserver=host\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  PluginOptionsBlock block = BuildInitialPluginOptionsBlock(definitions[0]);
+  EXPECT_EQ(block.plugin_name, "python");
+  ASSERT_EQ(block.options.size(), 1u);
+  EXPECT_EQ(block.options[0].first, "module_name");
+  EXPECT_EQ(block.options[0].second, "bareos-fd-vmware");
+}
+
+TEST(RestorePluginHints, BuildsInitialBlockWithoutModuleNameOption)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = \"bpipe:file=/a:reader=cat /a\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  PluginOptionsBlock block = BuildInitialPluginOptionsBlock(definitions[0]);
+  EXPECT_EQ(block.plugin_name, "bpipe");
+  EXPECT_TRUE(block.options.empty());
+}
+
+TEST(RestorePluginHints, PluginOptionTypeNameReturnsExpectedStrings)
+{
+  EXPECT_EQ(PluginOptionTypeName(PluginOptionType::kString), "string");
+  EXPECT_EQ(PluginOptionTypeName(PluginOptionType::kBoolean), "boolean");
+  EXPECT_EQ(PluginOptionTypeName(PluginOptionType::kInteger), "integer");
+  EXPECT_EQ(PluginOptionTypeName(PluginOptionType::kPath), "path");
 }
 
 TEST(PluginOptionsModel, ParsesBlockWithNameOnly)
