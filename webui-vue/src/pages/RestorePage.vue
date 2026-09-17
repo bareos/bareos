@@ -246,56 +246,21 @@
             <q-card flat bordered>
               <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Destination') }}</q-card-section>
               <q-card-section class="q-pt-none q-gutter-sm">
-                <q-select
-                  v-model="form.restoreclient"
-                  use-input
-                  fill-input
-                  hide-selected
-                  input-debounce="0"
-                  :options="filteredRestoreClientOptions"
-                  :label="t('Restore to Client')"
-                  outlined dense emit-value map-options
-                  :loading="loadingClients"
-                  :disable="!sourceDirector"
-                  data-testid="restore-target-client"
-                  @filter="filterRestoreClientOptions"
+                <RestoreOptionsEditor
+                  v-model="form"
+                  :restore-client-options="filteredRestoreClientOptions"
+                  :restore-job-options="filteredRestoreJobOptions"
+                  :loading-clients="loadingClients"
+                  :loading-restore-jobs="loadingRestoreJobs"
+                  :disabled="!sourceDirector"
+                  :show-plugin-options="showPluginOptions"
+                  :plugin-options-hint="pluginOptionsHint"
+                  :plugin-hints="pluginHintsStore.hints"
+                  :fileset-definitions="pluginRestoreInfo?.definitions"
+                  :filter-restore-client-options="filterRestoreClientOptions"
+                  :filter-restore-job-options="filterRestoreJobOptions"
+                  @browse-destination="showDestinationBrowseUnavailable"
                 />
-                <q-select
-                  v-model="form.restorejob"
-                  use-input
-                  fill-input
-                  hide-selected
-                  input-debounce="0"
-                  :options="filteredRestoreJobOptions"
-                  :label="t('Restore Job')"
-                  outlined dense emit-value map-options
-                  :loading="loadingRestoreJobs"
-                  :disable="!sourceDirector"
-                  data-testid="restore-job"
-                  @filter="filterRestoreJobOptions"
-                />
-                <q-input
-                  v-model="form.where"
-                  :label="t('Restore to (Where)')"
-                  outlined dense
-                  placeholder="/ or /tmp/bareos-restores"
-                  data-testid="restore-where"
-                />
-                <q-select
-                  v-model="form.replace"
-                  :options="replaceOptions"
-                  :label="t('Replace Policy')"
-                  outlined dense emit-value map-options
-                  data-testid="restore-replace-policy"
-                />
-                <div v-if="showPluginOptions" data-testid="restore-plugin-options">
-                  <div class="text-caption text-grey-7 q-mb-xs">{{ pluginOptionsHint }}</div>
-                  <PluginOptionsEditor
-                    v-model="form.pluginoptions"
-                    :plugin-hints="pluginHintsStore.hints"
-                    :fileset-definitions="pluginRestoreInfo?.definitions"
-                  />
-                </div>
                 <PluginRestoreInfoPanel
                   :plugin-restore-info="pluginRestoreInfo"
                   :plugin-hints="pluginHints"
@@ -754,6 +719,7 @@ import {
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
   buildRestoreBackupChains,
+  buildRestoreCommand,
   buildRestoreTimelinePoints,
   buildRestoreClientFilesetOptions,
   buildRestoreBvfsRestoreCommand,
@@ -765,6 +731,7 @@ import {
   decorateRestoreBackupsWithPluginJobs,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
+  resolveRestoreRegexWhere,
   getRestoreVersionsLookupJobId,
   getRestorePluginInfo,
   getRestorePluginHints,
@@ -789,7 +756,7 @@ import { resolveInitialRestoreStep } from '../utils/restoreStepper.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
-import PluginOptionsEditor from '../components/PluginOptionsEditor.vue'
+import RestoreOptionsEditor from '../components/RestoreOptionsEditor.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -807,8 +774,16 @@ const form = ref({
   restorejob:    '',
   jobid:         null,
   where:         '/tmp/bareos-restores',
+  relocationMode: 'where',
+  stripPrefix:   '',
+  addPrefix:     '',
+  addSuffix:     '',
+  regexWhere:    '',
+  relocationSample: '',
   replace:       'Always',
   pluginoptions: '',
+  when:          '',
+  priority:      null,
   mergeJobs:     true,
   mergeFilesets: false,
 })
@@ -849,13 +824,6 @@ const commonSourceDirector = ref('')
 const commonSourceDirectorOptions = computed(() => (
   activeDirectors.value.map(value => ({ label: value, value }))
 ))
-
-const replaceOptions = computed(() => [
-  { label: t('Always'), value: 'Always' },
-  { label: t('If Newer'), value: 'IfNewer' },
-  { label: t('If Older'), value: 'IfOlder' },
-  { label: t('Never'), value: 'Never' },
-])
 
 // ── Clients ─────────────────────────────────────────────────────────────────
 const sourceClients   = ref([])
@@ -1955,8 +1923,14 @@ const canRestore = computed(() =>
 // client/job, but that alone must not skip the Destination step).
 const activeStep = ref(1)
 const sourceStepDone = computed(() => !!form.value.jobid)
+const destinationLocationDone = computed(() => (
+  form.value.relocationMode === 'where'
+    ? !!form.value.where
+    : !!resolveRestoreRegexWhere(form.value)
+))
 const destinationStepDone = computed(() => (
   sourceStepDone.value && !!form.value.restoreclient && !!form.value.restorejob
+  && destinationLocationDone.value
 ))
 
 const restoreSelectedFilesCount = computed(() => selectedFiles.value.size)
@@ -1979,11 +1953,23 @@ const restoreConfirmSummaryRows = computed(() => {
     { label: t('Client'), value: form.value.client || '—' },
     { label: t('Restore to client'), value: restoreEffectiveClient.value },
     { label: t('Replace files on client'), value: form.value.replace || '—' },
-    { label: t('Restore location on client'), value: form.value.where || '—' },
+    {
+      label: t('Restore location on client'),
+      value: form.value.relocationMode === 'where'
+        ? (form.value.where || '—')
+        : (resolveRestoreRegexWhere(form.value) || '—'),
+    },
     { label: t('Plugin Options'), value: restorePluginOptionsSummary.value },
     { label: t('Directories selected'), value: String(restoreSelectedDirectoriesCount.value) },
     { label: t('Files selected'), value: String(restoreSelectedFilesCount.value) },
   ]
+
+  if (form.value.when) {
+    rows.push({ label: t('When'), value: form.value.when })
+  }
+  if (form.value.priority) {
+    rows.push({ label: t('Priority'), value: String(form.value.priority) })
+  }
 
   if (restoreVersionOverridesCount.value > 0) {
     rows.push({
@@ -2000,6 +1986,13 @@ function openRestoreConfirmDialog() {
     return
   }
   confirmRestoreDialog.value = true
+}
+
+function showDestinationBrowseUnavailable() {
+  $q.notify({
+    type: 'info',
+    message: t('Browsing the destination client is not implemented yet. Enter the Where path manually for now.'),
+  })
 }
 
 async function confirmRestoreAndRun() {
@@ -2180,14 +2173,19 @@ async function doRestore() {
     const src = form.value.client
     const dst = form.value.restoreclient || src
     const pluginOptions = form.value.pluginoptions.trim()
-    const cmd = `restore file=?${bvfsPath}` +
-      ` client=${quoteDirectorString(src)}` +
-      ` restoreclient=${quoteDirectorString(dst)}` +
-      ` restorejob=${quoteDirectorString(form.value.restorejob)}` +
-      ` where=${quoteDirectorString(form.value.where)}` +
-      ` replace=${quoteDirectorString(form.value.replace)}` +
-      (pluginOptions ? ` pluginoptions=${quoteDirectorString(pluginOptions)}` : '') +
-      ` yes`
+    const cmd = buildRestoreCommand({
+      bvfsPath,
+      backupClient: src,
+      restoreClient: dst,
+      restoreJob: form.value.restorejob,
+      where: form.value.where,
+      regexWhere: resolveRestoreRegexWhere(form.value),
+      replace: form.value.replace,
+      pluginOptions,
+      when: form.value.when,
+      priority: Number.isInteger(form.value.priority) ? form.value.priority : null,
+      yes: true,
+    })
     const result = await runRestoreCommand(t('Queue restore job'), cmd)
 
     const jobid = extractQueuedJobId(result)
@@ -2236,8 +2234,16 @@ function clearBrowserState() {
 function resetAll() {
   form.value.jobid = null
   form.value.where = '/tmp/bareos-restores'
+  form.value.relocationMode = 'where'
+  form.value.stripPrefix = ''
+  form.value.addPrefix = ''
+  form.value.addSuffix = ''
+  form.value.regexWhere = ''
+  form.value.relocationSample = ''
   form.value.replace = 'Always'
   form.value.pluginoptions = ''
+  form.value.when = ''
+  form.value.priority = null
   restoreResult.value = null
   browserReady.value = false
   clearBrowserState()

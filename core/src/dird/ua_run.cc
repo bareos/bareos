@@ -36,7 +36,10 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "dird/ua_tree_browser.h"
+#include "dird/ua_tree_browser_internal.h"
 #include "dird/ua_run.h"
+#include "lib/bnet.h"
 #include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
@@ -45,13 +48,24 @@
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <string_view>
+#include <vector>
+
 namespace directordaemon {
+
+using tree_browser_internal::FitText;
+using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::StyleFrameContent;
 
 /* Forward referenced subroutines */
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr);
 static bool DisplayJobParameters(UaContext* ua,
                                  JobControlRecord* jcr,
                                  RunContext& rc);
+static int ModifyRestoreParameters(UaContext* ua,
+                                   JobControlRecord* jcr,
+                                   RunContext& rc);
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr);
 static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr);
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc);
@@ -378,6 +392,7 @@ int DoRunCmd(UaContext* ua, const char*)
   int status, length;
   bool valid_response;
   bool do_pool_overrides = true;
+  bool restore_options_editor_shown = false;
 
   auto used_config = my_config->GetCurrentConfiguration();
 
@@ -431,6 +446,20 @@ try_again:
 
   /* Prompt User to see if all run job parameters are correct, and
    * allow him to modify them. */
+  if (!restore_options_editor_shown && jcr->is_JobType(JT_RESTORE)
+      && TreeBrowserSupported(ua)) {
+    restore_options_editor_shown = true;
+    status = ModifyRestoreParameters(ua, jcr, rc);
+    switch (status) {
+      case 0:
+        goto try_again;
+      case 1:
+        break;
+      case -1:
+        goto bail_out;
+    }
+  }
+
   if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
 
   // Prompt User until we have a valid response.
@@ -539,6 +568,10 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 
   // At user request modify parameters of job to be run.
   if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, T_("mod"), strlen(ua->cmd))) {
+    if (jcr->is_JobType(JT_RESTORE)) {
+      return ModifyRestoreParameters(ua, jcr, rc);
+    }
+
     StartPrompt(ua, T_("Parameters to modify:\n"));
 
     AddPrompt(ua, T_("Level"));   /* 0 */
@@ -799,6 +832,392 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
     return -1;
   }
   return 1;
+
+try_again:
+  return 0;
+}
+
+static const char* RestoreReplacePromptLabel(const char* replace)
+{
+  if (Bstrcasecmp(replace, "Always")) {
+    return T_("Always - overwrite existing files (Bareos value: Always)");
+  }
+  if (Bstrcasecmp(replace, "IfNewer")) {
+    return T_("Only overwrite older files (Bareos value: IfNewer)");
+  }
+  if (Bstrcasecmp(replace, "IfOlder")) {
+    return T_("Only overwrite newer files (Bareos value: IfOlder)");
+  }
+  if (Bstrcasecmp(replace, "Never")) {
+    return T_("Never overwrite existing files (Bareos value: Never)");
+  }
+  return replace;
+}
+
+enum class RestoreOptionAction
+{
+  kContinue = 0,
+  kRestoreClient,
+  kBrowseWhere,
+  kWhere,
+  kRelocation,
+  kReplace,
+  kPluginOptions,
+  kWhen,
+  kPriority,
+  kBootstrap,
+  kStorage,
+  kJobId,
+  kRestoreJob,
+};
+
+struct RestoreOptionRow {
+  RestoreOptionAction action;
+  const char* label;
+  std::string value;
+  bool advanced = false;
+};
+
+static std::string FitRestoreOptionText(std::string_view text, size_t width)
+{
+  if (text.size() <= width) { return std::string(text); }
+  if (width <= 3) { return std::string(text.substr(0, width)); }
+  std::string result(text.substr(0, width - 3));
+  result += "...";
+  return result;
+}
+
+static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc)
+{
+  char dt[MAX_TIME_LENGTH];
+  std::vector<RestoreOptionRow> rows;
+  rows.push_back({RestoreOptionAction::kContinue,
+                  T_("Continue to restore summary"),
+                  T_("review and confirm the restore job")});
+  rows.push_back({RestoreOptionAction::kRestoreClient, T_("Restore Client"),
+                  jcr->dir_impl->res.client
+                      ? jcr->dir_impl->res.client->resource_name_
+                      : T_("*None*")});
+  rows.push_back({RestoreOptionAction::kBrowseWhere,
+                  T_("Browse destination client"),
+                  T_("not available yet - enter Where manually"), false});
+  rows.push_back({RestoreOptionAction::kWhere, T_("Where"),
+                  jcr->where ? jcr->where : NPRT(rc.job->RestoreWhere)});
+  rows.push_back({RestoreOptionAction::kRelocation, T_("File Relocation"),
+                  jcr->RegexWhere ? jcr->RegexWhere : T_("not configured"),
+                  false});
+  rows.push_back(
+      {RestoreOptionAction::kReplace, T_("Replace Policy"), rc.replace});
+  rows.push_back({RestoreOptionAction::kPluginOptions, T_("Plugin Options"),
+                  jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
+                                                : T_("not configured")});
+  rows.push_back({RestoreOptionAction::kWhen, T_("When"),
+                  bstrutime(dt, sizeof(dt), jcr->sched_time), true});
+  rows.push_back({RestoreOptionAction::kPriority, T_("Priority"),
+                  std::to_string(jcr->JobPriority), true});
+  rows.push_back({RestoreOptionAction::kBootstrap, T_("Bootstrap"),
+                  NPRT(jcr->RestoreBootstrap), true});
+  rows.push_back({RestoreOptionAction::kStorage, T_("Storage"),
+                  jcr->dir_impl->res.read_storage
+                      ? jcr->dir_impl->res.read_storage->resource_name_
+                      : T_("*None*"),
+                  true});
+  rows.push_back({RestoreOptionAction::kJobId, T_("JobId"),
+                  jcr->dir_impl->RestoreJobId == 0
+                      ? T_("*None*")
+                      : std::to_string(jcr->dir_impl->RestoreJobId),
+                  true});
+  rows.push_back({RestoreOptionAction::kRestoreJob, T_("Restore Job"),
+                  rc.job ? rc.job->resource_name_ : T_("*None*"), true});
+  return rows;
+}
+
+static std::string RestoreOptionsFrameBorder(size_t width,
+                                             bool color,
+                                             FrameBorderStyle style,
+                                             std::string_view title = {})
+{
+  std::string line = RenderFrameBorder(width, style, title);
+  if (!color) { return line + "\n"; }
+  return "\033[34m" + line + "\033[0m\n";
+}
+
+static std::string RestoreOptionsFrameLine(size_t width,
+                                           std::string_view text,
+                                           bool color,
+                                           bool highlighted = false)
+{
+  if (width < 2) { return FitText(text, width) + "\n"; }
+
+  std::string content = FitText(text, width - 2);
+  content = StyleFrameContent(std::move(content), ' ', highlighted, color);
+
+  std::string border = color ? "\033[34m│\033[0m" : "│";
+  return border + content + border + "\n";
+}
+
+static std::string RenderRestoreOptionsScreen(UaContext* ua,
+                                              JobControlRecord* jcr,
+                                              RunContext& rc,
+                                              size_t cursor)
+{
+  std::vector<RestoreOptionRow> rows = BuildRestoreOptionRows(jcr, rc);
+  size_t width = ua->terminal_width > 50 ? ua->terminal_width : 80;
+  size_t inner_width = width > 2 ? width - 2 : width;
+  size_t value_width = inner_width > 46 ? inner_width - 46 : 20;
+  std::string screen;
+  screen.reserve(rows.size() * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Restore Options"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Tab/Down: next  Up: previous  Enter: edit  Esc/.: cancel"),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    std::string line;
+    line += i == cursor ? "> " : "  ";
+    line += row.advanced ? "[Advanced] " : "           ";
+    line += FitRestoreOptionText(row.label, 30);
+    if (line.size() < 46) { line.append(46 - line.size(), ' '); }
+    line += FitRestoreOptionText(row.value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  return screen;
+}
+
+static int SelectRestoreOptionVisual(UaContext* ua,
+                                     JobControlRecord* jcr,
+                                     RunContext& rc)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return -1; }
+
+  size_t cursor = 0;
+  size_t row_count = BuildRestoreOptionRows(jcr, rc).size();
+  for (;;) {
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRestoreOptionsScreen(ua, jcr, rc, cursor).c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return -1; }
+
+    std::string_view input(user->msg, user->message_length);
+    while (!input.empty()
+           && (input.back() == '\r' || input.back() == '\n'
+               || input.back() == ' ' || input.back() == '\t')) {
+      input.remove_suffix(1);
+    }
+
+    if (input.starts_with("resize:")) {
+      std::string_view size_view = input.substr(strlen("resize:"));
+      size_t separator = size_view.find(':');
+      std::string rows_text(size_view.substr(0, separator));
+      int new_height = atoi(rows_text.c_str());
+      if (new_height > 0) { ua->terminal_height = new_height; }
+      if (separator != std::string_view::npos) {
+        std::string cols_text(size_view.substr(separator + 1));
+        int new_width = atoi(cols_text.c_str());
+        if (new_width > 0) { ua->terminal_width = new_width; }
+      }
+      continue;
+    }
+
+    if (input == "key:cancel" || input == "." || input == "key:text:.") {
+      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+      return -1;
+    }
+    if (input == "key:enter" || input.empty()) {
+      return static_cast<int>(cursor);
+    }
+    if (input == "key:tab" || input == "key:down" || input == "key:right") {
+      cursor = (cursor + 1) % row_count;
+    } else if (input == "key:up" || input == "key:left"
+               || input == "key:backspace") {
+      cursor = cursor == 0 ? row_count - 1 : cursor - 1;
+    } else if (input == "key:home") {
+      cursor = 0;
+    } else if (input == "key:end") {
+      cursor = row_count - 1;
+    }
+  }
+}
+
+static int SelectRestoreOptionFallback(UaContext* ua)
+{
+  StartPrompt(ua, T_("Restore options to modify:\n"));
+  AddPrompt(ua, T_("Continue to restore summary"));             /* 0 */
+  AddPrompt(ua, T_("Restore Client"));                          /* 1 */
+  AddPrompt(ua, T_("Browse destination client (unavailable)")); /* 2 */
+  AddPrompt(ua, T_("Where"));                                   /* 3 */
+  AddPrompt(ua, T_("File Relocation"));                         /* 4 */
+  AddPrompt(ua, T_("Replace Policy"));                          /* 5 */
+  AddPrompt(ua, T_("Plugin Options"));                          /* 6 */
+  AddPrompt(ua, T_("Advanced: When"));                          /* 7 */
+  AddPrompt(ua, T_("Advanced: Priority"));                      /* 8 */
+  AddPrompt(ua, T_("Advanced: Bootstrap"));                     /* 9 */
+  AddPrompt(ua, T_("Advanced: Storage"));                       /* 10 */
+  AddPrompt(ua, T_("Advanced: JobId"));                         /* 11 */
+  AddPrompt(ua, T_("Advanced: Restore Job"));                   /* 12 */
+  int selected
+      = DoPrompt(ua, "", T_("Select restore option to modify"), NULL, 0);
+  return selected < 0 ? selected : selected;
+}
+
+static int ModifyRestoreParameters(UaContext* ua,
+                                   JobControlRecord* jcr,
+                                   RunContext& rc)
+{
+  int opt;
+
+  int selection = TreeBrowserSupported(ua)
+                      ? SelectRestoreOptionVisual(ua, jcr, rc)
+                      : SelectRestoreOptionFallback(ua);
+  if (selection < 0) { return -1; }
+
+  switch (static_cast<RestoreOptionAction>(selection)) {
+    case RestoreOptionAction::kContinue:
+      return 1;
+    case RestoreOptionAction::kRestoreClient:
+      rc.client = select_client_resource(ua);
+      if (rc.client) {
+        jcr->dir_impl->res.client = rc.client;
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kBrowseWhere:
+      ua->SendMsg(
+          T_("Browsing the destination client is not implemented yet. "
+             "Please enter the Where path manually for now.\n"));
+      goto try_again;
+    case RestoreOptionAction::kWhere:
+      if (GetCmd(ua, T_("Please enter the full path prefix for restore (/ "
+                        "for none): "))) {
+        if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
+          ua->SendMsg(T_("No authorization for \"where\" specification.\n"));
+        } else {
+          if (jcr->RegexWhere) {
+            free(jcr->RegexWhere);
+            jcr->RegexWhere = NULL;
+          }
+          if (jcr->where) {
+            free(jcr->where);
+            jcr->where = NULL;
+          }
+          if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
+            ua->cmd[0] = 0;
+          }
+          jcr->where = strdup(ua->cmd);
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kRelocation:
+      SelectWhereRegexp(ua, jcr);
+      goto try_again;
+    case RestoreOptionAction::kReplace:
+      StartPrompt(ua, T_("Replace policy:\n"));
+      for (int i = 0; ReplaceOptions[i].name; i++) {
+        AddPrompt(ua, RestoreReplacePromptLabel(ReplaceOptions[i].name));
+      }
+      opt = DoPrompt(ua, "", T_("Select replace policy"), NULL, 0);
+      if (opt >= 0) {
+        rc.replace = ReplaceOptions[opt].name;
+        jcr->dir_impl->replace = ReplaceOptions[opt].token;
+      }
+      goto try_again;
+    case RestoreOptionAction::kPluginOptions:
+      GetPluginOptions(ua, jcr);
+      goto try_again;
+    case RestoreOptionAction::kWhen:
+      for (;;) {
+        if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                           "HH:MM:SS (return for now): "))) {
+          break;
+        }
+        if (ua->cmd[0] == 0) {
+          jcr->sched_time = time(NULL);
+        } else {
+          auto parsed = StrToUtime(ua->cmd);
+          if (parsed == 0) {
+            ua->SendMsg(T_("Invalid time specification.\n"));
+            continue;
+          }
+          jcr->sched_time = parsed;
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kPriority:
+      if (GetPint(ua, T_("Enter new Priority: "))) {
+        if (!ua->pint32_val) {
+          ua->SendMsg(T_("Priority must be a positive integer.\n"));
+        } else {
+          jcr->JobPriority = ua->pint32_val;
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kBootstrap:
+      if (GetCmd(ua, T_("Please enter the Bootstrap file name: "))) {
+        if (jcr->RestoreBootstrap) {
+          free(jcr->RestoreBootstrap);
+          jcr->RestoreBootstrap = NULL;
+        }
+        if (ua->cmd[0] != 0) {
+          FILE* fd;
+
+          jcr->RestoreBootstrap = strdup(ua->cmd);
+          fd = fopen(jcr->RestoreBootstrap, "rb");
+          if (!fd) {
+            BErrNo be;
+            ua->SendMsg(T_("Warning cannot open %s: ERR=%s\n"),
+                        jcr->RestoreBootstrap, be.bstrerror());
+            free(jcr->RestoreBootstrap);
+            jcr->RestoreBootstrap = NULL;
+          } else {
+            fclose(fd);
+          }
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kStorage:
+      rc.store->store = select_storage_resource(ua);
+      if (rc.store->store) {
+        PmStrcpy(rc.store->store_source, T_("user selection"));
+        SetRwstorage(jcr, rc.store);
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kJobId:
+      rc.jid = NULL;
+      jcr->dir_impl->RestoreJobId = 0;
+      if (jcr->RestoreBootstrap) {
+        ua->SendMsg(
+            T_("You must set the bootstrap file to NULL to be able to specify "
+               "a JobId.\n"));
+      }
+      goto try_again;
+    case RestoreOptionAction::kRestoreJob:
+      rc.job = select_job_resource(ua);
+      if (rc.job) {
+        jcr->dir_impl->res.job = rc.job;
+        SetJcrDefaults(jcr, rc.job);
+        goto try_again;
+      }
+      break;
+  }
+  return -1;
 
 try_again:
   return 0;
