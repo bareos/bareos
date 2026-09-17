@@ -244,6 +244,18 @@ struct RestoreContext {
   };
   JobTypeFilter job_filter = JobTypeFilter::Backup;
 
+  /** Controls what a selected restore point in the guided
+   * FileSet@Client picker actually restores: the whole resolved
+   * backup chain (Full + any Diff/Incr up to that point, the
+   * default) or only the anchor Full job itself. Set via the
+   * "restore ... restorepointmode=chain|job" command argument. */
+  enum class RestorePointMode
+  {
+    Chain,
+    Job,
+  };
+  RestorePointMode restore_point_mode = RestorePointMode::Chain;
+
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
   JobId_t JobId = 0;
