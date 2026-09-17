@@ -162,14 +162,19 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
 }
 
 void BareosDb::ListClientRecords(JobControlRecord* jcr,
-                                 char* clientname,
+                                 const char* clientname,
                                  OutputFormatter* sendit,
                                  e_list_type type)
 {
   DbLocker _{this};
   PoolMem clientfilter(PM_MESSAGE);
 
-  if (clientname) { clientfilter.bsprintf("WHERE Name = '%s'", clientname); }
+  if (clientname) {
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    clientfilter.bsprintf("WHERE Name = '%s'", escaped_clientname.data());
+  }
   if (type == VERT_LIST) {
     Mmsg(cmd,
          "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
@@ -387,7 +392,10 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   PoolMem client_filter(PM_MESSAGE);
 
   if (clientname) {
-    Mmsg(client_filter, "AND Client.Name = '%s' ", clientname);
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    Mmsg(client_filter, "AND Client.Name = '%s' ", escaped_clientname.data());
   }
 
   if (reverse) {
@@ -533,7 +541,10 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (clientname) {
-    temp.bsprintf("AND Client.Name = '%s' ", clientname);
+    const auto clientname_len = strlen(clientname);
+    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
+    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
+    temp.bsprintf("AND Client.Name = '%s' ", escaped_clientname.data());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -557,14 +568,20 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (volumename) {
-    temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
+    const auto volumename_len = strlen(volumename);
+    std::vector<char> escaped_volumename(volumename_len * 2 + 1);
+    EscapeString(jcr, escaped_volumename.data(), volumename, volumename_len);
+    temp.bsprintf("AND Media.Volumename = '%s' ", escaped_volumename.data());
     PmStrcat(selection, temp.c_str());
   }
 
   if (poolname) {
+    const auto poolname_len = strlen(poolname);
+    std::vector<char> escaped_poolname(poolname_len * 2 + 1);
+    EscapeString(jcr, escaped_poolname.data(), poolname, poolname_len);
     temp.bsprintf(
         "AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ",
-        poolname);
+        escaped_poolname.data());
     PmStrcat(selection, temp.c_str());
   }
 
