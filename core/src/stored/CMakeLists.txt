@@ -67,6 +67,7 @@ target_sources(
           label.cc
           lock.cc
           mount.cc
+          ndmp_session_registry.cc
           read_record.cc
           record.cc
           reserve.cc

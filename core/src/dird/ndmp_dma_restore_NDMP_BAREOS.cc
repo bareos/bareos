@@ -51,13 +51,28 @@
 namespace directordaemon {
 
 #if HAVE_NDMP
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
 
 /* Forward referenced functions */
 
 inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+
+/* Wait until the storage daemon announced the next restore session.
+ *
+ * The flag is checked and reset under the same lock that the message thread
+ * uses to set it, so an announcement that arrives before we start waiting is
+ * not lost. The message thread also sets the flag when it terminates, so we
+ * do not block here when the next run will never arrive. */
+static void WaitForNextRun(JobControlRecord* jcr)
+{
+  auto locked = jcr->dir_impl->nextrun_ready.lock();
+
+  locked.wait(jcr->dir_impl->nextrun_wait, [](bool ready) { return ready; });
+
+  // Reset so a following restore session waits for its own announcement.
+  *locked = false;
+}
 
 /**
  * Walk the tree of selected files for restore and lookup the
@@ -503,13 +518,10 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
          * have multiple Backup runs as part of the same Job. When we are
          * restoring data from a Native Storage Daemon we let it know to expect
          * a next restore session. It will generate a new authorization key so
-         * we wait for the nextrun_ready conditional variable to be raised by
-         * the msg_thread. */
+         * we wait for the storage daemon message thread to pick it up. */
         if (jcr->store_bsock && cnt > 0) {
           jcr->store_bsock->fsend("nextrun");
-          lock_mutex(mutex);
-          pthread_cond_wait(&jcr->dir_impl->nextrun_ready, &mutex);
-          unlock_mutex(mutex);
+          WaitForNextRun(jcr);
         }
 
         /* Perform the actual NDMP job.

@@ -36,6 +36,7 @@
 #include "stored/sd_device_control_record.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
+#include "stored/ndmp_session_registry.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
@@ -82,6 +83,7 @@ bool use_cmd(JobControlRecord* jcr)
   // Get the device, media, and pool information
   if (!UseDeviceCmd(jcr)) {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    UnregisterNdmpSessionToken(jcr->sd_auth_key);
     memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
     return false;
   }
