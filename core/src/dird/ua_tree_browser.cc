@@ -530,12 +530,68 @@ std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows)
   return {tree_rows, plugin_rows};
 }
 
-std::string PluginOptionsInputDisplayText(std::string_view input)
+std::vector<std::string> BuildPluginOptionsRowLabels(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block)
 {
-  if (!input.empty()) { return std::string(input); }
-  return "(type plugin options, e.g. verbose=1)";
+  std::vector<std::string> rows;
+  rows.push_back(
+      "Plugin: "
+      + (block.plugin_name.empty() ? "(type plugin name)" : block.plugin_name));
+  for (const auto& [key, value] : block.options) {
+    rows.push_back(value.empty() ? "  " + key : "  " + key + " = " + value);
+  }
+  rows.push_back("  + add option");
+  return rows;
 }
 
+std::string BuildPluginOptionsTabBar(
+    const std::vector<directordaemon::restore_plugin_hints::PluginOptionsBlock>&
+        blocks,
+    size_t active_block)
+{
+  if (blocks.size() <= 1) { return ""; }
+  std::string out;
+  for (size_t i = 0; i < blocks.size(); ++i) {
+    if (i > 0) { out += " "; }
+    std::string name
+        = blocks[i].plugin_name.empty() ? "(new)" : blocks[i].plugin_name;
+    std::string tab = "[" + std::to_string(i + 1) + ":" + name + "]";
+    if (i == active_block) {
+      out += ">" + tab + "<";
+    } else {
+      out += tab;
+    }
+  }
+  return out;
+}
+
+std::string BuildKnownOptionsHintLine(std::string_view plugin_name)
+{
+  const auto* hint
+      = directordaemon::restore_plugin_hints::FindPluginRestoreHint(
+          plugin_name);
+  if (!hint || hint->options.empty()) { return ""; }
+
+  std::string out = "Known: ";
+  for (size_t i = 0; i < hint->options.size(); ++i) {
+    if (i > 0) { out += ", "; }
+    out += hint->options[i].name;
+    if (hint->options[i].status == "required") { out += "*"; }
+  }
+  out += " (*=required)";
+  return out;
+}
+
+PluginOptionsRowWindow ComputePluginOptionsRowWindow(size_t plugin_rows,
+                                                     size_t reserved_top,
+                                                     size_t row_count)
+{
+  size_t remaining
+      = plugin_rows > reserved_top ? plugin_rows - reserved_top : 0;
+  bool show_hint = remaining > row_count;
+  size_t window = show_hint ? row_count : std::min(remaining, row_count);
+  return {window, show_hint};
+}
 
 }  // namespace tree_browser_internal
 
@@ -544,15 +600,19 @@ namespace {
 using tree_browser_internal::AlignTextColumns;
 using tree_browser_internal::BuildAllKnownPluginHintLines;
 using tree_browser_internal::BuildDetectedPluginHintLines;
+using tree_browser_internal::BuildKnownOptionsHintLine;
 using tree_browser_internal::BuildPluginOptionsAdvertisement;
+using tree_browser_internal::BuildPluginOptionsRowLabels;
+using tree_browser_internal::BuildPluginOptionsTabBar;
 using tree_browser_internal::CaseFoldForSearch;
+using tree_browser_internal::ComputePluginOptionsRowWindow;
 using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
 using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::MaxHorizontalOffset;
-using tree_browser_internal::PluginOptionsInputDisplayText;
+using tree_browser_internal::PluginOptionsRowWindow;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::SplitTreeAndPluginRows;
@@ -586,21 +646,21 @@ std::string FrameLine(size_t width,
   return border + content + border + "\n";
 }
 
-// Renders the " Options: <value>" line, adding a reverse-video "cursor"
-// glyph right after the text when the pane is focused, and dimming the
-// placeholder text (shown when the input is empty) so it reads as a
-// hint rather than a real value. Kept separate from FrameLine()'s
-// generic mark/highlighted styling because the cursor glyph needs to be
-// inserted at the text's own end, not at a fixed offset or applied to
-// the whole line.
-std::string PluginOptionsLine(size_t width,
-                              std::string_view input,
-                              bool focused,
-                              bool color)
+// Renders one row of the structured Plugin Options editor. When
+// `editing` is true (this row is currently being typed into), appends a
+// reverse-video "cursor" glyph right after the text, and dims the
+// placeholder-style text (e.g. "(type plugin name)") so it reads as a
+// hint. When `selected` is true but not `editing`, the whole row is
+// shown in reverse video instead (matches the tree pane's row
+// highlighting), so "which row will Enter act on" is always visually
+// obvious.
+std::string PluginOptionsRowLine(size_t width,
+                                 std::string_view text,
+                                 bool is_placeholder,
+                                 bool selected,
+                                 bool editing,
+                                 bool color)
 {
-  bool is_placeholder = input.empty();
-  std::string text = " Options: " + PluginOptionsInputDisplayText(input);
-
   if (width < 2) { return FitText(text, width) + "\n"; }
 
   size_t inner_width = width - 2;
@@ -608,18 +668,23 @@ std::string PluginOptionsLine(size_t width,
   std::string content = FitText(text, inner_width);
 
   if (color) {
-    if (is_placeholder) {
+    if (editing) {
+      if (is_placeholder) {
+        content = "\033[2m" + content + "\033[0m";
+      } else if (text_width < inner_width && text.size() < content.size()) {
+        // See PluginOptionsRowLine's caller: text_width is a display-cell
+        // count, not a byte offset, so it must not index into content
+        // when text may contain multi-byte UTF-8 characters. Since
+        // text_width < inner_width means FitText() rendered the whole
+        // (untruncated) text byte-for-byte before appending plain ASCII
+        // padding, text.size() -- the original string's byte length --
+        // is the correct offset of the first padding space.
+        content.replace(text.size(), 1, "\033[7m \033[0m");
+      }
+    } else if (selected) {
+      content = "\033[7;36m" + content + "\033[0m";
+    } else if (is_placeholder) {
       content = "\033[2m" + content + "\033[0m";
-    } else if (focused && text_width < inner_width
-               && text.size() < content.size()) {
-      // text_width is a display-cell count, not a byte offset, so it
-      // must not be used to index into content when text may contain
-      // multi-byte UTF-8 characters. Since text_width < inner_width
-      // means FitText() rendered the whole (untruncated) text
-      // byte-for-byte before appending plain ASCII padding, text.size()
-      // -- the original string's byte length -- is the correct offset
-      // of the first padding space, regardless of encoding.
-      content.replace(text.size(), 1, "\033[7m \033[0m");
     }
   }
 
@@ -793,6 +858,21 @@ class TreeBrowser {
   void FocusPluginOptionsPane();
   void TogglePluginPaneFocus();
   bool CommitPluginOptions();
+  restore_plugin_hints::PluginOptionsBlock& ActivePluginBlock()
+  {
+    return plugin_options_blocks_[plugin_options_active_block_];
+  }
+  const restore_plugin_hints::PluginOptionsBlock& ActivePluginBlock() const
+  {
+    return plugin_options_blocks_[plugin_options_active_block_];
+  }
+  // Number of rows in the active block's editor (name row + option rows
+  // + the trailing "+ add option" row).
+  size_t PluginOptionsRowCount() const
+  {
+    return ActivePluginBlock().options.size() + 2;
+  }
+  void ClampPluginOptionsCursor();
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
@@ -869,8 +949,29 @@ class TreeBrowser {
   // (split-screen, below the tree); this only tracks which pane
   // currently has keyboard focus.
   bool plugin_pane_focused_ = false;
-  std::string plugin_options_input_;
-  size_t plugin_options_hint_offset_ = 0;
+
+  // Structured Plugin Options editor state: one PluginOptionsBlock per
+  // detected/added plugin ("tab"), navigated with Left/Right; within a
+  // block, row 0 is the plugin name, rows [1, options.size()] are
+  // option rows, and the last row is the "+ add option" affordance.
+  enum class PluginOptionsEditMode
+  {
+    kBrowsing,  // Up/Down/Left/Right move the cursor; Enter opens a row.
+    kEditingBlockName,
+    kEditingNewRowKey,  // Typing the key for a brand-new option row.
+    kEditingRowValue,   // Typing a value, either for a new or existing row.
+  };
+  PluginOptionsEditMode plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+  std::vector<restore_plugin_hints::PluginOptionsBlock> plugin_options_blocks_;
+  size_t plugin_options_active_block_ = 0;
+  size_t plugin_options_cursor_ = 0;
+  size_t plugin_options_row_offset_ = 0;
+  std::string plugin_options_edit_buffer_;
+  std::string plugin_options_pending_key_;
+  // True while kEditingRowValue is for a brand-new row (cursor_ already
+  // points past the last existing option, at the "+ add option" row);
+  // false when editing an existing row's value in place.
+  bool plugin_options_adding_new_row_ = false;
 
   bool estimate_calculated_ = false;
   bool estimate_stale_ = false;
@@ -1063,16 +1164,30 @@ void TreeBrowser::InvalidateEstimate()
 void TreeBrowser::FocusPluginOptionsPane()
 {
   plugin_pane_focused_ = true;
-  plugin_options_hint_offset_ = 0;
-  plugin_options_input_
-      = tree_->plugin_options_out && !tree_->plugin_options_out->empty()
-            ? *tree_->plugin_options_out
-            : "";
+  plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+  plugin_options_row_offset_ = 0;
+
+  std::string existing
+      = tree_->plugin_options_out ? *tree_->plugin_options_out : "";
+  plugin_options_blocks_
+      = restore_plugin_hints::ParsePluginOptionsDocument(existing);
+  if (plugin_options_blocks_.empty()) {
+    restore_plugin_hints::PluginOptionsBlock block;
+    if (!plugin_hint_definitions_.empty()) {
+      block.plugin_name = plugin_hint_definitions_.front().plugin_name;
+    }
+    plugin_options_blocks_.push_back(std::move(block));
+  }
+  plugin_options_active_block_ = 0;
+  plugin_options_cursor_ = 0;
 }
 
 void TreeBrowser::TogglePluginPaneFocus()
 {
   if (plugin_pane_focused_) {
+    // Discard any field that's still mid-edit (not yet committed as a
+    // row) rather than half-applying it, then save the committed rows.
+    plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
     // Only leave the pane once the value was actually committed; on ACL
     // rejection, stay focused so the user's edit isn't silently
     // discarded and they can adjust it (status_line_ explains why).
@@ -1088,16 +1203,49 @@ bool TreeBrowser::CommitPluginOptions()
     status_line_ = "Plugin Options are not supported in this context.";
     return false;
   }
-  if (!plugin_options_input_.empty()
-      && !ua_->AclAccessOk(PluginOptions_ACL, plugin_options_input_.c_str(),
-                           true)) {
+  std::string document = restore_plugin_hints::BuildPluginOptionsDocument(
+      plugin_options_blocks_);
+  // Authorize every "pluginname:key=value:..." block individually --
+  // SendPluginOptions() (dird/fd_cmds.cc) sends one "pluginoptions"
+  // protocol command per block, so checking only the combined
+  // multi-line document as one string would let an allowed block
+  // smuggle an otherwise-denied block past a single-block ACL pattern.
+  if (!restore_plugin_hints::AllPluginOptionsBlocksAuthorized(
+          document, [this](const std::string& block) {
+            return ua_->AclAccessOk(PluginOptions_ACL, block.c_str(), true);
+          })) {
     status_line_ = "No authorization for \"PluginOptions\" specification.";
     return false;
   }
-  *tree_->plugin_options_out = plugin_options_input_;
-  status_line_ = plugin_options_input_.empty() ? "Plugin Options cleared."
-                                               : "Plugin Options saved.";
+  *tree_->plugin_options_out = document;
+  status_line_
+      = document.empty() ? "Plugin Options cleared." : "Plugin Options saved.";
   return true;
+}
+
+void TreeBrowser::ClampPluginOptionsCursor()
+{
+  if (plugin_options_active_block_ >= plugin_options_blocks_.size()) {
+    plugin_options_active_block_ = plugin_options_blocks_.empty()
+                                       ? 0
+                                       : plugin_options_blocks_.size() - 1;
+  }
+  size_t row_count = PluginOptionsRowCount();
+  size_t max_row = row_count > 0 ? row_count - 1 : 0;
+  plugin_options_cursor_ = std::min(plugin_options_cursor_, max_row);
+
+  size_t reserved_top = plugin_options_blocks_.size() > 1 ? 1 : 0;
+  PluginOptionsRowWindow layout = ComputePluginOptionsRowWindow(
+      SplitPanelRows().second, reserved_top, row_count);
+  size_t max_offset = row_count > layout.window ? row_count - layout.window : 0;
+  if (plugin_options_cursor_ < plugin_options_row_offset_) {
+    plugin_options_row_offset_ = plugin_options_cursor_;
+  }
+  if (layout.window > 0
+      && plugin_options_cursor_ >= plugin_options_row_offset_ + layout.window) {
+    plugin_options_row_offset_ = plugin_options_cursor_ - layout.window + 1;
+  }
+  plugin_options_row_offset_ = std::min(plugin_options_row_offset_, max_offset);
 }
 
 size_t TreeBrowser::MaxVisibleRows(bool detail_header, bool plugin_split) const
@@ -1215,18 +1363,76 @@ std::string TreeBrowser::RenderPanel() const
     out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title,
                        plugin_pane_focused_);
 
-    out += PluginOptionsLine(width, plugin_options_input_, plugin_pane_focused_,
-                             color);
+    std::vector<std::string> display_rows
+        = BuildPluginOptionsRowLabels(ActivePluginBlock());
+    size_t row_count = display_rows.size();
+    bool editing = plugin_pane_focused_
+                   && plugin_options_mode_ != PluginOptionsEditMode::kBrowsing;
+    bool editing_is_placeholder = false;
+    if (editing) {
+      // plugin_options_cursor_ always points at the row currently being
+      // edited: unchanged from the browsing selection for
+      // kEditingBlockName/kEditingRowValue, and already sitting on the
+      // "+ add option" row (the only row Enter can open
+      // kEditingNewRowKey from) for kEditingNewRowKey.
+      size_t idx = plugin_options_cursor_;
+      switch (plugin_options_mode_) {
+        case PluginOptionsEditMode::kEditingBlockName:
+          display_rows[idx] = "Plugin: "
+                              + (plugin_options_edit_buffer_.empty()
+                                     ? std::string("(type plugin name)")
+                                     : plugin_options_edit_buffer_);
+          editing_is_placeholder = plugin_options_edit_buffer_.empty();
+          break;
+        case PluginOptionsEditMode::kEditingNewRowKey:
+          display_rows[idx] = "  "
+                              + (plugin_options_edit_buffer_.empty()
+                                     ? std::string("(type option key)")
+                                     : plugin_options_edit_buffer_);
+          editing_is_placeholder = plugin_options_edit_buffer_.empty();
+          break;
+        case PluginOptionsEditMode::kEditingRowValue: {
+          const std::string& key
+              = plugin_options_adding_new_row_
+                    ? plugin_options_pending_key_
+                    : ActivePluginBlock().options[idx - 1].first;
+          display_rows[idx] = "  " + key + " = " + plugin_options_edit_buffer_;
+          break;
+        }
+        default:
+          break;
+      }
+    }
 
-    std::vector<std::string> hint_lines = DetectedPluginHintLines();
-    size_t hint_rows = plugin_rows > 0 ? plugin_rows - 1 : 0;
+    std::string tab_bar = BuildPluginOptionsTabBar(
+        plugin_options_blocks_, plugin_options_active_block_);
+    size_t reserved_top = tab_bar.empty() ? 0 : 1;
+    PluginOptionsRowWindow layout
+        = ComputePluginOptionsRowWindow(plugin_rows, reserved_top, row_count);
     size_t max_offset
-        = hint_lines.size() > hint_rows ? hint_lines.size() - hint_rows : 0;
-    size_t offset = std::min(plugin_options_hint_offset_, max_offset);
-    for (size_t row = 0; row < hint_rows; ++row) {
+        = row_count > layout.window ? row_count - layout.window : 0;
+    size_t offset = std::min(plugin_options_row_offset_, max_offset);
+
+    if (!tab_bar.empty()) { out += FrameLine(width, tab_bar, color); }
+    for (size_t row = 0; row < layout.window; ++row) {
       size_t i = offset + row;
-      out += FrameLine(width, i < hint_lines.size() ? hint_lines[i] : "",
-                       color);
+      bool selected = plugin_pane_focused_ && i == plugin_options_cursor_;
+      bool editing_this_row = editing && i == plugin_options_cursor_;
+      out += PluginOptionsRowLine(
+          width, i < display_rows.size() ? display_rows[i] : "",
+          editing_this_row && editing_is_placeholder, selected,
+          editing_this_row, color);
+    }
+    size_t used_rows = reserved_top + layout.window;
+    if (layout.show_hint) {
+      out += FrameLine(
+          width,
+          "  " + BuildKnownOptionsHintLine(ActivePluginBlock().plugin_name),
+          color);
+      used_rows++;
+    }
+    for (; used_rows < plugin_rows; ++used_rows) {
+      out += FrameLine(width, "", color);
     }
     out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   }
@@ -1252,9 +1458,14 @@ std::string TreeBrowser::RenderPanel() const
   std::string first_help_line;
   std::string second_help_line;
   if (split && plugin_pane_focused_) {
-    first_help_line
-        = " Type Plugin Options  Backspace Delete  Up/Down Scroll hints";
-    second_help_line = " Tab/Enter Save & switch to Files  Esc Discard edits";
+    if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
+      first_help_line = " Up/Down Row  Left/Right Tab  Enter Edit  d Delete";
+      second_help_line
+          = " n New tab  Tab Save & switch to Files  Esc Discard edits";
+    } else {
+      first_help_line = " Type value  Backspace Delete";
+      second_help_line = " Enter Confirm row  Esc Cancel this edit";
+    }
   } else {
     first_help_line = " Enter Open  Space/m Mark  a All  u None  e Estimate";
     if (split) {
@@ -1434,6 +1645,13 @@ std::string TreeBrowser::RenderHelp() const
       "   o                Focus the Plugin Options pane (if shown)",
       "   Tab              Switch focus: file tree <-> Plugin Options",
       "",
+      " Plugin Options pane (once focused)",
+      "   Up/Down          Move between plugin name / options / add-row",
+      "   Left/Right       Switch plugin (when more than one is edited)",
+      "   Enter            Edit the selected row",
+      "   d                Delete the selected option (or whole plugin)",
+      "   n                Add another plugin's options as a new tab",
+      "",
       " Exit",
       "   q                Finish file selection",
       "   h, ?, or Esc     Close this help panel",
@@ -1554,34 +1772,118 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
 
 void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
 {
+  if (plugin_options_mode_ != PluginOptionsEditMode::kBrowsing) {
+    if (key == "key:enter") {
+      switch (plugin_options_mode_) {
+        case PluginOptionsEditMode::kEditingBlockName:
+          ActivePluginBlock().plugin_name = plugin_options_edit_buffer_;
+          break;
+        case PluginOptionsEditMode::kEditingNewRowKey:
+          if (plugin_options_edit_buffer_.empty()) {
+            // Nothing typed: quietly abandon adding a new row.
+            break;
+          }
+          plugin_options_pending_key_ = plugin_options_edit_buffer_;
+          plugin_options_edit_buffer_.clear();
+          plugin_options_mode_ = PluginOptionsEditMode::kEditingRowValue;
+          return;
+        case PluginOptionsEditMode::kEditingRowValue:
+          if (plugin_options_adding_new_row_) {
+            ActivePluginBlock().options.emplace_back(
+                plugin_options_pending_key_, plugin_options_edit_buffer_);
+            plugin_options_cursor_ = ActivePluginBlock().options.size();
+          } else {
+            ActivePluginBlock().options[plugin_options_cursor_ - 1].second
+                = plugin_options_edit_buffer_;
+          }
+          break;
+        default:
+          break;
+      }
+      plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+    } else if (key == "key:cancel") {
+      plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+    } else if (key == "key:backspace") {
+      if (!plugin_options_edit_buffer_.empty()) {
+        RemoveLastUtf8Character(&plugin_options_edit_buffer_);
+      }
+    } else if (key == "key:space") {
+      plugin_options_edit_buffer_.push_back(' ');
+    } else if (key.starts_with("key:text:")) {
+      plugin_options_edit_buffer_.append(key.substr(strlen("key:text:")));
+    }
+    return;
+  }
+
+  // kBrowsing: navigate rows/blocks and open the row editor.
   if (key == "key:enter") {
-    // Commits the current input and hands focus back to the file tree,
-    // mirroring Tab (see HandleKey()).
-    TogglePluginPaneFocus();
+    if (plugin_options_cursor_ == 0) {
+      plugin_options_mode_ = PluginOptionsEditMode::kEditingBlockName;
+      plugin_options_edit_buffer_ = ActivePluginBlock().plugin_name;
+    } else if (plugin_options_cursor_ == PluginOptionsRowCount() - 1) {
+      plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
+      plugin_options_edit_buffer_.clear();
+      plugin_options_pending_key_.clear();
+      plugin_options_adding_new_row_ = true;
+    } else {
+      plugin_options_mode_ = PluginOptionsEditMode::kEditingRowValue;
+      plugin_options_edit_buffer_
+          = ActivePluginBlock().options[plugin_options_cursor_ - 1].second;
+      plugin_options_adding_new_row_ = false;
+    }
   } else if (key == "key:cancel") {
     plugin_pane_focused_ = false;
-    plugin_options_input_
-        = tree_->plugin_options_out ? *tree_->plugin_options_out : "";
-  } else if (key == "key:backspace") {
-    if (!plugin_options_input_.empty()) {
-      RemoveLastUtf8Character(&plugin_options_input_);
+    plugin_options_blocks_ = restore_plugin_hints::ParsePluginOptionsDocument(
+        tree_->plugin_options_out ? *tree_->plugin_options_out : "");
+    if (plugin_options_blocks_.empty()) {
+      // Keep the pane rendering a single (empty) block even when the
+      // saved document is empty -- ActivePluginBlock() always assumes
+      // at least one block exists.
+      plugin_options_blocks_.emplace_back();
     }
-  } else if (key == "key:space") {
-    plugin_options_input_.push_back(' ');
+    plugin_options_active_block_ = 0;
+    plugin_options_cursor_ = 0;
   } else if (key == "key:up") {
-    if (plugin_options_hint_offset_ > 0) { plugin_options_hint_offset_--; }
+    if (plugin_options_cursor_ > 0) { plugin_options_cursor_--; }
   } else if (key == "key:down") {
-    size_t hint_rows = SplitPanelRows().second;
-    hint_rows = hint_rows > 0 ? hint_rows - 1 : 0;
-    std::vector<std::string> hint_lines = DetectedPluginHintLines();
-    size_t max_offset
-        = hint_lines.size() > hint_rows ? hint_lines.size() - hint_rows : 0;
-    if (plugin_options_hint_offset_ < max_offset) {
-      plugin_options_hint_offset_++;
+    if (plugin_options_cursor_ + 1 < PluginOptionsRowCount()) {
+      plugin_options_cursor_++;
     }
-  } else if (key.starts_with("key:text:")) {
-    plugin_options_input_.append(key.substr(strlen("key:text:")));
+  } else if (key == "key:left") {
+    if (plugin_options_blocks_.size() > 1) {
+      plugin_options_active_block_
+          = (plugin_options_active_block_ + plugin_options_blocks_.size() - 1)
+            % plugin_options_blocks_.size();
+      plugin_options_cursor_ = 0;
+    }
+  } else if (key == "key:right") {
+    if (plugin_options_blocks_.size() > 1) {
+      plugin_options_active_block_
+          = (plugin_options_active_block_ + 1) % plugin_options_blocks_.size();
+      plugin_options_cursor_ = 0;
+    }
+  } else if (key == "key:text:n") {
+    plugin_options_blocks_.emplace_back();
+    plugin_options_active_block_ = plugin_options_blocks_.size() - 1;
+    plugin_options_cursor_ = 0;
+  } else if (key == "key:text:d") {
+    auto& options = ActivePluginBlock().options;
+    if (plugin_options_cursor_ >= 1
+        && plugin_options_cursor_ <= options.size()) {
+      options.erase(options.begin()
+                    + static_cast<ptrdiff_t>(plugin_options_cursor_ - 1));
+    } else if (plugin_options_cursor_ == 0
+               && plugin_options_blocks_.size() > 1) {
+      plugin_options_blocks_.erase(
+          plugin_options_blocks_.begin()
+          + static_cast<ptrdiff_t>(plugin_options_active_block_));
+      if (plugin_options_active_block_ >= plugin_options_blocks_.size()) {
+        plugin_options_active_block_ = plugin_options_blocks_.size() - 1;
+      }
+    }
+    plugin_options_cursor_ = 0;
   }
+  ClampPluginOptionsCursor();
 }
 
 void TreeBrowser::HandleSearchResultsKey(std::string_view key)

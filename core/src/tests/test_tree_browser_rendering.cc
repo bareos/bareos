@@ -29,8 +29,13 @@
 
 namespace {
 
+using directordaemon::restore_plugin_hints::PluginOptionsBlock;
 using directordaemon::tree_browser_internal::AlignTextColumns;
+using directordaemon::tree_browser_internal::BuildKnownOptionsHintLine;
+using directordaemon::tree_browser_internal::BuildPluginOptionsRowLabels;
+using directordaemon::tree_browser_internal::BuildPluginOptionsTabBar;
 using directordaemon::tree_browser_internal::CaseFoldForSearch;
+using directordaemon::tree_browser_internal::ComputePluginOptionsRowWindow;
 using directordaemon::tree_browser_internal::EstimateStatus;
 using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
@@ -350,22 +355,100 @@ TEST(TreeBrowserRendering, SplitTreeAndPluginRowsAddsUpToTheTotal)
   }
 }
 
-TEST(TreeBrowserRendering, PluginOptionsInputDisplayTextShowsRealValue)
+TEST(PluginOptionsEditorRendering, RowLabelsShowNamePlaceholderWhenEmpty)
 {
-  EXPECT_EQ(
-      directordaemon::tree_browser_internal::PluginOptionsInputDisplayText(
-          "verbose=1"),
-      "verbose=1");
+  PluginOptionsBlock block;
+  auto rows = BuildPluginOptionsRowLabels(block);
+  ASSERT_EQ(rows.size(), 2u);
+  EXPECT_EQ(rows[0], "Plugin: (type plugin name)");
+  EXPECT_EQ(rows[1], "  + add option");
 }
 
-TEST(TreeBrowserRendering,
-     PluginOptionsInputDisplayTextShowsPlaceholderWhenEmpty)
+TEST(PluginOptionsEditorRendering, RowLabelsShowNameAndKeyValueOptions)
 {
-  std::string placeholder
-      = directordaemon::tree_browser_internal::PluginOptionsInputDisplayText(
-          "");
-  EXPECT_FALSE(placeholder.empty());
-  EXPECT_NE(placeholder.find("verbose=1"), std::string::npos);
+  PluginOptionsBlock block;
+  block.plugin_name = "bpipe";
+  block.options.emplace_back("file", "/tmp/x");
+  block.options.emplace_back("verbose", "");
+
+  auto rows = BuildPluginOptionsRowLabels(block);
+  ASSERT_EQ(rows.size(), 4u);
+  EXPECT_EQ(rows[0], "Plugin: bpipe");
+  EXPECT_EQ(rows[1], "  file = /tmp/x");
+  EXPECT_EQ(rows[2], "  verbose");
+  EXPECT_EQ(rows[3], "  + add option");
+}
+
+TEST(PluginOptionsEditorRendering, TabBarEmptyForSingleBlock)
+{
+  std::vector<PluginOptionsBlock> blocks(1);
+  EXPECT_EQ(BuildPluginOptionsTabBar(blocks, 0), "");
+}
+
+TEST(PluginOptionsEditorRendering, TabBarMarksActiveBlock)
+{
+  std::vector<PluginOptionsBlock> blocks(2);
+  blocks[0].plugin_name = "bpipe";
+  blocks[1].plugin_name = "barri";
+
+  EXPECT_EQ(BuildPluginOptionsTabBar(blocks, 0), ">[1:bpipe]< [2:barri]");
+  EXPECT_EQ(BuildPluginOptionsTabBar(blocks, 1), "[1:bpipe] >[2:barri]<");
+}
+
+TEST(PluginOptionsEditorRendering, TabBarShowsPlaceholderForUnnamedBlock)
+{
+  std::vector<PluginOptionsBlock> blocks(2);
+  blocks[0].plugin_name = "bpipe";
+  EXPECT_EQ(BuildPluginOptionsTabBar(blocks, 1), "[1:bpipe] >[2:(new)]<");
+}
+
+TEST(PluginOptionsEditorRendering, KnownOptionsHintListsNamesWithRequiredMark)
+{
+  std::string line = BuildKnownOptionsHintLine("vmware");
+  EXPECT_NE(line.find("Known: "), std::string::npos);
+  EXPECT_NE(line.find("vcserver*"), std::string::npos);
+  EXPECT_NE(line.find("(*=required)"), std::string::npos);
+}
+
+TEST(PluginOptionsEditorRendering, KnownOptionsHintEmptyForUnknownPlugin)
+{
+  EXPECT_EQ(BuildKnownOptionsHintLine("does-not-exist"), "");
+}
+
+TEST(PluginOptionsEditorRendering, RowWindowShowsAllRowsAndHintWhenRoomy)
+{
+  auto layout = ComputePluginOptionsRowWindow(/*plugin_rows=*/10,
+                                              /*reserved_top=*/0,
+                                              /*row_count=*/3);
+  EXPECT_EQ(layout.window, 3u);
+  EXPECT_TRUE(layout.show_hint);
+}
+
+TEST(PluginOptionsEditorRendering, RowWindowOmitsHintWhenExactFit)
+{
+  auto layout = ComputePluginOptionsRowWindow(/*plugin_rows=*/3,
+                                              /*reserved_top=*/0,
+                                              /*row_count=*/3);
+  EXPECT_EQ(layout.window, 3u);
+  EXPECT_FALSE(layout.show_hint);
+}
+
+TEST(PluginOptionsEditorRendering, RowWindowScrollsWhenTooSmall)
+{
+  auto layout = ComputePluginOptionsRowWindow(/*plugin_rows=*/2,
+                                              /*reserved_top=*/0,
+                                              /*row_count=*/5);
+  EXPECT_EQ(layout.window, 2u);
+  EXPECT_FALSE(layout.show_hint);
+}
+
+TEST(PluginOptionsEditorRendering, RowWindowAccountsForReservedTopRow)
+{
+  auto layout = ComputePluginOptionsRowWindow(/*plugin_rows=*/4,
+                                              /*reserved_top=*/1,
+                                              /*row_count=*/3);
+  EXPECT_EQ(layout.window, 3u);
+  EXPECT_FALSE(layout.show_hint);
 }
 
 }  // namespace

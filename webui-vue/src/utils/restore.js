@@ -755,6 +755,78 @@ export function resolveRestorePluginDisplayName(definition, hintsById) {
   return (hintId && hintsById?.[hintId]?.displayName) || definition?.pluginName || ''
 }
 
+// -- Structured Plugin Options editor model --------------------------------
+//
+// Mirrors core/src/dird/restore_plugin_hints.h's ParsePluginOptionsBlock/
+// BuildPluginOptionsBlock/ParsePluginOptionsDocument/
+// BuildPluginOptionsDocument (C++). The wire format is
+// "pluginname:key1=value1:key2=value2:...", one block per plugin; a
+// document (the interactive "pluginoptions=" value) is one or more
+// blocks separated by newlines, each still addressing exactly one
+// plugin (see GetPluginName() in filed/fd_plugins.cc, and
+// SendPluginOptions() in dird/fd_cmds.cc which sends one "pluginoptions"
+// protocol command per block).
+
+// Parses one "pluginname:key1=value1:key2=value2:..." block into
+// { pluginName, options: [{ key, value }] }. Options without "=" are
+// kept as flag-style options with an empty value.
+export function parsePluginOptionsBlock(block) {
+  const text = typeof block === 'string' ? block : ''
+  const separatorIndex = text.indexOf(':')
+  const pluginName = separatorIndex === -1 ? text : text.slice(0, separatorIndex)
+
+  const options = []
+  if (separatorIndex !== -1) {
+    for (const part of text.slice(separatorIndex + 1).split(':')) {
+      if (!part) {
+        continue
+      }
+      const equalsIndex = part.indexOf('=')
+      options.push(equalsIndex === -1
+        ? { key: part, value: '' }
+        : { key: part.slice(0, equalsIndex), value: part.slice(equalsIndex + 1) })
+    }
+  }
+
+  return { pluginName, options }
+}
+
+// Inverse of parsePluginOptionsBlock(): joins the plugin name and
+// options back into a single "pluginname:key=value:..." string.
+export function buildPluginOptionsBlock(block, separator = ':') {
+  const pluginName = block?.pluginName ?? ''
+  const options = Array.isArray(block?.options) ? block.options : []
+
+  let result = pluginName
+  for (const { key, value } of options) {
+    result += separator + key + (value ? `=${value}` : '')
+  }
+  return result
+}
+
+// Parses a full interactive "pluginoptions" document: one or more
+// blocks separated by newlines. Empty lines are skipped.
+export function parsePluginOptionsDocument(document) {
+  const text = typeof document === 'string' ? document : ''
+  return text.split('\n').filter(line => line.length > 0).map(parsePluginOptionsBlock)
+}
+
+// Inverse of parsePluginOptionsDocument(): joins blocks back into a
+// single newline-separated document.
+export function buildPluginOptionsDocument(blocks, separator = ':') {
+  return (Array.isArray(blocks) ? blocks : [])
+    .map(block => buildPluginOptionsBlock(block, separator))
+    .join('\n')
+}
+
+// Looks up the known hint (option names/statuses/descriptions) for a
+// plugin options block's editable plugin-name field, matching it the
+// same way resolveRestorePluginHintId() matches a FileSet's plugin
+// loader name (direct id/alias match; case-insensitive).
+export function findRestorePluginHintIdForBlockName(pluginName, hintsById) {
+  return resolveRestorePluginHintId({ pluginName }, hintsById)
+}
+
 export function buildRestorePluginOptionExample(pluginHint) {
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
   const preferredOptions = options.filter(option => option.status === 'required')

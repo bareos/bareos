@@ -26,10 +26,16 @@
 
 namespace {
 
+using directordaemon::restore_plugin_hints::AllPluginOptionsBlocksAuthorized;
 using directordaemon::restore_plugin_hints::AllPluginRestoreHints;
 using directordaemon::restore_plugin_hints::BuildPluginOptionExample;
+using directordaemon::restore_plugin_hints::BuildPluginOptionsBlock;
+using directordaemon::restore_plugin_hints::BuildPluginOptionsDocument;
 using directordaemon::restore_plugin_hints::ExtractFileSetPluginDefinitions;
 using directordaemon::restore_plugin_hints::FindPluginRestoreHint;
+using directordaemon::restore_plugin_hints::ParsePluginOptionsBlock;
+using directordaemon::restore_plugin_hints::ParsePluginOptionsDocument;
+using directordaemon::restore_plugin_hints::PluginOptionsBlock;
 using directordaemon::restore_plugin_hints::PluginRestoreHint;
 using directordaemon::restore_plugin_hints::ResolvePluginRestoreHint;
 using directordaemon::restore_plugin_hints::SortedPluginRestoreHints;
@@ -136,6 +142,101 @@ TEST(RestorePluginHints, BuildsExampleFromKnownOptionsWhenNoneRequired)
   const PluginRestoreHint* hint = FindPluginRestoreHint("bpipe");
   ASSERT_NE(hint, nullptr);
   EXPECT_EQ(BuildPluginOptionExample(*hint), "file=...:reader=...");
+}
+
+TEST(PluginOptionsModel, ParsesBlockWithNameOnly)
+{
+  PluginOptionsBlock block = ParsePluginOptionsBlock("bpipe");
+  EXPECT_EQ(block.plugin_name, "bpipe");
+  EXPECT_TRUE(block.options.empty());
+}
+
+TEST(PluginOptionsModel, ParsesBlockWithKeyValueOptions)
+{
+  PluginOptionsBlock block
+      = ParsePluginOptionsBlock("bpipe:file=/tmp/x:reader=cat %f");
+  EXPECT_EQ(block.plugin_name, "bpipe");
+  ASSERT_EQ(block.options.size(), 2u);
+  EXPECT_EQ(block.options[0].first, "file");
+  EXPECT_EQ(block.options[0].second, "/tmp/x");
+  EXPECT_EQ(block.options[1].first, "reader");
+  EXPECT_EQ(block.options[1].second, "cat %f");
+}
+
+TEST(PluginOptionsModel, ParsesFlagStyleOptionsWithoutEquals)
+{
+  PluginOptionsBlock block = ParsePluginOptionsBlock("barri:verbose");
+  ASSERT_EQ(block.options.size(), 1u);
+  EXPECT_EQ(block.options[0].first, "verbose");
+  EXPECT_EQ(block.options[0].second, "");
+}
+
+TEST(PluginOptionsModel, SkipsEmptySegmentsBetweenColons)
+{
+  PluginOptionsBlock block = ParsePluginOptionsBlock("bpipe::file=x:");
+  ASSERT_EQ(block.options.size(), 1u);
+  EXPECT_EQ(block.options[0].first, "file");
+}
+
+TEST(PluginOptionsModel, RoundTripsBlockThroughBuild)
+{
+  const std::string original = "bpipe:file=/tmp/x:reader=cat %f";
+  PluginOptionsBlock block = ParsePluginOptionsBlock(original);
+  EXPECT_EQ(BuildPluginOptionsBlock(block), original);
+}
+
+TEST(PluginOptionsModel, BuildsFlagOptionWithoutEquals)
+{
+  PluginOptionsBlock block;
+  block.plugin_name = "barri";
+  block.options.emplace_back("verbose", "");
+  EXPECT_EQ(BuildPluginOptionsBlock(block), "barri:verbose");
+}
+
+TEST(PluginOptionsModel, ParsesMultiBlockDocumentSeparatedByNewline)
+{
+  auto blocks
+      = ParsePluginOptionsDocument("bpipe:file=/tmp/x\n\nbarri:verbose\n");
+  ASSERT_EQ(blocks.size(), 2u);
+  EXPECT_EQ(blocks[0].plugin_name, "bpipe");
+  EXPECT_EQ(blocks[1].plugin_name, "barri");
+}
+
+TEST(PluginOptionsModel, RoundTripsDocumentThroughBuild)
+{
+  std::vector<PluginOptionsBlock> blocks
+      = ParsePluginOptionsDocument("bpipe:file=/tmp/x\nbarri:verbose");
+  EXPECT_EQ(BuildPluginOptionsDocument(blocks),
+            "bpipe:file=/tmp/x\nbarri:verbose");
+}
+
+TEST(PluginOptionsModel, BuildsEmptyDocumentForNoBlocks)
+{
+  EXPECT_EQ(BuildPluginOptionsDocument({}), "");
+}
+
+TEST(PluginOptionsModel, AllBlocksAuthorizedWhenEveryBlockPasses)
+{
+  EXPECT_TRUE(AllPluginOptionsBlocksAuthorized(
+      "bpipe:file=/tmp/x\nbarri:verbose",
+      [](const std::string&) { return true; }));
+}
+
+TEST(PluginOptionsModel, AllBlocksAuthorizedIsFalseIfAnyBlockDenied)
+{
+  // A single denied block must fail the whole document, even if an
+  // earlier block in the same (attacker-controlled) multi-line string
+  // would individually be authorized -- an allowed block must not be
+  // able to "smuggle" a denied one past a whole-string ACL check.
+  EXPECT_FALSE(AllPluginOptionsBlocksAuthorized(
+      "allowed:opt=1\ndenied:opt=2",
+      [](const std::string& block) { return block.starts_with("allowed:"); }));
+}
+
+TEST(PluginOptionsModel, AllBlocksAuthorizedForEmptyDocument)
+{
+  EXPECT_TRUE(AllPluginOptionsBlocksAuthorized(
+      "", [](const std::string&) { return false; }));
 }
 
 }  // namespace

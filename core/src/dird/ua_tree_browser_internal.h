@@ -121,7 +121,46 @@ std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows);
 // -- a placeholder hinting that the field is editable and giving an
 // example, so the field's purpose is obvious even before the user
 // types anything.
-std::string PluginOptionsInputDisplayText(std::string_view input);
+// Builds the plain-text label for each row of the structured Plugin
+// Options editor for one plugin block, in row order: row 0 is
+// "Plugin: <name>" (or a placeholder when empty), rows [1,
+// options.size()] are "  key = value" (value omitted when empty, e.g.
+// flag-style options), and the final row is the "+ add option"
+// affordance. Pure/testable independently of ANSI styling and cursor
+// highlighting (applied by the caller).
+std::vector<std::string> BuildPluginOptionsRowLabels(
+    const directordaemon::restore_plugin_hints::PluginOptionsBlock& block);
+
+// Builds a one-line tab bar summarizing all plugin blocks (e.g.
+// "[1:bpipe] >[2:barri]<"), with the active block wrapped in ">...<".
+// Returns an empty string when there's only one block (nothing to
+// switch between).
+std::string BuildPluginOptionsTabBar(
+    const std::vector<directordaemon::restore_plugin_hints::PluginOptionsBlock>&
+        blocks,
+    size_t active_block);
+
+// Builds a single-line hint listing the known option names (from the
+// curated hint database) for the given plugin name, marking required
+// ones with a "*". Returns an empty string when the plugin is unknown
+// or has no documented options.
+std::string BuildKnownOptionsHintLine(std::string_view plugin_name);
+
+// Decides how many of a plugin block's editor rows can be shown given
+// the pane's row budget, and whether there's still room for one extra
+// "known options" hint line below them.
+struct PluginOptionsRowWindow {
+  size_t window;
+  bool show_hint;
+};
+
+// reserved_top accounts for the tab bar row (1 when there's more than
+// one plugin block being edited, else 0); row_count is the total
+// number of editor rows (as returned by BuildPluginOptionsRowLabels()'s
+// size, i.e. name row + option rows + the "+ add option" row).
+PluginOptionsRowWindow ComputePluginOptionsRowWindow(size_t plugin_rows,
+                                                     size_t reserved_top,
+                                                     size_t row_count);
 
 constexpr size_t MaxHorizontalOffset(size_t text_width, size_t viewport_width)
 {
