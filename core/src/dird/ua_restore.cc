@@ -579,6 +579,11 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   JobId_t JobId;
   bool done = false;
+
+  auto pause_after_informational_output = [ua]() {
+    if (ua->terminal_height <= 0 || ua->api != 0 || ua->batch) { return true; }
+    return GetCmd(ua, T_("Press Enter to return to the restore menu: "), true);
+  };
   int i, j;
   const char* list[] = {
       T_("Select a FileSet@Client combination (latest backup)"),
@@ -969,6 +974,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                              true);
         ua->jcr->gui = gui_save;
+        if (!pause_after_informational_output()) { return 0; }
         done = false;
       } break;
       case 13: /* list where a file is saved */
@@ -985,6 +991,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
                              true);
         ua->jcr->gui = gui_save;
+        if (!pause_after_informational_output()) { return 0; }
         done = false;
         break;
       case 14: /* Cancel or quit */

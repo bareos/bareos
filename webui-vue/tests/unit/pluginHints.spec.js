@@ -34,7 +34,13 @@ describe('normalizePluginHintsResponse', () => {
         supportlevel: 'bareos',
         aliases: ['vmware', 'bareos-fd-vmware'],
         options: [
-          { name: 'vcserver', status: 'required', description: 'vCenter host', source: 'plugin-doc' },
+          {
+            name: 'vcserver',
+            status: 'required',
+            description: 'vCenter host',
+            source: 'plugin-doc',
+            providesdefaults: true,
+          },
         ],
       }],
     })).toEqual({
@@ -46,7 +52,14 @@ describe('normalizePluginHintsResponse', () => {
         supportLevel: 'bareos',
         aliases: ['vmware', 'bareos-fd-vmware'],
         options: [
-          { name: 'vcserver', status: 'required', description: 'vCenter host', source: 'plugin-doc' },
+          {
+            name: 'vcserver',
+            status: 'required',
+            description: 'vCenter host',
+            source: 'plugin-doc',
+            type: 'string',
+            providesDefaults: true,
+          },
         ],
       },
     })

@@ -130,7 +130,7 @@ std::string ApplyStyle(std::string_view text,
   const char* prefix = "";
   switch (style) {
     case ConsoleOutputStyle::kInfo:
-      prefix = "\033[36m";
+      prefix = "\033[34m";
       break;
     case ConsoleOutputStyle::kWarning:
       prefix = "\033[1;33m";
@@ -150,7 +150,7 @@ std::string ReadlinePrompt(std::string_view prompt, bool color_enabled)
 
   // Readline excludes bytes enclosed by \001 and \002 from cursor-width
   // calculations.
-  return "\001\033[1;36m\002" + std::string(prompt) + "\001\033[0m\002";
+  return "\001\033[1;34m\002" + std::string(prompt) + "\001\033[0m\002";
 }
 
 }  // namespace console

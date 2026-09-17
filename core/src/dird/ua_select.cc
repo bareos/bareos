@@ -329,7 +329,7 @@ std::string InteractiveSelection::Format(const std::string& header,
     if (supports_cursor_selection) {
       output.append(i == selected_index_ ? "> " : "  ");
       if (i == selected_index_ && supports_color) {
-        output.append("\033[7;36m");
+        output.append("\033[97;44m");
       }
     }
     output.append(std::to_string(i + 1));

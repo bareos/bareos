@@ -64,6 +64,8 @@ function normalizeHint(rawHint) {
         status: option?.status ?? 'known',
         description: option?.description ?? '',
         source: option?.source ?? 'plugin-doc',
+        type: option?.type ?? 'string',
+        providesDefaults: option?.providesdefaults === true,
       }))
       : [],
   }]

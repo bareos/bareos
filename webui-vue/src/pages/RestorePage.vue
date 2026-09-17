@@ -293,6 +293,7 @@
                   <PluginOptionsEditor
                     v-model="form.pluginoptions"
                     :plugin-hints="pluginHintsStore.hints"
+                    :fileset-definitions="pluginRestoreInfo?.definitions"
                   />
                 </div>
                 <PluginRestoreInfoPanel

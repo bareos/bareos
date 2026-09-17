@@ -324,7 +324,7 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
             "Filter: b\n"
-            "> \033[7;36m2: Beta\033[0m\n");
+            "> \033[97;44m2: Beta\033[0m\n");
   EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
   EXPECT_EQ(selection.selected_index(), 1);
 }
@@ -342,7 +342,7 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
   EXPECT_EQ(selection.Format("", "Select", 20, true, true),
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
-            "> \033[7;36m1: Alpha\033[0m\n"
+            "> \033[97;44m1: Alpha\033[0m\n"
             "  2: Beta\n"
             "  3: Gamma\n");
 
@@ -351,7 +351,7 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
             "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
             "filter):\n"
             "  1: Alpha\n"
-            "> \033[7;36m2: Beta\033[0m\n"
+            "> \033[97;44m2: Beta\033[0m\n"
             "  3: Gamma\n");
 }
 
@@ -366,7 +366,7 @@ TEST(InteractiveSelection, SanitizesTerminalControls)
             "Header?[2J\n"
             "Select? (Up/Down/Left/Right, Enter, Esc, type a number or text "
             "to filter):\n"
-            "> \033[7;36m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
+            "> \033[97;44m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
 }
 
 TEST(InteractiveSelection, NavigatesVisibleOptions)

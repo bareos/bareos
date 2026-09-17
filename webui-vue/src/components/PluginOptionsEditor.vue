@@ -91,10 +91,16 @@
           @update:model-value="emitModelValue"
         >
           <template #option="scope">
+            <q-item-label v-if="scope.opt.groupStart" header class="q-pb-none">
+              {{ scope.opt.groupLabel }}
+            </q-item-label>
             <q-item v-bind="scope.itemProps">
               <q-item-section>
                 <q-item-label>{{ scope.opt.name ?? scope.opt }}</q-item-label>
-                <q-item-label v-if="scope.opt.description" caption>
+                <q-item-label v-if="scope.opt.group === 'fileset'" caption>
+                  {{ t('Current FileSet value') }}: {{ scope.opt.filesetValue || t('(empty)') }}
+                </q-item-label>
+                <q-item-label v-else-if="scope.opt.description" caption>
                   {{ scope.opt.description }}
                 </q-item-label>
               </q-item-section>
@@ -149,8 +155,12 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   buildPluginOptionsDocument,
-  findRestorePluginHintIdForBlockName,
+  categorizePluginOptions,
+  extractRestorePluginDefinitionOption,
+  findMatchingRestorePluginDefinition,
+  hintProvidesDefaultsElsewhere,
   parsePluginOptionsDocument,
+  resolveBlockPluginHintId,
 } from '../utils/restore.js'
 
 const props = defineProps({
@@ -161,6 +171,14 @@ const props = defineProps({
   pluginHints: {
     type: Object,
     default: () => ({}),
+  },
+  // The FileSet's detected plugin definitions (pluginRestoreInfo.value
+  // .definitions in RestorePage.vue), used to show which options are
+  // already configured in the FileSet (with their current value) for
+  // whichever block's plugin they match.
+  filesetDefinitions: {
+    type: Array,
+    default: () => [],
   },
 })
 
@@ -227,18 +245,61 @@ function removeRow(rowIndex) {
 }
 
 function currentHint() {
-  const hintId = findRestorePluginHintIdForBlockName(activeBlock.value?.pluginName, props.pluginHints)
-  return hintId ? props.pluginHints?.[hintId] : null
+  const hintId = resolveBlockPluginHintId(activeBlock.value, props.pluginHints)
+  return hintId ? { id: hintId, hint: props.pluginHints?.[hintId] } : null
+}
+
+function currentFilesetOptionKeysAndDefinition() {
+  const resolved = currentHint()
+  if (!resolved) {
+    return { keys: [], definition: null }
+  }
+  const definition = findMatchingRestorePluginDefinition(
+    resolved.id, props.filesetDefinitions, props.pluginHints
+  )
+  return { keys: definition?.optionKeys ?? [], definition }
 }
 
 function filteredKeyOptions(currentValue) {
-  const hint = currentHint()
+  const resolved = currentHint()
+  const hint = resolved?.hint
   const usedKeys = new Set(
     (activeBlock.value?.options ?? [])
       .map(option => option.key)
       .filter(key => key && key !== currentValue)
   )
-  return (hint?.options ?? []).filter(option => !usedKeys.has(option.name))
+
+  const { keys: filesetOptionKeys, definition } = currentFilesetOptionKeysAndDefinition()
+  const { alreadyInFileset, required, optional } = categorizePluginOptions(hint, filesetOptionKeys)
+
+  const groups = [
+    { label: t('Already in FileSet (can be overridden)'), group: 'fileset', options: alreadyInFileset },
+    {
+      label: hint && hintProvidesDefaultsElsewhere(hint)
+        ? t('Required (can also be preset via a config/defaults file option)')
+        : t('Required'),
+      group: 'required',
+      options: required,
+    },
+    { label: t('Optional'), group: 'optional', options: optional },
+  ]
+
+  const result = []
+  for (const { label, group, options } of groups) {
+    const visible = options.filter(option => !usedKeys.has(option.name))
+    visible.forEach((option, index) => {
+      result.push({
+        ...option,
+        group,
+        groupStart: index === 0,
+        groupLabel: label,
+        filesetValue: group === 'fileset'
+          ? extractRestorePluginDefinitionOption(definition, option.name)
+          : '',
+      })
+    })
+  }
+  return result
 }
 
 function filterKeyOptions(val, update) {
