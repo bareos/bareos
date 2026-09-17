@@ -288,17 +288,13 @@
                   outlined dense emit-value map-options
                   data-testid="restore-replace-policy"
                 />
-                <q-input
-                  v-if="showPluginOptions"
-                  v-model="form.pluginoptions"
-                  :label="t('Plugin Options')"
-                  type="textarea"
-                  autogrow
-                  outlined dense
-                  :hint="pluginOptionsHint"
-                  :placeholder="pluginOptionsPlaceholder"
-                  data-testid="restore-plugin-options"
-                />
+                <div v-if="showPluginOptions" data-testid="restore-plugin-options">
+                  <div class="text-caption text-grey-7 q-mb-xs">{{ pluginOptionsHint }}</div>
+                  <PluginOptionsEditor
+                    v-model="form.pluginoptions"
+                    :plugin-hints="pluginHintsStore.hints"
+                  />
+                </div>
                 <PluginRestoreInfoPanel
                   :plugin-restore-info="pluginRestoreInfo"
                   :plugin-hints="pluginHints"
@@ -790,6 +786,7 @@ import { resolveInitialRestoreStep } from '../utils/restoreStepper.js'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import PluginRestoreInfoPanel from '../components/PluginRestoreInfoPanel.vue'
+import PluginOptionsEditor from '../components/PluginOptionsEditor.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -1502,18 +1499,6 @@ const pluginRestoreInfo = computed(() => getRestorePluginInfo({
 }))
 const pluginHints = computed(() => getRestorePluginHints(pluginRestoreInfo.value, pluginHintsStore.hints))
 const allPluginHints = computed(() => getAllRestorePluginHints(pluginHintsStore.hints))
-const pluginOptionsPlaceholder = computed(() => {
-  const example = pluginHints.value[0]?.example
-  if (example) {
-    return `e.g. ${example}`
-  }
-
-  if (pluginRestoreInfo.value?.optionKeys?.length > 0) {
-    return `e.g. ${pluginRestoreInfo.value.optionKeys.slice(0, 2).map(key => `${key}=...`).join(':')}`
-  }
-
-  return 'e.g. option=value:other=value'
-})
 const pluginOptionsHint = computed(() => {
   if (!pluginRestoreInfo.value) {
     return ''
