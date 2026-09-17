@@ -35,6 +35,7 @@
 
 #include "include/bc_types.h"
 
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -101,6 +102,54 @@ const PluginRestoreHint* ResolvePluginRestoreHint(
 // Builds a short "key=... :key2=..." usage example from a hint's
 // options, preferring required options.
 std::string BuildPluginOptionExample(const PluginRestoreHint& hint);
+
+// One "pluginname:key1=value1:key2=value2:..." block, as sent in a
+// single "pluginoptions" protocol command / used by one FileSet
+// "Plugin = ..." definition. option.first is empty for a flag-style
+// option that has no "=value" part.
+struct PluginOptionsBlock {
+  std::string plugin_name;
+  std::vector<std::pair<std::string, std::string>> options;
+};
+
+// Parses one "pluginname:key1=value1:key2=value2:..." block. Options
+// without an "=" are kept as flag-style options with an empty value.
+PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block);
+
+// Inverse of ParsePluginOptionsBlock(): joins the plugin name and
+// options back into a single "pluginname:key=value:..." string, using
+// separator (defaults to ":", matching PluginRestoreHint::
+// option_separator for all curated plugins).
+std::string BuildPluginOptionsBlock(const PluginOptionsBlock& block,
+                                    std::string_view separator = ":");
+
+// Parses a full interactive "pluginoptions" document: one or more
+// blocks (see PluginOptionsBlock), separated by newlines -- the format
+// used by the restore command's "pluginoptions=" argument once it
+// covers more than one plugin (see SendPluginOptions() in
+// dird/fd_cmds.cc, which sends one "pluginoptions" protocol command per
+// block). Empty lines are skipped.
+std::vector<PluginOptionsBlock> ParsePluginOptionsDocument(
+    std::string_view document);
+
+// Inverse of ParsePluginOptionsDocument(): joins blocks back into a
+// single newline-separated document.
+std::string BuildPluginOptionsDocument(
+    const std::vector<PluginOptionsBlock>& blocks,
+    std::string_view separator = ":");
+
+// Checks whether every individual "pluginname:key=value:..." block in
+// a (possibly multi-block, newline-separated) pluginoptions document
+// is authorized on its own, via is_block_authorized (typically a
+// PluginOptions_ACL check). Required because SendPluginOptions() (in
+// dird/fd_cmds.cc) sends one "pluginoptions" protocol command per
+// block -- authorizing only the combined multi-line document as one
+// string would let an allowed block "smuggle" an otherwise-denied
+// block past a single-block-oriented ACL pattern. An empty document
+// (no blocks) is always authorized.
+bool AllPluginOptionsBlocksAuthorized(
+    std::string_view document,
+    const std::function<bool(const std::string&)>& is_block_authorized);
 
 // Fetches FileSet.FileSetText for a given FileSetId. Needed because
 // BareosDb::GetFilesetRecord() only fetches the id/name/MD5/createtime
