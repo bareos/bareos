@@ -29,6 +29,7 @@
 #include "lib/bstringlist.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
+#include <sstream>
 #include <sys/stat.h>
 #if defined(HAVE_WIN32)
 #  include <shlwapi.h>  // for PathIsRelativeA()
@@ -102,12 +103,27 @@ class BPipeHandle {
     std::string output;
     char iobuf[1024];
     while (!feof(bpipe->rfd)) {
+      /*
+       * The backend command can legitimately take longer than the configured
+       * timeout while streaming a large result set. Keep the watchdog alive so
+       * a slow but healthy list/stat call does not get killed in the middle of
+       * reading its output.
+       */
+      if (bpipe->timer_id) { TimerKeepalive(*bpipe->timer_id); }
       size_t rsize = fread(iobuf, 1, 1024, bpipe->rfd);
-      if (rsize > 0 && !ferror(bpipe->rfd)) { output.append(iobuf, rsize); }
+      if (rsize > 0) { output.append(iobuf, rsize); }
+      if (ferror(bpipe->rfd) && errno == EINTR) {
+        clearerr(bpipe->rfd);
+        continue;
+      }
+      if (feof(bpipe->rfd)) { break; }
     }
     return output;
   }
-  void reset_timeout() { TimerKeepalive(*bpipe->timer_id); }
+  void reset_timeout()
+  {
+    if (bpipe->timer_id) { TimerKeepalive(*bpipe->timer_id); }
+  }
   bool timed_out() { return bpipe->timer_id && bpipe->timer_id->killed; }
   void close_write()
   {
@@ -282,29 +298,30 @@ auto CrudStorage::list(std::string_view obj_name)
   auto bph{
       BPipeHandle::create(cmdline.c_str(), m_program_timeout, "r", m_env_vars)};
   if (!bph) { return tl::unexpected(bph.error()); }
-  auto rfh = bph->getReadFd();
+  auto output = bph->getOutput();
+  auto ret = bph->close();
+  if (ret != 0) {
+    utl::Dfmt(debug_info, FMT_STRING("list returned {}"), ret);
+    return tl::unexpected(
+        fmt::format(FMT_STRING("Running \"{}\" returned {}\n"), cmdline, ret));
+  }
 
   std::map<std::string, Stat> result;
-  while (!feof(rfh)) {
+  std::istringstream lines{output};
+  std::string line;
+  while (std::getline(lines, line)) {
     Stat stat;
-    auto obj_part = std::string(129, '\0');
-    if (int n = fscanf(rfh, "%128s %zu\n", obj_part.data(), &stat.size);
-        n != 2) {
-      utl::Dfmt(debug_info, FMT_STRING("fscanf() returned {}"), n);
+    std::string obj_part;
+    std::istringstream record{line};
+    if (!(record >> obj_part >> stat.size)) {
+      utl::Dfmt(debug_info, FMT_STRING("could not parse '{}'"), line);
       return tl::unexpected(fmt::format(
           FMT_STRING("could not parse data returned by {}"), cmdline));
     }
-    obj_part.resize(std::strlen(obj_part.c_str()));
     result[obj_part] = stat;
 
     utl::Dfmt(debug_trace, FMT_STRING("volume={} part={} size={}"), obj_name,
               obj_part, stat.size);
-  }
-
-  if (auto ret = bph->close(); ret != 0) {
-    utl::Dfmt(debug_info, FMT_STRING("list returned {}"), ret);
-    return tl::unexpected(
-        fmt::format(FMT_STRING("Running \"{}\" returned {}\n"), cmdline, ret));
   }
   return result;
 }
