@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -241,43 +241,5 @@ TEST(bpipe, stalled_read)
   EXPECT_EQ(ferror(bp->rfd), 0);
   EXPECT_THAT(fgets(buffer, sizeof(buffer), bp->rfd), IsNull());
   EXPECT_EQ(CloseBpipe(bp), timeout_retcode);
-#endif
-}
-
-TEST(bpipe, keepalive_during_read)
-{
-#if defined(HAVE_WIN32)
-  exit(77);
-#else
-  using namespace std::chrono_literals;
-  char buffer[1024];
-  std::string output;
-
-  Bpipe* bp = OpenBpipe("/bin/sh -c 'printf one\\n; sleep 1; printf "
-                       "two\\n; sleep 1; printf three\\n; sleep 1; printf "
-                       "four\\n; sleep 1; printf five\\n'",
-                       4, "r");
-  ASSERT_THAT(bp, NotNull());
-  ASSERT_THAT(bp->timer_id, NotNull());
-
-  for (int i = 0; i < 12; ++i) {
-    TimerKeepalive(*bp->timer_id);
-    const auto bytes_read = fread(buffer, 1, sizeof(buffer), bp->rfd);
-    if (bytes_read > 0) { output.append(buffer, bytes_read); }
-    if (ferror(bp->rfd) && errno == EINTR) {
-      clearerr(bp->rfd);
-      continue;
-    }
-    if (feof(bp->rfd)) { break; }
-    std::this_thread::sleep_for(250ms);
-  }
-
-  EXPECT_FALSE(bp->timer_id->killed);
-  EXPECT_THAT(output, testing::HasSubstr("one"));
-  EXPECT_THAT(output, testing::HasSubstr("two"));
-  EXPECT_THAT(output, testing::HasSubstr("three"));
-  EXPECT_THAT(output, testing::HasSubstr("four"));
-  EXPECT_THAT(output, testing::HasSubstr("five"));
-  EXPECT_EQ(CloseBpipe(bp), 0);
 #endif
 }

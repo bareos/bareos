@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
 #include "lib/bstringlist.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
+#include <cerrno>
 #include <sstream>
 #include <sys/stat.h>
 #if defined(HAVE_WIN32)
@@ -56,6 +57,7 @@ bool path_is_relative(const std::string& path)
 
 class BPipeHandle {
   Bpipe* bpipe{nullptr};
+  int read_error{0};
 
  public:
   BPipeHandle(const char* prog,
@@ -103,18 +105,21 @@ class BPipeHandle {
     std::string output;
     char iobuf[1024];
     while (!feof(bpipe->rfd)) {
-      /*
-       * The backend command can legitimately take longer than the configured
+      /* The backend command can legitimately take longer than the configured
        * timeout while streaming a large result set. Keep the watchdog alive so
        * a slow but healthy list/stat call does not get killed in the middle of
-       * reading its output.
-       */
+       * reading its output. */
       if (bpipe->timer_id) { TimerKeepalive(*bpipe->timer_id); }
+      errno = 0;
       size_t rsize = fread(iobuf, 1, 1024, bpipe->rfd);
       if (rsize > 0) { output.append(iobuf, rsize); }
       if (ferror(bpipe->rfd) && errno == EINTR) {
         clearerr(bpipe->rfd);
         continue;
+      }
+      if (ferror(bpipe->rfd)) {
+        read_error = errno ? errno : EIO;
+        break;
       }
       if (feof(bpipe->rfd)) { break; }
     }
@@ -141,6 +146,7 @@ class BPipeHandle {
     }
 
     bpipe = nullptr;
+    if (ret == 0 && read_error != 0) { return read_error; }
     return ret;
   }
 };
@@ -314,6 +320,12 @@ auto CrudStorage::list(std::string_view obj_name)
     std::string obj_part;
     std::istringstream record{line};
     if (!(record >> obj_part >> stat.size)) {
+      utl::Dfmt(debug_info, FMT_STRING("could not parse '{}'"), line);
+      return tl::unexpected(fmt::format(
+          FMT_STRING("could not parse data returned by {}"), cmdline));
+    }
+    record >> std::ws;
+    if (!record.eof()) {
       utl::Dfmt(debug_info, FMT_STRING("could not parse '{}'"), line);
       return tl::unexpected(fmt::format(
           FMT_STRING("could not parse data returned by {}"), cmdline));

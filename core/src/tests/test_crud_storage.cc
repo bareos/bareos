@@ -1,0 +1,56 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
+#include "stored/backends/crud_storage.h"
+
+#include <chrono>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+TEST(crud_storage, list_keeps_backend_alive_while_reading)
+{
+#if defined(HAVE_WIN32)
+  exit(77);
+#else
+  CrudStorage storage;
+  ASSERT_TRUE(storage.set_program(TEST_PROGRAM).has_value());
+  storage.set_program_timeout(std::chrono::seconds{4});
+
+  auto result = storage.list("delayed");
+
+  ASSERT_TRUE(result.has_value()) << result.error();
+  EXPECT_EQ(result->size(), 6);
+  EXPECT_TRUE(result->contains("one"));
+  EXPECT_TRUE(result->contains("six"));
+#endif
+}
+
+TEST(crud_storage, list_rejects_trailing_record_data)
+{
+  CrudStorage storage;
+  ASSERT_TRUE(storage.set_program(TEST_PROGRAM).has_value());
+
+  auto result = storage.list("trailing-data");
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_THAT(result.error(), testing::HasSubstr("could not parse data"));
+}
