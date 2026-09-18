@@ -1287,6 +1287,7 @@ static std::string RenderDestinationBrowseScreen(
     const std::string& path,
     const std::vector<DestinationBrowseEntry>& rows,
     size_t cursor,
+    size_t first_row,
     std::string_view search)
 {
   size_t width = RestoreOptionsScreenWidth(ua);
@@ -1298,10 +1299,7 @@ static std::string RenderDestinationBrowseScreen(
 
   size_t visible_rows = std::min(
       DestinationBrowseVisibleRows(ua, !search.empty()), rows.size());
-  size_t first_row = 0;
-  if (visible_rows > 0 && cursor >= visible_rows) {
-    first_row = cursor - visible_rows + 1;
-  }
+  first_row = std::min(first_row, rows.size() - visible_rows);
 
   std::string help = T_(
       "Enter: open/use  PgUp/PgDn or Ctrl-U/D: page  /: search  "
@@ -1353,6 +1351,7 @@ static std::string RenderDestinationBrowseSearchInput(
     const std::string& path,
     const std::vector<DestinationBrowseEntry>& rows,
     size_t cursor,
+    size_t first_row,
     std::string_view search)
 {
   size_t width = RestoreOptionsScreenWidth(ua);
@@ -1364,10 +1363,7 @@ static std::string RenderDestinationBrowseSearchInput(
 
   size_t visible_rows
       = std::min(DestinationBrowseVisibleRows(ua, true), rows.size());
-  size_t first_row = 0;
-  if (visible_rows > 0 && cursor >= visible_rows) {
-    first_row = cursor - visible_rows + 1;
-  }
+  first_row = std::min(first_row, rows.size() - visible_rows);
 
   std::string help
       = T_("Type substring  Enter: accept  Backspace: delete  Esc: clear");
@@ -1407,6 +1403,53 @@ static std::string RenderDestinationBrowseSearchInput(
   return screen;
 }
 
+static void ClampDestinationBrowseWindow(size_t row_count,
+                                         size_t visible_rows,
+                                         size_t* cursor,
+                                         size_t* first_row)
+{
+  if (row_count == 0) {
+    *cursor = 0;
+    *first_row = 0;
+    return;
+  }
+
+  if (*cursor >= row_count) { *cursor = row_count - 1; }
+
+  size_t max_first_row
+      = row_count > visible_rows ? row_count - visible_rows : 0;
+  if (*first_row > max_first_row) { *first_row = max_first_row; }
+
+  if (*cursor < *first_row) {
+    *first_row = *cursor;
+  } else if (visible_rows > 0 && *cursor >= *first_row + visible_rows) {
+    *first_row = *cursor - visible_rows + 1;
+  }
+}
+
+static void MoveDestinationBrowsePage(size_t row_count,
+                                      size_t visible_rows,
+                                      int direction,
+                                      size_t* cursor,
+                                      size_t* first_row)
+{
+  if (row_count == 0) {
+    *cursor = 0;
+    *first_row = 0;
+    return;
+  }
+
+  size_t max_first_row
+      = row_count > visible_rows ? row_count - visible_rows : 0;
+  if (direction > 0) {
+    *first_row = std::min(*first_row + visible_rows, max_first_row);
+  } else {
+    *first_row = *first_row > visible_rows ? *first_row - visible_rows : 0;
+  }
+  *cursor = *first_row;
+  ClampDestinationBrowseWindow(row_count, visible_rows, cursor, first_row);
+}
+
 static bool SetRestoreWhere(UaContext* ua,
                             JobControlRecord* jcr,
                             const std::string& where)
@@ -1442,6 +1485,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
   DestinationBrowseMode mode = DestinationBrowseMode::kBrowsing;
   std::string search;
   size_t cursor = 0;
+  size_t first_row = 0;
   for (;;) {
     if (cached_path != current) {
       cached_entries.clear();
@@ -1452,21 +1496,26 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       cached_path = current;
       search.clear();
       mode = DestinationBrowseMode::kBrowsing;
+      cursor = 0;
+      first_row = 0;
     }
     std::vector<DestinationBrowseEntry> visible_entries
         = FilterDestinationBrowseEntries(cached_entries, search);
     std::vector<DestinationBrowseEntry> rows
         = BuildDestinationBrowseRows(current, visible_entries);
-    if (cursor >= rows.size()) { cursor = rows.empty() ? 0 : rows.size() - 1; }
+    size_t visible_rows = DestinationBrowseVisibleRows(
+        ua, mode == DestinationBrowseMode::kEnteringSearch || !search.empty());
+    ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
+                                 &first_row);
 
     user->signal(BNET_START_SELECT);
     if (mode == DestinationBrowseMode::kEnteringSearch) {
-      ua->SendMsg("%s", RenderDestinationBrowseSearchInput(ua, jcr, current,
-                                                           rows, cursor, search)
+      ua->SendMsg("%s", RenderDestinationBrowseSearchInput(
+                            ua, jcr, current, rows, cursor, first_row, search)
                             .c_str());
     } else {
       ua->SendMsg("%s", RenderDestinationBrowseScreen(ua, jcr, current, rows,
-                                                      cursor, search)
+                                                      cursor, first_row, search)
                             .c_str());
     }
     user->signal(BNET_END_SELECT);
@@ -1500,20 +1549,22 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       if (input == "key:enter") {
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;
+        first_row = 0;
       } else if (input == "key:cancel") {
         search.clear();
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;
+        first_row = 0;
       } else if (input == "key:down") {
         if (cursor + 1 < rows.size()) { cursor++; }
       } else if (input == "key:up") {
         if (cursor > 0) { cursor--; }
       } else if (input == "key:pagedown") {
-        size_t page = DestinationBrowseVisibleRows(ua, true);
-        cursor = rows.empty() ? 0 : std::min(cursor + page, rows.size() - 1);
+        MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
+                                  &first_row);
       } else if (input == "key:pageup") {
-        size_t page = DestinationBrowseVisibleRows(ua, true);
-        cursor = cursor > page ? cursor - page : 0;
+        MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
+                                  &first_row);
       } else if (input == "key:backspace") {
         RemoveLastBrowseSearchCharacter(&search);
       } else if (input == "key:space") {
@@ -1528,6 +1579,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       if (!search.empty()) {
         search.clear();
         cursor = 0;
+        first_row = 0;
         continue;
       }
       return false;
@@ -1536,6 +1588,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       mode = DestinationBrowseMode::kEnteringSearch;
       search.clear();
       cursor = 0;
+      first_row = 0;
       continue;
     }
     if (input == "key:tab" || input == "key:down" || input == "key:right") {
@@ -1547,26 +1600,30 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       continue;
     }
     if (input == "key:pagedown") {
-      size_t page = DestinationBrowseVisibleRows(ua, !search.empty());
-      cursor = rows.empty() ? 0 : std::min(cursor + page, rows.size() - 1);
+      MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
+                                &first_row);
       continue;
     }
     if (input == "key:pageup") {
-      size_t page = DestinationBrowseVisibleRows(ua, !search.empty());
-      cursor = cursor > page ? cursor - page : 0;
+      MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
+                                &first_row);
       continue;
     }
     if (input == "key:backspace") {
       current = ParentBrowsePath(current);
       cursor = 0;
+      first_row = 0;
       continue;
     }
     if (input == "key:home") {
       cursor = 0;
+      first_row = 0;
       continue;
     }
     if (input == "key:end") {
       cursor = rows.empty() ? 0 : rows.size() - 1;
+      ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
+                                   &first_row);
       continue;
     }
     if (input != "key:enter" && !input.empty()) { continue; }
