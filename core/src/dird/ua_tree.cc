@@ -226,7 +226,8 @@ bool UserSelectFilesFromTree(TreeContext* tree)
          "remove (unmark) files to be restored. No files are initially added, "
          "unless\n"
          "you used the \"all\" keyword on the command line.\n"
-         "Enter \"done\" to leave this mode.\n\n"));
+         "Enter \"done\" to leave this mode, or press d/r in the visual "
+         "browser.\n\n"));
   user->signal(BNET_START_RTREE);
 
   // Enter interactive command handler allowing selection of individual files.

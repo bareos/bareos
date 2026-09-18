@@ -958,6 +958,8 @@ list
       list jobmedia
       list jobmedia jobid=<id>
       list jobmedia job=<job-name>
+      list jobmedia volume=<volume-name>
+      list volumeusage volume=<volume-name>
       list files jobid=<id>
       list files job=<job-name>
       list media jobid=<jobid>

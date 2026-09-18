@@ -198,6 +198,8 @@ const char list_cmd_usage[] = NT_(
     "joblog jobids=<jobid,jobid,...> | "
     "jobmedia jobid=<jobid> | "
     "jobmedia ujobid=<complete_name> | "
+    "jobmedia volume=<volume-name> | "
+    "volumeusage volume=<volume-name> | "
     "jobtotals | "
     "jobstatistics jobid=<jobid> | "
     "log [client=<client-name>] [reverse] | "

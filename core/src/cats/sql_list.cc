@@ -240,41 +240,42 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
 
 void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
                                    uint32_t JobId,
+                                   const char* VolumeName,
                                    OutputFormatter* sendit,
                                    e_list_type type)
 {
   char ed1[50];
+  PoolMem where(PM_MESSAGE);
+
+  if (JobId > 0) {
+    where.bsprintf("AND JobMedia.JobId=%s ", edit_int64(JobId, ed1));
+  }
+
+  if (VolumeName && VolumeName[0] != 0) {
+    const auto volume_name_len = strlen(VolumeName);
+    std::vector<char> escaped_volume_name(volume_name_len * 2 + 1);
+    EscapeString(jcr, escaped_volume_name.data(), VolumeName, volume_name_len);
+    PoolMem filter(PM_MESSAGE);
+    filter.bsprintf("AND Media.VolumeName='%s' ", escaped_volume_name.data());
+    PmStrcat(where, filter.c_str());
+  }
 
   DbLocker _{this};
   if (type == VERT_LIST) {
-    if (JobId > 0) { /* do by JobId */
-      Mmsg(cmd,
-           "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
-           "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-           "JobMedia.EndBlock "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-           "AND JobMedia.JobId=%s ",
-           edit_int64(JobId, ed1));
-    } else {
-      Mmsg(cmd,
-           "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
-           "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-           "JobMedia.EndBlock "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId ");
-    }
+    Mmsg(cmd,
+         "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
+         "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
+         "JobMedia.EndBlock,JobMedia.JobBytes "
+         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
+         where.c_str());
 
   } else {
-    if (JobId > 0) { /* do by JobId */
-      Mmsg(cmd,
-           "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-           "AND JobMedia.JobId=%s ",
-           edit_int64(JobId, ed1));
-    } else {
-      Mmsg(cmd,
-           "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-           "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId ");
-    }
+    Mmsg(cmd,
+         "SELECT JobMediaId,JobId,Media.VolumeName,FirstIndex,LastIndex,"
+         "StartFile,JobMedia.EndFile,StartBlock,JobMedia.EndBlock,"
+         "JobMedia.JobBytes "
+         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
+         where.c_str());
   }
   if (!QueryDb(jcr, cmd)) { return; }
 
