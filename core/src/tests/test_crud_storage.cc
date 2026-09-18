@@ -37,6 +37,13 @@ std::string BackendProgram()
 #endif
   return program;
 }
+
+#if defined(HAVE_WIN32)
+// stat() on Windows resolves file attributes via function pointers that are
+// only populated by OSDependentInit(). Without this call every stat() fails,
+// regardless of whether the path is valid.
+[[maybe_unused]] static bool setup = (OSDependentInit(), true);
+#endif
 }  // namespace
 
 TEST(crud_storage, list_keeps_backend_alive_while_reading)
