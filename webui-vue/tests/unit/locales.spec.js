@@ -27,6 +27,7 @@ import {
 import {
   detectPreferredLocale,
   formatDirectorRelativeTime,
+  formatLocalDateTime,
   formatRelativeDate,
   formatSqlRelativeTime,
   localeFlagEmoji,
@@ -85,6 +86,17 @@ describe('webui locales', () => {
     expect(formatDirectorRelativeTime('23-Apr-26 11:58', 'en_EN')).toBe('2 minutes ago')
 
     vi.useRealTimers()
+  })
+
+  it('formats local date-time values with a 24-hour clock', () => {
+    const formatted = formatLocalDateTime(
+      new Date('2026-09-18T20:44:00'),
+      'en_EN',
+      { dateStyle: 'short', timeStyle: 'short' }
+    )
+
+    expect(formatted).toMatch(/^18\/09\/2026/)
+    expect(formatted).toContain('20:44')
   })
 
   it('uses calendar-day boundaries, not raw 24h chunks, for day-level relative labels', () => {

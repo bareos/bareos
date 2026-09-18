@@ -203,15 +203,38 @@ export function formatNumber(value, locale, options) {
   return new Intl.NumberFormat(localeToIntl(locale), options).format(number)
 }
 
+function datePartsDayMonthYear(date) {
+  return [
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getFullYear()),
+  ].join('/')
+}
+
+function timeOptionsFromStyle(timeStyle) {
+  switch (timeStyle) {
+    case 'short':
+      return { hour: '2-digit', minute: '2-digit' }
+    case 'medium':
+    case 'long':
+    case 'full':
+    default:
+      return { hour: '2-digit', minute: '2-digit', second: '2-digit' }
+  }
+}
+
 export function formatLocalDateTime(value, locale, options = {}) {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return String(value ?? '')
 
-  return new Intl.DateTimeFormat(localeToIntl(locale), {
-    dateStyle: 'medium',
-    timeStyle: 'medium',
-    ...options,
+  const dateText = datePartsDayMonthYear(date)
+  const timeStyle = options.timeStyle ?? 'medium'
+  const timeText = new Intl.DateTimeFormat(localeToIntl(locale), {
+    ...timeOptionsFromStyle(timeStyle),
+    hour12: false,
   }).format(date)
+
+  return `${dateText}, ${timeText}`
 }
 
 const HOUR_MS = 60 * 60 * 1000

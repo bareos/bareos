@@ -183,16 +183,26 @@ test('logs in and shows the dashboard', async ({ page }) => {
   const recentJobsCard = page.locator('.q-card').filter({
     hasText: 'Recent Jobs',
   })
-  const totalsCard = page.locator('.q-card').filter({
-    hasText: 'Job Totals',
-  })
 
   await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
+  await expect(page.getByTitle('Combined view of actual job')).toBeVisible()
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
   await expect(recentJobsCard).toBeVisible()
   await expect(recentJobsCard).not.toContainText('No data available')
   await expect(recentJobsCard).toContainText('backup-bareos-fd')
-  await expect(totalsCard).not.toContainText('Total Jobs0')
-  await expect(totalsCard).not.toContainText('Total Bytes0 B')
+
+  await page.getByRole('tab', { name: 'Job & Schedule Timeline' }).click()
+  await expect(page).toHaveURL(/#\/dashboard\/job-schedule-timeline$/)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
+  await page.getByTitle('Pan to the past').click()
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).not.toContainText(
+    /Authentication failed/i
+  )
 })
 
 test('shows a login error for invalid credentials', async ({ page }) => {
