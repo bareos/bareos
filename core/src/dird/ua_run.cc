@@ -1146,10 +1146,7 @@ static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
                   jcr->dir_impl->res.client
                       ? jcr->dir_impl->res.client->resource_name_
                       : T_("*None*")});
-  rows.push_back({RestoreOptionAction::kBrowseWhere,
-                  T_("Browse destination client"),
-                  T_("open target client filesystem browser"), false});
-  rows.push_back({RestoreOptionAction::kWhere, T_("Where"),
+  rows.push_back({RestoreOptionAction::kWhere, T_("Where [b: browse]"),
                   FormatRestoreWhereDisplay(jcr, rc)});
   rows.push_back({RestoreOptionAction::kRelocation, T_("File Relocation"),
                   jcr->RegexWhere ? jcr->RegexWhere : T_("not configured"),
@@ -2628,6 +2625,8 @@ enum class RelocationAction
   kApply,
 };
 
+static constexpr const char* kRelocationExampleFile = "report.pdf";
+
 struct RelocationEditorState {
   RelocationMode mode = RelocationMode::kNone;
   std::string source_drive = "C:";
@@ -2635,7 +2634,8 @@ struct RelocationEditorState {
   std::string source_prefix = "/home";
   std::string target_prefix = "/restore/home";
   std::string suffix = ".restored";
-  std::string example_path = "C:/Users/Alice/Documents/report.docx";
+  std::string example_path
+      = std::string("C:/Users/Alice/Documents/") + kRelocationExampleFile;
   std::string custom_regexwhere = "!^C:/Users/!/restore/users/!i";
 };
 
@@ -2763,12 +2763,13 @@ static void UpdateRelocationExampleForMode(RelocationEditorState* state)
   switch (state->mode) {
     case RelocationMode::kWindowsDriveRemap:
       state->example_path = NormalizeWindowsDrive(state->source_drive)
-                            + "/Users/Alice/Documents/report.docx";
+                            + "/Users/Alice/Documents/"
+                            + kRelocationExampleFile;
       break;
     case RelocationMode::kReplacePrefix:
     case RelocationMode::kStripPrefix:
       state->example_path
-          = state->source_prefix + "/alice/documents/report.pdf";
+          = state->source_prefix + "/alice/documents/" + kRelocationExampleFile;
       break;
     case RelocationMode::kAddSuffix:
     case RelocationMode::kNone:
@@ -3229,6 +3230,10 @@ static int SelectRestoreOptionVisual(UaContext* ua,
       }
       return static_cast<int>(rows[cursor].action);
     }
+    if (rows[cursor].action == RestoreOptionAction::kWhere
+        && (input == "key:text:b" || input == "key:text:B")) {
+      return static_cast<int>(RestoreOptionAction::kBrowseWhere);
+    }
     if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
       if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
         advanced_expanded = IsScrollRightKey(input);
@@ -3284,14 +3289,13 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
     AddPrompt(ua, T_("Storage"));     /* 4 */
     AddPrompt(ua, T_("Restore Job")); /* 5 */
   } else {
-    AddPrompt(ua, T_("Run now"));                                 /* 0 */
-    AddPrompt(ua, T_("Restore Client"));                          /* 1 */
-    AddPrompt(ua, T_("Browse destination client (unavailable)")); /* 2 */
-    AddPrompt(ua, T_("Where"));                                   /* 3 */
-    AddPrompt(ua, T_("File Relocation"));                         /* 4 */
-    AddPrompt(ua, T_("Replace Policy"));                          /* 5 */
-    AddPrompt(ua, T_("Plugin Options"));                          /* 6 */
-    AddPrompt(ua, T_("Advanced Options"));                        /* 7 */
+    AddPrompt(ua, T_("Run now"));          /* 0 */
+    AddPrompt(ua, T_("Restore Client"));   /* 1 */
+    AddPrompt(ua, T_("Where"));            /* 2 */
+    AddPrompt(ua, T_("File Relocation"));  /* 3 */
+    AddPrompt(ua, T_("Replace Policy"));   /* 4 */
+    AddPrompt(ua, T_("Plugin Options"));   /* 5 */
+    AddPrompt(ua, T_("Advanced Options")); /* 6 */
   }
   int selected = DoPrompt(ua, "",
                           advanced ? T_("Select advanced restore option")
@@ -3305,11 +3309,11 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
            RestoreOptionAction::kStorage,  RestoreOptionAction::kRestoreJob};
     return static_cast<int>(kAdvancedActions[selected]);
   }
-  static constexpr RestoreOptionAction kMainActions[] = {
-      RestoreOptionAction::kRunNow,        RestoreOptionAction::kRestoreClient,
-      RestoreOptionAction::kBrowseWhere,   RestoreOptionAction::kWhere,
-      RestoreOptionAction::kRelocation,    RestoreOptionAction::kReplace,
-      RestoreOptionAction::kPluginOptions, RestoreOptionAction::kAdvancedMenu};
+  static constexpr RestoreOptionAction kMainActions[]
+      = {RestoreOptionAction::kRunNow,      RestoreOptionAction::kRestoreClient,
+         RestoreOptionAction::kWhere,       RestoreOptionAction::kRelocation,
+         RestoreOptionAction::kReplace,     RestoreOptionAction::kPluginOptions,
+         RestoreOptionAction::kAdvancedMenu};
   return static_cast<int>(kMainActions[selected]);
 }
 
