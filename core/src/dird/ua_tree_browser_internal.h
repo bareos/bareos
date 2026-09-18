@@ -63,10 +63,13 @@ inline constexpr std::string_view kResizePrefix = "resize:";
 
 inline constexpr const char* kRunDialogHelp
     = "Enter: run/edit selected  e/Space: edit  Tab/Up/Down: select  "
-      "Left/Right: scroll  Esc/.: cancel";
+      "Left/Right: scroll/cycle  Esc/.: cancel";
 inline constexpr const char* kRestoreDialogHelp
     = "Enter: run/edit/toggle  e/Space: edit  Tab/Up/Down: select  "
       "Left/Right: scroll/advanced  Esc/.: cancel";
+inline constexpr const char* kRelocationDialogHelp
+    = "Enter: apply/edit  e/Space: edit  Tab/Up/Down: select  "
+      "Left/Right: scroll/cycle  Esc/.: cancel";
 inline constexpr const char* kListDialogHelp
     = "Enter: select  Tab/Up/Down: move  Esc/.: cancel";
 inline constexpr const char* kFieldEditorHelp
