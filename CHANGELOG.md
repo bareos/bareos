@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui-proxy: fix not bashing console name [PR #2757]
 - matrix: add Fedora45 and fix OpenSSL 4 build errors in TLS/crypto code [PR #2797]
 - cats: escape client list filter [PR #2814]
+- python-fd: allow multi __init__() [PR #2831]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2399,4 +2400,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2810]: https://github.com/bareos/bareos/pull/2810
 [PR #2814]: https://github.com/bareos/bareos/pull/2814
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
+[PR #2831]: https://github.com/bareos/bareos/pull/2831
 [unreleased]: https://github.com/bareos/bareos/tree/master
