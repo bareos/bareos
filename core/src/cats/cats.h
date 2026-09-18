@@ -847,6 +847,7 @@ class BareosDb : public BareosDbQueryEnum {
                         e_list_type type);
   void ListJobmediaRecords(JobControlRecord* jcr,
                            JobId_t JobId,
+                           const char* VolumeName,
                            OutputFormatter* sendit,
                            e_list_type type);
   void ListVolumesOfJobid(JobControlRecord* jcr,

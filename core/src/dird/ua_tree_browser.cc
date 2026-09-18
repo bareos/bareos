@@ -1696,7 +1696,7 @@ std::string TreeBrowser::RenderPanel() const
                          + BuildPluginOptionsAdvertisement(
                              SummarizePluginNames(plugin_hint_definitions_));
     }
-    second_help_line = " i Info  l List  / Search  h Help  c Classic  q Done";
+    second_help_line = " i Info  l List  / Search  h Help  c Classic  d/r Done";
   }
   out += HelpLine(width, first_help_line, color);
   out += HelpLine(width, second_help_line, color);
@@ -2326,6 +2326,10 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
   if (plugin_pane_focused_) {
+    if (key == "key:text:r") {
+      *exit_reason = TreeBrowserExit::kDone;
+      return true;
+    }
     HandlePluginOptionsPaneKey(key);
     return false;
   }
@@ -2378,7 +2382,8 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
   } else if (key == "key:text:c") {
     *exit_reason = TreeBrowserExit::kSwitchToClassic;
     return true;
-  } else if (key == "key:text:q" || key == "key:cancel") {
+  } else if (key == "key:text:d" || key == "key:text:r" || key == "key:text:q"
+             || key == "key:cancel") {
     *exit_reason = TreeBrowserExit::kDone;
     return true;
   }
