@@ -60,8 +60,38 @@ namespace directordaemon {
 
 using tree_browser_internal::FitText;
 using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::IsBackKey;
+using tree_browser_internal::IsCancelKey;
+using tree_browser_internal::IsEditKey;
+using tree_browser_internal::IsEndKey;
+using tree_browser_internal::IsEnterKey;
+using tree_browser_internal::IsHomeKey;
+using tree_browser_internal::IsNextRowKey;
+using tree_browser_internal::IsPreviousRowKey;
+using tree_browser_internal::IsScrollLeftKey;
+using tree_browser_internal::IsScrollRightKey;
+using tree_browser_internal::IsTextKey;
+using tree_browser_internal::kDestinationBrowserHelp;
+using tree_browser_internal::kFieldEditorHelp;
+using tree_browser_internal::kFrameColor;
+using tree_browser_internal::kFrameHelpColor;
+using tree_browser_internal::kFrameHighlightColor;
+using tree_browser_internal::kFrameResetColor;
+using tree_browser_internal::kFrameVerticalBorder;
+using tree_browser_internal::kKeyBackspace;
+using tree_browser_internal::kKeyDown;
+using tree_browser_internal::kKeyPageDown;
+using tree_browser_internal::kKeyPageUp;
+using tree_browser_internal::kKeySpace;
+using tree_browser_internal::kKeyTab;
+using tree_browser_internal::kListDialogHelp;
+using tree_browser_internal::kRestoreDialogHelp;
+using tree_browser_internal::kRunDialogHelp;
+using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::StyleFrameContent;
+using tree_browser_internal::TextKeyValue;
+using tree_browser_internal::TrimVisualInput;
 
 /* Forward referenced subroutines */
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr);
@@ -71,8 +101,12 @@ static bool DisplayJobParameters(UaContext* ua,
 static int ModifyRestoreParameters(UaContext* ua,
                                    JobControlRecord* jcr,
                                    RunContext& rc);
+static int ModifyBackupParameters(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  RunContext& rc);
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr);
 static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr);
+static bool SelectRunScheduleVisual(UaContext* ua, time_t* when);
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc);
 static bool ResetRestoreContext(UaContext* ua,
                                 JobControlRecord* jcr,
@@ -461,6 +495,24 @@ try_again:
         goto try_again;
       case 1:
         break;
+      case 2:
+        jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        goto start_job;
+      case -1:
+        goto bail_out;
+    }
+  }
+
+  if (jcr->is_JobType(JT_BACKUP) && TreeBrowserSupported(ua)) {
+    status = ModifyBackupParameters(ua, jcr, rc);
+    switch (status) {
+      case 0:
+        goto try_again;
+      case 1:
+        break;
+      case 2:
+        jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        goto start_job;
       case -1:
         goto bail_out;
     }
@@ -512,6 +564,9 @@ try_again:
       goto try_again;
     case 1:
       break;
+    case 2:
+      jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+      goto start_job;
     case -1:
       goto bail_out;
   }
@@ -865,7 +920,7 @@ static const char* RestoreReplacePromptLabel(const char* replace)
 
 enum class RestoreOptionAction
 {
-  kContinue = 0,
+  kRunNow = 0,
   kBack,
   kRestoreClient,
   kBrowseWhere,
@@ -880,6 +935,22 @@ enum class RestoreOptionAction
   kStorage,
   kJobId,
   kRestoreJob,
+};
+
+enum class BackupOptionAction
+{
+  kRunNow = 1000,
+  kLevel,
+  kStorage,
+  kJob,
+  kFileset,
+  kClient,
+  kBackupFormat,
+  kWhen,
+  kPriority,
+  kPool,
+  kNextPool,
+  kPluginOptions,
 };
 
 enum class DestinationBrowseAction
@@ -903,6 +974,16 @@ struct RestoreOptionRow {
   bool advanced = false;
 };
 
+static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc);
+
+struct BackupOptionRow {
+  BackupOptionAction action;
+  const char* label;
+  std::string value;
+};
+
 struct DestinationBrowseEntry {
   DestinationBrowseAction action;
   std::string label;
@@ -910,12 +991,42 @@ struct DestinationBrowseEntry {
   bool directory = false;
 };
 
+static constexpr size_t kRestoreOptionLabelColumn = 26;
+static constexpr size_t kRestoreScheduleFieldCount = 6;
+static const char* const kRestoreScheduleFields[kRestoreScheduleFieldCount]
+    = {NT_("Year"), NT_("Month"),  NT_("Day"),
+       NT_("Hour"), NT_("Minute"), NT_("Second")};
+
 static std::string FitRestoreOptionText(std::string_view text, size_t width)
 {
   if (text.size() <= width) { return std::string(text); }
   if (width <= 3) { return std::string(text.substr(0, width)); }
   std::string result(text.substr(0, width - 3));
   result += "...";
+  return result;
+}
+
+static std::string ScrollRestoreOptionText(std::string_view text,
+                                           size_t width,
+                                           size_t offset)
+{
+  if (text.size() <= width) { return std::string(text); }
+  if (width <= 2) { return std::string(text.substr(0, width)); }
+
+  size_t marker_width = 0;
+  if (offset > 0) { marker_width++; }
+  if (offset + width - marker_width < text.size()) { marker_width++; }
+
+  if (marker_width >= width) { return std::string(width, '.'); }
+
+  size_t text_width = width - marker_width;
+  size_t max_offset = text.size() > text_width ? text.size() - text_width : 0;
+  offset = std::min(offset, max_offset);
+
+  std::string result;
+  if (offset > 0) { result += '<'; }
+  result += text.substr(offset, text_width);
+  if (offset + text_width < text.size()) { result += '>'; }
   return result;
 }
 
@@ -947,19 +1058,71 @@ static size_t RestoreOptionsScreenWidth(UaContext* ua)
                   static_cast<size_t>(ua->terminal_width - 1));
 }
 
+static size_t RestoreOptionValueWidth(UaContext* ua)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t inner_width = width > 2 ? width - 2 : width;
+  return inner_width > kRestoreOptionLabelColumn
+             ? inner_width - kRestoreOptionLabelColumn
+             : 20;
+}
+
+static size_t MaxRestoreOptionValueOffset(std::string_view text, size_t width)
+{
+  if (text.size() <= width) { return 0; }
+  if (width <= 2) { return text.size() - width; }
+  return text.size() - (width - 2);
+}
+
 static void RemoveFinalNewline(std::string* text)
 {
   if (!text->empty() && text->back() == '\n') { text->pop_back(); }
 }
 
+static std::string FormatRunScheduleRelativeTime(time_t when, time_t now)
+{
+  struct Unit {
+    time_t seconds;
+    const char* singular;
+  };
+  static const Unit units[] = {
+      {31536000, NT_("year")}, {2592000, NT_("month")}, {604800, NT_("week")},
+      {86400, NT_("day")},     {3600, NT_("hour")},     {60, NT_("minute")},
+  };
+
+  time_t difference = when >= now ? when - now : now - when;
+  if (difference < 60) { return T_("now"); }
+
+  for (const auto& unit : units) {
+    if (difference >= unit.seconds) {
+      time_t count = difference / unit.seconds;
+      std::string text = std::to_string(count);
+      text += " ";
+      text += T_(unit.singular);
+      if (count != 1) { text += "s"; }
+      return when >= now ? T_("in ") + text : text + T_(" ago");
+    }
+  }
+
+  return T_("now");
+}
+
+static std::string FormatRunScheduleDisplay(time_t when)
+{
+  char dt[MAX_TIME_LENGTH];
+  std::string display = bstrutime(dt, sizeof(dt), when);
+  display += " (";
+  display += FormatRunScheduleRelativeTime(when, time(NULL));
+  display += ")";
+  return display;
+}
+
 static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
     JobControlRecord* jcr,
-    RunContext& rc)
+    RunContext& rc,
+    bool advanced_expanded)
 {
   std::vector<RestoreOptionRow> rows;
-  rows.push_back({RestoreOptionAction::kContinue,
-                  T_("Continue to restore summary"),
-                  T_("review and confirm the restore job")});
   rows.push_back({RestoreOptionAction::kRestoreClient, T_("Restore Client"),
                   jcr->dir_impl->res.client
                       ? jcr->dir_impl->res.client->resource_name_
@@ -977,8 +1140,24 @@ static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
   rows.push_back({RestoreOptionAction::kPluginOptions, T_("Plugin Options"),
                   jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
                                                 : T_("not configured")});
-  rows.push_back({RestoreOptionAction::kAdvancedMenu, T_("Advanced Options"),
-                  T_("press Enter to show advanced restore options"), false});
+  rows.push_back({RestoreOptionAction::kAdvancedMenu,
+                  advanced_expanded ? T_("[-] Advanced Options")
+                                    : T_("[+] Advanced Options"),
+                  advanced_expanded ? T_("press Enter to collapse")
+                                    : T_("press Enter to expand"),
+                  false});
+  if (advanced_expanded) {
+    std::vector<RestoreOptionRow> advanced_rows
+        = BuildRestoreAdvancedOptionRows(jcr, rc);
+    for (const auto& row : advanced_rows) {
+      if (row.action == RestoreOptionAction::kBack) { continue; }
+      RestoreOptionRow advanced_row = row;
+      advanced_row.advanced = true;
+      rows.push_back(std::move(advanced_row));
+    }
+  }
+  rows.push_back({RestoreOptionAction::kRunNow, T_("Run now"),
+                  T_("start the restore job with these settings")});
   return rows;
 }
 
@@ -1288,6 +1467,29 @@ static size_t DestinationBrowseVisibleRows(UaContext* ua, bool search_active)
   return std::max(kMinVisibleRows, available);
 }
 
+static size_t DestinationBrowseTextWidth(UaContext* ua)
+{
+  constexpr size_t kDestinationBrowseRowChrome = 5;
+  size_t width = RestoreOptionsScreenWidth(ua);
+  return width > kDestinationBrowseRowChrome
+             ? width - kDestinationBrowseRowChrome
+             : 0;
+}
+
+static size_t DestinationBrowseHorizontalLimit(
+    UaContext* ua,
+    const std::vector<DestinationBrowseEntry>& rows)
+{
+  size_t text_width = DestinationBrowseTextWidth(ua);
+  if (text_width == 0) { return 0; }
+
+  size_t max_width = 0;
+  for (const auto& row : rows) {
+    max_width = std::max(max_width, row.label.size());
+  }
+  return tree_browser_internal::MaxHorizontalOffset(max_width, text_width);
+}
+
 static std::string RenderDestinationBrowseScreen(
     UaContext* ua,
     JobControlRecord* jcr,
@@ -1295,7 +1497,8 @@ static std::string RenderDestinationBrowseScreen(
     const std::vector<DestinationBrowseEntry>& rows,
     size_t cursor,
     size_t first_row,
-    std::string_view search)
+    std::string_view search,
+    size_t horizontal_offset)
 {
   size_t width = RestoreOptionsScreenWidth(ua);
   std::string title = T_("Browse destination client");
@@ -1341,7 +1544,8 @@ static std::string RenderDestinationBrowseScreen(
           || rows[i].action == DestinationBrowseAction::kFile) {
         line += rows[i].directory ? "/" : " ";
       }
-      line += rows[i].label;
+      line += FitText(rows[i].label, DestinationBrowseTextWidth(ua),
+                      horizontal_offset, false);
       screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
                                         i == cursor);
     }
@@ -1350,11 +1554,8 @@ static std::string RenderDestinationBrowseScreen(
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
   screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
-  screen += RestoreOptionsHelpLine(
-      width,
-      T_(" Enter: open/use  PgUp/PgDn or Ctrl-U/D: page  /: search  "
-         "Esc/.: cancel"),
-      ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelp,
+                                   ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -1504,6 +1705,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
   std::string search;
   size_t cursor = 0;
   size_t first_row = 0;
+  size_t horizontal_offset = 0;
   for (;;) {
     if (cached_path != current) {
       cached_entries.clear();
@@ -1516,6 +1718,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       mode = DestinationBrowseMode::kBrowsing;
       cursor = 0;
       first_row = 0;
+      horizontal_offset = 0;
     }
     std::vector<DestinationBrowseEntry> visible_entries
         = FilterDestinationBrowseEntries(cached_entries, search);
@@ -1525,6 +1728,8 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
         ua, mode == DestinationBrowseMode::kEnteringSearch || !search.empty());
     ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
                                  &first_row);
+    horizontal_offset = std::min(horizontal_offset,
+                                 DestinationBrowseHorizontalLimit(ua, rows));
 
     user->signal(BNET_START_SELECT);
     if (mode == DestinationBrowseMode::kEnteringSearch) {
@@ -1533,7 +1738,8 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
                             .c_str());
     } else {
       ua->SendMsg("%s", RenderDestinationBrowseScreen(ua, jcr, current, rows,
-                                                      cursor, first_row, search)
+                                                      cursor, first_row, search,
+                                                      horizontal_offset)
                             .c_str());
     }
     user->signal(BNET_END_SELECT);
@@ -1543,61 +1749,51 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
     if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
 
     std::string_view input(user->msg, user->message_length);
-    while (!input.empty()
-           && (input.back() == '\r' || input.back() == '\n'
-               || input.back() == ' ' || input.back() == '\t')) {
-      input.remove_suffix(1);
-    }
+    TrimVisualInput(&input);
 
-    if (input.starts_with("resize:")) {
-      std::string_view size_view = input.substr(strlen("resize:"));
-      size_t separator = size_view.find(':');
-      std::string rows_text(size_view.substr(0, separator));
-      int new_height = atoi(rows_text.c_str());
-      if (new_height > 0) { ua->terminal_height = new_height; }
-      if (separator != std::string_view::npos) {
-        std::string cols_text(size_view.substr(separator + 1));
-        int new_width = atoi(cols_text.c_str());
-        if (new_width > 0) { ua->terminal_width = new_width; }
-      }
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
       continue;
     }
 
     if (mode == DestinationBrowseMode::kEnteringSearch) {
-      if (input == "key:enter") {
+      if (IsEnterKey(input)) {
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;
         first_row = 0;
-      } else if (input == "key:cancel") {
+      } else if (IsCancelKey(input)) {
         search.clear();
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;
         first_row = 0;
-      } else if (input == "key:down") {
+      } else if (IsNextRowKey(input)) {
         if (cursor + 1 < rows.size()) { cursor++; }
-      } else if (input == "key:up") {
+      } else if (IsPreviousRowKey(input)) {
         if (cursor > 0) { cursor--; }
-      } else if (input == "key:pagedown") {
+      } else if (input == kKeyPageDown) {
         MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
                                   &first_row);
-      } else if (input == "key:pageup") {
+      } else if (input == kKeyPageUp) {
         MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
                                   &first_row);
-      } else if (input == "key:backspace") {
+      } else if (input == kKeyBackspace) {
         RemoveLastBrowseSearchCharacter(&search);
-      } else if (input == "key:space") {
+      } else if (input == kKeySpace) {
         search.push_back(' ');
-      } else if (input.starts_with("key:text:")) {
-        search.append(input.substr(strlen("key:text:")));
+      } else if (IsTextKey(input)) {
+        search.append(TextKeyValue(input));
       }
       continue;
     }
 
-    if (input == "key:cancel" || input == "." || input == "key:text:.") {
+    if (IsCancelKey(input)) {
       if (!search.empty()) {
         search.clear();
         cursor = 0;
         first_row = 0;
+        horizontal_offset = 0;
         continue;
       }
       return false;
@@ -1607,44 +1803,65 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       search.clear();
       cursor = 0;
       first_row = 0;
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:tab" || input == "key:down" || input == "key:right") {
+    if (IsNextRowKey(input)) {
       cursor = rows.empty() ? 0 : (cursor + 1) % rows.size();
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:up" || input == "key:left") {
+    if (IsPreviousRowKey(input)) {
       cursor = cursor == 0 ? rows.size() - 1 : cursor - 1;
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:pagedown") {
+    if (IsScrollLeftKey(input)) {
+      constexpr size_t kScrollStep = 8;
+      horizontal_offset = horizontal_offset > kScrollStep
+                              ? horizontal_offset - kScrollStep
+                              : 0;
+      continue;
+    }
+    if (IsScrollRightKey(input)) {
+      constexpr size_t kScrollStep = 8;
+      horizontal_offset = std::min(horizontal_offset + kScrollStep,
+                                   DestinationBrowseHorizontalLimit(ua, rows));
+      continue;
+    }
+    if (input == kKeyPageDown) {
       MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
                                 &first_row);
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:pageup") {
+    if (input == kKeyPageUp) {
       MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
                                 &first_row);
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:backspace") {
+    if (input == kKeyBackspace) {
       current = ParentBrowsePath(current);
       cursor = 0;
       first_row = 0;
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:home") {
+    if (IsHomeKey(input)) {
       cursor = 0;
       first_row = 0;
+      horizontal_offset = 0;
       continue;
     }
-    if (input == "key:end") {
+    if (IsEndKey(input)) {
       cursor = rows.empty() ? 0 : rows.size() - 1;
       ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
                                    &first_row);
+      horizontal_offset = 0;
       continue;
     }
-    if (input != "key:enter" && !input.empty()) { continue; }
+    if (!IsEnterKey(input) && !input.empty()) { continue; }
 
     const DestinationBrowseEntry& selected = rows[cursor];
     switch (selected.action) {
@@ -1654,6 +1871,8 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       case DestinationBrowseAction::kOpenDirectory:
         current = NormalizeBrowsePath(selected.path);
         cursor = 0;
+        first_row = 0;
+        horizontal_offset = 0;
         break;
       case DestinationBrowseAction::kFile:
         ua->InfoMsg(T_("Select a directory for the restore destination.\n"));
@@ -1704,12 +1923,11 @@ static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
     JobControlRecord* jcr,
     RunContext& rc)
 {
-  char dt[MAX_TIME_LENGTH];
   std::vector<RestoreOptionRow> rows;
   rows.push_back({RestoreOptionAction::kBack, T_("Back"),
                   T_("return to restore options")});
   rows.push_back({RestoreOptionAction::kWhen, T_("When"),
-                  bstrutime(dt, sizeof(dt), jcr->sched_time)});
+                  FormatRunScheduleDisplay(jcr->sched_time)});
   rows.push_back({RestoreOptionAction::kPriority, T_("Priority"),
                   std::to_string(jcr->JobPriority)});
   rows.push_back({RestoreOptionAction::kBootstrap, T_("Bootstrap"),
@@ -1718,11 +1936,6 @@ static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
                   jcr->dir_impl->res.read_storage
                       ? jcr->dir_impl->res.read_storage->resource_name_
                       : T_("*None*"),
-                  false});
-  rows.push_back({RestoreOptionAction::kJobId, T_("JobId"),
-                  jcr->dir_impl->RestoreJobId == 0
-                      ? T_("*None*")
-                      : std::to_string(jcr->dir_impl->RestoreJobId),
                   false});
   rows.push_back({RestoreOptionAction::kRestoreJob, T_("Restore Job"),
                   rc.job ? rc.job->resource_name_ : T_("*None*")});
@@ -1736,7 +1949,7 @@ static std::string RestoreOptionsFrameBorder(size_t width,
 {
   std::string line = RenderFrameBorder(width, style, title);
   if (!color) { return line + "\n"; }
-  return "\033[34m" + line + "\033[0m\n";
+  return std::string(kFrameColor) + line + std::string(kFrameResetColor) + "\n";
 }
 
 static std::string RestoreOptionsFrameLine(size_t width,
@@ -1749,7 +1962,10 @@ static std::string RestoreOptionsFrameLine(size_t width,
   std::string content = FitText(text, width - 2);
   content = StyleFrameContent(std::move(content), ' ', highlighted, color);
 
-  std::string border = color ? "\033[34m│\033[0m" : "│";
+  std::string border = color ? std::string(kFrameColor)
+                                   + std::string(kFrameVerticalBorder)
+                                   + std::string(kFrameResetColor)
+                             : std::string(kFrameVerticalBorder);
   return border + content + border + "\n";
 }
 
@@ -1758,7 +1974,9 @@ static std::string RestoreOptionsStatusLine(size_t width,
                                             bool color)
 {
   std::string line = FitText(text, width);
-  return color ? "\033[97;44m" + line + "\033[0m\n" : line + "\n";
+  return color ? std::string(kFrameHighlightColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
 }
 
 static std::string RestoreOptionsHelpLine(size_t width,
@@ -1766,67 +1984,134 @@ static std::string RestoreOptionsHelpLine(size_t width,
                                           bool color)
 {
   std::string line = FitText(text, width);
-  return color ? "\033[2m" + line + "\033[0m\n" : line + "\n";
+  return color ? std::string(kFrameHelpColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
 }
 
-static std::string RenderRestoreOptionsScreen(UaContext* ua,
-                                              JobControlRecord* jcr,
-                                              RunContext& rc,
-                                              size_t cursor,
-                                              bool advanced)
+static std::string RunOptionValueWithSource(const char* value,
+                                            const char* source)
 {
-  std::vector<RestoreOptionRow> rows
-      = advanced ? BuildRestoreAdvancedOptionRows(jcr, rc)
-                 : BuildRestoreOptionRows(jcr, rc);
+  std::string result = value ? value : T_("*None*");
+  result += " (";
+  result += T_("From ");
+  result += source ? source : T_("*None*");
+  result += ")";
+  return result;
+}
+
+static std::vector<BackupOptionRow> BuildBackupOptionRows(JobControlRecord* jcr,
+                                                          RunContext& rc)
+{
+  std::vector<BackupOptionRow> rows;
+  rows.push_back({BackupOptionAction::kLevel, T_("Level"),
+                  JobLevelToString(jcr->getJobLevel())});
+  rows.push_back({BackupOptionAction::kStorage, T_("Storage"),
+                  RunOptionValueWithSource(
+                      jcr->dir_impl->res.write_storage
+                          ? jcr->dir_impl->res.write_storage->resource_name_
+                          : T_("*None*"),
+                      jcr->dir_impl->res.wstore_source)});
+  rows.push_back({BackupOptionAction::kJob, T_("Job"),
+                  rc.job ? rc.job->resource_name_ : T_("*None*")});
+  rows.push_back({BackupOptionAction::kFileset, T_("FileSet"),
+                  jcr->dir_impl->res.fileset
+                      ? jcr->dir_impl->res.fileset->resource_name_
+                      : T_("*None*")});
+  rows.push_back({BackupOptionAction::kClient, T_("Client"),
+                  jcr->dir_impl->res.client
+                      ? jcr->dir_impl->res.client->resource_name_
+                      : T_("*None*")});
+  rows.push_back({BackupOptionAction::kBackupFormat, T_("Backup Format"),
+                  jcr->dir_impl->backup_format ? jcr->dir_impl->backup_format
+                                               : T_("*None*")});
+  rows.push_back({BackupOptionAction::kWhen, T_("When"),
+                  FormatRunScheduleDisplay(jcr->sched_time)});
+  rows.push_back({BackupOptionAction::kPriority, T_("Priority"),
+                  std::to_string(jcr->JobPriority)});
+  rows.push_back(
+      {BackupOptionAction::kPool, T_("Pool"),
+       RunOptionValueWithSource(jcr->dir_impl->res.pool
+                                    ? jcr->dir_impl->res.pool->resource_name_
+                                    : T_("*None*"),
+                                jcr->dir_impl->res.pool_source)});
+  if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+    rows.push_back({BackupOptionAction::kNextPool, T_("NextPool"),
+                    RunOptionValueWithSource(
+                        jcr->dir_impl->res.next_pool
+                            ? jcr->dir_impl->res.next_pool->resource_name_
+                            : T_("*None*"),
+                        jcr->dir_impl->res.npool_source)});
+  }
+  rows.push_back({BackupOptionAction::kPluginOptions, T_("Plugin Options"),
+                  jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
+                                                : T_("not configured")});
+  rows.push_back({BackupOptionAction::kRunNow, T_("Run now"),
+                  T_("start the backup job with these settings")});
+  return rows;
+}
+
+static std::string RenderBackupOptionsScreen(UaContext* ua,
+                                             JobControlRecord* jcr,
+                                             RunContext& rc,
+                                             size_t cursor,
+                                             size_t value_offset)
+{
+  std::vector<BackupOptionRow> rows = BuildBackupOptionRows(jcr, rc);
   size_t width = RestoreOptionsScreenWidth(ua);
-  size_t inner_width = width > 2 ? width - 2 : width;
-  size_t value_width = inner_width > 46 ? inner_width - 46 : 20;
+  size_t value_width = RestoreOptionValueWidth(ua);
   std::string screen;
   screen.reserve(rows.size() * 80);
   screen += RestoreOptionsFrameBorder(
-      width, ua->supports_color, FrameBorderStyle::kTop,
-      advanced ? T_("Advanced Restore Options") : T_("Restore Options"));
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Run Backup Job"));
   screen += RestoreOptionsFrameLine(
-      width, T_("Tab/Down: next  Up: previous  Enter: edit  Esc/.: cancel"),
+      width, T_("Review the backup parameters below before starting the job."),
       ua->supports_color);
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kMiddle);
 
   for (size_t i = 0; i < rows.size(); ++i) {
     const auto& row = rows[i];
-    std::string line;
-    line += i == cursor ? "> " : "  ";
-    line += row.advanced ? "[Advanced] " : "           ";
-    line += FitRestoreOptionText(row.label, 30);
-    if (line.size() < 46) { line.append(46 - line.size(), ' '); }
-    line += FitRestoreOptionText(row.value, value_width);
+    if (row.action == BackupOptionAction::kRunNow && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string line = i == cursor ? "> " : "  ";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
+                : FitRestoreOptionText(row.value, value_width);
     screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
                                       i == cursor);
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kRunDialogHelp, ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
 
-static int SelectRestoreOptionVisual(UaContext* ua,
-                                     JobControlRecord* jcr,
-                                     RunContext& rc,
-                                     bool advanced)
+static int SelectBackupOptionVisual(UaContext* ua,
+                                    JobControlRecord* jcr,
+                                    RunContext& rc)
 {
   BareosSocket* user = ua->UA_sock;
   if (!user) { return -1; }
 
-  size_t cursor = 0;
-  std::vector<RestoreOptionRow> rows
-      = advanced ? BuildRestoreAdvancedOptionRows(jcr, rc)
-                 : BuildRestoreOptionRows(jcr, rc);
-  size_t row_count = rows.size();
+  size_t cursor = BuildBackupOptionRows(jcr, rc).size() - 1;
+  size_t value_offset = 0;
   for (;;) {
+    std::vector<BackupOptionRow> rows = BuildBackupOptionRows(jcr, rc);
+    size_t row_count = rows.size();
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
     user->signal(BNET_START_SELECT);
     ua->SendMsg(
         "%s",
-        RenderRestoreOptionsScreen(ua, jcr, rc, cursor, advanced).c_str());
+        RenderBackupOptionsScreen(ua, jcr, rc, cursor, value_offset).c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -1834,42 +2119,546 @@ static int SelectRestoreOptionVisual(UaContext* ua,
     if (status == BNET_SIGNAL || IsBnetStop(user)) { return -1; }
 
     std::string_view input(user->msg, user->message_length);
-    while (!input.empty()
-           && (input.back() == '\r' || input.back() == '\n'
-               || input.back() == ' ' || input.back() == '\t')) {
-      input.remove_suffix(1);
-    }
+    TrimVisualInput(&input);
 
-    if (input.starts_with("resize:")) {
-      std::string_view size_view = input.substr(strlen("resize:"));
-      size_t separator = size_view.find(':');
-      std::string rows_text(size_view.substr(0, separator));
-      int new_height = atoi(rows_text.c_str());
-      if (new_height > 0) { ua->terminal_height = new_height; }
-      if (separator != std::string_view::npos) {
-        std::string cols_text(size_view.substr(separator + 1));
-        int new_width = atoi(cols_text.c_str());
-        if (new_width > 0) { ua->terminal_width = new_width; }
-      }
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
       continue;
     }
 
-    if (input == "key:cancel" || input == "." || input == "key:text:.") {
+    if (IsCancelKey(input)) {
       ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
       return -1;
     }
-    if (input == "key:enter" || input.empty()) {
+    if (IsEnterKey(input) || input.empty()) {
       return static_cast<int>(rows[cursor].action);
     }
-    if (input == "key:tab" || input == "key:down" || input == "key:right") {
+    if (IsEditKey(input)) {
+      if (rows[cursor].action == BackupOptionAction::kRunNow) { continue; }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      size_t max_offset = MaxRestoreOptionValueOffset(
+          rows[cursor].value, RestoreOptionValueWidth(ua));
+      if (max_offset > 0) {
+        constexpr size_t kScrollStep = 8;
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+      }
+    } else if (IsNextRowKey(input)) {
       cursor = (cursor + 1) % row_count;
-    } else if (input == "key:up" || input == "key:left"
-               || input == "key:backspace") {
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
       cursor = cursor == 0 ? row_count - 1 : cursor - 1;
-    } else if (input == "key:home") {
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
       cursor = 0;
-    } else if (input == "key:end") {
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
       cursor = row_count - 1;
+      value_offset = 0;
+    }
+  }
+}
+
+static int ModifyBackupParameters(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  RunContext& rc)
+{
+  int selection = SelectBackupOptionVisual(ua, jcr, rc);
+  if (selection < 0) { return -1; }
+
+  switch (static_cast<BackupOptionAction>(selection)) {
+    case BackupOptionAction::kRunNow:
+      return 2;
+    case BackupOptionAction::kLevel:
+      SelectJobLevel(ua, jcr);
+      if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+        ApplyPoolOverrides(jcr, true);
+        rc.pool = jcr->dir_impl->res.pool;
+        rc.level_override = true;
+      }
+      goto try_again;
+    case BackupOptionAction::kStorage:
+      rc.store->store = select_storage_resource(ua);
+      if (rc.store->store) {
+        PmStrcpy(rc.store->store_source, T_("user selection"));
+        SetRwstorage(jcr, rc.store);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kJob:
+      rc.job = select_job_resource(ua);
+      if (rc.job) {
+        jcr->dir_impl->res.job = rc.job;
+        SetJcrDefaults(jcr, rc.job);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kFileset:
+      rc.fileset = select_fileset_resource(ua);
+      if (rc.fileset) {
+        jcr->dir_impl->res.fileset = rc.fileset;
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kClient:
+      rc.client = select_client_resource(ua);
+      if (rc.client) {
+        jcr->dir_impl->res.client = rc.client;
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kBackupFormat:
+      if (GetCmd(ua, T_("Please enter Backup Format: "))) {
+        if (jcr->dir_impl->backup_format) {
+          free(jcr->dir_impl->backup_format);
+          jcr->dir_impl->backup_format = NULL;
+        }
+        jcr->dir_impl->backup_format = strdup(ua->cmd);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kWhen:
+      if (TreeBrowserSupported(ua)) {
+        SelectRunScheduleVisual(ua, &jcr->sched_time);
+        goto try_again;
+      } else {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
+          if (ua->cmd[0] == 0) {
+            jcr->sched_time = time(NULL);
+          } else {
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            }
+            jcr->sched_time = parsed;
+          }
+          goto try_again;
+        }
+      }
+      break;
+    case BackupOptionAction::kPriority:
+      if (GetPint(ua, T_("Enter new Priority: "))) {
+        if (!ua->pint32_val) {
+          ua->SendMsg(T_("Priority must be a positive integer.\n"));
+        } else {
+          jcr->JobPriority = ua->pint32_val;
+        }
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kPool:
+      rc.pool = select_pool_resource(ua);
+      if (rc.pool) {
+        jcr->dir_impl->res.pool = rc.pool;
+        rc.level_override = false;
+        rc.pool_override = true;
+        Dmsg1(100, "Set new pool=%s\n",
+              jcr->dir_impl->res.pool->resource_name_);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kNextPool:
+      rc.next_pool = select_pool_resource(ua);
+      if (rc.next_pool) {
+        jcr->dir_impl->res.next_pool = rc.next_pool;
+        Dmsg1(100, "Set new next_pool=%s\n",
+              jcr->dir_impl->res.next_pool->resource_name_);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kPluginOptions:
+      GetPluginOptions(ua, jcr);
+      goto try_again;
+  }
+  return -1;
+
+try_again:
+  return 0;
+}
+
+static std::string RenderRestoreOptionsScreen(UaContext* ua,
+                                              JobControlRecord* jcr,
+                                              RunContext& rc,
+                                              size_t cursor,
+                                              bool advanced_expanded,
+                                              size_t value_offset)
+{
+  std::vector<RestoreOptionRow> rows
+      = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  std::string screen;
+  screen.reserve(rows.size() * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Restore Options"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Review the restore parameters below before starting the job."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == RestoreOptionAction::kRunNow && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string line;
+    line += i == cursor ? "> " : "  ";
+    line += row.advanced ? "  " : "";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
+                : FitRestoreOptionText(row.value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen
+      += RestoreOptionsHelpLine(width, kRestoreDialogHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static std::string FormatRunScheduleField(int value, int width)
+{
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%0*d", width, value);
+  return buffer;
+}
+
+static std::string FormatInlineRunScheduleTime(time_t when, size_t cursor)
+{
+  struct tm tm;
+  localtime_r(&when, &tm);
+  std::string fields[kRestoreScheduleFieldCount]
+      = {FormatRunScheduleField(tm.tm_year + 1900, 4),
+         FormatRunScheduleField(tm.tm_mon + 1, 2),
+         FormatRunScheduleField(tm.tm_mday, 2),
+         FormatRunScheduleField(tm.tm_hour, 2),
+         FormatRunScheduleField(tm.tm_min, 2),
+         FormatRunScheduleField(tm.tm_sec, 2)};
+
+  if (cursor < kRestoreScheduleFieldCount) {
+    fields[cursor] = "[" + fields[cursor] + "]";
+  }
+
+  return "When: " + fields[0] + "-" + fields[1] + "-" + fields[2] + " "
+         + fields[3] + ":" + fields[4] + ":" + fields[5];
+}
+
+static void AdjustRunScheduleTime(time_t* when, size_t field, int direction)
+{
+  struct tm tm;
+  localtime_r(when, &tm);
+  switch (field) {
+    case 0:
+      tm.tm_year += direction;
+      break;
+    case 1:
+      tm.tm_mon += direction;
+      break;
+    case 2:
+      tm.tm_mday += direction;
+      break;
+    case 3:
+      tm.tm_hour += direction;
+      break;
+    case 4:
+      tm.tm_min += direction;
+      break;
+    case 5:
+      tm.tm_sec += direction;
+      break;
+  }
+  tm.tm_isdst = -1;
+  time_t adjusted = mktime(&tm);
+  if (adjusted != -1) { *when = adjusted; }
+}
+
+static std::string RenderRunScheduleScreen(UaContext* ua,
+                                           time_t when,
+                                           size_t cursor)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  std::string screen;
+  screen.reserve(7 * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Edit start time"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Adjust the highlighted field in the start time."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  screen += RestoreOptionsFrameLine(width,
+                                    FormatInlineRunScheduleTime(when, cursor),
+                                    ua->supports_color, true);
+  screen += RestoreOptionsFrameLine(
+      width, "Relative: " + FormatRunScheduleRelativeTime(when, time(NULL)),
+      ua->supports_color);
+  screen += RestoreOptionsFrameLine(
+      width, "Field: " + std::string(kRestoreScheduleFields[cursor]),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kFieldEditorHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static bool SelectRunScheduleVisual(UaContext* ua, time_t* when)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  time_t edited_when = *when;
+  size_t cursor = 0;
+  for (;;) {
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRunScheduleScreen(ua, edited_when, cursor).c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty()) {
+      *when = edited_when;
+      return true;
+    }
+    if (input == "key:text:n" || input == "key:text:N") {
+      edited_when = time(NULL);
+    } else if (IsScrollRightKey(input) || input == kKeyTab) {
+      cursor = (cursor + 1) % kRestoreScheduleFieldCount;
+    } else if (IsScrollLeftKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? kRestoreScheduleFieldCount - 1 : cursor - 1;
+    } else if (IsPreviousRowKey(input)) {
+      AdjustRunScheduleTime(&edited_when, cursor, 1);
+    } else if (input == kKeyDown) {
+      AdjustRunScheduleTime(&edited_when, cursor, -1);
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+    } else if (IsEndKey(input)) {
+      cursor = kRestoreScheduleFieldCount - 1;
+    }
+  }
+}
+
+static size_t RestoreReplaceOptionCount()
+{
+  size_t count = 0;
+  while (ReplaceOptions[count].name) { ++count; }
+  return count;
+}
+
+static std::string RenderRestoreReplaceScreen(UaContext* ua, size_t cursor)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  size_t count = RestoreReplaceOptionCount();
+
+  std::string screen;
+  screen.reserve((count + 6) * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Replace Policy"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Choose how existing files should be handled."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  for (size_t i = 0; i < count; ++i) {
+    std::string line = i == cursor ? "> " : "  ";
+    line += FitRestoreOptionText(ReplaceOptions[i].name, 10);
+    if (line.size() < 14) { line.append(14 - line.size(), ' '); }
+    line += FitRestoreOptionText(
+        RestoreReplacePromptLabel(ReplaceOptions[i].name), value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kListDialogHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static bool SelectRestoreReplaceVisual(UaContext* ua,
+                                       const char* current_replace,
+                                       size_t* selection)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  size_t count = RestoreReplaceOptionCount();
+  size_t cursor = 0;
+  for (size_t i = 0; i < count; ++i) {
+    if (current_replace
+        && Bstrcasecmp(current_replace, ReplaceOptions[i].name)) {
+      cursor = i;
+      break;
+    }
+  }
+
+  for (;;) {
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRestoreReplaceScreen(ua, cursor).c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty()) {
+      *selection = cursor;
+      return true;
+    }
+    if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % count;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? count - 1 : cursor - 1;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+    } else if (IsEndKey(input)) {
+      cursor = count - 1;
+    }
+  }
+}
+
+static int SelectRestoreOptionVisual(UaContext* ua,
+                                     JobControlRecord* jcr,
+                                     RunContext& rc)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return -1; }
+
+  bool advanced_expanded = false;
+  std::vector<RestoreOptionRow> rows
+      = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+  size_t row_count = rows.size();
+  size_t cursor = row_count - 1;
+  size_t value_offset = 0;
+  for (;;) {
+    rows = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+    row_count = rows.size();
+    if (cursor >= row_count) { cursor = row_count - 1; }
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRestoreOptionsScreen(
+                          ua, jcr, rc, cursor, advanced_expanded, value_offset)
+                          .c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return -1; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
+      continue;
+    }
+
+    if (IsCancelKey(input)) {
+      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+      return -1;
+    }
+    if (IsEnterKey(input) || input.empty()) {
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsEditKey(input)) {
+      if (rows[cursor].action == RestoreOptionAction::kRunNow) { continue; }
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = IsScrollRightKey(input);
+        value_offset = 0;
+        continue;
+      }
+
+      size_t max_offset = MaxRestoreOptionValueOffset(
+          rows[cursor].value, RestoreOptionValueWidth(ua));
+      if (max_offset > 0) {
+        constexpr size_t kScrollStep = 8;
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+        continue;
+      }
+
+      advanced_expanded = IsScrollRightKey(input);
+      value_offset = 0;
+    } else if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % row_count;
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? row_count - 1 : cursor - 1;
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
+      cursor = row_count - 1;
+      value_offset = 0;
     }
   }
 }
@@ -1884,10 +2673,9 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
     AddPrompt(ua, T_("Priority"));    /* 2 */
     AddPrompt(ua, T_("Bootstrap"));   /* 3 */
     AddPrompt(ua, T_("Storage"));     /* 4 */
-    AddPrompt(ua, T_("JobId"));       /* 5 */
-    AddPrompt(ua, T_("Restore Job")); /* 6 */
+    AddPrompt(ua, T_("Restore Job")); /* 5 */
   } else {
-    AddPrompt(ua, T_("Continue to restore summary"));             /* 0 */
+    AddPrompt(ua, T_("Run now"));                                 /* 0 */
     AddPrompt(ua, T_("Restore Client"));                          /* 1 */
     AddPrompt(ua, T_("Browse destination client (unavailable)")); /* 2 */
     AddPrompt(ua, T_("Where"));                                   /* 3 */
@@ -1903,14 +2691,13 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
   if (selected < 0) { return selected; }
   if (advanced) {
     static constexpr RestoreOptionAction kAdvancedActions[]
-        = {RestoreOptionAction::kBack,      RestoreOptionAction::kWhen,
-           RestoreOptionAction::kPriority,  RestoreOptionAction::kBootstrap,
-           RestoreOptionAction::kStorage,   RestoreOptionAction::kJobId,
-           RestoreOptionAction::kRestoreJob};
+        = {RestoreOptionAction::kBack,     RestoreOptionAction::kWhen,
+           RestoreOptionAction::kPriority, RestoreOptionAction::kBootstrap,
+           RestoreOptionAction::kStorage,  RestoreOptionAction::kRestoreJob};
     return static_cast<int>(kAdvancedActions[selected]);
   }
   static constexpr RestoreOptionAction kMainActions[] = {
-      RestoreOptionAction::kContinue,      RestoreOptionAction::kRestoreClient,
+      RestoreOptionAction::kRunNow,        RestoreOptionAction::kRestoreClient,
       RestoreOptionAction::kBrowseWhere,   RestoreOptionAction::kWhere,
       RestoreOptionAction::kRelocation,    RestoreOptionAction::kReplace,
       RestoreOptionAction::kPluginOptions, RestoreOptionAction::kAdvancedMenu};
@@ -1924,28 +2711,29 @@ static int ModifyRestoreParameters(UaContext* ua,
   int opt;
 
   int selection = -1;
-  for (;;) {
-    selection = TreeBrowserSupported(ua)
-                    ? SelectRestoreOptionVisual(ua, jcr, rc, false)
-                    : SelectRestoreOptionFallback(ua, false);
+  if (TreeBrowserSupported(ua)) {
+    selection = SelectRestoreOptionVisual(ua, jcr, rc);
     if (selection < 0) { return -1; }
+  } else {
+    for (;;) {
+      selection = SelectRestoreOptionFallback(ua, false);
+      if (selection < 0) { return -1; }
 
-    auto action = static_cast<RestoreOptionAction>(selection);
-    if (action != RestoreOptionAction::kAdvancedMenu) { break; }
+      auto action = static_cast<RestoreOptionAction>(selection);
+      if (action != RestoreOptionAction::kAdvancedMenu) { break; }
 
-    selection = TreeBrowserSupported(ua)
-                    ? SelectRestoreOptionVisual(ua, jcr, rc, true)
-                    : SelectRestoreOptionFallback(ua, true);
-    if (selection < 0) { return -1; }
-    if (static_cast<RestoreOptionAction>(selection)
-        != RestoreOptionAction::kBack) {
-      break;
+      selection = SelectRestoreOptionFallback(ua, true);
+      if (selection < 0) { return -1; }
+      if (static_cast<RestoreOptionAction>(selection)
+          != RestoreOptionAction::kBack) {
+        break;
+      }
     }
   }
 
   switch (static_cast<RestoreOptionAction>(selection)) {
-    case RestoreOptionAction::kContinue:
-      return 1;
+    case RestoreOptionAction::kRunNow:
+      return 2;
     case RestoreOptionAction::kBack:
     case RestoreOptionAction::kAdvancedMenu:
       goto try_again;
@@ -1986,36 +2774,49 @@ static int ModifyRestoreParameters(UaContext* ua,
       SelectWhereRegexp(ua, jcr);
       goto try_again;
     case RestoreOptionAction::kReplace:
-      StartPrompt(ua, T_("Replace policy:\n"));
-      for (int i = 0; ReplaceOptions[i].name; i++) {
-        AddPrompt(ua, RestoreReplacePromptLabel(ReplaceOptions[i].name));
-      }
-      opt = DoPrompt(ua, "", T_("Select replace policy"), NULL, 0);
-      if (opt >= 0) {
-        rc.replace = ReplaceOptions[opt].name;
-        jcr->dir_impl->replace = ReplaceOptions[opt].token;
+      if (TreeBrowserSupported(ua)) {
+        size_t selected_replace = 0;
+        if (SelectRestoreReplaceVisual(ua, rc.replace, &selected_replace)) {
+          rc.replace = ReplaceOptions[selected_replace].name;
+          jcr->dir_impl->replace = ReplaceOptions[selected_replace].token;
+        }
+      } else {
+        StartPrompt(ua, T_("Replace policy:\n"));
+        for (int i = 0; ReplaceOptions[i].name; i++) {
+          AddPrompt(ua, RestoreReplacePromptLabel(ReplaceOptions[i].name));
+        }
+        opt = DoPrompt(ua, "", T_("Select replace policy"), NULL, 0);
+        if (opt >= 0) {
+          rc.replace = ReplaceOptions[opt].name;
+          jcr->dir_impl->replace = ReplaceOptions[opt].token;
+        }
       }
       goto try_again;
     case RestoreOptionAction::kPluginOptions:
       GetPluginOptions(ua, jcr);
       goto try_again;
     case RestoreOptionAction::kWhen:
-      for (;;) {
-        if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
-                           "HH:MM:SS (return for now): "))) {
-          break;
-        }
-        if (ua->cmd[0] == 0) {
-          jcr->sched_time = time(NULL);
-        } else {
-          auto parsed = StrToUtime(ua->cmd);
-          if (parsed == 0) {
-            ua->SendMsg(T_("Invalid time specification.\n"));
-            continue;
-          }
-          jcr->sched_time = parsed;
-        }
+      if (TreeBrowserSupported(ua)) {
+        SelectRunScheduleVisual(ua, &jcr->sched_time);
         goto try_again;
+      } else {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
+          if (ua->cmd[0] == 0) {
+            jcr->sched_time = time(NULL);
+          } else {
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            }
+            jcr->sched_time = parsed;
+          }
+          goto try_again;
+        }
       }
       break;
     case RestoreOptionAction::kPriority:
@@ -3033,6 +3834,35 @@ static bool DisplayJobParameters(UaContext* ua,
   return true;
 }
 
+static bool SetFilesetClientArgument(UaContext* ua, RunContext& rc, char* value)
+{
+  if (!value) {
+    ua->SendMsg(
+        T_("Expected fileset@client value for filesetclient keyword.\n"));
+    return false;
+  }
+
+  char* separator = strchr(value, '@');
+  if (!separator || separator == value || separator[1] == '\0') {
+    ua->SendMsg(
+        T_("Expected fileset@client value for filesetclient keyword.\n"));
+    return false;
+  }
+  if (rc.fileset_name) {
+    ua->SendMsg(T_("FileSet specified twice.\n"));
+    return false;
+  }
+  if (rc.client_name) {
+    ua->SendMsg(T_("Client specified twice.\n"));
+    return false;
+  }
+
+  *separator = '\0';
+  rc.fileset_name = value;
+  rc.client_name = separator + 1;
+  return true;
+}
+
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
 {
   bool kw_ok;
@@ -3071,6 +3901,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "accurate",             /* 29 */
          "backupformat",         /* 30 */
          "consolidatejob",       /* 31 - parent consolidate job */
+         "filesetclient",        /* 32 */
+         "fileset@client",       /* 33 */
          NULL};
 
 #define YES_POS 14
@@ -3397,6 +4229,13 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               return false;
             }
             consolidate_job_name = ua->argv[i];
+            kw_ok = true;
+            break;
+          case 32: /* filesetclient */
+          case 33: /* fileset@client */
+            if (!SetFilesetClientArgument(ua, rc, ua->argv[i])) {
+              return false;
+            }
             kw_ok = true;
             break;
           default:
