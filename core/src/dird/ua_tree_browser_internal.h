@@ -22,6 +22,7 @@
 #ifndef BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 #define BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -34,6 +35,131 @@
 struct tree_node;
 
 namespace directordaemon::tree_browser_internal {
+
+inline constexpr std::string_view kFrameColor = "\033[1;94m";
+inline constexpr std::string_view kFrameHighlightColor = "\033[97;44m";
+inline constexpr std::string_view kFrameHelpColor = "\033[2m";
+inline constexpr std::string_view kFrameMarkedFileColor = "\033[32m";
+inline constexpr std::string_view kFrameMarkedDirectoryColor = "\033[1;33m";
+inline constexpr std::string_view kFrameDefaultColor = "\033[39m";
+inline constexpr std::string_view kFrameResetColor = "\033[0m";
+inline constexpr std::string_view kFrameVerticalBorder = "│";
+
+inline constexpr std::string_view kKeyEnter = "key:enter";
+inline constexpr std::string_view kKeyCancel = "key:cancel";
+inline constexpr std::string_view kKeyBackspace = "key:backspace";
+inline constexpr std::string_view kKeyTab = "key:tab";
+inline constexpr std::string_view kKeyUp = "key:up";
+inline constexpr std::string_view kKeyDown = "key:down";
+inline constexpr std::string_view kKeyLeft = "key:left";
+inline constexpr std::string_view kKeyRight = "key:right";
+inline constexpr std::string_view kKeyHome = "key:home";
+inline constexpr std::string_view kKeyEnd = "key:end";
+inline constexpr std::string_view kKeyPageUp = "key:pageup";
+inline constexpr std::string_view kKeyPageDown = "key:pagedown";
+inline constexpr std::string_view kKeySpace = "key:space";
+inline constexpr std::string_view kKeyTextPrefix = "key:text:";
+inline constexpr std::string_view kResizePrefix = "resize:";
+
+inline constexpr const char* kRunDialogHelp
+    = "Enter: run/edit selected  e/Space: edit  Tab/Up/Down: select  "
+      "Left/Right: scroll  Esc/.: cancel";
+inline constexpr const char* kRestoreDialogHelp
+    = "Enter: run/edit/toggle  e/Space: edit  Tab/Up/Down: select  "
+      "Left/Right: scroll/advanced  Esc/.: cancel";
+inline constexpr const char* kListDialogHelp
+    = "Enter: select  Tab/Up/Down: move  Esc/.: cancel";
+inline constexpr const char* kFieldEditorHelp
+    = "Left/Right: field  Up/Down: adjust  n: now  Enter: accept  "
+      "Esc/.: cancel";
+inline constexpr const char* kBrowserHelpLine1
+    = "Enter Open  Left/Right Scroll  Space/m Mark  a All  u None";
+inline constexpr const char* kBrowserHelpLine2
+    = "e Estimate  i Info  l List  / Search  h Help  c Classic  d/r Done";
+inline constexpr const char* kSearchResultsHelpLine1
+    = "Up/Down Move  Left/Right Scroll  Home/End Edges";
+inline constexpr const char* kSearchResultsHelpLine2
+    = "Space Mark  Enter Go to file  Esc Return";
+inline constexpr const char* kSelectedFilesHelpLine2
+    = "Space Unmark  Enter Go to file  l/Esc Return";
+inline constexpr const char* kTextInputHelp
+    = "Type text  Backspace Delete  Enter Accept  Esc Cancel";
+inline constexpr const char* kDestinationBrowserHelp
+    = "Enter: open/use  Left/Right: scroll  PgUp/PgDn: page  /: search  "
+      "Esc/.: cancel";
+
+inline bool IsEnterKey(std::string_view key) { return key == kKeyEnter; }
+inline bool IsCancelKey(std::string_view key)
+{
+  return key == kKeyCancel || key == "." || key == "key:text:.";
+}
+inline bool IsBackKey(std::string_view key)
+{
+  return key == kKeyCancel || key == kKeyBackspace || key == "."
+         || key == "key:text:.";
+}
+inline bool IsEditKey(std::string_view key)
+{
+  return key == kKeySpace || key == "key:text:e" || key == "key:text:E";
+}
+inline bool IsNextRowKey(std::string_view key)
+{
+  return key == kKeyTab || key == kKeyDown;
+}
+inline bool IsPreviousRowKey(std::string_view key) { return key == kKeyUp; }
+inline bool IsScrollLeftKey(std::string_view key) { return key == kKeyLeft; }
+inline bool IsScrollRightKey(std::string_view key) { return key == kKeyRight; }
+inline bool IsHomeKey(std::string_view key) { return key == kKeyHome; }
+inline bool IsEndKey(std::string_view key) { return key == kKeyEnd; }
+inline bool IsTextKey(std::string_view key)
+{
+  return key.starts_with(kKeyTextPrefix);
+}
+inline std::string_view TextKeyValue(std::string_view key)
+{
+  return key.substr(kKeyTextPrefix.size());
+}
+
+inline void TrimVisualInput(std::string_view* input)
+{
+  while (!input->empty()
+         && (input->back() == '\r' || input->back() == '\n'
+             || input->back() == ' ' || input->back() == '\t')) {
+    input->remove_suffix(1);
+  }
+}
+
+struct TerminalResizeInput {
+  bool is_resize = false;
+  int height = 0;
+  int width = 0;
+};
+
+inline int ParsePositiveInteger(std::string_view text)
+{
+  int value = 0;
+  auto [ptr, ec]
+      = std::from_chars(text.data(), text.data() + text.size(), value);
+  if (ec != std::errc() || ptr != text.data() + text.size() || value <= 0) {
+    return 0;
+  }
+  return value;
+}
+
+inline TerminalResizeInput ParseTerminalResizeInput(std::string_view input)
+{
+  TerminalResizeInput result;
+  if (!input.starts_with(kResizePrefix)) { return result; }
+
+  result.is_resize = true;
+  std::string_view size_view = input.substr(kResizePrefix.size());
+  size_t separator = size_view.find(':');
+  result.height = ParsePositiveInteger(size_view.substr(0, separator));
+  if (separator != std::string_view::npos) {
+    result.width = ParsePositiveInteger(size_view.substr(separator + 1));
+  }
+  return result;
+}
 
 enum class FrameBorderStyle
 {
