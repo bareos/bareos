@@ -976,7 +976,9 @@ struct cpl_keywords_t {
 static struct cpl_keywords_t cpl_keywords[]
     = {{"pool=", ".pool", false},
        {"nextpool=", ".pool", false},
-       {"fileset=", ".fileset", false},
+       {"fileset=", ".filesets", false},
+       {"filesetclient=", ".filesetclients", false},
+       {"fileset@client=", ".filesetclients", false},
        {"client=", ".client", false},
        {"jobdefs=", ".jobdefs", false},
        {"job=", ".jobs", false},
