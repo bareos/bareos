@@ -47,6 +47,7 @@
 #include "lib/bpipe.h"
 #include <stdio.h>
 #include <fstream>
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -698,7 +699,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
     // touch this, so their normal ISIG/echo terminal behavior (e.g.
     // Ctrl-C aborting a long-running command) is unaffected.
     std::optional<TerminalRawModeGuard> raw_mode_guard;
-    std::optional<TerminalSelectionScreenGuard> selection_screen_guard;
+    std::unique_ptr<TerminalSelectionScreenGuard> selection_screen_guard;
 #endif
 
     tid = StartBsockTimer(UA_sock, timeout);
@@ -720,7 +721,8 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
             raw_mode_guard.emplace(fileno(input));
           }
           if (tty_input && !selection_screen_guard) {
-            selection_screen_guard.emplace();
+            selection_screen_guard
+                = std::make_unique<TerminalSelectionScreenGuard>();
           }
 #endif
           if (tty_input) { ConsoleOutput("\033[2J\033[H"); }

@@ -47,6 +47,7 @@
 #include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
+#include "lib/btime.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
@@ -2482,7 +2483,7 @@ static std::string FormatRunScheduleField(int value, int width)
 static std::string FormatInlineRunScheduleTime(time_t when, size_t cursor)
 {
   struct tm tm;
-  localtime_r(&when, &tm);
+  Blocaltime(&when, &tm);
   std::string fields[kRestoreScheduleFieldCount]
       = {FormatRunScheduleField(tm.tm_year + 1900, 4),
          FormatRunScheduleField(tm.tm_mon + 1, 2),
@@ -2502,7 +2503,7 @@ static std::string FormatInlineRunScheduleTime(time_t when, size_t cursor)
 static void AdjustRunScheduleTime(time_t* when, size_t field, int direction)
 {
   struct tm tm;
-  localtime_r(when, &tm);
+  Blocaltime(when, &tm);
   switch (field) {
     case 0:
       tm.tm_year += direction;
