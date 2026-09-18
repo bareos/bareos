@@ -284,7 +284,7 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await page.getByText('Custom Selection', { exact: true }).click()
+  await page.getByTestId('restore-source-mode-browse').click()
   await waitForQSelectReady(page, 'restore-source-tuple')
   await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-vmware', {
     selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
@@ -327,7 +327,7 @@ test('adapts the plugin hint panel and options editor for a second plugin', asyn
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await page.getByText('Custom Selection', { exact: true }).click()
+  await page.getByTestId('restore-source-mode-browse').click()
   await waitForQSelectReady(page, 'restore-source-tuple')
   await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-postgresql', {
     selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),

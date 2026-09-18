@@ -22,10 +22,12 @@
 import { describe, expect, it } from 'vitest'
 import { restorePluginHints as pluginHintsFixture } from '../../src/data/restorePluginHints.js'
 import {
+  DEFAULT_RELOCATION_SAMPLE_PATH,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
   buildRestoreCommand,
   buildRestoreRunCommand,
+  buildRegexWhereFromRelocationMode,
   buildRegexWhereFromRelocationRules,
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
@@ -822,6 +824,31 @@ describe('restore browser placeholder', () => {
     })).toBe('!/home!!i,!^!/restore!')
   })
 
+  it('builds regexwhere from console-style relocation modes', () => {
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('!^C:!D:!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'replace-prefix',
+      sourcePrefix: 'C:/Users',
+      targetPrefix: 'D:/Users',
+    })).toBe('!^C:/Users!D:/Users!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'strip-prefix',
+      stripPrefix: '/home',
+    })).toBe('!/home!!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'add-suffix',
+      addSuffix: '.restored',
+    })).toBe('!([^/])$!$1.restored!')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'custom-regex',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('!^/home/!/restore/home/!')
+  })
+
   it('previews relocation rules for a sample path', () => {
     expect(previewRelocatedPath({
       samplePath: '/home/user/file.txt',
@@ -830,6 +857,35 @@ describe('restore browser placeholder', () => {
       addPrefix: '/restore',
       addSuffix: '.restored',
     })).toBe('/restore/user/file.txt.restored')
+  })
+
+  it('previews console-style relocation modes for a sample path', () => {
+    expect(previewRelocatedPath({
+      samplePath: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
+    expect(previewRelocatedPath({
+      samplePath: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'replace-prefix',
+      sourcePrefix: 'C:/Users',
+      targetPrefix: 'D:/Users',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
+    expect(previewRelocatedPath({
+      samplePath: '/home/user/file.txt',
+      relocationMode: 'custom-regex',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('/restore/home/user/file.txt')
+  })
+
+  it('previews relocation modes from the restore form example field', () => {
+    expect(previewRelocatedPath({
+      relocationSample: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
   })
 
   it('clears restore source query fields when no source is selected', () => {
