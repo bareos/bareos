@@ -2154,6 +2154,9 @@ static int PyRestoreObject_init(PyRestoreObject* self,
                            (char*)"jobid",
                            NULL};
 
+  Py_CLEAR(self->object_name);
+  Py_CLEAR(self->object);
+  Py_CLEAR(self->plugin_name);
   self->object_name = Py_None;
   self->object = Py_None;
   self->plugin_name = Py_None;
@@ -2346,6 +2349,13 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
          (char*)"accurate_found", (char*)"cmd",          (char*)"save_time",
          (char*)"delta_seq",      (char*)"object_name",  (char*)"object",
          (char*)"object_len",     (char*)"object_index", NULL};
+  Py_CLEAR(self->fname);
+  Py_CLEAR(self->link);
+  Py_CLEAR(self->flags);
+  Py_CLEAR(self->cmd);
+  Py_CLEAR(self->object_name);
+  Py_CLEAR(self->object);
+  Py_CLEAR(self->statp);
   self->fname = Py_None;
   self->link = Py_None;
   self->type = 0;
@@ -2471,8 +2481,14 @@ static int PyRestorePacket_init(PyRestorePacket* self,
                            (char*)"original_link_name",
                            NULL};
 
-  // this has to be done like so, as we cannot overwrite the
-  // python object header
+  Py_CLEAR(self->statp);
+  Py_CLEAR(self->attrEx);
+  Py_CLEAR(self->ofname);
+  Py_CLEAR(self->olname);
+  Py_CLEAR(self->original_file_name);
+  Py_CLEAR(self->original_link_name);
+  C_CLEAR(self->where);
+  C_CLEAR(self->RegexWhere);
   self->stream = 0;
   self->data_stream = 0;
   self->type = 0;
@@ -2578,6 +2594,8 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
                            (char*)"offset",  (char*)"win32",
                            (char*)"filedes", NULL};
 
+  Py_CLEAR(self->buf);
+  Py_CLEAR(self->fname);
   self->func = 0;
   self->count = 0;
   self->flags = 0;
@@ -2656,6 +2674,8 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
 {
   static char* kwlist[] = {(char*)"fname", (char*)"content", NULL};
 
+  Py_CLEAR(self->fname);
+  Py_CLEAR(self->content);
   self->fname = Py_None;
   self->content = Py_None;
 
@@ -2707,6 +2727,9 @@ static int PyXattrPacket_init(PyXattrPacket* self,
 {
   static char* kwlist[] = {(char*)"fname", (char*)"name", (char*)"value", NULL};
 
+  Py_CLEAR(self->fname);
+  Py_CLEAR(self->name);
+  Py_CLEAR(self->value);
   self->fname = Py_None;
   self->name = Py_None;
   self->value = Py_None;
