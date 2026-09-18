@@ -27,15 +27,60 @@
             <q-card flat bordered>
                 <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
                 <q-card-section class="q-pt-none q-gutter-sm">
-                  <q-btn-toggle
-                    v-model="sourceMode"
-                    dense no-caps unelevated spread
-                    toggle-color="primary"
-                    color="white"
-                    text-color="primary"
-                    :options="sourceModeOptions"
-                    data-testid="restore-source-mode"
-                  />
+                  <div>
+                    <div class="text-subtitle2 q-mb-xs">
+                      {{ t('How do you want to restore?') }}
+                    </div>
+                    <div class="row q-col-gutter-sm" data-testid="restore-source-mode">
+                      <div
+                        v-for="option in sourceWorkflowOptions"
+                        :key="option.value"
+                        class="col-12 col-md-6"
+                      >
+                        <q-card
+                          flat
+                          bordered
+                          role="button"
+                          tabindex="0"
+                          class="restore-workflow-card cursor-pointer"
+                          :class="{
+                            'restore-workflow-card--selected': sourceMode === option.value,
+                          }"
+                          :data-testid="`restore-source-mode-${option.value}`"
+                          @click="sourceMode = option.value"
+                          @keydown.enter="sourceMode = option.value"
+                          @keydown.space.prevent="sourceMode = option.value"
+                        >
+                          <q-card-section>
+                            <div class="row items-start no-wrap q-gutter-sm">
+                              <q-icon
+                                :name="option.icon"
+                                size="28px"
+                                color="primary"
+                              />
+                              <div class="col">
+                                <div class="text-subtitle1 text-weight-medium">
+                                  {{ option.label }}
+                                </div>
+                                <div class="text-body2 text-grey-8 q-mt-xs">
+                                  {{ option.description }}
+                                </div>
+                                <div class="text-caption text-grey-7 q-mt-sm">
+                                  {{ option.detail }}
+                                </div>
+                              </div>
+                              <q-icon
+                                v-if="sourceMode === option.value"
+                                name="check_circle"
+                                color="primary"
+                                size="22px"
+                              />
+                            </div>
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </div>
+                  </div>
                   <q-select
                     v-if="isCommonRestore"
                     v-model="commonSourceDirector"
@@ -51,11 +96,14 @@
                     hide-selected
                     input-debounce="0"
                     :options="filteredLatestSourceOptions"
-                    :label="t('Backup Source')"
+                    :label="t('Backup Source (required)')"
                     outlined dense emit-value map-options
                     :loading="loadingBackups || loadingClients"
                     :disable="loadingBackups || loadingClients || !sourceDirector"
-                    :hint="t('Select a backup source that has backups')"
+                    :hint="sourceStepDone
+                      ? t('Selected backup source determines which files can be restored.')
+                      : t('Required: select a backup source to continue.')"
+                    persistent-hint
                     data-testid="restore-source-tuple"
                     @update:model-value="onLatestTupleSelected"
                     @filter="filterLatestSourceOptions"
@@ -163,6 +211,29 @@
                     </template>
                   </div>
                   <template v-if="sourceMode !== 'browse'">
+                    <q-card flat bordered class="q-pa-sm" data-testid="quick-restore-destination">
+                      <div class="text-subtitle2 q-mb-xs">
+                        {{ t('Restore location') }}
+                      </div>
+                      <q-option-group
+                        v-model="quickRestoreDestination"
+                        :options="quickRestoreDestinationOptions"
+                        color="primary"
+                        dense
+                        data-testid="quick-restore-destination-choice"
+                      />
+                      <q-banner
+                        v-if="quickRestoreDestination === 'original'"
+                        dense
+                        class="bg-warning text-black q-mt-sm"
+                        data-testid="quick-restore-original-warning"
+                      >
+                        <template #avatar>
+                          <q-icon name="warning" />
+                        </template>
+                        {{ t('Restoring to original locations can overwrite existing files on the restore client.') }}
+                      </q-banner>
+                    </q-card>
                     <div v-if="!sourceLatestTupleKey" class="text-caption text-grey-6 q-pa-sm">
                       {{ t('Select a backup source above to find its latest backup.') }}
                     </div>
@@ -174,6 +245,9 @@
                       {{ t('No completed backup found for this client and fileset.') }}
                     </div>
                     <template v-else>
+                      <div class="text-subtitle2 q-mt-sm">
+                        {{ t('Latest backup available is') }}
+                      </div>
                       <q-item class="restore-latest-summary" dense>
                         <q-item-section avatar>
                           <JobLevelBadge
@@ -186,37 +260,6 @@
                           <q-item-label caption>{{ latestBackupOption.secondary }}</q-item-label>
                         </q-item-section>
                       </q-item>
-                      <div class="text-caption text-grey-6 q-pl-sm">
-                        {{ t('Includes all related jobs back to the last Full backup.') }}
-                      </div>
-                      <q-expansion-item
-                        v-if="latestBackupChainOptions.length"
-                        dense
-                        expand-separator
-                        :label="latestBackupChainLabel"
-                        icon="account_tree"
-                        data-testid="restore-latest-chain"
-                      >
-                        <q-list dense>
-                          <q-item
-                            v-for="backup in latestBackupChainOptions"
-                            :key="backup.jobid"
-                            dense
-                            class="q-px-sm"
-                          >
-                            <q-item-section avatar>
-                              <JobLevelBadge
-                                v-if="backup.levelCode"
-                                :level="backup.levelCode"
-                              />
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label>{{ backup.name || backup.label }}</q-item-label>
-                              <q-item-label caption>{{ backup.secondary }}</q-item-label>
-                            </q-item-section>
-                          </q-item>
-                        </q-list>
-                      </q-expansion-item>
                       <q-banner v-if="showNoFullBackupWarning" dense class="bg-warning text-black" data-testid="restore-no-full-warning">
                         <template #avatar><q-icon name="warning" /></template>
                         {{ t('No Full backup found for this fileset — restoring the latest available backup(s) anyway.') }}
@@ -226,22 +269,38 @@
               </q-card-section>
             </q-card>
             <q-stepper-navigation>
+              <q-banner
+                v-if="!sourceStepDone"
+                dense
+                class="bg-blue-1 text-primary q-mb-sm"
+                data-testid="restore-source-required"
+              >
+                <template #avatar>
+                  <q-icon name="info" />
+                </template>
+                {{ t('Select a backup source before continuing.') }}
+              </q-banner>
               <q-btn
                 color="primary" no-caps
-                :label="t('Continue to Destination')"
-                :disable="!sourceStepDone"
+                :label="sourceMode === 'latest'
+                  ? t('Continue to Browse Files')
+                  : t('Continue to Destination')"
+                :disable="sourceMode === 'latest'
+                  ? !destinationStepDone
+                  : !sourceStepDone"
                 data-testid="restore-step-1-continue"
-                @click="activeStep = 2"
+                @click="activeStep = sourceMode === 'latest' ? 3 : 2"
               />
             </q-stepper-navigation>
           </q-step>
 
           <q-step
+            v-if="sourceMode === 'browse'"
             :name="2"
             :title="t('Destination')"
             icon="place"
             :done="destinationStepDone"
-            :header-nav="sourceStepDone"
+            :header-nav="sourceStepDone && sourceMode === 'browse'"
           >
             <q-card flat bordered>
               <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Destination') }}</q-card-section>
@@ -253,6 +312,7 @@
                   :loading-clients="loadingClients"
                   :loading-restore-jobs="loadingRestoreJobs"
                   :disabled="!sourceDirector"
+                  :advanced-mode="sourceMode === 'browse'"
                   :show-plugin-options="showPluginOptions"
                   :plugin-options-hint="pluginOptionsHint"
                   :plugin-hints="pluginHintsStore.hints"
@@ -552,22 +612,50 @@
     v-model="confirmRestoreDialog"
     :persistent="confirmRestoreSubmitting || loadingRestore"
   >
-    <q-card style="min-width: min(720px, 95vw);">
-      <q-card-section class="row items-center">
-        <div class="text-h6">{{ t('Confirm restore job submit') }}</div>
+    <q-card class="restore-confirm-card">
+      <q-card-section class="row items-center no-wrap q-gutter-sm">
+        <q-icon name="restore" color="primary" size="32px" />
+        <div>
+          <div class="text-h6">{{ t('Review restore job') }}</div>
+          <div class="text-caption text-grey-7">
+            {{ t('Confirm the restore parameters before scheduling the job.') }}
+          </div>
+        </div>
       </q-card-section>
       <q-card-section class="q-pt-none">
-        <div class="q-mb-sm">
-          {{ t('A restore job with the parameters given below will be scheduled.') }}
+        <q-banner
+          v-if="quickRestoreDestination === 'original' && sourceMode === 'latest'"
+          dense
+          class="bg-warning text-black q-mb-sm"
+          data-testid="quick-restore-confirm-original-warning"
+        >
+          <template #avatar>
+            <q-icon name="warning" />
+          </template>
+          {{ t('This quick restore will write files back to their original locations and may overwrite existing files.') }}
+        </q-banner>
+        <div class="restore-confirm-summary">
+          <div
+            v-for="row in restoreConfirmSummaryRows"
+            :key="row.label"
+            class="restore-confirm-summary__row"
+          >
+            <q-icon
+              :name="row.icon"
+              color="primary"
+              size="20px"
+              class="restore-confirm-summary__icon"
+            />
+            <div class="restore-confirm-summary__content">
+              <div class="restore-confirm-summary__label">
+                {{ row.label }}
+              </div>
+              <div class="restore-confirm-summary__value">
+                {{ row.value }}
+              </div>
+            </div>
+          </div>
         </div>
-        <q-markup-table dense flat bordered>
-          <tbody>
-            <tr v-for="row in restoreConfirmSummaryRows" :key="row.label">
-              <td class="text-weight-medium" style="width: 45%;">{{ row.label }}</td>
-              <td>{{ row.value }}</td>
-            </tr>
-          </tbody>
-        </q-markup-table>
       </q-card-section>
       <q-card-actions align="right">
         <q-btn
@@ -588,63 +676,115 @@
   </q-dialog>
 
   <q-dialog v-model="destinationBrowseDialog.open">
-    <q-card style="min-width: min(760px, 95vw);">
-      <q-card-section class="row items-center">
-        <div>
-          <div class="text-h6">{{ t('Browse destination client') }}</div>
-          <div class="text-caption text-grey-7">
-            {{ destinationBrowseClient }} · {{ destinationBrowseDialog.path }}
+    <q-card class="destination-browser-card">
+      <q-card-section class="panel-header q-py-xs q-px-md">
+        <div class="row items-center justify-between">
+          <span class="text-body2">{{ t('Browse destination client') }}</span>
+          <div class="row items-center q-gutter-sm">
+            <span class="text-caption text-grey-5">
+              {{ destinationBrowseClient }}
+            </span>
+            <q-btn flat round dense size="sm" icon="close" color="white" v-close-popup />
           </div>
         </div>
-        <q-space />
-        <q-btn flat round dense icon="close" v-close-popup />
       </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <div v-if="destinationBrowseDialog.error" class="text-negative">
-          {{ destinationBrowseDialog.error }}
+
+      <q-card-section class="q-py-sm q-px-md">
+        <div class="row items-center q-gutter-xs text-caption">
+          <q-icon name="storage" size="16px" color="grey-7" />
+          <template v-for="(crumb, i) in destinationBrowseBreadcrumbs" :key="crumb.path">
+            <q-btn
+              flat dense no-caps size="sm"
+              :label="crumb.label"
+              :class="i === destinationBrowseBreadcrumbs.length - 1
+                ? 'text-dark text-weight-medium'
+                : 'text-primary'"
+              class="q-px-xs"
+              @click="loadDestinationBrowsePath(crumb.path)"
+            />
+            <q-icon
+              v-if="i < destinationBrowseBreadcrumbs.length - 1"
+              name="chevron_right"
+              size="14px"
+              color="grey-7"
+            />
+          </template>
         </div>
-        <div
-          v-else-if="destinationBrowseDialog.loading"
-          class="text-center text-grey q-py-xl"
+      </q-card-section>
+
+      <template v-if="destinationBrowseDialog.error">
+        <div class="text-center text-negative q-py-xl">
+          <q-icon name="error_outline" size="48px" color="negative" /><br />
+          <div class="text-caption q-mt-sm q-mb-md">
+            {{ destinationBrowseDialog.error }}
+          </div>
+          <q-btn
+            flat dense color="primary" icon="refresh"
+            :label="t('Retry')"
+            :loading="destinationBrowseDialog.loading"
+            @click="loadDestinationBrowsePath(destinationBrowseDialog.path)"
+          />
+        </div>
+      </template>
+      <template v-else>
+        <q-table
+          :rows="destinationBrowseRows"
+          :columns="destinationBrowseCols"
+          row-key="path"
+          flat dense
+          :loading="destinationBrowseDialog.loading"
+          :pagination="{ rowsPerPage: 200, sortBy: 'name' }"
+          hide-bottom
+          class="destination-browser-table"
+          data-testid="restore-destination-browser"
         >
-          <q-spinner size="48px" color="primary" /><br />
-          <span class="text-caption q-mt-sm">{{ t('Loading directory...') }}</span>
-        </div>
-        <q-list v-else bordered separator>
-          <q-item clickable @click="useDestinationBrowsePath(destinationBrowseDialog.path)">
-            <q-item-section avatar><q-icon name="check" color="primary" /></q-item-section>
-            <q-item-section>
-              <q-item-label>{{ t('Use this directory') }}</q-item-label>
-              <q-item-label caption>{{ destinationBrowseDialog.path }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item clickable @click="loadDestinationBrowsePath(parentDestinationBrowsePath)">
-            <q-item-section avatar><q-icon name="drive_folder_upload" /></q-item-section>
-            <q-item-section>
-              <q-item-label>../</q-item-label>
-              <q-item-label caption>{{ parentDestinationBrowsePath }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item
-            v-for="entry in destinationBrowseDialog.entries"
-            :key="entry.path"
-            :clickable="entry.type === 'directory'"
-            :disable="entry.type !== 'directory'"
-            @click="entry.type === 'directory' && loadDestinationBrowsePath(entry.path)"
-          >
-            <q-item-section avatar>
-              <q-icon :name="entry.type === 'directory' ? 'folder' : 'description'" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ entry.name }}</q-item-label>
-              <q-item-label caption>{{ entry.path }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
+          <template #body="props">
+            <q-tr
+              :props="props"
+              :class="{ 'cursor-pointer': props.row.type === 'directory' }"
+              @click="props.row.type === 'directory' && loadDestinationBrowsePath(props.row.path)"
+            >
+              <q-td style="width:28px">
+                <q-icon
+                  :name="props.row.type === 'directory' ? 'folder' : 'description'"
+                  :color="props.row.type === 'directory' ? 'amber-6' : 'blue-grey-4'"
+                  size="18px"
+                />
+              </q-td>
+              <q-td>
+                <span
+                  v-if="props.row.type === 'directory'"
+                  class="text-primary"
+                >
+                  {{ props.row.name }}
+                </span>
+                <span v-else>{{ props.row.name }}</span>
+              </q-td>
+              <q-td class="text-caption text-grey-6">
+                {{ props.row.path }}
+              </q-td>
+            </q-tr>
+          </template>
+        </q-table>
+      </template>
+
       <q-card-actions align="right">
+        <q-btn
+          v-if="destinationBrowseDialog.path !== '/'"
+          flat
+          no-caps
+          icon="drive_folder_upload"
+          :label="t('Parent directory')"
+          @click="loadDestinationBrowsePath(parentDestinationBrowsePath)"
+        />
+        <q-space />
         <q-btn flat :label="t('Cancel')" v-close-popup />
+        <q-btn
+          color="primary"
+          icon="check"
+          :label="t('Use this directory')"
+          @click="useDestinationBrowsePath(destinationBrowseDialog.path)"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -778,6 +918,7 @@ import { formatBytes } from '../mock/index.js'
 import { formatSqlRelativeTime } from '../utils/locales.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import {
+  DEFAULT_RELOCATION_SAMPLE_PATH,
   buildRestoreBackupOption,
   buildRestoreBackupChainOptions,
   buildRestoreBackupChains,
@@ -830,18 +971,23 @@ const $q       = useQuasar()
 const { t } = useI18n()
 
 // ── Form state ──────────────────────────────────────────────────────────────
+const defaultRestoreWhere = '/tmp/bareos-restores'
+
 const form = ref({
   client:        '',
   restoreclient: '',
   restorejob:    '',
   jobid:         null,
-  where:         '/tmp/bareos-restores',
-  relocationMode: 'where',
+  where:         defaultRestoreWhere,
+  relocationMode: 'none',
+  sourceDrive:    'C:',
+  targetDrive:    'D:',
+  sourcePrefix:   'C:/Users',
+  targetPrefix:   'D:/Users',
   stripPrefix:   '',
-  addPrefix:     '',
   addSuffix:     '',
   regexWhere:    '',
-  relocationSample: '',
+  relocationSample: DEFAULT_RELOCATION_SAMPLE_PATH,
   replace:       'Always',
   pluginoptions: '',
   when:          '',
@@ -867,10 +1013,34 @@ function formatRestoreTime(value) {
 // list so future modes (e.g. a "search files" mode) can be added as
 // additional options without restructuring the panel.
 const sourceMode = ref('latest')
-const sourceModeOptions = computed(() => [
-  { label: t('Quick Restore'), value: 'latest' },
-  { label: t('Custom Selection'), value: 'browse' },
+const quickRestoreDestination = ref('safe')
+const sourceWorkflowOptions = computed(() => [
+  {
+    label: t('Quick Restore'),
+    value: 'latest',
+    icon: 'flash_on',
+    description: t('Restore the latest backup of a client and fileset with safe defaults.'),
+    detail: t('Shows backup source and restore location only.'),
+  },
+  {
+    label: t('Advanced Restore'),
+    value: 'browse',
+    icon: 'tune',
+    description: t('Choose the restore point, destination, relocation and restore options.'),
+    detail: t('Shows destination, replace policy, regexwhere and plugin options.'),
+  },
 ])
+const quickRestoreDestinationOptions = computed(() => [
+  {
+    label: t('Restore into /tmp/bareos-restores'),
+    value: 'safe',
+  },
+  {
+    label: t('Restore to original locations'),
+    value: 'original',
+  },
+])
+const advancedRestoreOptionsVisible = computed(() => sourceMode.value === 'browse')
 
 const {
   directorOptions,
@@ -966,6 +1136,36 @@ const destinationBrowseClient = computed(() => (
 const parentDestinationBrowsePath = computed(() => (
   parentClientBrowsePath(destinationBrowseDialog.value.path)
 ))
+const destinationBrowseBreadcrumbs = computed(() => {
+  const normalized = normalizeClientBrowsePath(destinationBrowseDialog.value.path)
+  if (normalized === '/') {
+    return [{ label: '/', path: '/' }]
+  }
+
+  const crumbs = [{ label: '/', path: '/' }]
+  let current = ''
+  normalized.split('/').filter(Boolean).forEach((part) => {
+    current += `/${part}`
+    crumbs.push({ label: part, path: current })
+  })
+  return crumbs
+})
+const destinationBrowseRows = computed(() => (
+  [...destinationBrowseDialog.value.entries].sort((left, right) => {
+    const leftDirectory = left.type === 'directory'
+    const rightDirectory = right.type === 'directory'
+    if (leftDirectory !== rightDirectory) {
+      return leftDirectory ? -1 : 1
+    }
+    return String(left.name ?? '').localeCompare(String(right.name ?? ''))
+  })
+))
+
+const destinationBrowseCols = [
+  { name: 'icon', label: '', field: 'type', align: 'left', style: 'width:28px' },
+  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
+  { name: 'path', label: 'Path', field: 'path', align: 'left', sortable: true },
+]
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
@@ -2002,7 +2202,7 @@ const canRestore = computed(() =>
 const activeStep = ref(1)
 const sourceStepDone = computed(() => !!form.value.jobid)
 const destinationLocationDone = computed(() => (
-  form.value.relocationMode === 'where'
+  form.value.relocationMode === 'none' || form.value.relocationMode === 'where'
     ? !!form.value.where
     : !!resolveRestoreRegexWhere(form.value)
 ))
@@ -2026,33 +2226,92 @@ const restorePluginOptionsSummary = computed(() => {
   const pluginOptions = form.value.pluginoptions?.trim() ?? ''
   return pluginOptions || '—'
 })
+
+function applyQuickRestoreDefaults() {
+  form.value.where = quickRestoreDestination.value === 'original'
+    ? '/'
+    : defaultRestoreWhere
+  form.value.relocationMode = 'none'
+  form.value.sourceDrive = 'C:'
+  form.value.targetDrive = 'D:'
+  form.value.sourcePrefix = 'C:/Users'
+  form.value.targetPrefix = 'D:/Users'
+  form.value.stripPrefix = ''
+  form.value.addSuffix = ''
+  form.value.regexWhere = ''
+  form.value.relocationSample = DEFAULT_RELOCATION_SAMPLE_PATH
+  form.value.replace = 'Always'
+  form.value.when = ''
+  form.value.priority = null
+  form.value.pluginoptions = defaultPluginOptionsDocument.value || ''
+}
+
 const restoreConfirmSummaryRows = computed(() => {
   const rows = [
-    { label: t('Client'), value: form.value.client || '—' },
-    { label: t('Restore to client'), value: restoreEffectiveClient.value },
-    { label: t('Replace files on client'), value: form.value.replace || '—' },
     {
-      label: t('Restore location on client'),
-      value: form.value.relocationMode === 'where'
-        ? (form.value.where || '—')
-        : (resolveRestoreRegexWhere(form.value) || '—'),
+      icon: 'source',
+      label: t('Original client'),
+      value: form.value.client || '—',
     },
-    { label: t('Plugin Options'), value: restorePluginOptionsSummary.value },
-    { label: t('Directories selected'), value: String(restoreSelectedDirectoriesCount.value) },
-    { label: t('Files selected'), value: String(restoreSelectedFilesCount.value) },
+    {
+      icon: 'folder',
+      label: t('Directories selected'),
+      value: String(restoreSelectedDirectoriesCount.value),
+    },
+    {
+      icon: 'description',
+      label: t('Files selected'),
+      value: String(restoreSelectedFilesCount.value),
+    },
+    {
+      icon: 'computer',
+      label: t('Restore to client'),
+      value: restoreEffectiveClient.value,
+    },
+    {
+      icon: 'place',
+      label: t('Restore location on client'),
+      value: sourceMode.value === 'latest' && quickRestoreDestination.value === 'original'
+        ? t('Original locations')
+        : (form.value.relocationMode === 'none' || form.value.relocationMode === 'where'
+            ? (form.value.where || '—')
+            : (resolveRestoreRegexWhere(form.value) || '—')),
+    },
   ]
 
-  if (form.value.when) {
-    rows.push({ label: t('When'), value: form.value.when })
-  }
-  if (form.value.priority) {
-    rows.push({ label: t('Priority'), value: String(form.value.priority) })
-  }
-
   if (restoreVersionOverridesCount.value > 0) {
-    rows.push({
+    rows.splice(3, 0, {
+      icon: 'history',
       label: t('Files with version overrides'),
       value: String(restoreVersionOverridesCount.value),
+    })
+  }
+
+  if (advancedRestoreOptionsVisible.value) {
+    rows.splice(
+      rows.length,
+      0,
+      {
+        icon: 'rule',
+        label: t('Replace files on client'),
+        value: form.value.replace || '—',
+      },
+      {
+        icon: 'extension',
+        label: t('Plugin Options'),
+        value: restorePluginOptionsSummary.value,
+      }
+    )
+  }
+
+  if (form.value.when) {
+    rows.push({ icon: 'schedule', label: t('When'), value: form.value.when })
+  }
+  if (form.value.priority) {
+    rows.push({
+      icon: 'priority_high',
+      label: t('Priority'),
+      value: String(form.value.priority),
     })
   }
 
@@ -2121,7 +2380,7 @@ async function loadDestinationBrowsePath(path) {
 
 function useDestinationBrowsePath(path) {
   form.value.where = normalizeClientBrowsePath(path)
-  form.value.relocationMode = 'where'
+  form.value.relocationMode = 'none'
   form.value.regexWhere = ''
   destinationBrowseDialog.value.open = false
 }
@@ -2301,6 +2560,9 @@ async function doRestore() {
     }))
 
     // Step 2: run restore job
+    if (sourceMode.value === 'latest') {
+      applyQuickRestoreDefaults()
+    }
     const src = form.value.client
     const dst = form.value.restoreclient || src
     const pluginOptions = form.value.pluginoptions.trim()
@@ -2364,13 +2626,17 @@ function clearBrowserState() {
 
 function resetAll() {
   form.value.jobid = null
-  form.value.where = '/tmp/bareos-restores'
-  form.value.relocationMode = 'where'
+  quickRestoreDestination.value = 'safe'
+  form.value.where = defaultRestoreWhere
+  form.value.relocationMode = 'none'
+  form.value.sourceDrive = 'C:'
+  form.value.targetDrive = 'D:'
+  form.value.sourcePrefix = 'C:/Users'
+  form.value.targetPrefix = 'D:/Users'
   form.value.stripPrefix = ''
-  form.value.addPrefix = ''
   form.value.addSuffix = ''
   form.value.regexWhere = ''
-  form.value.relocationSample = ''
+  form.value.relocationSample = DEFAULT_RELOCATION_SAMPLE_PATH
   form.value.replace = 'Always'
   form.value.pluginoptions = ''
   form.value.when = ''
@@ -2600,6 +2866,7 @@ async function init() {
   await loadAllClientBackups()
 
   if (sourceMode.value === 'latest') {
+    applyQuickRestoreDefaults()
     form.value.mergeJobs = true
     form.value.mergeFilesets = false
     if (latestBackupJobid.value !== null && form.value.jobid !== latestBackupJobid.value) {
@@ -2719,6 +2986,7 @@ watch(sourceMode, async (mode) => {
   clearBrowserState()
 
   if (mode === 'latest') {
+    applyQuickRestoreDefaults()
     form.value.mergeJobs = true
     form.value.mergeFilesets = false
     if (allClientBackups.value.length === 0) {
@@ -2740,6 +3008,12 @@ watch(sourceMode, async (mode) => {
     if (allClientBackups.value.length === 0) {
       await loadAllClientBackups()
     }
+  }
+})
+
+watch(quickRestoreDestination, () => {
+  if (sourceMode.value === 'latest') {
+    applyQuickRestoreDefaults()
   }
 })
 
@@ -2804,6 +3078,64 @@ watch(() => [
 
 .restore-backup-option .column {
   min-width: 0;
+}
+
+.restore-confirm-card {
+  min-width: min(760px, 95vw);
+}
+
+.restore-confirm-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.restore-confirm-summary__row {
+  align-items: flex-start;
+  background: rgba(0, 0, 0, 0.025);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px 12px;
+}
+
+.restore-confirm-summary__icon {
+  margin-top: 2px;
+}
+
+.restore-confirm-summary__content {
+  min-width: 0;
+}
+
+.restore-confirm-summary__label {
+  color: rgba(0, 0, 0, 0.62);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.restore-confirm-summary__value {
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.destination-browser-card {
+  min-width: min(900px, 95vw);
+}
+
+.destination-browser-table {
+  min-height: 320px;
+}
+
+.restore-workflow-card {
+  height: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.restore-workflow-card--selected {
+  border-color: var(--q-primary);
+  box-shadow: 0 0 0 1px var(--q-primary);
 }
 
 .restore-timeline {

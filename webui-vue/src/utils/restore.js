@@ -22,6 +22,8 @@
 import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobLevelCode } from './jobLevels.js'
 
+export const DEFAULT_RELOCATION_SAMPLE_PATH = 'C:/Users/Alice/Documents/report.pdf'
+
 export function getRestoreBrowserPlaceholder({
   browserError,
   loadingBrowser,
@@ -357,41 +359,166 @@ export function buildRegexWhereFromRelocationRules({
   return parts.join(',')
 }
 
+export function buildRegexWhereFromRelocationMode({
+  relocationMode = 'none',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+  regexWhere = '',
+} = {}) {
+  if (relocationMode === 'where') {
+    relocationMode = 'none'
+  }
+
+  switch (relocationMode) {
+    case 'windows-drive':
+      return sourceDrive && targetDrive
+        ? `!^${escapeRegexWherePart(sourceDrive)}!${escapeRegexWherePart(targetDrive)}!i`
+        : ''
+    case 'replace-prefix':
+      return sourcePrefix && targetPrefix
+        ? `!^${escapeRegexWherePart(sourcePrefix)}!${escapeRegexWherePart(targetPrefix)}!i`
+        : ''
+    case 'strip-prefix':
+      return stripPrefix ? `!${escapeRegexWherePart(stripPrefix)}!!i` : ''
+    case 'add-suffix':
+      return addSuffix ? `!([^/])$!$1${escapeRegexWherePart(addSuffix)}!` : ''
+    case 'custom-regex':
+    case 'regex':
+      return regexWhere
+    case 'rules':
+      return buildRegexWhereFromRelocationRules({
+        stripPrefix,
+        addPrefix: addPrefix || targetPrefix,
+        addSuffix,
+      })
+    default:
+      return ''
+  }
+}
+
 export function resolveRestoreRegexWhere({
-  relocationMode = 'where',
+  relocationMode = 'none',
   regexWhere = '',
   stripPrefix = '',
   addPrefix = '',
   addSuffix = '',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
 } = {}) {
-  if (relocationMode === 'regex') {
-    return regexWhere
+  return buildRegexWhereFromRelocationMode({
+    relocationMode,
+    regexWhere,
+    stripPrefix,
+    addPrefix,
+    addSuffix,
+    sourceDrive,
+    targetDrive,
+    sourcePrefix,
+    targetPrefix,
+  })
+}
+
+function unescapeRegexWherePart(value) {
+  return String(value ?? '').replace(/\\([!\\])/g, '$1')
+}
+
+function parseRegexWhereExpression(expression) {
+  const text = String(expression ?? '')
+  if (!text) {
+    return []
   }
-  if (relocationMode === 'rules') {
-    return buildRegexWhereFromRelocationRules({
-      stripPrefix,
-      addPrefix,
-      addSuffix,
-    })
+
+  const parts = []
+  let offset = 0
+  while (offset < text.length) {
+    const delimiter = text[offset]
+    if (!delimiter || delimiter === ',' || delimiter.match(/\s/)) {
+      offset += 1
+      continue
+    }
+
+    const fields = []
+    let field = ''
+    let escaped = false
+    offset += 1
+    while (offset < text.length && fields.length < 2) {
+      const char = text[offset]
+      if (escaped) {
+        field += `\\${char}`
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === delimiter) {
+        fields.push(field)
+        field = ''
+      } else {
+        field += char
+      }
+      offset += 1
+    }
+
+    let flags = ''
+    while (offset < text.length && text[offset] !== ',') {
+      flags += text[offset]
+      offset += 1
+    }
+    if (offset < text.length && text[offset] === ',') {
+      offset += 1
+    }
+
+    if (fields.length === 2) {
+      parts.push({
+        pattern: unescapeRegexWherePart(fields[0]),
+        replacement: unescapeRegexWherePart(fields[1]),
+        flags,
+      })
+    }
   }
-  return ''
+  return parts
+}
+
+function applyRegexWherePreview(samplePath, regexWhere) {
+  let result = String(samplePath ?? '')
+  for (const part of parseRegexWhereExpression(regexWhere)) {
+    try {
+      const flags = part.flags.includes('i') ? 'i' : ''
+      result = result.replace(new RegExp(part.pattern, flags), part.replacement)
+    } catch {
+      return regexWhere || result
+    }
+  }
+  return result
 }
 
 export function previewRelocatedPath({
   samplePath = '',
-  relocationMode = 'where',
+  relocationSample = '',
+  relocationMode = 'none',
   where = '',
   regexWhere = '',
   stripPrefix = '',
   addPrefix = '',
   addSuffix = '',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
 } = {}) {
-  if (relocationMode === 'where') {
-    return where || samplePath || ''
+  const previewPath = samplePath || relocationSample
+
+  if (relocationMode === 'where' || relocationMode === 'none') {
+    return where || previewPath || ''
   }
 
   if (relocationMode === 'rules') {
-    let result = String(samplePath ?? '')
+    let result = String(previewPath ?? '')
     if (stripPrefix && result.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
       result = result.slice(stripPrefix.length)
     }
@@ -404,7 +531,18 @@ export function previewRelocatedPath({
     return result
   }
 
-  return regexWhere || samplePath || ''
+  const resolvedRegexWhere = buildRegexWhereFromRelocationMode({
+    relocationMode,
+    regexWhere,
+    stripPrefix,
+    addPrefix,
+    addSuffix,
+    sourceDrive,
+    targetDrive,
+    sourcePrefix,
+    targetPrefix,
+  })
+  return applyRegexWherePreview(previewPath, resolvedRegexWhere)
 }
 
 export function buildRestoreBackupOption(
