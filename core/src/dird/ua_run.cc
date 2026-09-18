@@ -929,6 +929,14 @@ static std::string RestoreOptionsFrameLine(size_t width,
                                            bool color,
                                            bool highlighted = false);
 
+static std::string RestoreOptionsStatusLine(size_t width,
+                                            std::string_view text,
+                                            bool color);
+
+static std::string RestoreOptionsHelpLine(size_t width,
+                                          std::string_view text,
+                                          bool color);
+
 static size_t RestoreOptionsScreenWidth(UaContext* ua)
 {
   constexpr size_t kDefaultTerminalWidth = 80;
@@ -1239,7 +1247,6 @@ static bool ListDestinationClientDirectory(
                                    &entry_path, &directory)
           && IsImmediateBrowseChild(path, entry_path)) {
         std::string label = BrowsePathBasename(entry_path);
-        if (directory) { label += "/"; }
         entries->push_back({directory ? DestinationBrowseAction::kOpenDirectory
                                       : DestinationBrowseAction::kFile,
                             std::move(label), std::move(entry_path),
@@ -1261,7 +1268,7 @@ static std::vector<DestinationBrowseEntry> BuildDestinationBrowseRows(
   std::vector<DestinationBrowseEntry> rows;
   rows.push_back({DestinationBrowseAction::kUseCurrentDirectory,
                   T_("Use this directory"), path, true});
-  rows.push_back({DestinationBrowseAction::kParentDirectory, "../",
+  rows.push_back({DestinationBrowseAction::kParentDirectory, "..",
                   ParentBrowsePath(path), true});
   rows.insert(rows.end(), listed_entries.begin(), listed_entries.end());
   return rows;
@@ -1269,7 +1276,7 @@ static std::vector<DestinationBrowseEntry> BuildDestinationBrowseRows(
 
 static size_t DestinationBrowseVisibleRows(UaContext* ua, bool search_active)
 {
-  size_t chrome_lines = search_active ? 6 : 5;
+  size_t chrome_lines = search_active ? 7 : 6;
   constexpr size_t kDefaultVisibleRows = 20;
   constexpr size_t kMinVisibleRows = 3;
 
@@ -1301,23 +1308,20 @@ static std::string RenderDestinationBrowseScreen(
       DestinationBrowseVisibleRows(ua, !search.empty()), rows.size());
   first_row = std::min(first_row, rows.size() - visible_rows);
 
-  std::string help = T_(
-      "Enter: open/use  PgUp/PgDn or Ctrl-U/D: page  /: search  "
-      "Esc/.: cancel");
+  std::string status = " Entries: " + std::to_string(rows.size());
   if (rows.size() > visible_rows && visible_rows > 0) {
-    help += "  ";
-    help += std::to_string(first_row + 1);
-    help += "-";
-    help += std::to_string(first_row + visible_rows);
-    help += "/";
-    help += std::to_string(rows.size());
+    status += " | Showing " + std::to_string(first_row + 1) + "-"
+              + std::to_string(first_row + visible_rows) + " of "
+              + std::to_string(rows.size());
+  }
+  if (!search.empty()) {
+    status += " | Search: \"" + std::string(search) + "\"";
   }
 
   std::string screen;
-  screen.reserve((visible_rows + 5) * 80);
+  screen.reserve((visible_rows + 6) * 80);
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kTop, title);
-  screen += RestoreOptionsFrameLine(width, help, ua->supports_color);
   screen += RestoreOptionsFrameLine(width, "Path: " + path, ua->supports_color);
   if (!search.empty()) {
     screen += RestoreOptionsFrameLine(
@@ -1333,6 +1337,10 @@ static std::string RenderDestinationBrowseScreen(
   } else {
     for (size_t i = first_row; i < first_row + visible_rows; ++i) {
       std::string line = i == cursor ? "> " : "  ";
+      if (rows[i].action == DestinationBrowseAction::kOpenDirectory
+          || rows[i].action == DestinationBrowseAction::kFile) {
+        line += rows[i].directory ? "/" : " ";
+      }
       line += rows[i].label;
       screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
                                         i == cursor);
@@ -1341,6 +1349,12 @@ static std::string RenderDestinationBrowseScreen(
 
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
+  screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
+  screen += RestoreOptionsHelpLine(
+      width,
+      T_(" Enter: open/use  PgUp/PgDn or Ctrl-U/D: page  /: search  "
+         "Esc/.: cancel"),
+      ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -1365,22 +1379,17 @@ static std::string RenderDestinationBrowseSearchInput(
       = std::min(DestinationBrowseVisibleRows(ua, true), rows.size());
   first_row = std::min(first_row, rows.size() - visible_rows);
 
-  std::string help
-      = T_("Type substring  Enter: accept  Backspace: delete  Esc: clear");
+  std::string status = " Matches: " + std::to_string(rows.size());
   if (rows.size() > visible_rows && visible_rows > 0) {
-    help += "  ";
-    help += std::to_string(first_row + 1);
-    help += "-";
-    help += std::to_string(first_row + visible_rows);
-    help += "/";
-    help += std::to_string(rows.size());
+    status += " | Showing " + std::to_string(first_row + 1) + "-"
+              + std::to_string(first_row + visible_rows) + " of "
+              + std::to_string(rows.size());
   }
 
   std::string screen;
-  screen.reserve((visible_rows + 5) * 80);
+  screen.reserve((visible_rows + 7) * 80);
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kTop, title);
-  screen += RestoreOptionsFrameLine(width, help, ua->supports_color);
   screen += RestoreOptionsFrameLine(width, "Path: " + path, ua->supports_color);
   screen += RestoreOptionsFrameLine(width, "Search: " + std::string(search),
                                     ua->supports_color, true);
@@ -1392,6 +1401,10 @@ static std::string RenderDestinationBrowseSearchInput(
   } else {
     for (size_t i = first_row; i < first_row + visible_rows; ++i) {
       std::string line = i == cursor ? "> " : "  ";
+      if (rows[i].action == DestinationBrowseAction::kOpenDirectory
+          || rows[i].action == DestinationBrowseAction::kFile) {
+        line += rows[i].directory ? "/" : " ";
+      }
       line += rows[i].label;
       screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
                                         i == cursor);
@@ -1399,6 +1412,11 @@ static std::string RenderDestinationBrowseSearchInput(
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
+  screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
+  screen += RestoreOptionsHelpLine(
+      width,
+      T_(" Type substring  Enter: accept  Backspace: delete  Esc: clear"),
+      ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -1733,6 +1751,22 @@ static std::string RestoreOptionsFrameLine(size_t width,
 
   std::string border = color ? "\033[34m│\033[0m" : "│";
   return border + content + border + "\n";
+}
+
+static std::string RestoreOptionsStatusLine(size_t width,
+                                            std::string_view text,
+                                            bool color)
+{
+  std::string line = FitText(text, width);
+  return color ? "\033[97;44m" + line + "\033[0m\n" : line + "\n";
+}
+
+static std::string RestoreOptionsHelpLine(size_t width,
+                                          std::string_view text,
+                                          bool color)
+{
+  std::string line = FitText(text, width);
+  return color ? "\033[2m" + line + "\033[0m\n" : line + "\n";
 }
 
 static std::string RenderRestoreOptionsScreen(UaContext* ua,
