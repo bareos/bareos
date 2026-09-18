@@ -118,6 +118,7 @@ target_sources(
           ua_status.cc
           ua_tree.cc
           ua_tree_browser.cc
+          volume_usage.cc
           ua_update.cc
           vbackup.cc
           verify.cc
