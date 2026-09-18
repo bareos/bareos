@@ -790,6 +790,27 @@ bool DotFilesetsCmd(UaContext* ua, const char*)
   return true;
 }
 
+bool DotFilesetClientsCmd(UaContext* ua, const char*)
+{
+  FilesetResource* fs;
+  ClientResource* client;
+
+  ua->send->ArrayStart("filesetclients");
+  foreach_res (fs, R_FILESET) {
+    if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) { continue; }
+    foreach_res (client, R_CLIENT) {
+      if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", "%s@%s", fs->resource_name_,
+                               client->resource_name_);
+      ua->send->ObjectEnd();
+    }
+  }
+  ua->send->ArrayEnd("filesetclients");
+
+  return true;
+}
+
 namespace {
 
 void EmitPluginRestoreHintFields(

@@ -375,16 +375,19 @@ std::string StyleFrameContent(std::string content,
                               bool color)
 {
   if (!color) { return content; }
-  if (highlighted) { return "\033[97;44m" + content + "\033[0m"; }
+  if (highlighted) {
+    return std::string(kFrameHighlightColor) + content
+           + std::string(kFrameResetColor);
+  }
 
   if (mark == '*' && content.size() > 2) {
-    content.insert(3, "\033[39m");
-    content.insert(2, "\033[32m");
-    return "\033[1m" + content + "\033[0m";
+    content.insert(3, std::string(kFrameDefaultColor));
+    content.insert(2, std::string(kFrameMarkedFileColor));
+    return "\033[1m" + content + std::string(kFrameResetColor);
   }
   if (mark == '+' && content.size() > 2) {
-    content.insert(3, "\033[0m");
-    content.insert(2, "\033[1;33m");
+    content.insert(3, std::string(kFrameResetColor));
+    content.insert(2, std::string(kFrameMarkedDirectoryColor));
   }
   return content;
 }
@@ -723,8 +726,40 @@ using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::IsBackKey;
+using tree_browser_internal::IsCancelKey;
+using tree_browser_internal::IsEditKey;
+using tree_browser_internal::IsEndKey;
+using tree_browser_internal::IsEnterKey;
+using tree_browser_internal::IsHomeKey;
+using tree_browser_internal::IsNextRowKey;
+using tree_browser_internal::IsPreviousRowKey;
+using tree_browser_internal::IsScrollLeftKey;
+using tree_browser_internal::IsScrollRightKey;
+using tree_browser_internal::IsTextKey;
 using tree_browser_internal::IsTopLevelSelection;
+using tree_browser_internal::kBrowserHelpLine1;
+using tree_browser_internal::kBrowserHelpLine2;
+using tree_browser_internal::kFrameColor;
+using tree_browser_internal::kFrameHelpColor;
+using tree_browser_internal::kFrameHighlightColor;
+using tree_browser_internal::kFrameResetColor;
+using tree_browser_internal::kFrameVerticalBorder;
+using tree_browser_internal::kKeyBackspace;
+using tree_browser_internal::kKeyCancel;
+using tree_browser_internal::kKeyDown;
+using tree_browser_internal::kKeyEnter;
+using tree_browser_internal::kKeyLeft;
+using tree_browser_internal::kKeyRight;
+using tree_browser_internal::kKeySpace;
+using tree_browser_internal::kKeyTab;
+using tree_browser_internal::kKeyUp;
+using tree_browser_internal::kSearchResultsHelpLine1;
+using tree_browser_internal::kSearchResultsHelpLine2;
+using tree_browser_internal::kSelectedFilesHelpLine2;
+using tree_browser_internal::kTextInputHelp;
 using tree_browser_internal::MaxHorizontalOffset;
+using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::PluginOptionsRowWindow;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
@@ -732,16 +767,17 @@ using tree_browser_internal::SplitTreeAndPluginRows;
 using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::SummarizePluginNames;
 using tree_browser_internal::TextCellWidth;
+using tree_browser_internal::TextKeyValue;
+using tree_browser_internal::TrimVisualInput;
 
 std::string FrameBorder(size_t width,
                         bool color,
                         FrameBorderStyle style,
-                        std::string_view title = {},
-                        bool focused = false)
+                        std::string_view title = {})
 {
   std::string line = RenderFrameBorder(width, style, title);
   if (!color) { return line + "\n"; }
-  return (focused ? "\033[1;34m" : "\033[34m") + line + "\033[0m\n";
+  return std::string(kFrameColor) + line + std::string(kFrameResetColor) + "\n";
 }
 
 std::string FrameLine(size_t width,
@@ -755,7 +791,10 @@ std::string FrameLine(size_t width,
   std::string content = FitText(text, width - 2);
   content = StyleFrameContent(std::move(content), mark, highlighted, color);
 
-  std::string border = color ? "\033[34m│\033[0m" : "│";
+  std::string border = color ? std::string(kFrameColor)
+                                   + std::string(kFrameVerticalBorder)
+                                   + std::string(kFrameResetColor)
+                             : std::string(kFrameVerticalBorder);
   return border + content + border + "\n";
 }
 
@@ -770,10 +809,13 @@ std::string PluginOptionsResultLine(size_t width,
   std::string content = FitText(text, width - 2);
   if (color && content.size() > label.size()) {
     content.insert(label.size(), "\033[1m");
-    content += "\033[0m";
+    content += kFrameResetColor;
   }
 
-  std::string border = color ? "\033[34m│\033[0m" : "│";
+  std::string border = color ? std::string(kFrameColor)
+                                   + std::string(kFrameVerticalBorder)
+                                   + std::string(kFrameResetColor)
+                             : std::string(kFrameVerticalBorder);
   return border + content + border + "\n";
 }
 
@@ -801,7 +843,8 @@ std::string PluginOptionsRowLine(size_t width,
   if (color) {
     if (editing) {
       if (is_placeholder) {
-        content = "\033[2m" + content + "\033[0m";
+        content = std::string(kFrameHelpColor) + content
+                  + std::string(kFrameResetColor);
       } else if (text_width < inner_width && text.size() < content.size()) {
         // See PluginOptionsRowLine's caller: text_width is a display-cell
         // count, not a byte offset, so it must not index into content
@@ -813,26 +856,40 @@ std::string PluginOptionsRowLine(size_t width,
         content.replace(text.size(), 1, "\033[7m \033[0m");
       }
     } else if (selected) {
-      content = "\033[97;44m" + content + "\033[0m";
+      content = std::string(kFrameHighlightColor) + content
+                + std::string(kFrameResetColor);
     } else if (is_placeholder) {
-      content = "\033[2m" + content + "\033[0m";
+      content = std::string(kFrameHelpColor) + content
+                + std::string(kFrameResetColor);
     }
   }
 
-  std::string border = color ? "\033[34m│\033[0m" : "│";
+  std::string border = color ? std::string(kFrameColor)
+                                   + std::string(kFrameVerticalBorder)
+                                   + std::string(kFrameResetColor)
+                             : std::string(kFrameVerticalBorder);
   return border + content + border + "\n";
 }
 
 std::string StatusBar(size_t width, std::string_view text, bool color)
 {
   std::string line = FitText(text, width);
-  return color ? "\033[97;44m" + line + "\033[0m\n" : line + "\n";
+  return color ? std::string(kFrameHighlightColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
 }
 
 std::string HelpLine(size_t width, std::string_view text, bool color)
 {
   std::string line = FitText(text, width);
-  return color ? "\033[2m" + line + "\033[0m\n" : line + "\n";
+  return color ? std::string(kFrameHelpColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
+}
+
+void RemoveFinalNewline(std::string* text)
+{
+  if (!text->empty() && text->back() == '\n') { text->pop_back(); }
 }
 
 static_assert(MaxHorizontalOffset(20, 8) == 12);
@@ -1013,6 +1070,8 @@ class TreeBrowser {
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
+  size_t TreePathWidth() const;
+  size_t TreeHorizontalLimit() const;
   size_t SearchHorizontalLimit() const;
   size_t SelectedHorizontalLimit() const;
   size_t MaxVisibleRows(bool detail_header = false,
@@ -1053,6 +1112,7 @@ class TreeBrowser {
   std::vector<tree_node*> rows_;
   tree_node* rows_dir_ = nullptr;
   size_t cursor_ = 0;
+  size_t tree_horizontal_offset_ = 0;
   bool detail_view_ = false;
 
   bool entering_search_term_ = false;
@@ -1088,12 +1148,12 @@ class TreeBrowser {
   bool plugin_pane_focused_ = false;
 
   // Structured Plugin Options editor state: one PluginOptionsBlock per
-  // detected/added plugin ("tab"), navigated with Left/Right; within a
+  // detected/added plugin ("tab"), switched with Left/Right; within a
   // block, row 0 is the plugin name, rows [1, options.size()] are
   // option rows, and the last row is the "+ add option" affordance.
   enum class PluginOptionsEditMode
   {
-    kBrowsing,  // Up/Down/Left/Right move the cursor; Enter opens a row.
+    kBrowsing,  // Up/Down move the cursor; Enter opens a row.
     kChoosingNewRowKey,
     kChoosingBooleanValue,
     kEditingBlockName,
@@ -1126,6 +1186,7 @@ void TreeBrowser::RebuildRows()
 {
   rows_ = ChildRows(tree_->node);
   rows_dir_ = tree_->node;
+  tree_horizontal_offset_ = 0;
 }
 
 void TreeBrowser::SyncAfterClassicCommand()
@@ -1151,6 +1212,7 @@ void TreeBrowser::EnterDirectory(tree_node* node)
   tree_->node = node;
   RebuildRows();
   cursor_ = 0;
+  tree_horizontal_offset_ = 0;
 }
 
 void TreeBrowser::GoToParent()
@@ -1161,6 +1223,7 @@ void TreeBrowser::GoToParent()
   RebuildRows();
   auto it = std::find(rows_.begin(), rows_.end(), previous);
   cursor_ = it != rows_.end() ? static_cast<size_t>(it - rows_.begin()) : 0;
+  tree_horizontal_offset_ = 0;
 }
 
 void TreeBrowser::ToggleMarkCurrent()
@@ -1420,6 +1483,32 @@ size_t TreeBrowser::SearchPathWidth() const
   return width > kSearchRowChrome ? width - kSearchRowChrome : 0;
 }
 
+size_t TreeBrowser::TreePathWidth() const
+{
+  // Two frame borders plus the cursor, mark and directory marker prefix.
+  constexpr size_t kTreeRowChrome = 6;
+  size_t width = ScreenWidth();
+  if (detail_view_) {
+    constexpr size_t kDetailChrome = kDetailSizeWidth + kDetailTimeWidth + 3;
+    return width > kTreeRowChrome + kDetailChrome
+               ? width - kTreeRowChrome - kDetailChrome
+               : 0;
+  }
+  return width > kTreeRowChrome ? width - kTreeRowChrome : 0;
+}
+
+size_t TreeBrowser::TreeHorizontalLimit() const
+{
+  size_t path_width = TreePathWidth();
+  if (path_width == 0 || rows_.empty()) { return 0; }
+
+  size_t max_width = 0;
+  for (const tree_node* node : rows_) {
+    if (node->fname) { max_width = std::max(max_width, strlen(node->fname)); }
+  }
+  return MaxHorizontalOffset(max_width, path_width);
+}
+
 size_t TreeBrowser::SearchHorizontalLimit() const
 {
   size_t path_width = SearchPathWidth();
@@ -1454,9 +1543,8 @@ std::string TreeBrowser::RenderPanel() const
 
   std::string tree_title = "Restore selection";
   if (split) { tree_title = (plugin_pane_focused_ ? "  " : "> ") + tree_title; }
-  bool tree_focused = split && !plugin_pane_focused_;
-  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop,
-                                tree_title, tree_focused);
+  std::string out
+      = FrameBorder(width, color, FrameBorderStyle::kTop, tree_title);
 
   POOLMEM* cwd = tree_getpath(tree_->node);
   std::string path = " Path: ";
@@ -1468,7 +1556,7 @@ std::string TreeBrowser::RenderPanel() const
         "    Name", FormatDetailColumns("Size", "Modified"), width - 2);
     out += FrameLine(width, headings, color);
   }
-  out += FrameBorder(width, color, FrameBorderStyle::kMiddle, {}, tree_focused);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
 
   size_t marked = 0;
   for (const tree_node* node : rows_) {
@@ -1489,7 +1577,8 @@ std::string TreeBrowser::RenderPanel() const
       std::string entry = highlighted ? "> " : "  ";
       entry += MarkTag(node);
       entry += TreeNodeHasChild(node) ? "/" : " ";
-      entry += node->fname ? node->fname : "";
+      entry += FitText(node->fname ? node->fname : "", TreePathWidth(),
+                       tree_horizontal_offset_, false);
       if (detail_view_) {
         entry = AlignTextColumns(entry, NodeDetail(ua_, node), width - 2);
       }
@@ -1506,8 +1595,7 @@ std::string TreeBrowser::RenderPanel() const
   } else {
     std::string plugin_title = "Plugin Options";
     plugin_title = (plugin_pane_focused_ ? "> " : "  ") + plugin_title;
-    out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title,
-                       plugin_pane_focused_);
+    out += FrameBorder(width, color, FrameBorderStyle::kMiddle, plugin_title);
 
     bool choosing_option
         = plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey;
@@ -1661,6 +1749,7 @@ std::string TreeBrowser::RenderPanel() const
   status += " | Estimate: "
             + EstimateStatus(estimate_calculated_, estimate_stale_,
                              estimated_bytes_);
+  status += " | Column: " + std::to_string(tree_horizontal_offset_ + 1);
   if (!rows_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
               + std::to_string(last) + " of " + std::to_string(rows_.size());
@@ -1682,7 +1771,7 @@ std::string TreeBrowser::RenderPanel() const
       first_help_line = " Up/Down Choose yes/no  Enter Confirm";
       second_help_line = " Esc Back to option list";
     } else if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
-      first_help_line = " Up/Down Row  Left/Right Tab  Enter Edit  d Delete";
+      first_help_line = " Up/Down Row  Left/Right Plugin  Enter Edit  d Delete";
       second_help_line
           = " n New tab  Tab Save & switch to Files  Esc Discard edits";
     } else {
@@ -1690,16 +1779,17 @@ std::string TreeBrowser::RenderPanel() const
       second_help_line = " Enter Confirm row  Esc Cancel this edit";
     }
   } else {
-    first_help_line = " Enter Open  Space/m Mark  a All  u None  e Estimate";
+    first_help_line = kBrowserHelpLine1;
     if (split) {
       first_help_line += "  |  "
                          + BuildPluginOptionsAdvertisement(
                              SummarizePluginNames(plugin_hint_definitions_));
     }
-    second_help_line = " i Info  l List  / Search  h Help  c Classic  d/r Done";
+    second_help_line = kBrowserHelpLine2;
   }
   out += HelpLine(width, first_help_line, color);
   out += HelpLine(width, second_help_line, color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
@@ -1717,9 +1807,9 @@ std::string TreeBrowser::RenderSearchInput() const
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Enter starts search | Esc returns to files", color);
-  out += HelpLine(width, " Type search text  Backspace Delete  Enter Search",
-                  color);
-  out += HelpLine(width, " Esc Cancel", color);
+  out += HelpLine(width, kTextInputHelp, color);
+  out += HelpLine(width, "", color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
@@ -1776,9 +1866,9 @@ std::string TreeBrowser::RenderSearchResults() const
               + std::to_string(search_matches_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, " Up/Down Move  Left/Right Scroll  Home/End Edges",
-                  color);
-  out += HelpLine(width, " Space Mark  Enter Go to file  Esc Return", color);
+  out += HelpLine(width, kSearchResultsHelpLine1, color);
+  out += HelpLine(width, kSearchResultsHelpLine2, color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
@@ -1833,10 +1923,9 @@ std::string TreeBrowser::RenderSelectedFiles() const
               + std::to_string(selected_nodes_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, " Up/Down Move  Left/Right Scroll  Home/End Edges",
-                  color);
-  out += HelpLine(width, " Space Unmark  Enter Go to file  l/Esc Return",
-                  color);
+  out += HelpLine(width, kSearchResultsHelpLine1, color);
+  out += HelpLine(width, kSelectedFilesHelpLine2, color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
@@ -1849,8 +1938,9 @@ std::string TreeBrowser::RenderHelp() const
   constexpr std::string_view lines[] = {
       " Navigation",
       "   Up/Down          Move selection",
-      "   Enter/Right      Open directory or jump to selected path",
-      "   Left/Backspace   Go to parent directory",
+      "   Left/Right       Scroll long names horizontally",
+      "   Enter            Open directory or jump to selected path",
+      "   Backspace        Go to parent directory",
       "",
       " Selection",
       "   Space or m       Mark/unmark current file or directory",
@@ -1888,6 +1978,7 @@ std::string TreeBrowser::RenderHelp() const
   out += StatusBar(width, " Restore browser help", color);
   out += HelpLine(width, " h/?/Esc Return", color);
   out += HelpLine(width, "", color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
@@ -1973,22 +2064,23 @@ std::string TreeBrowser::RenderPluginHints() const
                   "  p/Esc Return",
                   color);
   out += HelpLine(width, "", color);
+  RemoveFinalNewline(&out);
   return out;
 }
 
 bool TreeBrowser::HandleSearchInputKey(std::string_view key)
 {
-  if (key == "key:enter") {
+  if (IsEnterKey(key)) {
     RunSearch();
-  } else if (key == "key:cancel") {
+  } else if (key == kKeyCancel) {
     entering_search_term_ = false;
     search_term_.clear();
-  } else if (key == "key:backspace") {
+  } else if (key == kKeyBackspace) {
     if (!search_term_.empty()) { RemoveLastUtf8Character(&search_term_); }
-  } else if (key == "key:space") {
+  } else if (key == kKeySpace) {
     search_term_.push_back(' ');
-  } else if (key.starts_with("key:text:")) {
-    search_term_.append(key.substr(strlen("key:text:")));
+  } else if (IsTextKey(key)) {
+    search_term_.append(TextKeyValue(key));
   }
   return false;
 }
@@ -1998,7 +2090,7 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
   if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey) {
     std::vector<tree_browser_internal::PluginOptionChoice> choices
         = AvailablePluginOptionChoices();
-    if (key == "key:enter" && !choices.empty()) {
+    if (IsEnterKey(key) && !choices.empty()) {
       plugin_options_choice_cursor_
           = std::min(plugin_options_choice_cursor_, choices.size() - 1);
       const auto& choice = choices[plugin_options_choice_cursor_];
@@ -2012,45 +2104,44 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
       } else {
         plugin_options_mode_ = PluginOptionsEditMode::kEditingRowValue;
       }
-    } else if (key == "key:cancel") {
+    } else if (key == kKeyCancel) {
       plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
-    } else if (key == "key:up") {
+    } else if (IsPreviousRowKey(key)) {
       if (plugin_options_choice_cursor_ > 0) {
         plugin_options_choice_cursor_--;
       }
-    } else if (key == "key:down") {
+    } else if (IsNextRowKey(key)) {
       if (plugin_options_choice_cursor_ + 1 < choices.size()) {
         plugin_options_choice_cursor_++;
       }
-    } else if (key == "key:space") {
+    } else if (key == kKeySpace) {
       plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
       plugin_options_edit_buffer_ = " ";
-    } else if (key.starts_with("key:text:")) {
+    } else if (IsTextKey(key)) {
       plugin_options_mode_ = PluginOptionsEditMode::kEditingNewRowKey;
-      plugin_options_edit_buffer_
-          = std::string(key.substr(strlen("key:text:")));
+      plugin_options_edit_buffer_ = std::string(TextKeyValue(key));
     }
     return;
   }
 
   if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingBooleanValue) {
-    if (key == "key:enter") {
+    if (IsEnterKey(key)) {
       ActivePluginBlock().options.emplace_back(
           plugin_options_pending_key_,
           plugin_options_boolean_value_ ? "yes" : "no");
       plugin_options_cursor_ = ActivePluginBlock().options.size();
       plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
-    } else if (key == "key:cancel") {
+    } else if (key == kKeyCancel) {
       plugin_options_mode_ = PluginOptionsEditMode::kChoosingNewRowKey;
-    } else if (key == "key:up" || key == "key:down" || key == "key:left"
-               || key == "key:right") {
+    } else if (IsPreviousRowKey(key) || IsNextRowKey(key)
+               || IsScrollLeftKey(key) || IsScrollRightKey(key)) {
       plugin_options_boolean_value_ = !plugin_options_boolean_value_;
     }
     return;
   }
 
   if (plugin_options_mode_ != PluginOptionsEditMode::kBrowsing) {
-    if (key == "key:enter") {
+    if (IsEnterKey(key)) {
       switch (plugin_options_mode_) {
         case PluginOptionsEditMode::kEditingBlockName:
           ActivePluginBlock().plugin_name = plugin_options_edit_buffer_;
@@ -2080,22 +2171,22 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
           break;
       }
       plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
-    } else if (key == "key:cancel") {
+    } else if (key == kKeyCancel) {
       plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
-    } else if (key == "key:backspace") {
+    } else if (key == kKeyBackspace) {
       if (!plugin_options_edit_buffer_.empty()) {
         RemoveLastUtf8Character(&plugin_options_edit_buffer_);
       }
-    } else if (key == "key:space") {
+    } else if (key == kKeySpace) {
       plugin_options_edit_buffer_.push_back(' ');
-    } else if (key.starts_with("key:text:")) {
-      plugin_options_edit_buffer_.append(key.substr(strlen("key:text:")));
+    } else if (IsTextKey(key)) {
+      plugin_options_edit_buffer_.append(TextKeyValue(key));
     }
     return;
   }
 
   // kBrowsing: navigate rows/blocks and open the row editor.
-  if (key == "key:enter") {
+  if (IsEnterKey(key)) {
     if (plugin_options_cursor_ == 0) {
       plugin_options_mode_ = PluginOptionsEditMode::kEditingBlockName;
       plugin_options_edit_buffer_ = ActivePluginBlock().plugin_name;
@@ -2115,7 +2206,7 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
           = ActivePluginBlock().options[plugin_options_cursor_ - 1].second;
       plugin_options_adding_new_row_ = false;
     }
-  } else if (key == "key:cancel") {
+  } else if (key == kKeyCancel) {
     plugin_pane_focused_ = false;
     plugin_options_blocks_ = restore_plugin_hints::ParsePluginOptionsDocument(
         tree_->plugin_options_out ? *tree_->plugin_options_out : "");
@@ -2127,20 +2218,20 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
     }
     plugin_options_active_block_ = 0;
     plugin_options_cursor_ = 0;
-  } else if (key == "key:up") {
+  } else if (IsPreviousRowKey(key)) {
     if (plugin_options_cursor_ > 0) { plugin_options_cursor_--; }
-  } else if (key == "key:down") {
+  } else if (IsNextRowKey(key)) {
     if (plugin_options_cursor_ + 1 < PluginOptionsRowCount()) {
       plugin_options_cursor_++;
     }
-  } else if (key == "key:left") {
+  } else if (IsScrollLeftKey(key)) {
     if (plugin_options_blocks_.size() > 1) {
       plugin_options_active_block_
           = (plugin_options_active_block_ + plugin_options_blocks_.size() - 1)
             % plugin_options_blocks_.size();
       plugin_options_cursor_ = 0;
     }
-  } else if (key == "key:right") {
+  } else if (IsScrollRightKey(key)) {
     if (plugin_options_blocks_.size() > 1) {
       plugin_options_active_block_
           = (plugin_options_active_block_ + 1) % plugin_options_blocks_.size();
@@ -2172,30 +2263,30 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
 
 void TreeBrowser::HandleSearchResultsKey(std::string_view key)
 {
-  if (key == "key:up") {
+  if (IsPreviousRowKey(key)) {
     if (search_cursor_ > 0) {
       search_cursor_--;
       ClampSearchHorizontalOffset();
     }
-  } else if (key == "key:down") {
+  } else if (IsNextRowKey(key)) {
     if (search_cursor_ + 1 < search_matches_.size()) {
       search_cursor_++;
       ClampSearchHorizontalOffset();
     }
-  } else if (key == "key:left") {
+  } else if (IsScrollLeftKey(key)) {
     search_horizontal_offset_
         = search_horizontal_offset_ > kHorizontalScrollColumns
               ? search_horizontal_offset_ - kHorizontalScrollColumns
               : 0;
-  } else if (key == "key:right") {
+  } else if (IsScrollRightKey(key)) {
     search_horizontal_offset_
         = std::min(SearchHorizontalLimit(),
                    search_horizontal_offset_ + kHorizontalScrollColumns);
-  } else if (key == "key:home") {
+  } else if (IsHomeKey(key)) {
     search_horizontal_offset_ = 0;
-  } else if (key == "key:end") {
+  } else if (IsEndKey(key)) {
     search_horizontal_offset_ = SearchHorizontalLimit();
-  } else if (key == "key:space") {
+  } else if (key == kKeySpace) {
     if (search_cursor_ < search_matches_.size()) {
       tree_node* node = search_matches_[search_cursor_];
       if (SetExtract(ua_, node, tree_, !node->extract) > 0) {
@@ -2204,35 +2295,35 @@ void TreeBrowser::HandleSearchResultsKey(std::string_view key)
     }
   } else if (key == "key:text:e") {
     CalculateEstimate();
-  } else if (key == "key:enter") {
+  } else if (IsEnterKey(key)) {
     if (search_cursor_ < search_matches_.size()) {
       JumpToSearchMatch(search_matches_[search_cursor_]);
     }
-  } else if (key == "key:cancel") {
+  } else if (kKeyCancel == key) {
     showing_search_results_ = false;
   }
 }
 
 void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
 {
-  if (key == "key:up") {
+  if (IsPreviousRowKey(key)) {
     if (selected_cursor_ > 0) { selected_cursor_--; }
-  } else if (key == "key:down") {
+  } else if (IsNextRowKey(key)) {
     if (selected_cursor_ + 1 < selected_nodes_.size()) { selected_cursor_++; }
-  } else if (key == "key:left") {
+  } else if (IsScrollLeftKey(key)) {
     selected_horizontal_offset_
         = selected_horizontal_offset_ > kHorizontalScrollColumns
               ? selected_horizontal_offset_ - kHorizontalScrollColumns
               : 0;
-  } else if (key == "key:right") {
+  } else if (IsScrollRightKey(key)) {
     selected_horizontal_offset_
         = std::min(SelectedHorizontalLimit(),
                    selected_horizontal_offset_ + kHorizontalScrollColumns);
-  } else if (key == "key:home") {
+  } else if (IsHomeKey(key)) {
     selected_horizontal_offset_ = 0;
-  } else if (key == "key:end") {
+  } else if (IsEndKey(key)) {
     selected_horizontal_offset_ = SelectedHorizontalLimit();
-  } else if (key == "key:space") {
+  } else if (key == kKeySpace) {
     if (selected_cursor_ < selected_nodes_.size()) {
       SetExtract(ua_, selected_nodes_[selected_cursor_], tree_, false);
       InvalidateEstimate();
@@ -2240,19 +2331,19 @@ void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
     }
   } else if (key == "key:text:e") {
     CalculateEstimate();
-  } else if (key == "key:enter") {
+  } else if (IsEnterKey(key)) {
     if (selected_cursor_ < selected_nodes_.size()) {
       JumpToSearchMatch(selected_nodes_[selected_cursor_]);
       showing_selected_files_ = false;
     }
-  } else if (key == "key:text:l" || key == "key:cancel") {
+  } else if (key == "key:text:l" || key == kKeyCancel) {
     showing_selected_files_ = false;
   }
 }
 
 void TreeBrowser::HandleHelpKey(std::string_view key)
 {
-  if (key == "key:text:h" || key == "key:text:?" || key == "key:cancel") {
+  if (key == "key:text:h" || key == "key:text:?" || key == kKeyCancel) {
     showing_help_ = false;
   }
 }
@@ -2266,17 +2357,17 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
   size_t max_offset
       = lines.size() > visible_rows ? lines.size() - visible_rows : 0;
 
-  if (key == "key:up") {
+  if (IsPreviousRowKey(key)) {
     if (plugin_hints_offset_ > 0) { plugin_hints_offset_--; }
-  } else if (key == "key:down") {
+  } else if (IsNextRowKey(key)) {
     if (plugin_hints_offset_ < max_offset) { plugin_hints_offset_++; }
   } else if (key == "key:text:a") {
     plugin_hints_show_all_ = !plugin_hints_show_all_;
     plugin_hints_offset_ = 0;
-  } else if (key == "key:text:o" || key == "key:tab") {
+  } else if (key == "key:text:o" || key == kKeyTab) {
     showing_plugin_hints_ = false;
     FocusPluginOptionsPane();
-  } else if (key == "key:text:p" || key == "key:cancel") {
+  } else if (key == "key:text:p" || key == kKeyCancel) {
     showing_plugin_hints_ = false;
   }
 }
@@ -2321,7 +2412,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
   // Tab always toggles which half of the split screen has keyboard focus
   // (only meaningful once a plugin backup was detected, since that's the
   // only time the Plugin Options pane is shown at all).
-  if (key == "key:tab" && HasDetectedPlugins()) {
+  if (key == kKeyTab && HasDetectedPlugins()) {
     TogglePluginPaneFocus();
     return false;
   }
@@ -2334,15 +2425,30 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
 
-  if (key == "key:up") {
+  if (IsPreviousRowKey(key)) {
     if (cursor_ > 0) { cursor_--; }
-  } else if (key == "key:down") {
+    tree_horizontal_offset_ = 0;
+  } else if (IsNextRowKey(key)) {
     if (cursor_ + 1 < rows_.size()) { cursor_++; }
-  } else if (key == "key:right" || key == "key:enter") {
+    tree_horizontal_offset_ = 0;
+  } else if (IsScrollLeftKey(key)) {
+    tree_horizontal_offset_
+        = tree_horizontal_offset_ > kHorizontalScrollColumns
+              ? tree_horizontal_offset_ - kHorizontalScrollColumns
+              : 0;
+  } else if (IsScrollRightKey(key)) {
+    tree_horizontal_offset_
+        = std::min(TreeHorizontalLimit(),
+                   tree_horizontal_offset_ + kHorizontalScrollColumns);
+  } else if (IsHomeKey(key)) {
+    tree_horizontal_offset_ = 0;
+  } else if (IsEndKey(key)) {
+    tree_horizontal_offset_ = TreeHorizontalLimit();
+  } else if (IsEnterKey(key)) {
     if (cursor_ < rows_.size()) { EnterDirectory(rows_[cursor_]); }
-  } else if (key == "key:left" || key == "key:backspace") {
+  } else if (key == kKeyBackspace) {
     GoToParent();
-  } else if (key == "key:space" || key == "key:text:m") {
+  } else if (key == kKeySpace || key == "key:text:m") {
     ToggleMarkCurrent();
   } else if (key == "key:text:a") {
     MarkAllInDirectory(true);
@@ -2383,7 +2489,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     *exit_reason = TreeBrowserExit::kSwitchToClassic;
     return true;
   } else if (key == "key:text:d" || key == "key:text:r" || key == "key:text:q"
-             || key == "key:cancel") {
+             || key == kKeyCancel) {
     *exit_reason = TreeBrowserExit::kDone;
     return true;
   }
@@ -2417,17 +2523,13 @@ TreeBrowserExit TreeBrowser::Run()
     }
 
     std::string_view input(user->msg, user->message_length);
-    if (input.starts_with("resize:")) {
-      std::string_view size_view = input.substr(strlen("resize:"));
-      size_t separator = size_view.find(':');
-      int new_height
-          = atoi(std::string(size_view.substr(0, separator)).c_str());
-      if (new_height > 0) { ua_->terminal_height = new_height; }
-      if (separator != std::string_view::npos) {
-        int new_width
-            = atoi(std::string(size_view.substr(separator + 1)).c_str());
-        if (new_width > 0) { ua_->terminal_width = new_width; }
-      }
+    TrimVisualInput(&input);
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua_->terminal_height = resize.height; }
+      if (resize.width > 0) { ua_->terminal_width = resize.width; }
+      tree_horizontal_offset_
+          = std::min(tree_horizontal_offset_, TreeHorizontalLimit());
       ClampSearchHorizontalOffset();
       ClampPluginHintsOffset();
       continue;

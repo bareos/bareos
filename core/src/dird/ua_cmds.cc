@@ -91,6 +91,7 @@ extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
+extern bool DotFilesetClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotPluginhintsCmd(UaContext* ua, const char* cmd);
 extern bool DotClientbrowseCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
@@ -255,6 +256,8 @@ static struct ua_cmdstruct commands[] = {
      false, false},
     {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
+    {NT_(".filesetclients"), DotFilesetClientsCmd,
+     T_("List fileset@client combinations"), NULL, false, false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
      NT_("[ all ] [ item=cmd ] [ full ]"), false, false},
     {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
@@ -421,7 +424,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("where=</path> client=<client-name> storage=<storage-name> "
          "bootstrap=<file> "
          "restorejob=<job-name> comment=<text> jobid=<jobid> "
-         "fileset=<fileset-name> "
+         "fileset=<fileset-name> filesetclient=<fileset-name>@<client-name> "
          "replace=<always|never|ifolder|ifnewer> "
          "pluginoptions=<plugin-options-string> "
          "regexwhere=<regex> fileregex=<regex> "
@@ -449,6 +452,7 @@ static struct ua_cmdstruct commands[] = {
      true},
     {NT_("run"), RunCmd, T_("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> "
+         "filesetclient=<fileset-name>@<client-name> "
          "level=<level> "
          "storage=<storage-name> where=<directory-prefix> "
          "when=<universal-time-specification> "
