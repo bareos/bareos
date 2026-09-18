@@ -66,7 +66,7 @@ inline constexpr const char* kRunDialogHelp
       "Left/Right: scroll/cycle  Esc/.: cancel";
 inline constexpr const char* kRestoreDialogHelp
     = "Enter: run/edit/toggle  e/Space: edit  Tab/Up/Down: select  "
-      "Left/Right: scroll/advanced  Esc/.: cancel";
+      "Left/Right: scroll/advanced  b: browse Where  Esc/.: cancel";
 inline constexpr const char* kRelocationDialogHelp
     = "Enter: apply/edit  e/Space: edit  Tab/Up/Down: select  "
       "Left/Right: scroll/cycle  Esc/.: cancel";
