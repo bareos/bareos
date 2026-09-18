@@ -77,7 +77,10 @@ int ndmca_op_create_backup(struct ndm_session* sess)
   ca->is_label_op = 0;
 
   rc = ndmca_backreco_startup(sess);
-  if (rc) return rc;
+  if (rc) {
+    ndmca_connect_close(sess);
+    return rc;
+  }
 
   rc = ndmca_data_start_backup(sess);
   if (rc == 0) {
@@ -105,7 +108,10 @@ int ndmca_op_recover_files(struct ndm_session* sess)
   ca->is_label_op = 0;
 
   rc = ndmca_backreco_startup(sess);
-  if (rc) return rc;
+  if (rc) {
+    ndmca_connect_close(sess);
+    return rc;
+  }
 
   rc = ndmca_data_start_recover(sess);
   if (rc == 0) {
@@ -152,7 +158,10 @@ int ndmca_op_recover_fh(struct ndm_session* sess)
   ca->is_label_op = 0;
 
   rc = ndmca_backreco_startup(sess);
-  if (rc) return rc;
+  if (rc) {
+    ndmca_connect_close(sess);
+    return rc;
+  }
 
   rc = ndmca_data_start_recover_filehist(sess);
   if (rc == 0) {
@@ -852,7 +861,7 @@ int ndmca_monitor_get_states(struct ndm_session* sess)
   if (ndmca_data_get_state(sess) < 0) rc = -1;
   if (!ca->job.tape_tcp) {
     if (ndmca_mover_get_state(sess) < 0) rc = -1;
-    ndmca_tape_get_state_no_tattle(sess);
+    if (ca->media_is_loaded) { ndmca_tape_get_state_no_tattle(sess); }
   }
 
   return rc;
