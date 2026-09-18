@@ -53,6 +53,7 @@
 #include "dird/jcr_util.h"
 
 #include <algorithm>
+#include <cctype>
 #include <string_view>
 #include <vector>
 
@@ -85,8 +86,10 @@ using tree_browser_internal::kKeyPageUp;
 using tree_browser_internal::kKeySpace;
 using tree_browser_internal::kKeyTab;
 using tree_browser_internal::kListDialogHelp;
+using tree_browser_internal::kRelocationDialogHelp;
 using tree_browser_internal::kRestoreDialogHelp;
 using tree_browser_internal::kRunDialogHelp;
+using tree_browser_internal::kTextInputHelp;
 using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::StyleFrameContent;
@@ -945,6 +948,7 @@ enum class BackupOptionAction
   kJob,
   kFileset,
   kClient,
+  kAdvancedMenu,
   kBackupFormat,
   kWhen,
   kPriority,
@@ -982,6 +986,7 @@ struct BackupOptionRow {
   BackupOptionAction action;
   const char* label;
   std::string value;
+  bool advanced = false;
 };
 
 struct DestinationBrowseEntry {
@@ -1079,6 +1084,20 @@ static void RemoveFinalNewline(std::string* text)
   if (!text->empty() && text->back() == '\n') { text->pop_back(); }
 }
 
+static std::string FormatRestoreWhereDisplay(JobControlRecord* jcr,
+                                             RunContext& rc)
+{
+  const char* where = jcr->where ? jcr->where : rc.job->RestoreWhere;
+  if (!where || where[0] == '\0') { return T_("(original location)"); }
+
+  std::string display = where;
+  if (IsPathSeparator(where[0]) && where[1] == '\0') {
+    display += " ";
+    display += T_("(original location)");
+  }
+  return display;
+}
+
 static std::string FormatRunScheduleRelativeTime(time_t when, time_t now)
 {
   struct Unit {
@@ -1131,7 +1150,7 @@ static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
                   T_("Browse destination client"),
                   T_("open target client filesystem browser"), false});
   rows.push_back({RestoreOptionAction::kWhere, T_("Where"),
-                  jcr->where ? jcr->where : NPRT(rc.job->RestoreWhere)});
+                  FormatRestoreWhereDisplay(jcr, rc)});
   rows.push_back({RestoreOptionAction::kRelocation, T_("File Relocation"),
                   jcr->RegexWhere ? jcr->RegexWhere : T_("not configured"),
                   false});
@@ -2000,8 +2019,10 @@ static std::string RunOptionValueWithSource(const char* value,
   return result;
 }
 
-static std::vector<BackupOptionRow> BuildBackupOptionRows(JobControlRecord* jcr,
-                                                          RunContext& rc)
+static std::vector<BackupOptionRow> BuildBackupOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc,
+    bool advanced_expanded)
 {
   std::vector<BackupOptionRow> rows;
   rows.push_back({BackupOptionAction::kLevel, T_("Level"),
@@ -2022,13 +2043,6 @@ static std::vector<BackupOptionRow> BuildBackupOptionRows(JobControlRecord* jcr,
                   jcr->dir_impl->res.client
                       ? jcr->dir_impl->res.client->resource_name_
                       : T_("*None*")});
-  rows.push_back({BackupOptionAction::kBackupFormat, T_("Backup Format"),
-                  jcr->dir_impl->backup_format ? jcr->dir_impl->backup_format
-                                               : T_("*None*")});
-  rows.push_back({BackupOptionAction::kWhen, T_("When"),
-                  FormatRunScheduleDisplay(jcr->sched_time)});
-  rows.push_back({BackupOptionAction::kPriority, T_("Priority"),
-                  std::to_string(jcr->JobPriority)});
   rows.push_back(
       {BackupOptionAction::kPool, T_("Pool"),
        RunOptionValueWithSource(jcr->dir_impl->res.pool
@@ -2043,21 +2057,117 @@ static std::vector<BackupOptionRow> BuildBackupOptionRows(JobControlRecord* jcr,
                             : T_("*None*"),
                         jcr->dir_impl->res.npool_source)});
   }
-  rows.push_back({BackupOptionAction::kPluginOptions, T_("Plugin Options"),
-                  jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
-                                                : T_("not configured")});
+  rows.push_back({BackupOptionAction::kAdvancedMenu,
+                  advanced_expanded ? T_("[-] Advanced Options")
+                                    : T_("[+] Advanced Options"),
+                  advanced_expanded ? T_("press Enter to collapse")
+                                    : T_("press Enter to expand")});
+  if (advanced_expanded) {
+    rows.push_back({BackupOptionAction::kWhen, T_("When"),
+                    FormatRunScheduleDisplay(jcr->sched_time), true});
+    rows.push_back({BackupOptionAction::kPriority, T_("Priority"),
+                    std::to_string(jcr->JobPriority), true});
+    rows.push_back({BackupOptionAction::kPluginOptions, T_("Plugin Options"),
+                    jcr->dir_impl->plugin_options
+                        ? jcr->dir_impl->plugin_options
+                        : T_("not configured"),
+                    true});
+    rows.push_back({BackupOptionAction::kBackupFormat, T_("Backup Format"),
+                    jcr->dir_impl->backup_format ? jcr->dir_impl->backup_format
+                                                 : T_("*None*"),
+                    true});
+  }
   rows.push_back({BackupOptionAction::kRunNow, T_("Run now"),
                   T_("start the backup job with these settings")});
   return rows;
+}
+
+static int BackupLevelIndex(int level)
+{
+  static constexpr int kBackupLevels[]
+      = {L_FULL, L_INCREMENTAL, L_DIFFERENTIAL, L_SINCE, L_VIRTUAL_FULL};
+  for (size_t i = 0; i < std::size(kBackupLevels); ++i) {
+    if (level == kBackupLevels[i]) { return static_cast<int>(i); }
+  }
+  return 0;
+}
+
+static void ApplyBackupLevelChange(JobControlRecord* jcr,
+                                   RunContext& rc,
+                                   int direction)
+{
+  if (!jcr->is_JobType(JT_BACKUP)) { return; }
+
+  static constexpr int kBackupLevels[]
+      = {L_FULL, L_INCREMENTAL, L_DIFFERENTIAL, L_SINCE, L_VIRTUAL_FULL};
+  int index = BackupLevelIndex(jcr->getJobLevel());
+  index = (index + direction + static_cast<int>(std::size(kBackupLevels)))
+          % static_cast<int>(std::size(kBackupLevels));
+  jcr->setJobLevel(kBackupLevels[index]);
+  if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+    ApplyPoolOverrides(jcr, true);
+    rc.pool = jcr->dir_impl->res.pool;
+    rc.level_override = true;
+  }
+}
+
+static void SetBackupFormat(JobControlRecord* jcr, const char* format)
+{
+  if (jcr->dir_impl->backup_format) {
+    free(jcr->dir_impl->backup_format);
+    jcr->dir_impl->backup_format = NULL;
+  }
+  jcr->dir_impl->backup_format = strdup(format);
+}
+
+static void ApplyBackupFormatChange(JobControlRecord* jcr)
+{
+  if (jcr->dir_impl->backup_format
+      && Bstrcasecmp(jcr->dir_impl->backup_format, "NDMP")) {
+    SetBackupFormat(jcr, "Native");
+  } else {
+    SetBackupFormat(jcr, "NDMP");
+  }
+}
+
+static void ApplyPriorityChange(JobControlRecord* jcr, int direction);
+
+static bool ApplyInlineBackupOptionChange(JobControlRecord* jcr,
+                                          RunContext& rc,
+                                          BackupOptionAction action,
+                                          int direction)
+{
+  switch (action) {
+    case BackupOptionAction::kLevel:
+      if (!jcr->is_JobType(JT_BACKUP)) { return false; }
+      ApplyBackupLevelChange(jcr, rc, direction);
+      return true;
+    case BackupOptionAction::kBackupFormat:
+      ApplyBackupFormatChange(jcr);
+      return true;
+    case BackupOptionAction::kPriority:
+      ApplyPriorityChange(jcr, direction);
+      return true;
+    default:
+      return false;
+  }
+}
+
+static void ApplyPriorityChange(JobControlRecord* jcr, int direction)
+{
+  int priority = jcr->JobPriority + direction;
+  jcr->JobPriority = std::max(priority, 1);
 }
 
 static std::string RenderBackupOptionsScreen(UaContext* ua,
                                              JobControlRecord* jcr,
                                              RunContext& rc,
                                              size_t cursor,
+                                             bool advanced_expanded,
                                              size_t value_offset)
 {
-  std::vector<BackupOptionRow> rows = BuildBackupOptionRows(jcr, rc);
+  std::vector<BackupOptionRow> rows
+      = BuildBackupOptionRows(jcr, rc, advanced_expanded);
   size_t width = RestoreOptionsScreenWidth(ua);
   size_t value_width = RestoreOptionValueWidth(ua);
   std::string screen;
@@ -2076,6 +2186,7 @@ static std::string RenderBackupOptionsScreen(UaContext* ua,
       screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
     }
     std::string line = i == cursor ? "> " : "  ";
+    line += row.advanced ? "  " : "";
     line += FitRestoreOptionText(row.label, 22);
     if (line.size() < kRestoreOptionLabelColumn) {
       line.append(kRestoreOptionLabelColumn - line.size(), ' ');
@@ -2100,18 +2211,21 @@ static int SelectBackupOptionVisual(UaContext* ua,
   BareosSocket* user = ua->UA_sock;
   if (!user) { return -1; }
 
-  size_t cursor = BuildBackupOptionRows(jcr, rc).size() - 1;
+  bool advanced_expanded = false;
+  size_t cursor = BuildBackupOptionRows(jcr, rc, advanced_expanded).size() - 1;
   size_t value_offset = 0;
   for (;;) {
-    std::vector<BackupOptionRow> rows = BuildBackupOptionRows(jcr, rc);
+    std::vector<BackupOptionRow> rows
+        = BuildBackupOptionRows(jcr, rc, advanced_expanded);
     size_t row_count = rows.size();
+    if (cursor >= row_count) { cursor = row_count - 1; }
     value_offset = std::min(
         value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
                                                   RestoreOptionValueWidth(ua)));
     user->signal(BNET_START_SELECT);
-    ua->SendMsg(
-        "%s",
-        RenderBackupOptionsScreen(ua, jcr, rc, cursor, value_offset).c_str());
+    ua->SendMsg("%s", RenderBackupOptionsScreen(ua, jcr, rc, cursor,
+                                                advanced_expanded, value_offset)
+                          .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -2134,16 +2248,37 @@ static int SelectBackupOptionVisual(UaContext* ua,
       return -1;
     }
     if (IsEnterKey(input) || input.empty()) {
+      if (rows[cursor].action == BackupOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action, 1)) {
+        value_offset = 0;
+        continue;
+      }
       return static_cast<int>(rows[cursor].action);
     }
     if (IsEditKey(input)) {
       if (rows[cursor].action == BackupOptionAction::kRunNow) { continue; }
+      if (rows[cursor].action == BackupOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action, 1)) {
+        value_offset = 0;
+        continue;
+      }
       return static_cast<int>(rows[cursor].action);
     }
     if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
-      size_t max_offset = MaxRestoreOptionValueOffset(
-          rows[cursor].value, RestoreOptionValueWidth(ua));
-      if (max_offset > 0) {
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action,
+                                        IsScrollRightKey(input) ? 1 : -1)) {
+        value_offset = 0;
+      } else {
+        size_t max_offset = MaxRestoreOptionValueOffset(
+            rows[cursor].value, RestoreOptionValueWidth(ua));
         constexpr size_t kScrollStep = 8;
         if (IsScrollRightKey(input)) {
           value_offset = std::min(value_offset + kScrollStep, max_offset);
@@ -2216,13 +2351,11 @@ static int ModifyBackupParameters(UaContext* ua,
         goto try_again;
       }
       break;
+    case BackupOptionAction::kAdvancedMenu:
+      goto try_again;
     case BackupOptionAction::kBackupFormat:
       if (GetCmd(ua, T_("Please enter Backup Format: "))) {
-        if (jcr->dir_impl->backup_format) {
-          free(jcr->dir_impl->backup_format);
-          jcr->dir_impl->backup_format = NULL;
-        }
-        jcr->dir_impl->backup_format = strdup(ua->cmd);
+        SetBackupFormat(jcr, ua->cmd);
         goto try_again;
       }
       break;
@@ -2472,6 +2605,477 @@ static bool SelectRunScheduleVisual(UaContext* ua, time_t* when)
   }
 }
 
+enum class RelocationMode
+{
+  kNone,
+  kWindowsDriveRemap,
+  kReplacePrefix,
+  kStripPrefix,
+  kAddSuffix,
+  kCustomRegexWhere,
+};
+
+enum class RelocationAction
+{
+  kMode,
+  kSourceDrive,
+  kTargetDrive,
+  kSourcePrefix,
+  kTargetPrefix,
+  kSuffix,
+  kExamplePath,
+  kRegexWhere,
+  kApply,
+};
+
+struct RelocationEditorState {
+  RelocationMode mode = RelocationMode::kNone;
+  std::string source_drive = "C:";
+  std::string target_drive = "D:";
+  std::string source_prefix = "/home";
+  std::string target_prefix = "/restore/home";
+  std::string suffix = ".restored";
+  std::string example_path = "C:/Users/Alice/Documents/report.docx";
+  std::string custom_regexwhere = "!^C:/Users/!/restore/users/!i";
+};
+
+struct RelocationEditorRow {
+  RelocationAction action;
+  const char* label;
+  std::string value;
+  bool editable = false;
+};
+
+static const char* RelocationModeName(RelocationMode mode)
+{
+  switch (mode) {
+    case RelocationMode::kNone:
+      return T_("No relocation");
+    case RelocationMode::kWindowsDriveRemap:
+      return T_("Windows drive remap");
+    case RelocationMode::kReplacePrefix:
+      return T_("Replace prefix");
+    case RelocationMode::kStripPrefix:
+      return T_("Strip prefix");
+    case RelocationMode::kAddSuffix:
+      return T_("Add suffix");
+    case RelocationMode::kCustomRegexWhere:
+      return T_("Custom RegexWhere");
+  }
+  return T_("No relocation");
+}
+
+static RelocationMode NextRelocationMode(RelocationMode mode, int direction)
+{
+  constexpr int kModeCount = 6;
+  int index = static_cast<int>(mode) + direction;
+  index = (index + kModeCount) % kModeCount;
+  return static_cast<RelocationMode>(index);
+}
+
+static std::string NormalizeWindowsDrive(std::string drive)
+{
+  if (drive.empty()) { return "C:"; }
+  drive[0] = static_cast<char>(toupper(drive[0]));
+  if (drive.size() == 1) { drive += ":"; }
+  if (drive.size() > 2) { drive.resize(2); }
+  return drive;
+}
+
+static std::string EscapeRegexWherePart(std::string_view text)
+{
+  std::string escaped;
+  escaped.reserve(text.size());
+  for (char ch : text) {
+    if (ch == '!' || ch == '\\') { escaped += '\\'; }
+    escaped += ch;
+  }
+  return escaped;
+}
+
+static std::string BuildRegexWhereFromParts(char* strip_prefix,
+                                            char* add_prefix,
+                                            char* add_suffix)
+{
+  int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
+  std::vector<char> buffer(static_cast<size_t>(len));
+  bregexp_build_where(buffer.data(), len, strip_prefix, add_prefix, add_suffix);
+  return buffer.data();
+}
+
+static std::string RelocationRegexWhere(const RelocationEditorState& state)
+{
+  switch (state.mode) {
+    case RelocationMode::kNone:
+      return "";
+    case RelocationMode::kWindowsDriveRemap: {
+      std::string source = NormalizeWindowsDrive(state.source_drive) + "/";
+      std::string target = NormalizeWindowsDrive(state.target_drive) + "/";
+      return "!^" + EscapeRegexWherePart(source) + "!"
+             + EscapeRegexWherePart(target) + "!i";
+    }
+    case RelocationMode::kReplacePrefix:
+      return "!^" + EscapeRegexWherePart(state.source_prefix) + "!"
+             + EscapeRegexWherePart(state.target_prefix) + "!i";
+    case RelocationMode::kStripPrefix: {
+      std::vector<char> strip(state.source_prefix.begin(),
+                              state.source_prefix.end());
+      strip.push_back('\0');
+      return BuildRegexWhereFromParts(strip.data(), nullptr, nullptr);
+    }
+    case RelocationMode::kAddSuffix: {
+      std::vector<char> suffix(state.suffix.begin(), state.suffix.end());
+      suffix.push_back('\0');
+      return BuildRegexWhereFromParts(nullptr, nullptr, suffix.data());
+    }
+    case RelocationMode::kCustomRegexWhere:
+      return state.custom_regexwhere;
+  }
+  return "";
+}
+
+static std::string RelocationPreviewResult(std::string_view regexwhere,
+                                           std::string_view example_path,
+                                           std::string* status)
+{
+  if (regexwhere.empty()) {
+    *status = T_("valid: no relocation configured");
+    return std::string(example_path);
+  }
+
+  alist<BareosRegex*>* regs = get_bregexps(std::string(regexwhere).c_str());
+  if (!regs) {
+    *status = T_("invalid RegexWhere");
+    return std::string(example_path);
+  }
+
+  char* result = nullptr;
+  ApplyBregexps(std::string(example_path).c_str(), regs, &result);
+  std::string preview = result ? result : std::string(example_path);
+  *status = T_("valid");
+  FreeBregexps(regs);
+  delete regs;
+  return preview;
+}
+
+static void UpdateRelocationExampleForMode(RelocationEditorState* state)
+{
+  switch (state->mode) {
+    case RelocationMode::kWindowsDriveRemap:
+      state->example_path = NormalizeWindowsDrive(state->source_drive)
+                            + "/Users/Alice/Documents/report.docx";
+      break;
+    case RelocationMode::kReplacePrefix:
+    case RelocationMode::kStripPrefix:
+      state->example_path
+          = state->source_prefix + "/alice/documents/report.pdf";
+      break;
+    case RelocationMode::kAddSuffix:
+    case RelocationMode::kNone:
+    case RelocationMode::kCustomRegexWhere:
+      break;
+  }
+}
+
+static std::vector<RelocationEditorRow> BuildRelocationRows(
+    const RelocationEditorState& state,
+    const std::string& regexwhere,
+    const std::string& preview_result,
+    const std::string& status)
+{
+  std::vector<RelocationEditorRow> rows;
+  rows.push_back(
+      {RelocationAction::kMode, T_("Mode"), RelocationModeName(state.mode)});
+  switch (state.mode) {
+    case RelocationMode::kWindowsDriveRemap:
+      rows.push_back({RelocationAction::kSourceDrive, T_("Source drive"),
+                      NormalizeWindowsDrive(state.source_drive), true});
+      rows.push_back({RelocationAction::kTargetDrive, T_("Target drive"),
+                      NormalizeWindowsDrive(state.target_drive), true});
+      break;
+    case RelocationMode::kReplacePrefix:
+      rows.push_back({RelocationAction::kSourcePrefix, T_("Source prefix"),
+                      state.source_prefix, true});
+      rows.push_back({RelocationAction::kTargetPrefix, T_("Target prefix"),
+                      state.target_prefix, true});
+      break;
+    case RelocationMode::kStripPrefix:
+      rows.push_back({RelocationAction::kSourcePrefix, T_("Source prefix"),
+                      state.source_prefix, true});
+      break;
+    case RelocationMode::kAddSuffix:
+      rows.push_back(
+          {RelocationAction::kSuffix, T_("Suffix"), state.suffix, true});
+      break;
+    case RelocationMode::kCustomRegexWhere:
+      rows.push_back({RelocationAction::kRegexWhere, T_("RegexWhere"),
+                      state.custom_regexwhere, true});
+      break;
+    case RelocationMode::kNone:
+      break;
+  }
+  rows.push_back({RelocationAction::kExamplePath, T_("Example path"),
+                  state.example_path, true});
+  if (state.mode != RelocationMode::kCustomRegexWhere) {
+    rows.push_back({RelocationAction::kRegexWhere, T_("RegexWhere"),
+                    regexwhere.empty() ? T_("not configured") : regexwhere});
+  }
+  rows.push_back(
+      {RelocationAction::kExamplePath, T_("Preview"), state.example_path});
+  rows.push_back(
+      {RelocationAction::kExamplePath, T_("Result"), "-> " + preview_result});
+  rows.push_back({RelocationAction::kRegexWhere, T_("Validation"), status});
+  rows.push_back({RelocationAction::kApply, T_("Apply"),
+                  state.mode == RelocationMode::kNone
+                      ? T_("clear File Relocation")
+                      : T_("use this relocation rule")});
+  return rows;
+}
+
+static std::string RenderRelocationEditorScreen(
+    UaContext* ua,
+    const RelocationEditorState& state,
+    size_t cursor,
+    size_t value_offset,
+    std::string_view edit_buffer,
+    RelocationAction editing_action)
+{
+  std::string regexwhere = RelocationRegexWhere(state);
+  std::string status;
+  std::string preview_result
+      = RelocationPreviewResult(regexwhere, state.example_path, &status);
+  std::vector<RelocationEditorRow> rows
+      = BuildRelocationRows(state, regexwhere, preview_result, status);
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  bool editing = editing_action != RelocationAction::kApply;
+
+  std::string screen;
+  screen.reserve((rows.size() + 7) * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("File Relocation"));
+  screen += RestoreOptionsFrameLine(
+      width,
+      T_("Use Where for simple restore roots; RegexWhere rewrites paths."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == RelocationAction::kApply && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string value = row.value;
+    if (editing && i == cursor && row.action == editing_action) {
+      value = std::string(edit_buffer);
+    }
+    std::string line = i == cursor ? "> " : "  ";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(value, value_width, value_offset)
+                : FitRestoreOptionText(value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(
+      width, editing ? kTextInputHelp : kRelocationDialogHelp,
+      ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static std::string* RelocationEditableValue(RelocationEditorState* state,
+                                            RelocationAction action)
+{
+  switch (action) {
+    case RelocationAction::kSourceDrive:
+      return &state->source_drive;
+    case RelocationAction::kTargetDrive:
+      return &state->target_drive;
+    case RelocationAction::kSourcePrefix:
+      return &state->source_prefix;
+    case RelocationAction::kTargetPrefix:
+      return &state->target_prefix;
+    case RelocationAction::kSuffix:
+      return &state->suffix;
+    case RelocationAction::kExamplePath:
+      return &state->example_path;
+    case RelocationAction::kRegexWhere:
+      return &state->custom_regexwhere;
+    default:
+      return nullptr;
+  }
+}
+
+static bool ApplyVisualRelocation(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  const RelocationEditorState& state)
+{
+  std::string regexwhere = RelocationRegexWhere(state);
+  if (!regexwhere.empty()) {
+    if (!ua->AclAccessOk(Where_ACL, regexwhere.c_str(), true)) {
+      ua->SendMsg(T_("Regex (%s) denied by \"WhereACL\" configuration.\n"),
+                  regexwhere.c_str());
+      return false;
+    }
+    alist<BareosRegex*>* regs = get_bregexps(regexwhere.c_str());
+    if (!regs) {
+      ua->SendMsg(T_("Cannot use your regexp.\n"));
+      return false;
+    }
+    FreeBregexps(regs);
+    delete regs;
+  }
+
+  if (!regexwhere.empty() && jcr->where) {
+    free(jcr->where);
+    jcr->where = NULL;
+  }
+  if (jcr->RegexWhere) {
+    free(jcr->RegexWhere);
+    jcr->RegexWhere = NULL;
+  }
+  if (!regexwhere.empty()) { jcr->RegexWhere = strdup(regexwhere.c_str()); }
+  return true;
+}
+
+static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  RelocationEditorState state;
+  if (jcr->RegexWhere) {
+    state.mode = RelocationMode::kCustomRegexWhere;
+    state.custom_regexwhere = jcr->RegexWhere;
+  }
+
+  size_t cursor = 0;
+  size_t value_offset = 0;
+  bool editing = false;
+  RelocationAction editing_action = RelocationAction::kApply;
+  std::string edit_buffer;
+  for (;;) {
+    std::string regexwhere = RelocationRegexWhere(state);
+    std::string status;
+    std::string preview_result
+        = RelocationPreviewResult(regexwhere, state.example_path, &status);
+    std::vector<RelocationEditorRow> rows
+        = BuildRelocationRows(state, regexwhere, preview_result, status);
+    if (cursor >= rows.size()) { cursor = rows.size() - 1; }
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
+
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRelocationEditorScreen(
+                          ua, state, cursor, value_offset, edit_buffer,
+                          editing ? editing_action : RelocationAction::kApply)
+                          .c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int socket_status = user->recv();
+    if (socket_status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
+      continue;
+    }
+
+    if (editing) {
+      if (IsEnterKey(input) || input.empty()) {
+        if (std::string* target
+            = RelocationEditableValue(&state, editing_action)) {
+          *target = edit_buffer;
+          if (editing_action == RelocationAction::kSourceDrive
+              || editing_action == RelocationAction::kTargetDrive) {
+            *target = NormalizeWindowsDrive(*target);
+          }
+          if (editing_action != RelocationAction::kExamplePath) {
+            UpdateRelocationExampleForMode(&state);
+          }
+        }
+        editing = false;
+        value_offset = 0;
+      } else if (IsCancelKey(input)) {
+        editing = false;
+        value_offset = 0;
+      } else if (input == kKeyBackspace) {
+        if (!edit_buffer.empty()) {
+          tree_browser_internal::RemoveLastUtf8Character(&edit_buffer);
+        }
+      } else if (input == kKeySpace) {
+        edit_buffer.push_back(' ');
+      } else if (IsTextKey(input)) {
+        edit_buffer.append(TextKeyValue(input));
+      }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty() || IsEditKey(input)) {
+      if (rows[cursor].action == RelocationAction::kApply) {
+        if (ApplyVisualRelocation(ua, jcr, state)) { return true; }
+        continue;
+      }
+      if (rows[cursor].action == RelocationAction::kMode) {
+        state.mode = NextRelocationMode(state.mode, 1);
+        UpdateRelocationExampleForMode(&state);
+        value_offset = 0;
+        continue;
+      }
+      if (rows[cursor].editable) {
+        editing = true;
+        editing_action = rows[cursor].action;
+        edit_buffer = rows[cursor].value;
+        value_offset = 0;
+      }
+      continue;
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      if (rows[cursor].action == RelocationAction::kMode) {
+        state.mode
+            = NextRelocationMode(state.mode, IsScrollRightKey(input) ? 1 : -1);
+        UpdateRelocationExampleForMode(&state);
+        value_offset = 0;
+      } else {
+        constexpr size_t kScrollStep = 8;
+        size_t max_offset = MaxRestoreOptionValueOffset(
+            rows[cursor].value, RestoreOptionValueWidth(ua));
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+      }
+    } else if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % rows.size();
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? rows.size() - 1 : cursor - 1;
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
+      cursor = rows.size() - 1;
+      value_offset = 0;
+    }
+  }
+}
+
 static size_t RestoreReplaceOptionCount()
 {
   size_t count = 0;
@@ -2631,6 +3235,11 @@ static int SelectRestoreOptionVisual(UaContext* ua,
         value_offset = 0;
         continue;
       }
+      if (rows[cursor].action == RestoreOptionAction::kPriority) {
+        ApplyPriorityChange(jcr, IsScrollRightKey(input) ? 1 : -1);
+        value_offset = 0;
+        continue;
+      }
 
       size_t max_offset = MaxRestoreOptionValueOffset(
           rows[cursor].value, RestoreOptionValueWidth(ua));
@@ -2771,7 +3380,11 @@ static int ModifyRestoreParameters(UaContext* ua,
       }
       break;
     case RestoreOptionAction::kRelocation:
-      SelectWhereRegexp(ua, jcr);
+      if (TreeBrowserSupported(ua)) {
+        SelectRelocationVisual(ua, jcr);
+      } else {
+        SelectWhereRegexp(ua, jcr);
+      }
       goto try_again;
     case RestoreOptionAction::kReplace:
       if (TreeBrowserSupported(ua)) {
