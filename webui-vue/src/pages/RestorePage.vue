@@ -19,13 +19,13 @@
         >
           <q-step
             :name="1"
-            :title="t('Source')"
+            :title="t('Backup source')"
             icon="source"
             :done="sourceStepDone"
             :header-nav="true"
           >
             <q-card flat bordered>
-                <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Source') }}</q-card-section>
+                <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Backup source') }}</q-card-section>
                 <q-card-section class="q-pt-none q-gutter-sm">
                   <div>
                     <div class="text-subtitle2 q-mb-xs">
@@ -211,29 +211,6 @@
                     </template>
                   </div>
                   <template v-if="sourceMode !== 'browse'">
-                    <q-card flat bordered class="q-pa-sm" data-testid="quick-restore-destination">
-                      <div class="text-subtitle2 q-mb-xs">
-                        {{ t('Restore location') }}
-                      </div>
-                      <q-option-group
-                        v-model="quickRestoreDestination"
-                        :options="quickRestoreDestinationOptions"
-                        color="primary"
-                        dense
-                        data-testid="quick-restore-destination-choice"
-                      />
-                      <q-banner
-                        v-if="quickRestoreDestination === 'original'"
-                        dense
-                        class="bg-warning text-black q-mt-sm"
-                        data-testid="quick-restore-original-warning"
-                      >
-                        <template #avatar>
-                          <q-icon name="warning" />
-                        </template>
-                        {{ t('Restoring to original locations can overwrite existing files on the restore client.') }}
-                      </q-banner>
-                    </q-card>
                     <div v-if="!sourceLatestTupleKey" class="text-caption text-grey-6 q-pa-sm">
                       {{ t('Select a backup source above to find its latest backup.') }}
                     </div>
@@ -282,75 +259,20 @@
               </q-banner>
               <q-btn
                 color="primary" no-caps
-                :label="sourceMode === 'latest'
-                  ? t('Continue to Browse Files')
-                  : t('Continue to Destination')"
-                :disable="sourceMode === 'latest'
-                  ? !destinationStepDone
-                  : !sourceStepDone"
+                :label="t('Continue to Files')"
+                :disable="!sourceStepDone"
                 data-testid="restore-step-1-continue"
-                @click="activeStep = sourceMode === 'latest' ? 3 : 2"
+                @click="activeStep = 2"
               />
             </q-stepper-navigation>
           </q-step>
 
           <q-step
-            v-if="sourceMode === 'browse'"
             :name="2"
-            :title="t('Destination')"
-            icon="place"
-            :done="destinationStepDone"
-            :header-nav="sourceStepDone && sourceMode === 'browse'"
-          >
-            <q-card flat bordered>
-              <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Destination') }}</q-card-section>
-              <q-card-section class="q-pt-none q-gutter-sm">
-                <RestoreOptionsEditor
-                  v-model="form"
-                  :restore-client-options="filteredRestoreClientOptions"
-                  :restore-job-options="filteredRestoreJobOptions"
-                  :loading-clients="loadingClients"
-                  :loading-restore-jobs="loadingRestoreJobs"
-                  :disabled="!sourceDirector"
-                  :advanced-mode="sourceMode === 'browse'"
-                  :show-plugin-options="showPluginOptions"
-                  :plugin-options-hint="pluginOptionsHint"
-                  :plugin-hints="pluginHintsStore.hints"
-                  :fileset-definitions="pluginRestoreInfo?.definitions"
-                  :filter-restore-client-options="filterRestoreClientOptions"
-                  :filter-restore-job-options="filterRestoreJobOptions"
-                  @browse-destination="openDestinationBrowse"
-                />
-                <PluginRestoreInfoPanel
-                  :plugin-restore-info="pluginRestoreInfo"
-                  :plugin-hints="pluginHints"
-                  :all-plugin-hints="allPluginHints"
-                />
-              </q-card-section>
-            </q-card>
-            <q-stepper-navigation>
-              <q-btn
-                color="primary" no-caps
-                :label="t('Continue to Browse Files')"
-                :disable="!destinationStepDone"
-                data-testid="restore-step-2-continue"
-                @click="activeStep = 3"
-              />
-              <q-btn
-                flat no-caps
-                :label="t('Back')"
-                class="q-ml-sm"
-                @click="activeStep = 1"
-              />
-            </q-stepper-navigation>
-          </q-step>
-
-          <q-step
-            :name="3"
-            :title="t('Browse & Restore')"
+            :title="t('Files to restore')"
             icon="folder_open"
-            :done="canRestore"
-            :header-nav="destinationStepDone"
+            :done="filesStepDone"
+            :header-nav="sourceStepDone"
           >
 
         <!-- File Browser -->
@@ -504,34 +426,182 @@
               </template>
               <template v-else>
                 <q-icon name="folder_open" size="48px" /><br />
-                <span class="text-caption q-mt-sm">{{ t('Select a client and backup job above to browse files') }}</span>
+                <span class="text-caption q-mt-sm">{{ t('Select a backup source first to browse files.') }}</span>
               </template>
             </div>
           </template>
         </q-card>
 
-        <!-- Action row -->
-        <div class="row items-center q-gutter-sm">
-          <q-btn
-            color="primary" :label="t('Restore')" icon="restore"
-            :disable="!canRestore"
-            :loading="loadingRestore"
-            data-testid="restore-submit"
-            @click="openRestoreConfirmDialog"
-          />
-          <q-btn flat :label="t('Reset')" @click="resetAll" />
-          <q-space />
-          <span v-if="!canRestore && form.jobid" class="text-caption text-grey-6">
-            {{ t('Select at least one file or folder to restore') }}
-          </span>
-        </div>
-
             <q-stepper-navigation>
+              <q-btn
+                color="primary" no-caps
+                :label="t('Continue to Restore Target')"
+                :disable="!filesStepDone"
+                data-testid="restore-step-2-continue"
+                @click="activeStep = 3"
+              />
               <q-btn
                 flat no-caps
                 :label="t('Back')"
+                class="q-ml-sm"
+                data-testid="restore-step-2-back"
+                @click="activeStep = 1"
+              />
+              <q-btn flat :label="t('Reset')" class="q-ml-sm" @click="resetAll" />
+              <span v-if="!filesStepDone && form.jobid" class="text-caption text-grey-6 q-ml-sm">
+                {{ t('Select at least one file or folder to restore') }}
+              </span>
+            </q-stepper-navigation>
+          </q-step>
+
+          <q-step
+            :name="3"
+            :title="t('Restore target')"
+            icon="place"
+            :done="destinationStepDone"
+            :header-nav="filesStepDone"
+          >
+            <q-card flat bordered>
+              <q-card-section class="text-subtitle2 q-pb-xs">{{ t('Restore target') }}</q-card-section>
+              <q-card-section class="q-pt-none q-gutter-sm">
+                <template v-if="sourceMode === 'latest'">
+                  <q-card flat bordered class="q-pa-sm" data-testid="quick-restore-destination">
+                    <div class="text-subtitle2 q-mb-xs">
+                      {{ t('Restore location') }}
+                    </div>
+                    <q-option-group
+                      v-model="quickRestoreDestination"
+                      :options="quickRestoreDestinationOptions"
+                      color="primary"
+                      dense
+                      data-testid="quick-restore-destination-choice"
+                    />
+                    <q-banner
+                      v-if="quickRestoreDestination === 'original'"
+                      dense
+                      class="bg-warning text-black q-mt-sm"
+                      data-testid="quick-restore-original-warning"
+                    >
+                      <template #avatar>
+                        <q-icon name="warning" />
+                      </template>
+                      {{ t('Restoring to original locations can overwrite existing files on the restore client.') }}
+                    </q-banner>
+                  </q-card>
+                </template>
+                <template v-else>
+                  <RestoreOptionsEditor
+                    v-model="form"
+                    :restore-client-options="filteredRestoreClientOptions"
+                    :restore-job-options="filteredRestoreJobOptions"
+                    :loading-clients="loadingClients"
+                    :loading-restore-jobs="loadingRestoreJobs"
+                    :disabled="!sourceDirector"
+                    :advanced-mode="true"
+                    :show-plugin-options="showPluginOptions"
+                    :plugin-options-hint="pluginOptionsHint"
+                    :plugin-hints="pluginHintsStore.hints"
+                    :fileset-definitions="pluginRestoreInfo?.definitions"
+                    :filter-restore-client-options="filterRestoreClientOptions"
+                    :filter-restore-job-options="filterRestoreJobOptions"
+                    @browse-destination="openDestinationBrowse"
+                  />
+                  <PluginRestoreInfoPanel
+                    :plugin-restore-info="pluginRestoreInfo"
+                    :plugin-hints="pluginHints"
+                    :all-plugin-hints="allPluginHints"
+                  />
+                </template>
+              </q-card-section>
+            </q-card>
+            <q-stepper-navigation>
+              <q-btn
+                color="primary" no-caps
+                :label="t('Continue to Review')"
+                :disable="!destinationStepDone"
+                data-testid="restore-step-3-continue"
+                @click="activeStep = 4"
+              />
+              <q-btn
+                flat no-caps
+                :label="t('Back')"
+                class="q-ml-sm"
                 data-testid="restore-step-3-back"
                 @click="activeStep = 2"
+              />
+            </q-stepper-navigation>
+          </q-step>
+
+          <q-step
+            :name="4"
+            :title="t('Review & run')"
+            icon="fact_check"
+            :done="restoreResult?.ok"
+            :header-nav="canRestore"
+          >
+            <q-card class="restore-confirm-card">
+              <q-card-section class="row items-center no-wrap q-gutter-sm">
+                <q-icon name="restore" color="primary" size="32px" />
+                <div>
+                  <div class="text-h6">{{ t('Review restore job') }}</div>
+                  <div class="text-caption text-grey-7">
+                    {{ t('Confirm the restore parameters before scheduling the job.') }}
+                  </div>
+                </div>
+              </q-card-section>
+              <q-card-section class="q-pt-none">
+                <q-banner
+                  v-if="quickRestoreDestination === 'original' && sourceMode === 'latest'"
+                  dense
+                  class="bg-warning text-black q-mb-sm"
+                  data-testid="quick-restore-confirm-original-warning"
+                >
+                  <template #avatar>
+                    <q-icon name="warning" />
+                  </template>
+                  {{ t('This quick restore will write files back to their original locations and may overwrite existing files.') }}
+                </q-banner>
+                <div class="restore-confirm-summary">
+                  <div
+                    v-for="row in restoreConfirmSummaryRows"
+                    :key="row.label"
+                    class="restore-confirm-summary__row"
+                  >
+                    <q-icon
+                      :name="row.icon"
+                      color="primary"
+                      size="20px"
+                      class="restore-confirm-summary__icon"
+                    />
+                    <div class="restore-confirm-summary__content">
+                      <div class="restore-confirm-summary__label">
+                        {{ row.label }}
+                      </div>
+                      <div class="restore-confirm-summary__value">
+                        {{ row.value }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+            <q-stepper-navigation>
+              <q-btn
+                color="primary"
+                no-caps
+                :label="t('Run restore')"
+                icon="restore"
+                :loading="confirmRestoreSubmitting || loadingRestore"
+                :disable="!canRestore || confirmRestoreSubmitting || loadingRestore"
+                data-testid="restore-submit"
+                @click="confirmRestoreAndRun"
+              />
+              <q-btn
+                flat no-caps
+                :label="t('Back')"
+                class="q-ml-sm"
+                data-testid="restore-step-4-back"
+                @click="activeStep = 3"
               />
             </q-stepper-navigation>
           </q-step>
@@ -607,73 +677,6 @@
       </q-card-section>
     </q-card>
   </q-page>
-
-  <q-dialog
-    v-model="confirmRestoreDialog"
-    :persistent="confirmRestoreSubmitting || loadingRestore"
-  >
-    <q-card class="restore-confirm-card">
-      <q-card-section class="row items-center no-wrap q-gutter-sm">
-        <q-icon name="restore" color="primary" size="32px" />
-        <div>
-          <div class="text-h6">{{ t('Review restore job') }}</div>
-          <div class="text-caption text-grey-7">
-            {{ t('Confirm the restore parameters before scheduling the job.') }}
-          </div>
-        </div>
-      </q-card-section>
-      <q-card-section class="q-pt-none">
-        <q-banner
-          v-if="quickRestoreDestination === 'original' && sourceMode === 'latest'"
-          dense
-          class="bg-warning text-black q-mb-sm"
-          data-testid="quick-restore-confirm-original-warning"
-        >
-          <template #avatar>
-            <q-icon name="warning" />
-          </template>
-          {{ t('This quick restore will write files back to their original locations and may overwrite existing files.') }}
-        </q-banner>
-        <div class="restore-confirm-summary">
-          <div
-            v-for="row in restoreConfirmSummaryRows"
-            :key="row.label"
-            class="restore-confirm-summary__row"
-          >
-            <q-icon
-              :name="row.icon"
-              color="primary"
-              size="20px"
-              class="restore-confirm-summary__icon"
-            />
-            <div class="restore-confirm-summary__content">
-              <div class="restore-confirm-summary__label">
-                {{ row.label }}
-              </div>
-              <div class="restore-confirm-summary__value">
-                {{ row.value }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn
-          flat
-          :label="t('Cancel')"
-          :disable="confirmRestoreSubmitting || loadingRestore"
-          @click="confirmRestoreDialog = false"
-        />
-        <q-btn
-          color="primary"
-          :label="t('OK')"
-          :loading="confirmRestoreSubmitting || loadingRestore"
-          :disable="!canRestore || confirmRestoreSubmitting || loadingRestore"
-          @click="confirmRestoreAndRun"
-        />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
 
   <q-dialog v-model="destinationBrowseDialog.open">
     <q-card class="destination-browser-card">
@@ -1860,7 +1863,7 @@ async function loadAllClientBackups() {
 
 // Resolves and selects the source client that produced a backup job picked
 // while browsing across all clients, then loads that client's backups so
-// the rest of the restore flow (destination client/job, BVFS browser)
+// the rest of the restore flow (restore target, BVFS browser)
 // behaves exactly as if the client had been selected first.
 async function selectSourceClientByName(clientName) {
   const match = resolveRestoreSourceClient(sourceClients.value, {
@@ -2171,7 +2174,6 @@ function clearSelection() {
 // ── Restore execution ──────────────────────────────────────────────────────────
 const loadingRestore = ref(false)
 const restoreResult  = ref(null)
-const confirmRestoreDialog = ref(false)
 const confirmRestoreSubmitting = ref(false)
 const commandRunning = ref(false)
 const commandLogVisible = ref(false)
@@ -2189,18 +2191,20 @@ const canRestore = computed(() =>
   (selectedFiles.value.size > 0 || selectedDirs.value.size > 0)
 )
 
-// Restore wizard step state: the stepper walks Source -> Destination ->
-// Browse & Restore, each step gated on the previous one's data being set,
-// so users can't reach the file browser before a source/destination job
-// is actually selected. `activeStep` only changes via the explicit
+// Restore wizard step state: the stepper walks Backup source ->
+// Files to restore -> Restore target -> Review & run. Each step is gated
+// on the previous step's data being set. `activeStep` only changes via the explicit
 // "Continue"/"Back" buttons, the step-header click-to-navigate
 // (`header-nav`, gated on the previous step being done), or — once, on
 // initial load — `resolveInitialRestoreStep()` below for deep links.
 // It must never auto-advance in response to later interactive changes
 // (e.g. selecting a source job also auto-defaults the destination
-// client/job, but that alone must not skip the Destination step).
+// client/job, but that alone must not skip the Restore target step).
 const activeStep = ref(1)
 const sourceStepDone = computed(() => !!form.value.jobid)
+const filesStepDone = computed(() => (
+  selectedFiles.value.size > 0 || selectedDirs.value.size > 0
+))
 const destinationLocationDone = computed(() => (
   form.value.relocationMode === 'none' || form.value.relocationMode === 'where'
     ? !!form.value.where
@@ -2318,13 +2322,6 @@ const restoreConfirmSummaryRows = computed(() => {
   return rows
 })
 
-function openRestoreConfirmDialog() {
-  if (!canRestore.value || confirmRestoreSubmitting.value || loadingRestore.value) {
-    return
-  }
-  confirmRestoreDialog.value = true
-}
-
 function normalizeClientBrowsePath(path) {
   const value = String(path || '/')
   const trimmed = value.replace(/[\\/]+$/, '')
@@ -2391,7 +2388,6 @@ async function confirmRestoreAndRun() {
   }
 
   confirmRestoreSubmitting.value = true
-  confirmRestoreDialog.value = false
   try {
     await doRestore()
   } finally {
@@ -2884,6 +2880,7 @@ async function init() {
     activeStep.value = resolveInitialRestoreStep({
       hasDeepLinkJobid: !!route.query.jobid,
       sourceStepDone: sourceStepDone.value,
+      filesStepDone: filesStepDone.value,
       destinationStepDone: destinationStepDone.value,
     })
   }
