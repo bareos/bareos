@@ -27,12 +27,14 @@ describe('resolveInitialRestoreStep', () => {
     expect(resolveInitialRestoreStep({
       hasDeepLinkJobid: false,
       sourceStepDone: false,
+      filesStepDone: false,
       destinationStepDone: false,
     })).toBe(1)
 
     expect(resolveInitialRestoreStep({
       hasDeepLinkJobid: false,
       sourceStepDone: true,
+      filesStepDone: true,
       destinationStepDone: true,
     })).toBe(1)
   })
@@ -41,23 +43,35 @@ describe('resolveInitialRestoreStep', () => {
     expect(resolveInitialRestoreStep({
       hasDeepLinkJobid: true,
       sourceStepDone: false,
+      filesStepDone: false,
       destinationStepDone: false,
     })).toBe(1)
   })
 
-  it('advances to Destination for a deep link with only the source step done', () => {
+  it('advances to Files to restore for a deep link with only the source step done', () => {
     expect(resolveInitialRestoreStep({
       hasDeepLinkJobid: true,
       sourceStepDone: true,
+      filesStepDone: false,
       destinationStepDone: false,
     })).toBe(2)
   })
 
-  it('advances to Browse & Restore for a deep link with source and destination done', () => {
+  it('advances to Restore target for a deep link with source and files done', () => {
     expect(resolveInitialRestoreStep({
       hasDeepLinkJobid: true,
       sourceStepDone: true,
-      destinationStepDone: true,
+      filesStepDone: true,
+      destinationStepDone: false,
     })).toBe(3)
+  })
+
+  it('advances to Review & run for a deep link with all steps done', () => {
+    expect(resolveInitialRestoreStep({
+      hasDeepLinkJobid: true,
+      sourceStepDone: true,
+      filesStepDone: true,
+      destinationStepDone: true,
+    })).toBe(4)
   })
 })
