@@ -1911,6 +1911,11 @@ bool DotClientbrowseCmd(UaContext* ua, const char*)
     ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[client_arg]);
     return false;
   }
+  if (!ua->AclAccessOk(Client_ACL, client->resource_name_, true)) {
+    ua->ErrorMsg(T_("No authorization. Client \"%s\".\n"),
+                 client->resource_name_);
+    return false;
+  }
 
   std::string path = NormalizeBrowsePath(ua->argv[path_arg]);
   std::vector<DestinationBrowseEntry> entries;

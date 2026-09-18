@@ -164,6 +164,8 @@ import { useI18n } from 'vue-i18n'
 import { displayJobStatus } from '../composables/useDirectorFetch.js'
 import { useNowLine } from '../composables/useNowLine.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { buildClientDetailsQuery } from '../utils/clients.js'
+import { buildJobDetailsQuery } from '../utils/jobs.js'
 import {
   buildCenteredTimelineDayBounds,
   buildCombinedTimelineGroups,
@@ -564,7 +566,10 @@ function openJob(run) {
   router.push({
     name: 'job-details',
     params: { id: run.id },
-    query: run.director ? { director: run.director, dashboardOrigin: true } : { dashboardOrigin: true },
+    query: buildJobDetailsQuery({
+      director: run.director,
+      dashboardOrigin: true,
+    }),
   })
 }
 
@@ -573,7 +578,10 @@ function openClient(lane) {
   router.push({
     name: 'client-details',
     params: { name: lane.client },
-    query: lane.director ? { director: lane.director, dashboardOrigin: true } : { dashboardOrigin: true },
+    query: buildClientDetailsQuery({
+      director: lane.director,
+      dashboardOrigin: true,
+    }),
   })
 }
 </script>
