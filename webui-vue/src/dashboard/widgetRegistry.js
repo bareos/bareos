@@ -95,6 +95,17 @@ const WIDGETS = [
     optionalProps: [],
   },
   {
+    type: 'job-schedule-timeline',
+    label: 'Job & Schedule Timeline',
+    description: 'Combined view of actual job history and scheduler trigger times.',
+    icon: 'mdi-timeline-clock-outline',
+    component: defineAsyncComponent(() => import('./widgets/JobScheduleTimelineWidget.vue')),
+    defaultTitle: 'Job & Schedule Timeline',
+    defaultLayout: { w: 8, h: 8 },
+    requiredProps: [],
+    optionalProps: [],
+  },
+  {
     type: 'running-jobs-status-chart',
     label: 'Running Jobs by Status',
     description: 'Doughnut chart of currently running and queued jobs by status.',

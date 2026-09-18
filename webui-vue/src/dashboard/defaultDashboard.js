@@ -77,6 +77,13 @@ export const DEFAULT_DASHBOARD = {
       props: {},
       layout: { x: 0, y: 6, w: 8, h: 11, i: 'w-recent-jobs', minW: 2, minH: 3 },
     },
+    {
+      id: 'w-job-schedule-timeline',
+      type: 'job-schedule-timeline',
+      title: 'Job & Schedule Timeline',
+      props: {},
+      layout: { x: 0, y: 25, w: 12, h: 9, i: 'w-job-schedule-timeline', minW: 4, minH: 5 },
+    },
   ],
 }
 
@@ -183,7 +190,30 @@ export const ANALYTICS_DASHBOARD = {
   ],
 }
 
+export const JOB_SCHEDULE_TIMELINE_DASHBOARD = {
+  id: 'job-schedule-timeline',
+  name: 'Job & Schedule Timeline',
+  widgets: [
+    {
+      id: 'w-job-schedule-timeline-full',
+      type: 'job-schedule-timeline',
+      title: 'Job & Schedule Timeline',
+      props: {},
+      layout: {
+        x: 0,
+        y: 0,
+        w: 12,
+        h: 22,
+        i: 'w-job-schedule-timeline-full',
+        minW: 6,
+        minH: 10,
+      },
+    },
+  ],
+}
+
 export const PRECONFIGURED_DASHBOARDS = [
   DEFAULT_DASHBOARD,
   ANALYTICS_DASHBOARD,
+  JOB_SCHEDULE_TIMELINE_DASHBOARD,
 ]
