@@ -785,10 +785,7 @@ static void do_interactive_mode()
 // main
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   MyNameIs(argc, argv, "dbcheck");
   InitMsg(nullptr, nullptr); /* setup message handler */

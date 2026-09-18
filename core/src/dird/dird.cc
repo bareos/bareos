@@ -137,10 +137,7 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
 
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");

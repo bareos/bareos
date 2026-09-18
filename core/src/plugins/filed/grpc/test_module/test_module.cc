@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -373,11 +373,6 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
 int main(int argc, char* argv[])
 {
-  // every (C) program is started in the C locale,
-  // so the following call ensures that we respect the users locale setting.
-  // This is necessary to ensure UTF-8 support as well.
-  setlocale(LC_ALL, "");
-
   (void)argv;
   if (argc != 1) {
     fprintf(

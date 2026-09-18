@@ -100,10 +100,7 @@ int main(int argc, char* argv[])
 {
   pthread_t thid;
 
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-sd");
