@@ -413,7 +413,7 @@ const relocationModeOptions = computed(() => [
     label: t('No relocation'),
     value: 'none',
     description: t('Use the Where destination without rewriting stored paths.'),
-    example: t('Example: restore below /tmp/bareos-restores'),
+    example: '',
   },
   {
     label: t('Windows drive remap'),
@@ -455,13 +455,15 @@ const selectedRelocationModeDescription = computed(() => (
     ?? ''
 ))
 const selectedRelocationModeExample = computed(() => (
-  relocationModeOptions.value.find(option => option.value === effectiveRelocationMode.value)?.example
-    ?? ''
+  effectiveRelocationMode.value === 'none'
+    ? (model.value.where || t('(no destination set)'))
+    : (relocationModeOptions.value.find(option => option.value === effectiveRelocationMode.value)?.example
+        ?? '')
 ))
 
 const replaceOptions = computed(() => [
   {
-    label: t('Always overwrite'),
+    label: t('Always overwrite (default)'),
     value: 'Always',
     description: t('Restore files even when a file already exists on the target client.'),
   },

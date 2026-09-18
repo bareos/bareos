@@ -293,13 +293,16 @@ test('loads the restore workflow selections', async ({ page }) => {
   await expect(page.getByTestId('restore-timeline-point').first()).toBeVisible()
   await page.getByTestId('restore-timeline-point').last().click()
   await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('restore-step-2-continue')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
 
   // The vmware-flavored job is a genuinely resolved plugin hint (not the
   // cosmetic bpipe-only fixture), so the plugin info banner and options
-  // editor should both appear on the destination step, before the user
-  // even continues to file browsing.
+  // editor should both appear on the restore target step.
   const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
   await expect(pluginInfo).toBeVisible()
   await expect(pluginInfo).toContainText('VMware')
@@ -316,9 +319,9 @@ test('loads the restore workflow selections', async ({ page }) => {
     pluginOptionsEditor.locator('.plugin-options-editor__preview code')
   ).toContainText('vmware:vcserver=vcenter.example.com')
 
-  await page.getByTestId('restore-step-2-continue').click()
-  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
-  await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
+  await page.getByTestId('restore-step-3-continue').click()
+  await expect(page.getByText('Review restore job', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-testid="restore-submit"]')).toBeEnabled()
 })
 
 test('adapts the plugin hint panel and options editor for a second plugin', async ({ page }) => {
@@ -334,6 +337,9 @@ test('adapts the plugin hint panel and options editor for a second plugin', asyn
   })
   await page.getByTestId('restore-timeline-point').last().click()
   await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
 
   const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')

@@ -19,15 +19,15 @@
    02110-1301, USA.
  */
 
-// Decides which step of the Restore wizard (Source / Destination /
-// Browse & Restore) should be shown right after the page's initial load
-// completes.
+// Decides which step of the Restore wizard (Backup source /
+// Files to restore / Restore target / Review & run) should be shown right
+// after the page's initial load completes.
 //
 // Normal interactive use must never auto-advance the stepper: the user
 // always has to click "Continue" to move forward, even once a step's
 // prerequisites happen to be satisfied (e.g. selecting a source job also
 // auto-defaults the destination client/job, but that alone must not jump
-// the user past "Destination").
+// the user past "Restore target").
 //
 // The one exception is a genuine deep link (the page opened with a
 // `jobid` query parameter, e.g. via a "Restore" link from a job's
@@ -38,12 +38,16 @@
 export function resolveInitialRestoreStep({
   hasDeepLinkJobid,
   sourceStepDone,
+  filesStepDone,
   destinationStepDone,
 }) {
   if (!hasDeepLinkJobid) {
     return 1
   }
-  if (destinationStepDone) {
+  if (sourceStepDone && filesStepDone && destinationStepDone) {
+    return 4
+  }
+  if (sourceStepDone && filesStepDone) {
     return 3
   }
   if (sourceStepDone) {
