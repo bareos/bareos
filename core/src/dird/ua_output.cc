@@ -42,6 +42,7 @@
 #include "dird/ua_output.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_select.h"
+#include "dird/volume_usage.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -75,6 +76,186 @@ const int kDefaultNumberOfDays = 50;
 struct PoolListRow {
   std::array<std::string, 19> fields;
 };
+
+static uint64_t ToUint64(const char* value)
+{
+  if (!value || !*value) { return 0; }
+  return strtoull(value, nullptr, 10);
+}
+
+static size_t VolumeUsageBarWidth(const UaContext* ua)
+{
+  constexpr size_t kFallbackWidth = 60;
+  constexpr size_t kMinWidth = 20;
+  constexpr size_t kMaxWidth = 100;
+
+  if (ua->terminal_width <= 10) { return kFallbackWidth; }
+
+  return std::clamp(static_cast<size_t>(ua->terminal_width - 10), kMinWidth,
+                    kMaxWidth);
+}
+
+static bool QueryVolumeUsageSegments(UaContext* ua,
+                                     const char* volume_name,
+                                     std::vector<VolumeUsageSegment>& segments)
+{
+  const auto escaped_volume_name = ua->db->EscapeString(ua->jcr, volume_name);
+  if (!escaped_volume_name) { return false; }
+
+  PoolMem query(PM_MESSAGE);
+  query.bsprintf(
+      "SELECT JobMedia.JobMediaId,JobMedia.JobId,Job.Name,Client.Name,"
+      "Media.VolumeName,JobMedia.FirstIndex,JobMedia.LastIndex,"
+      "JobMedia.StartFile,JobMedia.EndFile,JobMedia.StartBlock,"
+      "JobMedia.EndBlock,JobMedia.JobBytes "
+      "FROM JobMedia "
+      "JOIN Media ON Media.MediaId=JobMedia.MediaId "
+      "JOIN Job ON Job.JobId=JobMedia.JobId "
+      "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+      "WHERE Media.VolumeName='%s' "
+      "ORDER BY JobMedia.StartFile,JobMedia.StartBlock,JobMedia.JobMediaId",
+      escaped_volume_name->c_str());
+
+  struct QueryContext {
+    UaContext* ua;
+    std::vector<VolumeUsageSegment>* segments;
+  } ctx{ua, &segments};
+
+  auto handler = [](void* context, int, char** row) {
+    auto* query_context = static_cast<QueryContext*>(context);
+    UaContext* callback_ua = query_context->ua;
+    const char* job_name = row[2] ? row[2] : "";
+    const char* client_name = row[3] ? row[3] : "";
+
+    if (!callback_ua->AclAccessOk(Job_ACL, job_name, false)
+        || (client_name[0]
+            && !callback_ua->AclAccessOk(Client_ACL, client_name, false))) {
+      return 0;
+    }
+
+    VolumeUsageSegment segment;
+    segment.jobmediaid = ToUint64(row[0]);
+    segment.jobid = ToUint64(row[1]);
+    segment.job = job_name;
+    segment.client = client_name;
+    segment.volumename = row[4] ? row[4] : "";
+    segment.firstindex = ToUint64(row[5]);
+    segment.lastindex = ToUint64(row[6]);
+    segment.startfile = ToUint64(row[7]);
+    segment.endfile = ToUint64(row[8]);
+    segment.startblock = ToUint64(row[9]);
+    segment.endblock = ToUint64(row[10]);
+    segment.jobbytes = ToUint64(row[11]);
+    query_context->segments->push_back(std::move(segment));
+    return 0;
+  };
+
+  if (!ua->db->SqlQuery(query.c_str(), handler, &ctx)) { return false; }
+
+  AssignVolumeUsageWeights(segments);
+  AssignVolumeUsageMarkersByJob(segments);
+  return true;
+}
+
+static void EmitVolumeUsageJson(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->ObjectStart("volumeusage");
+  ua->send->ObjectKeyValue("volumename", volume_name, "%s\n");
+  ua->send->ObjectKeyValue("hasoverlaps",
+                           HasOverlappingVolumeUsageRanges(segments) ? 1 : 0);
+  ua->send->ArrayStart("segments");
+  for (const auto& segment : segments) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("marker", std::string(1, segment.marker).c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("jobmediaid", segment.jobmediaid);
+    ua->send->ObjectKeyValue("jobid", segment.jobid);
+    ua->send->ObjectKeyValue("job", segment.job.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("client", segment.client.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("volumename", segment.volumename.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("firstindex", segment.firstindex);
+    ua->send->ObjectKeyValue("lastindex", segment.lastindex);
+    ua->send->ObjectKeyValue("startfile", segment.startfile);
+    ua->send->ObjectKeyValue("endfile", segment.endfile);
+    ua->send->ObjectKeyValue("startblock", segment.startblock);
+    ua->send->ObjectKeyValue("endblock", segment.endblock);
+    ua->send->ObjectKeyValue("jobbytes", segment.jobbytes);
+    ua->send->ObjectKeyValue("weight", segment.weight);
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("segments");
+  ua->send->ObjectEnd("volumeusage");
+}
+
+static void EmitVolumeUsageText(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->Decoration(T_("Volume usage for %s\n"), volume_name);
+  if (segments.empty()) {
+    ua->send->Decoration(T_("  No JobMedia records found.\n"));
+    return;
+  }
+
+  const size_t bar_width = VolumeUsageBarWidth(ua);
+  const bool overlapping = HasOverlappingVolumeUsageRanges(segments);
+  if (overlapping) {
+    ua->send->Decoration(T_("  Overlapping JobMedia ranges detected.\n"));
+    ua->send->Decoration(
+        T_("  Each lane is a seek range for a job; other jobs may have blocks "
+           "inside that range.\n"));
+  } else {
+    ua->send->Decoration("  [%s]\n",
+                         BuildVolumeUsageTapeBar(segments, bar_width).c_str());
+  }
+  ua->send->Decoration(
+      T_("  Mk JobId Job Name              FileIndex   Media position"
+         "       Bytes\n"));
+  ua->send->Decoration(
+      T_("  -- ----- --------------------- ----------- --------------------"
+         " --------\n"));
+
+  char bytes[edit::min_buffer_size];
+  for (const auto& segment : segments) {
+    if (overlapping) {
+      ua->send->Decoration(
+          "  %c  [%s]\n", segment.marker,
+          BuildVolumeUsageRangeBar(segment, segments, bar_width).c_str());
+    }
+    PoolMem index_range(PM_FNAME);
+    index_range.bsprintf("%" PRIu64 "-%" PRIu64, segment.firstindex,
+                         segment.lastindex);
+    PoolMem media_range(PM_FNAME);
+    media_range.bsprintf("%" PRIu64 ":%" PRIu64 "-%" PRIu64 ":%" PRIu64,
+                         segment.startfile, segment.startblock, segment.endfile,
+                         segment.endblock);
+    ua->send->Decoration("  %c  %5" PRIu64 " %-21.21s %-11s %-20s %s\n",
+                         segment.marker, segment.jobid, segment.job.c_str(),
+                         index_range.c_str(), media_range.c_str(),
+                         edit_uint64_with_suffix(segment.jobbytes, bytes));
+  }
+}
+
+static bool ListVolumeUsage(UaContext* ua, e_list_type)
+{
+  const char* volume_name = GetArgValue(ua, NT_("volume"));
+  if (!volume_name || !*volume_name) {
+    ua->ErrorMsg(T_("volume name missing\n"));
+    return false;
+  }
+
+  std::vector<VolumeUsageSegment> segments;
+  if (!QueryVolumeUsageSegments(ua, volume_name, segments)) { return false; }
+
+  if (ua->api == API_MODE_JSON) {
+    EmitVolumeUsageJson(ua, volume_name, segments);
+  } else {
+    EmitVolumeUsageText(ua, volume_name, segments);
+  }
+  return true;
+}
 
 static bool QueryPoolListRows(UaContext* ua,
                               PoolDbRecord* pool,
@@ -523,6 +704,8 @@ bool show_cmd(UaContext* ua, const char*)
  *  list jobname=name           - same as above
  *  list jobmedia jobid=nnn
  *  list jobmedia ujobid=uname
+ *  list jobmedia volume=name
+ *  list volumeusage volume=name
  *  list joblog jobid=<nn>
  *  list joblog job=name
  *  list joblog jobids=<nn,nn,...> - joblog rows for several jobs in one query
@@ -1163,7 +1346,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
-      ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send.get(), llist);
+      const char* volume_name = GetArgValue(ua, NT_("volume"));
+      ua->db->ListJobmediaRecords(ua->jcr, jobid, volume_name, ua->send.get(),
+                                  llist);
       return true;
     } else {
       ua->ErrorMsg(
@@ -1171,6 +1356,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
              "client not found in db\n"));
       return false;
     }
+  }
+
+  if (Bstrcasecmp(ua->argk[1], NT_("volumeusage"))) {
+    return ListVolumeUsage(ua, llist);
   }
 
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
