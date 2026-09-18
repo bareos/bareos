@@ -1,0 +1,773 @@
+<!--
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public
+   License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+-->
+<template>
+  <q-layout view="hHh lpR fFf">
+    <q-header class="bg-primary"><q-toolbar>
+      <img src="../../../core/src/images/bareos-logo.svg" alt="Bareos"
+        class="toolbar-logo q-mr-sm" />
+      <q-toolbar-title>Bareos Setup</q-toolbar-title>
+      <div v-if="store.state.setup_version" class="text-caption">
+        v{{ store.state.setup_version }}
+      </div>
+    </q-toolbar></q-header>
+    <q-page-container><q-page class="q-pa-lg wizard">
+      <q-linear-progress :value="progress" class="q-mb-lg" />
+      <div class="row items-center q-mb-sm">
+        <img v-if="step !== 'welcome'" src="../../../core/src/images/boris.png"
+          alt="Boris the Bareos wizard" class="boris-mascot boris-mascot--inline q-mr-md" />
+        <div>
+          <h1 class="text-h5 q-my-none"><q-icon :name="stepIcon" size="28px" class="q-mr-sm" />{{ title }}</h1>
+          <p class="text-body1">{{ description }}</p>
+        </div>
+      </div>
+      <q-banner v-if="error" class="bg-negative text-white q-mb-md">
+        <template #avatar><q-icon name="error" /></template>
+        {{ error }}<template #action><q-btn flat label="Retry" @click="retry" /></template>
+      </q-banner>
+      <q-banner v-if="!connected" class="bg-warning q-mb-md">
+        <template #avatar><q-icon name="sync_problem" /></template>
+        Waiting for the local setup service…
+      </q-banner>
+
+      <q-card v-if="step === 'welcome'" flat bordered><q-card-section>
+        <div class="row items-center q-mb-md">
+          <img src="../../../core/src/images/boris.png" alt="Boris the Bareos wizard"
+            class="boris-mascot boris-mascot--welcome q-mr-lg" />
+          <q-list dense class="col">
+            <q-item v-for="component in installedComponents" :key="component.label">
+              <q-item-section avatar><q-icon :name="component.icon" color="primary" /></q-item-section>
+              <q-item-section>
+                <q-item-label>{{ component.label }}</q-item-label>
+                <q-item-label caption>{{ component.detail }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+        <q-list dense>
+          <q-item><q-item-section avatar><q-icon name="rocket_launch" color="positive" /></q-item-section>
+            <q-item-section>Installs and configures Director, Storage Daemon, File Daemon, PostgreSQL, and the WebUI — all in one guided flow.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="cloud_download" color="positive" /></q-item-section>
+            <q-item-section>Adds the official Bareos repository and installs packages using your distribution's standard package manager.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="verified_user" color="positive" /></q-item-section>
+            <q-item-section>Secure by default: TLS and strong admin passwords are generated automatically.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="health_and_safety" color="positive" /></q-item-section>
+            <q-item-section>Safe to run: an existing Bareos admin configuration makes setup abort before that file is changed.</q-item-section></q-item>
+          <q-item><q-item-section avatar><q-icon name="admin_panel_settings" color="positive" /></q-item-section>
+            <q-item-section>Transparent privilege use: only standard, approved commands are ever executed as root or via sudo — nothing else.</q-item-section></q-item>
+        </q-list>
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
+        <q-markup-table v-if="platformLoaded" flat bordered dense>
+          <tbody>
+            <tr v-for="row in platformRows" :key="row.label">
+              <th class="text-left platform-table__label">{{ row.label }}</th>
+              <td>
+                <span v-if="row.icon" class="row items-center no-wrap">
+                  <svg v-if="platformDistroIcon" class="platform-distro-icon q-mr-sm"
+                    viewBox="0 0 24 24" role="img" :aria-label="platformIconLabel">
+                    <path :fill="`#${platformDistroIcon.hex}`" :d="platformDistroIcon.path" />
+                  </svg>
+                  <q-icon v-else :name="FALLBACK_ICON" size="24px" class="q-mr-sm"
+                    :aria-label="platformIconLabel" />
+                  {{ row.value }}
+                </span>
+                <template v-else>{{ row.value }}</template>
+              </td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+        <q-banner v-if="platformLoaded && !store.state.package_manager_supported"
+          dense class="bg-red-1 text-red-10 q-mt-md">
+          <template #avatar><q-icon name="block" color="negative" /></template>
+          <div class="text-weight-medium">This system cannot be set up automatically</div>
+          <div class="text-caption">
+            No supported package manager (apt, dnf, yum or zypper) was found, so
+            bareos-setup cannot install the Bareos packages here. Follow the manual
+            installation instructions instead.
+          </div>
+        </q-banner>
+        <div v-else-if="platformLoaded && !store.state.platform_supported" class="q-mt-md">
+          <q-banner dense class="bg-orange-1 text-orange-10">
+            <template #avatar><q-icon name="warning" color="warning" /></template>
+            <div class="text-weight-medium">This distribution was not recognized</div>
+            <div class="text-caption">
+              Bareos does not publish a repository for this distribution. You can select a
+              repository built for a compatible distribution instead. This combination is
+              untested and unsupported.
+            </div>
+          </q-banner>
+          <q-select v-model="store.repoOsPath" class="q-mt-md" outlined dense use-input
+            new-value-mode="add-unique"
+            :options="repoOsPathOptions" label="Bareos repository"
+            hint="Choose a listed repository or type another repository name."
+            @new-value="onNewRepoOsPath" />
+          <q-checkbox v-model="store.repoOsPathAcknowledged" class="q-mt-sm"
+            label="I understand this combination is untested and unsupported." />
+        </div>
+        <q-spinner v-else-if="!platformLoaded && !error" size="2em" />
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'repository'" flat bordered><q-card-section>
+        <q-card flat bordered class="q-mb-md cursor-pointer repo-card repo-card--subscription"
+          :class="{ 'repo-card--selected': store.repository === 'subscription' }"
+          @click="store.repository = 'subscription'">
+          <q-card-section>
+            <div class="row items-center no-wrap">
+              <q-radio v-model="store.repository" val="subscription" color="primary" />
+              <div class="col">
+                <div class="row items-center">
+                  <span class="text-weight-bold text-primary">Bareos Subscription</span>
+                  <q-chip dense color="primary" text-color="white" icon="star" class="q-ml-sm">Recommended</q-chip>
+                </div>
+                <div class="text-caption text-grey-8">Vendor-supported packages with priority updates and support.</div>
+              </div>
+            </div>
+            <q-card flat bordered class="bg-blue-1 q-mt-md" @click.stop>
+              <q-card-section>
+                <div class="row items-center q-mb-sm">
+                  <q-icon name="workspace_premium" color="primary" size="28px" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-primary">Try Bareos Subscription features</div>
+                    <div class="text-caption text-grey-8">
+                      Evaluation access includes subscription packages and plugins.
+                    </div>
+                  </div>
+                </div>
+                <q-list dense class="q-mb-sm">
+                  <q-item v-for="feature in subscriptionHighlights" :key="feature.label">
+                    <q-item-section avatar>
+                      <q-icon :name="feature.icon" color="primary" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label>{{ feature.label }}</q-item-label>
+                      <q-item-label caption>{{ feature.caption }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <q-btn unelevated dense color="primary" icon-right="open_in_new"
+                  label="Get evaluation access" type="a"
+                  href="https://www.bareos.com/try/" target="_blank"
+                  rel="noopener" />
+              </q-card-section>
+            </q-card>
+            <q-banner v-if="store.repository === 'subscription' && store.state.dry_run"
+              class="bg-info text-white q-mt-md" rounded>
+              <template #avatar><q-icon name="visibility_off" /></template>
+              Dry run only: no subscription credentials are requested because
+              no repository download is performed.
+            </q-banner>
+            <q-banner v-else-if="store.repository === 'subscription' && store.state.subscription_credentials_on_terminal"
+              class="bg-info text-white q-mt-md" rounded>
+              <template #avatar><q-icon name="terminal" /></template>
+              Remote browser session: subscription credentials are requested
+              securely on the terminal running <code>bareos-setup</code> when
+              installation starts. They are not shown or sent in this browser.
+              To enter them here instead, reach the wizard through an SSH
+              tunnel: <code>ssh -L 19101:127.0.0.1:19101 root@host</code>.
+            </q-banner>
+            <q-banner v-else-if="store.repository === 'subscription' && !subscriptionCredentialModeKnown"
+              class="bg-warning q-mt-md" rounded>
+              <template #avatar><q-icon name="sync" /></template>
+              Waiting for the setup service to report whether credentials may
+              be entered in this browser.
+            </q-banner>
+            <template v-else-if="store.repository === 'subscription'">
+              <q-input v-model="store.repositoryLogin" label="Subscription login" autocomplete="off"
+                class="q-mt-md" @click.stop>
+                <template #prepend><q-icon name="person" /></template>
+              </q-input>
+              <q-input v-model="store.repositoryPassword" label="Subscription password" type="password"
+                autocomplete="new-password" @click.stop>
+                <template #prepend><q-icon name="key" /></template>
+              </q-input>
+            </template>
+          </q-card-section>
+        </q-card>
+        <q-card flat class="cursor-pointer repo-card repo-card--community"
+          @click="store.repository = 'community'">
+          <q-card-section>
+            <div class="row items-center no-wrap">
+              <q-radio v-model="store.repository" val="community" color="grey" dense />
+              <span class="text-caption text-grey-7 q-ml-sm">Bareos Community (unsupported, community-maintained packages)</span>
+            </div>
+          </q-card-section>
+        </q-card>
+        <div v-if="effectiveRepoOsPath" class="text-caption text-grey-7 q-mt-sm">
+          Packages will be installed from the
+          <span class="text-weight-medium">{{ effectiveRepoOsPath }}</span> repository.
+        </div>
+      </q-card-section></q-card>
+      <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
+        <q-list dense bordered separator>
+          <q-expansion-item v-for="item in installSteps" :key="item.id"
+            v-model="expandedSteps[item.id]">
+            <template #header>
+              <q-item-section avatar>
+                <q-spinner v-if="item.id === currentStepId && !done(item.id)" color="primary" size="24px" />
+                <q-icon v-else :name="done(item.id) ? 'check_circle' : item.icon"
+                  :color="done(item.id) ? 'positive' : 'grey-6'" size="24px" />
+              </q-item-section>
+              <q-item-section :class="{ 'text-primary text-weight-bold': item.id === currentStepId && !done(item.id) }">
+                {{ item.label }}
+              </q-item-section>
+            </template>
+            <q-card>
+              <q-card-section>
+                <pre v-if="stepLogs[item.id]" class="output-console"
+                  :ref="el => { if (el) logRefs[item.id] = el }">{{ stepLogs[item.id] }}</pre>
+                <p v-else class="text-grey">No output yet.</p>
+              </q-card-section>
+            </q-card>
+          </q-expansion-item>
+        </q-list>
+        <q-banner v-if="installFinished" class="bg-positive text-white q-mt-md" rounded>
+          <template #avatar><q-icon name="check_circle" /></template>
+          Installation steps completed. Review the setup summary for login
+          options and next steps.
+          <template #action>
+            <q-btn flat color="white" label="Show setup summary"
+              @click="step = 'complete'" />
+          </template>
+        </q-banner>
+      </q-card-section></q-card>
+      <q-card v-else flat bordered><q-card-section>
+        <q-icon name="check_circle" color="positive" size="3em" />
+        <p v-if="store.state.dry_run">
+          Dry run completed. No commands were executed, no files were changed,
+          and no credentials were generated.
+        </p>
+        <p v-else>Installation and service verification completed.</p>
+        <q-card v-if="adminPasswordVisible" flat bordered
+          class="credentials-card q-mb-md">
+          <q-card-section>
+            <div class="row items-center q-mb-sm">
+              <q-icon name="vpn_key" color="warning" size="1.6em" class="q-mr-sm" />
+              <div class="text-h6">Initial WebUI login</div>
+            </div>
+            <q-banner dense class="bg-warning text-black q-mb-md" rounded>
+              <template #avatar><q-icon name="warning" /></template>
+              This password is shown only once. Store it somewhere safe now.
+            </q-banner>
+            <div class="row items-center q-gutter-sm q-mb-sm">
+              <div class="credential-label">Username</div>
+              <div class="credential-value">{{ store.admin.username }}</div>
+              <q-btn unelevated color="primary"
+                :icon="copiedField === 'username' ? 'check' : 'content_copy'"
+                :label="copiedField === 'username' ? 'Copied!' : 'Copy'"
+                aria-label="Copy username"
+                @click="copyCredential('username')" />
+            </div>
+            <div class="row items-center q-gutter-sm">
+              <div class="credential-label">Password</div>
+              <div class="credential-value">
+                {{ passwordRevealed ? store.admin.password : maskedPassword }}
+              </div>
+              <q-btn flat round dense
+                :icon="passwordRevealed ? 'visibility_off' : 'visibility'"
+                :aria-label="passwordRevealed ? 'Hide password' : 'Show password'"
+                @click="passwordRevealed = !passwordRevealed" />
+              <q-btn unelevated color="primary"
+                :icon="copiedField === 'password' ? 'check' : 'content_copy'"
+                :label="copiedField === 'password' ? 'Copied!' : 'Copy'"
+                aria-label="Copy password"
+                @click="copyCredential('password')" />
+            </div>
+            <p class="q-mt-md q-mb-none">
+              If it is lost, you can find it on this host in
+              <span class="console-inline">/etc/bareos/bareos-dir.d/console/admin.conf</span>.
+            </p>
+          </q-card-section>
+        </q-card>
+        <q-banner v-else-if="adminPasswordPrintedToTerminal" class="bg-info text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="terminal" /></template>
+          The initial WebUI admin password was printed on the terminal where
+          <code>bareos-setup</code> is running. It is not shown here because
+          this browser connection is not local loopback.
+        </q-banner>
+        <q-banner v-else-if="store.state.dry_run" class="bg-info text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="visibility_off" /></template>
+          Dry run only: no initial WebUI admin password was generated.
+        </q-banner>
+        <p v-if="!store.state.dry_run"><q-icon name="open_in_browser" color="primary" class="q-mr-xs" />Log in to the Bareos WebUI at one of these URLs:</p>
+        <q-markup-table v-if="!store.state.dry_run && webuiUrls.length" flat bordered dense class="q-mb-md">
+          <tbody>
+            <tr v-for="url in webuiUrls" :key="url.href">
+              <th class="text-left webui-url-table__label">{{ url.label }}</th>
+              <td><a :href="url.href" target="_blank" rel="noopener noreferrer">{{ url.href }}</a></td>
+            </tr>
+          </tbody>
+        </q-markup-table>
+        <p v-if="!store.state.dry_run"><q-icon name="terminal" color="primary" class="q-mr-xs" />You can
+          also manage this Bareos system locally with <code>bconsole</code>.</p>
+        <q-card flat bordered class="q-mb-md"><q-card-section>
+          <div class="text-subtitle1 q-mb-sm">Possible next steps</div>
+          <q-list dense>
+            <q-item v-for="item in nextStepLinks" :key="item.href"
+              clickable tag="a" :href="item.href" target="_blank"
+              rel="noopener noreferrer">
+              <q-item-section avatar>
+                <q-icon :name="item.icon" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ item.label }}</q-item-label>
+                <q-item-label caption>{{ item.caption }}</q-item-label>
+              </q-item-section>
+              <q-item-section side><q-icon name="open_in_new" /></q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section></q-card>
+        <q-expansion-item v-if="hasInstallationLog" icon="article" label="Installation log"
+          caption="Redacted commands and output from this setup run" class="q-mb-md"
+          expand-separator>
+          <q-card>
+            <q-card-section>
+              <div class="row q-gutter-sm q-mb-sm">
+                <q-btn flat dense icon="content_copy" label="Copy log"
+                  @click="copyInstallationLog" />
+                <q-btn flat dense icon="download" label="Download log"
+                  @click="downloadInstallationLog" />
+              </div>
+              <pre class="output-console">{{ installationLog }}</pre>
+            </q-card-section>
+          </q-card>
+        </q-expansion-item>
+        <q-banner v-if="setupClosed" class="bg-positive text-white q-mb-md" rounded>
+          <template #avatar><q-icon name="check_circle" /></template>
+          Setup wizard closed. You can close this browser tab now.
+        </q-banner>
+        <q-btn color="primary" label="Close setup wizard" icon="power_settings_new"
+          :disable="setupClosed" @click="closeSetup" />
+      </q-card-section></q-card>
+
+      <div class="row justify-between q-mt-lg">
+        <q-btn v-if="step !== 'welcome' && step !== 'complete' && !(step === 'progress' && installStarted)"
+          flat icon="arrow_back" label="Back" @click="back" />
+        <q-space />
+        <q-btn v-if="step !== 'complete'" color="primary"
+          :disable="busy || !connected || !canContinue"
+          :icon-right="primaryActionIcon"
+          :label="primaryActionLabel" @click="next" />
+        <q-btn v-if="step === 'progress' && failed" flat color="negative"
+          icon="undo" label="Rollback" @click="rollback" />
+      </div>
+    </q-page></q-page-container>
+  </q-layout>
+</template>
+
+<script setup>
+import { computed, onMounted, reactive, ref, watch, nextTick } from 'vue'
+import { useQuasar } from 'quasar'
+import { useSetupStore } from '../stores/setup.js'
+import { useSetupWs } from '../composables/useSetupWs.js'
+import { FALLBACK_ICON, getDistroIcon } from '../utils/distro-icons.js'
+
+const $q = useQuasar()
+const store = useSetupStore()
+const { connected, messages, send } = useSetupWs()
+const step = ref('welcome')
+const busy = ref(false)
+const error = ref('')
+const failed = ref(false)
+const failedStep = ref('')
+const installStarted = ref(false)
+const installFinished = ref(false)
+const currentStepId = ref(null)
+const setupClosed = ref(false)
+const logRefs = {}
+const platformLoaded = computed(() => Boolean(store.state.setup_version))
+const effectiveRepoOsPath = computed(() =>
+  store.state.platform_supported ? store.state.repo_os_path : store.repoOsPath)
+const repoOsPathOptions = computed(() => {
+  const suggested = store.state.suggested_repo_os_paths || []
+  const known = store.state.known_repo_os_paths || []
+  return [...suggested, ...known.filter(path => !suggested.includes(path))]
+})
+function onNewRepoOsPath(value, done) { done(value, 'add-unique') }
+const platformRows = computed(() => [
+  { label: 'Distribution', value: store.state.pretty_name || store.state.distro || 'Not detected', icon: true },
+  { label: 'Distribution ID', value: store.state.distro },
+  { label: 'Version', value: store.state.version },
+  { label: 'Codename', value: store.state.codename },
+  { label: 'Architecture', value: store.state.arch },
+  { label: 'Package manager', value: store.state.package_manager },
+  { label: 'Bareos repository', value: effectiveRepoOsPath.value },
+  { label: 'Setup version', value: store.state.setup_version },
+].filter(row => row.value))
+const installSteps = [
+  { id: 'repository', label: 'Configure repository', icon: 'cloud_download' },
+  { id: 'packages', label: 'Install packages', icon: 'inventory_2' },
+  { id: 'catalog', label: 'Initialize catalog when needed', icon: 'storage' },
+  { id: 'admin', label: 'Create initial admin account', icon: 'admin_panel_settings' },
+  { id: 'proxy', label: 'Enable loopback WebUI proxy', icon: 'lan' },
+  { id: 'smoke_test', label: 'Verify required services', icon: 'verified' }]
+const stepLogs = reactive(Object.fromEntries(installSteps.map(item => [item.id, ''])))
+const expandedSteps = reactive(Object.fromEntries(installSteps.map(item => [item.id, false])))
+const installedComponents = [
+  { icon: 'hub', label: 'Director', detail: 'Job scheduling and catalog control' },
+  { icon: 'save', label: 'Storage Daemon', detail: 'Writes backup data' },
+  { icon: 'folder_copy', label: 'File Daemon', detail: "Backs up this host's files" },
+  { icon: 'storage', label: 'PostgreSQL', detail: 'Catalog database' },
+  { icon: 'web', label: 'WebUI', detail: 'Browser-based management interface' }]
+const subscriptionHighlights = [
+  {
+    icon: 'developer_board',
+    label: 'Hyper-V plugin',
+    caption: 'Protect Microsoft Hyper-V virtualization workloads.',
+  },
+  {
+    icon: 'restore',
+    label: 'Windows disaster recovery with Bareos Barri',
+    caption: 'Evaluate Bareos-assisted Windows recovery workflows.',
+  },
+  {
+    icon: 'account_tree',
+    label: 'Proxmox plugin',
+    caption: 'Back up Proxmox virtualization environments.',
+  },
+]
+const title = computed(() => step.value === 'complete'
+  ? 'Setup complete' : ({ welcome: 'Welcome', platform: 'Platform', repository: 'Repository',
+    progress: 'Installation progress' }[step.value]))
+const platformDistroIcon = computed(() => step.value === 'platform'
+  ? getDistroIcon(store.state.distro) : null)
+const platformIconLabel = computed(() =>
+  `${store.state.pretty_name || store.state.distro || 'Detected platform'} icon`)
+const stepIcon = computed(() => ({ welcome: 'rocket_launch', platform: 'computer', repository: 'cloud_download',
+  progress: 'settings', complete: 'check_circle' }[step.value] || 'rocket_launch'))
+const description = computed(() => ({
+  welcome: 'Bareos Setup will guide you through the installation and setup of Bareos and required services on this computer.',
+  platform: 'Detecting your Linux distribution and package manager to select compatible packages.',
+  repository: store.state.peer_is_loopback
+    ? 'Choose which Bareos package repository to install from.'
+    : 'Choose the repository. Subscription credentials, if needed, stay on the bareos-setup terminal and are never sent by this browser.',
+  progress: 'Installation stops on failure. Retry the failed step or roll back wizard-owned changes.',
+}[step.value] || ''))
+const progress = computed(() => step.value === 'complete' ? 1 :
+  ({ welcome: 0, platform: .2, repository: .45, progress: .7 }[step.value] || 0))
+const canEnterSubscriptionCredentials = computed(() =>
+  Boolean(store.state.subscription_credentials_in_browser))
+const subscriptionCredentialModeKnown = computed(() =>
+  store.state.dry_run || store.state.subscription_credentials_in_browser ||
+  store.state.subscription_credentials_on_terminal)
+const canContinue = computed(() => {
+  if (step.value === 'platform') {
+    if (!platformLoaded.value) return false
+    if (!store.state.package_manager_supported) return false
+    if (store.state.platform_supported) return true
+    return Boolean(store.repoOsPath) && store.repoOsPathAcknowledged
+  }
+  if (step.value !== 'repository' || store.repository === 'community') return true
+  if (!subscriptionCredentialModeKnown.value) return false
+  return !canEnterSubscriptionCredentials.value ||
+    (store.repositoryLogin && store.repositoryPassword)
+})
+const primaryActionLabel = computed(() => {
+  if (step.value === 'progress') {
+    return installFinished.value ? 'Show setup summary' : 'Start installation'
+  }
+  return 'Continue'
+})
+const primaryActionIcon = computed(() => {
+  if (step.value === 'progress') {
+    return installFinished.value ? 'check_circle' : 'play_arrow'
+  }
+  return 'arrow_forward'
+})
+const adminPasswordVisible = computed(() => Boolean(store.admin?.password))
+const passwordRevealed = ref(false)
+const copiedField = ref('')
+let copiedTimer = null
+const maskedPassword = computed(() => '•'.repeat(store.admin?.password?.length || 0))
+const adminPasswordPrintedToTerminal = computed(() =>
+  Boolean(store.admin?.password_printed_to_terminal))
+const nextStepLinks = computed(() => [
+  {
+    icon: 'menu_book',
+    label: 'Read the Bareos documentation',
+    caption: 'Learn how to configure jobs, schedules, clients, storage, and restores.',
+    href: 'https://docs.bareos.org/',
+  },
+  ...(store.repository === 'subscription' ? [] : [{
+    icon: 'workspace_premium',
+    label: 'Request Bareos trial access',
+    caption: 'Try subscription packages, plugins, and vendor-supported builds.',
+    href: 'https://www.bareos.com/try/',
+  }]),
+  {
+    icon: 'calculate',
+    label: 'Open the Bareos pricing calculator',
+    caption: 'Estimate subscription, support, and service options for your setup.',
+    href: 'https://www.bareos.com/pricing/',
+  },
+  {
+    icon: 'groups',
+    label: 'Join a Bareos Expert Circle',
+    caption: 'Meet Bareos experts and discuss backup topics, releases, and operations.',
+    href: 'https://www.bareos.com/meet/',
+  },
+  {
+    icon: 'support_agent',
+    label: 'Explore consulting, support, and funded development',
+    caption: 'Get expert help for setup review, migration, operations, and new features.',
+    href: 'https://www.bareos.com/services/',
+  },
+])
+function formatUrlHost(host) {
+  const value = host.trim()
+  if (!value) return ''
+  if (value.includes(':') && !(value.startsWith('[') && value.endsWith(']'))) {
+    return `[${value}]`
+  }
+  return value
+}
+const webuiUrls = computed(() => {
+  const candidates = [
+    { label: 'Loopback IPv4', host: '127.0.0.1' },
+    { label: 'Localhost', host: 'localhost' },
+    { label: 'Hostname', host: store.state.hostname },
+    { label: 'Current browser host', host: window.location.hostname },
+  ]
+  const seen = new Set()
+  return candidates.flatMap(candidate => {
+    const host = formatUrlHost(candidate.host || '')
+    if (!host) return []
+    const href = `https://${host}/bareos-webui-new`
+    const key = href.toLowerCase()
+    if (seen.has(key)) return []
+    seen.add(key)
+    return [{ label: candidate.label, href }]
+  })
+})
+const installationLog = computed(() => installSteps.map(item => {
+  const log = stepLogs[item.id].trimEnd()
+  if (!log) return ''
+  return `## ${item.label}\n${log}`
+}).filter(Boolean).join('\n\n'))
+const hasInstallationLog = computed(() => installationLog.value.length > 0)
+async function copyText(text) {
+  // navigator.clipboard is only defined in a secure context. The setup
+  // server speaks plain HTTP, so it is available on loopback but not for
+  // a remote browser; fall back to the deprecated execCommand path there.
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch (_) { /* fall through to the legacy path */ }
+  }
+  try {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.top = '-1000px'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    area.setSelectionRange(0, text.length)
+    const copied = document.execCommand('copy')
+    document.body.removeChild(area)
+    return copied
+  } catch (_) {
+    return false
+  }
+}
+async function copyInstallationLog() {
+  if (!installationLog.value) return
+  if (await copyText(installationLog.value)) {
+    $q.notify({ type: 'positive', message: 'Installation log copied.' })
+  } else {
+    $q.notify({ type: 'negative', message: 'Could not copy installation log.' })
+  }
+}
+function downloadInstallationLog() {
+  if (!installationLog.value) return
+  const blob = new Blob([installationLog.value], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = 'bareos-setup-installation.log'
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+function done(id) { return store.state.completed.includes(id) }
+function next() {
+  if (step.value === 'welcome') { step.value = 'platform'; send({ action: 'state' }) }
+  else if (step.value === 'platform') step.value = 'repository'
+  else if (step.value === 'repository') step.value = 'progress'
+  else if (step.value === 'progress' && installFinished.value) step.value = 'complete'
+  else if (step.value === 'progress') start()
+}
+function back() { step.value = ({ platform: 'welcome', repository: 'platform', progress: 'repository' })[step.value] || step.value }
+function payload() {
+  return {
+    repository: store.repository,
+    repository_login: canEnterSubscriptionCredentials.value ? store.repositoryLogin : '',
+    repository_password: canEnterSubscriptionCredentials.value ? store.repositoryPassword : '',
+    distro: store.state.distro,
+    version: store.state.version,
+    repo_os_path: store.state.platform_supported ? '' : store.repoOsPath,
+  }
+}
+function start(stepToRun = 'repository') {
+  if (stepToRun === 'repository') {
+    installStarted.value = true
+    installFinished.value = false
+    store.admin = null
+    installSteps.forEach(item => { stepLogs[item.id] = ''; expandedSteps[item.id] = false })
+  }
+  busy.value = true; error.value = ''; failed.value = false
+  failedStep.value = ''
+  currentStepId.value = stepToRun
+  expandedSteps[stepToRun] = true
+  send({ action: 'run', step: stepToRun, ...payload() })
+}
+function retry() { start(failedStep.value || 'repository') }
+function rollback() { send({ action: 'rollback' }); busy.value = false; failed.value = false; currentStepId.value = null }
+async function copyCredential(field) {
+  const text = field === 'username'
+    ? store.admin?.username
+    : store.admin?.password
+  if (!text) return
+  if (await copyText(text)) {
+    copiedField.value = field
+    if (copiedTimer) clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => { copiedField.value = '' }, 2000)
+    $q.notify({
+      type: 'positive',
+      message: field === 'username' ? 'Username copied.' : 'Password copied.',
+    })
+  } else {
+    $q.notify({
+      type: 'negative',
+      message: `Could not copy ${field} to clipboard.`,
+    })
+  }
+}
+function closeSetup() { send({ action: 'close' }) }
+watch(messages, list => {
+  const message = list[list.length - 1]; if (!message) return
+  if (message.type === 'state') {
+    Object.assign(store.state, message)
+    if (!store.state.platform_supported && !store.repoOsPath) {
+      store.repoOsPath = (message.suggested_repo_os_paths || [])[0] || ''
+    }
+  }
+  if (message.type === 'output' && currentStepId.value) stepLogs[currentStepId.value] += `${message.line}\n`
+  if (message.type === 'error') {
+    error.value = message.message
+    failed.value = true
+    failedStep.value = message.step || currentStepId.value || 'repository'
+    busy.value = false
+  }
+  if (message.type === 'admin_credentials') store.admin = message
+  if (message.type === 'rollback_complete') store.state.completed = []
+  if (message.type === 'closed') {
+    setupClosed.value = true
+    store.admin = null
+  }
+  if (message.type === 'done') {
+    if (message.exit_code) {
+      failed.value = true
+      failedStep.value = message.step || currentStepId.value || 'repository'
+      busy.value = false
+      return
+    }
+    if (!store.state.completed.includes(message.step)) store.state.completed.push(message.step)
+    expandedSteps[message.step] = false
+    const nextStep = installSteps.find(item => !done(item.id))
+    if (nextStep) {
+      currentStepId.value = nextStep.id
+      expandedSteps[nextStep.id] = true
+      send({ action: 'run', step: nextStep.id, ...payload() })
+    } else {
+      store.repositoryLogin = ''
+      store.repositoryPassword = ''
+      busy.value = false
+      currentStepId.value = null
+      installFinished.value = true
+    }
+  }
+}, { deep: true })
+watch(canEnterSubscriptionCredentials, allowed => {
+  if (allowed) return
+  store.repositoryLogin = ''
+  store.repositoryPassword = ''
+})
+watch(() => currentStepId.value && stepLogs[currentStepId.value], async () => {
+  const id = currentStepId.value; if (!id) return
+  await nextTick()
+  const el = logRefs[id]
+  if (el) el.scrollTop = el.scrollHeight
+})
+onMounted(() => send({ action: 'state' }))
+</script>
+
+<style scoped>
+.toolbar-logo {
+  width: 28px;
+  height: 28px;
+}
+.boris-mascot {
+  flex: 0 0 auto;
+}
+.boris-mascot--inline {
+  width: 80px;
+  height: 80px;
+}
+.boris-mascot--welcome {
+  width: 200px;
+  height: 200px;
+}
+.platform-distro-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.repo-card--subscription {
+  border-color: var(--q-primary);
+}
+.repo-card--selected {
+  box-shadow: 0 0 0 2px var(--q-primary);
+}
+.repo-card--community {
+  opacity: 0.85;
+}
+.platform-table__label {
+  width: 12rem;
+}
+.webui-url-table__label {
+  width: 12rem;
+}
+.credentials-card {
+  border-color: var(--q-warning);
+  border-width: 2px;
+}
+.credential-label {
+  width: 6rem;
+  font-weight: 500;
+}
+.credential-value {
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  word-break: break-all;
+}
+</style>
