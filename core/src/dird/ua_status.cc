@@ -41,6 +41,7 @@
 
 #include "cats/sql_pooling.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
 #include "dird/ua_status.h"
@@ -528,6 +529,11 @@ static bool DoSubscriptionStatus(UaContext* ua)
                  ua->argk[0], ua->argk[1]);
     return false;
   }
+
+  if (FindArg(ua, NT_("accounting")) > 0) {
+    return DoSubscriptionAccounting(ua);
+  }
+
   if (!OpenDb(ua)) {
     ua->ErrorMsg("Failed to open db.\n");
     return false;
