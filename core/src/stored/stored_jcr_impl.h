@@ -29,8 +29,6 @@
 #include "lib/thread_util.h"
 #include "stored/reserve.h"
 
-#include <string>
-
 template <typename T> class alist;
 
 namespace storagedaemon {
@@ -99,16 +97,6 @@ struct StoredJcrImpl {
   bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
   bool insert_jobmedia_records{}; /**< Need to insert job media records */
   uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
-
-  /* Bytes of STREAM_FILE_DATA written so far for the current NDMP-native
-   * (no FHDB) virtual file, i.e. since the last BndmpCreateVirtualFile()
-   * call.  Used to send a corrected attribute record with the real size
-   * from BndmpTapeClose(). */
-  uint64_t ndmp_virtual_file_bytes{};
-  /* Name of the current NDMP-native virtual file, set by
-   * BndmpCreateVirtualFile() and consumed by BndmpTapeClose() to build the
-   * corrected attribute record.  Empty if no virtual file is pending. */
-  std::string ndmp_virtual_file_name{};
 
   storagedaemon::ReadSession read_session;
   storagedaemon::DeviceWaitTimes device_wait_times;
