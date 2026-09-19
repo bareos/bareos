@@ -87,11 +87,12 @@ ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 
 void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  std::for_each(attributes_.begin(), attributes_.end(),
-                [jcr](ProcessedFileData& attribute) {
-                  DeviceRecord devicerecord = attribute.GetData();
-                  SendAttrsToDir(jcr, &devicerecord);
-                });
+  std::vector<bool> to_send = SelectAttributesToSend(attributes_);
+  for (std::size_t i = 0; i < attributes_.size(); i++) {
+    if (!to_send[i]) { continue; }
+    DeviceRecord devicerecord = attributes_[i].GetData();
+    SendAttrsToDir(jcr, &devicerecord);
+  }
 }
 
 void ProcessedFile::AddAttribute(DeviceRecord* record)
@@ -105,6 +106,42 @@ bool IsAttribute(DeviceRecord* record)
          || record->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
          || record->maskedStream == STREAM_RESTORE_OBJECT
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
+}
+
+bool IsUnixAttributeStream(int32_t stream)
+{
+  int32_t masked_stream = stream & STREAMMASK_TYPE;
+  return masked_stream == STREAM_UNIX_ATTRIBUTES
+         || masked_stream == STREAM_UNIX_ATTRIBUTES_EX;
+}
+
+std::vector<bool> SelectAttributesToSend(
+    const std::vector<ProcessedFileData>& attributes)
+{
+  /* A file can have more than one STREAM_UNIX_ATTRIBUTES/_EX record
+   * buffered here if something resent corrected attributes for it
+   * (e.g. a backup plugin that only learns the real st_size/st_blocks
+   * once it finishes writing, see fd_plugins.cc/bVarFileSizeBlocks).
+   * The medium already holds every one of those records -- that part
+   * is unaffected -- but only the last (i.e. most up to date) one
+   * should ever reach the Director/catalog, so File.LStat isn't
+   * duplicated for the same FileIndex. Every other buffered record
+   * (digests, restore objects) is unaffected and always selected. */
+  std::size_t last_unix_attribute_idx = attributes.size();
+  for (std::size_t i = 0; i < attributes.size(); i++) {
+    if (IsUnixAttributeStream(attributes[i].GetStream())) {
+      last_unix_attribute_idx = i;
+    }
+  }
+
+  std::vector<bool> to_send(attributes.size(), true);
+  for (std::size_t i = 0; i < attributes.size(); i++) {
+    if (IsUnixAttributeStream(attributes[i].GetStream())
+        && i != last_unix_attribute_idx) {
+      to_send[i] = false;
+    }
+  }
+  return to_send;
 }
 
 static bool SaveFullyProcessedFilesAttributes(

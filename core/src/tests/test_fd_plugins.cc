@@ -68,8 +68,18 @@ namespace filedaemon {
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool);
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*);
+void FillMissingPluginStatBlocks(struct stat& statp);
+bool EncodeAndSendAttributes(JobControlRecord*,
+                             FindFilesPacket*,
+                             int&,
+                             bool reuse_file_index);
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
+
+bool EncodeAndSendAttributes(JobControlRecord*, FindFilesPacket*, int&, bool)
+{
+  return true;
+}
 
 bool AccurateMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
@@ -80,6 +90,44 @@ bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
+
+TEST(fd, fill_missing_plugin_stat_blocks)
+{
+  // Plugin reported a real size but left st_blocks at 0: derive it.
+  struct stat statp{};
+  statp.st_size = 513;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Exact multiple of 512 should not round up an extra block.
+  statp = {};
+  statp.st_size = 1024;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Plugin already provided real block-allocation data: don't overwrite it.
+  statp = {};
+  statp.st_size = 100000;
+  statp.st_blocks = 7;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 7);
+
+  // Unknown size (e.g. streaming plugin still filling it in): don't guess.
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+
+  // Legitimate empty file: nothing to derive.
+  statp = {};
+  statp.st_size = 0;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+}
 
 TEST(fd, fd_plugins)
 {
