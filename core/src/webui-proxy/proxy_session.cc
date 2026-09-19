@@ -1045,12 +1045,21 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           send_command_state("running");
 
           if (stream_raw) {
-            result.prompt
-                = director.CallStreamed(command, [&](std::string_view chunk) {
-                    auto filtered = FilterRawConsoleChunk(command, chunk);
-                    if (filtered.empty()) { return; }
+            bool collecting_selection = false;
+            result.prompt = director.CallStreamed(
+                command,
+                [&](std::string_view chunk) {
+                  auto filtered = FilterRawConsoleChunk(command, chunk);
+                  if (collecting_selection) {
+                    result.text.append(filtered.data(), filtered.size());
+                  } else if (!filtered.empty()) {
                     SendRawResponse(*ws, req_id, command, filtered, "more");
-                  });
+                  }
+                },
+                [&]() {
+                  collecting_selection = true;
+                  result.text.clear();
+                });
           } else {
             result = director.Call(command);
           }
@@ -1064,12 +1073,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                                  ? "completed"
                                  : "waiting_for_input",
                              prompt_str);
-          if (stream_raw) {
-            SendRawResponse(*ws, req_id, command, "", prompt_str);
-          } else {
+          if (!stream_raw) {
             result.text = FilterRawConsoleChunk(command, result.text);
-            SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           }
+          SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           if (should_close_console_session) { break; }
         }
       } catch (const std::exception& ex) {

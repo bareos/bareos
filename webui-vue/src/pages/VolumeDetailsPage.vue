@@ -20,19 +20,12 @@
 -->
 <template>
   <q-page class="q-pa-md">
-    <!-- Back -->
-    <q-btn
-      flat
-      no-caps
-      icon="arrow_back"
-      :label="backLabel"
-      class="q-mb-md"
-      :to="backLocation"
-    />
+    <!-- Breadcrumbs -->
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- Loading / error -->
-    <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
-    <q-banner v-else-if="error" class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
+    <q-inner-loading :showing="loading" :label="t('Loading volume…')" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <template v-else-if="vol">
       <!-- ── Header ────────────────────────────────────────────────────── -->
@@ -45,12 +38,14 @@
               v-if="hasEncryptionKey"
               name="vpn_key"
               color="amber-8"
+              role="img"
+              :aria-label="t('Encryption key stored in catalog')"
             >
               <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
             </q-icon>
           </div>
           <div class="row q-gutter-xs q-mt-xs">
-            <q-badge :color="statusColor(vol.volstatus)" :label="vol.volstatus" />
+            <VolumeStatusBadge :status="vol.volstatus" />
             <q-badge :color="vol.enabled !== '0' && vol.enabled !== false ? 'positive' : 'grey'">
                {{ vol.enabled !== '0' && vol.enabled !== false ? t('Enabled') : t('Disabled') }}
             </q-badge>
@@ -134,34 +129,82 @@
                 />
               </div>
 
-              <!-- Job usage breakdown -->
-              <div v-if="jobUsageSegments.length" class="q-mt-md">
+              <!-- Volume tape contents -->
+              <div v-if="volumeTapeSegments.length" class="q-mt-md">
                 <div class="row justify-between text-caption text-grey-6 q-mb-xs">
-                  <span>{{ t('Space by Job') }}</span>
-                  <span>{{ formatJobCount(jobUsageSegments.length) }}</span>
+                  <span>{{ t('Tape contents') }}</span>
+                  <span>{{ formatRangeCount(volumeTapeSegments.length) }}</span>
                 </div>
-                <!-- stacked bar -->
-                <div style="height:14px; display:flex; overflow:hidden; background:#e0e0e0; border-radius:4px">
-                  <q-tooltip>
-                    <div v-for="seg in jobUsageSegments" :key="seg.jobid" class="text-caption">
-                      #{{ seg.jobid }} {{ seg.name }}: {{ formatBytes(seg.jobbytes) }} ({{ seg.pct.toFixed(1) }}%)
-                    </div>
-                  </q-tooltip>
+                <div
+                  v-if="volumeTapeHasOverlaps"
+                  class="text-caption text-grey-6 q-mb-xs"
+                >
+                  {{ t('Overlapping JobMedia ranges detected. Each lane is a seek range; other jobs may have blocks inside that range.') }}
+                </div>
+                <div v-if="volumeTapeHasOverlaps" class="volume-tape-lanes">
                   <div
-                    v-for="seg in jobUsageSegments"
-                    :key="seg.jobid"
-                    :style="{ width: seg.width + '%', background: seg.color, flexShrink: 0 }"
-                  />
+                    v-for="seg in volumeTapeSegments"
+                    :key="seg.key"
+                    class="volume-tape-lane-row"
+                  >
+                    <router-link
+                      :to="{
+                        name: 'job-details',
+                        params: { id: seg.jobid },
+                        query: buildVolumeJobDetailsQuery(currentVolumeDirector),
+                      }"
+                      class="volume-tape-lane-label text-primary text-caption"
+                    >#{{ seg.jobid }}</router-link>
+                    <div class="volume-tape-lane bg-grey-4">
+                      <div
+                        class="volume-tape-range"
+                        :style="{
+                          left: seg.leftPct + '%',
+                          width: seg.widthPct + '%',
+                          background: segmentColor(seg.colorIndex),
+                        }"
+                      >
+                        <q-tooltip>
+                          <div class="text-caption text-weight-medium">
+                            #{{ seg.jobid }} {{ seg.name || t('Unknown Job') }}
+                          </div>
+                          <div class="text-caption">{{ t('FileIndex') }}: {{ seg.fileIndexLabel }}</div>
+                          <div class="text-caption">{{ t('Media') }}: {{ seg.mediaPositionLabel }}</div>
+                          <div class="text-caption">{{ t('Bytes') }}: {{ formatBytes(seg.jobbytes) }}</div>
+                        </q-tooltip>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <!-- legend: top 8 jobs -->
+                <div v-else class="volume-tape-bar bg-grey-4">
+                  <div
+                    v-for="seg in volumeTapeSegments"
+                    :key="seg.key"
+                    class="volume-tape-segment"
+                    :style="{
+                      width: seg.pct + '%',
+                      background: segmentColor(seg.colorIndex),
+                    }"
+                  >
+                    <q-tooltip>
+                      <div class="text-caption text-weight-medium">
+                        #{{ seg.jobid }} {{ seg.name || t('Unknown Job') }}
+                      </div>
+                      <div class="text-caption">{{ t('FileIndex') }}: {{ seg.fileIndexLabel }}</div>
+                      <div class="text-caption">{{ t('Media') }}: {{ seg.mediaPositionLabel }}</div>
+                      <div class="text-caption">{{ t('Bytes') }}: {{ formatBytes(seg.jobbytes) }}</div>
+                    </q-tooltip>
+                  </div>
+                </div>
+
                 <div class="q-mt-sm">
                   <div
-                    v-for="seg in jobUsageSegments.slice(0, 8)"
-                    :key="seg.jobid"
+                    v-for="seg in volumeTapeSegments.slice(0, 8)"
+                    :key="seg.key"
                     class="row items-center q-mb-xs text-caption"
                   >
                     <div
-                      :style="{ background: seg.color, width: '10px', height: '10px', borderRadius: '2px', flexShrink: 0 }"
+                      :style="{ background: segmentColor(seg.colorIndex), width: '10px', height: '10px', borderRadius: '2px', flexShrink: 0 }"
                       class="q-mr-sm"
                     />
                     <router-link
@@ -176,11 +219,11 @@
                     <span class="text-grey-7 ellipsis">{{ seg.name }}</span>
                     <q-space />
                     <span class="text-grey-6 q-ml-sm" style="white-space:nowrap">
-                      {{ formatBytes(seg.jobbytes) }} ({{ seg.pct.toFixed(1) }}%)
+                      {{ t('FileIndex') }} {{ seg.fileIndexLabel }}
                     </span>
                   </div>
-                  <div v-if="jobUsageSegments.length > 8" class="text-caption text-grey-5">
-                     + {{ formatMoreJobsCount(jobUsageSegments.length - 8) }}
+                  <div v-if="volumeTapeSegments.length > 8" class="text-caption text-grey-5">
+                     + {{ formatMoreRangesCount(volumeTapeSegments.length - 8) }}
                   </div>
                 </div>
               </div>
@@ -198,7 +241,8 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="jobs" :columns="jobCols" row-key="jobid"
-                       dense flat v-model:pagination="jobsPagination">
+                       dense flat v-model:pagination="jobsPagination"
+                       :rows-per-page-options="jobsRowsPerPageOptions">
                 <template #body-cell-jobid="props">
                   <q-td :props="props">
                     <router-link
@@ -215,7 +259,7 @@
                 </template>
                 <template #body-cell-jobstatus="props">
                   <q-td :props="props" class="text-center">
-                    <q-badge :color="jobStatusColor(props.value)" :label="props.value" />
+                    <JobStatusBadge :status="props.value" />
                   </q-td>
                 </template>
                 <template #body-cell-jobbytes="props">
@@ -240,7 +284,10 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import {
+  usePersistedTablePagination,
+  UNBOUNDED_TABLE_ROWS_PER_PAGE,
+} from '../composables/usePersistedTablePagination.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
@@ -254,12 +301,17 @@ import {
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import {
+  buildVolumeTapeSegments,
   resolveVolumeDetailsDirectorOrigin,
   resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
   resolveVolumeDetailsStoragesOrigin,
   volumeHasEncryptionKey,
+  volumeUsageSegmentsFromResponse,
 } from '../utils/volumes.js'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
+import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route      = useRoute()
 const auth       = useAuthStore()
@@ -267,10 +319,11 @@ const director   = useDirectorStore()
 const settings   = useSettingsStore()
 const { t } = useI18n()
 const jobsPagination = usePersistedTablePagination('volume-details.jobs', {
-  rowsPerPage: 15,
+  rowsPerPage: 10,
   sortBy: 'jobid',
   descending: true,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const jobsRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const volumeName = computed(() => route.params.name)
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director : ''
@@ -285,22 +338,22 @@ const storagesOrigin = computed(() => resolveVolumeDetailsStoragesOrigin(route.q
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
 const backLabel = computed(() => {
   if (jobOrigin.value) {
-    return t('Back to Job')
+    return t('Job')
   }
 
   if (poolOrigin.value) {
-    return t('Back to Pool')
+    return t('Pool')
   }
 
   if (autochangerOrigin.value) {
-    return t('Back to Autochanger')
+    return t('Autochanger')
   }
 
   if (storagesOrigin.value) {
-    return t('Back to Storages')
+    return t('Storages')
   }
 
-  return directorOrigin.value ? t('Back to Director') : t('Volumes')
+  return directorOrigin.value ? t('Director') : t('Volumes')
 })
 const backLocation = computed(() => {
   if (jobOrigin.value) {
@@ -355,6 +408,10 @@ const backLocation = computed(() => {
     query: { tab: 'volumes' },
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: vol.value?.volumename ?? volumeName.value },
+])
 
 function buildVolumeJobDetailsQuery(jobDirector) {
   return buildJobDetailsQuery({
@@ -366,15 +423,16 @@ function buildVolumeJobDetailsQuery(jobDirector) {
 
 const vol         = ref(null)
 const jobs        = ref([])
+const volumeUsage = ref([])
 const loading     = ref(true)
 const jobsLoading = ref(false)
 const error       = ref(null)
-function formatJobCount(count) {
-  return `${formatNumber(count, settings.locale)} ${t('job(s)')}`
+function formatRangeCount(count) {
+  return `${formatNumber(count, settings.locale)} ${t('range(s)')}`
 }
 
-function formatMoreJobsCount(count) {
-  return `${formatNumber(count, settings.locale)} ${t('more jobs')}`
+function formatMoreRangesCount(count) {
+  return `${formatNumber(count, settings.locale)} ${t('more ranges')}`
 }
 
 // Retention reference scale: 1 year in seconds
@@ -403,9 +461,10 @@ async function ensureVolumeDirector() {
 async function loadVolume() {
   await ensureVolumeDirector()
 
-  const [volRes, jobRes] = await Promise.all([
+  const [volRes, jobRes, usageRes] = await Promise.all([
     director.call(`llist volume=${quoteDirectorString(volumeName.value)}`),
     fetchJobs(),
+    director.call(`llist volumeusage volume=${quoteDirectorString(volumeName.value)}`),
   ])
   const raw = volRes?.volumes ?? volRes?.volume ?? null
   if (Array.isArray(raw)) {
@@ -420,6 +479,7 @@ async function loadVolume() {
     }
   }
   jobs.value = jobRes
+  volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
 }
 
 watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
@@ -427,6 +487,7 @@ watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
   error.value = null
   vol.value = null
   jobs.value = []
+  volumeUsage.value = []
   try {
     await loadVolume()
   } catch (loadError) {
@@ -529,29 +590,17 @@ const JOB_COLORS = [
   '#00695C', '#283593', '#E65100', '#4527A0', '#2E7D32',
 ]
 
-const jobUsageSegments = computed(() => {
-  if (!jobs.value.length || !vol.value) return []
-  const totalBytes = Number(vol.value.volbytes) || 1
-  const sorted = [...jobs.value]
-    .filter(j => Number(j.jobbytes) > 0)
-    .sort((a, b) => Number(b.jobbytes) - Number(a.jobbytes))
-  // Normalize widths: each segment is its share of the total volume bytes,
-  // capped so the sum never exceeds 100 % in the bar.
-  let remaining = 100
-  return sorted.map((j, i) => {
-    const pct = (Number(j.jobbytes) / totalBytes) * 100
-    const width = Math.min(pct, remaining)
-    remaining = Math.max(0, remaining - width)
-    return {
-      jobid:    j.jobid,
-      name:     j.name,
-      jobbytes: Number(j.jobbytes),
-      pct,
-      width,
-      color: JOB_COLORS[i % JOB_COLORS.length],
-    }
-  })
-})
+function segmentColor(index) {
+  return JOB_COLORS[index % JOB_COLORS.length]
+}
+
+const volumeTapeSegments = computed(() => buildVolumeTapeSegments(
+  volumeUsage.value,
+  jobs.value
+))
+const volumeTapeHasOverlaps = computed(() => (
+  volumeTapeSegments.value.some(segment => segment.hasOverlaps)
+))
 
 const jobCols = computed(() => [
   { name: 'jobid',      label: t('ID'),       field: 'jobid',      align: 'right',  sortable: true },
@@ -562,20 +611,50 @@ const jobCols = computed(() => [
   { name: 'jobstatus',  label: t('Status'),   field: 'jobstatus',  align: 'center', sortable: true },
   { name: 'jobbytes',   label: t('Bytes'),    field: 'jobbytes',   align: 'right',  sortable: true },
 ])
-
-// ── Color helpers ─────────────────────────────────────────────────────────────
-
-function statusColor(s) {
-  return {
-    Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
-    Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal',
-  }[s] ?? 'info'
-}
-
-function jobStatusColor(s) {
-  return {
-    T: 'positive', W: 'warning', E: 'negative', f: 'negative',
-    R: 'blue', C: 'blue', A: 'warning', e: 'negative',
-  }[s] ?? 'grey'
-}
 </script>
+
+<style scoped>
+.volume-tape-bar {
+  border-radius: 4px;
+  display: flex;
+  height: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.volume-tape-segment {
+  flex-shrink: 0;
+  min-width: 2px;
+}
+
+.volume-tape-lane-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.volume-tape-lane-label {
+  flex: 0 0 48px;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.volume-tape-lane {
+  border-radius: 4px;
+  flex: 1 1 auto;
+  height: 14px;
+  min-width: 0;
+  position: relative;
+}
+
+.volume-tape-range {
+  border-radius: 4px;
+  height: 100%;
+  min-width: 2px;
+  position: absolute;
+  top: 0;
+}
+</style>

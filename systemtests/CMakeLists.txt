@@ -649,24 +649,35 @@ else()
     )
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 TIMEOUT 240 COST 2.0
+      PROPERTIES
+        FIXTURES_SETUP
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+        TIMEOUT
+        240
+        COST
+        3.0
     )
-    add_systemtest(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
-    )
-    set_tests_properties(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      PROPERTIES FIXTURES_REQUIRED
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 FIXTURES_SETUP
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
-                 TIMEOUT
-                 120
-                 COST
-                 1.0
-    )
+    # Drives the interactive split-screen restore tree browser and Plugin
+    # Options editor purely over the console wire protocol (no PTY required, see
+    # tree_browser_console.py), against the synthetic per-plugin fixture jobs.
+    # Only needed once, on the admin profile, since it requires an unrestricted
+    # console.
+    if(PYTHON_EXECUTABLE AND TEST_NAME STREQUAL "admin-smoke")
+      add_systemtest(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        ${tests_dir}/${TEST_NAME}/testrunner-restore-plugin-options-editor
+      )
+      set_tests_properties(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        PROPERTIES
+          FIXTURES_REQUIRED
+          "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+          TIMEOUT
+          120
+          COST
+          1.0
+      )
+    endif()
     add_systemtest(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
       ${tests_dir}/${TEST_NAME}/testrunner
@@ -695,11 +706,16 @@ else()
     # Keep the complete profile lifecycle exclusive on shared CI workers.
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
       PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
     )
+    if(PYTHON_EXECUTABLE AND TEST_NAME STREQUAL "admin-smoke")
+      set_tests_properties(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
+      )
+    endif()
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
   set(BAREOS_WEBUI_PROFILE "")

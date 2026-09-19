@@ -417,6 +417,21 @@ if(ENABLE_BCONSOLE)
     test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
                                               Bareos::Findlib GTest::gtest_main
   )
+  bareos_add_test(
+    test_console_key_mapping LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                            GTest::gtest_main
+  )
+  bareos_add_test(
+    test_console_output LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                       GTest::gtest_main
+  )
+  bareos_add_test(test_tree_browser_rendering LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_plugin_hints LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_options LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_volume_usage LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(
+    test_ua_restore_point_display LINK_LIBRARIES ${LINK_LIBRARIES}
+  )
 endif()
 
 # Keep alphabetically ordered
@@ -427,6 +442,8 @@ bareos_add_test(
 )
 
 bareos_add_test(job_control_record LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
+bareos_add_test(job_types_test LINK_LIBRARIES GTest::gtest_main)
 
 bareos_add_test(
   restore_stream_support_test LINK_LIBRARIES Bareos::Lib Bareos::Findlib

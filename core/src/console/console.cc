@@ -33,6 +33,7 @@
 #include "console/auth_pam.h"
 #include "console/console_output.h"
 #include "console/connect_to_director.h"
+#include "console/console_key_mapping.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
@@ -46,12 +47,21 @@
 #include "lib/bpipe.h"
 #include <stdio.h>
 #include <fstream>
+#include <memory>
+#include <optional>
 #include <string>
 
-#if defined(HAVE_WIN32) && !defined(HAVE_MSVC)
-// windows has its own isatty implemented, so
-// if we are compiling with msvc we can just use that
-#  define isatty(fd) ((fd) == 0)
+#if !defined(HAVE_WIN32)
+#  include <sys/select.h>
+#  include <sys/ioctl.h>
+#  include <termios.h>
+#  include <unistd.h>
+#  include <csignal>
+#else
+#  include <io.h>
+#  if !defined(isatty)
+#    define isatty(fd) _isatty(fd)
+#  endif
 #endif
 
 using namespace console;
@@ -199,13 +209,434 @@ static int Do_a_command(FILE* input, BareosSocket* UA_sock)
   return status;
 }
 
+#if !defined(HAVE_WIN32)
+static volatile std::sig_atomic_t terminal_resized = 0;
+
+static void HandleSigwinch(int) { terminal_resized = 1; }
+
+static bool TerminalWasResized()
+{
+  if (!terminal_resized) { return false; }
+  terminal_resized = 0;
+  return true;
+}
+#else
+static bool TerminalWasResized() { return false; }
+
+/**
+ * Try to enable ANSI/VT100 escape sequence interpretation on the console
+ * we are attached to (available on Windows 10 and later). If it sticks,
+ * tell console_output.cc to stop stripping escape sequences, so the
+ * reverse-video highlighting used by the interactive restore selection
+ * menu (see InteractiveSelection::Format() in dird/ua_select.cc) renders
+ * properly instead of being stripped to plain text. Older consoles, or
+ * output that has been redirected to a file, are left alone: stripping
+ * stays enabled (the default) in that case.
+ */
+static bool EnableWindowsAnsiConsoleIfPossible()
+{
+  if (!isatty(fileno(stdout))) { return false; }
+
+  HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (output_handle == INVALID_HANDLE_VALUE) { return false; }
+
+  DWORD original_mode = 0;
+  if (!GetConsoleMode(output_handle, &original_mode)) { return false; }
+
+  if (!SetConsoleMode(output_handle,
+                      original_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+    return false;
+  }
+
+  // Some older Windows builds silently ignore unsupported mode bits
+  // instead of failing, so read the mode back to confirm it actually took
+  // effect before relying on it.
+  DWORD confirmed_mode = 0;
+  if (GetConsoleMode(output_handle, &confirmed_mode)
+      && (confirmed_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+    ConsoleSetAnsiPassthrough(true);
+    return true;
+  } else {
+    SetConsoleMode(output_handle, original_mode);
+    return false;
+  }
+}
+#endif
+
+#if !defined(HAVE_WIN32)
+// Puts the given tty into raw, no-echo mode for as long as this guard is
+// alive, restoring the original termios settings on destruction (including
+// on early/exceptional return paths). This must span the *entire*
+// interactive selection session (i.e. every round trip while the tree
+// browser/selection menu is on screen), not just a single keystroke read:
+// toggling raw mode on and off around each individual key event leaves a
+// window, while waiting for the Director's response, where the terminal is
+// back in echo mode. If the user holds a key down, OS keyboard auto-repeat
+// then gets echoed straight to the screen by the tty driver itself,
+// corrupting the just-cleared selection screen.
+struct TerminalRawModeGuard {
+  int fd = -1;
+  termios original{};
+  bool active = false;
+
+  explicit TerminalRawModeGuard(int input_fd) : fd(input_fd)
+  {
+    if (tcgetattr(fd, &original) != 0) { return; }
+    termios raw = original;
+    raw.c_lflag &= ~(ICANON | ECHO | ISIG);
+    raw.c_iflag &= ~(IXON | ICRNL);
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    active = (tcsetattr(fd, TCSANOW, &raw) == 0);
+  }
+
+  ~TerminalRawModeGuard()
+  {
+    if (active) { tcsetattr(fd, TCSANOW, &original); }
+  }
+
+  TerminalRawModeGuard(const TerminalRawModeGuard&) = delete;
+  TerminalRawModeGuard& operator=(const TerminalRawModeGuard&) = delete;
+};
+
+struct TerminalSelectionScreenGuard {
+  bool active = false;
+
+  TerminalSelectionScreenGuard()
+  {
+    ConsoleOutput("\033[?1049h\033[H");
+    active = true;
+  }
+
+  ~TerminalSelectionScreenGuard()
+  {
+    if (active) { ConsoleOutput("\033[?1049l"); }
+  }
+
+  TerminalSelectionScreenGuard(const TerminalSelectionScreenGuard&) = delete;
+  TerminalSelectionScreenGuard& operator=(const TerminalSelectionScreenGuard&)
+      = delete;
+};
+#endif
+
+static bool ReadSelectionInput(FILE* input,
+                               BareosSocket* socket,
+                               bool input_is_interactive_tty)
+{
+  if (!input_is_interactive_tty) {
+    // Reading from a file/pipe (e.g. scripted bconcmds input): read a plain
+    // line the same way the main command loop does for non-tty input (see
+    // ReadAndProcessInput() above). GetCmd()/readline() must not be used
+    // here: on Windows, the readline-win32 port ignores redirected stdin
+    // and blocks waiting for real console input instead of consuming the
+    // next scripted line, hanging any restore that reaches this selection
+    // menu.
+    int len = SizeofPoolMemory(socket->msg) - 1;
+    if (fgets(socket->msg, len, input) == NULL) { return false; }
+    ConsoleOutput(socket->msg); /* echo to terminal */
+    StripTrailingJunk(socket->msg);
+    socket->message_length = strlen(socket->msg);
+    return true;
+  }
+
+#if !defined(HAVE_WIN32)
+  // Raw, no-echo mode is expected to already be active on `input_fd` for
+  // the whole interactive selection session -- see TerminalRawModeGuard,
+  // constructed once by the caller (ReadAndProcessInput()) around the
+  // entire receive loop, not per keystroke here.
+  int input_fd = fileno(input);
+
+  auto read_with_timeout = [&](unsigned char& value) {
+    for (;;) {
+      fd_set read_fds;
+      FD_ZERO(&read_fds);
+      FD_SET(input_fd, &read_fds);
+      timeval wait_time{0, 200000};
+      int status
+          = select(input_fd + 1, &read_fds, nullptr, nullptr, &wait_time);
+      if (status < 0 && errno == EINTR) { continue; }
+      if (status <= 0) { return false; }
+      ssize_t bytes_read = read(input_fd, &value, 1);
+      if (bytes_read < 0 && errno == EINTR) { continue; }
+      return bytes_read == 1;
+    }
+  };
+
+  unsigned char input_byte = 0;
+  bool resized = false;
+  for (;;) {
+    if (TerminalWasResized()) {
+      resized = true;
+      break;
+    }
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(input_fd, &read_fds);
+    timeval wait_time{0, 200000};
+    int select_status
+        = select(input_fd + 1, &read_fds, nullptr, nullptr, &wait_time);
+    if (select_status < 0 && errno == EINTR) { continue; }
+    if (select_status <= 0) { continue; /* timeout: re-check for resize */ }
+    ssize_t bytes_read = read(input_fd, &input_byte, 1);
+    if (bytes_read < 0 && errno == EINTR) { continue; }
+    if (bytes_read != 1) { return false; }
+    break;
+  }
+
+  std::string event;
+  if (resized) {
+    struct winsize ws{};
+    if (ioctl(input_fd, TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0) {
+      event = "resize:" + std::to_string(ws.ws_row) + ":"
+              + std::to_string(ws.ws_col);
+    } else {
+      event = "key:noop";
+    }
+  } else if (input_byte == 3) {
+    event = "key:cancel";
+  } else if (input_byte == 9) {
+    event = "key:tab";
+  } else if (input_byte == 10 || input_byte == 14) {
+    event = "key:down"; /* Ctrl-J, Ctrl-N */
+  } else if (input_byte == 11 || input_byte == 16) {
+    event = "key:up"; /* Ctrl-K, Ctrl-P */
+  } else if (input_byte == 2 || input_byte == 8) {
+    event = "key:left"; /* Ctrl-B, Ctrl-H */
+  } else if (input_byte == 4) {
+    event = "key:pagedown"; /* Ctrl-D */
+  } else if (input_byte == 21) {
+    event = "key:pageup"; /* Ctrl-U */
+  } else if (input_byte == 6 || input_byte == 12) {
+    event = "key:right"; /* Ctrl-F, Ctrl-L */
+  } else if (input_byte == 27 || input_byte == 0x9b) {
+    std::string sequence;
+    unsigned char next = 0;
+    if (input_byte == 0x9b) {
+      sequence = "\x1b[";
+      next = '[';
+    } else {
+      sequence.assign(1, '\x1b');
+    }
+
+    if ((input_byte == 0x9b || read_with_timeout(next)) && next == '[') {
+      if (input_byte != 0x9b) { sequence.push_back(static_cast<char>(next)); }
+      unsigned char final_byte = 0;
+      for (int i = 0; i < 16; ++i) {
+        unsigned char byte = 0;
+        if (!read_with_timeout(byte)) { break; }
+        sequence.push_back(static_cast<char>(byte));
+        if (byte >= 0x40 && byte <= 0x7e) {
+          final_byte = byte;
+          break;
+        }
+      }
+      event = final_byte == 0
+                  ? "key:noop"
+                  : console::MapAnsiEscapeSequenceToSelectionEvent(sequence);
+      if (event.empty()) { event = "key:noop"; }
+    } else if (next == 'O') {
+      sequence.push_back(static_cast<char>(next));
+      unsigned char final_byte = 0;
+      if (read_with_timeout(final_byte)) {
+        sequence.push_back(static_cast<char>(final_byte));
+      }
+      event = final_byte == 0
+                  ? "key:noop"
+                  : console::MapAnsiEscapeSequenceToSelectionEvent(sequence);
+      if (event.empty()) { event = "key:noop"; }
+    } else if (next == 0) {
+      event = "key:cancel";
+    } else {
+      event = "key:noop";
+    }
+  } else if (input_byte == '\r') {
+    event = "key:enter";
+  } else if (input_byte == 127) {
+    event = "key:backspace";
+  } else if (input_byte == ' ') {
+    event = "key:space";
+  } else if (input_byte >= 0x80) {
+    size_t length = 0;
+    if ((input_byte & 0xe0) == 0xc0) {
+      length = 2;
+    } else if ((input_byte & 0xf0) == 0xe0) {
+      length = 3;
+    } else if ((input_byte & 0xf8) == 0xf0) {
+      length = 4;
+    }
+
+    std::string utf8_character(1, static_cast<char>(input_byte));
+    while (utf8_character.size() < length) {
+      unsigned char continuation = 0;
+      if (!read_with_timeout(continuation)) { break; }
+      utf8_character.push_back(static_cast<char>(continuation));
+    }
+    event = console::MapUtf8InputToSelectionEvent(utf8_character);
+  } else if (input_byte >= 0x20 && input_byte != 0x7f) {
+    event = "key:text:";
+    event.push_back(static_cast<char>(input_byte));
+  }
+  if (event.empty()) { event = "key:cancel"; }
+
+  PmStrcpy(socket->msg, event.c_str());
+  socket->message_length = event.size();
+  return true;
+#else
+  // Raw single-keystroke reader using the Windows Console API, mirroring
+  // the POSIX branch above: read one key/resize event at a time and
+  // translate it to the same "key:..." protocol understood by
+  // InteractiveSelection::ApplyInput() (see dird/ua_select.cc), instead of
+  // falling back to GetCmd()/readline() (which does full line editing, not
+  // single-keystroke navigation, and would never send arrow keys through).
+  HANDLE input_handle = GetStdHandle(STD_INPUT_HANDLE);
+  if (input_handle == INVALID_HANDLE_VALUE) { return false; }
+
+  DWORD original_mode = 0;
+  if (!GetConsoleMode(input_handle, &original_mode)) { return false; }
+
+  // Always restore the original console mode before returning, even on an
+  // early/error return, so a crash or unexpected disconnect while the
+  // selection menu is on screen doesn't leave the user's terminal stuck in
+  // raw mode (no line editing/echo) for the rest of their session.
+  struct ConsoleModeGuard {
+    HANDLE handle;
+    DWORD mode;
+    ~ConsoleModeGuard() { SetConsoleMode(handle, mode); }
+  } restore_mode{input_handle, original_mode};
+
+  DWORD raw_mode = original_mode
+                   & ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
+                              | ENABLE_PROCESSED_INPUT);
+  raw_mode |= ENABLE_WINDOW_INPUT; /* to receive resize events below */
+  if (!SetConsoleMode(input_handle, raw_mode)) { return false; }
+
+  std::string event;
+  wchar_t pending_high_surrogate = 0;
+  for (;;) {
+    INPUT_RECORD record{};
+    DWORD events_read = 0;
+    if (!ReadConsoleInputW(input_handle, &record, 1, &events_read)
+        || events_read == 0) {
+      return false;
+    }
+
+    if (record.EventType == WINDOW_BUFFER_SIZE_EVENT) {
+      HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+      CONSOLE_SCREEN_BUFFER_INFO info{};
+      if (output_handle != INVALID_HANDLE_VALUE
+          && GetConsoleScreenBufferInfo(output_handle, &info)) {
+        int rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+        int cols = info.srWindow.Right - info.srWindow.Left + 1;
+        if (rows > 0 && cols > 0) {
+          event = "resize:" + std::to_string(rows) + ":" + std::to_string(cols);
+          break;
+        }
+      }
+      continue; /* couldn't determine the new size: ignore this event */
+    }
+
+    if (record.EventType != KEY_EVENT || !record.Event.KeyEvent.bKeyDown) {
+      continue; /* ignore key-up, mouse, focus, menu events */
+    }
+
+    bool ctrl_pressed = (record.Event.KeyEvent.dwControlKeyState
+                         & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED))
+                        != 0;
+    wchar_t unicode_char = record.Event.KeyEvent.uChar.UnicodeChar;
+    if (unicode_char >= 0xd800 && unicode_char <= 0xdbff) {
+      pending_high_surrogate = unicode_char;
+      continue;
+    }
+    if (pending_high_surrogate != 0 && unicode_char >= 0xdc00
+        && unicode_char <= 0xdfff) {
+      event = console::MapUtf16InputToSelectionEvent(pending_high_surrogate,
+                                                     unicode_char);
+      pending_high_surrogate = 0;
+      if (event.empty()) { event = "key:noop"; }
+      break;
+    }
+    pending_high_surrogate = 0;
+    event = console::MapConsoleKeyEventToSelectionEvent(
+        record.Event.KeyEvent.wVirtualKeyCode, unicode_char, ctrl_pressed);
+    if (event.empty()) { event = "key:noop"; }
+    break;
+  }
+
+  PmStrcpy(socket->msg, event.c_str());
+  socket->message_length = event.size();
+  return true;
+#endif
+}
+
+/**
+ * Silently tell the Director how big our terminal is, so that interactive
+ * selection menus (see InteractiveSelection::Format() on the Director side)
+ * can size themselves to fit without scrolling their header/first options
+ * off-screen, and lay options out in multiple columns when the terminal is
+ * wide enough to show more of them at once despite limited height. This is
+ * only meaningful for a real, interactive terminal; the reply is drained
+ * without being shown to the user, since it is not a user-facing command.
+ */
+static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
+{
+  int rows = 0;
+  int cols = 0;
+
+#if !defined(HAVE_WIN32)
+  static bool sigwinch_installed = false;
+  if (!sigwinch_installed) {
+    signal(SIGWINCH, HandleSigwinch);
+    sigwinch_installed = true;
+  }
+
+  struct winsize ws{};
+  if (ioctl(fileno(input), TIOCGWINSZ, &ws) == 0 && ws.ws_row > 0) {
+    rows = ws.ws_row;
+    cols = ws.ws_col;
+  }
+#else
+  (void)input;
+  HANDLE output_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  CONSOLE_SCREEN_BUFFER_INFO info{};
+  if (output_handle != INVALID_HANDLE_VALUE
+      && GetConsoleScreenBufferInfo(output_handle, &info)) {
+    rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+    cols = info.srWindow.Right - info.srWindow.Left + 1;
+  }
+#endif
+  if (rows <= 0 || cols <= 0) { return; }
+
+  std::string cmd
+      = ".terminalsize " + std::to_string(rows) + " " + std::to_string(cols);
+  if (ConsoleColorEnabled()) { cmd += " color"; }
+  PmStrcpy(UA_sock->msg, cmd.c_str());
+  UA_sock->message_length = static_cast<int32_t>(cmd.size());
+  if (!UA_sock->send()) { return; }
+
+  // Silently drain the reply (there should be none), same as any other
+  // command's response cycle, but without printing anything.
+  int status;
+  while ((status = UA_sock->recv()) >= 0
+         || ((status == BNET_SIGNAL) && (UA_sock->message_length != BNET_EOD)
+             && (UA_sock->message_length != BNET_MAIN_PROMPT)
+             && (UA_sock->message_length != BNET_SUB_PROMPT))) {
+    if (status == BNET_SIGNAL) { continue; }
+    // Discard any unexpected output instead of showing it to the user.
+  }
+}
+
 static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 {
   const char* prompt = "*";
   bool at_prompt = false;
+  bool collecting_selection = false;
+  std::string selection_output;
+  ConsoleOutputStyle pending_style = ConsoleOutputStyle::kDefault;
   int tty_input = isatty(fileno(input));
   int status;
   btimer_t* tid = NULL;
+
+  if (tty_input) { SendTerminalSize(input, UA_sock); }
 
   while (1) {
     if (at_prompt) { /* don't prompt multiple times */
@@ -214,6 +645,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       prompt = "*";
       at_prompt = true;
     }
+    if (tty_input && TerminalWasResized()) { SendTerminalSize(input, UA_sock); }
     if (tty_input) {
       status = GetCmd(input, prompt, UA_sock, 30);
     } else {
@@ -258,6 +690,18 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       break;
     }
 
+#if !defined(HAVE_WIN32)
+    // Only enabled lazily, the first time this receive loop actually enters
+    // an interactive selection session (BNET_START_SELECT/BNET_SELECT_INPUT
+    // below) -- see TerminalRawModeGuard's comment for why it must then stay
+    // active across every round trip of that session instead of being
+    // toggled per keystroke. Ordinary (non-interactive) commands never
+    // touch this, so their normal ISIG/echo terminal behavior (e.g.
+    // Ctrl-C aborting a long-running command) is unaffected.
+    std::optional<TerminalRawModeGuard> raw_mode_guard;
+    std::unique_ptr<TerminalSelectionScreenGuard> selection_screen_guard;
+#endif
+
     tid = StartBsockTimer(UA_sock, timeout);
     while ((status = UA_sock->recv()) >= 0
            || ((status == BNET_SIGNAL)
@@ -269,8 +713,47 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
           file_selection = true;
         } else if (UA_sock->message_length == BNET_END_RTREE) {
           file_selection = false;
+        } else if (UA_sock->message_length == BNET_START_SELECT) {
+          collecting_selection = true;
+          selection_output.clear();
+#if !defined(HAVE_WIN32)
+          if (tty_input && !raw_mode_guard) {
+            raw_mode_guard.emplace(fileno(input));
+          }
+          if (tty_input && !selection_screen_guard) {
+            selection_screen_guard
+                = std::make_unique<TerminalSelectionScreenGuard>();
+          }
+#endif
+          if (tty_input) { ConsoleOutput("\033[2J\033[H"); }
+        } else if (UA_sock->message_length == BNET_END_SELECT) {
+          collecting_selection = false;
+          ConsoleOutput(selection_output.c_str());
+        } else if (UA_sock->message_length == BNET_SELECT_INPUT
+                   && collecting_selection == false) {
+#if !defined(HAVE_WIN32)
+          // Safety net in case a selection flow ever sends
+          // BNET_SELECT_INPUT without a preceding BNET_START_SELECT.
+          if (tty_input && !raw_mode_guard) {
+            raw_mode_guard.emplace(fileno(input));
+          }
+#endif
+          if (!ReadSelectionInput(input, UA_sock, tty_input != 0)) { break; }
+          if (!UA_sock->send()) { break; }
+        } else if (UA_sock->message_length == BNET_INFO_MSG) {
+          pending_style = ConsoleOutputStyle::kInfo;
+        } else if (UA_sock->message_length == BNET_WARNING_MSG) {
+          pending_style = ConsoleOutputStyle::kWarning;
+        } else if (UA_sock->message_length == BNET_ERROR_MSG) {
+          pending_style = ConsoleOutputStyle::kError;
         }
         continue;
+      }
+
+      if (!collecting_selection) {
+#if !defined(HAVE_WIN32)
+        selection_screen_guard.reset();
+#endif
       }
 
       if (at_prompt) {
@@ -281,7 +764,12 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       /* Suppress output if running
        * in background or user hit ctl-c */
       if (!stop) {
-        if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
+        if (collecting_selection) {
+          selection_output.append(UA_sock->msg);
+        } else if (UA_sock->msg) {
+          ConsoleOutputStyled(UA_sock->msg, pending_style);
+          pending_style = ConsoleOutputStyle::kDefault;
+        }
       }
     }
     StopBsockTimer(tid);
@@ -490,7 +978,9 @@ struct cpl_keywords_t {
 static struct cpl_keywords_t cpl_keywords[]
     = {{"pool=", ".pool", false},
        {"nextpool=", ".pool", false},
-       {"fileset=", ".fileset", false},
+       {"fileset=", ".filesets", false},
+       {"filesetclient=", ".filesetclients", false},
+       {"fileset@client=", ".filesetclients", false},
        {"client=", ".client", false},
        {"jobdefs=", ".jobdefs", false},
        {"job=", ".jobs", false},
@@ -594,7 +1084,9 @@ int GetCmd(FILE* input, const char* prompt, BareosSocket* sock, int)
   do_history = 0;
   rl_catch_signals = 0; /* do it ourselves */
 
-  line = readline((char*)prompt); /* cast needed for old readlines */
+  std::string styled_prompt
+      = console::ReadlinePrompt(prompt, ConsoleColorEnabled());
+  line = readline(styled_prompt.data());
   if (!line) { return -1; }
   StripTrailingJunk(line);
   command = line;
@@ -837,6 +1329,15 @@ int main(int argc, char* argv[])
   InitStackDump();
   MyNameIs(argc, argv, "bconsole");
   InitMsg(NULL, NULL);
+#if defined(HAVE_WIN32)
+  bool ansi_supported = EnableWindowsAnsiConsoleIfPossible();
+#else
+  bool ansi_supported = true;
+#endif
+  bool color_enabled
+      = console::ShouldUseColor(isatty(fileno(stdout)), ansi_supported,
+                                getenv("TERM"), getenv("NO_COLOR"));
+  ConsoleSetColorEnabled(color_enabled);
   working_directory = "/tmp";
   g_args = GetPoolMemory(PM_FNAME);
 
@@ -1131,6 +1632,7 @@ static void TerminateConsole(int sig)
     exit(BEXIT_FAILURE);
   }
   already_here = true;
+  if (ConsoleColorEnabled()) { ConsoleOutput("\033[0m"); }
   StopWatchdog();
   delete my_config;
   my_config = NULL;

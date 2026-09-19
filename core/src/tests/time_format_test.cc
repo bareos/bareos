@@ -65,6 +65,16 @@ TEST(time_format, correct_time_and_date_format)
   EXPECT_EQ(StrToUtime("199--1--2 22:22:22"), 0);
   EXPECT_EQ(StrToUtime("1999-01-02 22:22:22:10"), 0);
 
+  // Fractional seconds (e.g. PostgreSQL's default timestamp output such as
+  // "2026-09-19 17:29:20.914399") must be tolerated (truncated to whole
+  // seconds), not treated as invalid trailing garbage.
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.914399"),
+            StrToUtime("1999-01-02 22:22:22"));
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.0"),
+            StrToUtime("1999-01-02 22:22:22"));
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22."), 0);
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.abc"), 0);
+
 
   // leap years
   EXPECT_TRUE(StrToUtime("2000-02-29 10:10:10") != 0);

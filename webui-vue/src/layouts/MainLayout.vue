@@ -7,13 +7,17 @@
       <q-scroll-area class="col">
         <!-- Drawer header -->
         <div class="q-pa-md row items-center">
-          <span style="height:32px; margin-right:8px; display:inline-flex; align-items:center">
-            <img :src="bareosLogo" alt="Bareos" style="height:32px" />
+          <router-link to="/dashboard" class="text-white"
+                       style="display:inline-flex; align-items:center; text-decoration:none"
+                       @click="drawerOpen = false">
+            <span style="height:32px; margin-right:8px; display:inline-flex; align-items:center">
+              <img :src="bareosLogo" alt="Bareos" style="height:32px" />
+            </span>
+            <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
+              Bareos
+            </span>
             <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
-          </span>
-          <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-            BAREOS
-          </span>
+          </router-link>
         </div>
         <q-separator dark />
 
@@ -104,17 +108,19 @@
 
         <!-- Hamburger (mobile / tablet) -->
         <q-btn v-if="$q.screen.lt.md" flat round dense icon="menu" color="white"
+               :title="t('Open navigation menu')" :aria-label="t('Open navigation menu')"
                class="q-mr-sm" @click="drawerOpen = !drawerOpen" />
 
         <!-- Logo -->
-        <router-link to="/dashboard" style="display:inline-flex; align-items:center">
+        <router-link to="/dashboard" class="text-white"
+                     style="display:inline-flex; align-items:center; text-decoration:none">
           <img :src="bareosLogo" alt="Bareos"
                style="height:36px; margin-right:8px;" />
+          <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
+            Bareos
+          </span>
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
-        <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-          BAREOS
-        </span>
 
         <!-- Main nav tabs (desktop only) -->
         <q-tabs v-if="!$q.screen.lt.md" dense align="left"
@@ -135,6 +141,7 @@
           dense
           :icon="directorUpdateAlert.icon"
           :color="directorUpdateAlert.color"
+          :aria-label="directorUpdateAlert.message"
           :href="RELEASE_INFO_PAGE_URL"
           target="_blank"
           rel="noopener noreferrer"
@@ -474,7 +481,6 @@ const mainNavItems = computed(() => [
   { label: t('Schedules'), to: '/schedules', icon: 'schedule', testId: 'nav-schedules', drawerTestId: 'drawer-nav-schedules' },
   { label: t('Storages'), to: '/storages', icon: 'storage', testId: 'nav-storages', drawerTestId: 'drawer-nav-storages' },
   { label: t('Director'), to: '/director', icon: 'settings', testId: 'nav-director', drawerTestId: 'drawer-nav-director' },
-  { label: t('Analytics'), to: '/analytics', icon: 'bar_chart', testId: 'nav-analytics', drawerTestId: 'drawer-nav-analytics' },
 ])
 
 onMounted(() => {

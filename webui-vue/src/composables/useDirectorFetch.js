@@ -100,6 +100,7 @@ export function normaliseJob(j) {
     id:        Number(j.jobid ?? j.id),
     name:      j.name       ?? '',
     client:    j.client     ?? j.clientname ?? '',
+    fileset:   j.fileset    ?? '',
     type:      j.jobtype    ?? j.type       ?? '',
     level:     j.joblevel   ?? j.level      ?? '',
     status:    j.jobstatus  ?? j.status     ?? '',
@@ -139,6 +140,18 @@ export function isRunningJobStatus(status) {
 
 export function isWaitingJobStatus(status) {
   return typeof status === 'string' && status.toLowerCase().includes('is waiting')
+}
+
+export function isErrorJobStatus(status) {
+  return status === 'E' || status === 'f'
+}
+
+export function isWarningJobStatus(status) {
+  return status === 'W'
+}
+
+export function isOkJobStatus(status) {
+  return status === 'T' || status === 'OK'
 }
 
 /**

@@ -95,7 +95,8 @@ class DirectorConnection {
    * Throws std::runtime_error on I/O error. */
   DirectorPrompt CallStreamed(
       const std::string& command,
-      const std::function<void(std::string_view)>& on_data);
+      const std::function<void(std::string_view)>& on_data,
+      const std::function<void()>& on_selection_start = {});
 
   /* Send a command and receive the complete response string.
    * In json_mode=true, the response is a JSON object.

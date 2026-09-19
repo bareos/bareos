@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-barri"
+  Description = "Smoke-test fileset backed by the bpipe plugin (BARRI-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/barri-demo/barri-image.dd"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

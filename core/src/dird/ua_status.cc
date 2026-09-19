@@ -54,6 +54,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <cerrno>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
@@ -67,6 +68,7 @@ static void DoDirectorStatus(UaContext* ua);
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
 static void DoConfigurationStatus(UaContext* ua);
+static void DoCatalogStatus(UaContext* ua);
 static void DoAllStatus(UaContext* ua);
 static void StatusSlots(UaContext* ua, StorageResource* store);
 static void StatusContentApi(UaContext* ua, StorageResource* store);
@@ -194,6 +196,9 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
       return DoSubscriptionStatus(ua);
+    } else if (bstrncasecmp(ua->argk[i], NT_("cata"), 4)) {
+      DoCatalogStatus(ua);
+      return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("conf"), 4)) {
       DoConfigurationStatus(ua);
       return true;
@@ -232,6 +237,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     AddPrompt(ua, NT_("Storage"));
     AddPrompt(ua, NT_("Client"));
     AddPrompt(ua, NT_("Scheduler"));
+    AddPrompt(ua, NT_("Catalog"));
     AddPrompt(ua, NT_("All"));
     Dmsg0(20, "DoPrompt: select daemon\n");
     if ((item = DoPrompt(ua, "", T_("Select daemon type for status"), prmt,
@@ -256,6 +262,9 @@ bool StatusCmd(UaContext* ua, const char* cmd)
         DoSchedulerStatus(ua);
         break;
       case 4:
+        DoCatalogStatus(ua);
+        break;
+      case 5:
         DoAllStatus(ua);
         break;
       default:
@@ -662,6 +671,232 @@ static void DoConfigurationStatus(UaContext* ua)
   }
 }
 
+struct CatalogTableSize {
+  std::string name;
+  uint64_t bytes = 0;
+  uint64_t rows = 0;
+};
+
+static bool QueryCatalogTotalSize(UaContext* ua,
+                                  uint64_t& total_bytes,
+                                  std::vector<std::string>& errors)
+{
+  static const char* kTotalQuery
+      = "SELECT pg_database_size(current_database())::bigint AS total_bytes";
+
+  struct TotalSizeContext {
+    bool has_row = false;
+    uint64_t value = 0;
+  } ctx;
+
+  auto handler = [](void* data, int, char** row) {
+    auto* total_ctx = static_cast<TotalSizeContext*>(data);
+    if (total_ctx->has_row) { return 0; }
+    total_ctx->has_row = true;
+    if (row && row[0]) { total_ctx->value = str_to_uint64(row[0]); }
+    return 0;
+  };
+
+  if (!ua->db->SqlQuery(kTotalQuery, handler, &ctx)) {
+    errors.emplace_back(T_("Failed to query total catalog size."));
+    return false;
+  }
+
+  if (!ctx.has_row) {
+    errors.emplace_back(T_("Catalog size query returned no rows."));
+    return false;
+  }
+
+  total_bytes = ctx.value;
+  return true;
+}
+
+static bool QueryLargestTables(UaContext* ua,
+                               std::vector<CatalogTableSize>& tables,
+                               std::vector<std::string>& errors)
+{
+  PoolMem query(PM_MESSAGE);
+  query.bsprintf(
+      "SELECT schemaname || '.' || relname AS name,"
+      " pg_total_relation_size(relid)::bigint AS bytes,"
+      " GREATEST(n_live_tup, 0)::bigint AS rows "
+      "FROM pg_catalog.pg_stat_user_tables "
+      "ORDER BY pg_total_relation_size(relid) DESC");
+
+  auto handler = [](void* data, int, char** row) {
+    auto* table_rows = static_cast<std::vector<CatalogTableSize>*>(data);
+    CatalogTableSize entry;
+    entry.name = (row && row[0]) ? row[0] : "";
+    entry.bytes = (row && row[1]) ? str_to_uint64(row[1]) : 0;
+    entry.rows = (row && row[2]) ? str_to_uint64(row[2]) : 0;
+    table_rows->emplace_back(std::move(entry));
+    return 0;
+  };
+
+  if (!ua->db->SqlQuery(query.c_str(), handler, &tables)) {
+    errors.emplace_back(T_("Failed to query table sizes."));
+    return false;
+  }
+  return true;
+}
+
+static void EmitCatalogStatusApi(UaContext* ua,
+                                 const char* status,
+                                 const char* checked_at,
+                                 bool total_available,
+                                 uint64_t total_bytes,
+                                 bool tables_available,
+                                 const std::vector<CatalogTableSize>& tables,
+                                 const std::vector<std::string>& errors)
+{
+  ua->send->ObjectStart("catalog_status");
+  ua->send->ObjectKeyValue("status", status, "%s\n");
+  ua->send->ObjectKeyValue("checked_at", checked_at, "%s\n");
+
+  ua->send->ObjectStart("catalog");
+  ua->send->ObjectKeyValue("engine", "postgresql", "%s\n");
+  ua->send->ObjectKeyValue("name", ua->catalog->db_name, "%s\n");
+  ua->send->ObjectKeyValueBool("total_bytes_available", total_available);
+  if (total_available) {
+    ua->send->ObjectKeyValue("total_bytes", total_bytes, "%" PRIu64 "\n");
+  }
+  ua->send->ObjectEnd("catalog");
+
+  ua->send->ObjectKeyValueBool("tables_available", tables_available);
+  ua->send->ArrayStart("tables");
+  for (const auto& table : tables) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", table.name.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("bytes", table.bytes, "%" PRIu64 "\n");
+    ua->send->ObjectKeyValue("rows", table.rows, "%" PRIu64 "\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("tables");
+
+  if (!errors.empty()) {
+    ua->send->ObjectKeyValue("message", errors.front().c_str(), "%s\n");
+    ua->send->ArrayStart("errors");
+    for (const auto& error : errors) {
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("message", error.c_str(), "%s\n");
+      ua->send->ObjectEnd();
+    }
+    ua->send->ArrayEnd("errors");
+  }
+  ua->send->ObjectEnd("catalog_status");
+}
+
+static void EmitCatalogStatusText(UaContext* ua,
+                                  const char* status,
+                                  const char* checked_at,
+                                  bool total_available,
+                                  uint64_t total_bytes,
+                                  const std::vector<CatalogTableSize>& tables,
+                                  const std::vector<std::string>& errors)
+{
+  char bytes_with_commas[50];
+  char bytes_with_suffix[50];
+  char rows_with_commas[50];
+
+  ua->SendMsg(T_("\nCatalog Status:\n"));
+  ua->SendMsg(T_(" Status: %s\n"), status);
+  ua->SendMsg(T_(" Checked at: %s\n"), checked_at);
+  ua->SendMsg(T_(" Catalog: %s\n"), ua->catalog->db_name);
+  ua->SendMsg(T_(" Engine: postgresql\n"));
+
+  if (total_available) {
+    ua->SendMsg(T_(" Total size: %s bytes (%s)\n"),
+                edit_uint64_with_commas(total_bytes, bytes_with_commas),
+                edit_uint64_with_suffix(total_bytes, bytes_with_suffix));
+  } else {
+    ua->SendMsg(T_(" Total size: unavailable\n"));
+  }
+
+  if (!errors.empty()) {
+    ua->SendMsg(T_(" Warnings/Errors:\n"));
+    for (const auto& error : errors) {
+      ua->SendMsg(T_("  - %s\n"), error.c_str());
+    }
+  }
+
+  if (!tables.empty()) {
+    ua->SendMsg(T_("\n Largest tables:\n"));
+    ua->SendMsg(T_(" %-4s %-48s %18s  %12s  %14s\n"), "#", "Table", "Bytes",
+                "Human", "Rows (est.)");
+    ua->SendMsg(
+        T_("-------------------------------------------------------------------"
+           "-------"
+           "-------------------------\n"));
+
+    int index = 1;
+    for (const auto& table : tables) {
+      ua->SendMsg(T_(" %-4d %-48s %18s  %12s  %14s\n"), index++,
+                  table.name.c_str(),
+                  edit_uint64_with_commas(table.bytes, bytes_with_commas),
+                  edit_uint64_with_suffix(table.bytes, bytes_with_suffix),
+                  edit_uint64_with_commas(table.rows, rows_with_commas));
+    }
+  } else {
+    ua->SendMsg(T_("\n Largest tables: unavailable\n"));
+  }
+  ua->SendMsg("====\n");
+}
+
+static void DoCatalogStatus(UaContext* ua)
+{
+  std::vector<std::string> errors;
+  std::vector<CatalogTableSize> tables;
+  bool total_available = false;
+  bool tables_available = false;
+  uint64_t total_bytes = 0;
+
+  char checked_at[MAX_TIME_LENGTH];
+  bstrftime_nc(checked_at, sizeof(checked_at), time(nullptr));
+
+  if (!OpenDb(ua)) {
+    errors.emplace_back(T_("Failed to open catalog database."));
+    if (ua->api) {
+      EmitCatalogStatusApi(ua, "unavailable", checked_at, false, 0, false,
+                           tables, errors);
+    } else {
+      EmitCatalogStatusText(ua, "unavailable", checked_at, false, 0, tables,
+                            errors);
+    }
+    return;
+  }
+
+  if (ua->db->GetTypeIndex() != SQL_TYPE_POSTGRESQL) {
+    errors.emplace_back(
+        T_("status catalog currently supports only PostgreSQL catalogs."));
+    if (ua->api) {
+      EmitCatalogStatusApi(ua, "unavailable", checked_at, false, 0, false,
+                           tables, errors);
+    } else {
+      EmitCatalogStatusText(ua, "unavailable", checked_at, false, 0, tables,
+                            errors);
+    }
+    return;
+  }
+
+  total_available = QueryCatalogTotalSize(ua, total_bytes, errors);
+  tables_available = QueryLargestTables(ua, tables, errors);
+
+  const char* status = "ok";
+  if (!total_available && !tables_available) {
+    status = "error";
+  } else if (!errors.empty()) {
+    status = "warning";
+  }
+
+  if (ua->api) {
+    EmitCatalogStatusApi(ua, status, checked_at, total_available, total_bytes,
+                         tables_available, tables, errors);
+  } else {
+    EmitCatalogStatusText(ua, status, checked_at, total_available, total_bytes,
+                          tables, errors);
+  }
+}
+
 /* Scheduling packet */
 struct sched_pkt {
   JobResource* job;
@@ -812,6 +1047,13 @@ static void DoSchedulerStatus(UaContext* ua)
           ua->send->ObjectStart();
           ua->send->ObjectKeyValue("name", jname, "%s\n");
           ua->send->ObjectKeyValueBool("enabled", jenabled);
+          if (JobResource* scheduled_job
+              = ua->GetJobResWithName(jname, false, false)) {
+            if (scheduled_job->client) {
+              ua->send->ObjectKeyValue(
+                  "client", scheduled_job->client->resource_name_, "%s\n");
+            }
+          }
           ua->send->ObjectEnd();
         }
         ua->send->ArrayEnd("jobs");
@@ -828,7 +1070,8 @@ static void DoSchedulerStatus(UaContext* ua)
           = json_now + (static_cast<time_t>(json_days_to) * seconds_per_day);
       ua->send->ArrayStart("preview");
       for (time_t t = preview_start; t < preview_stop; t += seconds_per_hour) {
-        auto emit_run = [&](ScheduleResource* s, RunResource* run) {
+        auto emit_run = [&](ScheduleResource* s, RunResource* run,
+                            JobResource* scheduled_job = nullptr) {
           if (!run->date_time_mask.TriggersOnDayAndHour(t)) { return; }
           struct tm tm_s;
           Blocaltime(&t, &tm_s);
@@ -842,6 +1085,14 @@ static void DoSchedulerStatus(UaContext* ua)
           ua->send->ObjectKeyValueSignedInt(
               "runtime", static_cast<int64_t>(runtime), "%" PRId64 "\n");
           ua->send->ObjectKeyValue("schedule", s->resource_name_, "%s\n");
+          if (scheduled_job) {
+            ua->send->ObjectKeyValue("job", scheduled_job->resource_name_,
+                                     "%s\n");
+            if (scheduled_job->client) {
+              ua->send->ObjectKeyValue(
+                  "client", scheduled_job->client->resource_name_, "%s\n");
+            }
+          }
           if (run->level) {
             ua->send->ObjectKeyValue("level", JobLevelToString(run->level),
                                      "%s\n");
@@ -874,7 +1125,7 @@ static void DoSchedulerStatus(UaContext* ua)
             if (!(job->client && !job->client->enabled)) {
               for (RunResource* run = job->schedule->run; run;
                    run = run->next) {
-                emit_run(job->schedule, run);
+                emit_run(job->schedule, run, job);
               }
             }
           }
@@ -895,7 +1146,7 @@ static void DoSchedulerStatus(UaContext* ua)
             }
             for (RunResource* run = json_job->schedule->run; run;
                  run = run->next) {
-              emit_run(json_job->schedule, run);
+              emit_run(json_job->schedule, run, json_job);
             }
           }
         } else {
@@ -1431,6 +1682,11 @@ static void ListRunningJobs(UaContext* ua)
       ua->send->ObjectStart();
       ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%llu\n");
       ua->send->ObjectKeyValue("name", jcr->Job, "%s\n");
+      ua->send->ObjectKeyValue("client",
+                               jcr->dir_impl->res.client
+                                   ? jcr->dir_impl->res.client->resource_name_
+                                   : "",
+                               "%s\n");
       ua->send->ObjectKeyValue("level", level, "%s\n");
       ua->send->ObjectKeyValue("type", job_type_to_str(jcr->getJobType()),
                                "%s\n");

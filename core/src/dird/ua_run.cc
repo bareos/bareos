@@ -25,33 +25,92 @@
  * BAREOS Director -- Run Command
  */
 #include "dird/dird_globals.h"
+#include "include/auth_protocol_types.h"
 #include "include/bareos.h"
+#include "include/job_types.h"
 #include "dird.h"
+#include "dird/backup.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/fd_cmds.h"
 #include "dird/job.h"
 #include "dird/migration.h"
+#include "dird/msgchan.h"
+#include "dird/restore_plugin_hints.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "dird/ua_tree_browser.h"
+#include "dird/ua_tree_browser_internal.h"
 #include "dird/ua_run.h"
+#include "lib/bnet.h"
 #include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
+#include "lib/btime.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <algorithm>
+#include <cctype>
+#include <string_view>
+#include <vector>
+
 namespace directordaemon {
+
+using tree_browser_internal::FitText;
+using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::IsBackKey;
+using tree_browser_internal::IsCancelKey;
+using tree_browser_internal::IsEditKey;
+using tree_browser_internal::IsEndKey;
+using tree_browser_internal::IsEnterKey;
+using tree_browser_internal::IsHomeKey;
+using tree_browser_internal::IsNextRowKey;
+using tree_browser_internal::IsPreviousRowKey;
+using tree_browser_internal::IsScrollLeftKey;
+using tree_browser_internal::IsScrollRightKey;
+using tree_browser_internal::IsTextKey;
+using tree_browser_internal::kDestinationBrowserHelp;
+using tree_browser_internal::kFieldEditorHelp;
+using tree_browser_internal::kFrameColor;
+using tree_browser_internal::kFrameHelpColor;
+using tree_browser_internal::kFrameHighlightColor;
+using tree_browser_internal::kFrameResetColor;
+using tree_browser_internal::kFrameVerticalBorder;
+using tree_browser_internal::kKeyBackspace;
+using tree_browser_internal::kKeyDown;
+using tree_browser_internal::kKeyPageDown;
+using tree_browser_internal::kKeyPageUp;
+using tree_browser_internal::kKeySpace;
+using tree_browser_internal::kKeyTab;
+using tree_browser_internal::kListDialogHelp;
+using tree_browser_internal::kRelocationDialogHelp;
+using tree_browser_internal::kRestoreDialogHelp;
+using tree_browser_internal::kRunDialogHelp;
+using tree_browser_internal::kTextInputHelp;
+using tree_browser_internal::ParseTerminalResizeInput;
+using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::StyleFrameContent;
+using tree_browser_internal::TextKeyValue;
+using tree_browser_internal::TrimVisualInput;
 
 /* Forward referenced subroutines */
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr);
 static bool DisplayJobParameters(UaContext* ua,
                                  JobControlRecord* jcr,
                                  RunContext& rc);
+static int ModifyRestoreParameters(UaContext* ua,
+                                   JobControlRecord* jcr,
+                                   RunContext& rc);
+static int ModifyBackupParameters(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  RunContext& rc);
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr);
 static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr);
+static bool SelectRunScheduleVisual(UaContext* ua, time_t* when);
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc);
 static bool ResetRestoreContext(UaContext* ua,
                                 JobControlRecord* jcr,
@@ -76,7 +135,6 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
   PoolMem cmdline(PM_MESSAGE);
 
   jr.JobId = JobId;
-  ua->SendMsg("rerunning jobid %" PRIu32 "\n", jr.JobId);
   if (DbLocker _{ua->db}; !ua->db->GetJobRecord(ua->jcr, &jr)) {
     Jmsg(ua->jcr, M_WARNING, 0,
          T_("Error getting Job record for Job rerun: ERR=%s\n"),
@@ -84,15 +142,17 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     return false;
   }
 
-  // Only perform rerun on JobTypes where it makes sense.
-  switch (jr.JobType) {
-    case JT_BACKUP:
-    case JT_COPY:
-    case JT_MIGRATE:
-      break;
-    default:
-      return true;
+  /* Only perform rerun on JobTypes where it makes sense. Skipping is not an
+   * error, so that a rerun over a selection of failed jobs continues with the
+   * remaining jobids. */
+  if (!IsRerunableJobType(static_cast<JobTypes>(jr.JobType))) {
+    ua->SendMsg(T_("Cannot rerun jobid %" PRIu32 ": %s jobs cannot be "
+                   "rerun.\n"),
+                jr.JobId, job_type_to_str(jr.JobType));
+    return true;
   }
+
+  ua->SendMsg("rerunning jobid %" PRIu32 "\n", jr.JobId);
 
   if (jr.JobLevel == L_NONE) {
     Mmsg(cmdline, "run job=\"%s\"", jr.Name);
@@ -375,6 +435,7 @@ int DoRunCmd(UaContext* ua, const char*)
   int status, length;
   bool valid_response;
   bool do_pool_overrides = true;
+  bool restore_options_editor_shown = false;
 
   auto used_config = my_config->GetCurrentConfiguration();
 
@@ -428,6 +489,39 @@ try_again:
 
   /* Prompt User to see if all run job parameters are correct, and
    * allow him to modify them. */
+  if (!restore_options_editor_shown && jcr->is_JobType(JT_RESTORE)
+      && TreeBrowserSupported(ua)) {
+    restore_options_editor_shown = true;
+    status = ModifyRestoreParameters(ua, jcr, rc);
+    switch (status) {
+      case 0:
+        restore_options_editor_shown = false;
+        goto try_again;
+      case 1:
+        break;
+      case 2:
+        jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        goto start_job;
+      case -1:
+        goto bail_out;
+    }
+  }
+
+  if (jcr->is_JobType(JT_BACKUP) && TreeBrowserSupported(ua)) {
+    status = ModifyBackupParameters(ua, jcr, rc);
+    switch (status) {
+      case 0:
+        goto try_again;
+      case 1:
+        break;
+      case 2:
+        jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        goto start_job;
+      case -1:
+        goto bail_out;
+    }
+  }
+
   if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
 
   // Prompt User until we have a valid response.
@@ -468,9 +562,15 @@ try_again:
   status = ModifyJobParameters(ua, jcr, rc);
   switch (status) {
     case 0:
+      if (jcr->is_JobType(JT_RESTORE) && TreeBrowserSupported(ua)) {
+        restore_options_editor_shown = false;
+      }
       goto try_again;
     case 1:
       break;
+    case 2:
+      jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+      goto start_job;
     case -1:
       goto bail_out;
   }
@@ -536,6 +636,10 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 
   // At user request modify parameters of job to be run.
   if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, T_("mod"), strlen(ua->cmd))) {
+    if (jcr->is_JobType(JT_RESTORE)) {
+      return ModifyRestoreParameters(ua, jcr, rc);
+    }
+
     StartPrompt(ua, T_("Parameters to modify:\n"));
 
     AddPrompt(ua, T_("Level"));   /* 0 */
@@ -796,6 +900,2609 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
     return -1;
   }
   return 1;
+
+try_again:
+  return 0;
+}
+
+static const char* RestoreReplacePromptLabel(const char* replace)
+{
+  if (Bstrcasecmp(replace, "Always")) {
+    return T_("Always - overwrite existing files (Bareos value: Always)");
+  }
+  if (Bstrcasecmp(replace, "IfNewer")) {
+    return T_("Only overwrite older files (Bareos value: IfNewer)");
+  }
+  if (Bstrcasecmp(replace, "IfOlder")) {
+    return T_("Only overwrite newer files (Bareos value: IfOlder)");
+  }
+  if (Bstrcasecmp(replace, "Never")) {
+    return T_("Never overwrite existing files (Bareos value: Never)");
+  }
+  return replace;
+}
+
+enum class RestoreOptionAction
+{
+  kRunNow = 0,
+  kBack,
+  kRestoreClient,
+  kBrowseWhere,
+  kWhere,
+  kRelocation,
+  kReplace,
+  kPluginOptions,
+  kAdvancedMenu,
+  kWhen,
+  kPriority,
+  kBootstrap,
+  kStorage,
+  kJobId,
+  kRestoreJob,
+};
+
+enum class BackupOptionAction
+{
+  kRunNow = 1000,
+  kLevel,
+  kStorage,
+  kJob,
+  kFileset,
+  kClient,
+  kAdvancedMenu,
+  kBackupFormat,
+  kWhen,
+  kPriority,
+  kPool,
+  kNextPool,
+  kPluginOptions,
+};
+
+enum class DestinationBrowseAction
+{
+  kUseCurrentDirectory,
+  kParentDirectory,
+  kOpenDirectory,
+  kFile,
+};
+
+enum class DestinationBrowseMode
+{
+  kBrowsing,
+  kEnteringSearch,
+};
+
+struct RestoreOptionRow {
+  RestoreOptionAction action;
+  const char* label;
+  std::string value;
+  bool advanced = false;
+};
+
+static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc);
+
+struct BackupOptionRow {
+  BackupOptionAction action;
+  const char* label;
+  std::string value;
+  bool advanced = false;
+};
+
+struct DestinationBrowseEntry {
+  DestinationBrowseAction action;
+  std::string label;
+  std::string path;
+  bool directory = false;
+};
+
+static constexpr size_t kRestoreOptionLabelColumn = 26;
+static constexpr size_t kRestoreScheduleFieldCount = 6;
+static const char* const kRestoreScheduleFields[kRestoreScheduleFieldCount]
+    = {NT_("Year"), NT_("Month"),  NT_("Day"),
+       NT_("Hour"), NT_("Minute"), NT_("Second")};
+
+static std::string FitRestoreOptionText(std::string_view text, size_t width)
+{
+  if (text.size() <= width) { return std::string(text); }
+  if (width <= 3) { return std::string(text.substr(0, width)); }
+  std::string result(text.substr(0, width - 3));
+  result += "...";
+  return result;
+}
+
+static std::string ScrollRestoreOptionText(std::string_view text,
+                                           size_t width,
+                                           size_t offset)
+{
+  if (text.size() <= width) { return std::string(text); }
+  if (width <= 2) { return std::string(text.substr(0, width)); }
+
+  size_t marker_width = 0;
+  if (offset > 0) { marker_width++; }
+  if (offset + width - marker_width < text.size()) { marker_width++; }
+
+  if (marker_width >= width) { return std::string(width, '.'); }
+
+  size_t text_width = width - marker_width;
+  size_t max_offset = text.size() > text_width ? text.size() - text_width : 0;
+  offset = std::min(offset, max_offset);
+
+  std::string result;
+  if (offset > 0) { result += '<'; }
+  result += text.substr(offset, text_width);
+  if (offset + text_width < text.size()) { result += '>'; }
+  return result;
+}
+
+static std::string RestoreOptionsFrameBorder(size_t width,
+                                             bool color,
+                                             FrameBorderStyle style,
+                                             std::string_view title = {});
+
+static std::string RestoreOptionsFrameLine(size_t width,
+                                           std::string_view text,
+                                           bool color,
+                                           bool highlighted = false);
+
+static std::string RestoreOptionsStatusLine(size_t width,
+                                            std::string_view text,
+                                            bool color);
+
+static std::string RestoreOptionsHelpLine(size_t width,
+                                          std::string_view text,
+                                          bool color);
+
+static size_t RestoreOptionsScreenWidth(UaContext* ua)
+{
+  constexpr size_t kDefaultTerminalWidth = 80;
+  constexpr size_t kMinTerminalWidth = 40;
+
+  if (ua->terminal_width <= 1) { return kDefaultTerminalWidth; }
+  return std::max(kMinTerminalWidth,
+                  static_cast<size_t>(ua->terminal_width - 1));
+}
+
+static size_t RestoreOptionValueWidth(UaContext* ua)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t inner_width = width > 2 ? width - 2 : width;
+  return inner_width > kRestoreOptionLabelColumn
+             ? inner_width - kRestoreOptionLabelColumn
+             : 20;
+}
+
+static size_t MaxRestoreOptionValueOffset(std::string_view text, size_t width)
+{
+  if (text.size() <= width) { return 0; }
+  if (width <= 2) { return text.size() - width; }
+  return text.size() - (width - 2);
+}
+
+static void RemoveFinalNewline(std::string* text)
+{
+  if (!text->empty() && text->back() == '\n') { text->pop_back(); }
+}
+
+static std::string FormatRestoreWhereDisplay(JobControlRecord* jcr,
+                                             RunContext& rc)
+{
+  const char* where = jcr->where ? jcr->where : rc.job->RestoreWhere;
+  if (!where || where[0] == '\0') { return T_("(original location)"); }
+
+  std::string display = where;
+  if (IsPathSeparator(where[0]) && where[1] == '\0') {
+    display += " ";
+    display += T_("(original location)");
+  }
+  return display;
+}
+
+static std::string FormatRunScheduleRelativeTime(time_t when, time_t now)
+{
+  struct Unit {
+    time_t seconds;
+    const char* singular;
+  };
+  static const Unit units[] = {
+      {31536000, NT_("year")}, {2592000, NT_("month")}, {604800, NT_("week")},
+      {86400, NT_("day")},     {3600, NT_("hour")},     {60, NT_("minute")},
+  };
+
+  time_t difference = when >= now ? when - now : now - when;
+  if (difference < 60) { return T_("now"); }
+
+  for (const auto& unit : units) {
+    if (difference >= unit.seconds) {
+      time_t count = difference / unit.seconds;
+      std::string text = std::to_string(count);
+      text += " ";
+      text += T_(unit.singular);
+      if (count != 1) { text += "s"; }
+      return when >= now ? T_("in ") + text : text + T_(" ago");
+    }
+  }
+
+  return T_("now");
+}
+
+static std::string FormatRunScheduleDisplay(time_t when)
+{
+  char dt[MAX_TIME_LENGTH];
+  std::string display = bstrutime(dt, sizeof(dt), when);
+  display += " (";
+  display += FormatRunScheduleRelativeTime(when, time(NULL));
+  display += ")";
+  return display;
+}
+
+static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc,
+    bool advanced_expanded)
+{
+  std::vector<RestoreOptionRow> rows;
+  rows.push_back({RestoreOptionAction::kRestoreClient, T_("Restore Client"),
+                  jcr->dir_impl->res.client
+                      ? jcr->dir_impl->res.client->resource_name_
+                      : T_("*None*")});
+  rows.push_back({RestoreOptionAction::kWhere, T_("Where [b: browse]"),
+                  FormatRestoreWhereDisplay(jcr, rc)});
+  rows.push_back({RestoreOptionAction::kRelocation, T_("File Relocation"),
+                  jcr->RegexWhere ? jcr->RegexWhere : T_("not configured"),
+                  false});
+  rows.push_back(
+      {RestoreOptionAction::kReplace, T_("Replace Policy"), rc.replace});
+  rows.push_back({RestoreOptionAction::kPluginOptions, T_("Plugin Options"),
+                  jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
+                                                : T_("not configured")});
+  rows.push_back({RestoreOptionAction::kAdvancedMenu,
+                  advanced_expanded ? T_("[-] Advanced Options")
+                                    : T_("[+] Advanced Options"),
+                  advanced_expanded ? T_("press Enter to collapse")
+                                    : T_("press Enter to expand"),
+                  false});
+  if (advanced_expanded) {
+    std::vector<RestoreOptionRow> advanced_rows
+        = BuildRestoreAdvancedOptionRows(jcr, rc);
+    for (const auto& row : advanced_rows) {
+      if (row.action == RestoreOptionAction::kBack) { continue; }
+      RestoreOptionRow advanced_row = row;
+      advanced_row.advanced = true;
+      rows.push_back(std::move(advanced_row));
+    }
+  }
+  rows.push_back({RestoreOptionAction::kRunNow, T_("Run now"),
+                  T_("start the restore job with these settings")});
+  return rows;
+}
+
+static bool IsListingTimestamp(std::string_view text, size_t pos)
+{
+  if (pos + 19 > text.size()) { return false; }
+  const auto digit = [](char ch) { return ch >= '0' && ch <= '9'; };
+  return digit(text[pos]) && digit(text[pos + 1]) && digit(text[pos + 2])
+         && digit(text[pos + 3]) && text[pos + 4] == '-' && digit(text[pos + 5])
+         && digit(text[pos + 6]) && text[pos + 7] == '-' && digit(text[pos + 8])
+         && digit(text[pos + 9]) && text[pos + 10] == ' '
+         && digit(text[pos + 11]) && digit(text[pos + 12])
+         && text[pos + 13] == ':' && digit(text[pos + 14])
+         && digit(text[pos + 15]) && text[pos + 16] == ':'
+         && digit(text[pos + 17]) && digit(text[pos + 18]);
+}
+
+static bool ParseEstimateListingLine(std::string_view line,
+                                     std::string* path,
+                                     bool* directory)
+{
+  if (line.empty()) { return false; }
+  switch (line.front()) {
+    case 'd':
+      *directory = true;
+      break;
+    case '-':
+    case 'l':
+    case 'b':
+    case 'c':
+    case 'f':
+    case 's':
+      *directory = false;
+      break;
+    default:
+      return false;
+  }
+
+  size_t timestamp = std::string_view::npos;
+  for (size_t i = 0; i + 19 <= line.size(); ++i) {
+    if (IsListingTimestamp(line, i)) {
+      timestamp = i;
+      break;
+    }
+  }
+  if (timestamp == std::string_view::npos) { return false; }
+
+  size_t filename = timestamp + 19;
+  while (filename < line.size() && line[filename] == ' ') { ++filename; }
+  if (filename >= line.size()) { return false; }
+
+  std::string parsed(line.substr(filename));
+  size_t link_separator = parsed.find(" -> ");
+  if (link_separator != std::string::npos) { parsed.resize(link_separator); }
+  *path = std::move(parsed);
+  return !path->empty();
+}
+
+static std::string NormalizeBrowsePath(std::string_view path)
+{
+  std::string normalized(path);
+  if (normalized.empty()) { return "/"; }
+  while (normalized.size() > 1 && IsPathSeparator(normalized.back())) {
+    normalized.pop_back();
+  }
+  return normalized.empty() ? "/" : normalized;
+}
+
+static std::string ParentBrowsePath(std::string_view path)
+{
+  std::string normalized = NormalizeBrowsePath(path);
+  if (normalized == "/") { return normalized; }
+  size_t separator = normalized.find_last_of("/\\");
+  if (separator == std::string::npos || separator == 0) { return "/"; }
+  return normalized.substr(0, separator);
+}
+
+static std::string BrowsePathBasename(std::string_view path)
+{
+  std::string normalized = NormalizeBrowsePath(path);
+  if (normalized == "/") { return normalized; }
+  size_t separator = normalized.find_last_of("/\\");
+  if (separator == std::string::npos) { return normalized; }
+  return normalized.substr(separator + 1);
+}
+
+static bool IsImmediateBrowseChild(std::string_view parent,
+                                   std::string_view child)
+{
+  std::string normalized_parent = NormalizeBrowsePath(parent);
+  if (child == normalized_parent) { return false; }
+  if (normalized_parent == "/") {
+    if (child.empty() || child.front() != '/') { return false; }
+    std::string_view remainder = child.substr(1);
+    return !remainder.empty()
+           && remainder.find_first_of("/\\") == std::string_view::npos;
+  }
+
+  if (child.size() <= normalized_parent.size()
+      || child.substr(0, normalized_parent.size()) != normalized_parent
+      || !IsPathSeparator(child[normalized_parent.size()])) {
+    return false;
+  }
+  std::string_view remainder = child.substr(normalized_parent.size() + 1);
+  return !remainder.empty()
+         && remainder.find_first_of("/\\") == std::string_view::npos;
+}
+
+static void SortBrowseEntries(std::vector<DestinationBrowseEntry>* entries)
+{
+  std::stable_sort(
+      entries->begin(), entries->end(),
+      [](const DestinationBrowseEntry& lhs, const DestinationBrowseEntry& rhs) {
+        if (lhs.directory != rhs.directory) {
+          return lhs.directory && !rhs.directory;
+        }
+        return lhs.label < rhs.label;
+      });
+}
+
+static void RemoveLastBrowseSearchCharacter(std::string* text)
+{
+  if (text->empty()) { return; }
+  size_t pos = text->size() - 1;
+  while (pos > 0 && (static_cast<unsigned char>((*text)[pos]) & 0xc0) == 0x80) {
+    --pos;
+  }
+  text->resize(pos);
+}
+
+static bool ContainsBrowseSearchMatch(std::string_view text,
+                                      std::string_view search)
+{
+  return search.empty() || text.find(search) != std::string_view::npos;
+}
+
+static std::vector<DestinationBrowseEntry> FilterDestinationBrowseEntries(
+    const std::vector<DestinationBrowseEntry>& entries,
+    std::string_view search)
+{
+  if (search.empty()) { return entries; }
+
+  std::vector<DestinationBrowseEntry> filtered;
+  for (const auto& entry : entries) {
+    if (ContainsBrowseSearchMatch(entry.label, search)
+        || ContainsBrowseSearchMatch(entry.path, search)) {
+      filtered.push_back(entry);
+    }
+  }
+  return filtered;
+}
+
+static bool SendBrowseJobInfoToFileDaemon(JobControlRecord* jcr)
+{
+  BareosSocket* fd = jcr->file_bsock;
+  if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = strdup("dummy"); }
+
+  char ed1[30];
+  fd->fsend("JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%u\n",
+            edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+            jcr->VolSessionTime, jcr->sd_auth_key,
+            static_cast<unsigned int>(TlsPolicy::kBnetTlsNone));
+
+  if (!jcr->dir_impl->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
+    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+  }
+
+  Dmsg1(100, ">filed: %s", fd->msg);
+  if (BgetDirmsg(fd) > 0) {
+    Dmsg1(110, "<filed: %s", fd->msg);
+    if (!bstrncmp(fd->msg, "2000 OK Job", strlen("2000 OK Job"))) {
+      Jmsg(jcr, M_FATAL, 0, T_("File daemon \"%s\" rejected Job command: %s\n"),
+           jcr->dir_impl->res.client->resource_name_, fd->msg);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
+    }
+  } else {
+    Jmsg(jcr, M_FATAL, 0, T_("FD gave bad response to Job command: %s\n"),
+         BnetStrerror(fd));
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
+  }
+
+  return true;
+}
+
+static bool ListDestinationClientDirectory(
+    UaContext* ua,
+    JobControlRecord* jcr,
+    ClientResource* client,
+    const std::string& path,
+    std::vector<DestinationBrowseEntry>* entries)
+{
+  if (!client) {
+    ua->ErrorMsg(T_("No restore client selected.\n"));
+    return false;
+  }
+  if (!ua->AclAccessOk(Where_ACL, path.c_str(), true)) {
+    ua->ErrorMsg(T_("No authorization for \"where\" specification.\n"));
+    return false;
+  }
+  if (client->Protocol != APT_NATIVE) {
+    ua->ErrorMsg(T_("Browsing is only supported on native clients.\n"));
+    return false;
+  }
+  if (jcr->file_bsock) {
+    ua->ErrorMsg(T_("Client connection already active.\n"));
+    return false;
+  }
+
+  FilesetResource browse_fileset;
+  browse_fileset.new_include = true;
+  IncludeExcludeItem include_item;
+  FileOptions file_options;
+  bstrncpy(file_options.opts, "h", sizeof(file_options.opts));
+  include_item.file_options_list.push_back(&file_options);
+  include_item.name_list.append(strdup(path.c_str()));
+  browse_fileset.include_items.push_back(&include_item);
+
+  FilesetResource* saved_fileset = jcr->dir_impl->res.fileset;
+  ClientResource* saved_client = jcr->dir_impl->res.client;
+  int32_t saved_job_type = jcr->getJobType();
+  int32_t saved_job_level = jcr->getJobLevel();
+  bool saved_accurate = jcr->accurate;
+
+  auto cleanup = [&]() {
+    if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      jcr->file_bsock->close();
+      delete jcr->file_bsock;
+      jcr->file_bsock = NULL;
+    }
+    jcr->dir_impl->res.fileset = saved_fileset;
+    jcr->dir_impl->res.client = saved_client;
+    jcr->setJobType(saved_job_type);
+    jcr->setJobLevel(saved_job_level);
+    jcr->accurate = saved_accurate;
+  };
+
+  jcr->dir_impl->res.client = client;
+  jcr->dir_impl->res.fileset = &browse_fileset;
+  jcr->setJobType(JT_BACKUP);
+  jcr->setJobLevel(L_FULL);
+  jcr->accurate = false;
+
+  if (!ConnectToFileDaemon(jcr, 1, 15, false, nullptr)
+      || !SendBrowseJobInfoToFileDaemon(jcr) || !SendLevelCommand(jcr)
+      || !SendIncludeExcludeLists(jcr) || !SendAccurateCurrentFiles(jcr)) {
+    cleanup();
+    ua->ErrorMsg(T_("Unable to browse Client \"%s\".\n"),
+                 client->resource_name_);
+    return false;
+  }
+
+  jcr->file_bsock->fsend("estimate listing=1\n");
+  while (jcr->file_bsock->recv() >= 0) {
+    std::string_view output(jcr->file_bsock->msg,
+                            jcr->file_bsock->message_length);
+    size_t start = 0;
+    while (start < output.size()) {
+      size_t end = output.find('\n', start);
+      if (end == std::string_view::npos) { end = output.size(); }
+      std::string entry_path;
+      bool directory = false;
+      if (ParseEstimateListingLine(output.substr(start, end - start),
+                                   &entry_path, &directory)
+          && IsImmediateBrowseChild(path, entry_path)) {
+        std::string label = BrowsePathBasename(entry_path);
+        entries->push_back({directory ? DestinationBrowseAction::kOpenDirectory
+                                      : DestinationBrowseAction::kFile,
+                            std::move(label), std::move(entry_path),
+                            directory});
+      }
+      start = end + 1;
+    }
+  }
+
+  cleanup();
+  SortBrowseEntries(entries);
+  return true;
+}
+
+static std::vector<DestinationBrowseEntry> BuildDestinationBrowseRows(
+    const std::string& path,
+    const std::vector<DestinationBrowseEntry>& listed_entries)
+{
+  std::vector<DestinationBrowseEntry> rows;
+  rows.push_back({DestinationBrowseAction::kUseCurrentDirectory,
+                  T_("Use this directory"), path, true});
+  rows.push_back({DestinationBrowseAction::kParentDirectory, "..",
+                  ParentBrowsePath(path), true});
+  rows.insert(rows.end(), listed_entries.begin(), listed_entries.end());
+  return rows;
+}
+
+static size_t DestinationBrowseVisibleRows(UaContext* ua, bool search_active)
+{
+  size_t chrome_lines = search_active ? 7 : 6;
+  constexpr size_t kDefaultVisibleRows = 20;
+  constexpr size_t kMinVisibleRows = 3;
+
+  if (ua->terminal_height <= 0) { return kDefaultVisibleRows; }
+  size_t available
+      = static_cast<size_t>(ua->terminal_height) > chrome_lines
+            ? static_cast<size_t>(ua->terminal_height) - chrome_lines
+            : 0;
+  return std::max(kMinVisibleRows, available);
+}
+
+static size_t DestinationBrowseTextWidth(UaContext* ua)
+{
+  constexpr size_t kDestinationBrowseRowChrome = 5;
+  size_t width = RestoreOptionsScreenWidth(ua);
+  return width > kDestinationBrowseRowChrome
+             ? width - kDestinationBrowseRowChrome
+             : 0;
+}
+
+static size_t DestinationBrowseHorizontalLimit(
+    UaContext* ua,
+    const std::vector<DestinationBrowseEntry>& rows)
+{
+  size_t text_width = DestinationBrowseTextWidth(ua);
+  if (text_width == 0) { return 0; }
+
+  size_t max_width = 0;
+  for (const auto& row : rows) {
+    max_width = std::max(max_width, row.label.size());
+  }
+  return tree_browser_internal::MaxHorizontalOffset(max_width, text_width);
+}
+
+static std::string RenderDestinationBrowseScreen(
+    UaContext* ua,
+    JobControlRecord* jcr,
+    const std::string& path,
+    const std::vector<DestinationBrowseEntry>& rows,
+    size_t cursor,
+    size_t first_row,
+    std::string_view search,
+    size_t horizontal_offset)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  std::string title = T_("Browse destination client");
+  if (jcr->dir_impl->res.client) {
+    title += ": ";
+    title += jcr->dir_impl->res.client->resource_name_;
+  }
+
+  size_t visible_rows = std::min(
+      DestinationBrowseVisibleRows(ua, !search.empty()), rows.size());
+  first_row = std::min(first_row, rows.size() - visible_rows);
+
+  std::string status = " Entries: " + std::to_string(rows.size());
+  if (rows.size() > visible_rows && visible_rows > 0) {
+    status += " | Showing " + std::to_string(first_row + 1) + "-"
+              + std::to_string(first_row + visible_rows) + " of "
+              + std::to_string(rows.size());
+  }
+  if (!search.empty()) {
+    status += " | Search: \"" + std::string(search) + "\"";
+  }
+
+  std::string screen;
+  screen.reserve((visible_rows + 6) * 80);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kTop, title);
+  screen += RestoreOptionsFrameLine(width, "Path: " + path, ua->supports_color);
+  if (!search.empty()) {
+    screen += RestoreOptionsFrameLine(
+        width, "Search: \"" + std::string(search) + "\"  (Esc clears search)",
+        ua->supports_color);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  if (visible_rows == 0) {
+    screen
+        += RestoreOptionsFrameLine(width, T_("No entries"), ua->supports_color);
+  } else {
+    for (size_t i = first_row; i < first_row + visible_rows; ++i) {
+      std::string line = i == cursor ? "> " : "  ";
+      if (rows[i].action == DestinationBrowseAction::kOpenDirectory
+          || rows[i].action == DestinationBrowseAction::kFile) {
+        line += rows[i].directory ? "/" : " ";
+      }
+      line += FitText(rows[i].label, DestinationBrowseTextWidth(ua),
+                      horizontal_offset, false);
+      screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                        i == cursor);
+    }
+  }
+
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelp,
+                                   ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static std::string RenderDestinationBrowseSearchInput(
+    UaContext* ua,
+    JobControlRecord* jcr,
+    const std::string& path,
+    const std::vector<DestinationBrowseEntry>& rows,
+    size_t cursor,
+    size_t first_row,
+    std::string_view search)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  std::string title = T_("Search destination client");
+  if (jcr->dir_impl->res.client) {
+    title += ": ";
+    title += jcr->dir_impl->res.client->resource_name_;
+  }
+
+  size_t visible_rows
+      = std::min(DestinationBrowseVisibleRows(ua, true), rows.size());
+  first_row = std::min(first_row, rows.size() - visible_rows);
+
+  std::string status = " Matches: " + std::to_string(rows.size());
+  if (rows.size() > visible_rows && visible_rows > 0) {
+    status += " | Showing " + std::to_string(first_row + 1) + "-"
+              + std::to_string(first_row + visible_rows) + " of "
+              + std::to_string(rows.size());
+  }
+
+  std::string screen;
+  screen.reserve((visible_rows + 7) * 80);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kTop, title);
+  screen += RestoreOptionsFrameLine(width, "Path: " + path, ua->supports_color);
+  screen += RestoreOptionsFrameLine(width, "Search: " + std::string(search),
+                                    ua->supports_color, true);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  if (visible_rows == 0) {
+    screen
+        += RestoreOptionsFrameLine(width, T_("No matches"), ua->supports_color);
+  } else {
+    for (size_t i = first_row; i < first_row + visible_rows; ++i) {
+      std::string line = i == cursor ? "> " : "  ";
+      if (rows[i].action == DestinationBrowseAction::kOpenDirectory
+          || rows[i].action == DestinationBrowseAction::kFile) {
+        line += rows[i].directory ? "/" : " ";
+      }
+      line += rows[i].label;
+      screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                        i == cursor);
+    }
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
+  screen += RestoreOptionsHelpLine(
+      width,
+      T_(" Type substring  Enter: accept  Backspace: delete  Esc: clear"),
+      ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static void ClampDestinationBrowseWindow(size_t row_count,
+                                         size_t visible_rows,
+                                         size_t* cursor,
+                                         size_t* first_row)
+{
+  if (row_count == 0) {
+    *cursor = 0;
+    *first_row = 0;
+    return;
+  }
+
+  if (*cursor >= row_count) { *cursor = row_count - 1; }
+
+  size_t max_first_row
+      = row_count > visible_rows ? row_count - visible_rows : 0;
+  if (*first_row > max_first_row) { *first_row = max_first_row; }
+
+  if (*cursor < *first_row) {
+    *first_row = *cursor;
+  } else if (visible_rows > 0 && *cursor >= *first_row + visible_rows) {
+    *first_row = *cursor - visible_rows + 1;
+  }
+}
+
+static void MoveDestinationBrowsePage(size_t row_count,
+                                      size_t visible_rows,
+                                      int direction,
+                                      size_t* cursor,
+                                      size_t* first_row)
+{
+  if (row_count == 0) {
+    *cursor = 0;
+    *first_row = 0;
+    return;
+  }
+
+  size_t max_first_row
+      = row_count > visible_rows ? row_count - visible_rows : 0;
+  if (direction > 0) {
+    *first_row = std::min(*first_row + visible_rows, max_first_row);
+  } else {
+    *first_row = *first_row > visible_rows ? *first_row - visible_rows : 0;
+  }
+  *cursor = *first_row;
+  ClampDestinationBrowseWindow(row_count, visible_rows, cursor, first_row);
+}
+
+static bool SetRestoreWhere(UaContext* ua,
+                            JobControlRecord* jcr,
+                            const std::string& where)
+{
+  if (!ua->AclAccessOk(Where_ACL, where.c_str(), true)) {
+    ua->SendMsg(T_("No authorization for \"where\" specification.\n"));
+    return false;
+  }
+  if (jcr->RegexWhere) {
+    free(jcr->RegexWhere);
+    jcr->RegexWhere = NULL;
+  }
+  if (jcr->where) {
+    free(jcr->where);
+    jcr->where = NULL;
+  }
+  jcr->where = strdup(where.c_str());
+  return true;
+}
+
+static bool BrowseDestinationClientWhere(UaContext* ua,
+                                         JobControlRecord* jcr,
+                                         RunContext& rc)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user || !TreeBrowserSupported(ua)) { return false; }
+
+  std::string current = NormalizeBrowsePath(
+      jcr->where ? jcr->where
+                 : (rc.job->RestoreWhere ? rc.job->RestoreWhere : "/"));
+  std::string cached_path;
+  std::vector<DestinationBrowseEntry> cached_entries;
+  DestinationBrowseMode mode = DestinationBrowseMode::kBrowsing;
+  std::string search;
+  size_t cursor = 0;
+  size_t first_row = 0;
+  size_t horizontal_offset = 0;
+  for (;;) {
+    if (cached_path != current) {
+      cached_entries.clear();
+      if (!ListDestinationClientDirectory(ua, jcr, jcr->dir_impl->res.client,
+                                          current, &cached_entries)) {
+        return false;
+      }
+      cached_path = current;
+      search.clear();
+      mode = DestinationBrowseMode::kBrowsing;
+      cursor = 0;
+      first_row = 0;
+      horizontal_offset = 0;
+    }
+    std::vector<DestinationBrowseEntry> visible_entries
+        = FilterDestinationBrowseEntries(cached_entries, search);
+    std::vector<DestinationBrowseEntry> rows
+        = BuildDestinationBrowseRows(current, visible_entries);
+    size_t visible_rows = DestinationBrowseVisibleRows(
+        ua, mode == DestinationBrowseMode::kEnteringSearch || !search.empty());
+    ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
+                                 &first_row);
+    horizontal_offset = std::min(horizontal_offset,
+                                 DestinationBrowseHorizontalLimit(ua, rows));
+
+    user->signal(BNET_START_SELECT);
+    if (mode == DestinationBrowseMode::kEnteringSearch) {
+      ua->SendMsg("%s", RenderDestinationBrowseSearchInput(
+                            ua, jcr, current, rows, cursor, first_row, search)
+                            .c_str());
+    } else {
+      ua->SendMsg("%s", RenderDestinationBrowseScreen(ua, jcr, current, rows,
+                                                      cursor, first_row, search,
+                                                      horizontal_offset)
+                            .c_str());
+    }
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (mode == DestinationBrowseMode::kEnteringSearch) {
+      if (IsEnterKey(input)) {
+        mode = DestinationBrowseMode::kBrowsing;
+        cursor = 0;
+        first_row = 0;
+      } else if (IsCancelKey(input)) {
+        search.clear();
+        mode = DestinationBrowseMode::kBrowsing;
+        cursor = 0;
+        first_row = 0;
+      } else if (IsNextRowKey(input)) {
+        if (cursor + 1 < rows.size()) { cursor++; }
+      } else if (IsPreviousRowKey(input)) {
+        if (cursor > 0) { cursor--; }
+      } else if (input == kKeyPageDown) {
+        MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
+                                  &first_row);
+      } else if (input == kKeyPageUp) {
+        MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
+                                  &first_row);
+      } else if (input == kKeyBackspace) {
+        RemoveLastBrowseSearchCharacter(&search);
+      } else if (input == kKeySpace) {
+        search.push_back(' ');
+      } else if (IsTextKey(input)) {
+        search.append(TextKeyValue(input));
+      }
+      continue;
+    }
+
+    if (IsCancelKey(input)) {
+      if (!search.empty()) {
+        search.clear();
+        cursor = 0;
+        first_row = 0;
+        horizontal_offset = 0;
+        continue;
+      }
+      return false;
+    }
+    if (input == "key:text:/") {
+      mode = DestinationBrowseMode::kEnteringSearch;
+      search.clear();
+      cursor = 0;
+      first_row = 0;
+      horizontal_offset = 0;
+      continue;
+    }
+    if (IsNextRowKey(input)) {
+      cursor = rows.empty() ? 0 : (cursor + 1) % rows.size();
+      horizontal_offset = 0;
+      continue;
+    }
+    if (IsPreviousRowKey(input)) {
+      cursor = cursor == 0 ? rows.size() - 1 : cursor - 1;
+      horizontal_offset = 0;
+      continue;
+    }
+    if (IsScrollLeftKey(input)) {
+      constexpr size_t kScrollStep = 8;
+      horizontal_offset = horizontal_offset > kScrollStep
+                              ? horizontal_offset - kScrollStep
+                              : 0;
+      continue;
+    }
+    if (IsScrollRightKey(input)) {
+      constexpr size_t kScrollStep = 8;
+      horizontal_offset = std::min(horizontal_offset + kScrollStep,
+                                   DestinationBrowseHorizontalLimit(ua, rows));
+      continue;
+    }
+    if (input == kKeyPageDown) {
+      MoveDestinationBrowsePage(rows.size(), visible_rows, 1, &cursor,
+                                &first_row);
+      horizontal_offset = 0;
+      continue;
+    }
+    if (input == kKeyPageUp) {
+      MoveDestinationBrowsePage(rows.size(), visible_rows, -1, &cursor,
+                                &first_row);
+      horizontal_offset = 0;
+      continue;
+    }
+    if (input == kKeyBackspace) {
+      current = ParentBrowsePath(current);
+      cursor = 0;
+      first_row = 0;
+      horizontal_offset = 0;
+      continue;
+    }
+    if (IsHomeKey(input)) {
+      cursor = 0;
+      first_row = 0;
+      horizontal_offset = 0;
+      continue;
+    }
+    if (IsEndKey(input)) {
+      cursor = rows.empty() ? 0 : rows.size() - 1;
+      ClampDestinationBrowseWindow(rows.size(), visible_rows, &cursor,
+                                   &first_row);
+      horizontal_offset = 0;
+      continue;
+    }
+    if (!IsEnterKey(input) && !input.empty()) { continue; }
+
+    const DestinationBrowseEntry& selected = rows[cursor];
+    switch (selected.action) {
+      case DestinationBrowseAction::kUseCurrentDirectory:
+        return SetRestoreWhere(ua, jcr, current);
+      case DestinationBrowseAction::kParentDirectory:
+      case DestinationBrowseAction::kOpenDirectory:
+        current = NormalizeBrowsePath(selected.path);
+        cursor = 0;
+        first_row = 0;
+        horizontal_offset = 0;
+        break;
+      case DestinationBrowseAction::kFile:
+        ua->InfoMsg(T_("Select a directory for the restore destination.\n"));
+        break;
+    }
+  }
+}
+
+bool DotClientbrowseCmd(UaContext* ua, const char*)
+{
+  int client_arg = FindArgWithValue(ua, NT_("client"));
+  int path_arg = FindArgWithValue(ua, NT_("path"));
+  if (client_arg < 0 || path_arg < 0) {
+    ua->ErrorMsg(T_("Required arguments: client=<client-name> path=<path>\n"));
+    return false;
+  }
+
+  ClientResource* client = ua->GetClientResWithName(ua->argv[client_arg]);
+  if (!client) {
+    ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[client_arg]);
+    return false;
+  }
+  if (!ua->AclAccessOk(Client_ACL, client->resource_name_, true)) {
+    ua->ErrorMsg(T_("No authorization. Client \"%s\".\n"),
+                 client->resource_name_);
+    return false;
+  }
+
+  std::string path = NormalizeBrowsePath(ua->argv[path_arg]);
+  std::vector<DestinationBrowseEntry> entries;
+  if (!ListDestinationClientDirectory(ua, ua->jcr, client, path, &entries)) {
+    return false;
+  }
+
+  ua->send->ObjectStart(".clientbrowse");
+  ua->send->ObjectKeyValue("client", client->resource_name_, "%s\n");
+  ua->send->ObjectKeyValue("path", path.c_str(), "%s\n");
+  ua->send->ArrayStart("entries");
+  for (const auto& entry : entries) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", entry.label.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("path", entry.path.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("type", entry.directory ? "directory" : "file",
+                             "%s\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("entries");
+  ua->send->ObjectEnd(".clientbrowse");
+  return true;
+}
+
+static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc)
+{
+  std::vector<RestoreOptionRow> rows;
+  rows.push_back({RestoreOptionAction::kBack, T_("Back"),
+                  T_("return to restore options")});
+  rows.push_back({RestoreOptionAction::kWhen, T_("When"),
+                  FormatRunScheduleDisplay(jcr->sched_time)});
+  rows.push_back({RestoreOptionAction::kPriority, T_("Priority"),
+                  std::to_string(jcr->JobPriority)});
+  rows.push_back({RestoreOptionAction::kBootstrap, T_("Bootstrap"),
+                  NPRT(jcr->RestoreBootstrap)});
+  rows.push_back({RestoreOptionAction::kStorage, T_("Storage"),
+                  jcr->dir_impl->res.read_storage
+                      ? jcr->dir_impl->res.read_storage->resource_name_
+                      : T_("*None*"),
+                  false});
+  rows.push_back({RestoreOptionAction::kRestoreJob, T_("Restore Job"),
+                  rc.job ? rc.job->resource_name_ : T_("*None*")});
+  return rows;
+}
+
+static std::string RestoreOptionsFrameBorder(size_t width,
+                                             bool color,
+                                             FrameBorderStyle style,
+                                             std::string_view title)
+{
+  std::string line = RenderFrameBorder(width, style, title);
+  if (!color) { return line + "\n"; }
+  return std::string(kFrameColor) + line + std::string(kFrameResetColor) + "\n";
+}
+
+static std::string RestoreOptionsFrameLine(size_t width,
+                                           std::string_view text,
+                                           bool color,
+                                           bool highlighted)
+{
+  if (width < 2) { return FitText(text, width) + "\n"; }
+
+  std::string content = FitText(text, width - 2);
+  content = StyleFrameContent(std::move(content), ' ', highlighted, color);
+
+  std::string border = color ? std::string(kFrameColor)
+                                   + std::string(kFrameVerticalBorder)
+                                   + std::string(kFrameResetColor)
+                             : std::string(kFrameVerticalBorder);
+  return border + content + border + "\n";
+}
+
+static std::string RestoreOptionsStatusLine(size_t width,
+                                            std::string_view text,
+                                            bool color)
+{
+  std::string line = FitText(text, width);
+  return color ? std::string(kFrameHighlightColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
+}
+
+static std::string RestoreOptionsHelpLine(size_t width,
+                                          std::string_view text,
+                                          bool color)
+{
+  std::string line = FitText(text, width);
+  return color ? std::string(kFrameHelpColor) + line
+                     + std::string(kFrameResetColor) + "\n"
+               : line + "\n";
+}
+
+static std::string RunOptionValueWithSource(const char* value,
+                                            const char* source)
+{
+  std::string result = value ? value : T_("*None*");
+  result += " (";
+  result += T_("From ");
+  result += source ? source : T_("*None*");
+  result += ")";
+  return result;
+}
+
+static std::vector<BackupOptionRow> BuildBackupOptionRows(
+    JobControlRecord* jcr,
+    RunContext& rc,
+    bool advanced_expanded)
+{
+  std::vector<BackupOptionRow> rows;
+  rows.push_back({BackupOptionAction::kLevel, T_("Level"),
+                  JobLevelToString(jcr->getJobLevel())});
+  rows.push_back({BackupOptionAction::kStorage, T_("Storage"),
+                  RunOptionValueWithSource(
+                      jcr->dir_impl->res.write_storage
+                          ? jcr->dir_impl->res.write_storage->resource_name_
+                          : T_("*None*"),
+                      jcr->dir_impl->res.wstore_source)});
+  rows.push_back({BackupOptionAction::kJob, T_("Job"),
+                  rc.job ? rc.job->resource_name_ : T_("*None*")});
+  rows.push_back({BackupOptionAction::kFileset, T_("FileSet"),
+                  jcr->dir_impl->res.fileset
+                      ? jcr->dir_impl->res.fileset->resource_name_
+                      : T_("*None*")});
+  rows.push_back({BackupOptionAction::kClient, T_("Client"),
+                  jcr->dir_impl->res.client
+                      ? jcr->dir_impl->res.client->resource_name_
+                      : T_("*None*")});
+  rows.push_back(
+      {BackupOptionAction::kPool, T_("Pool"),
+       RunOptionValueWithSource(jcr->dir_impl->res.pool
+                                    ? jcr->dir_impl->res.pool->resource_name_
+                                    : T_("*None*"),
+                                jcr->dir_impl->res.pool_source)});
+  if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+    rows.push_back({BackupOptionAction::kNextPool, T_("NextPool"),
+                    RunOptionValueWithSource(
+                        jcr->dir_impl->res.next_pool
+                            ? jcr->dir_impl->res.next_pool->resource_name_
+                            : T_("*None*"),
+                        jcr->dir_impl->res.npool_source)});
+  }
+  rows.push_back({BackupOptionAction::kAdvancedMenu,
+                  advanced_expanded ? T_("[-] Advanced Options")
+                                    : T_("[+] Advanced Options"),
+                  advanced_expanded ? T_("press Enter to collapse")
+                                    : T_("press Enter to expand")});
+  if (advanced_expanded) {
+    rows.push_back({BackupOptionAction::kWhen, T_("When"),
+                    FormatRunScheduleDisplay(jcr->sched_time), true});
+    rows.push_back({BackupOptionAction::kPriority, T_("Priority"),
+                    std::to_string(jcr->JobPriority), true});
+    rows.push_back({BackupOptionAction::kPluginOptions, T_("Plugin Options"),
+                    jcr->dir_impl->plugin_options
+                        ? jcr->dir_impl->plugin_options
+                        : T_("not configured"),
+                    true});
+    rows.push_back({BackupOptionAction::kBackupFormat, T_("Backup Format"),
+                    jcr->dir_impl->backup_format ? jcr->dir_impl->backup_format
+                                                 : T_("*None*"),
+                    true});
+  }
+  rows.push_back({BackupOptionAction::kRunNow, T_("Run now"),
+                  T_("start the backup job with these settings")});
+  return rows;
+}
+
+static int BackupLevelIndex(int level)
+{
+  static constexpr int kBackupLevels[]
+      = {L_FULL, L_INCREMENTAL, L_DIFFERENTIAL, L_SINCE, L_VIRTUAL_FULL};
+  for (size_t i = 0; i < std::size(kBackupLevels); ++i) {
+    if (level == kBackupLevels[i]) { return static_cast<int>(i); }
+  }
+  return 0;
+}
+
+static void ApplyBackupLevelChange(JobControlRecord* jcr,
+                                   RunContext& rc,
+                                   int direction)
+{
+  if (!jcr->is_JobType(JT_BACKUP)) { return; }
+
+  static constexpr int kBackupLevels[]
+      = {L_FULL, L_INCREMENTAL, L_DIFFERENTIAL, L_SINCE, L_VIRTUAL_FULL};
+  int index = BackupLevelIndex(jcr->getJobLevel());
+  index = (index + direction + static_cast<int>(std::size(kBackupLevels)))
+          % static_cast<int>(std::size(kBackupLevels));
+  jcr->setJobLevel(kBackupLevels[index]);
+  if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+    ApplyPoolOverrides(jcr, true);
+    rc.pool = jcr->dir_impl->res.pool;
+    rc.level_override = true;
+  }
+}
+
+static void SetBackupFormat(JobControlRecord* jcr, const char* format)
+{
+  if (jcr->dir_impl->backup_format) {
+    free(jcr->dir_impl->backup_format);
+    jcr->dir_impl->backup_format = NULL;
+  }
+  jcr->dir_impl->backup_format = strdup(format);
+}
+
+static void ApplyBackupFormatChange(JobControlRecord* jcr)
+{
+  if (jcr->dir_impl->backup_format
+      && Bstrcasecmp(jcr->dir_impl->backup_format, "NDMP")) {
+    SetBackupFormat(jcr, "Native");
+  } else {
+    SetBackupFormat(jcr, "NDMP");
+  }
+}
+
+static void ApplyPriorityChange(JobControlRecord* jcr, int direction);
+
+static bool ApplyInlineBackupOptionChange(JobControlRecord* jcr,
+                                          RunContext& rc,
+                                          BackupOptionAction action,
+                                          int direction)
+{
+  switch (action) {
+    case BackupOptionAction::kLevel:
+      if (!jcr->is_JobType(JT_BACKUP)) { return false; }
+      ApplyBackupLevelChange(jcr, rc, direction);
+      return true;
+    case BackupOptionAction::kBackupFormat:
+      ApplyBackupFormatChange(jcr);
+      return true;
+    case BackupOptionAction::kPriority:
+      ApplyPriorityChange(jcr, direction);
+      return true;
+    default:
+      return false;
+  }
+}
+
+static void ApplyPriorityChange(JobControlRecord* jcr, int direction)
+{
+  int priority = jcr->JobPriority + direction;
+  jcr->JobPriority = std::max(priority, 1);
+}
+
+static std::string RenderBackupOptionsScreen(UaContext* ua,
+                                             JobControlRecord* jcr,
+                                             RunContext& rc,
+                                             size_t cursor,
+                                             bool advanced_expanded,
+                                             size_t value_offset)
+{
+  std::vector<BackupOptionRow> rows
+      = BuildBackupOptionRows(jcr, rc, advanced_expanded);
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  std::string screen;
+  screen.reserve(rows.size() * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Run Backup Job"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Review the backup parameters below before starting the job."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == BackupOptionAction::kRunNow && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string line = i == cursor ? "> " : "  ";
+    line += row.advanced ? "  " : "";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
+                : FitRestoreOptionText(row.value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kRunDialogHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static int SelectBackupOptionVisual(UaContext* ua,
+                                    JobControlRecord* jcr,
+                                    RunContext& rc)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return -1; }
+
+  bool advanced_expanded = false;
+  size_t cursor = BuildBackupOptionRows(jcr, rc, advanced_expanded).size() - 1;
+  size_t value_offset = 0;
+  for (;;) {
+    std::vector<BackupOptionRow> rows
+        = BuildBackupOptionRows(jcr, rc, advanced_expanded);
+    size_t row_count = rows.size();
+    if (cursor >= row_count) { cursor = row_count - 1; }
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderBackupOptionsScreen(ua, jcr, rc, cursor,
+                                                advanced_expanded, value_offset)
+                          .c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return -1; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
+      continue;
+    }
+
+    if (IsCancelKey(input)) {
+      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+      return -1;
+    }
+    if (IsEnterKey(input) || input.empty()) {
+      if (rows[cursor].action == BackupOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action, 1)) {
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsEditKey(input)) {
+      if (rows[cursor].action == BackupOptionAction::kRunNow) { continue; }
+      if (rows[cursor].action == BackupOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action, 1)) {
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      if (ApplyInlineBackupOptionChange(jcr, rc, rows[cursor].action,
+                                        IsScrollRightKey(input) ? 1 : -1)) {
+        value_offset = 0;
+      } else {
+        size_t max_offset = MaxRestoreOptionValueOffset(
+            rows[cursor].value, RestoreOptionValueWidth(ua));
+        constexpr size_t kScrollStep = 8;
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+      }
+    } else if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % row_count;
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? row_count - 1 : cursor - 1;
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
+      cursor = row_count - 1;
+      value_offset = 0;
+    }
+  }
+}
+
+static int ModifyBackupParameters(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  RunContext& rc)
+{
+  int selection = SelectBackupOptionVisual(ua, jcr, rc);
+  if (selection < 0) { return -1; }
+
+  switch (static_cast<BackupOptionAction>(selection)) {
+    case BackupOptionAction::kRunNow:
+      return 2;
+    case BackupOptionAction::kLevel:
+      SelectJobLevel(ua, jcr);
+      if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+        ApplyPoolOverrides(jcr, true);
+        rc.pool = jcr->dir_impl->res.pool;
+        rc.level_override = true;
+      }
+      goto try_again;
+    case BackupOptionAction::kStorage:
+      rc.store->store = select_storage_resource(ua);
+      if (rc.store->store) {
+        PmStrcpy(rc.store->store_source, T_("user selection"));
+        SetRwstorage(jcr, rc.store);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kJob:
+      rc.job = select_job_resource(ua);
+      if (rc.job) {
+        jcr->dir_impl->res.job = rc.job;
+        SetJcrDefaults(jcr, rc.job);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kFileset:
+      rc.fileset = select_fileset_resource(ua);
+      if (rc.fileset) {
+        jcr->dir_impl->res.fileset = rc.fileset;
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kClient:
+      rc.client = select_client_resource(ua);
+      if (rc.client) {
+        jcr->dir_impl->res.client = rc.client;
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kAdvancedMenu:
+      goto try_again;
+    case BackupOptionAction::kBackupFormat:
+      if (GetCmd(ua, T_("Please enter Backup Format: "))) {
+        SetBackupFormat(jcr, ua->cmd);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kWhen:
+      if (TreeBrowserSupported(ua)) {
+        SelectRunScheduleVisual(ua, &jcr->sched_time);
+        goto try_again;
+      } else {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
+          if (ua->cmd[0] == 0) {
+            jcr->sched_time = time(NULL);
+          } else {
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            }
+            jcr->sched_time = parsed;
+          }
+          goto try_again;
+        }
+      }
+      break;
+    case BackupOptionAction::kPriority:
+      if (GetPint(ua, T_("Enter new Priority: "))) {
+        if (!ua->pint32_val) {
+          ua->SendMsg(T_("Priority must be a positive integer.\n"));
+        } else {
+          jcr->JobPriority = ua->pint32_val;
+        }
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kPool:
+      rc.pool = select_pool_resource(ua);
+      if (rc.pool) {
+        jcr->dir_impl->res.pool = rc.pool;
+        rc.level_override = false;
+        rc.pool_override = true;
+        Dmsg1(100, "Set new pool=%s\n",
+              jcr->dir_impl->res.pool->resource_name_);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kNextPool:
+      rc.next_pool = select_pool_resource(ua);
+      if (rc.next_pool) {
+        jcr->dir_impl->res.next_pool = rc.next_pool;
+        Dmsg1(100, "Set new next_pool=%s\n",
+              jcr->dir_impl->res.next_pool->resource_name_);
+        goto try_again;
+      }
+      break;
+    case BackupOptionAction::kPluginOptions:
+      GetPluginOptions(ua, jcr);
+      goto try_again;
+  }
+  return -1;
+
+try_again:
+  return 0;
+}
+
+static std::string RenderRestoreOptionsScreen(UaContext* ua,
+                                              JobControlRecord* jcr,
+                                              RunContext& rc,
+                                              size_t cursor,
+                                              bool advanced_expanded,
+                                              size_t value_offset)
+{
+  std::vector<RestoreOptionRow> rows
+      = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  std::string screen;
+  screen.reserve(rows.size() * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Restore Options"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Review the restore parameters below before starting the job."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == RestoreOptionAction::kRunNow && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string line;
+    line += i == cursor ? "> " : "  ";
+    line += row.advanced ? "  " : "";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
+                : FitRestoreOptionText(row.value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen
+      += RestoreOptionsHelpLine(width, kRestoreDialogHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static std::string FormatRunScheduleField(int value, int width)
+{
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%0*d", width, value);
+  return buffer;
+}
+
+static std::string FormatInlineRunScheduleTime(time_t when, size_t cursor)
+{
+  struct tm tm;
+  Blocaltime(&when, &tm);
+  std::string fields[kRestoreScheduleFieldCount]
+      = {FormatRunScheduleField(tm.tm_year + 1900, 4),
+         FormatRunScheduleField(tm.tm_mon + 1, 2),
+         FormatRunScheduleField(tm.tm_mday, 2),
+         FormatRunScheduleField(tm.tm_hour, 2),
+         FormatRunScheduleField(tm.tm_min, 2),
+         FormatRunScheduleField(tm.tm_sec, 2)};
+
+  if (cursor < kRestoreScheduleFieldCount) {
+    fields[cursor] = "[" + fields[cursor] + "]";
+  }
+
+  return "When: " + fields[0] + "-" + fields[1] + "-" + fields[2] + " "
+         + fields[3] + ":" + fields[4] + ":" + fields[5];
+}
+
+static void AdjustRunScheduleTime(time_t* when, size_t field, int direction)
+{
+  struct tm tm;
+  Blocaltime(when, &tm);
+  switch (field) {
+    case 0:
+      tm.tm_year += direction;
+      break;
+    case 1:
+      tm.tm_mon += direction;
+      break;
+    case 2:
+      tm.tm_mday += direction;
+      break;
+    case 3:
+      tm.tm_hour += direction;
+      break;
+    case 4:
+      tm.tm_min += direction;
+      break;
+    case 5:
+      tm.tm_sec += direction;
+      break;
+  }
+  tm.tm_isdst = -1;
+  time_t adjusted = mktime(&tm);
+  if (adjusted != -1) { *when = adjusted; }
+}
+
+static std::string RenderRunScheduleScreen(UaContext* ua,
+                                           time_t when,
+                                           size_t cursor)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  std::string screen;
+  screen.reserve(7 * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Edit start time"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Adjust the highlighted field in the start time."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  screen += RestoreOptionsFrameLine(width,
+                                    FormatInlineRunScheduleTime(when, cursor),
+                                    ua->supports_color, true);
+  screen += RestoreOptionsFrameLine(
+      width, "Relative: " + FormatRunScheduleRelativeTime(when, time(NULL)),
+      ua->supports_color);
+  screen += RestoreOptionsFrameLine(
+      width, "Field: " + std::string(kRestoreScheduleFields[cursor]),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kFieldEditorHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static bool SelectRunScheduleVisual(UaContext* ua, time_t* when)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  time_t edited_when = *when;
+  size_t cursor = 0;
+  for (;;) {
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRunScheduleScreen(ua, edited_when, cursor).c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty()) {
+      *when = edited_when;
+      return true;
+    }
+    if (input == "key:text:n" || input == "key:text:N") {
+      edited_when = time(NULL);
+    } else if (IsScrollRightKey(input) || input == kKeyTab) {
+      cursor = (cursor + 1) % kRestoreScheduleFieldCount;
+    } else if (IsScrollLeftKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? kRestoreScheduleFieldCount - 1 : cursor - 1;
+    } else if (IsPreviousRowKey(input)) {
+      AdjustRunScheduleTime(&edited_when, cursor, 1);
+    } else if (input == kKeyDown) {
+      AdjustRunScheduleTime(&edited_when, cursor, -1);
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+    } else if (IsEndKey(input)) {
+      cursor = kRestoreScheduleFieldCount - 1;
+    }
+  }
+}
+
+enum class RelocationMode
+{
+  kNone,
+  kWindowsDriveRemap,
+  kReplacePrefix,
+  kStripPrefix,
+  kAddSuffix,
+  kCustomRegexWhere,
+};
+
+enum class RelocationAction
+{
+  kMode,
+  kSourceDrive,
+  kTargetDrive,
+  kSourcePrefix,
+  kTargetPrefix,
+  kSuffix,
+  kExamplePath,
+  kRegexWhere,
+  kApply,
+};
+
+static constexpr const char* kRelocationExampleFile = "report.pdf";
+
+struct RelocationEditorState {
+  RelocationMode mode = RelocationMode::kNone;
+  std::string source_drive = "C:";
+  std::string target_drive = "D:";
+  std::string source_prefix = "/home";
+  std::string target_prefix = "/restore/home";
+  std::string suffix = ".restored";
+  std::string example_path
+      = std::string("C:/Users/Alice/Documents/") + kRelocationExampleFile;
+  std::string custom_regexwhere = "!^C:/Users/!/restore/users/!i";
+};
+
+struct RelocationEditorRow {
+  RelocationAction action;
+  const char* label;
+  std::string value;
+  bool editable = false;
+};
+
+static const char* RelocationModeName(RelocationMode mode)
+{
+  switch (mode) {
+    case RelocationMode::kNone:
+      return T_("No relocation");
+    case RelocationMode::kWindowsDriveRemap:
+      return T_("Windows drive remap");
+    case RelocationMode::kReplacePrefix:
+      return T_("Replace prefix");
+    case RelocationMode::kStripPrefix:
+      return T_("Strip prefix");
+    case RelocationMode::kAddSuffix:
+      return T_("Add suffix");
+    case RelocationMode::kCustomRegexWhere:
+      return T_("Custom RegexWhere");
+  }
+  return T_("No relocation");
+}
+
+static RelocationMode NextRelocationMode(RelocationMode mode, int direction)
+{
+  constexpr int kModeCount = 6;
+  int index = static_cast<int>(mode) + direction;
+  index = (index + kModeCount) % kModeCount;
+  return static_cast<RelocationMode>(index);
+}
+
+static std::string NormalizeWindowsDrive(std::string drive)
+{
+  if (drive.empty()) { return "C:"; }
+  drive[0] = static_cast<char>(toupper(drive[0]));
+  if (drive.size() == 1) { drive += ":"; }
+  if (drive.size() > 2) { drive.resize(2); }
+  return drive;
+}
+
+static std::string EscapeRegexWherePart(std::string_view text)
+{
+  std::string escaped;
+  escaped.reserve(text.size());
+  for (char ch : text) {
+    if (ch == '!' || ch == '\\') { escaped += '\\'; }
+    escaped += ch;
+  }
+  return escaped;
+}
+
+static std::string BuildRegexWhereFromParts(char* strip_prefix,
+                                            char* add_prefix,
+                                            char* add_suffix)
+{
+  int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
+  std::vector<char> buffer(static_cast<size_t>(len));
+  bregexp_build_where(buffer.data(), len, strip_prefix, add_prefix, add_suffix);
+  return buffer.data();
+}
+
+static std::string RelocationRegexWhere(const RelocationEditorState& state)
+{
+  switch (state.mode) {
+    case RelocationMode::kNone:
+      return "";
+    case RelocationMode::kWindowsDriveRemap: {
+      std::string source = NormalizeWindowsDrive(state.source_drive) + "/";
+      std::string target = NormalizeWindowsDrive(state.target_drive) + "/";
+      return "!^" + EscapeRegexWherePart(source) + "!"
+             + EscapeRegexWherePart(target) + "!i";
+    }
+    case RelocationMode::kReplacePrefix:
+      return "!^" + EscapeRegexWherePart(state.source_prefix) + "!"
+             + EscapeRegexWherePart(state.target_prefix) + "!i";
+    case RelocationMode::kStripPrefix: {
+      std::vector<char> strip(state.source_prefix.begin(),
+                              state.source_prefix.end());
+      strip.push_back('\0');
+      return BuildRegexWhereFromParts(strip.data(), nullptr, nullptr);
+    }
+    case RelocationMode::kAddSuffix: {
+      std::vector<char> suffix(state.suffix.begin(), state.suffix.end());
+      suffix.push_back('\0');
+      return BuildRegexWhereFromParts(nullptr, nullptr, suffix.data());
+    }
+    case RelocationMode::kCustomRegexWhere:
+      return state.custom_regexwhere;
+  }
+  return "";
+}
+
+static std::string RelocationPreviewResult(std::string_view regexwhere,
+                                           std::string_view example_path,
+                                           std::string* status)
+{
+  if (regexwhere.empty()) {
+    *status = T_("valid: no relocation configured");
+    return std::string(example_path);
+  }
+
+  alist<BareosRegex*>* regs = get_bregexps(std::string(regexwhere).c_str());
+  if (!regs) {
+    *status = T_("invalid RegexWhere");
+    return std::string(example_path);
+  }
+
+  char* result = nullptr;
+  ApplyBregexps(std::string(example_path).c_str(), regs, &result);
+  std::string preview = result ? result : std::string(example_path);
+  *status = T_("valid");
+  FreeBregexps(regs);
+  delete regs;
+  return preview;
+}
+
+static void UpdateRelocationExampleForMode(RelocationEditorState* state)
+{
+  switch (state->mode) {
+    case RelocationMode::kWindowsDriveRemap:
+      state->example_path = NormalizeWindowsDrive(state->source_drive)
+                            + "/Users/Alice/Documents/"
+                            + kRelocationExampleFile;
+      break;
+    case RelocationMode::kReplacePrefix:
+    case RelocationMode::kStripPrefix:
+      state->example_path
+          = state->source_prefix + "/alice/documents/" + kRelocationExampleFile;
+      break;
+    case RelocationMode::kAddSuffix:
+    case RelocationMode::kNone:
+    case RelocationMode::kCustomRegexWhere:
+      break;
+  }
+}
+
+static std::vector<RelocationEditorRow> BuildRelocationRows(
+    const RelocationEditorState& state,
+    const std::string& regexwhere,
+    const std::string& preview_result,
+    const std::string& status)
+{
+  std::vector<RelocationEditorRow> rows;
+  rows.push_back(
+      {RelocationAction::kMode, T_("Mode"), RelocationModeName(state.mode)});
+  switch (state.mode) {
+    case RelocationMode::kWindowsDriveRemap:
+      rows.push_back({RelocationAction::kSourceDrive, T_("Source drive"),
+                      NormalizeWindowsDrive(state.source_drive), true});
+      rows.push_back({RelocationAction::kTargetDrive, T_("Target drive"),
+                      NormalizeWindowsDrive(state.target_drive), true});
+      break;
+    case RelocationMode::kReplacePrefix:
+      rows.push_back({RelocationAction::kSourcePrefix, T_("Source prefix"),
+                      state.source_prefix, true});
+      rows.push_back({RelocationAction::kTargetPrefix, T_("Target prefix"),
+                      state.target_prefix, true});
+      break;
+    case RelocationMode::kStripPrefix:
+      rows.push_back({RelocationAction::kSourcePrefix, T_("Source prefix"),
+                      state.source_prefix, true});
+      break;
+    case RelocationMode::kAddSuffix:
+      rows.push_back(
+          {RelocationAction::kSuffix, T_("Suffix"), state.suffix, true});
+      break;
+    case RelocationMode::kCustomRegexWhere:
+      rows.push_back({RelocationAction::kRegexWhere, T_("RegexWhere"),
+                      state.custom_regexwhere, true});
+      break;
+    case RelocationMode::kNone:
+      break;
+  }
+  rows.push_back({RelocationAction::kExamplePath, T_("Example path"),
+                  state.example_path, true});
+  if (state.mode != RelocationMode::kCustomRegexWhere) {
+    rows.push_back({RelocationAction::kRegexWhere, T_("RegexWhere"),
+                    regexwhere.empty() ? T_("not configured") : regexwhere});
+  }
+  rows.push_back(
+      {RelocationAction::kExamplePath, T_("Preview"), state.example_path});
+  rows.push_back(
+      {RelocationAction::kExamplePath, T_("Result"), "-> " + preview_result});
+  rows.push_back({RelocationAction::kRegexWhere, T_("Validation"), status});
+  rows.push_back({RelocationAction::kApply, T_("Apply"),
+                  state.mode == RelocationMode::kNone
+                      ? T_("clear File Relocation")
+                      : T_("use this relocation rule")});
+  return rows;
+}
+
+static std::string RenderRelocationEditorScreen(
+    UaContext* ua,
+    const RelocationEditorState& state,
+    size_t cursor,
+    size_t value_offset,
+    std::string_view edit_buffer,
+    RelocationAction editing_action)
+{
+  std::string regexwhere = RelocationRegexWhere(state);
+  std::string status;
+  std::string preview_result
+      = RelocationPreviewResult(regexwhere, state.example_path, &status);
+  std::vector<RelocationEditorRow> rows
+      = BuildRelocationRows(state, regexwhere, preview_result, status);
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  bool editing = editing_action != RelocationAction::kApply;
+
+  std::string screen;
+  screen.reserve((rows.size() + 7) * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("File Relocation"));
+  screen += RestoreOptionsFrameLine(
+      width,
+      T_("Use Where for simple restore roots; RegexWhere rewrites paths."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == RelocationAction::kApply && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    std::string value = row.value;
+    if (editing && i == cursor && row.action == editing_action) {
+      value = std::string(edit_buffer);
+    }
+    std::string line = i == cursor ? "> " : "  ";
+    line += FitRestoreOptionText(row.label, 22);
+    if (line.size() < kRestoreOptionLabelColumn) {
+      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+    }
+    line += i == cursor
+                ? ScrollRestoreOptionText(value, value_width, value_offset)
+                : FitRestoreOptionText(value, value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(
+      width, editing ? kTextInputHelp : kRelocationDialogHelp,
+      ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static std::string* RelocationEditableValue(RelocationEditorState* state,
+                                            RelocationAction action)
+{
+  switch (action) {
+    case RelocationAction::kSourceDrive:
+      return &state->source_drive;
+    case RelocationAction::kTargetDrive:
+      return &state->target_drive;
+    case RelocationAction::kSourcePrefix:
+      return &state->source_prefix;
+    case RelocationAction::kTargetPrefix:
+      return &state->target_prefix;
+    case RelocationAction::kSuffix:
+      return &state->suffix;
+    case RelocationAction::kExamplePath:
+      return &state->example_path;
+    case RelocationAction::kRegexWhere:
+      return &state->custom_regexwhere;
+    default:
+      return nullptr;
+  }
+}
+
+static bool ApplyVisualRelocation(UaContext* ua,
+                                  JobControlRecord* jcr,
+                                  const RelocationEditorState& state)
+{
+  std::string regexwhere = RelocationRegexWhere(state);
+  if (!regexwhere.empty()) {
+    if (!ua->AclAccessOk(Where_ACL, regexwhere.c_str(), true)) {
+      ua->SendMsg(T_("Regex (%s) denied by \"WhereACL\" configuration.\n"),
+                  regexwhere.c_str());
+      return false;
+    }
+    alist<BareosRegex*>* regs = get_bregexps(regexwhere.c_str());
+    if (!regs) {
+      ua->SendMsg(T_("Cannot use your regexp.\n"));
+      return false;
+    }
+    FreeBregexps(regs);
+    delete regs;
+  }
+
+  if (!regexwhere.empty() && jcr->where) {
+    free(jcr->where);
+    jcr->where = NULL;
+  }
+  if (jcr->RegexWhere) {
+    free(jcr->RegexWhere);
+    jcr->RegexWhere = NULL;
+  }
+  if (!regexwhere.empty()) { jcr->RegexWhere = strdup(regexwhere.c_str()); }
+  return true;
+}
+
+static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  RelocationEditorState state;
+  if (jcr->RegexWhere) {
+    state.mode = RelocationMode::kCustomRegexWhere;
+    state.custom_regexwhere = jcr->RegexWhere;
+  }
+
+  size_t cursor = 0;
+  size_t value_offset = 0;
+  bool editing = false;
+  RelocationAction editing_action = RelocationAction::kApply;
+  std::string edit_buffer;
+  for (;;) {
+    std::string regexwhere = RelocationRegexWhere(state);
+    std::string status;
+    std::string preview_result
+        = RelocationPreviewResult(regexwhere, state.example_path, &status);
+    std::vector<RelocationEditorRow> rows
+        = BuildRelocationRows(state, regexwhere, preview_result, status);
+    if (cursor >= rows.size()) { cursor = rows.size() - 1; }
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
+
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRelocationEditorScreen(
+                          ua, state, cursor, value_offset, edit_buffer,
+                          editing ? editing_action : RelocationAction::kApply)
+                          .c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int socket_status = user->recv();
+    if (socket_status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
+      continue;
+    }
+
+    if (editing) {
+      if (IsEnterKey(input) || input.empty()) {
+        if (std::string* target
+            = RelocationEditableValue(&state, editing_action)) {
+          *target = edit_buffer;
+          if (editing_action == RelocationAction::kSourceDrive
+              || editing_action == RelocationAction::kTargetDrive) {
+            *target = NormalizeWindowsDrive(*target);
+          }
+          if (editing_action != RelocationAction::kExamplePath) {
+            UpdateRelocationExampleForMode(&state);
+          }
+        }
+        editing = false;
+        value_offset = 0;
+      } else if (IsCancelKey(input)) {
+        editing = false;
+        value_offset = 0;
+      } else if (input == kKeyBackspace) {
+        if (!edit_buffer.empty()) {
+          tree_browser_internal::RemoveLastUtf8Character(&edit_buffer);
+        }
+      } else if (input == kKeySpace) {
+        edit_buffer.push_back(' ');
+      } else if (IsTextKey(input)) {
+        edit_buffer.append(TextKeyValue(input));
+      }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty() || IsEditKey(input)) {
+      if (rows[cursor].action == RelocationAction::kApply) {
+        if (ApplyVisualRelocation(ua, jcr, state)) { return true; }
+        continue;
+      }
+      if (rows[cursor].action == RelocationAction::kMode) {
+        state.mode = NextRelocationMode(state.mode, 1);
+        UpdateRelocationExampleForMode(&state);
+        value_offset = 0;
+        continue;
+      }
+      if (rows[cursor].editable) {
+        editing = true;
+        editing_action = rows[cursor].action;
+        edit_buffer = rows[cursor].value;
+        value_offset = 0;
+      }
+      continue;
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      if (rows[cursor].action == RelocationAction::kMode) {
+        state.mode
+            = NextRelocationMode(state.mode, IsScrollRightKey(input) ? 1 : -1);
+        UpdateRelocationExampleForMode(&state);
+        value_offset = 0;
+      } else {
+        constexpr size_t kScrollStep = 8;
+        size_t max_offset = MaxRestoreOptionValueOffset(
+            rows[cursor].value, RestoreOptionValueWidth(ua));
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+      }
+    } else if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % rows.size();
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? rows.size() - 1 : cursor - 1;
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
+      cursor = rows.size() - 1;
+      value_offset = 0;
+    }
+  }
+}
+
+static size_t RestoreReplaceOptionCount()
+{
+  size_t count = 0;
+  while (ReplaceOptions[count].name) { ++count; }
+  return count;
+}
+
+static std::string RenderRestoreReplaceScreen(UaContext* ua, size_t cursor)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  size_t count = RestoreReplaceOptionCount();
+
+  std::string screen;
+  screen.reserve((count + 6) * 80);
+  screen += RestoreOptionsFrameBorder(
+      width, ua->supports_color, FrameBorderStyle::kTop, T_("Replace Policy"));
+  screen += RestoreOptionsFrameLine(
+      width, T_("Choose how existing files should be handled."),
+      ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+  for (size_t i = 0; i < count; ++i) {
+    std::string line = i == cursor ? "> " : "  ";
+    line += FitRestoreOptionText(ReplaceOptions[i].name, 10);
+    if (line.size() < 14) { line.append(14 - line.size(), ' '); }
+    line += FitRestoreOptionText(
+        RestoreReplacePromptLabel(ReplaceOptions[i].name), value_width);
+    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
+                                      i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, kListDialogHelp, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
+static bool SelectRestoreReplaceVisual(UaContext* ua,
+                                       const char* current_replace,
+                                       size_t* selection)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return false; }
+
+  size_t count = RestoreReplaceOptionCount();
+  size_t cursor = 0;
+  for (size_t i = 0; i < count; ++i) {
+    if (current_replace
+        && Bstrcasecmp(current_replace, ReplaceOptions[i].name)) {
+      cursor = i;
+      break;
+    }
+  }
+
+  for (;;) {
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRestoreReplaceScreen(ua, cursor).c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return false; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (IsCancelKey(input)) { return false; }
+    if (IsEnterKey(input) || input.empty()) {
+      *selection = cursor;
+      return true;
+    }
+    if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % count;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? count - 1 : cursor - 1;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+    } else if (IsEndKey(input)) {
+      cursor = count - 1;
+    }
+  }
+}
+
+static int SelectRestoreOptionVisual(UaContext* ua,
+                                     JobControlRecord* jcr,
+                                     RunContext& rc)
+{
+  BareosSocket* user = ua->UA_sock;
+  if (!user) { return -1; }
+
+  bool advanced_expanded = false;
+  std::vector<RestoreOptionRow> rows
+      = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+  size_t row_count = rows.size();
+  size_t cursor = row_count - 1;
+  size_t value_offset = 0;
+  for (;;) {
+    rows = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
+    row_count = rows.size();
+    if (cursor >= row_count) { cursor = row_count - 1; }
+    value_offset = std::min(
+        value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
+                                                  RestoreOptionValueWidth(ua)));
+    user->signal(BNET_START_SELECT);
+    ua->SendMsg("%s", RenderRestoreOptionsScreen(
+                          ua, jcr, rc, cursor, advanced_expanded, value_offset)
+                          .c_str());
+    user->signal(BNET_END_SELECT);
+    user->signal(BNET_SELECT_INPUT);
+
+    int status = user->recv();
+    if (status == BNET_SIGNAL || IsBnetStop(user)) { return -1; }
+
+    std::string_view input(user->msg, user->message_length);
+    TrimVisualInput(&input);
+
+    auto resize = ParseTerminalResizeInput(input);
+    if (resize.is_resize) {
+      if (resize.height > 0) { ua->terminal_height = resize.height; }
+      if (resize.width > 0) { ua->terminal_width = resize.width; }
+      value_offset = 0;
+      continue;
+    }
+
+    if (IsCancelKey(input)) {
+      ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
+      return -1;
+    }
+    if (IsEnterKey(input) || input.empty()) {
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (IsEditKey(input)) {
+      if (rows[cursor].action == RestoreOptionAction::kRunNow) { continue; }
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = !advanced_expanded;
+        value_offset = 0;
+        continue;
+      }
+      return static_cast<int>(rows[cursor].action);
+    }
+    if (rows[cursor].action == RestoreOptionAction::kWhere
+        && (input == "key:text:b" || input == "key:text:B")) {
+      return static_cast<int>(RestoreOptionAction::kBrowseWhere);
+    }
+    if (IsScrollRightKey(input) || IsScrollLeftKey(input)) {
+      if (rows[cursor].action == RestoreOptionAction::kAdvancedMenu) {
+        advanced_expanded = IsScrollRightKey(input);
+        value_offset = 0;
+        continue;
+      }
+      if (rows[cursor].action == RestoreOptionAction::kPriority) {
+        ApplyPriorityChange(jcr, IsScrollRightKey(input) ? 1 : -1);
+        value_offset = 0;
+        continue;
+      }
+
+      size_t max_offset = MaxRestoreOptionValueOffset(
+          rows[cursor].value, RestoreOptionValueWidth(ua));
+      if (max_offset > 0) {
+        constexpr size_t kScrollStep = 8;
+        if (IsScrollRightKey(input)) {
+          value_offset = std::min(value_offset + kScrollStep, max_offset);
+        } else {
+          value_offset
+              = value_offset > kScrollStep ? value_offset - kScrollStep : 0;
+        }
+        continue;
+      }
+
+      advanced_expanded = IsScrollRightKey(input);
+      value_offset = 0;
+    } else if (IsNextRowKey(input)) {
+      cursor = (cursor + 1) % row_count;
+      value_offset = 0;
+    } else if (IsPreviousRowKey(input) || input == kKeyBackspace) {
+      cursor = cursor == 0 ? row_count - 1 : cursor - 1;
+      value_offset = 0;
+    } else if (IsHomeKey(input)) {
+      cursor = 0;
+      value_offset = 0;
+    } else if (IsEndKey(input)) {
+      cursor = row_count - 1;
+      value_offset = 0;
+    }
+  }
+}
+
+static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
+{
+  StartPrompt(ua, advanced ? T_("Advanced restore options:\n")
+                           : T_("Restore options to modify:\n"));
+  if (advanced) {
+    AddPrompt(ua, T_("Back"));        /* 0 */
+    AddPrompt(ua, T_("When"));        /* 1 */
+    AddPrompt(ua, T_("Priority"));    /* 2 */
+    AddPrompt(ua, T_("Bootstrap"));   /* 3 */
+    AddPrompt(ua, T_("Storage"));     /* 4 */
+    AddPrompt(ua, T_("Restore Job")); /* 5 */
+  } else {
+    AddPrompt(ua, T_("Run now"));          /* 0 */
+    AddPrompt(ua, T_("Restore Client"));   /* 1 */
+    AddPrompt(ua, T_("Where"));            /* 2 */
+    AddPrompt(ua, T_("File Relocation"));  /* 3 */
+    AddPrompt(ua, T_("Replace Policy"));   /* 4 */
+    AddPrompt(ua, T_("Plugin Options"));   /* 5 */
+    AddPrompt(ua, T_("Advanced Options")); /* 6 */
+  }
+  int selected = DoPrompt(ua, "",
+                          advanced ? T_("Select advanced restore option")
+                                   : T_("Select restore option to modify"),
+                          NULL, 0);
+  if (selected < 0) { return selected; }
+  if (advanced) {
+    static constexpr RestoreOptionAction kAdvancedActions[]
+        = {RestoreOptionAction::kBack,     RestoreOptionAction::kWhen,
+           RestoreOptionAction::kPriority, RestoreOptionAction::kBootstrap,
+           RestoreOptionAction::kStorage,  RestoreOptionAction::kRestoreJob};
+    return static_cast<int>(kAdvancedActions[selected]);
+  }
+  static constexpr RestoreOptionAction kMainActions[]
+      = {RestoreOptionAction::kRunNow,      RestoreOptionAction::kRestoreClient,
+         RestoreOptionAction::kWhere,       RestoreOptionAction::kRelocation,
+         RestoreOptionAction::kReplace,     RestoreOptionAction::kPluginOptions,
+         RestoreOptionAction::kAdvancedMenu};
+  return static_cast<int>(kMainActions[selected]);
+}
+
+static int ModifyRestoreParameters(UaContext* ua,
+                                   JobControlRecord* jcr,
+                                   RunContext& rc)
+{
+  int opt;
+
+  int selection = -1;
+  if (TreeBrowserSupported(ua)) {
+    selection = SelectRestoreOptionVisual(ua, jcr, rc);
+    if (selection < 0) { return -1; }
+  } else {
+    for (;;) {
+      selection = SelectRestoreOptionFallback(ua, false);
+      if (selection < 0) { return -1; }
+
+      auto action = static_cast<RestoreOptionAction>(selection);
+      if (action != RestoreOptionAction::kAdvancedMenu) { break; }
+
+      selection = SelectRestoreOptionFallback(ua, true);
+      if (selection < 0) { return -1; }
+      if (static_cast<RestoreOptionAction>(selection)
+          != RestoreOptionAction::kBack) {
+        break;
+      }
+    }
+  }
+
+  switch (static_cast<RestoreOptionAction>(selection)) {
+    case RestoreOptionAction::kRunNow:
+      return 2;
+    case RestoreOptionAction::kBack:
+    case RestoreOptionAction::kAdvancedMenu:
+      goto try_again;
+    case RestoreOptionAction::kRestoreClient:
+      rc.client = select_client_resource(ua);
+      if (rc.client) {
+        jcr->dir_impl->res.client = rc.client;
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kBrowseWhere:
+      if (BrowseDestinationClientWhere(ua, jcr, rc)) { goto try_again; }
+      ua->SendMsg(T_("Browsing canceled. Enter Where manually if needed.\n"));
+      goto try_again;
+    case RestoreOptionAction::kWhere:
+      if (GetCmd(ua, T_("Please enter the full path prefix for restore (/ "
+                        "for none): "))) {
+        if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
+          ua->SendMsg(T_("No authorization for \"where\" specification.\n"));
+        } else {
+          if (jcr->RegexWhere) {
+            free(jcr->RegexWhere);
+            jcr->RegexWhere = NULL;
+          }
+          if (jcr->where) {
+            free(jcr->where);
+            jcr->where = NULL;
+          }
+          if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
+            ua->cmd[0] = 0;
+          }
+          jcr->where = strdup(ua->cmd);
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kRelocation:
+      if (TreeBrowserSupported(ua)) {
+        SelectRelocationVisual(ua, jcr);
+      } else {
+        SelectWhereRegexp(ua, jcr);
+      }
+      goto try_again;
+    case RestoreOptionAction::kReplace:
+      if (TreeBrowserSupported(ua)) {
+        size_t selected_replace = 0;
+        if (SelectRestoreReplaceVisual(ua, rc.replace, &selected_replace)) {
+          rc.replace = ReplaceOptions[selected_replace].name;
+          jcr->dir_impl->replace = ReplaceOptions[selected_replace].token;
+        }
+      } else {
+        StartPrompt(ua, T_("Replace policy:\n"));
+        for (int i = 0; ReplaceOptions[i].name; i++) {
+          AddPrompt(ua, RestoreReplacePromptLabel(ReplaceOptions[i].name));
+        }
+        opt = DoPrompt(ua, "", T_("Select replace policy"), NULL, 0);
+        if (opt >= 0) {
+          rc.replace = ReplaceOptions[opt].name;
+          jcr->dir_impl->replace = ReplaceOptions[opt].token;
+        }
+      }
+      goto try_again;
+    case RestoreOptionAction::kPluginOptions:
+      GetPluginOptions(ua, jcr);
+      goto try_again;
+    case RestoreOptionAction::kWhen:
+      if (TreeBrowserSupported(ua)) {
+        SelectRunScheduleVisual(ua, &jcr->sched_time);
+        goto try_again;
+      } else {
+        for (;;) {
+          if (!GetCmd(ua, T_("Please enter desired start time as YYYY-MM-DD "
+                             "HH:MM:SS (return for now): "))) {
+            break;
+          }
+          if (ua->cmd[0] == 0) {
+            jcr->sched_time = time(NULL);
+          } else {
+            auto parsed = StrToUtime(ua->cmd);
+            if (parsed == 0) {
+              ua->SendMsg(T_("Invalid time specification.\n"));
+              continue;
+            }
+            jcr->sched_time = parsed;
+          }
+          goto try_again;
+        }
+      }
+      break;
+    case RestoreOptionAction::kPriority:
+      if (GetPint(ua, T_("Enter new Priority: "))) {
+        if (!ua->pint32_val) {
+          ua->SendMsg(T_("Priority must be a positive integer.\n"));
+        } else {
+          jcr->JobPriority = ua->pint32_val;
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kBootstrap:
+      if (GetCmd(ua, T_("Please enter the Bootstrap file name: "))) {
+        if (jcr->RestoreBootstrap) {
+          free(jcr->RestoreBootstrap);
+          jcr->RestoreBootstrap = NULL;
+        }
+        if (ua->cmd[0] != 0) {
+          FILE* fd;
+
+          jcr->RestoreBootstrap = strdup(ua->cmd);
+          fd = fopen(jcr->RestoreBootstrap, "rb");
+          if (!fd) {
+            BErrNo be;
+            ua->SendMsg(T_("Warning cannot open %s: ERR=%s\n"),
+                        jcr->RestoreBootstrap, be.bstrerror());
+            free(jcr->RestoreBootstrap);
+            jcr->RestoreBootstrap = NULL;
+          } else {
+            fclose(fd);
+          }
+        }
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kStorage:
+      rc.store->store = select_storage_resource(ua);
+      if (rc.store->store) {
+        PmStrcpy(rc.store->store_source, T_("user selection"));
+        SetRwstorage(jcr, rc.store);
+        goto try_again;
+      }
+      break;
+    case RestoreOptionAction::kJobId:
+      rc.jid = NULL;
+      jcr->dir_impl->RestoreJobId = 0;
+      if (jcr->RestoreBootstrap) {
+        ua->SendMsg(
+            T_("You must set the bootstrap file to NULL to be able to specify "
+               "a JobId.\n"));
+      }
+      goto try_again;
+    case RestoreOptionAction::kRestoreJob:
+      rc.job = select_job_resource(ua);
+      if (rc.job) {
+        jcr->dir_impl->res.job = rc.job;
+        SetJcrDefaults(jcr, rc.job);
+        goto try_again;
+      }
+      break;
+  }
+  return -1;
 
 try_again:
   return 0;
@@ -1151,7 +3858,16 @@ bail_out_reg:
 static bool GetPluginOptions(UaContext* ua, JobControlRecord* jcr)
 {
   if (GetCmd(ua, T_("Please enter Plugin Options string: "))) {
-    if (!ua->AclAccessOk(PluginOptions_ACL, ua->cmd, true)) {
+    // Authorize every "pluginname:key=value:..." block individually,
+    // since SendPluginOptions() (dird/fd_cmds.cc) sends one
+    // "pluginoptions" protocol command per newline-separated block --
+    // checking only the whole string would let an allowed block
+    // smuggle an otherwise-denied block past a single-block ACL
+    // pattern.
+    if (!restore_plugin_hints::AllPluginOptionsBlocksAuthorized(
+            ua->cmd, [ua](const std::string& block) {
+              return ua->AclAccessOk(PluginOptions_ACL, block.c_str(), true);
+            })) {
       ua->SendMsg(
           T_("No authorization for \"PluginOptions\" specification.\n"));
       return false;
@@ -1741,6 +4457,35 @@ static bool DisplayJobParameters(UaContext* ua,
   return true;
 }
 
+static bool SetFilesetClientArgument(UaContext* ua, RunContext& rc, char* value)
+{
+  if (!value) {
+    ua->SendMsg(
+        T_("Expected fileset@client value for filesetclient keyword.\n"));
+    return false;
+  }
+
+  char* separator = strchr(value, '@');
+  if (!separator || separator == value || separator[1] == '\0') {
+    ua->SendMsg(
+        T_("Expected fileset@client value for filesetclient keyword.\n"));
+    return false;
+  }
+  if (rc.fileset_name) {
+    ua->SendMsg(T_("FileSet specified twice.\n"));
+    return false;
+  }
+  if (rc.client_name) {
+    ua->SendMsg(T_("Client specified twice.\n"));
+    return false;
+  }
+
+  *separator = '\0';
+  rc.fileset_name = value;
+  rc.client_name = separator + 1;
+  return true;
+}
+
 static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
 {
   bool kw_ok;
@@ -1779,6 +4524,8 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
          "accurate",             /* 29 */
          "backupformat",         /* 30 */
          "consolidatejob",       /* 31 - parent consolidate job */
+         "filesetclient",        /* 32 */
+         "fileset@client",       /* 33 */
          NULL};
 
 #define YES_POS 14
@@ -2010,7 +4757,14 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               return false;
             }
             rc.plugin_options = ua->argv[i];
-            if (!ua->AclAccessOk(PluginOptions_ACL, rc.plugin_options, true)) {
+            // See GetPluginOptions() above: authorize every block
+            // individually, not the whole (possibly multi-block)
+            // string at once.
+            if (!restore_plugin_hints::AllPluginOptionsBlocksAuthorized(
+                    rc.plugin_options, [ua](const std::string& block) {
+                      return ua->AclAccessOk(PluginOptions_ACL, block.c_str(),
+                                             true);
+                    })) {
               ua->SendMsg(T_(
                   "No authorization for \"PluginOptions\" specification.\n"));
               return false;
@@ -2098,6 +4852,13 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               return false;
             }
             consolidate_job_name = ua->argv[i];
+            kw_ok = true;
+            break;
+          case 32: /* filesetclient */
+          case 33: /* fileset@client */
+            if (!SetFilesetClientArgument(ua, rc, ua->argv[i])) {
+              return false;
+            }
             kw_ok = true;
             break;
           default:

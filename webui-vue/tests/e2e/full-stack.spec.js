@@ -60,11 +60,11 @@ async function login(
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
     await page.goto('/')
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-form"]')
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       if (!shouldSucceed) {
         throw new Error('Invalid credentials unexpectedly restored a session')
       }
@@ -78,7 +78,7 @@ async function login(
     await page.getByRole('button', { name: 'Login' }).click()
 
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-error"]')?.textContent?.trim()
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
@@ -88,7 +88,7 @@ async function login(
       return
     }
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       await expectConnected(page)
       return
     }
@@ -129,9 +129,19 @@ async function openConsole(page) {
   return consoleOutput
 }
 
-async function selectFirstQOption(
+async function waitForQSelectReady(page, testId) {
+  const field = page.locator(`[data-testid="${testId}"]`)
+    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
+    .first()
+  await expect(field).toBeVisible({ timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
+}
+
+async function selectQOptionByFilterText(
   page,
   testId,
+  filterText,
   {
     optionTimeoutMs = 5000,
     selected,
@@ -146,12 +156,14 @@ async function selectFirstQOption(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await combobox.click()
+      await combobox.fill(filterText)
       const listboxId = await combobox.getAttribute('aria-controls')
       if (!listboxId) {
         throw new Error(`Could not find the option list for ${testId}`)
       }
       const option = page.locator(`[id="${listboxId}"]`).getByRole('option').first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
+      await expect(option).toContainText(filterText, { ignoreCase: true })
       await option.click()
       if (selected) {
         await selected()
@@ -163,33 +175,34 @@ async function selectFirstQOption(
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`)
-}
-
-async function waitForQSelectReady(page, testId) {
-  const field = page.locator(`[data-testid="${testId}"]`)
-    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
-    .first()
-  await expect(field).toBeVisible({ timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
+  throw new Error(`Could not select an option matching "${filterText}" for ${testId}`)
 }
 
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
-    hasText: 'Most recent job status per job name',
-  })
-  const totalsCard = page.locator('.q-card').filter({
-    hasText: 'Job Totals',
+    hasText: 'Recent Jobs',
   })
 
   await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
+  await expect(page.getByTitle('Combined view of actual job')).toBeVisible()
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
   await expect(recentJobsCard).toBeVisible()
   await expect(recentJobsCard).not.toContainText('No data available')
   await expect(recentJobsCard).toContainText('backup-bareos-fd')
-  await expect(totalsCard).not.toContainText('Total Jobs0')
-  await expect(totalsCard).not.toContainText('Total Bytes0 B')
+
+  await page.getByRole('tab', { name: 'Job & Schedule Timeline' }).click()
+  await expect(page).toHaveURL(/#\/dashboard\/job-schedule-timeline$/)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
+  await page.getByTitle('Pan to the past').click()
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).not.toContainText(
+    /Authentication failed/i
+  )
 })
 
 test('shows a login error for invalid credentials', async ({ page }) => {
@@ -281,17 +294,82 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client', {
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-vmware', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
   })
-  await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
-  await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
+  await expect(page.locator('[data-testid="restore-backup-job"]')).toHaveCount(0)
+  await expect(page.getByTestId('restore-timeline-point').first()).toBeVisible()
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('restore-step-2-continue')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
+
+  // The vmware-flavored job is a genuinely resolved plugin hint (not the
+  // cosmetic bpipe-only fixture), so the plugin info banner and options
+  // editor should both appear on the restore target step.
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('VMware')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('vmware')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('vcserver')
+  await page.getByRole('option', { name: /vcserver/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('vcenter.example.com')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('vmware:vcserver=vcenter.example.com')
+
+  await page.getByTestId('restore-step-3-continue').click()
+  await expect(page.getByText('Review restore job', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-testid="restore-submit"]')).toBeEnabled()
+})
+
+test('adapts the plugin hint panel and options editor for a second plugin', async ({ page }) => {
+  test.setTimeout(90000)
+
+  await login(page)
+  await openNav(page, 'nav-restore', /#\/restore/)
+
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-postgresql', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
+  })
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
-  await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
+  await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
+
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('PostgreSQL')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('postgresql')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('wal_archive_dir')
+  await page.getByRole('option', { name: /wal_archive_dir/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('/var/lib/pgsql/wal')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('postgresql:wal_archive_dir=/var/lib/pgsql/wal')
+
+  // Stop here -- this test intentionally never continues to file browsing
+  // or clicks "Start Restore".
 })
 
 test('navigates through client, pool, and volume detail pages', async ({
@@ -340,7 +418,7 @@ test('covers schedules and director tabs through the director connection', async
   await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
   await expect(page.getByText('Scheduler Preview', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Show' }).click()
+  await page.getByRole('tab', { name: 'Definitions' }).click()
   await expect(
     page.locator('.q-tab-panel:visible').getByText('Schedules', { exact: true })
   ).toBeVisible()
@@ -352,7 +430,7 @@ test('covers schedules and director tabs through the director connection', async
   await page.getByRole('tab', { name: 'Messages' }).click()
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
+  await page.getByRole('tab', { name: 'Catalog' }).click()
   await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
   await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
@@ -405,4 +483,38 @@ test('opens the console and runs a raw command through the proxied director conn
   const consoleOutput = await openConsole(page)
   await page.getByText('status director', { exact: true }).click()
   await expect(consoleOutput).toContainText('Terminated Jobs:')
+})
+
+test('dashboard first resize attempt must persist', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/dashboard')
+
+  await page.getByTitle('Edit layout').click()
+  await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
+
+  const firstItem = page.locator('.vgl-item').first()
+  const resizer = firstItem.locator('.vgl-item__resizer').first()
+  await expect(firstItem).toBeVisible()
+  await expect(resizer).toBeVisible()
+
+  const before = await firstItem.boundingBox()
+  if (!before) throw new Error('Could not get initial widget bounds')
+
+  const handle = await resizer.boundingBox()
+  if (!handle) throw new Error('Could not get resize handle bounds')
+
+  const startX = handle.x + handle.width / 2
+  const startY = handle.y + handle.height / 2
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX - 260, startY - 120, { steps: 16 })
+  await page.mouse.up()
+
+  await page.waitForTimeout(350)
+  const after = await firstItem.boundingBox()
+  if (!after) throw new Error('Could not get resized widget bounds')
+
+  const widthChanged = Math.abs(after.width - before.width) > 20
+  const heightChanged = Math.abs(after.height - before.height) > 10
+  expect(widthChanged || heightChanged).toBe(true)
 })

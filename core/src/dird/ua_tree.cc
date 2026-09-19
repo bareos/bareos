@@ -36,6 +36,8 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
+#include "dird/ua_tree_browser.h"
+#include "dird/ua_tree_internal.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
@@ -61,6 +63,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree);
 static int UnMarkdircmd(UaContext* ua, TreeContext* tree);
 static int QuitCmd(UaContext* ua, TreeContext* tree);
 static int donecmd(UaContext* ua, TreeContext* tree);
+static int browsecmd(UaContext* ua, TreeContext* tree);
 static int DotLsdircmd(UaContext* ua, TreeContext* tree);
 static int DotLscmd(UaContext* ua, TreeContext* tree);
 static int DotHelpcmd(UaContext* ua, TreeContext* tree);
@@ -77,6 +80,8 @@ static struct cmdstruct commands[] = {
     {NT_("abort"), QuitCmd, T_("abort and do not do restore"), true},
     {NT_("add"), markcmd,
      T_("add dir/file to be restored recursively, wildcards allowed"), true},
+    {NT_("browse"), browsecmd,
+     T_("switch to the full-screen interactive tree browser"), false},
     {NT_("cd"), cdcmd, T_("change current directory"), true},
     {NT_("count"), countcmd, T_("count marked files in and below the cd"),
      false},
@@ -116,9 +121,89 @@ static struct cmdstruct commands[] = {
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
 /**
+ * Read and dispatch exactly one classic ("$ ") tree-selection command.
+ * Shared by the persistent classic command loop below and by the
+ * interactive tree browser's ":" one-shot command escape (see
+ * ua_tree_browser.cc) -- see ua_tree_internal.h.
+ */
+ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
+{
+  BareosSocket* user = ua->UA_sock;
+  int found, len, i;
+  bool status;
+
+  if (!GetCmd(ua, "$ ", true)) {
+    return ClassicCommandOutcome::kLeaveSelection;
+  }
+
+  if (ua->api) { user->signal(BNET_CMD_BEGIN); }
+
+  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+  if (ua->argc == 0) {
+    ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+                   ua->cmd);
+    if (ua->api) { user->signal(BNET_CMD_FAILED); }
+    return ClassicCommandOutcome::kContinue;
+  }
+
+  found = 0;
+  status = false;
+  len = strlen(ua->argk[0]);
+  for (i = 0; i < comsize; i++) { /* search for command */
+    if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+      // If we need to audit this event do it now.
+      if (ua->AuditEventWanted(commands[i].audit_event)) {
+        ua->LogAuditEventCmdline();
+      }
+      status = (*commands[i].func)(ua, tree); /* go execute command */
+      found = 1;
+      break;
+    }
+  }
+
+  if (!found) {
+    if (*ua->argk[0] == '.') {
+      /* Some unknown dot command -- probably .messages, ignore it */
+      return ClassicCommandOutcome::kContinue;
+    }
+    ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+                   ua->cmd);
+    if (ua->api) { user->signal(BNET_CMD_FAILED); }
+    return ClassicCommandOutcome::kContinue;
+  }
+
+  if (ua->api) { user->signal(BNET_CMD_OK); }
+
+  if (tree->switch_to_browser) {
+    tree->switch_to_browser = false;
+    return ClassicCommandOutcome::kSwitchToBrowser;
+  }
+
+  return status ? ClassicCommandOutcome::kContinue
+                : ClassicCommandOutcome::kLeaveSelection;
+}
+
+// Runs the classic line-mode "$ " prompt until the user leaves file
+// selection entirely, or asks to switch (back) into the browser.
+static ClassicCommandOutcome RunClassicTreeLoop(UaContext* ua,
+                                                TreeContext* tree)
+{
+  for (;;) {
+    ClassicCommandOutcome outcome = RunOneClassicTreeCommand(ua, tree);
+    if (outcome != ClassicCommandOutcome::kContinue) { return outcome; }
+  }
+}
+
+/**
  * Enter a prompt mode where the user can select/deselect
  * files to be restored. This is sort of like a mini-shell
  * that allows "cd", "pwd", "add", "rm", ...
+ *
+ * On an interactive terminal this starts in the full-screen interactive
+ * tree browser instead (see ua_tree_browser.cc); the user can always
+ * switch back and forth between the browser and this classic prompt (the
+ * 'c' key inside the browser, and the "browse" command here), with the
+ * current directory and all marks preserved across the switch.
  */
 bool UserSelectFilesFromTree(TreeContext* tree)
 {
@@ -130,6 +215,10 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   UaContext ua{tree->ua->jcr};
   ua.UA_sock = tree->ua->UA_sock; /* patch in UA socket */
   ua.api = tree->ua->api;         /* keep API flag too */
+  ua.batch = tree->ua->batch;     /* keep batch flag too */
+  ua.terminal_height = tree->ua->terminal_height;
+  ua.terminal_width = tree->ua->terminal_width;
+  ua.supports_color = tree->ua->supports_color;
   user = ua.UA_sock;
 
   ua.SendMsg(
@@ -137,7 +226,8 @@ bool UserSelectFilesFromTree(TreeContext* tree)
          "remove (unmark) files to be restored. No files are initially added, "
          "unless\n"
          "you used the \"all\" keyword on the command line.\n"
-         "Enter \"done\" to leave this mode.\n\n"));
+         "Enter \"done\" to leave this mode, or press d/r in the visual "
+         "browser.\n\n"));
   user->signal(BNET_START_RTREE);
 
   // Enter interactive command handler allowing selection of individual files.
@@ -148,52 +238,39 @@ bool UserSelectFilesFromTree(TreeContext* tree)
     FreePoolMemory(cwd);
   }
 
-  while (1) {
-    int found, len, i;
-    if (!GetCmd(&ua, "$ ", true)) { break; }
+  bool use_browser = TreeBrowserSupported(&ua);
+  bool leave_selection = false;
 
-    if (ua.api) { user->signal(BNET_CMD_BEGIN); }
-
-    ParseArgsOnly(ua.cmd, ua.args, &ua.argc, ua.argk, ua.argv, MAX_CMD_ARGS);
-    if (ua.argc == 0) {
-      ua.WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                    ua.cmd);
-      if (ua.api) { user->signal(BNET_CMD_FAILED); }
-      continue;
-    }
-
-    found = 0;
-    status = false;
-    len = strlen(ua.argk[0]);
-    for (i = 0; i < comsize; i++) { /* search for command */
-      if (bstrncasecmp(ua.argk[0], commands[i].key, len)) {
-        // If we need to audit this event do it now.
-        if (ua.AuditEventWanted(commands[i].audit_event)) {
-          ua.LogAuditEventCmdline();
-        }
-        status = (*commands[i].func)(&ua, tree); /* go execute command */
-        found = 1;
-        break;
+  do {
+    if (use_browser) {
+      switch (RunTreeBrowser(&ua, tree)) {
+        case TreeBrowserExit::kSwitchToClassic:
+          use_browser = false;
+          break;
+        case TreeBrowserExit::kDone:
+        case TreeBrowserExit::kQuit:
+          leave_selection = true;
+          break;
+      }
+    } else {
+      switch (RunClassicTreeLoop(&ua, tree)) {
+        case ClassicCommandOutcome::kSwitchToBrowser:
+          use_browser = true;
+          break;
+        case ClassicCommandOutcome::kLeaveSelection:
+        case ClassicCommandOutcome::kContinue: /* unreachable */
+          leave_selection = true;
+          break;
       }
     }
+  } while (!leave_selection);
 
-    if (!found) {
-      if (*ua.argk[0] == '.') {
-        /* Some unknown dot command -- probably .messages, ignore it */
-        continue;
-      }
-      ua.WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                    ua.cmd);
-      if (ua.api) { user->signal(BNET_CMD_FAILED); }
-      continue;
-    }
-
-    if (ua.api) { user->signal(BNET_CMD_OK); }
-
-    if (!status) { break; }
-  }
+  tree->ua->terminal_height = ua.terminal_height;
+  tree->ua->terminal_width = ua.terminal_width;
+  tree->ua->supports_color = ua.supports_color;
 
   user->signal(BNET_END_RTREE);
+
 
   ua.UA_sock = NULL; /* don't release restore socket */
   status = !ua.quit;
@@ -342,11 +419,13 @@ int InsertTreeHandler(void* ctx, int, char** row)
 /**
  * Set extract to value passed. We recursively walk down the tree setting all
  * children if the node is a directory.
+ *
+ * Not static: also called directly by the interactive tree browser
+ * (ua_tree_browser.cc) so mark/unmark semantics stay byte-identical between
+ * the classic commands and the browser's Space-key/search actions -- see
+ * ua_tree_internal.h.
  */
-static int SetExtract(UaContext* ua,
-                      tree_node* node,
-                      TreeContext* tree,
-                      bool extract)
+int SetExtract(UaContext* ua, tree_node* node, TreeContext* tree, bool extract)
 {
   tree_node* n;
   int count = 0;
@@ -690,6 +769,11 @@ static int DotLscmd(UaContext* ua, TreeContext* tree)
 static int lscmd(UaContext* ua, TreeContext* tree)
 {
   tree_node* node;
+
+  if (tree->node->parent
+      && (ua->argc == 1 || fnmatch(ua->argk[1], "..", 0) == 0)) {
+    ua->SendMsg("../\n");
+  }
 
   if (!TreeNodeHasChild(tree->node)) { return 1; }
   foreach_child (node, tree->node) {
@@ -1081,4 +1165,23 @@ static int QuitCmd(UaContext* ua, TreeContext*)
   ua->quit = true;
   return 0;
 }
+
+/**
+ * Request switching (back) into the full-screen interactive tree browser.
+ * The actual switch happens in UserSelectFilesFromTree()/
+ * RunOneClassicTreeCommand(), which notice tree->switch_to_browser after
+ * this command returns -- see ua_tree_internal.h.
+ */
+static int browsecmd(UaContext* ua, TreeContext* tree)
+{
+  if (!TreeBrowserSupported(ua)) {
+    ua->WarningMsg(
+        T_("The interactive tree browser is not available on this "
+           "client (no terminal size reported).\n"));
+    return 1;
+  }
+  tree->switch_to_browser = true;
+  return 1;
+}
+
 } /* namespace directordaemon */

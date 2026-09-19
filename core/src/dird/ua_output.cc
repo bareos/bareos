@@ -42,12 +42,16 @@
 #include "dird/ua_output.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_select.h"
+#include "dird/volume_usage.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
 #include "dird/jcr_util.h"
 
 #include <array>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace directordaemon {
 
@@ -72,6 +76,188 @@ const int kDefaultNumberOfDays = 50;
 struct PoolListRow {
   std::array<std::string, 19> fields;
 };
+
+static uint64_t ToUint64(const char* value)
+{
+  if (!value || !*value) { return 0; }
+  return strtoull(value, nullptr, 10);
+}
+
+static size_t VolumeUsageBarWidth(const UaContext* ua)
+{
+  constexpr size_t kFallbackWidth = 60;
+  constexpr size_t kMinWidth = 20;
+  constexpr size_t kMaxWidth = 100;
+
+  if (ua->terminal_width <= 10) { return kFallbackWidth; }
+
+  return std::clamp(static_cast<size_t>(ua->terminal_width - 10), kMinWidth,
+                    kMaxWidth);
+}
+
+static bool QueryVolumeUsageSegments(UaContext* ua,
+                                     const char* volume_name,
+                                     std::vector<VolumeUsageSegment>& segments)
+{
+  const auto volume_name_len = strlen(volume_name);
+  std::vector<char> escaped_volume_name(volume_name_len * 2 + 1);
+  ua->db->EscapeString(ua->jcr, escaped_volume_name.data(), volume_name,
+                       volume_name_len);
+
+  PoolMem query(PM_MESSAGE);
+  query.bsprintf(
+      "SELECT JobMedia.JobMediaId,JobMedia.JobId,Job.Name,Client.Name,"
+      "Media.VolumeName,JobMedia.FirstIndex,JobMedia.LastIndex,"
+      "JobMedia.StartFile,JobMedia.EndFile,JobMedia.StartBlock,"
+      "JobMedia.EndBlock,JobMedia.JobBytes "
+      "FROM JobMedia "
+      "JOIN Media ON Media.MediaId=JobMedia.MediaId "
+      "JOIN Job ON Job.JobId=JobMedia.JobId "
+      "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+      "WHERE Media.VolumeName='%s' "
+      "ORDER BY JobMedia.StartFile,JobMedia.StartBlock,JobMedia.JobMediaId",
+      escaped_volume_name.data());
+
+  struct QueryContext {
+    UaContext* ua;
+    std::vector<VolumeUsageSegment>* segments;
+  } ctx{ua, &segments};
+
+  auto handler = [](void* context, int, char** row) {
+    auto* query_context = static_cast<QueryContext*>(context);
+    UaContext* callback_ua = query_context->ua;
+    const char* job_name = row[2] ? row[2] : "";
+    const char* client_name = row[3] ? row[3] : "";
+
+    if (!callback_ua->AclAccessOk(Job_ACL, job_name, false)
+        || (client_name[0]
+            && !callback_ua->AclAccessOk(Client_ACL, client_name, false))) {
+      return 0;
+    }
+
+    VolumeUsageSegment segment;
+    segment.jobmediaid = ToUint64(row[0]);
+    segment.jobid = ToUint64(row[1]);
+    segment.job = job_name;
+    segment.client = client_name;
+    segment.volumename = row[4] ? row[4] : "";
+    segment.firstindex = ToUint64(row[5]);
+    segment.lastindex = ToUint64(row[6]);
+    segment.startfile = ToUint64(row[7]);
+    segment.endfile = ToUint64(row[8]);
+    segment.startblock = ToUint64(row[9]);
+    segment.endblock = ToUint64(row[10]);
+    segment.jobbytes = ToUint64(row[11]);
+    query_context->segments->push_back(std::move(segment));
+    return 0;
+  };
+
+  if (!ua->db->SqlQuery(query.c_str(), handler, &ctx)) { return false; }
+
+  AssignVolumeUsageWeights(segments);
+  AssignVolumeUsageMarkersByJob(segments);
+  return true;
+}
+
+static void EmitVolumeUsageJson(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->ObjectStart("volumeusage");
+  ua->send->ObjectKeyValue("volumename", volume_name, "%s\n");
+  ua->send->ObjectKeyValue("hasoverlaps",
+                           HasOverlappingVolumeUsageRanges(segments) ? 1 : 0);
+  ua->send->ArrayStart("segments");
+  for (const auto& segment : segments) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("marker", std::string(1, segment.marker).c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("jobmediaid", segment.jobmediaid);
+    ua->send->ObjectKeyValue("jobid", segment.jobid);
+    ua->send->ObjectKeyValue("job", segment.job.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("client", segment.client.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("volumename", segment.volumename.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("firstindex", segment.firstindex);
+    ua->send->ObjectKeyValue("lastindex", segment.lastindex);
+    ua->send->ObjectKeyValue("startfile", segment.startfile);
+    ua->send->ObjectKeyValue("endfile", segment.endfile);
+    ua->send->ObjectKeyValue("startblock", segment.startblock);
+    ua->send->ObjectKeyValue("endblock", segment.endblock);
+    ua->send->ObjectKeyValue("jobbytes", segment.jobbytes);
+    ua->send->ObjectKeyValue("weight", segment.weight);
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("segments");
+  ua->send->ObjectEnd("volumeusage");
+}
+
+static void EmitVolumeUsageText(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->Decoration(T_("Volume usage for %s\n"), volume_name);
+  if (segments.empty()) {
+    ua->send->Decoration(T_("  No JobMedia records found.\n"));
+    return;
+  }
+
+  const size_t bar_width = VolumeUsageBarWidth(ua);
+  const bool overlapping = HasOverlappingVolumeUsageRanges(segments);
+  if (overlapping) {
+    ua->send->Decoration(T_("  Overlapping JobMedia ranges detected.\n"));
+    ua->send->Decoration(
+        T_("  Each lane is a seek range for a job; other jobs may have blocks "
+           "inside that range.\n"));
+  } else {
+    ua->send->Decoration("  [%s]\n",
+                         BuildVolumeUsageTapeBar(segments, bar_width).c_str());
+  }
+  ua->send->Decoration(
+      T_("  Mk JobId Job Name              FileIndex   Media position"
+         "       Bytes\n"));
+  ua->send->Decoration(
+      T_("  -- ----- --------------------- ----------- --------------------"
+         " --------\n"));
+
+  char bytes[edit::min_buffer_size];
+  for (const auto& segment : segments) {
+    if (overlapping) {
+      ua->send->Decoration(
+          "  %c  [%s]\n", segment.marker,
+          BuildVolumeUsageRangeBar(segment, segments, bar_width).c_str());
+    }
+    PoolMem index_range(PM_FNAME);
+    index_range.bsprintf("%" PRIu64 "-%" PRIu64, segment.firstindex,
+                         segment.lastindex);
+    PoolMem media_range(PM_FNAME);
+    media_range.bsprintf("%" PRIu64 ":%" PRIu64 "-%" PRIu64 ":%" PRIu64,
+                         segment.startfile, segment.startblock, segment.endfile,
+                         segment.endblock);
+    ua->send->Decoration("  %c  %5" PRIu64 " %-21.21s %-11s %-20s %s\n",
+                         segment.marker, segment.jobid, segment.job.c_str(),
+                         index_range.c_str(), media_range.c_str(),
+                         edit_uint64_with_suffix(segment.jobbytes, bytes));
+  }
+}
+
+static bool ListVolumeUsage(UaContext* ua, e_list_type)
+{
+  const char* volume_name = GetArgValue(ua, NT_("volume"));
+  if (!volume_name || !*volume_name) {
+    ua->ErrorMsg(T_("volume name missing\n"));
+    return false;
+  }
+
+  std::vector<VolumeUsageSegment> segments;
+  if (!QueryVolumeUsageSegments(ua, volume_name, segments)) { return false; }
+
+  if (ua->api == API_MODE_JSON) {
+    EmitVolumeUsageJson(ua, volume_name, segments);
+  } else {
+    EmitVolumeUsageText(ua, volume_name, segments);
+  }
+  return true;
+}
 
 static bool QueryPoolListRows(UaContext* ua,
                               PoolDbRecord* pool,
@@ -521,8 +707,11 @@ bool show_cmd(UaContext* ua, const char*)
  *  list jobname=name           - same as above
  *  list jobmedia jobid=nnn
  *  list jobmedia ujobid=uname
+ *  list jobmedia volume=name
+ *  list volumeusage volume=name
  *  list joblog jobid=<nn>
  *  list joblog job=name
+ *  list joblog jobids=<nn,nn,...> - joblog rows for several jobs in one query
  *  list log [ limit=<number> [ offset=<number> ] ]
  *  list basefiles jobid=nnn    - list files saved for job nn
  *  list basefiles ujobid=uname
@@ -603,6 +792,73 @@ static int GetJobidFromCmdline(UaContext* ua)
   }
 
   return jr.JobId;
+}
+
+// Parses "jobids=<comma-list>" (used by the batch "list joblog jobids="
+// command) into ACL-filtered, existing JobIds. Unlike GetJobidFromCmdline(),
+// a single invalid, non-existent, or ACL-denied entry does not reject the
+// whole command -- it is silently skipped, matching how a caller (e.g. the
+// webui) would have simply received an empty joblog array for that one
+// jobid had it issued 200 individual "list joblog jobid=" commands instead.
+// Each candidate JobId still goes through the exact same per-job Job_ACL /
+// Client_ACL checks GetJobidFromCmdline() performs for the single-job
+// command, so a restricted console user cannot use jobids= to read logs for
+// jobs outside their allowed ACLs.
+// @return true if "jobids=" was present on the command line at all (whether
+// or not any jobid in it ultimately passed validation/ACL checks).
+static bool GetAclFilteredJobidsFromCmdline(UaContext* ua,
+                                            std::vector<JobId_t>* jobids)
+{
+  const char* jobids_arg = GetArgValue(ua, NT_("jobids"));
+  if (!jobids_arg) { return false; }
+
+  for (const std::string& token : split_string(jobids_arg, ',')) {
+    int64_t candidate = str_to_int64(token.c_str());
+    if (candidate <= 0) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Ignoring invalid jobid "
+            "'%s'.\n",
+            token.c_str());
+      continue;
+    }
+
+    JobDbRecord jr{};
+    jr.JobId = static_cast<JobId_t>(candidate);
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      Dmsg1(200,
+            "GetAclFilteredJobidsFromCmdline: Failed to get job record for "
+            "jobid %" PRIu32 ".\n",
+            jr.JobId);
+      continue;
+    }
+
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Job %s\n",
+            jr.Name);
+      continue;
+    }
+
+    if (jr.ClientId) {
+      ClientDbRecord cr{};
+      cr.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+        Dmsg1(200,
+              "GetAclFilteredJobidsFromCmdline: Failed to get client record "
+              "for ClientId %" PRIdbid "\n",
+              jr.ClientId);
+        continue;
+      }
+      if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
+        Dmsg1(200, "GetAclFilteredJobidsFromCmdline: No access to Client %s\n",
+              cr.Name);
+        continue;
+      }
+    }
+
+    jobids->push_back(jr.JobId);
+  }
+
+  return true;
 }
 
 /**
@@ -718,6 +974,51 @@ struct ListCmdOptions {
     return true;
   }
 };
+
+namespace {
+/* The `current`/`enabled`/`disabled` keywords depend on whether a Job or
+ * Client *resource* currently exists in the live configuration and, for
+ * `enabled`/`disabled`, on its current enabled state -- properties that are
+ * not stored in the catalog and therefore can never be expressed as a plain
+ * catalog column. Historically these were applied as a post-fetch filter on
+ * the already-limited/offset SQL result, which silently broke pagination
+ * (rows removed after LIMIT/OFFSET already trimmed the page) and any COUNT()
+ * query (a COUNT result has a single column, so filtering on a Job/Client
+ * name column read past the end of the result row).
+ *
+ * Resolving the filter to the small, bounded set of matching resource names
+ * *before* the query runs lets it be pushed into SQL as a plain "Name IN
+ * (...)" clause, so range and count queries see exactly the same filtered
+ * dataset. Returns std::nullopt when the given options don't request any
+ * such filtering, i.e. "do not filter by name". */
+std::optional<std::vector<std::string>> JobNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current && !optionslist.enabled && !optionslist.disabled) {
+    return std::nullopt;
+  }
+
+  std::vector<std::string> names;
+  JobResource* job = nullptr;
+  foreach_res (job, R_JOB) {
+    if (optionslist.enabled && !job->enabled) { continue; }
+    if (optionslist.disabled && job->enabled) { continue; }
+    names.emplace_back(job->resource_name_);
+  }
+  return names;
+}
+
+std::optional<std::vector<std::string>> ClientNameFilterFor(
+    const ListCmdOptions& optionslist)
+{
+  if (!optionslist.current) { return std::nullopt; }
+
+  std::vector<std::string> names;
+  ClientResource* client = nullptr;
+  foreach_res (client, R_CLIENT) { names.emplace_back(client->resource_name_); }
+  return names;
+}
+}  // namespace
 
 static bool ListMedia(UaContext* ua,
                       e_list_type llist,
@@ -893,6 +1194,11 @@ static bool ListJobs(UaContext* ua,
   const char* volumename = GetArgValue(ua, NT_("volume"));
   const char* poolname = GetArgValue(ua, NT_("pool"));
 
+  /* Job/Client `current`/`enabled`/`disabled` filtering is resolved to a SQL
+   * "Name IN (...)" clause below (job_name_filter/client_name_filter) so it
+   * applies identically to range and count queries. Pool/FileSet `current`
+   * filtering (VERT_LIST only) stays a post-fetch filter -- it is not used
+   * by any count query and is out of scope for this fix. */
   switch (llist) {
     case VERT_LIST:
       if (!optionslist.count) {  // count result is one column, no filtering
@@ -901,39 +1207,45 @@ static bool ListJobs(UaContext* ua,
         SetAclFilter(ua, 22, Pool_ACL);
         SetAclFilter(ua, 25, FileSet_ACL);
         if (optionslist.current) {
-          SetResFilter(ua, 2, R_JOB);
-          SetResFilter(ua, 7, R_CLIENT);
           SetResFilter(ua, 22, R_POOL);
           SetResFilter(ua, 25, R_FILESET);
         }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 2, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
       break;
     default:
       if (!optionslist.count) {  // count result is one column, no filtering
         SetAclFilter(ua, 1, Job_ACL);
         SetAclFilter(ua, 2, Client_ACL);
-        if (optionslist.current) {
-          SetResFilter(ua, 1, R_JOB);
-          SetResFilter(ua, 2, R_CLIENT);
-        }
       }
-      if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
-      if (optionslist.disabled) { SetDisabledFilter(ua, 1, R_JOB); }
       break;
   }
+
+  const std::optional<std::vector<std::string>> job_name_filter
+      = JobNameFilterFor(optionslist);
+  const std::optional<std::vector<std::string>> client_name_filter
+      = ClientNameFilterFor(optionslist);
 
   std::string query_range;
   SetQueryRange(query_range, ua, &jr);
 
   const bool descending = FindArg(ua, NT_("reverse")) >= 0;
 
-  ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
-                         optionslist.jobstatuslist, optionslist.joblevel_list,
-                         optionslist.jobtypes, volumename, poolname, schedtime,
-                         optionslist.last, optionslist.count, ua->send.get(),
-                         llist, descending);
+  const char* sortby = GetArgValue(ua, NT_("sortby"));
+  if (sortby) {
+    std::string discard;
+    if (!ua->db->GetJobsSortColumn(sortby, discard)) {
+      ua->ErrorMsg(T_("invalid sortby parameter\n"));
+      return false;
+    }
+  }
+
+  const char* search = GetArgValue(ua, NT_("search"));
+
+  ua->db->ListJobRecords(
+      ua->jcr, &jr, query_range.c_str(), clientname, optionslist.jobstatuslist,
+      optionslist.joblevel_list, optionslist.jobtypes, volumename, poolname,
+      schedtime, optionslist.last, optionslist.count, ua->send.get(), llist,
+      descending, sortby, search, job_name_filter, client_name_filter);
 
   return true;
 }
@@ -1037,7 +1349,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
-      ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send.get(), llist);
+      const char* volume_name = GetArgValue(ua, NT_("volume"));
+      ua->db->ListJobmediaRecords(ua->jcr, jobid, volume_name, ua->send.get(),
+                                  llist);
       return true;
     } else {
       ua->ErrorMsg(
@@ -1047,8 +1361,24 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   }
 
+  if (Bstrcasecmp(ua->argk[1], NT_("volumeusage"))) {
+    return ListVolumeUsage(ua, llist);
+  }
+
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
+    if (GetArgValue(ua, NT_("jobids"))) {
+      // Batch variant: one query for several JobIds instead of one
+      // "list joblog jobid=" round-trip per job. ACL filtering happens
+      // per-JobId inside GetAclFilteredJobidsFromCmdline(); an unauthorized
+      // or nonexistent jobid is simply omitted, not an error, since the
+      // caller already does not know in advance which of its requested
+      // jobids will be visible to it.
+      std::vector<JobId_t> jobids;
+      GetAclFilteredJobidsFromCmdline(ua, &jobids);
+      ua->db->ListJoblogRecordsForJobs(ua->jcr, jobids, ua->send.get(), llist);
+      return true;
+    }
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
                                 optionslist.count, ua->send.get(), llist);
@@ -1427,6 +1757,17 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
   if (const char* fileset = GetArgValue(ua, "fileset");
       (fileset != nullptr && Bstrcasecmp(fileset, "any"))
       || (fileset == nullptr && listall)) {
+    /* Without an explicit fileset= argument, FileSet_ACL is normally
+     * enforced by only matching FileSets that still have a resource
+     * configured in the Director (below). If the console has no FileSet
+     * ACL restrictions at all, skip that resource enumeration and match
+     * every FileSet, including ones for jobs whose FileSet was since
+     * renamed or removed from the configuration -- otherwise those
+     * backups silently disappear from "llist backups" (and thus from
+     * webui-vue's Quick Restore) even though they are fully present and
+     * restorable in the catalog. */
+    if (ua->AclNoRestrictions(FileSet_ACL)) { return true; }
+
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
@@ -1502,10 +1843,10 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   if (llist == VERT_LIST) {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs_long>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   } else {
     ua->db->FillQuery<BareosDb::SQL_QUERY::list_jobs>(
-        ua->cmd, selection.c_str(), criteria.c_str());
+        ua->cmd, selection.c_str(), "StartTime", criteria.c_str());
   }
 
   return true;
@@ -1863,7 +2204,7 @@ void UaContext::vSendMsg(int signal,
   PoolMem message;
   send->SendBuffer();
   if (signal) {
-    if (UA_sock && api) UA_sock->signal(signal);
+    if (UA_sock && (api || supports_color)) UA_sock->signal(signal);
   }
   message.Bvsprintf(fmt, arg_ptr);
   if (console_is_connected) {
