@@ -656,19 +656,14 @@ static void repair_bad_filenames()
       // Strip trailing slash(es)
       for (len = strlen(name); len > 0 && IsPathSeparator(name[len - 1]);
            len--) {}
+      const char* name_to_escape;
       if (len == 0) {
-        const char* name_to_escape = " ";
-        auto esc_name = db->EscapeString(nullptr, name_to_escape);
-        if (!esc_name) { return; }
-        Bsnprintf(buf, sizeof(buf),
-                  "UPDATE File SET Name='%s' WHERE FileId=%s",
-                  esc_name->c_str(), edit_int64(id_list.Id[i], ed1));
-        db->SqlQuery(buf, nullptr, nullptr);
-        continue;
+        name_to_escape = " ";
       } else {
         name[len - 1] = 0;
+        name_to_escape = name;
       }
-      auto esc_name = db->EscapeString(nullptr, name);
+      auto esc_name = db->EscapeString(nullptr, name_to_escape);
       if (!esc_name) { return; }
       Bsnprintf(buf, sizeof(buf), "UPDATE File SET Name='%s' WHERE FileId=%s",
                 esc_name->c_str(), edit_int64(id_list.Id[i], ed1));
