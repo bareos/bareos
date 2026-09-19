@@ -74,6 +74,14 @@ struct cb_data {
   uint32_t last_VolSessionTime{0};
   int32_t last_FileIndex{0};
   int32_t last_Stream{0};
+  /* Buffers attribute records for the file currently being processed by
+   * CloneRecordInternally(), keyed by the *output* FileIndex, so that only
+   * the last STREAM_UNIX_ATTRIBUTES(_EX) record among them is forwarded to
+   * the Director/catalog -- mirrors append.cc's DoAppendData() buffering,
+   * needed because the source medium may legitimately hold two attribute
+   * records per FileIndex (see the FD-plugin/NDMP "update after write"
+   * mechanism). */
+  ProcessedFile current_file{};
 };
 
 /**
@@ -190,10 +198,16 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
     if (rec->VolSessionId != data->last_VolSessionId
         || rec->VolSessionTime != data->last_VolSessionTime
         || rec->FileIndex != data->last_FileIndex) {
+      /* Flush the previous output file's buffered attribute records (if
+       * any) to the Director before starting to buffer for the new one. */
+      if (data->current_file.GetFileIndex() > 0) {
+        data->current_file.SendAttributesToDirector(jcr);
+      }
       jcr->JobFiles++;
       data->last_VolSessionId = rec->VolSessionId;
       data->last_VolSessionTime = rec->VolSessionTime;
       data->last_FileIndex = rec->FileIndex;
+      data->current_file = ProcessedFile{static_cast<int32_t>(jcr->JobFiles)};
     }
     rec->FileIndex = jcr->JobFiles; /* set sequential output FileIndex */
   }
@@ -261,7 +275,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr,
         jcr->sd_impl->dcr->after_rec->data_len);
 
   if (IsAttribute(jcr->sd_impl->dcr->after_rec)) {
-    SendAttrsToDir(jcr, jcr->sd_impl->dcr->after_rec);
+    data->current_file.AddAttribute(jcr->sd_impl->dcr->after_rec);
   }
 
   retval = true;
@@ -672,6 +686,14 @@ bool DoMacRun(JobControlRecord* jcr)
     // Read all data and make a local clone of it.
     ok = ReadRecords(jcr->sd_impl->read_dcr, CloneRecordInternally,
                      MountNextReadVolume, &data);
+
+    /* Flush any attribute records still buffered for the last processed
+     * file -- SendAttrsToDir() for it was deferred until the output
+     * FileIndex changed (see CloneRecordInternally()), so the very last
+     * file's attributes were never sent to the Director. */
+    if (data.current_file.GetFileIndex() > 0) {
+      data.current_file.SendAttributesToDirector(jcr);
+    }
   }
 
 bail_out:
