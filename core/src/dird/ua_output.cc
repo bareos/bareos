@@ -77,12 +77,11 @@ static bool QueryPoolListRows(UaContext* ua,
                               PoolDbRecord* pool,
                               std::vector<PoolListRow>* rows)
 {
-  char escaped_pool_name[MAX_ESCAPE_NAME_LENGTH];
   PoolMem query(PM_MESSAGE);
   PoolMem select(PM_MESSAGE);
 
-  ua->db->EscapeString(ua->jcr, escaped_pool_name, pool->Name,
-                       strlen(pool->Name));
+  auto escaped_pool_name = ua->db->EscapeString(ua->jcr, pool->Name);
+  if (!escaped_pool_name) { return false; }
   Mmsg(select,
        "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
        "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,"
@@ -90,7 +89,7 @@ static bool QueryPoolListRows(UaContext* ua,
        "ScratchPoolId,RecyclePoolId,LabelType ");
   if (pool->Name[0] != 0) {
     query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
-                   escaped_pool_name);
+                   escaped_pool_name->c_str());
   } else if (pool->PoolId > 0) {
     query.bsprintf("%s FROM Pool WHERE poolid=%" PRIdbid, select.c_str(),
                    pool->PoolId);

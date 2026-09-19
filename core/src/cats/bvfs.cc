@@ -33,6 +33,7 @@
 #include "lib/edit.h"
 
 #include <string>
+#include <string_view>
 #include <unordered_set>
 
 #define dbglevel 10
@@ -482,12 +483,11 @@ void Bvfs::GetAllFileVersions(const char* path,
                               const char* client)
 {
   DBId_t pathid = 0;
-  std::string path_esc;
   size_t path_len = strlen(path);
 
-  path_esc.resize(path_len * 2 + 1);
-  db->EscapeString(jcr, path_esc.data(), path, path_len);
-  pathid = db->GetPathRecord(jcr, path_esc.c_str());
+  auto path_esc = db->EscapeString(jcr, std::string_view{path, path_len});
+  if (!path_esc) { return; }
+  pathid = db->GetPathRecord(jcr, path_esc->c_str());
   GetAllFileVersions(pathid, fname, client);
 }
 
@@ -500,8 +500,6 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
                               const char* client)
 {
   char ed1[50];
-  std::string fname_esc;
-  std::string client_esc;
   PoolMem query(PM_MESSAGE);
   PoolMem filter(PM_MESSAGE);
   size_t fname_len = strlen(fname);
@@ -516,13 +514,13 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
     Mmsg(filter, " AND Job.Type IN ('B', 'A', 'a') ");
   }
 
-  fname_esc.resize(fname_len * 2 + 1);
-  client_esc.resize(client_len * 2 + 1);
-  db->EscapeString(jcr, fname_esc.data(), fname, fname_len);
-  db->EscapeString(jcr, client_esc.data(), client, client_len);
+  auto fname_esc = db->EscapeString(jcr, std::string_view{fname, fname_len});
+  if (!fname_esc) { return; }
+  auto client_esc = db->EscapeString(jcr, std::string_view{client, client_len});
+  if (!client_esc) { return; }
 
   db->FillQuery<BareosDb::SQL_QUERY::bvfs_versions_6>(
-      query, fname_esc.c_str(), edit_uint64(pathid, ed1), client_esc.c_str(),
+      query, fname_esc->c_str(), edit_uint64(pathid, ed1), client_esc->c_str(),
       filter.c_str(), limit, offset);
   db->SqlQuery(query.c_str(), list_entries, user_data);
 }
@@ -755,8 +753,9 @@ bool Bvfs::compute_restore_list(char* fileid,
     tmp.strcat("%");
 
     size_t len = strlen(tmp.c_str());
-    tmp2.check_size((len + 1) * 2);
-    db->EscapeString(jcr, tmp2.c_str(), tmp.c_str(), len);
+    auto escaped_path_like
+        = db->EscapeString(jcr, std::string_view{tmp.c_str(), len});
+    if (!escaped_path_like) { return false; }
 
     if (init) { query.strcat(" UNION "); }
 
@@ -765,7 +764,7 @@ bool Bvfs::compute_restore_list(char* fileid,
          "File.PathId, FileId "
          "FROM Path JOIN File USING (PathId) JOIN Job USING (JobId) "
          "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
+         escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
 
@@ -780,7 +779,7 @@ bool Bvfs::compute_restore_list(char* fileid,
          "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
          "JOIN Path USING (PathId) "
          "WHERE Path.Path LIKE '%s' AND BaseFiles.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
+         escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
   }
 

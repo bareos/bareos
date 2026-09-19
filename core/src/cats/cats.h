@@ -46,6 +46,7 @@
 
 #include <bitset>
 #include <string>
+#include <string_view>
 #include <stdexcept>
 #include <system_error>
 #include <vector>
@@ -521,8 +522,6 @@ class BareosDb : public BareosDbQueryEnum {
   POOLMEM* fname = nullptr;    /**< Filename only */
   POOLMEM* path = nullptr;     /**< Path only */
   POOLMEM* cached_path = nullptr; /**< Cached path name */
-  POOLMEM* esc_name = nullptr;    /**< Escaped file name */
-  POOLMEM* esc_path = nullptr;    /**< Escaped path name */
   POOLMEM* esc_obj = nullptr;     /**< Escaped restore object */
   POOLMEM* cmd = nullptr;         /**< SQL command string */
   POOLMEM* errmsg = nullptr;      /**< Nicely edited error message */
@@ -531,6 +530,7 @@ class BareosDb : public BareosDbQueryEnum {
   }; /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
   int num_rows_ = 0; /**< Number of rows returned by last query */
+
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
@@ -674,8 +674,8 @@ class BareosDb : public BareosDbQueryEnum {
 
   virtual SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* jcr,
-      std::string job_basename,
-      std::string client_name,
+      std::string_view job_basename,
+      std::string_view client_name,
       std::vector<char>& stime_out);
 
   bool FindLastJobStartTime(JobControlRecord* jcr,
@@ -972,10 +972,9 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
-  virtual void EscapeString(JobControlRecord* jcr,
-                            char* snew,
-                            const char* old,
-                            int len);
+  virtual std::optional<std::string> EscapeString(JobControlRecord* jcr,
+                                                  std::string_view input)
+      = 0;
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,

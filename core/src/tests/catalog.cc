@@ -35,6 +35,7 @@
 #include "dird/jcr_util.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 using directordaemon::InitDirConfig;
@@ -155,4 +156,11 @@ TEST_F(CatalogTest, database)
   time_t time_converted = static_cast<time_t>(StrToUtime(stime.data()));
 
   EXPECT_EQ(time_converted, StrToUtime("2019-11-27 15:04:49"));
+}
+
+TEST_F(CatalogTest, EscapeStringPreservesExplicitViewLength)
+{
+  constexpr char input[] = "a'bcd";
+
+  EXPECT_EQ(db->EscapeString(jcr, std::string_view{input, 3}), "a''b");
 }
