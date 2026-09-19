@@ -357,7 +357,9 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
 
 TEST(InteractiveSelection, SanitizesTerminalControls)
 {
-  std::vector<std::string> options{"unsafe\033]52;c;Y2xpcGJvYXJk\a\302\23331m"};
+  std::vector<std::string> options{
+      "unsafe\033]52;c;Y2xpcGJvYXJk\a\xC2\x9B"
+      "31m"};
   InteractiveSelection selection(options);
 
   const std::string output
