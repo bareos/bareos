@@ -37,6 +37,15 @@ JobName=backup-acct-test
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+st_blocks()
+{
+  if [ "$(uname)" = FreeBSD ]; then
+    stat -f %b "$@"
+  else
+    stat -c %b "$@"
+  fi
+}
+
 start_test
 
 rm -rf "$tmp/acct-data"
@@ -55,7 +64,7 @@ generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
 # computed from the actual on-disk allocation rather than hardcoded.
 expected_blocks=0
 for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
-  blocks="$(stat -c '%b' "$tmp/acct-data/$f")"
+  blocks="$(st_blocks "$tmp/acct-data/$f")"
   expected_blocks=$((expected_blocks + blocks))
 done
 expected_bytes=$((expected_blocks * 512))
