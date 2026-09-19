@@ -190,16 +190,16 @@ static POOLMEM* substitute_prompts(UaContext* ua,
                 q += 2;
                 break;
               }
-            }
-            if (!subst[n]) {
               subst[n] = ua->db->EscapeString(ua->jcr, ua->cmd);
+              if (!subst[n]) { return nullptr; }
             }
+            const auto& substitution = *subst[n];
             olen = o - new_query;
-            new_query
-                = CheckPoolMemorySize(new_query, olen + subst[n]->size() + 10);
+            new_query = CheckPoolMemorySize(new_query,
+                                            olen + substitution.size() + 10);
             o = new_query + olen;
-            memcpy(o, subst[n]->data(), subst[n]->size());
-            o += subst[n]->size();
+            memcpy(o, substitution.data(), substitution.size());
+            o += substitution.size();
           } else {
             ua->ErrorMsg(T_("Warning prompt %d missing.\n"), n + 1);
           }
