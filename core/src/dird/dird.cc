@@ -120,7 +120,7 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
 
   bstrutime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-       edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
+       edit_int64(jcr->JobId, ed1), dt, esc_msg->c_str());
 
   return jcr->db->SqlExec(query.c_str());
 }
