@@ -1047,10 +1047,8 @@ SectionIn 1 2
   File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\styles\*
   SetOutPath "$INSTDIR\imageformats"
   File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\imageformats\*
-  !ifexist "${CMAKE_BINARY_DIR}\bin\translations"
-    SetOutPath "$INSTDIR\translations"
-    File /r ${CMAKE_BINARY_DIR}\bin\translations\*
-  !endif
+  SetOutPath "$INSTDIR\translations"
+  File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\translations\*
   #
 #
   # install configuration as templates
