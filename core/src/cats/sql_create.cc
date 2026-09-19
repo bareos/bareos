@@ -684,6 +684,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
       // Update existing fileset record to make sure the fileset text is
       // inserted
       auto esc_filesettext = EscapeString(jcr, fsr->FileSetText);
+      if (!esc_filesettext) { return false; }
 
       Mmsg(cmd,
            "UPDATE FileSet SET (FileSet,MD5,CreateTime,FileSetText) "
@@ -711,6 +712,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
   bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
   if (fsr->FileSetText) {
     auto esc_filesettext = EscapeString(jcr, fsr->FileSetText);
+    if (!esc_filesettext) { return false; }
     Mmsg(cmd,
          "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
          "VALUES ('%s','%s','%s','%s')",
