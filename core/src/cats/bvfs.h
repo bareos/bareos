@@ -75,8 +75,12 @@ class Bvfs {
   void SetPattern(char* p)
   {
     auto escaped_pattern = db->EscapeString(jcr, p);
-    pattern = CheckPoolMemorySize(pattern, escaped_pattern.size() + 1);
-    PmStrcpy(pattern, escaped_pattern.c_str());
+    if (!escaped_pattern) {
+      pattern[0] = 0;
+      return;
+    }
+    pattern = CheckPoolMemorySize(pattern, escaped_pattern->size() + 1);
+    PmStrcpy(pattern, escaped_pattern->c_str());
   }
 
   /* Get the root point */
