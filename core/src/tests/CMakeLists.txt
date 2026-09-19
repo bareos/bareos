@@ -285,11 +285,17 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
-  bareos_add_test(
-    ndmp_fhdb_helpers_test
-    ADDITIONAL_SOURCES ../dird/ndmp_fhdb_helpers.cc
-    LINK_LIBRARIES ${LINK_LIBRARIES} bareosndmp
-  )
+  if(NOT HAVE_WIN32)
+    # ndmp_fhdb_helpers.cc pulls in the NDMP headers (ndmagents.h etc.), which
+    # are only built/usable when the ndmp/ subdirectory is configured; that
+    # never happens on Windows (see core/src/CMakeLists.txt: `if(NOT HAVE_WIN32
+    # AND ndmp)`).
+    bareos_add_test(
+      ndmp_fhdb_helpers_test
+      ADDITIONAL_SOURCES ../dird/ndmp_fhdb_helpers.cc
+      LINK_LIBRARIES ${LINK_LIBRARIES} bareosndmp
+    )
+  endif()
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(
