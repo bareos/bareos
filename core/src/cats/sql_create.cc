@@ -541,6 +541,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   errmsg[0] = 0;
   auto escaped_path
       = EscapeString(jcr, std::string_view{path, static_cast<size_t>(pnl)});
+  if (!escaped_path) { return false; }
 
   if (cached_path_id != 0 && cached_path_len == pnl
       && bstrcmp(cached_path, path)) {

@@ -105,6 +105,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
 
   auto esc_filename
       = EscapeString(jcr, std::string_view{fname, static_cast<size_t>(fnl)});
+  if (!esc_filename) { return false; }
 
   if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
     Mmsg(cmd,
@@ -180,6 +181,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
   auto escaped_path
       = EscapeString(jcr, std::string_view{path, static_cast<size_t>(pnl)});
+  if (!escaped_path) { return 0; }
 
   if (cached_path_id != 0 && cached_path_len == pnl
       && bstrcmp(cached_path, path)) {

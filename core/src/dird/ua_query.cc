@@ -118,7 +118,10 @@ bool QueryCmd(UaContext* ua, const char*)
     if (line[len - 1] != ';') { continue; }
     line[len - 1] = 0; /* zap ; */
     if (query[0] != 0) {
-      query = substitute_prompts(ua, query, prompt, nprompt);
+      POOLMEM* substituted_query
+          = substitute_prompts(ua, query, prompt, nprompt);
+      if (!substituted_query) { goto bail_out; }
+      query = substituted_query;
       Dmsg1(100, "Query2=%s\n", query);
       if (query[0] == '!') {
         ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send.get(), VERT_LIST,
@@ -132,7 +135,9 @@ bool QueryCmd(UaContext* ua, const char*)
   } /* end while */
 
   if (query[0] != 0) {
-    query = substitute_prompts(ua, query, prompt, nprompt);
+    POOLMEM* substituted_query = substitute_prompts(ua, query, prompt, nprompt);
+    if (!substituted_query) { goto bail_out; }
+    query = substituted_query;
     Dmsg1(100, "Query2=%s\n", query);
     if (query[0] == '!') {
       ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send.get(), VERT_LIST,
@@ -191,7 +196,10 @@ static POOLMEM* substitute_prompts(UaContext* ua,
                 break;
               }
               subst[n] = ua->db->EscapeString(ua->jcr, ua->cmd);
-              if (!subst[n]) { return nullptr; }
+              if (!subst[n]) {
+                FreePoolMemory(new_query);
+                return nullptr;
+              }
             }
             const auto& substitution = *subst[n];
             olen = o - new_query;
