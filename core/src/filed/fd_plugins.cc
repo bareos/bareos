@@ -45,6 +45,8 @@
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
 
+#include <optional>
+
 // Function pointers to be set here (findlib)
 BAREOS_IMPORT int (*plugin_bopen)(BareosFilePacket* bfd,
                                   const char* fname,
@@ -77,6 +79,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 extern int SaveFile(JobControlRecord* jcr,
                     FindFilesPacket* ff_pkt,
                     bool top_level);
+extern bool EncodeAndSendAttributes(JobControlRecord* jcr,
+                                    FindFilesPacket* ff_pkt,
+                                    int& data_stream,
+                                    bool reuse_file_index);
 
 // Forward referenced functions
 static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value);
@@ -177,6 +183,7 @@ struct FiledPluginContext {
       nullptr};   /* pointer to include/exclude files */
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
   bool check_changes{true}; /* call CheckChanges() on every file */
+  std::optional<PluginFileSizeBlocks> corrected_file_size_blocks{};
 };
 
 static inline bool IsEventEnabled(PluginContext* ctx, bEventType eventType)
@@ -750,6 +757,28 @@ bail_out:
 }
 
 /**
+ * A streaming plugin (e.g. bpipe) typically only knows the file's real
+ * size once all data has been transferred, so it may report the size
+ * in startBackupFile()'s save_pkt without also filling in st_blocks
+ * (POSIX st_blocks is 512-byte-unit block-allocation data, which the
+ * plugin generally has no way to derive on its own). Rather than
+ * leaving st_blocks at 0 -- which would silently under-report this
+ * file in any accounting based on st_blocks -- derive a reasonable
+ * fallback from st_size, the same way ordinary (non-sparse) files are
+ * accounted for elsewhere.
+ *
+ * Not declared static so it can be unit-tested directly (see
+ * core/src/tests/test_fd_plugins.cc); it is intentionally not exposed
+ * in a header, as it is an implementation detail of PluginSave() only.
+ */
+void FillMissingPluginStatBlocks(struct stat& statp)
+{
+  if (statp.st_size > 0 && statp.st_blocks == 0) {
+    statp.st_blocks = (statp.st_size + 511) / 512; /* ceil(st_size / 512) */
+  }
+}
+
+/**
  * Sequence of calls for a backup:
  * 1. PluginSave() here is called with ff_pkt
  * 2. we find the plugin requested on the command string
@@ -905,6 +934,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       }
 
       memcpy(&ff_pkt->statp, &sp.statp, sizeof(ff_pkt->statp));
+      FillMissingPluginStatBlocks(ff_pkt->statp);
       Dmsg2(debuglevel, "startBackup returned type=%d, fname=%s\n", sp.type,
             sp.fname);
       if (sp.object) {
@@ -971,6 +1001,27 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       CopyBits(FO_MAX, flags, ff_pkt->flags);
 
       bRC retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
+
+      // If the plugin reported a corrected size/blocks from within
+      // endBackupFile() (e.g. a streaming plugin that only knows the
+      // real size once it is done), resend the attributes for the file
+      // that was just saved, reusing the same FileIndex.
+      if (auto* b_ctx
+          = static_cast<FiledPluginContext*>(ctx->core_private_context);
+          b_ctx->corrected_file_size_blocks) {
+        const PluginFileSizeBlocks& corrected
+            = *b_ctx->corrected_file_size_blocks;
+        ff_pkt->statp.st_size = corrected.size;
+        ff_pkt->statp.st_blocks
+            = (corrected.blocks > 0)
+                  ? corrected.blocks
+                  : (corrected.size + 511) / 512; /* ceil(size / 512) */
+        int data_stream;
+        EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
+                                /*reuse_file_index=*/true);
+        b_ctx->corrected_file_size_blocks.reset();
+      }
+
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
       }
@@ -2344,6 +2395,15 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
     case bVarFileSeen:
       if (!AccurateMarkFileAsSeen(jcr, (char*)value)) { return bRC_Error; }
       break;
+    case bVarFileSizeBlocks: {
+      const auto& corrected = *static_cast<const PluginFileSizeBlocks*>(value);
+      static_cast<FiledPluginContext*>(ctx->core_private_context)
+          ->corrected_file_size_blocks
+          = corrected;
+      Dmsg2(100, "corrected file size/blocks set to %" PRId64 "/%" PRId64 "\n",
+            corrected.size, corrected.blocks);
+      return bRC_OK;
+    }
     default:
       Jmsg1(jcr, M_ERROR, 0,
             "Warning: bareosSetValue not implemented for var %d.\n", var);

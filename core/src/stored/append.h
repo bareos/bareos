@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@ class ProcessedFileData {
  public:
   explicit ProcessedFileData(DeviceRecord* record);
   DeviceRecord GetData();
+  int32_t GetStream() const { return stream_; }
 
  private:
   uint32_t volsessionid_{0};
@@ -64,6 +65,28 @@ class ProcessedFile {
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what);
 bool IsAttribute(DeviceRecord* record);
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec);
+
+/**
+ * True if stream (raw, i.e. as in DeviceRecord::Stream/
+ * ProcessedFileData::GetStream(), not yet masked) is a
+ * STREAM_UNIX_ATTRIBUTES or STREAM_UNIX_ATTRIBUTES_EX record -- the
+ * record type that carries the on-disk stat() information (including
+ * st_size/st_blocks) for a file.
+ */
+bool IsUnixAttributeStream(int32_t stream);
+
+/**
+ * Given all the buffered records for one file, return which indices
+ * should actually be forwarded to the Director/catalog: every
+ * non-STREAM_UNIX_ATTRIBUTES(_EX) record (digests, restore objects),
+ * plus only the *last* STREAM_UNIX_ATTRIBUTES(_EX) record (in case
+ * more than one was buffered, e.g. because a plugin resent corrected
+ * attributes for the same file). Exposed separately from
+ * ProcessedFile::SendAttributesToDirector() so this selection logic
+ * can be unit-tested without needing a live Director connection.
+ */
+std::vector<bool> SelectAttributesToSend(
+    const std::vector<ProcessedFileData>& attributes);
 }  // namespace storagedaemon
 
 #endif  // BAREOS_STORED_APPEND_H_

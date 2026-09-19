@@ -241,7 +241,26 @@ typedef enum
   bVarUsedConfig = 21,
   bVarPluginPath = 22,
   bVarAccurateOptions = 23,
+  bVarFileSizeBlocks = 24,
 } bVariable;
+
+/**
+ * Value type for setBareosValue(ctx, bVarFileSizeBlocks, &value).
+ *
+ * A streaming plugin (e.g. one that pipes data through an external
+ * command) may only know the true size of the file it just backed up
+ * once endBackupFile() is called -- by then, Bareos has already sent
+ * the (possibly placeholder) attributes for this file to the Storage
+ * Daemon. Setting this value from within endBackupFile() causes Bareos
+ * to resend corrected attributes (same FileIndex) for the file it just
+ * finished backing up.
+ */
+struct PluginFileSizeBlocks {
+  int64_t size;   /* corrected st_size */
+  int64_t blocks; /* corrected st_blocks (512-byte units); if 0, it is
+                      derived from size the same way as for a plugin
+                      that never provides st_blocks at all */
+};
 
 // Events that are passed to plugin
 typedef enum
