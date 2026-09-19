@@ -678,7 +678,7 @@
     </q-card>
   </q-page>
 
-  <q-dialog v-model="destinationBrowseDialog.open">
+  <q-dialog v-model="destinationBrowseDialog.open" :maximized="$q.screen.lt.sm">
     <q-card class="destination-browser-card">
       <q-card-section class="panel-header q-py-xs q-px-md">
         <div class="row items-center justify-between">
@@ -763,7 +763,7 @@
                 </span>
                 <span v-else>{{ props.row.name }}</span>
               </q-td>
-              <q-td class="text-caption text-grey-6">
+              <q-td v-if="!$q.screen.lt.sm" class="text-caption text-grey-6">
                 {{ props.row.path }}
               </q-td>
             </q-tr>
@@ -771,20 +771,30 @@
         </q-table>
       </template>
 
-      <q-card-actions align="right">
+      <q-card-actions
+        :align="$q.screen.lt.sm ? undefined : 'right'"
+        :class="$q.screen.lt.sm ? 'column q-gutter-sm' : ''"
+      >
         <q-btn
           v-if="destinationBrowseDialog.path !== '/'"
           flat
           no-caps
+          :class="$q.screen.lt.sm ? 'full-width' : ''"
           icon="drive_folder_upload"
           :label="t('Parent directory')"
           @click="loadDestinationBrowsePath(parentDestinationBrowsePath)"
         />
-        <q-space />
-        <q-btn flat :label="t('Cancel')" v-close-popup />
+        <q-space v-if="!$q.screen.lt.sm" />
+        <q-btn
+          flat
+          :class="$q.screen.lt.sm ? 'full-width' : ''"
+          :label="t('Cancel')"
+          v-close-popup
+        />
         <q-btn
           color="primary"
           icon="check"
+          :class="$q.screen.lt.sm ? 'full-width' : ''"
           :label="t('Use this directory')"
           @click="useDestinationBrowsePath(destinationBrowseDialog.path)"
         />
@@ -1164,11 +1174,18 @@ const destinationBrowseRows = computed(() => (
   })
 ))
 
-const destinationBrowseCols = [
-  { name: 'icon', label: '', field: 'type', align: 'left', style: 'width:28px' },
-  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'path', label: 'Path', field: 'path', align: 'left', sortable: true },
-]
+const destinationBrowseCols = computed(() => {
+  const cols = [
+    { name: 'icon', label: '', field: 'type', align: 'left', style: 'width:28px' },
+    { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
+  ]
+  if (!$q.screen.lt.sm) {
+    // The "path" column duplicates the breadcrumbs above the table; only
+    // show it once there is enough horizontal room for it.
+    cols.push({ name: 'path', label: 'Path', field: 'path', align: 'left', sortable: true })
+  }
+  return cols
+})
 
 async function ensureSelectedSourceDirector() {
   await ensureScopeDirector(sourceDirector.value)
@@ -3196,6 +3213,11 @@ watch(() => [
   .versions-dialog-card {
     width: 100vw;
     max-width: none;
+  }
+
+  .destination-browser-card {
+    min-width: 0;
+    width: 100vw;
   }
 }
 </style>
