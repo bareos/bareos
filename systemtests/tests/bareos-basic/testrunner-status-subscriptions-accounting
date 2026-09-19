@@ -57,17 +57,33 @@ generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
 
-# The accounting rule for non-Windows clients uses the real, filesystem-
-# reported st_blocks (real block-allocation data), not a naive
-# ceil(size/512) -- so the expected total depends on the underlying
-# filesystem's allocation block size (e.g. 4 KiB on ext4/xfs) and must be
-# computed from the actual on-disk allocation rather than hardcoded.
-expected_blocks=0
-for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
-  blocks="$(st_blocks "$tmp/acct-data/$f")"
-  expected_blocks=$((expected_blocks + blocks))
-done
-expected_bytes=$((expected_blocks * 512))
+# On some filesystems (e.g. ZFS) block allocation is only finalized once
+# the current transaction group is committed, so stat() run immediately
+# after file creation can under-report st_blocks compared to what the
+# backup (which runs moments later) will see. Force a sync so our
+# "expected" computation observes the same, settled allocation.
+sync
+
+# The accounting rule differs per client platform (see ua_acct.cc): a
+# Windows client's st_blocks is a purely synthetic value derived from
+# st_size, so the report uses st_size directly there; every other
+# platform uses the real, filesystem-reported st_blocks (real block-
+# allocation data, not a naive ceil(size/512)).
+if on_windows_host; then
+  rule="st_size"
+  expected_bytes=0
+  for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
+    expected_bytes=$((expected_bytes + $(stat -c %s "$tmp/acct-data/$f")))
+  done
+else
+  rule='st_blocks\*512'
+  expected_blocks=0
+  for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
+    blocks="$(st_blocks "$tmp/acct-data/$f")"
+    expected_blocks=$((expected_blocks + blocks))
+  done
+  expected_bytes=$((expected_blocks * 512))
+fi
 # Bareos always formats with comma thousands separators (edit_uint64_with_commas),
 # regardless of locale -- format expected_bytes the same way.
 expected_bytes_commas="$(echo "$expected_bytes" | rev | sed 's/[0-9]\{3\}/&,/g;s/,$//' | rev)"
@@ -86,12 +102,10 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-# 3 known-size files; expected byte total computed above from the actual
-# on-disk allocation (st_blocks), since the accounting rule for non-
-# Windows clients uses real block-allocation data, not a naive
-# ceil(size/512).
+# 3 known-size files; expected byte total and rule computed above,
+# per-platform, matching the per-client rule ua_acct.cc applies.
 if ! grep -q \
-  "bareos-fd / AcctTest: 3 files, ${expected_bytes_commas} bytes accounted (rule: st_blocks\*512, 1 jobs in chain)." \
+  "bareos-fd / AcctTest: 3 files, ${expected_bytes_commas} bytes accounted (rule: ${rule}, 1 jobs in chain)." \
   "$tmp/status-subscriptions-accounting.log"; then
   echo "status subscriptions accounting did not report the expected byte total" \
     "(expected ${expected_bytes_commas})!" >&2
