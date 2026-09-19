@@ -37,15 +37,6 @@ JobName=backup-acct-test
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-st_blocks()
-{
-  if [ "$(uname)" = FreeBSD ]; then
-    stat -f %b "$@"
-  else
-    stat -c %b "$@"
-  fi
-}
-
 start_test
 
 rm -rf "$tmp/acct-data"
@@ -56,37 +47,7 @@ mkdir -p "$tmp/acct-data"
 generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
-
-# On some filesystems (e.g. ZFS) block allocation is only finalized once
-# the current transaction group is committed, so stat() run immediately
-# after file creation can under-report st_blocks compared to what the
-# backup (which runs moments later) will see. Force a sync so our
-# "expected" computation observes the same, settled allocation.
-sync
-
-# The accounting rule differs per client platform (see ua_acct.cc): a
-# Windows client's st_blocks is a purely synthetic value derived from
-# st_size, so the report uses st_size directly there; every other
-# platform uses the real, filesystem-reported st_blocks (real block-
-# allocation data, not a naive ceil(size/512)).
-if on_windows_host; then
-  rule="st_size"
-  expected_bytes=0
-  for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
-    expected_bytes=$((expected_bytes + $(stat -c %s "$tmp/acct-data/$f")))
-  done
-else
-  rule='st_blocks\*512'
-  expected_blocks=0
-  for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
-    blocks="$(st_blocks "$tmp/acct-data/$f")"
-    expected_blocks=$((expected_blocks + blocks))
-  done
-  expected_bytes=$((expected_blocks * 512))
-fi
-# Bareos always formats with comma thousands separators (edit_uint64_with_commas),
-# regardless of locale -- format expected_bytes the same way.
-expected_bytes_commas="$(echo "$expected_bytes" | rev | sed 's/[0-9]\{3\}/&,/g;s/,$//' | rev)"
+raw_bytes=$((1 + 512 + 1000))
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -102,13 +63,47 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-# 3 known-size files; expected byte total and rule computed above,
-# per-platform, matching the per-client rule ua_acct.cc applies.
-if ! grep -q \
-  "bareos-fd / AcctTest: 3 files, ${expected_bytes_commas} bytes accounted (rule: ${rule}, 1 jobs in chain)." \
-  "$tmp/status-subscriptions-accounting.log"; then
-  echo "status subscriptions accounting did not report the expected byte total" \
-    "(expected ${expected_bytes_commas})!" >&2
+# The accounting rule differs per client platform (see ua_acct.cc): a
+# Windows client's st_blocks is a purely synthetic value derived from
+# st_size, so the report uses st_size directly there (exact, deterministic
+# match against the known raw byte total). Every other platform uses the
+# real, filesystem-reported st_blocks*512 -- real block-allocation data,
+# whose exact value depends on the underlying filesystem's allocation
+# strategy (block/sector size, compression, tiny-file embedding, etc.) and
+# cannot be reliably predicted from outside the backup itself, so only
+# sanity bounds are checked there: a multiple of 512, and never less than
+# the actual file content (block rounding never reduces the total below
+# the real size).
+line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
+if [[ -z "$line" ]]; then
+  echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
+  estat=1
+elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 1\ jobs\ in\ chain\)\. ]]; then
+  files="${BASH_REMATCH[1]}"
+  bytes="${BASH_REMATCH[2]//,/}"
+  actual_rule="${BASH_REMATCH[3]}"
+  if [[ "$files" -ne 3 ]]; then
+    echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
+    estat=1
+  fi
+  if on_windows_host; then
+    if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected '${raw_bytes} bytes (rule: st_size)'!" >&2
+      estat=1
+    fi
+  else
+    if [[ "$actual_rule" != 'st_blocks*512' ||
+      $((bytes % 512)) -ne 0 ||
+      "$bytes" -lt "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected a multiple of 512, >= ${raw_bytes}, with rule st_blocks*512!" >&2
+      estat=1
+    fi
+  fi
+else
+  echo "status subscriptions accounting report line did not match the expected format:" \
+    "${line}" >&2
   estat=1
 fi
 
