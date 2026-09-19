@@ -770,6 +770,11 @@ static int lscmd(UaContext* ua, TreeContext* tree)
 {
   tree_node* node;
 
+  if (tree->node->parent
+      && (ua->argc == 1 || fnmatch(ua->argk[1], "..", 0) == 0)) {
+    ua->SendMsg("../\n");
+  }
+
   if (!TreeNodeHasChild(tree->node)) { return 1; }
   foreach_child (node, tree->node) {
     if (ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) {
