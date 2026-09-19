@@ -2063,7 +2063,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   if (int i = FindArgWithValue(ua, "volume"); i >= 0) {
     if (IsNameValid(ua->argv[i])) {
       auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
-      if (!esc) { return false; }
+      if (!esc) { goto bail_out; }
       if (!*volumes.c_str()) {
         Mmsg(tmp, "'%s'", esc->c_str());
       } else {

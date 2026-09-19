@@ -62,13 +62,14 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   SQL_ROW row;
 
   DbLocker _{this};
-  auto esc_jobname = EscapeString(jcr, jr->Name);
-  if (!esc_jobname) { return false; }
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
 
   /* If no Id given, we must find corresponding job */
   if (jr->JobId == 0) {
+    auto esc_jobname = EscapeString(jcr, jr->Name);
+    if (!esc_jobname) { return false; }
+
     /* Differential is since last Full backup */
     Mmsg(cmd,
          "SELECT StartTime, Job FROM Job WHERE JobStatus IN ('T','W') AND "

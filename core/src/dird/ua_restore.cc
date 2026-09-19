@@ -70,7 +70,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
-static void SplitPathAndFilename(UaContext* ua,
+static bool SplitPathAndFilename(UaContext* ua,
                                  RestoreContext* rx,
                                  char* fname);
 static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
@@ -1113,7 +1113,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      const char* date)
 {
   StripTrailingNewline(file);
-  SplitPathAndFilename(ua, rx, file);
+  if (!SplitPathAndFilename(ua, rx, file)) { return false; }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
@@ -1191,7 +1191,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   return true;
 }
 
-static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
+static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
 {
   char *p, *f;
 
@@ -1219,7 +1219,7 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   if (rx->fnl > 0) {
     auto escaped_fname = ua->db->EscapeString(
         ua->jcr, std::string_view{f, static_cast<size_t>(rx->fnl)});
-    if (!escaped_fname) { return; }
+    if (!escaped_fname) { return false; }
     rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
     PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
@@ -1231,7 +1231,7 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   if (rx->pnl > 0) {
     auto escaped_path = ua->db->EscapeString(
         ua->jcr, std::string_view{name, static_cast<size_t>(rx->pnl)});
-    if (!escaped_path) { return; }
+    if (!escaped_path) { return false; }
     rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
     PmStrcpy(rx->path, escaped_path->c_str());
   } else {
@@ -1240,6 +1240,7 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
+  return true;
 }
 
 static bool CheckAndSetFileregex(UaContext* ua,
