@@ -194,6 +194,11 @@ if(NOT client-only)
   )
 
   bareos_add_test(
+    attribs_test LINK_LIBRARIES Bareos::Lib Bareos::Findlib Bareos::SQL
+                                GTest::gtest_main
+  )
+
+  bareos_add_test(
     append_test LINK_LIBRARIES Bareos::Lib Bareos::SD Bareos::LibSD
                                Bareos::Findlib GTest::gtest_main
   )
@@ -279,6 +284,11 @@ if(NOT client-only)
     ndmp_address_translate_test
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
+  )
+  bareos_add_test(
+    ndmp_fhdb_helpers_test
+    ADDITIONAL_SOURCES ../dird/ndmp_fhdb_helpers.cc
+    LINK_LIBRARIES ${LINK_LIBRARIES} bareosndmp
   )
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
