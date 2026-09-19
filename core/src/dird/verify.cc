@@ -799,10 +799,11 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
           if (do_Digest != CRYPTO_DIGEST_NONE) {
             auto escaped_digest
                 = jcr->db->EscapeString(jcr, Opts_Digest.c_str());
-            if (!bstrcmp(escaped_digest.c_str(), fdbr.Digest)) {
+            if (!escaped_digest) { return; }
+            if (!bstrcmp(escaped_digest->c_str(), fdbr.Digest)) {
               PrtFname(jcr);
               Jmsg(jcr, M_INFO, 0, T_("      %s differs. File=%s Cat=%s\n"),
-                   stream_to_ascii(stream), escaped_digest.c_str(),
+                   stream_to_ascii(stream), escaped_digest->c_str(),
                    fdbr.Digest);
               jcr->setJobStatusWithPriorityCheck(JS_Differences);
             }

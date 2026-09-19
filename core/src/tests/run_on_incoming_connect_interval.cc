@@ -195,17 +195,16 @@ class MockDatabase : public BareosDb {
 
   const char* OpenDatabase() override { return "bad"; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
-  bool EscapeString(JobControlRecord* /*jcr*/,
-                    std::string_view old,
-                    std::string& escaped) override
+  std::optional<std::string> EscapeString(JobControlRecord* /*jcr*/,
+                                          std::string_view old) override
   {
-    escaped.clear();
+    std::string escaped;
     escaped.reserve(old.size() * 2);
     for (char c : old) {
       if (c == '\'') { escaped.push_back('\''); }
       escaped.push_back(c);
     }
-    return true;
+    return escaped;
   }
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
