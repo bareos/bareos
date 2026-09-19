@@ -1754,6 +1754,17 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
   if (const char* fileset = GetArgValue(ua, "fileset");
       (fileset != nullptr && Bstrcasecmp(fileset, "any"))
       || (fileset == nullptr && listall)) {
+    /* Without an explicit fileset= argument, FileSet_ACL is normally
+     * enforced by only matching FileSets that still have a resource
+     * configured in the Director (below). If the console has no FileSet
+     * ACL restrictions at all, skip that resource enumeration and match
+     * every FileSet, including ones for jobs whose FileSet was since
+     * renamed or removed from the configuration -- otherwise those
+     * backups silently disappear from "llist backups" (and thus from
+     * webui-vue's Quick Restore) even though they are fully present and
+     * restorable in the catalog. */
+    if (ua->AclNoRestrictions(FileSet_ACL)) { return true; }
+
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
