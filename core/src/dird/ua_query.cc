@@ -198,7 +198,8 @@ static POOLMEM* substitute_prompts(UaContext* ua,
             new_query
                 = CheckPoolMemorySize(new_query, olen + subst[n]->size() + 10);
             o = new_query + olen;
-            for (const char c : *subst[n]) { *o++ = c; }
+            memcpy(o, subst[n]->data(), subst[n]->size());
+            o += subst[n]->size();
           } else {
             ua->ErrorMsg(T_("Warning prompt %d missing.\n"), n + 1);
           }
