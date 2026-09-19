@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -194,6 +194,14 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 
     if (fstat->links.valid == NDMP9_VALIDITY_VALID) {
       statp.st_nlink = fstat->links.value;
+    }
+
+    // Derive size/blocks from the reported file size, when known.
+    // Do not guess when the NDMP data server didn't report a size.
+    if (fstat->size.valid == NDMP9_VALIDITY_VALID) {
+      statp.st_size = fstat->size.value;
+      statp.st_blksize = 512;
+      statp.st_blocks = (statp.st_size + 511) / 512; /* ceil(size / 512) */
     }
   }
 

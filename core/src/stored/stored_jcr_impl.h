@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,8 @@
 #include "stored/stored_conf.h"
 #include "lib/thread_util.h"
 #include "stored/reserve.h"
+
+#include <string>
 
 template <typename T> class alist;
 
@@ -97,6 +99,16 @@ struct StoredJcrImpl {
   bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
   bool insert_jobmedia_records{}; /**< Need to insert job media records */
   uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
+
+  /* Bytes of STREAM_FILE_DATA written so far for the current NDMP-native
+   * (no FHDB) virtual file, i.e. since the last BndmpCreateVirtualFile()
+   * call.  Used to send a corrected attribute record with the real size
+   * from BndmpTapeClose(). */
+  uint64_t ndmp_virtual_file_bytes{};
+  /* Name of the current NDMP-native virtual file, set by
+   * BndmpCreateVirtualFile() and consumed by BndmpTapeClose() to build the
+   * corrected attribute record.  Empty if no virtual file is pending. */
+  std::string ndmp_virtual_file_name{};
 
   storagedaemon::ReadSession read_session;
   storagedaemon::DeviceWaitTimes device_wait_times;

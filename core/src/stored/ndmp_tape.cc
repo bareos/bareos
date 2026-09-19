@@ -288,7 +288,8 @@ extern "C" int bndmp_auth_md5(struct ndm_session* sess,
 static inline bool bndmp_write_data_to_block(JobControlRecord* jcr,
                                              int stream,
                                              char* data,
-                                             uint32_t data_length)
+                                             uint32_t data_length,
+                                             bool send_attrs_to_dir = true)
 {
   bool retval = false;
   DeviceControlRecord* dcr = jcr->sd_impl->dcr;
@@ -317,7 +318,7 @@ static inline bool bndmp_write_data_to_block(JobControlRecord* jcr,
 
   if (!dcr->WriteRecord()) { goto bail_out; }
 
-  if (stream == STREAM_UNIX_ATTRIBUTES) {
+  if (stream == STREAM_UNIX_ATTRIBUTES && send_attrs_to_dir) {
     dcr->DirUpdateFileAttributes(dcr->rec);
   }
 
@@ -441,13 +442,43 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
   return ok;
 }
 
+// Build the "file attributes" data stream for one NDMP-native virtual file.
+static inline int32_t BuildVirtualFileAttribsData(int32_t FileIndex,
+                                                  const char* filename,
+                                                  struct stat& statp,
+                                                  PoolMem& data)
+{
+  PoolMem attribs(PM_NAME);
+
+  // Encode a stat structure into an ASCII string.
+  EncodeStat(attribs.c_str(), &statp, sizeof(statp), FileIndex,
+             STREAM_UNIX_ATTRIBUTES);
+
+  /* Generate a file attributes stream.
+   *   File_index
+   *   File type
+   *   Filename (full path)
+   *   Encoded attributes
+   *   Link name (if type==FT_LNK or FT_LNKSAVED)
+   *   Encoded extended-attributes (for Win32)
+   *   Delta Sequence Number */
+  return Mmsg(data, "%ld %d %s%c%s%c%s%c%s%c%d%c", FileIndex, /* File_index */
+              FT_REG,                                         /* File type */
+              filename,           /* Filename (full path) */
+              0, attribs.c_str(), /* Encoded attributes */
+              0, "", /* Link name (if type==FT_LNK or FT_LNKSAVED) */
+              0, "", /* Encoded extended-attributes (for Win32) */
+              0, 0,  /* Delta Sequence Number */
+              0);
+}
+
 // Generate virtual file attributes for the whole NDMP stream.
 static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
 {
   DeviceControlRecord* dcr = jcr->sd_impl->dcr;
   struct stat statp;
   time_t now = time(NULL);
-  PoolMem attribs(PM_NAME), data(PM_NAME);
+  PoolMem data(PM_NAME);
   int32_t size;
 
   memset(&statp, 0, sizeof(statp));
@@ -459,30 +490,20 @@ static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
   statp.st_blksize = 4096;
   statp.st_blocks = 1;
 
-  // Encode a stat structure into an ASCII string.
-  EncodeStat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex,
-             STREAM_UNIX_ATTRIBUTES);
+  size = BuildVirtualFileAttribsData(dcr->FileIndex, filename, statp, data);
 
-  /* Generate a file attributes stream.
-   *   File_index
-   *   File type
-   *   Filename (full path)
-   *   Encoded attributes
-   *   Link name (if type==FT_LNK or FT_LNKSAVED)
-   *   Encoded extended-attributes (for Win32)
-   *   Delta Sequence Number */
-  size = Mmsg(data, "%ld %d %s%c%s%c%s%c%s%c%d%c",
-              dcr->FileIndex,     /* File_index */
-              FT_REG,             /* File type */
-              filename,           /* Filename (full path) */
-              0, attribs.c_str(), /* Encoded attributes */
-              0, "", /* Link name (if type==FT_LNK or FT_LNKSAVED) */
-              0, "", /* Encoded extended-attributes (for Win32) */
-              0, 0,  /* Delta Sequence Number */
-              0);
+  /* This placeholder record has an unknown/synthetic size. The real byte
+   * count only becomes known once all STREAM_FILE_DATA records for this
+   * virtual file have been written (see bndmp_tape_write()), so it is
+   * written to the medium (for bscan/bls compatibility) but not yet sent
+   * to the Director/catalog. BndmpTapeClose() sends the corrected
+   * attribute record for the same FileIndex once the real size is known.
+   */
+  jcr->sd_impl->ndmp_virtual_file_bytes = 0;
+  jcr->sd_impl->ndmp_virtual_file_name = filename;
 
   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(),
-                                   size);
+                                   size, /*send_attrs_to_dir=*/false);
 }
 
 static int BndmpSimuFlushWeof(struct ndm_session* sess)
@@ -744,6 +765,41 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
 
   err = NDMP9_NO_ERR;
   if (NDMTA_TAPE_IS_WRITABLE(ta)) {
+    /* If a virtual file's placeholder attribute record is still pending
+     * (i.e. BndmpCreateVirtualFile() ran for this open/close cycle), send
+     * the corrected attribute record with the real accumulated byte count
+     * now that all its STREAM_FILE_DATA records have been written. */
+    if (!jcr->sd_impl->ndmp_virtual_file_name.empty()) {
+      DeviceControlRecord* dcr = jcr->sd_impl->dcr;
+      struct stat statp;
+      time_t now = time(NULL);
+      PoolMem data(PM_NAME);
+      int32_t size;
+      uint64_t real_size = jcr->sd_impl->ndmp_virtual_file_bytes;
+
+      memset(&statp, 0, sizeof(statp));
+      statp.st_mode = 0700 | S_IFREG;
+      statp.st_ctime = now;
+      statp.st_mtime = now;
+      statp.st_atime = now;
+      statp.st_size = real_size;
+      statp.st_blksize = 512;
+      statp.st_blocks = (real_size + 511) / 512;
+
+      size = BuildVirtualFileAttribsData(
+          dcr->FileIndex, jcr->sd_impl->ndmp_virtual_file_name.c_str(), statp,
+          data);
+
+      if (!bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(),
+                                     size,
+                                     /*send_attrs_to_dir=*/true)) {
+        err = NDMP9_IO_ERR;
+      }
+
+      jcr->sd_impl->ndmp_virtual_file_name.clear();
+      jcr->sd_impl->ndmp_virtual_file_bytes = 0;
+    }
+
     /* Write a separator record so on restore we can recognize the different
      * NDMP datastreams from each other.  */
     if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPARATOR, ndmp_separator,
@@ -832,6 +888,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session* sess,
   if (bndmp_write_data_to_block(jcr, STREAM_FILE_DATA, buf, count)) {
     ta->tape_state.blockno.value++;
     *done_count = count;
+    jcr->sd_impl->ndmp_virtual_file_bytes += count;
     err = NDMP9_NO_ERR;
   } else {
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
