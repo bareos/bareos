@@ -1,0 +1,98 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Test the output of "status subscriptions accounting", the real,
+# File.LStat-based accounting report, against a backup of a handful of
+# files with known, exact sizes -- including one whose size is not a
+# multiple of 512 bytes, to exercise the block-rounding path.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+JobName=backup-acct-test
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+rm -rf "$tmp/acct-data"
+mkdir -p "$tmp/acct-data"
+
+# Known, exact sizes (bytes): one below one block, one exactly one block,
+# one spanning into a second (non-512-aligned -- exercises rounding up).
+generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
+generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
+generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
+
+# The accounting rule for non-Windows clients uses the real, filesystem-
+# reported st_blocks (real block-allocation data), not a naive
+# ceil(size/512) -- so the expected total depends on the underlying
+# filesystem's allocation block size (e.g. 4 KiB on ext4/xfs) and must be
+# computed from the actual on-disk allocation rather than hardcoded.
+expected_blocks=0
+for f in file-1byte.bin file-512bytes.bin file-1000bytes.bin; do
+  blocks="$(stat -c '%b' "$tmp/acct-data/$f")"
+  expected_blocks=$((expected_blocks + blocks))
+done
+expected_bytes=$((expected_blocks * 512))
+# Bareos always formats with comma thousands separators (edit_uint64_with_commas),
+# regardless of locale -- format expected_bytes the same way.
+expected_bytes_commas="$(echo "$expected_bytes" | rev | sed 's/[0-9]\{3\}/&,/g;s/,$//' | rev)"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $tmp/status-subscriptions-accounting.log
+run job=$JobName level=Full yes
+wait
+messages
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions accounting client=does-not-exist
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+# 3 known-size files; expected byte total computed above from the actual
+# on-disk allocation (st_blocks), since the accounting rule for non-
+# Windows clients uses real block-allocation data, not a naive
+# ceil(size/512).
+if ! grep -q \
+  "bareos-fd / AcctTest: 3 files, ${expected_bytes_commas} bytes accounted (rule: st_blocks\*512, 1 jobs in chain)." \
+  "$tmp/status-subscriptions-accounting.log"; then
+  echo "status subscriptions accounting did not report the expected byte total" \
+    "(expected ${expected_bytes_commas})!" >&2
+  estat=1
+fi
+
+if ! grep -q "No matching Client/FileSet combinations found." \
+  "$tmp/status-subscriptions-accounting.log"; then
+  echo "status subscriptions accounting did not exclude a non-existing client as expected!" >&2
+  estat=1
+fi
+
+end_test

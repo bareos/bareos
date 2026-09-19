@@ -1,0 +1,12 @@
+FileSet {
+  Name = "AcctTest"
+  Description = "small fileset with known-size files for the status subscriptions accounting systemtest"
+  Include {
+    Options {
+      Signature = xxh128
+    }
+    File = "@tmpdir@/acct-data/file-1byte.bin"
+    File = "@tmpdir@/acct-data/file-512bytes.bin"
+    File = "@tmpdir@/acct-data/file-1000bytes.bin"
+  }
+}
