@@ -1844,6 +1844,54 @@ status subscriptions
      In the current version there is no unknown data and detail is now the
      default.
 
+   To get a real, catalog-based accounting report instead of the estimate
+   above, use the keyword ``accounting`` (e.g.
+   :bcommand:`status subscriptions accounting`). Unlike the report above,
+   which estimates backed up data from job-level totals, this mode computes
+   the exact number of bytes still on record for every Client/FileSet
+   combination, based on the actual ``File`` catalog table rows (``LStat``) of the
+   most recent backup chain (latest Full, plus a later Differential if any,
+   plus all subsequent Incrementals), deduplicated so that only the latest
+   version of every file is counted once.
+
+   .. code-block:: bconsole
+      :caption: status subscriptions accounting
+
+      *<input>status subscriptions accounting</input>
+
+      Real (File.LStat-based) subscription accounting report:
+      linux-fd / system: 128,532 files, 24,318,732,288 bytes accounted (rule: st_blocks*512, 4 jobs in chain).
+      windows-fd / system: 84,221 files, 12,004,556,800 bytes accounted (rule: st_size, 3 jobs in chain).
+
+      Grand total: 212,753 files, 36,323,289,088 bytes across 2 accounted Client/FileSet combination(s)
+
+   Optional ``client=<client-name>`` and ``fileset=<fileset-name>`` filters
+   can be used to restrict the report to a single client and/or fileset,
+   for example
+   :bcommand:`status subscriptions accounting client=linux-fd`.
+
+   For every accounted Client/FileSet combination the report also states
+   which per-platform accounting rule was applied: ``st_blocks*512`` (real
+   block-allocation data, sparse-file aware) for Unix/Linux/macOS/BSD
+   clients, or ``st_size`` for Windows clients (detected via their reported
+   operating system information), since the ``st_blocks`` value reported by
+   Bareos's Windows compatibility layer is always a synthetic value derived
+   from ``st_size`` and therefore adds no additional accuracy.
+
+   .. limitation:: status subscriptions accounting has its own limitations
+
+      - Client/FileSet combinations without a usable backup chain (e.g. all
+        of their File information has been purged, or no Full backup ever
+        completed) are excluded from the report entirely rather than
+        estimated -- the grand total will under-report data for such
+        combinations if older jobs were purged.
+      - Copy, Migrate, Virtual Full, and Always-Incremental consolidation
+        jobs are supported and contribute their own File rows like an
+        ordinary Full backup would.
+      - Delta-plugin multi-part files (:config:option:`dir/job/accurate`
+        + delta plugins) are not specially merged in this first version;
+        only the latest JobId's File row per path is used.
+
    .. limitation:: status subscriptions may account the same data multiple times
 
       In some circumstances the number of backup units determined by
@@ -1852,6 +1900,11 @@ status subscriptions
       data will be accounted twice.
       If you back up a VM using a plugin and with a |fd| installed inside of
       the VM, that will also be accounted twice.
+
+      :bcommand:`status subscriptions accounting` (see above) computes real
+      numbers from actual catalog file data instead of estimating, and does
+      not suffer from this particular double-counting issue, but has its own
+      documented limitations (see above).
 
    .. note::
       :bcommand:`status subscriptions` report can also be obtained using |webui|
