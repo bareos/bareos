@@ -92,7 +92,20 @@
         </div>
       </q-card-section>
 
+      <q-select
+        v-if="$q.screen.lt.sm"
+        :model-value="effectiveRelocationMode"
+        :options="relocationModeOptions"
+        :label="t('File Relocation mode')"
+        outlined dense emit-value map-options
+        option-value="value"
+        option-label="label"
+        class="relocation-mode-select"
+        data-testid="restore-relocation-mode"
+        @update:model-value="selectRelocationMode"
+      />
       <q-tabs
+        v-else
         :model-value="effectiveRelocationMode"
         class="relocation-mode-tabs"
         active-color="primary"
@@ -329,6 +342,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import PluginOptionsEditor from './PluginOptionsEditor.vue'
 import {
   formatRunWhenPickerDate,
@@ -398,6 +412,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'browseDestination'])
 
 const { t } = useI18n()
+const $q = useQuasar()
 
 const model = computed(() => props.modelValue ?? {})
 const whenPickerValue = ref(formatRunWhenPickerDate(new Date()))
@@ -521,6 +536,10 @@ function updatePriority(value) {
 
 .relocation-mode-tabs {
   background: rgba(0, 0, 0, 0.03);
+}
+
+.relocation-mode-select {
+  padding: 8px 8px 0;
 }
 
 .relocation-mode-example {
