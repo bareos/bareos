@@ -320,6 +320,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
              || jr->JobType == JT_BACKUP) {
     if (Name) {
       auto esc_jobname = EscapeString(jcr, Name);
+      if (!esc_jobname) { return false; }
       Mmsg(
           cmd,
           "SELECT JobId FROM Job WHERE Type='B' AND JobStatus IN ('T','W') AND "
