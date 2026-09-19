@@ -32,6 +32,8 @@
 #include "include/filetypes.h"
 #include "lib/attribs.h"
 
+#include <limits>
+
 #if HAVE_NDMP
 
 #  include "ndmp/ndmagents.h"
@@ -198,10 +200,19 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 
     // Derive size/blocks from the reported file size, when known.
     // Do not guess when the NDMP data server didn't report a size.
-    if (fstat->size.valid == NDMP9_VALIDITY_VALID) {
-      statp.st_size = fstat->size.value;
+    // fstat->size.value comes from the (untrusted) NDMP data server as an
+    // unsigned 64-bit quantity; reject values that would not fit into
+    // st_size (a signed type) or that would overflow the block rounding
+    // below, rather than risk a sign-flip or signed-integer overflow when
+    // it is later reinterpreted as bytes (e.g. by accounting code).
+    if (fstat->size.valid == NDMP9_VALIDITY_VALID
+        && fstat->size.value
+               <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
+                      - 511) {
+      uint64_t blocks = (fstat->size.value + 511) / 512; /* ceil(size/512) */
+      statp.st_size = static_cast<decltype(statp.st_size)>(fstat->size.value);
       statp.st_blksize = 512;
-      statp.st_blocks = (statp.st_size + 511) / 512; /* ceil(size / 512) */
+      statp.st_blocks = static_cast<decltype(statp.st_blocks)>(blocks);
     }
   }
 
