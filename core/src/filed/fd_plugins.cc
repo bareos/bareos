@@ -784,9 +784,24 @@ void FillMissingPluginStatBlocks(struct stat& statp)
   }
 }
 
+template <typename T> constexpr bool PluginStatFieldIsUnknown(T value)
+{
+  if constexpr (std::numeric_limits<T>::is_signed) {
+    return value < 0;
+  } else {
+    return value == std::numeric_limits<T>::max();
+  }
+}
+
+static_assert(PluginStatFieldIsUnknown(int64_t{-1}));
+static_assert(!PluginStatFieldIsUnknown(int64_t{0}));
+static_assert(PluginStatFieldIsUnknown(std::numeric_limits<uint64_t>::max()));
+static_assert(!PluginStatFieldIsUnknown(uint64_t{0}));
+
 bool PluginSizeNeedsFdFallback(const struct stat& statp)
 {
-  return statp.st_size < 0 || statp.st_blocks < 0
+  return PluginStatFieldIsUnknown(statp.st_size)
+         || PluginStatFieldIsUnknown(statp.st_blocks)
          || (statp.st_size > 0 && statp.st_blocks == 0);
 }
 
