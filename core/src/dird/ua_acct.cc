@@ -141,19 +141,35 @@ int TupleRowHandler(void* ctx, int, char** row)
 }
 
 /**
+ * Distinguishes "nothing to account for this tuple" (a normal, expected
+ * outcome -- the tuple is excluded, not guessed) from "a catalog query
+ * failed" (an actual error -- the report must not silently continue and
+ * report an incomplete grand total as if it were complete).
+ */
+enum class ChainResult
+{
+  kFound,
+  kNotFound,
+  kError
+};
+
+/**
  * Resolve the latest backup chain (Full [+ Differential] + subsequent
  * Incrementals) for one (Client, FileSet) tuple -- same "latest wins"
  * semantics as the interactive restore-chain resolution in ua_restore.cc,
  * but without any JobMedia/Media join (accounting only cares whether File
  * rows exist, not whether the backing media is still available).
  *
- * Returns false if no Full backup could be found at all (nothing to
- * account for this tuple -- excluded, not guessed).
+ * Returns kNotFound if no Full backup could be found at all (nothing to
+ * account for this tuple -- excluded, not guessed). Returns kError if any
+ * of the catalog queries themselves failed -- callers must treat this
+ * differently from kNotFound and abort the report instead of silently
+ * excluding the tuple.
  */
-bool ResolveAccountingChain(UaContext* ua,
-                            DBId_t client_id,
-                            DBId_t fileset_id,
-                            std::vector<JobId_t>* jobids)
+ChainResult ResolveAccountingChain(UaContext* ua,
+                                   DBId_t client_id,
+                                   DBId_t fileset_id,
+                                   std::vector<JobId_t>* jobids)
 {
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[50], ed3[50];
@@ -169,9 +185,9 @@ bool ResolveAccountingChain(UaContext* ua,
        kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), ChainJobHandler, &full)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
-    return false;
+    return ChainResult::kError;
   }
-  if (!full.found) { return false; /* no baseline -> exclude tuple */ }
+  if (!full.found) { return ChainResult::kNotFound; /* no baseline */ }
 
   jobids->push_back(full.JobId);
   utime_t baseline = full.JobTDate;
@@ -188,7 +204,7 @@ bool ResolveAccountingChain(UaContext* ua,
        edit_uint64(baseline, ed3), kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), ChainJobHandler, &diff)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
-    return false;
+    return ChainResult::kError;
   }
   if (diff.found) {
     jobids->push_back(diff.JobId);
@@ -206,11 +222,11 @@ bool ResolveAccountingChain(UaContext* ua,
        edit_uint64(baseline, ed3), kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), JobIdListHandler, &incs)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
-    return false;
+    return ChainResult::kError;
   }
   for (JobId_t id : incs.jobids) { jobids->push_back(id); }
 
-  return true;
+  return ChainResult::kFound;
 }
 
 /**
@@ -344,12 +360,23 @@ bool DoSubscriptionAccounting(UaContext* ua)
 
   for (const TupleInfo& tuple : tuple_list.tuples) {
     std::vector<JobId_t> jobids;
-    if (!ResolveAccountingChain(ua, tuple.ClientId, tuple.FileSetId, &jobids)) {
-      ua->SendMsg(T_("%s / %s: no usable backup chain found -- excluded (not "
-                     "guessed).\n"),
-                  tuple.ClientName.c_str(), tuple.FileSetName.c_str());
-      excluded_tuples++;
-      continue;
+    switch (
+        ResolveAccountingChain(ua, tuple.ClientId, tuple.FileSetId, &jobids)) {
+      case ChainResult::kError:
+        // A catalog query failed -- abort the report rather than silently
+        // sending an incomplete grand total that looks complete.
+        ua->ErrorMsg(T_("%s / %s: failed to resolve backup chain -- aborting "
+                        "report.\n"),
+                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        return false;
+      case ChainResult::kNotFound:
+        ua->SendMsg(T_("%s / %s: no usable backup chain found -- excluded (not "
+                       "guessed).\n"),
+                    tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        excluded_tuples++;
+        continue;
+      case ChainResult::kFound:
+        break;
     }
 
     FileScanCtx scan{};
