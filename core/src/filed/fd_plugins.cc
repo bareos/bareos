@@ -1017,8 +1017,10 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                   ? corrected.blocks
                   : (corrected.size + 511) / 512; /* ceil(size / 512) */
         int data_stream;
-        EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
-                                /*reuse_file_index=*/true);
+        if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
+                                     /*reuse_file_index=*/true)) {
+          goto bail_out;
+        }
         b_ctx->corrected_file_size_blocks.reset();
       }
 
