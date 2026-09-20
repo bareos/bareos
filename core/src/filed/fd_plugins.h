@@ -254,6 +254,12 @@ typedef enum
  * Daemon. Setting this value from within endBackupFile() causes Bareos
  * to resend corrected attributes (same FileIndex) for the file it just
  * finished backing up.
+ *
+ * If a plugin does not set this value and the original attributes contain an
+ * unknown or unusable size/block count, Bareos may fall back to the number of
+ * bytes the File Daemon actually read from the plugin stream. Plugins should
+ * still set this value when their logical source size or block allocation is
+ * different from the bytes emitted on the plugin stream.
  */
 struct PluginFileSizeBlocks {
   int64_t size;   /* corrected st_size */
