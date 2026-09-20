@@ -45,6 +45,7 @@
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
 
+#include <limits>
 #include <optional>
 
 // Function pointers to be set here (findlib)
@@ -771,11 +772,73 @@ bail_out:
  * core/src/tests/test_fd_plugins.cc); it is intentionally not exposed
  * in a header, as it is an implementation detail of PluginSave() only.
  */
+uint64_t PluginBlocksFromSize(uint64_t size)
+{
+  return size / 512 + (size % 512 != 0);
+}
+
 void FillMissingPluginStatBlocks(struct stat& statp)
 {
   if (statp.st_size > 0 && statp.st_blocks == 0) {
-    statp.st_blocks = (statp.st_size + 511) / 512; /* ceil(st_size / 512) */
+    statp.st_blocks = PluginBlocksFromSize(statp.st_size);
   }
+}
+
+bool PluginSizeNeedsFdFallback(const struct stat& statp)
+{
+  return statp.st_size < 0 || statp.st_blocks < 0
+         || (statp.st_size > 0 && statp.st_blocks == 0);
+}
+
+template <typename T> bool FitsStatField(int64_t value)
+{
+  if constexpr (std::numeric_limits<T>::is_signed) {
+    return value <= static_cast<int64_t>(std::numeric_limits<T>::max());
+  } else {
+    return static_cast<uint64_t>(value) <= std::numeric_limits<T>::max();
+  }
+}
+
+bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected)
+{
+  struct stat statp{};
+
+  if (corrected.size < 0 || corrected.blocks < 0) { return false; }
+
+  using StatSizeType = decltype(statp.st_size);
+  using StatBlocksType = decltype(statp.st_blocks);
+
+  return FitsStatField<StatSizeType>(corrected.size)
+         && FitsStatField<StatBlocksType>(corrected.blocks);
+}
+
+std::optional<PluginFileSizeBlocks> FdCountedFileSizeBlocks(
+    const struct stat& original_statp,
+    bool save_status,
+    bool job_canceled,
+    bool data_was_read,
+    uint64_t read_bytes_before,
+    uint64_t read_bytes_after)
+{
+  if (!save_status || job_canceled || !data_was_read
+      || read_bytes_after < read_bytes_before
+      || !PluginSizeNeedsFdFallback(original_statp)) {
+    return std::nullopt;
+  }
+
+  uint64_t consumed_bytes = read_bytes_after - read_bytes_before;
+  if (consumed_bytes
+      > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return std::nullopt;
+  }
+
+  uint64_t blocks = PluginBlocksFromSize(consumed_bytes);
+  if (blocks > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return std::nullopt;
+  }
+
+  return PluginFileSizeBlocks{static_cast<int64_t>(consumed_bytes),
+                              static_cast<int64_t>(blocks)};
 }
 
 /**
@@ -992,8 +1055,13 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       sp.cmd = const_cast<char*>(original_cmd);
 
+      const struct stat original_statp = ff_pkt->statp;
+      bool data_was_read = !ff_pkt->no_read;
+      uint64_t read_bytes_before = jcr->ReadBytes;
+
       // Call Bareos core code to backup the plugin's file
-      SaveFile(jcr, ff_pkt, true);
+      int save_status = SaveFile(jcr, ff_pkt, true);
+      uint64_t read_bytes_after = jcr->ReadBytes;
 
       if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
 
@@ -1001,28 +1069,59 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       CopyBits(FO_MAX, flags, ff_pkt->flags);
 
       bRC retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
+      bool file_finished_successfully
+          = save_status && !jcr->IsJobCanceled()
+            && (retval == bRC_OK || retval == bRC_More);
 
-      // If the plugin reported a corrected size/blocks from within
-      // endBackupFile() (e.g. a streaming plugin that only knows the
-      // real size once it is done), resend the attributes for the file
-      // that was just saved, reusing the same FileIndex.
-      if (auto* b_ctx
-          = static_cast<FiledPluginContext*>(ctx->core_private_context);
-          b_ctx->corrected_file_size_blocks) {
-        const PluginFileSizeBlocks& corrected
-            = *b_ctx->corrected_file_size_blocks;
+      auto* b_ctx = static_cast<FiledPluginContext*>(ctx->core_private_context);
+      std::optional<PluginFileSizeBlocks> corrected_file_size_blocks;
+      bool using_fd_counted_fallback = false;
+      if (file_finished_successfully) {
+        if (b_ctx->corrected_file_size_blocks) {
+          corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
+        } else {
+          corrected_file_size_blocks = FdCountedFileSizeBlocks(
+              original_statp, save_status, jcr->IsJobCanceled(), data_was_read,
+              read_bytes_before, read_bytes_after);
+          using_fd_counted_fallback = corrected_file_size_blocks.has_value();
+        }
+      }
+
+      // If the plugin reported corrected size/blocks from within
+      // endBackupFile(), or the FD could safely count bytes consumed from a
+      // plugin that did not report useful size data, resend attributes for the
+      // file that was just saved, reusing the same FileIndex.
+      if (corrected_file_size_blocks) {
+        const PluginFileSizeBlocks& corrected = *corrected_file_size_blocks;
+        if (!PluginFileSizeBlocksAreValid(corrected)) {
+          Jmsg(jcr, M_ERROR, 0,
+               T_("Command plugin \"%s\": invalid corrected size/block "
+                  "count for %s: %" PRId64 "/%" PRId64 ".\n"),
+               cmd.c_str(), ff_pkt->fname, corrected.size, corrected.blocks);
+          goto bail_out;
+        }
+
+        uint64_t blocks = corrected.blocks > 0
+                              ? static_cast<uint64_t>(corrected.blocks)
+                              : PluginBlocksFromSize(corrected.size);
+        if (using_fd_counted_fallback) {
+          Jmsg(jcr, M_INFO, 0,
+               T_("Plugin did not report corrected size/block count for %s; "
+                  "using %" PRIu64 " byte(s) and %" PRIu64
+                  " 512-byte block(s) counted from the plugin stream for "
+                  "catalog attributes.\n"),
+               ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
+        }
+
         ff_pkt->statp.st_size = corrected.size;
-        ff_pkt->statp.st_blocks
-            = (corrected.blocks > 0)
-                  ? corrected.blocks
-                  : (corrected.size + 511) / 512; /* ceil(size / 512) */
+        ff_pkt->statp.st_blocks = blocks;
         int data_stream;
         if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
                                      /*reuse_file_index=*/true)) {
           goto bail_out;
         }
-        b_ctx->corrected_file_size_blocks.reset();
       }
+      b_ctx->corrected_file_size_blocks.reset();
 
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
@@ -2399,6 +2498,12 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
       break;
     case bVarFileSizeBlocks: {
       const auto& corrected = *static_cast<const PluginFileSizeBlocks*>(value);
+      if (!PluginFileSizeBlocksAreValid(corrected)) {
+        Jmsg2(jcr, M_ERROR, 0,
+              "Invalid corrected file size/blocks: %" PRId64 "/%" PRId64 ".\n",
+              corrected.size, corrected.blocks);
+        return bRC_Error;
+      }
       static_cast<FiledPluginContext*>(ctx->core_private_context)
           ->corrected_file_size_blocks
           = corrected;
