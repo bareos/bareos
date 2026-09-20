@@ -1128,6 +1128,12 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                   " 512-byte block(s) counted from the plugin stream for "
                   "catalog attributes.\n"),
                ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
+        } else {
+          Jmsg(jcr, M_INFO, 0,
+               T_("Plugin reported corrected size/block count for %s; using "
+                  "%" PRIu64 " byte(s) and %" PRIu64
+                  " 512-byte block(s) for catalog attributes.\n"),
+               ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
         }
 
         ff_pkt->statp.st_size = corrected.size;
