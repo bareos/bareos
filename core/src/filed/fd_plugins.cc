@@ -1055,6 +1055,10 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       sp.cmd = const_cast<char*>(original_cmd);
 
+      const struct stat original_statp = ff_pkt->statp;
+      bool data_was_read = !ff_pkt->no_read;
+      uint64_t read_bytes_before = jcr->ReadBytes;
+
       /* Ask SaveFile() to not send the "end of plugin data" marker itself:
        * a corrected-attributes resend (below) must happen before that
        * marker, otherwise the restore-side plugin state machine sees the
@@ -1065,6 +1069,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       // Call Bareos core code to backup the plugin's file
       int save_status = SaveFile(jcr, ff_pkt, true);
+      uint64_t read_bytes_after = jcr->ReadBytes;
 
       ff_pkt->defer_plugin_name_end = false;
       auto send_pending_plugin_name_end = [&]() {
@@ -1085,26 +1090,23 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
             && (retval == bRC_OK || retval == bRC_More);
 
       auto* b_ctx = static_cast<FiledPluginContext*>(ctx->core_private_context);
-      /* Only resend attributes if the plugin *explicitly* reported a
-       * corrected size/block count via setBareosValue(bVarFileSizeBlocks)
-       * from within endBackupFile(). We deliberately do not try to
-       * auto-detect this need from st_size/st_blocks heuristics:
-       * st_size == -1 (unknown ahead of time) is also the default
-       * StatPacket() value used by the vast majority of existing command
-       * plugins that never populate it at all. Since the catalog does not
-       * deduplicate attribute records by FileIndex (each STREAM_UNIX_
-       * ATTRIBUTES record received becomes its own File row), such a
-       * heuristic would resend -- and thus duplicate -- attributes for
-       * essentially every plugin-backed file, not just genuinely corrected
-       * ones. */
       std::optional<PluginFileSizeBlocks> corrected_file_size_blocks;
+      bool using_fd_counted_fallback = false;
       if (file_finished_successfully && !IS_FT_OBJECT(sp.type)) {
-        corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
+        if (b_ctx->corrected_file_size_blocks) {
+          corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
+        } else {
+          corrected_file_size_blocks = FdCountedFileSizeBlocks(
+              original_statp, save_status, jcr->IsJobCanceled(), data_was_read,
+              read_bytes_before, read_bytes_after);
+          using_fd_counted_fallback = corrected_file_size_blocks.has_value();
+        }
       }
 
       // If the plugin reported corrected size/blocks from within
-      // endBackupFile(), resend attributes for the file that was just
-      // saved, reusing the same FileIndex.
+      // endBackupFile(), or the FD could safely count bytes consumed from a
+      // plugin that did not report useful size data, resend attributes for the
+      // file that was just saved, reusing the same FileIndex.
       if (corrected_file_size_blocks) {
         const PluginFileSizeBlocks& corrected = *corrected_file_size_blocks;
         if (!PluginFileSizeBlocksAreValid(corrected)) {
@@ -1119,6 +1121,14 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         uint64_t blocks = corrected.blocks > 0
                               ? static_cast<uint64_t>(corrected.blocks)
                               : PluginBlocksFromSize(corrected.size);
+        if (using_fd_counted_fallback) {
+          Jmsg(jcr, M_INFO, 0,
+               T_("Plugin did not report corrected size/block count for %s; "
+                  "using %" PRIu64 " byte(s) and %" PRIu64
+                  " 512-byte block(s) counted from the plugin stream for "
+                  "catalog attributes.\n"),
+               ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
+        }
 
         ff_pkt->statp.st_size = corrected.size;
         ff_pkt->statp.st_blocks = blocks;

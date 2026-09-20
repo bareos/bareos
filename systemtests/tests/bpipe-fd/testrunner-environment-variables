@@ -64,6 +64,28 @@ check_log "$full_log"
 check_log "$incr_log"
 check_log "$restore_log"
 
+payload="bareos bpipe accounting payload"
+payload_bytes=${#payload}
+payload_blocks=$(((payload_bytes + 511) / 512))
+
+expect_grep \
+  "Plugin did not report corrected size/block count for /bpipe; using ${payload_bytes} byte(s) and ${payload_blocks} 512-byte block(s)" \
+  "$full_log" \
+  "File Daemon did not report its counted bpipe size"
+
+printf '%s' "$payload" >"${runner_tmp}/expected-restored-data"
+cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.3. .dat"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=1 AND p.path='/' AND f.name='bpipe'"
+END_OF_DATA
+
+expect_grep \
+  "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/accounting.out" \
+  "Catalog does not contain exactly one corrected bpipe File row"
+
 # validate environment variables in readprogram / writeprogram
 expected_output=(
   "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"

@@ -49,6 +49,10 @@ struct r_ctx {
   int32_t stream{0};           /* stream less new bits */
   int32_t prev_stream{0};      /* previous stream */
   int32_t full_stream{0};      /* full stream including new bits */
+  uint32_t attribute_vol_session_id{0};
+  uint32_t attribute_vol_session_time{0};
+  int32_t attribute_file_index{0};
+  bool attribute_seen{false};
   int32_t comp_stream{0};      /* last compressed stream found. needed only to
                                   restore encrypted compressed backup */
   BareosFilePacket bfd;     /* File content */

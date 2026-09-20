@@ -255,12 +255,11 @@ typedef enum
  * to resend corrected attributes (same FileIndex) for the file it just
  * finished backing up.
  *
- * If a plugin does not set this value, Bareos does not resend attributes and
- * keeps using whatever size/block count was reported in the original stat
- * packet. Plugins must set this value explicitly whenever their logical
- * source size or block allocation differs from what was known when the
- * original attributes were sent (e.g. because it is only known after all
- * data has been read/piped through).
+ * If a plugin does not set this value and the original attributes contain an
+ * unknown or unusable size/block count, Bareos falls back to the number of
+ * bytes the File Daemon actually read from the plugin stream. Plugins should
+ * still set this value when their logical source size or block allocation is
+ * different from the bytes emitted on the plugin stream.
  */
 struct PluginFileSizeBlocks {
   int64_t size;   /* corrected st_size */
