@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -64,6 +64,8 @@ list jobs
 run job=$JobName level=Incremental yes
 wait
 messages
+@$out ${test_home}/accounting-before-virtual-full.out
+status subscriptions accounting client=bareos-fd fileset=SelfTest
 END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
@@ -75,6 +77,8 @@ list jobs
 run job=$JobName level=VirtualFull yes
 wait
 messages
+@$out ${test_home}/accounting-after-virtual-full.out
+status subscriptions accounting client=bareos-fd fileset=SelfTest
 @$out ${test_home}/status.out
 list jobs
 status director
@@ -103,6 +107,39 @@ check_log "${test_home}/restore.out"
 check_for_zombie_jobs storage=File
 
 check_restore_diff "${BackupDirectory}" "${test_home}/bareos-restores"
+
+read_accounting_totals()
+{
+  local report=$1
+  local line
+  line="$(grep "bareos-fd / SelfTest:" "$report" || true)"
+
+  if [[ "$line" =~ ([0-9,]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+), ]]; then
+    printf '%s:%s:%s\n' \
+      "${BASH_REMATCH[1]//,/}" \
+      "${BASH_REMATCH[2]//,/}" \
+      "${BASH_REMATCH[3]}"
+    return
+  fi
+
+  echo "Could not parse subscription accounting output in ${report}: ${line}" >&2
+  return 1
+}
+
+if ! accounting_before=$(
+  read_accounting_totals "${test_home}/accounting-before-virtual-full.out"
+); then
+  estat=1
+elif ! accounting_after=$(
+  read_accounting_totals "${test_home}/accounting-after-virtual-full.out"
+); then
+  estat=1
+elif [[ "$accounting_before" != "$accounting_after" ]]; then
+  echo "Subscription accounting changed after Virtual Full:" >&2
+  echo "  before: ${accounting_before}" >&2
+  echo "  after:  ${accounting_after}" >&2
+  estat=1
+fi
 
 if on_windows_host; then
   expected_file_count=".."
