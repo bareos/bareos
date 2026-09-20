@@ -285,7 +285,7 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
-  if(NOT HAVE_WIN32)
+  if(NOT HAVE_WIN32 AND ndmp)
     # ndmp_fhdb_helpers.cc pulls in the NDMP headers (ndmagents.h etc.), which
     # are only built/usable when the ndmp/ subdirectory is configured; that
     # never happens on Windows (see core/src/CMakeLists.txt: `if(NOT HAVE_WIN32
