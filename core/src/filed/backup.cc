@@ -848,7 +848,14 @@ good_rtn:
 bail_out:
   if (jcr->IsIncomplete() || jcr->IsJobCanceled()) { rtnstat = 0; }
   if (plugin_started) {
-    SendPluginName(jcr, sd, false); /* signal end of plugin data */
+    if (ff_pkt->defer_plugin_name_end) {
+      /* Let the caller (PluginSave()) send the "end of plugin data" marker
+       * later, once it has had a chance to resend corrected attributes
+       * (same FileIndex) while still inside this bracket. */
+      ff_pkt->plugin_name_end_pending = true;
+    } else {
+      SendPluginName(jcr, sd, false); /* signal end of plugin data */
+    }
   }
   if (ff_pkt->opt_plugin) {
     jcr->fd_impl->plugin_sp = NULL; /* sp is local to this function */

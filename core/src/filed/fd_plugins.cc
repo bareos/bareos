@@ -1059,9 +1059,25 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       bool data_was_read = !ff_pkt->no_read;
       uint64_t read_bytes_before = jcr->ReadBytes;
 
+      /* Ask SaveFile() to not send the "end of plugin data" marker itself:
+       * a corrected-attributes resend (below) must happen before that
+       * marker, otherwise the restore-side plugin state machine sees the
+       * bracket as already closed and fatals on the second createFile()
+       * call. */
+      ff_pkt->defer_plugin_name_end = true;
+      ff_pkt->plugin_name_end_pending = false;
+
       // Call Bareos core code to backup the plugin's file
       int save_status = SaveFile(jcr, ff_pkt, true);
       uint64_t read_bytes_after = jcr->ReadBytes;
+
+      ff_pkt->defer_plugin_name_end = false;
+      auto send_pending_plugin_name_end = [&]() {
+        if (ff_pkt->plugin_name_end_pending) {
+          SendPluginName(jcr, jcr->store_bsock, false);
+          ff_pkt->plugin_name_end_pending = false;
+        }
+      };
 
       if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
 
@@ -1098,6 +1114,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                T_("Command plugin \"%s\": invalid corrected size/block "
                   "count for %s: %" PRId64 "/%" PRId64 ".\n"),
                cmd.c_str(), ff_pkt->fname, corrected.size, corrected.blocks);
+          send_pending_plugin_name_end();
           goto bail_out;
         }
 
@@ -1118,10 +1135,13 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         int data_stream;
         if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
                                      /*reuse_file_index=*/true)) {
+          send_pending_plugin_name_end();
           goto bail_out;
         }
       }
       b_ctx->corrected_file_size_blocks.reset();
+
+      send_pending_plugin_name_end();
 
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
