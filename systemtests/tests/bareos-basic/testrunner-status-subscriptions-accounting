@@ -69,11 +69,12 @@ check_for_zombie_jobs storage=File
 # match against the known raw byte total). Every other platform uses the
 # real, filesystem-reported st_blocks*512 -- real block-allocation data,
 # whose exact value depends on the underlying filesystem's allocation
-# strategy (block/sector size, compression, tiny-file embedding, etc.) and
-# cannot be reliably predicted from outside the backup itself, so only
-# sanity bounds are checked there: a multiple of 512, and never less than
-# the actual file content (block rounding never reduces the total below
-# the real size).
+# strategy (block/sector size, compression, tiny-file embedding, sparse
+# files, etc.) and cannot be reliably predicted from outside the backup
+# itself, so only a sanity bound is checked there: a multiple of 512.
+# (No lower-bound-vs-raw-bytes check: on filesystems that compress or
+# deduplicate blocks, e.g. compressed ZFS, st_blocks*512 can legitimately
+# be smaller than the logical file content size.)
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
@@ -94,10 +95,9 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
     fi
   else
     if [[ "$actual_rule" != 'st_blocks*512' ||
-      $((bytes % 512)) -ne 0 ||
-      "$bytes" -lt "$raw_bytes" ]]; then
+      $((bytes % 512)) -ne 0 ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
-        "expected a multiple of 512, >= ${raw_bytes}, with rule st_blocks*512!" >&2
+        "expected a multiple of 512 with rule st_blocks*512!" >&2
       estat=1
     fi
   fi
