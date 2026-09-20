@@ -1902,8 +1902,9 @@ status subscriptions
       the VM, that will also be accounted twice.
 
       :bcommand:`status subscriptions accounting` (see above) computes real
-      numbers from actual catalog file data instead of estimating, and does
-      not suffer from this particular double-counting issue, but has its own
+      numbers from actual catalog file data instead of estimating, and
+      deduplicates file versions within each Client/FileSet chain, but does
+      not deduplicate overlapping files across FileSets. It has its own
       documented limitations (see above).
 
    .. note::
