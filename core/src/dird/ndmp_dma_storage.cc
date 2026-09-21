@@ -1109,9 +1109,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
 #else
 // Dummy entry points when NDMP not enabled.
 void DoNdmpStorageStatus(UaContext* ua, StorageResource*, char*)
-{
-  Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
-}
+{ Jmsg(ua->jcr, M_FATAL, 0, T_("NDMP protocol not supported\n")); }
 
 dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
                                      StorageResource*,
