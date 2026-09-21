@@ -593,6 +593,17 @@ DirectorPrompt DirectorConnection::CallStreamed(
           || signal == BNET_END_SELECT) {
         continue;
       }
+      if (signal == BNET_INFO_MSG || signal == BNET_WARNING_MSG
+          || signal == BNET_ERROR_MSG) {
+        // Because this session advertises color support, the director
+        // precedes InfoMsg()/WarningMsg()/ErrorMsg() text with a message-type
+        // signal (see UaContext::vSendMsg()). These are just type tags for
+        // the data that follows, not command-completion markers, so they
+        // must not be mistaken for the end of the response (e.g. the
+        // "Building directory tree..." message emitted while auto-selecting
+        // a restore job).
+        continue;
+      }
       if (signal == BNET_EOD || signal == BNET_EOD_POLL
           || signal == BNET_STATUS) {
         // Some interactive raw-mode commands emit an EOD separator before the

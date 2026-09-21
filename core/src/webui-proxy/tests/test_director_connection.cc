@@ -238,6 +238,52 @@ TEST(DirectorConnection, ReportsSelectionStartWhileStreaming)
   connection.fd_ = -1;
 }
 
+TEST(DirectorConnection, TreatsMessageTypeSignalsAsTransparentInCallStreamed)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+  connection.json_mode_ = false;
+
+  std::thread director([peer = sockets[1]]() {
+    int32_t header = 0;
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto payload_size = static_cast<size_t>(ntohl(header));
+    std::string payload(payload_size, '\0');
+    ASSERT_EQ(read(peer, payload.data(), payload.size()),
+              static_cast<ssize_t>(payload.size()));
+
+    // A color-capable session makes UaContext::InfoMsg()/WarningMsg()/
+    // ErrorMsg() precede their text with a message-type signal (see
+    // UaContext::vSendMsg()). These must not be mistaken for the end of the
+    // response while more data (e.g. "Building directory tree...") is still
+    // to follow.
+    WriteFrame(peer, "table\n");
+    WriteSignal(peer, BNET_INFO_MSG);
+    WriteFrame(peer, "Building directory tree ...\n");
+    WriteSignal(peer, BNET_WARNING_MSG);
+    WriteFrame(peer, "some warning\n");
+    WriteSignal(peer, BNET_ERROR_MSG);
+    WriteFrame(peer, "some error\n");
+    WriteSignal(peer, BNET_SUB_PROMPT);
+    close(peer);
+  });
+
+  std::string streamed;
+  const auto prompt = connection.CallStreamed(
+      "restore", [&](std::string_view chunk) { streamed.append(chunk); });
+
+  EXPECT_EQ(streamed,
+            "table\nBuilding directory tree ...\nsome warning\nsome error\n");
+  EXPECT_EQ(prompt, DirectorPrompt::Sub);
+
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
 TEST(DirectorConnection, UsesCompatibleDirectorIdentityResponse)
 {
   int sockets[2] = {-1, -1};
