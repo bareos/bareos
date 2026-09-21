@@ -1299,7 +1299,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
     // Start conversation with Reading Storage daemon
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                me->SDConnectTimeout, true)) {
       goto bail_out;
     }
 
@@ -1308,7 +1309,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
     // Start conversation with Writing Storage daemon
     mig_jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
-    if (!ConnectToStorageDaemon(mig_jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(mig_jcr, mig_jcr->dir_impl->res.write_storage,
+                                10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
 
@@ -1337,7 +1339,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     mig_jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.write_storage, 10,
+                                me->SDConnectTimeout, true)) {
       FreePairedStorage(jcr);
       return false;
     }

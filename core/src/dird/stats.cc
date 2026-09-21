@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -188,7 +188,7 @@ extern "C" void* statistics_thread(void*)
         }
 
         jcr->dir_impl->res.read_storage = store;
-        if (!ConnectToStorageDaemon(jcr, 2, 1, false)) { continue; }
+        if (!ConnectToStorageDaemon(jcr, store, 2, 1, false)) { continue; }
 
         StorageId = store->StorageId;
         sd = jcr->store_bsock;

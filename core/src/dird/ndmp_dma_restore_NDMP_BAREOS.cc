@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -418,7 +418,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                me->SDConnectTimeout, true)) {
       goto cleanup;
     }
     sd = jcr->store_bsock;

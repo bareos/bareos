@@ -91,18 +91,12 @@ static void TerminateAndCloseJcrStoreSocket(JobControlRecord* jcr)
 }
 
 bool ConnectToStorageDaemon(JobControlRecord* jcr,
+                            StorageResource* store,
                             int retry_interval,
                             int max_retry_time,
                             bool verbose)
 {
   if (jcr->store_bsock) { return true; /* already connected */ }
-
-  StorageResource* store;
-  if (jcr->dir_impl->res.write_storage) {
-    store = jcr->dir_impl->res.write_storage;
-  } else {
-    store = jcr->dir_impl->res.read_storage;
-  }
 
   if (!store) {
     Dmsg0(200, "ConnectToStorageDaemon: Storage resource pointer is invalid\n");
@@ -175,7 +169,8 @@ BareosSocket* open_sd_bsock(UaContext* ua)
     ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d ...\n"),
                 store->resource_name_, store->address, store->SDport);
     /* the next call will set ua->jcr->store_bsock */
-    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(ua->jcr, store, 10, me->SDConnectTimeout,
+                                true)) {
       ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
       return nullptr;
     }
@@ -596,7 +591,8 @@ bool CancelStorageDaemonJob(UaContext* ua, StorageResource* store, char* JobId)
   control_jcr->dir_impl->res.write_storage = store;
 
   /* the next call will set control_jcr->store_bsock */
-  if (!ConnectToStorageDaemon(control_jcr, 10, me->SDConnectTimeout, true)) {
+  if (!ConnectToStorageDaemon(control_jcr, store, 10, me->SDConnectTimeout,
+                              true)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }
@@ -621,30 +617,29 @@ bool CancelStorageDaemonJob(UaContext* ua,
                             JobControlRecord* jcr,
                             bool interactive)
 {
+  StorageResource* store = nullptr;
+
   if (!ua->jcr->dir_impl->res.write_storage_list) {
     if (jcr->dir_impl->res.read_storage_list) {
-      CopyWstorage(ua->jcr, jcr->dir_impl->res.read_storage_list,
-                   T_("Job resource"));
+      store = jcr->dir_impl->res.read_storage_list->first();
     } else {
-      CopyWstorage(ua->jcr, jcr->dir_impl->res.write_storage_list,
-                   T_("Job resource"));
+      store = jcr->dir_impl->res.write_storage_list->first();
     }
   } else {
-    UnifiedStorageResource store;
     if (jcr->dir_impl->res.read_storage_list) {
-      store.store = jcr->dir_impl->res.read_storage;
+      store = jcr->dir_impl->res.read_storage;
     } else {
-      store.store = jcr->dir_impl->res.write_storage;
+      store = jcr->dir_impl->res.write_storage;
     }
-    if (!store.store) {
-      Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
-      return false;
-    }
-    SetWstorage(ua->jcr, &store);
+  }
+
+  if (!store) {
+    Dmsg0(200, "CancelStorageDaemonJob: No storage resource pointer set\n");
+    return false;
   }
 
   /* the next call will set ua->jcr->store_bsock */
-  if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 10, me->SDConnectTimeout, true)) {
     if (interactive) {
       ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     }
@@ -703,7 +698,8 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   }
 
   /* the next call will set ua->jcr->store_bsock */
-  if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 10, me->SDConnectTimeout,
+                              false)) {
     ua->SendMsg(T_("\nFailed to connect to Storage daemon %s.\n====\n"),
                 store->resource_name_);
     return;
