@@ -164,7 +164,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, store, 10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
     sd = jcr->store_bsock;

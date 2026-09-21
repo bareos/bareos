@@ -908,7 +908,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return true;
   }
@@ -1139,7 +1139,7 @@ static void DoStorageSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return;
   }
@@ -1578,7 +1578,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }

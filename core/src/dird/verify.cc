@@ -234,7 +234,8 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_VOLUME_TO_CATALOG:
       // Start conversation with Storage daemon
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                  me->SDConnectTimeout, true)) {
         return false;
       }
       sd = jcr->store_bsock;
