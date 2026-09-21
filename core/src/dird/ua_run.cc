@@ -40,6 +40,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "dird/ua_tree.h"
 #include "dird/ua_tree_browser.h"
 #include "dird/ua_tree_browser_internal.h"
 #include "dird/ua_run.h"
@@ -939,6 +940,7 @@ enum class RestoreOptionAction
   kStorage,
   kJobId,
   kRestoreJob,
+  kBrowseFiles,
 };
 
 enum class BackupOptionAction
@@ -1149,6 +1151,10 @@ static std::vector<RestoreOptionRow> BuildRestoreOptionRows(
                       : T_("*None*")});
   rows.push_back({RestoreOptionAction::kWhere, T_("Where [b: browse]"),
                   FormatRestoreWhereDisplay(jcr, rc)});
+  if (jcr->dir_impl->restore_tree_root) {
+    rows.push_back({RestoreOptionAction::kBrowseFiles, T_("Files"),
+                    T_("press Enter to change the selected files")});
+  }
   rows.push_back({RestoreOptionAction::kRelocation, T_("File Relocation"),
                   jcr->RegexWhere ? jcr->RegexWhere : T_("not configured"),
                   false});
@@ -3298,10 +3304,11 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
     AddPrompt(ua, T_("Run now"));          /* 0 */
     AddPrompt(ua, T_("Restore Client"));   /* 1 */
     AddPrompt(ua, T_("Where"));            /* 2 */
-    AddPrompt(ua, T_("File Relocation"));  /* 3 */
-    AddPrompt(ua, T_("Replace Policy"));   /* 4 */
-    AddPrompt(ua, T_("Plugin Options"));   /* 5 */
-    AddPrompt(ua, T_("Advanced Options")); /* 6 */
+    AddPrompt(ua, T_("Files"));            /* 3 */
+    AddPrompt(ua, T_("File Relocation"));  /* 4 */
+    AddPrompt(ua, T_("Replace Policy"));   /* 5 */
+    AddPrompt(ua, T_("Plugin Options"));   /* 6 */
+    AddPrompt(ua, T_("Advanced Options")); /* 7 */
   }
   int selected = DoPrompt(ua, "",
                           advanced ? T_("Select advanced restore option")
@@ -3315,11 +3322,11 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
            RestoreOptionAction::kStorage,  RestoreOptionAction::kRestoreJob};
     return static_cast<int>(kAdvancedActions[selected]);
   }
-  static constexpr RestoreOptionAction kMainActions[]
-      = {RestoreOptionAction::kRunNow,      RestoreOptionAction::kRestoreClient,
-         RestoreOptionAction::kWhere,       RestoreOptionAction::kRelocation,
-         RestoreOptionAction::kReplace,     RestoreOptionAction::kPluginOptions,
-         RestoreOptionAction::kAdvancedMenu};
+  static constexpr RestoreOptionAction kMainActions[] = {
+      RestoreOptionAction::kRunNow,        RestoreOptionAction::kRestoreClient,
+      RestoreOptionAction::kWhere,         RestoreOptionAction::kBrowseFiles,
+      RestoreOptionAction::kRelocation,    RestoreOptionAction::kReplace,
+      RestoreOptionAction::kPluginOptions, RestoreOptionAction::kAdvancedMenu};
   return static_cast<int>(kMainActions[selected]);
 }
 
@@ -3389,6 +3396,36 @@ static int ModifyRestoreParameters(UaContext* ua,
         goto try_again;
       }
       break;
+    case RestoreOptionAction::kBrowseFiles:
+      if (jcr->dir_impl->restore_tree_root) {
+        TreeContext tree;
+        tree.root = jcr->dir_impl->restore_tree_root;
+        tree.ua = ua;
+        // Thread the current Plugin Options value through so the
+        // reopened browser's Plugin Options pane starts from (and can
+        // update) the same value shown in the Restore Options frame,
+        // instead of losing the ability to edit it entirely.
+        std::string plugin_options = jcr->dir_impl->plugin_options
+                                         ? jcr->dir_impl->plugin_options
+                                         : "";
+        tree.plugin_options_out = &plugin_options;
+        UserSelectFilesFromTree(&tree);
+        if (plugin_options
+            != (jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
+                                              : "")) {
+          if (jcr->dir_impl->plugin_options) {
+            free(jcr->dir_impl->plugin_options);
+            jcr->dir_impl->plugin_options = nullptr;
+          }
+          if (!plugin_options.empty()) {
+            jcr->dir_impl->plugin_options = strdup(plugin_options.c_str());
+          }
+        }
+      } else {
+        ua->SendMsg(
+            T_("No selected file tree is available for this restore.\n"));
+      }
+      goto try_again;
     case RestoreOptionAction::kRelocation:
       if (TreeBrowserSupported(ua)) {
         SelectRelocationVisual(ua, jcr);
