@@ -560,6 +560,23 @@ std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows)
   return {tree_rows, plugin_rows};
 }
 
+size_t RowOffsetForParent(bool has_parent) { return has_parent ? 1 : 0; }
+
+size_t DefaultCursorFor(size_t row_offset, size_t child_row_count)
+{
+  return child_row_count == 0 ? 0 : row_offset;
+}
+
+bool IsParentRowCursor(size_t cursor, size_t row_offset)
+{
+  return row_offset > 0 && cursor == 0;
+}
+
+size_t DisplayedCursorToChildIndex(size_t cursor, size_t row_offset)
+{
+  return cursor - row_offset;
+}
+
 std::vector<std::string> BuildPluginOptionsRowLabels(
     const directordaemon::restore_plugin_hints::PluginOptionsBlock& block)
 {
@@ -722,6 +739,8 @@ using tree_browser_internal::BuildPluginOptionsRowLabels;
 using tree_browser_internal::BuildPluginOptionsTabBar;
 using tree_browser_internal::CaseFoldForSearch;
 using tree_browser_internal::ComputePluginOptionsRowWindow;
+using tree_browser_internal::DefaultCursorFor;
+using tree_browser_internal::DisplayedCursorToChildIndex;
 using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
@@ -733,6 +752,7 @@ using tree_browser_internal::IsEndKey;
 using tree_browser_internal::IsEnterKey;
 using tree_browser_internal::IsHomeKey;
 using tree_browser_internal::IsNextRowKey;
+using tree_browser_internal::IsParentRowCursor;
 using tree_browser_internal::IsPreviousRowKey;
 using tree_browser_internal::IsScrollLeftKey;
 using tree_browser_internal::IsScrollRightKey;
@@ -763,6 +783,7 @@ using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::PluginOptionsRowWindow;
 using tree_browser_internal::RemoveLastUtf8Character;
 using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::RowOffsetForParent;
 using tree_browser_internal::SplitTreeAndPluginRows;
 using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::SummarizePluginNames;
@@ -1054,6 +1075,21 @@ class TreeBrowser {
   {
     return plugin_options_blocks_[plugin_options_active_block_];
   }
+  // The tree pane shows a synthetic ".." row before the real child rows
+  // whenever the current directory has a parent, so the user can jump up
+  // a level without needing the Backspace shortcut. HasParentRow()/
+  // RowOffset() translate between `cursor_`'s position in the *displayed*
+  // list (which may include that synthetic row at index 0) and the real
+  // index into `rows_`.
+  bool HasParentRow() const { return tree_->node->parent != nullptr; }
+  size_t RowOffset() const { return RowOffsetForParent(HasParentRow()); }
+  // Where the cursor should land by default when (re-)entering a
+  // directory: on the first real child if there is one, otherwise on the
+  // synthetic ".." row (or 0 if there is no parent and no children).
+  size_t DefaultCursor() const
+  {
+    return DefaultCursorFor(RowOffset(), rows_.size());
+  }
   // Number of rows in the active block's editor (name row + option rows
   // + the trailing "+ add option" row).
   size_t PluginOptionsRowCount() const
@@ -1196,11 +1232,12 @@ void TreeBrowser::SyncAfterClassicCommand()
   // way, but only reset the cursor if the directory itself changed.
   if (tree_->node != rows_dir_) {
     RebuildRows();
-    cursor_ = 0;
+    cursor_ = DefaultCursor();
   } else {
     rows_ = ChildRows(tree_->node);
-    if (cursor_ >= rows_.size()) {
-      cursor_ = rows_.empty() ? 0 : rows_.size() - 1;
+    size_t visible_total = rows_.size() + RowOffset();
+    if (cursor_ >= visible_total) {
+      cursor_ = visible_total > 0 ? visible_total - 1 : 0;
     }
   }
   InvalidateEstimate();
@@ -1211,7 +1248,7 @@ void TreeBrowser::EnterDirectory(tree_node* node)
   if (!TreeNodeHasChild(node)) { return; }
   tree_->node = node;
   RebuildRows();
-  cursor_ = 0;
+  cursor_ = DefaultCursor();
   tree_horizontal_offset_ = 0;
 }
 
@@ -1222,14 +1259,19 @@ void TreeBrowser::GoToParent()
   tree_->node = tree_->node->parent;
   RebuildRows();
   auto it = std::find(rows_.begin(), rows_.end(), previous);
-  cursor_ = it != rows_.end() ? static_cast<size_t>(it - rows_.begin()) : 0;
+  cursor_ = it != rows_.end()
+                ? static_cast<size_t>(it - rows_.begin()) + RowOffset()
+                : DefaultCursor();
   tree_horizontal_offset_ = 0;
 }
 
 void TreeBrowser::ToggleMarkCurrent()
 {
-  if (cursor_ >= rows_.size()) { return; }
-  tree_node* node = rows_[cursor_];
+  size_t offset = RowOffset();
+  if (cursor_ < offset) { return; }  // cursor is on the synthetic ".." row
+  size_t index = cursor_ - offset;
+  if (index >= rows_.size()) { return; }
+  tree_node* node = rows_[index];
   bool extract = !node->extract;
   int changed = SetExtract(ua_, node, tree_, extract);
   status_line_ = extract ? "Marked " : "Unmarked ";
@@ -1255,7 +1297,9 @@ void TreeBrowser::JumpToSearchMatch(tree_node* node)
   tree_->node = node->parent ? node->parent : tree_->root;
   RebuildRows();
   auto it = std::find(rows_.begin(), rows_.end(), node);
-  cursor_ = it != rows_.end() ? static_cast<size_t>(it - rows_.begin()) : 0;
+  cursor_ = it != rows_.end()
+                ? static_cast<size_t>(it - rows_.begin()) + RowOffset()
+                : DefaultCursor();
   showing_search_results_ = false;
 }
 
@@ -1563,17 +1607,29 @@ std::string TreeBrowser::RenderPanel() const
     if (node->extract || node->extract_descendant) { marked++; }
   }
 
+  size_t row_offset = RowOffset();
+  size_t visible_total = rows_.size() + row_offset;
+
   size_t first = cursor_ > max_visible / 2 ? cursor_ - max_visible / 2 : 0;
-  if (!rows_.empty()) {
-    first = std::min(first, rows_.size() - std::min(rows_.size(), max_visible));
+  if (visible_total > 0) {
+    first
+        = std::min(first, visible_total - std::min(visible_total, max_visible));
   }
-  size_t last = std::min(rows_.size(), first + max_visible);
+  size_t last = std::min(visible_total, first + max_visible);
 
   for (size_t row = 0; row < max_visible; ++row) {
     size_t i = first + row;
     if (i < last) {
-      tree_node* node = rows_[i];
       bool highlighted = (i == cursor_);
+      if (IsParentRowCursor(i, row_offset)) {
+        // Synthetic ".." row: lets the user go up one directory without
+        // needing the Backspace shortcut.
+        std::string entry = highlighted ? "> " : "  ";
+        entry += "  ..";
+        out += FrameLine(width, entry, color, highlighted, ' ');
+        continue;
+      }
+      tree_node* node = rows_[DisplayedCursorToChildIndex(i, row_offset)];
       std::string entry = highlighted ? "> " : "  ";
       entry += MarkTag(node);
       entry += TreeNodeHasChild(node) ? "/" : " ";
@@ -1583,7 +1639,7 @@ std::string TreeBrowser::RenderPanel() const
         entry = AlignTextColumns(entry, NodeDetail(ua_, node), width - 2);
       }
       out += FrameLine(width, entry, color, highlighted, MarkTag(node)[0]);
-    } else if (rows_.empty() && row == 0) {
+    } else if (visible_total == 0 && row == 0) {
       out += FrameLine(width, "  (empty directory)", color);
     } else {
       out += FrameLine(width, "", color);
@@ -1750,9 +1806,9 @@ std::string TreeBrowser::RenderPanel() const
             + EstimateStatus(estimate_calculated_, estimate_stale_,
                              estimated_bytes_);
   status += " | Column: " + std::to_string(tree_horizontal_offset_ + 1);
-  if (!rows_.empty()) {
+  if (visible_total > 0) {
     status += " | Showing " + std::to_string(first + 1) + "-"
-              + std::to_string(last) + " of " + std::to_string(rows_.size());
+              + std::to_string(last) + " of " + std::to_string(visible_total);
   }
   if (split) {
     status += plugin_pane_focused_ ? " | Focus: Plugin Options"
@@ -2429,7 +2485,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     if (cursor_ > 0) { cursor_--; }
     tree_horizontal_offset_ = 0;
   } else if (IsNextRowKey(key)) {
-    if (cursor_ + 1 < rows_.size()) { cursor_++; }
+    if (cursor_ + 1 < rows_.size() + RowOffset()) { cursor_++; }
     tree_horizontal_offset_ = 0;
   } else if (IsScrollLeftKey(key)) {
     tree_horizontal_offset_
@@ -2445,7 +2501,12 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
   } else if (IsEndKey(key)) {
     tree_horizontal_offset_ = TreeHorizontalLimit();
   } else if (IsEnterKey(key)) {
-    if (cursor_ < rows_.size()) { EnterDirectory(rows_[cursor_]); }
+    if (IsParentRowCursor(cursor_, RowOffset())) {
+      GoToParent();
+    } else {
+      size_t index = DisplayedCursorToChildIndex(cursor_, RowOffset());
+      if (index < rows_.size()) { EnterDirectory(rows_[index]); }
+    }
   } else if (key == kKeyBackspace) {
     GoToParent();
   } else if (key == kKeySpace || key == "key:text:m") {

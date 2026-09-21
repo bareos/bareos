@@ -355,6 +355,58 @@ TEST(TreeBrowserRendering, SplitTreeAndPluginRowsAddsUpToTheTotal)
   }
 }
 
+TEST(TreeBrowserRendering, RowOffsetForParentIsOneOnlyWithParent)
+{
+  using directordaemon::tree_browser_internal::RowOffsetForParent;
+  EXPECT_EQ(RowOffsetForParent(false), size_t{0});
+  EXPECT_EQ(RowOffsetForParent(true), size_t{1});
+}
+
+TEST(TreeBrowserRendering, DefaultCursorSkipsSyntheticRowWhenChildrenExist)
+{
+  using directordaemon::tree_browser_internal::DefaultCursorFor;
+  // At the root (row_offset == 0) the default cursor is always on the
+  // first child, if any.
+  EXPECT_EQ(DefaultCursorFor(/*row_offset=*/0, /*child_row_count=*/3),
+            size_t{0});
+  // With a parent (row_offset == 1) and existing children, land on the
+  // first real child (index 1 in the displayed list), skipping "..".
+  EXPECT_EQ(DefaultCursorFor(/*row_offset=*/1, /*child_row_count=*/3),
+            size_t{1});
+}
+
+TEST(TreeBrowserRendering, DefaultCursorLandsOnParentRowWhenEmpty)
+{
+  using directordaemon::tree_browser_internal::DefaultCursorFor;
+  // An empty directory with a parent: index 0 is the synthetic ".." row
+  // (there are no children to offset past), so the cursor lands there.
+  EXPECT_EQ(DefaultCursorFor(/*row_offset=*/1, /*child_row_count=*/0),
+            size_t{0});
+  // An empty root directory: nothing to land on but index 0.
+  EXPECT_EQ(DefaultCursorFor(/*row_offset=*/0, /*child_row_count=*/0),
+            size_t{0});
+}
+
+TEST(TreeBrowserRendering, IsParentRowCursorOnlyTrueAtIndexZeroWithOffset)
+{
+  using directordaemon::tree_browser_internal::IsParentRowCursor;
+  EXPECT_TRUE(IsParentRowCursor(/*cursor=*/0, /*row_offset=*/1));
+  EXPECT_FALSE(IsParentRowCursor(/*cursor=*/1, /*row_offset=*/1));
+  // No parent row exists at the root, so index 0 is a real child there.
+  EXPECT_FALSE(IsParentRowCursor(/*cursor=*/0, /*row_offset=*/0));
+}
+
+TEST(TreeBrowserRendering, DisplayedCursorToChildIndexSubtractsOffset)
+{
+  using directordaemon::tree_browser_internal::DisplayedCursorToChildIndex;
+  EXPECT_EQ(DisplayedCursorToChildIndex(/*cursor=*/1, /*row_offset=*/1),
+            size_t{0});
+  EXPECT_EQ(DisplayedCursorToChildIndex(/*cursor=*/3, /*row_offset=*/1),
+            size_t{2});
+  EXPECT_EQ(DisplayedCursorToChildIndex(/*cursor=*/0, /*row_offset=*/0),
+            size_t{0});
+}
+
 TEST(PluginOptionsEditorRendering, RowLabelsShowNamePlaceholderWhenEmpty)
 {
   PluginOptionsBlock block;
