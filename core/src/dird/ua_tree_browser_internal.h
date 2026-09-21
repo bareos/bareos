@@ -244,6 +244,32 @@ std::string BuildPluginOptionsAdvertisement(
 // the tree and 75% for the options editor.
 std::pair<size_t, size_t> SplitTreeAndPluginRows(size_t total_rows);
 
+// The tree browser shows a synthetic ".." row before the real child
+// rows whenever the current directory has a parent, letting the user
+// jump up a level without needing the Backspace shortcut. These
+// functions translate between a cursor position in the *displayed* list
+// (which may include that synthetic row at index 0) and a real index
+// into the list of real child rows.
+
+// Number of displayed rows taken up by the synthetic ".." row: 1 when
+// the current directory has a parent, 0 (root directory) otherwise.
+size_t RowOffsetForParent(bool has_parent);
+
+// Where the cursor should land by default when (re-)entering a
+// directory: on the first real child row if there is one, otherwise on
+// the synthetic ".." row (or 0 if there is no parent and no children).
+size_t DefaultCursorFor(size_t row_offset, size_t child_row_count);
+
+// True when the given displayed cursor position refers to the synthetic
+// ".." row rather than a real child row.
+bool IsParentRowCursor(size_t cursor, size_t row_offset);
+
+// Maps a displayed cursor position to the corresponding index into the
+// real child rows. Only meaningful when !IsParentRowCursor(cursor,
+// row_offset); the caller is still responsible for bounds-checking the
+// result against the real row count.
+size_t DisplayedCursorToChildIndex(size_t cursor, size_t row_offset);
+
 // Decides what plain text (no ANSI styling) the Plugin Options input
 // line should display: the current input value, or -- when it's empty
 // -- a placeholder hinting that the field is editable and giving an
