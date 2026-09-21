@@ -859,7 +859,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               client->resource_name_, client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return true;
   }
@@ -1193,7 +1194,8 @@ static void DoClientSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               client->resource_name_, client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return;
   }
@@ -1899,7 +1901,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
-  if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return false;
   }

@@ -181,7 +181,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       jcr->dir_impl->keep_sd_auth_key
           = true; /* don't clear the sd_auth_key now */
 
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);

@@ -258,7 +258,8 @@ bool DoVerify(JobControlRecord* jcr)
 
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);
@@ -276,7 +277,8 @@ bool DoVerify(JobControlRecord* jcr)
     default:
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);

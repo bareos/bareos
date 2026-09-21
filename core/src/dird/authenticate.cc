@@ -62,7 +62,7 @@ static const int debuglevel = 50;
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
 
-bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
 {
   if (jcr->authenticated) { return true; }
 
@@ -74,7 +74,6 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   if (!myself) { return false; }
 
   auto* fd = jcr->file_bsock;
-  auto* client = jcr->dir_impl->res.client;
   fd->SetEnableKtls(myself->enable_ktls);
 
   using global_resource::Type;
