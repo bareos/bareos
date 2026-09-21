@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,9 +30,8 @@ class UaContext;
 bool AuthenticateWithStorageDaemon(BareosSocket* sd,
                                    JobControlRecord* jcr,
                                    StorageResource* store);
-bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name);
-
 } /* namespace directordaemon */
 
 #endif  // BAREOS_DIRD_AUTHENTICATE_H_
