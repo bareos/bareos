@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,12 +28,16 @@
 namespace directordaemon {
 
 bool ConnectToFileDaemon(JobControlRecord* jcr,
+                         ClientResource* res,
                          int retry_interval,
                          int max_retry_time,
                          bool verbose,
                          UaContext* ua = nullptr);
-void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr);
-void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua);
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr,
+                                         ClientResource* client);
+void SetConnectionHandshakeMode(JobControlRecord* jcr,
+                                ClientResource* client,
+                                UaContext* ua);
 int SendJobInfoToFileDaemon(JobControlRecord* jcr);
 bool SendIncludeExcludeLists(JobControlRecord* jcr);
 bool SendLevelCommand(JobControlRecord* jcr);
@@ -62,11 +66,11 @@ void* HandleFiledConnection(connection_pool& connections,
 
 connection_pool& get_client_connections();
 bool IsConnectingToClientAllowed(ClientResource* res);
-bool IsConnectingToClientAllowed(JobControlRecord* jcr);
-bool IsClientTlsRequired(JobControlRecord* jcr);
 bool IsConnectFromClientAllowed(ClientResource* res);
-bool IsConnectFromClientAllowed(JobControlRecord* jcr);
-bool UseWaitingClient(JobControlRecord* jcr_job, int timeout);
+bool IsClientTlsRequired(ClientResource* res);
+bool UseWaitingClient(JobControlRecord* jcr_job,
+                      ClientResource* client,
+                      int timeout);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_FD_CMDS_H_

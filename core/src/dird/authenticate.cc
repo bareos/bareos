@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -120,12 +120,11 @@ bool AuthenticateWithStorageDaemon(BareosSocket* sd,
   return true;
 }
 
-bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
 {
   if (jcr->authenticated) { return true; }
 
   BareosSocket* fd = jcr->file_bsock;
-  ClientResource* client = jcr->dir_impl->res.client;
 
   if (jcr->dir_impl->connection_handshake_try_
       == ClientConnectionHandshakeMode::kTlsFirst) {

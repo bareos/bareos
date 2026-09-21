@@ -540,7 +540,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (!StartStorageDaemonJob(jcr)) { return false; }
 
   jcr->setJobStatusWithPriorityCheck(JS_WaitFD);
-  if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+  if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                           me->FDConnectTimeout, true)) {
     TerminateBackupWithError(jcr);
     return false;
   }
