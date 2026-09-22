@@ -111,7 +111,7 @@ htableImpl::htableImpl(size_t t_loffset, int tsize)
 
 void htableImpl::init(int tsize)
 {
-  memset(this, 0, sizeof(htableImpl));
+  memset(static_cast<void*>(this), 0, sizeof(htableImpl));
   if (tsize < 31) { tsize = 31; }
   tsize >>= 2;
 
@@ -230,7 +230,8 @@ void htableImpl::grow_table()
   }
 
   free(table);
-  memcpy(this, big, sizeof(htableImpl)); /* Move everything across */
+  memcpy(static_cast<void*>(this), static_cast<const void*>(big),
+         sizeof(htableImpl)); /* Move everything across */
   free(big);
 
   Dmsg0(100, "Exit grow.\n");
