@@ -321,8 +321,8 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
             SelectionInputResult::kContinue);
   EXPECT_EQ(selection.Format("Choices:\n", "Select", 20, true, true),
             "Choices:\n"
-            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
-            "filter):\n"
+            "Select (Arrows move, Enter selects, Esc/. cancels;\n"
+            "type a number/text to filter, Backspace edits, Space inserts):\n"
             "Filter: b\n"
             "> \033[97;44m2: Beta\033[0m\n");
   EXPECT_EQ(selection.ApplyInput("key:enter"), SelectionInputResult::kSelected);
@@ -340,16 +340,16 @@ TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
   InteractiveSelection selection(options);
 
   EXPECT_EQ(selection.Format("", "Select", 20, true, true),
-            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
-            "filter):\n"
+            "Select (Arrows move, Enter selects, Esc/. cancels;\n"
+            "type a number/text to filter, Backspace edits, Space inserts):\n"
             "> \033[97;44m1: Alpha\033[0m\n"
             "  2: Beta\n"
             "  3: Gamma\n");
 
   EXPECT_EQ(selection.ApplyInput("key:down"), SelectionInputResult::kContinue);
   EXPECT_EQ(selection.Format("", "Select", 20, true, true),
-            "Select (Up/Down/Left/Right, Enter, Esc, type a number or text to "
-            "filter):\n"
+            "Select (Arrows move, Enter selects, Esc/. cancels;\n"
+            "type a number/text to filter, Backspace edits, Space inserts):\n"
             "  1: Alpha\n"
             "> \033[97;44m2: Beta\033[0m\n"
             "  3: Gamma\n");
@@ -366,8 +366,8 @@ TEST(InteractiveSelection, SanitizesTerminalControls)
       = selection.Format("Header\033[2J\n", "Select\a", 20, true, true);
   EXPECT_EQ(output,
             "Header?[2J\n"
-            "Select? (Up/Down/Left/Right, Enter, Esc, type a number or text "
-            "to filter):\n"
+            "Select? (Arrows move, Enter selects, Esc/. cancels;\n"
+            "type a number/text to filter, Backspace edits, Space inserts):\n"
             "> \033[97;44m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
 }
 
@@ -461,7 +461,7 @@ TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
   const auto output = selection.Format("", "Select");
   EXPECT_NE(output.find("> 26: option 26\n"), std::string::npos);
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
-  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 23);
 }
 
 TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
@@ -483,8 +483,9 @@ TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
   const auto output = selection.Format("", "Select", /*max_visible_options=*/5);
   EXPECT_NE(output.find("> 26: option 26\n"), std::string::npos);
   EXPECT_NE(output.find("  ...\n"), std::string::npos);
-  // header line + leading "..." + 5 option lines + trailing "..." = 8 lines
-  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 8);
+  // Two help lines + leading "..." + 5 option lines + trailing "..." = 9
+  // lines.
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 9);
 }
 
 TEST(InteractiveSelection, RendersMultipleColumnsWhenWideEnough)
@@ -517,8 +518,8 @@ TEST(InteractiveSelection, RendersMultipleColumnsWhenWideEnough)
   auto first_newline = output.find('\n', first_option);
   EXPECT_GT(first_newline, third_option);
 
-  // header line + 4 option rows = 5 lines
-  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 5);
+  // Two help lines + 4 option rows = 6 lines.
+  EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 6);
 }
 
 TEST(InteractiveSelection, LeftRightNavigateBetweenColumns)

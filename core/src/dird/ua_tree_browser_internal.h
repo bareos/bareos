@@ -61,35 +61,54 @@ inline constexpr std::string_view kKeySpace = "key:space";
 inline constexpr std::string_view kKeyTextPrefix = "key:text:";
 inline constexpr std::string_view kResizePrefix = "resize:";
 
-inline constexpr const char* kRunDialogHelp
-    = "Enter: run/edit selected  e/Space: edit  Tab/Up/Down: select  "
-      "Left/Right: scroll/cycle  Esc/.: cancel";
-inline constexpr const char* kRestoreDialogHelp
-    = "Enter: run/edit/toggle  e/Space: edit  Tab/Up/Down: select  "
-      "Left/Right: scroll/advanced  b: browse Where  Esc/.: cancel";
-inline constexpr const char* kRelocationDialogHelp
-    = "Enter: apply/edit  e/Space: edit  Tab/Up/Down: select  "
-      "Left/Right: scroll/cycle  Esc/.: cancel";
-inline constexpr const char* kListDialogHelp
-    = "Enter: select  Tab/Up/Down: move  Esc/.: cancel";
-inline constexpr const char* kFieldEditorHelp
-    = "Left/Right: field  Up/Down: adjust  n: now  Enter: accept  "
-      "Esc/.: cancel";
+inline constexpr const char* kRunDialogHelpLine1
+    = "Enter Run/Edit  e/E/Space Edit  Tab/Down Next  Up/Backspace Previous";
+inline constexpr const char* kRunDialogHelpLine2
+    = "Left/Right Scroll/Cycle  Home/End First/Last  Esc/. Cancel";
+inline constexpr const char* kRestoreDialogHelpLine1
+    = "Enter Run/Edit/Toggle  e/E/Space Edit  Tab/Down Next  Up/Backspace Prev";
+inline constexpr const char* kRestoreDialogHelpLine2
+    = "Left/Right Scroll/Advanced  Home/End First/Last  b/B Browse Where";
+inline constexpr const char* kRelocationDialogHelpLine1
+    = "Enter Apply/Edit  e/E/Space Edit  Tab/Down Next  Up/Backspace Previous";
+inline constexpr const char* kRelocationDialogHelpLine2
+    = "Left/Right Scroll/Cycle  Home/End First/Last  Esc/. Cancel";
+inline constexpr const char* kListDialogHelpLine1
+    = "Enter Select  Tab/Down Next  Up/Backspace Previous";
+inline constexpr const char* kListDialogHelpLine2
+    = "Home/End First/Last  Esc/. Cancel";
+inline constexpr const char* kFieldEditorHelpLine1
+    = "Left/Right/Tab Next field  Backspace Previous  Home/End First/Last";
+inline constexpr const char* kFieldEditorHelpLine2
+    = "Up/Down Adjust  n/N Now  Enter Accept  Esc/. Cancel";
 inline constexpr const char* kBrowserHelpLine1
-    = "Enter Open  Left/Right Scroll  Space/m Mark  a All  u None";
+    = "Up/Down/Tab Move  Left/Right Scroll  Home/End Column edges";
 inline constexpr const char* kBrowserHelpLine2
-    = "e Estimate  i Info  l List  / Search  h Help  c Classic  d/r Done";
+    = "Enter Open/..  Backspace Parent  Space/m Mark  a All  u None";
+inline constexpr const char* kBrowserHelpLine3
+    = "e Estimate  i Info  l List  / Search  : Command  h/? Help";
+inline constexpr const char* kBrowserHelpLine4
+    = "p Hints  o Options  c Classic  d/r/q/Esc Done";
 inline constexpr const char* kSearchResultsHelpLine1
-    = "Up/Down Move  Left/Right Scroll  Home/End Edges";
+    = "Up/Down/Tab Move  Left/Right Scroll  Home/End Column edges";
 inline constexpr const char* kSearchResultsHelpLine2
-    = "Space Mark  Enter Go to file  Esc Return";
+    = "Space Mark  e Estimate  Enter Go to file  Esc Return";
 inline constexpr const char* kSelectedFilesHelpLine2
-    = "Space Unmark  Enter Go to file  l/Esc Return";
+    = "Space Unmark  e Estimate  Enter Go to file  l/Esc Return";
 inline constexpr const char* kTextInputHelp
     = "Type text  Backspace Delete  Enter Accept  Esc Cancel";
-inline constexpr const char* kDestinationBrowserHelp
-    = "Enter: open/use  Left/Right: scroll  PgUp/PgDn: page  /: search  "
-      "Esc/.: cancel";
+inline constexpr const char* kDialogTextInputHelp
+    = "Type text  Backspace Delete  Enter Accept  Esc/. Cancel";
+inline constexpr const char* kDestinationBrowserHelpLine1
+    = "Enter Open/Use  Tab/Down Next  Up Previous  Backspace Parent";
+inline constexpr const char* kDestinationBrowserHelpLine2
+    = "Left/Right Scroll  Home/End First/Last  PgUp/PgDn Page";
+inline constexpr const char* kDestinationBrowserHelpLine3
+    = "/ Search  Esc/. Clear search or cancel";
+inline constexpr const char* kDestinationSearchHelpLine1
+    = "Type substring/Space  Backspace Delete";
+inline constexpr const char* kDestinationSearchHelpLine2
+    = "Up/Down/Tab Move  PgUp/PgDn Page  Enter Accept  Esc/. Clear";
 
 inline bool IsEnterKey(std::string_view key) { return key == kKeyEnter; }
 inline bool IsCancelKey(std::string_view key)
