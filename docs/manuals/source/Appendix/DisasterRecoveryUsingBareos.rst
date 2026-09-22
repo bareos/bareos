@@ -472,7 +472,10 @@ and add the Run Script definition to the job intended to backup the data for a R
 Windows
 ~~~~~~~
 
-We support disaster recovery efforts on windows with the `barri-fd` Plugin.  See :ref:`BarriPlugin` for more information.
+We support disaster recovery efforts on windows with the `barri-fd` Plugin. A
+Computer running the Bareos Filedaemon with the `barri-fd` plugin can create a
+disaster recovery image out of the running Computer without interfering with the
+normal operation. See :ref:`BarriPlugin` for more information.
 
 
 .. _section-RestoreServer:
