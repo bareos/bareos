@@ -38,7 +38,7 @@ env:
   artifact_dir: "${{ github.workspace }}/artifacts"
 
 jobs:
-  build:
+  build_intel:
     name: Build MacOS Intel packages
     runs-on: macos-26-intel
     steps:
@@ -130,7 +130,7 @@ jobs:
         name: MacOS Packages
         path: ${{ env.artifact_dir }}
         retention-days: 1
-  build:
+  build_arm:
     name: Build MacOS ARM packages
     runs-on: macos-26
     steps:
