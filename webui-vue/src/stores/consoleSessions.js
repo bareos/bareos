@@ -365,8 +365,9 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
   }
 
   if (session.selectionActive) {
-    // Leaving interactive selection: return to the main screen buffer.
-    writeToTerminal(director, '\x1B[?1049l')
+    // Leaving interactive selection: return to the main screen buffer and
+    // start normal output on a fresh line.
+    writeToTerminal(director, '\x1B[?1049l\r\n')
   }
 
   session.selectionActive = false
@@ -492,7 +493,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   // their normal scrollback.
   function exitSelectionMode(session, director) {
     if (session.selectionActive) {
-      writeToTerminal(director, '\x1B[?1049l')
+      writeToTerminal(director, '\x1B[?1049l\r\n')
     }
     session.selectionActive = false
     session.selectionText = ''

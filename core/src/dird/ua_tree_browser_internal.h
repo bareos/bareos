@@ -22,6 +22,7 @@
 #ifndef BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 #define BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 
+#include <array>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -61,54 +62,138 @@ inline constexpr std::string_view kKeySpace = "key:space";
 inline constexpr std::string_view kKeyTextPrefix = "key:text:";
 inline constexpr std::string_view kResizePrefix = "resize:";
 
-inline constexpr const char* kRunDialogHelpLine1
-    = "Enter Run/Edit  e/E/Space Edit  Tab/Down Next  Up/Backspace Previous";
-inline constexpr const char* kRunDialogHelpLine2
-    = "Left/Right Scroll/Cycle  Home/End First/Last  Esc/. Cancel";
-inline constexpr const char* kRestoreDialogHelpLine1
-    = "Enter Run/Edit/Toggle  e/E/Space Edit  Tab/Down Next  Up/Backspace Prev";
-inline constexpr const char* kRestoreDialogHelpLine2
-    = "Left/Right Scroll/Advanced  Home/End First/Last  b/B Browse Where";
-inline constexpr const char* kRelocationDialogHelpLine1
-    = "Enter Apply/Edit  e/E/Space Edit  Tab/Down Next  Up/Backspace Previous";
-inline constexpr const char* kRelocationDialogHelpLine2
-    = "Left/Right Scroll/Cycle  Home/End First/Last  Esc/. Cancel";
-inline constexpr const char* kListDialogHelpLine1
-    = "Enter Select  Tab/Down Next  Up/Backspace Previous";
-inline constexpr const char* kListDialogHelpLine2
-    = "Home/End First/Last  Esc/. Cancel";
-inline constexpr const char* kFieldEditorHelpLine1
-    = "Left/Right/Tab Next field  Backspace Previous  Home/End First/Last";
-inline constexpr const char* kFieldEditorHelpLine2
-    = "Up/Down Adjust  n/N Now  Enter Accept  Esc/. Cancel";
-inline constexpr const char* kBrowserHelpLine1
-    = "Up/Down/Tab Move  Left/Right Scroll  Home/End Column edges";
-inline constexpr const char* kBrowserHelpLine2
-    = "Enter Open/..  Backspace Parent  Space/m Mark  a All  u None";
-inline constexpr const char* kBrowserHelpLine3
-    = "e Estimate  i Info  l List  / Search  : Command  h/? Help";
-inline constexpr const char* kBrowserHelpLine4
-    = "p Hints  o Options  c Classic  d/r/q/Esc Done";
-inline constexpr const char* kSearchResultsHelpLine1
-    = "Up/Down/Tab Move  Left/Right Scroll  Home/End Column edges";
-inline constexpr const char* kSearchResultsHelpLine2
-    = "Space Mark  e Estimate  Enter Go to file  Esc Return";
-inline constexpr const char* kSelectedFilesHelpLine2
-    = "Space Unmark  e Estimate  Enter Go to file  l/Esc Return";
+inline constexpr const char* kRunDialogFooter
+    = "Up/Down Move  Enter/e/Space Edit  Left/Right Adjust  h/? Help  Esc/. "
+      "Cancel";
+inline constexpr const char* kRestoreDialogFooter
+    = "Up/Down Move  Enter/e/Space Edit  Left/Right Adjust  h/? Help  Esc/. "
+      "Cancel";
+inline constexpr const char* kRelocationDialogFooter
+    = "Up/Down Move  Enter/e/Space Edit  Left/Right Adjust  h/? Help  Esc/. "
+      "Cancel";
+inline constexpr const char* kListDialogFooter
+    = "Up/Down Move  Enter Select  Home/End First/Last  h/? Help  Esc/. Cancel";
+inline constexpr const char* kFieldEditorFooter
+    = "Left/Right Field  Up/Down Adjust  Enter Accept  h/? Help  Esc/. Cancel";
+inline constexpr const char* kBrowserFooter
+    = "Arrows Move/Scroll  Enter Open  Space Mark  h/? Help  Esc Done";
+inline constexpr const char* kSearchResultsFooter
+    = "Arrows Move/Scroll  Space Mark  Enter Go  h/? Help  Esc Return";
+inline constexpr const char* kSelectedFilesFooter
+    = "Arrows Move/Scroll  Space Unmark  Enter Go  h/? Help  l/Esc Return";
+inline constexpr const char* kPluginHintsFooter
+    = "Up/Down Scroll  a All/Detected  o/Tab Options  h/? Help  p/Esc Return";
+inline constexpr const char* kPluginOptionsFooter
+    = "Up/Down Row  Left/Right Plugin  Enter Edit  h/? Help  Tab Files";
 inline constexpr const char* kTextInputHelp
     = "Type text  Backspace Delete  Enter Accept  Esc Cancel";
 inline constexpr const char* kDialogTextInputHelp
     = "Type text  Backspace Delete  Enter Accept  Esc/. Cancel";
-inline constexpr const char* kDestinationBrowserHelpLine1
-    = "Enter Open/Use  Tab/Down Next  Up Previous  Backspace Parent";
-inline constexpr const char* kDestinationBrowserHelpLine2
-    = "Left/Right Scroll  Home/End First/Last  PgUp/PgDn Page";
-inline constexpr const char* kDestinationBrowserHelpLine3
-    = "/ Search  Esc/. Clear search or cancel";
+inline constexpr const char* kDestinationBrowserFooter
+    = "Arrows Move/Scroll  Enter Open/Use  / Search  h/? Help  Esc/. Cancel";
 inline constexpr const char* kDestinationSearchHelpLine1
     = "Type substring/Space  Backspace Delete";
 inline constexpr const char* kDestinationSearchHelpLine2
     = "Up/Down/Tab Move  PgUp/PgDn Page  Enter Accept  Esc/. Clear";
+inline constexpr const char* kSelectionFooter
+    = "Arrows Move  Enter Select  Type Filter  h/? Help  Esc/. Cancel";
+
+inline constexpr std::array<std::string_view, 5> kRunDialogHelp = {
+    "Down/Tab: next row; Up/Backspace: previous row",
+    "Home/End: first/last row",
+    "Enter or e/E/Space: run, edit, toggle, or expand the selected row",
+    "Left/Right: adjust cycle values or scroll long values",
+    "Esc/.: cancel; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 6> kRestoreDialogHelp = {
+    "Down/Tab: next row; Up/Backspace: previous row",
+    "Home/End: first/last row",
+    "Enter or e/E/Space: run, edit, toggle, or expand the selected row",
+    "Left/Right: adjust priority/Advanced Options or scroll long values",
+    "b/B: browse destination while Where is selected; Esc/.: cancel",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kRelocationDialogHelp = {
+    "Down/Tab: next row; Up/Backspace: previous row",
+    "Home/End: first/last row",
+    "Enter or e/E/Space: apply, edit, or cycle the selected row",
+    "Left/Right: cycle relocation mode or scroll long values",
+    "Esc/.: cancel; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 4> kListDialogHelp = {
+    "Down/Tab: next row; Up/Backspace: previous row",
+    "Home/End: first/last row; Enter: select",
+    "Esc/.: cancel",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kFieldEditorHelp = {
+    "Left/Right/Tab: next field; Backspace: previous field",
+    "Home/End: first/last field; Up/Down: increase/decrease",
+    "n/N: set the start time to now",
+    "Enter: accept; Esc/.: cancel",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kDestinationBrowserHelp = {
+    "Up/Down/Tab: move; Backspace: parent directory",
+    "Left/Right: scroll names; Home/End: first/last row",
+    "PgUp/PgDn: move one page; Enter: open or use directory",
+    "/: search; Esc/.: clear search or cancel",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 9> kBrowserHelp = {
+    "Up/Down/Tab: move; Left/Right: scroll names",
+    "Home/End: first/last column; Enter: open directory or '..'",
+    "Backspace: parent directory",
+    "Space/m: mark; a: mark all; u: unmark all",
+    "l: list selections; e: estimate size; i: toggle details",
+    "/: search; :: one classic command; c: classic mode",
+    "p: plugin hints; o: focus Plugin Options; Tab: switch panes",
+    "d/r/q/Esc: finish file selection",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kSearchResultsHelp = {
+    "Up/Down/Tab: move; Left/Right: scroll paths",
+    "Home/End: first/last column; Space: mark/unmark",
+    "e: estimate size; Enter: go to matching file",
+    "Esc: return to files",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kSelectedFilesHelp = {
+    "Up/Down/Tab: move; Left/Right: scroll paths",
+    "Home/End: first/last column; Space: unmark selection",
+    "e: estimate size; Enter: go to selected file",
+    "l/Esc: return to files",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 4> kPluginHintsHelp = {
+    "Up/Down/Tab: scroll plugin hints",
+    "a: toggle all known hints or only detected plugins",
+    "o/Tab: focus Plugin Options; p/Esc: return to files",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 5> kPluginOptionsHelp = {
+    "Up/Down: move row; Left/Right: switch plugin tab",
+    "Enter: edit row; d: delete row/tab; n: add plugin tab",
+    "Tab: save and focus files; Esc: discard edits and focus files",
+    "r: finish file selection",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+inline constexpr std::array<std::string_view, 3> kPluginBooleanHelp = {
+    "Up/Down/Left/Right: toggle yes/no; Enter: confirm",
+    "Esc: return to option choices; Tab: save and focus files",
+    "h/?: open help; h/?/Enter/Esc/.: return from help",
+};
+
+inline bool IsHelpKey(std::string_view key)
+{
+  return key == "key:text:h" || key == "key:text:?";
+}
+
+inline bool IsHelpReturnKey(std::string_view key)
+{
+  return IsHelpKey(key) || key == kKeyEnter || key == kKeyCancel || key == "."
+         || key == "key:text:.";
+}
 
 inline bool IsEnterKey(std::string_view key) { return key == kKeyEnter; }
 inline bool IsCancelKey(std::string_view key)
