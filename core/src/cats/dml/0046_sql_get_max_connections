@@ -1,1 +1,1 @@
-SELECT 0
+SHOW max_connections

@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+
+export SQL_DDL_DIR="${current_test_directory}/bareos_25_db_2250_ddl"
+"${BAREOS_SCRIPTS_DIR}"/setup
+unset SQL_DDL_DIR
+
+"${POSTGRES_BIN_PATH}/psql" -v ON_ERROR_STOP=1 "${db_name}" <<'SQL'
+INSERT INTO public.basefiles (JobId, FileId, FileIndex, BaseJobId)
+VALUES (1, 1, 1, 1);
+SQL
+
+set +e
+update_output=$("${BAREOS_SCRIPTS_DIR}/update_bareos_tables" -f 2>&1)
+update_rc=$?
+set -e
+
+if [ "${update_rc}" -eq 0 ]; then
+  echo "update_bareos_tables unexpectedly succeeded"
+  exit 1
+fi
+
+if ! grep -Fq \
+  "Refusing to drop non-empty basefiles table during 2250 to 2260 migration" \
+  <<<"${update_output}"; then
+  echo "update_bareos_tables failed, but not for the expected reason"
+  echo "${update_output}"
+  exit 1
+fi
