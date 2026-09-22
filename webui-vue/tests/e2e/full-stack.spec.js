@@ -113,19 +113,9 @@ async function openConsole(page) {
   const consoleOutput = page.locator('[data-testid="console-output"]')
   await page.goto('/#/console-popup')
   await expect(consoleOutput).toBeVisible()
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      await expect(consoleOutput).toContainText('Connected to bareos-dir', {
-        timeout: 5000,
-      })
-      return consoleOutput
-    } catch {
-      await page.getByTitle('Reconnect').click()
-    }
-  }
-
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  await expect(page.getByTestId('console-status-label')).toContainText(
+    'Connected'
+  )
   return consoleOutput
 }
 
@@ -481,7 +471,9 @@ test('opens the console and runs a raw command through the proxied director conn
   await login(page)
 
   const consoleOutput = await openConsole(page)
-  await page.getByText('status director', { exact: true }).click()
+  await consoleOutput.click()
+  await page.keyboard.type('status director')
+  await page.keyboard.press('Enter')
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
