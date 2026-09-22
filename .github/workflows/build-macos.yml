@@ -124,10 +124,10 @@ jobs:
         sudo launchctl print system/com.bareos.bareos-fd | grep "state = running"
         sudo launchctl stop com.bareos.bareos-fd
 
-    - name: Upload package
+    - name: Upload Intel package
       uses: actions/upload-artifact@v4
       with:
-        name: MacOS Packages
+        name: MacOS Intel Packages
         path: ${{ env.artifact_dir }}
         retention-days: 1
   build_arm:
@@ -216,9 +216,9 @@ jobs:
         sudo launchctl print system/com.bareos.bareos-fd | grep "state = running"
         sudo launchctl stop com.bareos.bareos-fd
 
-    - name: Upload package
+    - name: Upload ARM package
       uses: actions/upload-artifact@v4
       with:
-        name: MacOS Packages
+        name: MacOS ARM Packages
         path: ${{ env.artifact_dir }}
         retention-days: 1
