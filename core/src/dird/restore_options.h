@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,11 @@
 #include <string>
 
 namespace directordaemon::restore_options {
+
+inline constexpr std::string_view kDefaultRelocationExamplePath
+    = "/home/alice/documents/report.pdf";
+inline constexpr std::string_view kDefaultCustomRegexWhere
+    = "!^/home/!/restore/home/!i";
 
 enum class ReplacePolicy
 {
@@ -66,6 +71,8 @@ std::string ReplacePolicyName(ReplacePolicy policy);
 std::optional<ReplacePolicy> ParseReplacePolicy(std::string_view policy);
 std::string QuoteDirectorString(std::string_view value);
 std::string BuildRestoreRunCommand(const RestoreRunOptions& options);
+std::optional<std::string> PreviewRegexWhere(std::string_view regex_where,
+                                             std::string_view path);
 
 }  // namespace directordaemon::restore_options
 

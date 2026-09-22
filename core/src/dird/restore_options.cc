@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,8 @@
 #include "dird/restore_options.h"
 
 #include "include/bareos.h"
+#include "lib/alist.h"
+#include "lib/breg.h"
 
 #include <algorithm>
 #include <cctype>
@@ -121,6 +123,20 @@ std::string BuildRestoreRunCommand(const RestoreRunOptions& options)
 
   if (options.yes) { command += " yes"; }
   return command;
+}
+
+std::optional<std::string> PreviewRegexWhere(std::string_view regex_where,
+                                             std::string_view path)
+{
+  alist<BareosRegex*>* rules = get_bregexps(std::string(regex_where).c_str());
+  if (!rules) { return std::nullopt; }
+
+  char* result = nullptr;
+  ApplyBregexps(std::string(path).c_str(), rules, &result);
+  std::string preview = result ? result : std::string(path);
+  FreeBregexps(rules);
+  delete rules;
+  return preview;
 }
 
 }  // namespace directordaemon::restore_options

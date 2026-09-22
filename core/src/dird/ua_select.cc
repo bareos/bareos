@@ -284,13 +284,14 @@ std::string InteractiveSelection::Format(const std::string& header,
   output.append(SanitizeSelectionText(prompt, false));
   if (supports_cursor_selection) {
     output.append(
-        " (Up/Down/Left/Right, Enter, Esc, type a number or text to "
-        "filter):\n");
+        " (Arrows move, Enter selects, Esc/. cancels;\n"
+        "type a number/text to filter, Backspace edits, Space inserts):\n");
   } else {
     // The client cannot move the highlight with the cursor keys (see the
     // supports_cursor_selection doc comment in ua_select.h), so don't
     // advertise keys that will not do anything.
-    output.append(" (Enter, type a number or text to filter):\n");
+    output.append(
+        " (Enter selects, type a number/text to filter, . cancels):\n");
   }
   if (!filter_.empty()) {
     output.append("Filter: ");
@@ -1615,7 +1616,7 @@ int DoPrompt(UaContext* ua,
     // the WebUI console, batch/API mode, or an older bconsole).
     constexpr size_t kDefaultMaxVisibleOptions = 20;
     constexpr size_t kMinVisibleOptions = 3;
-    constexpr size_t kChromeLines = 5;
+    constexpr size_t kChromeLines = 6;
     auto compute_max_visible_options = [&] {
       if (ua->terminal_height <= 0) { return kDefaultMaxVisibleOptions; }
       size_t available

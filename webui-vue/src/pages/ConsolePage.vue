@@ -66,6 +66,25 @@
           class="console-terminal-mount"
           ref="terminalContainerEl"
         ></div>
+        <div
+          v-if="showReconnectOverlay"
+          data-testid="console-reconnect-overlay"
+          class="console-reconnect-overlay"
+          role="alert"
+          @click.stop
+        >
+          <q-icon name="link_off" size="2.5rem" />
+          <div class="text-subtitle1 text-weight-medium">
+            {{ reconnectOverlayMessage }}
+          </div>
+          <q-btn
+            data-testid="console-overlay-reconnect"
+            color="primary"
+            icon="refresh"
+            :label="t('Reconnect')"
+            @click="reconnectSelectedSession"
+          />
+        </div>
       </div>
 
       <!-- quick command chips -->
@@ -197,6 +216,14 @@ const currentSession = computed(() => (
   consoleSessions.getSession(selectedDirector.value)
 ))
 const consoleStatus = computed(() => currentSession.value.status)
+const showReconnectOverlay = computed(() => (
+  consoleStatus.value === 'disconnected' || consoleStatus.value === 'error'
+))
+const reconnectOverlayMessage = computed(() => (
+  consoleStatus.value === 'error'
+    ? t('Console connection failed')
+    : t('Console disconnected')
+))
 
 const statusColor = computed(() => ({
   connected: 'positive', connecting: 'warning',
@@ -484,6 +511,7 @@ watch(
   padding: 12px 16px 12px;
   cursor: text;
   overflow: hidden;
+  position: relative;
 }
 .console-terminal-mount {
   /* Deliberately named differently from the unscoped .console-output rule
@@ -497,6 +525,19 @@ watch(
 }
 .console-terminal-mount :deep(.xterm) {
   height: 100%;
+}
+.console-reconnect-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: white;
+  background: rgb(26 26 26 / 88%);
+  cursor: default;
 }
 .console-output-wrapper-popup {
   height: calc(100vh - 140px);

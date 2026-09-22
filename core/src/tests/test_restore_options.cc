@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,10 @@
 namespace {
 
 using directordaemon::restore_options::BuildRestoreRunCommand;
+using directordaemon::restore_options::kDefaultCustomRegexWhere;
+using directordaemon::restore_options::kDefaultRelocationExamplePath;
 using directordaemon::restore_options::ParseReplacePolicy;
+using directordaemon::restore_options::PreviewRegexWhere;
 using directordaemon::restore_options::QuoteDirectorString;
 using directordaemon::restore_options::ReplacePolicy;
 using directordaemon::restore_options::ReplacePolicyName;
@@ -87,22 +90,32 @@ TEST(RestoreOptions, PrefersRegexWhereOverWhere)
             R"(run job="RestoreFiles" regexwhere="!^/home/!/restore/home/!")");
 }
 
+TEST(RestoreOptions, DefaultRegexWhereExampleShowsPathRewrite)
+{
+  auto preview = PreviewRegexWhere(kDefaultCustomRegexWhere,
+                                   kDefaultRelocationExamplePath);
+
+  ASSERT_TRUE(preview);
+  EXPECT_EQ(*preview, "/restore/home/alice/documents/report.pdf");
+  EXPECT_NE(*preview, kDefaultRelocationExamplePath);
+}
+
 TEST(RestoreOptions, BuildsAdvancedRestoreRunCommand)
 {
   RestoreRunOptions options;
   options.restore_job = "RestoreFiles";
   options.backup_format = "Native";
-  options.plugin_options = "python:module_name=bareos-fd-vmware\nbarri:files=/dev/null";
+  options.plugin_options
+      = "python:module_name=bareos-fd-vmware\nbarri:files=/dev/null";
   options.comment = R"(operator said "restore")";
   options.when = "2026-09-17 18:30:00";
   options.priority = 42;
 
-  EXPECT_EQ(
-      BuildRestoreRunCommand(options),
-      "run job=\"RestoreFiles\" backupformat=\"Native\" "
-      "pluginoptions=\"python:module_name=bareos-fd-vmware\n"
-      "barri:files=/dev/null\" comment=\"operator said \\\"restore\\\"\" "
-      "when=\"2026-09-17 18:30:00\" priority=42");
+  EXPECT_EQ(BuildRestoreRunCommand(options),
+            "run job=\"RestoreFiles\" backupformat=\"Native\" "
+            "pluginoptions=\"python:module_name=bareos-fd-vmware\n"
+            "barri:files=/dev/null\" comment=\"operator said \\\"restore\\\"\" "
+            "when=\"2026-09-17 18:30:00\" priority=42");
 }
 
 }  // namespace

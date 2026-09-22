@@ -63,7 +63,7 @@ namespace directordaemon {
 
 namespace {
 
-constexpr size_t kChromeLines = 7;
+constexpr size_t kChromeLines = 9;
 // Extra chrome lines needed when the split-screen Plugin Options pane is
 // shown below the file tree: one additional frame border separating the
 // two panes, plus the fixed Plugin Options input line.
@@ -394,13 +394,14 @@ std::string StyleFrameContent(std::string content,
 
 bool IsTopLevelSelection(const tree_node* node)
 {
-  if (!node || !node->extract || node->type == tree_node_type::Root
-      || node->type == tree_node_type::NewDir) {
+  if (!node || !node->extract || node->type == tree_node_type::Root) {
     return false;
   }
   for (const tree_node* parent = node->parent; parent;
        parent = parent->parent) {
-    if (parent->extract) { return false; }
+    if (parent->type != tree_node_type::Root && parent->extract) {
+      return false;
+    }
   }
   return true;
 }
@@ -760,6 +761,8 @@ using tree_browser_internal::IsTextKey;
 using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::kBrowserHelpLine1;
 using tree_browser_internal::kBrowserHelpLine2;
+using tree_browser_internal::kBrowserHelpLine3;
+using tree_browser_internal::kBrowserHelpLine4;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
@@ -1816,35 +1819,41 @@ std::string TreeBrowser::RenderPanel() const
   }
   out += StatusBar(width, status, color);
 
-  std::string first_help_line;
-  std::string second_help_line;
+  std::string help_lines[4];
   if (split && plugin_pane_focused_) {
     if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey) {
-      first_help_line = " Up/Down Option  Enter Select";
-      second_help_line = " Type name for custom option  Esc Back";
+      help_lines[0] = " Up/Down Option  Enter Select";
+      help_lines[1] = " Type name for custom option  Space Start with space";
+      help_lines[2] = " Tab Save & switch to Files  Esc Back";
     } else if (plugin_options_mode_
                == PluginOptionsEditMode::kChoosingBooleanValue) {
-      first_help_line = " Up/Down Choose yes/no  Enter Confirm";
-      second_help_line = " Esc Back to option list";
+      help_lines[0] = " Up/Down/Left/Right Toggle yes/no";
+      help_lines[1] = " Enter Confirm  Esc Back to option list";
+      help_lines[2] = " Tab Save & switch to Files";
     } else if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
-      first_help_line = " Up/Down Row  Left/Right Plugin  Enter Edit  d Delete";
-      second_help_line
+      help_lines[0] = " Up/Down Row  Left/Right Plugin  Enter Edit  d Delete";
+      help_lines[1]
           = " n New tab  Tab Save & switch to Files  Esc Discard edits";
+      help_lines[2] = " r Finish file selection";
     } else {
-      first_help_line = " Type value  Backspace Delete";
-      second_help_line = " Enter Confirm row  Esc Cancel this edit";
+      help_lines[0] = " Type value  Space Insert space  Backspace Delete";
+      help_lines[1] = " Enter Confirm row  Esc Cancel this edit";
+      help_lines[2] = " Tab Save & switch to Files";
     }
   } else {
-    first_help_line = kBrowserHelpLine1;
+    help_lines[0] = kBrowserHelpLine1;
     if (split) {
-      first_help_line += "  |  "
-                         + BuildPluginOptionsAdvertisement(
-                             SummarizePluginNames(plugin_hint_definitions_));
+      help_lines[0] += "  |  "
+                       + BuildPluginOptionsAdvertisement(
+                           SummarizePluginNames(plugin_hint_definitions_));
     }
-    second_help_line = kBrowserHelpLine2;
+    help_lines[1] = kBrowserHelpLine2;
+    help_lines[2] = kBrowserHelpLine3;
+    help_lines[3] = kBrowserHelpLine4;
   }
-  out += HelpLine(width, first_help_line, color);
-  out += HelpLine(width, second_help_line, color);
+  for (const auto& help_line : help_lines) {
+    out += HelpLine(width, help_line, color);
+  }
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1864,6 +1873,8 @@ std::string TreeBrowser::RenderSearchInput() const
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Enter starts search | Esc returns to files", color);
   out += HelpLine(width, kTextInputHelp, color);
+  out += HelpLine(width, "", color);
+  out += HelpLine(width, "", color);
   out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
@@ -1924,6 +1935,8 @@ std::string TreeBrowser::RenderSearchResults() const
   out += StatusBar(width, status, color);
   out += HelpLine(width, kSearchResultsHelpLine1, color);
   out += HelpLine(width, kSearchResultsHelpLine2, color);
+  out += HelpLine(width, "", color);
+  out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1981,6 +1994,8 @@ std::string TreeBrowser::RenderSelectedFiles() const
   out += StatusBar(width, status, color);
   out += HelpLine(width, kSearchResultsHelpLine1, color);
   out += HelpLine(width, kSelectedFilesHelpLine2, color);
+  out += HelpLine(width, "", color);
+  out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1992,38 +2007,17 @@ std::string TreeBrowser::RenderHelp() const
   std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, "Help");
 
   constexpr std::string_view lines[] = {
-      " Navigation",
-      "   Up/Down          Move selection",
-      "   Left/Right       Scroll long names horizontally",
-      "   Enter            Open directory or jump to selected path",
-      "   Backspace        Go to parent directory",
-      "",
-      " Selection",
-      "   Space or m       Mark/unmark current file or directory",
-      "   a                Mark all entries in current directory",
-      "   u                Unmark all entries in current directory",
-      "   l                List top-level selected paths",
-      "   e                Calculate selected data size",
-      "",
-      " Views and commands",
-      "   i                Toggle Size and Modified columns",
-      "   /                Search the entire restore tree",
-      "   :                Run one classic selection command",
-      "   c                Switch to classic selection mode",
-      "   p                Show restore plugin hints",
-      "   o                Focus the Plugin Options pane (if shown)",
-      "   Tab              Switch focus: file tree <-> Plugin Options",
-      "",
-      " Plugin Options pane (once focused)",
-      "   Up/Down          Move between plugin name / options / add-row",
-      "   Left/Right       Switch plugin (when more than one is edited)",
-      "   Enter            Edit the selected row",
-      "   d                Delete the selected option (or whole plugin)",
-      "   n                Add another plugin's options as a new tab",
-      "",
-      " Exit",
-      "   q                Finish file selection",
-      "   h, ?, or Esc     Close this help panel",
+      " Navigation: Up/Down/Tab move; Left/Right scroll names",
+      " Home/End: first/last column; Enter: open directory or '..'",
+      " Backspace: parent directory",
+      " Selection: Space/m mark; a mark all; u unmark all",
+      " l list selections; e estimate size; i toggle detail columns",
+      " Views: / search; : one classic command; c classic mode",
+      " p plugin hints; o focus Plugin Options; Tab switches panes",
+      " Options: Up/Down row; Left/Right plugin; Enter edit",
+      " d delete; n new tab; type/Space insert; Backspace delete",
+      " Enter confirms; Esc cancels; Tab saves and switches pane",
+      " Help closes with h/?/Esc; browser finishes with d/r/q/Esc",
   };
 
   size_t visible_rows = MaxVisibleRows();
@@ -2033,6 +2027,8 @@ std::string TreeBrowser::RenderHelp() const
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Restore browser help", color);
   out += HelpLine(width, " h/?/Esc Return", color);
+  out += HelpLine(width, "", color);
+  out += HelpLine(width, "", color);
   out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
@@ -2115,10 +2111,9 @@ std::string TreeBrowser::RenderPluginHints() const
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Restore plugin hints", color);
-  out += HelpLine(width,
-                  " Up/Down Scroll  a Toggle all/detected  o Options"
-                  "  p/Esc Return",
-                  color);
+  out += HelpLine(width, " Up/Down/Tab Scroll  a Toggle all/detected", color);
+  out += HelpLine(width, " o/Tab Options  p/Esc Return", color);
+  out += HelpLine(width, "", color);
   out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
