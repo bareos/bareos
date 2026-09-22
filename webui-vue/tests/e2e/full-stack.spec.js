@@ -248,15 +248,20 @@ test('reconnects the console after typing exit', async ({ page }) => {
   await consoleOutput.click()
   await page.keyboard.type('exit')
   await page.keyboard.press('Enter')
-  await expect(consoleOutput).toContainText('Console disconnected.')
+  const reconnectOverlay = page.getByTestId('console-reconnect-overlay')
+  await expect(reconnectOverlay).toBeVisible()
+  await expect(reconnectOverlay).toContainText('Console disconnected')
 
-  await page.getByTitle('Reconnect').click()
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  await page.getByTestId('console-overlay-reconnect').click()
+  await expect(reconnectOverlay).toBeHidden()
+  await expect(page.getByTestId('console-status-label')).toContainText(
+    'Connected'
+  )
 
   await consoleOutput.click()
   await page.keyboard.type('status director')
   await page.keyboard.press('Enter')
-  await expect(consoleOutput).toContainText('status director')
+  await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
 test('opens jobs and job details through the real director connection', async ({

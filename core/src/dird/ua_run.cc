@@ -35,6 +35,7 @@
 #include "dird/job.h"
 #include "dird/migration.h"
 #include "dird/msgchan.h"
+#include "dird/restore_options.h"
 #include "dird/restore_plugin_hints.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
@@ -61,6 +62,9 @@
 
 namespace directordaemon {
 
+using restore_options::kDefaultCustomRegexWhere;
+using restore_options::kDefaultRelocationExamplePath;
+using restore_options::PreviewRegexWhere;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FrameBorderStyle;
 using tree_browser_internal::IsBackKey;
@@ -74,8 +78,14 @@ using tree_browser_internal::IsPreviousRowKey;
 using tree_browser_internal::IsScrollLeftKey;
 using tree_browser_internal::IsScrollRightKey;
 using tree_browser_internal::IsTextKey;
-using tree_browser_internal::kDestinationBrowserHelp;
-using tree_browser_internal::kFieldEditorHelp;
+using tree_browser_internal::kDestinationBrowserHelpLine1;
+using tree_browser_internal::kDestinationBrowserHelpLine2;
+using tree_browser_internal::kDestinationBrowserHelpLine3;
+using tree_browser_internal::kDestinationSearchHelpLine1;
+using tree_browser_internal::kDestinationSearchHelpLine2;
+using tree_browser_internal::kDialogTextInputHelp;
+using tree_browser_internal::kFieldEditorHelpLine1;
+using tree_browser_internal::kFieldEditorHelpLine2;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
@@ -87,11 +97,14 @@ using tree_browser_internal::kKeyPageDown;
 using tree_browser_internal::kKeyPageUp;
 using tree_browser_internal::kKeySpace;
 using tree_browser_internal::kKeyTab;
-using tree_browser_internal::kListDialogHelp;
-using tree_browser_internal::kRelocationDialogHelp;
-using tree_browser_internal::kRestoreDialogHelp;
-using tree_browser_internal::kRunDialogHelp;
-using tree_browser_internal::kTextInputHelp;
+using tree_browser_internal::kListDialogHelpLine1;
+using tree_browser_internal::kListDialogHelpLine2;
+using tree_browser_internal::kRelocationDialogHelpLine1;
+using tree_browser_internal::kRelocationDialogHelpLine2;
+using tree_browser_internal::kRestoreDialogHelpLine1;
+using tree_browser_internal::kRestoreDialogHelpLine2;
+using tree_browser_internal::kRunDialogHelpLine1;
+using tree_browser_internal::kRunDialogHelpLine2;
 using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::StyleFrameContent;
@@ -1476,9 +1489,9 @@ static std::vector<DestinationBrowseEntry> BuildDestinationBrowseRows(
   return rows;
 }
 
-static size_t DestinationBrowseVisibleRows(UaContext* ua, bool search_active)
+static size_t DestinationBrowseVisibleRows(UaContext* ua, bool)
 {
-  size_t chrome_lines = search_active ? 7 : 6;
+  constexpr size_t chrome_lines = 8;
   constexpr size_t kDefaultVisibleRows = 20;
   constexpr size_t kMinVisibleRows = 3;
 
@@ -1577,7 +1590,11 @@ static std::string RenderDestinationBrowseScreen(
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
   screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelp,
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine1,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine2,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine3,
                                    ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
@@ -1637,10 +1654,10 @@ static std::string RenderDestinationBrowseSearchInput(
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
   screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
-  screen += RestoreOptionsHelpLine(
-      width,
-      T_(" Type substring  Enter: accept  Backspace: delete  Esc: clear"),
-      ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationSearchHelpLine1,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kDestinationSearchHelpLine2,
+                                   ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2208,7 +2225,10 @@ static std::string RenderBackupOptionsScreen(UaContext* ua,
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kRunDialogHelp, ua->supports_color);
+  screen
+      += RestoreOptionsHelpLine(width, kRunDialogHelpLine1, ua->supports_color);
+  screen
+      += RestoreOptionsHelpLine(width, kRunDialogHelpLine2, ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2473,8 +2493,11 @@ static std::string RenderRestoreOptionsScreen(UaContext* ua,
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen
-      += RestoreOptionsHelpLine(width, kRestoreDialogHelp, ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kRestoreDialogHelpLine1,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kRestoreDialogHelpLine2,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, "Esc/. Cancel", ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2560,7 +2583,10 @@ static std::string RenderRunScheduleScreen(UaContext* ua,
       ua->supports_color);
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kFieldEditorHelp, ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kFieldEditorHelpLine1,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kFieldEditorHelpLine2,
+                                   ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2646,9 +2672,8 @@ struct RelocationEditorState {
   std::string source_prefix = "/home";
   std::string target_prefix = "/restore/home";
   std::string suffix = ".restored";
-  std::string example_path
-      = std::string("C:/Users/Alice/Documents/") + kRelocationExampleFile;
-  std::string custom_regexwhere = "!^C:/Users/!/restore/users/!i";
+  std::string example_path = std::string(kDefaultRelocationExamplePath);
+  std::string custom_regexwhere = std::string(kDefaultCustomRegexWhere);
 };
 
 struct RelocationEditorRow {
@@ -2755,19 +2780,14 @@ static std::string RelocationPreviewResult(std::string_view regexwhere,
     return std::string(example_path);
   }
 
-  alist<BareosRegex*>* regs = get_bregexps(std::string(regexwhere).c_str());
-  if (!regs) {
+  auto preview = PreviewRegexWhere(regexwhere, example_path);
+  if (!preview) {
     *status = T_("invalid RegexWhere");
     return std::string(example_path);
   }
 
-  char* result = nullptr;
-  ApplyBregexps(std::string(example_path).c_str(), regs, &result);
-  std::string preview = result ? result : std::string(example_path);
   *status = T_("valid");
-  FreeBregexps(regs);
-  delete regs;
-  return preview;
+  return *preview;
 }
 
 static void UpdateRelocationExampleForMode(RelocationEditorState* state)
@@ -2895,9 +2915,15 @@ static std::string RenderRelocationEditorScreen(
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(
-      width, editing ? kTextInputHelp : kRelocationDialogHelp,
-      ua->supports_color);
+  if (editing) {
+    screen += RestoreOptionsHelpLine(width, kDialogTextInputHelp,
+                                     ua->supports_color);
+  } else {
+    screen += RestoreOptionsHelpLine(width, kRelocationDialogHelpLine1,
+                                     ua->supports_color);
+    screen += RestoreOptionsHelpLine(width, kRelocationDialogHelpLine2,
+                                     ua->supports_color);
+  }
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -3122,7 +3148,10 @@ static std::string RenderRestoreReplaceScreen(UaContext* ua, size_t cursor)
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kListDialogHelp, ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kListDialogHelpLine1,
+                                   ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kListDialogHelpLine2,
+                                   ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
