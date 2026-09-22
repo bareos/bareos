@@ -33,6 +33,7 @@
 #include "dird/storage.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "dird/ua_tree_browser_internal.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
@@ -283,9 +284,9 @@ std::string InteractiveSelection::Format(const std::string& header,
   std::string output = SanitizeSelectionText(header, true);
   output.append(SanitizeSelectionText(prompt, false));
   if (supports_cursor_selection) {
-    output.append(
-        " (Arrows move, Enter selects, Esc/. cancels;\n"
-        "type a number/text to filter, Backspace edits, Space inserts):\n");
+    output.append(" (");
+    output.append(tree_browser_internal::kSelectionFooter);
+    output.append("):\n");
   } else {
     // The client cannot move the highlight with the cursor keys (see the
     // supports_cursor_selection doc comment in ua_select.h), so don't
@@ -408,6 +409,21 @@ std::string InteractiveSelection::Format(const std::string& header,
     }
     if (last_col < columns_needed) { output.append("  ...\n"); }
   }
+  return output;
+}
+
+std::string InteractiveSelection::FormatHelp(const std::string& header) const
+{
+  std::string output = SanitizeSelectionText(header, true);
+  output.append(
+      "Selection Help:\n"
+      "  Up/Down: move one row; Left/Right: move between columns\n"
+      "  Enter: select the highlighted option\n"
+      "  Type a number or text: filter options; Space: insert a space\n"
+      "  Backspace: remove the last filter character\n"
+      "  Esc/.: cancel the selection\n"
+      "  h/?: open help when the filter is empty\n"
+      "  h/?/Enter/Esc/.: return from help\n");
   return output;
 }
 
@@ -1616,7 +1632,7 @@ int DoPrompt(UaContext* ua,
     // the WebUI console, batch/API mode, or an older bconsole).
     constexpr size_t kDefaultMaxVisibleOptions = 20;
     constexpr size_t kMinVisibleOptions = 3;
-    constexpr size_t kChromeLines = 6;
+    constexpr size_t kChromeLines = 5;
     auto compute_max_visible_options = [&] {
       if (ua->terminal_height <= 0) { return kDefaultMaxVisibleOptions; }
       size_t available
@@ -1650,6 +1666,7 @@ int DoPrompt(UaContext* ua,
     };
 
     InteractiveSelection selection(ua->prompts);
+    bool showing_help = false;
     for (;;) {
       selection.SetColumnLayout(max_visible_options, compute_num_columns());
       // A client only ever reports a terminal size (see
@@ -1661,11 +1678,13 @@ int DoPrompt(UaContext* ua,
       // cannot move the selection highlight with the cursor keys".
       bool supports_cursor_selection = ua->terminal_height > 0;
       user->signal(BNET_START_SELECT);
-      ua->SendMsg("%s",
-                  selection
-                      .Format(ua->prompt_header, msg, max_visible_options,
-                              supports_cursor_selection, ua->supports_color)
-                      .c_str());
+      ua->SendMsg(
+          "%s",
+          (showing_help ? selection.FormatHelp(ua->prompt_header)
+                        : selection.Format(
+                              ua->prompt_header, msg, max_visible_options,
+                              supports_cursor_selection, ua->supports_color))
+              .c_str());
       user->signal(BNET_END_SELECT);
       user->signal(BNET_SELECT_INPUT);
 
@@ -1693,6 +1712,18 @@ int DoPrompt(UaContext* ua,
           if (new_width > 0) { ua->terminal_width = new_width; }
         }
         max_visible_options = compute_max_visible_options();
+        continue;
+      }
+
+      if (showing_help) {
+        if (tree_browser_internal::IsHelpReturnKey(msg_view)) {
+          showing_help = false;
+        }
+        continue;
+      }
+      if (supports_cursor_selection && selection.filter_empty()
+          && tree_browser_internal::IsHelpKey(msg_view)) {
+        showing_help = true;
         continue;
       }
 

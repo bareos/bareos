@@ -72,20 +72,21 @@ using tree_browser_internal::IsCancelKey;
 using tree_browser_internal::IsEditKey;
 using tree_browser_internal::IsEndKey;
 using tree_browser_internal::IsEnterKey;
+using tree_browser_internal::IsHelpKey;
+using tree_browser_internal::IsHelpReturnKey;
 using tree_browser_internal::IsHomeKey;
 using tree_browser_internal::IsNextRowKey;
 using tree_browser_internal::IsPreviousRowKey;
 using tree_browser_internal::IsScrollLeftKey;
 using tree_browser_internal::IsScrollRightKey;
 using tree_browser_internal::IsTextKey;
-using tree_browser_internal::kDestinationBrowserHelpLine1;
-using tree_browser_internal::kDestinationBrowserHelpLine2;
-using tree_browser_internal::kDestinationBrowserHelpLine3;
+using tree_browser_internal::kDestinationBrowserFooter;
+using tree_browser_internal::kDestinationBrowserHelp;
 using tree_browser_internal::kDestinationSearchHelpLine1;
 using tree_browser_internal::kDestinationSearchHelpLine2;
 using tree_browser_internal::kDialogTextInputHelp;
-using tree_browser_internal::kFieldEditorHelpLine1;
-using tree_browser_internal::kFieldEditorHelpLine2;
+using tree_browser_internal::kFieldEditorFooter;
+using tree_browser_internal::kFieldEditorHelp;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
@@ -97,14 +98,14 @@ using tree_browser_internal::kKeyPageDown;
 using tree_browser_internal::kKeyPageUp;
 using tree_browser_internal::kKeySpace;
 using tree_browser_internal::kKeyTab;
-using tree_browser_internal::kListDialogHelpLine1;
-using tree_browser_internal::kListDialogHelpLine2;
-using tree_browser_internal::kRelocationDialogHelpLine1;
-using tree_browser_internal::kRelocationDialogHelpLine2;
-using tree_browser_internal::kRestoreDialogHelpLine1;
-using tree_browser_internal::kRestoreDialogHelpLine2;
-using tree_browser_internal::kRunDialogHelpLine1;
-using tree_browser_internal::kRunDialogHelpLine2;
+using tree_browser_internal::kListDialogFooter;
+using tree_browser_internal::kListDialogHelp;
+using tree_browser_internal::kRelocationDialogFooter;
+using tree_browser_internal::kRelocationDialogHelp;
+using tree_browser_internal::kRestoreDialogFooter;
+using tree_browser_internal::kRestoreDialogHelp;
+using tree_browser_internal::kRunDialogFooter;
+using tree_browser_internal::kRunDialogHelp;
 using tree_browser_internal::ParseTerminalResizeInput;
 using tree_browser_internal::RenderFrameBorder;
 using tree_browser_internal::StyleFrameContent;
@@ -1069,6 +1070,37 @@ static std::string RestoreOptionsHelpLine(size_t width,
                                           std::string_view text,
                                           bool color);
 
+static size_t RestoreOptionsScreenWidth(UaContext* ua);
+static void RemoveFinalNewline(std::string* text);
+
+template <size_t N>
+static std::string RenderContextHelpScreen(
+    UaContext* ua,
+    std::string_view title,
+    const std::array<std::string_view, N>& lines)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t visible_rows = lines.size();
+  if (ua->terminal_height > 3) {
+    visible_rows
+        = std::max(visible_rows, static_cast<size_t>(ua->terminal_height - 3));
+  }
+
+  std::string screen;
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kTop, title);
+  for (size_t row = 0; row < visible_rows; ++row) {
+    screen += RestoreOptionsFrameLine(
+        width, row < lines.size() ? lines[row] : "", ua->supports_color);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, "h/?/Enter/Esc/. Return",
+                                   ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
 static size_t RestoreOptionsScreenWidth(UaContext* ua)
 {
   constexpr size_t kDefaultTerminalWidth = 80;
@@ -1489,13 +1521,16 @@ static std::vector<DestinationBrowseEntry> BuildDestinationBrowseRows(
   return rows;
 }
 
-static size_t DestinationBrowseVisibleRows(UaContext* ua, bool)
+static size_t DestinationBrowseVisibleRows(UaContext* ua, bool entering_search)
 {
-  constexpr size_t chrome_lines = 8;
+  constexpr size_t kBrowserChromeLines = 6;
+  constexpr size_t kSearchChromeLines = 8;
   constexpr size_t kDefaultVisibleRows = 20;
   constexpr size_t kMinVisibleRows = 3;
 
   if (ua->terminal_height <= 0) { return kDefaultVisibleRows; }
+  size_t chrome_lines
+      = entering_search ? kSearchChromeLines : kBrowserChromeLines;
   size_t available
       = static_cast<size_t>(ua->terminal_height) > chrome_lines
             ? static_cast<size_t>(ua->terminal_height) - chrome_lines
@@ -1590,11 +1625,7 @@ static std::string RenderDestinationBrowseScreen(
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
   screen += RestoreOptionsStatusLine(width, status, ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine1,
-                                   ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine2,
-                                   ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kDestinationBrowserHelpLine3,
+  screen += RestoreOptionsHelpLine(width, kDestinationBrowserFooter,
                                    ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
@@ -1742,6 +1773,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
   std::string cached_path;
   std::vector<DestinationBrowseEntry> cached_entries;
   DestinationBrowseMode mode = DestinationBrowseMode::kBrowsing;
+  bool showing_help = false;
   std::string search;
   size_t cursor = 0;
   size_t first_row = 0;
@@ -1772,7 +1804,12 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
                                  DestinationBrowseHorizontalLimit(ua, rows));
 
     user->signal(BNET_START_SELECT);
-    if (mode == DestinationBrowseMode::kEnteringSearch) {
+    if (showing_help) {
+      ua->SendMsg("%s",
+                  RenderContextHelpScreen(ua, T_("Destination Browser Help"),
+                                          kDestinationBrowserHelp)
+                      .c_str());
+    } else if (mode == DestinationBrowseMode::kEnteringSearch) {
       ua->SendMsg("%s", RenderDestinationBrowseSearchInput(
                             ua, jcr, current, rows, cursor, first_row, search)
                             .c_str());
@@ -1795,6 +1832,11 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
     if (resize.is_resize) {
       if (resize.height > 0) { ua->terminal_height = resize.height; }
       if (resize.width > 0) { ua->terminal_width = resize.width; }
+      continue;
+    }
+
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
       continue;
     }
 
@@ -1828,6 +1870,10 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
       continue;
     }
 
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) {
       if (!search.empty()) {
         search.clear();
@@ -2225,10 +2271,7 @@ static std::string RenderBackupOptionsScreen(UaContext* ua,
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen
-      += RestoreOptionsHelpLine(width, kRunDialogHelpLine1, ua->supports_color);
-  screen
-      += RestoreOptionsHelpLine(width, kRunDialogHelpLine2, ua->supports_color);
+  screen += RestoreOptionsHelpLine(width, kRunDialogFooter, ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2241,6 +2284,7 @@ static int SelectBackupOptionVisual(UaContext* ua,
   if (!user) { return -1; }
 
   bool advanced_expanded = false;
+  bool showing_help = false;
   size_t cursor = BuildBackupOptionRows(jcr, rc, advanced_expanded).size() - 1;
   size_t value_offset = 0;
   for (;;) {
@@ -2252,9 +2296,13 @@ static int SelectBackupOptionVisual(UaContext* ua,
         value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
                                                   RestoreOptionValueWidth(ua)));
     user->signal(BNET_START_SELECT);
-    ua->SendMsg("%s", RenderBackupOptionsScreen(ua, jcr, rc, cursor,
-                                                advanced_expanded, value_offset)
-                          .c_str());
+    ua->SendMsg(
+        "%s", (showing_help
+                   ? RenderContextHelpScreen(ua, T_("Backup Options Help"),
+                                             kRunDialogHelp)
+                   : RenderBackupOptionsScreen(ua, jcr, rc, cursor,
+                                               advanced_expanded, value_offset))
+                  .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -2272,6 +2320,14 @@ static int SelectBackupOptionVisual(UaContext* ua,
       continue;
     }
 
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
+      continue;
+    }
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) {
       ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
       return -1;
@@ -2493,11 +2549,8 @@ static std::string RenderRestoreOptionsScreen(UaContext* ua,
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kRestoreDialogHelpLine1,
+  screen += RestoreOptionsHelpLine(width, kRestoreDialogFooter,
                                    ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kRestoreDialogHelpLine2,
-                                   ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, "Esc/. Cancel", ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2583,10 +2636,8 @@ static std::string RenderRunScheduleScreen(UaContext* ua,
       ua->supports_color);
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kFieldEditorHelpLine1,
-                                   ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kFieldEditorHelpLine2,
-                                   ua->supports_color);
+  screen
+      += RestoreOptionsHelpLine(width, kFieldEditorFooter, ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -2598,9 +2649,14 @@ static bool SelectRunScheduleVisual(UaContext* ua, time_t* when)
 
   time_t edited_when = *when;
   size_t cursor = 0;
+  bool showing_help = false;
   for (;;) {
     user->signal(BNET_START_SELECT);
-    ua->SendMsg("%s", RenderRunScheduleScreen(ua, edited_when, cursor).c_str());
+    ua->SendMsg(
+        "%s", (showing_help ? RenderContextHelpScreen(ua, T_("Start Time Help"),
+                                                      kFieldEditorHelp)
+                            : RenderRunScheduleScreen(ua, edited_when, cursor))
+                  .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -2617,6 +2673,14 @@ static bool SelectRunScheduleVisual(UaContext* ua, time_t* when)
       continue;
     }
 
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
+      continue;
+    }
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) { return false; }
     if (IsEnterKey(input) || input.empty()) {
       *when = edited_when;
@@ -2919,9 +2983,7 @@ static std::string RenderRelocationEditorScreen(
     screen += RestoreOptionsHelpLine(width, kDialogTextInputHelp,
                                      ua->supports_color);
   } else {
-    screen += RestoreOptionsHelpLine(width, kRelocationDialogHelpLine1,
-                                     ua->supports_color);
-    screen += RestoreOptionsHelpLine(width, kRelocationDialogHelpLine2,
+    screen += RestoreOptionsHelpLine(width, kRelocationDialogFooter,
                                      ua->supports_color);
   }
   RemoveFinalNewline(&screen);
@@ -2997,6 +3059,7 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
   size_t cursor = 0;
   size_t value_offset = 0;
   bool editing = false;
+  bool showing_help = false;
   RelocationAction editing_action = RelocationAction::kApply;
   std::string edit_buffer;
   for (;;) {
@@ -3012,10 +3075,14 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
                                                   RestoreOptionValueWidth(ua)));
 
     user->signal(BNET_START_SELECT);
-    ua->SendMsg("%s", RenderRelocationEditorScreen(
-                          ua, state, cursor, value_offset, edit_buffer,
-                          editing ? editing_action : RelocationAction::kApply)
-                          .c_str());
+    ua->SendMsg("%s",
+                (showing_help
+                     ? RenderContextHelpScreen(ua, T_("File Relocation Help"),
+                                               kRelocationDialogHelp)
+                     : RenderRelocationEditorScreen(
+                           ua, state, cursor, value_offset, edit_buffer,
+                           editing ? editing_action : RelocationAction::kApply))
+                    .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -3029,6 +3096,11 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
       if (resize.height > 0) { ua->terminal_height = resize.height; }
       if (resize.width > 0) { ua->terminal_width = resize.width; }
       value_offset = 0;
+      continue;
+    }
+
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
       continue;
     }
 
@@ -3062,6 +3134,10 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
       continue;
     }
 
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) { return false; }
     if (IsEnterKey(input) || input.empty() || IsEditKey(input)) {
       if (rows[cursor].action == RelocationAction::kApply) {
@@ -3148,10 +3224,8 @@ static std::string RenderRestoreReplaceScreen(UaContext* ua, size_t cursor)
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kListDialogHelpLine1,
-                                   ua->supports_color);
-  screen += RestoreOptionsHelpLine(width, kListDialogHelpLine2,
-                                   ua->supports_color);
+  screen
+      += RestoreOptionsHelpLine(width, kListDialogFooter, ua->supports_color);
   RemoveFinalNewline(&screen);
   return screen;
 }
@@ -3165,6 +3239,7 @@ static bool SelectRestoreReplaceVisual(UaContext* ua,
 
   size_t count = RestoreReplaceOptionCount();
   size_t cursor = 0;
+  bool showing_help = false;
   for (size_t i = 0; i < count; ++i) {
     if (current_replace
         && Bstrcasecmp(current_replace, ReplaceOptions[i].name)) {
@@ -3175,7 +3250,11 @@ static bool SelectRestoreReplaceVisual(UaContext* ua,
 
   for (;;) {
     user->signal(BNET_START_SELECT);
-    ua->SendMsg("%s", RenderRestoreReplaceScreen(ua, cursor).c_str());
+    ua->SendMsg("%s", (showing_help
+                           ? RenderContextHelpScreen(
+                                 ua, T_("Replace Policy Help"), kListDialogHelp)
+                           : RenderRestoreReplaceScreen(ua, cursor))
+                          .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -3192,6 +3271,14 @@ static bool SelectRestoreReplaceVisual(UaContext* ua,
       continue;
     }
 
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
+      continue;
+    }
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) { return false; }
     if (IsEnterKey(input) || input.empty()) {
       *selection = cursor;
@@ -3217,6 +3304,7 @@ static int SelectRestoreOptionVisual(UaContext* ua,
   if (!user) { return -1; }
 
   bool advanced_expanded = false;
+  bool showing_help = false;
   std::vector<RestoreOptionRow> rows
       = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
   size_t row_count = rows.size();
@@ -3230,9 +3318,13 @@ static int SelectRestoreOptionVisual(UaContext* ua,
         value_offset, MaxRestoreOptionValueOffset(rows[cursor].value,
                                                   RestoreOptionValueWidth(ua)));
     user->signal(BNET_START_SELECT);
-    ua->SendMsg("%s", RenderRestoreOptionsScreen(
-                          ua, jcr, rc, cursor, advanced_expanded, value_offset)
-                          .c_str());
+    ua->SendMsg(
+        "%s", (showing_help
+                   ? RenderContextHelpScreen(ua, T_("Restore Options Help"),
+                                             kRestoreDialogHelp)
+                   : RenderRestoreOptionsScreen(
+                         ua, jcr, rc, cursor, advanced_expanded, value_offset))
+                  .c_str());
     user->signal(BNET_END_SELECT);
     user->signal(BNET_SELECT_INPUT);
 
@@ -3250,6 +3342,14 @@ static int SelectRestoreOptionVisual(UaContext* ua,
       continue;
     }
 
+    if (showing_help) {
+      if (IsHelpReturnKey(input)) { showing_help = false; }
+      continue;
+    }
+    if (IsHelpKey(input)) {
+      showing_help = true;
+      continue;
+    }
     if (IsCancelKey(input)) {
       ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
       return -1;

@@ -387,7 +387,8 @@ describe('console session store', () => {
 
     // Leaving selection mode returns to the main screen buffer before
     // any further normal output is written.
-    expect(written[0]).toBe('\u001B[?1049l')
+    expect(written[0]).toBe('\u001B[?1049l\r\n')
+    expect(written[1]).toBe('Done\n')
   })
 
   it('restores the main screen buffer if a command times out mid-selection', () => {
@@ -425,7 +426,7 @@ describe('console session store', () => {
     // A pending command timing out mid-selection must not leave the
     // terminal stuck on the alternate screen buffer.
     expect(session.selectionActive).toBe(false)
-    expect(written).toContain('\u001B[?1049l')
+    expect(written).toContain('\u001B[?1049l\r\n')
   })
 
   it('restores the main screen buffer if the Director reports an error mid-selection', () => {
@@ -462,7 +463,7 @@ describe('console session store', () => {
     })
 
     expect(session.selectionActive).toBe(false)
-    expect(written).toContain('\u001B[?1049l')
+    expect(written).toContain('\u001B[?1049l\r\n')
   })
 
   it('restores the main screen buffer if the WebSocket closes unexpectedly mid-selection', () => {
@@ -497,7 +498,7 @@ describe('console session store', () => {
     socket.onclose?.()
 
     expect(session.selectionActive).toBe(false)
-    expect(written).toContain('\u001B[?1049l')
+    expect(written).toContain('\u001B[?1049l\r\n')
   })
 
   it('replays prior terminal output to a newly registered writer', () => {
