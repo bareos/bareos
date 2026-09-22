@@ -1,9 +1,17 @@
+---
 name: Build MacOS packages
-run-name: "${{ inputs.run-name }}"
+run-name: "${{ inputs.run-name }} (${{ inputs.arch }})"
 
 on:
   workflow_dispatch:
     inputs:
+      arch:
+        description: "The target architecture"
+        required: true
+        type: choice
+        options:
+          - intel
+          - arm
       version:
         description: "The resulting version number of the build"
         required: true
@@ -29,104 +37,114 @@ on:
         required: false
         type: string
       ssh_access:
-        description: 'Enable sshd debugging'
+        description: "Enable sshd debugging"
         type: boolean
         required: false
         default: false
 
 env:
   artifact_dir: "${{ github.workspace }}/artifacts"
+  PACKAGE_NAME: "bareos-${{ inputs.version }}-${{ inputs.arch }}.pkg"
 
 jobs:
   build:
-    name: Build MacOS packages
-    runs-on: macos-15-intel
+    name: "Build MacOS ${{ inputs.arch }} packages"
+    runs-on: "${{ inputs.arch == 'intel' && 'macos-26-intel' || 'macos-26' }}"
     steps:
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+          limit-access-to-actor: true
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.ssh_access }}
 
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      with:
-        detached: true
-        limit-access-to-actor: true
-      if: ${{ github.event_name == 'workflow_dispatch' && inputs.ssh_access }}
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          repository: "${{ inputs.repository || github.repository }}"
+          ref: "${{ inputs.ref || github.ref }}"
 
-    - name: "Checkout source"
-      uses: actions/checkout@v4
-      with:
-        repository: "${{ inputs.repository || github.repository }}"
-        ref: "${{ inputs.ref || github.ref }}"
-    - name: "Check HEAD commit"
-      run: |
-        HAVE_TREE="$(git cat-file -p HEAD | awk '/^tree / { print $2; exit }')"
-        if [ -z "$WANT_TREE" ]; then
-          echo "Have tree $HAVE_TREE. No tree to compare with."
-        elif [ "$HAVE_TREE" = "$WANT_TREE" ]; then
-          echo "Have tree $HAVE_TREE, wanted $WANT_TREE. All OK!"
-        else
-          echo "Have tree $HAVE_TREE, wanted $WANT_TREE. Stopping build!"
-          exit 1
-        fi
-      env:
-        WANT_TREE: "${{ inputs.treeid }}"
-    - name: Inject version parameters
-      run: |
-        echo -e "set(VERSION_STRING \"$VERSION\")\nset(VERSION_TIMESTAMP \"$TIMESTAMP\")" >core/cmake/BareosVersion.cmake
-        cat core/cmake/BareosVersion.cmake
-      env:
-        VERSION: "${{ inputs.version }}"
-        TIMESTAMP: "${{ inputs.timestamp }}"
+      - name: Check HEAD commit
+        run: |
+          HAVE_TREE="$(git cat-file -p HEAD |
+            awk '/^tree / { print $2; exit }')"
+          if [ -z "$WANT_TREE" ]; then
+            echo "Have tree $HAVE_TREE. No tree to compare with."
+          elif [ "$HAVE_TREE" = "$WANT_TREE" ]; then
+            echo "Have tree $HAVE_TREE, wanted $WANT_TREE. All OK!"
+          else
+            echo "Have tree $HAVE_TREE, wanted $WANT_TREE. Stopping build!"
+            exit 1
+          fi
+        env:
+          WANT_TREE: "${{ inputs.treeid }}"
 
-    - name: Build package
-      run: |
-        eval "$(brew shellenv)"
-        cmake -S . -B cmake-build \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/bareos \
-        -DUSE_RELATIVE_PATHS=ON \
-        -Dconfigtemplatedir=lib/bareos/defaultconfigs \
-        -DENABLE_JANSSON=OFF \
-        -Dclient-only=yes \
-        -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
-        -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
-        -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
-        -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
-        -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
-        -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
-        -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-        -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX"
-        cmake --build cmake-build -- package
-        ls -la cmake-build/*.pkg
-        mkdir -p "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
-        mv cmake-build/*.pkg "${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
-        cp cmake-build/core/src/include/config.h "${{ env.artifact_dir }}"
-        find cmake-build/core/src -type f -perm +0111 -exec otool -L {} ";" > "${{ env.artifact_dir }}/libdepends.txt"
-      env:
-        CFLAGS: -I/usr/local/include
-        CXXFLAGS: -I/usr/local/include
-        CMAKE_BUILD_PARALLEL_LEVEL: 4
+      - name: Inject version parameters
+        run: |
+          printf 'set(VERSION_STRING "%s")\nset(VERSION_TIMESTAMP "%s")\n' \
+            "$VERSION" "$TIMESTAMP" >core/cmake/BareosVersion.cmake
+          cat core/cmake/BareosVersion.cmake
+        env:
+          VERSION: "${{ inputs.version }}"
+          TIMESTAMP: "${{ inputs.timestamp }}"
 
-    - name: CTest
-      run: |
-        cd cmake-build
-        ctest -V -S CTestScript.cmake
-        mv ./Testing "${{ env.artifact_dir }}"
+      - name: Build package
+        run: |
+          eval "$(brew shellenv)"
+          cmake -S . -B cmake-build \
+            -DCMAKE_INSTALL_PREFIX=/usr/local/bareos \
+            -DUSE_RELATIVE_PATHS=ON \
+            -Dconfigtemplatedir=lib/bareos/defaultconfigs \
+            -DENABLE_JANSSON=OFF \
+            -Dclient-only=yes \
+            -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+            -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+            -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+            -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+            -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+            -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+            -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+            -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX"
+          cmake --build cmake-build -- package
+          ls -la cmake-build/*.pkg
+          PACKAGE_PATH="${{ env.artifact_dir }}/BUILD_RESULTS/MacOS"
+          mkdir -p "${PACKAGE_PATH}"
+          PACKAGE_OUT="$PACKAGE_PATH/$PACKAGE_NAME"
+          mv cmake-build/*.pkg "$PACKAGE_OUT"
+          cp cmake-build/core/src/include/config.h "${{ env.artifact_dir }}"
+          find cmake-build/core/src -type f -perm +0111 \
+            -exec otool -L {} ";" > "${{ env.artifact_dir }}/libdepends.txt"
+        env:
+          CFLAGS: -I/usr/local/include
+          CXXFLAGS: -I/usr/local/include
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
 
-    - name: Test package
-      run: |
-        set -x
-        sudo installer -pkg artifacts/BUILD_RESULTS/MacOS/bareos-${{ inputs.version }}.pkg -target /
-        cat /tmp/bareos-postinstall.log
-        cd /usr/local/bareos/
-        /usr/local/bareos/sbin/bareos-fd -d 100 --xc || /usr/local/bareos/sbin/bareos-fd -d 100 -xc
-        cd
-        sudo launchctl start com.bareos.bareos-fd
-        sudo launchctl print system/com.bareos.bareos-fd
-        sleep 1
-        sudo launchctl print system/com.bareos.bareos-fd | grep "state = running"
-        sudo launchctl stop com.bareos.bareos-fd
+      - name: CTest
+        run: |
+          cd cmake-build
+          ctest -V -S CTestScript.cmake
+          mv ./Testing "${{ env.artifact_dir }}"
 
-    - name: Upload package
-      uses: actions/upload-artifact@v4
-      with:
-        name: MacOS Packages
-        path: ${{ env.artifact_dir }}
-        retention-days: 1
+      - name: Test package
+        run: |
+          set -x
+          sudo installer -pkg \
+            "artifacts/BUILD_RESULTS/MacOS/$PACKAGE_NAME" -target /
+          cat /tmp/bareos-postinstall.log
+          cd /usr/local/bareos/
+          /usr/local/bareos/sbin/bareos-fd -d 100 --xc ||
+            /usr/local/bareos/sbin/bareos-fd -d 100 -xc
+          cd
+          sudo launchctl start com.bareos.bareos-fd
+          sudo launchctl print system/com.bareos.bareos-fd
+          sleep 1
+          sudo launchctl print system/com.bareos.bareos-fd |
+            grep "state = running"
+          sudo launchctl stop com.bareos.bareos-fd
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: "MacOS ${{ inputs.arch }} Packages"
+          path: ${{ env.artifact_dir }}
+          retention-days: 1
