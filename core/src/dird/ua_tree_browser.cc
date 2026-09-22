@@ -63,7 +63,7 @@ namespace directordaemon {
 
 namespace {
 
-constexpr size_t kChromeLines = 9;
+constexpr size_t kChromeLines = 6;
 // Extra chrome lines needed when the split-screen Plugin Options pane is
 // shown below the file tree: one additional frame border separating the
 // two panes, plus the fixed Plugin Options input line.
@@ -751,6 +751,8 @@ using tree_browser_internal::IsCancelKey;
 using tree_browser_internal::IsEditKey;
 using tree_browser_internal::IsEndKey;
 using tree_browser_internal::IsEnterKey;
+using tree_browser_internal::IsHelpKey;
+using tree_browser_internal::IsHelpReturnKey;
 using tree_browser_internal::IsHomeKey;
 using tree_browser_internal::IsNextRowKey;
 using tree_browser_internal::IsParentRowCursor;
@@ -759,10 +761,8 @@ using tree_browser_internal::IsScrollLeftKey;
 using tree_browser_internal::IsScrollRightKey;
 using tree_browser_internal::IsTextKey;
 using tree_browser_internal::IsTopLevelSelection;
-using tree_browser_internal::kBrowserHelpLine1;
-using tree_browser_internal::kBrowserHelpLine2;
-using tree_browser_internal::kBrowserHelpLine3;
-using tree_browser_internal::kBrowserHelpLine4;
+using tree_browser_internal::kBrowserFooter;
+using tree_browser_internal::kBrowserHelp;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
@@ -777,9 +777,15 @@ using tree_browser_internal::kKeyRight;
 using tree_browser_internal::kKeySpace;
 using tree_browser_internal::kKeyTab;
 using tree_browser_internal::kKeyUp;
-using tree_browser_internal::kSearchResultsHelpLine1;
-using tree_browser_internal::kSearchResultsHelpLine2;
-using tree_browser_internal::kSelectedFilesHelpLine2;
+using tree_browser_internal::kPluginBooleanHelp;
+using tree_browser_internal::kPluginHintsFooter;
+using tree_browser_internal::kPluginHintsHelp;
+using tree_browser_internal::kPluginOptionsFooter;
+using tree_browser_internal::kPluginOptionsHelp;
+using tree_browser_internal::kSearchResultsFooter;
+using tree_browser_internal::kSearchResultsHelp;
+using tree_browser_internal::kSelectedFilesFooter;
+using tree_browser_internal::kSelectedFilesHelp;
 using tree_browser_internal::kTextInputHelp;
 using tree_browser_internal::MaxHorizontalOffset;
 using tree_browser_internal::ParseTerminalResizeInput;
@@ -1819,41 +1825,24 @@ std::string TreeBrowser::RenderPanel() const
   }
   out += StatusBar(width, status, color);
 
-  std::string help_lines[4];
+  std::string help_line;
   if (split && plugin_pane_focused_) {
     if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingNewRowKey) {
-      help_lines[0] = " Up/Down Option  Enter Select";
-      help_lines[1] = " Type name for custom option  Space Start with space";
-      help_lines[2] = " Tab Save & switch to Files  Esc Back";
+      help_line = "Up/Down Option  Enter Select  Type custom key  Esc Back";
     } else if (plugin_options_mode_
                == PluginOptionsEditMode::kChoosingBooleanValue) {
-      help_lines[0] = " Up/Down/Left/Right Toggle yes/no";
-      help_lines[1] = " Enter Confirm  Esc Back to option list";
-      help_lines[2] = " Tab Save & switch to Files";
+      help_line = "Arrows Toggle  Enter Confirm  h/? Help  Tab Files  Esc Back";
     } else if (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing) {
-      help_lines[0] = " Up/Down Row  Left/Right Plugin  Enter Edit  d Delete";
-      help_lines[1]
-          = " n New tab  Tab Save & switch to Files  Esc Discard edits";
-      help_lines[2] = " r Finish file selection";
+      help_line = kPluginOptionsFooter;
     } else {
-      help_lines[0] = " Type value  Space Insert space  Backspace Delete";
-      help_lines[1] = " Enter Confirm row  Esc Cancel this edit";
-      help_lines[2] = " Tab Save & switch to Files";
+      help_line
+          = "Type value  Space Insert  Backspace Delete  Enter Save  Esc "
+            "Cancel";
     }
   } else {
-    help_lines[0] = kBrowserHelpLine1;
-    if (split) {
-      help_lines[0] += "  |  "
-                       + BuildPluginOptionsAdvertisement(
-                           SummarizePluginNames(plugin_hint_definitions_));
-    }
-    help_lines[1] = kBrowserHelpLine2;
-    help_lines[2] = kBrowserHelpLine3;
-    help_lines[3] = kBrowserHelpLine4;
+    help_line = kBrowserFooter;
   }
-  for (const auto& help_line : help_lines) {
-    out += HelpLine(width, help_line, color);
-  }
+  out += HelpLine(width, help_line, color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1873,9 +1862,6 @@ std::string TreeBrowser::RenderSearchInput() const
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Enter starts search | Esc returns to files", color);
   out += HelpLine(width, kTextInputHelp, color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1933,10 +1919,7 @@ std::string TreeBrowser::RenderSearchResults() const
               + std::to_string(search_matches_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, kSearchResultsHelpLine1, color);
-  out += HelpLine(width, kSearchResultsHelpLine2, color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
+  out += HelpLine(width, kSearchResultsFooter, color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1992,10 +1975,7 @@ std::string TreeBrowser::RenderSelectedFiles() const
               + std::to_string(selected_nodes_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, kSearchResultsHelpLine1, color);
-  out += HelpLine(width, kSelectedFilesHelpLine2, color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
+  out += HelpLine(width, kSelectedFilesFooter, color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -2004,32 +1984,37 @@ std::string TreeBrowser::RenderHelp() const
 {
   size_t width = ScreenWidth();
   bool color = ua_->supports_color;
-  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, "Help");
+  std::string title = "Restore Browser Help";
+  std::vector<std::string_view> lines;
+  if (showing_selected_files_) {
+    title = "Selected Files Help";
+    lines.assign(kSelectedFilesHelp.begin(), kSelectedFilesHelp.end());
+  } else if (showing_search_results_) {
+    title = "Search Results Help";
+    lines.assign(kSearchResultsHelp.begin(), kSearchResultsHelp.end());
+  } else if (showing_plugin_hints_) {
+    title = "Plugin Hints Help";
+    lines.assign(kPluginHintsHelp.begin(), kPluginHintsHelp.end());
+  } else if (plugin_pane_focused_) {
+    title = "Plugin Options Help";
+    if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingBooleanValue) {
+      lines.assign(kPluginBooleanHelp.begin(), kPluginBooleanHelp.end());
+    } else {
+      lines.assign(kPluginOptionsHelp.begin(), kPluginOptionsHelp.end());
+    }
+  } else {
+    lines.assign(kBrowserHelp.begin(), kBrowserHelp.end());
+  }
 
-  constexpr std::string_view lines[] = {
-      " Navigation: Up/Down/Tab move; Left/Right scroll names",
-      " Home/End: first/last column; Enter: open directory or '..'",
-      " Backspace: parent directory",
-      " Selection: Space/m mark; a mark all; u unmark all",
-      " l list selections; e estimate size; i toggle detail columns",
-      " Views: / search; : one classic command; c classic mode",
-      " p plugin hints; o focus Plugin Options; Tab switches panes",
-      " Options: Up/Down row; Left/Right plugin; Enter edit",
-      " d delete; n new tab; type/Space insert; Backspace delete",
-      " Enter confirms; Esc cancels; Tab saves and switches pane",
-      " Help closes with h/?/Esc; browser finishes with d/r/q/Esc",
-  };
+  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, title);
 
   size_t visible_rows = MaxVisibleRows();
   for (size_t row = 0; row < visible_rows; ++row) {
-    out += FrameLine(width, row < std::size(lines) ? lines[row] : "", color);
+    out += FrameLine(width, row < lines.size() ? lines[row] : "", color);
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
-  out += StatusBar(width, " Restore browser help", color);
-  out += HelpLine(width, " h/?/Esc Return", color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
+  out += StatusBar(width, " Contextual help", color);
+  out += HelpLine(width, "h/?/Enter/Esc/. Return", color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -2111,10 +2096,7 @@ std::string TreeBrowser::RenderPluginHints() const
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Restore plugin hints", color);
-  out += HelpLine(width, " Up/Down/Tab Scroll  a Toggle all/detected", color);
-  out += HelpLine(width, " o/Tab Options  p/Esc Return", color);
-  out += HelpLine(width, "", color);
-  out += HelpLine(width, "", color);
+  out += HelpLine(width, kPluginHintsFooter, color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -2314,7 +2296,9 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
 
 void TreeBrowser::HandleSearchResultsKey(std::string_view key)
 {
-  if (IsPreviousRowKey(key)) {
+  if (IsHelpKey(key)) {
+    showing_help_ = true;
+  } else if (IsPreviousRowKey(key)) {
     if (search_cursor_ > 0) {
       search_cursor_--;
       ClampSearchHorizontalOffset();
@@ -2357,7 +2341,9 @@ void TreeBrowser::HandleSearchResultsKey(std::string_view key)
 
 void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
 {
-  if (IsPreviousRowKey(key)) {
+  if (IsHelpKey(key)) {
+    showing_help_ = true;
+  } else if (IsPreviousRowKey(key)) {
     if (selected_cursor_ > 0) { selected_cursor_--; }
   } else if (IsNextRowKey(key)) {
     if (selected_cursor_ + 1 < selected_nodes_.size()) { selected_cursor_++; }
@@ -2394,9 +2380,7 @@ void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
 
 void TreeBrowser::HandleHelpKey(std::string_view key)
 {
-  if (key == "key:text:h" || key == "key:text:?" || key == kKeyCancel) {
-    showing_help_ = false;
-  }
+  if (IsHelpReturnKey(key)) { showing_help_ = false; }
 }
 
 void TreeBrowser::HandlePluginHintsKey(std::string_view key)
@@ -2408,7 +2392,9 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
   size_t max_offset
       = lines.size() > visible_rows ? lines.size() - visible_rows : 0;
 
-  if (IsPreviousRowKey(key)) {
+  if (IsHelpKey(key)) {
+    showing_help_ = true;
+  } else if (IsPreviousRowKey(key)) {
     if (plugin_hints_offset_ > 0) { plugin_hints_offset_--; }
   } else if (IsNextRowKey(key)) {
     if (plugin_hints_offset_ < max_offset) { plugin_hints_offset_++; }
@@ -2468,6 +2454,13 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
   if (plugin_pane_focused_) {
+    if (IsHelpKey(key)
+        && (plugin_options_mode_ == PluginOptionsEditMode::kBrowsing
+            || plugin_options_mode_
+                   == PluginOptionsEditMode::kChoosingBooleanValue)) {
+      showing_help_ = true;
+      return false;
+    }
     if (key == "key:text:r") {
       *exit_reason = TreeBrowserExit::kDone;
       return true;
@@ -2516,7 +2509,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     CalculateEstimate();
   } else if (key == "key:text:l") {
     OpenSelectedFiles();
-  } else if (key == "key:text:h" || key == "key:text:?") {
+  } else if (IsHelpKey(key)) {
     showing_help_ = true;
   } else if (key == "key:text:p") {
     if (!plugin_hints_gathered_) { GatherPluginHints(); }

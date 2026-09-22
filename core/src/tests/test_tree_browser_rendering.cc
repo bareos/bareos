@@ -43,32 +43,47 @@ using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
 using directordaemon::tree_browser_internal::FrameBorderStyle;
 using directordaemon::tree_browser_internal::IsTopLevelSelection;
-using directordaemon::tree_browser_internal::kBrowserHelpLine1;
-using directordaemon::tree_browser_internal::kBrowserHelpLine2;
-using directordaemon::tree_browser_internal::kBrowserHelpLine3;
-using directordaemon::tree_browser_internal::kBrowserHelpLine4;
-using directordaemon::tree_browser_internal::kDestinationBrowserHelpLine1;
-using directordaemon::tree_browser_internal::kDestinationBrowserHelpLine2;
-using directordaemon::tree_browser_internal::kDestinationBrowserHelpLine3;
+using directordaemon::tree_browser_internal::kBrowserFooter;
+using directordaemon::tree_browser_internal::kBrowserHelp;
+using directordaemon::tree_browser_internal::kDestinationBrowserFooter;
+using directordaemon::tree_browser_internal::kDestinationBrowserHelp;
 using directordaemon::tree_browser_internal::kDestinationSearchHelpLine1;
 using directordaemon::tree_browser_internal::kDestinationSearchHelpLine2;
 using directordaemon::tree_browser_internal::kDialogTextInputHelp;
-using directordaemon::tree_browser_internal::kFieldEditorHelpLine1;
-using directordaemon::tree_browser_internal::kFieldEditorHelpLine2;
-using directordaemon::tree_browser_internal::kListDialogHelpLine1;
-using directordaemon::tree_browser_internal::kListDialogHelpLine2;
-using directordaemon::tree_browser_internal::kRelocationDialogHelpLine1;
-using directordaemon::tree_browser_internal::kRelocationDialogHelpLine2;
-using directordaemon::tree_browser_internal::kRestoreDialogHelpLine1;
-using directordaemon::tree_browser_internal::kRestoreDialogHelpLine2;
-using directordaemon::tree_browser_internal::kRunDialogHelpLine1;
-using directordaemon::tree_browser_internal::kRunDialogHelpLine2;
+using directordaemon::tree_browser_internal::kFieldEditorFooter;
+using directordaemon::tree_browser_internal::kFieldEditorHelp;
+using directordaemon::tree_browser_internal::kListDialogFooter;
+using directordaemon::tree_browser_internal::kListDialogHelp;
+using directordaemon::tree_browser_internal::kPluginBooleanHelp;
+using directordaemon::tree_browser_internal::kPluginHintsFooter;
+using directordaemon::tree_browser_internal::kPluginHintsHelp;
+using directordaemon::tree_browser_internal::kPluginOptionsFooter;
+using directordaemon::tree_browser_internal::kPluginOptionsHelp;
+using directordaemon::tree_browser_internal::kRelocationDialogFooter;
+using directordaemon::tree_browser_internal::kRelocationDialogHelp;
+using directordaemon::tree_browser_internal::kRestoreDialogFooter;
+using directordaemon::tree_browser_internal::kRestoreDialogHelp;
+using directordaemon::tree_browser_internal::kRunDialogFooter;
+using directordaemon::tree_browser_internal::kRunDialogHelp;
+using directordaemon::tree_browser_internal::kSearchResultsFooter;
+using directordaemon::tree_browser_internal::kSearchResultsHelp;
+using directordaemon::tree_browser_internal::kSelectedFilesFooter;
+using directordaemon::tree_browser_internal::kSelectedFilesHelp;
+using directordaemon::tree_browser_internal::kSelectionFooter;
 using directordaemon::tree_browser_internal::MaxHorizontalOffset;
 using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
 using directordaemon::tree_browser_internal::RenderFrameBorder;
 using directordaemon::tree_browser_internal::SortDirectoriesFirst;
 using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
+
+template <size_t N>
+std::string JoinHelp(const std::array<std::string_view, N>& lines)
+{
+  std::string result;
+  for (std::string_view line : lines) { result += line; }
+  return result;
+}
 
 TEST(TreeBrowserRendering, FitsAndPadsAscii)
 {
@@ -78,8 +93,7 @@ TEST(TreeBrowserRendering, FitsAndPadsAscii)
 
 TEST(TreeBrowserRendering, DocumentsRestoreBrowserKeyAliases)
 {
-  std::string help = std::string(kBrowserHelpLine1) + kBrowserHelpLine2
-                     + kBrowserHelpLine3 + kBrowserHelpLine4;
+  std::string help = JoinHelp(kBrowserHelp);
   for (std::string_view key :
        {"Up",    "Down", "Tab",       "Left",  "Right", "Home", "End",
         "Enter", "..",   "Backspace", "Space", "m",     "a",    "u",
@@ -91,9 +105,8 @@ TEST(TreeBrowserRendering, DocumentsRestoreBrowserKeyAliases)
 
 TEST(TreeBrowserRendering, DocumentsDialogNavigationAliases)
 {
-  std::string run_help = std::string(kRunDialogHelpLine1) + kRunDialogHelpLine2;
-  std::string relocation_help
-      = std::string(kRelocationDialogHelpLine1) + kRelocationDialogHelpLine2;
+  std::string run_help = JoinHelp(kRunDialogHelp);
+  std::string relocation_help = JoinHelp(kRelocationDialogHelp);
   for (const auto* help : {&run_help, &relocation_help}) {
     for (std::string_view key :
          {"Enter", "e/E", "Space", "Tab", "Down", "Up", "Backspace", "Left",
@@ -102,23 +115,20 @@ TEST(TreeBrowserRendering, DocumentsDialogNavigationAliases)
     }
   }
 
-  std::string restore_help
-      = std::string(kRestoreDialogHelpLine1) + kRestoreDialogHelpLine2;
+  std::string restore_help = JoinHelp(kRestoreDialogHelp);
   for (std::string_view key :
        {"Enter", "e/E", "Space", "Tab", "Down", "Up", "Backspace", "Left",
-        "Right", "Home", "End", "b/B"}) {
+        "Right", "Home", "End", "b/B", "h/?"}) {
     EXPECT_NE(restore_help.find(key), std::string::npos) << key;
   }
 
-  std::string list_help
-      = std::string(kListDialogHelpLine1) + kListDialogHelpLine2;
+  std::string list_help = JoinHelp(kListDialogHelp);
   for (std::string_view key :
        {"Enter", "Tab", "Down", "Up", "Backspace", "Home", "End", "Esc", "."}) {
     EXPECT_NE(list_help.find(key), std::string::npos) << key;
   }
 
-  std::string field_help
-      = std::string(kFieldEditorHelpLine1) + kFieldEditorHelpLine2;
+  std::string field_help = JoinHelp(kFieldEditorHelp);
   for (std::string_view key :
        {"Left", "Right", "Tab", "Backspace", "Home", "End", "Up", "Down", "n/N",
         "Enter", "Esc", "."}) {
@@ -128,9 +138,7 @@ TEST(TreeBrowserRendering, DocumentsDialogNavigationAliases)
 
 TEST(TreeBrowserRendering, DocumentsDestinationBrowserNavigation)
 {
-  std::string help = std::string(kDestinationBrowserHelpLine1)
-                     + kDestinationBrowserHelpLine2
-                     + kDestinationBrowserHelpLine3;
+  std::string help = JoinHelp(kDestinationBrowserHelp);
   for (std::string_view key :
        {"Enter", "Tab", "Down", "Up", "Backspace", "Left", "Right", "Home",
         "End", "PgUp", "PgDn", "/", "Esc", "."}) {
@@ -153,28 +161,61 @@ TEST(TreeBrowserRendering, DocumentsDestinationBrowserNavigation)
 
 TEST(TreeBrowserRendering, KeyHelpLinesFitDefaultTerminalWidth)
 {
-  for (std::string_view line : {kRunDialogHelpLine1,
-                                kRunDialogHelpLine2,
-                                kRestoreDialogHelpLine1,
-                                kRestoreDialogHelpLine2,
-                                kRelocationDialogHelpLine1,
-                                kRelocationDialogHelpLine2,
-                                kListDialogHelpLine1,
-                                kListDialogHelpLine2,
-                                kFieldEditorHelpLine1,
-                                kFieldEditorHelpLine2,
-                                kBrowserHelpLine1,
-                                kBrowserHelpLine2,
-                                kBrowserHelpLine3,
-                                kBrowserHelpLine4,
-                                kDestinationBrowserHelpLine1,
-                                kDestinationBrowserHelpLine2,
-                                kDestinationBrowserHelpLine3,
-                                kDestinationSearchHelpLine1,
-                                kDestinationSearchHelpLine2,
-                                kDialogTextInputHelp}) {
+  for (std::string_view line :
+       {kRunDialogFooter, kRestoreDialogFooter, kRelocationDialogFooter,
+        kListDialogFooter, kFieldEditorFooter, kBrowserFooter,
+        kDestinationBrowserFooter, kSearchResultsFooter, kSelectedFilesFooter,
+        kPluginHintsFooter, kPluginOptionsFooter, kSelectionFooter,
+        kDestinationSearchHelpLine1, kDestinationSearchHelpLine2,
+        kDialogTextInputHelp}) {
     EXPECT_LE(TextCellWidth(line), 80) << line;
   }
+  for (const auto* help : {&kRunDialogHelp, &kRelocationDialogHelp}) {
+    for (std::string_view line : *help) {
+      EXPECT_LE(TextCellWidth(line), 80) << line;
+    }
+  }
+  for (std::string_view line : kRestoreDialogHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (std::string_view line : kListDialogHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (std::string_view line : kFieldEditorHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (std::string_view line : kBrowserHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (std::string_view line : kDestinationBrowserHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (const auto* help :
+       {&kSearchResultsHelp, &kSelectedFilesHelp, &kPluginOptionsHelp}) {
+    for (std::string_view line : *help) {
+      EXPECT_LE(TextCellWidth(line), 80) << line;
+    }
+  }
+  for (std::string_view line : kPluginHintsHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+  for (std::string_view line : kPluginBooleanHelp) {
+    EXPECT_LE(TextCellWidth(line), 80) << line;
+  }
+}
+
+TEST(TreeBrowserRendering, CompactFootersAdvertiseContextualHelp)
+{
+  for (std::string_view footer :
+       {kRunDialogFooter, kRestoreDialogFooter, kRelocationDialogFooter,
+        kListDialogFooter, kFieldEditorFooter, kBrowserFooter,
+        kDestinationBrowserFooter, kSearchResultsFooter, kSelectedFilesFooter,
+        kPluginHintsFooter, kPluginOptionsFooter, kSelectionFooter}) {
+    EXPECT_NE(footer.find("h/? Help"), std::string_view::npos) << footer;
+  }
+
+  EXPECT_EQ(std::string_view(kDialogTextInputHelp).find("h/?"),
+            std::string_view::npos);
 }
 
 TEST(TreeBrowserRendering, AlignsDetailsAtRightEdge)

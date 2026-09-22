@@ -310,7 +310,7 @@ struct TerminalSelectionScreenGuard {
 
   ~TerminalSelectionScreenGuard()
   {
-    if (active) { ConsoleOutput("\033[?1049l"); }
+    if (active) { ConsoleOutput("\033[?1049l\r\n"); }
   }
 
   TerminalSelectionScreenGuard(const TerminalSelectionScreenGuard&) = delete;
