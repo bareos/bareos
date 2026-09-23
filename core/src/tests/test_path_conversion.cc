@@ -237,6 +237,18 @@ TEST_P(Regression, wchar_long_path)
   EXPECT_EQ(new_str, old_str);
 }
 
+TEST(WindowsPathConversion, wchar_long_unc_path)
+{
+  SetVSSPathConvert(nullptr, nullptr);
+  Win32ResetConversionCache();
+
+  std::string path = "\\\\server\\share\\" + std::string(5000, 'a') + 'b';
+  std::wstring converted = make_win32_path_UTF8_2_wchar(path);
+
+  EXPECT_EQ(converted.substr(0, 8), L"\\\\?\\UNC\\");
+  EXPECT_EQ(converted.substr(8), FromUtf8(path).substr(2));
+}
+
 auto invalid_paths = {
     "C:/dir./",      "C:/dir</",      "C:/dir>/",
     "C:/dir*/",      "C:/dir?/",      "C:/dir /",
