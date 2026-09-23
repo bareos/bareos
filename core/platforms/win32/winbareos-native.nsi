@@ -707,7 +707,9 @@ SectionIn 1 2 3
 SectionEnd
 
 Section /o "Hyper-V File Daemon Plugin " SEC_FDPLUGIN_HYPERV
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
 SectionIn 1 2 3
+!endif
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -719,7 +721,9 @@ SectionIn 1 2 3
 SectionEnd
 
 Section /o "Windows Disaster Recovery (Barri) File Daemon Plugin and Tools" SEC_FDPLUGIN_BARRI
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
 SectionIn 1 2 3
+!endif
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
