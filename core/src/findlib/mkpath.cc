@@ -105,6 +105,69 @@ static void SetOwnMod(Attributes* attr,
   }
 }
 
+#if defined(HAVE_WIN32)
+/**
+ * Windows paths can be rooted either by a drive letter ("C:\...") or by
+ * a UNC share ("\\server\share\..."). Neither the drive root nor the UNC
+ * share itself can be created with mkdir() -- they are assumed to already
+ * exist -- so both forms need to be skipped before walking the remaining
+ * directory components.
+ *
+ * Returns a pointer into path positioned right after the non-creatable
+ * prefix, or nullptr if the drive letter is invalid (an error message has
+ * already been queued in that case). If the path consists of only the
+ * prefix (nothing to create below it), *only_prefix is set to true.
+ */
+static char* SkipWin32PathRoot(JobControlRecord* jcr,
+                               char* path,
+                               bool* only_prefix)
+{
+  *only_prefix = false;
+
+  if (path[1] == ':') {
+    char drive[4] = "X:\\";
+
+    drive[0] = path[0];
+
+    UINT drive_type = GetDriveType(drive);
+
+    if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+      Jmsg1(jcr, M_ERROR, 0, T_("%c: is not a valid drive.\n"), path[0]);
+      return nullptr;
+    }
+
+    if (path[2] == '\0') { /* attempt to create a drive */
+      *only_prefix = true;
+      return path;
+    }
+
+    return &path[3];
+  } else if (IsPathSeparator(path[0]) && IsPathSeparator(path[1])) {
+    // UNC path: \\server\share\... Skip any additional leading
+    // separators beyond the first two (e.g. accidentally over-escaped
+    // input); a UNC prefix is only ever exactly two separators.
+    char* server = path + 2;
+    while (IsPathSeparator(*server)) { server++; }
+    char* after_server = first_path_separator(server);
+    if (!after_server) {
+      *only_prefix = true;
+      return path;
+    }
+
+    char* share = after_server + 1;
+    char* after_share = first_path_separator(share);
+    if (!after_share) {
+      *only_prefix = true;
+      return path;
+    }
+
+    return after_share;
+  }
+
+  return path;
+}
+#endif
+
 /**
  * mode is the mode bits to use in creating a new directory
  * parent_mode are the parent's modes if we need to create parent directories.
@@ -158,27 +221,14 @@ bool makepath(Attributes* attr,
   tmode = 0777;
 
 #if defined(HAVE_WIN32)
-  // Validate drive letter
-  if (path[1] == ':') {
-    char drive[4] = "X:\\";
-
-    drive[0] = path[0];
-
-    UINT drive_type = GetDriveType(drive);
-
-    if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
-      Jmsg1(jcr, M_ERROR, 0, T_("%c: is not a valid drive.\n"), path[0]);
-      goto bail_out;
-    }
-
-    if (path[2] == '\0') { /* attempt to create a drive */
+  {
+    bool only_prefix;
+    p = SkipWin32PathRoot(jcr, path, &only_prefix);
+    if (!p) { goto bail_out; }
+    if (only_prefix) {
       ok = true;
       goto bail_out; /* OK, it is already there */
     }
-
-    p = &path[3];
-  } else {
-    p = path;
   }
 #else
   p = path;
@@ -212,10 +262,10 @@ bool makepath(Attributes* attr,
   // Don't propagate the hidden attribute to parent directories
   parent_mode &= ~S_ISVTX;
 
-  if (path[1] == ':') {
-    p = &path[3];
-  } else {
-    p = path;
+  {
+    bool only_prefix;
+    // Already validated above; errors/only_prefix cases already handled.
+    p = SkipWin32PathRoot(jcr, path, &only_prefix);
   }
 #else
   p = path;

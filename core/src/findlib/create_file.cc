@@ -50,7 +50,6 @@
 #  define O_CTG 0
 #endif
 
-static int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile);
 static int PathAlreadySeen(JobControlRecord* jcr, char* path, int pnl);
 
 /**
@@ -499,13 +498,30 @@ int CreateFile(JobControlRecord* jcr,
  *           0  no path
  *           -1 filename is zero length
  */
-static int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile)
+int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile)
 {
   char *f, *p, *q;
   int fnl, pnl;
 
+  q = p = f = ofile;
+#ifdef HAVE_WIN32
+  // Preserve the leading separator pair of a UNC path (e.g. \\server\share),
+  // otherwise the loop below collapses it to a single separator and the
+  // path is later misinterpreted as a drive-relative path. A run of more
+  // than two leading separators (e.g. accidentally over-escaped input) is
+  // collapsed down to exactly two, since that is the only valid form of a
+  // UNC prefix.
+  if (IsPathSeparator(p[0]) && IsPathSeparator(p[1])) {
+    char sep = p[0];
+    while (IsPathSeparator(*p)) { p++; }
+    q[0] = q[1] = sep;
+    q += 2;
+    f = q;
+  }
+#endif
+
   /* Separate pathname and filename */
-  for (q = p = f = ofile; *p; p++) {
+  for (; *p; p++) {
 #ifdef HAVE_WIN32
     if (IsPathSeparator(*p)) {
       f = q;
