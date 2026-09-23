@@ -251,6 +251,50 @@ describe('console session store', () => {
     expect(session.output.map(line => line.text)).not.toContain('> 1: Alpha')
   })
 
+  it('blocks selection key events while a busy frame is active', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Calculating estimate... |',
+        prompt: 'select_busy',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    const sentCount = socket.sent.length
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(false)
+    expect(socket.sent).toHaveLength(sentCount)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n',
+        prompt: 'select',
+      }),
+    })
+
+    expect(session.selectionBusy).toBe(false)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(true)
+  })
+
   it('normalizes terminal inverse selection markers for browser display', () => {
     const consoleSessions = useConsoleSessionsStore()
 
