@@ -469,13 +469,40 @@
                     <div class="text-subtitle2 q-mb-xs">
                       {{ t('Restore location') }}
                     </div>
-                    <q-option-group
-                      v-model="quickRestoreDestination"
-                      :options="quickRestoreDestinationOptions"
-                      color="primary"
-                      dense
+                    <div
+                      class="quick-restore-destination-choice"
                       data-testid="quick-restore-destination-choice"
-                    />
+                    >
+                      <div class="row items-start no-wrap q-gutter-sm">
+                        <q-radio
+                          v-model="quickRestoreDestination"
+                          val="safe"
+                          color="primary"
+                          dense
+                          class="q-mt-sm"
+                          data-testid="quick-restore-destination-safe"
+                        />
+                        <q-input
+                          :model-value="quickRestoreSafeWhere"
+                          :label="t('Restore into')"
+                          outlined dense
+                          class="col"
+                          placeholder="/tmp/bareos-restores"
+                          :hint="t('Enter the destination path on the selected restore client.')"
+                          data-testid="quick-restore-where"
+                          @focus="quickRestoreDestination = 'safe'"
+                          @update:model-value="updateQuickRestoreSafeWhere"
+                        />
+                      </div>
+                      <q-radio
+                        v-model="quickRestoreDestination"
+                        val="original"
+                        color="primary"
+                        dense
+                        :label="t('Restore to original locations')"
+                        data-testid="quick-restore-destination-original"
+                      />
+                    </div>
                     <q-banner
                       v-if="quickRestoreDestination === 'original'"
                       dense
@@ -1027,6 +1054,7 @@ function formatRestoreTime(value) {
 // additional options without restructuring the panel.
 const sourceMode = ref('latest')
 const quickRestoreDestination = ref('safe')
+const quickRestoreSafeWhere = ref(defaultRestoreWhere)
 const sourceWorkflowOptions = computed(() => [
   {
     label: t('Quick Restore'),
@@ -1041,16 +1069,6 @@ const sourceWorkflowOptions = computed(() => [
     icon: 'tune',
     description: t('Choose the restore point, destination, relocation and restore options.'),
     detail: t('Shows destination, replace policy, regexwhere and plugin options.'),
-  },
-])
-const quickRestoreDestinationOptions = computed(() => [
-  {
-    label: t('Restore into /tmp/bareos-restores'),
-    value: 'safe',
-  },
-  {
-    label: t('Restore to original locations'),
-    value: 'original',
   },
 ])
 const advancedRestoreOptionsVisible = computed(() => sourceMode.value === 'browse')
@@ -2249,9 +2267,11 @@ const restorePluginOptionsSummary = computed(() => {
 })
 
 function applyQuickRestoreDefaults() {
-  form.value.where = quickRestoreDestination.value === 'original'
-    ? '/'
-    : defaultRestoreWhere
+  if (quickRestoreDestination.value === 'original') {
+    form.value.where = '/'
+  } else {
+    form.value.where = quickRestoreSafeWhere.value || defaultRestoreWhere
+  }
   form.value.relocationMode = 'none'
   form.value.sourceDrive = 'C:'
   form.value.targetDrive = 'D:'
@@ -2265,6 +2285,12 @@ function applyQuickRestoreDefaults() {
   form.value.when = ''
   form.value.priority = null
   form.value.pluginoptions = defaultPluginOptionsDocument.value || ''
+}
+
+function updateQuickRestoreSafeWhere(value) {
+  quickRestoreDestination.value = 'safe'
+  quickRestoreSafeWhere.value = value
+  form.value.where = value
 }
 
 const restoreConfirmSummaryRows = computed(() => {
@@ -2640,6 +2666,7 @@ function clearBrowserState() {
 function resetAll() {
   form.value.jobid = null
   quickRestoreDestination.value = 'safe'
+  quickRestoreSafeWhere.value = defaultRestoreWhere
   form.value.where = defaultRestoreWhere
   form.value.relocationMode = 'none'
   form.value.sourceDrive = 'C:'
