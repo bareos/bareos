@@ -81,6 +81,8 @@ inline constexpr const char* kSearchResultsFooter
     = "Arrows Move/Scroll  Space Mark  Enter Go  h/? Help  Esc Return";
 inline constexpr const char* kSelectedFilesFooter
     = "Arrows Move/Scroll  Space Unmark  Enter Go  h/? Help  l/Esc Return";
+inline constexpr const char* kEstimateBusyFooter
+    = "Calculating estimate... Please wait; input is disabled";
 inline constexpr const char* kPluginHintsFooter
     = "Up/Down Scroll  a All/Detected  o/Tab Options  h/? Help  p/Esc Return";
 inline constexpr const char* kPluginOptionsFooter
@@ -306,7 +308,11 @@ bool IsTopLevelSelection(const tree_node* node);
 
 void SortDirectoriesFirst(std::vector<tree_node*>* nodes);
 
-std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes);
+std::string EstimateStatus(bool calculated,
+                           bool stale,
+                           uint64_t bytes,
+                           bool running = false,
+                           char spinner = '|');
 
 // Renders detected "Plugin = ..." FileSet definitions (and their resolved
 // hints, if any) as plain text lines for the tree browser's plugin hints

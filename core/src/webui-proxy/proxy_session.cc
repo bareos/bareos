@@ -1046,20 +1046,41 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
 
           if (stream_raw) {
             bool collecting_selection = false;
+            std::string pending_selection_frame;
+            auto send_pending_selection_busy = [&]() {
+              if (pending_selection_frame.empty()) { return; }
+              SendRawResponse(*ws, req_id, command, pending_selection_frame,
+                              "select_busy");
+              pending_selection_frame.clear();
+            };
             result.prompt = director.CallStreamed(
                 command,
                 [&](std::string_view chunk) {
                   auto filtered = FilterRawConsoleChunk(command, chunk);
                   if (collecting_selection) {
                     result.text.append(filtered.data(), filtered.size());
-                  } else if (!filtered.empty()) {
-                    SendRawResponse(*ws, req_id, command, filtered, "more");
+                  } else {
+                    send_pending_selection_busy();
+                    if (!filtered.empty()) {
+                      SendRawResponse(*ws, req_id, command, filtered, "more");
+                    }
                   }
                 },
                 [&]() {
+                  send_pending_selection_busy();
                   collecting_selection = true;
                   result.text.clear();
+                },
+                [&]() {
+                  collecting_selection = false;
+                  pending_selection_frame = std::move(result.text);
+                  result.text.clear();
                 });
+            if (result.prompt == DirectorPrompt::Select) {
+              result.text = std::move(pending_selection_frame);
+            } else {
+              send_pending_selection_busy();
+            }
           } else {
             result = director.Call(command);
           }

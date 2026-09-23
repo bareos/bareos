@@ -43,6 +43,7 @@
 #include "dird/ua_tree_browser.h"
 #include "dird/ua_tree_browser_internal.h"
 #include "dird/ua_tree_internal.h"
+#include "dird/ua_visual_busy.h"
 #include "lib/attribs.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
@@ -415,8 +416,13 @@ void SortDirectoriesFirst(std::vector<tree_node*>* nodes)
                         });
 }
 
-std::string EstimateStatus(bool calculated, bool stale, uint64_t bytes)
+std::string EstimateStatus(bool calculated,
+                           bool stale,
+                           uint64_t bytes,
+                           bool running,
+                           char spinner)
 {
+  if (running) { return "calculating [" + std::string(1, spinner) + "]"; }
   if (!calculated) { return "not calculated"; }
   if (stale) { return "stale"; }
   return SizeAsSiPrefixFormat(bytes);
@@ -763,6 +769,7 @@ using tree_browser_internal::IsTextKey;
 using tree_browser_internal::IsTopLevelSelection;
 using tree_browser_internal::kBrowserFooter;
 using tree_browser_internal::kBrowserHelp;
+using tree_browser_internal::kEstimateBusyFooter;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
@@ -1128,6 +1135,7 @@ class TreeBrowser {
     return SplitTreeAndPluginRows(MaxVisibleRows(detail_view_, true));
   }
   std::string RenderPanel() const;
+  std::string RenderCurrentScreen() const;
   std::string RenderSearchInput() const;
   std::string RenderSearchResults() const;
   std::string RenderSelectedFiles() const;
@@ -1223,6 +1231,8 @@ class TreeBrowser {
 
   bool estimate_calculated_ = false;
   bool estimate_stale_ = false;
+  bool estimate_running_ = false;
+  char estimate_spinner_ = '|';
   uint64_t estimated_bytes_ = 0;
   std::string status_line_;
 };
@@ -1392,6 +1402,13 @@ void TreeBrowser::CalculateEstimate()
     return;
   }
 
+  estimate_running_ = true;
+  VisualBusyIndicator busy_indicator(ua_, [this](char spinner) {
+    estimate_spinner_ = spinner;
+    return RenderCurrentScreen();
+  });
+  busy_indicator.Start();
+
   FileDbRecord fdbr;
   struct stat statp;
   for (tree_node* node = FirstTreeNode(tree_->root); node;
@@ -1409,7 +1426,9 @@ void TreeBrowser::CalculateEstimate()
       }
     }
     FreePoolMemory(path);
+    busy_indicator.Tick();
   }
+  estimate_running_ = false;
   estimate_calculated_ = true;
   estimate_stale_ = false;
   status_line_ = "Estimated selected data";
@@ -1813,7 +1832,8 @@ std::string TreeBrowser::RenderPanel() const
   status += detail_view_ ? " | Detail: on" : " | Detail: off";
   status += " | Estimate: "
             + EstimateStatus(estimate_calculated_, estimate_stale_,
-                             estimated_bytes_);
+                             estimated_bytes_, estimate_running_,
+                             estimate_spinner_);
   status += " | Column: " + std::to_string(tree_horizontal_offset_ + 1);
   if (visible_total > 0) {
     status += " | Showing " + std::to_string(first + 1) + "-"
@@ -1842,7 +1862,8 @@ std::string TreeBrowser::RenderPanel() const
   } else {
     help_line = kBrowserFooter;
   }
-  out += HelpLine(width, help_line, color);
+  out += HelpLine(width, estimate_running_ ? kEstimateBusyFooter : help_line,
+                  color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1911,7 +1932,8 @@ std::string TreeBrowser::RenderSearchResults() const
   std::string status = " Matches: " + std::to_string(search_matches_.size());
   status += " | Estimate: "
             + EstimateStatus(estimate_calculated_, estimate_stale_,
-                             estimated_bytes_);
+                             estimated_bytes_, estimate_running_,
+                             estimate_spinner_);
   status += " | Column: " + std::to_string(search_horizontal_offset_ + 1);
   if (!search_matches_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
@@ -1919,7 +1941,9 @@ std::string TreeBrowser::RenderSearchResults() const
               + std::to_string(search_matches_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, kSearchResultsFooter, color);
+  out += HelpLine(
+      width, estimate_running_ ? kEstimateBusyFooter : kSearchResultsFooter,
+      color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -1967,7 +1991,8 @@ std::string TreeBrowser::RenderSelectedFiles() const
       = " Top-level selections: " + std::to_string(selected_nodes_.size());
   status += " | Estimate: "
             + EstimateStatus(estimate_calculated_, estimate_stale_,
-                             estimated_bytes_);
+                             estimated_bytes_, estimate_running_,
+                             estimate_spinner_);
   status += " | Column: " + std::to_string(selected_horizontal_offset_ + 1);
   if (!selected_nodes_.empty()) {
     status += " | Showing " + std::to_string(first + 1) + "-"
@@ -1975,7 +2000,9 @@ std::string TreeBrowser::RenderSelectedFiles() const
               + std::to_string(selected_nodes_.size());
   }
   out += StatusBar(width, status, color);
-  out += HelpLine(width, kSelectedFilesFooter, color);
+  out += HelpLine(
+      width, estimate_running_ ? kEstimateBusyFooter : kSelectedFilesFooter,
+      color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -2554,12 +2581,7 @@ TreeBrowserExit TreeBrowser::Run()
   TreeBrowserExit exit_reason = TreeBrowserExit::kDone;
 
   for (;;) {
-    std::string screen = showing_help_             ? RenderHelp()
-                         : showing_plugin_hints_   ? RenderPluginHints()
-                         : showing_selected_files_ ? RenderSelectedFiles()
-                         : showing_search_results_ ? RenderSearchResults()
-                         : entering_search_term_   ? RenderSearchInput()
-                                                   : RenderPanel();
+    std::string screen = RenderCurrentScreen();
 
     user->signal(BNET_START_SELECT);
     ua_->SendMsg("%s", screen.c_str());
@@ -2586,6 +2608,16 @@ TreeBrowserExit TreeBrowser::Run()
 
     if (HandleKey(input, &exit_reason)) { return exit_reason; }
   }
+}
+
+std::string TreeBrowser::RenderCurrentScreen() const
+{
+  return showing_help_             ? RenderHelp()
+         : showing_plugin_hints_   ? RenderPluginHints()
+         : showing_selected_files_ ? RenderSelectedFiles()
+         : showing_search_results_ ? RenderSearchResults()
+         : entering_search_term_   ? RenderSearchInput()
+                                   : RenderPanel();
 }
 
 }  // namespace

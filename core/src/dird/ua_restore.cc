@@ -41,6 +41,8 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
+#include "dird/ua_tree_browser.h"
+#include "dird/ua_visual_busy.h"
 #include "dird/ua_run.h"
 #include "dird/ua_restore.h"
 #include "dird/restore_options.h"
@@ -55,6 +57,7 @@
 
 #include <string_view>
 #include <vector>
+#include <optional>
 
 namespace directordaemon {
 
@@ -1360,8 +1363,24 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
-              rx->JobIds);
+  std::optional<VisualBusyIndicator> busy_indicator;
+  if (TreeBrowserSupported(ua)) {
+    busy_indicator.emplace(ua, [ua, rx, &tree](char spinner) {
+      std::string detail = T_("JobIds: ");
+      detail += rx->JobIds;
+      detail += T_(" | Files inserted: ");
+      detail += std::to_string(tree.FileCount);
+      return visual_busy_internal::RenderBusyScreen(
+          ua->terminal_width, ua->terminal_height, ua->supports_color,
+          T_("Building directory tree"), T_("Building directory tree..."),
+          detail, spinner);
+    });
+    tree.busy_indicator = &*busy_indicator;
+    busy_indicator->Start();
+  } else {
+    ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
+                rx->JobIds);
+  }
 
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
@@ -1371,6 +1390,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
                            (void*)&tree)) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
+  tree.busy_indicator = nullptr;
 
   if (*rx->BaseJobIds) {
     PmStrcat(rx->JobIds, ",");
