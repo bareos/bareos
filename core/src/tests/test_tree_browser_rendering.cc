@@ -20,8 +20,10 @@
 */
 
 #include "dird/ua_tree_browser_internal.h"
+#include "dird/ua_visual_busy.h"
 
 #include <algorithm>
+#include <chrono>
 #include <clocale>
 
 #include "gtest/gtest.h"
@@ -50,6 +52,7 @@ using directordaemon::tree_browser_internal::kDestinationBrowserHelp;
 using directordaemon::tree_browser_internal::kDestinationSearchHelpLine1;
 using directordaemon::tree_browser_internal::kDestinationSearchHelpLine2;
 using directordaemon::tree_browser_internal::kDialogTextInputHelp;
+using directordaemon::tree_browser_internal::kEstimateBusyFooter;
 using directordaemon::tree_browser_internal::kFieldEditorFooter;
 using directordaemon::tree_browser_internal::kFieldEditorHelp;
 using directordaemon::tree_browser_internal::kListDialogFooter;
@@ -76,6 +79,8 @@ using directordaemon::tree_browser_internal::RenderFrameBorder;
 using directordaemon::tree_browser_internal::SortDirectoriesFirst;
 using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
+using directordaemon::visual_busy_internal::BusySpinner;
+using directordaemon::visual_busy_internal::RenderBusyScreen;
 
 template <size_t N>
 std::string JoinHelp(const std::array<std::string_view, N>& lines)
@@ -315,6 +320,46 @@ TEST(TreeBrowserRendering, FormatsEstimateStatus)
   EXPECT_EQ(EstimateStatus(true, true, 1024), "stale");
   EXPECT_FALSE(EstimateStatus(true, false, 0).empty());
   EXPECT_NE(EstimateStatus(true, false, 1024), "stale");
+  EXPECT_EQ(EstimateStatus(true, false, 1024, true, '/'), "calculating [/]");
+  EXPECT_LE(TextCellWidth(kEstimateBusyFooter), 80);
+}
+
+TEST(TreeBrowserRendering, AdvancesBusySpinnerAtThrottledIntervals)
+{
+  BusySpinner spinner;
+  auto start = BusySpinner::Clock::time_point{};
+
+  EXPECT_EQ(spinner.Start(start), '|');
+  EXPECT_EQ(spinner.Tick(start + std::chrono::milliseconds(199)), std::nullopt);
+  EXPECT_EQ(spinner.Tick(start + std::chrono::milliseconds(200)), '/');
+  EXPECT_EQ(spinner.Tick(start + std::chrono::milliseconds(400)), '-');
+  EXPECT_EQ(spinner.Tick(start + std::chrono::milliseconds(600)), '\\');
+  EXPECT_EQ(spinner.Tick(start + std::chrono::milliseconds(800)), '|');
+}
+
+TEST(TreeBrowserRendering, RendersBlockingBusyScreenWithinTerminal)
+{
+  std::string screen = RenderBusyScreen(
+      80, 24, false, "Building directory tree", "Building directory tree...",
+      "JobIds: 1,2 | Files inserted: 123", '/');
+
+  EXPECT_NE(screen.find("Building directory tree... /"), std::string::npos);
+  EXPECT_NE(screen.find("Files inserted: 123"), std::string::npos);
+  EXPECT_NE(screen.find("Please wait; input is disabled"), std::string::npos);
+
+  size_t line_count = 0;
+  size_t offset = 0;
+  while (offset <= screen.size()) {
+    size_t end = screen.find('\n', offset);
+    std::string_view line(screen.data() + offset, end == std::string::npos
+                                                      ? screen.size() - offset
+                                                      : end - offset);
+    EXPECT_EQ(TextCellWidth(line), 80) << line;
+    line_count++;
+    if (end == std::string::npos) { break; }
+    offset = end + 1;
+  }
+  EXPECT_EQ(line_count, 24);
 }
 
 TEST(TreeBrowserRendering, OmitsDetailsWhenThePanelIsTooNarrow)

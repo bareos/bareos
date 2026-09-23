@@ -38,6 +38,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_tree_browser.h"
 #include "dird/ua_tree_internal.h"
+#include "dird/ua_visual_busy.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "lib/tree.h"
@@ -405,13 +406,14 @@ int InsertTreeHandler(void* ctx, int, char** row)
 
   if (node->inserted) {
     tree->FileCount++;
-    if (tree->DeltaCount > 0
+    if (!tree->busy_indicator && tree->DeltaCount > 0
         && (tree->FileCount - tree->LastCount) > tree->DeltaCount) {
       tree->ua->SendMsg("+");
       tree->LastCount = tree->FileCount;
     }
   }
 
+  if (tree->busy_indicator) { tree->busy_indicator->Tick(); }
   tree->cnt++;
   return 0;
 }

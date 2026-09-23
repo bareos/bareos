@@ -76,6 +76,7 @@ function createSession(director) {
     output: [],
     outputLineOpen: false,
     selectionActive: false,
+    selectionBusy: false,
     selectionText: '',
     selectionLines: [],
     cmd: '',
@@ -340,7 +341,7 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
 }
 
 function applyRawConsoleResponse(session, director, appendLines, writeToTerminal, message) {
-  if (message.prompt === 'select') {
+  if (message.prompt === 'select' || message.prompt === 'select_busy') {
     if (!session.selectionActive) {
       // Entering an interactive selection: switch the terminal to the
       // alternate screen buffer, mirroring bconsole's
@@ -349,6 +350,7 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
       writeToTerminal(director, '\x1B[?1049h')
     }
     session.selectionActive = true
+    session.selectionBusy = message.prompt === 'select_busy'
     session.selectionText = normalizeSelectionText(message.text)
     session.selectionLines = parseSelectionLines(message.text)
     session.currentPrompt = ''
@@ -371,6 +373,7 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
   }
 
   session.selectionActive = false
+  session.selectionBusy = false
   session.selectionText = ''
   session.selectionLines = []
   const isStreamingChunk = message.prompt === 'more'
@@ -496,6 +499,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       writeToTerminal(director, '\x1B[?1049l\r\n')
     }
     session.selectionActive = false
+    session.selectionBusy = false
     session.selectionText = ''
     session.selectionLines = []
   }
@@ -748,7 +752,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             msg.text
           )
         } else {
-          const isStreamingChunk = msg.prompt === 'more'
+          const isStreamingChunk = msg.prompt === 'more' || msg.prompt === 'select_busy'
           if (!isStreamingChunk) {
             const entry = runtime.pendingCmds.get(msg.id)
             if (entry) {
@@ -904,7 +908,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
   function sendSelectionEvent(director, event) {
     const session = getSession(director)
-    if (!session.selectionActive) {
+    if (!session.selectionActive || session.selectionBusy) {
       return false
     }
     return sendCommand(director, event)
