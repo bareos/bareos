@@ -204,6 +204,8 @@ class UaContext {
                 va_list arg_ptr);
 };
 
+class VisualBusyIndicator;
+
 // Context for InsertTreeHandler()
 struct TreeContext {
   TREE_ROOT* root = nullptr;       /**< Root */
@@ -216,6 +218,7 @@ struct TreeContext {
   uint32_t FileCount = 0;    /**< Current count of files */
   uint32_t LastCount = 0;    /**< Last count of files */
   uint32_t DeltaCount = 0;   /**< Trigger for printing */
+  VisualBusyIndicator* busy_indicator = nullptr;
 
   /** Set by the "browse" classic-mode command to request switching (back)
    * into the full-screen interactive tree browser. Cleared as soon as the
