@@ -143,10 +143,12 @@ static char* SkipWin32PathRoot(JobControlRecord* jcr,
 
     return &path[3];
   } else if (IsPathSeparator(path[0]) && IsPathSeparator(path[1])) {
-    // UNC path: \\server\share\... or \\?\UNC\server\share\...
-    // Skip any additional leading separators beyond the first two (e.g.
-    // accidentally over-escaped input); a UNC prefix is only ever exactly two
-    // separators.
+    /*
+     * UNC path: \\server\share\... or \\?\UNC\server\share\...
+     * Skip any additional leading separators beyond the first two (e.g.
+     * accidentally over-escaped input); a UNC prefix is only ever exactly two
+     * separators.
+     */
     char* server;
     if (path[2] == '?' && IsPathSeparator(path[3])
         && bstrncasecmp(path + 4, "UNC", 3) && IsPathSeparator(path[7])) {

@@ -155,10 +155,11 @@ static void StripDoubleSlashes(char* fname)
 {
   char* p = fname;
 
-  // Preserve the leading separator pair of a UNC path. A run of more than
-  // two leading separators (e.g. accidentally over-escaped input) is
-  // collapsed down to exactly two, since that is the only valid form of a
-  // UNC prefix.
+  /*
+   * Preserve the leading separator pair of a UNC path. A run of more than two
+   * leading separators (e.g. accidentally over-escaped input) is collapsed down
+   * to exactly two, since that is the only valid form of a UNC prefix.
+   */
   if (IsPathSeparator(p[0]) && IsPathSeparator(p[1])) {
     p += 2;
     while (IsPathSeparator(*p)) { RemovePathSeparator(p); }

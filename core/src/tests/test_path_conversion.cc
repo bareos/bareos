@@ -260,10 +260,12 @@ TEST(WindowsPathConversion, preserve_forward_slash_unc_prefix)
   Attributes* attr = new_attr(&jcr);
   attr->type = FT_REG;
   PmStrcpy(attr->fname, "C:/Users/Administrator/file.txt");
-  // BuildAttrOutputFnames() always runs on an attr that was previously
-  // populated by UnpackAttributesRecord(), which zero-terminates ofname
-  // and olname. new_attr() only allocates the pool memory (uninitialized),
-  // so replicate that here to avoid reading uninitialized memory below.
+  /*
+   * BuildAttrOutputFnames() always runs on an attr that was previously
+   * populated by UnpackAttributesRecord(), which zero-terminates ofname and
+   * olname. new_attr() only allocates the pool memory (uninitialized), so
+   * replicate that here to avoid reading uninitialized memory below.
+   */
   *attr->ofname = 0;
   *attr->olname = 0;
 
@@ -273,14 +275,18 @@ TEST(WindowsPathConversion, preserve_forward_slash_unc_prefix)
                "//server/share/restore-target/C/Users/Administrator/file.txt");
 
   FreeAttr(attr);
-  // jcr.where is freed automatically by ~JobControlRecord() (via
-  // FreeCommonJcr()) when jcr goes out of scope below; do not free it here
-  // too, or it will be a double free.
+  /*
+   * jcr.where is freed automatically by ~JobControlRecord() (via
+   * FreeCommonJcr()) when jcr goes out of scope below; do not free it here too,
+   * or it will be a double free.
+   */
 }
 
-// A run of more than two leading separators in the "where" prefix (e.g.
-// from over-escaped bconsole input) must be collapsed down to exactly two,
-// since 3+ leading separators is not a valid UNC prefix.
+/*
+ * A run of more than two leading separators in the "where" prefix (e.g. from
+ * over-escaped bconsole input) must be collapsed down to exactly two, since 3+
+ * leading separators is not a valid UNC prefix.
+ */
 TEST(WindowsPathConversion, collapses_excess_leading_separators_in_where)
 {
   JobControlRecord jcr{};

@@ -32,11 +32,13 @@
 #include <cstring>
 
 #if defined(HAVE_WIN32)
-// Regression test for restoring to a UNC path (e.g. \\server\share\...).
-// SeparatePathAndFile() used to collapse the leading double separator of a
-// UNC path down to a single separator, which made the restored file end up
-// under a bogus drive-relative path (e.g. C:\server\share\...) instead of
-// the intended network share.
+/*
+ * Regression test for restoring to a UNC path (e.g. \\server\share\...).
+ * SeparatePathAndFile() used to collapse the leading double separator of a UNC
+ * path down to a single separator, which made the restored file end up under a
+ * bogus drive-relative path (e.g. C:\server\share\...) instead of the intended
+ * network share.
+ */
 TEST(SeparatePathAndFile, preserves_unc_prefix)
 {
   JobControlRecord jcr{};
@@ -50,14 +52,16 @@ TEST(SeparatePathAndFile, preserves_unc_prefix)
       ofile,
       "\\\\localhost\\C$\\Users\\Administrator\\restore-target\\file.txt");
   EXPECT_STREQ(ofile + pnl + 1, "file.txt");
-  // the path must still start with the double separator of the UNC prefix
+  /* The path must still start with the double separator of the UNC prefix. */
   EXPECT_EQ(ofile[0], '\\');
   EXPECT_EQ(ofile[1], '\\');
 }
 
-// A run of more than two leading separators (e.g. from over-escaped
-// bconsole input) must be collapsed down to exactly two, since 3+ leading
-// separators is not a valid UNC prefix and Windows will reject it.
+/*
+ * A run of more than two leading separators (e.g. from over-escaped bconsole
+ * input) must be collapsed down to exactly two, since 3+ leading separators is
+ * not a valid UNC prefix and Windows will reject it.
+ */
 TEST(SeparatePathAndFile, collapses_excess_leading_separators)
 {
   JobControlRecord jcr{};
@@ -73,9 +77,11 @@ TEST(SeparatePathAndFile, collapses_excess_leading_separators)
   EXPECT_STREQ(ofile + pnl + 1, "file.txt");
 }
 
-// Bareos conventionally also accepts forward slashes as path separators
-// (this avoids the need to escape backslashes e.g. in bconsole). Make sure
-// the UNC prefix is preserved for that form too: //server/share/...
+/*
+ * Bareos conventionally also accepts forward slashes as path separators (this
+ * avoids the need to escape backslashes e.g. in bconsole). Make sure the UNC
+ * prefix is preserved for that form too: //server/share/...
+ */
 TEST(SeparatePathAndFile, preserves_forward_slash_unc_prefix)
 {
   JobControlRecord jcr{};
@@ -91,7 +97,7 @@ TEST(SeparatePathAndFile, preserves_forward_slash_unc_prefix)
   EXPECT_EQ(ofile[1], '/');
 }
 
-// Mixed separators: a forward-slash UNC prefix followed by backslashes.
+/* Mixed separators: a forward-slash UNC prefix followed by backslashes. */
 TEST(SeparatePathAndFile, preserves_mixed_separator_unc_prefix)
 {
   JobControlRecord jcr{};

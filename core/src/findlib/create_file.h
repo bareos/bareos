@@ -26,8 +26,10 @@ int CreateFile(JobControlRecord* jcr,
                BareosFilePacket* ofd,
                int replace);
 
-// Exposed (non-static) only so it can be unit tested. Not part of the
-// public API of this header.
+/*
+ * Exposed (non-static) only so it can be unit tested. Not part of the public
+ * API of this header.
+ */
 int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile);
 
 #endif  // BAREOS_FINDLIB_CREATE_FILE_H_
