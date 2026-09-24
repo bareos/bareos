@@ -359,7 +359,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   bool retval = UpdateDb(jcr, cmd) > 0;
 
   // Make sure InChanger is 0 for any record having the same Slot
-  MakeInchangerUnique(jcr, mr);
+  retval &= MakeInchangerUnique(jcr, mr);
 
   return retval;
 }
@@ -413,7 +413,7 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
  *
  * This routine assumes the database is already locked.
  */
-void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
+bool BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   CheckOwnership();
   char ed1[50], ed2[50];
@@ -427,7 +427,7 @@ void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
 
     } else if (*mr->VolumeName) {
       auto esc = EscapeString(jcr, mr->VolumeName);
-      if (!esc) { return; }
+      if (!esc) { return false; }
       Mmsg(cmd,
            "UPDATE Media SET InChanger=0, Slot=0 WHERE "
            "Slot=%d AND StorageId=%s AND VolumeName!='%s'",
@@ -440,8 +440,10 @@ void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
            mr->Slot, edit_int64(mr->StorageId, ed1));
     }
     Dmsg1(100, "%s\n", cmd);
-    UpdateDb(jcr, cmd);
+    return UpdateDb(jcr, cmd) >= 0;
   }
+
+  return true;
 }
 
 /**
