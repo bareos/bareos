@@ -1247,7 +1247,10 @@ static void UpdateSlots(UaContext* ua)
         if (BitIsSet(i - 1, slot_list)) {
           // Set InChanger to zero for this Slot
           mr.Slot = i;
-          ua->db->MakeInchangerUnique(ua->jcr, &mr);
+          if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+            ua->WarningMsg(T_("Could not set inchanger to 0 for slot %d.\n"),
+                           mr.Slot);
+          }
         }
       }
     }
@@ -1311,7 +1314,12 @@ void UpdateSlotsFromVolList(UaContext* ua,
     {
       DbLocker _{ua->db};
       // Set InChanger to zero for this Slot
-      ua->db->MakeInchangerUnique(ua->jcr, &mr);
+      if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+        Dmsg4(100,
+              "Could not make unique: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid
+              "\n",
+              mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      }
     }
     Dmsg4(100,
           "After make unique: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid "\n",
@@ -1410,7 +1418,12 @@ void UpdateInchangerForExport(UaContext* ua,
     DbLocker _{ua->db};
 
     // Set InChanger to zero for this Slot
-    ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+      Dmsg4(100,
+            "Could not make unique: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid
+            "\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+    }
 
     Dmsg4(100,
           "After make unique: Vol=%s slot=%d inchanger=%d sid=%" PRIdbid "\n",

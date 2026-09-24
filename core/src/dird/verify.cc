@@ -797,12 +797,18 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
             goto bail_out;
           }
           if (do_Digest != CRYPTO_DIGEST_NONE) {
-            jcr->db->EscapeString(jcr, buf.c_str(), Opts_Digest.c_str(),
-                                  strlen(Opts_Digest.c_str()));
-            if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
+            auto escaped_digest
+                = jcr->db->EscapeString(jcr, Opts_Digest.c_str());
+            if (!escaped_digest) {
+              Jmsg(jcr, M_FATAL, 0,
+                   T_("Failed to escape digest for catalog comparison.\n"));
+              goto bail_out;
+            }
+            if (!bstrcmp(escaped_digest->c_str(), fdbr.Digest)) {
               PrtFname(jcr);
               Jmsg(jcr, M_INFO, 0, T_("      %s differs. File=%s Cat=%s\n"),
-                   stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
+                   stream_to_ascii(stream), escaped_digest->c_str(),
+                   fdbr.Digest);
               jcr->setJobStatusWithPriorityCheck(JS_Differences);
             }
             do_Digest = CRYPTO_DIGEST_NONE;

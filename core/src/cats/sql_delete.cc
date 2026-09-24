@@ -51,11 +51,11 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 {
   SQL_ROW row;
   int num_rows;
-  char esc[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc, pr->Name, strlen(pr->Name));
-  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
+  auto esc = EscapeString(jcr, pr->Name);
+  if (!esc) { return false; }
+  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc->c_str());
   Dmsg1(10, "selectpool: %s\n", cmd);
 
   pr->PoolId = pr->NumVols = 0;
