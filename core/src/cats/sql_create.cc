@@ -463,7 +463,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     }
     /* Make sure that if InChanger is non-zero any other identical slot
      * has InChanger zero. */
-    MakeInchangerUnique(jcr, mr);
+    retval &= MakeInchangerUnique(jcr, mr);
   }
 
   return retval;
