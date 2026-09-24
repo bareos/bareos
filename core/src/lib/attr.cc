@@ -149,6 +149,8 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
 }
 
 #if defined(HAVE_WIN32)
+static void RemovePathSeparator(char* p) { memmove(p, p + 1, strlen(p)); }
+
 static void StripDoubleSlashes(char* fname)
 {
   char* p = fname;
@@ -159,13 +161,13 @@ static void StripDoubleSlashes(char* fname)
   // UNC prefix.
   if (IsPathSeparator(p[0]) && IsPathSeparator(p[1])) {
     p += 2;
-    while (IsPathSeparator(*p)) { strcpy(p, p + 1); }
+    while (IsPathSeparator(*p)) { RemovePathSeparator(p); }
   }
 
   while (p && *p) {
     p = strpbrk(p, "/\\");
     if (p != NULL) {
-      if (IsPathSeparator(p[1])) { strcpy(p, p + 1); }
+      if (IsPathSeparator(p[1])) { RemovePathSeparator(p); }
       p++;
     }
   }

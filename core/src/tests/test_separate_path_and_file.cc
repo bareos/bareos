@@ -27,6 +27,7 @@
 #include "findlib/find.h"
 #include "lib/attr.h"
 #include "findlib/create_file.h"
+#include "findlib/makepath.h"
 
 #include <cstring>
 
@@ -115,5 +116,30 @@ TEST(SeparatePathAndFile, regular_path_unaffected)
   ASSERT_GT(pnl, 0);
   EXPECT_STREQ(ofile, "C:/Users/Administrator/restore-target/file.txt");
   EXPECT_STREQ(ofile + pnl + 1, "file.txt");
+}
+
+TEST(MakePath, rejects_missing_unc_share_root)
+{
+  JobControlRecord jcr{};
+  Attributes* attr = new_attr(&jcr);
+  attr->type = FT_DIREND;
+
+  EXPECT_FALSE(makepath(attr, "\\\\localhost\\bareos-missing-share", 0777, 0777,
+                        0, 0, false));
+
+  FreeAttr(attr);
+}
+
+TEST(MakePath, recognizes_extended_unc_root)
+{
+  JobControlRecord jcr{};
+  Attributes* attr = new_attr(&jcr);
+  attr->type = FT_DIREND;
+
+  EXPECT_FALSE(makepath(
+      attr, "\\\\?\\UNC\\localhost\\bareos-missing-share\\restore-target", 0777,
+      0777, 0, 0, false));
+
+  FreeAttr(attr);
 }
 #endif  // HAVE_WIN32

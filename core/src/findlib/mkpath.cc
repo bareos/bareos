@@ -143,22 +143,31 @@ static char* SkipWin32PathRoot(JobControlRecord* jcr,
 
     return &path[3];
   } else if (IsPathSeparator(path[0]) && IsPathSeparator(path[1])) {
-    // UNC path: \\server\share\... Skip any additional leading
-    // separators beyond the first two (e.g. accidentally over-escaped
-    // input); a UNC prefix is only ever exactly two separators.
-    char* server = path + 2;
-    while (IsPathSeparator(*server)) { server++; }
+    // UNC path: \\server\share\... or \\?\UNC\server\share\...
+    // Skip any additional leading separators beyond the first two (e.g.
+    // accidentally over-escaped input); a UNC prefix is only ever exactly two
+    // separators.
+    char* server;
+    if (path[2] == '?' && IsPathSeparator(path[3])
+        && bstrncasecmp(path + 4, "UNC", 3) && IsPathSeparator(path[7])) {
+      server = path + 8;
+    } else {
+      server = path + 2;
+      while (IsPathSeparator(*server)) { server++; }
+    }
     char* after_server = first_path_separator(server);
     if (!after_server) {
-      *only_prefix = true;
-      return path;
+      Jmsg1(jcr, M_ERROR, 0, T_("UNC path %s does not specify a share.\n"),
+            path);
+      return nullptr;
     }
 
     char* share = after_server + 1;
+    while (IsPathSeparator(*share)) { share++; }
     char* after_share = first_path_separator(share);
     if (!after_share) {
-      *only_prefix = true;
-      return path;
+      Jmsg1(jcr, M_ERROR, 0, T_("UNC share %s does not exist.\n"), path);
+      return nullptr;
     }
 
     return after_share;
