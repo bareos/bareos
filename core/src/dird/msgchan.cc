@@ -446,9 +446,11 @@ extern "C" void MsgThreadCleanup(void* arg)
     jcr->dir_impl->SD_msg_chan_started = false;
   }
 
-  pthread_cond_broadcast(
-      &jcr->dir_impl->nextrun_ready);    /* wakeup any waiting threads */
-  jcr->dir_impl->term_wait.notify_all(); /* wakeup any waiting threads */
+  /* Let a thread waiting for the next run know that it will never arrive,
+   * so it does not block until the job gets cancelled. */
+  *jcr->dir_impl->nextrun_ready.lock() = true;
+  jcr->dir_impl->nextrun_wait.notify_all(); /* wakeup any waiting threads */
+  jcr->dir_impl->term_wait.notify_all();    /* wakeup any waiting threads */
   Dmsg2(100, "=== End msg_thread. JobId=%" PRIu32 " usecnt=%d\n", jcr->JobId,
         jcr->UseCount());
   jcr->db->ThreadCleanup(); /* remove thread specific data */
@@ -487,8 +489,8 @@ extern "C" void* msg_thread(void* arg)
     if (bsscanf(sd->msg, OK_nextrun, auth_key) == 1) {
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
       jcr->sd_auth_key = strdup(auth_key);
-      pthread_cond_broadcast(
-          &jcr->dir_impl->nextrun_ready); /* wakeup any waiting threads */
+      *jcr->dir_impl->nextrun_ready.lock() = true;
+      jcr->dir_impl->nextrun_wait.notify_all(); /* wakeup any waiting threads */
       continue;
     }
 
