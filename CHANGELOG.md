@@ -66,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: escape client list filter [PR #2814]
 - python-fd: allow multi __init__() [PR #2831]
 - cats: size SQL escape buffers dynamically [PR #2813]
+- dird: fix cancel duplicate crash [PR #2833]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2403,4 +2404,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2814]: https://github.com/bareos/bareos/pull/2814
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
+[PR #2833]: https://github.com/bareos/bareos/pull/2833
 [unreleased]: https://github.com/bareos/bareos/tree/master
