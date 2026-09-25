@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -142,9 +142,12 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
+static std::string pgsql_copy_escape(const char* src, size_t len)
 {
   char c = '\0';
+
+  std::string result;
+  result.reserve(len);  // we will need at least len bytes
 
   while (len > 0 && *src) {
     switch (*src) {
@@ -178,20 +181,17 @@ static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
     }
 
     if (c) {
-      *dest = '\\';
-      dest++;
-      *dest = c;
+      result.push_back('\\');
+      result.push_back(c);
     } else {
-      *dest = *src;
+      result.push_back(*src);
     }
 
     len--;
     src++;
-    dest++;
   }
 
-  *dest = '\0';
-  return dest;
+  return result;
 }
 
 bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
@@ -203,11 +203,8 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   const char* digest;
   char ed1[50], ed2[50], ed3[50];
 
-  esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
-  pgsql_copy_escape(esc_name, fname, fnl);
-
-  esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
-  pgsql_copy_escape(esc_path, path, pnl);
+  auto esc_name = pgsql_copy_escape(fname, fnl);
+  auto esc_path = pgsql_copy_escape(path, pnl);
 
   if (ar->Digest == NULL || ar->Digest[0] == 0) {
     digest = "0";
@@ -216,8 +213,8 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   }
 
   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\t%s\t%s\n", ar->FileIndex,
-             edit_int64(ar->JobId, ed1), esc_path, esc_name, ar->attr, digest,
-             ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
+             edit_int64(ar->JobId, ed1), esc_path.c_str(), esc_name.c_str(),
+             ar->attr, digest, ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
              edit_uint64(ar->Fhnode, ed3));
 
   do {
@@ -328,9 +325,9 @@ bool BareosDbPostgresql::SqlCopyInsert(
 
   std::vector<char> buffer;
   for (const auto& field : data_fields) {
-    if (strlen(field.data_pointer) != 0U) {
-      buffer.resize(strlen(field.data_pointer) * 2 + 1);
-      pgsql_copy_escape(buffer.data(), field.data_pointer, buffer.size());
+    auto len = strlen(field.data_pointer);
+    if (len != 0U) {
+      auto buffer = pgsql_copy_escape(field.data_pointer, len);
       query += buffer.data();
     }
     query += "\t";

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -919,8 +919,6 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
-      size_t length;
-
       /* First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
        * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
@@ -931,11 +929,11 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         continue;
       }
 
-      ar->Digest = digest.c_str();
       ar->DigestType = CryptoDigestStreamType(stream);
-      length = strlen(Digest.c_str());
-      digest.check_size(length * 2 + 1);
-      jcr->db->EscapeString(jcr, digest.c_str(), Digest.c_str(), length);
+      auto escaped_digest = jcr->db->EscapeString(jcr, Digest.c_str());
+      if (!escaped_digest) { return 0; }
+      PmStrcpy(digest, escaped_digest->c_str());
+      ar->Digest = digest.c_str();
       Dmsg4(debuglevel, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
             strlen(digest.c_str()), digest.c_str(), ar->DigestType);
     }

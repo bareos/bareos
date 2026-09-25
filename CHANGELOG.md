@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - cats: escape client list filter [PR #2824]
+- cats: size SQL escape buffers dynamically [PR #2841]
 
 ## [23.1.8] - 2026-09-03
 
@@ -1794,4 +1795,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2709]: https://github.com/bareos/bareos/pull/2709
 [PR #2788]: https://github.com/bareos/bareos/pull/2788
 [PR #2824]: https://github.com/bareos/bareos/pull/2824
+[PR #2841]: https://github.com/bareos/bareos/pull/2841
 [unreleased]: https://github.com/bareos/bareos/tree/master

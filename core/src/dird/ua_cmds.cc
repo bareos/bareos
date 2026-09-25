@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1994,7 +1994,6 @@ static bool TruncateCmd(UaContext* ua, const char*)
   bool result = false;
   int i = -1;
   int parsed_args = 1; /* start at 1, as command itself is also counted */
-  char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem tmp(PM_MESSAGE);
   PoolMem volumes(PM_MESSAGE);
   dbid_list mediaIds;
@@ -2064,11 +2063,12 @@ static bool TruncateCmd(UaContext* ua, const char*)
   i = FindArgWithValue(ua, "volume");
   if (i >= 0) {
     if (IsNameValid(ua->argv[i])) {
-      ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
+      auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
+      if (!esc) { goto bail_out; }
       if (!*volumes.c_str()) {
-        Mmsg(tmp, "'%s'", esc);
+        Mmsg(tmp, "'%s'", esc->c_str());
       } else {
-        Mmsg(tmp, ",'%s'", esc);
+        Mmsg(tmp, ",'%s'", esc->c_str());
       }
       volumes.strcat(tmp.c_str());
       parsed_args++;
