@@ -62,5 +62,15 @@ enum class ClassicCommandOutcome
 ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua,
                                                TreeContext* tree);
 
+/**
+ * Parse and dispatch exactly one classic tree-selection command line
+ * already stored in ua->cmd (skips reading a new command from the
+ * console socket). Used by RunOneClassicTreeCommand() above, and directly
+ * by the interactive tree browser's '+'/'-' glob mark/unmark prompts to
+ * run a synthesized "mark <pattern>"/"unmark <pattern>" command line.
+ */
+ClassicCommandOutcome ExecuteClassicTreeCommand(UaContext* ua,
+                                                TreeContext* tree);
+
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_TREE_INTERNAL_H_
