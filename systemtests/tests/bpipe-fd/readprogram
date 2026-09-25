@@ -13,4 +13,6 @@ read_program_env_file="tmp/readprogram.$BareosJobLevel.env"
   echo "BareosWhere='$BareosWhere'"
   echo "BareosReplace='$BareosReplace'"
   echo "my_env_variable='$my_env_variable'"
-} > "$read_program_env_file"
+} >"$read_program_env_file"
+
+printf '%s' 'bareos bpipe accounting payload'

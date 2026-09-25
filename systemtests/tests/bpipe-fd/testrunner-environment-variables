@@ -64,6 +64,30 @@ check_log "$full_log"
 check_log "$incr_log"
 check_log "$restore_log"
 
+payload="bareos bpipe accounting payload"
+payload_bytes=${#payload}
+payload_blocks=$(((payload_bytes + 511) / 512))
+
+expect_grep \
+  "Plugin did not report corrected size/block count for /bpipe; using ${payload_bytes} byte(s) and ${payload_blocks} 512-byte block(s)" \
+  "$full_log" \
+  "File Daemon did not report its counted bpipe size"
+
+printf '%s' "$payload" >"${runner_tmp}/expected-restored-data"
+cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.3. .dat"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=1 AND p.path='/' AND f.name='bpipe'"
+@$out ${runner_tmp}/accounting-before-virtual-full.out
+status subscriptions accounting client=bareos-fd fileset=SelfTest
+END_OF_DATA
+
+expect_grep \
+  "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/accounting.out" \
+  "Catalog does not contain exactly one corrected bpipe File row"
+
 # validate environment variables in readprogram / writeprogram
 expected_output=(
   "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
@@ -104,5 +128,57 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
     fi
   fi
 done
+
+if on_windows_host; then
+  accounted_bytes=$payload_bytes
+  accounting_rule=st_size
+else
+  accounted_bytes=$((payload_blocks * 512))
+  accounting_rule='st_blocks\*512'
+fi
+
+expect_grep \
+  "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 2 jobs in chain)\\." \
+  "${runner_tmp}/accounting-before-virtual-full.out" \
+  "Subscription accounting did not count the original bpipe backup correctly"
+
+virtual_full_log="${runner_tmp}/virtual-full.out"
+virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
+
+run_bconsole - <<END_OF_DATA
+@$out ${virtual_full_log}
+label volume=VirtualFull-0001 storage=File2 pool=VirtualFull
+run job=backup-bareos-fd level=VirtualFull jobid=1,2 yes
+wait
+messages
+@$out ${runner_tmp}/virtual-full-accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=4 AND p.path='/' AND f.name='bpipe'"
+status subscriptions accounting client=bareos-fd fileset=SelfTest
+@$out ${virtual_full_restore_log}
+purge volume=Full-0001 yes
+restore jobid=4 client=bareos-fd all done yes
+wait
+messages
+END_OF_DATA
+
+check_log "$virtual_full_log"
+check_log "$virtual_full_restore_log"
+
+expect_grep \
+  "SD Files Written:[[:space:]]*1" \
+  "$virtual_full_log" \
+  "Virtual Full did not consolidate exactly one bpipe file"
+
+expect_grep \
+  "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/virtual-full-accounting.out" \
+  "Virtual Full catalog row does not retain corrected bpipe attributes"
+
+expect_grep \
+  "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 1 jobs in chain)\\." \
+  "${runner_tmp}/virtual-full-accounting.out" \
+  "Subscription accounting changed after bpipe consolidation"
+
+cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
 
 end_test

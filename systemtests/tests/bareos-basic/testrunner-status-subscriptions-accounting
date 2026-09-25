@@ -1,0 +1,116 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Test the output of "status subscriptions accounting", the real,
+# File.LStat-based accounting report, against a backup of a handful of
+# files with known, exact sizes -- including one whose size is not a
+# multiple of 512 bytes, to exercise the block-rounding path.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+JobName=backup-acct-test
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+rm -rf "$tmp/acct-data"
+mkdir -p "$tmp/acct-data"
+
+# Known, exact sizes (bytes): one below one block, one exactly one block,
+# one spanning into a second (non-512-aligned -- exercises rounding up).
+generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
+generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
+generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
+raw_bytes=$((1 + 512 + 1000))
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $tmp/status-subscriptions-accounting.log
+run job=$JobName level=Full yes
+wait
+messages
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions accounting client=does-not-exist
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+# The accounting rule differs per client platform (see ua_acct.cc): a
+# Windows client's st_blocks is a purely synthetic value derived from
+# st_size, so the report uses st_size directly there (exact, deterministic
+# match against the known raw byte total). Every other platform uses the
+# real, filesystem-reported st_blocks*512 -- real block-allocation data,
+# whose exact value depends on the underlying filesystem's allocation
+# strategy (block/sector size, compression, tiny-file embedding, sparse
+# files, etc.) and cannot be reliably predicted from outside the backup
+# itself, so only a sanity bound is checked there: a multiple of 512.
+# (No lower-bound-vs-raw-bytes check: on filesystems that compress or
+# deduplicate blocks, e.g. compressed ZFS, st_blocks*512 can legitimately
+# be smaller than the logical file content size.)
+line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
+if [[ -z "$line" ]]; then
+  echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
+  estat=1
+elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 1\ jobs\ in\ chain\)\. ]]; then
+  files="${BASH_REMATCH[1]}"
+  bytes="${BASH_REMATCH[2]//,/}"
+  actual_rule="${BASH_REMATCH[3]}"
+  if [[ "$files" -ne 3 ]]; then
+    echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
+    estat=1
+  fi
+  if on_windows_host; then
+    if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected '${raw_bytes} bytes (rule: st_size)'!" >&2
+      estat=1
+    fi
+  else
+    if [[ "$actual_rule" != 'st_blocks*512' ||
+      $((bytes % 512)) -ne 0 ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected a multiple of 512 with rule st_blocks*512!" >&2
+      estat=1
+    fi
+  fi
+else
+  echo "status subscriptions accounting report line did not match the expected format:" \
+    "${line}" >&2
+  estat=1
+fi
+
+if ! grep -q "No matching Client/FileSet combinations found." \
+  "$tmp/status-subscriptions-accounting.log"; then
+  echo "status subscriptions accounting did not exclude a non-existing client as expected!" >&2
+  estat=1
+fi
+
+end_test

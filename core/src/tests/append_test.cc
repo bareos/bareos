@@ -22,6 +22,20 @@
 #include "gtest/gtest.h"
 
 #include "stored/append.h"
+#include "include/streams.h"
+
+namespace {
+storagedaemon::DeviceRecord MakeRecord(int32_t fileindex, int32_t stream)
+{
+  storagedaemon::DeviceRecord dr{};
+  dr.FileIndex = fileindex;
+  dr.Stream = stream;
+  static char dummy_data[] = "x";
+  dr.data = dummy_data;
+  dr.data_len = 1;
+  return dr;
+}
+} /* namespace */
 
 TEST(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
 {
@@ -52,4 +66,46 @@ TEST(AppendProcessedFileTest, AddDeviceRecordCopiesDataContentNotPointer)
   EXPECT_EQ(memcmp(processedfiledata.GetData().data, dr.data, dr.data_len), 0);
 
   FreePoolMemory(test_msg);
+}
+
+TEST(AppendProcessedFileTest, IsUnixAttributeStreamRecognizesAttributeStreams)
+{
+  EXPECT_TRUE(storagedaemon::IsUnixAttributeStream(STREAM_UNIX_ATTRIBUTES));
+  EXPECT_TRUE(storagedaemon::IsUnixAttributeStream(STREAM_UNIX_ATTRIBUTES_EX));
+  EXPECT_FALSE(storagedaemon::IsUnixAttributeStream(STREAM_MD5_DIGEST));
+}
+
+TEST(AppendProcessedFileTest, SelectAttributesToSendKeepsOnlyLastUnixAttribute)
+{
+  storagedaemon::DeviceRecord original_attrs
+      = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  storagedaemon::DeviceRecord digest = MakeRecord(1, STREAM_MD5_DIGEST);
+  storagedaemon::DeviceRecord corrected_attrs
+      = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+
+  std::vector<storagedaemon::ProcessedFileData> attributes;
+  attributes.emplace_back(&original_attrs);
+  attributes.emplace_back(&digest);
+  attributes.emplace_back(&corrected_attrs);
+
+  std::vector<bool> to_send = storagedaemon::SelectAttributesToSend(attributes);
+
+  ASSERT_EQ(to_send.size(), 3U);
+  EXPECT_FALSE(to_send[0]); /* superseded original attributes */
+  EXPECT_TRUE(to_send[1]);  /* digest is never deduplicated */
+  EXPECT_TRUE(to_send[2]);  /* the last (corrected) attributes */
+}
+
+TEST(AppendProcessedFileTest,
+     SelectAttributesToSendSendsSingleUnixAttributeAsIs)
+{
+  storagedaemon::DeviceRecord attrs = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+
+  std::vector<storagedaemon::ProcessedFileData> attributes;
+  attributes.emplace_back(&attrs);
+
+  std::vector<bool> to_send = storagedaemon::SelectAttributesToSend(attributes);
+
+  ASSERT_EQ(to_send.size(), 1U);
+  EXPECT_TRUE(to_send[0]);
 }
