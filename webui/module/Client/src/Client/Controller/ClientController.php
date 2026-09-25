@@ -25,6 +25,7 @@
 
 namespace Client\Controller;
 
+use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Exception;
@@ -75,11 +76,20 @@ class ClientController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
+        $action = $this->params()->fromPost('action');
 
         if (empty($action)) {
             return new ViewModel();
         } else {
+            $form = new ActionForm();
+            $form->setData($this->getRequest()->getPost());
+            if (!$this->getRequest()->isPost() || !$form->isValid()) {
+                error_log('Rejected client action request: ' . json_encode($form->getMessages()));
+                $this->getResponse()->setStatusCode(400);
+                $this->getResponse()->setContent('Invalid request.');
+                return $this->getResponse();
+            }
+
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
@@ -92,7 +102,7 @@ class ClientController extends AbstractActionController
             }
 
             if ($action == "enable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
                     if ($this->bsock) {
                         $this->bsock->disconnect();
@@ -122,7 +132,7 @@ class ClientController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
                     if ($this->bsock) {
                         $this->bsock->disconnect();

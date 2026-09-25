@@ -25,6 +25,7 @@
 
 namespace Api\Controller;
 
+use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractRestfulController;
 use Laminas\Json\Json;
 use Exception;
@@ -54,8 +55,16 @@ class ConsoleController extends AbstractRestfulController
             );
         }
 
+        $form = new ActionForm();
+        $form->setData($data);
+        if (!$form->isValid()) {
+            $this->getResponse()->setStatusCode(400);
+            $this->getResponse()->setContent(Json::encode(array('error' => 'Invalid request.')));
+            return $this->getResponse();
+        }
+
         $this->bsock = $this->getServiceLocator()->get('director');
-        $command = $this->params()->fromPost('command');
+        $command = isset($data['command']) ? $data['command'] : null;
 
         try{
             $this->result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, $command);

@@ -101,3 +101,33 @@ function initDTLocale() {
    iJS.i18n.bindtextdomain(dt_locale, dt_textdomain, "po");
    iJS.i18n.try_load_lang();
 }
+function escapeHtmlAttribute(value) {
+   return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+}
+
+function actionPostButton(url, parameters, title, icon, confirmation) {
+   let csrfElement = document.querySelector('meta[name="csrf-token"]');
+   let form = '<form method="post" action="' + escapeHtmlAttribute(url) + '" style="display:inline"';
+
+   if(confirmation) {
+      form += ' data-confirmation="' + escapeHtmlAttribute(confirmation) +
+         '" onsubmit="return confirm(this.getAttribute(\'data-confirmation\'))"';
+   }
+   form += '>';
+
+   parameters.csrf = csrfElement ? csrfElement.getAttribute('content') : '';
+   Object.keys(parameters).forEach(function(name) {
+      form += '<input type="hidden" name="' + escapeHtmlAttribute(name) + '" value="' +
+         escapeHtmlAttribute(parameters[name]) + '">';
+   });
+
+   form += '<button type="submit" class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" title="' +
+      escapeHtmlAttribute(title) + '" id="btn-1"><span class="glyphicon ' + escapeHtmlAttribute(icon) +
+      '"></span></button></form>';
+   return form;
+}

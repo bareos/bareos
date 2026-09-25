@@ -236,13 +236,19 @@ $this->headTitle($title);
       if (s.length === 0) {
         $("#modal-004").modal();
       } else {
-         let url = "<?php echo $this->url('api/execute', array(), array()) . '?command=rerun&jobs=" + s + "'; ?>";
+         let url = "<?php echo $this->url('api/execute', array(), array()); ?>";
+         let csrfElement = document.querySelector('meta[name="csrf-token"]');
 
          $('#dir-messages').empty()
 
          $.ajax({
             url: url,
             type: 'POST',
+            data: {
+               action: 'rerun',
+               jobs: s,
+               csrf: csrfElement ? csrfElement.getAttribute('content') : ''
+            },
             dataType: 'json',
             timeout: 10000,
             success: function(data) {
