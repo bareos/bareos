@@ -149,18 +149,32 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
 }
 
 #if defined(HAVE_WIN32)
+static void RemovePathSeparator(char* p) { memmove(p, p + 1, strlen(p)); }
+
 static void StripDoubleSlashes(char* fname)
 {
   char* p = fname;
+
+  /*
+   * Preserve the leading separator pair of a UNC path. A run of more than two
+   * leading separators (e.g. accidentally over-escaped input) is collapsed down
+   * to exactly two, since that is the only valid form of a UNC prefix.
+   */
+  if (IsPathSeparator(p[0]) && IsPathSeparator(p[1])) {
+    p += 2;
+    while (IsPathSeparator(*p)) { RemovePathSeparator(p); }
+  }
+
   while (p && *p) {
     p = strpbrk(p, "/\\");
     if (p != NULL) {
-      if (IsPathSeparator(p[1])) { strcpy(p, p + 1); }
+      if (IsPathSeparator(p[1])) { RemovePathSeparator(p); }
       p++;
     }
   }
 }
 #endif
+
 
 /**
  * Build attr->ofname from attr->fname and
