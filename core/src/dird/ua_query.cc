@@ -34,6 +34,9 @@
 #include "dird/ua_select.h"
 #include "lib/berrno.h"
 
+#include <optional>
+#include <string>
+
 namespace directordaemon {
 
 extern DirectorResource* director;
@@ -115,7 +118,10 @@ bool QueryCmd(UaContext* ua, const char*)
     if (line[len - 1] != ';') { continue; }
     line[len - 1] = 0; /* zap ; */
     if (query[0] != 0) {
-      query = substitute_prompts(ua, query, prompt, nprompt);
+      POOLMEM* substituted_query
+          = substitute_prompts(ua, query, prompt, nprompt);
+      if (!substituted_query) { goto bail_out; }
+      query = substituted_query;
       Dmsg1(100, "Query2=%s\n", query);
       if (query[0] == '!') {
         ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
@@ -128,7 +134,9 @@ bool QueryCmd(UaContext* ua, const char*)
   } /* end while */
 
   if (query[0] != 0) {
-    query = substitute_prompts(ua, query, prompt, nprompt);
+    POOLMEM* substituted_query = substitute_prompts(ua, query, prompt, nprompt);
+    if (!substituted_query) { goto bail_out; }
+    query = substituted_query;
     Dmsg1(100, "Query2=%s\n", query);
     if (query[0] == '!') {
       ua->db->ListSqlQuery(ua->jcr, query + 1, ua->send, VERT_LIST, false);
@@ -152,12 +160,10 @@ static POOLMEM* substitute_prompts(UaContext* ua,
 {
   char *p, *q, *o;
   POOLMEM* new_query;
-  int i, n, len, olen;
-  char* subst[9];
+  int n, olen;
+  std::optional<std::string> subst[9];
 
   if (nprompt == 0) { return query; }
-
-  for (i = 0; i < 9; i++) { subst[i] = NULL; }
 
   new_query = GetPoolMemory(PM_FNAME);
   o = new_query;
@@ -187,15 +193,19 @@ static POOLMEM* substitute_prompts(UaContext* ua,
                 q += 2;
                 break;
               }
+              subst[n] = ua->db->EscapeString(ua->jcr, ua->cmd);
+              if (!subst[n]) {
+                FreePoolMemory(new_query);
+                return nullptr;
+              }
             }
-            len = strlen(ua->cmd);
-            p = (char*)malloc(len * 2 + 1);
-            ua->db->EscapeString(ua->jcr, p, ua->cmd, len);
-            subst[n] = p;
+            const auto& substitution = *subst[n];
             olen = o - new_query;
-            new_query = CheckPoolMemorySize(new_query, olen + strlen(p) + 10);
+            new_query = CheckPoolMemorySize(new_query,
+                                            olen + substitution.size() + 10);
             o = new_query + olen;
-            while (*p) { *o++ = *p++; }
+            memcpy(o, substitution.data(), substitution.size());
+            o += substitution.size();
           } else {
             ua->ErrorMsg(T_("Warning prompt %d missing.\n"), n + 1);
           }
@@ -217,9 +227,6 @@ static POOLMEM* substitute_prompts(UaContext* ua,
   o = new_query + olen;
   while (*q) { *o++ = *q++; }
   *o = 0;
-  for (i = 0; i < 9; i++) {
-    if (subst[i]) { free(subst[i]); }
-  }
   FreePoolMemory(query);
   return new_query;
 }

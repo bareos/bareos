@@ -926,8 +926,6 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
       jcr->FileId = ar->FileId;
     } else if (CryptoDigestStreamType(stream) != CRYPTO_DIGEST_NONE) {
-      size_t length;
-
       /* First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
        * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with
        * it (or not) When we get a new STREAM_UNIX_ATTRIBUTES, we known that we
@@ -938,11 +936,11 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         continue;
       }
 
-      ar->Digest = digest.c_str();
       ar->DigestType = CryptoDigestStreamType(stream);
-      length = strlen(Digest.c_str());
-      digest.check_size(length * 2 + 1);
-      jcr->db->EscapeString(jcr, digest.c_str(), Digest.c_str(), length);
+      auto escaped_digest = jcr->db->EscapeString(jcr, Digest.c_str());
+      if (!escaped_digest) { return 0; }
+      PmStrcpy(digest, escaped_digest->c_str());
+      ar->Digest = digest.c_str();
       Dmsg4(debuglevel, "stream=%d DigestLen=%" PRIuz " Digest=%s type=%d\n",
             stream, strlen(digest.c_str()), digest.c_str(), ar->DigestType);
     }

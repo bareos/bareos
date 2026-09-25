@@ -51,6 +51,7 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <string_view>
 #include <vector>
 
 namespace directordaemon {
@@ -69,7 +70,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
-static void SplitPathAndFilename(UaContext* ua,
+static bool SplitPathAndFilename(UaContext* ua,
                                  RestoreContext* rx,
                                  char* fname);
 static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
@@ -661,7 +662,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   /* If choice not already made above, prompt */
   for (; !done;) {
-    char* fname;
     int len;
     bool gui_save;
     db_list_ctx jobids;
@@ -688,21 +688,20 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->jcr->gui = gui_save;
         done = false;
       } break;
-      case 1: /* list where a file is saved */
+      case 1: { /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
         if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
-        len = strlen(ua->cmd);
-        fname = (char*)malloc(len * 2 + 1);
-        ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
+        std::string_view cmd_view{ua->cmd};
+        auto fname = ua->db->EscapeString(ua->jcr, cmd_view);
+        if (!fname) { return 0; }
         ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_file,
-                          rx->ClientName, fname);
-        free(fname);
+                          rx->ClientName, fname->c_str());
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
         ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
         ua->jcr->gui = gui_save;
         done = false;
-        break;
+      } break;
       case 2: /* enter a list of JobIds */
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
           return 0;
@@ -1012,7 +1011,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      char* date)
 {
   StripTrailingNewline(file);
-  SplitPathAndFilename(ua, rx, file);
+  if (!SplitPathAndFilename(ua, rx, file)) { return false; }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
@@ -1093,7 +1092,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   return true;
 }
 
-static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
+static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
 {
   char *p, *f;
 
@@ -1119,8 +1118,11 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
    */
   rx->fnl = p - f;
   if (rx->fnl > 0) {
-    rx->fname = CheckPoolMemorySize(rx->fname, 2 * (rx->fnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->fname, f, rx->fnl);
+    auto escaped_fname = ua->db->EscapeString(
+        ua->jcr, std::string_view{f, static_cast<size_t>(rx->fnl)});
+    if (!escaped_fname) { return false; }
+    rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
+    PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
     rx->fnl = 0;
@@ -1128,14 +1130,18 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
 
   rx->pnl = f - name;
   if (rx->pnl > 0) {
-    rx->path = CheckPoolMemorySize(rx->path, 2 * (rx->pnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->path, name, rx->pnl);
+    auto escaped_path = ua->db->EscapeString(
+        ua->jcr, std::string_view{name, static_cast<size_t>(rx->pnl)});
+    if (!escaped_path) { return false; }
+    rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
+    PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
     rx->pnl = 0;
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
+  return true;
 }
 
 static bool CheckAndSetFileregex(UaContext* ua,

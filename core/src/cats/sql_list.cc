@@ -116,13 +116,12 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
                                OutputFormatter* sendit,
                                e_list_type type)
 {
-  char escaped_pool_name[MAX_ESCAPE_NAME_LENGTH];
-
   PoolMem query(PM_MESSAGE);
   PoolMem select(PM_MESSAGE);
 
   DbLocker _{this};
-  EscapeString(jcr, escaped_pool_name, pdbr->Name, strlen(pdbr->Name));
+  const auto escaped_pool_name = EscapeString(jcr, pdbr->Name);
+  if (!escaped_pool_name) { return; }
 
   if (type == VERT_LIST) {
     Mmsg(select,
@@ -132,7 +131,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
          "RecyclePoolId,LabelType ");
     if (pdbr->Name[0] != 0) {
       query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
-                     escaped_pool_name);
+                     escaped_pool_name->c_str());
     } else if (pdbr->PoolId > 0) {
       query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
                      pdbr->PoolId);
@@ -143,7 +142,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
     Mmsg(select, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat ");
     if (pdbr->Name[0] != 0) {
       query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
-                     escaped_pool_name);
+                     escaped_pool_name->c_str());
     } else if (pdbr->PoolId > 0) {
       query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
                      pdbr->PoolId);
@@ -170,10 +169,9 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
   PoolMem clientfilter(PM_MESSAGE);
 
   if (clientname) {
-    const auto clientname_len = strlen(clientname);
-    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
-    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
-    clientfilter.bsprintf("WHERE Name = '%s'", escaped_clientname.data());
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    if (!escaped_clientname) { return; }
+    clientfilter.bsprintf("WHERE Name = '%s'", escaped_clientname->c_str());
   }
   if (type == VERT_LIST) {
     Mmsg(cmd,
@@ -208,12 +206,11 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
                                 OutputFormatter* sendit,
                                 e_list_type type)
 {
-  char ed1[50];
-  char esc[MAX_ESCAPE_NAME_LENGTH];
   PoolMem select(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
-  EscapeString(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
+  const auto esc = EscapeString(jcr, mdbr->VolumeName);
+  if (!esc) { return; }
 
   /* There is one case where ListMediaRecords() is called from SelectMediaDbr()
    * with the range argument set to NULL. To avoid problems, we set the range to
@@ -224,8 +221,9 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
   if (count) {
     /* NOTE: ACLs are ignored. */
     if (mdbr->VolumeName[0] != 0) {
-      FillQuery(query, SQL_QUERY::list_volumes_by_name_count_1, esc);
+      FillQuery(query, SQL_QUERY::list_volumes_by_name_count_1, esc->c_str());
     } else if (mdbr->PoolId > 0) {
+      char ed1[50];
       FillQuery(query, SQL_QUERY::list_volumes_by_poolid_count_1,
                 edit_int64(mdbr->PoolId, ed1));
     } else {
@@ -239,13 +237,13 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     }
 
     if (mdbr->VolumeName[0] != 0) {
-      query.bsprintf("%s WHERE VolumeName='%s'", select.c_str(), esc);
+      query.bsprintf("%s WHERE VolumeName='%s'", select.c_str(), esc->c_str());
     } else if (mdbr->PoolId > 0) {
-      query.bsprintf("%s WHERE PoolId=%s ORDER BY MediaId %s", select.c_str(),
-                     edit_int64(mdbr->PoolId, ed1), range);
+      query.bsprintf("%s WHERE PoolId=%" PRIdbid " ORDER BY MediaId %s",
+                     select.c_str(), mdbr->PoolId, range);
     } else if (mdbr->MediaId > 0) {
-      query.bsprintf("%s WHERE MediaId=%s ORDER BY MediaId %s", select.c_str(),
-                     edit_int64(mdbr->MediaId, ed1), range);
+      query.bsprintf("%s WHERE MediaId=%" PRIdbid " ORDER BY MediaId %s",
+                     select.c_str(), mdbr->MediaId, range);
     } else {
       query.bsprintf("%s ORDER BY MediaId %s", select.c_str(), range);
     }
@@ -392,10 +390,9 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
   PoolMem client_filter(PM_MESSAGE);
 
   if (clientname) {
-    const auto clientname_len = strlen(clientname);
-    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
-    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
-    Mmsg(client_filter, "AND Client.Name = '%s' ", escaped_clientname.data());
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    if (!escaped_clientname) { return; }
+    Mmsg(client_filter, "AND Client.Name = '%s' ", escaped_clientname->c_str());
   }
 
   if (reverse) {
@@ -526,7 +523,6 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 {
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
-  char esc[MAX_ESCAPE_NAME_LENGTH];
   PoolMem temp(PM_MESSAGE), selection(PM_MESSAGE), criteria(PM_MESSAGE);
 
   if (jr->JobId > 0) {
@@ -535,16 +531,16 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (jr->Name[0] != 0) {
-    EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
-    temp.bsprintf("AND Job.Name = '%s' ", esc);
+    const auto esc = EscapeString(jcr, jr->Name);
+    if (!esc) { return; }
+    temp.bsprintf("AND Job.Name = '%s' ", esc->c_str());
     PmStrcat(selection, temp.c_str());
   }
 
   if (clientname) {
-    const auto clientname_len = strlen(clientname);
-    std::vector<char> escaped_clientname(clientname_len * 2 + 1);
-    EscapeString(jcr, escaped_clientname.data(), clientname, clientname_len);
-    temp.bsprintf("AND Client.Name = '%s' ", escaped_clientname.data());
+    const auto escaped_clientname = EscapeString(jcr, clientname);
+    if (!escaped_clientname) { return; }
+    temp.bsprintf("AND Client.Name = '%s' ", escaped_clientname->c_str());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -568,20 +564,18 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   }
 
   if (volumename) {
-    const auto volumename_len = strlen(volumename);
-    std::vector<char> escaped_volumename(volumename_len * 2 + 1);
-    EscapeString(jcr, escaped_volumename.data(), volumename, volumename_len);
-    temp.bsprintf("AND Media.Volumename = '%s' ", escaped_volumename.data());
+    const auto escaped_volumename = EscapeString(jcr, volumename);
+    if (!escaped_volumename) { return; }
+    temp.bsprintf("AND Media.Volumename = '%s' ", escaped_volumename->c_str());
     PmStrcat(selection, temp.c_str());
   }
 
   if (poolname) {
-    const auto poolname_len = strlen(poolname);
-    std::vector<char> escaped_poolname(poolname_len * 2 + 1);
-    EscapeString(jcr, escaped_poolname.data(), poolname, poolname_len);
+    const auto escaped_poolname = EscapeString(jcr, poolname);
+    if (!escaped_poolname) { return; }
     temp.bsprintf(
         "AND Job.poolid = (SELECT poolid FROM pool WHERE name = '%s' LIMIT 1) ",
-        escaped_poolname.data());
+        escaped_poolname->c_str());
     PmStrcat(selection, temp.c_str());
   }
 
@@ -722,41 +716,41 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
                             OutputFormatter* sendit,
                             e_list_type type)
 {
-  char esc[MAX_ESCAPE_NAME_LENGTH];
-
   DbLocker _{this};
   if (jr->Name[0] != 0) {
-    EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
+    auto esc = EscapeString(jcr, jr->Name);
+    if (!esc) { return; }
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s' %s",
-         esc, range);
+         esc->c_str(), range);
   } else if (jr->Job[0] != 0) {
-    EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
+    auto esc = EscapeString(jcr, jr->Job);
+    if (!esc) { return; }
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
          "AND Job.Name='%s' %s",
-         esc, range);
+         esc->c_str(), range);
   } else if (jr->JobId != 0) {
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "
          "CreateTime, FileSetText "
          "FROM Job, FileSet "
          "WHERE Job.FileSetId = FileSet.FileSetId "
-         "AND Job.JobId='%s' %s",
-         edit_int64(jr->JobId, esc), range);
+         "AND Job.JobId='%" PRIu32 "' %s",
+         jr->JobId, range);
   } else if (jr->FileSetId != 0) {
     Mmsg(cmd,
          "SELECT FileSetId, FileSet, MD5, CreateTime, FileSetText "
          "FROM FileSet "
-         "WHERE FileSetId=%s ",
-         edit_int64(jr->FileSetId, esc));
+         "WHERE FileSetId=%" PRIdbid " ",
+         jr->FileSetId);
   } else { /* all records */
     Mmsg(cmd,
          "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, "

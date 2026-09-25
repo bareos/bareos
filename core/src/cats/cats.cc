@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -134,43 +134,6 @@ void BareosDb::PrintLockInfo(FILE* fp)
     fprintf(fp, "\tRWLOCK=%p w_active=%i w_wait=%i\n", &lock_, lock_.w_active,
             lock_.w_wait);
   }
-}
-
-/**
- * Escape strings so that database engine is happy.
- *
- * NOTE! len is the length of the old string. Your new
- *       string must be long enough (max 2*old+1) to hold
- *       the escaped output.
- */
-void BareosDb::EscapeString(JobControlRecord*,
-                            char* snew,
-                            const char* old,
-                            int len)
-{
-  char* n;
-  const char* o;
-
-  n = snew;
-  o = old;
-  while (len--) {
-    switch (*o) {
-      case '\'':
-        *n++ = '\'';
-        *n++ = '\'';
-        o++;
-        break;
-      case 0:
-        *n++ = '\\';
-        *n++ = 0;
-        o++;
-        break;
-      default:
-        *n++ = *o++;
-        break;
-    }
-  }
-  *n = 0;
 }
 
 /**
