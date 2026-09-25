@@ -249,7 +249,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
   )
   if(MSVC)
-    link_libraries(Intl::Intl)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()

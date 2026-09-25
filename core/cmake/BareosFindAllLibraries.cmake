@@ -180,4 +180,6 @@ else()
   find_package(pthread)
 endif()
 
-find_package(Intl)
+if(ENABLE_NLS)
+  find_package(Intl REQUIRED)
+endif()

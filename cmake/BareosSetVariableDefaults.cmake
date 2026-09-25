@@ -486,7 +486,7 @@ set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
 set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
 set(ENABLE_NLS
-    "1"
+    "0"
     CACHE STRING "Enable (1) or disable (0) Native Language Support (NLS)"
 )
 mark_as_advanced(ENABLE_NLS)

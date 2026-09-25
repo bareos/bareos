@@ -109,6 +109,7 @@ target_sources(
           socket_server.cc
           status.cc
 )
+target_link_libraries(stored_objects PUBLIC Bareos::Lib)
 if(HAVE_WIN32)
   target_sources(
     stored_objects PRIVATE ../win32/generic/main.cc ../win32/generic/service.cc

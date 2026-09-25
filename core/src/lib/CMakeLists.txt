@@ -142,6 +142,10 @@ target_link_libraries(
   PUBLIC ${THREADS_THREADS} fmt::fmt
 )
 
+if(ENABLE_NLS)
+  target_link_libraries(bareos PUBLIC Intl::Intl)
+endif()
+
 if(TARGET Bareos::LowLevelScsi)
   target_link_libraries(bareos PRIVATE Bareos::LowLevelScsi)
 endif()

@@ -139,10 +139,7 @@ static void unwrap_key(char* keydata,
 
 int main(int argc, char* const* argv)
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   CLI::App bscrypto_app;
   InitCLIApp(bscrypto_app, "The Bareos encryption tool.");

@@ -83,16 +83,22 @@ void InitWinAPIWrapper();
 #  ifndef T_
 #    define T_(s) gettext((s))
 #  endif /* T_ */
-#else    /* !ENABLE_NLS */
-#  undef T_
-#  undef textdomain
-#  undef bindtextdomain
-#  undef setlocale
 
+
+#  define INIT_LANGUAGES(Lang)             \
+    do {                                   \
+      setlocale(LC_ALL, (Lang));           \
+      tzset();                             \
+      bindtextdomain("bareos", LOCALEDIR); \
+      textdomain("bareos");                \
+    } while (0)
+
+#else /* !ENABLE_NLS */
+#  define INIT_LANGUAGES(Lang) \
+    do {                       \
+      (void)sizeof(Lang);      \
+    } while (0)
 #  define T_(s) (s)
-#  define textdomain(d)
-#  define bindtextdomain(p, d)
-#  define setlocale(p, d)
 #endif /* ENABLE_NLS */
 
 
