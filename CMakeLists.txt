@@ -166,6 +166,7 @@ if(BUILD_UNIVERSAL_CLIENT)
 endif()
 
 option(ENABLE_WEBUI "Build with WEBUI" ON)
+option(ENABLE_BAREOS_SETUP "Build the bareos-setup tool" OFF)
 option(docs-only "Build only the documentation" OFF)
 option(docs-build-json "Update the configuration schema JSON files" OFF)
 

@@ -9,9 +9,134 @@ Installing the Bareos Server
 
 If you are like me, you want to get Bareos running immediately to get a feel for it, then later you want to go back and read about all the details. This chapter attempts to accomplish just that: get you going quickly without all the details.
 
-Bareos comes prepackaged for a number of Linux distributions. So the easiest way to get to a running Bareos installation, is to use a platform where prepacked Bareos packages are available. Additional information can be found in the chapter :ref:`Operating Systems <SupportedOSes>`.
+Bareos comes prepackaged for a number of Linux distributions. Additional information can be found in the chapter :ref:`Operating Systems <SupportedOSes>`.
 
-If Bareos is available as a package, only 4 steps are required to get to a running Bareos system:
+On supported Linux distributions, the preferred way to install a single-host Bareos server is the :command:`bareos-setup` tool. Download the standalone :command:`bareos-setup` binary manually, copy it to the target host, and execute it as an administrator. The tool detects the platform, configures the Bareos repository, installs the required packages, prepares the local catalog where required, creates an initial WebUI administrator, enables the required services, and verifies that they are active.
+
+For custom, distributed, non-standard, or non-Linux installations, use the manual installation instructions below as the second option.
+
+Preferred option: install with bareos-setup
+-------------------------------------------
+
+The :command:`bareos-setup` tool is intended for installing a Bareos server on a supported Linux distribution. It is available as a web based wizard and as a terminal UI (TUI).
+
+Web based installation
+~~~~~~~~~~~~~~~~~~~~~~
+
+Run :command:`bareos-setup` on the target Linux host:
+
+.. code-block:: shell-session
+   :caption: Start the Bareos setup web wizard
+
+   root@host:~# ./bareos-setup
+
+By default, the setup service listens only on the local loopback interface and opens a browser automatically. On headless systems, use ``--no-browser`` and open the printed URL manually:
+
+.. code-block:: shell-session
+   :caption: Start the Bareos setup web wizard without opening a browser
+
+   root@host:~# ./bareos-setup --no-browser
+   Open this URL in your browser: http://127.0.0.1:19101/?token=...
+
+The URL contains a setup token and should be treated as sensitive.
+
+.. _section-bareos-setup-remote:
+
+Accessing the wizard from another host
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The setup service speaks plain HTTP, so it must not be exposed directly to an untrusted network. To run the wizard from your workstation, forward the setup port over SSH instead. This is the recommended way to install a remote server:
+
+.. code-block:: shell-session
+   :caption: Forward the setup port over SSH
+
+   user@workstation:~$ ssh -L 19101:127.0.0.1:19101 root@server
+
+Leave that session open, start the wizard in it, and open the printed ``http://127.0.0.1:19101/?token=...`` URL in your local browser:
+
+.. code-block:: shell-session
+   :caption: Start the wizard inside the forwarded session
+
+   root@server:~# ./bareos-setup --no-browser
+
+All traffic is then encrypted and authenticated by SSH, and the setup service still listens only on the server's loopback interface. Because the browser reaches the wizard through the tunnel, the connection is a local one from the server's point of view, so the wizard also accepts Bareos Subscription credentials directly in the browser.
+
+Alternatively, the setup service can be bound to a reachable interface:
+
+.. code-block:: shell-session
+   :caption: Listen on all interfaces
+
+   root@host:~# ./bareos-setup --listen 0.0.0.0 --no-browser
+
+Use this only on a trusted network. The setup wizard executes privileged commands as root or through sudo, the setup token in the URL is the only access control, and the connection is not encrypted. For that reason the wizard does not accept Bareos Subscription credentials in the browser over such a connection; it asks for them on the terminal it is running on instead. Prefer the SSH tunnel above.
+
+The web wizard guides you through these steps:
+
+#. Detect the Linux distribution and package manager.
+#. Choose the Bareos Community or Bareos Subscription repository.
+#. Install the required Bareos, PostgreSQL, and WebUI packages.
+#. Prepare the catalog where required.
+#. Create an initial WebUI administrator account.
+#. Enable the WebUI proxy and web server.
+#. Verify that the required services are active.
+
+When the installation is complete, the wizard shows the WebUI URLs, the initial WebUI administrator credentials, and next steps. You can also manage the Bareos system locally with :command:`bconsole`.
+
+TUI installation
+~~~~~~~~~~~~~~~~
+
+If no browser is available, run the same setup flow in terminal UI mode:
+
+.. code-block:: shell-session
+   :caption: Start the Bareos setup terminal UI
+
+   root@host:~# ./bareos-setup --tui
+
+The TUI asks whether to use the Bareos Community or Bareos Subscription repository. When using the subscription repository, enter your subscription credentials when prompted. The credentials are passed to :command:`curl` through standard input configuration and are not placed on the command line.
+
+At the end of a successful TUI installation, the generated WebUI administrator password is printed in the terminal. Store it safely.
+
+.. _section-bareos-setup-unknown-distribution:
+
+Unrecognized distributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Bareos publishes repositories for a fixed set of distributions. If :command:`bareos-setup` cannot identify the running distribution, for example on a derivative or a rebuild, it does not abort. Instead it offers a manual choice of the repository to install from, in both the web wizard and the TUI. A distribution that declares a compatible family through ``ID_LIKE`` in :file:`/etc/os-release` is used to preselect a matching suggestion.
+
+The following repositories can be selected:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Distribution family
+     - Repositories
+   * - RHEL and rebuilds
+     - ``EL_8``, ``EL_9``, ``EL_10``
+   * - Debian
+     - ``Debian_11``, ``Debian_12``, ``Debian_13``
+   * - Ubuntu
+     - ``xUbuntu_22.04``, ``xUbuntu_24.04``, ``xUbuntu_26.04``
+   * - Fedora
+     - ``Fedora_43``, ``Fedora_44``
+   * - SUSE
+     - ``SUSE_15``, ``SUSE_16``
+
+The selected repository is checked for availability before it is added, so a wrong choice fails immediately instead of part-way through the installation.
+
+.. warning::
+
+   Installing a Bareos repository that was built for a different distribution is neither tested nor supported. Only do this if you know that the selected repository is binary compatible with the running system.
+
+A manual choice is only offered when the distribution is not recognized. It is not possible to override the repository on a distribution that :command:`bareos-setup` detects, because that could only produce a mismatched installation.
+
+The package manager cannot be chosen manually. If none of :command:`apt`, :command:`dnf`, :command:`yum` or :command:`zypper` is present, :command:`bareos-setup` cannot install Bareos on that system and reports this instead of continuing.
+
+Second option: manual installation
+----------------------------------
+
+Manual installation remains useful for non-Linux systems, distributed installations, and deployments that need custom package selection or custom database handling.
+
+If Bareos is available as a package, the manual installation requires these steps to get to a running Bareos system:
 
 #.
 
@@ -34,7 +159,7 @@ This will start a very basic Bareos installation which will regularly backup a d
 .. _section-AddSoftwareRepository:
 
 Decide about the Bareos release to use
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are different types of Bareos repositories:
 
@@ -95,7 +220,7 @@ For Bareos Subscription customers the URL of the bareos-25 release for Debian 13
 .. _section-InstallBareosPackages:
 
 Install the Bareos Software Packages
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The |dir| requires a PostgreSQL database as its catalog.
 The Bareos database packages have their dependencies only to the database client packages,
@@ -112,10 +237,10 @@ The package **bareos** is only a meta package which contains dependencies on the
 .. _section-InstallBareosPackagesRedhat:
 
 Install on RedHat based Linux Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 RHEL and derivatives, Fedora
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+''''''''''''''''''''''''''''
 
 .. index::
    single: Platform; RHEL
@@ -146,10 +271,10 @@ they are stored within the repo file :file:`/etc/yum.repos.d/bareos.repo`.
 .. _section-InstallBareosPackagesSuse:
 
 Install on SUSE based Linux Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SUSE Linux Enterprise Server (SLES), openSUSE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''''''''''''''''''''''''''
 
 .. index::
    single: Platform; SLES
@@ -177,10 +302,10 @@ they are stored in the file :file:`/etc/zypp/credentials.d/bareos`.
 .. _section-univentioncorporateserver:
 
 Install on Debian based Linux Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Debian / Ubuntu / Univention Corporate Server (UCS)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+'''''''''''''''''''''''''''''''''''''''''''''''''''
 
 .. index::
    single: Platform; Debian
@@ -210,7 +335,7 @@ The :file:`add_bareos_repositories.sh` script will:
   they are stored in the file :file:`/etc/apt/auth.conf.d/download_bareos_com.conf`.
 
 Univention Corporate Server
-'''''''''''''''''''''''''''
+"""""""""""""""""""""""""""
 
 .. index::
    single: Platform; Univention Corporate Server
@@ -238,7 +363,7 @@ Only packages that passes this acceptance test, will get released by the Bareos 
 .. _section-InstallBareosPackagesFreebsd:
 
 Install on FreeBSD based Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. index::
    single: Platform; FreeBSD
@@ -267,14 +392,14 @@ The :file:`add_bareos_repositories.sh` script will:
 .. _section-CreateDatabase:
 
 Prepare Bareos database
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 We assume that you already have your PostgreSQL database server installed and basically running.
 
 For details, see chapter :ref:`CatMaintenanceChapter`.
 
 Debian based Linux Distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database.
 
@@ -290,12 +415,12 @@ For details see :ref:`section-dbconfig`.
 .. _section-CreateDatabaseOtherDistributions:
 
 Other Platforms
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 If your PostgreSQL administration user is **postgres** (default), use the following commands:
 
 Linux
-^^^^^
+'''''
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with PostgreSQL (Linux)
@@ -305,7 +430,7 @@ Linux
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 
 FreeBSD
-^^^^^^^
+'''''''
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with PostgreSQL (FreeBSD)
@@ -318,12 +443,12 @@ FreeBSD
 .. _section-StartDaemons:
 
 Start the daemons
------------------
+~~~~~~~~~~~~~~~~~
 
 Please remark, the Bareos Daemons need to have access to the TCP ports 9101-9103.
 
 Linux
-~~~~~
+^^^^^
 
 Depending on the Linux distribution,
 the name of the Bareos services either correspond to the
@@ -351,7 +476,7 @@ or
 
 
 FreeBSD
-~~~~~~~
+^^^^^^^
 
 .. code-block:: shell-session
    :caption: Configure Bareos on FreeBSD
