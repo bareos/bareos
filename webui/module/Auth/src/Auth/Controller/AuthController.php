@@ -31,6 +31,7 @@ use Laminas\Session\Container;
 use Exception;
 use Auth\Model\Auth;
 use Auth\Form\LoginForm;
+use Application\Form\ActionForm;
 
 class AuthController extends AbstractActionController
 {
@@ -186,6 +187,14 @@ class AuthController extends AbstractActionController
      */
     public function logoutAction()
     {
+        $form = new ActionForm();
+        $form->setData($this->getRequest()->getPost());
+        if (!$this->getRequest()->isPost() || !$form->isValid()) {
+            $this->getResponse()->setStatusCode(400);
+            $this->getResponse()->setContent('Invalid request.');
+            return $this->getResponse();
+        }
+
         $session = new Container('bareos');
         $session->getManager()->destroy();
         return $this->redirect()->toRoute('auth', array('action' => 'login'));
