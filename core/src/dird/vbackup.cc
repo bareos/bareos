@@ -331,7 +331,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
   // Start conversation with Storage daemon
-  if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+  if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.write_storage, 10,
+                              me->SDConnectTimeout, true)) {
     return false;
   }
 

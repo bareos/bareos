@@ -859,7 +859,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return true;
   }
@@ -908,7 +909,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return true;
   }
@@ -1141,7 +1142,7 @@ static void DoStorageSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return;
   }
@@ -1195,7 +1196,8 @@ static void DoClientSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return;
   }
@@ -1565,7 +1567,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }
@@ -1876,7 +1878,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
-  if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return false;
   }

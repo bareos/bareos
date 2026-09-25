@@ -118,6 +118,7 @@ static utime_t get_heartbeat_interval(ClientResource* res)
  * give up after max_retry_time (default 30 mins).
  */
 static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
+                                            ClientResource* client,
                                             int retry_interval,
                                             int max_retry_time,
                                             bool verbose)
@@ -126,23 +127,22 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
   BareosSocket* fd = NULL;
   utime_t heart_beat;
 
-  if (!IsConnectingToClientAllowed(jcr)) {
+  if (!IsConnectingToClientAllowed(client)) {
     Dmsg1(120, "Connection to client \"%s\" is not allowed.\n",
-          jcr->dir_impl->res.client->resource_name_);
+          client->resource_name_);
     return false;
   }
 
   fd = new BareosSocketTCP;
-  heart_beat = get_heartbeat_interval(jcr->dir_impl->res.client);
+  heart_beat = get_heartbeat_interval(client);
 
   char name[MAX_NAME_LENGTH + 100];
   bstrncpy(name, T_("Client: "), sizeof(name));
-  bstrncat(name, jcr->dir_impl->res.client->resource_name_, sizeof(name));
+  bstrncat(name, client->resource_name_, sizeof(name));
 
   fd->SetSourceAddress(me->DIRsrc_addr);
   if (!fd->connect(jcr, retry_interval, max_retry_time, heart_beat, name,
-                   jcr->dir_impl->res.client->address, NULL,
-                   jcr->dir_impl->res.client->FDport, verbose)) {
+                   client->address, NULL, client->FDport, verbose)) {
     delete fd;
     fd = NULL;
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
@@ -156,14 +156,16 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
   return result;
 }
 
-static void OutputMessageForConnectionTry(JobControlRecord* jcr, UaContext* ua)
+static void OutputMessageForConnectionTry(JobControlRecord* jcr,
+                                          ClientResource* client,
+                                          UaContext* ua)
 {
   ASSERT(jcr);
 
   bool handshake_failed_or_undefined
-      = jcr->dir_impl->res.client->connection_successful_handshake_
+      = client->connection_successful_handshake_
             == ClientConnectionHandshakeMode::kUndefined
-        || jcr->dir_impl->res.client->connection_successful_handshake_
+        || client->connection_successful_handshake_
                == ClientConnectionHandshakeMode::kFailed;
 
   if (!handshake_failed_or_undefined) { return; }
@@ -184,10 +186,12 @@ static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
   }
 }
 
-static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
+static void SendInfoSuccess(JobControlRecord* jcr,
+                            ClientResource* client,
+                            UaContext* ua)
 {
   std::string m;
-  if (jcr->dir_impl->res.client->connection_successful_handshake_
+  if (client->connection_successful_handshake_
       == ClientConnectionHandshakeMode::kUndefined) {
     m = "\r\v";
   }
@@ -216,7 +220,8 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
   }
 }
 
-void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
+void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr,
+                                         ClientResource* client)
 {
   switch (jcr->dir_impl->connection_handshake_try_) {
     case ClientConnectionHandshakeMode::kTlsFirst:
@@ -226,7 +231,7 @@ void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
         jcr->file_bsock = nullptr;
       }
       jcr->setJobStatus(JS_Running);
-      if (!IsClientTlsRequired(jcr)) {
+      if (!IsClientTlsRequired(client)) {
         jcr->dir_impl->connection_handshake_try_
             = ClientConnectionHandshakeMode::kCleartextFirst;
       } else {
@@ -248,16 +253,18 @@ void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
 /* try the connection modes starting with tls directly,
  * in case there is a client that cannot do Tls immediately then
  * fall back to cleartext md5-handshake */
-void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua)
+void SetConnectionHandshakeMode(JobControlRecord* jcr,
+                                ClientResource* client,
+                                UaContext* ua)
 {
   ASSERT(jcr);
 
-  OutputMessageForConnectionTry(jcr, ua);
-  if (jcr->dir_impl->res.client->connection_successful_handshake_
+  OutputMessageForConnectionTry(jcr, client, ua);
+  if (client->connection_successful_handshake_
           == ClientConnectionHandshakeMode::kUndefined
-      || jcr->dir_impl->res.client->connection_successful_handshake_
+      || client->connection_successful_handshake_
              == ClientConnectionHandshakeMode::kFailed) {
-    if (jcr->dir_impl->res.client->IsTlsConfigured()) {
+    if (client->IsTlsConfigured()) {
       jcr->dir_impl->connection_handshake_try_
           = ClientConnectionHandshakeMode::kTlsFirst;
     } else {
@@ -268,20 +275,22 @@ void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua)
   } else {
     /* if there is a stored mode from a previous connection then use this */
     jcr->dir_impl->connection_handshake_try_
-        = jcr->dir_impl->res.client->connection_successful_handshake_;
+        = client->connection_successful_handshake_;
     jcr->is_passive_client_connection_probing = false;
   }
 }
 
 bool ConnectToFileDaemon(JobControlRecord* jcr,
+                         ClientResource* client,
                          int retry_interval,
                          int max_retry_time,
                          bool verbose,
                          UaContext* ua)
 {
-  if (!IsConnectingToClientAllowed(jcr) && !IsConnectFromClientAllowed(jcr)) {
+  if (!IsConnectingToClientAllowed(client)
+      && !IsConnectFromClientAllowed(client)) {
     Emsg1(M_WARNING, 0, T_("Connecting to %s is not allowed.\n"),
-          jcr->dir_impl->res.client->resource_name_);
+          client->resource_name_);
     return false;
   }
   bool success = false;
@@ -289,16 +298,16 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
   int connect_tries
       = 3; /* as a finish-hook for the UseWaitingClient mechanism */
 
-  SetConnectionHandshakeMode(jcr, ua);
+  SetConnectionHandshakeMode(jcr, client, ua);
 
   do { /* while (tcp_connect_failed ...) */
     /* connect the tcp socket */
     if (!jcr->file_bsock) {
-      if (!UseWaitingClient(jcr, 0)) {
-        if (!connect_outbound_to_file_daemon(jcr, retry_interval,
+      if (!UseWaitingClient(jcr, client, 0)) {
+        if (!connect_outbound_to_file_daemon(jcr, client, retry_interval,
                                              max_retry_time, verbose)) {
           if (!UseWaitingClient(
-                  jcr,
+                  jcr, client,
                   max_retry_time)) { /* will set jcr->file_bsock accordingly */
             tcp_connect_failed = true;
           }
@@ -308,23 +317,23 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
 
     if (jcr->file_bsock) {
       jcr->setJobStatusWithPriorityCheck(JS_Running);
-      if (AuthenticateWithFileDaemon(jcr)) {
+      if (AuthenticateWithFileDaemon(jcr, client)) {
         success = true;
-        SendInfoSuccess(jcr, ua);
+        SendInfoSuccess(jcr, client, ua);
         SendInfoChosenCipher(jcr, ua);
         jcr->is_passive_client_connection_probing = false;
-        jcr->dir_impl->res.client->connection_successful_handshake_
+        client->connection_successful_handshake_
             = jcr->dir_impl->connection_handshake_try_;
       } else {
         /* authentication failed due to
          * - tls mismatch or
          * - if an old client cannot do tls- before md5-handshake
          * */
-        UpdateFailedConnectionHandshakeMode(jcr);
+        UpdateFailedConnectionHandshakeMode(jcr, client);
       }
     } else {
       Jmsg(jcr, M_FATAL, 0, "\nFailed to connect to client \"%s\".\n",
-           jcr->dir_impl->res.client->resource_name_);
+           client->resource_name_);
     }
     connect_tries--;
   } while (!tcp_connect_failed && connect_tries && !success
@@ -975,8 +984,8 @@ bool CancelFileDaemonJob(UaContext* ua, JobControlRecord* jcr)
 {
   BareosSocket* fd;
 
-  ua->jcr->dir_impl->res.client = jcr->dir_impl->res.client;
-  if (!ConnectToFileDaemon(ua->jcr, 10, me->FDConnectTimeout, true, ua)) {
+  if (!ConnectToFileDaemon(ua->jcr, jcr->dir_impl->res.client, 10,
+                           me->FDConnectTimeout, true, ua)) {
     ua->ErrorMsg(T_("\nFailed to connect to File daemon.\n"));
     return false;
   }
@@ -1007,7 +1016,7 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
                 client->resource_name_, client->address, client->FDport);
   }
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
+  if (!ConnectToFileDaemon(ua->jcr, client, 1, 15, false, ua)) {
     ua->SendMsg(T_("\nFailed to connect to Client %s.\n====\n"),
                 client->resource_name_);
     if (ua->jcr->file_bsock) {
@@ -1050,7 +1059,8 @@ void DoClientResolve(UaContext* ua, ClientResource* client)
                 client->resource_name_, client->address, client->FDport);
   }
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15, false,
+                           ua)) {
     ua->SendMsg(T_("\nFailed to connect to Client %s.\n====\n"),
                 client->resource_name_);
     if (ua->jcr->file_bsock) {
