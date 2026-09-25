@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -17,7 +17,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
- */
+*/
 
 #include "dird/volume_usage.h"
 
@@ -94,7 +94,10 @@ bool HasOverlappingVolumeUsageRanges(
 
   uint64_t current_end = ranges[0].second;
   for (size_t i = 1; i < ranges.size(); ++i) {
-    if (ranges[i].first <= current_end) { return true; }
+    // Ranges that merely touch at a shared boundary block are sequential,
+    // not concurrent/multiplexed, so only a strictly earlier start counts
+    // as a real overlap.
+    if (ranges[i].first < current_end) { return true; }
     current_end = std::max(current_end, ranges[i].second);
   }
   return false;

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -17,7 +17,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
- */
+*/
 
 #include "dird/volume_usage.h"
 
@@ -128,6 +128,45 @@ TEST(VolumeUsage, ReusesMarkersForRepeatedJobRanges)
   EXPECT_EQ(segments[0].marker, '1');
   EXPECT_EQ(segments[1].marker, '2');
   EXPECT_EQ(segments[2].marker, '1');
+}
+
+TEST(VolumeUsage, TouchingBoundaryIsNotOverlap)
+{
+  // Sequential jobs where one job's EndBlock equals the next job's
+  // StartBlock (a shared boundary block) are not truly concurrent and
+  // must not be reported as overlapping.
+  std::vector<VolumeUsageSegment> segments{
+      MakeSegment(1, 10, 10, 101, 100, 200),
+      MakeSegment(11, 20, 10, 102, 200, 300),
+  };
+
+  EXPECT_FALSE(HasOverlappingVolumeUsageRanges(segments));
+}
+
+TEST(VolumeUsage, StrictlyEarlierStartIsStillOverlap)
+{
+  // A range that genuinely starts before the previous one ends (not just
+  // touching) must still be detected as overlapping.
+  std::vector<VolumeUsageSegment> segments{
+      MakeSegment(1, 10, 10, 101, 100, 200),
+      MakeSegment(11, 20, 10, 102, 150, 300),
+  };
+
+  EXPECT_TRUE(HasOverlappingVolumeUsageRanges(segments));
+}
+
+TEST(VolumeUsage, DegenerateZeroLengthSegmentsDoNotOverlap)
+{
+  // Zero-byte placeholder segments (no real range at all) all collapse to
+  // the same degenerate point; they must not be reported as overlapping
+  // each other.
+  std::vector<VolumeUsageSegment> segments{
+      MakeSegment(0, 0, 0, 101, 0, 0),
+      MakeSegment(0, 0, 0, 102, 0, 0),
+      MakeSegment(0, 0, 0, 103, 0, 0),
+  };
+
+  EXPECT_FALSE(HasOverlappingVolumeUsageRanges(segments));
 }
 
 } /* namespace directordaemon */

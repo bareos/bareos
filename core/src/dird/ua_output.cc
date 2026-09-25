@@ -83,6 +83,18 @@ static uint64_t ToUint64(const char* value)
   return strtoull(value, nullptr, 10);
 }
 
+// Some JobMedia records are bookkeeping placeholders (e.g. created on
+// volume switch) that never got a real range written to them. They all
+// collapse to the same degenerate zero position/index, so they falsely
+// "overlap" every other segment and only add noise to the output.
+static bool IsEmptyVolumeUsageSegment(const VolumeUsageSegment& segment)
+{
+  return segment.jobbytes == 0 && segment.firstindex == 0
+         && segment.lastindex == 0 && segment.startfile == 0
+         && segment.startblock == 0 && segment.endfile == 0
+         && segment.endblock == 0;
+}
+
 static size_t VolumeUsageBarWidth(const UaContext* ua)
 {
   constexpr size_t kFallbackWidth = 60;
@@ -146,7 +158,9 @@ static bool QueryVolumeUsageSegments(UaContext* ua,
     segment.startblock = ToUint64(row[9]);
     segment.endblock = ToUint64(row[10]);
     segment.jobbytes = ToUint64(row[11]);
-    query_context->segments->push_back(std::move(segment));
+    if (!IsEmptyVolumeUsageSegment(segment)) {
+      query_context->segments->push_back(std::move(segment));
+    }
     return 0;
   };
 
