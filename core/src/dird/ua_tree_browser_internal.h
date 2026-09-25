@@ -59,6 +59,8 @@ inline constexpr std::string_view kKeyEnd = "key:end";
 inline constexpr std::string_view kKeyPageUp = "key:pageup";
 inline constexpr std::string_view kKeyPageDown = "key:pagedown";
 inline constexpr std::string_view kKeySpace = "key:space";
+inline constexpr std::string_view kKeyInsert = "key:insert";
+inline constexpr std::string_view kKeyDelete = "key:delete";
 inline constexpr std::string_view kKeyTextPrefix = "key:text:";
 inline constexpr std::string_view kResizePrefix = "resize:";
 
@@ -76,7 +78,7 @@ inline constexpr const char* kListDialogFooter
 inline constexpr const char* kFieldEditorFooter
     = "Left/Right Field  Up/Down Adjust  Enter Accept  h/? Help  Esc/. Cancel";
 inline constexpr const char* kBrowserFooter
-    = "Arrows Move/Scroll  Enter Open  Space Mark  h/? Help  Esc Done";
+    = "Arrows Move/Scroll  Ins/Del/Space Mark  +/- Glob  h/? Help  Esc Done";
 inline constexpr const char* kSearchResultsFooter
     = "Arrows Move/Scroll  Space Mark  Enter Go  h/? Help  Esc Return";
 inline constexpr const char* kSelectedFilesFooter
@@ -89,6 +91,9 @@ inline constexpr const char* kPluginOptionsFooter
     = "Up/Down Row  Left/Right Plugin  Enter Edit  h/? Help  Tab Files";
 inline constexpr const char* kTextInputHelp
     = "Type text  Backspace Delete  Enter Accept  Esc Cancel";
+inline constexpr const char* kGlobInputHelp
+    = "Type wildcard pattern (e.g. *.txt)  Backspace Delete  Enter Accept  "
+      "Esc Cancel";
 inline constexpr const char* kDialogTextInputHelp
     = "Type text  Backspace Delete  Enter Accept  Esc/. Cancel";
 inline constexpr const char* kDestinationBrowserFooter
@@ -142,11 +147,13 @@ inline constexpr std::array<std::string_view, 5> kDestinationBrowserHelp = {
     "/: search; Esc/.: clear search or cancel",
     "h/?: open help; h/?/Enter/Esc/.: return from help",
 };
-inline constexpr std::array<std::string_view, 9> kBrowserHelp = {
+inline constexpr std::array<std::string_view, 11> kBrowserHelp = {
     "Up/Down/Tab: move; Left/Right: scroll names",
     "Home/End: first/last column; Enter: open directory or '..'",
     "Backspace: parent directory",
-    "Space/m: mark; a: mark all; u: unmark all",
+    "Space/m: mark/unmark; Insert: mark; Delete: unmark",
+    "+: mark by glob pattern; -: unmark by glob pattern",
+    "a: mark all; u: unmark all",
     "l: list selections; e: estimate size; i: toggle details",
     "/: search; :: one classic command; c: classic mode",
     "p: plugin hints; o: focus Plugin Options; Tab: switch panes",

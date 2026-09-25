@@ -39,6 +39,8 @@ constexpr int kVkLeft = 0x25;
 constexpr int kVkUp = 0x26;
 constexpr int kVkRight = 0x27;
 constexpr int kVkDown = 0x28;
+constexpr int kVkInsert = 0x2D;
+constexpr int kVkDelete = 0x2E;
 constexpr int kVkTab = 0x09;
 
 std::string EncodeUtf8(char32_t codepoint)
@@ -175,6 +177,8 @@ std::string MapAnsiEscapeSequenceToSelectionEvent(std::string_view sequence)
   if (final_byte == '~' || final_byte == 'u' || final_byte == '^'
       || final_byte == '$' || final_byte == '@') {
     if (first_parameter == "1" || first_parameter == "7") { return "key:home"; }
+    if (first_parameter == "2") { return "key:insert"; }
+    if (first_parameter == "3") { return "key:delete"; }
     if (first_parameter == "4" || first_parameter == "8") { return "key:end"; }
     if (first_parameter == "5") { return "key:pageup"; }
     if (first_parameter == "6") { return "key:pagedown"; }
@@ -248,6 +252,10 @@ std::string MapConsoleKeyEventToSelectionEvent(int virtual_key_code,
       return "key:home";
     case kVkEnd:
       return "key:end";
+    case kVkInsert:
+      return "key:insert";
+    case kVkDelete:
+      return "key:delete";
     case kVkUp:
       return "key:up";
     case kVkDown:

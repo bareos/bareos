@@ -43,6 +43,8 @@ constexpr int kVkLeft = 0x25;
 constexpr int kVkUp = 0x26;
 constexpr int kVkRight = 0x27;
 constexpr int kVkDown = 0x28;
+constexpr int kVkInsert = 0x2D;
+constexpr int kVkDelete = 0x2E;
 constexpr int kVkNone = 0; /* no virtual key, e.g. a plain character event */
 }  // namespace
 
@@ -69,6 +71,14 @@ TEST(ConsoleKeyMapping, PageUpAndPageDownMapToPageNavigation)
             "key:pagedown");
 }
 
+TEST(ConsoleKeyMapping, InsertAndDeleteMapToMarkAndUnmark)
+{
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkInsert, 0, false),
+            "key:insert");
+  EXPECT_EQ(MapConsoleKeyEventToSelectionEvent(kVkDelete, 0, false),
+            "key:delete");
+}
+
 TEST(ConsoleKeyMapping, AnsiPageKeysMapToPageNavigation)
 {
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[5~"), "key:pageup");
@@ -92,6 +102,13 @@ TEST(ConsoleKeyMapping, AnsiCursorKeysMapToNavigation)
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[F"), "key:end");
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[1~"), "key:home");
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[4~"), "key:end");
+}
+
+TEST(ConsoleKeyMapping, AnsiInsertAndDeleteKeysMapToMarkAndUnmark)
+{
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[2~"), "key:insert");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[3~"), "key:delete");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[3;5~"), "key:delete");
 }
 
 TEST(ConsoleKeyMapping, EnterBackspaceEscape)

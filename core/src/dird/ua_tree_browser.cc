@@ -775,10 +775,13 @@ using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
 using tree_browser_internal::kFrameResetColor;
 using tree_browser_internal::kFrameVerticalBorder;
+using tree_browser_internal::kGlobInputHelp;
 using tree_browser_internal::kKeyBackspace;
 using tree_browser_internal::kKeyCancel;
+using tree_browser_internal::kKeyDelete;
 using tree_browser_internal::kKeyDown;
 using tree_browser_internal::kKeyEnter;
+using tree_browser_internal::kKeyInsert;
 using tree_browser_internal::kKeyLeft;
 using tree_browser_internal::kKeyRight;
 using tree_browser_internal::kKeySpace;
@@ -1070,9 +1073,11 @@ class TreeBrowser {
   void EnterDirectory(tree_node* node);
   void GoToParent();
   void ToggleMarkCurrent();
+  void MarkCurrent(bool extract);
   void MarkAllInDirectory(bool extract);
   void JumpToSearchMatch(tree_node* node);
   void RunSearch();
+  void RunGlobMarkUnmark();
   void ClampSearchHorizontalOffset();
   void OpenSelectedFiles();
   void RebuildSelectedFiles();
@@ -1137,6 +1142,7 @@ class TreeBrowser {
   std::string RenderPanel() const;
   std::string RenderCurrentScreen() const;
   std::string RenderSearchInput() const;
+  std::string RenderGlobInput() const;
   std::string RenderSearchResults() const;
   std::string RenderSelectedFiles() const;
   std::string RenderHelp() const;
@@ -1146,6 +1152,7 @@ class TreeBrowser {
   // browser loop should stop (the user left the browser entirely).
   bool HandleKey(std::string_view key, TreeBrowserExit* exit_reason);
   bool HandleSearchInputKey(std::string_view key);
+  bool HandleGlobInputKey(std::string_view key);
   void HandleSearchResultsKey(std::string_view key);
   void HandleSelectedFilesKey(std::string_view key);
   void HandleHelpKey(std::string_view key);
@@ -1177,6 +1184,13 @@ class TreeBrowser {
   bool search_truncated_ = false;
   size_t search_cursor_ = 0;
   size_t search_horizontal_offset_ = 0;
+
+  // '+'/'-' glob mark/unmark prompt: entering_glob_pattern_ is set while
+  // typing the wildcard pattern, glob_mark_ selects mark ('+') vs. unmark
+  // ('-') on Enter.
+  bool entering_glob_pattern_ = false;
+  bool glob_mark_ = true;
+  std::string glob_pattern_;
 
   bool showing_selected_files_ = false;
   std::vector<tree_node*> selected_nodes_;
@@ -1291,7 +1305,20 @@ void TreeBrowser::ToggleMarkCurrent()
   size_t index = cursor_ - offset;
   if (index >= rows_.size()) { return; }
   tree_node* node = rows_[index];
-  bool extract = !node->extract;
+  MarkCurrent(!node->extract);
+}
+
+// Insert/Delete-style force mark/unmark of the row under the cursor (as
+// opposed to ToggleMarkCurrent()'s Space/'m' toggle): used by the Insert
+// and Delete keys, mirroring Midnight Commander's Insert-marks/
+// Delete-unmarks convention. Does not move the cursor.
+void TreeBrowser::MarkCurrent(bool extract)
+{
+  size_t offset = RowOffset();
+  if (cursor_ < offset) { return; }  // cursor is on the synthetic ".." row
+  size_t index = cursor_ - offset;
+  if (index >= rows_.size()) { return; }
+  tree_node* node = rows_[index];
   int changed = SetExtract(ua_, node, tree_, extract);
   status_line_ = extract ? "Marked " : "Unmarked ";
   status_line_ += std::to_string(changed);
@@ -1341,6 +1368,38 @@ void TreeBrowser::RunSearch()
   search_horizontal_offset_ = 0;
   entering_search_term_ = false;
   showing_search_results_ = true;
+}
+
+// '+'/'-' glob mark/unmark: dispatches a synthesized "mark <pattern>"/
+// "unmark <pattern>" classic command through ExecuteClassicTreeCommand()
+// so this stays byte-identical to the classic mark/unmark wildcard
+// semantics (fnmatch() against every child in the current directory,
+// recursing into matched subdirectories) -- see ua_tree_internal.h.
+void TreeBrowser::RunGlobMarkUnmark()
+{
+  entering_glob_pattern_ = false;
+  std::string pattern = glob_pattern_;
+  glob_pattern_.clear();
+  // Strip any embedded quotes: the pattern is always wrapped in double
+  // quotes below so a literal glob (with spaces, etc.) survives
+  // ParseArgsOnly() unsplit.
+  pattern.erase(std::remove(pattern.begin(), pattern.end(), '"'),
+                pattern.end());
+  if (pattern.empty()) {
+    status_line_ = "Cancelled: empty pattern";
+    return;
+  }
+
+  std::string cmdline = glob_mark_ ? "mark \"" : "unmark \"";
+  cmdline += pattern;
+  cmdline += "\"";
+
+  PmStrcpy(ua_->cmd, cmdline.c_str());
+  ExecuteClassicTreeCommand(ua_, tree_);
+  SyncAfterClassicCommand();
+  status_line_ = glob_mark_ ? "Marked by pattern \"" : "Unmarked by pattern \"";
+  status_line_ += pattern;
+  status_line_ += "\"";
 }
 
 void TreeBrowser::ClampSearchHorizontalOffset()
@@ -1887,6 +1946,31 @@ std::string TreeBrowser::RenderSearchInput() const
   return out;
 }
 
+std::string TreeBrowser::RenderGlobInput() const
+{
+  size_t width = ScreenWidth();
+  bool color = ua_->supports_color;
+  std::string title = glob_mark_ ? "Mark by pattern" : "Unmark by pattern";
+  std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, title);
+  out += FrameLine(
+      width,
+      glob_mark_
+          ? " Mark all files/dirs matching a wildcard, in the current dir"
+          : " Unmark all files/dirs matching a wildcard, in the current dir",
+      color);
+  out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
+  out += FrameLine(width, " Pattern: " + glob_pattern_, color);
+  for (size_t row = 1; row < MaxVisibleRows(); ++row) {
+    out += FrameLine(width, "", color);
+  }
+  out += FrameBorder(width, color, FrameBorderStyle::kBottom);
+  out += StatusBar(width, " Enter applies pattern | Esc returns to files",
+                   color);
+  out += HelpLine(width, kGlobInputHelp, color);
+  RemoveFinalNewline(&out);
+  return out;
+}
+
 std::string TreeBrowser::RenderSearchResults() const
 {
   size_t width = ScreenWidth();
@@ -2141,6 +2225,23 @@ bool TreeBrowser::HandleSearchInputKey(std::string_view key)
     search_term_.push_back(' ');
   } else if (IsTextKey(key)) {
     search_term_.append(TextKeyValue(key));
+  }
+  return false;
+}
+
+bool TreeBrowser::HandleGlobInputKey(std::string_view key)
+{
+  if (IsEnterKey(key)) {
+    RunGlobMarkUnmark();
+  } else if (key == kKeyCancel) {
+    entering_glob_pattern_ = false;
+    glob_pattern_.clear();
+  } else if (key == kKeyBackspace) {
+    if (!glob_pattern_.empty()) { RemoveLastUtf8Character(&glob_pattern_); }
+  } else if (key == kKeySpace) {
+    glob_pattern_.push_back(' ');
+  } else if (IsTextKey(key)) {
+    glob_pattern_.append(TextKeyValue(key));
   }
   return false;
 }
@@ -2472,6 +2573,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     return false;
   }
   if (entering_search_term_) { return HandleSearchInputKey(key); }
+  if (entering_glob_pattern_) { return HandleGlobInputKey(key); }
 
   // Tab always toggles which half of the split screen has keyboard focus
   // (only meaningful once a plugin backup was detected, since that's the
@@ -2526,6 +2628,18 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     GoToParent();
   } else if (key == kKeySpace || key == "key:text:m") {
     ToggleMarkCurrent();
+  } else if (key == kKeyInsert) {
+    MarkCurrent(true);
+  } else if (key == kKeyDelete) {
+    MarkCurrent(false);
+  } else if (key == "key:text:+") {
+    entering_glob_pattern_ = true;
+    glob_mark_ = true;
+    glob_pattern_.clear();
+  } else if (key == "key:text:-") {
+    entering_glob_pattern_ = true;
+    glob_mark_ = false;
+    glob_pattern_.clear();
   } else if (key == "key:text:a") {
     MarkAllInDirectory(true);
   } else if (key == "key:text:u") {
@@ -2617,6 +2731,7 @@ std::string TreeBrowser::RenderCurrentScreen() const
          : showing_selected_files_ ? RenderSelectedFiles()
          : showing_search_results_ ? RenderSearchResults()
          : entering_search_term_   ? RenderSearchInput()
+         : entering_glob_pattern_  ? RenderGlobInput()
                                    : RenderPanel();
 }
 

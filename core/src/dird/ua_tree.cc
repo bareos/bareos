@@ -122,20 +122,20 @@ static struct cmdstruct commands[] = {
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
 /**
- * Read and dispatch exactly one classic ("$ ") tree-selection command.
- * Shared by the persistent classic command loop below and by the
- * interactive tree browser's ":" one-shot command escape (see
- * ua_tree_browser.cc) -- see ua_tree_internal.h.
+ * Parse and dispatch exactly one classic tree-selection command already
+ * sitting in ua->cmd (i.e. the part of RunOneClassicTreeCommand() below
+ * that doesn't need to read the command from the console socket). Shared
+ * with the interactive tree browser's '+'/'-' glob mark/unmark prompts
+ * (see ua_tree_browser.cc), which synthesize a "mark <pattern>"/"unmark
+ * <pattern>" command line and dispatch it through here directly -- see
+ * ua_tree_internal.h.
  */
-ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
+ClassicCommandOutcome ExecuteClassicTreeCommand(UaContext* ua,
+                                                TreeContext* tree)
 {
   BareosSocket* user = ua->UA_sock;
   int found, len, i;
   bool status;
-
-  if (!GetCmd(ua, "$ ", true)) {
-    return ClassicCommandOutcome::kLeaveSelection;
-  }
 
   if (ua->api) { user->signal(BNET_CMD_BEGIN); }
 
@@ -182,6 +182,20 @@ ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
 
   return status ? ClassicCommandOutcome::kContinue
                 : ClassicCommandOutcome::kLeaveSelection;
+}
+
+/**
+ * Read and dispatch exactly one classic ("$ ") tree-selection command.
+ * Shared by the persistent classic command loop below and by the
+ * interactive tree browser's ":" one-shot command escape (see
+ * ua_tree_browser.cc) -- see ua_tree_internal.h.
+ */
+ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
+{
+  if (!GetCmd(ua, "$ ", true)) {
+    return ClassicCommandOutcome::kLeaveSelection;
+  }
+  return ExecuteClassicTreeCommand(ua, tree);
 }
 
 // Runs the classic line-mode "$ " prompt until the user leaves file
