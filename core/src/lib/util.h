@@ -275,4 +275,21 @@ template <fixed_string S> struct ci_string {
   }
 };
 
+inline std::vector<std::string_view> split_string_view(std::string_view input,
+                                                       char c)
+{
+  std::vector<std::string_view> result;
+  auto current = input;
+  for (;;) {
+    std::optional split = split_first(current, c);
+    if (!split) {
+      result.push_back(current);
+      break;
+    }
+    result.push_back(split->first);
+    current = split->second;
+  }
+
+  return result;
+}
 #endif  // BAREOS_LIB_UTIL_H_
