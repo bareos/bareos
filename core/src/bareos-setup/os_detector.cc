@@ -29,18 +29,42 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-/** Strip leading/trailing whitespace and optional surrounding quotes. */
+/** Strip leading/trailing whitespace and optional surrounding quotes,
+ * handling the shell-style escaping used by os-release values. */
 static std::string Unquote(std::string s)
 {
-  // trim whitespace
-  auto b = s.find_first_not_of(" \t\r\n");
-  auto e = s.find_last_not_of(" \t\r\n");
-  if (b == std::string::npos) return {};
-  s = s.substr(b, e - b + 1);
-  // strip quotes
-  if (s.size() >= 2 && s.front() == '"' && s.back() == '"')
+  const auto trim = [](std::string value) {
+    const auto begin = value.find_first_not_of(" \t\r\n");
+    if (begin == std::string::npos) return std::string{};
+    const auto end = value.find_last_not_of(" \t\r\n");
+    return value.substr(begin, end - begin + 1);
+  };
+
+  s = trim(s);
+  if (s.empty()) return {};
+
+  const char quote = s.front();
+  if ((quote == '"' || quote == '\'') && s.size() >= 2 && s.back() == quote)
     s = s.substr(1, s.size() - 2);
-  return s;
+
+  std::string unescaped;
+  unescaped.reserve(s.size());
+  bool escaping = false;
+  for (const char ch : s) {
+    if (escaping) {
+      unescaped.push_back(ch);
+      escaping = false;
+      continue;
+    }
+    if (ch == '\\') {
+      escaping = true;
+      continue;
+    }
+    unescaped.push_back(ch);
+  }
+  if (escaping) unescaped.push_back('\\');
+
+  return unescaped;
 }
 
 /** Split a whitespace separated os-release value list into its entries. */
