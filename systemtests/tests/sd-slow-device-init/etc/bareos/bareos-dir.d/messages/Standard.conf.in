@@ -1,0 +1,7 @@
+Messages {
+  Name = Standard
+  Description = "Reasonable message delivery -- send most everything to email address and to the console."
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
+  catalog = all, !skipped, !saved, !audit
+}

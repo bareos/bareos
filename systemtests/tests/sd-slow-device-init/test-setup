@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+cp mtx-inventory.txt "${tmp}/mtx-inventory.txt"
+rm -rf "${tmp}/autochanger-media"
+mkdir -p "${tmp}/autochanger-media"
+while IFS=: read -r kind slot_index state barcode; do
+  if [[ "${kind}" == "S" && "${state}" == "F" ]]; then
+    touch "${tmp}/autochanger-media/${barcode}"
+  fi
+done <mtx-inventory.txt
+rm -f storage/drv_*
+
+# The storage daemon is started by the testrunner, so that it can measure how
+# long it takes until the daemon answers while its devices are still being
+# initialized.
+start_dir
+start_fd
+
+# make sure that the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"

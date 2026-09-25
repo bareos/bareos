@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# The storage daemon initializes its devices in the background. Asking the
+# autochanger which volume is loaded is deliberately made very slow here, so
+# that the storage daemon still has to answer a "status storage" while it is
+# busy initializing.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# shellcheck source=../../environment.in
+. ./environment
+
+# shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+# How long the autochanger blocks the device initialization and how long we
+# are willing to wait for an answer from the storage daemon.
+export SLOW_CHANGER_DELAY=60
+readonly max_answer_time=25
+
+start_test
+
+rm -f "${tmp}/slow-mtx-changer-delay-done"
+
+sd_start="$(date +%s)"
+start_sd
+
+answered=0
+while [ "$(($(date +%s) - sd_start))" -lt "${max_answer_time}" ]; do
+  rm -f "${tmp}/status-during-init.out"
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${tmp}/status-during-init.out
+status storage=File
+END_OF_DATA
+  run_bconsole
+
+  if grep -q "Device \"File1\"" "${tmp}/status-during-init.out"; then
+    answered=1
+    break
+  fi
+  sleep 1
+done
+
+answer_time="$(($(date +%s) - sd_start))"
+print_debug "storage daemon answered after ${answer_time} seconds"
+print_debug "$(cat "${tmp}/status-during-init.out")"
+
+if [ "${answered}" -ne 1 ]; then
+  set_error "storage daemon did not answer 'status storage' within" \
+    "${max_answer_time} seconds while initializing its devices"
+fi
+
+expect_grep "Device \"File1\" is being initialized." \
+  "${tmp}/status-during-init.out" \
+  "storage daemon did not report the device as being initialized"
+
+# The device must become usable once the autochanger has answered.
+init_deadline="$(($(date +%s) + 2 * SLOW_CHANGER_DELAY))"
+while [ "$(date +%s)" -lt "${init_deadline}" ]; do
+  rm -f "${tmp}/status-after-init.out"
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${tmp}/status-after-init.out
+status storage=File
+END_OF_DATA
+  run_bconsole
+
+  if ! grep -q "is being initialized" "${tmp}/status-after-init.out" \
+    && grep -q "Device \"File1\"" "${tmp}/status-after-init.out"; then
+    break
+  fi
+  sleep 2
+done
+
+print_debug "$(cat "${tmp}/status-after-init.out")"
+expect_not_grep "is being initialized" \
+  "${tmp}/status-after-init.out" \
+  "device initialization did not finish"
+
+end_test
