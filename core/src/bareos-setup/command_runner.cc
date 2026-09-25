@@ -163,6 +163,9 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
     }
     // Redirect stdin from /dev/null so sudo doesn't hang asking for password
     if (input == nullptr) {
+      // execvp() inherits the current environment and will block on stdin
+      // when a command asks for interactive input, so /dev/null keeps the
+      // child non-interactive even if the parent is attached to a terminal.
       int devnull = open("/dev/null", O_RDONLY);
       if (devnull >= 0) {
         dup2(devnull, STDIN_FILENO);
@@ -254,6 +257,18 @@ int RunCommandWithInput(const std::vector<std::string>& argv,
   return RunCommandImpl(argv, &input, use_sudo, std::move(cb));
 }
 
+static std::string DefaultPathSearch()
+{
+  const char* path_env = getenv("PATH");
+  if (path_env != nullptr && path_env[0] != '\0') return path_env;
+
+  char path[PATH_MAX]{};
+  const auto length = confstr(_CS_PATH, path, sizeof(path));
+  if (length > 0 && path[0] != '\0') return std::string(path, length - 1);
+
+  return "/usr/bin:/bin";
+}
+
 bool IsToolInPath(const std::string& name)
 {
   if (name.empty()) return false;
@@ -263,8 +278,7 @@ bool IsToolInPath(const std::string& name)
     struct stat st{};
     return stat(name.c_str(), &st) == 0 && (st.st_mode & S_IXUSR);
   }
-  const char* path_env = getenv("PATH");
-  const std::string path = path_env != nullptr ? path_env : "/usr/bin:/bin";
+  const std::string path = DefaultPathSearch();
   std::istringstream stream(path);
   std::string dir;
   while (std::getline(stream, dir, ':')) {

@@ -89,14 +89,14 @@ int main(int argc, char* argv[])
 
   std::string listen_address = "127.0.0.1";
   app.add_option("--listen,-l", listen_address,
-                 "IPv4 address to listen on. Defaults to 127.0.0.1 "
-                 "(loopback only, the secure default). To reach the "
-                 "wizard from another host, prefer forwarding the port "
-                 "over SSH (ssh -L 19101:127.0.0.1:19101 root@host) "
-                 "rather than binding to a reachable interface: the "
-                 "setup service speaks plain HTTP and executes "
-                 "privileged commands.")
-      ->default_val("127.0.0.1");
+                 "IPv4 address for the temporary setup web UI listener. "
+                 "Defaults to 127.0.0.1 (loopback only, the secure default). "
+                 "To reach the wizard from another host, prefer forwarding "
+                 "the port over SSH (ssh -L 19101:127.0.0.1:19101 root@host) "
+                 "rather than binding to a reachable interface: the setup "
+                 "wizard speaks plain HTTP and executes privileged commands.")
+      ->default_val("127.0.0.1")
+      ->excludes("--tui");
 
   bool no_browser = false;
   app.add_flag("--no-browser", no_browser,
@@ -108,7 +108,8 @@ int main(int argc, char* argv[])
 
   bool tui = false;
   app.add_flag("--tui", tui,
-               "Run as interactive terminal wizard instead of web UI");
+               "Run as interactive terminal wizard instead of web UI")
+      ->excludes("--listen");
 
   CLI11_PARSE(app, argc, argv);
 
