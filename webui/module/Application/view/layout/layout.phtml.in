@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -34,6 +34,7 @@ include 'version.php';
 
 <head>
 <meta charset="utf-8">
+<meta name="csrf-token" content="<?php echo $this->escapeHtmlAttr((new \Application\Form\ActionForm())->get('csrf')->getValue()); ?>" data-refresh-url="<?php echo $this->url('api/csrf'); ?>">
 
 <?php echo $this->headTitle($_SESSION['bareos']['director'],'APPEND')->setSeparator(' | ')->setAutoEscape(false) ?>
 
@@ -113,7 +114,12 @@ include 'version.php';
                   <li><a href="https://www.bareos.com/support/" target="_blank"><?php echo $this->translate("Support"); ?></a></li>
                   <li><a href="<?php echo $this->url('director', array('action' => 'subscription')); ?>"><?php echo $this->translate("Subscription"); ?></a></li>
                   <li role="separator" class="divider"></li>
-                  <li><a href="<?php echo $this->url('auth', array('action' => 'logout')); ?>"><?php echo $this->translate("Logout"); ?></a></li>
+                  <li>
+                     <form method="post" action="<?php echo $this->url('auth', array('action' => 'logout')); ?>">
+                        <?php echo $this->formHidden((new \Application\Form\ActionForm())->get('csrf')); ?>
+                        <button type="submit" class="btn btn-link"><?php echo $this->translate("Logout"); ?></button>
+                     </form>
+                  </li>
                </ul>
             </li>
          </ul>

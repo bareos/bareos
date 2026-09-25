@@ -47,6 +47,16 @@ class RunJobForm extends Form
         $this->pools = $pools;
         $this->jobdefaults = $jobdefaults;
 
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array(
+                    'timeout' => 3600,
+                ),
+            ),
+        ));
+
         $this->addSelectElement('client', _('Client'), $this->getClientList(), $jobdefaults['client'] ?? null);
         $this->addSelectElement('job', _('Job'), $this->getJobList(), $jobdefaults['job'] ?? null);
         $this->addSelectElement('fileset', _('Fileset'), $this->getFilesetList(), $jobdefaults['fileset'] ?? null);
