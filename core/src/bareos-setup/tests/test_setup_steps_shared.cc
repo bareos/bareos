@@ -956,6 +956,21 @@ TEST(BareosSetupStepsShared, ParsesOsReleaseWithoutIdLike)
   EXPECT_TRUE(info.id_like.empty());
 }
 
+TEST(BareosSetupStepsShared, ParsesOsReleaseWithSingleQuotesAndEscapes)
+{
+  const auto info = ParseOsRelease(
+      "ID='debian'\n"
+      "VERSION_ID='13'\n"
+      "PRETTY_NAME='Debian GNU/Linux \"bookworm\"'\n"
+      "ID_LIKE='rhel centos fedora'\n");
+
+  EXPECT_EQ(info.distro, "debian");
+  EXPECT_EQ(info.version, "13");
+  EXPECT_EQ(info.pretty_name, "Debian GNU/Linux \"bookworm\"");
+  EXPECT_EQ(info.id_like,
+            (std::vector<std::string>{"rhel", "centos", "fedora"}));
+}
+
 TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
 {
   // DetectOs() must never throw: the wizard has to stay usable on systems
