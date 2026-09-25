@@ -1,12 +1,18 @@
 CREATE TABLE Path
 (
-    PathId            SERIAL      NOT NULL,
+    PathId            BIGSERIAL      NOT NULL,
     Path              TEXT        NOT NULL,
     PRIMARY KEY (PathId)
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
 CREATE UNIQUE INDEX path_name_idx ON Path (Path);
+
+SELECT setval(
+    pg_get_serial_sequence('Path', 'pathid'),
+    3147483647,
+    false
+);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
 -- In general, these will cause very significant performance
@@ -26,7 +32,7 @@ CREATE TABLE File (
    FileId           BIGSERIAL   NOT NULL,
    FileIndex        INTEGER     NOT NULL  DEFAULT 0,
    JobId            INTEGER     NOT NULL,
-   PathId           INTEGER     NOT NULL,
+   PathId           BIGINT     NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
    Fhinfo           NUMERIC(20) NOT NULL  DEFAULT 0,
@@ -345,8 +351,8 @@ CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
 CREATE TABLE PathHierarchy
 (
-    PathId            INTEGER     NOT NULL,
-    PPathId           INTEGER     NOT NULL,
+    PathId            BIGINT     NOT NULL,
+    PPathId           BIGINT     NOT NULL,
     CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
@@ -355,7 +361,7 @@ CREATE INDEX pathhierarchy_ppathid
 
 CREATE TABLE PathVisibility
 (
-      PathId          INTEGER     NOT NULL,
+      PathId          BIGINT     NOT NULL,
       JobId           INTEGER     NOT NULL,
       Size            BIGINT      DEFAULT 0,
       Files           INTEGER     DEFAULT 0,
