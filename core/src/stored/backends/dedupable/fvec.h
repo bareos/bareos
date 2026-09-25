@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -291,9 +291,10 @@ template <typename T> class fvec : access {
   void flush()
   {
     auto size = useful_bytes();
-    if (msync(buffer, size, MS_SYNC) < 0) {
+    if (size > 0 && msync(buffer, size, MS_SYNC) < 0) {
       throw error("msync (size = " + std::to_string(size) + ")");
     }
+    if (fsync(fd) < 0) { throw error("fsync"); }
   }
 
   ~fvec()
