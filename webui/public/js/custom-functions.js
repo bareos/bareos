@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -101,6 +101,54 @@ function initDTLocale() {
    iJS.i18n.bindtextdomain(dt_locale, dt_textdomain, "po");
    iJS.i18n.try_load_lang();
 }
+
+function refreshCsrfToken(onSuccess, onFailure) {
+   let csrfElement = document.querySelector('meta[name="csrf-token"]');
+   let refreshUrl = csrfElement ? csrfElement.getAttribute('data-refresh-url') : null;
+
+   if(!refreshUrl) {
+      onFailure("Unable to refresh the CSRF token.");
+      return;
+   }
+
+   $.ajax({
+      method: "GET",
+      url: refreshUrl,
+      dataType: "json",
+      cache: false
+   }).done(function(response) {
+      if(!response || !response.csrf) {
+         onFailure("Unable to refresh the CSRF token.");
+         return;
+      }
+      csrfElement.setAttribute('content', response.csrf);
+      onSuccess(response.csrf);
+   }).fail(function() {
+      onFailure("Unable to refresh the CSRF token. Please reload the page and try again.");
+   });
+}
+
+function submitActionPostForm(form) {
+   if(form.getAttribute('data-submitting') === 'true') {
+      return false;
+   }
+
+   let confirmation = form.getAttribute('data-confirmation');
+   if(confirmation && !confirm(confirmation)) {
+      return false;
+   }
+
+   form.setAttribute('data-submitting', 'true');
+   refreshCsrfToken(function(token) {
+      form.querySelector('input[name="csrf"]').value = token;
+      HTMLFormElement.prototype.submit.call(form);
+   }, function(error) {
+      form.removeAttribute('data-submitting');
+      alert(error);
+   });
+   return false;
+}
+
 function escapeHtmlAttribute(value) {
    return String(value)
       .replace(/&/g, '&amp;')
@@ -112,15 +160,17 @@ function escapeHtmlAttribute(value) {
 
 function actionPostButton(url, parameters, title, icon, confirmation) {
    let csrfElement = document.querySelector('meta[name="csrf-token"]');
-   let form = '<form method="post" action="' + escapeHtmlAttribute(url) + '" style="display:inline"';
+   let csrfToken = csrfElement ? csrfElement.getAttribute('content') : '';
+   let form = '<form method="post" action="' + escapeHtmlAttribute(url) +
+      '" style="display:inline" onsubmit="return submitActionPostForm(this)"';
 
    if(confirmation) {
       form += ' data-confirmation="' + escapeHtmlAttribute(confirmation) +
-         '" onsubmit="return confirm(this.getAttribute(\'data-confirmation\'))"';
+         '"';
    }
    form += '>';
 
-   parameters.csrf = csrfElement ? csrfElement.getAttribute('content') : '';
+   parameters.csrf = csrfToken;
    Object.keys(parameters).forEach(function(name) {
       form += '<input type="hidden" name="' + escapeHtmlAttribute(name) + '" value="' +
          escapeHtmlAttribute(parameters[name]) + '">';

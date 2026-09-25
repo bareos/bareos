@@ -77,6 +77,18 @@ class JobController extends AbstractActionController
             );
         }
 
+        $action = $this->params()->fromPost('action');
+        if (!empty($action)) {
+            $actionForm = new ActionForm();
+            $actionForm->setData($this->getRequest()->getPost());
+            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
+                error_log('Rejected job action request: ' . json_encode($actionForm->getMessages()));
+                $this->getResponse()->setStatusCode(400);
+                $this->getResponse()->setContent('Invalid request.');
+                return $this->getResponse();
+            }
+        }
+
         $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : ($_SESSION['bareos']['jobview_period'] ? $_SESSION['bareos']['jobview_period'] : 7);
         $status = $this->params()->fromQuery('status') ? $this->params()->fromQuery('status') : 'all';
         $jobname = $this->params()->fromQuery('jobname') ? $this->params()->fromQuery('jobname') : 'all';
@@ -97,7 +109,6 @@ class JobController extends AbstractActionController
         $form = new JobForm($jobs, $jobname, $period, $status);
         $result = null;
 
-        $action = $this->params()->fromPost('action');
         if (empty($action)) {
             return new ViewModel(
                 array(
@@ -108,15 +119,6 @@ class JobController extends AbstractActionController
                 )
             );
         } else {
-            $actionForm = new ActionForm();
-            $actionForm->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
-                error_log('Rejected job action request: ' . json_encode($actionForm->getMessages()));
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {

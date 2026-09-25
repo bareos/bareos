@@ -83,6 +83,16 @@ class ScheduleController extends AbstractActionController
         $action = $this->params()->fromPost('action');
         $schedulename = $this->params()->fromPost('schedule');
 
+        if (!empty($action)) {
+            $form = new ActionForm();
+            $form->setData($this->getRequest()->getPost());
+            if (!$this->getRequest()->isPost() || !$form->isValid()) {
+                $this->getResponse()->setStatusCode(400);
+                $this->getResponse()->setContent('Invalid request.');
+                return $this->getResponse();
+            }
+        }
+
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
         } catch (Exception $e) {
@@ -116,14 +126,6 @@ class ScheduleController extends AbstractActionController
                 )
             );
         } else {
-            $form = new ActionForm();
-            $form->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$form->isValid()) {
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-
             try {
                 if ($action == "enable") {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
