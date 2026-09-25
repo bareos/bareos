@@ -254,7 +254,7 @@ $this->headTitle($title);
                   $('.running-jobs-container').append('<div class="panel panel-default"><div class="panel-body rjc-panel-'+ i +'">');
                   $('.rjc-panel-'+i).append('<p>');
                   $('.rjc-panel-'+i).append('<strong>' + data[id].name + ' (' + data[id].client + ')' + '</strong>' + ' ');
-                  $('.rjc-panel-'+i).append('<a href="<?php echo $this->basePath() . '/job/cancel/'; ?>' + data[id].jobid + '"><span class="pull-right text-danger glyphicon glyphicon-remove" aria-hidden="true" title="Cancel"></span></a>');
+                  $('.rjc-panel-'+i).append(actionPostButton('<?php echo $this->basePath() . '/job/cancel/'; ?>' + data[id].jobid, { action: 'cancel' }, <?php echo json_encode($this->translate("Cancel")); ?>, 'glyphicon-remove', 'Cancel Job ID ' + data[id].jobid + '?'));
                   $('.rjc-panel-'+i).append('</p>');
                   $('.rjc-panel-'+i).append('<strong>Job ID: </strong><a href="<?php echo $this->basePath() . '/job/details/'; ?>' + data[id].jobid + '">' + data[id].jobid + '</a> ');
                   if(data[id].lastbackupsize > 0) {

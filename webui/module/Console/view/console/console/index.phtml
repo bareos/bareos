@@ -71,7 +71,9 @@ function send(cmd) {
          method: "POST",
          url: "<?php echo $this->url('api/console', array(), array()); ?>",
          data: {
-            "command": cmd
+            "action": "execute",
+            "command": cmd,
+            "csrf": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
          },
          dataType: "json",
       });

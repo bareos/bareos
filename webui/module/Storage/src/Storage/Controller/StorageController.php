@@ -25,6 +25,7 @@
 
 namespace Storage\Controller;
 
+use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Json\Json;
@@ -123,8 +124,18 @@ class StorageController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
+        $action = $this->params()->fromPost('action');
         $storagename = $this->params()->fromRoute('id');
+
+        if (!empty($action)) {
+            $actionForm = new ActionForm();
+            $actionForm->setData($this->getRequest()->getPost());
+            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
+                $this->getResponse()->setStatusCode(400);
+                $this->getResponse()->setContent('Invalid request.');
+                return $this->getResponse();
+            }
+        }
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
@@ -197,9 +208,9 @@ class StorageController extends AbstractActionController
             ));
         } else {
             if ($action == "import") {
-                $storage = $this->params()->fromQuery('storage');
-                $srcslots = $this->params()->fromQuery('srcslots');
-                $dstslots = $this->params()->fromQuery('dstslots');
+                $storage = $this->params()->fromPost('storage');
+                $srcslots = $this->params()->fromPost('srcslots');
+                $dstslots = $this->params()->fromPost('dstslots');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -221,8 +232,8 @@ class StorageController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "export") {
-                $storage = $this->params()->fromQuery('storage');
-                $srcslots = $this->params()->fromQuery('srcslots');
+                $storage = $this->params()->fromPost('storage');
+                $srcslots = $this->params()->fromPost('srcslots');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -244,9 +255,9 @@ class StorageController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "mount") {
-                $storage = $this->params()->fromQuery('storage');
-                $slot = $this->params()->fromQuery('slot');
-                $drive = $this->params()->fromQuery('drive');
+                $storage = $this->params()->fromPost('storage');
+                $slot = $this->params()->fromPost('slot');
+                $drive = $this->params()->fromPost('drive');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -268,8 +279,8 @@ class StorageController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "unmount") {
-                $storage = $this->params()->fromQuery('storage');
-                $drive = $this->params()->fromQuery('drive');
+                $storage = $this->params()->fromPost('storage');
+                $drive = $this->params()->fromPost('drive');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -291,8 +302,8 @@ class StorageController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "release") {
-                $storage = $this->params()->fromQuery('storage');
-                $drive = $this->params()->fromQuery('srcslots');
+                $storage = $this->params()->fromPost('storage');
+                $drive = $this->params()->fromPost('srcslots');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
@@ -348,7 +359,7 @@ class StorageController extends AbstractActionController
                     }
                 }
             } elseif ($action == "updateslots") {
-                $storage = $this->params()->fromQuery('storage');
+                $storage = $this->params()->fromPost('storage');
 
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();

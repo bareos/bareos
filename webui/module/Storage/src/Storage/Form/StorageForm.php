@@ -42,6 +42,24 @@ class StorageForm extends Form
         $this->pools = $pools;
         $this->drives = $drives;
 
+        $this->add(array(
+            'name' => 'action',
+            'type' => 'Laminas\Form\Element\Hidden',
+            'attributes' => array(
+                'value' => 'label',
+            ),
+        ));
+
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array(
+                    'timeout' => 3600,
+                ),
+            ),
+        ));
+
         // storage
         $this->add(array(
             'name' => 'storage',

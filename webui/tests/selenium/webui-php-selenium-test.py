@@ -301,23 +301,16 @@ class SeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Enabled":
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Disable"]'
+                % self.client
+            )
             if self.profile == "readonly":
-                # For readonly: clicking bootstrap-table action links may not navigate.
-                # Navigate directly to the disable URL to verify the ACL error page.
-                self.driver.get(
-                    self.base_url + "/client/index?action=disable&client=" + self.client
-                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
                 self.driver.get(self.base_url + "/client")
                 self.wait_for_spinner_absence()
                 self.assertEqual(self.client_status(self.client), "Enabled")
             else:
-                # Disables client
-                self.wait_and_click(
-                    By.XPATH,
-                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]'
-                    % self.client,
-                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -328,22 +321,16 @@ class SeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Disabled":
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Enable"]'
+                % self.client
+            )
             if self.profile == "readonly":
-                # For readonly: navigate directly to the enable URL.
-                self.driver.get(
-                    self.base_url + "/client/index?action=enable&client=" + self.client
-                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
                 self.driver.get(self.base_url + "/client")
                 self.wait_for_spinner_absence()
                 self.assertEqual(self.client_status(self.client), "Disabled")
             else:
-                # Enables client
-                self.wait_and_click(
-                    By.XPATH,
-                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]'
-                    % self.client,
-                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -404,23 +391,12 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.driver.get(self.base_url + "/client/details?client=" + self.client)
         self.wait_for_spinner_absence()
+        # Select first backup in list
+        self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+        self.submit_action_form('//button[@title="Rerun"]')
         if self.profile == "readonly":
-            # For readonly: clicking bootstrap-table links may not navigate.
-            # Extract the rerun URL from the first row and navigate directly to
-            # verify the ACL error page.
-            rerun_anchor = self.wait_for_element(
-                By.XPATH, '//tr[@data-index="0"]//a[contains(@href, "action=rerun")]'
-            )
-            rerun_href = rerun_anchor.get_attribute("href")
-            self.driver.get(rerun_href)
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
-            # Select first backup in list
-            self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-            # Press on rerun button
-            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-            # Accept confirmation dialog
-            self.driver.switch_to.alert.accept()
             self.select_navbar_element(
                 "dashboard",
                 [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")],
@@ -830,6 +806,11 @@ class SeleniumTest(unittest.TestCase):
             retry += 1
         logger.error("failed to click %s %s", by, value)
         raise FailedClickException(value)
+
+    def submit_action_form(self, button_xpath):
+        button = self.wait_for_element(By.XPATH, button_xpath)
+        form = button.find_element(By.XPATH, "./ancestor::form")
+        self.driver.execute_script("arguments[0].submit();", form)
 
     def wait_for_element(self, by, value):
         logger = logging.getLogger()
