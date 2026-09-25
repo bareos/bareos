@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ return array(
             'Api\Controller\Analytics' => 'Api\Controller\AnalyticsController',
             'Api\Controller\Api' => 'Api\Controller\ApiController',
             'Api\Controller\Client' => 'Api\Controller\ClientController',
+            'Api\Controller\Csrf' => 'Api\Controller\CsrfController',
             'Api\Controller\Console' => 'Api\Controller\ConsoleController',
             'Api\Controller\Director' => 'Api\Controller\DirectorController',
             'Api\Controller\DotJob' => 'Api\Controller\DotJobController',
@@ -226,6 +227,15 @@ return array(
                             ),
                             'defaults' => array(
                                 'controller' => 'Api\Controller\Console',
+                            ),
+                        ),
+                    ),
+                    'csrf' => array(
+                        'type' => Literal::class,
+                        'options' => array(
+                            'route' => '/csrf',
+                            'defaults' => array(
+                                'controller' => 'Api\Controller\Csrf',
                             ),
                         ),
                     ),

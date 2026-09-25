@@ -5,7 +5,7 @@
 * bareos-webui - Bareos Web-Frontend
 *
 * @link      https://github.com/bareos/bareos for the canonical source repository
-* @copyright Copyright (c) 2013-2024 Bareos GmbH & Co. KG (https://www.bareos.org/)
+* @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (https://www.bareos.org/)
 * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
 *
 * This program is free software: you can redistribute it and/or modify
@@ -67,20 +67,35 @@ function send(cmd) {
       focusScreen();
    } else {
       $('.prompt').hide();
-      var request = $.ajax({
-         method: "POST",
-         url: "<?php echo $this->url('api/console', array(), array()); ?>",
-         data: {
-            "action": "execute",
-            "command": cmd,
-            "csrf": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-         },
-         dataType: "json",
-      });
-      request.done(function(msg) {
-         $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
+      refreshCsrfToken(function(token) {
+         var request = $.ajax({
+            method: "POST",
+            url: "<?php echo $this->url('api/console', array(), array()); ?>",
+            data: {
+               "action": "execute",
+               "command": cmd,
+               "csrf": token
+            },
+            dataType: "json",
+         });
+         request.done(function(msg) {
+            $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
+            $('.prompt').show();
+            document.getElementById('cli').value = "";
+            focusScreen();
+         });
+         request.fail(function(xhr) {
+            var message = xhr.statusText || "Request failed";
+            if(xhr.status) {
+               message += " (HTTP " + xhr.status + ")";
+            }
+            $("<div class='output'></div>").text(message).insertBefore(".prompt");
+            $('.prompt').show();
+            focusScreen();
+         });
+      }, function(error) {
+         $("<div class='output'></div>").text(error).insertBefore(".prompt");
          $('.prompt').show();
-         document.getElementById('cli').value = "";
          focusScreen();
       });
    }

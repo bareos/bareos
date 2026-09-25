@@ -302,8 +302,7 @@ class SeleniumTest(unittest.TestCase):
 
         if self.client_status(self.client) == "Enabled":
             self.submit_action_form(
-                '//tr[contains(td[1], "%s")]//button[@title="Disable"]'
-                % self.client
+                '//tr[contains(td[1], "%s")]//button[@title="Disable"]' % self.client
             )
             if self.profile == "readonly":
                 self.wait_and_click(By.LINK_TEXT, "Back")
@@ -322,8 +321,7 @@ class SeleniumTest(unittest.TestCase):
 
         if self.client_status(self.client) == "Disabled":
             self.submit_action_form(
-                '//tr[contains(td[1], "%s")]//button[@title="Enable"]'
-                % self.client
+                '//tr[contains(td[1], "%s")]//button[@title="Enable"]' % self.client
             )
             if self.profile == "readonly":
                 self.wait_and_click(By.LINK_TEXT, "Back")
@@ -810,7 +808,12 @@ class SeleniumTest(unittest.TestCase):
     def submit_action_form(self, button_xpath):
         button = self.wait_for_element(By.XPATH, button_xpath)
         form = button.find_element(By.XPATH, "./ancestor::form")
-        self.driver.execute_script("arguments[0].submit();", form)
+        confirmation = form.get_attribute("data-confirmation")
+        button.click()
+        if confirmation:
+            alert = self.driver.switch_to_alert()
+            self.assertEqual(confirmation, alert.text)
+            alert.accept()
 
     def wait_for_element(self, by, value):
         logger = logging.getLogger()
