@@ -234,7 +234,8 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_VOLUME_TO_CATALOG:
       // Start conversation with Storage daemon
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                  me->SDConnectTimeout, true)) {
         return false;
       }
       sd = jcr->store_bsock;
@@ -257,7 +258,8 @@ bool DoVerify(JobControlRecord* jcr)
 
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);
@@ -275,7 +277,8 @@ bool DoVerify(JobControlRecord* jcr)
     default:
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);

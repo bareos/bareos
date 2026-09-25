@@ -37,7 +37,7 @@ namespace directordaemon {
 class StorageResource;
 class UaContext;
 
-bool AuthenticateWithFileDaemon(JobControlRecord* jcr);
+bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 
 struct DirectorAuth : ::TlsConfigProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
