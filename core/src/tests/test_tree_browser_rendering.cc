@@ -100,10 +100,10 @@ TEST(TreeBrowserRendering, DocumentsRestoreBrowserKeyAliases)
 {
   std::string help = JoinHelp(kBrowserHelp);
   for (std::string_view key :
-       {"Up",    "Down", "Tab",       "Left",  "Right", "Home", "End",
-        "Enter", "..",   "Backspace", "Space", "m",     "a",    "u",
-        "e",     "i",    "l",         "/",     ":",     "h",    "?",
-        "p",     "o",    "c",         "d",     "r",     "q",    "Esc"}) {
+       {"Up", "Down",      "Tab",   "Left",   "Right",  "Home", "End", "Enter",
+        "..", "Backspace", "Space", "Insert", "Delete", "+",    "-",   "m",
+        "a",  "u",         "e",     "i",      "l",      "/",    ":",   "h",
+        "?",  "p",         "o",     "c",      "d",      "r",    "q",   "Esc"}) {
     EXPECT_NE(help.find(key), std::string::npos) << key;
   }
 }
