@@ -48,6 +48,7 @@
 #define BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <string_view>
