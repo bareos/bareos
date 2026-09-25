@@ -235,9 +235,9 @@ TEST(TreeBrowserRendering, AlignsDetailsAtRightEdge)
 TEST(TreeBrowserRendering, FormatsStableSizeAndTimeColumns)
 {
   EXPECT_EQ(FormatDetailColumns("12 B", "2026-09-15 22:30:00"),
-            "    12 B  2026-09-15 22:30:00");
+            "   12 B  2026-09-15 22:30:00");
   EXPECT_EQ(FormatDetailColumns("Size", "Modified"),
-            "    Size  Modified           ");
+            "   Size  Modified           ");
 }
 
 TEST(TreeBrowserRendering, RendersMcStyleFrameBorders)

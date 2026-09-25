@@ -75,7 +75,7 @@ constexpr size_t kDefaultTerminalWidth = 80;
 constexpr size_t kMinTerminalWidth = 2;
 constexpr size_t kMaxSearchMatches = 2000;
 constexpr size_t kHorizontalScrollColumns = 8;
-constexpr size_t kDetailSizeWidth = 8;
+constexpr size_t kDetailSizeWidth = 7;
 constexpr size_t kDetailTimeWidth = 19;
 
 struct Utf8Character {
@@ -425,7 +425,7 @@ std::string EstimateStatus(bool calculated,
   if (running) { return "calculating [" + std::string(1, spinner) + "]"; }
   if (!calculated) { return "not calculated"; }
   if (stale) { return "stale"; }
-  return SizeAsSiPrefixFormat(bytes);
+  return SizeAsCompact7Format(bytes);
 }
 
 std::vector<std::string> BuildDetectedPluginHintLines(
@@ -997,7 +997,7 @@ std::string NodeDetail(UaContext* ua, tree_node* node)
   encode_time(mtime, time_str);
 
   return FormatDetailColumns(
-      SizeAsSiPrefixFormat(static_cast<uint64_t>(statp.st_size)), time_str);
+      SizeAsCompact7Format(static_cast<uint64_t>(statp.st_size)), time_str);
 }
 
 // Whole-tree, case-insensitive substring search against each node's own
