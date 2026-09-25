@@ -382,6 +382,13 @@
                   />
                 </q-td>
               </template>
+              <template #body-cell-lastwritten="props">
+                <q-td :props="props">
+                  <span :title="catalogTime(props.value).title">
+                    {{ catalogTime(props.value).text }}
+                  </span>
+                </q-td>
+              </template>
               <template #body-cell-retention="props">
                 <q-td :props="props" style="min-width:90px">
                   <div>{{ formatDuration(props.value) }}</div>
@@ -465,12 +472,17 @@ import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
+import { formatCatalogTimestamp } from '../utils/locales.js'
 
 const route    = useRoute()
 const router   = useRouter()
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
+
+function catalogTime(value) {
+  return formatCatalogTimestamp(value, settings.relativeTime, settings.locale)
+}
 const $q = useQuasar()
 const { t } = useI18n()
 const devicesPagination = usePersistedTablePagination('storages.devices', {
