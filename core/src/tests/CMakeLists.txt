@@ -350,6 +350,11 @@ if(NOT client-only)
                                          GTest::gtest_main
   )
   bareos_add_test(
+    test_generic_tape_device
+    ADDITIONAL_SOURCES ../stored/backends/generic_tape_device.cc
+    LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib GTest::gtest_main
+  )
+  bareos_add_test(
     test_db_list_ctx LINK_LIBRARIES Bareos::Lib Bareos::SQL GTest::gtest_main
   )
   if(NOT MSVC)
