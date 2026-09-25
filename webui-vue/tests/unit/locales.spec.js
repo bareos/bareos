@@ -26,6 +26,7 @@ import {
 } from '../../src/generated/webui-locales.js'
 import {
   detectPreferredLocale,
+  formatCatalogTimestamp,
   formatDirectorRelativeTime,
   formatLocalDateTime,
   formatRelativeDate,
@@ -83,7 +84,31 @@ describe('webui locales', () => {
     vi.setSystemTime(new Date('2026-04-23T12:00:00'))
 
     expect(formatSqlRelativeTime('2026-04-23 11:58:00', 'en_EN')).toBe('2 minutes ago')
-    expect(formatDirectorRelativeTime('23-Apr-26 11:58', 'en_EN')).toBe('2 minutes ago')
+    vi.useRealTimers()
+  })
+
+  it('formats catalog timestamps according to the relative time setting', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-23T12:00:00'))
+
+    expect(formatCatalogTimestamp('2026-04-23 11:58:00', true, 'en_EN')).toEqual({
+      text: '2 minutes ago',
+      title: '2026-04-23 11:58:00',
+    })
+    expect(formatCatalogTimestamp('2026-04-23 11:58:00', false, 'en_EN')).toEqual({
+      text: '2026-04-23 11:58:00',
+      title: '2 minutes ago',
+    })
+    for (const empty of [null, undefined, '', '0000-00-00 00:00:00']) {
+      expect(formatCatalogTimestamp(empty, true, 'en_EN')).toEqual({
+        text: '—',
+        title: undefined,
+      })
+    }
+    expect(formatCatalogTimestamp('garbage', true, 'en_EN')).toEqual({
+      text: 'garbage',
+      title: undefined,
+    })
 
     vi.useRealTimers()
   })
