@@ -447,6 +447,30 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   return result;
 }
 
+// Compact, fixed-upper-bound (7 character) byte count formatter, in the
+// style of Midnight Commander's file-size column: values up to 9,999,999
+// are printed as plain digits (up to 7 characters, no suffix); larger
+// values are divided by 1024 repeatedly, rounding to the nearest integer
+// at each step, until the result fits in 6 digits, then a single-letter
+// suffix (K/M/G/T/P/E) is appended as the 7th character.
+std::string SizeAsCompact7Format(uint64_t value_in)
+{
+  constexpr uint64_t kSevenDigitLimit = 10000000ULL;
+  if (value_in < kSevenDigitLimit) { return std::to_string(value_in); }
+
+  constexpr uint64_t kSixDigitLimit = 1000000ULL;
+  static const char kSuffix[] = "KMGTPE";
+
+  uint64_t scale = 1024ULL;
+  uint64_t rounded = value_in;
+  size_t unit = 0;
+  for (; unit < sizeof(kSuffix) - 1; ++unit, scale *= 1024ULL) {
+    rounded = (value_in + scale / 2) / scale;
+    if (rounded < kSixDigitLimit) { break; }
+  }
+  return std::to_string(rounded) + kSuffix[unit];
+}
+
 
 /*
  * Convert a size in bytes to uint64_t
