@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1144,7 +1144,10 @@ static void UpdateSlots(UaContext* ua)
         if (BitIsSet(i - 1, slot_list)) {
           // Set InChanger to zero for this Slot
           mr.Slot = i;
-          ua->db->MakeInchangerUnique(ua->jcr, &mr);
+          if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+            ua->WarningMsg(T_("Could not set inchanger to 0 for slot %d.\n"),
+                           mr.Slot);
+          }
         }
       }
     }
@@ -1207,7 +1210,11 @@ void UpdateSlotsFromVolList(UaContext* ua,
     {
       DbLocker _{ua->db};
       // Set InChanger to zero for this Slot
-      ua->db->MakeInchangerUnique(ua->jcr, &mr);
+      if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+        Dmsg4(100,
+              "Could not make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+              mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+      }
     }
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
@@ -1302,7 +1309,10 @@ void UpdateInchangerForExport(UaContext* ua,
     DbLocker _{ua->db};
 
     // Set InChanger to zero for this Slot
-    ua->db->MakeInchangerUnique(ua->jcr, &mr);
+    if (!ua->db->MakeInchangerUnique(ua->jcr, &mr)) {
+      Dmsg4(100, "Could not make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
+            mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
+    }
 
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);

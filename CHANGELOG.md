@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - cats: escape client list filter [PR #2823]
+- cats: size SQL escape buffers dynamically [PR #2840]
 
 ## [24.0.11] - 2026-09-03
 
@@ -2060,4 +2061,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2790]: https://github.com/bareos/bareos/pull/2790
 [PR #2818]: https://github.com/bareos/bareos/pull/2818
 [PR #2823]: https://github.com/bareos/bareos/pull/2823
+[PR #2840]: https://github.com/bareos/bareos/pull/2840
 [unreleased]: https://github.com/bareos/bareos/tree/master

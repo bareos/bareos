@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -110,8 +110,6 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   ref_count_ = 1;
   fname = GetPoolMemory(PM_FNAME);
   path = GetPoolMemory(PM_FNAME);
-  esc_name = GetPoolMemory(PM_FNAME);
-  esc_path = GetPoolMemory(PM_FNAME);
   esc_obj = GetPoolMemory(PM_FNAME);
   buf_ = GetPoolMemory(PM_FNAME);
   allow_transactions_ = mult_db_connections;
@@ -277,8 +275,6 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
     FreePoolMemory(cached_path);
     FreePoolMemory(fname);
     FreePoolMemory(path);
-    FreePoolMemory(esc_name);
-    FreePoolMemory(esc_path);
     FreePoolMemory(esc_obj);
     FreePoolMemory(buf_);
     if (db_driver_) { free(db_driver_); }
@@ -296,28 +292,36 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
   unlock_mutex(mutex);
 }
 
-/**
- * Escape strings so that PostgreSQL is happy
- *
- *   NOTE! len is the length of the old string. Your new
- *         string must be long enough (max 2*old+1) to hold
- *         the escaped output.
- */
-void BareosDbPostgresql::EscapeString(JobControlRecord* jcr,
-                                      char* snew,
-                                      const char* old,
-                                      int len)
+// Escape strings so that PostgreSQL is happy
+std::optional<std::string> BareosDbPostgresql::EscapeString(
+    JobControlRecord* jcr,
+    std::string_view str)
 {
   DbLocker _{this};
   int error;
 
-  PQescapeStringConn(db_handle_, snew, old, len, &error);
+  std::string result;
+  if (str.size() > (result.max_size() - 1) / 2) {
+    Jmsg(jcr, M_FATAL, 0, T_("String too long to escape for PostgreSQL.\n"));
+    Dmsg0(500, "PQescapeStringConn input too large\n");
+    return std::nullopt;
+  }
+
+  result.resize(str.size() * 2 + 1);
+
+  std::size_t byte_count = PQescapeStringConn(db_handle_, result.data(),
+                                              str.data(), str.size(), &error);
   if (error) {
     Jmsg(jcr, M_FATAL, 0, T_("PQescapeStringConn returned non-zero.\n"));
     /* error on encoding, probably invalid multibyte encoding in the source
       string see PQescapeStringConn documentation for details. */
     Dmsg0(500, "PQescapeStringConn failed\n");
+
+    return std::nullopt;
   }
+
+  result.resize(byte_count);
+  return result;
 }
 
 /**
