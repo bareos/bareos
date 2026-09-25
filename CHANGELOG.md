@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - cats: escape client list filter [PR #2822]
+- cats: size SQL escape buffers dynamically [PR #2839]
 
 ## [25.1.1] - 2026-09-03
 
@@ -2372,4 +2373,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2817]: https://github.com/bareos/bareos/pull/2817
 [PR #2822]: https://github.com/bareos/bareos/pull/2822
 [PR #2828]: https://github.com/bareos/bareos/pull/2828
+[PR #2839]: https://github.com/bareos/bareos/pull/2839
 [unreleased]: https://github.com/bareos/bareos/tree/master
