@@ -96,6 +96,13 @@
                     />
                   </q-td>
                 </template>
+                <template #body-cell-lastwritten="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-inchanger="props">
                   <q-td :props="props" class="text-center">
                     <q-icon :name="props.value ? 'check' : 'remove'"
@@ -155,6 +162,13 @@
                     <VolumeStatusBadge :status="props.value" />
                   </q-td>
                 </template>
+                <template #body-cell-lastwritten="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-prunablebytes="props">
                   <q-td :props="props" class="text-right">
                     {{ formatBytes(props.value) }}
@@ -176,6 +190,13 @@
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.jobs" :columns="prunableJobCols" row-key="jobid"
                        dense flat v-model:pagination="prunableJobsPagination">
+                <template #body-cell-starttime="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-bytes="props">
                   <q-td :props="props" class="text-right">
                     {{ formatBytes(props.value) }}
@@ -214,7 +235,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
-import { formatNumber } from '../utils/locales.js'
+import { formatCatalogTimestamp, formatNumber } from '../utils/locales.js'
 import {
   buildPoolVolumeDetailsQuery,
   resolvePoolDetailsStoragesOrigin,
@@ -232,6 +253,10 @@ const route     = useRoute()
 const auth      = useAuthStore()
 const director  = useDirectorStore()
 const settings  = useSettingsStore()
+
+function catalogTime(value) {
+  return formatCatalogTimestamp(value, settings.relativeTime, settings.locale)
+}
 const { t } = useI18n()
 const volumesPagination = usePersistedTablePagination('pool-details.volumes', {
   rowsPerPage: 10,

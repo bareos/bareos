@@ -309,6 +309,22 @@ export function formatSqlRelativeTime(value, locale) {
   return formatRelativeDate(date, locale)
 }
 
+// Catalog timestamp as { text, title } honouring the "relative time"
+// setting; the other representation is returned as tooltip.
+export function formatCatalogTimestamp(value, relative, locale) {
+  const raw = value == null ? '' : String(value).trim()
+  if (!raw || /^0{4}-0{2}-0{2}/.test(raw)) {
+    return { text: '—', title: undefined }
+  }
+
+  const relativeText = formatSqlRelativeTime(raw, locale)
+  if (relativeText === raw) return { text: raw, title: undefined }
+
+  return relative
+    ? { text: relativeText, title: raw }
+    : { text: raw, title: relativeText }
+}
+
 export function parseDirectorDate(value) {
   if (!value) return null
 

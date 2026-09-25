@@ -75,6 +75,7 @@
                     </router-link>
                     <component :is="row.component ?? 'span'" v-else-if="row.component"
                                v-bind="row.componentProps" />
+                    <span v-else-if="row.title" :title="row.title">{{ row.value }}</span>
                     <template v-else>{{ row.value }}</template>
                   </q-item-section>
                 </q-item>
@@ -257,6 +258,13 @@
                     </router-link>
                   </q-td>
                 </template>
+                <template #body-cell-starttime="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-jobstatus="props">
                   <q-td :props="props" class="text-center">
                     <JobStatusBadge :status="props.value" />
@@ -292,7 +300,7 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import { buildDirectorPageQuery } from '../utils/director.js'
 import { buildJobDetailsQuery, resolveJobDetailsQuery } from '../utils/jobs.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
-import { formatNumber } from '../utils/locales.js'
+import { formatCatalogTimestamp, formatNumber } from '../utils/locales.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
 import {
   buildAutochangerSelectionQuery,
@@ -331,6 +339,15 @@ const requestedDirector = computed(() => (
 const currentVolumeDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
+
+function catalogTime(value) {
+  return formatCatalogTimestamp(value, settings.relativeTime, settings.locale)
+}
+
+function catalogTimeRow(value) {
+  const { text, title } = catalogTime(value)
+  return { value: text, title }
+}
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const jobOrigin = computed(() => resolveVolumeDetailsJobOrigin(route.query))
 const poolOrigin = computed(() => resolveVolumeDetailsPoolOrigin(route.query))
@@ -559,9 +576,9 @@ const detailRows = computed(() => {
     { label: t('Media Type'),  value: v.mediatype ?? v.MediaType ?? '—' },
     { label: t('Encryption Key'), value: hasEncryptionKey.value ? t('Present') : '—' },
     { label: t('Slot'),        value: v.slot ?? '0' },
-    { label: t('Label Date'),  value: v.labeldate ?? '—' },
-    { label: t('First Written'), value: v.firstwritten ?? '—' },
-    { label: t('Last Written'),  value: v.lastwritten ?? '—' },
+    { label: t('Label Date'),  ...catalogTimeRow(v.labeldate) },
+    { label: t('First Written'), ...catalogTimeRow(v.firstwritten) },
+    { label: t('Last Written'),  ...catalogTimeRow(v.lastwritten) },
     { label: t('Jobs on Vol'), value: `${v.voljobs ?? 0}${Number(v.maxvoljobs) > 0 ? ` / ${v.maxvoljobs}` : ''}` },
     { label: t('Files on Vol'), value: v.volfiles ?? '0' },
     { label: t('Blocks on Vol'), value: v.volblocks ?? '0' },
