@@ -111,7 +111,17 @@ htableImpl::htableImpl(size_t t_loffset, int tsize)
 
 void htableImpl::init(int tsize)
 {
-  memset(this, 0, sizeof(htableImpl));
+  table = nullptr;
+  loffset = 0;
+  walkptr = nullptr;
+  hash = 0;
+  walk_index = 0;
+  num_items = 0;
+  max_items = 0;
+  buckets = 0;
+  index = 0;
+  mask = 0;
+  rshift = 0;
   if (tsize < 31) { tsize = 31; }
   tsize >>= 2;
 
@@ -230,7 +240,17 @@ void htableImpl::grow_table()
   }
 
   free(table);
-  memcpy(this, big, sizeof(htableImpl)); /* Move everything across */
+  table = big->table;
+  loffset = big->loffset;
+  walkptr = big->walkptr;
+  hash = big->hash;
+  walk_index = big->walk_index;
+  num_items = big->num_items;
+  max_items = big->max_items;
+  buckets = big->buckets;
+  index = big->index;
+  mask = big->mask;
+  rshift = big->rshift;
   free(big);
 
   Dmsg0(100, "Exit grow.\n");
