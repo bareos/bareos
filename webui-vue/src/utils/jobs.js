@@ -413,8 +413,10 @@ export function filterJobsBySearch(jobs, searchTerm) {
     const jobId = String(job.id ?? '').toLowerCase()
     const jobName = String(job.name ?? '').toLowerCase()
     const clientName = String(job.client ?? '').toLowerCase()
+    const comment = String(job.comment ?? '').toLowerCase()
 
     return jobId.includes(query) || jobName.includes(query) || clientName.includes(query)
+      || comment.includes(query)
   })
 }
 

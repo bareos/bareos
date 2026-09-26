@@ -53,6 +53,7 @@ describe('director data normalisers', () => {
       jobfiles: '48231',
       jobbytes: '2147483648',
       joberrors: '0',
+      comment: 'weekly offsite',
     })).toEqual({
       id: 42,
       name: 'BackupClient1',
@@ -67,6 +68,7 @@ describe('director data normalisers', () => {
       files: 48231,
       bytes: 2147483648,
       errors: 0,
+      comment: 'weekly offsite',
     })
   })
 

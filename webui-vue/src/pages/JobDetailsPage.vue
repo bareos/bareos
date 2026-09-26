@@ -46,6 +46,14 @@
                     </span>
                     <span v-else>{{ row.value }}</span>
                   </q-item-section>
+                  <q-item-section v-if="row.editComment" side>
+                    <q-btn
+                      flat round dense size="sm" icon="edit" color="primary"
+                      :title="t('Edit comment')" :aria-label="t('Edit comment')"
+                      data-testid="job-comment-edit"
+                      @click="commentDialogOpen = true"
+                    />
+                  </q-item-section>
                 </q-item>
               </q-list>
             </q-card-section>
@@ -135,6 +143,12 @@
     </div>
 
     <div v-else-if="!loading" class="text-center q-pa-xl text-grey">{{ t('Job not found.') }}</div>
+    <CommentEditDialog
+      v-model="commentDialogOpen"
+      :title="t('Edit comment')"
+      :comment="job?.comment ?? ''"
+      :save="saveJobComment"
+    />
   </q-page>
 </template>
 
@@ -183,6 +197,8 @@ import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import CommentEditDialog from '../components/CommentEditDialog.vue'
+import { buildJobCommentCommand } from '../utils/volumeBulk.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -419,6 +435,16 @@ async function ensureJobDirector() {
   await switchActiveDirector(requestedDirector.value)
 }
 
+const commentDialogOpen = ref(false)
+
+async function saveJobComment(comment) {
+  await ensureJobDirector()
+  await director.call(buildJobCommentCommand(currentJobId.value, comment))
+  if (jobData.value) {
+    jobData.value = { ...jobData.value, comment }
+  }
+}
+
 async function loadJob() {
   await ensureJobDirector()
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
@@ -538,6 +564,7 @@ const summaryRows = computed(() => {
     { label: t('Bytes'),      value: formatBytes(j.bytes) },
     { label: t('Speed'),      value: formatSpeed(j.bytes, j.duration) },
     { label: t('Errors'),     value: j.errors },
+    { label: t('Comment'),    value: j.comment || '—', editComment: true },
   ]
 })
 

@@ -110,6 +110,7 @@ export function normaliseJob(j) {
     files:     Number(j.jobfiles   ?? j.files   ?? 0),
     bytes:     Number(j.jobbytes   ?? j.bytes   ?? 0),
     errors:    Number(j.joberrors  ?? j.errors  ?? 0),
+    comment:   j.comment    ?? '',
   }
 }
 

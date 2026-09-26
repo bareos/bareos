@@ -113,6 +113,7 @@
                      :title="t('Rerun by Job ID')"
                      @click="openRerunJobIdDialog" />
               <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="manualRefresh" />
+              <ColumnPickerMenu :columns="toggleableJobCols" @toggle="toggleJobCol" />
             </div>
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -194,7 +195,7 @@
             <q-table
               v-if="!(loading && !jobs.length)"
               :rows="jobs"
-              :columns="columns"
+              :columns="visibleJobCols"
               row-key="scopeKey"
               binary-state-sort
               dense flat
@@ -711,6 +712,8 @@ import {
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -1205,8 +1208,19 @@ const columns = computed(() => [
   { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
     sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center', sortable: true },
+  { name: 'comment',   label: 'Comment',  field: 'comment',   align: 'left',   sortable: true,
+    classes: 'ellipsis', style: 'max-width:240px' },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
+
+const {
+  visibleColumns: visibleJobCols,
+  toggleableColumns: toggleableJobCols,
+  toggleColumn: toggleJobCol,
+} = usePersistedTableColumns('jobs.history', columns, {
+  essential: ['id', 'director', 'actions'],
+  defaultHidden: ['comment'],
+})
 
 const runningColumns = computed(() => [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true },
