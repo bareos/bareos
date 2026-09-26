@@ -78,6 +78,14 @@
                     <span v-else-if="row.title" :title="row.title">{{ row.value }}</span>
                     <template v-else>{{ row.value }}</template>
                   </q-item-section>
+                  <q-item-section v-if="row.editComment" side>
+                    <q-btn
+                      flat round dense size="sm" icon="edit" color="primary"
+                      :title="t('Edit comment')" :aria-label="t('Edit comment')"
+                      data-testid="volume-comment-edit"
+                      @click="commentDialogOpen = true"
+                    />
+                  </q-item-section>
                 </q-item>
               </q-list>
             </q-card-section>
@@ -281,6 +289,12 @@
         </div>
       </div>
     </template>
+    <CommentEditDialog
+      v-model="commentDialogOpen"
+      :title="t('Edit comment')"
+      :comment="vol?.comment ?? ''"
+      :save="saveVolumeComment"
+    />
   </q-page>
 </template>
 
@@ -318,6 +332,8 @@ import {
   volumeUsageSegmentsFromResponse,
 } from '../utils/volumes.js'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
+import CommentEditDialog from '../components/CommentEditDialog.vue'
+import { buildVolumeCommentCommand } from '../utils/volumeBulk.js'
 import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
@@ -493,6 +509,16 @@ async function loadVolume() {
   volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
 }
 
+const commentDialogOpen = ref(false)
+
+async function saveVolumeComment(comment) {
+  await ensureVolumeDirector()
+  await director.call(buildVolumeCommentCommand(volumeName.value, comment))
+  if (vol.value) {
+    vol.value = { ...vol.value, comment }
+  }
+}
+
 watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
   loading.value = true
   error.value = null
@@ -589,7 +615,7 @@ const detailRows = computed(() => {
     { label: t('Recycle'), value: v.recycle === '1' ? t('Yes') : t('No') },
     { label: t('Auto Prune'), value: v.autoprune === '1' ? t('Yes') : t('No') },
     { label: t('Recycle Count'), value: v.recyclecount ?? '0' },
-    { label: t('Comment'), value: v.comment || '—' },
+    { label: t('Comment'), value: v.comment || '—', editComment: true },
   ].filter(r => r.value !== '—' || r.label === t('Storage') || r.label === t('Comment'))
 })
 
