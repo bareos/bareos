@@ -103,4 +103,3 @@ export function installStaleBuildReloadHandling(
 
   return { clearReloadGuard: () => clearReloadGuard(storage) }
 }
-
