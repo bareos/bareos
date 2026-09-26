@@ -23,6 +23,15 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
 import { useDashboardStore } from '../../src/stores/dashboards.js'
+import { PRECONFIGURED_DASHBOARDS } from '../../src/dashboard/defaultDashboard.js'
+
+// Derived from the store's own seed list so that adding another
+// preconfigured dashboard does not break every expectation here.
+const PRECONFIGURED_COUNT = PRECONFIGURED_DASHBOARDS.length
+const PRECONFIGURED_NAMES = PRECONFIGURED_DASHBOARDS.map(d => d.name)
+const PRECONFIGURED_MATCHERS = PRECONFIGURED_NAMES.map(
+  name => expect.objectContaining({ name })
+)
 
 describe('dashboards store', () => {
   beforeEach(() => {
@@ -34,7 +43,8 @@ describe('dashboards store', () => {
 
   it('seeds a default dashboard on first run', () => {
     const store = useDashboardStore()
-    expect(store.dashboards).toHaveLength(2)
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT)
+    expect(store.dashboards.map(d => d.name)).toEqual(PRECONFIGURED_NAMES)
     expect(store.dashboards[0].name).toBe('Operations')
     expect(store.dashboards[0].widgets).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'running-jobs' }),
@@ -74,8 +84,13 @@ describe('dashboards store', () => {
 
     const store = useDashboardStore()
 
-    expect(store.dashboards).toHaveLength(2)
-    expect(store.dashboards.map(d => d.name)).toEqual(['Overview', 'Analytics'])
+    // The two stored dashboards keep their former names, the remaining
+    // preconfigured ones are appended.
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT)
+    expect(store.dashboards.slice(0, 2).map(d => d.name)).toEqual(['Overview', 'Analytics'])
+    expect(store.dashboards.map(d => d.id)).toEqual(
+      PRECONFIGURED_DASHBOARDS.map(d => d.id)
+    )
   })
 
   // ── persistence ────────────────────────────────────────────────────────────
@@ -115,25 +130,19 @@ describe('dashboards store', () => {
     setActivePinia(createPinia())
     const store = useDashboardStore()
 
-    expect(store.dashboards).toHaveLength(3)
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT + 1)
     expect(store.dashboards[0].id).toBe('saved-1')
     expect(store.dashboards[0].name).toBe('Restored Board')
     expect(store.dashboards[0].widgets).toHaveLength(1)
     expect(store.dashboards[0].widgets[0].type).toBe('job-totals')
-    expect(store.dashboards).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'Operations' }),
-      expect.objectContaining({ name: 'System Overview' }),
-    ]))
+    expect(store.dashboards).toEqual(expect.arrayContaining(PRECONFIGURED_MATCHERS))
   })
 
   it('falls back to the default dashboard when localStorage is corrupt', () => {
     localStorage.setItem('bareos_dashboards', 'not-valid-json{{')
     setActivePinia(createPinia())
     const store = useDashboardStore()
-    expect(store.dashboards).toEqual(expect.arrayContaining([
-      expect.objectContaining({ name: 'Operations' }),
-      expect.objectContaining({ name: 'System Overview' }),
-    ]))
+    expect(store.dashboards).toEqual(expect.arrayContaining(PRECONFIGURED_MATCHERS))
   })
 
   it('falls back to default when localStorage contains an empty array', () => {
@@ -170,8 +179,8 @@ describe('dashboards store', () => {
     const store = useDashboardStore()
     const id = store.addDashboard('Ops Board')
 
-    expect(store.dashboards).toHaveLength(3)
-    expect(store.dashboards[2].name).toBe('Ops Board')
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT + 1)
+    expect(store.dashboards.at(-1).name).toBe('Ops Board')
     expect(store.activeDashboardId).toBe(id)
   })
 
@@ -190,14 +199,17 @@ describe('dashboards store', () => {
 
     store.removeDashboard(secondId)
 
-    expect(store.dashboards).toHaveLength(2)
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT)
     expect(store.activeDashboardId).toBe(firstId)
   })
 
   it('does not remove the last remaining dashboard', () => {
     const store = useDashboardStore()
-    const id = store.dashboards[0].id
-    store.removeDashboard(id)
+    while (store.dashboards.length > 1) {
+      store.removeDashboard(store.dashboards[0].id)
+    }
+
+    store.removeDashboard(store.dashboards[0].id)
     expect(store.dashboards).toHaveLength(1)
   })
 
@@ -209,8 +221,8 @@ describe('dashboards store', () => {
 
     store.resetAllDashboards()
 
-    expect(store.dashboards).toHaveLength(2)
-    expect(store.dashboards.map(d => d.name)).toEqual(['Operations', 'System Overview'])
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT)
+    expect(store.dashboards.map(d => d.name)).toEqual(PRECONFIGURED_NAMES)
     expect(store.activeDashboardId).toBe(store.dashboards[0].id)
     expect(store.dashboards[0].widgets).toHaveLength(defaultOperationsWidgetCount)
   })
@@ -221,15 +233,15 @@ describe('dashboards store', () => {
     store.addWidget(store.dashboards[0].id, { type: 'analytics-summary', title: 'x', props: {}, layout: {} })
 
     const backup = store.exportDashboards()
-    expect(backup.dashboards).toHaveLength(3)
+    expect(backup.dashboards).toHaveLength(PRECONFIGURED_COUNT + 1)
     expect(backup.activeDashboardId).toBe(store.activeDashboardId)
 
     store.resetAllDashboards()
-    expect(store.dashboards).toHaveLength(2)
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT)
 
     store.importDashboards(backup)
-    expect(store.dashboards).toHaveLength(3)
-    expect(store.dashboards.map(d => d.name)).toEqual(['Operations', 'System Overview', 'Custom'])
+    expect(store.dashboards).toHaveLength(PRECONFIGURED_COUNT + 1)
+    expect(store.dashboards.map(d => d.name)).toEqual([...PRECONFIGURED_NAMES, 'Custom'])
     expect(store.activeDashboardId).toBe(backup.activeDashboardId)
   })
 
