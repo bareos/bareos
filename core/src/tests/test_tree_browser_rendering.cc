@@ -108,6 +108,17 @@ TEST(TreeBrowserRendering, DocumentsRestoreBrowserKeyAliases)
   }
 }
 
+// "r" finishes the file selection only while the Plugin Options pane is
+// browsed; while typing a plugin name, option key or option value it must
+// stay an ordinary character (values such as "/opt/oracle" contain "r").
+namespace {
+using directordaemon::tree_browser_internal::PluginPaneKeyFinishesSelection;
+static_assert(PluginPaneKeyFinishesSelection("key:text:r", true));
+static_assert(!PluginPaneKeyFinishesSelection("key:text:r", false));
+static_assert(!PluginPaneKeyFinishesSelection("key:text:x", true));
+static_assert(!PluginPaneKeyFinishesSelection("key:enter", true));
+}  // namespace
+
 TEST(TreeBrowserRendering, DocumentsDialogNavigationAliases)
 {
   std::string run_help = JoinHelp(kRunDialogHelp);
