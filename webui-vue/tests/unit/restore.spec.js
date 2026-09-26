@@ -990,6 +990,24 @@ describe('restore browser placeholder', () => {
     ]))
   })
 
+  // Regression guard: the restore page derives the plugin fileset details
+  // from the raw "list filesets" payload and the plugin hints, which are
+  // fetched concurrently. Re-deriving with hints that arrived late must
+  // resolve the real plugin name ("VMware") instead of keeping the
+  // generic loader name ("python") the empty-hints pass produced.
+  it('resolves display names once the plugin hints arrive late', () => {
+    const filesets = [{
+      fileset: 'PluginOptionsTest-vmware',
+      filesettext: 'FileSet {\n  Name = "PluginOptionsTest-vmware"\n  Include {\n    Plugin = "python:module_name=bareos-fd-vmware:file=/vmware-demo/vmware-backup.vmdk"\n  }\n}\n',
+    }]
+
+    const withoutHints = buildRestorePluginFilesetDetails(filesets, {})
+    expect(withoutHints.get('PluginOptionsTest-vmware').pluginNames).toEqual(['python'])
+
+    const withHints = buildRestorePluginFilesetDetails(filesets, pluginHintsFixture)
+    expect(withHints.get('PluginOptionsTest-vmware').pluginNames).toEqual(['VMware'])
+  })
+
   it('marks backups as plugin jobs from their fileset metadata', () => {
     expect(decorateRestoreBackupsWithPluginJobs([
       { jobid: 10, fileset: 'PluginFS' },

@@ -2590,7 +2590,11 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
       showing_help_ = true;
       return false;
     }
-    if (key == "key:text:r") {
+    // "r" only runs the restore while merely browsing the pane; during
+    // any kind of text entry it is an ordinary character of the value or
+    // key being typed.
+    if (tree_browser_internal::PluginPaneKeyFinishesSelection(
+            key, plugin_options_mode_ == PluginOptionsEditMode::kBrowsing)) {
       *exit_reason = TreeBrowserExit::kDone;
       return true;
     }

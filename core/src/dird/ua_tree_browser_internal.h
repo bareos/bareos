@@ -198,6 +198,16 @@ inline bool IsHelpKey(std::string_view key)
   return key == "key:text:h" || key == "key:text:?";
 }
 
+/* While the Plugin Options pane has focus, "r" finishes the file
+ * selection -- but only as long as the pane is merely being browsed. As
+ * soon as a plugin name, option key or option value is being typed, "r"
+ * is an ordinary character of that text. */
+constexpr bool PluginPaneKeyFinishesSelection(std::string_view key,
+                                              bool pane_is_browsing)
+{
+  return pane_is_browsing && key == "key:text:r";
+}
+
 inline bool IsHelpReturnKey(std::string_view key)
 {
   return IsHelpKey(key) || key == kKeyEnter || key == kKeyCancel || key == "."
