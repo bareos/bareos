@@ -1990,6 +1990,13 @@ update
          Volume from Pool
          All Volumes from Pool
          All Volumes from all Pools
+         Comment
+
+   You can set a free-text comment on a volume with :bcommand:`update
+   volume=<volume-name> comment="<text>"` and on a job with
+   :bcommand:`update jobid=<jobid> comment="<text>"`. Use ``comment=""`` to
+   clear it. The comments are shown by :bcommand:`llist volume` and
+   :bcommand:`llist jobs`.
 
    You can add, remove or rotate a volume encryption key using :bcommand:`update
    volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
@@ -2029,14 +2036,15 @@ update
 
       update  volume=<volume-name> [volstatus=<status>]
               [volretention=<time-def>] [pool=<pool-name>]
-              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
+              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]
+              [comment=<text>] |
               pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
               [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
               [actiononpurge=<action>] [encrypt=<yes/no/rotate>] |
               slots [storage=<storage-name>] [scan] |
               jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
               [client=<client-name>] [filesetid=<fileset-id>]
-              [jobtype=<job-type>] |
+              [jobtype=<job-type>] [comment=<text>] |
               stats [days=<number>]
 
 use

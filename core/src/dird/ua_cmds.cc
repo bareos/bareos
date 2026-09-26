@@ -527,7 +527,7 @@ static struct ua_cmdstruct commands[] = {
          "[volstatus=<status>] [volretention=<time-def>] "
          "[actiononpurge=<action>] [encrypt=<yes/no/rotate>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] "
-         "[inchanger=<yes/no>]] "
+         "[inchanger=<yes/no>] [comment=<text>]] "
          "| [pool=<pool-name> "
          "[maxvolbytes=<size>] [maxvolfiles=<nb>] [maxvoljobs=<nb>]"
          "[enabled=<yes/no>] [recyclepool=<pool-name>] "
@@ -535,7 +535,8 @@ static struct ua_cmdstruct commands[] = {
          "slots [storage=<storage-name>] [scan]] "
          "| [jobid=<jobid> [jobname=<name>] [starttime=<time-def>] "
          "[client=<client-name>] "
-         "[filesetid=<fileset-id>] [jobtype=<job-type>]] "
+         "[filesetid=<fileset-id>] [jobtype=<job-type>] "
+         "[comment=<text>]] "
          "| [stats [days=<number>]]"),
      true, true},
     {NT_("use"), use_cmd, T_("Use specific catalog"), NT_("catalog=<catalog>"),
