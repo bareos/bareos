@@ -385,12 +385,14 @@ test('navigates through client, pool, and volume detail pages', async ({
   await page.goBack()
 
   await openNav(page, 'nav-storages', /#\/storages/)
-  await page.getByRole('tab', { name: 'Pools' }).click()
+  await expect(page.locator('.q-page').getByText('Storages', { exact: true }).first()).toBeVisible()
+
+  await openNav(page, 'nav-pools', /#\/pools/)
   const firstPool = page.locator('tbody tr a.text-primary').first()
   const poolName = (await firstPool.textContent())?.trim()
   await firstPool.click()
 
-  await expect(page).toHaveURL(/#\/storages\/pools\/.+/)
+  await expect(page).toHaveURL(/#\/pools\/.+/)
   await expect(page.locator('.q-page .text-h5').first()).toContainText(
     poolName ?? ''
   )
@@ -400,7 +402,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await page.getByRole('tab', { name: 'Volumes' }).click()
   const firstVolume = page.locator('tbody tr a.text-primary').first()
   await firstVolume.click()
-  await expect(page).toHaveURL(/#\/storages\/volumes\/.+/)
+  await expect(page).toHaveURL(/#\/volumes\/.+/)
   await expect(page.getByText('Volume Properties', { exact: true })).toBeVisible()
 })
 
