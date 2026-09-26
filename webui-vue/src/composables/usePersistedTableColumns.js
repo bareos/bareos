@@ -7,6 +7,8 @@ import { useSettingsStore } from '../stores/settings.js'
  * are persisted. `allColumns` is the full list of q-table column
  * definitions (or a ref/computed of it); columns whose `name` is not
  * "essential" can be toggled off by the user via a column-picker menu.
+ * `options.defaultHidden` lists columns hidden until the user changes the
+ * column selection for this table.
  *
  * Returns:
  * - `visibleColumns`: computed array of column definitions to pass to
@@ -19,9 +21,13 @@ export function usePersistedTableColumns(key, allColumns, options = {}) {
   const settings = useSettingsStore()
   const essential = new Set(options.essential ?? [])
 
+  const defaultHidden = options.defaultHidden ?? []
+
   const hiddenColumns = computed({
-    get: () => settings.getTableHiddenColumns(key, []),
-    set: (value) => settings.setTableHiddenColumns(key, value),
+    get: () => settings.getTableHiddenColumns(key, defaultHidden),
+    set: (value) => settings.setTableHiddenColumns(key, value, {
+      keepEmpty: defaultHidden.length > 0,
+    }),
   })
 
   const columns = computed(() => unref(allColumns))

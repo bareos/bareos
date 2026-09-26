@@ -92,15 +92,16 @@ function normalizeTableHiddenColumns(value) {
     return {}
   }
 
+  // An explicitly stored empty list is kept: it records that the user
+  // re-enabled columns a table hides by default.
   return Object.fromEntries(
     Object.entries(value)
+      .filter(([, hidden]) => Array.isArray(hidden))
       .map(([key, hidden]) => [
         String(key).trim(),
-        Array.isArray(hidden)
-          ? [...new Set(hidden.map(name => String(name ?? '').trim()).filter(Boolean))]
-          : [],
+        [...new Set(hidden.map(name => String(name ?? '').trim()).filter(Boolean))],
       ])
-      .filter(([key, hidden]) => key && hidden.length)
+      .filter(([key]) => key)
   )
 }
 
@@ -277,7 +278,7 @@ export const useSettingsStore = defineStore('settings', () => {
     return tableHiddenColumns.value[normalizedKey] ?? fallback
   }
 
-  function setTableHiddenColumns(key, value) {
+  function setTableHiddenColumns(key, value, { keepEmpty = false } = {}) {
     const normalizedKey = String(key ?? '').trim()
     if (!normalizedKey) {
       return
@@ -285,7 +286,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     const normalized = normalizeTableHiddenColumns({ [normalizedKey]: value })
     const hidden = normalized[normalizedKey]
-    if (hidden?.length) {
+    if (hidden?.length || (hidden && keepEmpty)) {
       tableHiddenColumns.value = {
         ...tableHiddenColumns.value,
         [normalizedKey]: hidden,

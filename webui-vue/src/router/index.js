@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { buildStoragesTabQuery } from '../utils/storagesRoute.js'
 
 const routes = [
   {
@@ -25,16 +24,10 @@ const routes = [
       { path: 'clients/:name', name: 'client-details', component: () => import('../pages/ClientDetailsPage.vue'), meta: { title: 'Client Details' } },
       { path: 'schedules', name: 'schedules', component: () => import('../pages/SchedulesPage.vue'), meta: { title: 'Schedules' } },
       { path: 'storages', name: 'storages', component: () => import('../pages/StoragesPage.vue'), meta: { title: 'Storages' } },
-      {
-        path: 'autochangers',
-        name: 'autochangers',
-        redirect: to => ({
-          path: '/storages',
-          query: buildStoragesTabQuery(to.query, 'autochangers'),
-        }),
-      },
-      { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue'), meta: { title: 'Pool Details' } },
-      { path: 'storages/volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue'), meta: { title: 'Volume Details' } },
+      { path: 'storages/:name/autochanger', name: 'autochanger', component: () => import('../pages/AutochangerPage.vue'), meta: { title: 'Autochanger' } },
+      { path: 'pools', name: 'pools', component: () => import('../pages/PoolsPage.vue'), meta: { title: 'Pools' } },
+      { path: 'pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue'), meta: { title: 'Pool Details' } },
+      { path: 'volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue'), meta: { title: 'Volume Details' } },
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue'), meta: { title: 'Director' } },
       { path: 'filesets',  name: 'filesets',  component: () => import('../pages/FilesetsPage.vue'), meta: { title: 'Filesets' } },
       { path: 'acls',      name: 'acls',      component: () => import('../pages/AclPage.vue'), meta: { title: 'Command ACL' } },

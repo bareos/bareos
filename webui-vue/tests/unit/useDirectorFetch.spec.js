@@ -146,6 +146,7 @@ describe('director data normalisers', () => {
       VolRetention: '365 days',
       Slot: '8',
       enabled: true,
+      Comment: 'offsite',
     })).toEqual({
       volumename: 'Full-0001',
       pool: 'Full',
@@ -162,6 +163,7 @@ describe('director data normalisers', () => {
       retention: '365 days',
       slot: 8,
       enabled: true,
+      comment: 'offsite',
     })
   })
 

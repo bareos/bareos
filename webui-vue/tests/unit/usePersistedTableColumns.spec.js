@@ -101,4 +101,30 @@ describe('usePersistedTableColumns', () => {
     expect(toggleableColumns.value.map(c => c.name)).toEqual(['pooltype'])
     expect(JSON.parse(localStorage.getItem(LS_KEY)).tableHiddenColumns).toEqual({})
   })
+
+  it('hides default-hidden columns until the user shows them', async () => {
+    const { visibleColumns, toggleColumn } = usePersistedTableColumns('storages.pools', COLUMNS, {
+      essential: ['name', 'actions'],
+      defaultHidden: ['numvols'],
+    })
+
+    expect(visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'actions'])
+
+    toggleColumn('numvols')
+    await nextTick()
+
+    expect(visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'numvols', 'actions'])
+    // The explicit empty list must be kept, otherwise the default would
+    // hide the column again after a reload.
+    expect(JSON.parse(localStorage.getItem(LS_KEY)).tableHiddenColumns).toEqual({
+      'storages.pools': [],
+    })
+
+    setActivePinia(createPinia())
+    const reloaded = usePersistedTableColumns('storages.pools', COLUMNS, {
+      essential: ['name', 'actions'],
+      defaultHidden: ['numvols'],
+    })
+    expect(reloaded.visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'numvols', 'actions'])
+  })
 })

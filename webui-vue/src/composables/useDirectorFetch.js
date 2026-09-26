@@ -279,5 +279,6 @@ export function normaliseVolume(v) {
     retention:   v.volretention ?? v.VolRetention ?? '',
     slot:        Number(v.slot ?? v.Slot ?? 0),
     enabled:     v.enabled !== '0' && v.enabled !== false,
+    comment:     v.comment ?? v.Comment ?? '',
   }
 }
