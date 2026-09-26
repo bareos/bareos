@@ -46,9 +46,9 @@ struct RestorePointCandidate {
   JobId_t JobId = 0;
   utime_t RestorePoint = 0;
   uint32_t JobCount = 0;
-  std::string JobNames;   /**< Distinct job names, comma separated. */
-  uint64_t JobFiles = 0;  /**< Anchor Full job's own JobFiles. */
-  uint64_t JobBytes = 0;  /**< Anchor Full job's own JobBytes. */
+  std::string JobNames;  /**< Distinct job names, comma separated. */
+  uint64_t JobFiles = 0; /**< Anchor Full job's own JobFiles. */
+  uint64_t JobBytes = 0; /**< Anchor Full job's own JobBytes. */
 };
 
 /**

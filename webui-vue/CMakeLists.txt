@@ -146,17 +146,14 @@ if(NPM_EXECUTABLE)
       WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
     )
     set_tests_properties(
-      webui-vue:unit-tests PROPERTIES
-      LABELS "webui-vue"
-      TIMEOUT 120
-      ENVIRONMENT "PATH=$ENV{PATH}:${WEBUI_VUE_SRC}/node_modules/.bin"
+      webui-vue:unit-tests
+      PROPERTIES LABELS "webui-vue" TIMEOUT 120 ENVIRONMENT
+                 "PATH=$ENV{PATH}:${WEBUI_VUE_SRC}/node_modules/.bin"
     )
   else()
-    message(
-      STATUS
-      "vitest not found in ${WEBUI_VUE_SRC}/node_modules/.bin — "
-      "webui-vue:unit-tests ctest disabled. "
-      "Run 'npm ci' in webui-vue/ to enable it."
+    message(STATUS "vitest not found in ${WEBUI_VUE_SRC}/node_modules/.bin — "
+                   "webui-vue:unit-tests ctest disabled. "
+                   "Run 'npm ci' in webui-vue/ to enable it."
     )
   endif()
 else()
