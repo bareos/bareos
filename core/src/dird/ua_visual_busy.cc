@@ -35,13 +35,13 @@ namespace visual_busy_internal {
 
 using tree_browser_internal::FitText;
 using tree_browser_internal::FrameBorderStyle;
-using tree_browser_internal::RenderFrameBorder;
-using tree_browser_internal::StyleFrameContent;
 using tree_browser_internal::kFrameColor;
 using tree_browser_internal::kFrameHelpColor;
 using tree_browser_internal::kFrameHighlightColor;
 using tree_browser_internal::kFrameResetColor;
 using tree_browser_internal::kFrameVerticalBorder;
+using tree_browser_internal::RenderFrameBorder;
+using tree_browser_internal::StyleFrameContent;
 
 namespace {
 
@@ -76,8 +76,9 @@ std::string StyledLine(size_t width,
                        bool color)
 {
   std::string line = FitText(text, width);
-  return color ? std::string(style) + line + std::string(kFrameResetColor) + "\n"
-               : line + "\n";
+  return color
+             ? std::string(style) + line + std::string(kFrameResetColor) + "\n"
+             : line + "\n";
 }
 
 }  // namespace
@@ -111,9 +112,9 @@ std::string RenderBusyScreen(int width,
   constexpr size_t kDefaultContentRows = 20;
   constexpr size_t kChromeRows = 4;
 
-  size_t screen_width
-      = width > 0 ? std::max(size_t{2}, static_cast<size_t>(width))
-                  : kDefaultWidth;
+  size_t screen_width = width > 0
+                            ? std::max(size_t{2}, static_cast<size_t>(width))
+                            : kDefaultWidth;
   size_t content_rows = height > static_cast<int>(kChromeRows)
                             ? static_cast<size_t>(height) - kChromeRows
                         : height > 0 ? 3
@@ -126,8 +127,7 @@ std::string RenderBusyScreen(int width,
     screen += FrameLine(screen_width, "", color);
   }
   screen += FrameBorder(screen_width, color, FrameBorderStyle::kBottom);
-  screen += StyledLine(screen_width,
-                       " " + std::string(message) + " " + spinner,
+  screen += StyledLine(screen_width, " " + std::string(message) + " " + spinner,
                        kFrameHighlightColor, color);
   screen += StyledLine(screen_width, T_("Please wait; input is disabled"),
                        kFrameHelpColor, color);
