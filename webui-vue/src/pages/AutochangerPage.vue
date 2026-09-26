@@ -20,13 +20,8 @@
 -->
 
 <template>
-  <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
-    <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
-      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
-      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
-      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }" />
-    </q-tabs>
+  <q-page class="q-pa-md">
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- ── Toolbar ─────────────────────────────────────────── -->
     <div class="row items-center q-gutter-sm q-mb-md">
@@ -194,7 +189,7 @@
                         name: 'pool-details',
                         params: { name: props.value },
                         query: {
-                          ...buildAutochangerSelectionQuery(route.query, currentStorage),
+                          ...buildAutochangerOriginQuery({}, currentStorage),
                           ...(currentStorage?.director ? { director: currentStorage.director } : {}),
                         },
                       }"
@@ -563,7 +558,7 @@
         </q-scroll-area>
       </q-card-section>
     </q-card>
-  </component>
+  </q-page>
 </template>
 
 <script setup>
@@ -586,12 +581,11 @@ import {
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
 import {
-  AUTOCHANGER_DIRECTOR_QUERY_KEY,
-  AUTOCHANGER_STORAGE_QUERY_KEY,
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildAutochangerOriginQuery,
   resolveAutochangerSelection,
   resolveStoragesScopeDirector,
+  withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
 import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
@@ -600,13 +594,7 @@ import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
-
-const { embedded } = defineProps({
-  embedded: {
-    type: Boolean,
-    default: false,
-  },
-})
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -701,17 +689,21 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
-const isAutochangerRouteActive = computed(() => !embedded || route.query.tab === 'autochangers')
+const isAutochangerRouteActive = computed(() => route.name === 'autochanger')
 const queriedStorageName = computed(() => (
-  typeof route.query[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_STORAGE_QUERY_KEY]
-    : ''
+  typeof route.params.name === 'string' ? route.params.name : ''
 ))
 const queriedDirectorName = computed(() => (
-  typeof route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
-    : ''
+  typeof route.query.director === 'string' ? route.query.director : ''
 ))
+const breadcrumbItems = computed(() => [
+  {
+    label: t('Storages'),
+    icon: 'arrow_back',
+    to: { name: 'storages', query: withStoragesScopeDirectorQuery({}, storagesScopeDirector.value) },
+  },
+  { label: queriedStorageName.value || t('Autochanger') },
+])
 const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
 const autochangerScopeDirectors = computed(() => (
   storagesScopeDirector.value ? [storagesScopeDirector.value] : activeDirectors.value
@@ -764,7 +756,7 @@ function buildAutochangerVolumeDetailsQuery(storage) {
   }
 
   return {
-    ...buildAutochangerSelectionQuery(route.query, storage),
+    ...buildAutochangerOriginQuery({}, storage),
     ...(storage.director ? { director: storage.director } : {}),
   }
 }
@@ -1451,24 +1443,19 @@ async function syncRouteToSelectedStorage() {
     return
   }
 
-  const targetQuery = buildAutochangerSelectionQuery(route.query, currentStorage.value)
-  const currentStorageName = queriedStorageName.value
-  const currentDirectorName = queriedDirectorName.value
-  const targetStorageName = targetQuery[AUTOCHANGER_STORAGE_QUERY_KEY] ?? ''
-  const targetDirectorName = targetQuery[AUTOCHANGER_DIRECTOR_QUERY_KEY] ?? ''
+  if (!currentStorage.value) {
+    return
+  }
 
+  const target = buildAutochangerLocation(currentStorage.value, route.query)
   if (
-    route.query.tab === targetQuery.tab
-    && currentStorageName === targetStorageName
-    && currentDirectorName === targetDirectorName
+    queriedStorageName.value === target.params.name
+    && queriedDirectorName.value === (target.query.director ?? '')
   ) {
     return
   }
 
-  await router.replace({
-    path: '/storages',
-    query: targetQuery,
-  })
+  await router.replace(target)
 }
 
 function syncSelectedStorageFromRoute() {
@@ -1530,7 +1517,6 @@ watch(() => [
   queriedStorageName.value,
   queriedDirectorName.value,
   storagesScopeDirector.value,
-  route.query.tab,
 ], () => {
   if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
     return

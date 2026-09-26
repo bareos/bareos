@@ -22,11 +22,17 @@
 export const AUTOCHANGER_STORAGE_QUERY_KEY = 'autochangerStorage'
 export const AUTOCHANGER_DIRECTOR_QUERY_KEY = 'autochangerDirector'
 
-export function buildStoragesTabQuery(query, tab) {
+export const POOLS_TABS = ['pools', 'volumes']
+
+export function normalisePoolsTab(value) {
+  return POOLS_TABS.includes(value) ? value : 'pools'
+}
+
+export function buildPoolsTabQuery(query, tab) {
   const next = { ...query }
   delete next.tab
 
-  if (tab && tab !== 'storages') {
+  if (tab && tab !== 'pools') {
     next.tab = tab
   }
 
@@ -50,8 +56,31 @@ export function withStoragesScopeDirectorQuery(query, director) {
   return next
 }
 
-export function buildAutochangerSelectionQuery(query, storage) {
-  const next = buildStoragesTabQuery(query, 'autochangers')
+/**
+ * Route location of the autochanger view of a storage. The director is
+ * only added as `director` query for multi-director setups.
+ */
+export function buildAutochangerLocation(storage, query = {}) {
+  const next = { ...query }
+  delete next.director
+
+  if (storage?.director) {
+    next.director = storage.director
+  }
+
+  return {
+    name: 'autochanger',
+    params: { name: storage?.name ?? '' },
+    query: next,
+  }
+}
+
+/**
+ * Query marking that a details page was opened from the autochanger view,
+ * so its breadcrumb can link back there.
+ */
+export function buildAutochangerOriginQuery(query, storage) {
+  const next = { ...query }
 
   delete next[AUTOCHANGER_STORAGE_QUERY_KEY]
   delete next[AUTOCHANGER_DIRECTOR_QUERY_KEY]

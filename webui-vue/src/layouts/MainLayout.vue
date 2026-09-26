@@ -480,6 +480,7 @@ const mainNavItems = computed(() => [
   { label: t('Clients'), to: '/clients', icon: 'devices', testId: 'nav-clients', drawerTestId: 'drawer-nav-clients' },
   { label: t('Schedules'), to: '/schedules', icon: 'schedule', testId: 'nav-schedules', drawerTestId: 'drawer-nav-schedules' },
   { label: t('Storages'), to: '/storages', icon: 'storage', testId: 'nav-storages', drawerTestId: 'drawer-nav-storages' },
+  { label: t('Pools'), to: '/pools', icon: 'inventory_2', testId: 'nav-pools', drawerTestId: 'drawer-nav-pools' },
   { label: t('Director'), to: '/director', icon: 'settings', testId: 'nav-director', drawerTestId: 'drawer-nav-director' },
 ])
 
