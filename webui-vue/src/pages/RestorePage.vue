@@ -1574,7 +1574,16 @@ async function loadRestoreClients() {
 const backups           = ref([])
 const allClientBackups  = ref([])
 const loadingBackups    = ref(false)
-const pluginFilesets    = ref(new Map())
+// The raw "list filesets" payload. The derived plugin details are a
+// computed (not a snapshot taken at load time) because the plugin hints
+// are fetched concurrently with the filesets: whichever request wins the
+// race, the display names must still resolve once the hints arrive.
+// Otherwise a lost race permanently shows the generic loader name
+// ("python", "bpipe", ...) instead of the real plugin ("VMware").
+const rawPluginFilesets = ref(null)
+const pluginFilesets = computed(() => (
+  buildRestorePluginFilesetDetails(rawPluginFilesets.value, pluginHintsStore.hints)
+))
 const sourceFilesetFilter = ref('')
 const latestSourceOptions = computed(() => (
   buildRestoreClientFilesetOptions(allClientBackups.value)
@@ -1818,7 +1827,7 @@ async function onClientChange(clientName) {
   browserReady.value = false
   clearBrowserState()
   backups.value = []
-  pluginFilesets.value = new Map()
+  rawPluginFilesets.value = null
 
   const selectedClient = sourceClients.value.find(client => client.scopeKey === clientName) ?? null
   form.value.client = selectedClient?.name ?? ''
@@ -1858,7 +1867,7 @@ async function loadBackups(client) {
       pluginHintsStore.ensureLoaded().catch(() => null),
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
-    pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets, pluginHintsStore.hints)
+    rawPluginFilesets.value = filesets?.filesets ?? null
     backups.value = decorateRestoreBackupsWithPluginJobs(
       directorCollection(r?.backups),
       pluginFilesetFlags
@@ -1866,7 +1875,7 @@ async function loadBackups(client) {
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
   } catch (_) {
     backups.value = []
-    pluginFilesets.value = new Map()
+    rawPluginFilesets.value = null
   } finally {
     loadingBackups.value = false
   }
@@ -2685,7 +2694,7 @@ function resetAll() {
   browserReady.value = false
   clearBrowserState()
   backups.value = []
-  pluginFilesets.value = new Map()
+  rawPluginFilesets.value = null
   activeStep.value = 1
 }
 
