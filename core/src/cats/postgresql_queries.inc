@@ -76,7 +76,8 @@ CASE
     END as Duration,
 Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
-Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
+Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet,
+Job.Comment
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
@@ -137,7 +138,8 @@ CASE
     END as Duration,
 Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
-Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
+Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet,
+Job.Comment
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
