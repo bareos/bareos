@@ -238,13 +238,13 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import { formatCatalogTimestamp, formatNumber } from '../utils/locales.js'
 import {
   buildPoolVolumeDetailsQuery,
-  resolvePoolDetailsStoragesOrigin,
+  resolvePoolDetailsPoolsOrigin,
   resolvePoolDetailsVolumeOrigin,
   resolvePoolDetailsVolumeQuery,
 } from '../utils/pools.js'
 import {
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildPoolsTabQuery,
   resolveAutochangerSelectionQuery,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
@@ -277,7 +277,7 @@ const requestedDirector = computed(() => (
 const currentPoolDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
-const storagesOrigin = computed(() => resolvePoolDetailsStoragesOrigin(route.query))
+const poolsOrigin = computed(() => resolvePoolDetailsPoolsOrigin(route.query))
 const volumeOrigin = computed(() => resolvePoolDetailsVolumeOrigin(route.query))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const backLabel = computed(() => {
@@ -285,8 +285,8 @@ const backLabel = computed(() => {
     return t('Volume')
   }
 
-  if (storagesOrigin.value) {
-    return t('Storages')
+  if (poolsOrigin.value) {
+    return poolsOrigin.value.tab === 'volumes' ? t('Volumes') : t('Pools')
   }
 
   return autochangerOrigin.value ? t('Autochanger') : t('Pools')
@@ -300,29 +300,23 @@ const backLocation = computed(() => {
     }
   }
 
-  if (storagesOrigin.value) {
-    const storagesQuery = withStoragesScopeDirectorQuery(
-      buildStoragesTabQuery({}, storagesOrigin.value.tab),
-      storagesOrigin.value.scopeDirector
+  if (poolsOrigin.value) {
+    const poolsQuery = withStoragesScopeDirectorQuery(
+      buildPoolsTabQuery({}, poolsOrigin.value.tab),
+      poolsOrigin.value.scopeDirector
     )
 
     return {
-      name: 'storages',
-      query: storagesQuery,
+      name: 'pools',
+      query: poolsQuery,
     }
   }
 
   if (autochangerOrigin.value) {
-    return {
-      name: 'storages',
-      query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
-    }
+    return buildAutochangerLocation(autochangerOrigin.value)
   }
 
-  return {
-    name: 'storages',
-    query: { tab: 'pools' },
-  }
+  return { name: 'pools' }
 })
 const breadcrumbItems = computed(() => [
   { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },

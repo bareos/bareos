@@ -303,8 +303,8 @@ import { formatBytes, formatDuration } from '../mock/index.js'
 import { formatCatalogTimestamp, formatNumber } from '../utils/locales.js'
 import { buildPoolDetailsQuery } from '../utils/pools.js'
 import {
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildPoolsTabQuery,
   resolveAutochangerSelectionQuery,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
@@ -313,7 +313,7 @@ import {
   resolveVolumeDetailsDirectorOrigin,
   resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
-  resolveVolumeDetailsStoragesOrigin,
+  resolveVolumeDetailsPoolsOrigin,
   volumeHasEncryptionKey,
   volumeUsageSegmentsFromResponse,
 } from '../utils/volumes.js'
@@ -351,7 +351,7 @@ function catalogTimeRow(value) {
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const jobOrigin = computed(() => resolveVolumeDetailsJobOrigin(route.query))
 const poolOrigin = computed(() => resolveVolumeDetailsPoolOrigin(route.query))
-const storagesOrigin = computed(() => resolveVolumeDetailsStoragesOrigin(route.query))
+const poolsOrigin = computed(() => resolveVolumeDetailsPoolsOrigin(route.query))
 const directorOrigin = computed(() => resolveVolumeDetailsDirectorOrigin(route.query))
 const backLabel = computed(() => {
   if (jobOrigin.value) {
@@ -366,8 +366,8 @@ const backLabel = computed(() => {
     return t('Autochanger')
   }
 
-  if (storagesOrigin.value) {
-    return t('Storages')
+  if (poolsOrigin.value) {
+    return poolsOrigin.value.tab === 'volumes' ? t('Volumes') : t('Pools')
   }
 
   return directorOrigin.value ? t('Director') : t('Volumes')
@@ -394,18 +394,15 @@ const backLocation = computed(() => {
   }
 
   if (autochangerOrigin.value) {
-    return {
-      name: 'storages',
-      query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
-    }
+    return buildAutochangerLocation(autochangerOrigin.value)
   }
 
-  if (storagesOrigin.value) {
+  if (poolsOrigin.value) {
     return {
-      name: 'storages',
+      name: 'pools',
       query: withStoragesScopeDirectorQuery(
-        buildStoragesTabQuery({}, storagesOrigin.value.tab),
-        storagesOrigin.value.scopeDirector
+        buildPoolsTabQuery({}, poolsOrigin.value.tab),
+        poolsOrigin.value.scopeDirector
       ),
     }
   }
@@ -420,10 +417,7 @@ const backLocation = computed(() => {
     }
   }
 
-  return {
-    name: 'storages',
-    query: { tab: 'volumes' },
-  }
+  return { name: 'pools', query: { tab: 'volumes' } }
 })
 const breadcrumbItems = computed(() => [
   { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },

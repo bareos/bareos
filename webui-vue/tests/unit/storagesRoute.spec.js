@@ -23,8 +23,10 @@ import { describe, expect, it } from 'vitest'
 import {
   AUTOCHANGER_DIRECTOR_QUERY_KEY,
   AUTOCHANGER_STORAGE_QUERY_KEY,
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildAutochangerOriginQuery,
+  buildPoolsTabQuery,
+  normalisePoolsTab,
   resolveAutochangerSelectionQuery,
   resolveAutochangerSelection,
   resolveStoragesScopeDirector,
@@ -32,25 +34,30 @@ import {
 } from '../../src/utils/storagesRoute.js'
 
 describe('storages route helpers', () => {
-  it('keeps unrelated query fields while switching tabs', () => {
-    expect(buildStoragesTabQuery({
+  it('keeps unrelated query fields while switching pools tabs', () => {
+    expect(buildPoolsTabQuery({
       foo: 'bar',
-      tab: 'pools',
-      [AUTOCHANGER_STORAGE_QUERY_KEY]: 'TapeLibrary',
-    }, 'autochangers')).toEqual({
+      volPool: 'Full',
+    }, 'volumes')).toEqual({
       foo: 'bar',
-      tab: 'autochangers',
-      [AUTOCHANGER_STORAGE_QUERY_KEY]: 'TapeLibrary',
+      tab: 'volumes',
+      volPool: 'Full',
     })
   })
 
-  it('drops the tab query for the default storages tab', () => {
-    expect(buildStoragesTabQuery({
-      tab: 'autochangers',
+  it('drops the tab query for the default pools tab', () => {
+    expect(buildPoolsTabQuery({
+      tab: 'volumes',
       foo: 'bar',
-    }, 'storages')).toEqual({
+    }, 'pools')).toEqual({
       foo: 'bar',
     })
+  })
+
+  it('normalises unknown pools tabs to pools', () => {
+    expect(normalisePoolsTab('volumes')).toBe('volumes')
+    expect(normalisePoolsTab('autochangers')).toBe('pools')
+    expect(normalisePoolsTab(undefined)).toBe('pools')
   })
 
   it('adds and removes the storages scope director query parameter', () => {
@@ -69,15 +76,32 @@ describe('storages route helpers', () => {
     expect(resolveStoragesScopeDirector({})).toBe('')
   })
 
-  it('writes autochanger selection into the query', () => {
-    expect(buildAutochangerSelectionQuery({
+  it('builds the autochanger route location of a storage', () => {
+    expect(buildAutochangerLocation({
+      name: 'TapeLibrary',
+      director: 'prod-a',
+    }, { scopeDirector: 'prod-a', director: 'old' })).toEqual({
+      name: 'autochanger',
+      params: { name: 'TapeLibrary' },
+      query: { scopeDirector: 'prod-a', director: 'prod-a' },
+    })
+
+    expect(buildAutochangerLocation({ name: 'TapeLibrary' })).toEqual({
+      name: 'autochanger',
+      params: { name: 'TapeLibrary' },
+      query: {},
+    })
+  })
+
+  it('writes the autochanger origin into the query', () => {
+    expect(buildAutochangerOriginQuery({
       foo: 'bar',
+      [AUTOCHANGER_DIRECTOR_QUERY_KEY]: 'stale',
     }, {
       name: 'TapeLibrary',
       director: 'prod-a',
     })).toEqual({
       foo: 'bar',
-      tab: 'autochangers',
       [AUTOCHANGER_STORAGE_QUERY_KEY]: 'TapeLibrary',
       [AUTOCHANGER_DIRECTOR_QUERY_KEY]: 'prod-a',
     })
