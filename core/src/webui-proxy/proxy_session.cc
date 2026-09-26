@@ -1045,12 +1045,42 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           send_command_state("running");
 
           if (stream_raw) {
-            result.prompt
-                = director.CallStreamed(command, [&](std::string_view chunk) {
-                    auto filtered = FilterRawConsoleChunk(command, chunk);
-                    if (filtered.empty()) { return; }
-                    SendRawResponse(*ws, req_id, command, filtered, "more");
-                  });
+            bool collecting_selection = false;
+            std::string pending_selection_frame;
+            auto send_pending_selection_busy = [&]() {
+              if (pending_selection_frame.empty()) { return; }
+              SendRawResponse(*ws, req_id, command, pending_selection_frame,
+                              "select_busy");
+              pending_selection_frame.clear();
+            };
+            result.prompt = director.CallStreamed(
+                command,
+                [&](std::string_view chunk) {
+                  auto filtered = FilterRawConsoleChunk(command, chunk);
+                  if (collecting_selection) {
+                    result.text.append(filtered.data(), filtered.size());
+                  } else {
+                    send_pending_selection_busy();
+                    if (!filtered.empty()) {
+                      SendRawResponse(*ws, req_id, command, filtered, "more");
+                    }
+                  }
+                },
+                [&]() {
+                  send_pending_selection_busy();
+                  collecting_selection = true;
+                  result.text.clear();
+                },
+                [&]() {
+                  collecting_selection = false;
+                  pending_selection_frame = std::move(result.text);
+                  result.text.clear();
+                });
+            if (result.prompt == DirectorPrompt::Select) {
+              result.text = std::move(pending_selection_frame);
+            } else {
+              send_pending_selection_busy();
+            }
           } else {
             result = director.Call(command);
           }
@@ -1064,12 +1094,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                                  ? "completed"
                                  : "waiting_for_input",
                              prompt_str);
-          if (stream_raw) {
-            SendRawResponse(*ws, req_id, command, "", prompt_str);
-          } else {
+          if (!stream_raw) {
             result.text = FilterRawConsoleChunk(command, result.text);
-            SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           }
+          SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           if (should_close_console_session) { break; }
         }
       } catch (const std::exception& ex) {

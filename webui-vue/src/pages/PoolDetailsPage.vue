@@ -1,18 +1,11 @@
 <template>
   <q-page class="q-pa-md">
-    <!-- Back -->
-    <q-btn
-      flat
-      no-caps
-      icon="arrow_back"
-      :label="backLabel"
-      class="q-mb-md"
-      :to="backLocation"
-    />
+    <!-- Breadcrumbs -->
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- Loading / error -->
-    <q-spinner v-if="loading" size="40px" class="block q-mx-auto q-mt-xl" />
-    <q-banner v-else-if="error" class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
+    <q-inner-loading :showing="loading" :label="t('Loading pool…')" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <template v-else-if="pool">
       <!-- Header -->
@@ -20,8 +13,9 @@
         <q-icon name="mdi-database" size="2rem" color="primary" />
         <div>
           <div class="text-h5">{{ pool.name }}</div>
-          <q-badge :color="poolTypeColor(pool.pooltype)" class="q-mt-xs">{{ pool.pooltype }}</q-badge>
-          <q-badge :color="pool.enabled !== '0' ? 'positive' : 'grey'" class="q-mt-xs q-ml-xs">
+          <PoolTypeBadge :type="pool.pooltype" class="q-mt-xs" />
+          <span class="q-ml-xs text-body2">{{ pool.pooltype }}</span>
+          <q-badge :color="pool.enabled !== '0' ? 'positive' : 'grey'" class="q-mt-xs q-ml-sm">
             {{ pool.enabled !== '0' ? t('Enabled') : t('Disabled') }}
           </q-badge>
         </div>
@@ -51,7 +45,8 @@
             </q-card-section>
             <q-card-section class="q-pa-none">
               <q-table :rows="volumes" :columns="volumeCols" row-key="volumename"
-                       dense flat v-model:pagination="volumesPagination">
+                       dense flat v-model:pagination="volumesPagination"
+                       :rows-per-page-options="volumesRowsPerPageOptions">
                 <template #body-cell-volumename="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -68,7 +63,7 @@
                 </template>
                 <template #body-cell-volstatus="props">
                   <q-td :props="props">
-                    <q-badge :color="statusColor(props.value)" :label="props.value" />
+                    <VolumeStatusBadge :status="props.value" />
                   </q-td>
                 </template>
                 <template #body-cell-volbytes="props">
@@ -101,10 +96,18 @@
                     />
                   </q-td>
                 </template>
+                <template #body-cell-lastwritten="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-inchanger="props">
                   <q-td :props="props" class="text-center">
                     <q-icon :name="props.value ? 'check' : 'remove'"
-                            :color="props.value ? 'positive' : 'grey'" size="xs" />
+                            :color="props.value ? 'positive' : 'grey'" size="xs"
+                            role="img" :aria-label="props.value ? t('Yes') : t('No')" />
                   </q-td>
                 </template>
               </q-table>
@@ -129,6 +132,7 @@
                 :loading="pruneSelectedLoading"
                 :disable="pruneSelectedDisabled"
                 @click="confirmPruneSelectedVolumes"
+                data-testid="pool-details-prune-selected"
               />
             </q-card-section>
             <q-card-section v-if="pruneReport.volumes.length === 0" class="text-grey-6">
@@ -137,7 +141,8 @@
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.volumes" :columns="prunableVolumeCols" row-key="name"
                        dense flat selection="multiple" v-model:selected="selectedPrunableVolumes"
-                       v-model:pagination="prunableVolumesPagination">
+                       v-model:pagination="prunableVolumesPagination"
+                       :rows-per-page-options="prunableVolumesRowsPerPageOptions">
                 <template #body-cell-name="props">
                   <q-td :props="props">
                     <VolumeNameLink
@@ -154,7 +159,14 @@
                 </template>
                 <template #body-cell-status="props">
                   <q-td :props="props">
-                    <q-badge :color="statusColor(props.value)" :label="props.value" />
+                    <VolumeStatusBadge :status="props.value" />
+                  </q-td>
+                </template>
+                <template #body-cell-lastwritten="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
                   </q-td>
                 </template>
                 <template #body-cell-prunablebytes="props">
@@ -178,6 +190,13 @@
             <q-card-section v-else class="q-pa-none">
               <q-table :rows="pruneReport.jobs" :columns="prunableJobCols" row-key="jobid"
                        dense flat v-model:pagination="prunableJobsPagination">
+                <template #body-cell-starttime="props">
+                  <q-td :props="props">
+                    <span :title="catalogTime(props.value).title">
+                      {{ catalogTime(props.value).text }}
+                    </span>
+                  </q-td>
+                </template>
                 <template #body-cell-bytes="props">
                   <q-td :props="props" class="text-right">
                     {{ formatBytes(props.value) }}
@@ -203,23 +222,29 @@ import {
   normaliseVolume,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
-import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import {
+  usePersistedTablePagination,
+  UNBOUNDED_TABLE_ROWS_PER_PAGE,
+} from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
-import { formatNumber } from '../utils/locales.js'
+import { formatCatalogTimestamp, formatNumber } from '../utils/locales.js'
 import {
   buildPoolVolumeDetailsQuery,
-  resolvePoolDetailsStoragesOrigin,
+  resolvePoolDetailsPoolsOrigin,
   resolvePoolDetailsVolumeOrigin,
   resolvePoolDetailsVolumeQuery,
 } from '../utils/pools.js'
 import {
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildPoolsTabQuery,
   resolveAutochangerSelectionQuery,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
@@ -228,13 +253,19 @@ const route     = useRoute()
 const auth      = useAuthStore()
 const director  = useDirectorStore()
 const settings  = useSettingsStore()
+
+function catalogTime(value) {
+  return formatCatalogTimestamp(value, settings.relativeTime, settings.locale)
+}
 const { t } = useI18n()
 const volumesPagination = usePersistedTablePagination('pool-details.volumes', {
   rowsPerPage: 10,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const volumesRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const prunableVolumesPagination = usePersistedTablePagination('pool-details.prunable', {
   rowsPerPage: 10,
-})
+}, { allowedRowsPerPage: UNBOUNDED_TABLE_ROWS_PER_PAGE })
+const prunableVolumesRowsPerPageOptions = UNBOUNDED_TABLE_ROWS_PER_PAGE
 const prunableJobsPagination = usePersistedTablePagination('pool-details.prunable-jobs', {
   rowsPerPage: 10,
 })
@@ -246,19 +277,19 @@ const requestedDirector = computed(() => (
 const currentPoolDirector = computed(() => (
   requestedDirector.value || auth.user?.director || settings.directorName || ''
 ))
-const storagesOrigin = computed(() => resolvePoolDetailsStoragesOrigin(route.query))
+const poolsOrigin = computed(() => resolvePoolDetailsPoolsOrigin(route.query))
 const volumeOrigin = computed(() => resolvePoolDetailsVolumeOrigin(route.query))
 const autochangerOrigin = computed(() => resolveAutochangerSelectionQuery(route.query))
 const backLabel = computed(() => {
   if (volumeOrigin.value) {
-    return t('Back to Volume')
+    return t('Volume')
   }
 
-  if (storagesOrigin.value) {
-    return t('Back to Storages')
+  if (poolsOrigin.value) {
+    return poolsOrigin.value.tab === 'volumes' ? t('Volumes') : t('Pools')
   }
 
-  return autochangerOrigin.value ? t('Back to Autochanger') : t('Pools')
+  return autochangerOrigin.value ? t('Autochanger') : t('Pools')
 })
 const backLocation = computed(() => {
   if (volumeOrigin.value) {
@@ -269,30 +300,28 @@ const backLocation = computed(() => {
     }
   }
 
-  if (storagesOrigin.value) {
-    const storagesQuery = withStoragesScopeDirectorQuery(
-      buildStoragesTabQuery({}, storagesOrigin.value.tab),
-      storagesOrigin.value.scopeDirector
+  if (poolsOrigin.value) {
+    const poolsQuery = withStoragesScopeDirectorQuery(
+      buildPoolsTabQuery({}, poolsOrigin.value.tab),
+      poolsOrigin.value.scopeDirector
     )
 
     return {
-      name: 'storages',
-      query: storagesQuery,
+      name: 'pools',
+      query: poolsQuery,
     }
   }
 
   if (autochangerOrigin.value) {
-    return {
-      name: 'storages',
-      query: buildAutochangerSelectionQuery({}, autochangerOrigin.value),
-    }
+    return buildAutochangerLocation(autochangerOrigin.value)
   }
 
-  return {
-    name: 'storages',
-    query: { tab: 'pools' },
-  }
+  return { name: 'pools' }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: pool.value?.name ?? (typeof route.params.name === 'string' ? route.params.name : '') },
+])
 
 const pool    = ref(null)
 const volumes = ref([])
@@ -490,11 +519,4 @@ function findVolume(name) {
   return volumes.value.find(volume => volume.volumename === name) ?? { volumename: name }
 }
 
-function statusColor(s) {
-  return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative', Purged: 'grey', Used: 'info' }[s] || 'info'
-}
-
-function poolTypeColor(t) {
-  return { Backup: 'primary', Scratch: 'grey', Archive: 'deep-purple', Copy: 'teal', Migration: 'orange' }[t] || 'primary'
-}
 </script>

@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-tasks-pgsql"
+  Description = "Smoke-test fileset backed by the bpipe plugin (Tasks PostgreSQL-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/tasks-pgsql-demo/dump.sql"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

@@ -114,6 +114,21 @@ const DIRECTOR_MONTHS = Object.freeze({
   Dec: 11,
 })
 
+const DIRECTOR_MONTH_ALIASES = Object.freeze({
+  jan: 0, janv: 0, enero: 0, janeiro: 0, januar: 0,
+  feb: 1, févr: 1, febrero: 1, fevereiro: 1, februar: 1,
+  mar: 2, mär: 2, mars: 2, marzo: 2, março: 2, märz: 2,
+  apr: 3, avr: 3, abril: 3, aprile: 3, april: 3,
+  may: 4, mai: 4, mayo: 4, maggio: 4,
+  jun: 5, juin: 5, junio: 5, junho: 5, juni: 5,
+  jul: 6, juil: 6, julio: 6, julho: 6, juli: 6,
+  aug: 7, août: 7, agosto: 7, augustus: 7,
+  sep: 8, sept: 8, septiembre: 8, setembro: 8, september: 8,
+  oct: 9, okt: 9, octobre: 9, octubre: 9, outubro: 9, oktober: 9,
+  nov: 10, noviembre: 10, novembro: 10,
+  dec: 11, dez: 11, déc: 11, diciembre: 11, dezembro: 11, dezember: 11,
+})
+
 export function localeFlagEmoji(locale) {
   return LOCALE_TO_FLAG[normalizeWebUiLocale(locale)] ?? '🏳️'
 }
@@ -188,40 +203,93 @@ export function formatNumber(value, locale, options) {
   return new Intl.NumberFormat(localeToIntl(locale), options).format(number)
 }
 
+function datePartsDayMonthYear(date) {
+  return [
+    String(date.getDate()).padStart(2, '0'),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getFullYear()),
+  ].join('/')
+}
+
+function timeOptionsFromStyle(timeStyle) {
+  switch (timeStyle) {
+    case 'short':
+      return { hour: '2-digit', minute: '2-digit' }
+    case 'medium':
+    case 'long':
+    case 'full':
+    default:
+      return { hour: '2-digit', minute: '2-digit', second: '2-digit' }
+  }
+}
+
 export function formatLocalDateTime(value, locale, options = {}) {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return String(value ?? '')
 
-  return new Intl.DateTimeFormat(localeToIntl(locale), {
-    dateStyle: 'medium',
-    timeStyle: 'medium',
-    ...options,
+  const dateText = datePartsDayMonthYear(date)
+  const timeStyle = options.timeStyle ?? 'medium'
+  const timeText = new Intl.DateTimeFormat(localeToIntl(locale), {
+    ...timeOptionsFromStyle(timeStyle),
+    hour12: false,
   }).format(date)
+
+  return `${dateText}, ${timeText}`
 }
 
-function formatRelativeDiff(diffMs, locale) {
+const HOUR_MS = 60 * 60 * 1000
+
+function calendarDayDiff(from, to) {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate())
+  return Math.round((b.getTime() - a.getTime()) / (24 * HOUR_MS))
+}
+
+function formatRelativeDiff(date, now, locale) {
+  const diffMs = date.getTime() - now.getTime()
   const absDiffMs = Math.abs(diffMs)
   const formatter = new Intl.RelativeTimeFormat(localeToIntl(locale), {
     numeric: 'auto',
   })
-  const units = [
-    ['year',   365 * 24 * 60 * 60 * 1000],
-    ['month',   30 * 24 * 60 * 60 * 1000],
-    ['day',           24 * 60 * 60 * 1000],
-    ['hour',               60 * 60 * 1000],
-    ['minute',                  60 * 1000],
-    ['second',                       1000],
-  ]
 
-  for (const [unit, unitMs] of units) {
-    if (absDiffMs >= unitMs || unit === 'second') {
-      const delta = diffMs / unitMs
-      const rounded = diffMs < 0 ? Math.ceil(delta) : Math.floor(delta)
-      return formatter.format(rounded, unit)
+  // Below one hour, precise minute/second wording reads better than
+  // calendar-day wording ("in 2 minutes" vs. "today").
+  if (absDiffMs < HOUR_MS) {
+    const units = [
+      ['minute', 60 * 1000],
+      ['second', 1000],
+    ]
+    for (const [unit, unitMs] of units) {
+      if (absDiffMs >= unitMs || unit === 'second') {
+        const delta = diffMs / unitMs
+        const rounded = diffMs < 0 ? Math.ceil(delta) : Math.floor(delta)
+        return formatter.format(rounded, unit)
+      }
     }
   }
 
-  return formatter.format(0, 'second')
+  // From one hour up, use the calendar-day difference (based on local
+  // midnight boundaries) so a run at 03:00 the day after tomorrow is
+  // reported as "in 2 days" rather than "tomorrow" just because it is
+  // less than 24 raw hours away.
+  const dayDiff = calendarDayDiff(now, date)
+  const absDayDiff = Math.abs(dayDiff)
+
+  if (absDayDiff === 0) {
+    const hours = diffMs / HOUR_MS
+    const rounded = diffMs < 0 ? Math.ceil(hours) : Math.floor(hours)
+    return formatter.format(rounded, 'hour')
+  }
+
+  if (absDayDiff < 30) {
+    return formatter.format(dayDiff, 'day')
+  }
+
+  if (absDayDiff < 365) {
+    return formatter.format(Math.round(dayDiff / 30), 'month')
+  }
+
+  return formatter.format(Math.round(dayDiff / 365), 'year')
 }
 
 export function formatRelativeDate(date, locale) {
@@ -229,7 +297,7 @@ export function formatRelativeDate(date, locale) {
     return String(date ?? '')
   }
 
-  return formatRelativeDiff(date.getTime() - Date.now(), locale)
+  return formatRelativeDiff(date, new Date(), locale)
 }
 
 export function formatSqlRelativeTime(value, locale) {
@@ -241,23 +309,47 @@ export function formatSqlRelativeTime(value, locale) {
   return formatRelativeDate(date, locale)
 }
 
+// Catalog timestamp as { text, title } honouring the "relative time"
+// setting; the other representation is returned as tooltip.
+export function formatCatalogTimestamp(value, relative, locale) {
+  const raw = value == null ? '' : String(value).trim()
+  if (!raw || /^0{4}-0{2}-0{2}/.test(raw)) {
+    return { text: '—', title: undefined }
+  }
+
+  const relativeText = formatSqlRelativeTime(raw, locale)
+  if (relativeText === raw) return { text: raw, title: undefined }
+
+  return relative
+    ? { text: relativeText, title: raw }
+    : { text: raw, title: relativeText }
+}
+
 export function parseDirectorDate(value) {
   if (!value) return null
 
+  const direct = new Date(String(value).replace(' ', 'T'))
+  if (!Number.isNaN(direct.getTime())) return direct
+
   const match = String(value).match(
-    /^(\d{1,2})-([A-Za-z]{3})-(\d{2})\s+(\d{2}):(\d{2})/,
+    /^(\d{1,2})-([A-Za-zÀ-ÿ]{3,9})-(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/i,
   )
   if (!match) return null
 
   const month = DIRECTOR_MONTHS[match[2]]
+    ?? DIRECTOR_MONTH_ALIASES[match[2].toLocaleLowerCase()]
   if (month === undefined) return null
 
+  let year = parseInt(match[3], 10)
+  if (year < 100) year += 2000
+
   return new Date(
-    2000 + parseInt(match[3], 10),
+    year,
     month,
     parseInt(match[1], 10),
     parseInt(match[4], 10),
     parseInt(match[5], 10),
+    match[6] ? parseInt(match[6], 10) : 0,
   )
 }
 

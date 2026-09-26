@@ -54,6 +54,14 @@ asterisk (*). Generally, for all commands, you can simply enter the command name
 program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter
 the command followed by arguments. The general format is:
 
+When standard output is a capable terminal, :command:`bconsole` uses color to
+distinguish prompts, selections, informational messages, warnings, and errors.
+Set the :envvar:`NO_COLOR` environment variable to disable color. Color is also
+disabled for terminals that identify themselves as ``dumb`` and on Windows
+consoles without virtual-terminal support. Redirected output and files written
+by ``@output`` or ``@tee`` do not contain terminal color sequences. Textual
+selection markers remain present when color is enabled.
+
 
 
 ::
@@ -950,6 +958,8 @@ list
       list jobmedia
       list jobmedia jobid=<id>
       list jobmedia job=<job-name>
+      list jobmedia volume=<volume-name>
+      list volumeusage volume=<volume-name>
       list files jobid=<id>
       list files job=<job-name>
       list media jobid=<jobid>
@@ -1319,6 +1329,19 @@ restore
    restore job configured. However, for certain cases, such as a varying list of RunScript
    specifications, multiple restore jobs may be configured.
    The restorejob argument allows the selection of one of these jobs.
+
+   When selecting a restore point via the guided FileSet@Client picker, each candidate restore
+   point is shown with its timestamp/age, JobId, the distinct job name(s) that make up its backup
+   chain, and the anchor Full job's own file count and size. By default, restoring a selected
+   restore point uses the whole resolved backup chain (Full plus any Differential/Incremental
+   jobs up to that point). The **restorepointmode** argument controls this:
+
+   restorepointmode=chain
+      Restore the whole resolved backup chain up to the selected restore point (default).
+
+   restorepointmode=job
+      Restore only the anchor Full job of the selected restore point, bypassing chain/dependency
+      resolution entirely.
 
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
@@ -1967,6 +1990,13 @@ update
          Volume from Pool
          All Volumes from Pool
          All Volumes from all Pools
+         Comment
+
+   You can set a free-text comment on a volume with :bcommand:`update
+   volume=<volume-name> comment="<text>"` and on a job with
+   :bcommand:`update jobid=<jobid> comment="<text>"`. Use ``comment=""`` to
+   clear it. The comments are shown by :bcommand:`llist volume` and
+   :bcommand:`llist jobs`.
 
    You can add, remove or rotate a volume encryption key using :bcommand:`update
    volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
@@ -2006,14 +2036,15 @@ update
 
       update  volume=<volume-name> [volstatus=<status>]
               [volretention=<time-def>] [pool=<pool-name>]
-              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
+              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]
+              [comment=<text>] |
               pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
               [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
               [actiononpurge=<action>] [encrypt=<yes/no/rotate>] |
               slots [storage=<storage-name>] [scan] |
               jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
               [client=<client-name>] [filesetid=<fileset-id>]
-              [jobtype=<job-type>] |
+              [jobtype=<job-type>] [comment=<text>] |
               stats [days=<number>]
 
 use

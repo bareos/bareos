@@ -1,0 +1,29 @@
+# List the latest restore point in every Full backup chain, newest first.
+
+WITH completed_jobs AS (
+  SELECT JobId, Name, Level, StartTime
+    FROM Job
+   WHERE ClientId = %s
+     AND FileSetId = %s
+     AND JobStatus IN ('T','W')
+     AND Type = '%c'
+),
+full_backups AS (
+  SELECT JobId,
+         StartTime AS FullStartTime,
+         LEAD(StartTime) OVER (ORDER BY StartTime) AS NextFullStartTime
+    FROM completed_jobs
+   WHERE Level = 'F'
+)
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames
+  FROM full_backups
+  JOIN completed_jobs
+    ON completed_jobs.StartTime >= full_backups.FullStartTime
+   AND (full_backups.NextFullStartTime IS NULL
+        OR completed_jobs.StartTime < full_backups.NextFullStartTime)
+ GROUP BY full_backups.JobId, full_backups.FullStartTime
+ ORDER BY full_backups.FullStartTime DESC

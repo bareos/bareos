@@ -27,4 +27,4 @@ INNER JOIN (
    GROUP BY Job.Name
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
+ORDER BY %s%s;

@@ -1,22 +1,17 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading job…')" />
-    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <Breadcrumbs :items="breadcrumbItems" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
 
     <div v-else-if="!loading && job">
       <!-- Header row -->
       <div class="row items-center q-mb-md">
-        <q-btn
-          flat
-          icon="arrow_back"
-          :label="backLabel"
-          :to="backLocation"
-          no-caps
-          class="q-mr-md"
-        />
-        <div class="row items-center q-gutter-sm">
-          <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
-          <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+        <div class="column">
+          <div class="row items-center q-gutter-sm">
+            <div class="text-h5">Job #{{ job.id }} — {{ job.name }}</div>
+            <q-spinner v-if="isRunning" color="primary" size="18px" :title="t('Auto-refreshing…')" />
+          </div>
         </div>
       </div>
 
@@ -51,6 +46,14 @@
                     </span>
                     <span v-else>{{ row.value }}</span>
                   </q-item-section>
+                  <q-item-section v-if="row.editComment" side>
+                    <q-btn
+                      flat round dense size="sm" icon="edit" color="primary"
+                      :title="t('Edit comment')" :aria-label="t('Edit comment')"
+                      data-testid="job-comment-edit"
+                      @click="commentDialogOpen = true"
+                    />
+                  </q-item-section>
                 </q-item>
               </q-list>
             </q-card-section>
@@ -64,10 +67,12 @@
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header">{{ t('Actions') }}</q-card-section>
             <q-card-section class="q-gutter-sm">
-              <q-btn icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
-                     :loading="rerunLoading" @click="confirmRerun" />
+              <q-btn v-if="canRerunCurrentJob" icon="restart_alt" :label="t('Rerun Job')" color="primary" no-caps
+                     :loading="rerunLoading" @click="confirmRerun" data-testid="job-details-rerun" />
+              <q-btn v-if="!isRestoreJob" icon="restore" :label="t('Restore Job')" color="secondary" no-caps
+                     @click="openRestoreDetails" data-testid="job-details-restore" />
               <q-btn v-if="isRunning" icon="cancel" :label="t('Cancel Job')" color="negative" no-caps
-                     :loading="cancelLoading" @click="confirmCancel" />
+                     :loading="cancelLoading" @click="confirmCancel" data-testid="job-details-cancel" />
             </q-card-section>
           </q-card>
 
@@ -111,13 +116,23 @@
             <q-card-section class="panel-header row items-center">
                 <span>{{ t('Job Log') }}</span>
               <q-space />
+              <template v-if="issueLineIndexes.length >= 2">
+                <span class="text-caption q-mr-sm">
+                  {{ t('Issue {current} of {total}', { current: currentIssueDisplay, total: issueLineIndexes.length }) }}
+                </span>
+                <q-btn flat round dense icon="arrow_upward" size="sm" color="white"
+                       :title="t('Previous issue')" :aria-label="t('Previous issue')" @click="jumpToIssue(-1)" />
+                <q-btn flat round dense icon="arrow_downward" size="sm" color="white"
+                       :title="t('Next issue')" :aria-label="t('Next issue')" @click="jumpToIssue(1)" />
+              </template>
               <q-btn flat round dense icon="content_copy" size="sm" color="white"
-                     :title="t('Copy log')" @click="copyLog" />
+                     :title="t('Copy log')" :aria-label="t('Copy log')" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
               <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">
                 <div v-for="(line, i) in highlightedLines" :key="i"
-                     :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
+                     :ref="el => setLineRef(el, i)"
+                     :class="['log-line', `log-line--${line.type}`, { 'log-line--focused': i === focusedLineIndex }]">{{ line.text }}</div>
               </div>
                <div v-else class="text-grey text-caption q-pa-md">{{ t('No log entries found.') }}</div>
             </q-card-section>
@@ -128,6 +143,12 @@
     </div>
 
     <div v-else-if="!loading" class="text-center q-pa-xl text-grey">{{ t('Job not found.') }}</div>
+    <CommentEditDialog
+      v-model="commentDialogOpen"
+      :title="t('Edit comment')"
+      :comment="job?.comment ?? ''"
+      :save="saveJobComment"
+    />
   </q-page>
 </template>
 
@@ -158,6 +179,7 @@ import {
   buildJobDetailsQuery,
   buildListJobCommand,
   buildRerunJobCommand,
+  canRerunJob,
   resolveJobDetailsClientOrigin,
   resolveJobDetailsQuery,
   resolveJobDetailsDashboardOrigin,
@@ -166,6 +188,7 @@ import {
   resolveJobDetailsVolumeOrigin,
   resolveJobsListQuery,
   mergeJobMediaByVolume,
+  classifyLogLine,
 } from '../utils/jobs.js'
 import { resolveJobTypeCode } from '../utils/jobTypes.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
@@ -173,6 +196,9 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import CommentEditDialog from '../components/CommentEditDialog.vue'
+import { buildJobCommentCommand } from '../utils/volumeBulk.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -198,16 +224,16 @@ const volumeOrigin = computed(() => resolveJobDetailsVolumeOrigin(route.query))
 const currentJobDetailsQuery = computed(() => resolveJobDetailsQuery(route.query))
 const backLabel = computed(() => (
   clientOrigin.value
-    ? t('Back to Client')
+    ? t('Client')
     : (dashboardOrigin.value
-      ? t('Back to Dashboard')
+      ? t('Dashboard')
       : (
         directorOrigin.value
-          ? t('Back to Director')
+          ? t('Director')
           : (
             restoreOrigin.value
-              ? t('Back to Restore')
-              : (volumeOrigin.value ? t('Back to Volume') : t('Back to Jobs'))
+              ? t('Restore')
+              : (volumeOrigin.value ? t('Volume') : t('Jobs'))
           )
       ))
 ))
@@ -270,6 +296,10 @@ const backLocation = computed(() => {
     query: backToJobsQuery.value,
   }
 })
+const breadcrumbItems = computed(() => [
+  { label: backLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: jobData.value ? `${t('Job')} #${jobData.value.id}` : `${t('Job')} #${currentJobId.value}` },
+])
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
@@ -282,13 +312,111 @@ const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
 const volumesPagination = usePersistedTablePagination('job-details.volumes', {
-  rowsPerPage: 15,
+  rowsPerPage: 10,
   sortBy: 'volumename',
   descending: false,
 })
 
-// Scroll the log panel to the bottom whenever new log content arrives.
+const logFocus = computed(() => {
+  const value = route.query.logFocus
+  return value === 'error' || value === 'warning' || value === 'ok' ? value : ''
+})
+const lineRefs = ref({})
+const focusedLineIndex = ref(-1)
+const focusedIssuePosition = ref(0)
+let autoFocusPending = true
+
+function setLineRef(el, index) {
+  if (el) lineRefs.value[index] = el
+  else delete lineRefs.value[index]
+}
+
+// Indexes of all error/warning lines, used for the prev/next issue navigation.
+const issueLineIndexes = computed(() => (
+  highlightedLines.value
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => line.type === 'error' || line.type === 'warning')
+    .map(({ index }) => index)
+))
+
+const currentIssueDisplay = computed(() => {
+  const pos = issueLineIndexes.value.indexOf(focusedLineIndex.value)
+  return pos >= 0 ? pos + 1 : Math.min(focusedIssuePosition.value + 1, issueLineIndexes.value.length)
+})
+
+function scrollToLine(index) {
+  // The DOM element for a given log line may take a couple of render
+  // passes to appear (e.g. right after the "No log entries" placeholder is
+  // replaced by the actual list), so poll briefly for it instead of
+  // assuming a single nextTick/animation frame is enough.
+  let attempts = 0
+  const tryScroll = () => {
+    const el = lineRefs.value[index]
+    if (el?.scrollIntoView) {
+      el.scrollIntoView({ block: 'center' })
+      return
+    }
+    attempts += 1
+    if (attempts < 20) {
+      setTimeout(tryScroll, 25)
+    }
+  }
+  nextTick(tryScroll)
+}
+
+function focusIssueAt(position) {
+  const indexes = issueLineIndexes.value
+  if (!indexes.length) return
+  const clamped = ((position % indexes.length) + indexes.length) % indexes.length
+  focusedIssuePosition.value = clamped
+  focusedLineIndex.value = indexes[clamped]
+  scrollToLine(focusedLineIndex.value)
+}
+
+function jumpToIssue(direction) {
+  focusIssueAt(focusedIssuePosition.value + direction)
+}
+
+// Find the log line to jump to for a given logFocus value:
+// - 'error'   → first error line (falls back to first warning line)
+// - 'warning' → first warning line (falls back to first error line)
+// - 'ok'      → last line classified as 'ok' (the termination summary)
+function findFocusTargetIndex(focus) {
+  const lines = highlightedLines.value
+  if (focus === 'error' || focus === 'warning') {
+    const preferredType = focus
+    const fallbackType = focus === 'error' ? 'warning' : 'error'
+    const preferredIndex = lines.findIndex(l => l.type === preferredType)
+    if (preferredIndex >= 0) return preferredIndex
+    return lines.findIndex(l => l.type === fallbackType)
+  }
+  if (focus === 'ok') {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].type === 'ok') return i
+    }
+  }
+  return -1
+}
+
+// Scroll the log panel on first load: jump to and highlight the relevant
+// error/warning/termination line if logFocus was requested, otherwise fall
+// back to the default "scroll to bottom" behavior.
 watch(logLines, () => {
+  if (autoFocusPending && logFocus.value) {
+    autoFocusPending = false
+    nextTick(() => {
+      const targetIndex = findFocusTargetIndex(logFocus.value)
+      if (targetIndex >= 0) {
+        const issuePos = issueLineIndexes.value.indexOf(targetIndex)
+        focusedIssuePosition.value = issuePos >= 0 ? issuePos : 0
+        focusedLineIndex.value = targetIndex
+        scrollToLine(targetIndex)
+        return
+      }
+      if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
+    })
+    return
+  }
   nextTick(() => {
     if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
   })
@@ -305,6 +433,16 @@ async function ensureJobDirector() {
   }
 
   await switchActiveDirector(requestedDirector.value)
+}
+
+const commentDialogOpen = ref(false)
+
+async function saveJobComment(comment) {
+  await ensureJobDirector()
+  await director.call(buildJobCommentCommand(currentJobId.value, comment))
+  if (jobData.value) {
+    jobData.value = { ...jobData.value, comment }
+  }
 }
 
 async function loadJob() {
@@ -393,6 +531,7 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
 const isRestoreJob = computed(() => resolveJobTypeCode(job.value?.type) === 'R')
+const canRerunCurrentJob = computed(() => canRerunJob(job.value))
 const showVolumesCard = computed(() => !isRestoreJob.value || volumes.value.length > 0)
 
 const volumeCols = computed(() => [
@@ -425,6 +564,7 @@ const summaryRows = computed(() => {
     { label: t('Bytes'),      value: formatBytes(j.bytes) },
     { label: t('Speed'),      value: formatSpeed(j.bytes, j.duration) },
     { label: t('Errors'),     value: j.errors },
+    { label: t('Comment'),    value: j.comment || '—', editComment: true },
   ]
 })
 
@@ -432,16 +572,7 @@ const jobLog = computed(() => logLines.value)
 
 const highlightedLines = computed(() => {
   if (!logLines.value) return []
-  return logLines.value.split('\n').map(line => {
-    const l = line.toLowerCase()
-    if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
-      return { text: line, type: 'normal' }
-    }
-    if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
-    if (/warning|warn/.test(l))                      return { text: line, type: 'warning' }
-    if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
-    return { text: line, type: 'normal' }
-  })
+  return logLines.value.split('\n').map(line => ({ text: line, type: classifyLogLine(line) }))
 })
 
 // ── auto-refresh for running jobs ─────────────────────────────────────────────
@@ -487,6 +618,32 @@ function confirmRerun() {
     ok:     { label: t('Rerun'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
   }).onOk(doRerun)
+}
+
+async function openRestoreDetails() {
+  if (!job.value) { return }
+
+  try {
+    if (currentJobDirector.value) {
+      await switchActiveDirector(currentJobDirector.value)
+    }
+    await router.push({
+      name: 'restore',
+      query: {
+        client: job.value.client,
+        director: currentJobDirector.value,
+        jobid: currentJobId.value,
+      },
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: t('Could not switch to director {director}: {message}', {
+        director: currentJobDirector.value || t('unknown'),
+        message: error.message,
+      }),
+    })
+  }
 }
 
 async function doRerun() {
@@ -589,4 +746,5 @@ function copyLog() {
 .log-line--ok      { color: #89d185; }
 .log-line--warning { color: #f2c037; }
 .log-line--error   { color: #f48771; font-weight: 600; background: rgba(244, 135, 113, 0.08); }
+.log-line--focused { outline: 2px solid currentColor; background: rgba(255, 255, 255, 0.12); }
 </style>

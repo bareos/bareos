@@ -601,6 +601,27 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
+static void UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
+{
+  PoolMem query(PM_MESSAGE);
+  char ed1[50];
+
+  DbLocker _{ua->db};
+  auto esc = ua->db->EscapeString(ua->jcr, val);
+  if (!esc) {
+    ua->ErrorMsg(T_("Could not escape comment.\n"));
+    return;
+  }
+  Mmsg(query, "UPDATE Media SET Comment='%s' WHERE MediaId=%s", esc->c_str(),
+       edit_int64(mr->MediaId, ed1));
+  if (!ua->db->SqlQuery(query.c_str())) {
+    ua->ErrorMsg(T_("Error updating media record Comment: ERR=%s"),
+                 ua->db->strerror());
+  } else {
+    ua->InfoMsg(T_("New Comment is: %s\n"), val);
+  }
+}
+
 /**
  * Update a media record -- allows you to change the
  *  Volume status. E.g. if you want BAREOS to stop
@@ -633,6 +654,7 @@ static bool UpdateVolume(UaContext* ua)
                       NT_("ActionOnPurge"), /* 14 */
                       NT_("Storage"),       /* 15 */
                       NT_("Encrypt"),       /* 16 */
+                      NT_("Comment"),       /* 17 */
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
@@ -702,6 +724,9 @@ static bool UpdateVolume(UaContext* ua)
         case 16:
           UpdateVolEncryption(ua, ua->argv[j], &mr);
           break;
+        case 17:
+          UpdateVolComment(ua, ua->argv[j], &mr);
+          break;
       }
       done = true;
     }
@@ -737,12 +762,13 @@ static bool UpdateVolume(UaContext* ua)
     AddPrompt(ua, T_("RecyclePool"));                /* 15 */
     AddPrompt(ua, T_("Action On Purge"));            /* 16 */
     AddPrompt(ua, T_("Storage"));                    /* 17 */
-    AddPrompt(ua, T_("Done"));                       /* 18 */
+    AddPrompt(ua, T_("Comment"));                    /* 18 */
+    AddPrompt(ua, T_("Done"));                       /* 19 */
     i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
      * a Volume record */
-    if (i != 12 && i != 13 && i != 18) {
+    if (i != 12 && i != 13 && i != 19) {
       if (!SelectMediaDbr(ua, &mr)) { /* Get Volume record */
         return false;
       }
@@ -932,6 +958,11 @@ static bool UpdateVolume(UaContext* ua)
         ua->InfoMsg(T_("New Storage is: %s\n"), sr.Name);
         return true;
 
+      case 18:
+        if (!GetCmd(ua, T_("Enter new Comment: "))) { return false; }
+        UpdateVolComment(ua, ua->cmd, &mr);
+        break;
+
       default: /* Done or error */
         ua->InfoMsg(T_("Selection terminated.\n"));
         return true;
@@ -1001,12 +1032,14 @@ static bool UpdateJob(UaContext* ua)
   char* job_name = NULL;
   char* start_time = NULL;
   char job_type = '\0';
+  const char* comment = nullptr;
   DBId_t fileset_id = 0;
   const char* kw[] = {NT_("starttime"), /* 0 */
                       NT_("client"),    /* 1 */
                       NT_("filesetid"), /* 2 */
                       NT_("jobname"),   /* 3 */
                       NT_("jobtype"),   /* 4 */
+                      NT_("comment"),   /* 5 */
                       NULL};
 
   Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -1041,13 +1074,35 @@ static bool UpdateJob(UaContext* ua)
         case 4: /* Job Type */
           job_type = ua->argv[j][0];
           break;
+        case 5: /* Comment */
+          comment = ua->argv[j];
+          break;
       }
     }
   }
-  if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-    ua->ErrorMsg(T_(
-        "Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
+  if (!client_name && !start_time && !fileset_id && !job_name && !job_type
+      && !comment) {
+    ua->ErrorMsg(
+        T_("Neither Client, StartTime, Filesetid, JobType, Name nor Comment "
+           "specified.\n"));
     return false;
+  }
+  if (comment) {
+    auto esc = ua->db->EscapeString(ua->jcr, comment);
+    if (!esc) {
+      ua->ErrorMsg(T_("Could not escape comment.\n"));
+      return false;
+    }
+    Mmsg(cmd, "UPDATE Job SET Comment='%s' WHERE JobId=%s", esc->c_str(),
+         edit_int64(jr.JobId, ed1));
+    if (!ua->db->SqlQuery(cmd.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
+    ua->InfoMsg(T_("New Comment is: %s\n"), comment);
+    if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
+      return true;
+    }
   }
   if (client_name) {
     if (!GetClientDbr(ua, &cr)) { return false; }

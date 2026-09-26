@@ -1352,20 +1352,30 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 std::optional<time_t> RunResource::NextScheduleTime(time_t start,
                                                     uint32_t ndays) const
 {
+  time_t check_time = start;
   for (uint32_t d = 0; d <= ndays; ++d) {
-    if (date_time_mask.TriggersOnDay(start)) {
+    if (date_time_mask.TriggersOnDay(check_time)) {
       struct tm tm = {};
-      Blocaltime(&start, &tm);
+      Blocaltime(&check_time, &tm);
       for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
         if (BitIsSet(h, date_time_mask.hour)) {
           tm.tm_hour = h;
           tm.tm_min = minute;
           tm.tm_sec = 0;
-          return mktime(&tm);
+          tm.tm_isdst = -1;
+          time_t candidate = mktime(&tm);
+          if (candidate >= start) { return candidate; }
         }
       }
     }
-    start += 24 * 60 * 60;
+    struct tm tm_next = {};
+    Blocaltime(&check_time, &tm_next);
+    tm_next.tm_hour = 0;
+    tm_next.tm_min = 0;
+    tm_next.tm_sec = 0;
+    tm_next.tm_mday += 1;
+    tm_next.tm_isdst = -1;
+    check_time = mktime(&tm_next);
   }
   return std::nullopt;
 }

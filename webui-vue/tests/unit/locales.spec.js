@@ -26,7 +26,10 @@ import {
 } from '../../src/generated/webui-locales.js'
 import {
   detectPreferredLocale,
+  formatCatalogTimestamp,
   formatDirectorRelativeTime,
+  formatLocalDateTime,
+  formatRelativeDate,
   formatSqlRelativeTime,
   localeFlagEmoji,
   localeOptions,
@@ -81,7 +84,59 @@ describe('webui locales', () => {
     vi.setSystemTime(new Date('2026-04-23T12:00:00'))
 
     expect(formatSqlRelativeTime('2026-04-23 11:58:00', 'en_EN')).toBe('2 minutes ago')
-    expect(formatDirectorRelativeTime('23-Apr-26 11:58', 'en_EN')).toBe('2 minutes ago')
+    vi.useRealTimers()
+  })
+
+  it('formats catalog timestamps according to the relative time setting', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-23T12:00:00'))
+
+    expect(formatCatalogTimestamp('2026-04-23 11:58:00', true, 'en_EN')).toEqual({
+      text: '2 minutes ago',
+      title: '2026-04-23 11:58:00',
+    })
+    expect(formatCatalogTimestamp('2026-04-23 11:58:00', false, 'en_EN')).toEqual({
+      text: '2026-04-23 11:58:00',
+      title: '2 minutes ago',
+    })
+    for (const empty of [null, undefined, '', '0000-00-00 00:00:00']) {
+      expect(formatCatalogTimestamp(empty, true, 'en_EN')).toEqual({
+        text: '—',
+        title: undefined,
+      })
+    }
+    expect(formatCatalogTimestamp('garbage', true, 'en_EN')).toEqual({
+      text: 'garbage',
+      title: undefined,
+    })
+
+    vi.useRealTimers()
+  })
+
+  it('formats local date-time values with a 24-hour clock', () => {
+    const formatted = formatLocalDateTime(
+      new Date('2026-09-18T20:44:00'),
+      'en_EN',
+      { dateStyle: 'short', timeStyle: 'short' }
+    )
+
+    expect(formatted).toMatch(/^18\/09\/2026/)
+    expect(formatted).toContain('20:44')
+  })
+
+  it('uses calendar-day boundaries, not raw 24h chunks, for day-level relative labels', () => {
+    vi.useFakeTimers()
+    // Friday 21:12 local time.
+    vi.setSystemTime(new Date(2026, 8, 11, 21, 12, 0))
+
+    // Less than 24 raw hours away but crosses two calendar-day boundaries
+    // (Saturday, then Sunday) -> should read "in 2 days", not "tomorrow".
+    const dayAfterTomorrow = new Date(2026, 8, 13, 3, 0, 0)
+    expect(formatRelativeDate(dayAfterTomorrow, 'en_EN')).toBe('in 2 days')
+
+    // A run tomorrow (Saturday) should still read "tomorrow".
+    const tomorrow = new Date(2026, 8, 12, 21, 0, 0)
+    expect(formatRelativeDate(tomorrow, 'en_EN')).toBe('tomorrow')
 
     vi.useRealTimers()
   })

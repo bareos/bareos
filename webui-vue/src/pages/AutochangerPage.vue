@@ -20,13 +20,8 @@
 -->
 
 <template>
-  <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
-    <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
-      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
-      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
-      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }" />
-    </q-tabs>
+  <q-page class="q-pa-md">
+    <Breadcrumbs :items="breadcrumbItems" />
 
     <!-- ── Toolbar ─────────────────────────────────────────── -->
     <div class="row items-center q-gutter-sm q-mb-md">
@@ -44,7 +39,7 @@
         :loading="storagesLoading"
       />
 
-      <q-btn flat round dense icon="refresh" :title="t('Refresh')"
+      <q-btn flat round dense icon="refresh" :title="t('Refresh')" :aria-label="t('Refresh')"
              :loading="slotsLoading" @click="manualRefresh" />
 
       <DirectorBadge
@@ -57,16 +52,16 @@
       <q-space />
 
       <q-btn outline color="primary" icon="sync_alt" :label="t('Update Slots')"
-             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" />
+             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" data-testid="autochanger-update-slots" />
 
       <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
-             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" />
+             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" data-testid="autochanger-label-barcodes" />
 
       <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
-             :disable="!selectedStorageName || commandRunning" @click="showStatus" />
+             :disable="!selectedStorageName || commandRunning" @click="showStatus" data-testid="autochanger-status" />
     </div>
 
-    <q-banner v-if="loadError" class="bg-negative text-white q-mb-md" rounded>
+    <q-banner v-if="loadError" dense rounded class="bg-negative text-white q-mb-md">
       {{ loadError }}
     </q-banner>
 
@@ -96,16 +91,24 @@
       <!-- Storage Slots (left, wide) -->
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(storageSlots.length, t('Slots')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(storageSlots.length, t('Slots')) }}</span>
+            <q-space />
+            <q-input v-model="slotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable data-testid="autochanger-slots-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableSlotCols" @toggle="toggleSlotCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !storageSlots.length)"
               :rows="storageSlots"
-              :columns="slotCols"
+              :columns="visibleSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="slotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
               virtual-scroll
@@ -163,7 +166,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -186,7 +189,7 @@
                         name: 'pool-details',
                         params: { name: props.value },
                         query: {
-                          ...buildAutochangerSelectionQuery(route.query, currentStorage),
+                          ...buildAutochangerOriginQuery({}, currentStorage),
                           ...(currentStorage?.director ? { director: currentStorage.director } : {}),
                         },
                       }"
@@ -203,18 +206,19 @@
                 <q-td :props="props" class="text-right">
                   <template v-if="props.row.content === 'full' && slotInDriveMap[props.row.slotnr] == null">
                     <q-btn flat round dense size="sm" icon="play_circle"
-                           :title="t('Mount to drive')"
+                           :title="t('Mount to drive')" :aria-label="t('Mount to drive')"
                            @click="openSlotMountDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="swap_horiz"
-                           :title="t('Transfer to slot')"
+                           :title="t('Transfer to slot')" :aria-label="t('Transfer to slot')"
                            @click="openTransferDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="upload"
-                           :title="t('Export')"
+                           :title="t('Export')" :aria-label="t('Export')"
                            @click="doExport(props.row.slotnr)" />
                   </template>
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleSlotCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </div>
@@ -224,16 +228,24 @@
 
         <!-- Drives -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(drives.length, t('Drives')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(drives.length, t('Drives')) }}</span>
+            <q-space />
+            <q-input v-model="drivesSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:160px" clearable data-testid="autochanger-drives-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableDriveCols" @toggle="toggleDriveCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !drives.length)"
               :rows="drives"
-              :columns="driveCols"
+              :columns="visibleDriveCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="drivesSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -282,7 +294,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -291,34 +303,42 @@
                 <q-td :props="props" class="text-right">
                   <q-btn v-if="props.row.content === 'full'"
                          flat round dense size="sm" icon="eject"
-                         :title="t('Release')"
+                         :title="t('Release')" :aria-label="t('Release')"
                          @click="doRelease(props.row.slotnr)" />
                   <q-btn v-else
                          flat round dense size="sm" icon="play_circle"
-                         :title="t('Mount')"
+                         :title="t('Mount')" :aria-label="t('Mount')"
                          @click="openMountDialog(props.row.slotnr)" />
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleDriveCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
         <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center no-wrap">
+          <q-card-section class="panel-header row items-center no-wrap q-gutter-xs">
             <span class="col">
               {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
             </span>
+            <q-input v-model="ieSlotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:140px" clearable data-testid="autochanger-ieslots-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableIeSlotCols" @toggle="toggleIeSlotCol" />
              <q-btn flat round dense size="sm" icon="download"
-                   :title="t('Import all')" :disable="commandRunning" @click="doImportAll" />
+                   :title="t('Import all')" :aria-label="t('Import all')" :disable="commandRunning" @click="doImportAll" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !importSlots.length)"
               :rows="importSlots"
-              :columns="ieSlotCols"
+              :columns="visibleIeSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="ieSlotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -349,7 +369,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -358,12 +378,13 @@
                 <q-td :props="props" class="text-right">
                    <q-btn v-if="props.row.content === 'full'"
                           flat round dense size="sm" icon="download"
-                          :title="t('Import')"
+                          :title="t('Import')" :aria-label="t('Import')"
                           :disable="commandRunning"
                           @click="doImport(props.row.slotnr)" />
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleIeSlotCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
@@ -377,7 +398,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Label barcodes') }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="labelForm.pool"
@@ -417,7 +438,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Mount Tape') }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-input v-model="mountForm.slot"
@@ -443,7 +464,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Transfer from Slot {slot}', { slot: transferForm.srcSlot }) }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="transferForm.dstSlot"
@@ -467,7 +488,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Label Slot {slot}', { slot: slotLabelForm.slot }) }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="slotLabelForm.pool"
@@ -526,7 +547,7 @@
           dense
           icon="delete_sweep"
           :disable="commandRunning"
-          :title="t('Clear')"
+          :title="t('Clear')" :aria-label="t('Clear')"
           @click="clearCommandLog"
         />
       </q-card-section>
@@ -537,7 +558,7 @@
         </q-scroll-area>
       </q-card-section>
     </q-card>
-  </component>
+  </q-page>
 </template>
 
 <script setup>
@@ -560,23 +581,20 @@ import {
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
 import {
-  AUTOCHANGER_DIRECTOR_QUERY_KEY,
-  AUTOCHANGER_STORAGE_QUERY_KEY,
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
+  buildAutochangerOriginQuery,
   resolveAutochangerSelection,
   resolveStoragesScopeDirector,
+  withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
-
-const { embedded } = defineProps({
-  embedded: {
-    type: Boolean,
-    default: false,
-  },
-})
+import TableSkeleton from '../components/TableSkeleton.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -671,17 +689,21 @@ const activeDirectors = computed(() => {
   return currentDirector ? [currentDirector] : []
 })
 
-const isAutochangerRouteActive = computed(() => !embedded || route.query.tab === 'autochangers')
+const isAutochangerRouteActive = computed(() => route.name === 'autochanger')
 const queriedStorageName = computed(() => (
-  typeof route.query[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_STORAGE_QUERY_KEY]
-    : ''
+  typeof route.params.name === 'string' ? route.params.name : ''
 ))
 const queriedDirectorName = computed(() => (
-  typeof route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
-    : ''
+  typeof route.query.director === 'string' ? route.query.director : ''
 ))
+const breadcrumbItems = computed(() => [
+  {
+    label: t('Storages'),
+    icon: 'arrow_back',
+    to: { name: 'storages', query: withStoragesScopeDirectorQuery({}, storagesScopeDirector.value) },
+  },
+  { label: queriedStorageName.value || t('Autochanger') },
+])
 const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
 const autochangerScopeDirectors = computed(() => (
   storagesScopeDirector.value ? [storagesScopeDirector.value] : activeDirectors.value
@@ -734,7 +756,7 @@ function buildAutochangerVolumeDetailsQuery(storage) {
   }
 
   return {
-    ...buildAutochangerSelectionQuery(route.query, storage),
+    ...buildAutochangerOriginQuery({}, storage),
     ...(storage.director ? { director: storage.director } : {}),
   }
 }
@@ -835,6 +857,29 @@ const slotCols = [
   { name: 'pr_name',     label: 'Pool',      field: 'pr_name',     align: 'left', sortable: true },
   { name: 'actions',     label: '',          field: 'actions',     align: 'right' },
 ]
+
+const {
+  visibleColumns: visibleSlotCols,
+  toggleableColumns: toggleableSlotCols,
+  toggleColumn: toggleSlotCol,
+} = usePersistedTableColumns('autochanger.slots', slotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleDriveCols,
+  toggleableColumns: toggleableDriveCols,
+  toggleColumn: toggleDriveCol,
+} = usePersistedTableColumns('autochanger.drives', driveCols, { essential: ['slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleIeSlotCols,
+  toggleableColumns: toggleableIeSlotCols,
+  toggleColumn: toggleIeSlotCol,
+} = usePersistedTableColumns('autochanger.ieSlots', ieSlotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const slotsSearch = usePersistedTableFilter('autochanger.slots')
+const drivesSearch = usePersistedTableFilter('autochanger.drives')
+const ieSlotsSearch = usePersistedTableFilter('autochanger.ieSlots')
+
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -1398,24 +1443,19 @@ async function syncRouteToSelectedStorage() {
     return
   }
 
-  const targetQuery = buildAutochangerSelectionQuery(route.query, currentStorage.value)
-  const currentStorageName = queriedStorageName.value
-  const currentDirectorName = queriedDirectorName.value
-  const targetStorageName = targetQuery[AUTOCHANGER_STORAGE_QUERY_KEY] ?? ''
-  const targetDirectorName = targetQuery[AUTOCHANGER_DIRECTOR_QUERY_KEY] ?? ''
+  if (!currentStorage.value) {
+    return
+  }
 
+  const target = buildAutochangerLocation(currentStorage.value, route.query)
   if (
-    route.query.tab === targetQuery.tab
-    && currentStorageName === targetStorageName
-    && currentDirectorName === targetDirectorName
+    queriedStorageName.value === target.params.name
+    && queriedDirectorName.value === (target.query.director ?? '')
   ) {
     return
   }
 
-  await router.replace({
-    path: '/storages',
-    query: targetQuery,
-  })
+  await router.replace(target)
 }
 
 function syncSelectedStorageFromRoute() {
@@ -1477,7 +1517,6 @@ watch(() => [
   queriedStorageName.value,
   queriedDirectorName.value,
   storagesScopeDirector.value,
-  route.query.tab,
 ], () => {
   if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
     return

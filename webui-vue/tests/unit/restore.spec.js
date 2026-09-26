@@ -20,26 +20,57 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { restorePluginHints as pluginHintsFixture } from '../../src/data/restorePluginHints.js'
 import {
+  DEFAULT_RELOCATION_SAMPLE_PATH,
   buildRestoreBvfsRestoreCommand,
   buildRestoreBvfsJobidsCommand,
+  buildRestoreCommand,
+  buildRestoreRunCommand,
+  buildRegexWhereFromRelocationMode,
+  buildRegexWhereFromRelocationRules,
   buildRestoreBackupOption,
+  buildRestoreBackupChainOptions,
+  buildRestoreBackupChains,
+  buildRestoreClientFilesetOptions,
+  buildRestoreTimelinePoints,
+  buildRestoreFilesetOptions,
   buildRestorePluginFilesetDetails,
   buildRestorePluginFilesetMap,
+  buildPluginOptionsBlock,
+  buildPluginOptionsDocument,
+  buildInitialPluginOptionsBlock,
   canNavigateRestoreBrowser,
+  categorizePluginOptions,
+  findMatchingRestorePluginDefinition,
+  findRestorePluginHintIdForBlockName,
+  hintProvidesDefaultsElsewhere,
+  previewRelocatedPath,
+  resolveBlockPluginHintId,
+  resolveRestoreRegexWhere,
   buildRestoreSourceQuery,
   decorateRestoreBackupsWithPluginJobs,
   dedupeRestoreVersions,
   getRestoreVersionsLookupJobId,
+  filterRestoreBackupsByCriteria,
   filterRestoreVersionsByJobids,
   filterRestoreSourceClients,
   getAllRestorePluginHints,
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  hasRestoreFullBackupInChain,
   normaliseRestoreToggle,
+  parsePluginOptionsBlock,
+  parsePluginOptionsDocument,
   parseRestorePluginDefinition,
   pushRestoreBreadcrumb,
+  resolveLatestRestoreBackup,
+  resolveAdjacentRestoreBackupChain,
+  resolveAdjacentRestoreTimelinePoint,
+  resolveRestoreTimelinePointPosition,
+  resolveRestoreBackupChain,
+  resolveRestoreTimelineSelection,
   resolveRestoreSourceClient,
   resolveRestoreBackupOption,
   resolveRestorePluginHintId,
@@ -63,6 +94,24 @@ describe('restore browser placeholder', () => {
       loadingBrowser: true,
       hasSelectedJob: true,
     })).toBe('loading')
+  })
+
+  it('shows a building-cache state while the bvfs cache is being built', () => {
+    expect(getRestoreBrowserPlaceholder({
+      browserError: '',
+      loadingBrowser: true,
+      buildingCache: true,
+      hasSelectedJob: true,
+    })).toBe('building-cache')
+  })
+
+  it('prefers the error state over building-cache', () => {
+    expect(getRestoreBrowserPlaceholder({
+      browserError: 'Failed to load file tree',
+      loadingBrowser: true,
+      buildingCache: true,
+      hasSelectedJob: true,
+    })).toBe('error')
   })
 
   it('falls back to the initial empty prompt otherwise', () => {
@@ -179,19 +228,25 @@ describe('restore browser placeholder', () => {
     expect(buildRestoreSourceQuery({
       foo: 'bar',
       jobid: 'old',
+      fileset: 'OldFS',
+      mode: 'browse',
     }, {
       clientName: 'bareos-fd',
       directorName: 'prod-a',
+      filesetName: 'SelfTest',
       jobid: 42,
       mergeJobs: true,
       mergeFilesets: false,
+      sourceMode: 'latest',
     })).toEqual({
       foo: 'bar',
       client: 'bareos-fd',
       director: 'prod-a',
+      fileset: 'SelfTest',
       jobid: '42',
       mergejobs: '1',
       mergefilesets: '0',
+      mode: 'latest',
     })
   })
 
@@ -213,8 +268,29 @@ describe('restore browser placeholder', () => {
       level: 'I',
       levelCode: 'I',
       starttime: '2026-06-09 10:00:00',
+      displayStarttime: '2026-06-09 10:00:00',
+      client: '',
+      fileset: '',
       secondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
+      absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
+      absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
     })
+  })
+
+  it('keeps raw restore timestamps for logic while formatting display labels', () => {
+    const option = buildRestoreBackupOption({
+      jobid: 42,
+      name: 'backup-bareos-fd',
+      level: 'I',
+      starttime: '2026-06-09 10:00:00',
+    }, {
+      formatTime: value => `relative:${value}`,
+    })
+
+    expect(option.starttime).toBe('2026-06-09 10:00:00')
+    expect(option.displayStarttime).toBe('relative:2026-06-09 10:00:00')
+    expect(option.secondary).toBe('#42 · relative:2026-06-09 10:00:00')
+    expect(option.absoluteSecondary).toBe('#42 · 2026-06-09 10:00:00')
   })
 
   it('omits zero-sized secondary restore backup metrics', () => {
@@ -233,7 +309,11 @@ describe('restore browser placeholder', () => {
       level: 'F',
       levelCode: 'F',
       starttime: '2026-06-09 09:00:00',
+      displayStarttime: '2026-06-09 09:00:00',
+      client: '',
+      fileset: '',
       secondary: '#7 · 2026-06-09 09:00:00',
+      absoluteSecondary: '#7 · 2026-06-09 09:00:00',
     })
   })
 
@@ -246,6 +326,355 @@ describe('restore browser placeholder', () => {
     expect(resolveRestoreBackupOption(options, '42')).toEqual(options[1])
     expect(resolveRestoreBackupOption(options, 7)).toEqual(options[0])
     expect(resolveRestoreBackupOption(options, '999')).toBeNull()
+  })
+
+  it('includes the client name in backup option labels when browsing across clients', () => {
+    const option = buildRestoreBackupOption({
+      jobid: 5,
+      name: 'backup-web01',
+      level: 'F',
+      starttime: '2026-06-09 08:00:00',
+      client: 'web01-fd',
+      fileset: 'WebFS',
+    }, { showClient: true })
+
+    expect(option.client).toBe('web01-fd')
+    expect(option.fileset).toBe('WebFS')
+    expect(option.secondary).toBe('#5 · web01-fd · 2026-06-09 08:00:00')
+  })
+
+  it('filters restore backups by fileset and before timestamp', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'PartialFS', starttime: '2026-06-05 10:00:00' },
+      { jobid: 3, fileset: 'FullFS', starttime: '2026-06-10 10:00:00' },
+    ]
+
+    expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS' }))
+      .toEqual([backups[0], backups[2]])
+    expect(filterRestoreBackupsByCriteria(backups, { beforeFilter: '2026-06-05 10:00:00' }))
+      .toEqual([backups[0], backups[1]])
+    expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS', beforeFilter: '2026-06-05 10:00:00' }))
+      .toEqual([backups[0]])
+    expect(filterRestoreBackupsByCriteria(backups)).toEqual(backups)
+    expect(filterRestoreBackupsByCriteria(null)).toEqual([])
+  })
+
+  it('builds client/fileset tuple options only from real backup jobs', () => {
+    expect(buildRestoreClientFilesetOptions([
+      {
+        jobid: 1,
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-06-01 10:00:00',
+      },
+      {
+        jobid: 2,
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        starttime: '2026-06-02 10:00:00',
+      },
+      {
+        jobid: 3,
+        client: 'web01-fd',
+        fileset: 'WebFS',
+        starttime: '2026-06-03 10:00:00',
+      },
+      { jobid: 4, client: 'missing-fileset', starttime: '2026-06-04 10:00:00' },
+      { jobid: 5, fileset: 'missing-client', starttime: '2026-06-05 10:00:00' },
+    ])).toEqual([
+      {
+        value: 'bareos-fd\u0000SelfTest',
+        label: 'SelfTest@bareos-fd',
+        client: 'bareos-fd',
+        fileset: 'SelfTest',
+        latestStarttime: '2026-06-02 10:00:00',
+      },
+      {
+        value: 'web01-fd\u0000WebFS',
+        label: 'WebFS@web01-fd',
+        client: 'web01-fd',
+        fileset: 'WebFS',
+        latestStarttime: '2026-06-03 10:00:00',
+      },
+    ])
+    expect(buildRestoreClientFilesetOptions(null)).toEqual([])
+  })
+
+  it('builds backup chain options from merged job ids', () => {
+    const backups = [
+      {
+        jobid: 7,
+        name: 'backup-web',
+        level: 'I',
+        starttime: '2026-06-03 10:00:00',
+        jobbytes: 4096,
+        jobfiles: 8,
+      },
+      {
+        jobid: 5,
+        name: 'backup-web',
+        level: 'F',
+        starttime: '2026-06-01 10:00:00',
+        jobbytes: 2048,
+        jobfiles: 4,
+      },
+    ]
+
+    expect(buildRestoreBackupChainOptions(backups, '7,5', {
+      formatBytes: value => `${value} B`,
+    })).toEqual([
+      expect.objectContaining({
+        jobid: 5,
+        level: 'F',
+        levelCode: 'F',
+        secondary: '#5 · 2026-06-01 10:00:00 · 2048 B · 4 files',
+      }),
+      expect.objectContaining({
+        jobid: 7,
+        level: 'I',
+        levelCode: 'I',
+        secondary: '#7 · 2026-06-03 10:00:00 · 4096 B · 8 files',
+      }),
+    ])
+  })
+
+  it('ignores backup-chain job ids without loaded metadata', () => {
+    expect(buildRestoreBackupChainOptions([
+      { jobid: 5, name: 'backup-web', level: 'F', starttime: '2026-06-01 10:00:00' },
+    ], ['5', '7'])).toEqual([
+      expect.objectContaining({ jobid: 5 }),
+    ])
+  })
+
+  it('sorts backup-chain options oldest to newest', () => {
+    expect(buildRestoreBackupChainOptions([
+      { jobid: 30, name: 'backup-web', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 10, name: 'backup-web', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 20, name: 'backup-web', level: 'D', starttime: '2026-06-02 10:00:00' },
+    ], '30,10,20').map(option => option.jobid)).toEqual([10, 20, 30])
+  })
+
+  it('returns an empty backup-chain list for empty input', () => {
+    expect(buildRestoreBackupChainOptions([], '1,2')).toEqual([])
+    expect(buildRestoreBackupChainOptions(null, '1,2')).toEqual([])
+    expect(buildRestoreBackupChainOptions([{ jobid: 1 }], '')).toEqual([])
+    expect(buildRestoreBackupChainOptions([{ jobid: 1 }], null)).toEqual([])
+  })
+
+  it('builds restore timeline points for a selected fileset', () => {
+    const backups = [
+      {
+        jobid: 12,
+        name: 'backup-web',
+        fileset: 'WebFS',
+        level: 'I',
+        starttime: '2026-06-03 10:00:00',
+        jobbytes: 4096,
+        jobfiles: 8,
+      },
+      {
+        jobid: 10,
+        name: 'backup-web',
+        fileset: 'WebFS',
+        level: 'F',
+        starttime: '2026-06-01 10:00:00',
+        jobbytes: 2048,
+        jobfiles: 4,
+      },
+      {
+        jobid: 11,
+        name: 'backup-db',
+        fileset: 'DbFS',
+        level: 'F',
+        starttime: '2026-06-02 10:00:00',
+      },
+    ]
+
+    expect(buildRestoreTimelinePoints(backups, {
+      filesetFilter: 'WebFS',
+      formatBytes: value => `${value} B`,
+    })).toEqual([
+      expect.objectContaining({
+        jobid: 10,
+        levelCode: 'F',
+        secondary: '#10 · 2026-06-01 10:00:00 · 2048 B · 4 files',
+      }),
+      expect.objectContaining({
+        jobid: 12,
+        levelCode: 'I',
+        secondary: '#12 · 2026-06-03 10:00:00 · 4096 B · 8 files',
+      }),
+    ])
+  })
+
+  it('formats restore chain display times without changing sort timestamps', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+    ], {
+      filesetFilter: 'WebFS',
+      formatTime: value => `relative:${value}`,
+    })
+
+    expect(chains[0].rootStarttime).toBe('2026-06-01 10:00:00')
+    expect(chains[0].rootDisplayStarttime).toBe('relative:2026-06-01 10:00:00')
+    expect(chains[0].label).toBe('Full #1 · relative:2026-06-01 10:00:00')
+    expect(chains[0].jobs[1].displayStarttime).toBe('relative:2026-06-02 10:00:00')
+  })
+
+  it('resolves restore timeline selection or falls back to the latest point', () => {
+    const points = [
+      { jobid: 10, starttime: '2026-06-01 10:00:00' },
+      { jobid: 12, starttime: '2026-06-03 10:00:00' },
+    ]
+
+    expect(resolveRestoreTimelineSelection(points, '10')).toBe(points[0])
+    expect(resolveRestoreTimelineSelection(points, 99)).toBe(points[1])
+    expect(resolveRestoreTimelineSelection(points, null)).toBe(points[1])
+    expect(resolveRestoreTimelineSelection([], 10)).toBeNull()
+    expect(resolveRestoreTimelineSelection(null, 10)).toBeNull()
+  })
+
+  it('groups restore backups into Full-rooted chains', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, name: 'backup-web', fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, name: 'backup-web', fileset: 'WebFS', level: 'D', starttime: '2026-06-04 10:00:00' },
+      { jobid: 5, name: 'backup-web', fileset: 'WebFS', level: 'I', starttime: '2026-06-05 10:00:00' },
+      { jobid: 6, name: 'backup-db', fileset: 'DbFS', level: 'F', starttime: '2026-06-06 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(chains).toEqual([
+      expect.objectContaining({
+        rootJobid: 1,
+        latestJobid: 2,
+        jobCount: 2,
+        jobs: [
+          expect.objectContaining({ jobid: 1, levelCode: 'F' }),
+          expect.objectContaining({ jobid: 2, levelCode: 'I' }),
+        ],
+      }),
+      expect.objectContaining({
+        rootJobid: 3,
+        latestJobid: 5,
+        jobCount: 3,
+        jobs: [
+          expect.objectContaining({ jobid: 3, levelCode: 'F' }),
+          expect.objectContaining({ jobid: 4, levelCode: 'D' }),
+          expect.objectContaining({ jobid: 5, levelCode: 'I' }),
+        ],
+      }),
+    ])
+  })
+
+  it('resolves selected and adjacent restore backup chains', () => {
+    const chains = buildRestoreBackupChains([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, fileset: 'WebFS', level: 'I', starttime: '2026-06-04 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(resolveRestoreBackupChain(chains, 2)).toBe(chains[0])
+    expect(resolveRestoreBackupChain(chains, 4)).toBe(chains[1])
+    expect(resolveRestoreBackupChain(chains, null)).toBe(chains[1])
+    expect(resolveRestoreBackupChain([], 1)).toBeNull()
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[1], 'older')).toBe(chains[0])
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'newer')).toBe(chains[1])
+    expect(resolveAdjacentRestoreBackupChain(chains, chains[0], 'older')).toBeNull()
+    expect(resolveAdjacentRestoreBackupChain(chains, null, 'older')).toBeNull()
+  })
+
+  it('steps to the previous/next restore point across chain boundaries', () => {
+    const points = buildRestoreTimelinePoints([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+      { jobid: 4, fileset: 'WebFS', level: 'I', starttime: '2026-06-04 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    // Older/Newer walk individual jobs, including across the Full-backup
+    // boundary between jobid 2 (end of the first chain) and jobid 3 (start
+    // of the second chain) — this must NOT jump straight from job 2 to the
+    // *last* job of the next chain (job 4).
+    expect(resolveAdjacentRestoreTimelinePoint(points, 2, 'newer')).toBe(points[2])
+    expect(resolveAdjacentRestoreTimelinePoint(points, 3, 'older')).toBe(points[1])
+    expect(resolveAdjacentRestoreTimelinePoint(points, 1, 'older')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint(points, 4, 'newer')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint(points, 99, 'newer')).toBeNull()
+    expect(resolveAdjacentRestoreTimelinePoint([], 1, 'newer')).toBeNull()
+  })
+
+  it('resolves the 1-based position of a restore point among all points', () => {
+    const points = buildRestoreTimelinePoints([
+      { jobid: 1, fileset: 'WebFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'WebFS', level: 'I', starttime: '2026-06-02 10:00:00' },
+      { jobid: 3, fileset: 'WebFS', level: 'F', starttime: '2026-06-03 10:00:00' },
+    ], { filesetFilter: 'WebFS' })
+
+    expect(resolveRestoreTimelinePointPosition(points, 1)).toEqual({ current: 1, total: 3 })
+    expect(resolveRestoreTimelinePointPosition(points, 3)).toEqual({ current: 3, total: 3 })
+    expect(resolveRestoreTimelinePointPosition(points, 99)).toBeNull()
+    expect(resolveRestoreTimelinePointPosition([], 1)).toBeNull()
+  })
+
+  it('resolves the latest backup for a client+fileset tuple', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'FullFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+      { jobid: 3, fileset: 'OtherFS', level: 'F', starttime: '2026-06-20 10:00:00' },
+    ]
+
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'FullFS' })).toBe(2)
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'OtherFS' })).toBe(3)
+    expect(resolveLatestRestoreBackup(backups, {
+      filesetFilter: 'FullFS',
+      beforeFilter: '2026-06-05 10:00:00',
+    })).toBe(1)
+    // A fileset is required -- restoring "the latest backup" is only
+    // well-defined for a single client+fileset tuple.
+    expect(resolveLatestRestoreBackup(backups, {})).toBeNull()
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'NoMatch' })).toBeNull()
+    expect(resolveLatestRestoreBackup([], { filesetFilter: 'FullFS' })).toBeNull()
+  })
+
+  it('resolves the latest backup by starttime even if jobids are out of order', () => {
+    const backups = [
+      { jobid: 20, fileset: 'FullFS', level: 'I', starttime: '2026-06-01 10:00:00' },
+      { jobid: 10, fileset: 'FullFS', level: 'F', starttime: '2026-06-15 10:00:00' },
+    ]
+
+    expect(resolveLatestRestoreBackup(backups, { filesetFilter: 'FullFS' })).toBe(10)
+  })
+
+  it('detects whether a Full backup exists in the chain for a fileset', () => {
+    const backups = [
+      { jobid: 1, fileset: 'FullFS', level: 'F', starttime: '2026-06-01 10:00:00' },
+      { jobid: 2, fileset: 'FullFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+      { jobid: 3, fileset: 'IncOnlyFS', level: 'I', starttime: '2026-06-10 10:00:00' },
+    ]
+
+    expect(hasRestoreFullBackupInChain(backups, { filesetFilter: 'FullFS' })).toBe(true)
+    expect(hasRestoreFullBackupInChain(backups, { filesetFilter: 'IncOnlyFS' })).toBe(false)
+    expect(hasRestoreFullBackupInChain(backups, {
+      filesetFilter: 'FullFS',
+      uptoStarttime: '2026-05-01 00:00:00',
+    })).toBe(false)
+  })
+
+  it('builds sorted, de-duplicated fileset filter options', () => {
+    expect(buildRestoreFilesetOptions([
+      { name: 'WebFS' },
+      { fileset: 'DatabaseFS' },
+      { name: 'WebFS' },
+      { name: '' },
+    ])).toEqual([
+      { label: 'DatabaseFS', value: 'DatabaseFS' },
+      { label: 'WebFS', value: 'WebFS' },
+    ])
+    expect(buildRestoreFilesetOptions(null)).toEqual([])
   })
 
   it('normalizes restore merge toggle query values', () => {
@@ -283,6 +712,180 @@ describe('restore browser placeholder', () => {
       dirids: '42',
       path: '"b2000298"',
     })).toBe('.bvfs_restore jobid=1,14,17 dirid=42 path="b2000298"')
+  })
+
+  it('builds the final restore run command from structured options', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      storage: 'File',
+      bootstrap: '/tmp/restore.bsr',
+      files: 2,
+      catalog: 'MyCatalog',
+      where: '/tmp/bareos-restores',
+      replace: 'IfNewer',
+      yes: true,
+    })).toBe(
+      'run job="RestoreFiles" client="backup-fd" restoreclient="target-fd" ' +
+      'storage="File" bootstrap="/tmp/restore.bsr" files=2 ' +
+      'catalog="MyCatalog" where="/tmp/bareos-restores" replace=IfNewer yes'
+    )
+  })
+
+  it('prefers regexwhere over where in the final restore run command', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/out',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('run job="RestoreFiles" regexwhere="!^/home/!/restore/home/!"')
+  })
+
+  it('builds advanced final restore run command options', () => {
+    expect(buildRestoreRunCommand({
+      restoreJob: 'RestoreFiles',
+      backupFormat: 'Native',
+      pluginOptions: 'python:module_name=bareos-fd-vmware\nbarri:files=/dev/null',
+      comment: 'operator said "restore"',
+      when: '2026-09-17 18:30:00',
+      priority: 42,
+    })).toBe(
+      'run job="RestoreFiles" backupformat="Native" ' +
+      'pluginoptions="python:module_name=bareos-fd-vmware\n' +
+      'barri:files=/dev/null" comment="operator said \\"restore\\"" ' +
+      'when="2026-09-17 18:30:00" priority=42'
+    )
+  })
+
+  it('builds the webui restore command from structured options', () => {
+    expect(buildRestoreCommand({
+      bvfsPath: 'b2000123',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/bareos-restores',
+      replace: 'Always',
+      pluginOptions: 'python:module_name=bareos-fd-vmware',
+      yes: true,
+    })).toBe(
+      'restore file=?b2000123 client="backup-fd" restoreclient="target-fd" ' +
+      'restorejob="RestoreFiles" where="/tmp/bareos-restores" ' +
+      'replace="Always" pluginoptions="python:module_name=bareos-fd-vmware" yes'
+    )
+  })
+
+  it('builds webui restore command with regex relocation and advanced options', () => {
+    expect(buildRestoreCommand({
+      bvfsPath: 'b2000123',
+      backupClient: 'backup-fd',
+      restoreClient: 'target-fd',
+      restoreJob: 'RestoreFiles',
+      where: '/tmp/out',
+      regexWhere: '!^/home/!/restore/home/!',
+      replace: 'IfNewer',
+      when: '2026-09-17 18:30:00',
+      priority: 42,
+      yes: true,
+    })).toBe(
+      'restore file=?b2000123 client="backup-fd" restoreclient="target-fd" ' +
+      'restorejob="RestoreFiles" regexwhere="!^/home/!/restore/home/!" ' +
+      'replace="IfNewer" when="2026-09-17 18:30:00" priority=42 yes'
+    )
+  })
+
+  it('builds regexwhere from relocation rules', () => {
+    expect(buildRegexWhereFromRelocationRules({
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+      addSuffix: '.restored',
+    })).toBe('!/home!!i,!([^/])$!$1.restored!,!^!/restore!')
+  })
+
+  it('escapes regexwhere separators in relocation rules', () => {
+    expect(buildRegexWhereFromRelocationRules({
+      stripPrefix: '/a!b\\c',
+      addPrefix: '/target!',
+    })).toBe('!/a\\!b\\\\c!!i,!^!/target\\!!')
+  })
+
+  it('resolves restore regexwhere from relocation mode', () => {
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'where',
+      stripPrefix: '/home',
+    })).toBe('')
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'regex',
+      regexWhere: '!^/!/restore/!',
+    })).toBe('!^/!/restore/!')
+    expect(resolveRestoreRegexWhere({
+      relocationMode: 'rules',
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+    })).toBe('!/home!!i,!^!/restore!')
+  })
+
+  it('builds regexwhere from console-style relocation modes', () => {
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('!^C:!D:!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'replace-prefix',
+      sourcePrefix: 'C:/Users',
+      targetPrefix: 'D:/Users',
+    })).toBe('!^C:/Users!D:/Users!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'strip-prefix',
+      stripPrefix: '/home',
+    })).toBe('!/home!!i')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'add-suffix',
+      addSuffix: '.restored',
+    })).toBe('!([^/])$!$1.restored!')
+    expect(buildRegexWhereFromRelocationMode({
+      relocationMode: 'custom-regex',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('!^/home/!/restore/home/!')
+  })
+
+  it('previews relocation rules for a sample path', () => {
+    expect(previewRelocatedPath({
+      samplePath: '/home/user/file.txt',
+      relocationMode: 'rules',
+      stripPrefix: '/home',
+      addPrefix: '/restore',
+      addSuffix: '.restored',
+    })).toBe('/restore/user/file.txt.restored')
+  })
+
+  it('previews console-style relocation modes for a sample path', () => {
+    expect(previewRelocatedPath({
+      samplePath: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
+    expect(previewRelocatedPath({
+      samplePath: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'replace-prefix',
+      sourcePrefix: 'C:/Users',
+      targetPrefix: 'D:/Users',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
+    expect(previewRelocatedPath({
+      samplePath: '/home/user/file.txt',
+      relocationMode: 'custom-regex',
+      regexWhere: '!^/home/!/restore/home/!',
+    })).toBe('/restore/home/user/file.txt')
+  })
+
+  it('previews relocation modes from the restore form example field', () => {
+    expect(previewRelocatedPath({
+      relocationSample: DEFAULT_RELOCATION_SAMPLE_PATH,
+      relocationMode: 'windows-drive',
+      sourceDrive: 'C:',
+      targetDrive: 'D:',
+    })).toBe('D:/Users/Alice/Documents/report.pdf')
   })
 
   it('clears restore source query fields when no source is selected', () => {
@@ -329,7 +932,7 @@ describe('restore browser placeholder', () => {
       PlainFS: {
         include: [{ file: '/etc' }],
       },
-    })).toEqual(new Map([
+    }, pluginHintsFixture)).toEqual(new Map([
       ['PluginFS', {
         filesetName: 'PluginFS',
         description: 'Plugin backup',
@@ -339,7 +942,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {
@@ -363,7 +966,7 @@ describe('restore browser placeholder', () => {
         fileset: 'PlainFS',
         filesettext: 'FileSet {\n  Name = "PlainFS"\n}\n',
       },
-    ])).toEqual(new Map([
+    ], pluginHintsFixture)).toEqual(new Map([
       ['PluginOptionsTest', {
         filesetName: 'PluginOptionsTest',
         description: 'Plugin backup',
@@ -373,7 +976,7 @@ describe('restore browser placeholder', () => {
           pluginName: 'bpipe',
           optionKeys: ['file', 'reader', 'writer'],
         }],
-        pluginNames: ['bpipe'],
+        pluginNames: ['BPipe'],
         optionKeys: ['file', 'reader', 'writer'],
       }],
       ['PlainFS', {
@@ -470,7 +1073,7 @@ describe('restore browser placeholder', () => {
       raw: 'bpipe:file=/data:reader=cat /tmp/in:writer=cat >/tmp/out',
       pluginName: 'bpipe',
       optionKeys: ['file', 'reader', 'writer'],
-    })).toBe('bpipe')
+    }, pluginHintsFixture)).toBe('bpipe')
   })
 
   it('resolves python module names to specific plugin hint entries', () => {
@@ -478,7 +1081,7 @@ describe('restore browser placeholder', () => {
       raw: 'python:module_path=/tmp/plugins:module_name=bareos-fd-vmware:config_file=/tmp/vmware.ini',
       pluginName: 'python',
       optionKeys: ['module_path', 'module_name', 'config_file'],
-    })).toBe('vmware')
+    }, pluginHintsFixture)).toBe('vmware')
   })
 
   it('builds static plugin hints for the selected restore plugin', () => {
@@ -488,7 +1091,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_path', 'module_name', 'config_file'],
       }],
-    })).toEqual([
+    }, pluginHintsFixture)).toEqual([
       expect.objectContaining({
         id: 'vmware',
         displayName: 'VMware',
@@ -505,7 +1108,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_name', 'config_file'],
       }],
-    })[0]?.options).toContainEqual(expect.objectContaining({
+    }, pluginHintsFixture)[0]?.options).toContainEqual(expect.objectContaining({
       name: 'buckets_exclude',
       description: 'Comma-separated list of buckets to exclude.',
       source: 'plugin-doc',
@@ -519,7 +1122,7 @@ describe('restore browser placeholder', () => {
         pluginName: 'python',
         optionKeys: ['module_name', 'databases'],
       }],
-    })).toEqual([
+    }, pluginHintsFixture)).toEqual([
       expect.objectContaining({
         id: 'tasksPgsql',
         displayName: 'Tasks PostgreSQL',
@@ -533,31 +1136,67 @@ describe('restore browser placeholder', () => {
       raw: 'python:module_name=bareos_tasks.pgsql:databases=db001,db002',
       pluginName: 'python',
       optionKeys: ['module_name', 'databases'],
-    })).toBe('tasksPgsql')
+    }, pluginHintsFixture)).toBe('tasksPgsql')
   })
 
   it('resolves qumulo plugin names to the documented third-party hint entry', () => {
-    expect(getRestorePluginHints({
+    const hints = getRestorePluginHints({
       definitions: [{
-        raw: 'qumulo:cluster=qumulo.example.test:path=/data',
+        raw: 'qumulo:host=qumulo.example.test:path=/data',
         pluginName: 'qumulo',
-        optionKeys: ['cluster', 'path'],
+        optionKeys: ['host', 'path'],
       }],
-    })).toContainEqual(expect.objectContaining({
+    }, pluginHintsFixture)
+
+    expect(hints).toContainEqual(expect.objectContaining({
       id: 'qumulo',
       displayName: 'Qumulo by Yuzuy',
       supportLevel: 'third-party',
       manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#section-yuzuy-qumulo-plugin',
     }))
+    expect(hints[0].options).toContainEqual(expect.objectContaining({
+      name: 'host',
+      status: 'required',
+      source: 'plugin-source',
+    }))
+    expect(hints[0].options).toContainEqual(expect.objectContaining({
+      name: 'config_file',
+      type: 'path',
+      providesDefaults: true,
+    }))
+    expect(hints[0].options).not.toContainEqual(expect.objectContaining({
+      name: 'cluster',
+    }))
   })
 
   it('lists all known plugin hints in display-name order', () => {
-    const hints = getAllRestorePluginHints()
+    const hints = getAllRestorePluginHints(pluginHintsFixture)
 
     expect(hints[0]).toEqual(expect.objectContaining({
-      displayName: 'BPipe',
-      example: 'file=...:reader=...',
-      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#bpipe',
+      displayName: 'BARRI (Bareos Recovery Imager)',
+      example: 'files=...',
+      manualUrl: 'https://docs.bareos.org/master/TasksAndConcepts/Plugins.html#barriplugin',
+    }))
+    expect(hints[0].options[0]).toEqual(expect.objectContaining({
+      name: 'files',
+      status: 'required',
+      type: 'path',
+    }))
+    expect(hints).toContainEqual(expect.objectContaining({
+      id: 'incus',
+      displayName: 'Incus',
+      options: expect.arrayContaining([
+        expect.objectContaining({
+          name: 'restore_path',
+          status: 'optional',
+          type: 'path',
+        }),
+        expect.objectContaining({
+          name: 'restore_buffer_depth',
+          status: 'optional',
+          type: 'integer',
+        }),
+      ]),
     }))
     expect(hints.at(-1)).toEqual(expect.objectContaining({
       displayName: 'VMware',
@@ -646,5 +1285,142 @@ describe('restore browser placeholder', () => {
 
   it('uses zero for version lookups when no job ids are available', () => {
     expect(getRestoreVersionsLookupJobId('', '')).toBe('0')
+  })
+})
+
+describe('plugin options editor model', () => {
+  it('round-trips a single block with several options', () => {
+    const block = parsePluginOptionsBlock('bpipe:verbose=1:command=/bin/true')
+    expect(block).toEqual({
+      pluginName: 'bpipe',
+      options: [
+        { key: 'verbose', value: '1' },
+        { key: 'command', value: '/bin/true' },
+      ],
+    })
+    expect(buildPluginOptionsBlock(block)).toBe('bpipe:verbose=1:command=/bin/true')
+  })
+
+  it('parses a plugin name with no options', () => {
+    expect(parsePluginOptionsBlock('bpipe')).toEqual({ pluginName: 'bpipe', options: [] })
+    expect(buildPluginOptionsBlock({ pluginName: 'bpipe', options: [] })).toBe('bpipe')
+  })
+
+  it('treats options without "=" as flag-style options', () => {
+    const block = parsePluginOptionsBlock('vmware:verbose')
+    expect(block).toEqual({ pluginName: 'vmware', options: [{ key: 'verbose', value: '' }] })
+    expect(buildPluginOptionsBlock(block)).toBe('vmware:verbose')
+  })
+
+  it('skips empty segments between colons', () => {
+    expect(parsePluginOptionsBlock('bpipe::verbose=1::command=/bin/true:')).toEqual({
+      pluginName: 'bpipe',
+      options: [
+        { key: 'verbose', value: '1' },
+        { key: 'command', value: '/bin/true' },
+      ],
+    })
+  })
+
+  it('returns an empty block for an empty string', () => {
+    expect(parsePluginOptionsBlock('')).toEqual({ pluginName: '', options: [] })
+    expect(parsePluginOptionsBlock(undefined)).toEqual({ pluginName: '', options: [] })
+  })
+
+  it('builds using a custom separator', () => {
+    expect(buildPluginOptionsBlock({
+      pluginName: 'bpipe',
+      options: [{ key: 'verbose', value: '1' }],
+    }, ';')).toBe('bpipe;verbose=1')
+  })
+
+  it('builds an initial block prefilled with module_name for python-wrapped plugins', () => {
+    const definition = parseRestorePluginDefinition(
+      'python:module_name=bareos-fd-vmware:vcserver=host'
+    )
+    expect(buildInitialPluginOptionsBlock(definition)).toEqual({
+      pluginName: 'python',
+      options: [{ key: 'module_name', value: 'bareos-fd-vmware' }],
+    })
+  })
+
+  it('builds an initial block without options when there is no module_name', () => {
+    const definition = parseRestorePluginDefinition('bpipe:file=/a:reader=cat /a')
+    expect(buildInitialPluginOptionsBlock(definition)).toEqual({
+      pluginName: 'bpipe',
+      options: [],
+    })
+  })
+
+  it('round-trips a multi-block document separated by newlines', () => {
+    const document = 'bpipe:verbose=1\nvmware:host=esx01:user=root'
+    const blocks = parsePluginOptionsDocument(document)
+    expect(blocks).toEqual([
+      { pluginName: 'bpipe', options: [{ key: 'verbose', value: '1' }] },
+      {
+        pluginName: 'vmware',
+        options: [{ key: 'host', value: 'esx01' }, { key: 'user', value: 'root' }],
+      },
+    ])
+    expect(buildPluginOptionsDocument(blocks)).toBe(document)
+  })
+
+  it('skips empty lines when parsing a document', () => {
+    expect(parsePluginOptionsDocument('bpipe:verbose=1\n\n\nvmware:host=esx01')).toEqual([
+      { pluginName: 'bpipe', options: [{ key: 'verbose', value: '1' }] },
+      { pluginName: 'vmware', options: [{ key: 'host', value: 'esx01' }] },
+    ])
+  })
+
+  it('returns an empty document for an empty/blank string', () => {
+    expect(parsePluginOptionsDocument('')).toEqual([])
+    expect(parsePluginOptionsDocument(undefined)).toEqual([])
+  })
+
+  it('builds an empty document from an empty block list', () => {
+    expect(buildPluginOptionsDocument([])).toBe('')
+    expect(buildPluginOptionsDocument(undefined)).toBe('')
+  })
+
+  it('resolves the known hint id for a block name via alias/id match', () => {
+    expect(findRestorePluginHintIdForBlockName('bpipe', pluginHintsFixture)).toBe('bpipe')
+    expect(findRestorePluginHintIdForBlockName('unknown-plugin', pluginHintsFixture)).toBeNull()
+  })
+
+  it('resolves a whole block, preferring its module_name option over the bare plugin name', () => {
+    const block = {
+      pluginName: 'python',
+      options: [{ key: 'module_name', value: 'bareos-fd-vmware' }, { key: 'vcserver', value: 'host' }],
+    }
+    expect(resolveBlockPluginHintId(block, pluginHintsFixture)).toBe('vmware')
+  })
+
+  it('resolves a whole block by its bare plugin name when there is no module_name option', () => {
+    const block = { pluginName: 'bpipe', options: [{ key: 'file', value: '/a' }] }
+    expect(resolveBlockPluginHintId(block, pluginHintsFixture)).toBe('bpipe')
+  })
+
+  it('finds the FileSet definition matching a resolved hint id', () => {
+    const definitions = [parseRestorePluginDefinition(
+      'python:module_name=bareos-fd-vmware:vcserver=host'
+    )]
+    expect(findMatchingRestorePluginDefinition('vmware', definitions, pluginHintsFixture))
+      .toEqual(definitions[0])
+    expect(findMatchingRestorePluginDefinition('bpipe', definitions, pluginHintsFixture)).toBeNull()
+    expect(findMatchingRestorePluginDefinition(null, definitions, pluginHintsFixture)).toBeNull()
+  })
+
+  it('categorizes options into already-in-fileset/required/optional', () => {
+    const hint = pluginHintsFixture.vmware
+    const { alreadyInFileset, required, optional } = categorizePluginOptions(hint, ['vcserver'])
+    expect(alreadyInFileset.map(o => o.name)).toEqual(['vcserver'])
+    expect(required.some(o => o.name === 'vcserver')).toBe(false)
+    expect(optional.some(o => o.name === 'vcserver')).toBe(false)
+    expect(required.every(o => o.status === 'required')).toBe(true)
+  })
+
+  it('detects whether a hint provides defaults via a config/defaults-file option', () => {
+    expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.vmware)).toBe(true)
+    expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.bpipe)).toBe(false)
   })
 })

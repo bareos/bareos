@@ -90,12 +90,16 @@ class DirectorConnection {
   static DirectorConnection Connect(const DirectorConfig& cfg);
 
   /* Send a command and stream each received data chunk to @p on_data.
-   * Returns the prompt type that terminated the response so callers can update
-   * the UI prompt indicator.
+   * Selection callbacks delimit complete visual frames, including busy
+   * redraws that are not followed by an input prompt. Returns the prompt type
+   * that terminated the response so callers can update the UI prompt
+   * indicator.
    * Throws std::runtime_error on I/O error. */
   DirectorPrompt CallStreamed(
       const std::string& command,
-      const std::function<void(std::string_view)>& on_data);
+      const std::function<void(std::string_view)>& on_data,
+      const std::function<void()>& on_selection_start = {},
+      const std::function<void()>& on_selection_end = {});
 
   /* Send a command and receive the complete response string.
    * In json_mode=true, the response is a JSON object.

@@ -552,31 +552,31 @@ if(NODE
   message(STATUS "OK: all requirements for webui-vue browser tests were met.")
 else()
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST FALSE)
-  message(
-    STATUS
-      "NOT OK: disabling webui-vue browser tests as not all requirements were found."
-  )
   if(NOT NODE)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
     )
   elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
     )
+  elseif(NOT GOOGLE_CHROME)
+    set(WEBUI_VUE_BROWSER_TEST_REASON
+        "Install Google Chrome or Chromium before configuring webui-vue browser tests."
+    )
   elseif(NOT WEBUI_VUE_PLAYWRIGHT)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
     )
-  elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
-    message(
-      STATUS
+  else()
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
     )
   endif()
+  webui_vue_tests_unavailable(
+    "NOT OK: disabling webui-vue browser tests as not all requirements were found. "
+    "${WEBUI_VUE_BROWSER_TEST_REASON}"
+  )
 endif()
 
 set(WEBUI_VUE_TEST_PREFIX "webui-vue:")
@@ -649,24 +649,35 @@ else()
     )
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      PROPERTIES FIXTURES_SETUP "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 TIMEOUT 240 COST 2.0
+      PROPERTIES
+        FIXTURES_SETUP
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+        TIMEOUT
+        240
+        COST
+        3.0
     )
-    add_systemtest(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      ${tests_dir}/${TEST_NAME}/testrunner-create-backup
-    )
-    set_tests_properties(
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
-      PROPERTIES FIXTURES_REQUIRED
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture"
-                 FIXTURES_SETUP
-                 "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
-                 TIMEOUT
-                 120
-                 COST
-                 1.0
-    )
+    # Drives the interactive split-screen restore tree browser and Plugin
+    # Options editor purely over the console wire protocol (no PTY required, see
+    # tree_browser_console.py), against the synthetic per-plugin fixture jobs.
+    # Only needed once, on the admin profile, since it requires an unrestricted
+    # console.
+    if(PYTHON_EXECUTABLE AND TEST_NAME STREQUAL "admin-smoke")
+      add_systemtest(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        ${tests_dir}/${TEST_NAME}/testrunner-restore-plugin-options-editor
+      )
+      set_tests_properties(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        PROPERTIES
+          FIXTURES_REQUIRED
+          "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-fixture;${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}-backup-fixture"
+          TIMEOUT
+          120
+          COST
+          1.0
+      )
+    endif()
     add_systemtest(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
       ${tests_dir}/${TEST_NAME}/testrunner
@@ -695,11 +706,16 @@ else()
     # Keep the complete profile lifecycle exclusive on shared CI workers.
     set_tests_properties(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:setup"
-      "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:create-backup"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
       PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
     )
+    if(PYTHON_EXECUTABLE AND TEST_NAME STREQUAL "admin-smoke")
+      set_tests_properties(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+        PROPERTIES RESOURCE_LOCK webui_vue_playwright_resource
+      )
+    endif()
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
   set(BAREOS_WEBUI_PROFILE "")

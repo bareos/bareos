@@ -12,287 +12,138 @@
       </DirectorBadge>
     </div>
 
-    <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
-    <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab name="storages" :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
-      <q-route-tab name="pools"    :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
-      <q-route-tab name="volumes"  :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
-      <q-route-tab
-        name="autochangers"
-        :label="t('Autochangers')"
-        no-caps
-        :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }"
-      />
-    </q-tabs>
-
-    <q-banner v-if="error" dense class="bg-negative text-white q-mb-md">
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">
       {{ error }}
     </q-banner>
 
-    <q-tab-panels v-model="tab" animated :swipeable="$q.platform.has.touch">
-      <!-- DEVICES -->
-      <q-tab-panel name="storages" class="q-pa-none">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Storage Devices') }}</q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="storages"
-              :columns="storageCols"
-              row-key="scopeKey"
-              dense
-              flat
-              :loading="loading"
-              v-model:pagination="devicesPagination"
-            >
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <DirectorLabel :director="props.row.director || props.value || ''" />
-                </q-td>
-              </template>
-              <template #body-cell-autochanger="props">
-                <q-td :props="props" class="text-center">
-                  <BoolIcon :value="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-enabled="props">
-                <q-td :props="props" class="text-center">
-                  <EnabledBadge :enabled="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn
-                    v-if="props.row.autochanger"
-                    flat
-                    round
-                    dense
-                    size="sm"
-                    icon="view_carousel"
-                    :title="t('Open Autochanger')"
-                    @click="openAutochanger(props.row)"
-                  />
-                  <q-btn flat round dense size="sm" icon="monitor_heart"
-                         :title="t('Storage Status')"
-                          @click="showStorageStatus(props.row)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
-      <!-- POOLS -->
-      <q-tab-panel name="pools" class="q-pa-none">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">{{ t('Pools') }}</q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="pools"
-              :columns="poolCols"
-              row-key="scopeKey"
-              dense
-              flat
-              :loading="loading"
-              v-model:pagination="poolsPagination"
-            >
-              <template #body-cell-name="props">
-                <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openPoolDetails(props.row)">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <DirectorLabel :director="props.row.director || props.value || ''" />
-                </q-td>
-              </template>
-              <template #body-cell-pooltype="props">
-                <q-td :props="props">
-                  <div class="row items-center no-wrap q-gutter-xs">
-                    <PoolTypeBadge :type="props.value" />
-                    <span>{{ props.value }}</span>
-                  </div>
-                </q-td>
-              </template>
-              <template #body-cell-numvols="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ props.value }}</div>
-                  <q-linear-progress
-                    :value="poolGauge(props.value, maxNumVols)"
-                    color="primary" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-maxvols="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ Number(props.value) > 0 ? props.value : '∞' }}</div>
-                  <q-linear-progress v-if="Number(props.value) > 0"
-                    :value="poolGauge(props.value, maxMaxVols)"
-                    color="grey-6" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-volretention="props">
-                <q-td :props="props" style="min-width:90px">
-                  <div>{{ formatDuration(props.value) }}</div>
-                  <q-linear-progress
-                    :value="poolGauge(Number(props.value), maxRetentionSecs)"
-                    color="orange" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-maxvoljobs="props">
-                <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ Number(props.value) > 0 ? props.value : '∞' }}</div>
-                  <q-linear-progress v-if="Number(props.value) > 0"
-                    :value="poolGauge(props.value, maxMaxVolJobs)"
-                    color="deep-purple" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-maxvolbytes="props">
-                <q-td :props="props" class="text-right" style="min-width:100px">
-                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
-                  <q-linear-progress v-if="Number(props.value) > 0"
-                    :value="poolGauge(props.value, maxMaxVolBytes)"
-                    color="teal" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-totalbytes="props">
-                <q-td :props="props" class="text-right" style="min-width:110px">
-                  <div>{{ formatBytes(props.value) }}</div>
-                  <q-linear-progress
-                    :value="poolBytesGauge(props.value)"
-                    color="cyan-7" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-prunablebytes="props">
-                <q-td :props="props" class="text-right" style="min-width:120px">
-                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '—' }}</div>
-                  <div v-if="props.row.prunablejobs > 0" class="text-caption text-grey-6">
-                    {{ props.row.prunablejobs }} {{ t('jobs') }} / {{ props.row.prunablevolumes }} {{ t('volumes') }}
-                  </div>
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
-      <!-- VOLUMES -->
-      <q-tab-panel name="volumes" class="q-pa-none">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-              <span>{{ t('Volumes') }}</span>
-            <q-space />
-            <q-input v-model="volSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable>
-              <template #prepend><q-icon name="search" /></template>
-            </q-input>
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="volumes"
-              :columns="volumeCols"
-              row-key="scopeKey"
-              dense
-              flat
-              :loading="loading"
-              :filter="volSearch"
-              v-model:pagination="volumesPagination"
-            >
-              <template #body-cell-volumename="props">
-                <q-td :props="props">
-                  <div class="row items-center no-wrap q-gutter-xs">
-                    <a href="#" class="text-primary" @click.prevent="openVolumeDetails(props.row)">
-                      {{ props.value }}
-                    </a>
-                    <q-icon
-                      v-if="volumeHasEncryptionKey(props.row)"
-                      name="vpn_key"
-                      size="xs"
-                      color="amber-8"
-                    >
-                      <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
-                    </q-icon>
-                  </div>
-                </q-td>
-              </template>
-              <template #body-cell-director="props">
-                <q-td :props="props">
-                  <DirectorLabel :director="props.row.director || props.value || ''" />
-                </q-td>
-              </template>
-              <template #body-cell-inchanger="props">
-                <q-td :props="props" class="text-center">
-                  <BoolIcon :value="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-pool="props">
-                <q-td :props="props">
-                  <a href="#" class="text-primary" @click.prevent="openPoolDetails({ name: props.row.pool, director: props.row.director })">
-                    {{ props.value }}
-                  </a>
-                </q-td>
-              </template>
-              <template #body-cell-volstatus="props">
-                <q-td :props="props">
-                  <q-badge :color="statusColor(props.value)" :label="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-volbytes="props">
-                <q-td :props="props" class="text-right" style="min-width:100px">
-                  <div>{{ formatBytes(props.value) }}</div>
-                  <q-linear-progress
-                    :value="volBytesGauge(props.value)"
-                    color="primary" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-maxvolbytes="props">
-                <q-td :props="props" class="text-right" style="min-width:100px">
-                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
-                  <q-linear-progress v-if="Number(props.value) > 0"
-                    :value="volGauge(props.value, maxVolMaxBytes)"
-                    color="teal" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-retention="props">
-                <q-td :props="props" style="min-width:90px">
-                  <div>{{ formatDuration(props.value) }}</div>
-                  <q-linear-progress
-                    :value="volGauge(Number(props.value), maxVolRetention)"
-                    color="orange" track-color="grey-3"
-                    size="4px" class="q-mt-xs" rounded
-                  />
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <span class="text-grey-5">—</span>
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-tab-panel>
-
-      <!-- AUTOCHANGERS -->
-      <q-tab-panel name="autochangers" class="q-pa-none">
-        <AutochangerPage embedded />
-      </q-tab-panel>
-    </q-tab-panels>
+    <q-card flat bordered class="bareos-panel">
+      <q-card-section class="panel-header row items-center">
+        <span>{{ t('Storages') }}</span>
+        <q-space />
+        <q-input v-model="deviceSearch" dense outlined :placeholder="t('Search…')" style="width:200px" clearable data-testid="storages-device-search">
+          <template #prepend><q-icon name="search" /></template>
+        </q-input>
+        <ColumnPickerMenu :columns="toggleableStorageCols" @toggle="toggleStorageCol" />
+      </q-card-section>
+      <q-card-section class="q-py-sm storages-list-stats">
+        <div class="row items-center q-gutter-sm">
+          <q-chip
+            dense square outline color="grey-8"
+            icon="dns"
+            clickable
+            :selected="deviceQuickFilter === 'all'"
+            @click="deviceQuickFilter = 'all'"
+          >
+            {{ t('Total') }}: {{ deviceStats.total }}
+          </q-chip>
+          <q-chip
+            dense square outline color="positive"
+            icon="check_circle"
+            clickable
+            :selected="deviceQuickFilter === 'enabled'"
+            @click="deviceQuickFilter = 'enabled'"
+          >
+            {{ t('Enabled') }}: {{ deviceStats.enabled }}
+          </q-chip>
+          <q-chip
+            dense square outline color="negative"
+            icon="pause_circle"
+            clickable
+            :selected="deviceQuickFilter === 'disabled'"
+            @click="deviceQuickFilter = 'disabled'"
+          >
+            {{ t('Disabled') }}: {{ deviceStats.disabled }}
+          </q-chip>
+          <q-chip
+            v-if="deviceStats.autochanger"
+            dense square outline color="info"
+            icon="view_carousel"
+            clickable
+            :selected="deviceQuickFilter === 'autochanger'"
+            @click="deviceQuickFilter = 'autochanger'"
+          >
+            {{ t('Autochanger') }}: {{ deviceStats.autochanger }}
+          </q-chip>
+        </div>
+      </q-card-section>
+      <q-card-section class="q-pa-none">
+        <q-table
+          v-if="!(loading && !storages.length)"
+          :rows="storages"
+          :columns="visibleStorageCols"
+          row-key="scopeKey"
+          dense
+          flat
+          :loading="loading"
+          :filter="deviceSearch"
+          v-model:pagination="devicesPagination"
+        >
+          <template #body-cell-name="props">
+            <q-td :props="props">
+              <div class="row items-center no-wrap q-gutter-xs">
+                <q-icon
+                  :name="props.row.autochanger ? 'view_carousel' : 'storage'"
+                  :color="props.row.autochanger ? 'info' : 'grey-7'"
+                  size="xs"
+                  role="img"
+                  :aria-label="props.row.autochanger ? t('Autochanger') : t('Single device')"
+                  :data-testid="props.row.autochanger ? 'storage-icon-autochanger' : 'storage-icon-single'"
+                >
+                  <q-tooltip>{{ props.row.autochanger ? t('Autochanger') : t('Single device') }}</q-tooltip>
+                </q-icon>
+                <span>{{ props.value }}</span>
+              </div>
+            </q-td>
+          </template>
+          <template #body-cell-address="props">
+            <q-td :props="props">
+              <span v-if="props.value">{{ props.value }}<span v-if="props.row.port" class="text-grey-6">:{{ props.row.port }}</span></span>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-mediatype="props">
+            <q-td :props="props">
+              <span v-if="props.value">{{ props.value }}</span>
+              <span v-else class="text-grey-5">—</span>
+            </q-td>
+          </template>
+          <template #body-cell-director="props">
+            <q-td :props="props">
+              <DirectorLabel :director="props.row.director || props.value || ''" />
+            </q-td>
+          </template>
+          <template #body-cell-autochanger="props">
+            <q-td :props="props" class="text-center">
+              <BoolIcon :value="props.value" />
+            </q-td>
+          </template>
+          <template #body-cell-enabled="props">
+            <q-td :props="props" class="text-center">
+              <EnabledBadge :enabled="props.value" />
+            </q-td>
+          </template>
+          <template #body-cell-actions="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="props.row.autochanger"
+                flat
+                round
+                dense
+                size="sm"
+                icon="view_carousel"
+                :title="t('Open Autochanger')" :aria-label="t('Open Autochanger')"
+                data-testid="storages-open-autochanger"
+                @click="openAutochanger(props.row)"
+              />
+              <q-btn flat round dense size="sm" icon="monitor_heart"
+                     :title="t('Storage Status')" :aria-label="t('Storage Status')"
+                      @click="showStorageStatus(props.row)" />
+            </q-td>
+          </template>
+        </q-table>
+        <TableSkeleton v-else :columns="visibleStorageCols.length" :rows="6" />
+      </q-card-section>
+    </q-card>
 
     <!-- Storage Status Dialog -->
     <q-dialog v-model="storageStatusDlg.open">
@@ -300,10 +151,10 @@
           <q-card-section class="panel-header row items-center">
             <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white"
+            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')"
                  @click="reloadStorageStatus(storageStatusDlg)"
                  :loading="storageStatusDlg.loading" />
-            <q-btn flat round dense icon="close" color="white" v-close-popup class="q-ml-xs" />
+            <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" v-close-popup class="q-ml-xs" />
           </q-card-section>
         <q-card-section>
           <q-inner-loading :showing="storageStatusDlg.loading" />
@@ -319,62 +170,46 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import {
-  fetchAggregatedStoragesState,
-  normaliseDirectorStoragesState,
+  fetchAggregatedStorages,
+  fetchDirectorStorages,
 } from '../composables/storagesAggregate.js'
 import {
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
+  buildAutochangerLocation,
   resolveStoragesScopeDirector,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
-import { buildPoolDetailsQuery } from '../utils/pools.js'
-import { buildVolumeDetailsQuery, volumeHasEncryptionKey } from '../utils/volumes.js'
-import AutochangerPage from './AutochangerPage.vue'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import DirectorBadge from '../components/DirectorBadge.vue'
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
-import PoolTypeBadge from '../components/PoolTypeBadge.vue'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const route    = useRoute()
 const router   = useRouter()
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
-const $q = useQuasar()
 const { t } = useI18n()
 const devicesPagination = usePersistedTablePagination('storages.devices', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
-const poolsPagination = usePersistedTablePagination('storages.pools', {
-  rowsPerPage: 15,
-})
-const volumesPagination = usePersistedTablePagination('storages.volumes', {
-  rowsPerPage: 15,
-})
-const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
-function normaliseTab(value) {
-  return validTabs.has(value) ? value : 'storages'
-}
-const tab      = ref(normaliseTab(route.query.tab))
-const volSearch = ref('')
+const deviceSearch = usePersistedTableFilter('storages.devices')
+const deviceQuickFilter = ref('all')
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
 const storageRows = ref([])
-const poolRows = ref([])
-const volumeRows = ref([])
 
 const reachableDirectors = computed(() => [...new Set([
   ...director.availableDirectors,
@@ -384,11 +219,8 @@ const reachableDirectors = computed(() => [...new Set([
 
 const {
   directorOptions,
-  selectedDirectorsModel,
   activeDirectors,
   isCommonScope: isCommonStorages,
-  isSingleDirectorScope,
-  scopeLabel: storagesScopeLabel,
   syncSelectedDirectors,
   ensureScopeDirector,
   ensureSingleScopeDirector,
@@ -410,23 +242,6 @@ const storagesPageDirectors = computed(() => (
   storagesListScopeDirector.value ? [storagesListScopeDirector.value] : activeDirectors.value
 ))
 const showDirectorColumn = computed(() => storagesPageDirectors.value.length > 1)
-
-watch(() => route.query.tab, (value) => {
-  const next = normaliseTab(value)
-  if (tab.value !== next) {
-    tab.value = next
-  }
-})
-
-watch(tab, (next) => {
-  const target = next
-  const current = normaliseTab(route.query.tab)
-  if (current === target) {
-    return
-  }
-
-  router.replace({ path: '/storages', query: buildStoragesTabQuery(route.query, target) })
-})
 
 watch(() => route.query.scopeDirector, (value) => {
   if (typeof value === 'string' && value && !activeDirectors.value.includes(value)) {
@@ -455,20 +270,24 @@ function reportRowError(row, reason) {
   }]
 }
 
-const pools = computed(() => {
-  return poolRows.value
+const storages = computed(() => storageRows.value.filter(deviceMatchesQuickFilter))
+
+const deviceStats = computed(() => {
+  const all = storageRows.value
+  return {
+    total: all.length,
+    enabled: all.filter(s => s.enabled).length,
+    disabled: all.filter(s => !s.enabled).length,
+    autochanger: all.filter(s => s.autochanger).length,
+  }
 })
 
-const maxPoolBytes = computed(() =>
-  Math.max(1, ...pools.value.map(p => p.totalbytes))
-)
-function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
-
-const volumes = computed(() => {
-  return volumeRows.value
-})
-
-const storages = computed(() => storageRows.value)
+function deviceMatchesQuickFilter(storage) {
+  if (deviceQuickFilter.value === 'enabled') return storage.enabled
+  if (deviceQuickFilter.value === 'disabled') return !storage.enabled
+  if (deviceQuickFilter.value === 'autochanger') return !!storage.autochanger
+  return true
+}
 
 async function refresh() {
   loading.value = true
@@ -477,8 +296,6 @@ async function refresh() {
   try {
     if (storagesPageDirectors.value.length === 0) {
       storageRows.value = []
-      poolRows.value = []
-      volumeRows.value = []
       return
     }
 
@@ -488,85 +305,24 @@ async function refresh() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedStoragesState(credentials, storagesPageDirectors.value)
+      const result = await fetchAggregatedStorages(credentials, storagesPageDirectors.value)
       storageRows.value = result.storages
-      poolRows.value = result.pools
-      volumeRows.value = result.volumes
       directorErrors.value = result.directorErrors
       return
     }
 
     const currentDirector = storagesPageDirectors.value[0]
     await ensureSingleScopeDirector()
-    const [storagesResult, poolsResult, volumesResult] = await Promise.all([
-      director.call('list storages'),
-      director.call('llist pools'),
-      director.call('llist volumes'),
-    ])
-    const result = normaliseDirectorStoragesState(
-      currentDirector,
-      storagesResult?.storages,
-      poolsResult?.pools,
-      volumesResult?.volumes
+    storageRows.value = await fetchDirectorStorages(
+      command => director.call(command),
+      currentDirector
     )
-    storageRows.value = result.storages
-    poolRows.value = result.pools
-    volumeRows.value = result.volumes
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   } finally {
     loading.value = false
   }
 }
-
-// ── Pool gauge helpers ────────────────────────────────────────────────────────
-function maxOf(arr, field) {
-  return Math.max(1, ...arr.map(p => Number(p[field]) || 0))
-}
-const maxNumVols      = computed(() => maxOf(pools.value, 'numvols'))
-const maxMaxVols      = computed(() => maxOf(pools.value.filter(p => Number(p.maxvols) > 0), 'maxvols'))
-const maxRetentionSecs= computed(() => maxOf(pools.value, 'volretention'))
-const maxMaxVolJobs   = computed(() => maxOf(pools.value.filter(p => Number(p.maxvoljobs) > 0), 'maxvoljobs'))
-const maxMaxVolBytes  = computed(() => maxOf(pools.value.filter(p => Number(p.maxvolbytes) > 0), 'maxvolbytes'))
-function poolGauge(val, max) { return (Number(val) || 0) / (max || 1) }
-
-// ── Volume gauge helpers ──────────────────────────────────────────────────────
-const maxVolBytes     = computed(() => maxOf(volumes.value, 'volbytes'))
-const maxVolMaxBytes  = computed(() => maxOf(volumes.value.filter(v => Number(v.maxvolbytes) > 0), 'maxvolbytes'))
-const maxVolRetention = computed(() => maxOf(volumes.value, 'retention'))
-function volBytesGauge(val) { return (Number(val) || 0) / maxVolBytes.value }
-function volGauge(val, max) { return (Number(val) || 0) / (max || 1) }
-
-const poolCols = computed(() => [
-  ...(showDirectorColumn.value ? [{
-    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
-  }] : []),
-  { name: 'name',         label: t('Name'),          field: 'name',         align: 'left',  sortable: true },
-  { name: 'pooltype',     label: t('Type'),          field: 'pooltype',     align: 'left',  sortable: true },
-  { name: 'numvols',      label: t('Volumes'),       field: 'numvols',      align: 'right', sortable: true },
-  { name: 'maxvols',      label: t('Max Volumes'),   field: 'maxvols',      align: 'right', sortable: true },
-  { name: 'totalbytes',   label: t('Total Data'),    field: 'totalbytes',   align: 'right', sortable: true },
-  { name: 'prunablebytes',label: t('Prunable Now'),  field: 'prunablebytes',align: 'right', sortable: true },
-  { name: 'volretention', label: t('Retention'),     field: 'volretention', align: 'left',  sortable: true },
-  { name: 'maxvoljobs',   label: t('Max Jobs/Vol'),  field: 'maxvoljobs',   align: 'right', sortable: true },
-  { name: 'maxvolbytes',  label: t('Max Bytes/Vol'), field: 'maxvolbytes',  align: 'right', sortable: true },
-])
-const volumeCols = computed(() => [
-  ...(showDirectorColumn.value ? [{
-    name: 'director', label: t('Director'), field: 'director', align: 'left', sortable: true,
-  }] : []),
-  { name: 'volumename',  label: t('Volume Name'),  field: 'volumename',  align: 'left',  sortable: true },
-  { name: 'pool',        label: t('Pool'),         field: 'pool',        align: 'left',  sortable: true },
-  { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left',  sortable: true },
-  { name: 'mediatype',   label: t('Media Type'),   field: 'mediatype',   align: 'left',  sortable: true },
-  { name: 'lastwritten', label: t('Last Written'), field: 'lastwritten', align: 'left',  sortable: true },
-  { name: 'volstatus',   label: t('Status'),       field: 'volstatus',   align: 'center', sortable: true },
-  { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center', sortable: true },
-  { name: 'retention',   label: t('Retention'),    field: 'retention',   align: 'left',  sortable: true },
-  { name: 'maxvolbytes', label: t('Max Bytes'),    field: 'maxvolbytes', align: 'right', sortable: true },
-  { name: 'volbytes',    label: t('Used Bytes'),   field: 'volbytes',    align: 'right', sortable: true },
-  { name: 'actions',     label: '',                field: 'actions',     align: 'center', style: 'width:40px' },
-])
 
 const storageCols = computed(() => [
   ...(showDirectorColumn.value ? [{
@@ -580,10 +336,14 @@ const storageCols = computed(() => [
   { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:110px' },
 ])
 
-function statusColor(s) {
-  return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
-           Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal' }[s] || 'info'
-}
+const {
+  visibleColumns: visibleStorageCols,
+  toggleableColumns: toggleableStorageCols,
+  toggleColumn: toggleStorageCol,
+} = usePersistedTableColumns('storages.devices', storageCols, {
+  essential: ['name', 'director', 'actions'],
+  defaultHidden: ['autochanger'],
+})
 
 // ── Storage Status Dialog ─────────────────────────────────────────────────────
 const storageStatusDlg = ref({
@@ -609,10 +369,10 @@ async function showStorageStatus(storage) {
 
 async function openAutochanger(storage) {
   try {
-    await router.push({
-      path: '/storages',
-      query: buildAutochangerSelectionQuery(route.query, storage),
-    })
+    await router.push(buildAutochangerLocation(
+      storage,
+      withStoragesScopeDirectorQuery({}, storagesListScopeDirector.value)
+    ))
   } catch (reason) {
     reportRowError(storage, reason)
   }
@@ -631,40 +391,6 @@ async function reloadStorageStatus(storage) {
     storageStatusDlg.value.error = e.message
   } finally {
     storageStatusDlg.value.loading = false
-  }
-}
-
-async function openPoolDetails(pool) {
-  try {
-    await switchToRowDirector(pool)
-    await router.push({
-      name: 'pool-details',
-      params: { name: pool.name },
-      query: buildPoolDetailsQuery({
-        director: pool.director,
-        storagesTab: tab.value,
-        storagesScopeDirector: pool.director,
-      }),
-    })
-  } catch (reason) {
-    reportRowError(pool, reason)
-  }
-}
-
-async function openVolumeDetails(volume) {
-  try {
-    await switchToRowDirector(volume)
-    await router.push({
-      name: 'volume-details',
-      params: { name: volume.volumename },
-      query: buildVolumeDetailsQuery({
-        director: volume.director,
-        storagesTab: tab.value,
-        storagesScopeDirector: volume.director,
-      }),
-    })
-  } catch (reason) {
-    reportRowError(volume, reason)
   }
 }
 
@@ -690,3 +416,13 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   refresh()
 })
 </script>
+
+<style scoped>
+.storages-list-stats {
+  flex-wrap: wrap;
+}
+
+.storages-list-stats :deep(.q-chip) {
+  font-weight: 600;
+}
+</style>

@@ -64,7 +64,7 @@
             dense
             size="sm"
             icon="login"
-            :title="t('Login')"
+            :title="t('Login')" :aria-label="t('Login')"
             @click.stop="emit('loginDirector', option.value)"
           />
         </q-item-section>

@@ -111,7 +111,12 @@ class UaContext {
   std::string prompt_header{};        /**< Name of current prompt */
   std::vector<std::string> prompts{}; /**< List of prompts */
   int api{0};                         /**< For programs want an API */
-  bool auto_display_messages{false};  /**< If set, display messages */
+  int terminal_height{
+      0}; /**< Client-reported terminal height (rows), 0 = unknown */
+  int terminal_width{
+      0}; /**< Client-reported terminal width (columns), 0 = unknown */
+  bool supports_color{false};            /**< Client accepts ANSI colors */
+  bool auto_display_messages{false};     /**< If set, display messages */
   bool user_notified_msg_pending{false}; /**< Set when user notified */
   bool automount{true};                  /**< If set, mount after label */
   bool quit{false};                      /**< If set, quit */
@@ -199,6 +204,8 @@ class UaContext {
                 va_list arg_ptr);
 };
 
+class VisualBusyIndicator;
+
 // Context for InsertTreeHandler()
 struct TreeContext {
   TREE_ROOT* root = nullptr;       /**< Root */
@@ -211,6 +218,21 @@ struct TreeContext {
   uint32_t FileCount = 0;    /**< Current count of files */
   uint32_t LastCount = 0;    /**< Last count of files */
   uint32_t DeltaCount = 0;   /**< Trigger for printing */
+  VisualBusyIndicator* busy_indicator = nullptr;
+
+  /** Set by the "browse" classic-mode command to request switching (back)
+   * into the full-screen interactive tree browser. Cleared as soon as the
+   * request has been picked up by UserSelectFilesFromTree(). */
+  bool switch_to_browser = false;
+
+  /** When set (by BuildDirectoryTree()), the interactive tree browser's
+   * 'o' (Set Plugin Options) action writes the user-entered Plugin
+   * Options string here, so it can be threaded into the generated
+   * "run ... pluginoptions=..." command without a separate, context-free
+   * prompt later in the run-confirmation menu. Left nullptr (and thus
+   * unused) by callers that don't support this, e.g. classic-mode-only
+   * InsertTreeHandler() callers. */
+  std::string* plugin_options_out = nullptr;
 
   TreeContext() = default;
   ~TreeContext() = default;
@@ -224,6 +246,18 @@ struct RestoreContext {
     Archive,
   };
   JobTypeFilter job_filter = JobTypeFilter::Backup;
+
+  /** Controls what a selected restore point in the guided
+   * FileSet@Client picker actually restores: the whole resolved
+   * backup chain (Full + any Diff/Incr up to that point, the
+   * default) or only the anchor Full job itself. Set via the
+   * "restore ... restorepointmode=chain|job" command argument. */
+  enum class RestorePointMode
+  {
+    Chain,
+    Job,
+  };
+  RestorePointMode restore_point_mode = RestorePointMode::Chain;
 
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
@@ -243,7 +277,18 @@ struct RestoreContext {
   char* where = nullptr;
   char* RegexWhere = nullptr;
   char* replace = nullptr;
-  char* plugin_options = nullptr;
+  /** Plugin Options supplied via the "restore ... pluginoptions=" command
+   * line argument. Copied into an owning std::string (rather than kept
+   * as a pointer into ua->argv[]/ua->args) because the interactive tree
+   * browser invoked further below re-parses ua->cmd/ua->args for its
+   * classic-mode passthrough commands, which can reallocate that pool
+   * memory and would otherwise leave a dangling pointer here. */
+  std::string plugin_options;
+  /** Plugin Options entered interactively via the tree browser's 'o' key
+   * (see TreeContext::plugin_options_out). Used to build the "run ..."
+   * command only when \ref plugin_options wasn't already supplied via
+   * the "restore ... pluginoptions=" command-line argument. */
+  std::string interactive_plugin_options;
   std::unique_ptr<RestoreBootstrapRecord> bsr;
   POOLMEM* fname = nullptr; /**< Filename only */
   POOLMEM* path = nullptr;  /**< Path only */

@@ -60,11 +60,11 @@ async function login(
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
     await page.goto('/')
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-form"]')
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       if (!shouldSucceed) {
         throw new Error('Invalid credentials unexpectedly restored a session')
       }
@@ -78,7 +78,7 @@ async function login(
     await page.getByRole('button', { name: 'Login' }).click()
 
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-error"]')?.textContent?.trim()
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
@@ -88,7 +88,7 @@ async function login(
       return
     }
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       await expectConnected(page)
       return
     }
@@ -113,25 +113,25 @@ async function openConsole(page) {
   const consoleOutput = page.locator('[data-testid="console-output"]')
   await page.goto('/#/console-popup')
   await expect(consoleOutput).toBeVisible()
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      await expect(consoleOutput).toContainText('Connected to bareos-dir', {
-        timeout: 5000,
-      })
-      return consoleOutput
-    } catch {
-      await page.getByTitle('Reconnect').click()
-    }
-  }
-
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  await expect(page.getByTestId('console-status-label')).toContainText(
+    'Connected'
+  )
   return consoleOutput
 }
 
-async function selectFirstQOption(
+async function waitForQSelectReady(page, testId) {
+  const field = page.locator(`[data-testid="${testId}"]`)
+    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
+    .first()
+  await expect(field).toBeVisible({ timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
+  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
+}
+
+async function selectQOptionByFilterText(
   page,
   testId,
+  filterText,
   {
     optionTimeoutMs = 5000,
     selected,
@@ -146,12 +146,14 @@ async function selectFirstQOption(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await combobox.click()
+      await combobox.fill(filterText)
       const listboxId = await combobox.getAttribute('aria-controls')
       if (!listboxId) {
         throw new Error(`Could not find the option list for ${testId}`)
       }
       const option = page.locator(`[id="${listboxId}"]`).getByRole('option').first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
+      await expect(option).toContainText(filterText, { ignoreCase: true })
       await option.click()
       if (selected) {
         await selected()
@@ -163,33 +165,34 @@ async function selectFirstQOption(
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`)
-}
-
-async function waitForQSelectReady(page, testId) {
-  const field = page.locator(`[data-testid="${testId}"]`)
-    .locator('xpath=ancestor::*[contains(@class,"q-field")]')
-    .first()
-  await expect(field).toBeVisible({ timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
+  throw new Error(`Could not select an option matching "${filterText}" for ${testId}`)
 }
 
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
-    hasText: 'Most recent job status per job name',
-  })
-  const totalsCard = page.locator('.q-card').filter({
-    hasText: 'Job Totals',
+    hasText: 'Recent Jobs',
   })
 
   await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
+  await expect(page.getByTitle('Combined view of actual job')).toBeVisible()
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
   await expect(recentJobsCard).toBeVisible()
   await expect(recentJobsCard).not.toContainText('No data available')
   await expect(recentJobsCard).toContainText('backup-bareos-fd')
-  await expect(totalsCard).not.toContainText('Total Jobs0')
-  await expect(totalsCard).not.toContainText('Total Bytes0 B')
+
+  await page.getByRole('tab', { name: 'Job & Schedule Timeline' }).click()
+  await expect(page).toHaveURL(/#\/dashboard\/job-schedule-timeline$/)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
+  await page.getByTitle('Pan to the past').click()
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).not.toContainText(
+    /Authentication failed/i
+  )
 })
 
 test('shows a login error for invalid credentials', async ({ page }) => {
@@ -223,7 +226,7 @@ test('shows all configured directors in multi-director login mode', async ({
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Login' }).click()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
@@ -245,15 +248,20 @@ test('reconnects the console after typing exit', async ({ page }) => {
   await consoleOutput.click()
   await page.keyboard.type('exit')
   await page.keyboard.press('Enter')
-  await expect(consoleOutput).toContainText('Console disconnected.')
+  const reconnectOverlay = page.getByTestId('console-reconnect-overlay')
+  await expect(reconnectOverlay).toBeVisible()
+  await expect(reconnectOverlay).toContainText('Console disconnected')
 
-  await page.getByTitle('Reconnect').click()
-  await expect(consoleOutput).toContainText('Connected to bareos-dir')
+  await page.getByTestId('console-overlay-reconnect').click()
+  await expect(reconnectOverlay).toBeHidden()
+  await expect(page.getByTestId('console-status-label')).toContainText(
+    'Connected'
+  )
 
   await consoleOutput.click()
   await page.keyboard.type('status director')
   await page.keyboard.press('Enter')
-  await expect(consoleOutput).toContainText('status director')
+  await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
 test('opens jobs and job details through the real director connection', async ({
@@ -263,8 +271,13 @@ test('opens jobs and job details through the real director connection', async ({
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
   await page.getByLabel('Search in results').fill('backup-bareos-fd')
-  const firstRow = page.locator('tbody tr').first()
-  await expect(firstRow).toContainText('backup-bareos-fd')
+  // The jobs table is virtual-scrolled, so tbody also contains Quasar's
+  // empty padding rows — pick the first row that actually holds a match.
+  const firstRow = page
+    .locator('tbody tr')
+    .filter({ hasText: 'backup-bareos-fd' })
+    .first()
+  await expect(firstRow).toBeVisible()
 
   const jobId = (await firstRow.locator('a.text-primary').first().textContent())?.trim()
   await firstRow.locator('a.text-primary').first().click()
@@ -281,17 +294,82 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client', {
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-vmware', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
   })
-  await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
-  await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
+  await expect(page.locator('[data-testid="restore-backup-job"]')).toHaveCount(0)
+  await expect(page.getByTestId('restore-timeline-point').first()).toBeVisible()
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('restore-step-2-continue')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
+
+  // The vmware-flavored job is a genuinely resolved plugin hint (not the
+  // cosmetic bpipe-only fixture), so the plugin info banner and options
+  // editor should both appear on the restore target step.
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('VMware')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('vmware')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('vcserver')
+  await page.getByRole('option', { name: /vcserver/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('vcenter.example.com')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('vmware:vcserver=vcenter.example.com')
+
+  await page.getByTestId('restore-step-3-continue').click()
+  await expect(page.getByText('Review restore job', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-testid="restore-submit"]')).toBeEnabled()
+})
+
+test('adapts the plugin hint panel and options editor for a second plugin', async ({ page }) => {
+  test.setTimeout(90000)
+
+  await login(page)
+  await openNav(page, 'nav-restore', /#\/restore/)
+
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-postgresql', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
+  })
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
-  await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
+  await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
+
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('PostgreSQL')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('postgresql')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('wal_archive_dir')
+  await page.getByRole('option', { name: /wal_archive_dir/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('/var/lib/pgsql/wal')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('postgresql:wal_archive_dir=/var/lib/pgsql/wal')
+
+  // Stop here -- this test intentionally never continues to file browsing
+  // or clicks "Start Restore".
 })
 
 test('navigates through client, pool, and volume detail pages', async ({
@@ -305,19 +383,21 @@ test('navigates through client, pool, and volume detail pages', async ({
   await firstClient.click()
 
   await expect(page).toHaveURL(/#\/clients\/.+/)
-  await expect(page.locator('.q-page .text-h6').first()).toContainText(
+  await expect(page.locator('.q-page .text-h5').first()).toContainText(
     clientName ?? ''
   )
   await expect(page.getByText('Client Details', { exact: true })).toBeVisible()
   await page.goBack()
 
   await openNav(page, 'nav-storages', /#\/storages/)
-  await page.getByRole('tab', { name: 'Pools' }).click()
+  await expect(page.locator('.q-page').getByText('Storages', { exact: true }).first()).toBeVisible()
+
+  await openNav(page, 'nav-pools', /#\/pools/)
   const firstPool = page.locator('tbody tr a.text-primary').first()
   const poolName = (await firstPool.textContent())?.trim()
   await firstPool.click()
 
-  await expect(page).toHaveURL(/#\/storages\/pools\/.+/)
+  await expect(page).toHaveURL(/#\/pools\/.+/)
   await expect(page.locator('.q-page .text-h5').first()).toContainText(
     poolName ?? ''
   )
@@ -327,7 +407,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await page.getByRole('tab', { name: 'Volumes' }).click()
   const firstVolume = page.locator('tbody tr a.text-primary').first()
   await firstVolume.click()
-  await expect(page).toHaveURL(/#\/storages\/volumes\/.+/)
+  await expect(page).toHaveURL(/#\/volumes\/.+/)
   await expect(page.getByText('Volume Properties', { exact: true })).toBeVisible()
 })
 
@@ -340,7 +420,7 @@ test('covers schedules and director tabs through the director connection', async
   await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
   await expect(page.getByText('Scheduler Preview', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Show' }).click()
+  await page.getByRole('tab', { name: 'Definitions' }).click()
   await expect(
     page.locator('.q-tab-panel:visible').getByText('Schedules', { exact: true })
   ).toBeVisible()
@@ -352,7 +432,7 @@ test('covers schedules and director tabs through the director connection', async
   await page.getByRole('tab', { name: 'Messages' }).click()
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
+  await page.getByRole('tab', { name: 'Catalog' }).click()
   await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
   await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
@@ -383,7 +463,10 @@ test('keeps the console session when navigating away and back', async ({
 
   await page.goto('/#/dashboard')
   await page.goto('/#/console-popup')
-  await expect(consoleOutput).toContainText('status director')
+  // xterm.js only keeps the visible viewport rows in the DOM, so the
+  // echoed command line has scrolled out by the time the (much longer)
+  // replayed response is redrawn — assert on the replayed output itself,
+  // which is what proves the session survived the navigation.
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
@@ -393,7 +476,7 @@ test('restores the proxy-backed login after a page reload', async ({ page }) => 
   // Reload clears the SPA state; /api/session must restore the proxy-backed
   // login from the session cookie so users stay signed in.
   await page.reload()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
@@ -403,6 +486,42 @@ test('opens the console and runs a raw command through the proxied director conn
   await login(page)
 
   const consoleOutput = await openConsole(page)
-  await page.getByText('status director', { exact: true }).click()
+  await consoleOutput.click()
+  await page.keyboard.type('status director')
+  await page.keyboard.press('Enter')
   await expect(consoleOutput).toContainText('Terminated Jobs:')
+})
+
+test('dashboard first resize attempt must persist', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/dashboard')
+
+  await page.getByTitle('Edit layout').click()
+  await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
+
+  const firstItem = page.locator('.vgl-item').first()
+  const resizer = firstItem.locator('.vgl-item__resizer').first()
+  await expect(firstItem).toBeVisible()
+  await expect(resizer).toBeVisible()
+
+  const before = await firstItem.boundingBox()
+  if (!before) throw new Error('Could not get initial widget bounds')
+
+  const handle = await resizer.boundingBox()
+  if (!handle) throw new Error('Could not get resize handle bounds')
+
+  const startX = handle.x + handle.width / 2
+  const startY = handle.y + handle.height / 2
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX - 260, startY - 120, { steps: 16 })
+  await page.mouse.up()
+
+  await page.waitForTimeout(350)
+  const after = await firstItem.boundingBox()
+  if (!after) throw new Error('Could not get resized widget bounds')
+
+  const widthChanged = Math.abs(after.width - before.width) > 20
+  const heightChanged = Math.abs(after.height - before.height) > 10
+  expect(widthChanged || heightChanged).toBe(true)
 })
