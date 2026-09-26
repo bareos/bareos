@@ -591,12 +591,16 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
   }
 
+  // Notices are always complete lines of their own. They must be
+  // terminated explicitly: the terminal writer redraws the live input
+  // line afterwards, which starts with "\r\x1B[K" and would otherwise
+  // erase an unterminated notice right after writing it.
   function appendInfo(director, text) {
-    appendLines(director, text, 'console-info')
+    appendLines(director, `${text}\n`, 'console-info')
   }
 
   function appendErr(director, text) {
-    appendLines(director, text, 'console-err')
+    appendLines(director, `${text}\n`, 'console-err')
   }
 
   function appendCommand(director, text) {

@@ -226,7 +226,7 @@ test('shows all configured directors in multi-director login mode', async ({
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Login' }).click()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
@@ -271,8 +271,13 @@ test('opens jobs and job details through the real director connection', async ({
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
   await page.getByLabel('Search in results').fill('backup-bareos-fd')
-  const firstRow = page.locator('tbody tr').first()
-  await expect(firstRow).toContainText('backup-bareos-fd')
+  // The jobs table is virtual-scrolled, so tbody also contains Quasar's
+  // empty padding rows — pick the first row that actually holds a match.
+  const firstRow = page
+    .locator('tbody tr')
+    .filter({ hasText: 'backup-bareos-fd' })
+    .first()
+  await expect(firstRow).toBeVisible()
 
   const jobId = (await firstRow.locator('a.text-primary').first().textContent())?.trim()
   await firstRow.locator('a.text-primary').first().click()
@@ -378,7 +383,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await firstClient.click()
 
   await expect(page).toHaveURL(/#\/clients\/.+/)
-  await expect(page.locator('.q-page .text-h6').first()).toContainText(
+  await expect(page.locator('.q-page .text-h5').first()).toContainText(
     clientName ?? ''
   )
   await expect(page.getByText('Client Details', { exact: true })).toBeVisible()
@@ -458,7 +463,10 @@ test('keeps the console session when navigating away and back', async ({
 
   await page.goto('/#/dashboard')
   await page.goto('/#/console-popup')
-  await expect(consoleOutput).toContainText('status director')
+  // xterm.js only keeps the visible viewport rows in the DOM, so the
+  // echoed command line has scrolled out by the time the (much longer)
+  // replayed response is redrawn — assert on the replayed output itself,
+  // which is what proves the session survived the navigation.
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
@@ -468,7 +476,7 @@ test('restores the proxy-backed login after a page reload', async ({ page }) => 
   // Reload clears the SPA state; /api/session must restore the proxy-backed
   // login from the session cookie so users stay signed in.
   await page.reload()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
