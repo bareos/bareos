@@ -692,6 +692,18 @@ else()
         COST
         2.0
     )
+    # end_test() in systemtests/scripts/functions stops the daemons for every
+    # script named "testrunner", so the Playwright run tears the Director down
+    # when it finishes. Order the console-only editor test before it, otherwise
+    # it would find no Director to connect to.
+    if(PYTHON_EXECUTABLE AND TEST_NAME STREQUAL "admin-smoke")
+      set_tests_properties(
+        "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}"
+        PROPERTIES
+          DEPENDS
+          "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:restore-plugin-options-editor"
+      )
+    endif()
     add_systemtest(
       "${WEBUI_VUE_TEST_PREFIX}${TEST_NAME}:cleanup"
       ${tests_dir}/${TEST_NAME}/test-cleanup
