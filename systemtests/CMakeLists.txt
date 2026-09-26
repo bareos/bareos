@@ -552,31 +552,31 @@ if(NODE
   message(STATUS "OK: all requirements for webui-vue browser tests were met.")
 else()
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST FALSE)
-  message(
-    STATUS
-      "NOT OK: disabling webui-vue browser tests as not all requirements were found."
-  )
   if(NOT NODE)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
     )
   elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
     )
+  elseif(NOT GOOGLE_CHROME)
+    set(WEBUI_VUE_BROWSER_TEST_REASON
+        "Install Google Chrome or Chromium before configuring webui-vue browser tests."
+    )
   elseif(NOT WEBUI_VUE_PLAYWRIGHT)
-    message(
-      STATUS
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
     )
-  elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
-    message(
-      STATUS
+  else()
+    set(WEBUI_VUE_BROWSER_TEST_REASON
         "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
     )
   endif()
+  webui_vue_tests_unavailable(
+    "NOT OK: disabling webui-vue browser tests as not all requirements were found. "
+    "${WEBUI_VUE_BROWSER_TEST_REASON}"
+  )
 endif()
 
 set(WEBUI_VUE_TEST_PREFIX "webui-vue:")
