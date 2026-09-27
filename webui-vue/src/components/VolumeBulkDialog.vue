@@ -193,7 +193,12 @@ const planState = computed(() => {
     const entries = buildVolumeBulkPlan(props.actionId, props.volumes, params.value)
       .map(entry => ({
         ...entry,
-        skipReason: entry.commands.length ? '' : t('status is not Purged'),
+        skipReason: entry.commands.length
+          ? ''
+          : t('status is {status}, requires {expected}', {
+            status: entry.volume?.volstatus ?? '?',
+            expected: (action.value.requiresStatus ?? []).join(', '),
+          }),
       }))
     return { entries, error: '' }
   } catch (reason) {

@@ -43,6 +43,12 @@ export function buildJobCommentCommand(jobId, comment) {
   return `update jobid=${id} comment=${quoteDirectorString(sanitizeComment(comment))}`
 }
 
+/*
+ * Status changes are offered as named actions with the statuses they apply
+ * to, instead of a free choice of any status: the director accepts almost
+ * any change, but only these are safe routine operations. Recycle, Purged
+ * and Append are left to purge/prune, recycling and labelling.
+ */
 export const VOLUME_BULK_ACTIONS = [
   { id: 'pool', label: 'Move to pool', icon: 'drive_file_move', param: 'pool' },
   { id: 'enable', label: 'Enable', icon: 'check_circle' },
@@ -50,13 +56,44 @@ export const VOLUME_BULK_ACTIONS = [
   { id: 'frompool', label: 'Reset from pool', icon: 'settings_backup_restore' },
   { id: 'comment', label: 'Set comment', icon: 'comment', param: 'comment' },
   { id: 'prune', label: 'Prune', icon: 'content_cut' },
+  {
+    id: 'status-used', label: 'Stop appending (mark Used)', icon: 'do_not_disturb_on',
+    group: 'status', requiresStatus: ['Append'], volstatus: 'Used',
+  },
+  {
+    id: 'status-readonly', label: 'Protect as read-only', icon: 'lock',
+    group: 'status', requiresStatus: ['Full', 'Used'], volstatus: 'Read-Only',
+  },
+  {
+    id: 'status-archive', label: 'Archive', icon: 'inventory_2',
+    group: 'status', requiresStatus: ['Full', 'Used'], volstatus: 'Archive',
+  },
+  {
+    id: 'status-unprotect', label: 'Remove protection (mark Used)', icon: 'lock_open',
+    group: 'status', requiresStatus: ['Read-Only', 'Archive'], volstatus: 'Used',
+  },
+  {
+    id: 'status-clearerror', label: 'Clear error (mark Used)', icon: 'healing',
+    group: 'status', requiresStatus: ['Error'], volstatus: 'Used',
+  },
   { id: 'purge', label: 'Purge', icon: 'delete_sweep', destructive: true },
-  { id: 'truncate', label: 'Truncate', icon: 'layers_clear', destructive: true },
+  {
+    id: 'truncate', label: 'Truncate', icon: 'layers_clear', destructive: true,
+    requiresStatus: ['Purged'],
+  },
   { id: 'delete', label: 'Delete from catalog', icon: 'delete_forever', destructive: true },
 ]
 
 export function findVolumeBulkAction(id) {
   return VOLUME_BULK_ACTIONS.find(action => action.id === id) ?? null
+}
+
+/** Whether an action applies to a volume with the given volstatus. */
+export function isVolumeActionApplicable(action, volstatus) {
+  if (!action) {
+    return false
+  }
+  return !action.requiresStatus || action.requiresStatus.includes(volstatus)
 }
 
 /**
@@ -65,6 +102,13 @@ export function findVolumeBulkAction(id) {
  */
 export function buildVolumeBulkCommand(actionId, volume, params = {}) {
   const name = quoteDirectorString(volume?.volumename ?? volume?.name ?? '')
+  const action = findVolumeBulkAction(actionId)
+  if (action && !isVolumeActionApplicable(action, volume?.volstatus)) {
+    return null
+  }
+  if (action?.volstatus) {
+    return `update volume=${name} volstatus=${action.volstatus}`
+  }
   switch (actionId) {
     case 'pool':
       if (!params.pool) {
@@ -84,9 +128,6 @@ export function buildVolumeBulkCommand(actionId, volume, params = {}) {
     case 'purge':
       return `purge volume=${name}`
     case 'truncate':
-      if (volume?.volstatus !== 'Purged') {
-        return null
-      }
       return `truncate volstatus=Purged volume=${name} yes`
     case 'delete':
       return `delete volume=${name} yes`
