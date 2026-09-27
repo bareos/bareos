@@ -105,7 +105,8 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
          "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
          "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
          "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-         "RecyclePoolId,LabelType ");
+         "RecyclePoolId,LabelType,MaxVolFiles,ActionOnPurge,MinBlocksize,"
+         "MaxBlocksize ");
     if (pdbr->Name[0] != 0) {
       query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
                      escaped_pool_name->c_str());

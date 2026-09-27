@@ -40,6 +40,7 @@
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
+#include "dird/ua_output_pool_internal.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_select.h"
 #include "dird/volume_usage.h"
@@ -73,8 +74,26 @@ static bool ParseListBackupsCmd(UaContext* ua,
 const int kDefaultLogLines = 5;
 const int kDefaultNumberOfDays = 50;
 
+using directordaemon::pool_list_internal::kPoolListColumnCount;
+using directordaemon::pool_list_internal::kPoolListColumns;
+using directordaemon::pool_list_internal::kPoolListNameIndex;
+using directordaemon::pool_list_internal::kPoolListPoolIdIndex;
+
+static_assert(directordaemon::pool_list_internal::PoolListColumnsAreUnique(),
+              "pool list columns and keys must be unique");
+static_assert(kPoolListPoolIdIndex == 0, "poolid must be the first column");
+static_assert(kPoolListNameIndex == 1, "name must be the second column");
+static_assert(
+    directordaemon::pool_list_internal::PoolListColumnIndex("maxvolfiles")
+        < kPoolListColumnCount,
+    "the volume defaults must be part of the pool listing");
+static_assert(
+    directordaemon::pool_list_internal::PoolListColumnIndex("nosuchcolumn")
+        == kPoolListColumnCount,
+    "unknown keys must not resolve to a column");
+
 struct PoolListRow {
-  std::array<std::string, 19> fields;
+  std::array<std::string, kPoolListColumnCount> fields;
 };
 
 static uint64_t ToUint64(const char* value)
@@ -280,11 +299,12 @@ static bool QueryPoolListRows(UaContext* ua,
 
   auto escaped_pool_name = ua->db->EscapeString(ua->jcr, pool->Name);
   if (!escaped_pool_name) { return false; }
-  Mmsg(select,
-       "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-       "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,"
-       "MaxVolBytes,AutoPrune,Recycle,PoolType,LabelFormat,Enabled,"
-       "ScratchPoolId,RecyclePoolId,LabelType ");
+  std::string columns;
+  for (const auto& column : kPoolListColumns) {
+    if (!columns.empty()) { columns += ","; }
+    columns.append(column.column);
+  }
+  Mmsg(select, "SELECT %s ", columns.c_str());
   if (pool->Name[0] != 0) {
     query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
                    escaped_pool_name->c_str());
@@ -329,25 +349,10 @@ static void EmitPoolFields(UaContext* ua,
     ua->send->ObjectKeyValue(key, "%s: ", value, "%s\n");
   };
 
-  emit_field("poolid", row.fields[0].c_str());
-  emit_field("name", row.fields[1].c_str());
-  emit_field("numvols", row.fields[2].c_str());
-  emit_field("maxvols", row.fields[3].c_str());
-  emit_field("useonce", row.fields[4].c_str());
-  emit_field("usecatalog", row.fields[5].c_str());
-  emit_field("acceptanyvolume", row.fields[6].c_str());
-  emit_field("volretention", row.fields[7].c_str());
-  emit_field("voluseduration", row.fields[8].c_str());
-  emit_field("maxvoljobs", row.fields[9].c_str());
-  emit_field("maxvolbytes", row.fields[10].c_str());
-  emit_field("autoprune", row.fields[11].c_str());
-  emit_field("recycle", row.fields[12].c_str());
-  emit_field("pooltype", row.fields[13].c_str());
-  emit_field("labelformat", row.fields[14].c_str());
-  emit_field("enabled", row.fields[15].c_str());
-  emit_field("scratchpoolid", row.fields[16].c_str());
-  emit_field("recyclepoolid", row.fields[17].c_str());
-  emit_field("labeltype", row.fields[18].c_str());
+  for (std::size_t i = 0; i < kPoolListColumns.size(); ++i) {
+    emit_field(std::string(kPoolListColumns[i].key).c_str(),
+               row.fields[i].c_str());
+  }
   emit_field("prunablevolumes", prunable_volumes.c_str());
   emit_field("prunablejobs", prunable_jobs.c_str());
   emit_field("prunablebytes", prunable_bytes.c_str());
@@ -1437,14 +1442,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->send->ArrayStart("pools");
       for (const auto& row : rows) {
         PoolDbRecord pool_record;
-        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
-        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+        pool_record.PoolId
+            = str_to_int64(row.fields[kPoolListPoolIdIndex].c_str());
+        bstrncpy(pool_record.Name, row.fields[kPoolListNameIndex].c_str(),
                  sizeof(pool_record.Name));
 
         PoolPruneSummary prune_summary;
         if (!GetPoolPruneSummary(ua, &pool_record, &prune_summary)) {
           ua->ErrorMsg(T_("Failed to compute prune summary for pool %s.\n"),
-                       row.fields[1].c_str());
+                       row.fields[kPoolListNameIndex].c_str());
           ua->send->ArrayEnd("pools");
           return false;
         }
@@ -1462,14 +1468,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->send->ArrayStart("pools");
       for (const auto& row : rows) {
         PoolDbRecord pool_record;
-        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
-        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+        pool_record.PoolId
+            = str_to_int64(row.fields[kPoolListPoolIdIndex].c_str());
+        bstrncpy(pool_record.Name, row.fields[kPoolListNameIndex].c_str(),
                  sizeof(pool_record.Name));
 
         PoolPruneReport report;
         if (!GetPoolPruneReport(ua, &pool_record, &report)) {
           ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
-                       row.fields[1].c_str());
+                       row.fields[kPoolListNameIndex].c_str());
           ua->send->ArrayEnd("pools");
           return false;
         }
