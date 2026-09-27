@@ -391,6 +391,24 @@ test('navigates through client, pool, and volume detail pages', async ({
 
   await openNav(page, 'nav-storages', /#\/storages/)
   await expect(page.locator('.q-page').getByText('Storages', { exact: true }).first()).toBeVisible()
+  await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
+
+  const firstStorageRow = page.locator('tbody tr').first()
+  const storageName = (
+    await firstStorageRow.getByTestId('storages-row-name').textContent()
+  )?.trim()
+  await firstStorageRow.click()
+
+  await expect(page).toHaveURL(/#\/storages\?.*storage=/)
+  await expect(page.getByTestId('storages-detail')).toBeVisible()
+  await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+
+  // The selection lives in the URL, so a reload restores the detail panel.
+  await page.reload()
+  await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+
+  await page.getByTestId('storages-detail-close').click()
+  await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
 
   await openNav(page, 'nav-pools', /#\/pools/)
   const firstPool = page.locator('tbody tr a.text-primary').first()

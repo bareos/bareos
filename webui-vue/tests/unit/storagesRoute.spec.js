@@ -29,7 +29,10 @@ import {
   normalisePoolsTab,
   resolveAutochangerSelectionQuery,
   resolveAutochangerSelection,
+  resolveStorageSelectionQuery,
   resolveStoragesScopeDirector,
+  STORAGE_SELECTION_QUERY_KEY,
+  withStorageSelectionQuery,
   withStoragesScopeDirectorQuery,
 } from '../../src/utils/storagesRoute.js'
 
@@ -76,21 +79,50 @@ describe('storages route helpers', () => {
     expect(resolveStoragesScopeDirector({})).toBe('')
   })
 
-  it('builds the autochanger route location of a storage', () => {
+  it('builds the storages location selecting an autochanger', () => {
     expect(buildAutochangerLocation({
       name: 'TapeLibrary',
       director: 'prod-a',
     }, { scopeDirector: 'prod-a', director: 'old' })).toEqual({
-      name: 'autochanger',
-      params: { name: 'TapeLibrary' },
-      query: { scopeDirector: 'prod-a', director: 'prod-a' },
+      name: 'storages',
+      query: { scopeDirector: 'prod-a', storage: 'TapeLibrary', director: 'prod-a' },
     })
 
     expect(buildAutochangerLocation({ name: 'TapeLibrary' })).toEqual({
-      name: 'autochanger',
-      params: { name: 'TapeLibrary' },
-      query: {},
+      name: 'storages',
+      query: { storage: 'TapeLibrary' },
     })
+  })
+
+  it('writes and clears the storages page selection query', () => {
+    expect(withStorageSelectionQuery({ scopeDirector: 'prod-a' }, {
+      name: 'TapeLibrary',
+      director: 'prod-a',
+    })).toEqual({
+      scopeDirector: 'prod-a',
+      [STORAGE_SELECTION_QUERY_KEY]: 'TapeLibrary',
+      director: 'prod-a',
+    })
+
+    expect(withStorageSelectionQuery({
+      scopeDirector: 'prod-a',
+      [STORAGE_SELECTION_QUERY_KEY]: 'TapeLibrary',
+      director: 'prod-a',
+    }, null)).toEqual({ scopeDirector: 'prod-a' })
+  })
+
+  it('reads the storages page selection back out of the query', () => {
+    expect(resolveStorageSelectionQuery({
+      [STORAGE_SELECTION_QUERY_KEY]: 'TapeLibrary',
+      director: 'prod-a',
+    })).toEqual({ name: 'TapeLibrary', director: 'prod-a' })
+
+    expect(resolveStorageSelectionQuery({
+      [STORAGE_SELECTION_QUERY_KEY]: 'TapeLibrary',
+    })).toEqual({ name: 'TapeLibrary', director: '' })
+
+    expect(resolveStorageSelectionQuery({ director: 'prod-a' })).toBeNull()
+    expect(resolveStorageSelectionQuery({})).toBeNull()
   })
 
   it('writes the autochanger origin into the query', () => {
