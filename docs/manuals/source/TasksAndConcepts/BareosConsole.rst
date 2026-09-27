@@ -1998,6 +1998,17 @@ update
    clear it. The comments are shown by :bcommand:`llist volume` and
    :bcommand:`llist jobs`.
 
+   :bcommand:`update volume=<volume-name> volstatus=<status>` refuses
+   status changes that would lose data or make a volume unusable:
+
+   - `Recycle` can only be set on a `Purged` volume, because a recycled
+     volume is relabelled and its data is lost. Purge the volume first.
+   - `Cleaning` can only be set on a volume the catalog has no jobs for,
+     because cleaning volumes are never used for backups.
+
+   Add the ``force`` keyword to override these checks. Setting the status
+   a volume already has does not change the catalog.
+
    You can add, remove or rotate a volume encryption key using :bcommand:`update
    volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
 
@@ -2034,7 +2045,7 @@ update
    .. code-block:: bconsole
       :caption: update
 
-      update  volume=<volume-name> [volstatus=<status>]
+      update  volume=<volume-name> [volstatus=<status> [force]]
               [volretention=<time-def>] [pool=<pool-name>]
               [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]
               [comment=<text>] |
