@@ -59,30 +59,26 @@ TEST(edit, convert_number_to_siunits)
 
 TEST(edit, convert_number_to_compact7)
 {
-  // Values that fit in 7 decimal digits are printed as-is, no suffix.
+  // Values below 1 KiB are printed as bytes; larger values use the largest
+  // applicable binary unit rounded to the nearest integer.
   ASSERT_STREQ(SizeAsCompact7Format(0).c_str(), "0");
   ASSERT_STREQ(SizeAsCompact7Format(1).c_str(), "1");
-  ASSERT_STREQ(SizeAsCompact7Format(9999999).c_str(), "9999999");
-  ASSERT_STREQ(SizeAsCompact7Format(kibi).c_str(), "1024");
-  ASSERT_STREQ(SizeAsCompact7Format(mebi).c_str(), "1048576");
-
-  // Above that, the value is divided by 1024 repeatedly until it fits in
-  // 6 digits, with a single-letter suffix appended as the (at most) 7th
-  // character -- exactly like Midnight Commander's size column, this
-  // stops at the first unit the number fits in, not necessarily the
-  // "cleanest" prefix (e.g. 1 GiB becomes "1024M", not "1G").
-  ASSERT_STREQ(SizeAsCompact7Format(10000000).c_str(), "9766K");
-  ASSERT_STREQ(SizeAsCompact7Format(gibi).c_str(), "1024M");
-  ASSERT_STREQ(SizeAsCompact7Format(tebi).c_str(), "1024G");
-  ASSERT_STREQ(SizeAsCompact7Format(pebi).c_str(), "1024T");
-  ASSERT_STREQ(SizeAsCompact7Format(exi).c_str(), "1024P");
+  ASSERT_STREQ(SizeAsCompact7Format(1023).c_str(), "1023");
+  ASSERT_STREQ(SizeAsCompact7Format(kibi).c_str(), "1K");
+  ASSERT_STREQ(SizeAsCompact7Format(mebi).c_str(), "1M");
+  ASSERT_STREQ(SizeAsCompact7Format(gibi).c_str(), "1G");
+  ASSERT_STREQ(SizeAsCompact7Format(tebi).c_str(), "1T");
+  ASSERT_STREQ(SizeAsCompact7Format(pebi).c_str(), "1P");
+  ASSERT_STREQ(SizeAsCompact7Format(exi).c_str(), "1E");
+  ASSERT_STREQ(SizeAsCompact7Format(29004 * kibi).c_str(), "28M");
+  ASSERT_STREQ(SizeAsCompact7Format(mebi - 512).c_str(), "1M");
+  ASSERT_STREQ(SizeAsCompact7Format(10000000).c_str(), "10M");
 
   // Every result must be at most 7 characters wide, across the full
   // 64-bit range.
   for (uint64_t value :
-       {uint64_t{0}, uint64_t{1}, uint64_t{999999}, uint64_t{9999999},
-        uint64_t{10000000}, kibi, mebi, gibi, tebi, pebi, exi,
-        std::numeric_limits<uint64_t>::max()}) {
+       {uint64_t{0}, uint64_t{1}, uint64_t{1023}, uint64_t{10000000}, kibi,
+        mebi, gibi, tebi, pebi, exi, std::numeric_limits<uint64_t>::max()}) {
     EXPECT_LE(SizeAsCompact7Format(value).size(), 7u) << value;
   }
 }
