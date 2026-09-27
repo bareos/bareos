@@ -24,7 +24,6 @@ const routes = [
       { path: 'clients/:name', name: 'client-details', component: () => import('../pages/ClientDetailsPage.vue'), meta: { title: 'Client Details' } },
       { path: 'schedules', name: 'schedules', component: () => import('../pages/SchedulesPage.vue'), meta: { title: 'Schedules' } },
       { path: 'storages', name: 'storages', component: () => import('../pages/StoragesPage.vue'), meta: { title: 'Storages' } },
-      { path: 'storages/:name/autochanger', name: 'autochanger', component: () => import('../pages/AutochangerPage.vue'), meta: { title: 'Autochanger' } },
       { path: 'pools', name: 'pools', component: () => import('../pages/PoolsPage.vue'), meta: { title: 'Pools' } },
       { path: 'pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue'), meta: { title: 'Pool Details' } },
       { path: 'volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue'), meta: { title: 'Volume Details' } },
