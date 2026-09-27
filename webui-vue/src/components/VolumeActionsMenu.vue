@@ -37,6 +37,25 @@
         <q-item-section avatar><q-icon :name="action.icon" /></q-item-section>
         <q-item-section>{{ t(action.label) }}</q-item-section>
       </q-item>
+      <template v-if="statusActions.length">
+        <q-separator />
+        <q-item-label header>{{ t('Volume status') }}</q-item-label>
+        <q-item
+          v-for="action in statusActions"
+          :key="action.id"
+          clickable v-close-popup
+          :data-testid="`${testid}-${action.id}`"
+          @click="emit('select', action.id)"
+        >
+          <q-item-section avatar><q-icon :name="action.icon" /></q-item-section>
+          <q-item-section>
+            <q-item-label>{{ t(action.label) }}</q-item-label>
+            <q-item-label caption>
+              {{ action.requiresStatus.join(', ') }} → {{ action.volstatus }}
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </template>
       <q-separator />
       <q-item-label header class="text-negative">
         <q-icon name="warning" class="q-mr-xs" />{{ t('Destructive') }}
@@ -57,19 +76,30 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { VOLUME_BULK_ACTIONS } from '../utils/volumeBulk.js'
+import { VOLUME_BULK_ACTIONS, isVolumeActionApplicable } from '../utils/volumeBulk.js'
 
-defineProps({
+const props = defineProps({
   // Number of volumes the actions would apply to; zero disables the menu.
   count: { type: Number, default: 0 },
   disable: { type: Boolean, default: false },
   label: { type: String, default: null },
   testid: { type: String, default: 'volume-actions' },
+  // Current volstatus values of the volumes; status actions that apply to
+  // none of them are hidden. Null shows all of them.
+  statuses: { type: Array, default: null },
 })
 const emit = defineEmits(['select'])
 const { t } = useI18n()
 
-const nonDestructiveActions = VOLUME_BULK_ACTIONS.filter(action => !action.destructive)
+const nonDestructiveActions = VOLUME_BULK_ACTIONS.filter(
+  action => !action.destructive && action.group !== 'status',
+)
+const statusActions = computed(() => VOLUME_BULK_ACTIONS.filter(
+  action => action.group === 'status'
+    && (!props.statuses
+      || props.statuses.some(status => isVolumeActionApplicable(action, status))),
+))
 const destructiveActions = VOLUME_BULK_ACTIONS.filter(action => action.destructive)
 </script>

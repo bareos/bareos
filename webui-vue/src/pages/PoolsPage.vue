@@ -370,6 +370,7 @@
             />
             <VolumeActionsMenu
               :count="selectedVolumes.length"
+              :statuses="selectedVolumes.map(volume => volume.volstatus)"
               :label="t('Bulk actions')"
               testid="volumes-bulk"
               @select="openBulkAction"
