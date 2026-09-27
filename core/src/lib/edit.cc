@@ -447,28 +447,34 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   return result;
 }
 
-// Compact, fixed-upper-bound (7 character) byte count formatter, in the
-// style of Midnight Commander's file-size column: values up to 9,999,999
-// are printed as plain digits (up to 7 characters, no suffix); larger
-// values are divided by 1024 repeatedly, rounding to the nearest integer
-// at each step, until the result fits in 6 digits, then a single-letter
-// suffix (K/M/G/T/P/E) is appended as the 7th character.
+// Compact, fixed-upper-bound (7 character) byte count formatter. Values below
+// 1 KiB are printed as bytes; larger values use the largest applicable
+// binary unit and are rounded to the nearest integer.
 std::string SizeAsCompact7Format(uint64_t value_in)
 {
-  constexpr uint64_t kSevenDigitLimit = 10000000ULL;
-  if (value_in < kSevenDigitLimit) { return std::to_string(value_in); }
-
-  constexpr uint64_t kSixDigitLimit = 1000000ULL;
   static const char kSuffix[] = "KMGTPE";
 
-  uint64_t scale = 1024ULL;
-  uint64_t rounded = value_in;
+  uint64_t divisor = 1;
   size_t unit = 0;
-  for (; unit < sizeof(kSuffix) - 1; ++unit, scale *= 1024ULL) {
-    rounded = (value_in + scale / 2) / scale;
-    if (rounded < kSixDigitLimit) { break; }
+  while (unit < sizeof(kSuffix) - 1 && value_in / divisor >= 1024) {
+    divisor *= 1024;
+    ++unit;
   }
-  return std::to_string(rounded) + kSuffix[unit];
+
+  if (unit == 0) { return std::to_string(value_in); }
+
+  uint64_t rounded = value_in / divisor;
+  if (value_in % divisor >= divisor / 2) { ++rounded; }
+
+  // Rounding near a unit boundary can produce 1024 of the current unit.
+  if (rounded >= 1024 && unit < sizeof(kSuffix) - 1) {
+    divisor *= 1024;
+    ++unit;
+    rounded = value_in / divisor;
+    if (value_in % divisor >= divisor / 2) { ++rounded; }
+  }
+
+  return std::to_string(rounded) + kSuffix[unit - 1];
 }
 
 
