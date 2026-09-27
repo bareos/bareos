@@ -20,30 +20,14 @@
 -->
 
 <template>
-  <q-page class="q-pa-md">
-    <Breadcrumbs :items="breadcrumbItems" />
-
-    <!-- ── Toolbar ─────────────────────────────────────────── -->
+  <div class="autochanger-panel">
+    <!-- Toolbar -->
     <div class="row items-center q-gutter-sm q-mb-md">
-      <q-select
-        v-model="selectedStorage"
-        :options="storageOptions"
-        option-label="label"
-        option-value="value"
-        emit-value
-        map-options
-        :label="t('Autochanger')"
-        outlined
-        dense
-        style="min-width:200px"
-        :loading="storagesLoading"
-      />
-
       <q-btn flat round dense icon="refresh" :title="t('Refresh')" :aria-label="t('Refresh')"
              :loading="slotsLoading" @click="manualRefresh" />
 
       <DirectorBadge
-        v-if="isCommonAutochangerScope && currentStorage"
+        v-if="showDirector && currentStorage?.director"
         :director="currentStorage.director"
       >
         {{ currentStorage.director }}
@@ -65,25 +49,7 @@
       {{ loadError }}
     </q-banner>
 
-    <q-banner
-      v-if="visibleDirectorErrors.length"
-      class="bg-warning text-black q-mb-md"
-      rounded
-    >
-      <template #avatar>
-        <q-icon name="warning" />
-      </template>
-      <div v-for="item in visibleDirectorErrors" :key="item.director" class="row items-center q-gutter-xs">
-        <DirectorBadge :director="item.director" size="sm" />
-        <span>{{ item.message }}</span>
-      </div>
-    </q-banner>
 
-    <!-- No autochanger storages -->
-    <q-banner v-if="!storagesLoading && storageOptions.length === 0"
-              class="bg-warning text-white q-mb-md" rounded>
-      {{ t('No autochanger storages configured.') }}
-    </q-banner>
 
     <!-- ── Slot Tables ────────────────────────────────────── -->
     <div v-if="selectedStorageName" class="row q-col-gutter-md">
@@ -558,20 +524,17 @@
         </q-scroll-area>
       </q-card-section>
     </q-card>
-  </q-page>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useQuasar } from 'quasar'
-import { directorCollection } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
-import { fetchAggregatedAutochangerStorages } from '../composables/storagesAggregate.js'
 import {
   buildExportCommand,
   buildImportCommand,
@@ -580,37 +543,31 @@ import {
   shouldReloadAutochangerAfterCommand,
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
-import {
-  buildAutochangerLocation,
-  buildAutochangerOriginQuery,
-  resolveAutochangerSelection,
-  resolveStoragesScopeDirector,
-  withStoragesScopeDirectorQuery,
-} from '../utils/storagesRoute.js'
-import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
+import { buildAutochangerOriginQuery } from '../utils/storagesRoute.js'
 import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
-import DirectorBadge from '../components/DirectorBadge.vue'
-import VolumeNameLink from '../components/VolumeNameLink.vue'
-import TableSkeleton from '../components/TableSkeleton.vue'
-import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
-import Breadcrumbs from '../components/Breadcrumbs.vue'
+import DirectorBadge from './DirectorBadge.vue'
+import VolumeNameLink from './VolumeNameLink.vue'
+import TableSkeleton from './TableSkeleton.vue'
+import ColumnPickerMenu from './ColumnPickerMenu.vue'
+
+const props = defineProps({
+  // Decorated storage row (name, director, scopeKey) owned by the parent
+  // page; `null` means nothing is selected and the panel stays idle.
+  storage: { type: Object, default: null },
+  // Show the owning director, which is only meaningful across directors.
+  showDirector: { type: Boolean, default: false },
+})
 
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
-const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 
 // ── State ───────────────────────────────────────────────────
 
-const autochangerStorages = ref([])
-const storagesLoading = ref(false)
 const loadError = ref(null)
-const directorErrors = ref([])
-const selectedStorage = ref(null)
 
 const allSlots = ref([])
 const slotsLoading = ref(false)
@@ -649,74 +606,8 @@ const dragOverImportSlot = ref(null) // import/export slot number hovered during
 
 // ── Computed ─────────────────────────────────────────────────
 
-const reachableDirectors = computed(() => [...new Set([
-  ...director.availableDirectors,
-  auth.user?.director,
-  settings.directorName,
-].filter(Boolean))])
-
-const directorOptions = computed(() => (
-  reachableDirectors.value.map(value => ({ label: value, value }))
-))
-
-function syncSelectedDirectors() {
-  const validDirectors = reachableDirectors.value
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    reachableDirectors.value.includes(value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isAutochangerRouteActive = computed(() => route.name === 'autochanger')
-const queriedStorageName = computed(() => (
-  typeof route.params.name === 'string' ? route.params.name : ''
-))
-const queriedDirectorName = computed(() => (
-  typeof route.query.director === 'string' ? route.query.director : ''
-))
-const breadcrumbItems = computed(() => [
-  {
-    label: t('Storages'),
-    icon: 'arrow_back',
-    to: { name: 'storages', query: withStoragesScopeDirectorQuery({}, storagesScopeDirector.value) },
-  },
-  { label: queriedStorageName.value || t('Autochanger') },
-])
-const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
-const autochangerScopeDirectors = computed(() => (
-  storagesScopeDirector.value ? [storagesScopeDirector.value] : activeDirectors.value
-))
-const currentStorage = computed(() => (
-  autochangerStorages.value.find(storage => storage.scopeKey === selectedStorage.value) ?? null
-))
+const currentStorage = computed(() => props.storage ?? null)
 const selectedStorageName = computed(() => currentStorage.value?.name ?? null)
-const isCommonAutochangerScope = computed(() => autochangerScopeDirectors.value.length > 1)
-const storageOptions = computed(() => autochangerStorages.value.map(storage => ({
-  label: isCommonAutochangerScope.value ? storage.label : storage.name,
-  value: storage.scopeKey,
-})))
 
 const drives = computed(() =>
   allSlots.value.filter(s => s.type === 'drive')
@@ -746,9 +637,6 @@ const emptySlotOptions = computed(() =>
     .filter(s => s.content === 'empty')
     .map(s => ({ label: `Slot ${s.slotnr}`, value: s.slotnr }))
 )
-const visibleDirectorErrors = computed(() => (
-  directorErrors.value.filter(item => !isDirectorLoginRequiredError(item?.message))
-))
 
 function buildAutochangerVolumeDetailsQuery(storage) {
   if (!storage) {
@@ -906,63 +794,6 @@ function formatCountLabel(count, label) {
 }
 
 // ── Data Loading ──────────────────────────────────────────────
-
-async function loadStorages() {
-  storagesLoading.value = true
-  loadError.value = null
-  directorErrors.value = []
-  try {
-    if (autochangerScopeDirectors.value.length === 0) {
-      autochangerStorages.value = []
-      selectedStorage.value = null
-      return
-    }
-
-    if (isCommonAutochangerScope.value) {
-      const credentials = auth.getCredentials()
-      if (!credentials?.password) {
-        throw new Error(t('Not logged in.'))
-      }
-
-      const result = await fetchAggregatedAutochangerStorages(
-        credentials,
-        autochangerScopeDirectors.value
-      )
-      autochangerStorages.value = result.storages
-      directorErrors.value = result.directorErrors
-    } else {
-      await ensureScopeDirector(autochangerScopeDirectors.value[0])
-      const res = await director.call('list storages')
-      const list = directorCollection(res?.storages)
-      autochangerStorages.value = list
-        .filter(s => String(s.autochanger) === '1')
-        .map(storage => ({
-          ...storage,
-          director: autochangerScopeDirectors.value[0],
-          scopeKey: `${autochangerScopeDirectors.value[0]}:${storage.name}`,
-          label: `${autochangerScopeDirectors.value[0]} / ${storage.name}`,
-        }))
-    }
-
-    const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
-      storageName: queriedStorageName.value,
-      directorName: queriedDirectorName.value,
-      scopeDirector: storagesScopeDirector.value,
-      activeDirectors: autochangerScopeDirectors.value,
-    })
-    if (queriedSelection) {
-      selectedStorage.value = queriedSelection.scopeKey
-    } else if (!autochangerStorages.value.some(storage => storage.scopeKey === selectedStorage.value)) {
-      selectedStorage.value = autochangerStorages.value[0]?.scopeKey ?? null
-    }
-  } catch (e) {
-    autochangerStorages.value = []
-    selectedStorage.value = null
-    loadError.value = e?.message ?? String(e)
-  } finally {
-    storagesLoading.value = false
-  }
-}
 
 async function ensureScopeDirector(targetDirector) {
   if (!targetDirector) {
@@ -1428,50 +1259,6 @@ async function showStatus() {
   )
 }
 
-async function refreshSelectedStorageViewsIfStable(previousSelection) {
-  if (!selectedStorage.value || selectedStorage.value !== previousSelection) {
-    return
-  }
-
-  await loadPools()
-  await loadSlots()
-  startAutoRefresh()
-}
-
-async function syncRouteToSelectedStorage() {
-  if (!isAutochangerRouteActive.value) {
-    return
-  }
-
-  if (!currentStorage.value) {
-    return
-  }
-
-  const target = buildAutochangerLocation(currentStorage.value, route.query)
-  if (
-    queriedStorageName.value === target.params.name
-    && queriedDirectorName.value === (target.query.director ?? '')
-  ) {
-    return
-  }
-
-  await router.replace(target)
-}
-
-function syncSelectedStorageFromRoute() {
-  const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
-    storageName: queriedStorageName.value,
-    directorName: queriedDirectorName.value,
-    scopeDirector: storagesScopeDirector.value,
-    activeDirectors: autochangerScopeDirectors.value,
-  })
-  if (!queriedSelection || selectedStorage.value === queriedSelection.scopeKey) {
-    return
-  }
-
-  selectedStorage.value = queriedSelection.scopeKey
-}
-
 function clearCommandLog() {
   commandLogVisible.value = false
   commandLogTitle.value = ''
@@ -1486,70 +1273,34 @@ async function scrollCommandLogToBottom() {
 
 // ── Lifecycle ─────────────────────────────────────────────────
 
-onMounted(async () => {
-  await director.fetchAvailableDirectors().catch(() => {})
-  syncSelectedDirectors()
-  const previousSelection = selectedStorage.value
-  await loadStorages()
-  await refreshSelectedStorageViewsIfStable(previousSelection)
-})
+watch(() => props.storage, async (next) => {
+  stopAutoRefresh()
+  pools.value = []
+  allSlots.value = []
+  volumeDetailsByName.value = {}
+  loadError.value = null
 
-watch(() => director.status, async (s) => {
-  if (s === 'connected') {
-    syncSelectedDirectors()
-    const previousSelection = selectedStorage.value
-    await loadStorages()
-    await refreshSelectedStorageViewsIfStable(previousSelection)
-  }
-})
-
-watch(() => directorOptions.value, () => {
-  syncSelectedDirectors()
-})
-
-watch(() => autochangerScopeDirectors.value.join('\u0000'), async () => {
-  const previousSelection = selectedStorage.value
-  await loadStorages()
-  await refreshSelectedStorageViewsIfStable(previousSelection)
-})
-
-watch(() => [
-  queriedStorageName.value,
-  queriedDirectorName.value,
-  storagesScopeDirector.value,
-], () => {
-  if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
-    return
-  }
-
-  syncSelectedStorageFromRoute()
-})
-
-watch(selectedStorage, async (next) => {
   if (!next) {
-    await syncRouteToSelectedStorage()
-    pools.value = []
-    allSlots.value = []
-    volumeDetailsByName.value = {}
-    stopAutoRefresh()
     return
   }
 
-  await syncRouteToSelectedStorage()
   await loadPools()
   await loadSlots()
   startAutoRefresh()
-})
+}, { immediate: true })
 
-watch(isAutochangerRouteActive, async (active) => {
-  if (active) {
-    syncSelectedStorageFromRoute()
-    await syncRouteToSelectedStorage()
+watch(() => director.status, async (status) => {
+  if (status === 'connected' && props.storage) {
+    await loadPools()
+    await loadSlots()
+    startAutoRefresh()
   }
 })
 
 watch(() => settings.refreshInterval, () => {
-  startAutoRefresh()
+  if (props.storage) {
+    startAutoRefresh()
+  }
 })
 
 onUnmounted(() => {
