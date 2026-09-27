@@ -168,6 +168,23 @@ async function selectQOptionByFilterText(
   throw new Error(`Could not select an option matching "${filterText}" for ${testId}`)
 }
 
+// The test schedules only fire on Sundays at 03:00/03:10 and Mon-Sat at
+// 21:00, so the default ±12 h window contains no trigger from Sunday
+// 15:10 until Monday 09:00. Zoom out (up to ±3.5 d) until one is shown.
+async function expectScheduleTick(page) {
+  const timeline = page.getByTestId('combined-job-schedule-timeline').first()
+  const tick = timeline.getByTestId('combined-timeline-schedule-tick').first()
+  for (let zoomOuts = 0; zoomOuts < 2; zoomOuts += 1) {
+    try {
+      await tick.waitFor({ state: 'visible', timeout: 5000 })
+      return
+    } catch {
+      await timeline.getByTitle('Zoom out').click()
+    }
+  }
+  await expect(tick).toBeVisible()
+}
+
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
@@ -178,7 +195,7 @@ test('logs in and shows the dashboard', async ({ page }) => {
   await expect(page.getByTitle('Combined view of actual job')).toBeVisible()
   await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
   await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
-  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
+  await expectScheduleTick(page)
   await expect(recentJobsCard).toBeVisible()
   await expect(recentJobsCard).not.toContainText('No data available')
   await expect(recentJobsCard).toContainText('backup-bareos-fd')
@@ -187,7 +204,7 @@ test('logs in and shows the dashboard', async ({ page }) => {
   await expect(page).toHaveURL(/#\/dashboard\/job-schedule-timeline$/)
   await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
   await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
-  await expect(page.getByTestId('combined-timeline-schedule-tick').first()).toBeVisible()
+  await expectScheduleTick(page)
   await page.getByTitle('Pan to the past').click()
   await page.waitForTimeout(500)
   await expect(page.getByTestId('combined-job-schedule-timeline')).not.toContainText(
