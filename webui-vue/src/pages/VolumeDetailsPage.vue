@@ -56,6 +56,7 @@
         <q-space />
         <VolumeActionsMenu
           :count="1"
+          :statuses="[vol.volstatus]"
           testid="volume-actions"
           @select="openVolumeAction"
         />

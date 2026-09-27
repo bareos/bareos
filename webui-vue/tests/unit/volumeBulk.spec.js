@@ -27,7 +27,9 @@ import {
   buildVolumeBulkCommands,
   buildVolumeBulkPlan,
   buildVolumeCommentCommand,
+  VOLUME_BULK_ACTIONS,
   findVolumeBulkAction,
+  isVolumeActionApplicable,
   sanitizeComment,
 } from '../../src/utils/volumeBulk.js'
 
@@ -119,5 +121,41 @@ describe('volume bulk helpers', () => {
       volumename: 'Vol-1',
       volstatus: 'Append',
     })).toEqual([])
+  })
+
+  it('offers status changes only from the statuses they apply to', () => {
+    const cases = [
+      ['status-used', 'Append', 'Used'],
+      ['status-readonly', 'Full', 'Read-Only'],
+      ['status-readonly', 'Used', 'Read-Only'],
+      ['status-archive', 'Used', 'Archive'],
+      ['status-unprotect', 'Read-Only', 'Used'],
+      ['status-unprotect', 'Archive', 'Used'],
+      ['status-clearerror', 'Error', 'Used'],
+    ]
+    for (const [id, from, to] of cases) {
+      expect(buildVolumeBulkCommand(id, { volumename: 'V 1', volstatus: from }))
+        .toBe(`update volume="V 1" volstatus=${to}`)
+    }
+    expect(buildVolumeBulkCommand('status-used', { volumename: 'V', volstatus: 'Full' })).toBeNull()
+    expect(buildVolumeBulkCommand('status-clearerror', { volumename: 'V', volstatus: 'Append' })).toBeNull()
+    expect(buildVolumeBulkCommands('status-archive', { volumename: 'V', volstatus: 'Purged' })).toEqual([])
+  })
+
+  it('never offers the dangerous target statuses', () => {
+    const targets = VOLUME_BULK_ACTIONS.map(action => action.volstatus).filter(Boolean)
+    for (const status of ['Recycle', 'Purged', 'Append', 'Cleaning']) {
+      expect(targets).not.toContain(status)
+    }
+    for (const action of VOLUME_BULK_ACTIONS.filter(entry => entry.volstatus)) {
+      expect(action.requiresStatus).not.toContain(action.volstatus)
+    }
+  })
+
+  it('checks applicability against the required statuses', () => {
+    expect(isVolumeActionApplicable(findVolumeBulkAction('enable'), 'Full')).toBe(true)
+    expect(isVolumeActionApplicable(findVolumeBulkAction('truncate'), 'Purged')).toBe(true)
+    expect(isVolumeActionApplicable(findVolumeBulkAction('truncate'), 'Full')).toBe(false)
+    expect(isVolumeActionApplicable(null, 'Full')).toBe(false)
   })
 })
