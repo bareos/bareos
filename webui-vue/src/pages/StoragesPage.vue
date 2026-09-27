@@ -57,7 +57,7 @@
           <q-chip
             v-if="deviceStats.autochanger"
             dense square outline color="info"
-            icon="view_carousel"
+            icon="mdi-robot-industrial"
             clickable
             :selected="deviceQuickFilter === 'autochanger'"
             @click="deviceQuickFilter = 'autochanger'"
@@ -76,13 +76,15 @@
           flat
           :loading="loading"
           :filter="deviceSearch"
+          :row-class="storageRowClass"
           v-model:pagination="devicesPagination"
+          @row-click="(event, row) => toggleSelectedStorage(row)"
         >
           <template #body-cell-name="props">
             <q-td :props="props">
               <div class="row items-center no-wrap q-gutter-xs">
                 <q-icon
-                  :name="props.row.autochanger ? 'view_carousel' : 'storage'"
+                  :name="props.row.autochanger ? 'mdi-robot-industrial' : 'mdi-harddisk'"
                   :color="props.row.autochanger ? 'info' : 'grey-7'"
                   size="xs"
                   role="img"
@@ -91,7 +93,7 @@
                 >
                   <q-tooltip>{{ props.row.autochanger ? t('Autochanger') : t('Single device') }}</q-tooltip>
                 </q-icon>
-                <span>{{ props.value }}</span>
+                <span data-testid="storages-row-name">{{ props.value }}</span>
               </div>
             </q-td>
           </template>
@@ -122,47 +124,55 @@
               <EnabledBadge :enabled="props.value" />
             </q-td>
           </template>
-          <template #body-cell-actions="props">
-            <q-td :props="props" class="text-center">
-              <q-btn
-                v-if="props.row.autochanger"
-                flat
-                round
-                dense
-                size="sm"
-                icon="view_carousel"
-                :title="t('Open Autochanger')" :aria-label="t('Open Autochanger')"
-                data-testid="storages-open-autochanger"
-                @click="openAutochanger(props.row)"
-              />
-              <q-btn flat round dense size="sm" icon="monitor_heart"
-                     :title="t('Storage Status')" :aria-label="t('Storage Status')"
-                      @click="showStorageStatus(props.row)" />
-            </q-td>
-          </template>
         </q-table>
         <TableSkeleton v-else :columns="visibleStorageCols.length" :rows="6" />
       </q-card-section>
     </q-card>
 
-    <!-- Storage Status Dialog -->
-    <q-dialog v-model="storageStatusDlg.open">
-        <q-card style="min-width:600px;max-width:90vw">
-          <q-card-section class="panel-header row items-center">
-            <span>{{ t('Status') }}: {{ storageStatusDlg.name }}</span>
-            <q-space />
-            <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')"
-                 @click="reloadStorageStatus(storageStatusDlg)"
-                 :loading="storageStatusDlg.loading" />
-            <q-btn flat round dense icon="close" color="white" :title="t('Close')" :aria-label="t('Close')" v-close-popup class="q-ml-xs" />
-          </q-card-section>
-        <q-card-section>
-          <q-inner-loading :showing="storageStatusDlg.loading" />
-          <div v-if="storageStatusDlg.error" class="text-negative">{{ storageStatusDlg.error }}</div>
-          <div v-else class="console-output">{{ storageStatusDlg.text }}</div>
+    <!-- Detail panel for the selected storage -->
+    <div class="q-mt-md">
+      <q-card
+        v-if="!selectedStorage"
+        flat
+        bordered
+        class="bareos-panel storages-detail-hint"
+        data-testid="storages-detail-hint"
+      >
+        <q-card-section class="text-center text-grey-6">
+          <q-icon name="mdi-robot-industrial" size="32px" class="block q-mx-auto q-mb-sm" />
+          {{ t('Select a storage to manage it.') }}
         </q-card-section>
       </q-card>
-    </q-dialog>
+
+      <div v-else data-testid="storages-detail">
+        <div class="row items-center q-gutter-sm q-mb-sm">
+          <q-icon
+            :name="selectedStorage.autochanger ? 'mdi-robot-industrial' : 'mdi-harddisk'"
+            :color="selectedStorage.autochanger ? 'info' : 'grey-7'"
+            size="sm"
+          />
+          <span class="text-h6" data-testid="storages-detail-name">{{ selectedStorage.name }}</span>
+          <q-space />
+          <q-btn
+            flat round dense icon="close"
+            :title="t('Close')" :aria-label="t('Close')"
+            data-testid="storages-detail-close"
+            @click="selectStorage(null)"
+          />
+        </div>
+
+        <AutochangerPanel
+          v-if="selectedStorage.autochanger"
+          :storage="selectedStorage"
+          :show-director="showDirectorColumn"
+        />
+        <StorageDetailsPanel
+          v-else
+          :storage="selectedStorage"
+          :show-director="showDirectorColumn"
+        />
+      </div>
+    </div>
   </q-page>
 </template>
 
@@ -179,11 +189,13 @@ import {
   fetchDirectorStorages,
 } from '../composables/storagesAggregate.js'
 import {
-  buildAutochangerLocation,
+  STORAGE_SELECTION_QUERY_KEY,
+  resolveAutochangerSelection,
+  resolveStorageSelectionQuery,
   resolveStoragesScopeDirector,
+  withStorageSelectionQuery,
   withStoragesScopeDirectorQuery,
 } from '../utils/storagesRoute.js'
-import { quoteDirectorString } from '../utils/directorStrings.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -194,6 +206,8 @@ import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
+import AutochangerPanel from '../components/AutochangerPanel.vue'
+import StorageDetailsPanel from '../components/StorageDetailsPanel.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -210,6 +224,7 @@ const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
 const storageRows = ref([])
+const selectedStorageKey = ref(null)
 
 const reachableDirectors = computed(() => [...new Set([
   ...director.availableDirectors,
@@ -222,7 +237,6 @@ const {
   activeDirectors,
   isCommonScope: isCommonStorages,
   syncSelectedDirectors,
-  ensureScopeDirector,
   ensureSingleScopeDirector,
 } = useDirectorScope({
   t,
@@ -254,21 +268,6 @@ watch(() => route.query.scopeDirector, (value) => {
 
   refresh()
 })
-
-async function switchToRowDirector(row) {
-  if (!row?.director) {
-    return
-  }
-
-  await ensureScopeDirector(row.director)
-}
-
-function reportRowError(row, reason) {
-  directorErrors.value = [{
-    director: row?.director ?? t('unknown'),
-    message: reason?.message ?? String(reason),
-  }]
-}
 
 const storages = computed(() => storageRows.value.filter(deviceMatchesQuickFilter))
 
@@ -333,7 +332,6 @@ const storageCols = computed(() => [
   { name: 'mediatype',   label: t('Media Type'),  field: 'mediatype',   align: 'left',  sortable: true },
   { name: 'autochanger', label: t('Autochanger'), field: 'autochanger', align: 'center', sortable: true },
   { name: 'enabled',     label: t('Status'),      field: 'enabled',     align: 'center', sortable: true },
-  { name: 'actions',     label: '',               field: 'actions',     align: 'center', style: 'width:110px' },
 ])
 
 const {
@@ -341,58 +339,70 @@ const {
   toggleableColumns: toggleableStorageCols,
   toggleColumn: toggleStorageCol,
 } = usePersistedTableColumns('storages.devices', storageCols, {
-  essential: ['name', 'director', 'actions'],
+  essential: ['name', 'director'],
   defaultHidden: ['autochanger'],
 })
 
-// ── Storage Status Dialog ─────────────────────────────────────────────────────
-const storageStatusDlg = ref({
-  open: false,
-  name: '',
-  director: '',
-  loading: false,
-  error: null,
-  text: '',
+// Master-detail selection
+
+const selectedStorage = computed(() => (
+  storageRows.value.find(storage => storage.scopeKey === selectedStorageKey.value) ?? null
+))
+
+function storageRowClass(row) {
+  return row.scopeKey === selectedStorageKey.value ? 'storages-row-selected' : ''
+}
+
+function selectStorage(storage) {
+  selectedStorageKey.value = storage?.scopeKey ?? null
+  syncRouteToSelection()
+}
+
+function toggleSelectedStorage(row) {
+  selectStorage(row?.scopeKey === selectedStorageKey.value ? null : row)
+}
+
+function syncRouteToSelection() {
+  const nextQuery = withStorageSelectionQuery(route.query, selectedStorage.value)
+
+  if (JSON.stringify(nextQuery) === JSON.stringify(route.query)) {
+    return
+  }
+
+  router.replace({ path: '/storages', query: nextQuery }).catch(() => {})
+}
+
+function syncSelectionFromRoute() {
+  const requested = resolveStorageSelectionQuery(route.query)
+
+  if (!requested) {
+    selectedStorageKey.value = null
+    return
+  }
+
+  const match = resolveAutochangerSelection(storageRows.value, {
+    storageName: requested.name,
+    directorName: requested.director,
+    scopeDirector: storagesListScopeDirector.value,
+    activeDirectors: storagesPageDirectors.value,
+  })
+
+  selectedStorageKey.value = match?.scopeKey ?? null
+}
+
+// Drop the selection when the selected storage is no longer listed, for
+// instance after a director scope change or a refresh.
+watch(storageRows, () => {
+  syncSelectionFromRoute()
+
+  if (!selectedStorage.value && resolveStorageSelectionQuery(route.query)) {
+    syncRouteToSelection()
+  }
 })
 
-async function showStorageStatus(storage) {
-  storageStatusDlg.value = {
-    open: true,
-    name: storage.name,
-    director: storage.director ?? '',
-    loading: true,
-    error: null,
-    text: '',
-  }
-  await reloadStorageStatus(storage)
-}
-
-async function openAutochanger(storage) {
-  try {
-    await router.push(buildAutochangerLocation(
-      storage,
-      withStoragesScopeDirectorQuery({}, storagesListScopeDirector.value)
-    ))
-  } catch (reason) {
-    reportRowError(storage, reason)
-  }
-}
-
-async function reloadStorageStatus(storage) {
-  storageStatusDlg.value.loading = true
-  storageStatusDlg.value.error   = null
-  try {
-    await switchToRowDirector(storage)
-    const r = await director.rawCall(
-      `status storage=${quoteDirectorString(storage.name)}`
-    )
-    storageStatusDlg.value.text = r
-  } catch (e) {
-    storageStatusDlg.value.error = e.message
-  } finally {
-    storageStatusDlg.value.loading = false
-  }
-}
+watch(() => route.query[STORAGE_SELECTION_QUERY_KEY], () => {
+  syncSelectionFromRoute()
+})
 
 onMounted(() => {
   director.fetchAvailableDirectors().catch(() => {})
@@ -424,5 +434,17 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 
 .storages-list-stats :deep(.q-chip) {
   font-weight: 600;
+}
+
+.storages-detail-hint {
+  border-style: dashed;
+}
+
+:deep(.q-table tbody tr) {
+  cursor: pointer;
+}
+
+:deep(.storages-row-selected) > td {
+  background: rgba(var(--q-primary-rgb, 25, 118, 210), 0.12);
 }
 </style>
