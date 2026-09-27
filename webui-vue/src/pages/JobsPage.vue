@@ -379,6 +379,16 @@
                   </template>
                 </q-td>
               </template>
+              <template #body-cell-comment="props">
+                <q-td :props="props" style="max-width:240px">
+                  <EditableCommentCell
+                    :comment="props.value ?? ''"
+                    :title="`${t('Comment')} — ${t('Job')} ${props.row.id}`"
+                    :testid="`job-comment-edit-${props.row.id}`"
+                    :save="(comment) => saveJobComment(props.row, comment)"
+                  />
+                </q-td>
+              </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
                    <q-btn v-if="canRerunJob(props.row)"
@@ -712,6 +722,8 @@ import {
 import DirectorLabel from '../components/DirectorLabel.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
+import EditableCommentCell from '../components/EditableCommentCell.vue'
+import { buildJobCommentCommand } from '../utils/volumeBulk.js'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -1353,6 +1365,12 @@ async function loadFilterOptions() {
 }
 
 // ── row-level actions ─────────────────────────────────────────────────────────
+async function saveJobComment(job, comment) {
+  await switchToJobDirector(job)
+  await director.call(buildJobCommentCommand(job.id, comment))
+  job.comment = comment
+}
+
 async function switchToJobDirector(job) {
   if (!job?.director) {
     return

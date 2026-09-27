@@ -42,9 +42,25 @@
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
               <span>{{ t('Volumes') }} ({{ volumes.length }})</span>
+              <q-space />
+              <q-btn
+                flat dense no-caps size="sm" color="white" icon="rule"
+                :label="t('Check against pool defaults')"
+                :disable="!volumes.length"
+                data-testid="pool-details-check-defaults"
+                @click="poolDefaultsDialogOpen = true"
+              />
             </q-card-section>
+            <CommonValuesBar
+              :entries="collapsedVolumeColumns"
+              :row-count="volumes.length"
+              :row-label="t('volumes')"
+              testid="pool-details-volumes-common"
+              @pin="pinVolumeColumn"
+            />
+
             <q-card-section class="q-pa-none">
-              <q-table :rows="volumes" :columns="volumeCols" row-key="volumename"
+              <q-table :rows="volumes" :columns="tableVolumeCols" row-key="volumename"
                        dense flat v-model:pagination="volumesPagination"
                        :rows-per-page-options="volumesRowsPerPageOptions">
                 <template #body-cell-volumename="props">
@@ -208,6 +224,14 @@
         </div>
       </div>
     </template>
+
+    <PoolDefaultsCheckDialog
+      v-model="poolDefaultsDialogOpen"
+      :volumes="volumes"
+      :pools="poolRecord ? [poolRecord] : []"
+      :run-command="runVolumeCommand"
+      @done="onPoolDefaultsDone"
+    />
   </q-page>
 </template>
 
@@ -227,6 +251,9 @@ import {
   UNBOUNDED_TABLE_ROWS_PER_PAGE,
 } from '../composables/usePersistedTablePagination.js'
 import VolumeNameLink from '../components/VolumeNameLink.vue'
+import PoolDefaultsCheckDialog from '../components/PoolDefaultsCheckDialog.vue'
+import CommonValuesBar from '../components/CommonValuesBar.vue'
+import { useCollapsedColumns } from '../composables/useCollapsedColumns.js'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
@@ -337,6 +364,22 @@ function pruneReasonLabel(reason) {
   }[reason] ?? (reason || '—')
 }
 
+const poolRecord = ref(null)
+const poolDefaultsDialogOpen = ref(false)
+
+async function runVolumeCommand(volume, command) {
+  await ensurePoolDirector()
+  return director.call(command)
+}
+
+async function onPoolDefaultsDone() {
+  try {
+    await loadPool()
+  } catch (reason) {
+    error.value = reason?.message ?? String(reason)
+  }
+}
+
 async function ensurePoolDirector() {
   if (!requestedDirector.value) {
     return
@@ -358,6 +401,11 @@ async function loadPool() {
   ])
   const pools = poolRes?.pools ?? []
   const rawPool = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]
+  // The drift check compares the untouched catalog record, which carries
+  // fields that normalisePool() does not keep.
+  poolRecord.value = rawPool
+    ? { ...rawPool, director: currentPoolDirector.value || null }
+    : null
   pool.value = rawPool ? normalisePool(rawPool) : null
   pruneReport.value = normalisePoolPruneReport(rawPool)
   selectedPrunableVolumes.value = []
@@ -486,6 +534,20 @@ const volumeCols = computed(() => [
   { name: 'inchanger',   label: t('In Changer'),   field: 'inchanger',   align: 'center', sortable: true },
   { name: 'storage',     label: t('Storage'),      field: 'storage',     align: 'left', sortable: true },
 ])
+const {
+  collapsedColumns: collapsedVolumeColumns,
+  tableColumns: tableVolumeCols,
+  pinColumn: pinVolumeColumn,
+} = useCollapsedColumns('pool-details.volumes', volumes, volumeCols, {
+  exclude: ['volumename'],
+  format: {
+    volretention: (value) => (Number(value) > 0 ? formatDuration(value) : '—'),
+    maxvolbytes: (value) => (Number(value) > 0 ? formatBytes(value) : '∞'),
+    volbytes: (value) => formatBytes(value),
+    inchanger: (value) => (String(value) === '0' ? t('No') : t('Yes')),
+  },
+})
+
 const prunableVolumeCols = computed(() => [
   { name: 'name', label: t('Volume'), field: 'name', align: 'left', sortable: true },
   { name: 'status', label: t('Status'), field: 'status', align: 'center', sortable: true },
