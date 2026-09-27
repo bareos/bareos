@@ -54,7 +54,35 @@
           </div>
         </div>
         <q-space />
+        <VolumeActionsMenu
+          :count="1"
+          testid="volume-actions"
+          @select="openVolumeAction"
+        />
       </div>
+
+      <q-banner
+        v-if="poolDefaultDifferences.length"
+        dense rounded class="bg-orange-1 q-mb-md"
+        data-testid="volume-pool-drift"
+      >
+        <template #avatar><q-icon name="rule" color="orange-9" /></template>
+        <div class="text-weight-medium">
+          {{ t('This volume deviates from the settings of pool {pool}.', { pool: vol.pool }) }}
+        </div>
+        <div class="text-caption">
+          {{ poolDefaultDifferences.map(entry => t(entry.field.label)).join(', ') }}
+        </div>
+        <template #action>
+          <q-btn
+            flat dense no-caps color="orange-9"
+            :label="t('Apply pool settings')"
+            :loading="applyingPoolDefaults"
+            data-testid="volume-pool-drift-apply"
+            @click="applyPoolDefaults"
+          />
+        </template>
+      </q-banner>
 
       <!-- ── Two-column layout ─────────────────────────────────────────── -->
       <div class="row q-col-gutter-md">
@@ -289,6 +317,14 @@
         </div>
       </div>
     </template>
+    <VolumeBulkDialog
+      v-model="actionDialog.open"
+      :action-id="actionDialog.action"
+      :volumes="actionDialog.volumes"
+      :pool-options="poolOptions"
+      :run-command="runVolumeCommand"
+      @done="onVolumeActionDone"
+    />
     <CommentEditDialog
       v-model="commentDialogOpen"
       :title="t('Edit comment')"
@@ -301,7 +337,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -334,10 +370,17 @@ import {
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import CommentEditDialog from '../components/CommentEditDialog.vue'
 import { buildVolumeCommentCommand } from '../utils/volumeBulk.js'
+import VolumeActionsMenu from '../components/VolumeActionsMenu.vue'
+import VolumeBulkDialog from '../components/VolumeBulkDialog.vue'
+import {
+  buildApplyPoolDefaultsCommand,
+  compareVolumeToPoolDefaults,
+} from '../utils/poolDefaults.js'
 import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route      = useRoute()
+const router     = useRouter()
 const auth       = useAuthStore()
 const director   = useDirectorStore()
 const settings   = useSettingsStore()
@@ -509,6 +552,83 @@ async function loadVolume() {
   volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
 }
 
+// Volume actions, shared with the bulk operations on the pools page.
+const actionDialog = ref({ open: false, action: '', volumes: [] })
+const pools = ref([])
+const poolRecord = ref(null)
+const applyingPoolDefaults = ref(false)
+
+const poolOptions = computed(() => pools.value.map(pool => pool.name).sort())
+
+const poolDefaultDifferences = computed(() => (
+  compareVolumeToPoolDefaults(vol.value, poolRecord.value)
+))
+
+async function loadPools() {
+  try {
+    const res = await director.call('llist pools')
+    pools.value = Array.isArray(res?.pools) ? res.pools : []
+  } catch {
+    pools.value = []
+  }
+
+  poolRecord.value = pools.value.find(pool => pool.name === vol.value?.pool) ?? null
+}
+
+function openVolumeAction(actionId) {
+  if (!vol.value) {
+    return
+  }
+
+  actionDialog.value = {
+    open: true,
+    action: actionId,
+    volumes: [{ ...vol.value, scopeKey: volumeName.value }],
+  }
+}
+
+async function runVolumeCommand(volume, command) {
+  await ensureVolumeDirector()
+  return director.call(command)
+}
+
+async function onVolumeActionDone(results) {
+  // A deleted or purged volume may be gone; reloading surfaces that as the
+  // regular "not found" state instead of showing stale data.
+  const removed = actionDialog.value.action === 'delete'
+    && results.every(result => result.ok)
+
+  if (removed) {
+    router.push(backLocation.value).catch(() => {})
+    return
+  }
+
+  try {
+    await loadVolume()
+    await loadPools()
+  } catch (reason) {
+    error.value = reason?.message ?? String(reason)
+  }
+}
+
+async function applyPoolDefaults() {
+  if (!vol.value) {
+    return
+  }
+
+  applyingPoolDefaults.value = true
+  try {
+    await ensureVolumeDirector()
+    await director.call(buildApplyPoolDefaultsCommand(volumeName.value))
+    await loadVolume()
+    await loadPools()
+  } catch (reason) {
+    error.value = reason?.message ?? String(reason)
+  } finally {
+    applyingPoolDefaults.value = false
+  }
+}
+
 const commentDialogOpen = ref(false)
 
 async function saveVolumeComment(comment) {
@@ -527,6 +647,7 @@ watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
   volumeUsage.value = []
   try {
     await loadVolume()
+    await loadPools()
   } catch (loadError) {
     error.value = loadError.message
   } finally {

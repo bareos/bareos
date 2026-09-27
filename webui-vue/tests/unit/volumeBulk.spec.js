@@ -24,6 +24,7 @@ import {
   MAX_COMMENT_LENGTH,
   buildJobCommentCommand,
   buildVolumeBulkCommand,
+  buildVolumeBulkCommands,
   buildVolumeBulkPlan,
   buildVolumeCommentCommand,
   findVolumeBulkAction,
@@ -88,9 +89,35 @@ describe('volume bulk helpers', () => {
       { volumename: 'B', volstatus: 'Append' },
     ]
     expect(buildVolumeBulkPlan('truncate', volumes)).toEqual([
-      { volume: volumes[0], command: 'truncate volstatus=Purged volume="A" yes' },
-      { volume: volumes[1], command: null },
+      { volume: volumes[0], commands: ['truncate volstatus=Purged volume="A" yes'] },
+      { volume: volumes[1], commands: [] },
     ])
     expect(buildVolumeBulkPlan('prune', null)).toEqual([])
+  })
+
+  it('chains frompool after a pool move when asked to', () => {
+    const volume = { volumename: 'Vol-1' }
+
+    expect(buildVolumeBulkCommands('pool', volume, { pool: 'Scratch' })).toEqual([
+      'update volume="Vol-1" pool="Scratch"',
+    ])
+    expect(buildVolumeBulkCommands('pool', volume, {
+      pool: 'Scratch',
+      applyPoolDefaults: true,
+    })).toEqual([
+      'update volume="Vol-1" pool="Scratch"',
+      'update volume="Vol-1" frompool=yes',
+    ])
+  })
+
+  it('does not chain frompool for other actions or skipped volumes', () => {
+    expect(buildVolumeBulkCommands('enable', { volumename: 'Vol-1' }, {
+      applyPoolDefaults: true,
+    })).toEqual(['update volume="Vol-1" enabled=yes'])
+
+    expect(buildVolumeBulkCommands('truncate', {
+      volumename: 'Vol-1',
+      volstatus: 'Append',
+    })).toEqual([])
   })
 })

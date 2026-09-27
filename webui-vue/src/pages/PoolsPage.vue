@@ -86,6 +86,14 @@
                       <a href="#" class="text-primary" @click.prevent="openPoolDetails(props.row)">
                         {{ col.value }}
                       </a>
+                      <q-btn
+                        flat round dense size="sm" icon="rule" color="grey-7"
+                        class="pool-check-defaults"
+                        :title="t('Check against pool defaults')"
+                        :aria-label="t('Check against pool defaults')"
+                        :data-testid="`pool-check-defaults-${props.row.name}`"
+                        @click.stop="openPoolDefaultsCheck(volumesOfPool(props.row))"
+                      />
                     </template>
                     <template v-else-if="col.name === 'director'">
                       <DirectorLabel :director="props.row.director || col.value || ''" />
@@ -255,7 +263,44 @@
                 </q-icon>
               </template>
             </q-input>
+            <q-toggle
+              v-model="onlyDeviatingVolumes"
+              dense size="sm" left-label color="orange-8"
+              :label="t('Only deviating')"
+              data-testid="volumes-only-deviating"
+            >
+              <q-tooltip>
+                {{ t('Show only volumes whose settings differ from their pool defaults.') }}
+              </q-tooltip>
+            </q-toggle>
+            <q-toggle
+              v-model="collapseUniformVolumeColumns"
+              dense size="sm" left-label
+              :label="t('Collapse uniform columns')"
+              data-testid="volumes-collapse-uniform"
+            >
+              <q-tooltip>
+                {{ t('Hide columns whose value is the same in every listed volume.') }}
+              </q-tooltip>
+            </q-toggle>
             <ColumnPickerMenu :columns="toggleableVolumeCols" @toggle="toggleVolumeCol" />
+          </q-card-section>
+
+          <CommonValuesBar
+            :entries="collapsedVolumeColumns"
+            :row-count="filteredVolumes.length"
+            :row-label="t('volumes')"
+            testid="volumes-common"
+            @pin="pinVolumeColumn"
+          />
+
+          <q-card-section v-if="volumeRows.length" class="q-py-sm">
+            <VolumeStatusBar
+              :volumes="statusBarVolumes"
+              :active="volumeFilters.statuses"
+              testid="volumes-status-bar"
+              @select="toggleVolumeStatusFilter"
+            />
           </q-card-section>
 
           <q-card-section class="q-py-sm pools-list-stats">
@@ -316,47 +361,26 @@
               @click="selectedVolumes = []"
             />
             <q-space />
-            <q-btn-dropdown
-              color="primary" dense no-caps icon="playlist_play"
+            <q-btn
+              flat dense no-caps size="sm" icon="rule" color="primary"
+              :label="t('Check against pool defaults')"
+              :disable="!filteredVolumes.length"
+              data-testid="volumes-check-pool-defaults"
+              @click="openPoolDefaultsCheck(filteredVolumes)"
+            />
+            <VolumeActionsMenu
+              :count="selectedVolumes.length"
               :label="t('Bulk actions')"
-              :disable="!selectedVolumes.length"
-              data-testid="volumes-bulk-actions"
-            >
-              <q-list dense style="min-width:220px">
-                <q-item
-                  v-for="action in nonDestructiveBulkActions"
-                  :key="action.id"
-                  clickable v-close-popup
-                  :data-testid="`volumes-bulk-${action.id}`"
-                  @click="openBulkAction(action.id)"
-                >
-                  <q-item-section avatar><q-icon :name="action.icon" /></q-item-section>
-                  <q-item-section>{{ t(action.label) }}</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item-label header class="text-negative">
-                  <q-icon name="warning" class="q-mr-xs" />{{ t('Destructive') }}
-                </q-item-label>
-                <q-item
-                  v-for="action in destructiveBulkActions"
-                  :key="action.id"
-                  clickable v-close-popup
-                  class="text-negative"
-                  :data-testid="`volumes-bulk-${action.id}`"
-                  @click="openBulkAction(action.id)"
-                >
-                  <q-item-section avatar><q-icon :name="action.icon" color="negative" /></q-item-section>
-                  <q-item-section>{{ t(action.label) }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-btn-dropdown>
+              testid="volumes-bulk"
+              @select="openBulkAction"
+            />
           </q-card-section>
 
           <q-card-section class="q-pa-none">
             <q-table
               v-if="!(loading && !volumeRows.length)"
               :rows="filteredVolumes"
-              :columns="visibleVolumeCols"
+              :columns="tableVolumeCols"
               row-key="scopeKey"
               dense
               flat
@@ -382,6 +406,10 @@
                     >
                       <q-tooltip>{{ t('Encryption key stored in catalog') }}</q-tooltip>
                     </q-icon>
+                    <PoolDefaultDriftDot
+                      :entries="volumeDriftEntries(props.row)"
+                      :pool-name="props.row.pool"
+                    />
                   </div>
                 </q-td>
               </template>
@@ -449,7 +477,7 @@
                 </q-td>
               </template>
               <template #body-cell-maxvolbytes="props">
-                <q-td :props="props" class="text-right" style="min-width:100px">
+                <q-td :props="props" class="text-right" style="min-width:100px" :class="driftCellClass(props.row, 'maxvolbytes')">
                   <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
                   <q-linear-progress v-if="Number(props.value) > 0"
                     :value="volGauge(props.value, maxVolMaxBytes)"
@@ -466,7 +494,7 @@
                 </q-td>
               </template>
               <template #body-cell-retention="props">
-                <q-td :props="props" style="min-width:90px">
+                <q-td :props="props" style="min-width:90px" :class="driftCellClass(props.row, 'volretention')">
                   <div>{{ formatDuration(props.value) }}</div>
                   <q-linear-progress
                     :value="volGauge(Number(props.value), maxVolRetention)"
@@ -477,16 +505,29 @@
               </template>
               <template #body-cell-comment="props">
                 <q-td :props="props" class="volume-comment-cell">
-                  <span :title="props.value">{{ props.value }}</span>
+                  <EditableCommentCell
+                    :comment="props.value ?? ''"
+                    :title="`${t('Comment')} — ${props.row.volumename}`"
+                    :testid="`volume-comment-edit-${props.row.volumename}`"
+                    :save="(comment) => saveVolumeComment(props.row, comment)"
+                  />
                 </q-td>
               </template>
             </q-table>
-            <TableSkeleton v-else :columns="visibleVolumeCols.length" :rows="8" />
+            <TableSkeleton v-else :columns="tableVolumeCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </q-tab-panel>
     </q-tab-panels>
 
+    <PoolDefaultsCheckDialog
+      v-model="poolDefaultsDialog.open"
+      :volumes="poolDefaultsDialog.volumes"
+      :pools="poolRows"
+      :show-director="showDirectorColumn"
+      :run-command="runVolumeCommand"
+      @done="onBulkDone"
+    />
     <VolumeBulkDialog
       v-model="bulkDialog.open"
       :action-id="bulkDialog.action"
@@ -526,7 +567,6 @@ import {
   volumeFilterOptions,
   volumeFiltersEqual,
 } from '../utils/volumeFilters.js'
-import { VOLUME_BULK_ACTIONS } from '../utils/volumeBulk.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -541,6 +581,18 @@ import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import TableSkeleton from '../components/TableSkeleton.vue'
 import VolumeBulkDialog from '../components/VolumeBulkDialog.vue'
+import VolumeActionsMenu from '../components/VolumeActionsMenu.vue'
+import PoolDefaultsCheckDialog from '../components/PoolDefaultsCheckDialog.vue'
+import CommonValuesBar from '../components/CommonValuesBar.vue'
+import VolumeStatusBar from '../components/VolumeStatusBar.vue'
+import PoolDefaultDriftDot from '../components/PoolDefaultDriftDot.vue'
+import EditableCommentCell from '../components/EditableCommentCell.vue'
+import { buildVolumeCommentCommand } from '../utils/volumeBulk.js'
+import {
+  buildPoolDefaultDriftIndex,
+  volumeDriftFields,
+} from '../utils/poolDefaults.js'
+import { useCollapsedColumns } from '../composables/useCollapsedColumns.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -659,6 +711,16 @@ function addVolumeFilterValue(name, value) {
   setVolumeFilter(name, [...current, value])
 }
 
+function toggleVolumeStatusFilter(status) {
+  const current = volumeFilters.value.statuses ?? []
+  setVolumeFilter(
+    'statuses',
+    current.includes(status)
+      ? current.filter((item) => item !== status)
+      : [...current, status],
+  )
+}
+
 function removeVolumeFilterValue(name, value) {
   setVolumeFilter(name, (volumeFilters.value[name] ?? []).filter(item => item !== value))
 }
@@ -744,8 +806,45 @@ function poolCellClass(name) {
 // ── Volumes ───────────────────────────────────────────────────────────────────
 const SEARCH_FIELDS = ['volumename', 'pool', 'storage', 'mediatype', 'volstatus', 'comment', 'director']
 
+const onlyDeviatingVolumes = computed({
+  get: () => settings.getTableFlag('storages.volumes.onlyDeviating', false),
+  set: (value) => settings.setTableFlag('storages.volumes.onlyDeviating', value),
+})
+
 const filteredVolumes = computed(() => {
   const byFilters = filterVolumes(volumeRows.value, volumeFilters.value)
+    .filter(volume => (
+      !onlyDeviatingVolumes.value
+      || volumeDriftFields(volumeDriftIndex.value, volume).size > 0
+    ))
+  const needle = String(volSearch.value ?? '').trim().toLowerCase()
+  if (!needle) {
+    return byFilters
+  }
+  return byFilters.filter(volume => SEARCH_FIELDS.some(field => (
+    String(volume[field] ?? '').toLowerCase().includes(needle)
+  )))
+})
+
+const volumeDriftIndex = computed(
+  () => buildPoolDefaultDriftIndex(volumeRows.value, poolRows.value),
+)
+
+function volumeDriftEntries(volume) {
+  return [...volumeDriftFields(volumeDriftIndex.value, volume).values()]
+}
+
+function driftCellClass(volume, fieldId) {
+  return volumeDriftFields(volumeDriftIndex.value, volume).has(fieldId)
+    ? 'volume-cell-drift'
+    : ''
+}
+
+// The status bar must keep showing every status, otherwise selecting one
+// would make all other segments disappear and the filter unclickable.
+const statusBarVolumes = computed(() => {
+  const withoutStatus = { ...volumeFilters.value, statuses: [] }
+  const byFilters = filterVolumes(volumeRows.value, withoutStatus)
   const needle = String(volSearch.value ?? '').trim().toLowerCase()
   if (!needle) {
     return byFilters
@@ -786,10 +885,12 @@ function volBytesGauge(val) { return (Number(val) || 0) / maxVolBytes.value }
 function volGauge(val, max) { return (Number(val) || 0) / (max || 1) }
 
 // ── Bulk operations ───────────────────────────────────────────────────────────
-const nonDestructiveBulkActions = VOLUME_BULK_ACTIONS.filter(action => !action.destructive)
-const destructiveBulkActions = VOLUME_BULK_ACTIONS.filter(action => action.destructive)
-
 const bulkDialog = ref({ open: false, action: '', volumes: [] })
+const poolDefaultsDialog = ref({ open: false, volumes: [] })
+
+function openPoolDefaultsCheck(volumes) {
+  poolDefaultsDialog.value = { open: true, volumes: [...volumes] }
+}
 
 // Pools that exist on every director involved in the selection.
 const bulkPoolOptions = computed(() => {
@@ -816,6 +917,14 @@ async function runVolumeCommand(volume, command) {
     await switchToRowDirector(volume)
   }
   return director.call(command)
+}
+
+async function saveVolumeComment(volume, comment) {
+  await runVolumeCommand(
+    volume,
+    buildVolumeCommentCommand(volume.volumename, comment),
+  )
+  volume.comment = comment
 }
 
 async function onBulkDone() {
@@ -869,7 +978,24 @@ const {
   toggleColumn: toggleVolumeCol,
 } = usePersistedTableColumns('storages.volumes', volumeCols, {
   essential: ['volumename', 'director'],
-  defaultHidden: ['enabled'],
+  defaultHidden: ['enabled', 'storage', 'mediatype', 'retention', 'maxvolbytes', 'inchanger'],
+  autoRevealRows: volumeRows,
+})
+
+const {
+  enabled: collapseUniformVolumeColumns,
+  collapsedColumns: collapsedVolumeColumns,
+  tableColumns: tableVolumeCols,
+  pinColumn: pinVolumeColumn,
+} = useCollapsedColumns('storages.volumes', filteredVolumes, visibleVolumeCols, {
+  exclude: ['volumename', 'comment'],
+  format: {
+    retention: (value) => (Number(value) > 0 ? formatDuration(value) : '—'),
+    maxvolbytes: (value) => (Number(value) > 0 ? formatBytes(value) : '—'),
+    volbytes: (value) => formatBytes(value),
+    enabled: (value) => (String(value) === '0' ? t('No') : t('Yes')),
+    inchanger: (value) => (String(value) === '0' ? t('No') : t('Yes')),
+  },
 })
 
 function statusColor(s) {
@@ -975,6 +1101,11 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 </script>
 
 <style scoped>
+.volume-cell-drift {
+  font-weight: 600;
+  background: rgba(245, 124, 0, 0.08);
+}
+
 .pools-list-stats {
   flex-wrap: wrap;
 }

@@ -95,9 +95,31 @@ export function buildVolumeBulkCommand(actionId, volume, params = {}) {
   }
 }
 
+/**
+ * All bconsole commands for one volume, in execution order. Empty when the
+ * action does not apply to this volume.
+ *
+ * Moving a volume to another pool only rewrites its PoolId, so the volume
+ * keeps the *previous* pool's retention and limits. With
+ * `params.applyPoolDefaults` the move is followed by `frompool=yes`, which
+ * copies the target pool's defaults onto the volume.
+ */
+export function buildVolumeBulkCommands(actionId, volume, params = {}) {
+  const command = buildVolumeBulkCommand(actionId, volume, params)
+  if (!command) {
+    return []
+  }
+
+  if (actionId === 'pool' && params.applyPoolDefaults) {
+    return [command, buildVolumeBulkCommand('frompool', volume, params)]
+  }
+
+  return [command]
+}
+
 export function buildVolumeBulkPlan(actionId, volumes, params = {}) {
   return (volumes ?? []).map(volume => ({
     volume,
-    command: buildVolumeBulkCommand(actionId, volume, params),
+    commands: buildVolumeBulkCommands(actionId, volume, params),
   }))
 }

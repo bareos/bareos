@@ -1,5 +1,6 @@
 import { computed, unref, watch } from 'vue'
 import { useSettingsStore } from '../stores/settings.js'
+import { columnIsUniform } from '../utils/tableCommonValues.js'
 
 /**
  * Column-visibility state for a q-table, persisted per `key` in the
@@ -8,7 +9,9 @@ import { useSettingsStore } from '../stores/settings.js'
  * definitions (or a ref/computed of it); columns whose `name` is not
  * "essential" can be toggled off by the user via a column-picker menu.
  * `options.defaultHidden` lists columns hidden until the user changes the
- * column selection for this table.
+ * column selection for this table. When `options.autoRevealRows` is given,
+ * a default-hidden column is revealed again as soon as those rows hold more
+ * than one distinct value for it — an explicit user choice always wins.
  *
  * Returns:
  * - `visibleColumns`: computed array of column definitions to pass to
@@ -32,20 +35,55 @@ export function usePersistedTableColumns(key, allColumns, options = {}) {
 
   const columns = computed(() => unref(allColumns))
 
+  // `null` as fallback tells us whether the user ever touched this table.
+  const userChoseColumns = computed(
+    () => settings.getTableHiddenColumns(key, null) !== null,
+  )
+
+  const autoRevealed = computed(() => {
+    const revealed = new Set()
+    if (userChoseColumns.value || !options.autoRevealRows) {
+      return revealed
+    }
+
+    const rows = unref(options.autoRevealRows)
+    for (const column of columns.value) {
+      if (defaultHidden.includes(column.name) && !columnIsUniform(rows, column)) {
+        revealed.add(column.name)
+      }
+    }
+    return revealed
+  })
+
   const visibleColumns = computed(() => {
     const hidden = new Set(hiddenColumns.value)
-    return columns.value.filter(col => essential.has(col.name) || !hidden.has(col.name))
+    return columns.value.filter(col => (
+      essential.has(col.name)
+      || !hidden.has(col.name)
+      || autoRevealed.value.has(col.name)
+    ))
   })
 
   const toggleableColumns = computed(() => {
     const hidden = new Set(hiddenColumns.value)
     return columns.value
       .filter(col => !essential.has(col.name) && col.label)
-      .map(col => ({ name: col.name, label: col.label, visible: !hidden.has(col.name) }))
+      .map(col => ({
+        name: col.name,
+        label: col.label,
+        visible: !hidden.has(col.name) || autoRevealed.value.has(col.name),
+      }))
   })
 
   function toggleColumn(name) {
     const hidden = new Set(hiddenColumns.value)
+    // Turning an auto-revealed column off has to persist the whole current
+    // selection, otherwise the automatic rule would immediately undo it.
+    if (autoRevealed.value.has(name)) {
+      hidden.delete(name)
+      hiddenColumns.value = [...hidden, name]
+      return
+    }
     if (hidden.has(name)) {
       hidden.delete(name)
     } else {
