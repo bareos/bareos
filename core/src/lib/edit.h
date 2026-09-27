@@ -66,11 +66,10 @@ bool IsAclEntryValid(const char* acl);
 std::string SizeAsSiPrefixFormat(uint64_t value_in);
 
 /**
- * Format a byte count as a Midnight-Commander-style compact size string:
- * at most 7 characters wide. Values that fit in 7 decimal digits are
- * printed as-is (no suffix); larger values are scaled down by powers of
- * 1024 until they fit in 6 digits, with a single-letter suffix
- * (K/M/G/T/P/E) appended as the 7th character.
+ * Format a byte count as a compact size string of at most 7 characters.
+ * Values below 1 KiB are printed as bytes; larger values are rounded to
+ * the nearest integer in the largest applicable binary unit, with a
+ * single-letter suffix (K/M/G/T/P/E).
  */
 std::string SizeAsCompact7Format(uint64_t value_in);
 
