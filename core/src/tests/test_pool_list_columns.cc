@@ -61,8 +61,8 @@ TEST(PoolListColumns, KeysAreLowercaseColumnNames)
   for (const auto& column : kPoolListColumns) {
     std::string expected;
     for (const char c : column.column) {
-      expected += static_cast<char>(
-          std::tolower(static_cast<unsigned char>(c)));
+      expected
+          += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
     EXPECT_EQ(std::string(column.key), expected);
   }
