@@ -36,6 +36,16 @@
             dense outlined
             data-testid="volume-bulk-pool"
           />
+          <q-checkbox
+            v-model="params.applyPoolDefaults"
+            dense
+            class="q-mt-sm"
+            :label="applyPoolDefaultsLabel"
+            data-testid="volume-bulk-apply-pool-defaults"
+          />
+          <div class="text-caption text-grey-7 q-ml-lg">
+            {{ t('Without this, the volumes keep the retention and limits of their previous pool.') }}
+          </div>
         </q-card-section>
         <q-card-section v-if="action?.param === 'comment'" class="q-pb-none">
           <q-input
@@ -52,7 +62,9 @@
           <div class="text-caption text-grey-7 q-mb-xs">{{ t('Commands to run') }}</div>
           <div class="console-output volume-bulk-commands" data-testid="volume-bulk-commands">
             <div v-for="entry in plan" :key="entry.volume.scopeKey">
-              <template v-if="entry.command">{{ entry.command }}</template>
+              <template v-if="entry.commands.length">
+                <div v-for="command in entry.commands" :key="command">{{ command }}</div>
+              </template>
               <span v-else class="text-grey-6">
                 # {{ entry.volume.volumename }}: {{ t('skipped') }} ({{ entry.skipReason }})
               </span>
@@ -141,8 +153,12 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'done'])
 const { t } = useI18n()
 
+const applyPoolDefaultsLabel = computed(() => (
+  t("Apply the target pool's settings to the moved volumes")
+))
+
 const phase = ref('confirm')
-const params = ref({ pool: null, comment: '' })
+const params = ref({ pool: null, comment: '', applyPoolDefaults: true })
 const confirmText = ref('')
 const running = ref(false)
 const results = ref([])
@@ -169,7 +185,7 @@ const planState = computed(() => {
   }
   if (action.value.param === 'pool' && !params.value.pool) {
     return {
-      entries: props.volumes.map(volume => ({ volume, command: null, skipReason: t('no target pool selected') })),
+      entries: props.volumes.map(volume => ({ volume, commands: [], skipReason: t('no target pool selected') })),
       error: '',
     }
   }
@@ -177,7 +193,7 @@ const planState = computed(() => {
     const entries = buildVolumeBulkPlan(props.actionId, props.volumes, params.value)
       .map(entry => ({
         ...entry,
-        skipReason: entry.command ? '' : t('status is not Purged'),
+        skipReason: entry.commands.length ? '' : t('status is not Purged'),
       }))
     return { entries, error: '' }
   } catch (reason) {
@@ -186,7 +202,7 @@ const planState = computed(() => {
 })
 const plan = computed(() => planState.value.entries)
 const planError = computed(() => planState.value.error)
-const runnable = computed(() => plan.value.filter(entry => entry.command))
+const runnable = computed(() => plan.value.filter(entry => entry.commands.length))
 const skippedCount = computed(() => plan.value.length - runnable.value.length)
 const failedCount = computed(() => results.value.filter(result => !result.ok).length)
 
@@ -203,7 +219,7 @@ const canRun = computed(() => {
 watch(() => props.modelValue, (open) => {
   if (open) {
     phase.value = 'confirm'
-    params.value = { pool: null, comment: '' }
+    params.value = { pool: null, comment: '', applyPoolDefaults: true }
     confirmText.value = ''
     results.value = []
   }
@@ -220,7 +236,11 @@ async function run() {
   try {
     for (const entry of entries) {
       try {
-        await props.runCommand(entry.volume, entry.command)
+        // Commands of one volume build on each other, so a failure aborts
+        // the rest for that volume but not for the remaining ones.
+        for (const command of entry.commands) {
+          await props.runCommand(entry.volume, command)
+        }
         results.value.push({ volume: entry.volume, ok: true, message: '' })
       } catch (reason) {
         results.value.push({

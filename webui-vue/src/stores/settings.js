@@ -22,9 +22,25 @@ const DEFAULTS = {
   tableSort: {},
   tableFilter: {},
   tableHiddenColumns: {},
+  tableFlags: {},
   schedulesViewMode: 'week',
   jobsTimelineViewMode: 'week',
   clientBackupWarningFailedJobs: 2,
+}
+
+function normalizeTableFlags(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+
+  const result = {}
+  for (const [key, flag] of Object.entries(value)) {
+    const normalizedKey = String(key ?? '').trim()
+    if (normalizedKey && typeof flag === 'boolean') {
+      result[normalizedKey] = flag
+    }
+  }
+  return result
 }
 
 function normalizeBoolean(value, fallback) {
@@ -142,6 +158,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const tableSort = ref(normalizeTableSort(saved.tableSort))
   const tableFilter = ref(normalizeTableFilter(saved.tableFilter))
   const tableHiddenColumns = ref(normalizeTableHiddenColumns(saved.tableHiddenColumns))
+  const tableFlags = ref(normalizeTableFlags(saved.tableFlags))
   const schedulesViewMode = ref(normalizeSchedulesViewMode(saved.schedulesViewMode))
   const jobsTimelineViewMode = ref(normalizeJobsTimelineViewMode(saved.jobsTimelineViewMode))
   const clientBackupWarningFailedJobs = ref(
@@ -160,6 +177,7 @@ export const useSettingsStore = defineStore('settings', () => {
       tableSort: tableSort.value,
       tableFilter: tableFilter.value,
       tableHiddenColumns: tableHiddenColumns.value,
+      tableFlags: tableFlags.value,
       schedulesViewMode: schedulesViewMode.value,
       jobsTimelineViewMode: jobsTimelineViewMode.value,
       clientBackupWarningFailedJobs: clientBackupWarningFailedJobs.value,
@@ -261,6 +279,28 @@ export const useSettingsStore = defineStore('settings', () => {
     tableFilter.value = rest
   }
 
+  // Generic per-table boolean preferences (collapsing, filter toggles, ...).
+  function getTableFlag(key, fallback = false) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return fallback
+    }
+
+    return tableFlags.value[normalizedKey] ?? fallback
+  }
+
+  function setTableFlag(key, value) {
+    const normalizedKey = String(key ?? '').trim()
+    if (!normalizedKey) {
+      return
+    }
+
+    tableFlags.value = {
+      ...tableFlags.value,
+      [normalizedKey]: Boolean(value),
+    }
+  }
+
   function setSchedulesViewMode(value) {
     schedulesViewMode.value = normalizeSchedulesViewMode(value, schedulesViewMode.value)
   }
@@ -317,6 +357,7 @@ export const useSettingsStore = defineStore('settings', () => {
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
       tableHiddenColumns: tableHiddenColumns.value,
+      tableFlags: tableFlags.value,
       schedulesViewMode: schedulesViewMode.value,
       jobsTimelineViewMode: jobsTimelineViewMode.value,
       clientBackupWarningFailedJobs: clientBackupWarningFailedJobs.value,
@@ -360,6 +401,10 @@ export const useSettingsStore = defineStore('settings', () => {
     if ('tableHiddenColumns' in data) {
       tableHiddenColumns.value = normalizeTableHiddenColumns(data.tableHiddenColumns)
     }
+
+    if ('tableFlags' in data) {
+      tableFlags.value = normalizeTableFlags(data.tableFlags)
+    }
     if ('schedulesViewMode' in data) {
       schedulesViewMode.value = normalizeSchedulesViewMode(
         data.schedulesViewMode,
@@ -390,6 +435,7 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(tableSort, save, { deep: true })
   watch(tableFilter, save, { deep: true })
   watch(tableHiddenColumns, save, { deep: true })
+  watch(tableFlags, save, { deep: true })
   watch(schedulesViewMode, save)
   watch(jobsTimelineViewMode, save)
   watch(clientBackupWarningFailedJobs, (value) => {
@@ -414,6 +460,7 @@ export const useSettingsStore = defineStore('settings', () => {
     tableSort,
     tableFilter,
     tableHiddenColumns,
+    tableFlags,
     schedulesViewMode,
     jobsTimelineViewMode,
     clientBackupWarningFailedJobs,
@@ -427,6 +474,8 @@ export const useSettingsStore = defineStore('settings', () => {
     setTableFilter,
     getTableHiddenColumns,
     setTableHiddenColumns,
+    getTableFlag,
+    setTableFlag,
     setSchedulesViewMode,
     setJobsTimelineViewMode,
     exportSettings,
