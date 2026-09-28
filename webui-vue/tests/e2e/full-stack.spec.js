@@ -274,6 +274,16 @@ test('advertises Bareos services unless the director is a subscription build', a
     .toHaveAttribute('href', 'https://www.bareos.com/meet/')
 })
 
+test('loads translations from the Vue JSON catalogs', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('.login-language-select').click()
+  await page.getByRole('option', { name: /German/ }).click()
+
+  await expect(page.getByTestId('login-submit')).toContainText('Anmelden')
+  await expect(page.getByTestId('login-username')).toHaveAttribute('aria-label', 'Benutzername')
+  await expect(page.getByTestId('login-password')).toHaveAttribute('aria-label', 'Passwort')
+})
+
 // Official releases run these tests with the build definitions of the
 // release, but PR builds are never subscription builds. Pretend to be one
 // by rewriting binary_info in the director replies.
