@@ -19,12 +19,14 @@
    02110-1301, USA.
  */
 
+import { messageId } from '../i18n/messageId.js'
+
 export const JOB_STATUS_24H_CHART_SEGMENTS = [
-  { status: 'R', labelKey: 'Running', color: '#17a2b8' },
-  { status: 'C', labelKey: 'Waiting', color: '#9e9e9e' },
-  { status: 'T', labelKey: 'Successful', color: '#28a745' },
-  { status: 'W', labelKey: 'Warning', color: '#ffc107' },
-  { status: 'f', labelKey: 'Failed', color: '#dc3545' },
+  { status: 'R', labelKey: messageId('Running'), color: '#17a2b8' },
+  { status: 'C', labelKey: messageId('Waiting'), color: '#9e9e9e' },
+  { status: 'T', labelKey: messageId('Successful'), color: '#28a745' },
+  { status: 'W', labelKey: messageId('Warning'), color: '#ffc107' },
+  { status: 'f', labelKey: messageId('Failed'), color: '#dc3545' },
 ]
 
 function normaliseCount(value) {

@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+import { messageId } from '../i18n/messageId.js'
+
 /*
  * The director reports how it was built in "status director" ->
  * header.binary_info. The value comes from the build definitions used for
@@ -49,51 +51,51 @@ export const COMMERCIAL_OFFERINGS = Object.freeze([
   {
     id: 'evaluation',
     icon: 'rocket_launch',
-    label: 'Try the subscription release',
-    description: 'Request free trial access to the tested subscription packages and plugins for your evaluation.',
+    label: messageId('Try the subscription release'),
+    description: messageId('Request free trial access to the tested subscription packages and plugins for your evaluation.'),
     url: EVALUATION_URL,
     highlight: true,
   },
   {
     id: 'subscription',
     icon: 'verified',
-    label: 'Subscription packages',
-    description: 'Maintained and tested packages for all major platforms, plus subscription-only plugins.',
+    label: messageId('Subscription packages'),
+    description: messageId('Maintained and tested packages for all major platforms, plus subscription-only plugins.'),
     url: SUBSCRIPTION_URL,
   },
   {
     id: 'support',
     icon: 'support_agent',
-    label: 'Professional support',
-    description: 'Direct help from the Bareos developers for production and regulated environments.',
+    label: messageId('Professional support'),
+    description: messageId('Direct help from the Bareos developers for production and regulated environments.'),
     url: SUPPORT_URL,
   },
   {
     id: 'training',
     icon: 'school',
-    label: 'Training',
-    description: 'Administration courses and workshops for daily operation and restore workflows.',
+    label: messageId('Training'),
+    description: messageId('Administration courses and workshops for daily operation and restore workflows.'),
     url: 'https://www.bareos.com/learn/training/',
   },
   {
     id: 'consulting',
     icon: 'engineering',
-    label: 'Consulting',
-    description: 'Migration support, setup reviews and best practices for stable operations.',
+    label: messageId('Consulting'),
+    description: messageId('Migration support, setup reviews and best practices for stable operations.'),
     url: 'https://www.bareos.com/contact/',
   },
   {
     id: 'development',
     icon: 'extension',
-    label: 'Sponsored development',
-    description: 'Get the feature, integration, plugin or platform support you need.',
+    label: messageId('Sponsored development'),
+    description: messageId('Get the feature, integration, plugin or platform support you need.'),
     url: 'https://www.bareos.com/contact/',
   },
   {
     id: 'expert-circle',
     icon: 'groups',
-    label: 'Bareos Expert Circle',
-    description: 'Meet users, customers and Bareos experts online, discuss real use cases and get an early look at new features.',
+    label: messageId('Bareos Expert Circle'),
+    description: messageId('Meet users, customers and Bareos experts online, discuss real use cases and get an early look at new features.'),
     url: EXPERT_CIRCLE_URL,
   },
 ])
