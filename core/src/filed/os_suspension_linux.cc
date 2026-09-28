@@ -101,6 +101,7 @@ SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
     return sleep_prevention.release();
   }
 
+  // The message owns fd; duplicate it before the reply is released.
   int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
   if (dupfd < 0) {
     BErrNo be;
