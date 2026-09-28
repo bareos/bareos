@@ -93,6 +93,24 @@
             <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
             <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
           </q-item>
+          <template v-if="buildInfo.promote">
+            <q-item clickable v-ripple
+                    tag="a" :href="SERVICES_URL" target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="drawer-professional-support"
+                    @click="drawerOpen = false">
+              <q-item-section avatar><q-icon name="support_agent" /></q-item-section>
+              <q-item-section>{{ t('Professional support') }}</q-item-section>
+            </q-item>
+            <q-item clickable v-ripple
+                    tag="a" :href="EXPERT_CIRCLE_URL" target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="drawer-expert-circle"
+                    @click="drawerOpen = false">
+              <q-item-section avatar><q-icon name="groups" /></q-item-section>
+              <q-item-section>{{ t('Bareos Expert Circle') }}</q-item-section>
+            </q-item>
+          </template>
           <q-separator dark />
           <q-item clickable v-ripple @click="logout">
             <q-item-section avatar><q-icon name="logout" /></q-item-section>
@@ -215,6 +233,18 @@
                   <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
                   <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
                 </q-item>
+                <template v-if="buildInfo.promote">
+                  <q-item clickable tag="a" :href="SERVICES_URL" target="_blank" rel="noopener noreferrer" v-close-popup
+                          data-testid="menu-professional-support">
+                    <q-item-section avatar><q-icon name="support_agent" /></q-item-section>
+                    <q-item-section>{{ t('Professional support') }}</q-item-section>
+                  </q-item>
+                  <q-item clickable tag="a" :href="EXPERT_CIRCLE_URL" target="_blank" rel="noopener noreferrer" v-close-popup
+                          data-testid="menu-expert-circle">
+                    <q-item-section avatar><q-icon name="groups" /></q-item-section>
+                    <q-item-section>{{ t('Bareos Expert Circle') }}</q-item-section>
+                  </q-item>
+                </template>
                 <q-separator />
                 <q-item clickable v-close-popup @click="logout">
                   <q-item-section avatar><q-icon name="logout" /></q-item-section>
@@ -264,6 +294,19 @@
 
       <q-space />
 
+      <template v-if="buildInfo.promote">
+        <a
+          :href="SERVICES_URL" target="_blank" rel="noopener noreferrer"
+          class="statusbar-offering gt-xs"
+          data-testid="statusbar-commercial-offering"
+        >
+          <q-icon name="support_agent" size="13px" />
+          {{ t(buildKindLabel(buildInfo.kind)) }} · {{ t('Get support') }}
+          <q-tooltip>{{ offeringTooltip }}</q-tooltip>
+        </a>
+        <span class="gt-xs" style="opacity:.4">|</span>
+      </template>
+
       <!-- session info -->
       <template v-if="accountDirectorSessions.length > 0">
         <q-icon name="person" size="13px" style="opacity:.7" />
@@ -298,11 +341,22 @@ import {
   useReleaseInfoStore,
 } from '../stores/releaseInfo.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { useBuildInfoStore } from '../stores/buildInfo.js'
+import {
+  COMMERCIAL_OFFERINGS,
+  EXPERT_CIRCLE_URL,
+  SERVICES_URL,
+  buildKindLabel,
+} from '../utils/commercialOffering.js'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
 const consoleSessions = useConsoleSessionsStore()
 const director = useDirectorStore()
+const buildInfo = useBuildInfoStore()
+const offeringTooltip = computed(() => (
+  `${t('Bareos GmbH offers')}: ${COMMERCIAL_OFFERINGS.map(offering => t(offering.label)).join(', ')}`
+))
 const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
@@ -535,10 +589,16 @@ async function refreshDirectorVersion() {
   try {
     const status = await director.call('status director')
     directorVersion.value = status?.header?.version ?? ''
+    buildInfo.recordStatus(currentDirector.value, status)
   } catch {
     directorVersion.value = ''
   }
 }
+
+watch(
+  () => accountDirectorSessions.value.map(session => session.director),
+  (directors) => { if (directors.length) buildInfo.retain(directors) },
+)
 
 watch(
   () => [...activeDirectors.value],
@@ -598,6 +658,20 @@ async function logout() {
 </script>
 
 <style scoped>
+.statusbar-offering {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.statusbar-offering:hover,
+.statusbar-offering:focus-visible {
+  text-decoration: underline;
+}
+
 .director-scope-control {
   max-width: 15rem;
 }
