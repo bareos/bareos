@@ -25,9 +25,16 @@ import {
   BUILD_KINDS,
   BUILD_KIND_STORAGE_KEY,
   COMMERCIAL_OFFERINGS,
+  EVALUATION_URL,
   EXPERT_CIRCLE_URL,
+  MENU_OFFERINGS,
   SERVICES_URL,
+  SUBSCRIPTION_URL,
+  SUPPORT_URL,
+  UNSUPPORTED_BUILD_TEXT,
+  buildKindLabel,
   classifyBinaryInfo,
+  formatDocumentTitle,
   loadCachedBuildKind,
   shouldPromote,
   storeBuildKind,
@@ -88,7 +95,8 @@ describe('commercial offering helpers', () => {
   })
 
   it('links only to https pages on bareos.com and includes the Expert Circle', () => {
-    const urls = [SERVICES_URL, EXPERT_CIRCLE_URL, ...COMMERCIAL_OFFERINGS.map(offering => offering.url)]
+    const urls = [SERVICES_URL, EXPERT_CIRCLE_URL, EVALUATION_URL, SUBSCRIPTION_URL,
+      SUPPORT_URL, ...COMMERCIAL_OFFERINGS.map(offering => offering.url)]
     for (const url of urls) {
       const parsed = new URL(url)
       expect(parsed.protocol).toBe('https:')
@@ -100,6 +108,32 @@ describe('commercial offering helpers', () => {
       'subscription', 'support', 'training', 'consulting', 'development', 'expert-circle',
     ]))
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('leads with the evaluation program, then subscription packages', () => {
+    expect(COMMERCIAL_OFFERINGS[0]).toMatchObject({ id: 'evaluation', url: EVALUATION_URL })
+    expect(COMMERCIAL_OFFERINGS[1].id).toBe('subscription')
+    expect(COMMERCIAL_OFFERINGS.filter(offering => offering.highlight).map(offering => offering.id))
+      .toEqual(['evaluation'])
+    expect(EVALUATION_URL).toBe('https://www.bareos.com/try/')
+    expect(MENU_OFFERINGS.map(offering => offering.id))
+      .toEqual(['evaluation', 'subscription', 'support', 'expert-circle'])
+  })
+
+  it('does not name the company in user-facing texts', () => {
+    const texts = [
+      UNSUPPORTED_BUILD_TEXT,
+      ...COMMERCIAL_OFFERINGS.flatMap(offering => [offering.label, offering.description]),
+      ...Object.values(BUILD_KINDS).map(buildKindLabel),
+    ]
+    for (const text of texts) expect(text).not.toMatch(/GmbH/)
+  })
+
+  it('marks the browser tab title for unsupported builds', () => {
+    expect(formatDocumentTitle('Jobs')).toBe('Jobs - Bareos')
+    expect(formatDocumentTitle('Jobs', true)).toBe('Jobs - Bareos (unsupported build)')
+    expect(formatDocumentTitle(undefined)).toBe('Bareos')
+    expect(formatDocumentTitle('', true)).toBe('Bareos (unsupported build)')
   })
 })
 

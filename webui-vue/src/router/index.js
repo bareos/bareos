@@ -61,9 +61,4 @@ router.beforeEach(async (to) => {
   }
 })
 
-router.afterEach((to) => {
-  const pageTitle = to.meta?.title
-  document.title = pageTitle ? `${pageTitle} - Bareos` : 'Bareos'
-})
-
 export default router
