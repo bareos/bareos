@@ -338,6 +338,7 @@ import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import DirectorScopeMenuContent from '../components/DirectorScopeMenuContent.vue'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
@@ -595,23 +596,60 @@ const dirStatusLabel = computed(() => ({
   disconnected:   t('Offline'),
 }[director.status] ?? t('Offline')))
 
-async function refreshDirectorVersion() {
-  if (!director.isConnected) {
+let buildInfoRefreshGeneration = 0
+
+async function fetchDirectorStatus(directorName) {
+  if (directorName === currentDirector.value && director.isConnected) {
+    return director.call('status director')
+  }
+
+  const credentials = auth.getCredentials(directorName)
+  if (!credentials) {
+    throw new Error(`No credentials for director "${directorName}".`)
+  }
+
+  const client = await createDirectorCommandClient(credentials)
+  try {
+    return await client.call('status director')
+  } finally {
+    client.disconnect()
+  }
+}
+
+async function refreshDirectorVersions() {
+  const generation = ++buildInfoRefreshGeneration
+  const directorNames = accountDirectorSessions.value.map(session => session.director)
+  buildInfo.retain(directorNames)
+
+  if (!directorNames.length) {
     directorVersion.value = ''
     return
   }
-  try {
-    const status = await director.call('status director')
-    directorVersion.value = status?.header?.version ?? ''
-    buildInfo.recordStatus(currentDirector.value, status)
-  } catch {
-    directorVersion.value = ''
+
+  const results = await Promise.allSettled(
+    directorNames.map(async directorName => ({
+      director: directorName,
+      status: await fetchDirectorStatus(directorName),
+    })),
+  )
+
+  if (generation !== buildInfoRefreshGeneration) return
+
+  directorVersion.value = ''
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    const { director: directorName, status } = result.value
+    buildInfo.recordStatus(directorName, status)
+    if (directorName === currentDirector.value) {
+      directorVersion.value = status?.header?.version ?? ''
+    }
   }
 }
 
 watch(
   () => accountDirectorSessions.value.map(session => session.director),
-  (directors) => { if (directors.length) buildInfo.retain(directors) },
+  () => { refreshDirectorVersions() },
+  { immediate: true },
 )
 
 watch(
@@ -627,7 +665,7 @@ watch(
   (status) => {
     if (status === 'connected') {
       releaseInfo.refresh().catch(() => {})
-      refreshDirectorVersion()
+      refreshDirectorVersions()
     } else if (status !== 'connecting' && status !== 'authenticating') {
       directorVersion.value = ''
     }
@@ -705,6 +743,11 @@ async function logout() {
   color: inherit;
   text-decoration: none;
   font-weight: 500;
+}
+
+body.bareos-unsupported-build .statusbar-offering {
+  color: #ffca28;
+  font-weight: 600;
 }
 
 .statusbar-offering:hover,
