@@ -177,7 +177,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
                                    std::vector<JobId_t>* jobids)
 {
   PoolMem query(PM_MESSAGE);
-  char ed1[50], ed2[50], ed3[50];
+  char ed1[50], ed2[50], ed3[50], ed4[50];
 
   // 1. Latest Full backup for this Client/FileSet.
   ChainResolveCtx full{};
@@ -185,7 +185,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
        "SELECT JobId, JobTDate FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='F'"
        " AND JobStatus IN ('T','W') AND Type IN (%s)"
-       " ORDER BY JobTDate DESC LIMIT 1",
+       " ORDER BY JobTDate DESC, JobId DESC LIMIT 1",
        edit_int64(client_id, ed1), edit_int64(fileset_id, ed2),
        kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), ChainJobHandler, &full)) {
@@ -196,17 +196,21 @@ ChainResult ResolveAccountingChain(UaContext* ua,
 
   jobids->push_back(full.JobId);
   utime_t baseline = full.JobTDate;
+  JobId_t baseline_jobid = full.JobId;
 
   // 2. Most recent Differential after the Full, if any -- moves the
   // baseline forward so only Incrementals after it are collected.
   ChainResolveCtx diff{};
+  edit_uint64(baseline, ed3);
+  edit_int64(baseline_jobid, ed4);
   Mmsg(query,
        "SELECT JobId, JobTDate FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='D'"
-       " AND JobTDate>%s AND JobStatus IN ('T','W') AND Type IN (%s)"
-       " ORDER BY JobTDate DESC LIMIT 1",
-       edit_int64(client_id, ed1), edit_int64(fileset_id, ed2),
-       edit_uint64(baseline, ed3), kAccountableJobTypes);
+       " AND (JobTDate>%s OR (JobTDate=%s AND JobId>%s))"
+       " AND JobStatus IN ('T','W') AND Type IN (%s)"
+       " ORDER BY JobTDate DESC, JobId DESC LIMIT 1",
+       edit_int64(client_id, ed1), edit_int64(fileset_id, ed2), ed3, ed3, ed4,
+       kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), ChainJobHandler, &diff)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return ChainResult::kError;
@@ -214,17 +218,21 @@ ChainResult ResolveAccountingChain(UaContext* ua,
   if (diff.found) {
     jobids->push_back(diff.JobId);
     baseline = diff.JobTDate;
+    baseline_jobid = diff.JobId;
   }
 
   // 3. All Incrementals after the current baseline.
   JobIdListCtx incs{};
+  edit_uint64(baseline, ed3);
+  edit_int64(baseline_jobid, ed4);
   Mmsg(query,
        "SELECT JobId FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='I'"
-       " AND JobTDate>%s AND JobStatus IN ('T','W') AND Type IN (%s)"
-       " ORDER BY JobTDate",
-       edit_int64(client_id, ed1), edit_int64(fileset_id, ed2),
-       edit_uint64(baseline, ed3), kAccountableJobTypes);
+       " AND (JobTDate>%s OR (JobTDate=%s AND JobId>%s))"
+       " AND JobStatus IN ('T','W') AND Type IN (%s)"
+       " ORDER BY JobTDate, JobId",
+       edit_int64(client_id, ed1), edit_int64(fileset_id, ed2), ed3, ed3, ed4,
+       kAccountableJobTypes);
   if (!ua->db->SqlQuery(query.c_str(), JobIdListHandler, &incs)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return ChainResult::kError;
