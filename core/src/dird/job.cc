@@ -362,44 +362,35 @@ bool IsConnectingToClientAllowed(ClientResource* res)
   return res->conn_from_dir_to_fd;
 }
 
-bool IsConnectingToClientAllowed(JobControlRecord* jcr)
-{
-  return IsConnectingToClientAllowed(jcr->dir_impl->res.client);
-}
-
 bool IsConnectFromClientAllowed(ClientResource* res)
 {
   return res->conn_from_fd_to_dir;
 }
 
-bool IsClientTlsRequired(JobControlRecord* jcr)
+bool IsClientTlsRequired(ClientResource* res)
 {
-  return jcr->dir_impl->res.client->GetPolicy() == TlsPolicy::kBnetTlsRequired;
+  return res->GetPolicy() == TlsPolicy::kBnetTlsRequired;
 }
 
-bool IsConnectFromClientAllowed(JobControlRecord* jcr)
-{
-  return IsConnectFromClientAllowed(jcr->dir_impl->res.client);
-}
-
-bool UseWaitingClient(JobControlRecord* jcr, int timeout)
+bool UseWaitingClient(JobControlRecord* jcr,
+                      ClientResource* client,
+                      int timeout)
 {
   bool result = false;
   auto& connections = get_client_connections();
 
-  if (!IsConnectFromClientAllowed(jcr)) {
+  if (!IsConnectFromClientAllowed(client)) {
     Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
-          jcr->dir_impl->res.client->resource_name_);
+          client->resource_name_);
   } else {
-    auto connection
-        = connections.take_by_name(jcr->dir_impl->res.client->resource_name_,
-                                   std::chrono::seconds{timeout});
+    auto connection = connections.take_by_name(client->resource_name_,
+                                               std::chrono::seconds{timeout});
     if (connection) {
       jcr->file_bsock = connection->socket.release();
       jcr->dir_impl->FDVersion = connection->protocol_version;
       jcr->authenticated = true;
       Jmsg(jcr, M_INFO, 0, T_("Using Client Initiated Connection (%s).\n"),
-           jcr->dir_impl->res.client->resource_name_);
+           client->resource_name_);
       result = true;
     }
   }
