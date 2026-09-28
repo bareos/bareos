@@ -1073,6 +1073,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       const struct stat original_statp = ff_pkt->statp;
       bool data_was_read = !ff_pkt->no_read;
       uint64_t read_bytes_before = jcr->ReadBytes;
+      uint32_t job_errors_before = jcr->JobErrors;
 
       /* Ask SaveFile() to not send the "end of plugin data" marker itself:
        * a corrected-attributes resend (below) must happen before that
@@ -1110,7 +1111,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       if (file_finished_successfully && !IS_FT_OBJECT(sp.type)) {
         if (b_ctx->corrected_file_size_blocks) {
           corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
-        } else {
+        } else if (jcr->JobErrors == job_errors_before) {
           corrected_file_size_blocks = FdCountedFileSizeBlocks(
               original_statp, save_status, jcr->IsJobCanceled(), data_was_read,
               read_bytes_before, read_bytes_after);
