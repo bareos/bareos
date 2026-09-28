@@ -22,7 +22,7 @@
 import {
   DEFAULT_WEBUI_LOCALE,
   WEBUI_LOCALES,
-} from '../generated/webui-locales.js'
+} from '../i18n/locales/catalogs.js'
 
 const AVAILABLE_LOCALES = new Set(WEBUI_LOCALES.map(({ value }) => value))
 

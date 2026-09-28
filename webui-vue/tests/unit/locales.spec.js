@@ -23,7 +23,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_WEBUI_LOCALE,
   WEBUI_LOCALES,
-} from '../../src/generated/webui-locales.js'
+} from '../../src/i18n/locales/catalogs.js'
 import {
   detectPreferredLocale,
   formatCatalogTimestamp,
@@ -38,7 +38,7 @@ import {
 } from '../../src/utils/locales.js'
 
 describe('webui locales', () => {
-  it('matches the PHP WebUI locale catalog', () => {
+  it('lists the supported Vue WebUI locales', () => {
     expect(WEBUI_LOCALES.map(({ value }) => value)).toEqual([
       'cn_CN',
       'cs_CZ',
