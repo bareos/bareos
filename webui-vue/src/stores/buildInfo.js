@@ -22,6 +22,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import {
+  BUILD_KINDS,
   classifyBinaryInfo,
   loadCachedBuildKind,
   loadRibbonDismissed,
@@ -65,10 +66,14 @@ export const useBuildInfoStore = defineStore('build-info', () => {
   /** Forget directors that are no longer part of the session. */
   function retain(directors) {
     const keep = new Set(directors ?? [])
-    const next = Object.fromEntries(
-      Object.entries(kindsByDirector.value).filter(([name]) => keep.has(name)),
-    )
-    if (Object.keys(next).length !== kinds.value.length) {
+    const next = Object.fromEntries([...keep].map(name => [
+      name,
+      kindsByDirector.value[name] ?? BUILD_KINDS.unknown,
+    ]))
+    if (
+      Object.keys(next).length !== kinds.value.length
+      || Object.entries(next).some(([name, kind]) => kindsByDirector.value[name] !== kind)
+    ) {
       kindsByDirector.value = next
     }
   }

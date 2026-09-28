@@ -218,7 +218,9 @@ test('advertises Bareos services unless the director is a subscription build', a
   await expect(page.getByTestId('login-commercial-offering')).toBeVisible()
   await expect(page.getByTestId('login-commercial-offering').getByTestId('commercial-offering-evaluation'))
     .toHaveAttribute('href', 'https://www.bareos.com/try/')
-  await expect(page.getByTestId('unsupported-build-sash')).toBeVisible()
+  const sash = page.getByTestId('unsupported-build-sash')
+  await expect(sash).toBeVisible()
+  await expect(sash).toHaveCSS('background-color', 'rgb(255, 179, 0)')
 
   await login(page)
   await page.goto('/#/director')
@@ -234,6 +236,7 @@ test('advertises Bareos services unless the director is a subscription build', a
   }
   await expect(statusbarOffering).toBeVisible()
   await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(statusbarOffering).toHaveCSS('color', 'rgb(255, 202, 40)')
 
   // markers that this is not an official subscription build; the sash is
   // only shown on the login page
@@ -242,6 +245,7 @@ test('advertises Bareos services unless the director is a subscription build', a
   await expect(page).toHaveTitle('Director - Bareos (unsupported build)')
   const ribbon = page.getByTestId('unsupported-build-ribbon')
   await expect(ribbon).toBeVisible()
+  await expect(ribbon).toHaveCSS('background-color', 'rgb(255, 179, 0)')
   await expect(ribbon.getByRole('link'))
     .toHaveAttribute('href', 'https://www.bareos.com/try/')
   await expect(ribbon).toContainText(/not for production use/i)
