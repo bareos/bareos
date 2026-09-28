@@ -94,21 +94,14 @@
             <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
           </q-item>
           <template v-if="buildInfo.promote">
-            <q-item clickable v-ripple
-                    tag="a" :href="SERVICES_URL" target="_blank"
+            <q-item v-for="offering in MENU_OFFERINGS" :key="offering.id"
+                    clickable v-ripple
+                    tag="a" :href="offering.url" target="_blank"
                     rel="noopener noreferrer"
-                    data-testid="drawer-professional-support"
+                    :data-testid="`drawer-offering-${offering.id}`"
                     @click="drawerOpen = false">
-              <q-item-section avatar><q-icon name="support_agent" /></q-item-section>
-              <q-item-section>{{ t('Professional support') }}</q-item-section>
-            </q-item>
-            <q-item clickable v-ripple
-                    tag="a" :href="EXPERT_CIRCLE_URL" target="_blank"
-                    rel="noopener noreferrer"
-                    data-testid="drawer-expert-circle"
-                    @click="drawerOpen = false">
-              <q-item-section avatar><q-icon name="groups" /></q-item-section>
-              <q-item-section>{{ t('Bareos Expert Circle') }}</q-item-section>
+              <q-item-section avatar><q-icon :name="offering.icon" /></q-item-section>
+              <q-item-section>{{ t(offering.label) }}</q-item-section>
             </q-item>
           </template>
           <q-separator dark />
@@ -139,6 +132,7 @@
           </span>
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
+        <UnsupportedBuildBadge v-if="buildInfo.promote" class="q-ml-sm" />
 
         <!-- Main nav tabs (desktop only) -->
         <q-tabs v-if="!$q.screen.lt.md" dense align="left"
@@ -199,7 +193,8 @@
             </q-menu>
           </q-btn>
 
-          <q-btn flat color="white" :label="accountMenuLabel" icon="person" no-caps>
+          <q-btn flat color="white" :label="accountMenuLabel" icon="person" no-caps
+                 data-testid="account-menu">
             <q-menu>
               <q-list dense style="min-width:180px">
                 <q-item
@@ -234,15 +229,11 @@
                   <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
                 </q-item>
                 <template v-if="buildInfo.promote">
-                  <q-item clickable tag="a" :href="SERVICES_URL" target="_blank" rel="noopener noreferrer" v-close-popup
-                          data-testid="menu-professional-support">
-                    <q-item-section avatar><q-icon name="support_agent" /></q-item-section>
-                    <q-item-section>{{ t('Professional support') }}</q-item-section>
-                  </q-item>
-                  <q-item clickable tag="a" :href="EXPERT_CIRCLE_URL" target="_blank" rel="noopener noreferrer" v-close-popup
-                          data-testid="menu-expert-circle">
-                    <q-item-section avatar><q-icon name="groups" /></q-item-section>
-                    <q-item-section>{{ t('Bareos Expert Circle') }}</q-item-section>
+                  <q-item v-for="offering in MENU_OFFERINGS" :key="offering.id"
+                          clickable tag="a" :href="offering.url" target="_blank" rel="noopener noreferrer" v-close-popup
+                          :data-testid="`menu-offering-${offering.id}`">
+                    <q-item-section avatar><q-icon :name="offering.icon" /></q-item-section>
+                    <q-item-section>{{ t(offering.label) }}</q-item-section>
                   </q-item>
                 </template>
                 <q-separator />
@@ -256,6 +247,19 @@
         </template>
 
       </q-toolbar>
+      <div
+        v-if="buildInfo.promote"
+        class="unsupported-build-ribbon row items-center justify-center no-wrap"
+        data-testid="unsupported-build-ribbon"
+      >
+        <q-icon name="warning" size="14px" class="q-mr-xs" />
+        <span class="ellipsis">
+          {{ t(UNSUPPORTED_BUILD_TEXT) }}.
+          <a :href="EVALUATION_URL" target="_blank" rel="noopener noreferrer">
+            {{ t('Try the subscription release for free') }} →
+          </a>
+        </span>
+      </div>
     </q-header>
 
     <q-page-container>
@@ -296,12 +300,12 @@
 
       <template v-if="buildInfo.promote">
         <a
-          :href="SERVICES_URL" target="_blank" rel="noopener noreferrer"
+          :href="EVALUATION_URL" target="_blank" rel="noopener noreferrer"
           class="statusbar-offering gt-xs"
           data-testid="statusbar-commercial-offering"
         >
-          <q-icon name="support_agent" size="13px" />
-          {{ t(buildKindLabel(buildInfo.kind)) }} · {{ t('Get support') }}
+          <q-icon name="rocket_launch" size="13px" />
+          {{ t('Unsupported build') }} · {{ t('Try the subscription release') }}
           <q-tooltip>{{ offeringTooltip }}</q-tooltip>
         </a>
         <span class="gt-xs" style="opacity:.4">|</span>
@@ -344,10 +348,12 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useBuildInfoStore } from '../stores/buildInfo.js'
 import {
   COMMERCIAL_OFFERINGS,
-  EXPERT_CIRCLE_URL,
-  SERVICES_URL,
+  EVALUATION_URL,
+  MENU_OFFERINGS,
+  UNSUPPORTED_BUILD_TEXT,
   buildKindLabel,
 } from '../utils/commercialOffering.js'
+import UnsupportedBuildBadge from '../components/UnsupportedBuildBadge.vue'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
@@ -355,7 +361,7 @@ const consoleSessions = useConsoleSessionsStore()
 const director = useDirectorStore()
 const buildInfo = useBuildInfoStore()
 const offeringTooltip = computed(() => (
-  `${t('Bareos GmbH offers')}: ${COMMERCIAL_OFFERINGS.map(offering => t(offering.label)).join(', ')}`
+  `${t(buildKindLabel(buildInfo.kind))} · ${t('Available from bareos.com')}: ${COMMERCIAL_OFFERINGS.map(offering => t(offering.label)).join(', ')}`
 ))
 const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
@@ -658,6 +664,21 @@ async function logout() {
 </script>
 
 <style scoped>
+.unsupported-build-ribbon {
+  min-height: 24px;
+  padding: 2px 12px;
+  background: #ffb300;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.unsupported-build-ribbon a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .statusbar-offering {
   display: inline-flex;
   align-items: center;

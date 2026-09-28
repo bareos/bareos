@@ -20,14 +20,24 @@
 -->
 
 <template>
-  <q-card flat bordered class="commercial-offering-card" data-testid="commercial-offering-card">
+  <q-card
+    flat bordered
+    class="commercial-offering-card"
+    :class="{ 'commercial-offering-card--compact': compact }"
+    data-testid="commercial-offering-card"
+  >
     <q-card-section class="q-pb-sm">
       <div class="text-subtitle1 text-weight-medium">
         <q-icon name="workspace_premium" color="primary" class="q-mr-xs" />
         {{ t('Bareos for production environments') }}
       </div>
       <div class="text-body2 text-grey-8">
-        {{ t('You are running a {kind}. Bareos GmbH, the company behind Bareos, offers the following services.', { kind: t(buildKindLabel(kind)).toLowerCase() }) }}
+        <template v-if="kind === 'unknown'">
+          {{ t('Community builds of Bareos come without official subscription. The following services are available from bareos.com.') }}
+        </template>
+        <template v-else>
+          {{ t('You are running a {kind} without official subscription. The following services are available from bareos.com.', { kind: t(buildKindLabel(kind)).toLowerCase() }) }}
+        </template>
       </div>
     </q-card-section>
     <q-card-section class="q-pt-none">
@@ -35,7 +45,7 @@
         <div
           v-for="offering in COMMERCIAL_OFFERINGS"
           :key="offering.id"
-          class="col-12 col-sm-6"
+          :class="offering.highlight || compact ? 'col-12' : 'col-12 col-sm-6'"
         >
           <a
             :href="offering.url"
@@ -45,10 +55,10 @@
             :class="{ 'offering-tile--highlight': offering.highlight }"
             :data-testid="`commercial-offering-${offering.id}`"
           >
-            <q-icon :name="offering.icon" size="24px" :color="offering.highlight ? 'white' : 'primary'" />
+            <q-icon :name="offering.icon" :size="compact ? '20px' : '24px'" :color="offering.highlight ? 'white' : 'primary'" />
             <div class="offering-text">
               <div class="text-weight-medium">{{ t(offering.label) }}</div>
-              <div class="text-caption">
+              <div v-if="!compact || offering.highlight" class="text-caption">
                 {{ t(offering.description) }}
                 <template v-if="offering.id === 'subscription'">
                   {{ t('Plugins') }}: {{ SUBSCRIPTION_ONLY_PLUGINS.join(', ') }}, …
@@ -81,6 +91,7 @@ import {
 
 defineProps({
   kind: { type: String, default: 'unknown' },
+  compact: { type: Boolean, default: false },
 })
 const { t } = useI18n()
 </script>
@@ -119,6 +130,11 @@ const { t } = useI18n()
 
 .offering-text {
   flex: 1;
+}
+
+.commercial-offering-card--compact .offering-tile {
+  padding: 6px 10px;
+  align-items: center;
 }
 
 .offering-open {
