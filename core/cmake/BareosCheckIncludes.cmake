@@ -19,14 +19,14 @@
 
 if(NOT MSVC)
   include(CheckIncludeFiles)
+  include(CMakePushCheckState)
   check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
   check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
 
   if(HAVE_SYSTEMD AND HAVE_LINUX_OS)
-    set(_previous_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+    cmake_push_check_state()
     set(CMAKE_REQUIRED_INCLUDES "${SYSTEMD_INCLUDE_DIRS}")
     check_include_files("systemd/sd-bus.h" HAVE_SYSTEMD_SD_BUS_H)
-    set(CMAKE_REQUIRED_INCLUDES "${_previous_required_includes}")
-    unset(_previous_required_includes)
+    cmake_pop_check_state()
   endif()
 endif()
