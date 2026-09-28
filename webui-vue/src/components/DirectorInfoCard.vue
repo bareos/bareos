@@ -116,6 +116,7 @@
           </q-chip>
           <q-chip
             v-if="card.binary_info"
+            data-testid="director-binary-info"
             dense
             square
             class="director-info-chip"
