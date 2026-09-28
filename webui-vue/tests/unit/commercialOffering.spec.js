@@ -207,6 +207,19 @@ describe('build info store', () => {
     expect(store.promote).toBe(false)
   })
 
+  it('promotes while a newly connected director has not reported its build kind', () => {
+    const store = useBuildInfoStore()
+    store.recordStatus('dir-1', { header: { binary_info: 'Bareos subscription' } })
+    expect(store.promote).toBe(false)
+
+    store.retain(['dir-1', 'dir-2'])
+    expect(store.kindsByDirector).toEqual({
+      'dir-1': BUILD_KINDS.subscription,
+      'dir-2': BUILD_KINDS.unknown,
+    })
+    expect(store.promote).toBe(true)
+  })
+
   it('keeps the ribbon closed for the session until it is reset', () => {
     const store = useBuildInfoStore()
     expect(store.ribbonDismissed).toBe(false)
