@@ -36,6 +36,8 @@
 #include "lib/attribs.h"
 #include "lib/edit.h"
 
+#include <limits>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -283,7 +285,22 @@ bool ScanFilesForChain(UaContext* ua,
  *  - Everyone else: use st_blocks * 512 (real block-allocation data,
  *    sparse-file aware).
  */
-uint64_t AccountedBytesForFile(const std::string& lstat, bool is_windows)
+template <typename T> constexpr bool IsUnknownStatField(T value)
+{
+  if constexpr (std::numeric_limits<T>::is_signed) {
+    return value < 0;
+  } else {
+    return value == std::numeric_limits<T>::max();
+  }
+}
+
+static_assert(IsUnknownStatField(int64_t{-1}));
+static_assert(!IsUnknownStatField(int64_t{0}));
+static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
+static_assert(!IsUnknownStatField(uint64_t{0}));
+
+std::optional<uint64_t> AccountedBytesForFile(const std::string& lstat,
+                                              bool is_windows)
 {
   if (lstat.empty()) { return 0; }
 
@@ -294,8 +311,17 @@ uint64_t AccountedBytesForFile(const std::string& lstat, bool is_windows)
   std::string mutable_lstat = lstat;
   DecodeStat(mutable_lstat.data(), &statp, sizeof(statp), &LinkFI);
 
-  if (is_windows) { return static_cast<uint64_t>(statp.st_size); }
-  return static_cast<uint64_t>(statp.st_blocks) * 512;
+  if (is_windows) {
+    if (IsUnknownStatField(statp.st_size)) { return std::nullopt; }
+    return static_cast<uint64_t>(statp.st_size);
+  }
+
+  if (IsUnknownStatField(statp.st_blocks)) { return std::nullopt; }
+  uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
+  if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
+    return std::nullopt;
+  }
+  return blocks * 512;
 }
 
 bool UnameLooksLikeWindows(const std::string& uname)
@@ -405,7 +431,21 @@ bool DoSubscriptionAccounting(UaContext* ua)
       /* FileIndex==0 marks an accurate-mode "this file was deleted since
        * the last backup" entry -- exclude it, don't count stale bytes. */
       if (file.FileIndex == 0) { continue; }
-      tuple_bytes += AccountedBytesForFile(file.LStat, is_windows);
+      std::optional<uint64_t> file_bytes
+          = AccountedBytesForFile(file.LStat, is_windows);
+      if (!file_bytes) {
+        ua->ErrorMsg(T_("%s / %s: invalid file attributes for JobId=%" PRId64
+                        " FileIndex=%u -- aborting report.\n"),
+                     tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
+                     file.JobId, file.FileIndex);
+        return false;
+      }
+      if (*file_bytes > std::numeric_limits<uint64_t>::max() - tuple_bytes) {
+        ua->ErrorMsg(T_("%s / %s: byte total overflow -- aborting report.\n"),
+                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        return false;
+      }
+      tuple_bytes += *file_bytes;
       tuple_files++;
     }
 
@@ -418,6 +458,11 @@ bool DoSubscriptionAccounting(UaContext* ua)
         edit_uint64_with_commas(tuple_bytes, ec2),
         is_windows ? "st_size" : "st_blocks*512", jobids.size());
 
+    if (tuple_bytes
+        > std::numeric_limits<uint64_t>::max() - grand_total_bytes) {
+      ua->ErrorMsg(T_("Grand total byte count overflow -- aborting report.\n"));
+      return false;
+    }
     grand_total_bytes += tuple_bytes;
     grand_total_files += tuple_files;
     accounted_tuples++;
