@@ -33,24 +33,6 @@ if(HAVE_WIN32)
   )
 endif()
 
-if(FD_CLIENT_SLEEP_INHIBITION AND HAVE_LINUX_OS)
-  if(NOT HAVE_SYSTEMD)
-    message(
-      FATAL_ERROR
-        "FD_CLIENT_SLEEP_INHIBITION requires systemd support on Linux. "
-        "Set -DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
-    )
-  endif()
-  if(NOT HAVE_SYSTEMD_SD_BUS_H)
-    message(
-      FATAL_ERROR
-        "FD_CLIENT_SLEEP_INHIBITION requires <systemd/sd-bus.h> on Linux. "
-        "Install systemd development headers or set "
-        "-DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
-    )
-  endif()
-endif()
-
 add_library(fd_objects_common OBJECT)
 target_sources(
   fd_objects_common
@@ -80,8 +62,32 @@ target_sources(
 if(FD_CLIENT_SLEEP_INHIBITION)
   if(HAVE_WIN32)
     target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
-  elseif(HAVE_LINUX_OS AND HAVE_SYSTEMD)
+  elseif(HAVE_LINUX_OS)
+    if(NOT HAVE_SYSTEMD)
+      message(
+        FATAL_ERROR
+          "FD_CLIENT_SLEEP_INHIBITION requires systemd support on Linux. "
+          "Set -DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+      )
+    endif()
+    if(NOT HAVE_SYSTEMD_SD_BUS_H)
+      message(
+        FATAL_ERROR
+          "FD_CLIENT_SLEEP_INHIBITION requires <systemd/sd-bus.h> on Linux. "
+          "Install systemd development headers or set "
+          "-DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+      )
+    endif()
     target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
+    target_include_directories(
+      fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
+    )
+    target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
+    if(SYSTEMD_LIBRARIES)
+      target_link_libraries(fd_objects_common PRIVATE ${SYSTEMD_LIBRARIES})
+    else()
+      target_link_libraries(fd_objects_common PRIVATE systemd)
+    endif()
   elseif(HAVE_DARWIN_OS)
     target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
     target_link_libraries(fd_objects_common PRIVATE "-framework IOKit")
@@ -100,17 +106,6 @@ if(FD_CLIENT_SLEEP_INHIBITION)
   target_compile_definitions(
     fd_objects_common PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
   )
-  if(HAVE_LINUX_OS AND HAVE_SYSTEMD)
-    target_include_directories(
-      fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
-    )
-    target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
-    if(SYSTEMD_LIBRARIES)
-      target_link_libraries(fd_objects_common PRIVATE ${SYSTEMD_LIBRARIES})
-    else()
-      target_link_libraries(fd_objects_common PRIVATE systemd)
-    endif()
-  endif()
 endif()
 if(HAVE_LMDB)
   target_link_libraries(fd_objects_common PRIVATE bareoslmdb)
