@@ -33,6 +33,7 @@ export const BUILD_KINDS = Object.freeze({
 })
 
 export const BUILD_KIND_STORAGE_KEY = 'bareos-webui.buildKind'
+export const RIBBON_DISMISSED_STORAGE_KEY = 'bareos-webui.unsupportedRibbonDismissed'
 
 export const SERVICES_URL = 'https://www.bareos.com/services/'
 export const EVALUATION_URL = 'https://www.bareos.com/try/'
@@ -42,7 +43,7 @@ export const EXPERT_CIRCLE_URL = 'https://www.bareos.com/meet/'
 
 export const SUBSCRIPTION_ONLY_PLUGINS = ['Proxmox', 'Hyper-V', 'Barri']
 
-export const UNSUPPORTED_BUILD_TEXT = 'Unsupported build – no official subscription'
+export const UNSUPPORTED_BUILD_TEXT = 'Unsupported build – not for production use'
 
 export const COMMERCIAL_OFFERINGS = Object.freeze([
   {
@@ -140,6 +141,30 @@ export function buildKindLabel(kind) {
   }
 }
 
+/**
+ * Quasar Notify options shown once the unsupported-build ribbon is closed.
+ * `t` translates, `open` opens an external page (window.open by default).
+ */
+export function closedRibbonNotification(t = text => text, open = openExternal) {
+  return {
+    message: t('For production use: try it for free or buy a subscription'),
+    icon: 'rocket_launch',
+    color: 'grey-9',
+    textColor: 'white',
+    position: 'bottom-right',
+    timeout: 8000,
+    classes: 'unsupported-build-toast',
+    actions: [
+      { label: t('Try for free'), color: 'amber', noCaps: true, handler: () => open(EVALUATION_URL) },
+      { label: t('Buy a subscription'), color: 'amber', noCaps: true, handler: () => open(SUBSCRIPTION_URL) },
+    ],
+  }
+}
+
+function openExternal(url) {
+  globalThis.open?.(url, '_blank', 'noopener,noreferrer')
+}
+
 /** Browser tab title, marked while an unsupported build is in use. */
 export function formatDocumentTitle(pageTitle, unsupported = false) {
   const base = pageTitle ? `${pageTitle} - Bareos` : 'Bareos'
@@ -161,6 +186,34 @@ export function loadCachedBuildKind(storageImpl) {
     return Object.values(BUILD_KINDS).includes(value) ? value : BUILD_KINDS.unknown
   } catch {
     return BUILD_KINDS.unknown
+  }
+}
+
+function sessionStore(storageImpl) {
+  if (storageImpl !== undefined) return storageImpl
+  try {
+    return globalThis.sessionStorage ?? null
+  } catch {
+    return null
+  }
+}
+
+/** The ribbon stays closed until the next login in this browser tab. */
+export function loadRibbonDismissed(storageImpl) {
+  try {
+    return sessionStore(storageImpl)?.getItem(RIBBON_DISMISSED_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function storeRibbonDismissed(dismissed, storageImpl) {
+  try {
+    const store = sessionStore(storageImpl)
+    if (dismissed) store?.setItem(RIBBON_DISMISSED_STORAGE_KEY, '1')
+    else store?.removeItem(RIBBON_DISMISSED_STORAGE_KEY)
+  } catch {
+    // without storage the ribbon just stays closed until reload
   }
 }
 
