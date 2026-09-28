@@ -52,7 +52,8 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
       kIOPMAssertionTypePreventSystemSleep, kIOPMAssertionLevelOn,
       CFSTR("Bareos backup or restore running"), &assertion_id);
   if (status != kIOReturnSuccess) {
-    sleep_prevention.darwin_assertion_id = 0;
+    sleep_prevention.darwin_assertion_id
+        = static_cast<uintptr_t>(kIOPMNullAssertionID);
     WarnDarwinSleepInhibitFailure(jcr, sleep_prevention.darwin_warning_logged,
                                   status);
     return;
@@ -67,7 +68,8 @@ void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
       = static_cast<IOPMAssertionID>(sleep_prevention.darwin_assertion_id);
   if (assertion_id != kIOPMNullAssertionID) {
     IOPMAssertionRelease(assertion_id);
-    sleep_prevention.darwin_assertion_id = 0;
+    sleep_prevention.darwin_assertion_id
+        = static_cast<uintptr_t>(kIOPMNullAssertionID);
   }
 }
 
