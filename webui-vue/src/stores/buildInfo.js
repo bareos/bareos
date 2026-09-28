@@ -24,8 +24,10 @@ import { defineStore } from 'pinia'
 import {
   classifyBinaryInfo,
   loadCachedBuildKind,
+  loadRibbonDismissed,
   shouldPromote,
   storeBuildKind,
+  storeRibbonDismissed,
   summariseBuildKinds,
 } from '../utils/commercialOffering.js'
 
@@ -37,6 +39,7 @@ import {
 export const useBuildInfoStore = defineStore('build-info', () => {
   const kindsByDirector = ref({})
   const cachedKind = ref(loadCachedBuildKind())
+  const ribbonDismissed = ref(loadRibbonDismissed())
 
   const kinds = computed(() => Object.values(kindsByDirector.value))
   const kind = computed(() => (
@@ -70,5 +73,13 @@ export const useBuildInfoStore = defineStore('build-info', () => {
     }
   }
 
-  return { kindsByDirector, kind, promote, record, recordStatus, retain }
+  function setRibbonDismissed(dismissed) {
+    ribbonDismissed.value = Boolean(dismissed)
+    storeRibbonDismissed(ribbonDismissed.value)
+  }
+
+  return {
+    kindsByDirector, kind, promote, ribbonDismissed,
+    record, recordStatus, retain, setRibbonDismissed,
+  }
 })
