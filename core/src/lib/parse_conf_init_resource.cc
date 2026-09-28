@@ -65,6 +65,11 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(
           SetItemVariable<bool>(*item, false);
         }
         break;
+      case CFG_TYPE_VERIFY_PEER: {
+        auto setting = parse_verify_peer_setting(item->default_value);
+        ASSERT(setting.has_value());
+        SetItemVariable<VerifyPeerSetting>(*item, *setting);
+      } break;
       case CFG_TYPE_PINT32:
       case CFG_TYPE_INT32:
       case CFG_TYPE_SIZE32:

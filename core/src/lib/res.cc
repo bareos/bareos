@@ -1170,6 +1170,49 @@ void ConfigurationParser::StoreBool(lexer* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
+namespace {
+constexpr std::pair<std::string_view, VerifyPeerSetting>
+    VerifyPeerSettingByName[] = {
+        {"IfAvailable", VerifyPeerSetting::IfAvailable},
+        {"Yes", VerifyPeerSetting::Always},
+        {"No", VerifyPeerSetting::Never},
+};
+
+std::string as_str(VerifyPeerSetting to_convert)
+{
+  for (auto& [name, setting] : VerifyPeerSettingByName) {
+    if (to_convert == setting) { return std::string{name}; }
+  }
+
+  return "<UNKNOWN>";
+}
+};  // namespace
+
+std::optional<VerifyPeerSetting> parse_verify_peer_setting(
+    std::string_view input)
+{
+  return parse_enum<VerifyPeerSetting>(input, VerifyPeerSettingByName);
+}
+
+void ConfigurationParser::StoreVerifyPeer(lexer* lc,
+                                          const ResourceItem* item,
+                                          int index,
+                                          int)
+{
+  LexGetToken(lc, BCT_NAME);
+  std::optional setting = parse_verify_peer_setting(lc->str);
+
+  if (setting) {
+    SetItemVariable<VerifyPeerSetting>(*item, *setting);
+  } else {
+    scan_err(lc, T_("Expect %s, got: %s"), "Yes, No, or AsClient", lc->str);
+  }
+
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
 // Store Tape Label Type (BAREOS, ANSI, IBM)
 void ConfigurationParser::StoreLabel(lexer* lc,
                                      const ResourceItem* item,
@@ -1470,6 +1513,9 @@ bool ConfigurationParser::StoreResource(int type,
       break;
     case CFG_TYPE_BOOL:
       StoreBool(lc, item, index, pass);
+      break;
+    case CFG_TYPE_VERIFY_PEER:
+      StoreVerifyPeer(lc, item, index, pass);
       break;
     case CFG_TYPE_TIME:
       StoreTime(lc, item, index, pass);
@@ -1773,6 +1819,15 @@ static bool HasDefaultValue(const ResourceItem& item)
         is_default = (GetItemVariable<bool>(item) == default_value);
         break;
       }
+
+      case CFG_TYPE_VERIFY_PEER: {
+        auto default_value = parse_verify_peer_setting(item.default_value);
+
+
+        is_default
+            = (GetItemVariable<VerifyPeerSetting>(item) == default_value);
+        break;
+      }
       default:
         break;
     }
@@ -1821,6 +1876,10 @@ static bool HasDefaultValue(const ResourceItem& item)
         break;
       case CFG_TYPE_BOOL:
         is_default = (GetItemVariable<bool>(item) == false);
+        break;
+      case CFG_TYPE_VERIFY_PEER:
+        is_default = (GetItemVariable<VerifyPeerSetting>(item)
+                      == VerifyPeerSetting::Never);
         break;
       default:
         break;
@@ -1965,6 +2024,12 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     }
     case CFG_TYPE_BOOL: {
       send.KeyBool(item.name, GetItemVariable<bool>(item), inherited);
+      break;
+    }
+    case CFG_TYPE_VERIFY_PEER: {
+      VerifyPeerSetting setting = GetItemVariable<VerifyPeerSetting>(item);
+      auto value = as_str(setting);
+      send.KeyString(item.name, value, inherited);
       break;
     }
     case CFG_TYPE_STR_VECTOR:

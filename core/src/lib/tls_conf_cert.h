@@ -25,6 +25,13 @@
 #include <string>
 #include <vector>
 
+enum class VerifyPeerSetting
+{
+  Never,        // we do not verify the peer at all
+  IfAvailable,  // we only verify the peer when we received a certificate
+  Always,       // we always verify the peer
+};
+
 class TlsConfigCert {
  public:
   bool verify_peer_ = false; /* TLS Verify Peer Certificate */
