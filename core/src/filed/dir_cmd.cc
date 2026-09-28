@@ -141,6 +141,7 @@ struct s_fd_dir_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord*);
   bool monitoraccess; /* specify if monitors have access to this function */
+  bool prevent_os_suspension = false;
 };
 
 /**
@@ -151,7 +152,7 @@ struct s_fd_dir_cmds {
  */
 static struct s_fd_dir_cmds cmds[] = {
     {"accurate", AccurateCmd, false},
-    {"backup", BackupCmd, false},
+    {"backup", BackupCmd, false, true},
     {"bootstrap", BootstrapCmd, false},
     {"cancel", CancelCmd, false},
     {"endrestore", EndRestoreCmd, false},
@@ -163,7 +164,7 @@ static struct s_fd_dir_cmds cmds[] = {
     {"RunBeforeNow", RunbeforenowCmd, false},
     {"Run", RunscriptCmd, false},
     {"restoreobject", RestoreObjectCmd, false},
-    {"restore ", RestoreCmd, false},
+    {"restore ", RestoreCmd, false, true},
     {"resolve ", ResolveCmd, false},
     {"getSecureEraseCmd", SecureerasereqCmd, false},
     {"session", SessionCmd, false},
@@ -394,10 +395,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
-      const bool is_backup_or_restore_command
-          = (to_execute->func == BackupCmd || to_execute->func == RestoreCmd);
-
-      if (is_backup_or_restore_command) {
+      if (to_execute->prevent_os_suspension) {
         ActivateSleepPrevention(jcr, sleep_prevention);
       }
 
