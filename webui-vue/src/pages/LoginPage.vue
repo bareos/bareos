@@ -6,8 +6,6 @@
           <q-card-section class="login-card-header">
             <img :src="bareosLogo" alt="Bareos" class="login-card-logo" />
             <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Log in to Bareos') }}</div>
-            <q-space />
-            <UnsupportedBuildBadge v-if="buildInfo.promote" />
           </q-card-section>
           <q-card-section class="q-pt-md">
             <q-form data-testid="login-form" @submit.prevent="doLogin">
@@ -144,6 +142,16 @@
       </div>
     </div>
 
+    <div
+      v-if="buildInfo.promote"
+      class="unsupported-build-sash"
+      data-testid="unsupported-build-sash"
+      aria-hidden="true"
+    >
+      <div class="sash-title">{{ t('Unsupported build') }}</div>
+      <div class="sash-subtitle">{{ t('Not for production use') }}</div>
+    </div>
+
     <div class="login-language-anchor">
       <LanguageSelect v-model="localeRef" hide-label class="login-language-select" />
     </div>
@@ -180,7 +188,6 @@ import {
 import LanguageSelect from '../components/LanguageSelect.vue'
 import { useBuildInfoStore } from '../stores/buildInfo.js'
 import CommercialOfferingCard from '../components/CommercialOfferingCard.vue'
-import UnsupportedBuildBadge from '../components/UnsupportedBuildBadge.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -340,6 +347,8 @@ watch(
 )
 
 onMounted(async () => {
+  // a closed "unsupported build" ribbon comes back with the next login
+  buildInfo.setRibbonDismissed(false)
   if (requestedDirector.value) {
     directorRef.value = requestedDirector.value
   }
@@ -603,8 +612,6 @@ async function skipFailedDirectors() {
 
 .login-card-header {
   display: flex;
-  flex-wrap: wrap;
-  row-gap: 8px;
   align-items: center;
   color: white;
   border-radius: 8px 8px 0 0;
@@ -619,14 +626,6 @@ async function skipFailedDirectors() {
 .login-offering :deep(.commercial-offering-card) {
   border-radius: 8px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-}
-
-.login-card-header .text-h6 {
-  white-space: nowrap;
-}
-
-.login-card-badge {
-  margin-left: auto;
 }
 
 .login-card-logo {
@@ -666,6 +665,35 @@ async function skipFailedDirectors() {
   min-height: 42px;
   font-weight: 600;
   letter-spacing: 0;
+}
+
+.unsupported-build-sash {
+  position: fixed;
+  top: 52px;
+  left: -78px;
+  z-index: 10;
+  width: 300px;
+  padding: 5px 0;
+  transform: rotate(-45deg);
+  background: #ef6c00;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.sash-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sash-subtitle {
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 
 .login-language-anchor {

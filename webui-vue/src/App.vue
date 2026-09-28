@@ -1,19 +1,10 @@
 <template>
   <router-view />
-  <div
-    v-if="buildInfo.promote"
-    class="unsupported-build-sash"
-    data-testid="unsupported-build-sash"
-    aria-hidden="true"
-  >
-    {{ t('Unsupported') }}
-  </div>
 </template>
 
 <script setup>
 import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { useAuthStore }     from './stores/auth.js'
 import { useBuildInfoStore } from './stores/buildInfo.js'
 import { useDirectorStore } from './stores/director.js'
@@ -27,7 +18,6 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const buildInfo = useBuildInfoStore()
 const route = useRoute()
-const { t } = useI18n()
 
 watch(
   () => [route.meta?.title, buildInfo.promote],
@@ -87,25 +77,3 @@ onUnmounted(() => {
   window.removeEventListener('message', handleConsolePopupAuth)
 })
 </script>
-
-<style>
-.unsupported-build-sash {
-  position: fixed;
-  top: 30px;
-  left: -56px;
-  z-index: 9000;
-  width: 200px;
-  padding: 3px 0;
-  transform: rotate(-45deg);
-  background: #ef6c00;
-  color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
-  pointer-events: none;
-  opacity: 0.92;
-}
-</style>

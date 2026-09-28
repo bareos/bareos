@@ -34,7 +34,11 @@ import {
   UNSUPPORTED_BUILD_TEXT,
   buildKindLabel,
   classifyBinaryInfo,
+  RIBBON_DISMISSED_STORAGE_KEY,
+  closedRibbonNotification,
   formatDocumentTitle,
+  loadRibbonDismissed,
+  storeRibbonDismissed,
   loadCachedBuildKind,
   shouldPromote,
   storeBuildKind,
@@ -48,6 +52,7 @@ function memoryStorage(initial = {}) {
     data,
     getItem: key => (key in data ? data[key] : null),
     setItem: (key, value) => { data[key] = String(value) },
+    removeItem: (key) => { delete data[key] },
   }
 }
 
@@ -129,6 +134,35 @@ describe('commercial offering helpers', () => {
     for (const text of texts) expect(text).not.toMatch(/GmbH/)
   })
 
+  it('remembers a closed ribbon in the given storage', () => {
+    const storage = memoryStorage()
+    expect(loadRibbonDismissed(storage)).toBe(false)
+    storeRibbonDismissed(true, storage)
+    expect(storage.data[RIBBON_DISMISSED_STORAGE_KEY]).toBe('1')
+    expect(loadRibbonDismissed(storage)).toBe(true)
+    storeRibbonDismissed(false, storage)
+    expect(loadRibbonDismissed(storage)).toBe(false)
+    expect(loadRibbonDismissed(null)).toBe(false)
+    const throwing = { getItem() { throw new Error('denied') }, setItem() { throw new Error('denied') } }
+    expect(loadRibbonDismissed(throwing)).toBe(false)
+    expect(() => storeRibbonDismissed(true, throwing)).not.toThrow()
+  })
+
+  it('says the build is not for production use', () => {
+    expect(UNSUPPORTED_BUILD_TEXT).toMatch(/not for production use/)
+  })
+
+  it('offers evaluation and subscription after the ribbon is closed', () => {
+    const opened = []
+    const options = closedRibbonNotification(text => `T:${text}`, url => opened.push(url))
+    expect(options.message).toBe('T:For production use: try it for free or buy a subscription')
+    expect(options.classes).toBe('unsupported-build-toast')
+    expect(options.actions.map(action => action.label))
+      .toEqual(['T:Try for free', 'T:Buy a subscription'])
+    options.actions.forEach(action => action.handler())
+    expect(opened).toEqual([EVALUATION_URL, SUBSCRIPTION_URL])
+  })
+
   it('marks the browser tab title for unsupported builds', () => {
     expect(formatDocumentTitle('Jobs')).toBe('Jobs - Bareos')
     expect(formatDocumentTitle('Jobs', true)).toBe('Jobs - Bareos (unsupported build)')
@@ -140,6 +174,7 @@ describe('commercial offering helpers', () => {
 describe('build info store', () => {
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.clear()
     setActivePinia(createPinia())
   })
 
@@ -170,6 +205,16 @@ describe('build info store', () => {
 
     store.retain(['dir-1'])
     expect(store.promote).toBe(false)
+  })
+
+  it('keeps the ribbon closed for the session until it is reset', () => {
+    const store = useBuildInfoStore()
+    expect(store.ribbonDismissed).toBe(false)
+    store.setRibbonDismissed(true)
+    setActivePinia(createPinia())
+    expect(useBuildInfoStore().ribbonDismissed).toBe(true)
+    useBuildInfoStore().setRibbonDismissed(false)
+    expect(sessionStorage.getItem(RIBBON_DISMISSED_STORAGE_KEY)).toBeNull()
   })
 
   it('ignores status results without a header', () => {

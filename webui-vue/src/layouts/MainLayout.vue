@@ -132,7 +132,6 @@
           </span>
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
-        <UnsupportedBuildBadge v-if="buildInfo.promote" class="q-ml-sm" />
 
         <!-- Main nav tabs (desktop only) -->
         <q-tabs v-if="!$q.screen.lt.md" dense align="left"
@@ -248,7 +247,7 @@
 
       </q-toolbar>
       <div
-        v-if="buildInfo.promote"
+        v-if="buildInfo.promote && !buildInfo.ribbonDismissed"
         class="unsupported-build-ribbon row items-center justify-center no-wrap"
         data-testid="unsupported-build-ribbon"
       >
@@ -259,6 +258,15 @@
             {{ t('Try the subscription release for free') }} →
           </a>
         </span>
+        <q-btn
+          flat round dense size="xs" icon="close"
+          class="unsupported-build-ribbon-close"
+          :aria-label="t('Close')"
+          data-testid="unsupported-build-ribbon-close"
+          @click="closeUnsupportedRibbon"
+        >
+          <q-tooltip>{{ t('Hide until the next login') }}</q-tooltip>
+        </q-btn>
       </div>
     </q-header>
 
@@ -351,9 +359,9 @@ import {
   EVALUATION_URL,
   MENU_OFFERINGS,
   UNSUPPORTED_BUILD_TEXT,
+  closedRibbonNotification,
   buildKindLabel,
 } from '../utils/commercialOffering.js'
-import UnsupportedBuildBadge from '../components/UnsupportedBuildBadge.vue'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
@@ -650,6 +658,11 @@ const directorUpdateAlert = computed(() => {
   return { color, icon, message }
 })
 
+function closeUnsupportedRibbon() {
+  buildInfo.setRibbonDismissed(true)
+  $q.notify(closedRibbonNotification(t))
+}
+
 async function logout() {
   try {
     await deleteProxySession()
@@ -665,8 +678,9 @@ async function logout() {
 
 <style scoped>
 .unsupported-build-ribbon {
+  position: relative;
   min-height: 24px;
-  padding: 2px 12px;
+  padding: 2px 36px;
   background: #ffb300;
   color: rgba(0, 0, 0, 0.87);
   font-size: 0.78rem;
@@ -677,6 +691,11 @@ async function logout() {
   color: inherit;
   font-weight: 700;
   text-decoration: underline;
+}
+
+.unsupported-build-ribbon-close {
+  position: absolute;
+  right: 8px;
 }
 
 .statusbar-offering {
