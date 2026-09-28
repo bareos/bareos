@@ -212,6 +212,27 @@ test('logs in and shows the dashboard', async ({ page }) => {
   )
 })
 
+test('advertises Bareos services unless the director is a subscription build', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/director')
+  const binaryInfo = page.getByTestId('director-binary-info').first()
+  await expect(binaryInfo).toBeVisible()
+  const isSubscription = /subscription/i.test(await binaryInfo.innerText())
+
+  const statusbarOffering = page.getByTestId('statusbar-commercial-offering')
+  if (isSubscription) {
+    await expect(statusbarOffering).toHaveCount(0)
+    return
+  }
+  await expect(statusbarOffering).toBeVisible()
+  await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/services/')
+
+  await page.getByRole('tab', { name: 'Subscription' }).click()
+  await expect(page.getByTestId('commercial-offering-card')).toBeVisible()
+  await expect(page.getByTestId('commercial-offering-expert-circle'))
+    .toHaveAttribute('href', 'https://www.bareos.com/meet/')
+})
+
 test('shows a login error for invalid credentials', async ({ page }) => {
   await login(page, {
     loginPassword: `${password}-invalid`,
