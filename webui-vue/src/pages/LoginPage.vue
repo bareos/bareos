@@ -1,154 +1,146 @@
 <template>
   <q-page class="login-page flex flex-center">
-    <div class="login-shell">
-      <q-card flat bordered class="login-card">
-        <q-card-section class="login-card-header">
-          <img :src="bareosLogo" alt="Bareos" class="login-card-logo" />
-          <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Log in to Bareos') }}</div>
-        </q-card-section>
-        <q-card-section class="q-pt-md">
-          <q-form data-testid="login-form" @submit.prevent="doLogin">
-            <q-input
-              v-model="username"
-              data-testid="login-username"
-              :label="t('Username')"
-              outlined
-              class="login-input q-mb-sm"
-              autocomplete="username"
-            >
-              <template #prepend><q-icon name="person" /></template>
-            </q-input>
-            <q-input
-              v-model="password"
-              data-testid="login-password"
-              :label="t('Password')"
-              type="password"
-              outlined
-              class="login-input q-mb-sm"
-              autocomplete="current-password"
-            >
-              <template #prepend><q-icon name="key" /></template>
-            </q-input>
-            <q-banner
-              v-if="isMultiDirectorLogin"
-              dense
-              class="login-multi-banner q-mb-md rounded-borders"
-            >
-              <div class="row items-center no-wrap text-weight-medium">
-                <q-icon name="dns" class="q-mr-sm" />
-                <span>{{ multiDirectorLoginMessage }}</span>
-              </div>
-              <div
-                v-if="multiDirectorStatuses.length > 0"
-                class="q-mt-sm"
-                data-testid="login-target-directors"
+    <div class="login-row">
+      <div class="login-shell">
+        <q-card flat bordered class="login-card">
+          <q-card-section class="login-card-header">
+            <img :src="bareosLogo" alt="Bareos" class="login-card-logo" />
+            <div class="text-h6 text-weight-medium q-ml-sm">{{ t('Log in to Bareos') }}</div>
+            <q-space />
+            <UnsupportedBuildBadge v-if="buildInfo.promote" />
+          </q-card-section>
+          <q-card-section class="q-pt-md">
+            <q-form data-testid="login-form" @submit.prevent="doLogin">
+              <q-input
+                v-model="username"
+                data-testid="login-username"
+                :label="t('Username')"
+                outlined
+                class="login-input q-mb-sm"
+                autocomplete="username"
               >
-                <div class="text-caption text-grey-7 q-mb-xs">{{ t('Directors') }}</div>
-                <div class="column q-gutter-xs">
-                  <div
-                    v-for="entry in multiDirectorStatuses"
-                    :key="entry.director"
-                    class="director-login-status"
-                  >
-                    <div class="row items-center no-wrap">
-                      <q-icon :name="entry.icon" :color="entry.color" size="16px" class="q-mr-sm" />
-                      <span class="text-weight-medium q-mr-sm">{{ entry.director }}</span>
-                      <span :class="entry.statusClass">{{ entry.statusText }}</span>
-                    </div>
+                <template #prepend><q-icon name="person" /></template>
+              </q-input>
+              <q-input
+                v-model="password"
+                data-testid="login-password"
+                :label="t('Password')"
+                type="password"
+                outlined
+                class="login-input q-mb-sm"
+                autocomplete="current-password"
+              >
+                <template #prepend><q-icon name="key" /></template>
+              </q-input>
+              <q-banner
+                v-if="isMultiDirectorLogin"
+                dense
+                class="login-multi-banner q-mb-md rounded-borders"
+              >
+                <div class="row items-center no-wrap text-weight-medium">
+                  <q-icon name="dns" class="q-mr-sm" />
+                  <span>{{ multiDirectorLoginMessage }}</span>
+                </div>
+                <div
+                  v-if="multiDirectorStatuses.length > 0"
+                  class="q-mt-sm"
+                  data-testid="login-target-directors"
+                >
+                  <div class="text-caption text-grey-7 q-mb-xs">{{ t('Directors') }}</div>
+                  <div class="column q-gutter-xs">
                     <div
-                      v-if="entry.failureMessage"
-                      class="text-negative text-caption q-ml-lg"
+                      v-for="entry in multiDirectorStatuses"
+                      :key="entry.director"
+                      class="director-login-status"
                     >
-                      {{ entry.failureMessage }}
+                      <div class="row items-center no-wrap">
+                        <q-icon :name="entry.icon" :color="entry.color" size="16px" class="q-mr-sm" />
+                        <span class="text-weight-medium q-mr-sm">{{ entry.director }}</span>
+                        <span :class="entry.statusClass">{{ entry.statusText }}</span>
+                      </div>
+                      <div
+                        v-if="entry.failureMessage"
+                        class="text-negative text-caption q-ml-lg"
+                      >
+                        {{ entry.failureMessage }}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </q-banner>
-            <q-select
-              v-if="showDirectorSelect"
-              v-model="directorRef"
-              data-testid="login-director"
-              :options="directorOptions"
-              option-label="label"
-              option-value="value"
-              emit-value
-              map-options
-              :label="t('Director')"
-              :error="!!directorLoadError"
-              :error-message="directorLoadError"
-              bottom-slots
-              outlined
-              class="login-director-field q-mb-lg"
-            >
-              <template #prepend><q-icon name="dns" /></template>
-            </q-select>
-            <q-input
-              v-else-if="showDirectorTextInput"
-              v-model="directorRef"
-              data-testid="login-director"
-              :label="t('Director')"
-              :error="!!directorLoadError"
-              :error-message="directorLoadError"
-              bottom-slots
-              outlined
-              class="login-director-field q-mb-lg"
-            >
-              <template #prepend><q-icon name="dns" /></template>
-            </q-input>
-            <q-banner v-if="errorMsg" data-testid="login-error" dense rounded class="bg-negative text-white q-mb-md">
-              <template #avatar><q-icon name="error" /></template>
-              {{ errorMsg }}
-            </q-banner>
+              </q-banner>
+              <q-select
+                v-if="showDirectorSelect"
+                v-model="directorRef"
+                data-testid="login-director"
+                :options="directorOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                :label="t('Director')"
+                :error="!!directorLoadError"
+                :error-message="directorLoadError"
+                bottom-slots
+                outlined
+                class="login-director-field q-mb-lg"
+              >
+                <template #prepend><q-icon name="dns" /></template>
+              </q-select>
+              <q-input
+                v-else-if="showDirectorTextInput"
+                v-model="directorRef"
+                data-testid="login-director"
+                :label="t('Director')"
+                :error="!!directorLoadError"
+                :error-message="directorLoadError"
+                bottom-slots
+                outlined
+                class="login-director-field q-mb-lg"
+              >
+                <template #prepend><q-icon name="dns" /></template>
+              </q-input>
+              <q-banner v-if="errorMsg" data-testid="login-error" dense rounded class="bg-negative text-white q-mb-md">
+                <template #avatar><q-icon name="error" /></template>
+                {{ errorMsg }}
+              </q-banner>
 
-            <q-btn
-              data-testid="login-submit"
-              type="submit"
-              :label="submitLabel"
-              color="primary"
-              unelevated
-              class="full-width login-submit"
-              :loading="loading"
-            />
-            <q-btn
-              v-if="canSkipRemainingDirectors"
-              flat
-              color="primary"
-              class="full-width q-mt-sm"
-              :label="t('Skip failed directors')"
-              :disable="loading"
-              @click="skipFailedDirectors"
-            />
-            <q-btn
-              v-if="canReuseCurrentCredentials"
-              flat
-              color="primary"
-              class="full-width q-mt-sm"
-              :label="t('Reuse current credentials')"
-              :disable="loading"
-              @click="reuseCurrentCredentials"
-            />
-          </q-form>
-        </q-card-section>
-      </q-card>
+              <q-btn
+                data-testid="login-submit"
+                type="submit"
+                :label="submitLabel"
+                color="primary"
+                unelevated
+                class="full-width login-submit"
+                :loading="loading"
+              />
+              <q-btn
+                v-if="canSkipRemainingDirectors"
+                flat
+                color="primary"
+                class="full-width q-mt-sm"
+                :label="t('Skip failed directors')"
+                :disable="loading"
+                @click="skipFailedDirectors"
+              />
+              <q-btn
+                v-if="canReuseCurrentCredentials"
+                flat
+                color="primary"
+                class="full-width q-mt-sm"
+                :label="t('Reuse current credentials')"
+                :disable="loading"
+                @click="reuseCurrentCredentials"
+              />
+            </q-form>
+          </q-card-section>
+        </q-card>
+      </div>
       <div
         v-if="buildInfo.promote"
-        class="login-offering text-caption text-center q-mt-md"
+        class="login-offering"
         data-testid="login-commercial-offering"
       >
-        <div v-if="buildInfo.kind !== 'unknown'" class="text-weight-medium">
-          {{ t(buildKindLabel(buildInfo.kind)) }} ({{ t('unsupported') }})
-        </div>
-        <div>
-          <a :href="SERVICES_URL" target="_blank" rel="noopener noreferrer">
-            {{ t('Subscription, professional support, training and consulting from Bareos GmbH') }}
-          </a>
-        </div>
-        <div>
-          <a :href="EXPERT_CIRCLE_URL" target="_blank" rel="noopener noreferrer">
-            {{ t('Join the Bareos Expert Circle') }}
-          </a>
-        </div>
+        <CommercialOfferingCard :kind="buildInfo.kind" compact />
       </div>
     </div>
 
@@ -187,11 +179,8 @@ import {
 } from '../utils/sessionApi.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import { useBuildInfoStore } from '../stores/buildInfo.js'
-import {
-  EXPERT_CIRCLE_URL,
-  SERVICES_URL,
-  buildKindLabel,
-} from '../utils/commercialOffering.js'
+import CommercialOfferingCard from '../components/CommercialOfferingCard.vue'
+import UnsupportedBuildBadge from '../components/UnsupportedBuildBadge.vue'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -595,6 +584,13 @@ async function skipFailedDirectors() {
   background: transparent;
 }
 
+.login-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+}
+
 .login-shell {
   width: min(420px, calc(100vw - 32px));
   padding: 24px;
@@ -607,6 +603,8 @@ async function skipFailedDirectors() {
 
 .login-card-header {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 8px;
   align-items: center;
   color: white;
   border-radius: 8px 8px 0 0;
@@ -614,21 +612,21 @@ async function skipFailedDirectors() {
 }
 
 .login-offering {
-  padding: 8px 12px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 24px;
+}
+
+.login-offering :deep(.commercial-offering-card) {
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
-  color: rgba(0, 0, 0, 0.7);
-  line-height: 1.6;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
-.login-offering a {
-  color: var(--q-primary);
-  text-decoration: none;
+.login-card-header .text-h6 {
+  white-space: nowrap;
 }
 
-.login-offering a:hover,
-.login-offering a:focus-visible {
-  text-decoration: underline;
+.login-card-badge {
+  margin-left: auto;
 }
 
 .login-card-logo {

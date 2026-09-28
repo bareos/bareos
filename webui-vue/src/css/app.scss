@@ -154,6 +154,16 @@ $bareos-blue-dark: #005a96;
   gap: 6px;
 }
 
+// Community, pre-release and self-compiled builds: no brand colour, so it
+// is obvious at a glance that this is not an official subscription build.
+body.bareos-unsupported-build .bareos-toolbar {
+  background-color: #37474f !important;
+}
+
+body.bareos-unsupported-build .bareos-statusbar {
+  background-color: #263238 !important;
+}
+
 .panel-refresh-countdown {
   display: inline-flex;
   align-items: center;

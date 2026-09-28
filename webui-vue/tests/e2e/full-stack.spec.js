@@ -213,6 +213,13 @@ test('logs in and shows the dashboard', async ({ page }) => {
 })
 
 test('advertises Bareos services unless the director is a subscription build', async ({ page }) => {
+  // nothing is known about the build before the first login
+  await page.goto('/')
+  await expect(page.getByTestId('login-commercial-offering')).toBeVisible()
+  await expect(page.getByTestId('login-commercial-offering').getByTestId('commercial-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(page.getByTestId('unsupported-build-sash')).toBeVisible()
+
   await login(page)
   await page.goto('/#/director')
   const binaryInfo = page.getByTestId('director-binary-info').first()
@@ -222,15 +229,87 @@ test('advertises Bareos services unless the director is a subscription build', a
   const statusbarOffering = page.getByTestId('statusbar-commercial-offering')
   if (isSubscription) {
     await expect(statusbarOffering).toHaveCount(0)
+    await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
     return
   }
   await expect(statusbarOffering).toBeVisible()
-  await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/services/')
+  await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/try/')
+
+  // markers that this is not an official subscription build
+  await expect(page.getByTestId('unsupported-build-badge')).toBeVisible()
+  await expect(page.getByTestId('unsupported-build-ribbon')).toBeVisible()
+  await expect(page.getByTestId('unsupported-build-ribbon').getByRole('link'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(page.getByTestId('unsupported-build-sash')).toBeVisible()
+  await expect(page.locator('body')).toHaveClass(/bareos-unsupported-build/)
+  await expect(page).toHaveTitle('Director - Bareos (unsupported build)')
+
+  await page.getByTestId('account-menu').click()
+  await expect(page.getByTestId('menu-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(page.getByTestId('menu-offering-subscription')).toBeVisible()
+  await page.keyboard.press('Escape')
 
   await page.getByRole('tab', { name: 'Subscription' }).click()
   await expect(page.getByTestId('commercial-offering-card')).toBeVisible()
+  await expect(page.getByTestId('commercial-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
   await expect(page.getByTestId('commercial-offering-expert-circle'))
     .toHaveAttribute('href', 'https://www.bareos.com/meet/')
+})
+
+// Official releases run these tests with the build definitions of the
+// release, but PR builds are never subscription builds. Pretend to be one
+// by rewriting binary_info in the director replies.
+async function reportSubscriptionBuild(page) {
+  await page.routeWebSocket(/.*/, (ws) => {
+    const server = ws.connectToServer()
+    server.onMessage((message) => {
+      try {
+        const parsed = JSON.parse(message)
+        if (parsed?.type === 'response' && parsed.data?.header?.binary_info !== undefined) {
+          parsed.data.header.binary_info = 'Bareos subscription'
+          ws.send(JSON.stringify(parsed))
+          return
+        }
+      } catch {
+        // not JSON: forward unchanged
+      }
+      ws.send(message)
+    })
+  })
+}
+
+test('hides the service advertisement for subscription builds', async ({ page }) => {
+  await reportSubscriptionBuild(page)
+  await login(page)
+  await page.goto('/#/director')
+  await expect(page.getByTestId('director-binary-info').first())
+    .toHaveText(/Bareos subscription/)
+
+  await expect(page.getByTestId('statusbar-commercial-offering')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-badge')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
+  await expect(page.locator('body')).not.toHaveClass(/bareos-unsupported-build/)
+  await expect(page).toHaveTitle('Director - Bareos')
+  await page.getByTestId('account-menu').click()
+  await expect(page.getByTestId('menu-offering-evaluation')).toHaveCount(0)
+  await expect(page.getByTestId('menu-offering-support')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('tab', { name: 'Subscription' }).click()
+  await expect(page.getByRole('link', { name: 'Get Official Support' })).toBeVisible()
+  await expect(page.getByTestId('commercial-offering-card')).toHaveCount(0)
+
+  // the login page decides from the remembered build kind
+  expect(await page.evaluate(() => localStorage.getItem('bareos-webui.buildKind')))
+    .toBe('subscription')
+  await page.getByTestId('account-menu').click()
+  await page.locator('.q-menu').getByText('Logout', { exact: true }).click()
+  await expect(page.getByTestId('login-form')).toBeVisible()
+  await expect(page.getByTestId('login-commercial-offering')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
 })
 
 test('shows a login error for invalid credentials', async ({ page }) => {

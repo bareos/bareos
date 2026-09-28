@@ -35,24 +35,37 @@ export const BUILD_KINDS = Object.freeze({
 export const BUILD_KIND_STORAGE_KEY = 'bareos-webui.buildKind'
 
 export const SERVICES_URL = 'https://www.bareos.com/services/'
+export const EVALUATION_URL = 'https://www.bareos.com/try/'
+export const SUBSCRIPTION_URL = 'https://www.bareos.com/product/subscription/'
+export const SUPPORT_URL = 'https://www.bareos.com/product/support/'
 export const EXPERT_CIRCLE_URL = 'https://www.bareos.com/meet/'
 
 export const SUBSCRIPTION_ONLY_PLUGINS = ['Proxmox', 'Hyper-V', 'Barri']
 
+export const UNSUPPORTED_BUILD_TEXT = 'Unsupported build – no official subscription'
+
 export const COMMERCIAL_OFFERINGS = Object.freeze([
+  {
+    id: 'evaluation',
+    icon: 'rocket_launch',
+    label: 'Try the subscription release',
+    description: 'Request free trial access to the tested subscription packages and plugins for your evaluation.',
+    url: EVALUATION_URL,
+    highlight: true,
+  },
   {
     id: 'subscription',
     icon: 'verified',
-    label: 'Subscription',
+    label: 'Subscription packages',
     description: 'Maintained and tested packages for all major platforms, plus subscription-only plugins.',
-    url: 'https://www.bareos.com/product/subscription/',
+    url: SUBSCRIPTION_URL,
   },
   {
     id: 'support',
     icon: 'support_agent',
     label: 'Professional support',
     description: 'Direct help from the Bareos developers for production and regulated environments.',
-    url: 'https://www.bareos.com/product/support/',
+    url: SUPPORT_URL,
   },
   {
     id: 'training',
@@ -81,9 +94,14 @@ export const COMMERCIAL_OFFERINGS = Object.freeze([
     label: 'Bareos Expert Circle',
     description: 'Meet users, customers and Bareos experts online, discuss real use cases and get an early look at new features.',
     url: EXPERT_CIRCLE_URL,
-    highlight: true,
   },
 ])
+
+/** Short list for the menus, most important first. */
+export const MENU_OFFERINGS = Object.freeze(
+  ['evaluation', 'subscription', 'support', 'expert-circle']
+    .map(id => COMMERCIAL_OFFERINGS.find(offering => offering.id === id)),
+)
 
 export function classifyBinaryInfo(binaryInfo) {
   const text = String(binaryInfo ?? '').trim().toLowerCase()
@@ -120,6 +138,12 @@ export function buildKindLabel(kind) {
     case BUILD_KINDS.selfcompiled: return 'Self-compiled build'
     default: return 'Community build'
   }
+}
+
+/** Browser tab title, marked while an unsupported build is in use. */
+export function formatDocumentTitle(pageTitle, unsupported = false) {
+  const base = pageTitle ? `${pageTitle} - Bareos` : 'Bareos'
+  return unsupported ? `${base} (unsupported build)` : base
 }
 
 function storage(storageImpl) {
