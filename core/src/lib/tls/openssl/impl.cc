@@ -121,7 +121,7 @@ class TlsOpenSsl : public Tls {
    * If necessary it is still accessible via the SSL object. */
   ssl_ptr openssl_{};
 
-  bool verify_peer_{};
+  VerifyPeerSetting verify_peer_{};
   std::vector<std::string> allowed_common_names{};
 
   std::optional<PskCredentials> credentials_;
@@ -603,17 +603,33 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
     return false;
   }
 
-  if (!verify_peer_) {
-    Dmsg0(200, "We do not check the peer\n");
-    return true;
-  }
-
   cert_ptr cert{SSL_get_peer_certificate(ssl())};
-
-  if (!cert) {
-    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
-    return false;
+  switch (verify_peer_) {
+    case VerifyPeerSetting::Never: {
+      Dmsg0(200, "We do not check the peer\n");
+      return true;
+    } break;
+    case VerifyPeerSetting::IfAvailable: {
+      if (!cert) {
+        Dmsg0(200,
+              "Peer did not present a TLS certificate -> skipping check\n");
+        return true;
+      }
+    } break;
+    case VerifyPeerSetting::Always: {
+      if (!cert) {
+        Qmsg0(jcr, M_ERROR, 0, "Peer failed to present a TLS certificate\n");
+        return false;
+      }
+    } break;
+    default: {
+      Qmsg0(jcr, M_ERROR, 0, "Unknown verify peer setting: %zu\n",
+            static_cast<size_t>(verify_peer_));
+      return false;
+    } break;
   }
+
+  ASSERT(cert);
 
   /* If there's an Allowed CN verify list, use that to validate the remote
    * certificate's CN. Otherwise, we use standard host/CN matching. */
@@ -646,16 +662,33 @@ bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
 
   auto* jcr = bsock->jcr();
 
-  if (!verify_peer_) {
-    Dmsg0(200, "We do not check the peer\n");
-    return true;
+  cert_ptr cert{SSL_get_peer_certificate(ssl())};
+  switch (verify_peer_) {
+    case VerifyPeerSetting::Never: {
+      Dmsg0(200, "We do not check the peer\n");
+      return true;
+    } break;
+    case VerifyPeerSetting::IfAvailable: {
+      if (!cert) {
+        Dmsg0(200,
+              "Peer did not present a TLS certificate -> skipping check\n");
+        return true;
+      }
+    } break;
+    case VerifyPeerSetting::Always: {
+      if (!cert) {
+        Qmsg0(jcr, M_ERROR, 0, "Peer failed to present a TLS certificate\n");
+        return false;
+      }
+    } break;
+    default: {
+      Qmsg0(jcr, M_ERROR, 0, "Unknown verify peer setting: %zu\n",
+            static_cast<size_t>(verify_peer_));
+      return false;
+    } break;
   }
 
-  cert_ptr cert{SSL_get_peer_certificate(ssl())};
-  if (!cert) {
-    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
-    return false;
-  }
+  ASSERT(cert);
 
   if (!allowed_common_names.empty()) {
     if (!TlsPostconnectVerifyCn(cert.get(), allowed_common_names)) {
@@ -862,7 +895,7 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
                         T_("Error loading certificate verification stores"));
       return {};
     }
-  } else if (verify_peer) {
+  } else if (verify_peer != VerifyPeerSetting::Never) {
     /* At least one CA is required for peer verification */
     Dmsg0(100, T_("Either a certificate file or a directory must be"
                   " specified as a verification store\n"));
@@ -946,13 +979,26 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
     SSL_CTX_set_options(openssl_ctx_.get(), SSL_OP_SINGLE_DH_USE);
   }
 
-  if (verify_peer) {
-    // SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
-    SSL_CTX_set_verify(openssl_ctx_.get(),
-                       SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       OpensslVerifyPeer);
-  } else {
-    SSL_CTX_set_verify(openssl_ctx_.get(), SSL_VERIFY_NONE, NULL);
+  switch (verify_peer) {
+    case VerifyPeerSetting::Never: {
+      SSL_CTX_set_verify(openssl_ctx_.get(), SSL_VERIFY_NONE, NULL);
+    } break;
+    case VerifyPeerSetting::IfAvailable: {
+      SSL_CTX_set_verify(openssl_ctx_.get(), SSL_VERIFY_PEER,
+                         OpensslVerifyPeer);
+    } break;
+    case VerifyPeerSetting::Always: {
+      // NOTE: SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
+      //  But the verification will still fail later when we do our own check!
+      SSL_CTX_set_verify(openssl_ctx_.get(),
+                         SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                         OpensslVerifyPeer);
+    } break;
+    default: {
+      Dmsg0(50, "Uknown verify peer setting %zu\n",
+            static_cast<size_t>(verify_peer));
+      return {};
+    } break;
   }
 
   ssl_ptr openssl_{SSL_new(openssl_ctx_.get())};
@@ -1017,7 +1063,7 @@ void print_options(const TlsResource* res)
   Dmsg1(100, "Set certfile_:\t<%s>\n", cert.certfile_.c_str());
   Dmsg1(100, "Set keyfile_:\t<%s>\n", cert.keyfile_.c_str());
   Dmsg1(100, "Set dhfile_:\t<%s>\n", cert.dhfile_.c_str());
-  Dmsg1(100, "Set Verify Peer:\t<%s>\n", cert.verify_peer_ ? "Yes" : "No");
+  Dmsg1(100, "Set Verify Peer:\t<%s>\n", as_str(cert.verify_peer_).c_str());
 }
 
 };  // namespace
