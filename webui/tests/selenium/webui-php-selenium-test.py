@@ -666,7 +666,15 @@ class SeleniumTest(unittest.TestCase):
     def logout(self):
         if self.is_shared_session_test():
             return
-        self.driver.get(self.base_url + "/auth/logout")
+        self.driver.get(self.base_url)
+        self.wait_and_click(
+            By.XPATH,
+            '//span[contains(@class, "glyphicon-user")]/ancestor::a',
+        )
+        self.wait_and_click(
+            By.XPATH,
+            '//form[@method="post"]//button[normalize-space()="Logout"]',
+        )
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
