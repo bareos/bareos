@@ -155,17 +155,19 @@ async function selectQOptionByFilterText(
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await expect(option).toContainText(filterText, { ignoreCase: true })
       await option.click()
-      if (selected) {
-        await selected()
+      break
+    } catch (error) {
+      if (page.isClosed() || attempt === 2) {
+        throw error
       }
-      return
-    } catch {
       await page.keyboard.press('Escape')
       await page.waitForTimeout(300)
     }
   }
 
-  throw new Error(`Could not select an option matching "${filterText}" for ${testId}`)
+  if (selected) {
+    await selected()
+  }
 }
 
 // The test schedules only fire on Sundays at 03:00/03:10 and Mon-Sat at
