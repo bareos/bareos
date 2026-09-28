@@ -57,11 +57,28 @@ using namespace filedaemon;
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
 
+static bool IsClientInitiatedOnlyModeConfigured()
+{
+  BareosResource* resource = nullptr;
+  bool has_outbound_director = false;
+  bool has_inbound_director = false;
+
+  while ((resource = my_config->GetNextRes(R_DIRECTOR, resource)) != nullptr) {
+    auto* director = dynamic_cast<DirectorResource*>(resource);
+    if (!director) { continue; }
+
+    if (director->conn_from_fd_to_dir) { has_outbound_director = true; }
+    if (director->conn_from_dir_to_fd) { has_inbound_director = true; }
+  }
+
+  return has_outbound_director && !has_inbound_director;
+}
+
 #if defined(HAVE_WIN32)
 static HANDLE termination_event = nullptr;
 
 static bool SetupTerminationHandling(bool client_initiated_only_mode,
-                                     bool no_signals)
+                                     bool signals_disabled)
 {
   if (client_initiated_only_mode) {
     termination_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
@@ -73,7 +90,7 @@ static bool SetupTerminationHandling(bool client_initiated_only_mode,
     }
   }
 
-  if (!no_signals) { InitSignals(TerminateFiled); }
+  if (!signals_disabled) { InitSignals(TerminateFiled); }
   return true;
 }
 
@@ -148,9 +165,9 @@ static void NotifyTerminationViaPipe(int sig)
 }
 
 static bool SetupTerminationHandling(bool client_initiated_only_mode,
-                                     bool no_signals)
+                                     bool signals_disabled)
 {
-  if (no_signals) { return true; }
+  if (signals_disabled) { return true; }
 
   if (client_initiated_only_mode && SetupTerminationPipe()) {
     InitSignals(NotifyTerminationViaPipe);
@@ -159,23 +176,6 @@ static bool SetupTerminationHandling(bool client_initiated_only_mode,
     InitSignals(TerminateFiled);
   }
   return true;
-}
-
-static bool IsClientInitiatedOnlyModeConfigured()
-{
-  BareosResource* resource = nullptr;
-  bool has_outbound_director = false;
-  bool has_inbound_director = false;
-
-  while ((resource = my_config->GetNextRes(R_DIRECTOR, resource)) != nullptr) {
-    auto* director = dynamic_cast<DirectorResource*>(resource);
-    if (!director) { continue; }
-
-    if (director->conn_from_fd_to_dir) { has_outbound_director = true; }
-    if (director->conn_from_dir_to_fd) { has_inbound_director = true; }
-  }
-
-  return has_outbound_director && !has_inbound_director;
 }
 
 static void WaitUntilTerminated()
