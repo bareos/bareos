@@ -22,6 +22,7 @@
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_STAT_BLOCKS_H_
 
 #include <cstdint>
+#include <limits>
 
 /**
  * Windows has no native notion of "512-byte blocks allocated" like POSIX
@@ -35,7 +36,7 @@
  */
 constexpr uint64_t WindowsSizeToBlocks(uint64_t st_size)
 {
-  return (st_size + 511) / 512;
+  return st_size / 512 + (st_size % 512 != 0);
 }
 
 // Compile-time tests: POSIX st_blocks is always counted in 512-byte
@@ -45,5 +46,7 @@ static_assert(WindowsSizeToBlocks(1) == 1);
 static_assert(WindowsSizeToBlocks(512) == 1);
 static_assert(WindowsSizeToBlocks(513) == 2);
 static_assert(WindowsSizeToBlocks(1024) == 2);
+static_assert(WindowsSizeToBlocks(std::numeric_limits<uint64_t>::max())
+              == std::numeric_limits<uint64_t>::max() / 512 + 1);
 
 #endif  // BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_STAT_BLOCKS_H_

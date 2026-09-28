@@ -57,6 +57,7 @@ constexpr const char* kAccountableJobTypes = "'B','C','g','O'";
 
 struct AccountedFile {
   JobId_t JobId{0};
+  utime_t JobTDate{0};
   uint32_t FileIndex{0};
   std::string LStat{};
 };
@@ -104,18 +105,22 @@ struct FileScanCtx {
 
 int FileRowHandler(void* ctx, int, char** row)
 {
-  // row[0]=PathId row[1]=Name row[2]=FileIndex row[3]=JobId row[4]=LStat
+  // row[0]=PathId row[1]=Name row[2]=FileIndex row[3]=JobId
+  // row[4]=JobTDate row[5]=LStat
   auto* c = static_cast<FileScanCtx*>(ctx);
   FileKey key = std::string(row[0] ? row[0] : "") + "\x01"
                 + std::string(row[1] ? row[1] : "");
   auto jobid = static_cast<JobId_t>(str_to_int64(row[3]));
+  auto job_tdate = static_cast<utime_t>(str_to_int64(row[4]));
 
   auto it = c->files.find(key);
-  if (it == c->files.end() || jobid > it->second.JobId) {
+  if (it == c->files.end() || job_tdate > it->second.JobTDate
+      || (job_tdate == it->second.JobTDate && jobid > it->second.JobId)) {
     AccountedFile f;
     f.JobId = jobid;
+    f.JobTDate = job_tdate;
     f.FileIndex = static_cast<uint32_t>(str_to_int64(row[2]));
-    f.LStat = row[4] ? row[4] : "";
+    f.LStat = row[5] ? row[5] : "";
     c->files[key] = std::move(f);
   }
   return 0;
@@ -233,7 +238,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
  * Fetch every File row for the resolved JobId chain in one plain query (no
  * DISTINCT/GROUP BY -- confirmed faster and independent of catalog
  * work_mem tuning, see plan.md benchmark), then dedup on the application
- * side: latest JobId wins per (PathId, Name).
+ * side: latest JobTDate wins per (PathId, Name), with JobId as a tie-breaker.
  */
 bool ScanFilesForChain(UaContext* ua,
                        const std::vector<JobId_t>& jobids,
@@ -250,8 +255,9 @@ bool ScanFilesForChain(UaContext* ua,
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
-       "SELECT PathId, Name, FileIndex, JobId, LStat FROM File"
-       " WHERE JobId IN (%s)",
+       "SELECT File.PathId, File.Name, File.FileIndex, File.JobId,"
+       " Job.JobTDate, File.LStat FROM File"
+       " JOIN Job USING (JobId) WHERE File.JobId IN (%s)",
        jobid_list.c_str());
 
   if (!ua->db->SqlQuery(query.c_str(), FileRowHandler, scan)) {
