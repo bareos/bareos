@@ -21,26 +21,20 @@
 
 #include "filed/os_suspension.h"
 
-#include "compat.h"
-
 namespace filedaemon {
 
-struct SleepPrevention {
-  bool active = false;
-};
+struct SleepPrevention {};
 
 SleepPrevention* ActivateSleepPrevention(JobControlRecord*)
 {
-  auto* sleep_prevention = new SleepPrevention;
-  PreventOsSuspensions();
-  sleep_prevention->active = true;
-  return sleep_prevention;
+  SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+  return new SleepPrevention;
 }
 
 void DeactivateSleepPrevention(SleepPrevention* sleep_prevention)
 {
   if (!sleep_prevention) { return; }
-  if (sleep_prevention->active) { AllowOsSuspensions(); }
+  SetThreadExecutionState(ES_CONTINUOUS);
   delete sleep_prevention;
 }
 

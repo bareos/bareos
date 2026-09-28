@@ -2722,17 +2722,6 @@ int kill(int pid, int signal)
   return rval;
 }
 
-/**
- * Don't allow OS to suspend while backup running
- * Note, the OS automatically tracks these for each thread
- */
-void PreventOsSuspensions()
-{
-  SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
-}
-
-void AllowOsSuspensions() { SetThreadExecutionState(ES_CONTINUOUS); }
-
 int win32_link(const char* target, const char* link)
 {
   std::wstring linkw = make_win32_path_UTF8_2_wchar(link);
