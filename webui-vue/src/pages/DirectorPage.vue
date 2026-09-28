@@ -593,7 +593,12 @@
             </div>
             <q-inner-loading :showing="subscriptionLoading" />
             <div v-if="subscriptionError" class="text-negative">{{ subscriptionError }}</div>
-            <template v-else-if="subscriptionData">
+            <CommercialOfferingCard
+              v-if="buildInfo.promote"
+              :kind="buildInfo.kind"
+              class="q-mb-md"
+            />
+            <template v-if="!subscriptionError && subscriptionData">
               <SubscriptionReport :data="subscriptionData" />
 
               <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
@@ -614,7 +619,7 @@
                        @click="downloadSubscription(true)" />
               </div>
 
-               <q-btn color="primary" :label="t('Get Official Support')" icon="open_in_new"
+               <q-btn v-if="!buildInfo.promote" color="primary" :label="t('Get Official Support')" icon="open_in_new"
                      href="https://www.bareos.com/subscription/" target="_blank" rel="noopener noreferrer" no-caps />
             </template>
           </q-card-section>
@@ -703,6 +708,8 @@ import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
 import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
+import CommercialOfferingCard from '../components/CommercialOfferingCard.vue'
+import { useBuildInfoStore } from '../stores/buildInfo.js'
 import TableSkeleton from '../components/TableSkeleton.vue'
 
 const validTabs = new Set(['status', 'messages', 'catalog', 'subscription'])
@@ -716,6 +723,7 @@ const router = useRouter()
 const $q = useQuasar()
 const auth = useAuthStore()
 const director = useDirectorStore()
+const buildInfo = useBuildInfoStore()
 const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
 const { t } = useI18n()
@@ -856,6 +864,12 @@ async function refreshStatus() {
     statusLoading.value = false
   }
 }
+
+watch(statusSnapshots, (snapshots) => {
+  for (const snapshot of snapshots ?? []) {
+    buildInfo.recordStatus(snapshot.director, snapshot)
+  }
+})
 
 const statusCountdown = ref(settings.refreshInterval)
 let _statusTimer = null

@@ -131,6 +131,25 @@
           </q-form>
         </q-card-section>
       </q-card>
+      <div
+        v-if="buildInfo.promote"
+        class="login-offering text-caption text-center q-mt-md"
+        data-testid="login-commercial-offering"
+      >
+        <div v-if="buildInfo.kind !== 'unknown'" class="text-weight-medium">
+          {{ t(buildKindLabel(buildInfo.kind)) }} ({{ t('unsupported') }})
+        </div>
+        <div>
+          <a :href="SERVICES_URL" target="_blank" rel="noopener noreferrer">
+            {{ t('Subscription, professional support, training and consulting from Bareos GmbH') }}
+          </a>
+        </div>
+        <div>
+          <a :href="EXPERT_CIRCLE_URL" target="_blank" rel="noopener noreferrer">
+            {{ t('Join the Bareos Expert Circle') }}
+          </a>
+        </div>
+      </div>
     </div>
 
     <div class="login-language-anchor">
@@ -167,6 +186,12 @@ import {
   SESSION_AUTH_PASSWORD,
 } from '../utils/sessionApi.js'
 import LanguageSelect from '../components/LanguageSelect.vue'
+import { useBuildInfoStore } from '../stores/buildInfo.js'
+import {
+  EXPERT_CIRCLE_URL,
+  SERVICES_URL,
+  buildKindLabel,
+} from '../utils/commercialOffering.js'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
@@ -175,6 +200,7 @@ const route    = useRoute()
 const settings = useSettingsStore()
 const router   = useRouter()
 const { t } = useI18n()
+const buildInfo = useBuildInfoStore()
 
 const username = computed({
   get: () => settings.loginUsername,
@@ -585,6 +611,24 @@ async function skipFailedDirectors() {
   color: white;
   border-radius: 8px 8px 0 0;
   background: var(--q-primary);
+}
+
+.login-offering {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(0, 0, 0, 0.7);
+  line-height: 1.6;
+}
+
+.login-offering a {
+  color: var(--q-primary);
+  text-decoration: none;
+}
+
+.login-offering a:hover,
+.login-offering a:focus-visible {
+  text-decoration: underline;
 }
 
 .login-card-logo {
