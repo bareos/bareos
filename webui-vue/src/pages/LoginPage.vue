@@ -675,8 +675,8 @@ async function skipFailedDirectors() {
   width: 300px;
   padding: 5px 0;
   transform: rotate(-45deg);
-  background: #ef6c00;
-  color: white;
+  background: #ffb300;
+  color: rgba(0, 0, 0, 0.87);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   line-height: 1.25;
   text-align: center;
