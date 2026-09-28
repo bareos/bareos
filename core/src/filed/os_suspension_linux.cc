@@ -36,6 +36,12 @@ struct SleepPrevention {
   bool warning_logged = false;
 };
 
+struct SdBusError {
+  sd_bus_error error = SD_BUS_ERROR_NULL;
+
+  ~SdBusError() { sd_bus_error_free(&error); }
+};
+
 static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
                                          bool& warning_logged,
                                          const char* reason)
@@ -53,35 +59,33 @@ SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
 {
   auto sleep_prevention = std::make_unique<SleepPrevention>();
 
-  sd_bus* bus = nullptr;
-  sd_bus_message* reply = nullptr;
-  sd_bus_error error = SD_BUS_ERROR_NULL;
-
-  auto cleanup = [&]() {
-    sd_bus_error_free(&error);
-    sd_bus_message_unref(reply);
-    sd_bus_unref(bus);
-  };
+  std::unique_ptr<sd_bus, decltype(&sd_bus_unref)> bus{nullptr, sd_bus_unref};
+  std::unique_ptr<sd_bus_message, decltype(&sd_bus_message_unref)> reply{
+      nullptr, sd_bus_message_unref};
+  SdBusError error;
 
   auto warn_and_return = [&](const char* reason) {
     WarnLinuxSleepInhibitFailure(jcr, sleep_prevention->warning_logged, reason);
-    cleanup();
   };
 
-  int status = sd_bus_open_system(&bus);
+  sd_bus* raw_bus = nullptr;
+  int status = sd_bus_open_system(&raw_bus);
+  bus.reset(raw_bus);
   if (status < 0) {
     BErrNo be;
     warn_and_return(be.bstrerror(-status));
     return sleep_prevention.release();
   }
 
+  sd_bus_message* raw_reply = nullptr;
   status = sd_bus_call_method(
-      bus, "org.freedesktop.login1", "/org/freedesktop/login1",
-      "org.freedesktop.login1.Manager", "Inhibit", &error, &reply, "ssss",
-      "sleep", "bareos-fd", "Backup or restore running", "block");
+      bus.get(), "org.freedesktop.login1", "/org/freedesktop/login1",
+      "org.freedesktop.login1.Manager", "Inhibit", &error.error, &raw_reply,
+      "ssss", "sleep", "bareos-fd", "Backup or restore running", "block");
+  reply.reset(raw_reply);
   if (status < 0) {
-    if (error.message != nullptr) {
-      warn_and_return(error.message);
+    if (error.error.message != nullptr) {
+      warn_and_return(error.error.message);
     } else {
       BErrNo be;
       warn_and_return(be.bstrerror(-status));
@@ -90,7 +94,7 @@ SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
   }
 
   int fd = -1;
-  status = sd_bus_message_read(reply, "h", &fd);
+  status = sd_bus_message_read(reply.get(), "h", &fd);
   if (status < 0 || fd < 0) {
     BErrNo be;
     warn_and_return(be.bstrerror((status < 0) ? -status : EINVAL));
@@ -105,7 +109,6 @@ SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
   }
 
   sleep_prevention->inhibitor_fd = dupfd;
-  cleanup();
   return sleep_prevention.release();
 }
 
