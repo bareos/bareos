@@ -57,22 +57,52 @@ using namespace filedaemon;
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
 
-static bool use_signal_pipe_termination = false;
-#if !defined(HAVE_WIN32)
-static int termination_pipe_fds[2] = {-1, -1};
-static volatile sig_atomic_t termination_signal = 0;
-#else
-static HANDLE termination_event = nullptr;
-#endif
-
-static void CloseTerminationPipe()
-{
 #if defined(HAVE_WIN32)
+static HANDLE termination_event = nullptr;
+
+static bool SetupTerminationHandling(bool client_initiated_only_mode,
+                                     bool no_signals)
+{
+  if (client_initiated_only_mode) {
+    termination_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+    if (termination_event == nullptr) {
+      BErrNo be;
+      Emsg1(M_ERROR, 0, T_("Failed to create termination event: %s\n"),
+            be.bstrerror());
+      return false;
+    }
+  }
+
+  if (!no_signals) { InitSignals(TerminateFiled); }
+  return true;
+}
+
+static void WaitUntilTerminated()
+{
+  WaitForSingleObject(termination_event, INFINITE);
+}
+
+static void NotifyTerminationWaiter()
+{
+  if (termination_event != nullptr) { SetEvent(termination_event); }
+}
+
+static void FinishClientInitiatedWait() { TerminateFiled(BEXIT_SUCCESS); }
+
+static void CloseTerminationNotification()
+{
   if (termination_event != nullptr) {
     CloseHandle(termination_event);
     termination_event = nullptr;
   }
+}
 #else
+static bool use_signal_pipe_termination = false;
+static int termination_pipe_fds[2] = {-1, -1};
+static volatile sig_atomic_t termination_signal = 0;
+
+static void CloseTerminationNotification()
+{
   if (termination_pipe_fds[0] >= 0) {
     close(termination_pipe_fds[0]);
     termination_pipe_fds[0] = -1;
@@ -81,24 +111,8 @@ static void CloseTerminationPipe()
     close(termination_pipe_fds[1]);
     termination_pipe_fds[1] = -1;
   }
-#endif
 }
 
-#if defined(HAVE_WIN32)
-static bool SetupTerminationEvent()
-{
-  termination_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
-  if (termination_event == nullptr) {
-    BErrNo be;
-    Emsg1(M_ERROR, 0, T_("Failed to create termination event: %s\n"),
-          be.bstrerror());
-    return false;
-  }
-  return true;
-}
-#endif
-
-#if !defined(HAVE_WIN32)
 static bool SetupTerminationPipe()
 {
   if (pipe(termination_pipe_fds) != 0) {
@@ -116,7 +130,7 @@ static bool SetupTerminationPipe()
     Emsg1(M_WARNING, 0,
           T_("Failed to configure termination notification pipe: %s\n"),
           be.bstrerror());
-    CloseTerminationPipe();
+    CloseTerminationNotification();
     return false;
   }
 
@@ -132,7 +146,20 @@ static void NotifyTerminationViaPipe(int sig)
         = write(termination_pipe_fds[1], &signal_byte, sizeof(signal_byte));
   }
 }
-#endif
+
+static bool SetupTerminationHandling(bool client_initiated_only_mode,
+                                     bool no_signals)
+{
+  if (no_signals) { return true; }
+
+  if (client_initiated_only_mode && SetupTerminationPipe()) {
+    InitSignals(NotifyTerminationViaPipe);
+    use_signal_pipe_termination = true;
+  } else {
+    InitSignals(TerminateFiled);
+  }
+  return true;
+}
 
 static bool IsClientInitiatedOnlyModeConfigured()
 {
@@ -158,7 +185,6 @@ static void WaitUntilTerminated()
   // uses a self-pipe because signal handlers may only perform async-signal-
   // safe operations. Windows uses its native shutdown path, so wait directly
   // on a kernel event signaled by TerminateFiled.
-#if !defined(HAVE_WIN32)
   if (use_signal_pipe_termination && termination_pipe_fds[0] >= 0) {
     unsigned char signal_byte;
     while (read(termination_pipe_fds[0], &signal_byte, sizeof(signal_byte))
@@ -168,11 +194,17 @@ static void WaitUntilTerminated()
   } else {
     for (;;) { pause(); }
   }
-#else
-  WaitForSingleObject(termination_event, INFINITE);
-#endif
 }
 
+static void NotifyTerminationWaiter() {}
+
+static void FinishClientInitiatedWait()
+{
+  if (use_signal_pipe_termination) {
+    TerminateFiled(termination_signal ? termination_signal : BEXIT_SUCCESS);
+  }
+}
+#endif
 
 static std::string pidfile_path{};
 
@@ -330,23 +362,8 @@ int main(int argc, char* argv[])
 
   const bool client_initiated_only_mode = IsClientInitiatedOnlyModeConfigured();
 
-#if defined(HAVE_WIN32)
-  if (client_initiated_only_mode && !SetupTerminationEvent()) {
+  if (!SetupTerminationHandling(client_initiated_only_mode, no_signals)) {
     TerminateFiled(BEXIT_FAILURE);
-  }
-#endif
-
-  if (!no_signals) {
-#if !defined(HAVE_WIN32)
-    if (client_initiated_only_mode && SetupTerminationPipe()) {
-      InitSignals(NotifyTerminationViaPipe);
-      use_signal_pipe_termination = true;
-    } else {
-      InitSignals(TerminateFiled);
-    }
-#else
-    InitSignals(TerminateFiled);
-#endif
   }
 
   if (!foreground && !test_config) {
@@ -387,13 +404,7 @@ int main(int argc, char* argv[])
     Pmsg0(000, T_("Client-initiated-only mode detected; "
                   "skipping socket listener startup.\n"));
     WaitUntilTerminated();
-    if (use_signal_pipe_termination) {
-#if !defined(HAVE_WIN32)
-      TerminateFiled(termination_signal ? termination_signal : BEXIT_SUCCESS);
-#else
-      TerminateFiled(BEXIT_SUCCESS);
-#endif
-    }
+    FinishClientInitiatedWait();
   } else {
     StartSocketServer(me->FDaddrs);
   }
@@ -408,9 +419,7 @@ void TerminateFiled(int sig)
 {
   static bool already_here = false;
 
-#if defined(HAVE_WIN32)
-  if (termination_event != nullptr) { SetEvent(termination_event); }
-#endif
+  NotifyTerminationWaiter();
 
   if (already_here) {
     Bmicrosleep(2, 0);   /* yield */
@@ -429,7 +438,7 @@ void TerminateFiled(int sig)
     WriteStateFile(me->working_directory, "bareos-fd",
                    GetFirstPortHostOrder(me->FDaddrs));
   }
-  CloseTerminationPipe();
+  CloseTerminationNotification();
   DeletePidFile(pidfile_path);
 
   if (g_filed_configfile != nullptr) { free(g_filed_configfile); }
