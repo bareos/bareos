@@ -22,6 +22,7 @@
 #include "filed/os_suspension.h"
 
 #include <fcntl.h>
+#include <memory>
 #include <systemd/sd-bus.h>
 #include <unistd.h>
 
@@ -29,6 +30,11 @@
 #include "lib/berrno.h"
 
 namespace filedaemon {
+
+struct SleepPrevention {
+  int inhibitor_fd = -1;
+  bool warning_logged = false;
+};
 
 static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
                                          bool& warning_logged,
@@ -43,10 +49,9 @@ static void WarnLinuxSleepInhibitFailure(JobControlRecord* jcr,
   warning_logged = true;
 }
 
-void ActivateSleepPrevention(JobControlRecord* jcr,
-                             SleepPrevention& sleep_prevention)
+SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
 {
-  if (sleep_prevention.linux_inhibitor_fd >= 0) { return; }
+  auto sleep_prevention = std::make_unique<SleepPrevention>();
 
   sd_bus* bus = nullptr;
   sd_bus_message* reply = nullptr;
@@ -59,8 +64,7 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
   };
 
   auto warn_and_return = [&](const char* reason) {
-    WarnLinuxSleepInhibitFailure(jcr, sleep_prevention.linux_warning_logged,
-                                 reason);
+    WarnLinuxSleepInhibitFailure(jcr, sleep_prevention->warning_logged, reason);
     cleanup();
   };
 
@@ -68,7 +72,7 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
   if (status < 0) {
     BErrNo be;
     warn_and_return(be.bstrerror(-status));
-    return;
+    return sleep_prevention.release();
   }
 
   status = sd_bus_call_method(
@@ -82,7 +86,7 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
       BErrNo be;
       warn_and_return(be.bstrerror(-status));
     }
-    return;
+    return sleep_prevention.release();
   }
 
   int fd = -1;
@@ -90,26 +94,29 @@ void ActivateSleepPrevention(JobControlRecord* jcr,
   if (status < 0 || fd < 0) {
     BErrNo be;
     warn_and_return(be.bstrerror((status < 0) ? -status : EINVAL));
-    return;
+    return sleep_prevention.release();
   }
 
   int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
   if (dupfd < 0) {
     BErrNo be;
     warn_and_return(be.bstrerror());
-    return;
+    return sleep_prevention.release();
   }
 
-  sleep_prevention.linux_inhibitor_fd = dupfd;
+  sleep_prevention->inhibitor_fd = dupfd;
   cleanup();
+  return sleep_prevention.release();
 }
 
-void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention* sleep_prevention)
 {
-  if (sleep_prevention.linux_inhibitor_fd >= 0) {
-    close(sleep_prevention.linux_inhibitor_fd);
-    sleep_prevention.linux_inhibitor_fd = -1;
+  if (!sleep_prevention) { return; }
+
+  if (sleep_prevention->inhibitor_fd >= 0) {
+    close(sleep_prevention->inhibitor_fd);
   }
+  delete sleep_prevention;
 }
 
 }  // namespace filedaemon

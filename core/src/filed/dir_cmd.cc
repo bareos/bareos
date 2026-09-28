@@ -365,7 +365,7 @@ static s_fd_dir_cmds* SelectCommandByName(const char* name)
 
 void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 {
-  SleepPrevention sleep_prevention;
+  SleepPrevention* sleep_prevention = nullptr;
 
   // only do the cleanup if dir is not authenticated
   if (jcr->authenticated) {
@@ -395,8 +395,8 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       }
 
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
-      if (to_execute->prevent_os_suspension) {
-        ActivateSleepPrevention(jcr, sleep_prevention);
+      if (to_execute->prevent_os_suspension && !sleep_prevention) {
+        sleep_prevention = ActivateSleepPrevention(jcr);
       }
 
       if (!to_execute->func(jcr)) { /* do command */

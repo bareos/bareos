@@ -23,14 +23,15 @@
 
 namespace filedaemon {
 
-void ActivateSleepPrevention(JobControlRecord* jcr,
-                             SleepPrevention& sleep_prevention)
+struct SleepPrevention {};
+
+SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
 {
   (void)jcr;
-  (void)sleep_prevention;
+  return nullptr;
 }
 
-void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention* sleep_prevention)
 {
   (void)sleep_prevention;
 }

@@ -28,6 +28,11 @@
 
 namespace filedaemon {
 
+struct SleepPrevention {
+  IOPMAssertionID assertion_id = kIOPMNullAssertionID;
+  bool warning_logged = false;
+};
+
 static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
                                           bool& warning_logged,
                                           IOReturn status)
@@ -41,36 +46,32 @@ static void WarnDarwinSleepInhibitFailure(JobControlRecord* jcr,
   warning_logged = true;
 }
 
-void ActivateSleepPrevention(JobControlRecord* jcr,
-                             SleepPrevention& sleep_prevention)
+SleepPrevention* ActivateSleepPrevention(JobControlRecord* jcr)
 {
-  IOPMAssertionID assertion_id
-      = static_cast<IOPMAssertionID>(sleep_prevention.darwin_assertion_id);
-  if (assertion_id != kIOPMNullAssertionID) { return; }
+  auto* sleep_prevention = new SleepPrevention;
+  IOPMAssertionID assertion_id = sleep_prevention->assertion_id;
 
   IOReturn status = IOPMAssertionCreateWithName(
       kIOPMAssertionTypePreventSystemSleep, kIOPMAssertionLevelOn,
       CFSTR("Bareos backup or restore running"), &assertion_id);
   if (status != kIOReturnSuccess) {
-    sleep_prevention.darwin_assertion_id
-        = static_cast<uintptr_t>(kIOPMNullAssertionID);
-    WarnDarwinSleepInhibitFailure(jcr, sleep_prevention.darwin_warning_logged,
+    WarnDarwinSleepInhibitFailure(jcr, sleep_prevention->warning_logged,
                                   status);
-    return;
+    return sleep_prevention;
   }
 
-  sleep_prevention.darwin_assertion_id = assertion_id;
+  sleep_prevention->assertion_id = assertion_id;
+  return sleep_prevention;
 }
 
-void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention* sleep_prevention)
 {
-  IOPMAssertionID assertion_id
-      = static_cast<IOPMAssertionID>(sleep_prevention.darwin_assertion_id);
-  if (assertion_id != kIOPMNullAssertionID) {
-    IOPMAssertionRelease(assertion_id);
-    sleep_prevention.darwin_assertion_id
-        = static_cast<uintptr_t>(kIOPMNullAssertionID);
+  if (!sleep_prevention) { return; }
+
+  if (sleep_prevention->assertion_id != kIOPMNullAssertionID) {
+    IOPMAssertionRelease(sleep_prevention->assertion_id);
   }
+  delete sleep_prevention;
 }
 
 }  // namespace filedaemon

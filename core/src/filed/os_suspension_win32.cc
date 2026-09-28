@@ -25,21 +25,23 @@
 
 namespace filedaemon {
 
-void ActivateSleepPrevention(JobControlRecord*,
-                             SleepPrevention& sleep_prevention)
+struct SleepPrevention {
+  bool active = false;
+};
+
+SleepPrevention* ActivateSleepPrevention(JobControlRecord*)
 {
-  if (!sleep_prevention.windows_active) {
-    PreventOsSuspensions();
-    sleep_prevention.windows_active = true;
-  }
+  auto* sleep_prevention = new SleepPrevention;
+  PreventOsSuspensions();
+  sleep_prevention->active = true;
+  return sleep_prevention;
 }
 
-void DeactivateSleepPrevention(SleepPrevention& sleep_prevention)
+void DeactivateSleepPrevention(SleepPrevention* sleep_prevention)
 {
-  if (sleep_prevention.windows_active) {
-    AllowOsSuspensions();
-    sleep_prevention.windows_active = false;
-  }
+  if (!sleep_prevention) { return; }
+  if (sleep_prevention->active) { AllowOsSuspensions(); }
+  delete sleep_prevention;
 }
 
 }  // namespace filedaemon
