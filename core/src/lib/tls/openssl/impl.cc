@@ -58,7 +58,7 @@ class TlsOpenSsl : public Tls {
   virtual ~TlsOpenSsl();
   TlsOpenSsl(TlsOpenSsl& other) = delete;
 
-  bool init() override;
+  bool init();
 
   bool TlsBsockAccept(BareosSocket* bsock) override;
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
@@ -72,8 +72,8 @@ class TlsOpenSsl : public Tls {
                       int port,
                       const char* who) const override;
 
-  void SetTlsPskClientContext(const PskCredentials& credentials) override;
-  void SetTlsPskServerContext(TlsConfigProvider* data) override;
+  void SetTlsPskClientContext(const PskCredentials& credentials);
+  void SetTlsPskServerContext(TlsConfigProvider* data);
 
 
   bool KtlsSendStatus() override;
@@ -1139,9 +1139,27 @@ int TlsOpenSsl::TlsPendingBytes()
 }
 };  // namespace
 
-std::unique_ptr<Tls> make_openssl_tls(const TlsResource* config)
+std::unique_ptr<Tls> make_openssl_server_tls(const TlsResource* res,
+                                             TlsConfigProvider* config)
 {
-  auto tls = std::make_unique<TlsOpenSsl>(config);
+  auto tls = std::make_unique<TlsOpenSsl>(res);
   if (!tls) { return tls; }
+
+  if (config) { tls->SetTlsPskServerContext(config); }
+
+  if (!tls->init()) { return {}; }
+
+  return tls;
+}
+std::unique_ptr<Tls> make_openssl_client_tls(const TlsResource* res,
+                                             const PskCredentials* creds)
+{
+  auto tls = std::make_unique<TlsOpenSsl>(res);
+  if (!tls) { return tls; }
+
+  if (creds) { tls->SetTlsPskClientContext(*creds); }
+
+  if (!tls->init()) { return {}; }
+
   return tls;
 }

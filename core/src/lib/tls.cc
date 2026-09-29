@@ -28,14 +28,7 @@ std::unique_ptr<Tls> Tls::CreateClientContext(Tls::ImplementationType type,
 {
   switch (type) {
     case ImplementationType::kOpenSsl: {
-      auto ctx = make_openssl_tls(tls);
-      if (!ctx) { return ctx; }
-
-      if (creds) { ctx->SetTlsPskClientContext(*creds); }
-
-      if (!ctx->init(false)) { return {}; }
-
-      return ctx;
+      return make_openssl_client_tls(tls, creds);
     }
     case ImplementationType::kUnknown:
       [[fallthrough]];
@@ -50,14 +43,7 @@ std::unique_ptr<Tls> Tls::CreateServerContext(Tls::ImplementationType type,
 {
   switch (type) {
     case ImplementationType::kOpenSsl: {
-      auto ctx = make_openssl_tls(tls);
-      if (!ctx) { return ctx; }
-
-      if (config) { ctx->SetTlsPskServerContext(config); }
-
-      if (!ctx->init(true)) { return {}; }
-
-      return ctx;
+      return make_openssl_server_tls(tls, config);
     }
     case ImplementationType::kUnknown:
       [[fallthrough]];
