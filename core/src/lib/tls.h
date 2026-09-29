@@ -51,8 +51,6 @@ class Tls {
   virtual ~Tls() = default;
   Tls(Tls& other) = delete;
 
-  virtual bool init() = 0;
-
   enum class ImplementationType
   {
     kUnknown,
@@ -65,9 +63,6 @@ class Tls {
   static std::unique_ptr<Tls> CreateClientContext(Tls::ImplementationType type,
                                                   const TlsResource* res,
                                                   const PskCredentials* creds);
-
-  virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
-  virtual void SetTlsPskServerContext(TlsConfigProvider* config) = 0;
 
   virtual bool TlsBsockAccept(BareosSocket* bsock) = 0;
   virtual int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
