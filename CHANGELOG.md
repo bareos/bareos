@@ -68,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: size SQL escape buffers dynamically [PR #2813]
 - dird: fix cancel duplicate crash [PR #2833]
 - fix(dird): accept extended labels after purge truncate [PR #2815]
+- webui-proxy: include <cstdint> for int32_t in director_connection.h [PR #2826]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2406,6 +2407,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2814]: https://github.com/bareos/bareos/pull/2814
 [PR #2815]: https://github.com/bareos/bareos/pull/2815
 [PR #2819]: https://github.com/bareos/bareos/pull/2819
+[PR #2826]: https://github.com/bareos/bareos/pull/2826
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
