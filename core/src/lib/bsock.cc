@@ -111,19 +111,13 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAServer(
     TlsConfigProvider* data)
 {
   ASSERT(tls_resource);
-  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl,
-                                         tls_resource);
+  auto result = Tls::CreateServerContext(Tls::ImplementationType::kOpenSsl,
+                                         tls_resource, data);
   if (!result) {
     Emsg0(M_ERROR, 0, T_("TLS connection initialization failed.\n"));
     return nullptr;
   }
 
-  result->SetTlsPskServerContext(data);
-
-  if (!result->init()) {
-    result.reset();
-    return nullptr;
-  }
   return result;
 }
 
@@ -136,24 +130,21 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
   ASSERT(tls_resource);
   ASSERT(tls_resource->IsTlsConfigured());
 
-  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl,
-                                         tls_resource);
+  PskCredentials psk_cred, *ptr{};
+
+  if (identity) {
+    psk_cred = PskCredentials{identity, password};
+    ptr = &psk_cred;
+  } else {
+    Dmsg2(200, "Psk is not setup, as not identity was provided\n");
+  }
+  auto result = Tls::CreateClientContext(Tls::ImplementationType::kOpenSsl,
+                                         tls_resource, ptr);
   if (!result) {
     Qmsg0(jcr, M_FATAL, 0, T_("TLS connection initialization failed.\n"));
     return nullptr;
   }
 
-  if (identity) {
-    PskCredentials psk_cred{identity, password};
-    result->SetTlsPskClientContext(psk_cred);
-  } else {
-    Dmsg2(200, "Psk is not setup, as not identity was provided\n");
-  }
-
-  if (!result->init()) {
-    result.reset();
-    return nullptr;
-  }
   return result;
 }
 

@@ -58,8 +58,13 @@ class Tls {
     kUnknown,
     kOpenSsl
   };
-  static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type,
-                                                  const TlsResource* res);
+  static std::unique_ptr<Tls> CreateServerContext(Tls::ImplementationType type,
+                                                  const TlsResource* res,
+                                                  TlsConfigProvider* config);
+
+  static std::unique_ptr<Tls> CreateClientContext(Tls::ImplementationType type,
+                                                  const TlsResource* res,
+                                                  const PskCredentials* creds);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
   virtual void SetTlsPskServerContext(TlsConfigProvider* config) = 0;

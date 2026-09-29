@@ -22,12 +22,43 @@
 #include "lib/tls.h"
 #include "lib/tls/openssl.h"
 
-std::unique_ptr<Tls> Tls::CreateNewTlsContext(Tls::ImplementationType type,
-                                              const TlsResource* tls)
+std::unique_ptr<Tls> Tls::CreateClientContext(Tls::ImplementationType type,
+                                              const TlsResource* tls,
+                                              const PskCredentials* creds)
 {
   switch (type) {
-    case ImplementationType::kOpenSsl:
-      return make_openssl_tls(tls);
+    case ImplementationType::kOpenSsl: {
+      auto ctx = make_openssl_tls(tls);
+      if (!ctx) { return ctx; }
+
+      if (creds) { ctx->SetTlsPskClientContext(*creds); }
+
+      if (!ctx->init(false)) { return {}; }
+
+      return ctx;
+    }
+    case ImplementationType::kUnknown:
+      [[fallthrough]];
+    default:
+      return {};
+  }
+}
+
+std::unique_ptr<Tls> Tls::CreateServerContext(Tls::ImplementationType type,
+                                              const TlsResource* tls,
+                                              TlsConfigProvider* config)
+{
+  switch (type) {
+    case ImplementationType::kOpenSsl: {
+      auto ctx = make_openssl_tls(tls);
+      if (!ctx) { return ctx; }
+
+      if (config) { ctx->SetTlsPskServerContext(config); }
+
+      if (!ctx->init(true)) { return {}; }
+
+      return ctx;
+    }
     case ImplementationType::kUnknown:
       [[fallthrough]];
     default:
