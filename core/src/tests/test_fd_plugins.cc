@@ -86,6 +86,11 @@ bool EncodeAndSendAttributes(JobControlRecord*,
                              FindFilesPacket*,
                              int&,
                              bool reuse_file_index);
+bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value);
+PluginContext* NewTestPluginContext(JobControlRecord* jcr);
+void FreeTestPluginContext(PluginContext* ctx);
+std::optional<PluginFileSizeBlocks> TestGetCorrectedFileSizeBlocks(
+    PluginContext* ctx);
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
 
@@ -209,6 +214,46 @@ TEST(fd, fd_counted_plugin_size_blocks_fallback_is_bounded)
           statp, true, false, true, 0,
           static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 1)
           .has_value());
+}
+
+TEST(fd, bareos_set_value_file_size_blocks)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks corrected{1234, 3};
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, &corrected), bRC_OK);
+
+  auto stored = TestGetCorrectedFileSizeBlocks(ctx);
+  ASSERT_TRUE(stored.has_value());
+  EXPECT_EQ(stored->size, 1234);
+  EXPECT_EQ(stored->blocks, 3);
+
+  FreeTestPluginContext(ctx);
+}
+
+TEST(fd, bareos_set_value_file_size_blocks_rejects_invalid)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks invalid{-1, 0};
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, &invalid), bRC_Error);
+  EXPECT_FALSE(TestGetCorrectedFileSizeBlocks(ctx).has_value());
+
+  FreeTestPluginContext(ctx);
+}
+
+TEST(fd, bareos_set_value_file_size_blocks_rejects_null_args)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks corrected{1234, 3};
+  EXPECT_EQ(bareosSetValue(nullptr, bVarFileSizeBlocks, &corrected), bRC_Error);
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, nullptr), bRC_Error);
+
+  FreeTestPluginContext(ctx);
 }
 
 TEST(fd, fd_plugins)

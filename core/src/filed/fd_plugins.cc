@@ -87,7 +87,8 @@ extern bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
 // Forward referenced functions
 static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value);
-static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value);
+// not static: exercised directly by test_fd_plugins.cc
+bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value);
 static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...);
 static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...);
 static bRC bareosJobMsg(PluginContext* ctx,
@@ -186,6 +187,33 @@ struct FiledPluginContext {
   bool check_changes{true}; /* call CheckChanges() on every file */
   std::optional<PluginFileSizeBlocks> corrected_file_size_blocks{};
 };
+
+/* The following three helpers are not used outside of unit tests
+ * (test_fd_plugins.cc). They let the tests exercise bareosSetValue()'s
+ * bVarFileSizeBlocks handling via a real PluginContext/FiledPluginContext
+ * pair, without having to load an actual plugin shared object. */
+PluginContext* NewTestPluginContext(JobControlRecord* jcr)
+{
+  auto* ctx = new PluginContext;
+  ctx->instance = 0;
+  ctx->plugin = nullptr;
+  ctx->core_private_context = new FiledPluginContext(jcr, nullptr);
+  ctx->plugin_private_context = nullptr;
+  return ctx;
+}
+
+void FreeTestPluginContext(PluginContext* ctx)
+{
+  delete static_cast<FiledPluginContext*>(ctx->core_private_context);
+  delete ctx;
+}
+
+std::optional<PluginFileSizeBlocks> TestGetCorrectedFileSizeBlocks(
+    PluginContext* ctx)
+{
+  return static_cast<FiledPluginContext*>(ctx->core_private_context)
+      ->corrected_file_size_blocks;
+}
 
 static inline bool IsEventEnabled(PluginContext* ctx, bEventType eventType)
 {
@@ -2518,7 +2546,7 @@ static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value)
   return bRC_OK;
 }
 
-static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
+bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
 {
   JobControlRecord* jcr;
 
