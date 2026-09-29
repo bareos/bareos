@@ -58,7 +58,8 @@ class Tls {
     kUnknown,
     kOpenSsl
   };
-  static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type);
+  static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type,
+                                                  const TlsResource* res);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
   virtual void SetTlsPskServerContext(TlsConfigProvider* config) = 0;
@@ -85,22 +86,8 @@ class Tls {
       = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
-  virtual void SetCipherList(const std::string& cipherlist) = 0;
-  virtual void SetCipherSuites(const std::string& ciphersuites) = 0;
-  virtual void SetProtocol(const std::string& version) = 0;
-
   virtual bool KtlsSendStatus() = 0;
   virtual bool KtlsRecvStatus() = 0;
-
-  virtual void Setca_certfile_(const std::string& ca_certfile) = 0;
-  virtual void SetCaCertdir(const std::string& ca_certdir) = 0;
-  virtual void SetCrlfile(const std::string& crlfile_) = 0;
-  virtual void SetCertfile(const std::string& certfile_) = 0;
-  virtual void SetKeyfile(const std::string& keyfile_) = 0;
-  virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
-  virtual void SetPemUserdata(void* pem_userdata) = 0;
-  virtual void SetDhFile(const std::string& dhfile_) = 0;
-  virtual void SetVerifyPeer(const bool& verify_peer) = 0;
 
  protected:
   Tls() = default;

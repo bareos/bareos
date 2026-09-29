@@ -51,21 +51,6 @@
 static constexpr int debuglevel = 50;
 
 namespace {
-void ParameterizeTlsCert(Tls* tls, const TlsConfigCert& tls_cert)
-{
-  tls->Setca_certfile_(tls_cert.ca_certfile_);
-  tls->SetCaCertdir(tls_cert.ca_certdir_);
-  tls->SetCrlfile(tls_cert.crlfile_);
-  tls->SetCertfile(tls_cert.certfile_);
-  tls->SetKeyfile(tls_cert.keyfile_);
-  /*      tls->SetPemCallback(TlsPemCallback);
-   * --> Feature not implemented: Console Callback */
-  /*      tls->SetPemUserdata(tls_cert.pem_message_);
-   * --> Feature not implemented: SetPemUserdata */
-  tls->SetDhFile(tls_cert.dhfile_);
-  tls->SetVerifyPeer(tls_cert.verify_peer_);
-}
-
 struct auth_timer {
   auth_timer(BareosSocket* socket)
       : timer{StartBsockTimer(socket, AUTH_TIMEOUT)}
@@ -136,16 +121,13 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAServer(
     TlsConfigProvider* data)
 {
   ASSERT(tls_resource);
-  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
+  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl,
+                                         tls_resource);
   if (!result) {
     Emsg0(M_ERROR, 0, T_("TLS connection initialization failed.\n"));
     return nullptr;
   }
 
-  result->SetProtocol(tls_resource->protocol_);
-  ParameterizeTlsCert(result.get(), tls_resource->tls_cert_);
-  result->SetCipherList(tls_resource->cipherlist_);
-  result->SetCipherSuites(tls_resource->ciphersuites_);
   result->SetTlsPskServerContext(data);
 
   if (!result->init()) {
@@ -164,16 +146,12 @@ std::shared_ptr<Tls> ParameterizeAndInitTlsConnectionAsAClient(
   ASSERT(tls_resource);
   ASSERT(tls_resource->IsTlsConfigured());
 
-  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl);
+  auto result = Tls::CreateNewTlsContext(Tls::ImplementationType::kOpenSsl,
+                                         tls_resource);
   if (!result) {
     Qmsg0(jcr, M_FATAL, 0, T_("TLS connection initialization failed.\n"));
     return nullptr;
   }
-
-  result->SetProtocol(tls_resource->protocol_);
-  ParameterizeTlsCert(result.get(), tls_resource->tls_cert_);
-  result->SetCipherList(tls_resource->cipherlist_);
-  result->SetCipherSuites(tls_resource->ciphersuites_);
 
   if (identity) {
     PskCredentials psk_cred{identity, password};

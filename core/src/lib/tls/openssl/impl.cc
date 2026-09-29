@@ -73,25 +73,27 @@ class TlsOpenSsl : public Tls {
   void TlsBsockShutdown(BareosSocket* bsock) override;
 
   std::string TlsCipherGetName() const override;
-  void SetCipherList(const std::string& cipherlist) override;
-  void SetCipherSuites(const std::string& ciphersuites) override;
-  void SetProtocol(const std::string& protocol) override;
   void TlsLogConninfo(JobControlRecord* jcr,
                       const char* host,
                       int port,
                       const char* who) const override;
+
+  void SetCipherList(const std::string& cipherlist);
+  void SetCipherSuites(const std::string& ciphersuites);
+  void SetProtocol(const std::string& protocol);
+  void Setca_certfile_(const std::string& ca_certfile);
+  void SetCaCertdir(const std::string& ca_certdir);
+  void SetCrlfile(const std::string& crlfile);
+  void SetCertfile(const std::string& certfile);
+  void SetKeyfile(const std::string& keyfile);
+  void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback);
+  void SetPemUserdata(void* pem_userdata);
+  void SetDhFile(const std::string& dhfile_);
+  void SetVerifyPeer(bool verify_peer);
+
   void SetTlsPskClientContext(const PskCredentials& credentials) override;
   void SetTlsPskServerContext(TlsConfigProvider* data) override;
 
-  void Setca_certfile_(const std::string& ca_certfile) override;
-  void SetCaCertdir(const std::string& ca_certdir) override;
-  void SetCrlfile(const std::string& crlfile) override;
-  void SetCertfile(const std::string& certfile) override;
-  void SetKeyfile(const std::string& keyfile) override;
-  void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override;
-  void SetPemUserdata(void* pem_userdata) override;
-  void SetDhFile(const std::string& dhfile_) override;
-  void SetVerifyPeer(const bool& verify_peer) override;
 
   bool KtlsSendStatus() override;
   bool KtlsRecvStatus() override;
@@ -603,7 +605,7 @@ void TlsOpenSsl::SetDhFile(const std::string& dhfile)
   dhfile_ = dhfile;
 }
 
-void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
+void TlsOpenSsl::SetVerifyPeer(bool verify_peer)
 {
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", verify_peer ? "true" : "false");
   verify_peer_ = verify_peer;
@@ -1131,7 +1133,29 @@ int TlsOpenSsl::TlsPendingBytes()
 }
 };  // namespace
 
-std::unique_ptr<Tls> make_openssl_tls()
+std::unique_ptr<Tls> make_openssl_tls(const TlsResource* config)
 {
-  return std::make_unique<TlsOpenSsl>();
+  auto tls = std::make_unique<TlsOpenSsl>();
+  if (!tls) { return tls; }
+
+  auto& tls_cert = config->tls_cert_;
+
+
+  tls->SetProtocol(config->protocol_);
+  tls->SetCipherList(config->cipherlist_);
+  tls->SetCipherSuites(config->ciphersuites_);
+  tls->Setca_certfile_(tls_cert.ca_certfile_);
+  tls->SetCaCertdir(tls_cert.ca_certdir_);
+  tls->SetCrlfile(tls_cert.crlfile_);
+  tls->SetCertfile(tls_cert.certfile_);
+  tls->SetKeyfile(tls_cert.keyfile_);
+  /*      tls->SetPemCallback(TlsPemCallback);
+   * --> Feature not implemented: Console Callback */
+  /*      tls->SetPemUserdata(tls_cert.pem_message_);
+   * --> Feature not implemented: SetPemUserdata */
+  tls->SetDhFile(tls_cert.dhfile_);
+
+  tls->SetVerifyPeer(tls_cert.verify_peer_);
+
+  return tls;
 }
