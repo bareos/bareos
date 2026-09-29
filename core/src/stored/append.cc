@@ -87,9 +87,7 @@ ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 
 void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  std::vector<bool> to_send = SelectAttributesToSend(attributes_);
-  for (std::size_t i = 0; i < attributes_.size(); i++) {
-    if (!to_send[i]) { continue; }
+  for (std::size_t i : SelectAttributesToSend(attributes_)) {
     DeviceRecord devicerecord = attributes_[i].GetData();
     SendAttrsToDir(jcr, &devicerecord);
   }
@@ -115,7 +113,7 @@ bool IsUnixAttributeStream(int32_t stream)
          || masked_stream == STREAM_UNIX_ATTRIBUTES_EX;
 }
 
-std::vector<bool> SelectAttributesToSend(
+std::vector<std::size_t> SelectAttributesToSend(
     const std::vector<ProcessedFileData>& attributes)
 {
   /* A file can have more than one STREAM_UNIX_ATTRIBUTES/_EX record
@@ -126,20 +124,35 @@ std::vector<bool> SelectAttributesToSend(
    * is unaffected -- but only the last (i.e. most up to date) one
    * should ever reach the Director/catalog, so File.LStat isn't
    * duplicated for the same FileIndex. Every other buffered record
-   * (digests, restore objects) is unaffected and always selected. */
+   * (digests, restore objects) is unaffected and always selected.
+   *
+   * The last attribute record is emitted in the slot of the first
+   * attribute record (see the header for why the order matters). */
+  std::size_t first_unix_attribute_idx = attributes.size();
   std::size_t last_unix_attribute_idx = attributes.size();
   for (std::size_t i = 0; i < attributes.size(); i++) {
     if (IsUnixAttributeStream(attributes[i].GetStream())) {
+      if (first_unix_attribute_idx == attributes.size()) {
+        first_unix_attribute_idx = i;
+      }
       last_unix_attribute_idx = i;
     }
   }
 
-  std::vector<bool> to_send(attributes.size(), true);
+  std::vector<std::size_t> to_send;
+  to_send.reserve(attributes.size());
   for (std::size_t i = 0; i < attributes.size(); i++) {
-    if (IsUnixAttributeStream(attributes[i].GetStream())
-        && i != last_unix_attribute_idx) {
-      to_send[i] = false;
+    if (IsUnixAttributeStream(attributes[i].GetStream())) {
+      if (i == first_unix_attribute_idx) {
+        /* Emit the last (most up to date) attribute record here, in
+         * the first attribute's slot, so any following digest record
+         * still arrives after the file row is created. */
+        to_send.push_back(last_unix_attribute_idx);
+      }
+      /* Superseded or already emitted attribute records are skipped. */
+      continue;
     }
+    to_send.push_back(i);
   }
   return to_send;
 }

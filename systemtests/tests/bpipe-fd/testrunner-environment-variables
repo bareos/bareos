@@ -73,6 +73,13 @@ expect_grep \
   "$full_log" \
   "File Daemon did not report its counted bpipe size"
 
+# The corrected attributes must reach the Director before the digest,
+# otherwise the digest is dropped with a "not same File" warning.
+expect_not_grep \
+  "not same File" \
+  "$full_log" \
+  "bpipe digest was dropped: corrected attributes reached the Director after the digest"
+
 printf '%s' "$payload" >"${runner_tmp}/expected-restored-data"
 cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.3. .dat"
 
@@ -173,6 +180,11 @@ expect_grep \
   "1:${payload_bytes}:${payload_blocks}" \
   "${runner_tmp}/virtual-full-accounting.out" \
   "Virtual Full catalog row does not retain corrected bpipe attributes"
+
+expect_not_grep \
+  "not same File" \
+  "$virtual_full_log" \
+  "Virtual Full dropped the bpipe digest: corrected attributes reached the Director after the digest"
 
 expect_grep \
   "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 1 jobs in chain)\\." \
