@@ -37,7 +37,6 @@
 #include "lib/edit.h"
 
 #include <limits>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -299,10 +298,32 @@ static_assert(!IsUnknownStatField(int64_t{0}));
 static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
 static_assert(!IsUnknownStatField(uint64_t{0}));
 
-std::optional<uint64_t> AccountedBytesForFile(const std::string& lstat,
-                                              bool is_windows)
+/**
+ * kRegular      -- a countable, billable file; bytes is meaningful.
+ * kNonRegular   -- a directory, symlink or special file (FIFO/device/
+ *                  socket) catalog row -- not billable subscription
+ *                  data, silently excluded from the report (not an
+ *                  error).
+ * kInvalidStat  -- the stat field the platform's rule needs is unusable
+ *                  (unknown/overflowing); the caller must abort the
+ *                  report rather than under-report silently.
+ */
+enum class FileAccountingKind
 {
-  if (lstat.empty()) { return 0; }
+  kRegular,
+  kNonRegular,
+  kInvalidStat
+};
+
+struct FileAccountingResult {
+  FileAccountingKind kind{FileAccountingKind::kInvalidStat};
+  uint64_t bytes{0};
+};
+
+FileAccountingResult AccountedBytesForFile(const std::string& lstat,
+                                           bool is_windows)
+{
+  if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
 
   struct stat statp{};
   int32_t LinkFI;
@@ -311,17 +332,29 @@ std::optional<uint64_t> AccountedBytesForFile(const std::string& lstat,
   std::string mutable_lstat = lstat;
   DecodeStat(mutable_lstat.data(), &statp, sizeof(statp), &LinkFI);
 
+  /* Only regular files count toward the report -- directories, symlinks
+   * and special files (FIFOs, device/socket nodes) are catalog metadata,
+   * not billable subscription data. A hard-linked file's FT_LNKSAVED row
+   * still encodes the underlying regular file's stat (see
+   * filed/backup.cc), so it is counted like any other regular file, once
+   * per catalog name. */
+  if (!S_ISREG(statp.st_mode)) { return {FileAccountingKind::kNonRegular, 0}; }
+
   if (is_windows) {
-    if (IsUnknownStatField(statp.st_size)) { return std::nullopt; }
-    return static_cast<uint64_t>(statp.st_size);
+    if (IsUnknownStatField(statp.st_size)) {
+      return {FileAccountingKind::kInvalidStat, 0};
+    }
+    return {FileAccountingKind::kRegular, static_cast<uint64_t>(statp.st_size)};
   }
 
-  if (IsUnknownStatField(statp.st_blocks)) { return std::nullopt; }
+  if (IsUnknownStatField(statp.st_blocks)) {
+    return {FileAccountingKind::kInvalidStat, 0};
+  }
   uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
   if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
-    return std::nullopt;
+    return {FileAccountingKind::kInvalidStat, 0};
   }
-  return blocks * 512;
+  return {FileAccountingKind::kRegular, blocks * 512};
 }
 
 bool UnameLooksLikeWindows(const std::string& uname)
@@ -431,21 +464,27 @@ bool DoSubscriptionAccounting(UaContext* ua)
       /* FileIndex==0 marks an accurate-mode "this file was deleted since
        * the last backup" entry -- exclude it, don't count stale bytes. */
       if (file.FileIndex == 0) { continue; }
-      std::optional<uint64_t> file_bytes
+      FileAccountingResult file_result
           = AccountedBytesForFile(file.LStat, is_windows);
-      if (!file_bytes) {
+      if (file_result.kind == FileAccountingKind::kInvalidStat) {
         ua->ErrorMsg(T_("%s / %s: invalid file attributes for JobId=%" PRIu32
                         " FileIndex=%u -- aborting report.\n"),
                      tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
                      file.JobId, file.FileIndex);
         return false;
       }
-      if (*file_bytes > std::numeric_limits<uint64_t>::max() - tuple_bytes) {
+      if (file_result.kind == FileAccountingKind::kNonRegular) {
+        /* Directory, symlink or special file catalog row -- not billable
+         * subscription data, exclude it from the count. */
+        continue;
+      }
+      if (file_result.bytes
+          > std::numeric_limits<uint64_t>::max() - tuple_bytes) {
         ua->ErrorMsg(T_("%s / %s: byte total overflow -- aborting report.\n"),
                      tuple.ClientName.c_str(), tuple.FileSetName.c_str());
         return false;
       }
-      tuple_bytes += *file_bytes;
+      tuple_bytes += file_result.bytes;
       tuple_files++;
     }
 

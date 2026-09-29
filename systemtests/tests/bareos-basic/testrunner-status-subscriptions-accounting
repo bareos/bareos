@@ -25,7 +25,9 @@ set -u
 # Test the output of "status subscriptions accounting", the real,
 # File.LStat-based accounting report, against a backup of a handful of
 # files with known, exact sizes -- including one whose size is not a
-# multiple of 512 bytes, to exercise the block-rounding path.
+# multiple of 512 bytes, to exercise the block-rounding path -- plus a
+# directory and a symlink to confirm non-regular catalog rows are
+# excluded from the file count and byte total.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -48,6 +50,18 @@ generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
 raw_bytes=$((1 + 512 + 1000))
+
+# An (empty) subdirectory and a symlink, both explicitly included in the
+# AcctTest fileset alongside the three regular files above. Their catalog
+# File rows (FT_DIREND / FT_LNK) are not regular files, so they must not
+# add to the reported file count or byte total (see ua_acct.cc's
+# S_ISREG() check). Symlinks aren't created on Windows hosts here; a
+# missing path is simply skipped by the backup (job status Warning, not
+# Error), so the exclusion is only actively exercised on POSIX hosts.
+mkdir -p "$tmp/acct-data/subdir"
+if ! on_windows_host; then
+  ln -sf file-1byte.bin "$tmp/acct-data/symlink-to-file"
+fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
