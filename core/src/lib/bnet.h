@@ -24,6 +24,7 @@
 #include "tls.h"
 #include "lib/address_conf.h"
 #include "include/compiler_macro.h"
+#include "lib/tls_conf_cert.h"
 
 #include <memory>
 #include <vector>
