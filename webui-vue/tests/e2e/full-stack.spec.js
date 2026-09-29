@@ -244,6 +244,14 @@ test('advertises Bareos services unless the director is a subscription build', a
   // only shown on the login page
   await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
   await expect(page.locator('body')).toHaveClass(/bareos-unsupported-build/)
+  await expect(page.locator('header.bareos-toolbar')).toHaveCSS(
+    'background-color',
+    'rgb(0, 117, 190)',
+  )
+  await expect(page.locator('footer.bareos-statusbar')).toHaveCSS(
+    'background-color',
+    'rgb(0, 86, 139)',
+  )
   await expect(page).toHaveTitle('Director - Bareos (unsupported build)')
   const ribbon = page.getByTestId('unsupported-build-ribbon')
   await expect(ribbon).toBeVisible()
