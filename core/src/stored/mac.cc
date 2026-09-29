@@ -79,8 +79,8 @@ struct cb_data {
    * the last STREAM_UNIX_ATTRIBUTES(_EX) record among them is forwarded to
    * the Director/catalog -- mirrors append.cc's DoAppendData() buffering,
    * needed because the source medium may legitimately hold two attribute
-   * records per FileIndex (see the FD-plugin/NDMP "update after write"
-   * mechanism). */
+   * records per FileIndex (see the FD-plugin corrected-attributes resend
+   * mechanism in fd_plugins.cc). */
   ProcessedFile current_file{};
 };
 

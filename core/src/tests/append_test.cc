@@ -138,3 +138,25 @@ TEST(AppendProcessedFileTest,
   ASSERT_EQ(to_send.size(), 1U);
   EXPECT_EQ(to_send[0], 0U);
 }
+
+TEST(AppendProcessedFileTest,
+     SelectAttributesToSendPassesThroughSingleAttributeWithDigest)
+{
+  /* The common (non-resend) case: exactly one attribute record followed
+   * by a digest, as read from the medium for a regular file. This is the
+   * baseline bscan/bextract/bls must not disturb when no plugin
+   * corrected-attributes resend is involved. */
+  storagedaemon::DeviceRecord attrs = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  storagedaemon::DeviceRecord md5 = MakeRecord(1, STREAM_MD5_DIGEST);
+
+  std::vector<storagedaemon::ProcessedFileData> attributes;
+  attributes.emplace_back(&attrs);
+  attributes.emplace_back(&md5);
+
+  std::vector<std::size_t> to_send
+      = storagedaemon::SelectAttributesToSend(attributes);
+
+  ASSERT_EQ(to_send.size(), 2U);
+  EXPECT_EQ(to_send[0], 0U); /* attributes */
+  EXPECT_EQ(to_send[1], 1U); /* digest */
+}
