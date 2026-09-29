@@ -37,13 +37,8 @@ bool BnetSend(BareosSocket* bsock);
 bool BnetFsend(BareosSocket* bs, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool BnetSetBufferSize(BareosSocket* bs, uint32_t size, int rw);
 bool BnetSig(BareosSocket* bs, int sig);
-bool BnetTlsServer(BareosSocket* bsock,
-                   std::shared_ptr<Tls> tls,
-                   const std::vector<std::string>& verify_list);
-bool BnetTlsClient(BareosSocket* bsock,
-                   std::shared_ptr<Tls> tls,
-                   bool VerifyPeer,
-                   const std::vector<std::string>& verify_list);
+bool BnetTlsServer(BareosSocket* bsock, std::shared_ptr<Tls> tls);
+bool BnetTlsClient(BareosSocket* bsock, std::shared_ptr<Tls> tls);
 int BnetGetPeer(BareosSocket* bs, char* buf, socklen_t buflen);
 BareosSocket* dup_bsock(BareosSocket* bsock);
 const char* BnetStrerror(BareosSocket* bsock);

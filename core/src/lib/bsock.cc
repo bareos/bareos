@@ -70,15 +70,9 @@ struct auth_timer {
 
 bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
                               BareosSocket* socket,
-                              std::shared_ptr<Tls> tls,
-                              const TlsConfigCert* local_tls_cert)
+                              std::shared_ptr<Tls> tls)
 {
-  std::vector<std::string> verify_list;
-
-  if (local_tls_cert->verify_peer_) {
-    verify_list = local_tls_cert->allowed_certificate_common_names_;
-  }
-  if (BnetTlsServer(socket, std::move(tls), verify_list)) { return true; }
+  if (BnetTlsServer(socket, std::move(tls))) { return true; }
   if (jcr && jcr->JobId != 0) {
     Jmsg(jcr, M_FATAL, 0, T_("TLS negotiation failed.\n"));
   }
@@ -88,13 +82,9 @@ bool DoTlsHandshakeWithClient(JobControlRecord* jcr,
 
 bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
                               BareosSocket* socket,
-                              std::shared_ptr<Tls> tls,
-                              const TlsConfigCert* local_tls_cert)
+                              std::shared_ptr<Tls> tls)
 {
-  if (BnetTlsClient(socket, std::move(tls), local_tls_cert->verify_peer_,
-                    local_tls_cert->allowed_certificate_common_names_)) {
-    return true;
-  }
+  if (BnetTlsClient(socket, std::move(tls))) { return true; }
 
   int message_type = 0;
   std::string message;
@@ -783,8 +773,7 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
         return false;
       }
 
-      if (!DoTlsHandshakeWithServer(args.jcr, args.socket, std::move(tls),
-                                    &args.target->tls_cert_)) {
+      if (!DoTlsHandshakeWithServer(args.jcr, args.socket, std::move(tls))) {
         return false;
       }
 
@@ -834,8 +823,7 @@ bool Md5Authenticator::authenticate_inbound(InboundArgs args)
         return false;
       }
 
-      if (!DoTlsHandshakeWithClient(nullptr, args.socket, std::move(tls),
-                                    &args.target->tls_cert_)) {
+      if (!DoTlsHandshakeWithClient(nullptr, args.socket, std::move(tls))) {
         return false;
       }
 
@@ -872,7 +860,7 @@ bool BareosConnect(JobControlRecord* jcr,
       return false;
     }
 
-    if (!DoTlsHandshakeWithServer(jcr, socket, tls, &res->tls_cert_)) {
+    if (!DoTlsHandshakeWithServer(jcr, socket, tls)) {
       Jmsg(jcr, M_FATAL, 0, "Could not complete tls handshake\n");
       return false;
     }
@@ -977,8 +965,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
             socket->who());
       return std::nullopt;
     }
-    if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls),
-                                  &initial_tls->tls_cert_)) {
+    if (!DoTlsHandshakeWithClient(nullptr, socket, std::move(tls))) {
       Emsg1(M_ERROR, 0, "Could not complete tls handshake with %s\n",
             socket->who());
       return std::nullopt;

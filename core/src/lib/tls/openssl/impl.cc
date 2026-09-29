@@ -54,17 +54,11 @@ std::mutex file_access_mutex_;
 
 class TlsOpenSsl : public Tls {
  public:
-  TlsOpenSsl();
+  TlsOpenSsl(const TlsResource* res);
   virtual ~TlsOpenSsl();
   TlsOpenSsl(TlsOpenSsl& other) = delete;
 
   bool init() override;
-
-  bool TlsPostconnectVerifyHost(JobControlRecord* jcr,
-                                const char* host) override;
-  bool TlsPostconnectVerifyCn(
-      JobControlRecord* jcr,
-      const std::vector<std::string>& verify_list) override;
 
   bool TlsBsockAccept(BareosSocket* bsock) override;
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
@@ -78,27 +72,17 @@ class TlsOpenSsl : public Tls {
                       int port,
                       const char* who) const override;
 
-  void SetCipherList(const std::string& cipherlist);
-  void SetCipherSuites(const std::string& ciphersuites);
-  void SetProtocol(const std::string& protocol);
-  void Setca_certfile_(const std::string& ca_certfile);
-  void SetCaCertdir(const std::string& ca_certdir);
-  void SetCrlfile(const std::string& crlfile);
-  void SetCertfile(const std::string& certfile);
-  void SetKeyfile(const std::string& keyfile);
-  void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback);
-  void SetPemUserdata(void* pem_userdata);
-  void SetDhFile(const std::string& dhfile_);
-  void SetVerifyPeer(bool verify_peer);
-
   void SetTlsPskClientContext(const PskCredentials& credentials) override;
   void SetTlsPskServerContext(TlsConfigProvider* data) override;
 
 
   bool KtlsSendStatus() override;
   bool KtlsRecvStatus() override;
-
   int TlsPendingBytes() override;
+
+  bool TlsPostconnectVerifyHost(X509* cert, const char* host);
+  bool TlsPostconnectVerifyCn(X509* cert,
+                              const std::vector<std::string>& verify_list);
 
  private:
   friend int tls_pem_callback_dispatch(char* buf,
@@ -137,7 +121,11 @@ class TlsOpenSsl : public Tls {
   std::string ciphersuites_;
   bool verify_peer_{};
 
+  std::vector<std::string> allowed_common_names{};
+
   std::optional<PskCredentials> credentials_;
+
+  void debug_message();
 };
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
@@ -556,80 +544,7 @@ unsigned int psk_client_cb(SSL* ssl,
   return ret;
 }
 
-// public interfaces from TlsOpenSsl that set private data
-void TlsOpenSsl::Setca_certfile_(const std::string& ca_certfile)
-{
-  Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile.c_str());
-  ca_certfile_ = ca_certfile;
-}
-
-void TlsOpenSsl::SetCaCertdir(const std::string& ca_certdir)
-{
-  Dmsg1(100, "Set ca_certdir:\t<%s>\n", ca_certdir.c_str());
-  ca_certdir_ = ca_certdir;
-}
-
-void TlsOpenSsl::SetCrlfile(const std::string& crlfile)
-{
-  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile.c_str());
-  crlfile_ = crlfile;
-}
-
-void TlsOpenSsl::SetCertfile(const std::string& certfile)
-{
-  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile.c_str());
-  certfile_ = certfile;
-}
-
-void TlsOpenSsl::SetKeyfile(const std::string& keyfile)
-{
-  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile.c_str());
-  keyfile_ = keyfile;
-}
-
-void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
-{
-  Dmsg1(100, "Set pem_callback to address: <%p>\n", pem_callback);
-  pem_callback_ = pem_callback;
-}
-
-void TlsOpenSsl::SetPemUserdata(void* pem_userdata)
-{
-  Dmsg1(100, "Set pem_userdata to address: <%p>\n", pem_userdata);
-  pem_userdata_ = pem_userdata;
-}
-
-void TlsOpenSsl::SetDhFile(const std::string& dhfile)
-{
-  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile.c_str());
-  dhfile_ = dhfile;
-}
-
-void TlsOpenSsl::SetVerifyPeer(bool verify_peer)
-{
-  Dmsg1(100, "Set Verify Peer:\t<%s>\n", verify_peer ? "true" : "false");
-  verify_peer_ = verify_peer;
-}
-
-void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
-{
-  Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
-  cipherlist_ = cipherlist;
-}
-
-void TlsOpenSsl::SetCipherSuites(const std::string& ciphersuites)
-{
-  Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites.c_str());
-  ciphersuites_ = ciphersuites;
-}
-
-void TlsOpenSsl::SetProtocol(const std::string& protocol)
-{
-  Dmsg1(100, "Set protocol:\t<%s>\n", protocol.c_str());
-  protocol_ = protocol;
-}
-
-TlsOpenSsl::TlsOpenSsl()
+TlsOpenSsl::TlsOpenSsl(const TlsResource* config)
 {
   Dmsg0(100, "Construct TlsOpenSsl\n");
 
@@ -652,6 +567,42 @@ TlsOpenSsl::TlsOpenSsl()
   }
 
   SSL_CONF_CTX_set_ssl_ctx(openssl_conf_ctx_, openssl_ctx_);
+
+
+  auto& tls_cert = config->tls_cert_;
+
+  protocol_ = config->protocol_;
+  cipherlist_ = config->cipherlist_;
+  ciphersuites_ = config->ciphersuites_;
+  ca_certfile_ = tls_cert.ca_certfile_;
+  ca_certdir_ = tls_cert.ca_certdir_;
+  crlfile_ = tls_cert.crlfile_;
+  certfile_ = tls_cert.certfile_;
+
+  keyfile_ = tls_cert.keyfile_;
+  dhfile_ = tls_cert.dhfile_;
+
+  verify_peer_ = tls_cert.verify_peer_;
+
+  allowed_common_names = tls_cert.allowed_certificate_common_names_;
+
+  debug_message();
+}
+
+void TlsOpenSsl::debug_message()
+{
+  Dmsg1(100, "Set protocol:\t<%s>\n", protocol_.c_str());
+  Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist_.c_str());
+  Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites_.c_str());
+  Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile_.c_str());
+  Dmsg1(100, "Set ca_certdir:\t<%s>\n", ca_certdir_.c_str());
+  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile_.c_str());
+  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile_.c_str());
+  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile_.c_str());
+  // Dmsg1(100, "Set pem_callback to address: <%p>\n", pem_callback_);
+  // Dmsg1(100, "Set pem_userdata to address: <%p>\n", pem_userdata_);
+  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile_.c_str());
+  Dmsg1(100, "Set Verify Peer:\t<%s>\n", verify_peer_ ? "Yes" : "No");
 }
 
 TlsOpenSsl::~TlsOpenSsl()
@@ -918,16 +869,12 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord* jcr,
  *          false on failure
  */
 bool TlsOpenSsl::TlsPostconnectVerifyCn(
-    JobControlRecord* jcr,
+    X509* cert,
     const std::vector<std::string>& verify_list)
 {
-  X509* cert;
-  bool auth_success = false;
+  ASSERT(cert);
 
-  if (!(cert = SSL_get_peer_certificate(openssl_))) {
-    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
-    return false;
-  }
+  bool auth_success = false;
 
   auto* subject = X509_get_subject_name(cert);
   if (subject != NULL) {
@@ -952,18 +899,12 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
  * Returns: true on success
  *          false on failure
  */
-bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
-                                          const char* host)
+bool TlsOpenSsl::TlsPostconnectVerifyHost(X509* cert, const char* host)
 {
-  int cnLastPos = -1;
-  X509* cert;
-  bool auth_success = false;
+  ASSERT(cert);
 
-  if (!(cert = SSL_get_peer_certificate(openssl_))) {
-    Qmsg1(jcr, M_ERROR, 0, T_("Peer %s failed to present a TLS certificate\n"),
-          host);
-    return false;
-  }
+  int cnLastPos = -1;
+  bool auth_success = false;
 
   // Check subjectAltName extensions first
   if (auto* sans = static_cast<GENERAL_NAMES*>(
@@ -1017,12 +958,79 @@ success:
 
 bool TlsOpenSsl::TlsBsockConnect(BareosSocket* bsock)
 {
-  return OpensslBsockSessionStart(bsock, false);
+  if (!OpensslBsockSessionStart(bsock, false)) {
+    Dmsg0(100, "Could not establish a tls session with %s\n", bsock->host());
+    return false;
+  }
+
+  auto* jcr = bsock->jcr();
+
+  if (!verify_peer_) {
+    Dmsg0(200, "We do not check the peer\n");
+    return true;
+  }
+
+  auto* cert = SSL_get_peer_certificate(openssl_);
+
+  if (!cert) {
+    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
+    return false;
+  }
+
+  /* If there's an Allowed CN verify list, use that to validate the remote
+   * certificate's CN. Otherwise, we use standard host/CN matching. */
+  if (!allowed_common_names.empty()) {
+    if (!TlsPostconnectVerifyCn(cert, allowed_common_names)) {
+      Qmsg1(bsock->jcr(), M_FATAL, 0,
+            "TLS certificate verification failed."
+            " Peer certificate did not match a required commonName\n");
+      return false;
+    }
+  } else {
+    if (!TlsPostconnectVerifyHost(cert, bsock->host())) {
+      Qmsg1(bsock->jcr(), M_FATAL, 0,
+            "TLS host certificate verification failed. Host name \"%s\""
+            "did not match presented certificate\n",
+            bsock->host());
+      return false;
+    }
+  }
+
+  return true;
 }
 
 bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
 {
-  return OpensslBsockSessionStart(bsock, true);
+  if (!OpensslBsockSessionStart(bsock, true)) {
+    Dmsg0(100, "Could not accept a tls session from %s\n", bsock->host());
+    return false;
+  }
+
+  auto* jcr = bsock->jcr();
+
+  if (!verify_peer_) {
+    Dmsg0(200, "We do not check the peer\n");
+    return true;
+  }
+
+  auto* cert = SSL_get_peer_certificate(openssl_);
+  if (!cert) {
+    Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
+    return false;
+  }
+
+  if (!allowed_common_names.empty()) {
+    if (!TlsPostconnectVerifyCn(cert, allowed_common_names)) {
+      Qmsg1(bsock->jcr(), M_FATAL, 0,
+            T_("TLS certificate verification failed."
+               " Peer certificate did not match a required commonName\n"));
+      return false;
+    }
+  } else {
+    X509_free(cert);
+  }
+
+  return true;
 }
 
 void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
@@ -1135,27 +1143,7 @@ int TlsOpenSsl::TlsPendingBytes()
 
 std::unique_ptr<Tls> make_openssl_tls(const TlsResource* config)
 {
-  auto tls = std::make_unique<TlsOpenSsl>();
+  auto tls = std::make_unique<TlsOpenSsl>(config);
   if (!tls) { return tls; }
-
-  auto& tls_cert = config->tls_cert_;
-
-
-  tls->SetProtocol(config->protocol_);
-  tls->SetCipherList(config->cipherlist_);
-  tls->SetCipherSuites(config->ciphersuites_);
-  tls->Setca_certfile_(tls_cert.ca_certfile_);
-  tls->SetCaCertdir(tls_cert.ca_certdir_);
-  tls->SetCrlfile(tls_cert.crlfile_);
-  tls->SetCertfile(tls_cert.certfile_);
-  tls->SetKeyfile(tls_cert.keyfile_);
-  /*      tls->SetPemCallback(TlsPemCallback);
-   * --> Feature not implemented: Console Callback */
-  /*      tls->SetPemUserdata(tls_cert.pem_message_);
-   * --> Feature not implemented: SetPemUserdata */
-  tls->SetDhFile(tls_cert.dhfile_);
-
-  tls->SetVerifyPeer(tls_cert.verify_peer_);
-
   return tls;
 }
