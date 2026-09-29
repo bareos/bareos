@@ -136,14 +136,16 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(BareosSocket* bsock, std::shared_ptr<Tls> tls)
+bool BnetTlsClient(JobControlRecord* jcr,
+                   BareosSocket* bsock,
+                   std::shared_ptr<Tls> tls)
 {
   if (!tls) {
     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockConnect\n");
     goto err;
   }
 
-  if (!tls->TlsBsockConnect(bsock)) { goto err; }
+  if (!tls->TlsBsockConnect(jcr, bsock)) { goto err; }
 
   bsock->LockMutex();
   bsock->tls_conn = std::move(tls);

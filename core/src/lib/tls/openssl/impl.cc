@@ -63,7 +63,7 @@ class TlsOpenSsl : public Tls {
   bool TlsBsockAccept(BareosSocket* bsock) override;
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
-  bool TlsBsockConnect(BareosSocket* bsock) override;
+  bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) override;
   void TlsBsockShutdown(BareosSocket* bsock) override;
 
   std::string TlsCipherGetName() const override;
@@ -956,14 +956,12 @@ success:
   return auth_success;
 }
 
-bool TlsOpenSsl::TlsBsockConnect(BareosSocket* bsock)
+bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
 {
   if (!OpensslBsockSessionStart(bsock, false)) {
     Dmsg0(100, "Could not establish a tls session with %s\n", bsock->host());
     return false;
   }
-
-  auto* jcr = bsock->jcr();
 
   if (!verify_peer_) {
     Dmsg0(200, "We do not check the peer\n");
@@ -981,14 +979,14 @@ bool TlsOpenSsl::TlsBsockConnect(BareosSocket* bsock)
    * certificate's CN. Otherwise, we use standard host/CN matching. */
   if (!allowed_common_names.empty()) {
     if (!TlsPostconnectVerifyCn(cert, allowed_common_names)) {
-      Qmsg1(bsock->jcr(), M_FATAL, 0,
+      Qmsg1(jcr, M_FATAL, 0,
             "TLS certificate verification failed."
             " Peer certificate did not match a required commonName\n");
       return false;
     }
   } else {
     if (!TlsPostconnectVerifyHost(cert, bsock->host())) {
-      Qmsg1(bsock->jcr(), M_FATAL, 0,
+      Qmsg1(jcr, M_FATAL, 0,
             "TLS host certificate verification failed. Host name \"%s\" "
             "did not match presented certificate\n",
             bsock->host());
