@@ -84,7 +84,7 @@ bool DoTlsHandshakeWithServer(JobControlRecord* jcr,
                               BareosSocket* socket,
                               std::shared_ptr<Tls> tls)
 {
-  if (BnetTlsClient(socket, std::move(tls))) { return true; }
+  if (BnetTlsClient(jcr, socket, std::move(tls))) { return true; }
 
   int message_type = 0;
   std::string message;
