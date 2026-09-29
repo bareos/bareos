@@ -434,7 +434,7 @@ bool DoSubscriptionAccounting(UaContext* ua)
       std::optional<uint64_t> file_bytes
           = AccountedBytesForFile(file.LStat, is_windows);
       if (!file_bytes) {
-        ua->ErrorMsg(T_("%s / %s: invalid file attributes for JobId=%" PRId64
+        ua->ErrorMsg(T_("%s / %s: invalid file attributes for JobId=%" PRIu32
                         " FileIndex=%u -- aborting report.\n"),
                      tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
                      file.JobId, file.FileIndex);
