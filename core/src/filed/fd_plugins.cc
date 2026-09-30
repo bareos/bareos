@@ -1165,19 +1165,23 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         uint64_t blocks = corrected.blocks > 0
                               ? static_cast<uint64_t>(corrected.blocks)
                               : PluginBlocksFromSize(corrected.size);
+        /* Debug-only: one line per corrected file would flood the job log
+         * for plugins backing up many files needing correction. The
+         * catalog (File.LStat) already carries the corrected values, so
+         * per-file detail is only needed for troubleshooting. */
         if (using_fd_counted_fallback) {
-          Jmsg(jcr, M_INFO, 0,
-               T_("Plugin did not report corrected size/block count for %s; "
-                  "using %" PRIu64 " byte(s) and %" PRIu64
-                  " 512-byte block(s) counted from the plugin stream for "
-                  "catalog attributes.\n"),
-               ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
+          Dmsg3(100,
+                "Plugin did not report corrected size/block count for %s; "
+                "using %" PRIu64 " byte(s) and %" PRIu64
+                " 512-byte block(s) counted from the plugin stream for "
+                "catalog attributes.\n",
+                ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
         } else {
-          Jmsg(jcr, M_INFO, 0,
-               T_("Plugin reported corrected size/block count for %s; using "
-                  "%" PRIu64 " byte(s) and %" PRIu64
-                  " 512-byte block(s) for catalog attributes.\n"),
-               ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
+          Dmsg3(100,
+                "Plugin reported corrected size/block count for %s; using "
+                "%" PRIu64 " byte(s) and %" PRIu64
+                " 512-byte block(s) for catalog attributes.\n",
+                ff_pkt->fname, static_cast<uint64_t>(corrected.size), blocks);
         }
 
         ff_pkt->statp.st_size = corrected.size;

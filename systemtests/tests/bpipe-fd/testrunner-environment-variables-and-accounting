@@ -77,10 +77,12 @@ payload="bareos bpipe accounting payload"
 payload_bytes=${#payload}
 payload_blocks=$(((payload_bytes + 511) / 512))
 
-expect_grep \
-  "Plugin did not report corrected size/block count for /bpipe; using ${payload_bytes} byte(s) and ${payload_blocks} 512-byte block(s)" \
-  "$full_log" \
-  "File Daemon did not report its counted bpipe size"
+# The bpipe plugin did not report a corrected size/block count itself,
+# so the FD's fallback counts it from the plugin stream instead. That
+# per-file correction is only logged at debug level (not the job log,
+# to avoid flooding it for plugins backing up many files needing
+# correction) -- the catalog check below (via .sql query) is the
+# behavioral proof that the fallback was applied correctly.
 
 # The corrected attributes must reach the Director before the digest,
 # otherwise the digest is dropped with a "not same File" warning.
