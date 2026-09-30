@@ -152,26 +152,32 @@ struct TupleInfo {
 struct ChainResolveCtx {
   JobId_t JobId{0};
   utime_t JobTDate{0};
+  bool purged{false};
   bool found{false};
 };
 
 int ChainJobHandler(void* ctx, int, char** row)
 {
+  // row[0]=JobId row[1]=JobTDate row[2]=PurgedFiles
   auto* c = static_cast<ChainResolveCtx*>(ctx);
   c->JobId = static_cast<JobId_t>(str_to_int64(row[0]));
   c->JobTDate = static_cast<utime_t>(str_to_int64(row[1]));
+  c->purged = row[2] && str_to_int64(row[2]) != 0;
   c->found = true;
   return 0;
 }
 
 struct JobIdListCtx {
   std::vector<JobId_t> jobids;
+  bool any_purged{false};
 };
 
 int JobIdListHandler(void* ctx, int, char** row)
 {
+  // row[0]=JobId row[1]=PurgedFiles
   auto* c = static_cast<JobIdListCtx*>(ctx);
   c->jobids.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
+  if (row[1] && str_to_int64(row[1]) != 0) { c->any_purged = true; }
   return 0;
 }
 
@@ -285,7 +291,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
   // 1. Latest Full backup for this Client/FileSet.
   ChainResolveCtx full{};
   Mmsg(query,
-       "SELECT JobId, JobTDate FROM Job"
+       "SELECT JobId, JobTDate, PurgedFiles FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='F'"
        " AND JobStatus IN ('T','W') AND Type IN (%s)"
        " ORDER BY JobTDate DESC, JobId DESC LIMIT 1",
@@ -296,6 +302,12 @@ ChainResult ResolveAccountingChain(UaContext* ua,
     return ChainResult::kError;
   }
   if (!full.found) { return ChainResult::kNotFound; /* no baseline */ }
+  // File retention usually expires before Job retention, so the Full's
+  // Job row can survive with its File rows already purged. Counting
+  // only the later Incrementals in that case would silently under-
+  // report instead of excluding the tuple as documented -- treat a
+  // purged baseline the same as "no usable chain found".
+  if (full.purged) { return ChainResult::kNotFound; /* File rows pruned */ }
 
   jobids->push_back(full.JobId);
   utime_t baseline = full.JobTDate;
@@ -307,7 +319,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
   edit_uint64(baseline, ed3);
   edit_int64(baseline_jobid, ed4);
   Mmsg(query,
-       "SELECT JobId, JobTDate FROM Job"
+       "SELECT JobId, JobTDate, PurgedFiles FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='D'"
        " AND (JobTDate>%s OR (JobTDate=%s AND JobId>%s))"
        " AND JobStatus IN ('T','W') AND Type IN (%s)"
@@ -319,6 +331,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
     return ChainResult::kError;
   }
   if (diff.found) {
+    if (diff.purged) { return ChainResult::kNotFound; /* File rows pruned */ }
     jobids->push_back(diff.JobId);
     baseline = diff.JobTDate;
     baseline_jobid = diff.JobId;
@@ -329,7 +342,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
   edit_uint64(baseline, ed3);
   edit_int64(baseline_jobid, ed4);
   Mmsg(query,
-       "SELECT JobId FROM Job"
+       "SELECT JobId, PurgedFiles FROM Job"
        " WHERE ClientId=%s AND FileSetId=%s AND Level='I'"
        " AND (JobTDate>%s OR (JobTDate=%s AND JobId>%s))"
        " AND JobStatus IN ('T','W') AND Type IN (%s)"
@@ -340,6 +353,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return ChainResult::kError;
   }
+  if (incs.any_purged) { return ChainResult::kNotFound; /* File rows pruned */ }
   for (JobId_t id : incs.jobids) { jobids->push_back(id); }
 
   return ChainResult::kFound;
