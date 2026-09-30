@@ -54,6 +54,33 @@ std::vector<std::uint32_t> NdmpNativeJobsToRestore(
     const char* JobIds,
     s_tree_root* restore_tree_root);
 bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess);
+
+struct NdmpRecoveredFiles {
+  std::uint32_t restored{};
+  std::uint32_t failed{};
+};
+
+/* The data server reports the result of each name list entry with
+ * NDMP_LOG_FILE. Data servers that do not send it are counted as one
+ * restored file per successfully recovered image. */
+constexpr NdmpRecoveredFiles NdmpNativeRecoveredFiles(int log_file_count,
+                                                      int log_file_ok,
+                                                      bool session_ok)
+{
+  if (log_file_count <= 0) { return {session_ok ? 1u : 0u, 0}; }
+  std::uint32_t ok = log_file_ok > 0 ? log_file_ok : 0;
+  std::uint32_t failed
+      = log_file_count > log_file_ok
+            ? static_cast<std::uint32_t>(log_file_count - log_file_ok)
+            : 0;
+  return {ok, failed};
+}
+
+/* Update the job statistics of a NDMP_NATIVE restore image, also for
+ * sessions that failed. Returns false if the session failed. */
+bool ExtractPostRestoreStatsNdmpNative(JobControlRecord* jcr,
+                                       struct ndm_session* sess,
+                                       bool session_ok);
 void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode);
 
 } /* namespace directordaemon */

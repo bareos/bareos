@@ -28,6 +28,28 @@
 #include <vector>
 
 using directordaemon::NdmpNativeJobsToRestore;
+using directordaemon::NdmpNativeRecoveredFiles;
+
+namespace {
+constexpr bool Recovered(int count,
+                         int ok,
+                         bool session_ok,
+                         std::uint32_t restored,
+                         std::uint32_t failed)
+{
+  auto files = NdmpNativeRecoveredFiles(count, ok, session_ok);
+  return files.restored == restored && files.failed == failed;
+}
+}  // namespace
+
+// without NDMP_LOG_FILE messages an image counts as one file
+static_assert(Recovered(0, 0, true, 1, 0));
+static_assert(Recovered(0, 0, false, 0, 0));
+// otherwise every name list entry is counted
+static_assert(Recovered(7, 7, true, 7, 0));
+static_assert(Recovered(7, 5, false, 5, 2));
+static_assert(Recovered(7, 0, false, 0, 7));
+static_assert(Recovered(3, 3, false, 3, 0));
 
 class NdmpNativeRestore : public testing::Test {
  protected:

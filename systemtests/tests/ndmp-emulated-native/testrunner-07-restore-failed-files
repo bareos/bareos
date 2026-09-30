@@ -24,7 +24,8 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore a full backup
+# files the data server fails to recover are reported per file
+# (NDMP_LOG_FILE), are not counted as restored and fail the restore
 #
 
 TestName="$(basename "$(pwd)")"
@@ -37,22 +38,34 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 start_test
 
-# remove files
-rm -rf "${NDMP_FILESYSTEM}"
+readonly_dir="${tmp}/readonly"
+rm -rf "${readonly_dir}"
+mkdir -p "${readonly_dir}"
+chmod 0555 "${readonly_dir}"
+if [ -w "${readonly_dir}" ]; then
+  echo "cannot create a read-only directory (running as root?), skipping"
+  chmod 0755 "${readonly_dir}"
+  end_test
+  exit 0
+fi
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
-restore jobid=1 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump all done yes
+restore jobid=1 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump where=^${readonly_dir}/restore all done yes
 wait
 messages
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
+chmod 0755 "${readonly_dir}"
 
-check_log "${log_home}/restore.out"
-expect_grep "Termination:.*Restore OK" "${log_home}/restore.out" \
-  "restore did not succeed"
+expect_grep "Termination:.*Restore Error" \
+  "${log_home}/restore.out" "restore did not fail"
+expect_grep "failed to recover 7 of 7 files" "${log_home}/restore.out" \
+  "failed files were not reported"
+expect_grep "Files Restored: *0$" "${log_home}/restore.out" \
+  "failed files were counted as restored"
 
-check_ndmp_data_full "${NDMP_FILESYSTEM}"
+check_no_running_jobs
 
 end_test
