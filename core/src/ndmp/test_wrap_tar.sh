@@ -90,6 +90,27 @@ cmp "${src}/sub/random" "${work}/single/r" || fail "single restore differs"
 cmp "${src}/sub/random" "${work}/dir/random" || fail "dir restore differs"
 [ ! -e "${work}/dir/file" ] || fail "dir restore restored too much"
 
+# every name list entry gets a recovery result, the most specific entry wins
+"${WRAP_TAR}" -x -I "${work}/rr.idx" -E "FILESYSTEM=${src}" \
+  /sub @- "${work}/rr/sub" /sub/random @- "${work}/rr/random" \
+  /missing @- "${work}/rr/missing" <"${work}/full.img"
+grep -q "^RR 0 /sub$" "${work}/rr.idx" || fail "no result for /sub"
+grep -q "^RR 0 /sub/random$" "${work}/rr.idx" || fail "no result for random"
+grep -q "^RR 2 /missing$" "${work}/rr.idx" || fail "no not found result"
+cmp "${src}/sub/random" "${work}/rr/random" || fail "nested entry differs"
+[ ! -e "${work}/rr/sub/random" ] || fail "less specific entry used"
+
+# extraction errors are reported for the entry, not as formatter failure
+mkdir -p "${work}/ro"
+chmod 0555 "${work}/ro"
+if [ ! -w "${work}/ro" ]; then
+  "${WRAP_TAR}" -x -I "${work}/ro.idx" -E "FILESYSTEM=${src}" \
+    /file @- "${work}/ro/file" <"${work}/full.img" \
+    || fail "extraction error made the formatter fail"
+  grep -q "^RR 13 /file$" "${work}/ro.idx" || fail "no EACCES result"
+fi
+chmod 0755 "${work}/ro"
+
 # file history from an existing image
 "${WRAP_TAR}" -t -I "${work}/t.idx" -E HIST=f <"${work}/full.img"
 grep -q "^HF /sub/random @" "${work}/t.idx" || fail "no -t file history"

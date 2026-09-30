@@ -62,6 +62,21 @@ int ndma_notify_data_halted(struct ndm_session* sess)
   return 0;
 }
 
+int ndma_notify_log_file(struct ndm_session* sess,
+                         char* name,
+                         ndmp9_recovery_status status)
+{
+  struct ndmconn* conn = sess->plumb.control;
+
+  NDMC_WITH_NO_REPLY(ndmp9_log_file, NDMP9VER)
+  request->name = name;
+  request->recovery_status = status;
+  ndma_send_to_control(sess, xa, sess->plumb.data);
+  NDMC_ENDWITH
+
+  return 0;
+}
+
 int ndma_notify_data_read(struct ndm_session* sess,
                           uint64_t offset,
                           uint64_t length)

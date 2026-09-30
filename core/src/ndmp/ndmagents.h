@@ -1395,6 +1395,9 @@ extern ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
 /* ndma_noti_calls.c */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 extern int ndma_notify_data_halted(struct ndm_session* sess);
+extern int ndma_notify_log_file(struct ndm_session* sess,
+                                char* name,
+                                ndmp9_recovery_status status);
 extern int ndma_notify_data_read(struct ndm_session* sess,
                                  uint64_t offset,
                                  uint64_t length);
