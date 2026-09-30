@@ -97,11 +97,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -224,11 +224,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -357,11 +357,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -506,11 +506,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",

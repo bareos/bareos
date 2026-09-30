@@ -2269,6 +2269,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_STR_VECTOR, "STRING_LIST", "string list"},
     {CFG_TYPE_STR_VECTOR_OF_DIRS, "DIRECTORY_LIST", "directory list"},
     {CFG_TYPE_DIR_OR_CMD, "DIRECTORY_OR_COMMAND", "Directory or command"},
+    {CFG_TYPE_VERIFY_PEER, "VERIFY_PEER", "verify peer setting"},
 
     // Director resource types. handlers in dird_conf.
     {CFG_TYPE_ACL, "ACL", "User Access Control List"},
