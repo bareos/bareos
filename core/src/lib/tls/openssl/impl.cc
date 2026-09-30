@@ -1011,6 +1011,13 @@ std::unique_ptr<TlsOpenSsl> TlsOpenSsl::make_server(const TlsResource* res,
   auto openssl_ = make_ssl_from_res(res);
   if (!openssl_) { return {}; }
 
+  // this is necessary (for some reason) to support SSL_VERIFY_PEER
+  // when no client certificate is given.  Without this call on the server side,
+  // the server will complain that it was not setup.
+  // NOTE: do not set this on the client!  For some reason connections will fail
+  //  due to a session resumption error, when this is set on the client...
+  SSL_set_session_id_context(openssl_.get(), (unsigned const char*)"bareos", 6);
+
   if (config) {
     SSL_set_secretprovider(openssl_.get(), config);
     SSL_set_psk_server_callback(openssl_.get(), psk_server_cb);
