@@ -60,6 +60,8 @@ std::mutex file_access_mutex_;
 using ssl_ptr = UNIQUE_PTR(SSL);
 using ssl_ctx_ptr = UNIQUE_PTR(SSL_CTX);
 using ssl_conf_ptr = UNIQUE_PTR(SSL_CONF_CTX);
+using cert_ptr = UNIQUE_PTR(X509);
+using general_names_ptr = UNIQUE_PTR(GENERAL_NAMES);
 
 #undef UNIQUE_PTR
 
@@ -513,8 +515,6 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
 {
   ASSERT(cert);
 
-  bool auth_success = false;
-
   auto* subject = X509_get_subject_name(cert);
   if (subject != NULL) {
     const std::optional<CommonName> common_name = GetCommonName(subject, -1);
@@ -522,13 +522,12 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
       for (const std::string& cn : verify_list) {
         Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n",
               common_name->value.c_str(), cn.c_str());
-        if (common_name->value.compare(cn) == 0) { auth_success = true; }
+        if (common_name->value == cn) { return true; }
       }
     }
   }
 
-  X509_free(cert);
-  return auth_success;
+  return false;
 }
 
 /*
@@ -543,14 +542,13 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(X509* cert, const char* host)
   ASSERT(cert);
 
   int cnLastPos = -1;
-  bool auth_success = false;
 
   // Check subjectAltName extensions first
-  if (auto* sans = static_cast<GENERAL_NAMES*>(
-          X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr))) {
-    const int num = sk_GENERAL_NAME_num(sans);
+  if (general_names_ptr sans{static_cast<GENERAL_NAMES*>(
+          X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr))}) {
+    const int num = sk_GENERAL_NAME_num(sans.get());
     for (int i = 0; i < num; ++i) {
-      const GENERAL_NAME* name = sk_GENERAL_NAME_value(sans, i);
+      const GENERAL_NAME* name = sk_GENERAL_NAME_value(sans.get(), i);
       if (name->type == GEN_DNS) {
         const ASN1_IA5STRING* dns = name->d.dNSName;
         const char* dns_data
@@ -560,39 +558,27 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(X509* cert, const char* host)
           std::string_view dns_view{dns_data, static_cast<size_t>(dns_len)};
           if (dns_view.find('\0') == std::string_view::npos
               && Bstrcasecmp(std::string(dns_view).c_str(), host)) {
-            auth_success = true;
-            break;
+            return true;
           }
         }
       }
     }
-    GENERAL_NAMES_free(sans);
-    if (auth_success) { goto success; }
   }
 
   // Try verifying against the subject name
-  if (!auth_success) {
-    auto* subject = X509_get_subject_name(cert);
-    if (subject != NULL) {
-      // Loop through all CNs
-      for (;;) {
-        const std::optional<CommonName> common_name
-            = GetCommonName(subject, cnLastPos);
-        if (!common_name) { break; }
+  auto* subject = X509_get_subject_name(cert);
+  if (subject != NULL) {
+    // Loop through all CNs
+    for (;;) {
+      const std::optional<CommonName> common_name
+          = GetCommonName(subject, cnLastPos);
+      if (!common_name) { break; }
 
-        cnLastPos = common_name->index;
-        if (Bstrcasecmp(common_name->value.c_str(), host)) {
-          auth_success = true;
-          break;
-        }
-      }
+      cnLastPos = common_name->index;
+      if (Bstrcasecmp(common_name->value.c_str(), host)) { return true; }
     }
   }
-
-success:
-  X509_free(cert);
-
-  return auth_success;
+  return false;
 }
 
 bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
@@ -607,7 +593,7 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
     return true;
   }
 
-  auto* cert = SSL_get_peer_certificate(ssl());
+  cert_ptr cert{SSL_get_peer_certificate(ssl())};
 
   if (!cert) {
     Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
@@ -617,14 +603,14 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
   /* If there's an Allowed CN verify list, use that to validate the remote
    * certificate's CN. Otherwise, we use standard host/CN matching. */
   if (!allowed_common_names.empty()) {
-    if (!TlsPostconnectVerifyCn(cert, allowed_common_names)) {
+    if (!TlsPostconnectVerifyCn(cert.get(), allowed_common_names)) {
       Qmsg1(jcr, M_FATAL, 0,
             "TLS certificate verification failed."
             " Peer certificate did not match a required commonName\n");
       return false;
     }
   } else {
-    if (!TlsPostconnectVerifyHost(cert, bsock->host())) {
+    if (!TlsPostconnectVerifyHost(cert.get(), bsock->host())) {
       Qmsg1(jcr, M_FATAL, 0,
             "TLS host certificate verification failed. Host name \"%s\" "
             "did not match presented certificate\n",
@@ -650,21 +636,19 @@ bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
     return true;
   }
 
-  auto* cert = SSL_get_peer_certificate(ssl());
+  cert_ptr cert{SSL_get_peer_certificate(ssl())};
   if (!cert) {
     Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
     return false;
   }
 
   if (!allowed_common_names.empty()) {
-    if (!TlsPostconnectVerifyCn(cert, allowed_common_names)) {
+    if (!TlsPostconnectVerifyCn(cert.get(), allowed_common_names)) {
       Qmsg1(bsock->jcr(), M_FATAL, 0,
             T_("TLS certificate verification failed."
                " Peer certificate did not match a required commonName\n"));
       return false;
     }
-  } else {
-    X509_free(cert);
   }
 
   return true;
