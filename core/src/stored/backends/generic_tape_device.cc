@@ -328,6 +328,18 @@ bool generic_tape_device::offline()
   return true;
 }
 
+/**
+ * Write one or more end-of-file marks on the device.
+ *
+ * The regular tape-layer write-filemark operation is used here. We intentionally
+ * do not fall back to the non-immediate variant when the device reports an
+ * error, because an immediate filemark is not equivalent to a regular filemark
+ * and silently switching to the latter can flush buffered data to tape in a way
+ * that defeats the intended semantics.
+ *
+ * Returns: true on success
+ *          false on failure
+ */
 bool generic_tape_device::weof(int num)
 {
   mtop mt_com{};
@@ -350,15 +362,9 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
-  mt_com.mt_op = MTWEOFI;
+  mt_com.mt_op = MTWEOF;
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  if (status < 0) {
-    Dmsg1(129, "Immediate filemark failed on %s, trying non-immediate\n",
-          prt_name);
-    mt_com.mt_op = MTWEOF;
-    status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  }
   if (status == 0) {
     block_num = 0;
     file += num;
