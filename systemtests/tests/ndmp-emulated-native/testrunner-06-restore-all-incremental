@@ -50,7 +50,7 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_native_restore_log "${log_home}/restore.out"
+check_log "${log_home}/restore.out"
 expect_grep "Termination:.*Restore OK" "${log_home}/restore.out" \
   "restore did not succeed"
 expect_grep "Recovering the NDMP image of JobId 1" "${log_home}/restore.out" \

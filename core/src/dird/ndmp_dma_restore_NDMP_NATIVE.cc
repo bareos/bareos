@@ -342,22 +342,30 @@ static bool DoNdmpNativeRestoreImage(JobControlRecord* jcr, JobId_t JobId)
   ndmp_sess.conn_open = 1;
   ndmp_sess.conn_authorized = 1;
 
-  // Let the DMA perform its magic.
-  if (ndmca_control_agent(&ndmp_sess) != 0) {
-    Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_control_agent\n"));
-    goto cleanup_ndmp;
-  }
+  {
+    // Let the DMA perform its magic.
+    bool session_ok = ndmca_control_agent(&ndmp_sess) == 0;
 
-  if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0,
-         "could not free ndmp tape device %s from job %" PRIu32,
-         ndmp_job.tape_device, jcr->JobId);
-  }
+    // Account the recovered files also when the session failed.
+    bool stats_ok
+        = ExtractPostRestoreStatsNdmpNative(jcr, &ndmp_sess, session_ok);
 
-  // See if there were any errors during the restore.
-  if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
-    Jmsg(jcr, M_ERROR, 0, T_("ERROR in ExtractPostRestoreStats\n"));
-    goto cleanup_ndmp;
+    if (!session_ok) {
+      Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_control_agent\n"));
+      goto cleanup_ndmp;
+    }
+
+    if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0,
+           "could not free ndmp tape device %s from job %" PRIu32,
+           ndmp_job.tape_device, jcr->JobId);
+    }
+
+    // See if there were any errors during the restore.
+    if (!stats_ok) {
+      Jmsg(jcr, M_ERROR, 0, T_("ERROR in ExtractPostRestoreStats\n"));
+      goto cleanup_ndmp;
+    }
   }
 
   // Reset the NDMP session states.

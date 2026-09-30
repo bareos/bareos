@@ -48,17 +48,6 @@ check_ndmp_data_full()
   diff -r --no-dereference "${NDMP_REFERENCE}" "$1"
 }
 
-# The director counts one file per NDMP_NATIVE restore session, so every
-# native restore ends with "Restore OK -- warning file count mismatch".
-# Accept exactly that warning and check the log for anything else.
-check_native_restore_log()
-{
-  local filtered="${tmp}/$(basename "$1").filtered"
-  sed -e 's/Restore OK -- warning file count mismatch/Restore OK/' "$1" \
-    >"${filtered}"
-  check_log "${filtered}"
-}
-
 # NDMP_NATIVE jobs only involve the director and ndmjob, so the generic
 # check_for_zombie_jobs (which needs a storage daemon resource) does not
 # apply. Make sure the director has no jobs left running instead.
