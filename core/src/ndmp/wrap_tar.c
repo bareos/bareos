@@ -84,6 +84,11 @@ struct wrap_tar {
   time_t since;
   int n_errors;
   uint64_t n_files;
+  int n_extract_errors; /* reported per name list entry, not fatal */
+  int last_errno;
+  /* recovery: per name list entry, was a member restored, first errno */
+  int file_seen[WRAP_MAX_FILE];
+  int file_errno[WRAP_MAX_FILE];
 };
 
 /*
@@ -614,14 +619,23 @@ static int unsafe_path(const char* rel)
 }
 
 /* map the archive member rel (e.g. "/dir/file") to its restore path */
+/*
+ * Map the member rel to its destination. Returns the index of the name list
+ * entry with the longest matching original name, WRAP_MAX_FILE if there is
+ * no name list at all and -1 if the member is not wanted.
+ */
 static int map_destination(struct wrap_ccb* wccb,
                            const char* rel,
                            char* dest,
                            size_t dest_size)
 {
+  int best = -1;
+  size_t best_len = 0;
+  const char* best_suffix = NULL;
+
   if (wccb->n_file == 0) {
     snprintf(dest, dest_size, "%s%s", wccb->backup_root, rel);
-    return 1;
+    return WRAP_MAX_FILE;
   }
 
   for (int i = 0; i < wccb->n_file; i++) {
@@ -645,12 +659,17 @@ static int map_destination(struct wrap_ccb* wccb,
       suffix = rel + len;
     }
 
-    if (suffix) {
-      snprintf(dest, dest_size, "%s%s", wccb->file[i].save_to_name, suffix);
-      return 1;
+    if (suffix && (best < 0 || len > best_len)) {
+      best = i;
+      best_len = len;
+      best_suffix = suffix;
     }
   }
-  return 0;
+  if (best >= 0) {
+    snprintf(dest, dest_size, "%s%s", wccb->file[best].save_to_name,
+             best_suffix);
+  }
+  return best;
 }
 
 static int mkdir_p(char* path, mode_t mode)
@@ -763,8 +782,9 @@ static int extract_member(struct wrap_tar* wt,
   }
 
 error:
-  wrap_log(wccb, "restore of %s failed: %s", dest, strerror(errno));
-  wt->n_errors++;
+  wt->last_errno = errno ? errno : EIO;
+  wrap_log(wccb, "restore of %s failed: %s", dest, strerror(wt->last_errno));
+  wt->n_extract_errors++;
   return image_skip(wt, padded(size));
 }
 
@@ -843,6 +863,7 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
     uint64_t start = wt->offset;
     uint64_t size;
     size_t len;
+    int entry;
 
     if (image_read(wt, &h, sizeof h) < 0) break;
 
@@ -918,8 +939,9 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
     } else if (filehist_only) {
       history_from_header(wt, &h, rel, fhinfo, size);
       if (image_skip(wt, padded(size)) < 0) rc = -1;
-    } else if (map_destination(wccb, rel, dest, sizeof dest)) {
+    } else if ((entry = map_destination(wccb, rel, dest, sizeof dest)) >= 0) {
       char link[WRAP_MAX_PATH];
+      int errors = wt->n_extract_errors;
 
       if (longlink) {
         snprintf(link, sizeof link, "%s", longlink);
@@ -929,6 +951,12 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
       }
       if (extract_member(wt, &h, dest, link, size) < 0) rc = -1;
       wt->n_files++;
+      if (entry < WRAP_MAX_FILE) {
+        wt->file_seen[entry] = 1;
+        if (wt->n_extract_errors != errors && !wt->file_errno[entry]) {
+          wt->file_errno[entry] = wt->last_errno;
+        }
+      }
     } else {
       if (image_skip(wt, padded(size)) < 0) rc = -1;
     }
@@ -956,7 +984,23 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
   }
 
   if (rc < 0) wrap_log(wccb, "reading the image failed");
-  if (wt->n_errors) rc = -1;
+
+  /* report the result of every name list entry (NDMP_LOG_FILE) */
+  if (!filehist_only) {
+    for (int i = 0; i < wccb->n_file; i++) {
+      int err = wt->file_errno[i];
+      if (!err && !wt->file_seen[i]) err = rc < 0 ? EIO : ENOENT;
+      if (err) {
+        wrap_log(wccb, "recovery of %s failed: %s", wccb->file[i].original_name,
+                 strerror(err));
+      }
+      wrap_send_recovery_result(wccb->index_fp, err,
+                                wccb->file[i].original_name);
+    }
+  }
+
+  /* without a name list there is nobody to report extraction errors to */
+  if (wt->n_errors || (wccb->n_file == 0 && wt->n_extract_errors)) rc = -1;
 
   wrap_log(wccb, "recover done, %llu entries", (unsigned long long)wt->n_files);
   return rc;
