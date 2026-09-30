@@ -74,8 +74,6 @@ class TlsOpenSsl : public Tls {
   static std::unique_ptr<TlsOpenSsl> make_client(const TlsResource* res,
                                                  const PskCredentials* creds);
 
-  TlsOpenSsl(TlsOpenSsl& other) = delete;
-
   bool TlsBsockAccept(BareosSocket* bsock) override;
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
@@ -107,11 +105,14 @@ class TlsOpenSsl : public Tls {
                             int nbytes,
                             bool write);
 
+  SSL* ssl() { return openssl_.get(); }
+  const SSL* ssl() const { return openssl_.get(); }
+
  private:
   /* each TCP connection has its own SSL object.  We do not reuse SSL_CTX
    * objects, so there is no need for us to keep a separate pointer to it.
    * If necessary it is still accessible via the SSL object. */
-  SSL* openssl_{};
+  ssl_ptr openssl_{};
 
   bool verify_peer_{};
   std::vector<std::string> allowed_common_names{};
@@ -204,12 +205,12 @@ int TlsOpenSsl::OpensslBsockReadwrite(BareosSocket* bsock,
   while (nleft > 0) {
     int nwritten = 0;
     if (write) {
-      nwritten = SSL_write(openssl_, ptr, nleft);
+      nwritten = SSL_write(ssl(), ptr, nleft);
     } else {
-      nwritten = SSL_read(openssl_, ptr, nleft);
+      nwritten = SSL_read(ssl(), ptr, nleft);
     }
 
-    int ssl_error = SSL_get_error(openssl_, nwritten);
+    int ssl_error = SSL_get_error(ssl(), nwritten);
     LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
@@ -280,10 +281,10 @@ bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
   }
 
   BIO_set_fd(bio, bsock->fd_, BIO_NOCLOSE);
-  SSL_set_bio(openssl_, bio, bio);
+  SSL_set_bio(ssl(), bio, bio);
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  if (bsock->enable_ktls_) { SSL_set_options(openssl_, SSL_OP_ENABLE_KTLS); }
+  if (bsock->enable_ktls_) { SSL_set_options(ssl(), SSL_OP_ENABLE_KTLS); }
 #endif
 
   bool status = true;
@@ -297,12 +298,12 @@ bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
   for (;;) {
     int err_accept;
     if (server) {
-      err_accept = SSL_accept(openssl_);
+      err_accept = SSL_accept(ssl());
     } else {
-      err_accept = SSL_connect(openssl_);
+      err_accept = SSL_connect(ssl());
     }
 
-    int ssl_error = SSL_get_error(openssl_, err_accept);
+    int ssl_error = SSL_get_error(ssl(), err_accept);
     LogSSLError(ssl_error);
     switch (ssl_error) {
       case SSL_ERROR_NONE:
@@ -363,8 +364,7 @@ void TlsOpenSsl::ClientContextInsertCredentials(
 {
   ASSERT(!credentials_.has_value());
   credentials_ = credentials;
-  SSL_set_ex_data(openssl_, static_cast<int>(CtxDataIndex::Cred),
-                  &*credentials_);
+  SSL_set_ex_data(ssl(), static_cast<int>(CtxDataIndex::Cred), &*credentials_);
 }
 
 const PskCredentials& SSL_getcred(SSL* ctx)
@@ -461,7 +461,7 @@ unsigned int psk_client_cb(SSL* ssl,
 }
 
 TlsOpenSsl::TlsOpenSsl(const TlsResource* config, ssl_ptr ptr)
-    : openssl_(ptr.release())
+    : openssl_(std::move(ptr))
 {
   Dmsg0(100, "Create TlsOpenSsl at %p\n", this);
 
@@ -471,25 +471,13 @@ TlsOpenSsl::TlsOpenSsl(const TlsResource* config, ssl_ptr ptr)
   allowed_common_names = tls_cert.allowed_certificate_common_names_;
 }
 
-TlsOpenSsl::~TlsOpenSsl()
-{
-  Dmsg0(100, "Destruct TlsOpenSsl\n");
-
-  /* Free in this order:
-   * 1. openssl object
-   * 2. openssl_ctx object */
-
-  if (openssl_) {
-    SSL_free(openssl_);
-    openssl_ = nullptr;
-  }
-}
+TlsOpenSsl::~TlsOpenSsl() { Dmsg0(100, "Destruct TlsOpenSsl at %p\n", this); }
 
 std::string TlsOpenSsl::TlsCipherGetName() const
 {
-  if (openssl_) {
-    const SSL_CIPHER* cipher = SSL_get_current_cipher(openssl_);
-    const char* protocol_name = SSL_get_version(openssl_);
+  if (auto* openssl = ssl()) {
+    const SSL_CIPHER* cipher = SSL_get_current_cipher(openssl);
+    const char* protocol_name = SSL_get_version(openssl);
     if (cipher) {
       return std::string(SSL_CIPHER_get_name(cipher)) + " " + protocol_name;
     }
@@ -619,7 +607,7 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
     return true;
   }
 
-  auto* cert = SSL_get_peer_certificate(openssl_);
+  auto* cert = SSL_get_peer_certificate(ssl());
 
   if (!cert) {
     Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
@@ -662,7 +650,7 @@ bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
     return true;
   }
 
-  auto* cert = SSL_get_peer_certificate(openssl_);
+  auto* cert = SSL_get_peer_certificate(ssl());
   if (!cert) {
     Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
     return false;
@@ -700,18 +688,18 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
   btimer_t* tid = StartBsockTimer(bsock, 60 * 2);
 
-  int err_shutdown = SSL_shutdown(openssl_);
+  int err_shutdown = SSL_shutdown(ssl());
 
   StopBsockTimer(tid);
 
   if (err_shutdown == 0) {
     /* Complete the shutdown with the second call */
     tid = StartBsockTimer(bsock, 2);
-    err_shutdown = SSL_shutdown(openssl_);
+    err_shutdown = SSL_shutdown(ssl());
     StopBsockTimer(tid);
   }
 
-  int ssl_error = SSL_get_error(openssl_, err_shutdown);
+  int ssl_error = SSL_get_error(ssl(), err_shutdown);
   LogSSLError(ssl_error);
 
   /* There may be more errors on the thread-local error-queue.
@@ -720,9 +708,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
    * that may have occurred here. */
   ERR_clear_error();  // empties the current thread's openssl error queue
 
-  SSL_free(openssl_);
-  openssl_ = nullptr;
-
+  openssl_.reset();
 
   JobControlRecord* jcr = bsock->get_jcr();
 
@@ -759,7 +745,7 @@ bool TlsOpenSsl::KtlsSendStatus()
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   // old openssl versions might return -1 as well; so check for > 0 instead
-  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
+  return BIO_get_ktls_send(SSL_get_wbio(ssl())) > 0;
 #else
   return false;
 #endif
@@ -769,7 +755,7 @@ bool TlsOpenSsl::KtlsRecvStatus()
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   // old openssl versions might return -1 as well; so check for > 0 instead
-  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
+  return BIO_get_ktls_recv(SSL_get_rbio(ssl())) > 0;
 #else
   return false;
 #endif
@@ -784,7 +770,7 @@ int TlsOpenSsl::TlsPendingBytes()
    * As such, we use SSL_has_pending() as that returns a truthy value if
    * any number of bytes are inside openssls buffer.
    * See https://docs.openssl.org/3.6/man3/SSL_pending for more information */
-  if (SSL_has_pending(openssl_)) { return 1; }
+  if (SSL_has_pending(ssl())) { return 1; }
 
   return 0;
 }
@@ -1017,7 +1003,7 @@ std::unique_ptr<TlsOpenSsl> TlsOpenSsl::make_client(const TlsResource* res,
     Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n",
           ident.JoinReadable().c_str());
     ptr->ClientContextInsertCredentials(*creds);
-    SSL_set_psk_client_callback(ptr->openssl_, psk_client_cb);
+    SSL_set_psk_client_callback(ptr->ssl(), psk_client_cb);
   }
 
   return ptr;
