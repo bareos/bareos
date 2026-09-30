@@ -5,5 +5,10 @@ Client {
   Password = "@fd_password@"          # password for FileDaemon
   Port = @fd_port@
 
-  Tls Verify Peer = No
+  TLS Enable = yes
+  TLS Require = yes
+  TLS Verify Peer = no
+  TLS Certificate = "@tls_dir_certificate@"
+  TLS Key = @tls_dir_key@
+  TLS CA Certificate File = "@tls_ca_certificate@"
 }
