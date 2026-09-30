@@ -56,7 +56,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/status-subscriptions-accounting.out"
 
-if ! grep -qE "^isilon / isilon-fileset: [1-9][0-9]* files, [1-9][0-9]* bytes accounted" \
+if ! grep -qE "^isilon / isilon-fileset: [1-9][0-9,]* files, [1-9][0-9,]* bytes accounted" \
   "${log_home}/status-subscriptions-accounting.out"; then
   set_error "expected isilon / isilon-fileset accounted with a non-zero \
 file count and byte total -- NdmpConvertFstat() st_size/st_blocks likely \
