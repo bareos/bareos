@@ -83,6 +83,8 @@ static_assert(!IsUnknownStatField(uint64_t{0}));
  *                  socket) catalog row -- not billable subscription
  *                  data, silently excluded from the report (not an
  *                  error).
+ * kVirtualNdmpArchive -- the synthetic whole-stream NDMP file, which has
+ *                  placeholder attributes and is not a user file.
  * kInvalidStat  -- the stat field the platform's rule needs is unusable
  *                  (unknown/overflowing); the caller must abort the
  *                  report rather than under-report silently.
@@ -91,6 +93,7 @@ enum class FileAccountingKind
 {
   kRegular,
   kNonRegular,
+  kVirtualNdmpArchive,
   kInvalidStat
 };
 
@@ -122,6 +125,15 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
    * per catalog name. */
   if (!S_ISREG(statp.st_mode)) {
     return {FileAccountingKind::kNonRegular, 0, 0};
+  }
+
+  /* The Storage Daemon creates a synthetic regular-file row for the entire
+   * NDMP stream (stored/ndmp_tape.cc:BndmpCreateVirtualFile). Its deliberately
+   * invalid size and fixed block fields distinguish it from backed-up files;
+   * do not count this container as user data. */
+  if ((statp.st_mode & 07777) == 0700 && statp.st_size == -1
+      && statp.st_blksize == 4096 && statp.st_blocks == 1) {
+    return {FileAccountingKind::kVirtualNdmpArchive, 0, 0};
   }
 
   if (IsUnknownStatField(statp.st_size)) {
@@ -237,9 +249,10 @@ int FileRowHandler(void* ctx, int, char** row)
     c->aborted = true;
     return 1;
   }
-  if (file_result.kind == FileAccountingKind::kNonRegular) {
-    /* Directory, symlink or special file catalog row -- not billable
-     * subscription data, exclude it from the count. */
+  if (file_result.kind == FileAccountingKind::kNonRegular
+      || file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
+    /* Non-regular catalog metadata and the synthetic NDMP stream container
+     * are not billable user files. */
     return 0;
   }
   if (file_result.bytes > std::numeric_limits<uint64_t>::max() - c->bytes) {
