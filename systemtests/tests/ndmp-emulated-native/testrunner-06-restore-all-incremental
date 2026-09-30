@@ -24,7 +24,8 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore an incremental backup
+# restore the most recent state: the images of the full and
+# of the incremental backup have to be recovered one after another
 #
 
 TestName="$(basename "$(pwd)")"
@@ -42,10 +43,7 @@ rm -rf "${NDMP_FILESYSTEM}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
-restore select jobid=2 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump
-mark ${NDMP_FILESYSTEM}/incremental
-done
-yes
+restore client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump select current all done yes
 wait
 messages
 END_OF_DATA
@@ -55,13 +53,15 @@ run_bconsole "${tmp}/bconcmds"
 check_native_restore_log "${log_home}/restore.out"
 expect_grep "Termination:.*Restore OK" "${log_home}/restore.out" \
   "restore did not succeed"
+expect_grep "Recovering the NDMP image of JobId 1" "${log_home}/restore.out" \
+  "the image of the full job was not recovered"
+expect_grep "Recovering the NDMP image of JobId 2" "${log_home}/restore.out" \
+  "the image of the incremental job was not recovered"
 
 [ "$(cat "${NDMP_FILESYSTEM}/incremental")" = "incremental-1" ] \
   || set_error "wrong content of the restored incremental file"
-expect_grep "Recovering the NDMP image of JobId 2" "${log_home}/restore.out" \
-  "the image of the incremental job was not recovered"
-expect_not_grep "Recovering the NDMP image of JobId 1" \
-  "${log_home}/restore.out" "the image of the full job was recovered"
+rm "${NDMP_FILESYSTEM}/incremental"
+check_ndmp_data_full "${NDMP_FILESYSTEM}"
 
 check_no_running_jobs
 
