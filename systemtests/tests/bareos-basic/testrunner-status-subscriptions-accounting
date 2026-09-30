@@ -132,6 +132,23 @@ catalog_accounted_totals()
   echo "$files $bytes $logical_bytes"
 }
 
+check_logical_size()
+{
+  local report="$1" expected="$2" line actual
+  line="$(grep -m1 "Logical size (st_size):" "$report" || true)"
+  if [[ "$line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
+    actual="${BASH_REMATCH[1]//,/}"
+    if [[ "$actual" -ne "$expected" ]]; then
+      echo "status subscriptions accounting reported logical size ${actual}," \
+        "expected ${expected}!" >&2
+      estat=1
+    fi
+  else
+    echo "status subscriptions accounting did not report a logical size!" >&2
+    estat=1
+  fi
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -216,12 +233,7 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
     echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
     estat=1
   fi
-  if ! grep -q "Logical size (st_size): ${raw_bytes} bytes." \
-    "$tmp/status-subscriptions-accounting.log"; then
-    echo "status subscriptions accounting reported an incorrect logical size" \
-      "after the Full!" >&2
-    estat=1
-  fi
+  check_logical_size "$tmp/status-subscriptions-accounting.log" "$raw_bytes"
   if on_windows_host; then
     if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
@@ -300,12 +312,8 @@ if ! grep -Eq 'SELECTED_ROW .*file=file-1000bytes\.bin .*size=65536 ' \
   echo "catalog did not select the resized file from the Incremental!" >&2
   estat=1
 fi
-if ! grep -q "Logical size (st_size): ${raw_bytes} bytes." \
-  "$tmp/status-subscriptions-accounting-incremental.log"; then
-  echo "status subscriptions accounting reported an incorrect logical size" \
-    "after the Incremental!" >&2
-  estat=1
-fi
+check_logical_size "$tmp/status-subscriptions-accounting-incremental.log" \
+  "$raw_bytes"
 
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
 if [[ -z "$line" ]]; then
@@ -343,7 +351,9 @@ fi
 
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
-  cat "$tmp/accounting-source-stats.log" >&2
+  if [[ -f "$tmp/accounting-source-stats.log" ]]; then
+    cat "$tmp/accounting-source-stats.log" >&2
+  fi
   echo "=== catalog after Full ===" >&2
   cat "$tmp/accounting-catalog-full.log" >&2
   echo "=== catalog after Incremental ===" >&2

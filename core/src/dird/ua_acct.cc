@@ -98,6 +98,8 @@ struct FileAccountingResult {
   FileAccountingKind kind{FileAccountingKind::kInvalidStat};
   uint64_t bytes{0};
   uint64_t logical_bytes{0};
+  struct stat statp{};
+  const char* invalid_reason{nullptr};
 };
 
 FileAccountingResult AccountedBytesForFile(const std::string& lstat,
@@ -123,7 +125,8 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
   }
 
   if (IsUnknownStatField(statp.st_size)) {
-    return {FileAccountingKind::kInvalidStat, 0, 0};
+    return {FileAccountingKind::kInvalidStat, 0, 0, statp,
+            "st_size is unknown or negative"};
   }
   uint64_t logical_bytes = static_cast<uint64_t>(statp.st_size);
 
@@ -131,11 +134,13 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
     return {FileAccountingKind::kRegular, logical_bytes, logical_bytes};
   }
   if (IsUnknownStatField(statp.st_blocks)) {
-    return {FileAccountingKind::kInvalidStat, 0, 0};
+    return {FileAccountingKind::kInvalidStat, 0, 0, statp,
+            "st_blocks is unknown or negative"};
   }
   uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
   if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
-    return {FileAccountingKind::kInvalidStat, 0, 0};
+    return {FileAccountingKind::kInvalidStat, 0, 0, statp,
+            "st_blocks * 512 would overflow"};
   }
   return {FileAccountingKind::kRegular, blocks * 512, logical_bytes};
 }
@@ -205,21 +210,30 @@ struct FileScanCtx {
 
 int FileRowHandler(void* ctx, int, char** row)
 {
-  // row[0]=FileIndex row[1]=LStat
+  // row[0]=JobId row[1]=PathId row[2]=Name row[3]=FileIndex row[4]=LStat
   auto* c = static_cast<FileScanCtx*>(ctx);
-  auto FileIndex = static_cast<uint32_t>(str_to_int64(row[0]));
+  auto JobId = row[0] ? row[0] : "";
+  auto PathId = row[1] ? row[1] : "";
+  auto Name = row[2] ? row[2] : "";
+  auto FileIndex = static_cast<uint32_t>(str_to_int64(row[3]));
 
   /* FileIndex==0 marks an accurate-mode "this file was deleted since the
    * last backup" entry -- exclude it, don't count stale bytes. */
   if (FileIndex == 0) { return 0; }
 
   FileAccountingResult file_result
-      = AccountedBytesForFile(row[1] ? row[1] : "", c->is_windows);
+      = AccountedBytesForFile(row[4] ? row[4] : "", c->is_windows);
   if (file_result.kind == FileAccountingKind::kInvalidStat) {
-    c->ua->ErrorMsg(T_("%s / %s: invalid file attributes for FileIndex=%u "
-                       "-- aborting report.\n"),
-                    c->tuple->ClientName.c_str(), c->tuple->FileSetName.c_str(),
-                    FileIndex);
+    c->ua->ErrorMsg(
+        T_("%s / %s: invalid file attributes for FileIndex=%u "
+           "(JobId=%s PathId=%s Name='%s'): %s; decoded st_mode=%s "
+           "st_size=%s st_blocks=%s; raw LStat='%s' -- aborting report.\n"),
+        c->tuple->ClientName.c_str(), c->tuple->FileSetName.c_str(), FileIndex,
+        JobId, PathId, Name, file_result.invalid_reason,
+        std::to_string(file_result.statp.st_mode).c_str(),
+        std::to_string(file_result.statp.st_size).c_str(),
+        std::to_string(file_result.statp.st_blocks).c_str(),
+        row[4] ? row[4] : "");
     c->aborted = true;
     return 1;
   }
@@ -414,7 +428,8 @@ bool ScanFilesForChain(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "SELECT DISTINCT ON (File.PathId, File.Name)"
-       " File.FileIndex, File.LStat FROM File"
+       " File.JobId, File.PathId, File.Name, File.FileIndex, File.LStat FROM "
+       "File"
        " JOIN Job USING (JobId) WHERE File.JobId IN (%s)"
        " ORDER BY File.PathId, File.Name, Job.JobTDate DESC,"
        " File.JobId DESC",
