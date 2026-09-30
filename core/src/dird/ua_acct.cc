@@ -20,7 +20,7 @@
 */
 /**
  * @file
- * Real, File.LStat-based subscription/accounting byte totals -- computed
+ * Real, File.LStat-based subscription/accounting size totals -- computed
  * on demand, per (Client, FileSet) tuple, from actual catalog File rows
  * rather than the guessed numbers used by the rest of 'status
  * subscriptions'. Implements 'status subscriptions accounting
@@ -59,10 +59,9 @@ constexpr const char* kAccountableJobTypes = "'B','C','g','O'";
 /**
  * Per-platform accounting rule (see plan.md for the full rationale):
  *  - Windows clients (Client.Uname contains "Windows"): use st_size
- *    directly -- Windows st_blocks is a synthetic value derived purely
- *    from st_size and adds no real accuracy.
- *  - Everyone else: use st_blocks * 512 (real block-allocation data,
- *    sparse-file aware).
+ *    for both totals -- Windows st_blocks is synthetic.
+ *  - Everyone else: use st_blocks * 512 for allocated bytes and st_size
+ *    for logical bytes.
  */
 template <typename T> constexpr bool IsUnknownStatField(T value)
 {
@@ -79,7 +78,7 @@ static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
 static_assert(!IsUnknownStatField(uint64_t{0}));
 
 /**
- * kRegular      -- a countable, billable file; bytes is meaningful.
+ * kRegular      -- a countable file; both byte counts are meaningful.
  * kNonRegular   -- a directory, symlink or special file (FIFO/device/
  *                  socket) catalog row -- not billable subscription
  *                  data, silently excluded from the report (not an
@@ -98,6 +97,7 @@ enum class FileAccountingKind
 struct FileAccountingResult {
   FileAccountingKind kind{FileAccountingKind::kInvalidStat};
   uint64_t bytes{0};
+  uint64_t logical_bytes{0};
 };
 
 FileAccountingResult AccountedBytesForFile(const std::string& lstat,
@@ -118,23 +118,26 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
    * still encodes the underlying regular file's stat (see
    * filed/backup.cc), so it is counted like any other regular file, once
    * per catalog name. */
-  if (!S_ISREG(statp.st_mode)) { return {FileAccountingKind::kNonRegular, 0}; }
-
-  if (is_windows) {
-    if (IsUnknownStatField(statp.st_size)) {
-      return {FileAccountingKind::kInvalidStat, 0};
-    }
-    return {FileAccountingKind::kRegular, static_cast<uint64_t>(statp.st_size)};
+  if (!S_ISREG(statp.st_mode)) {
+    return {FileAccountingKind::kNonRegular, 0, 0};
   }
 
+  if (IsUnknownStatField(statp.st_size)) {
+    return {FileAccountingKind::kInvalidStat, 0, 0};
+  }
+  uint64_t logical_bytes = static_cast<uint64_t>(statp.st_size);
+
+  if (is_windows) {
+    return {FileAccountingKind::kRegular, logical_bytes, logical_bytes};
+  }
   if (IsUnknownStatField(statp.st_blocks)) {
-    return {FileAccountingKind::kInvalidStat, 0};
+    return {FileAccountingKind::kInvalidStat, 0, 0};
   }
   uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
   if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
-    return {FileAccountingKind::kInvalidStat, 0};
+    return {FileAccountingKind::kInvalidStat, 0, 0};
   }
-  return {FileAccountingKind::kRegular, blocks * 512};
+  return {FileAccountingKind::kRegular, blocks * 512, logical_bytes};
 }
 
 bool UnameLooksLikeWindows(const std::string& uname)
@@ -195,6 +198,7 @@ struct FileScanCtx {
   const TupleInfo* tuple{nullptr};
   bool is_windows{false};
   uint64_t bytes{0};
+  uint64_t logical_bytes{0};
   uint64_t files{0};
   bool aborted{false};
 };
@@ -231,7 +235,16 @@ int FileRowHandler(void* ctx, int, char** row)
     c->aborted = true;
     return 1;
   }
+  if (file_result.logical_bytes
+      > std::numeric_limits<uint64_t>::max() - c->logical_bytes) {
+    c->ua->ErrorMsg(
+        T_("%s / %s: logical byte total overflow -- aborting report.\n"),
+        c->tuple->ClientName.c_str(), c->tuple->FileSetName.c_str());
+    c->aborted = true;
+    return 1;
+  }
   c->bytes += file_result.bytes;
+  c->logical_bytes += file_result.logical_bytes;
   c->files++;
   return 0;
 }
@@ -501,6 +514,7 @@ bool DoSubscriptionAccounting(UaContext* ua)
       T_("\nReal (File.LStat-based) subscription accounting report:\n"));
 
   uint64_t grand_total_bytes = 0;
+  uint64_t grand_total_logical_bytes = 0;
   uint64_t grand_total_files = 0;
   uint32_t accounted_tuples = 0;
   uint32_t excluded_tuples = 0;
@@ -550,6 +564,7 @@ bool DoSubscriptionAccounting(UaContext* ua)
     }
 
     uint64_t tuple_bytes = scan.bytes;
+    uint64_t tuple_logical_bytes = scan.logical_bytes;
     uint64_t tuple_files = scan.files;
     const char* rule = is_windows ? "st_size" : "st_blocks*512";
 
@@ -561,12 +576,16 @@ bool DoSubscriptionAccounting(UaContext* ua)
         edit_uint64_with_commas(tuple_files, ec1),
         edit_uint64_with_commas(tuple_bytes, ec2), rule, jobids.size());
 
+    ua->SendMsg(T_("  Logical size (st_size): %s bytes.\n"),
+                edit_uint64_with_commas(tuple_logical_bytes, ec1));
+
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
     ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
     ua->send->ObjectKeyValueBool("excluded", false);
     ua->send->ObjectKeyValue("files", tuple_files);
     ua->send->ObjectKeyValue("bytes", tuple_bytes);
+    ua->send->ObjectKeyValue("logical_bytes", tuple_logical_bytes);
     ua->send->ObjectKeyValue("rule", rule);
     ua->send->ObjectKeyValue("jobs_in_chain",
                              static_cast<uint64_t>(jobids.size()));
@@ -578,7 +597,15 @@ bool DoSubscriptionAccounting(UaContext* ua)
       ua->send->ArrayEnd("accounting");
       return false;
     }
+    if (tuple_logical_bytes
+        > std::numeric_limits<uint64_t>::max() - grand_total_logical_bytes) {
+      ua->ErrorMsg(
+          T_("Grand total logical byte count overflow -- aborting report.\n"));
+      ua->send->ArrayEnd("accounting");
+      return false;
+    }
     grand_total_bytes += tuple_bytes;
+    grand_total_logical_bytes += tuple_logical_bytes;
     grand_total_files += tuple_files;
     accounted_tuples++;
   }
@@ -595,11 +622,13 @@ bool DoSubscriptionAccounting(UaContext* ua)
     ua->SendMsg(T_(" (%u excluded for lack of file information)"),
                 excluded_tuples);
   }
-  ua->SendMsg("\n");
+  ua->SendMsg(T_("\nLogical size total (st_size): %s bytes\n"),
+              edit_uint64_with_commas(grand_total_logical_bytes, ec1));
 
   ua->send->ObjectStart("summary");
   ua->send->ObjectKeyValue("total_files", grand_total_files);
   ua->send->ObjectKeyValue("total_bytes", grand_total_bytes);
+  ua->send->ObjectKeyValue("total_logical_bytes", grand_total_logical_bytes);
   ua->send->ObjectKeyValue("accounted_tuples",
                            static_cast<uint64_t>(accounted_tuples));
   ua->send->ObjectKeyValue("excluded_tuples",

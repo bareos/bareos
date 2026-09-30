@@ -28,8 +28,9 @@ namespace directordaemon {
 /**
  * Implements 'status subscriptions accounting [client=<name>]
  * [fileset=<name>]' -- computes the real, on-disk subscription/accounting
- * byte total from File.LStat (st_size/st_blocks), instead of the
+ * byte totals from File.LStat (st_size/st_blocks), instead of the
  * guessed/estimated numbers used by the rest of 'status subscriptions'.
+ * Reports allocated bytes and logical file size.
  *
  * Returns true on success (even if some tuples had to be excluded for
  * lack of file information), false on a hard error (e.g. database not

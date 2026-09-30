@@ -11,9 +11,8 @@ set -u
 # fallback byte/block count reported when the plugin doesn't set an
 # exact size), including that the corrected attributes reach the
 # Director before the digest, that "status subscriptions accounting"
-# reports the corrected size, and that a Virtual Full consolidation of
-# the bpipe-backed file retains the corrected attributes and accounting
-# total unchanged.
+# reports the corrected allocated and logical sizes, and that a Virtual
+# Full consolidation retains both values unchanged.
 #
 
 TestName="$(basename "$(pwd)")"
@@ -159,6 +158,10 @@ expect_grep \
   "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 2 jobs in chain)\\." \
   "${runner_tmp}/accounting-before-virtual-full.out" \
   "Subscription accounting did not count the original bpipe backup correctly"
+expect_grep \
+  "Logical size \\(st_size\\): ${payload_bytes} bytes\\." \
+  "${runner_tmp}/accounting-before-virtual-full.out" \
+  "Subscription accounting reported an incorrect logical bpipe size"
 
 virtual_full_log="${runner_tmp}/virtual-full.out"
 virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
@@ -201,6 +204,11 @@ expect_grep \
   "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 1 jobs in chain)\\." \
   "${runner_tmp}/virtual-full-accounting.out" \
   "Subscription accounting changed after bpipe consolidation"
+expect_grep \
+  "Logical size \\(st_size\\): ${payload_bytes} bytes\\." \
+  "${runner_tmp}/virtual-full-accounting.out" \
+  "Subscription accounting reported an incorrect logical bpipe size" \
+  "after consolidation"
 
 cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
 

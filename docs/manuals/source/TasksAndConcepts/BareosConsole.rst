@@ -1848,21 +1848,22 @@ status subscriptions
    above, use the keyword ``accounting`` (e.g.
    :bcommand:`status subscriptions accounting`). Unlike the report above,
    which estimates backed up data from job-level totals, this mode computes
-   the exact number of bytes still on record for every Client/FileSet
-   combination, based on the actual ``File`` catalog table rows (``LStat``) of the
-   most recent backup chain (latest Full, plus a later Differential if any,
-   plus all subsequent Incrementals), deduplicated so that only the latest
-   version of every file is counted once.
+   exact file counts and sizes still on record for every Client/FileSet
+   combination, based on the actual ``File`` catalog table rows (``LStat``)
+   of the most recent backup chain (latest Full, plus a later Differential
+   if any, plus all subsequent Incrementals), deduplicated so that only the
+   latest version of every file is counted once.
 
-   The reported value for a Client/FileSet combination represents the
-   total size of the data currently backed up for that combination, i.e.
-   what a :command:`du` on the client's file system would show for the
-   files covered by this FileSet at the time of the most recent backup --
-   not the sum of everything that has ever been transferred by every
-   backup job. A file that was saved unchanged by several successive
-   Incrementals is counted only once, at its newest version's size; a
-   file that no longer exists on the client (recorded as deleted by
-   accurate mode) is not counted at all.
+   The report provides two sizes for a Client/FileSet combination:
+   allocated bytes, based on ``st_blocks * 512`` for Unix-like clients,
+   and logical bytes, based on ``st_size``. Allocated bytes are sparse-file
+   aware and approximate what :command:`du` would report on the client;
+   logical bytes represent the sum of the backed-up file lengths and are
+   independent of filesystem allocation and compression. Both describe
+   files in the most recent backup chain, not the sum of everything that
+   has ever been transferred by every backup job. A file saved unchanged
+   by successive Incrementals is counted only once, using its newest
+   version; a file recorded as deleted by accurate mode is not counted.
 
    .. code-block:: bconsole
       :caption: status subscriptions accounting
@@ -1871,22 +1872,27 @@ status subscriptions
 
       Real (File.LStat-based) subscription accounting report:
       linux-fd / system: 128,532 files, 24,318,732,288 bytes accounted (rule: st_blocks*512, 4 jobs in chain).
+        Logical size (st_size): 25,004,123,456 bytes.
       windows-fd / system: 84,221 files, 12,004,556,800 bytes accounted (rule: st_size, 3 jobs in chain).
+        Logical size (st_size): 12,004,556,800 bytes.
 
       Grand total: 212,753 files, 36,323,289,088 bytes across 2 accounted Client/FileSet combination(s)
+      Logical size total (st_size): 37,008,680,256 bytes
 
    Optional ``client=<client-name>`` and ``fileset=<fileset-name>`` filters
    can be used to restrict the report to a single client and/or fileset,
    for example
    :bcommand:`status subscriptions accounting client=linux-fd`.
 
-   For every accounted Client/FileSet combination the report also states
-   which per-platform accounting rule was applied: ``st_blocks*512`` (real
-   block-allocation data, sparse-file aware) for Unix/Linux/macOS/BSD
-   clients, or ``st_size`` for Windows clients (detected via their reported
-   operating system information), since the ``st_blocks`` value reported by
-   Bareos's Windows compatibility layer is always a synthetic value derived
-   from ``st_size`` and therefore adds no additional accuracy.
+   For every accounted Client/FileSet combination, ``bytes`` in the
+   structured output and the main text line report allocated bytes using
+   ``st_blocks*512`` for Unix/Linux/macOS/BSD clients, or logical size using
+   ``st_size`` for Windows clients (detected via their reported operating
+   system information), since the ``st_blocks`` value reported by Bareos's
+   Windows compatibility layer is synthetic. The secondary
+   ``logical_bytes`` field and ``Logical size (st_size)`` text line always
+   report logical file size. The structured summary includes
+   ``total_logical_bytes``.
 
    .. limitation:: status subscriptions accounting has its own limitations
 

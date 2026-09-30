@@ -115,15 +115,22 @@ check_restore_diff "${BackupDirectory}" "${test_home}/bareos-restores"
 
 read_accounting_totals()
 {
-  local report=$1
-  local line
+  local report=$1 line logical_line files bytes rule logical_bytes
   line="$(grep "bareos-fd / SelfTest:" "$report" || true)"
+  logical_line="$(grep "Logical size (st_size):" "$report" || true)"
 
   if [[ "$line" =~ ([0-9,]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+), ]]; then
+    files="${BASH_REMATCH[1]//,/}"
+    bytes="${BASH_REMATCH[2]//,/}"
+    rule="${BASH_REMATCH[3]}"
+    if [[ "$logical_line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
+      logical_bytes="${BASH_REMATCH[1]//,/}"
+    else
+      echo "Could not parse logical size from ${report}: ${logical_line}" >&2
+      return 1
+    fi
     printf '%s:%s:%s\n' \
-      "${BASH_REMATCH[1]//,/}" \
-      "${BASH_REMATCH[2]//,/}" \
-      "${BASH_REMATCH[3]}"
+      "$files" "$bytes" "${rule}:${logical_bytes}"
     return
   fi
 

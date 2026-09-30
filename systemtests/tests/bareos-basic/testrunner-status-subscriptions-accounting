@@ -31,40 +31,6 @@ set -u
 # Incremental job with one file resized to confirm the multi-job chain
 # de-duplication (latest JobTDate wins per catalog path) still works.
 #
-# On non-Windows hosts the byte total is checked for an exact match
-# against the source files' real st_blocks*512 (via `stat`, see
-# file_blocks_bytes() below), not just a "multiple of 512" sanity bound
-# -- the systemtest's FD backs up files on the very same local
-# filesystem the test script runs on, so the expected value is knowable
-# exactly, not just approximately.
-#
-# Sum of a file's real, filesystem-allocated st_blocks*512, in the same
-# 512-byte units on both Linux (`stat -c %b`) and FreeBSD (`stat -f %b`)
-# -- POSIX defines %b that way, independent of the filesystem's own
-# block/sector size. Used to compute the exact byte total the daemon's
-# st_blocks*512 rule is expected to report, instead of only checking a
-# multiple of 512.
-file_blocks_bytes()
-{
-  local blocks total=0 f
-  for f in "$@"; do
-    if [ "$(uname -s)" == FreeBSD ]; then
-      blocks="$(stat -f %b "$f")"
-    else
-      blocks="$(stat -c %b "$f")"
-    fi
-    total=$((total + blocks * 512))
-  done
-  echo "$total"
-}
-
-flush_testdata()
-{
-  if ! on_windows_host; then
-    sync
-  fi
-}
-
 record_file_stats()
 {
   local phase="$1" f
@@ -147,6 +113,25 @@ ORDER BY recent.PathId, recent.Name"
 END_OF_DATA
 }
 
+catalog_accounted_totals()
+{
+  local phase="$1" row size blocks files=0 bytes=0 logical_bytes=0
+  while IFS= read -r row; do
+    if [[ "$row" =~ SELECTED_ROW.*size=([0-9]+)\ blocks=([0-9]+)\ mtime= ]]; then
+      size="${BASH_REMATCH[1]}"
+      blocks="${BASH_REMATCH[2]}"
+      files=$((files + 1))
+      logical_bytes=$((logical_bytes + size))
+      if on_windows_host; then
+        bytes=$((bytes + size))
+      else
+        bytes=$((bytes + blocks * 512))
+      fi
+    fi
+  done <"$tmp/accounting-catalog-${phase}.log"
+  echo "$files $bytes $logical_bytes"
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -167,12 +152,9 @@ mkdir -p "$tmp/acct-data"
 generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
-flush_testdata
 raw_bytes=$((1 + 512 + 1000))
-expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
-  "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
 record_filesystem_info
-record_file_stats "after Full test-data creation; expected=${expected_blocks_bytes}"
+record_file_stats "after Full test-data creation"
 
 # An (empty) subdirectory and a symlink, both explicitly included in the
 # AcctTest fileset alongside the three regular files above. Their catalog
@@ -202,16 +184,26 @@ run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Full"
 record_catalog_stats "full"
+read -r catalog_files catalog_bytes catalog_logical_bytes \
+  < <(catalog_accounted_totals full)
+if [[ "$catalog_files" -ne 3 ]]; then
+  echo "catalog contained ${catalog_files} selected regular files" \
+    "after the Full, expected 3!" >&2
+  estat=1
+fi
+if [[ "$catalog_logical_bytes" -ne "$raw_bytes" ]]; then
+  echo "catalog logical size was ${catalog_logical_bytes} bytes after the Full," \
+    "expected ${raw_bytes}!" >&2
+  estat=1
+fi
 
 # The accounting rule differs per client platform (see ua_acct.cc): a
 # Windows client's st_blocks is a purely synthetic value derived from
 # st_size, so the report uses st_size directly there (exact, deterministic
-# match against the known raw byte total). Every other platform uses the
-# real, filesystem-reported st_blocks*512 -- since the systemtest's FD
-# backs up files on the very same local filesystem the test script itself
-# runs on, `stat`'ing the source files right before/after the backup
-# yields the exact same st_blocks the daemon saw, so the expected byte
-# total can be checked exactly here too, not just as a multiple of 512.
+# match against the known raw byte total). On other platforms st_blocks
+# can change as the filesystem commits or compresses data, so compare the
+# report to the LStat values stored in the catalog by that backup instead
+# of sampling the live files before or after it.
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
@@ -220,9 +212,14 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
-  bytes_full="$bytes"
   if [[ "$files" -ne 3 ]]; then
     echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
+    estat=1
+  fi
+  if ! grep -q "Logical size (st_size): ${raw_bytes} bytes." \
+    "$tmp/status-subscriptions-accounting.log"; then
+    echo "status subscriptions accounting reported an incorrect logical size" \
+      "after the Full!" >&2
     estat=1
   fi
   if on_windows_host; then
@@ -232,10 +229,11 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
       estat=1
     fi
   else
+    expected_bytes="$catalog_bytes"
     if [[ "$actual_rule" != 'st_blocks*512' ||
-      "$bytes" -ne "$expected_blocks_bytes" ]]; then
+      "$bytes" -ne "$expected_bytes" ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
-        "expected '${expected_blocks_bytes} bytes (rule: st_blocks*512)'!" >&2
+        "expected '${expected_bytes} bytes (rule: st_blocks*512)'!" >&2
       estat=1
     fi
   fi
@@ -257,24 +255,18 @@ fi
 # (now done server-side via a DISTINCT ON query, see ua_acct.cc), instead
 # of only ever seeing a single-job chain where every path is trivially
 # unique. The file count must stay at 3 (same catalog paths, not new
-# ones), and the byte total must strictly grow to reflect the much
-# larger updated size -- if the chain resolution picked the stale
-# Full-backup row instead of the Incremental's, the total would stay
-# unchanged. The size jump (1000 -> 65536 bytes) is deliberately large
-# so the strict-increase check holds regardless of the underlying
-# filesystem's block size, short of an exotic compressing/deduplicating
-# one (see the st_blocks*512 caveat above).
+# ones. The catalog check below confirms that the selected row for the
+# resized file comes from the Incremental. Its st_blocks may not increase
+# on filesystems that compress data, so the expected total is computed
+# from the selected catalog rows rather than compared to the Full total.
 # Ensure the resized file's mtime is unambiguously newer than the Full
 # backup's "since" reference time (whole-second granularity), otherwise
 # the Incremental may not detect it as changed.
 sleep 2
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
-flush_testdata
 raw_bytes=$((1 + 512 + 65536))
-expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
-  "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
 record_file_stats \
-  "after Incremental test-data creation; expected=${expected_blocks_bytes}"
+  "after Incremental test-data creation"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -291,6 +283,29 @@ run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Incremental"
 record_catalog_stats "incremental"
+read -r catalog_files catalog_bytes catalog_logical_bytes \
+  < <(catalog_accounted_totals incremental)
+if [[ "$catalog_files" -ne 3 ]]; then
+  echo "catalog contained ${catalog_files} selected regular files" \
+    "after the Incremental, expected 3!" >&2
+  estat=1
+fi
+if [[ "$catalog_logical_bytes" -ne "$raw_bytes" ]]; then
+  echo "catalog logical size was ${catalog_logical_bytes} bytes after the Incremental," \
+    "expected ${raw_bytes}!" >&2
+  estat=1
+fi
+if ! grep -Eq 'SELECTED_ROW .*file=file-1000bytes\.bin .*size=65536 ' \
+  "$tmp/accounting-catalog-incremental.log"; then
+  echo "catalog did not select the resized file from the Incremental!" >&2
+  estat=1
+fi
+if ! grep -q "Logical size (st_size): ${raw_bytes} bytes." \
+  "$tmp/status-subscriptions-accounting-incremental.log"; then
+  echo "status subscriptions accounting reported an incorrect logical size" \
+    "after the Incremental!" >&2
+  estat=1
+fi
 
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
 if [[ -z "$line" ]]; then
@@ -311,16 +326,12 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
       estat=1
     fi
   else
+    expected_bytes="$catalog_bytes"
     if [[ "$actual_rule" != 'st_blocks*512' ||
-      "$bytes" -ne "$expected_blocks_bytes" ]]; then
+      "$bytes" -ne "$expected_bytes" ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
-        "expected '${expected_blocks_bytes} bytes (rule: st_blocks*512)' (chain dedup broken)!" >&2
-      estat=1
-    fi
-    if [[ "$bytes" -le "$bytes_full" ]]; then
-      echo "status subscriptions accounting reported ${bytes} bytes after the incremental," \
-        "which is not more than the ${bytes_full} bytes reported after the Full" \
-        "-- the chain dedup did not pick up the resized file (chain dedup broken)!" >&2
+        "expected '${expected_bytes} bytes (rule: st_blocks*512)'" \
+        "(chain dedup broken)!" >&2
       estat=1
     fi
   fi
