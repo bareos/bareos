@@ -108,8 +108,35 @@ record_catalog_stats()
   local phase="$1"
   run_bconsole - <<END_OF_DATA || true
 @$out $tmp/accounting-catalog-${phase}.log
-.sql query="SELECT 'CATALOG_ROW jobid=' || j.JobId || ' level=' || j.Level || ' jobtdate=' || j.JobTDate || ' pathid=' || f.PathId || ' file=' || f.Name || ' fileindex=' || f.FileIndex || ' size=' || s.st_size || ' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) CROSS JOIN LATERAL decode_lstat(f.LStat, ARRAY['st_size','st_blocks','st_mtime']) s WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name IN ('file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') ORDER BY j.JobTDate, j.JobId, f.PathId, f.Name"
-.sql query="SELECT 'SELECTED_ROW jobid=' || recent.JobId || ' jobtdate=' || recent.JobTDate || ' pathid=' || recent.PathId || ' file=' || recent.Name || ' fileindex=' || recent.FileIndex || ' size=' || s.st_size || ' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime FROM (SELECT DISTINCT ON (f.PathId, f.Name) f.JobId, j.JobTDate, f.PathId, f.Name, f.FileIndex, f.LStat FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name IN ('file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC) recent CROSS JOIN LATERAL decode_lstat(recent.LStat, ARRAY['st_size','st_blocks','st_mtime']) s ORDER BY recent.PathId, recent.Name"
+.sql query="SELECT 'CATALOG_ROW jobid=' || j.JobId || \
+' level=' || j.Level || ' jobtdate=' || j.JobTDate || \
+' pathid=' || f.PathId || ' file=' || f.Name || \
+' fileindex=' || f.FileIndex || ' size=' || s.st_size || \
+' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime \
+FROM File f JOIN Job j USING (JobId) \
+JOIN FileSet fs USING (FileSetId) \
+CROSS JOIN LATERAL decode_lstat( \
+f.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
+WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
+AND f.Name IN ( \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
+ORDER BY j.JobTDate, j.JobId, f.PathId, f.Name"
+.sql query="SELECT 'SELECTED_ROW jobid=' || recent.JobId || \
+' jobtdate=' || recent.JobTDate || ' pathid=' || recent.PathId || \
+' file=' || recent.Name || ' fileindex=' || recent.FileIndex || \
+' size=' || s.st_size || ' blocks=' || s.st_blocks || \
+' mtime=' || s.st_mtime \
+FROM (SELECT DISTINCT ON (f.PathId, f.Name) \
+f.JobId, j.JobTDate, f.PathId, f.Name, f.FileIndex, f.LStat \
+FROM File f JOIN Job j USING (JobId) \
+JOIN FileSet fs USING (FileSetId) \
+WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
+AND f.Name IN ( \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
+ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC) recent \
+CROSS JOIN LATERAL decode_lstat( \
+recent.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
+ORDER BY recent.PathId, recent.Name"
 END_OF_DATA
 }
 
