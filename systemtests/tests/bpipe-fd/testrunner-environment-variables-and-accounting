@@ -159,7 +159,7 @@ expect_grep \
   "${runner_tmp}/accounting-before-virtual-full.out" \
   "Subscription accounting did not count the original bpipe backup correctly"
 expect_grep \
-  "Logical size \\(st_size\\): ${payload_bytes} bytes\\." \
+  "Logical size (st_size): ${payload_bytes} bytes\\." \
   "${runner_tmp}/accounting-before-virtual-full.out" \
   "Subscription accounting reported an incorrect logical bpipe size"
 
@@ -205,7 +205,7 @@ expect_grep \
   "${runner_tmp}/virtual-full-accounting.out" \
   "Subscription accounting changed after bpipe consolidation"
 expect_grep \
-  "Logical size \\(st_size\\): ${payload_bytes} bytes\\." \
+  "Logical size (st_size): ${payload_bytes} bytes\\." \
   "${runner_tmp}/virtual-full-accounting.out" \
   "Subscription accounting reported an incorrect logical bpipe size" \
   "after consolidation"
