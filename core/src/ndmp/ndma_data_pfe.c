@@ -176,6 +176,13 @@ int ndmda_add_to_cmd_with_escapes(char* cmd, char* word, char* special)
   while (*p) p++;
   if (p != cmd) *p++ = ' ';
 
+  /* an empty word must survive sh(1) word splitting as an empty argument */
+  if (*word == 0) {
+    if (p + 2 >= cmd_lim) return -1; /* overflow */
+    *p++ = '\'';
+    *p++ = '\'';
+  }
+
   while ((c = *word++) != 0) {
     if (p >= cmd_lim) return -1; /* overflow */
     if (c == '\\' || strchr(special, c)) *p++ = '\\';
