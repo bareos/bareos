@@ -58,6 +58,61 @@ file_blocks_bytes()
   echo "$total"
 }
 
+record_file_stats()
+{
+  local phase="$1" f
+  if on_windows_host; then
+    return
+  fi
+
+  {
+    echo "=== source stat: ${phase} ==="
+    date
+    for f in "$tmp"/acct-data/file-*.bin; do
+      if [ "$(uname -s)" == FreeBSD ]; then
+        stat -f \
+          'path=%N size=%z blocks=%b blksize=%k inode=%i mtime=%m ctime=%c' \
+          "$f"
+      else
+        stat -c \
+          'path=%n size=%s blocks=%b block-unit=%B inode=%i mtime=%Y ctime=%Z' \
+          "$f"
+      fi
+    done
+  } >>"$tmp/accounting-source-stats.log" 2>&1
+}
+
+record_filesystem_info()
+{
+  local dataset
+  if on_windows_host; then
+    return
+  fi
+
+  {
+    echo "=== filesystem ==="
+    uname -a
+    df -T "$tmp/acct-data" || df "$tmp/acct-data"
+    dataset="$(df -P "$tmp/acct-data" | awk 'END { print $1 }')"
+    if command -v zfs >/dev/null 2>&1; then
+      echo "=== ZFS dataset: ${dataset} ==="
+      zfs get -H -o name,property,value \
+        compression,recordsize,dedup,sync,logicalused,used "$dataset" \
+        || true
+    fi
+  } >>"$tmp/accounting-source-stats.log" 2>&1
+}
+
+record_catalog_stats()
+{
+  local phase="$1"
+  run_bconsole - <<END_OF_DATA || true
+@$out $tmp/accounting-catalog-${phase}.log
+.sql query="SELECT 'CATALOG_ROW jobid=' || j.JobId || ' level=' || j.Level || ' jobtdate=' || j.JobTDate || ' pathid=' || f.PathId || ' file=' || f.Name || ' fileindex=' || f.FileIndex || ' size=' || s.st_size || ' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) CROSS JOIN LATERAL decode_lstat(f.LStat, ARRAY['st_size','st_blocks','st_mtime']) s WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name IN ('file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') ORDER BY j.JobTDate, j.JobId, f.PathId, f.Name"
+.sql query="SELECT 'SELECTED_ROW jobid=' || recent.JobId || ' jobtdate=' || recent.JobTDate || ' pathid=' || recent.PathId || ' file=' || recent.Name || ' fileindex=' || recent.FileIndex || ' size=' || s.st_size || ' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime FROM (SELECT DISTINCT ON (f.PathId, f.Name) f.JobId, j.JobTDate, f.PathId, f.Name, f.FileIndex, f.LStat FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name IN ('file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC) recent CROSS JOIN LATERAL decode_lstat(recent.LStat, ARRAY['st_size','st_blocks','st_mtime']) s ORDER BY recent.PathId, recent.Name"
+END_OF_DATA
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -81,6 +136,8 @@ generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
 raw_bytes=$((1 + 512 + 1000))
 expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
   "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
+record_filesystem_info
+record_file_stats "after Full test-data creation; expected=${expected_blocks_bytes}"
 
 # An (empty) subdirectory and a symlink, both explicitly included in the
 # AcctTest fileset alongside the three regular files above. Their catalog
@@ -105,8 +162,11 @@ status subscriptions accounting client=bareos-fd fileset=AcctTest
 status subscriptions accounting client=does-not-exist
 END_OF_DATA
 
+record_file_stats "immediately before Full"
 run_bconsole
 check_for_zombie_jobs storage=File
+record_file_stats "immediately after Full"
+record_catalog_stats "full"
 
 # The accounting rule differs per client platform (see ua_acct.cc): a
 # Windows client's st_blocks is a purely synthetic value derived from
@@ -177,6 +237,8 @@ generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
 raw_bytes=$((1 + 512 + 65536))
 expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
   "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
+record_file_stats \
+  "after Incremental test-data creation; expected=${expected_blocks_bytes}"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -188,8 +250,11 @@ messages
 status subscriptions accounting client=bareos-fd fileset=AcctTest
 END_OF_DATA
 
+record_file_stats "immediately before Incremental"
 run_bconsole
 check_for_zombie_jobs storage=File
+record_file_stats "immediately after Incremental"
+record_catalog_stats "incremental"
 
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
 if [[ -z "$line" ]]; then
@@ -227,6 +292,15 @@ else
   echo "status subscriptions accounting report line after the incremental did not match" \
     "the expected format (expected exactly 2 jobs in chain): ${line}" >&2
   estat=1
+fi
+
+if [[ "${estat:-0}" -ne 0 ]]; then
+  echo "=== accounting source/filesystem diagnostics ===" >&2
+  cat "$tmp/accounting-source-stats.log" >&2
+  echo "=== catalog after Full ===" >&2
+  cat "$tmp/accounting-catalog-full.log" >&2
+  echo "=== catalog after Incremental ===" >&2
+  cat "$tmp/accounting-catalog-incremental.log" >&2
 fi
 
 end_test
