@@ -45,6 +45,37 @@ export TestName
 
 start_test
 
+refresh_and_wait_for_subscription_accounting()
+{
+  local report=$1 expected_chain_size=$2
+
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out "${test_home}/accounting-refresh-request.out"
+refresh subscriptions accounting
+END_OF_DATA
+  run_bconsole "${tmp}/bconcmds"
+
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${report}
+status subscriptions accounting client=bareos-fd fileset=SelfTest
+END_OF_DATA
+    run_bconsole "${tmp}/bconcmds"
+    if grep -qF "Background refresh worker: idle." "${report}" \
+      && grep -qF "Real (File.LStat-based) subscription accounting report" \
+        "${report}" \
+      && grep -qF "${expected_chain_size} jobs in chain)." "${report}"; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "timed out waiting for subscription accounting refresh" >&2
+  cat "${test_home}/accounting-refresh-request.out" >&2
+  cat "${report}" >&2
+  return 1
+}
+
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
@@ -69,12 +100,12 @@ list jobs
 run job=$JobName level=Incremental yes
 wait
 messages
-@$out ${test_home}/accounting-before-virtual-full.out
-status subscriptions accounting client=bareos-fd fileset=SelfTest
 END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/incr.out"
+refresh_and_wait_for_subscription_accounting \
+  "${test_home}/accounting-before-virtual-full.out" 2
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${test_home}/virtual.out
@@ -82,8 +113,6 @@ list jobs
 run job=$JobName level=VirtualFull yes
 wait
 messages
-@$out ${test_home}/accounting-after-virtual-full.out
-status subscriptions accounting client=bareos-fd fileset=SelfTest
 @$out ${test_home}/status.out
 list jobs
 status director
@@ -93,6 +122,8 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/virtual.out"
+refresh_and_wait_for_subscription_accounting \
+  "${test_home}/accounting-after-virtual-full.out" 1
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @# make sure we really restore the virtualfull

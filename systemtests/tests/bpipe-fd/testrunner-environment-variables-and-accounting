@@ -25,6 +25,38 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
+
+refresh_and_wait_for_subscription_accounting()
+{
+  local report="$1" expected_chain_size="$2"
+
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out "${runner_tmp}/accounting-refresh-request.out"
+refresh subscriptions accounting
+END_OF_DATA
+  run_bconsole
+
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out "$report"
+status subscriptions accounting client=bareos-fd fileset=SelfTest
+END_OF_DATA
+    run_bconsole
+    if grep -qF "Background refresh worker: idle." "$report" \
+      && grep -qF "Real (File.LStat-based) subscription accounting report" \
+        "$report" \
+      && grep -qF "${expected_chain_size} jobs in chain)." "$report"; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "timed out waiting for subscription accounting refresh" >&2
+  cat "${runner_tmp}/accounting-refresh-request.out" >&2
+  cat "$report" >&2
+  return 1
+}
+
 # Windows debug: show environment vars
 if on_windows_host; then
   nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
@@ -96,14 +128,14 @@ cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.3. .dat"
 run_bconsole - <<END_OF_DATA
 @$out ${runner_tmp}/accounting.out
 .sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=1 AND p.path='/' AND f.name='bpipe'"
-@$out ${runner_tmp}/accounting-before-virtual-full.out
-status subscriptions accounting client=bareos-fd fileset=SelfTest
 END_OF_DATA
 
 expect_grep \
   "1:${payload_bytes}:${payload_blocks}" \
   "${runner_tmp}/accounting.out" \
   "Catalog does not contain exactly one corrected bpipe File row"
+refresh_and_wait_for_subscription_accounting \
+  "${runner_tmp}/accounting-before-virtual-full.out" 2
 
 # validate environment variables in readprogram / writeprogram
 expected_output=(
@@ -174,7 +206,6 @@ wait
 messages
 @$out ${runner_tmp}/virtual-full-accounting.out
 .sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=4 AND p.path='/' AND f.name='bpipe'"
-status subscriptions accounting client=bareos-fd fileset=SelfTest
 @$out ${virtual_full_restore_log}
 purge volume=Full-0001 yes
 restore jobid=4 client=bareos-fd all done yes
@@ -184,6 +215,8 @@ END_OF_DATA
 
 check_log "$virtual_full_log"
 check_log "$virtual_full_restore_log"
+refresh_and_wait_for_subscription_accounting \
+  "${runner_tmp}/virtual-full-accounting.out" 1
 
 expect_grep \
   "SD Files Written:[[:space:]]*1" \
