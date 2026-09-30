@@ -30,7 +30,7 @@ namespace {
 
 class TestTapeDevice : public generic_tape_device {
  public:
-  explicit TestTapeDevice(bool write_succeeds) : write_succeeds_(write_succeeds)
+  explicit TestTapeDevice(int write_error) : write_error_(write_error)
   {
     errmsg = GetMemory(256);
     prt_name = GetMemory(32);
@@ -49,8 +49,8 @@ class TestTapeDevice : public generic_tape_device {
     EXPECT_EQ(request, static_cast<ioctl_req_t>(MTIOCTOP));
     auto* mt_com = reinterpret_cast<mtop*>(op);
     operations.push_back(mt_com->mt_op);
-    if (!write_succeeds_) {
-      errno = EIO;
+    if (write_error_) {
+      errno = write_error_;
       return -1;
     }
     return 0;
@@ -59,31 +59,33 @@ class TestTapeDevice : public generic_tape_device {
   std::vector<short> operations;
 
  private:
-  bool write_succeeds_;
+  int write_error_;
 };
 
 }  // namespace
 
 TEST(GenericTapeDevice, weof_reports_failed_filemark_without_retry)
 {
-  TestTapeDevice dev{/*write_succeeds=*/false};
+  for (int write_error : {EIO, ENOTTY}) {
+    TestTapeDevice dev{write_error};
 
-  EXPECT_FALSE(dev.weof(1));
+    EXPECT_FALSE(dev.weof(1));
 
-  ASSERT_EQ(dev.operations.size(), 1U);
-  EXPECT_EQ(dev.operations[0], MTWEOF);
-  EXPECT_EQ(dev.GetFile(), 0U);
-  EXPECT_EQ(dev.GetBlockNum(), 0U);
+    ASSERT_EQ(dev.operations.size(), 1U);
+    EXPECT_EQ(dev.operations[0], MTWEOFI);
+    EXPECT_EQ(dev.GetFile(), 0U);
+    EXPECT_EQ(dev.GetBlockNum(), 0U);
+  }
 }
 
-TEST(GenericTapeDevice, weof_writes_regular_filemark)
+TEST(GenericTapeDevice, weof_writes_immediate_filemark)
 {
-  TestTapeDevice dev{/*write_succeeds=*/true};
+  TestTapeDevice dev{/*write_error=*/0};
 
   ASSERT_TRUE(dev.weof(2));
 
   ASSERT_EQ(dev.operations.size(), 1U);
-  EXPECT_EQ(dev.operations[0], MTWEOF);
+  EXPECT_EQ(dev.operations[0], MTWEOFI);
   EXPECT_EQ(dev.GetFile(), 2U);
   EXPECT_EQ(dev.GetBlockNum(), 0U);
 }
