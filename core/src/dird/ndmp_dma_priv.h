@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -149,7 +149,8 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog);
 // NDMP Media Info in DB storage and retrieval
 bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr);
 bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
-                                 JobControlRecord* jcr);
+                                 JobControlRecord* jcr,
+                                 JobId_t restoreJobId);
 extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
                                 int tagc,
                                 char* raw_name,
