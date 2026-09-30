@@ -72,6 +72,33 @@ $(cat "${log_home}/status-subscriptions-accounting.out")"
   exit 1
 fi
 
+# With per-file history disabled, only the synthetic NDMP stream container
+# remains in the File catalog. Its LStat is a placeholder, not a file size;
+# accounting must exclude the tuple rather than count or guess its size.
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/no-file-history-backup.out
+run job=isilondump-no-file-history level=Full yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/no-file-history-backup.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/no-file-history-accounting.out
+status subscriptions accounting client=isilon fileset=isilon-fileset
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/no-file-history-accounting.out"
+
+if ! grep -qE "^isilon / isilon-fileset: no per-file data available \\(NDMP file history may be disabled\\) -- excluded \\(not guessed\\)\\." \
+  "${log_home}/no-file-history-accounting.out"; then
+  set_error "expected NDMP tuple with no per-file history to be excluded:
+$(cat "${log_home}/no-file-history-accounting.out")"
+  exit 1
+fi
+
 check_for_zombie_jobs storage=isilonfile client=bareos-fd
 
 end_test

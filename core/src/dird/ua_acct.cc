@@ -218,6 +218,7 @@ struct FileScanCtx {
   uint64_t logical_bytes{0};
   uint64_t files{0};
   bool aborted{false};
+  bool saw_virtual_ndmp_archive{false};
 };
 
 int FileRowHandler(void* ctx, int, char** row)
@@ -253,6 +254,9 @@ int FileRowHandler(void* ctx, int, char** row)
       || file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
     /* Non-regular catalog metadata and the synthetic NDMP stream container
      * are not billable user files. */
+    if (file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
+      c->saw_virtual_ndmp_archive = true;
+    }
     return 0;
   }
   if (file_result.bytes > std::numeric_limits<uint64_t>::max() - c->bytes) {
@@ -589,6 +593,20 @@ bool DoSubscriptionAccounting(UaContext* ua)
     if (!ScanFilesForChain(ua, jobids, &scan)) {
       ua->send->ArrayEnd("accounting");
       return false;
+    }
+
+    if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+      ua->SendMsg(T_("%s / %s: no per-file data available (NDMP file history "
+                     "may be disabled) -- excluded (not guessed).\n"),
+                  tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
+      ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
+      ua->send->ObjectKeyValueBool("excluded", true);
+      ua->send->ObjectKeyValue("exclusion_reason", "no_per_file_data");
+      ua->send->ObjectEnd();
+      excluded_tuples++;
+      continue;
     }
 
     uint64_t tuple_bytes = scan.bytes;

@@ -1901,6 +1901,12 @@ status subscriptions
         completed) are excluded from the report entirely rather than
         estimated -- the grand total will under-report data for such
         combinations if older jobs were purged.
+      - NDMP Client/FileSet combinations without per-file history are
+        excluded when the catalog contains only the synthetic archive row.
+        The archive row's size is a placeholder, and job-level ``JobBytes``
+        counts transferred record-stream bytes, not the logical or allocated
+        sizes of the source files; neither is used as a per-file size
+        fallback.
       - Copy, Migrate, Virtual Full, and Always-Incremental consolidation
         jobs are supported and contribute their own File rows like an
         ordinary Full backup would.
