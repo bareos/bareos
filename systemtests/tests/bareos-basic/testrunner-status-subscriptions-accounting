@@ -58,6 +58,13 @@ file_blocks_bytes()
   echo "$total"
 }
 
+flush_testdata()
+{
+  if ! on_windows_host; then
+    sync
+  fi
+}
+
 record_file_stats()
 {
   local phase="$1" f
@@ -160,6 +167,7 @@ mkdir -p "$tmp/acct-data"
 generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
+flush_testdata
 raw_bytes=$((1 + 512 + 1000))
 expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
   "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
@@ -261,6 +269,7 @@ fi
 # the Incremental may not detect it as changed.
 sleep 2
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
+flush_testdata
 raw_bytes=$((1 + 512 + 65536))
 expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
   "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
