@@ -36,6 +36,7 @@
 #include "lib/attribs.h"
 #include "lib/edit.h"
 
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <vector>
@@ -444,13 +445,14 @@ bool DoSubscriptionAccounting(UaContext* ua)
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
-       "SELECT DISTINCT Job.ClientId, Client.Name, Client.Uname,"
+       "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet)"
+       " Job.ClientId, Client.Name, Client.Uname,"
        " Job.FileSetId, FileSet.FileSet"
        " FROM Job"
        " JOIN Client ON Client.ClientId = Job.ClientId"
        " JOIN FileSet ON FileSet.FileSetId = Job.FileSetId"
        " WHERE Job.JobStatus IN ('T','W') AND Job.Type IN (%s)"
-       " AND Job.JobFiles > 0",
+       " AND Job.JobFiles > 0 AND Job.Level='F'",
        kAccountableJobTypes);
   if (client_filter) {
     PmStrcat(query, " AND Client.Name='");
@@ -462,13 +464,26 @@ bool DoSubscriptionAccounting(UaContext* ua)
     PmStrcat(query, fileset_filter);
     PmStrcat(query, "'");
   }
-  PmStrcat(query, " ORDER BY Client.Name, FileSet.FileSet");
+  // DISTINCT ON requires its own columns to lead ORDER BY, so the
+  // newest Full per (ClientId, FileSet name) wins the pick here; the
+  // result set is re-sorted below for the documented Client.Name/
+  // FileSet.FileSet output order.
+  PmStrcat(query,
+           " ORDER BY Job.ClientId, FileSet.FileSet,"
+           " Job.JobTDate DESC, Job.JobId DESC");
 
   TupleListCtx tuple_list{};
   if (!ua->db->SqlQuery(query.c_str(), TupleRowHandler, &tuple_list)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
+  std::sort(tuple_list.tuples.begin(), tuple_list.tuples.end(),
+            [](const TupleInfo& a, const TupleInfo& b) {
+              if (a.ClientName != b.ClientName) {
+                return a.ClientName < b.ClientName;
+              }
+              return a.FileSetName < b.FileSetName;
+            });
 
   if (tuple_list.tuples.empty()) {
     ua->SendMsg(T_("No matching Client/FileSet combinations found.\n"));
