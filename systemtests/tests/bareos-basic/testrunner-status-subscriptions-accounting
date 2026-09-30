@@ -27,7 +27,9 @@ set -u
 # files with known, exact sizes -- including one whose size is not a
 # multiple of 512 bytes, to exercise the block-rounding path -- plus a
 # directory and a symlink to confirm non-regular catalog rows are
-# excluded from the file count and byte total.
+# excluded from the file count and byte total. Also runs a second,
+# Incremental job with one file resized to confirm the multi-job chain
+# de-duplication (latest JobTDate wins per catalog path) still works.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -97,6 +99,7 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
+  bytes_full="$bytes"
   if [[ "$files" -ne 3 ]]; then
     echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
     estat=1
@@ -124,6 +127,77 @@ fi
 if ! grep -q "No matching Client/FileSet combinations found." \
   "$tmp/status-subscriptions-accounting.log"; then
   echo "status subscriptions accounting did not exclude a non-existing client as expected!" >&2
+  estat=1
+fi
+
+# Now grow the chain to two jobs: rewrite one file with a much larger
+# size and run an Incremental. This exercises the "latest JobTDate wins
+# per (PathId, Name)" de-duplication across multiple jobs in the chain
+# (now done server-side via a DISTINCT ON query, see ua_acct.cc), instead
+# of only ever seeing a single-job chain where every path is trivially
+# unique. The file count must stay at 3 (same catalog paths, not new
+# ones), and the byte total must strictly grow to reflect the much
+# larger updated size -- if the chain resolution picked the stale
+# Full-backup row instead of the Incremental's, the total would stay
+# unchanged. The size jump (1000 -> 65536 bytes) is deliberately large
+# so the strict-increase check holds regardless of the underlying
+# filesystem's block size, short of an exotic compressing/deduplicating
+# one (see the st_blocks*512 caveat above).
+# Ensure the resized file's mtime is unambiguously newer than the Full
+# backup's "since" reference time (whole-second granularity), otherwise
+# the Incremental may not detect it as changed.
+sleep 2
+generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
+raw_bytes=$((1 + 512 + 65536))
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $tmp/status-subscriptions-accounting-incremental.log
+run job=$JobName level=Incremental yes
+wait
+messages
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+
+line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
+if [[ -z "$line" ]]; then
+  echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest after the incremental!" >&2
+  estat=1
+elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 2\ jobs\ in\ chain\)\. ]]; then
+  files="${BASH_REMATCH[1]}"
+  bytes="${BASH_REMATCH[2]//,/}"
+  actual_rule="${BASH_REMATCH[3]}"
+  if [[ "$files" -ne 3 ]]; then
+    echo "status subscriptions accounting reported ${files} files after the incremental, expected 3 (chain dedup broken)!" >&2
+    estat=1
+  fi
+  if on_windows_host; then
+    if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
+        "expected '${raw_bytes} bytes (rule: st_size)' (chain dedup broken)!" >&2
+      estat=1
+    fi
+  else
+    if [[ "$actual_rule" != 'st_blocks*512' ||
+      $((bytes % 512)) -ne 0 ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
+        "expected a multiple of 512 with rule st_blocks*512!" >&2
+      estat=1
+    fi
+    if [[ "$bytes" -le "$bytes_full" ]]; then
+      echo "status subscriptions accounting reported ${bytes} bytes after the incremental," \
+        "which is not more than the ${bytes_full} bytes reported after the Full" \
+        "-- the chain dedup did not pick up the resized file (chain dedup broken)!" >&2
+      estat=1
+    fi
+  fi
+else
+  echo "status subscriptions accounting report line after the incremental did not match" \
+    "the expected format (expected exactly 2 jobs in chain): ${line}" >&2
   estat=1
 fi
 

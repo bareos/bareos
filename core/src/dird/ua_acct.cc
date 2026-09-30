@@ -38,7 +38,6 @@
 
 #include <limits>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace directordaemon {
@@ -56,15 +55,91 @@ namespace {
  * no longer the current on-disk representation of this Client/FileSet. */
 constexpr const char* kAccountableJobTypes = "'B','C','g','O'";
 
-struct AccountedFile {
-  JobId_t JobId{0};
-  utime_t JobTDate{0};
-  uint32_t FileIndex{0};
-  std::string LStat{};
+/**
+ * Per-platform accounting rule (see plan.md for the full rationale):
+ *  - Windows clients (Client.Uname contains "Windows"): use st_size
+ *    directly -- Windows st_blocks is a synthetic value derived purely
+ *    from st_size and adds no real accuracy.
+ *  - Everyone else: use st_blocks * 512 (real block-allocation data,
+ *    sparse-file aware).
+ */
+template <typename T> constexpr bool IsUnknownStatField(T value)
+{
+  if constexpr (std::numeric_limits<T>::is_signed) {
+    return value < 0;
+  } else {
+    return value == std::numeric_limits<T>::max();
+  }
+}
+
+static_assert(IsUnknownStatField(int64_t{-1}));
+static_assert(!IsUnknownStatField(int64_t{0}));
+static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
+static_assert(!IsUnknownStatField(uint64_t{0}));
+
+/**
+ * kRegular      -- a countable, billable file; bytes is meaningful.
+ * kNonRegular   -- a directory, symlink or special file (FIFO/device/
+ *                  socket) catalog row -- not billable subscription
+ *                  data, silently excluded from the report (not an
+ *                  error).
+ * kInvalidStat  -- the stat field the platform's rule needs is unusable
+ *                  (unknown/overflowing); the caller must abort the
+ *                  report rather than under-report silently.
+ */
+enum class FileAccountingKind
+{
+  kRegular,
+  kNonRegular,
+  kInvalidStat
 };
 
-// Key: "PathId\x01Name" -- uniquely identifies one catalog file path.
-using FileKey = std::string;
+struct FileAccountingResult {
+  FileAccountingKind kind{FileAccountingKind::kInvalidStat};
+  uint64_t bytes{0};
+};
+
+FileAccountingResult AccountedBytesForFile(const std::string& lstat,
+                                           bool is_windows)
+{
+  if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
+
+  struct stat statp{};
+  int32_t LinkFI;
+  /* DecodeStat() takes a non-const char* but does not modify the
+   * underlying data. */
+  std::string mutable_lstat = lstat;
+  DecodeStat(mutable_lstat.data(), &statp, sizeof(statp), &LinkFI);
+
+  /* Only regular files count toward the report -- directories, symlinks
+   * and special files (FIFOs, device/socket nodes) are catalog metadata,
+   * not billable subscription data. A hard-linked file's FT_LNKSAVED row
+   * still encodes the underlying regular file's stat (see
+   * filed/backup.cc), so it is counted like any other regular file, once
+   * per catalog name. */
+  if (!S_ISREG(statp.st_mode)) { return {FileAccountingKind::kNonRegular, 0}; }
+
+  if (is_windows) {
+    if (IsUnknownStatField(statp.st_size)) {
+      return {FileAccountingKind::kInvalidStat, 0};
+    }
+    return {FileAccountingKind::kRegular, static_cast<uint64_t>(statp.st_size)};
+  }
+
+  if (IsUnknownStatField(statp.st_blocks)) {
+    return {FileAccountingKind::kInvalidStat, 0};
+  }
+  uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
+  if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
+    return {FileAccountingKind::kInvalidStat, 0};
+  }
+  return {FileAccountingKind::kRegular, blocks * 512};
+}
+
+bool UnameLooksLikeWindows(const std::string& uname)
+{
+  return uname.find("Windows") != std::string::npos;
+}
 
 struct TupleInfo {
   DBId_t ClientId{0};
@@ -100,30 +175,57 @@ int JobIdListHandler(void* ctx, int, char** row)
   return 0;
 }
 
+/**
+ * Per (PathId, Name) de-duplication ("latest JobTDate, JobId tie-break,
+ * wins") is done by the catalog query itself (PostgreSQL DISTINCT ON --
+ * see ScanFilesForChain()), so this handler sees each catalog path
+ * exactly once and can accumulate running totals directly. This avoids
+ * holding an application-side map of every distinct file in the chain
+ * in Director memory (see plan.md benchmark for the rationale).
+ */
 struct FileScanCtx {
-  std::unordered_map<FileKey, AccountedFile> files;
+  UaContext* ua{nullptr};
+  const TupleInfo* tuple{nullptr};
+  bool is_windows{false};
+  uint64_t bytes{0};
+  uint64_t files{0};
+  bool aborted{false};
 };
 
 int FileRowHandler(void* ctx, int, char** row)
 {
-  // row[0]=PathId row[1]=Name row[2]=FileIndex row[3]=JobId
-  // row[4]=JobTDate row[5]=LStat
+  // row[0]=FileIndex row[1]=LStat
   auto* c = static_cast<FileScanCtx*>(ctx);
-  FileKey key = std::string(row[0] ? row[0] : "") + "\x01"
-                + std::string(row[1] ? row[1] : "");
-  auto jobid = static_cast<JobId_t>(str_to_int64(row[3]));
-  auto job_tdate = static_cast<utime_t>(str_to_int64(row[4]));
+  auto FileIndex = static_cast<uint32_t>(str_to_int64(row[0]));
 
-  auto it = c->files.find(key);
-  if (it == c->files.end() || job_tdate > it->second.JobTDate
-      || (job_tdate == it->second.JobTDate && jobid > it->second.JobId)) {
-    AccountedFile f;
-    f.JobId = jobid;
-    f.JobTDate = job_tdate;
-    f.FileIndex = static_cast<uint32_t>(str_to_int64(row[2]));
-    f.LStat = row[5] ? row[5] : "";
-    c->files[key] = std::move(f);
+  /* FileIndex==0 marks an accurate-mode "this file was deleted since the
+   * last backup" entry -- exclude it, don't count stale bytes. */
+  if (FileIndex == 0) { return 0; }
+
+  FileAccountingResult file_result
+      = AccountedBytesForFile(row[1] ? row[1] : "", c->is_windows);
+  if (file_result.kind == FileAccountingKind::kInvalidStat) {
+    c->ua->ErrorMsg(T_("%s / %s: invalid file attributes for FileIndex=%u "
+                       "-- aborting report.\n"),
+                    c->tuple->ClientName.c_str(), c->tuple->FileSetName.c_str(),
+                    FileIndex);
+    c->aborted = true;
+    return 1;
   }
+  if (file_result.kind == FileAccountingKind::kNonRegular) {
+    /* Directory, symlink or special file catalog row -- not billable
+     * subscription data, exclude it from the count. */
+    return 0;
+  }
+  if (file_result.bytes > std::numeric_limits<uint64_t>::max() - c->bytes) {
+    c->ua->ErrorMsg(T_("%s / %s: byte total overflow -- aborting report.\n"),
+                    c->tuple->ClientName.c_str(),
+                    c->tuple->FileSetName.c_str());
+    c->aborted = true;
+    return 1;
+  }
+  c->bytes += file_result.bytes;
+  c->files++;
   return 0;
 }
 
@@ -244,10 +346,20 @@ ChainResult ResolveAccountingChain(UaContext* ua,
 }
 
 /**
- * Fetch every File row for the resolved JobId chain in one plain query (no
- * DISTINCT/GROUP BY -- confirmed faster and independent of catalog
- * work_mem tuning, see plan.md benchmark), then dedup on the application
- * side: latest JobTDate wins per (PathId, Name), with JobId as a tie-breaker.
+ * Fetch the File rows for the resolved JobId chain, one per distinct
+ * catalog path, already de-duplicated server-side: PostgreSQL's
+ * DISTINCT ON picks the row with the highest JobTDate (JobId as
+ * tie-breaker) per (PathId, Name) directly in the query, replacing the
+ * previous approach of fetching every row and de-duplicating in an
+ * application-side std::unordered_map (which held the full distinct
+ * file set of the chain resident in Director memory -- many GB on
+ * large catalogs, see plan.md benchmark).
+ *
+ * The query result itself is streamed via BigSqlQuery() (server-side
+ * cursor, fetched in batches), and FileRowHandler() folds each row
+ * directly into the running per-tuple totals in *scan* instead of
+ * retaining it, so Director memory use no longer scales with the
+ * number of distinct files in the chain.
  */
 bool ScanFilesForChain(UaContext* ua,
                        const std::vector<JobId_t>& jobids,
@@ -264,103 +376,20 @@ bool ScanFilesForChain(UaContext* ua,
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
-       "SELECT File.PathId, File.Name, File.FileIndex, File.JobId,"
-       " Job.JobTDate, File.LStat FROM File"
-       " JOIN Job USING (JobId) WHERE File.JobId IN (%s)",
+       "SELECT DISTINCT ON (File.PathId, File.Name)"
+       " File.FileIndex, File.LStat FROM File"
+       " JOIN Job USING (JobId) WHERE File.JobId IN (%s)"
+       " ORDER BY File.PathId, File.Name, Job.JobTDate DESC,"
+       " File.JobId DESC",
        jobid_list.c_str());
 
-  if (!ua->db->SqlQuery(query.c_str(), FileRowHandler, scan)) {
+  if (!ua->db->BigSqlQuery(query.c_str(), FileRowHandler, scan)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
-  return true;
+  return !scan->aborted;
 }
 
-/**
- * Per-platform accounting rule (see plan.md for the full rationale):
- *  - Windows clients (Client.Uname contains "Windows"): use st_size
- *    directly -- Windows st_blocks is a synthetic value derived purely
- *    from st_size and adds no real accuracy.
- *  - Everyone else: use st_blocks * 512 (real block-allocation data,
- *    sparse-file aware).
- */
-template <typename T> constexpr bool IsUnknownStatField(T value)
-{
-  if constexpr (std::numeric_limits<T>::is_signed) {
-    return value < 0;
-  } else {
-    return value == std::numeric_limits<T>::max();
-  }
-}
-
-static_assert(IsUnknownStatField(int64_t{-1}));
-static_assert(!IsUnknownStatField(int64_t{0}));
-static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
-static_assert(!IsUnknownStatField(uint64_t{0}));
-
-/**
- * kRegular      -- a countable, billable file; bytes is meaningful.
- * kNonRegular   -- a directory, symlink or special file (FIFO/device/
- *                  socket) catalog row -- not billable subscription
- *                  data, silently excluded from the report (not an
- *                  error).
- * kInvalidStat  -- the stat field the platform's rule needs is unusable
- *                  (unknown/overflowing); the caller must abort the
- *                  report rather than under-report silently.
- */
-enum class FileAccountingKind
-{
-  kRegular,
-  kNonRegular,
-  kInvalidStat
-};
-
-struct FileAccountingResult {
-  FileAccountingKind kind{FileAccountingKind::kInvalidStat};
-  uint64_t bytes{0};
-};
-
-FileAccountingResult AccountedBytesForFile(const std::string& lstat,
-                                           bool is_windows)
-{
-  if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
-
-  struct stat statp{};
-  int32_t LinkFI;
-  /* DecodeStat() takes a non-const char* but does not modify the
-   * underlying data. */
-  std::string mutable_lstat = lstat;
-  DecodeStat(mutable_lstat.data(), &statp, sizeof(statp), &LinkFI);
-
-  /* Only regular files count toward the report -- directories, symlinks
-   * and special files (FIFOs, device/socket nodes) are catalog metadata,
-   * not billable subscription data. A hard-linked file's FT_LNKSAVED row
-   * still encodes the underlying regular file's stat (see
-   * filed/backup.cc), so it is counted like any other regular file, once
-   * per catalog name. */
-  if (!S_ISREG(statp.st_mode)) { return {FileAccountingKind::kNonRegular, 0}; }
-
-  if (is_windows) {
-    if (IsUnknownStatField(statp.st_size)) {
-      return {FileAccountingKind::kInvalidStat, 0};
-    }
-    return {FileAccountingKind::kRegular, static_cast<uint64_t>(statp.st_size)};
-  }
-
-  if (IsUnknownStatField(statp.st_blocks)) {
-    return {FileAccountingKind::kInvalidStat, 0};
-  }
-  uint64_t blocks = static_cast<uint64_t>(statp.st_blocks);
-  if (blocks > std::numeric_limits<uint64_t>::max() / 512) {
-    return {FileAccountingKind::kInvalidStat, 0};
-  }
-  return {FileAccountingKind::kRegular, blocks * 512};
-}
-
-bool UnameLooksLikeWindows(const std::string& uname)
-{
-  return uname.find("Windows") != std::string::npos;
-}
 
 }  // namespace
 
@@ -452,41 +481,16 @@ bool DoSubscriptionAccounting(UaContext* ua)
         break;
     }
 
+    bool is_windows = UnameLooksLikeWindows(tuple.Uname);
+
     FileScanCtx scan{};
+    scan.ua = ua;
+    scan.tuple = &tuple;
+    scan.is_windows = is_windows;
     if (!ScanFilesForChain(ua, jobids, &scan)) { return false; }
 
-    bool is_windows = UnameLooksLikeWindows(tuple.Uname);
-    uint64_t tuple_bytes = 0;
-    uint64_t tuple_files = 0;
-
-    for (const auto& [key, file] : scan.files) {
-      (void)key;
-      /* FileIndex==0 marks an accurate-mode "this file was deleted since
-       * the last backup" entry -- exclude it, don't count stale bytes. */
-      if (file.FileIndex == 0) { continue; }
-      FileAccountingResult file_result
-          = AccountedBytesForFile(file.LStat, is_windows);
-      if (file_result.kind == FileAccountingKind::kInvalidStat) {
-        ua->ErrorMsg(T_("%s / %s: invalid file attributes for JobId=%" PRIu32
-                        " FileIndex=%u -- aborting report.\n"),
-                     tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
-                     file.JobId, file.FileIndex);
-        return false;
-      }
-      if (file_result.kind == FileAccountingKind::kNonRegular) {
-        /* Directory, symlink or special file catalog row -- not billable
-         * subscription data, exclude it from the count. */
-        continue;
-      }
-      if (file_result.bytes
-          > std::numeric_limits<uint64_t>::max() - tuple_bytes) {
-        ua->ErrorMsg(T_("%s / %s: byte total overflow -- aborting report.\n"),
-                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
-        return false;
-      }
-      tuple_bytes += file_result.bytes;
-      tuple_files++;
-    }
+    uint64_t tuple_bytes = scan.bytes;
+    uint64_t tuple_files = scan.files;
 
     char ec1[50], ec2[50];
     ua->SendMsg(
