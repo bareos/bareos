@@ -56,17 +56,11 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/status-subscriptions-accounting.out"
 
-if ! grep -q "^isilon / isilon-fileset: " \
+if ! grep -qE "^isilon / isilon-fileset: [1-9][0-9]* files, [1-9][0-9]* bytes accounted" \
   "${log_home}/status-subscriptions-accounting.out"; then
-  set_error "expected an accounted isilon / isilon-fileset line, got:
-$(cat "${log_home}/status-subscriptions-accounting.out")"
-  exit 1
-fi
-
-if grep -q ": 0 files, 0 bytes accounted" \
-  "${log_home}/status-subscriptions-accounting.out"; then
-  set_error "isilon / isilon-fileset was accounted with 0 files/bytes -- \
-NdmpConvertFstat() st_size/st_blocks likely did not reach the catalog:
+  set_error "expected isilon / isilon-fileset accounted with a non-zero \
+file count and byte total -- NdmpConvertFstat() st_size/st_blocks likely \
+did not reach the catalog:
 $(cat "${log_home}/status-subscriptions-accounting.out")"
   exit 1
 fi

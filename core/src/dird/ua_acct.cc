@@ -451,8 +451,15 @@ bool DoSubscriptionAccounting(UaContext* ua)
        " FROM Job"
        " JOIN Client ON Client.ClientId = Job.ClientId"
        " JOIN FileSet ON FileSet.FileSetId = Job.FileSetId"
+       // No "Job.JobFiles > 0" filter here: it would run before
+       // DISTINCT ON picks the newest Full, so a genuinely empty
+       // newest Full could be filtered out first, letting an older,
+       // non-empty Full under a stale FileSetId win the tuple instead
+       // (undoing the very double-counting fix DISTINCT ON provides
+       // here). An empty newest Full is a legitimate "0 files, 0
+       // bytes" tuple, resolved normally by ResolveAccountingChain().
        " WHERE Job.JobStatus IN ('T','W') AND Job.Type IN (%s)"
-       " AND Job.JobFiles > 0 AND Job.Level='F'",
+       " AND Job.Level='F'",
        kAccountableJobTypes);
   if (client_filter) {
     PmStrcat(query, " AND Client.Name='");
