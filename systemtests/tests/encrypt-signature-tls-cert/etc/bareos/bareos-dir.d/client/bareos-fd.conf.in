@@ -4,4 +4,6 @@ Client {
   Address = @hostname@
   Password = "@fd_password@"          # password for FileDaemon
   Port = @fd_port@
+
+  Tls Verify Peer = No
 }
