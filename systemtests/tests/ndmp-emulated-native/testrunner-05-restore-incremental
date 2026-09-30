@@ -56,12 +56,12 @@ check_native_restore_log "${log_home}/restore.out"
 expect_grep "Termination:.*Restore OK" "${log_home}/restore.out" \
   "restore did not succeed"
 
-# TODO: the restore expands jobid=2 to "1,2", but the NDMP_NATIVE restore
-# only uses the first jobid (see GetNdmmediaInfoFromDatabase()), so the
-# image of the full backup is restored instead of the incremental one and
-# the incremental file is missing. Enable this check once that is fixed:
-# [ "$(cat "${NDMP_FILESYSTEM}/incremental")" = "incremental-1" ] \
-#   || set_error "wrong content of the restored incremental file"
+[ "$(cat "${NDMP_FILESYSTEM}/incremental")" = "incremental-1" ] \
+  || set_error "wrong content of the restored incremental file"
+expect_grep "Recovering the NDMP image of JobId 2" "${log_home}/restore.out" \
+  "the image of the incremental job was not recovered"
+expect_not_grep "Recovering the NDMP image of JobId 1" \
+  "${log_home}/restore.out" "the image of the full job was recovered"
 
 check_no_running_jobs
 
