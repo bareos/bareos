@@ -329,13 +329,11 @@ bool generic_tape_device::offline()
 }
 
 /**
- * Write one or more end-of-file marks on the device.
+ * Write one or more immediate end-of-file marks on the device.
  *
- * The regular tape-layer write-filemark operation is used here. We intentionally
- * do not fall back to the non-immediate variant when the device reports an
- * error, because an immediate filemark is not equivalent to a regular filemark
- * and silently switching to the latter can flush buffered data to tape in a way
- * that defeats the intended semantics.
+ * An immediate filemark does not wait for the drive's buffer to reach tape.
+ * Do not retry with MTWEOF on failure: a non-immediate filemark would flush
+ * that buffer and change the operation's semantics.
  *
  * Returns: true on success
  *          false on failure
@@ -362,7 +360,7 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
-  mt_com.mt_op = MTWEOF;
+  mt_com.mt_op = MTWEOFI;
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
   if (status == 0) {
@@ -374,7 +372,7 @@ bool generic_tape_device::weof(int num)
 
     clrerror(mt_com.mt_op);
     if (status == -1) {
-      Mmsg2(errmsg, T_("ioctl MTWEOF error on %s. ERR=%s.\n"), prt_name,
+      Mmsg2(errmsg, T_("ioctl MTWEOFI error on %s. ERR=%s.\n"), prt_name,
             be.bstrerror());
     }
   }
@@ -810,6 +808,9 @@ void generic_tape_device::HandleError(int func)
       case MTWEOF:
         msg = "WTWEOF";
         ClearCap(CAP_EOF); /* turn off feature */
+        break;
+      case MTWEOFI:
+        msg = "MTWEOFI";
         break;
 #ifdef MTEOM
       case MTEOM:
