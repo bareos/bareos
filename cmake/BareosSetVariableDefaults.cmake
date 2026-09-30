@@ -402,7 +402,9 @@ cmake_dependent_option(
   scsi-crypto "Enable scsi-crypto" ON "NOT HAVE_WIN32;NOT HAVE_DARWIN_OS" OFF
 )
 option(ndmp "Enable NDMP support" ON)
-option(build_ndmjob "Building ndmpjob" OFF)
+option(build_ndmjob
+       "Building ndmjob (always built when ENABLE_SYSTEMTESTS is set)" OFF
+)
 mark_as_advanced(build_ndmjob)
 
 option(traymonitor "Build bareos-traymonitor" OFF)
