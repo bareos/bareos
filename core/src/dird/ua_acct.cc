@@ -469,6 +469,12 @@ bool DoSubscriptionAccounting(UaContext* ua)
   uint32_t accounted_tuples = 0;
   uint32_t excluded_tuples = 0;
 
+  // Structured (.api 2 / WebUI) output, in addition to the plain-text
+  // report above. ObjectKeyValue()/ArrayStart()/... calls are no-ops for
+  // plain-text consumers when no format string is given, so this does not
+  // change the human-readable output produced by ua->SendMsg() above.
+  ua->send->ArrayStart("accounting");
+
   for (const TupleInfo& tuple : tuple_list.tuples) {
     std::vector<JobId_t> jobids;
     switch (
@@ -479,11 +485,17 @@ bool DoSubscriptionAccounting(UaContext* ua)
         ua->ErrorMsg(T_("%s / %s: failed to resolve backup chain -- aborting "
                         "report.\n"),
                      tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        ua->send->ArrayEnd("accounting");
         return false;
       case ChainResult::kNotFound:
         ua->SendMsg(T_("%s / %s: no usable backup chain found -- excluded (not "
                        "guessed).\n"),
                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        ua->send->ObjectStart();
+        ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
+        ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
+        ua->send->ObjectKeyValueBool("excluded", true);
+        ua->send->ObjectEnd();
         excluded_tuples++;
         continue;
       case ChainResult::kFound:
@@ -496,10 +508,14 @@ bool DoSubscriptionAccounting(UaContext* ua)
     scan.ua = ua;
     scan.tuple = &tuple;
     scan.is_windows = is_windows;
-    if (!ScanFilesForChain(ua, jobids, &scan)) { return false; }
+    if (!ScanFilesForChain(ua, jobids, &scan)) {
+      ua->send->ArrayEnd("accounting");
+      return false;
+    }
 
     uint64_t tuple_bytes = scan.bytes;
     uint64_t tuple_files = scan.files;
+    const char* rule = is_windows ? "st_size" : "st_blocks*512";
 
     char ec1[50], ec2[50];
     ua->SendMsg(
@@ -507,18 +523,31 @@ bool DoSubscriptionAccounting(UaContext* ua)
            "chain).\n"),
         tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
         edit_uint64_with_commas(tuple_files, ec1),
-        edit_uint64_with_commas(tuple_bytes, ec2),
-        is_windows ? "st_size" : "st_blocks*512", jobids.size());
+        edit_uint64_with_commas(tuple_bytes, ec2), rule, jobids.size());
+
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
+    ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
+    ua->send->ObjectKeyValueBool("excluded", false);
+    ua->send->ObjectKeyValue("files", tuple_files);
+    ua->send->ObjectKeyValue("bytes", tuple_bytes);
+    ua->send->ObjectKeyValue("rule", rule);
+    ua->send->ObjectKeyValue("jobs_in_chain",
+                             static_cast<uint64_t>(jobids.size()));
+    ua->send->ObjectEnd();
 
     if (tuple_bytes
         > std::numeric_limits<uint64_t>::max() - grand_total_bytes) {
       ua->ErrorMsg(T_("Grand total byte count overflow -- aborting report.\n"));
+      ua->send->ArrayEnd("accounting");
       return false;
     }
     grand_total_bytes += tuple_bytes;
     grand_total_files += tuple_files;
     accounted_tuples++;
   }
+
+  ua->send->ArrayEnd("accounting");
 
   char ec1[50], ec2[50];
   ua->SendMsg(T_("\nGrand total: %s files, %s bytes across %u accounted "
@@ -531,6 +560,15 @@ bool DoSubscriptionAccounting(UaContext* ua)
                 excluded_tuples);
   }
   ua->SendMsg("\n");
+
+  ua->send->ObjectStart("summary");
+  ua->send->ObjectKeyValue("total_files", grand_total_files);
+  ua->send->ObjectKeyValue("total_bytes", grand_total_bytes);
+  ua->send->ObjectKeyValue("accounted_tuples",
+                           static_cast<uint64_t>(accounted_tuples));
+  ua->send->ObjectKeyValue("excluded_tuples",
+                           static_cast<uint64_t>(excluded_tuples));
+  ua->send->ObjectEnd("summary");
 
   return true;
 }

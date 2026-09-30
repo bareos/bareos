@@ -448,6 +448,8 @@ static struct ua_cmdstruct commands[] = {
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
          "subscriptions [clients] [plugins] [all] [anonymize] "
          "[client=<client-name>] | "
+         "subscriptions accounting [client=<client-name>] "
+         "[fileset=<fileset-name>] | "
          "configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
