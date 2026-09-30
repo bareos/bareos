@@ -1891,6 +1891,10 @@ status subscriptions
       - Delta-plugin multi-part files (:config:option:`dir/job/accurate`
         + delta plugins) are not specially merged in this first version;
         only the latest JobId's File row per path is used.
+      - A running report cannot be cancelled once started; the console
+        command executes synchronously to completion. The only way to
+        stop it is to terminate the console connection itself (e.g.
+        killing :bcommand:`bconsole`).
 
    .. limitation:: status subscriptions may account the same data multiple times
 

@@ -360,6 +360,15 @@ ChainResult ResolveAccountingChain(UaContext* ua,
  * directly into the running per-tuple totals in *scan* instead of
  * retaining it, so Director memory use no longer scales with the
  * number of distinct files in the chain.
+ *
+ * There is currently no way for an operator to proactively cancel a
+ * running report: "status subscriptions accounting" executes
+ * synchronously inside the console's single command loop, with no
+ * side channel available while it runs. The only way to stop it is to
+ * terminate the console connection itself (e.g. killing bconsole),
+ * which the Director will notice on its next socket I/O once the
+ * report completes -- there is no active mid-query polling for a
+ * closed console connection.
  */
 bool ScanFilesForChain(UaContext* ua,
                        const std::vector<JobId_t>& jobids,
