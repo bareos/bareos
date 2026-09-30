@@ -20,9 +20,9 @@
 */
 /**
  * @file
- * Real, File.LStat-based subscription/accounting size totals -- computed
- * on demand, per (Client, FileSet) tuple, from actual catalog File rows
- * rather than the guessed numbers used by the rest of 'status
+ * Real, File.LStat-based subscription/accounting size totals -- refreshed
+ * in the background per (Client, FileSet) tuple from actual catalog File
+ * rows rather than the guessed numbers used by the rest of 'status
  * subscriptions'. Implements 'status subscriptions accounting
  * [client=<name>] [fileset=<name>]'.
  */
@@ -35,10 +35,18 @@
 #include "dird/ua_acct.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
+#include "dird/director_jcr_impl.h"
+#include "dird/get_database_connection.h"
+#include "dird/jcr_util.h"
+#include "cats/sql_pooling.h"
+#include "lib/berrno.h"
 
 #include <algorithm>
+#include <atomic>
 #include <limits>
+#include <pthread.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace directordaemon {
@@ -170,6 +178,18 @@ struct TupleInfo {
   std::string FileSetName;
 };
 
+struct AccountingRow {
+  std::string ClientName;
+  std::string FileSetName;
+  bool excluded{false};
+  std::string exclusion_reason;
+  uint64_t files{0};
+  uint64_t bytes{0};
+  uint64_t logical_bytes{0};
+  std::string rule;
+  uint64_t jobs_in_chain{0};
+};
+
 struct ChainResolveCtx {
   JobId_t JobId{0};
   utime_t JobTDate{0};
@@ -213,6 +233,7 @@ int JobIdListHandler(void* ctx, int, char** row)
 struct FileScanCtx {
   UaContext* ua{nullptr};
   const TupleInfo* tuple{nullptr};
+  const std::atomic_bool* cancel{nullptr};
   bool is_windows{false};
   uint64_t bytes{0};
   uint64_t logical_bytes{0};
@@ -225,6 +246,10 @@ int FileRowHandler(void* ctx, int, char** row)
 {
   // row[0]=JobId row[1]=PathId row[2]=Name row[3]=FileIndex row[4]=LStat
   auto* c = static_cast<FileScanCtx*>(ctx);
+  if (c->cancel && c->cancel->load()) {
+    c->aborted = true;
+    return 1;
+  }
   auto JobId = row[0] ? row[0] : "";
   auto PathId = row[1] ? row[1] : "";
   auto Name = row[2] ? row[2] : "";
@@ -420,14 +445,8 @@ ChainResult ResolveAccountingChain(UaContext* ua,
  * retaining it, so Director memory use no longer scales with the
  * number of distinct files in the chain.
  *
- * There is currently no way for an operator to proactively cancel a
- * running report: "status subscriptions accounting" executes
- * synchronously inside the console's single command loop, with no
- * side channel available while it runs. The only way to stop it is to
- * terminate the console connection itself (e.g. killing bconsole),
- * which the Director will notice on its next socket I/O once the
- * report completes -- there is no active mid-query polling for a
- * closed console connection.
+ * The background refresh can be cancelled between rows when Director is
+ * shutting down or reloading its configuration.
  */
 bool ScanFilesForChain(UaContext* ua,
                        const std::vector<JobId_t>& jobids,
@@ -459,6 +478,352 @@ bool ScanFilesForChain(UaContext* ua,
   return !scan->aborted;
 }
 
+bool CalculateSubscriptionAccounting(UaContext* ua,
+                                     std::vector<AccountingRow>* rows,
+                                     std::string* error,
+                                     const std::atomic_bool* cancel = nullptr)
+{
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet)"
+       " Job.ClientId, Client.Name, Client.Uname,"
+       " Job.FileSetId, FileSet.FileSet"
+       " FROM Job"
+       " JOIN Client ON Client.ClientId = Job.ClientId"
+       " JOIN FileSet ON FileSet.FileSetId = Job.FileSetId"
+       " WHERE Job.JobStatus IN ('T','W') AND Job.Type IN (%s)"
+       " AND Job.Level='F'"
+       " ORDER BY Job.ClientId, FileSet.FileSet,"
+       " Job.JobTDate DESC, Job.JobId DESC",
+       kAccountableJobTypes);
+
+  TupleListCtx tuple_list{};
+  if (!ua->db->SqlQuery(query.c_str(), TupleRowHandler, &tuple_list)) {
+    *error = ua->db->strerror();
+    ua->ErrorMsg("%s\n", error->c_str());
+    return false;
+  }
+  std::sort(tuple_list.tuples.begin(), tuple_list.tuples.end(),
+            [](const TupleInfo& a, const TupleInfo& b) {
+              if (a.ClientName != b.ClientName) {
+                return a.ClientName < b.ClientName;
+              }
+              return a.FileSetName < b.FileSetName;
+            });
+
+  rows->clear();
+  for (const TupleInfo& tuple : tuple_list.tuples) {
+    if (cancel && cancel->load()) {
+      *error = "accounting refresh cancelled";
+      return false;
+    }
+
+    AccountingRow row;
+    row.ClientName = tuple.ClientName;
+    row.FileSetName = tuple.FileSetName;
+
+    std::vector<JobId_t> jobids;
+    switch (
+        ResolveAccountingChain(ua, tuple.ClientId, tuple.FileSetId, &jobids)) {
+      case ChainResult::kError:
+        *error = "failed to resolve backup chain";
+        ua->ErrorMsg(T_("%s / %s: failed to resolve backup chain.\n"),
+                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+        return false;
+      case ChainResult::kNotFound:
+        row.excluded = true;
+        row.exclusion_reason = "no_usable_chain";
+        rows->push_back(std::move(row));
+        continue;
+      case ChainResult::kFound:
+        break;
+    }
+
+    FileScanCtx scan{};
+    scan.ua = ua;
+    scan.tuple = &tuple;
+    scan.cancel = cancel;
+    scan.is_windows = UnameLooksLikeWindows(tuple.Uname);
+    if (!ScanFilesForChain(ua, jobids, &scan)) {
+      *error = scan.aborted && cancel && cancel->load()
+                   ? "accounting refresh cancelled"
+                   : "failed to scan file attributes";
+      return false;
+    }
+
+    if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+      row.excluded = true;
+      row.exclusion_reason = "no_per_file_data";
+    } else {
+      row.files = scan.files;
+      row.bytes = scan.bytes;
+      row.logical_bytes = scan.logical_bytes;
+      row.rule = scan.is_windows ? "st_size" : "st_blocks*512";
+      row.jobs_in_chain = jobids.size();
+    }
+    rows->push_back(std::move(row));
+  }
+  return true;
+}
+
+struct SnapshotMetadata {
+  std::string timestamp;
+  std::string last_error;
+  bool has_snapshot{false};
+  bool stale{true};
+};
+
+int SnapshotMetadataHandler(void* ctx, int, char** row)
+{
+  auto* metadata = static_cast<SnapshotMetadata*>(ctx);
+  metadata->timestamp = row[0] ? row[0] : "";
+  metadata->last_error = row[1] ? row[1] : "";
+  metadata->has_snapshot = !metadata->timestamp.empty();
+  metadata->stale = row[2] == nullptr || bstrcmp(row[2], "t");
+  return 0;
+}
+
+int SnapshotRowHandler(void* ctx, int, char** row)
+{
+  auto* rows = static_cast<std::vector<AccountingRow>*>(ctx);
+  AccountingRow result;
+  result.ClientName = row[0] ? row[0] : "";
+  result.FileSetName = row[1] ? row[1] : "";
+  result.excluded = row[2] && bstrcmp(row[2], "t");
+  result.exclusion_reason = row[3] ? row[3] : "";
+  result.files = row[4] ? str_to_uint64(row[4]) : 0;
+  result.bytes = row[5] ? str_to_uint64(row[5]) : 0;
+  result.logical_bytes = row[6] ? str_to_uint64(row[6]) : 0;
+  result.rule = row[7] ? row[7] : "";
+  result.jobs_in_chain = row[8] ? str_to_uint64(row[8]) : 0;
+  rows->push_back(std::move(result));
+  return 0;
+}
+
+bool EscapeForSql(UaContext* ua, const std::string& value, std::string* escaped)
+{
+  auto result = ua->db->EscapeString(ua->jcr, value);
+  if (!result) {
+    ua->ErrorMsg(T_("Could not escape subscription accounting value.\n"));
+    return false;
+  }
+  *escaped = *result;
+  return true;
+}
+
+bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
+                                        const char* client_filter,
+                                        const char* fileset_filter,
+                                        SnapshotMetadata* metadata,
+                                        std::vector<AccountingRow>* rows)
+{
+  if (!ua->db->SqlQuery(
+          "SELECT COALESCE(to_char(LastSuccess, 'YYYY-MM-DD HH24:MI:SS'), "
+          "''), COALESCE(LastError, ''), "
+          "(LastSuccess IS NULL OR LastSuccess < CURRENT_TIMESTAMP - "
+          "INTERVAL '24 hours')::text "
+          "FROM SubscriptionAccountingSnapshot WHERE SnapshotId=1",
+          SnapshotMetadataHandler, metadata)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+
+  PoolMem query(PM_MESSAGE);
+  PmStrcpy(query,
+           "SELECT ClientName, FileSetName, Excluded, "
+           "COALESCE(ExclusionReason, ''), Files::text, Bytes::text, "
+           "LogicalBytes::text, COALESCE(Rule, ''), JobsInChain::text "
+           "FROM SubscriptionAccounting");
+  if (client_filter || fileset_filter) { PmStrcat(query, " WHERE "); }
+  bool needs_and = false;
+  std::string escaped;
+  if (client_filter) {
+    if (!EscapeForSql(ua, client_filter, &escaped)) { return false; }
+    PmStrcat(query, "ClientName='");
+    PmStrcat(query, escaped.c_str());
+    PmStrcat(query, "'");
+    needs_and = true;
+  }
+  if (fileset_filter) {
+    if (needs_and) { PmStrcat(query, " AND "); }
+    if (!EscapeForSql(ua, fileset_filter, &escaped)) { return false; }
+    PmStrcat(query, "FileSetName='");
+    PmStrcat(query, escaped.c_str());
+    PmStrcat(query, "'");
+  }
+  PmStrcat(query, " ORDER BY ClientName, FileSetName");
+
+  if (!ua->db->SqlQuery(query.c_str(), SnapshotRowHandler, rows)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  return true;
+}
+
+bool RecordSubscriptionAccountingFailure(UaContext* ua,
+                                         const std::string& error)
+{
+  std::string escaped;
+  if (!EscapeForSql(ua, error, &escaped)) { return false; }
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "UPDATE SubscriptionAccountingSnapshot SET "
+       "LastAttempt=CURRENT_TIMESTAMP, LastError='%s' WHERE SnapshotId=1",
+       escaped.c_str());
+  return ua->db->SqlExec(query.c_str());
+}
+
+bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
+                                        const std::vector<AccountingRow>& rows)
+{
+  if (!ua->db->SqlExec("BEGIN")) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  bool success = ua->db->SqlExec("DELETE FROM SubscriptionAccounting");
+  for (const auto& row : rows) {
+    std::string client_name, fileset_name, reason, rule;
+    if (!success || !EscapeForSql(ua, row.ClientName, &client_name)
+        || !EscapeForSql(ua, row.FileSetName, &fileset_name)
+        || !EscapeForSql(ua, row.exclusion_reason, &reason)
+        || !EscapeForSql(ua, row.rule, &rule)) {
+      success = false;
+      break;
+    }
+    PoolMem query(PM_MESSAGE);
+    Mmsg(query,
+         "INSERT INTO SubscriptionAccounting "
+         "(ClientName, FileSetName, Excluded, ExclusionReason, Files, Bytes, "
+         "LogicalBytes, Rule, JobsInChain) VALUES "
+         "('%s', '%s', %s, %s, %llu, %llu, %llu, %s, %llu)",
+         client_name.c_str(), fileset_name.c_str(),
+         row.excluded ? "true" : "false",
+         row.exclusion_reason.empty() ? "NULL" : ("'" + reason + "'").c_str(),
+         static_cast<unsigned long long>(row.files),
+         static_cast<unsigned long long>(row.bytes),
+         static_cast<unsigned long long>(row.logical_bytes),
+         row.rule.empty() ? "NULL" : ("'" + rule + "'").c_str(),
+         static_cast<unsigned long long>(row.jobs_in_chain));
+    success = ua->db->SqlExec(query.c_str());
+  }
+
+  if (success) {
+    success = ua->db->SqlExec(
+        "UPDATE SubscriptionAccountingSnapshot SET "
+        "LastAttempt=CURRENT_TIMESTAMP, LastSuccess=CURRENT_TIMESTAMP, "
+        "LastError=NULL WHERE SnapshotId=1");
+  }
+  if (success) { success = ua->db->SqlExec("COMMIT"); }
+  if (!success) {
+    ua->db->SqlExec("ROLLBACK");
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+  }
+  return success;
+}
+
+static std::atomic_bool accounting_quit{false};
+static pthread_t accounting_thread_id;
+static pthread_mutex_t accounting_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t accounting_cond = PTHREAD_COND_INITIALIZER;
+static bool accounting_thread_initialized{false};
+static bool accounting_worker_available{false};
+static bool accounting_refresh_requested{false};
+static bool accounting_refresh_running{false};
+
+void RefreshSubscriptionAccounting(UaContext* ua)
+{
+  std::vector<AccountingRow> rows;
+  std::string error;
+  if (!CalculateSubscriptionAccounting(ua, &rows, &error, &accounting_quit)) {
+    if (accounting_quit.load()) { return; }
+    if (!RecordSubscriptionAccountingFailure(ua, error)) {
+      Jmsg(ua->jcr, M_ERROR, 0,
+           T_("Could not record subscription accounting refresh failure: %s\n"),
+           ua->db->strerror());
+    }
+    Jmsg(ua->jcr, M_ERROR, 0,
+         T_("Subscription accounting refresh failed: %s\n"), error.c_str());
+    return;
+  }
+  if (accounting_quit.load()) { return; }
+  if (!SaveSubscriptionAccountingSnapshot(ua, rows)) {
+    std::string save_error = ua->db->strerror();
+    RecordSubscriptionAccountingFailure(ua, save_error);
+    Jmsg(ua->jcr, M_ERROR, 0,
+         T_("Could not save subscription accounting snapshot: %s\n"),
+         save_error.c_str());
+    return;
+  }
+  Jmsg(ua->jcr, M_INFO, 0,
+       T_("Subscription accounting snapshot refreshed with %zu "
+          "Client/FileSet combination(s).\n"),
+       rows.size());
+}
+
+void* SubscriptionAccountingThread(void*)
+{
+  auto config = my_config->GetCurrentConfiguration();
+  auto* catalog
+      = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
+  if (!catalog) {
+    Jmsg(nullptr, M_ERROR, 0,
+         T_("No catalog resource for subscription accounting refresh.\n"));
+    pthread_mutex_lock(&accounting_mutex);
+    accounting_worker_available = false;
+    pthread_mutex_unlock(&accounting_mutex);
+    return nullptr;
+  }
+
+  JobControlRecord* jcr = NewDirectorJcr(config);
+  jcr->dir_impl->res.catalog = catalog;
+  jcr->db = GetDatabaseConnection(jcr);
+  if (!jcr->db) {
+    Jmsg(jcr, M_ERROR, 0,
+         T_("Could not open catalog for subscription "
+            "accounting refresh.\n"));
+    FreeJcr(jcr);
+    pthread_mutex_lock(&accounting_mutex);
+    accounting_worker_available = false;
+    pthread_mutex_unlock(&accounting_mutex);
+    return nullptr;
+  }
+
+  {
+    UaContext ua(jcr);
+    ua.SetConsoleConnected(false);
+    pthread_mutex_lock(&accounting_mutex);
+    accounting_worker_available = true;
+    pthread_mutex_unlock(&accounting_mutex);
+    while (!accounting_quit.load()) {
+      pthread_mutex_lock(&accounting_mutex);
+      while (!accounting_quit.load() && !accounting_refresh_requested) {
+        pthread_cond_wait(&accounting_cond, &accounting_mutex);
+      }
+      const bool refresh_due
+          = !accounting_quit.load() && accounting_refresh_requested;
+      if (refresh_due) {
+        accounting_refresh_requested = false;
+        accounting_refresh_running = true;
+      }
+      pthread_mutex_unlock(&accounting_mutex);
+      if (accounting_quit.load()) { break; }
+      if (refresh_due) {
+        RefreshSubscriptionAccounting(&ua);
+        pthread_mutex_lock(&accounting_mutex);
+        accounting_refresh_running = false;
+        pthread_mutex_unlock(&accounting_mutex);
+      }
+    }
+  }
+
+  DbSqlClosePooledConnection(jcr, jcr->db);
+  jcr->db = nullptr;
+  FreeJcr(jcr);
+  pthread_mutex_lock(&accounting_mutex);
+  accounting_worker_available = false;
+  pthread_mutex_unlock(&accounting_mutex);
+  return nullptr;
+}
 
 }  // namespace
 
@@ -488,62 +853,53 @@ bool DoSubscriptionAccounting(UaContext* ua)
     return false;
   }
 
-  PoolMem query(PM_MESSAGE);
-  Mmsg(query,
-       "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet)"
-       " Job.ClientId, Client.Name, Client.Uname,"
-       " Job.FileSetId, FileSet.FileSet"
-       " FROM Job"
-       " JOIN Client ON Client.ClientId = Job.ClientId"
-       " JOIN FileSet ON FileSet.FileSetId = Job.FileSetId"
-       // No "Job.JobFiles > 0" filter here: it would run before
-       // DISTINCT ON picks the newest Full, so a genuinely empty
-       // newest Full could be filtered out first, letting an older,
-       // non-empty Full under a stale FileSetId win the tuple instead
-       // (undoing the very double-counting fix DISTINCT ON provides
-       // here). An empty newest Full is a legitimate "0 files, 0
-       // bytes" tuple, resolved normally by ResolveAccountingChain().
-       " WHERE Job.JobStatus IN ('T','W') AND Job.Type IN (%s)"
-       " AND Job.Level='F'",
-       kAccountableJobTypes);
-  if (client_filter) {
-    PmStrcat(query, " AND Client.Name='");
-    PmStrcat(query, client_filter);
-    PmStrcat(query, "'");
-  }
-  if (fileset_filter) {
-    PmStrcat(query, " AND FileSet.FileSet='");
-    PmStrcat(query, fileset_filter);
-    PmStrcat(query, "'");
-  }
-  // DISTINCT ON requires its own columns to lead ORDER BY, so the
-  // newest Full per (ClientId, FileSet name) wins the pick here; the
-  // result set is re-sorted below for the documented Client.Name/
-  // FileSet.FileSet output order.
-  PmStrcat(query,
-           " ORDER BY Job.ClientId, FileSet.FileSet,"
-           " Job.JobTDate DESC, Job.JobId DESC");
-
-  TupleListCtx tuple_list{};
-  if (!ua->db->SqlQuery(query.c_str(), TupleRowHandler, &tuple_list)) {
-    ua->ErrorMsg("%s\n", ua->db->strerror());
+  std::vector<AccountingRow> rows;
+  SnapshotMetadata metadata{};
+  std::string error;
+  if (!LoadSubscriptionAccountingSnapshot(ua, client_filter, fileset_filter,
+                                          &metadata, &rows)) {
     return false;
   }
-  std::sort(tuple_list.tuples.begin(), tuple_list.tuples.end(),
-            [](const TupleInfo& a, const TupleInfo& b) {
-              if (a.ClientName != b.ClientName) {
-                return a.ClientName < b.ClientName;
-              }
-              return a.FileSetName < b.FileSetName;
-            });
+  const auto thread_status = GetSubscriptionAccountingThreadStatus();
+  const char* thread_state = !thread_status.available ? T_("unavailable")
+                             : thread_status.running  ? T_("running")
+                             : thread_status.queued   ? T_("queued")
+                                                      : T_("idle");
+  ua->SendMsg(T_("Background refresh worker: %s.\n"), thread_state);
 
-  if (tuple_list.tuples.empty()) {
-    ua->SendMsg(T_("No matching Client/FileSet combinations found.\n"));
+  ua->send->ObjectStart("accounting_snapshot");
+  ua->send->ObjectKeyValueBool("available", metadata.has_snapshot);
+  ua->send->ObjectKeyValue("calculated_at", metadata.timestamp.c_str());
+  ua->send->ObjectKeyValueBool("stale", metadata.stale);
+  ua->send->ObjectKeyValue("refresh_thread_state", thread_state);
+  if (!metadata.last_error.empty()) {
+    ua->send->ObjectKeyValue("last_refresh_error", metadata.last_error.c_str());
+  }
+  ua->send->ObjectEnd();
+
+  if (!metadata.has_snapshot) {
+    ua->SendMsg(T_("Subscription accounting has not been calculated yet.\n"));
+    if (!metadata.last_error.empty()) {
+      ua->SendMsg(T_("Last refresh failed: %s\n"), metadata.last_error.c_str());
+    }
     return true;
   }
 
-  ua->SendMsg(
-      T_("\nReal (File.LStat-based) subscription accounting report:\n"));
+  ua->SendMsg(T_("\nReal (File.LStat-based) subscription accounting report "
+                 "from snapshot at %s:\n"),
+              metadata.timestamp.c_str());
+  if (metadata.stale) {
+    ua->WarningMsg(T_("WARNING: this snapshot is more than 24 hours old.\n"));
+  }
+  if (!metadata.last_error.empty()) {
+    ua->WarningMsg(T_("WARNING: the latest refresh failed; showing the last "
+                      "successful snapshot: %s\n"),
+                   metadata.last_error.c_str());
+  }
+  if (rows.empty()) {
+    ua->SendMsg(T_("No matching Client/FileSet combinations found.\n"));
+    return true;
+  }
 
   uint64_t grand_total_bytes = 0;
   uint64_t grand_total_logical_bytes = 0;
@@ -557,102 +913,70 @@ bool DoSubscriptionAccounting(UaContext* ua)
   // change the human-readable output produced by ua->SendMsg() above.
   ua->send->ArrayStart("accounting");
 
-  for (const TupleInfo& tuple : tuple_list.tuples) {
-    std::vector<JobId_t> jobids;
-    switch (
-        ResolveAccountingChain(ua, tuple.ClientId, tuple.FileSetId, &jobids)) {
-      case ChainResult::kError:
-        // A catalog query failed -- abort the report rather than silently
-        // sending an incomplete grand total that looks complete.
-        ua->ErrorMsg(T_("%s / %s: failed to resolve backup chain -- aborting "
-                        "report.\n"),
-                     tuple.ClientName.c_str(), tuple.FileSetName.c_str());
-        ua->send->ArrayEnd("accounting");
-        return false;
-      case ChainResult::kNotFound:
-        ua->SendMsg(T_("%s / %s: no usable backup chain found -- excluded (not "
-                       "guessed).\n"),
-                    tuple.ClientName.c_str(), tuple.FileSetName.c_str());
-        ua->send->ObjectStart();
-        ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
-        ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
-        ua->send->ObjectKeyValueBool("excluded", true);
-        ua->send->ObjectEnd();
-        excluded_tuples++;
-        continue;
-      case ChainResult::kFound:
-        break;
-    }
-
-    bool is_windows = UnameLooksLikeWindows(tuple.Uname);
-
-    FileScanCtx scan{};
-    scan.ua = ua;
-    scan.tuple = &tuple;
-    scan.is_windows = is_windows;
-    if (!ScanFilesForChain(ua, jobids, &scan)) {
-      ua->send->ArrayEnd("accounting");
-      return false;
-    }
-
-    if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
-      ua->SendMsg(T_("%s / %s: no per-file data available (NDMP file history "
-                     "may be disabled) -- excluded (not guessed).\n"),
-                  tuple.ClientName.c_str(), tuple.FileSetName.c_str());
+  for (const AccountingRow& row : rows) {
+    if (row.excluded) {
+      const char* reason = row.exclusion_reason == "no_per_file_data"
+                               ? T_("no per-file data available (NDMP file "
+                                    "history may be disabled)")
+                               : T_("no usable backup chain found");
+      ua->SendMsg(T_("%s / %s: %s -- excluded (not guessed).\n"),
+                  row.ClientName.c_str(), row.FileSetName.c_str(), reason);
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
-      ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
+      ua->send->ObjectKeyValue("client", row.ClientName.c_str());
+      ua->send->ObjectKeyValue("fileset", row.FileSetName.c_str());
       ua->send->ObjectKeyValueBool("excluded", true);
-      ua->send->ObjectKeyValue("exclusion_reason", "no_per_file_data");
+      if (!row.exclusion_reason.empty()) {
+        ua->send->ObjectKeyValue("exclusion_reason",
+                                 row.exclusion_reason.c_str());
+      }
       ua->send->ObjectEnd();
       excluded_tuples++;
       continue;
     }
 
-    uint64_t tuple_bytes = scan.bytes;
-    uint64_t tuple_logical_bytes = scan.logical_bytes;
-    uint64_t tuple_files = scan.files;
-    const char* rule = is_windows ? "st_size" : "st_blocks*512";
-
     char ec1[50], ec2[50];
     ua->SendMsg(
         T_("%s / %s: %s files, %s bytes accounted (rule: %s, %zu jobs in "
            "chain).\n"),
-        tuple.ClientName.c_str(), tuple.FileSetName.c_str(),
-        edit_uint64_with_commas(tuple_files, ec1),
-        edit_uint64_with_commas(tuple_bytes, ec2), rule, jobids.size());
+        row.ClientName.c_str(), row.FileSetName.c_str(),
+        edit_uint64_with_commas(row.files, ec1),
+        edit_uint64_with_commas(row.bytes, ec2), row.rule.c_str(),
+        static_cast<size_t>(row.jobs_in_chain));
 
     ua->SendMsg(T_("  Logical size (st_size): %s bytes.\n"),
-                edit_uint64_with_commas(tuple_logical_bytes, ec1));
+                edit_uint64_with_commas(row.logical_bytes, ec1));
 
     ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("client", tuple.ClientName.c_str());
-    ua->send->ObjectKeyValue("fileset", tuple.FileSetName.c_str());
+    ua->send->ObjectKeyValue("client", row.ClientName.c_str());
+    ua->send->ObjectKeyValue("fileset", row.FileSetName.c_str());
     ua->send->ObjectKeyValueBool("excluded", false);
-    ua->send->ObjectKeyValue("files", tuple_files);
-    ua->send->ObjectKeyValue("bytes", tuple_bytes);
-    ua->send->ObjectKeyValue("logical_bytes", tuple_logical_bytes);
-    ua->send->ObjectKeyValue("rule", rule);
-    ua->send->ObjectKeyValue("jobs_in_chain",
-                             static_cast<uint64_t>(jobids.size()));
+    ua->send->ObjectKeyValue("files", row.files);
+    ua->send->ObjectKeyValue("bytes", row.bytes);
+    ua->send->ObjectKeyValue("logical_bytes", row.logical_bytes);
+    ua->send->ObjectKeyValue("rule", row.rule.c_str());
+    ua->send->ObjectKeyValue("jobs_in_chain", row.jobs_in_chain);
     ua->send->ObjectEnd();
 
-    if (tuple_bytes
-        > std::numeric_limits<uint64_t>::max() - grand_total_bytes) {
+    if (row.bytes > std::numeric_limits<uint64_t>::max() - grand_total_bytes) {
       ua->ErrorMsg(T_("Grand total byte count overflow -- aborting report.\n"));
       ua->send->ArrayEnd("accounting");
       return false;
     }
-    if (tuple_logical_bytes
+    if (row.logical_bytes
         > std::numeric_limits<uint64_t>::max() - grand_total_logical_bytes) {
       ua->ErrorMsg(
           T_("Grand total logical byte count overflow -- aborting report.\n"));
       ua->send->ArrayEnd("accounting");
       return false;
     }
-    grand_total_bytes += tuple_bytes;
-    grand_total_logical_bytes += tuple_logical_bytes;
-    grand_total_files += tuple_files;
+    if (row.files > std::numeric_limits<uint64_t>::max() - grand_total_files) {
+      ua->ErrorMsg(T_("Grand total file count overflow -- aborting report.\n"));
+      ua->send->ArrayEnd("accounting");
+      return false;
+    }
+    grand_total_bytes += row.bytes;
+    grand_total_logical_bytes += row.logical_bytes;
+    grand_total_files += row.files;
     accounted_tuples++;
   }
 
@@ -682,6 +1006,87 @@ bool DoSubscriptionAccounting(UaContext* ua)
   ua->send->ObjectEnd("summary");
 
   return true;
+}
+
+bool StartSubscriptionAccountingThread()
+{
+  pthread_mutex_lock(&accounting_mutex);
+  if (accounting_thread_initialized) {
+    pthread_mutex_unlock(&accounting_mutex);
+    return true;
+  }
+  accounting_quit = false;
+  pthread_mutex_unlock(&accounting_mutex);
+  int status = pthread_create(&accounting_thread_id, nullptr,
+                              SubscriptionAccountingThread, nullptr);
+  if (status != 0) {
+    BErrNo be;
+    Jmsg(nullptr, M_ERROR, 0,
+         T_("Subscription accounting thread could not be started: %s\n"),
+         be.bstrerror());
+    return false;
+  }
+  pthread_mutex_lock(&accounting_mutex);
+  accounting_thread_initialized = true;
+  pthread_mutex_unlock(&accounting_mutex);
+  return true;
+}
+
+void StopSubscriptionAccountingThread()
+{
+  pthread_mutex_lock(&accounting_mutex);
+  if (!accounting_thread_initialized) {
+    pthread_mutex_unlock(&accounting_mutex);
+    return;
+  }
+  accounting_quit = true;
+  pthread_cond_broadcast(&accounting_cond);
+  pthread_mutex_unlock(&accounting_mutex);
+  if (!pthread_equal(accounting_thread_id, pthread_self())) {
+    pthread_join(accounting_thread_id, nullptr);
+  }
+  pthread_mutex_lock(&accounting_mutex);
+  accounting_refresh_running = false;
+  accounting_worker_available = false;
+  accounting_thread_initialized = false;
+  pthread_mutex_unlock(&accounting_mutex);
+}
+
+bool RequestSubscriptionAccountingRefresh(UaContext* ua)
+{
+  pthread_mutex_lock(&accounting_mutex);
+  if (!accounting_worker_available || accounting_quit.load()) {
+    pthread_mutex_unlock(&accounting_mutex);
+    ua->ErrorMsg(
+        T_("Subscription accounting background worker is not "
+           "available.\n"));
+    return false;
+  }
+  if (accounting_refresh_running || accounting_refresh_requested) {
+    pthread_mutex_unlock(&accounting_mutex);
+    ua->SendMsg(
+        T_("A subscription accounting refresh is already running or "
+           "queued.\n"));
+    return true;
+  }
+  accounting_refresh_requested = true;
+  pthread_cond_signal(&accounting_cond);
+  pthread_mutex_unlock(&accounting_mutex);
+  ua->SendMsg(
+      T_("Subscription accounting refresh requested in the "
+         "background.\n"));
+  return true;
+}
+
+SubscriptionAccountingThreadStatus GetSubscriptionAccountingThreadStatus()
+{
+  pthread_mutex_lock(&accounting_mutex);
+  SubscriptionAccountingThreadStatus status;
+  status.available = accounting_worker_available;
+  status.queued = accounting_refresh_requested;
+  status.running = accounting_refresh_running;
+  pthread_mutex_unlock(&accounting_mutex);
+  return status;
 }
 
 } /* namespace directordaemon */

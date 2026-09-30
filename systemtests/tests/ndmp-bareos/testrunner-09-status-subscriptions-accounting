@@ -48,11 +48,22 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
+refresh subscriptions accounting
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+for _ in {1..60}; do
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/status-subscriptions-accounting.out
 status subscriptions accounting client=isilon fileset=isilon-fileset
 END_OF_DATA
-
-run_bconsole "${tmp}/bconcmds"
+  run_bconsole "${tmp}/bconcmds"
+  if grep -qE "^isilon / isilon-fileset: [1-9][0-9,]* files, [1-9][0-9,]* bytes accounted" \
+    "${log_home}/status-subscriptions-accounting.out"; then
+    break
+  fi
+  sleep 1
+done
 
 check_log "${log_home}/status-subscriptions-accounting.out"
 
@@ -85,11 +96,23 @@ run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/no-file-history-backup.out"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
+refresh subscriptions accounting
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+for _ in {1..60}; do
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/no-file-history-accounting.out
 status subscriptions accounting client=isilon fileset=isilon-fileset
 END_OF_DATA
+  run_bconsole "${tmp}/bconcmds"
+  if grep -q "^isilon / isilon-fileset: no per-file data available" \
+    "${log_home}/no-file-history-accounting.out"; then
+    break
+  fi
+  sleep 1
+done
 
-run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/no-file-history-accounting.out"
 
 if ! grep -qE "^isilon / isilon-fileset: no per-file data available \\(NDMP file history may be disabled\\) -- excluded \\(not guessed\\)\\." \

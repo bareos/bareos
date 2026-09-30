@@ -149,6 +149,38 @@ check_logical_size()
   fi
 }
 
+refresh_accounting_snapshot()
+{
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/accounting-adminjob.out
+run job=SubscriptionAccounting yes
+wait
+END_OF_DATA
+  run_bconsole
+}
+
+wait_for_accounting_result()
+{
+  local report="$1" expected="$2"
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $report
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions accounting client=does-not-exist
+END_OF_DATA
+    run_bconsole
+    if grep -qE "$expected" "$report"; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "timed out waiting for subscription accounting snapshot containing ${expected}" >&2
+  if [[ -f "$tmp/accounting-adminjob.out" ]]; then
+    cat "$tmp/accounting-adminjob.out" >&2
+  fi
+  return 1
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -192,14 +224,15 @@ messages
 run job=$JobName level=Full yes
 wait
 messages
-status subscriptions accounting client=bareos-fd fileset=AcctTest
-status subscriptions accounting client=does-not-exist
 END_OF_DATA
 
 record_file_stats "immediately before Full"
 run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Full"
+refresh_accounting_snapshot
+wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
+  "bareos-fd / AcctTest: [1-9][0-9,]* files"
 record_catalog_stats "full"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals full)
@@ -287,13 +320,15 @@ messages
 run job=$JobName level=Incremental yes
 wait
 messages
-status subscriptions accounting client=bareos-fd fileset=AcctTest
 END_OF_DATA
 
 record_file_stats "immediately before Incremental"
 run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Incremental"
+refresh_accounting_snapshot
+wait_for_accounting_result "$tmp/status-subscriptions-accounting-incremental.log" \
+  "bareos-fd / AcctTest: [1-9][0-9,]* files"
 record_catalog_stats "incremental"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals incremental)

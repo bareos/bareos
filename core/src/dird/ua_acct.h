@@ -25,18 +25,29 @@
 
 namespace directordaemon {
 
+struct SubscriptionAccountingThreadStatus {
+  bool available{false};
+  bool queued{false};
+  bool running{false};
+};
+
 /**
  * Implements 'status subscriptions accounting [client=<name>]
- * [fileset=<name>]' -- computes the real, on-disk subscription/accounting
- * byte totals from File.LStat (st_size/st_blocks), instead of the
- * guessed/estimated numbers used by the rest of 'status subscriptions'.
- * Reports allocated bytes and logical file size.
+ * [fileset=<name>]' -- displays the latest background-calculated
+ * subscription/accounting totals from File.LStat (st_size/st_blocks),
+ * instead of the guessed/estimated numbers used by the rest of
+ * 'status subscriptions'.
  *
  * Returns true on success (even if some tuples had to be excluded for
  * lack of file information), false on a hard error (e.g. database not
  * available, invalid argument).
  */
 bool DoSubscriptionAccounting(UaContext* ua);
+
+bool StartSubscriptionAccountingThread();
+void StopSubscriptionAccountingThread();
+bool RequestSubscriptionAccountingRefresh(UaContext* ua);
+SubscriptionAccountingThreadStatus GetSubscriptionAccountingThreadStatus();
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_ACCT_H_

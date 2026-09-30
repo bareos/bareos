@@ -1847,12 +1847,47 @@ status subscriptions
    To get a real, catalog-based accounting report instead of the estimate
    above, use the keyword ``accounting`` (e.g.
    :bcommand:`status subscriptions accounting`). Unlike the report above,
-   which estimates backed up data from job-level totals, this mode computes
-   exact file counts and sizes still on record for every Client/FileSet
-   combination, based on the actual ``File`` catalog table rows (``LStat``)
-   of the most recent backup chain (latest Full, plus a later Differential
-   if any, plus all subsequent Incrementals), deduplicated so that only the
-   latest version of every file is counted once.
+   which estimates backed up data from job-level totals, this mode displays
+   the latest successfully calculated snapshot of exact file counts and
+   sizes for every Client/FileSet combination. The snapshot is refreshed by
+   a background worker when requested. Running the status command does not
+   start a calculation.
+
+   The standard Director configuration shipped with Bareos already includes
+   the ``SubscriptionAccounting`` Admin Job and its daily Schedule. The
+   default Schedule runs every day at 14:00 local time:
+
+   .. code-block:: bareosconfig
+
+      Schedule {
+        Name = "SubscriptionAccounting"
+        Run = sun-sat at 14:00
+      }
+
+      Job {
+        Name = "SubscriptionAccounting"
+        JobDefs = "DefaultJob"
+        Type = Admin
+        Schedule = "SubscriptionAccounting"
+        RunScript {
+          RunsWhen = Before
+          Console = "refresh subscriptions accounting"
+        }
+      }
+
+   The packaged Job inherits Client, FileSet, and other required settings
+   from ``DefaultJob``. Change the shipped Schedule resource if another
+   daily time or calendar is preferred. Bareos's ordinary scheduler runs the
+   Admin Job and records it in job history; starting or reloading the
+   Director does not trigger a calculation. The
+   :bcommand:`refresh subscriptions accounting` command can also request an
+   additional refresh directly. It queues the calculation in the background
+   and returns immediately; repeated requests while a refresh is running or
+   already queued are coalesced.
+
+   The accounting status report shows whether the worker is idle, queued,
+   running, or unavailable. Structured output includes the worker state in
+   ``accounting_snapshot.refresh_thread_state``.
 
    The report provides two sizes for a Client/FileSet combination:
    allocated bytes, based on ``st_blocks * 512`` for Unix-like clients,
@@ -1870,7 +1905,7 @@ status subscriptions
 
       *<input>status subscriptions accounting</input>
 
-      Real (File.LStat-based) subscription accounting report:
+      Real (File.LStat-based) subscription accounting report from snapshot at 2026-09-30 12:00:00:
       linux-fd / system: 128,532 files, 24,318,732,288 bytes accounted (rule: st_blocks*512, 4 jobs in chain).
         Logical size (st_size): 25,004,123,456 bytes.
       windows-fd / system: 84,221 files, 12,004,556,800 bytes accounted (rule: st_size, 3 jobs in chain).
@@ -1883,6 +1918,17 @@ status subscriptions
    can be used to restrict the report to a single client and/or fileset,
    for example
    :bcommand:`status subscriptions accounting client=linux-fd`.
+
+   The report includes the snapshot calculation time. A snapshot older than
+   24 hours is flagged as stale. If the latest background refresh failed,
+   the report warns that it is showing the last successful snapshot; a
+   failed refresh never replaces previously calculated totals. If no
+   snapshot has completed yet, the command reports that no data is available
+   and includes the latest refresh error, if any. Changes to backups,
+   pruning, or catalog data are reflected after the next successful refresh.
+   Structured output also includes an ``accounting_snapshot`` object with
+   ``available``, ``calculated_at``, and ``stale`` fields, plus
+   ``last_refresh_error`` when the latest refresh failed.
 
    For every accounted Client/FileSet combination, ``bytes`` in the
    structured output and the main text line report allocated bytes using

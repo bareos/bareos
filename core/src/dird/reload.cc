@@ -20,6 +20,7 @@
 */
 
 #include "dird/reload.h"
+#include "dird/ua_acct.h"
 
 #include <cassert>
 #include <atomic>
@@ -194,6 +195,7 @@ bool DoReloadConfig()
   }
 
   StopStatisticsThread();
+  StopSubscriptionAccountingThread();
 
   LockJobs();
   ResLocker _{my_config};
@@ -231,6 +233,7 @@ bool DoReloadConfig()
   }
   SetWorkingDirectory(me->working_directory);
   StartStatisticsThread();
+  StartSubscriptionAccountingThread();
   UnlockJobs();
 
   is_reloading.clear();
