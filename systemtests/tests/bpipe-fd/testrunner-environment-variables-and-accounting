@@ -3,8 +3,17 @@ set -e
 set -o pipefail
 set -u
 #
-# This test checks whether the environment variables for the bpipe plugin work correctly.
-# Both the read- and the writeprogram use the set environment variables
+# This test checks whether the environment variables for the bpipe plugin
+# work correctly. Both the read- and the writeprogram use the set
+# environment variables.
+#
+# It also covers the bpipe plugin's corrected-attributes resend (the
+# fallback byte/block count reported when the plugin doesn't set an
+# exact size), including that the corrected attributes reach the
+# Director before the digest, that "status subscriptions accounting"
+# reports the corrected size, and that a Virtual Full consolidation of
+# the bpipe-backed file retains the corrected attributes and accounting
+# total unchanged.
 #
 
 TestName="$(basename "$(pwd)")"

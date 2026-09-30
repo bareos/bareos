@@ -28,6 +28,11 @@ set -u
 #  via a virtualfull.  Afterwards check that the virtualfull
 #  worked via a restore.
 #
+# Also confirms "status subscriptions accounting" reports the same
+# file count/byte total before and after the Virtual Full consolidation
+# (the consolidated File rows must still de-duplicate to the same
+# accounted totals).
+#
 
 TestName="$(basename "$(pwd)")"
 export TestName
