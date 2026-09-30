@@ -31,6 +31,33 @@ set -u
 # Incremental job with one file resized to confirm the multi-job chain
 # de-duplication (latest JobTDate wins per catalog path) still works.
 #
+# On non-Windows hosts the byte total is checked for an exact match
+# against the source files' real st_blocks*512 (via `stat`, see
+# file_blocks_bytes() below), not just a "multiple of 512" sanity bound
+# -- the systemtest's FD backs up files on the very same local
+# filesystem the test script runs on, so the expected value is knowable
+# exactly, not just approximately.
+#
+# Sum of a file's real, filesystem-allocated st_blocks*512, in the same
+# 512-byte units on both Linux (`stat -c %b`) and FreeBSD (`stat -f %b`)
+# -- POSIX defines %b that way, independent of the filesystem's own
+# block/sector size. Used to compute the exact byte total the daemon's
+# st_blocks*512 rule is expected to report, instead of only checking a
+# multiple of 512.
+file_blocks_bytes()
+{
+  local blocks total=0 f
+  for f in "$@"; do
+    if [ "$(uname -s)" == FreeBSD ]; then
+      blocks="$(stat -f %b "$f")"
+    else
+      blocks="$(stat -c %b "$f")"
+    fi
+    total=$((total + blocks * 512))
+  done
+  echo "$total"
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -52,6 +79,8 @@ generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
 generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
 raw_bytes=$((1 + 512 + 1000))
+expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
+  "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
 
 # An (empty) subdirectory and a symlink, both explicitly included in the
 # AcctTest fileset alongside the three regular files above. Their catalog
@@ -83,14 +112,11 @@ check_for_zombie_jobs storage=File
 # Windows client's st_blocks is a purely synthetic value derived from
 # st_size, so the report uses st_size directly there (exact, deterministic
 # match against the known raw byte total). Every other platform uses the
-# real, filesystem-reported st_blocks*512 -- real block-allocation data,
-# whose exact value depends on the underlying filesystem's allocation
-# strategy (block/sector size, compression, tiny-file embedding, sparse
-# files, etc.) and cannot be reliably predicted from outside the backup
-# itself, so only a sanity bound is checked there: a multiple of 512.
-# (No lower-bound-vs-raw-bytes check: on filesystems that compress or
-# deduplicate blocks, e.g. compressed ZFS, st_blocks*512 can legitimately
-# be smaller than the logical file content size.)
+# real, filesystem-reported st_blocks*512 -- since the systemtest's FD
+# backs up files on the very same local filesystem the test script itself
+# runs on, `stat`'ing the source files right before/after the backup
+# yields the exact same st_blocks the daemon saw, so the expected byte
+# total can be checked exactly here too, not just as a multiple of 512.
 line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
@@ -112,9 +138,9 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
     fi
   else
     if [[ "$actual_rule" != 'st_blocks*512' ||
-      $((bytes % 512)) -ne 0 ]]; then
+      "$bytes" -ne "$expected_blocks_bytes" ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
-        "expected a multiple of 512 with rule st_blocks*512!" >&2
+        "expected '${expected_blocks_bytes} bytes (rule: st_blocks*512)'!" >&2
       estat=1
     fi
   fi
@@ -149,6 +175,8 @@ fi
 sleep 2
 generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
 raw_bytes=$((1 + 512 + 65536))
+expected_blocks_bytes="$(file_blocks_bytes "$tmp/acct-data/file-1byte.bin" \
+  "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/file-1000bytes.bin")"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -183,9 +211,9 @@ elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]
     fi
   else
     if [[ "$actual_rule" != 'st_blocks*512' ||
-      $((bytes % 512)) -ne 0 ]]; then
+      "$bytes" -ne "$expected_blocks_bytes" ]]; then
       echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
-        "expected a multiple of 512 with rule st_blocks*512!" >&2
+        "expected '${expected_blocks_bytes} bytes (rule: st_blocks*512)' (chain dedup broken)!" >&2
       estat=1
     fi
     if [[ "$bytes" -le "$bytes_full" ]]; then
