@@ -1136,10 +1136,16 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       auto* b_ctx = static_cast<FiledPluginContext*>(ctx->core_private_context);
       std::optional<PluginFileSizeBlocks> corrected_file_size_blocks;
       bool using_fd_counted_fallback = false;
-      if (file_finished_successfully && !IS_FT_OBJECT(sp.type)) {
+      // A read error during SaveFile() can bump JobErrors while still
+      // returning success (see file_finished_successfully above). Gate
+      // both the plugin-supplied correction and the FD-counted fallback
+      // on it, so a correction is never applied/resent for a file whose
+      // data transfer actually failed partway through.
+      if (file_finished_successfully && !IS_FT_OBJECT(sp.type)
+          && jcr->JobErrors == job_errors_before) {
         if (b_ctx->corrected_file_size_blocks) {
           corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
-        } else if (jcr->JobErrors == job_errors_before) {
+        } else {
           corrected_file_size_blocks = FdCountedFileSizeBlocks(
               original_statp, save_status, jcr->IsJobCanceled(), data_was_read,
               read_bytes_before, read_bytes_after);
