@@ -1854,6 +1854,16 @@ status subscriptions
    plus all subsequent Incrementals), deduplicated so that only the latest
    version of every file is counted once.
 
+   The reported value for a Client/FileSet combination represents the
+   total size of the data currently backed up for that combination, i.e.
+   what a :command:`du` on the client's file system would show for the
+   files covered by this FileSet at the time of the most recent backup --
+   not the sum of everything that has ever been transferred by every
+   backup job. A file that was saved unchanged by several successive
+   Incrementals is counted only once, at its newest version's size; a
+   file that no longer exists on the client (recorded as deleted by
+   accurate mode) is not counted at all.
+
    .. code-block:: bconsole
       :caption: status subscriptions accounting
 
