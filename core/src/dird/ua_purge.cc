@@ -605,6 +605,7 @@ static void do_truncate_on_purge(UaContext* ua,
 {
   bool ok = false;
   uint64_t VolBytes = 0;
+  uint32_t VolFiles = 0;
 
   // TODO: Return if not mr->Recyle ?
   if (!mr->Recycle) { return; }
@@ -644,7 +645,10 @@ static void do_truncate_on_purge(UaContext* ua,
   // Send relabel command, and check for valid response
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
-    if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
+    if (sscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ", &VolFiles,
+               &VolBytes)
+            == 2
+        || sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
       ok = true;
     }
   }
