@@ -1,0 +1,13 @@
+
+#
+# A NDMP Client.
+#
+Client {
+  Name = ndmjob
+  Address = 127.0.0.1
+  Port = @ndmjob_port@
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = MD5                           # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "ndmp"                         # ndmjob has the credentials hardcoded
+  Password = "ndmp"
+}

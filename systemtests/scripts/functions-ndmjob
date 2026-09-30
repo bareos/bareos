@@ -1,0 +1,134 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# Helpers to run ndmjob as an emulated NDMP server (DATA, TAPE and ROBOT
+# agent) for systemtests.
+#
+# Required variables:
+#   NDMJOB_BINARY  path to the ndmjob binary
+#   WRAP_TAR_DIR   directory containing wrap_tar and wrap_dump
+#   NDMJOB_PORT    port ndmjob listens on
+#   NDMJOB_DIR     working directory for config, logs, pid and dumpdates
+#
+# Optional variables:
+#   NDMJOB_ROBOT_DIR  directory of the robot simulator, its drives and
+#                     changer are announced to the DMA if set
+#
+# The NDMP credentials of ndmjob are hardcoded to ndmp/ndmp.
+
+ndmjob_write_config()
+{
+  # v3attr/v4attr: backup/recover filelist, incremental, fh_file and
+  # recover filehist
+  cat >"${NDMJOB_DIR}/ndmjob.conf" <<'END_OF_CONFIG'
+[butype dump]
+	v2attr 0x0
+	v3attr 0x1A66
+	v4attr 0x1A66
+[butype tar]
+	v2attr 0x0
+	v3attr 0x1A66
+	v4attr 0x1A66
+END_OF_CONFIG
+
+  # tape drives and changer of the robot simulator, reported to the DMA via
+  # NDMP_CONFIG_GET_TAPE_INFO and NDMP_CONFIG_GET_SCSI_INFO
+  if [ -n "${NDMJOB_ROBOT_DIR:-}" ]; then
+    cat >>"${NDMJOB_DIR}/ndmjob.conf" <<END_OF_CONFIG
+[tape ndmjob-simulated-tape]
+	device ${NDMJOB_ROBOT_DIR}/drive0
+	v3attr 0x3
+	v4attr 0x3
+[tape ndmjob-simulated-tape]
+	device ${NDMJOB_ROBOT_DIR}/drive1
+	v3attr 0x3
+	v4attr 0x3
+[scsi ndmjob-simulated-robot]
+	device ${NDMJOB_ROBOT_DIR}
+END_OF_CONFIG
+  fi
+}
+
+ndmjob_is_listening()
+{
+  (exec 3<>"/dev/tcp/127.0.0.1/${NDMJOB_PORT}") 2>/dev/null
+}
+
+start_ndmjob()
+{
+  local timeout=20
+
+  stop_ndmjob
+  mkdir -p "${NDMJOB_DIR}"
+  ndmjob_write_config
+
+  (
+    cd "${NDMJOB_DIR}" || exit 1
+    export PATH="${WRAP_TAR_DIR}:${PATH}"
+    export WRAP_TAR_DUMPDATES="${NDMJOB_DIR}/dumpdates"
+    # own session, so stop_ndmjob can terminate all forked children
+    exec setsid "${NDMJOB_BINARY}" -o daemon \
+      -o config-file="${NDMJOB_DIR}/ndmjob.conf" \
+      -p "${NDMJOB_PORT}" -d 7 \
+      >"${NDMJOB_DIR}/ndmjob.out" 2>&1 </dev/null
+  ) &
+  echo $! >"${NDMJOB_DIR}/ndmjob.pid"
+
+  while ! ndmjob_is_listening; do
+    timeout=$((timeout - 1))
+    if [ "${timeout}" -le 0 ]; then
+      echo "ndmjob did not start listening on port ${NDMJOB_PORT}" >&2
+      cat "${NDMJOB_DIR}/ndmjob.out" >&2 || :
+      return 1
+    fi
+    sleep 0.5
+  done
+  print_debug "ndmjob listening on port ${NDMJOB_PORT}"
+}
+
+stop_ndmjob()
+{
+  local pidfile="${NDMJOB_DIR}/ndmjob.pid"
+  local pid
+
+  [ -f "${pidfile}" ] || return 0
+  pid="$(cat "${pidfile}")"
+  if [ -n "${pid}" ]; then
+    # the daemon is a session leader, its process group id is its pid
+    kill -TERM -- "-${pid}" 2>/dev/null || :
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      kill -0 -- "-${pid}" 2>/dev/null || break
+      sleep 0.5
+    done
+    kill -KILL -- "-${pid}" 2>/dev/null || :
+  fi
+  rm -f "${pidfile}"
+}
+
+# Prepare the directory of the ndmjob robot simulator. The simulator
+# starts with a full set of storage slots (barcodes PTAG00XX..PTAG09XX)
+# and empty drives; the tape files are created when a tape is moved.
+setup_ndmjob_robot()
+{
+  local simdir="$1"
+
+  rm -rf "${simdir}"
+  mkdir -p "${simdir}"
+}
