@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,8 +90,8 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
     }
 
     NdmpStoreAttributeRecord(
-        nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(),
-        FileType,
+        nis->jcr, nis->FileIndex, pathname.c_str(), nis->virtual_filename,
+        attribs.c_str(), FileType,
         (fstat->node.valid == NDMP9_VALIDITY_VALID) ? fstat->node.value : 0,
         (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value
                                                        : 0);

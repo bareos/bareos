@@ -125,6 +125,7 @@ void NdmpDoQuery(UaContext* ua,
 
 // NDMP FHDB specific helpers.
 void NdmpStoreAttributeRecord(JobControlRecord* jcr,
+                              int32_t FileIndex,
                               char* fname,
                               char* linked_fname,
                               char* attributes,
