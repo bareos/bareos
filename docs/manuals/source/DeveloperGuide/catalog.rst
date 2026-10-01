@@ -55,13 +55,13 @@ Path
 The **Path** table contains shown above the path or directory names of all
 directories on the system or systems.
 
-+-------------+-----------+-------------+
-| Column Name | Data Type | Remark      |
-+=============+===========+=============+
-| PathId      | serial    | Primary Key |
-+-------------+-----------+-------------+
-| Path        | text      | Full Path   |
-+-------------+-----------+-------------+
++-------------+---------------+-------------+
+| Column Name | Data Type    | Remark      |
++=============+===============+=============+
+| PathId      | bigserial    | Primary Key |
++-------------+---------------+-------------+
+| Path        | text         | Full Path   |
++-------------+---------------+-------------+
 
 The filename and any disk name are stripped off. As with the filename,
 only one copy of each directory name is kept regardless of how many machines
@@ -76,13 +76,13 @@ The **File** table contains one entry for each file backed up by Bareos.
 +-------------+---------------+---------------------------------------+
 | Column Name | Data Type     | Remark                                |
 +=============+===============+=======================================+
-| FileId      | serial        | Primary Key                           |
+| FileId      | bigserial     | Primary Key                           |
 +-------------+---------------+---------------------------------------+
 | FileIndex   | integer       | The sequential file number in the Job |
 +-------------+---------------+---------------------------------------+
 | JobId       | integer       | Link to Job Record                    |
 +-------------+---------------+---------------------------------------+
-| PathId      | integer       | Link to Path Record                   |
+| PathId      | bigint        | Link to Path Record                   |
 +-------------+---------------+---------------------------------------+
 | DeltaSeq    | smallint      |                                       |
 +-------------+---------------+---------------------------------------+
@@ -94,7 +94,7 @@ The **File** table contains one entry for each file backed up by Bareos.
 +-------------+---------------+---------------------------------------+
 | LStat       | text          | File attributes in base64 encoding    |
 +-------------+---------------+---------------------------------------+
-| MD5         | text          | MD5/SHA1 signature in base64 encoding |
+| MD5         | text          | signature in base64 encoding          |
 +-------------+---------------+---------------------------------------+
 | name        | text          |                                       |
 +-------------+---------------+---------------------------------------+

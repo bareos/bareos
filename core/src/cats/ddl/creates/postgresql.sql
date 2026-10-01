@@ -1,11 +1,12 @@
 CREATE TABLE Path
 (
-    PathId            SERIAL      NOT NULL,
+    PathId            BIGSERIAL   NOT NULL,
     Path              TEXT        NOT NULL,
     PRIMARY KEY (PathId)
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
+ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE UNIQUE INDEX path_name_idx ON Path (Path);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
@@ -26,7 +27,7 @@ CREATE TABLE File (
    FileId           BIGSERIAL   NOT NULL,
    FileIndex        INTEGER     NOT NULL  DEFAULT 0,
    JobId            INTEGER     NOT NULL,
-   PathId           INTEGER     NOT NULL,
+   PathId           BIGINT      NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
    Fhinfo           NUMERIC(20) NOT NULL  DEFAULT 0,
@@ -36,6 +37,7 @@ CREATE TABLE File (
    Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
+ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- This index is important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
@@ -345,8 +347,8 @@ CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
 CREATE TABLE PathHierarchy
 (
-    PathId            INTEGER     NOT NULL,
-    PPathId           INTEGER     NOT NULL,
+    PathId            BIGINT     NOT NULL,
+    PPathId           BIGINT     NOT NULL,
     CONSTRAINT pathhierarchy_pkey PRIMARY KEY (PathId)
 );
 
@@ -355,7 +357,7 @@ CREATE INDEX pathhierarchy_ppathid
 
 CREATE TABLE PathVisibility
 (
-      PathId          INTEGER     NOT NULL,
+      PathId          BIGINT      NOT NULL,
       JobId           INTEGER     NOT NULL,
       Size            BIGINT      DEFAULT 0,
       Files           INTEGER     DEFAULT 0,
@@ -635,7 +637,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions
