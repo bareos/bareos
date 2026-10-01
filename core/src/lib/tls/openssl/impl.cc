@@ -98,11 +98,6 @@ class TlsOpenSsl : public Tls {
   bool TlsPostconnectVerifyCn(X509* cert,
                               const std::vector<std::string>& verify_list);
 
-  friend int tls_pem_callback_dispatch(char* buf,
-                                       int size,
-                                       int,
-                                       void* userdata);
-
   void ClientContextInsertCredentials(const PskCredentials& credentials);
 
   bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
@@ -125,9 +120,6 @@ class TlsOpenSsl : public Tls {
   std::vector<std::string> allowed_common_names{};
 
   std::optional<PskCredentials> credentials_;
-
-  CRYPTO_PEM_PASSWD_CB* pem_callback_{};
-  void* pem_userdata_{};
 };
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
@@ -358,10 +350,9 @@ cleanup:
   return status;
 }
 
-int tls_pem_callback_dispatch(char* buf, int size, int, void* userdata)
+int tls_pem_callback_dispatch(char* buf, int size, int, void*)
 {
-  TlsOpenSsl* p = static_cast<TlsOpenSsl*>(userdata);
-  return (p->pem_callback_(buf, size, p->pem_userdata_));
+  return CryptoDefaultPemCallback(buf, size, nullptr);
 }
 
 enum class CtxDataIndex : int
@@ -474,18 +465,12 @@ unsigned int psk_client_cb(SSL* ssl,
 TlsOpenSsl::TlsOpenSsl(const TlsResource* config, ssl_ptr ptr)
     : openssl_(std::move(ptr))
 {
+  Dmsg0(100, "Create TlsOpenSsl at %p\n", this);
+
   auto& tls_cert = config->tls_cert_;
   verify_peer_ = tls_cert.verify_peer_;
 
   allowed_common_names = tls_cert.allowed_certificate_common_names_;
-
-  pem_callback_ = CryptoDefaultPemCallback;
-  pem_userdata_ = NULL;
-
-  SSL_set_default_passwd_cb(ssl(), tls_pem_callback_dispatch);
-  SSL_set_default_passwd_cb_userdata(ssl(), static_cast<void*>(this));
-
-  Dmsg0(100, "Create TlsOpenSsl at %p\n", this);
 }
 
 TlsOpenSsl::~TlsOpenSsl() { Dmsg0(100, "Destruct TlsOpenSsl at %p\n", this); }
@@ -825,6 +810,7 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
     return {};
   }
 
+
   SSL_CONF_CTX_set_ssl_ctx(openssl_conf_ctx_.get(), openssl_ctx_.get());
 
   auto& tls_cert = res->tls_cert_;
@@ -866,6 +852,10 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
 
   SSL_CTX_set_options(openssl_ctx_.get(), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
   SSL_CTX_set_read_ahead(openssl_ctx_.get(), 1);
+
+  SSL_CTX_set_default_passwd_cb(openssl_ctx_.get(), tls_pem_callback_dispatch);
+  SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_.get(), nullptr);
+
 
   auto* used_cipher_list = tls_default_ciphers_;
   if (!cipherlist_.empty()) { used_cipher_list = cipherlist_.c_str(); }
