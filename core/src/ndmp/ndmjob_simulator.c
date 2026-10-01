@@ -1216,7 +1216,7 @@ static ndmp9_error execute_cdb_mode_sense_6(struct ndm_session* sess,
   int page, subpage;
   char* response;
   int response_len;
-  char* p;
+  unsigned char* p;
 
   if (request->cdb.cdb_len != 6 || request->data_dir != NDMP9_SCSI_DATA_DIR_IN)
     return scsi_fail_with_sense_code(sess, reply, SCSI_STATUS_CHECK_CONDITION,
@@ -1233,9 +1233,10 @@ static ndmp9_error execute_cdb_mode_sense_6(struct ndm_session* sess,
             SCSI_SENSE_KEY_ILLEGAL_REQUEST, ASQ_INVALID_FIELD_IN_CDB);
 
       response_len = 24;
-      p = response = NDMOS_API_MALLOC(response_len);
+      response = NDMOS_API_MALLOC(response_len);
       if (!response) return NDMP9_NO_MEM_ERR;
       NDMOS_API_BZERO(response, response_len);
+      p = (unsigned char*)response;
       *(p++) = response_len;
       *(p++) = 0;    /* reserved medium type */
       *(p++) = 0;    /* reserved device-specific parameter */
