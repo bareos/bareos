@@ -7,7 +7,8 @@ on the volume.
 
 .. note::
 
-   Since Bareos 26, the default Maximum File Size has changed.
+   Since Bareos :sinceVersion:`26: Maximum File Size default`, the
+   default Maximum File Size has changed.
 
 This directive creates EOF marks only on tape media. However, regardless
 of the medium type (tape, disk, USB, etc.), each time the Maximum File Size
