@@ -526,9 +526,10 @@ Tapespeed and blocksizes
 
 The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_
 discusses how :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\
-historically affected tape speed. Since Bareos 26, filemarks are written in
-immediate mode by default, so they no longer stall writes while the drive
-flushes its buffer. Increasing :config:option:`sd/device/MaximumFileSize` for
+historically affected tape speed. Since Bareos
+:sinceVersion:`26.0.0: Immediate tape filemarks and tape speed`, filemarks
+are written in immediate mode by default, so they no longer stall writes
+while the drive flushes its buffer. Increasing :config:option:`sd/device/MaximumFileSize` for
 tape write speed is no longer necessary; it can be left at its default value.
 
 While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of

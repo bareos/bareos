@@ -7,7 +7,8 @@ on the volume.
 
 .. note::
 
-   Since Bareos 26, the default Maximum File Size has changed.
+   Since Bareos :sinceVersion:`26.0.0: Maximum File Size default 25 GiB`,
+   the default Maximum File Size is 25 GiB (previously 1 GB).
 
 This directive creates EOF marks only on tape media. However, regardless
 of the medium type (tape, disk, USB, etc.), each time the Maximum File Size
