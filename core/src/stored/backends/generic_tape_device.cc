@@ -331,9 +331,8 @@ bool generic_tape_device::offline()
 /**
  * Write one or more end-of-file marks on the device.
  *
- * Try immediate filemarks first, which do not wait for the drive's buffer to
- * reach tape. If that fails, retry with non-immediate filemarks, which flush
- * the buffer.
+ * Use immediate filemarks when supported. On failure, retry with
+ * non-immediate filemarks, which flush the drive's buffer.
  *
  * Returns: true on success
  *          false on failure
@@ -360,10 +359,11 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
-  mt_com.mt_op = MTWEOFI;
+  mt_com.mt_op = HasCap(CAP_WEOFI) ? MTWEOFI : MTWEOF;
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  if (status < 0) {
+  if (status < 0 && mt_com.mt_op == MTWEOFI) {
+    if (errno == ENOTTY || errno == ENOSYS) { ClearCap(CAP_WEOFI); }
     Dmsg1(129, "Immediate filemark failed on %s, trying non-immediate\n",
           prt_name);
     mt_com.mt_op = MTWEOF;

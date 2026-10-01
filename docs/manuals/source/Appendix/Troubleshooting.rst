@@ -380,9 +380,11 @@ Please consider the following information when testing tape speed:
    :config:option:`sd/device/MaximumFileSize` bytes to improve positioning
    during restores. Since Bareos
    :sinceVersion:`26: Immediate tape filemarks and troubleshooting`,
-   filemarks are written in immediate mode by default; they do not wait
-   for the drive's buffer to flush and therefore no longer reduce tape
-   write speed in normal operation. You can leave
+   filemarks are written in immediate mode by default when supported;
+   they do not wait for the drive's buffer to flush and therefore do not
+   reduce tape write speed in normal operation. Disabled or failing
+   immediate filemarks fall back to regular filemarks, which may flush
+   the drive's buffer. You can normally leave
    :config:option:`sd/device/MaximumFileSize` at its default value instead
    of increasing it for performance. Larger values still mean fewer
    positioning points and can increase single-file restore times.

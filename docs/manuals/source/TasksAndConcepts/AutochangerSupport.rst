@@ -522,10 +522,11 @@ Tapespeed and blocksizes
 
    Since Bareos :sinceVersion:`23: Default tape block size`, the default
    block size is 1 MiB (1,048,576 bytes). Since Bareos
-   :sinceVersion:`26: Immediate filemarks by default`, filemarks no longer
-   wait for the tape drive to flush its buffer. For tape write speed, it
-   is no longer necessary to change either the maximum block size or
-   :config:option:`sd/device/MaximumFileSize` from their defaults.
+   :sinceVersion:`26: Immediate filemarks by default`, supported immediate
+   filemarks no longer wait for the tape drive to flush its buffer. For
+   tape write speed, it is normally unnecessary to change either the
+   maximum block size or :config:option:`sd/device/MaximumFileSize` from
+   their defaults.
    The original tuning guidance below is retained for reference.
 
 
@@ -533,8 +534,10 @@ The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/opt
 discusses how :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\
 historically affected tape speed. Since Bareos
 :sinceVersion:`26: Immediate tape filemarks and tape speed`, filemarks are
-written in immediate mode by default, so they no longer stall writes while
-the drive flushes its buffer. Increasing
+written in immediate mode by default when supported, so they do not stall
+writes while the drive flushes its buffer. If immediate filemarks are
+disabled with :config:option:`sd/device/HardwareImmediateEndOfFile` or fail,
+Bareos uses regular filemarks, which may flush the buffer. Increasing
 :config:option:`sd/device/MaximumFileSize` for tape write speed is no longer
 necessary; it can be left at its default value.
 
