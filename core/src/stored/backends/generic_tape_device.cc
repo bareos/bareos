@@ -328,6 +328,16 @@ bool generic_tape_device::offline()
   return true;
 }
 
+/**
+ * Write one or more immediate end-of-file marks on the device.
+ *
+ * An immediate filemark does not wait for the drive's buffer to reach tape.
+ * Do not retry with MTWEOF on failure: that would flush the buffer and change
+ * the operation's semantics.
+ *
+ * Returns: true on success
+ *          false on failure
+ */
 bool generic_tape_device::weof(int num)
 {
   mtop mt_com{};
@@ -353,12 +363,6 @@ bool generic_tape_device::weof(int num)
   mt_com.mt_op = MTWEOFI;
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  if (status < 0) {
-    Dmsg1(129, "Immediate filemark failed on %s, trying non-immediate\n",
-          prt_name);
-    mt_com.mt_op = MTWEOF;
-    status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  }
   if (status == 0) {
     block_num = 0;
     file += num;
@@ -368,7 +372,7 @@ bool generic_tape_device::weof(int num)
 
     clrerror(mt_com.mt_op);
     if (status == -1) {
-      Mmsg2(errmsg, T_("ioctl MTWEOF error on %s. ERR=%s.\n"), prt_name,
+      Mmsg2(errmsg, T_("ioctl MTWEOFI error on %s. ERR=%s.\n"), prt_name,
             be.bstrerror());
     }
   }
