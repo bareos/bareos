@@ -678,6 +678,7 @@ static void capcmd()
 {
   printf(T_("Configured device capabilities:\n"));
   printf("%sEOF ", g_dev->HasCap(CAP_EOF) ? "" : "!");
+  printf("%sWEOFI ", g_dev->HasCap(CAP_WEOFI) ? "" : "!");
   printf("%sBSR ", g_dev->HasCap(CAP_BSR) ? "" : "!");
   printf("%sBSF ", g_dev->HasCap(CAP_BSF) ? "" : "!");
   printf("%sFSR ", g_dev->HasCap(CAP_FSR) ? "" : "!");

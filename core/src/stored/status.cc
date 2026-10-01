@@ -569,12 +569,14 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
 
     len = Mmsg(
         msg,
-        "  %sEOF %sBSR %sBSF %sFSR %sFSF %sEOM %sREM %sRACCESS %sAUTOMOUNT "
+        "  %sEOF %sWEOFI %sBSR %sBSF %sFSR %sFSF %sEOM %sREM %sRACCESS "
+        "%sAUTOMOUNT "
         "%sLABEL %sANONVOLS %sALWAYSOPEN\n",
-        dev->HasCap(CAP_EOF) ? "" : "!", dev->HasCap(CAP_BSR) ? "" : "!",
-        dev->HasCap(CAP_BSF) ? "" : "!", dev->HasCap(CAP_FSR) ? "" : "!",
-        dev->HasCap(CAP_FSF) ? "" : "!", dev->HasCap(CAP_EOM) ? "" : "!",
-        dev->HasCap(CAP_REM) ? "" : "!", dev->HasCap(CAP_RACCESS) ? "" : "!",
+        dev->HasCap(CAP_EOF) ? "" : "!", dev->HasCap(CAP_WEOFI) ? "" : "!",
+        dev->HasCap(CAP_BSR) ? "" : "!", dev->HasCap(CAP_BSF) ? "" : "!",
+        dev->HasCap(CAP_FSR) ? "" : "!", dev->HasCap(CAP_FSF) ? "" : "!",
+        dev->HasCap(CAP_EOM) ? "" : "!", dev->HasCap(CAP_REM) ? "" : "!",
+        dev->HasCap(CAP_RACCESS) ? "" : "!",
         dev->HasCap(CAP_AUTOMOUNT) ? "" : "!",
         dev->HasCap(CAP_LABEL) ? "" : "!", dev->HasCap(CAP_ANONVOLS) ? "" : "!",
         dev->HasCap(CAP_ALWAYSOPEN) ? "" : "!");

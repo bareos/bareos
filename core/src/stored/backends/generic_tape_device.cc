@@ -331,9 +331,8 @@ bool generic_tape_device::offline()
 /**
  * Write one or more end-of-file marks on the device.
  *
- * Try immediate filemarks first, which do not wait for the drive's buffer to
- * reach tape. If that fails, retry with non-immediate filemarks, which flush
- * the buffer.
+ * Use immediate filemarks when supported. On failure, retry with
+ * non-immediate filemarks, which flush the drive's buffer.
  *
  * Returns: true on success
  *          false on failure
@@ -360,15 +359,24 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
-  mt_com.mt_op = MTWEOFI;
+#ifdef MTWEOFI
+  mt_com.mt_op = HasCap(CAP_WEOFI) ? MTWEOFI : MTWEOF;
+#else
+  // Platform tape headers (e.g. illumos) may not provide MTWEOFI.
+  ClearCap(CAP_WEOFI);
+  mt_com.mt_op = MTWEOF;
+#endif
   mt_com.mt_count = num;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
-  if (status < 0) {
+#ifdef MTWEOFI
+  if (status < 0 && mt_com.mt_op == MTWEOFI) {
+    if (errno == ENOTTY || errno == ENOSYS) { ClearCap(CAP_WEOFI); }
     Dmsg1(129, "Immediate filemark failed on %s, trying non-immediate\n",
           prt_name);
     mt_com.mt_op = MTWEOF;
     status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
   }
+#endif
   if (status == 0) {
     block_num = 0;
     file += num;
@@ -384,6 +392,39 @@ bool generic_tape_device::weof(int num)
   }
 
   return status == 0;
+}
+
+/**
+ * Flush the drive's buffer to the medium.
+ *
+ * Writing zero filemarks without the immediate flag is the tape
+ * synchronization point: it waits until buffered data, including data from
+ * earlier immediate filemarks, is on tape and reports deferred write errors.
+ *
+ * Returns: true on success
+ *          false on failure
+ */
+bool generic_tape_device::d_flush(DeviceControlRecord*)
+{
+  mtop mt_com{};
+
+  if (!IsOpen()) {
+    dev_errno = EBADF;
+    Mmsg1(errmsg, T_("Bad call to d_flush. Device %s not open\n"), prt_name);
+    return false;
+  }
+
+  mt_com.mt_op = MTWEOF;
+  mt_com.mt_count = 0;
+  if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
+    BErrNo be;
+    clrerror(-1);  // don't disable CAP_EOF if a zero count is rejected
+    Mmsg2(errmsg, T_("Flushing tape buffer on %s failed. ERR=%s.\n"), prt_name,
+          be.bstrerror());
+    return false;
+  }
+
+  return true;
 }
 
 /**

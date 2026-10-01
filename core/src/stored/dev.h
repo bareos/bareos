@@ -156,11 +156,12 @@ enum
   CAP_BLOCKCHECKSUM = 23,           /**< Create/test block checksum */
   CAP_IOERRATEOM = 24,              /**< IOError at EOM */
   CAP_IBMLINTAPE = 25,              /**< Using IBM lin_tape driver */
-  CAP_ADJWRITESIZE = 26             /**< Adjust write size to min/max */
+  CAP_ADJWRITESIZE = 26,            /**< Adjust write size to min/max */
+  CAP_WEOFI = 27                    /**< Has MTWEOFI */
 };
 
 // Keep this set to the last entry in the enum.
-constexpr int CAP_MAX = CAP_ADJWRITESIZE;
+constexpr int CAP_MAX = CAP_WEOFI;
 
 // Make sure you have enough bits to store all above bit fields.
 constexpr int CAP_BYTES = NbytesForBits(CAP_MAX + 1);
