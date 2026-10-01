@@ -1187,22 +1187,37 @@ void ConfigurationParser::StoreVerifyPeer(lexer* lc,
   if (setting) {
     SetItemVariable<VerifyPeerSetting>(*item, *setting);
   } else {
-    std::string alternatives;
+    /* VerifyPeerSetting was a bool previously.
+     * To make sure that configurations do not break, we also parse bools here.
+     * As VerifyPeerSetting also allows Yes/No, this is mostly done for
+     * the deprecated options true/false.  This fallback can be removed
+     * as soon as those deprecated options are removed. */
+    switch (parse_conf_bool(lc)) {
+      case parse_bool_result::True: {
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Always);
+      } break;
+      case parse_bool_result::False: {
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Never);
+      } break;
+      case parse_bool_result::Error: {
+        std::string alternatives;
 
-    static_assert(std::size(VerifyPeerSettingByName) >= 2);
+        static_assert(std::size(VerifyPeerSettingByName) >= 2);
 
-    auto setting_count = std::size(VerifyPeerSettingByName);
+        auto setting_count = std::size(VerifyPeerSettingByName);
 
-    for (size_t i = 0; i < setting_count - 1; ++i) {
-      alternatives += VerifyPeerSettingByName[i].first;
-      alternatives += ", ";
+        for (size_t i = 0; i < setting_count - 1; ++i) {
+          alternatives += VerifyPeerSettingByName[i].first;
+          alternatives += ", ";
+        }
+
+        alternatives += "or ";
+        alternatives += VerifyPeerSettingByName[setting_count - 1].first;
+
+
+        scan_err(lc, "Expect %s, got: %s", alternatives.c_str(), lc->str);
+      } break;
     }
-
-    alternatives += "or ";
-    alternatives += VerifyPeerSettingByName[setting_count - 1].first;
-
-
-    scan_err(lc, "Expect %s, got: %s", alternatives.c_str(), lc->str);
   }
 
   ScanToEol(lc);
