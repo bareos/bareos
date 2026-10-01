@@ -42,6 +42,20 @@ TEST(ConfigParser_SD, test_stored_config)
 
   my_config->DumpResources(PrintMessage, NULL);
 
+  auto* default_device = dynamic_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, "DefaultFileSize", false));
+  auto* decimal_device = dynamic_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, "DecimalFileSize", false));
+  auto* numeric_device = dynamic_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, "NumericFileSize", false));
+  ASSERT_NE(default_device, nullptr);
+  ASSERT_NE(decimal_device, nullptr);
+  ASSERT_NE(numeric_device, nullptr);
+  EXPECT_EQ(DeviceResource{}.max_file_size, 25LL * 1024 * 1024 * 1024);
+  EXPECT_EQ(default_device->max_file_size, 25LL * 1024 * 1024 * 1024);
+  EXPECT_EQ(decimal_device->max_file_size, 25'000'000'000LL);
+  EXPECT_EQ(numeric_device->max_file_size, 100'000'000'000LL);
+
   delete my_config;
 }
 
