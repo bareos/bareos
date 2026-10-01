@@ -1187,7 +1187,22 @@ void ConfigurationParser::StoreVerifyPeer(lexer* lc,
   if (setting) {
     SetItemVariable<VerifyPeerSetting>(*item, *setting);
   } else {
-    scan_err(lc, T_("Expect %s, got: %s"), "Yes, No, or AsClient", lc->str);
+    std::string alternatives;
+
+    static_assert(std::size(VerifyPeerSettingByName) >= 2);
+
+    auto setting_count = std::size(VerifyPeerSettingByName);
+
+    for (size_t i = 0; i < setting_count - 1; ++i) {
+      alternatives += VerifyPeerSettingByName[i].first;
+      alternatives += ", ";
+    }
+
+    alternatives += "or ";
+    alternatives += VerifyPeerSettingByName[setting_count - 1].first;
+
+
+    scan_err(lc, "Expect %s, got: %s", alternatives.c_str(), lc->str);
   }
 
   ScanToEol(lc);
