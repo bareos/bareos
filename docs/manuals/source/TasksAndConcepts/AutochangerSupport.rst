@@ -519,17 +519,30 @@ Tapespeed and blocksizes
 .. index:: Blocksize; optimize
 
 .. note::
-  As of Bareos 23, the default block size has been increased to 1 MiB (1.048.576 bytes).
-  This should provide optimal tape performance in the default configuration and remedy the need to tune block sizes.
-  The original chapter has been preserved in its original state for reference.
+
+   Since Bareos :sinceVersion:`23: Default tape block size`, the default
+   block size is 1 MiB (1,048,576 bytes). Since Bareos
+   :sinceVersion:`26: Immediate filemarks by default`, supported immediate
+   filemarks no longer wait for the tape drive to flush its buffer. For
+   tape write speed, it is normally unnecessary to change either the
+   maximum block size or :config:option:`sd/device/MaximumFileSize` from
+   their defaults.
+   The original tuning guidance below is retained for reference.
 
 
 The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_
 discusses how :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\
-historically affected tape speed. Since Bareos 26, filemarks are written in
-immediate mode by default, so they no longer stall writes while the drive
-flushes its buffer. Increasing :config:option:`sd/device/MaximumFileSize` for
-tape write speed is no longer necessary; it can be left at its default value.
+historically affected tape speed. Since Bareos
+:sinceVersion:`26: Immediate tape filemarks and tape speed`, filemarks are
+written in immediate mode by default when supported, so they do not stall
+writes while the drive flushes its buffer. If immediate filemarks are
+disabled with :config:option:`sd/device/HardwareImmediateEndOfFile` or fail,
+Bareos uses regular filemarks, which may flush the buffer. Bareos still
+waits for the drive to flush its buffer after labeling a volume, at the
+end of a job and at the end of a volume, so write errors are detected
+before the data is considered written. Increasing
+:config:option:`sd/device/MaximumFileSize` for tape write speed is no longer
+necessary; it can be left at its default value.
 
 While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of
 course then the new volumes would be unreadable.

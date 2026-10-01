@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,6 +73,7 @@ class generic_tape_device : public Device {
   virtual ssize_t d_read(int fd, void* buffer, size_t count) override;
   virtual ssize_t d_write(int fd, const void* buffer, size_t count) override;
   virtual bool d_truncate(DeviceControlRecord* dcr) override;
+  virtual bool d_flush(DeviceControlRecord* dcr) override;
 
  private:
   bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout);

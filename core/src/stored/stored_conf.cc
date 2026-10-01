@@ -153,6 +153,7 @@ static const ResourceItem dev_items[] = {
   { "DeviceOptions", CFG_TYPE_STR, ITEM(res_dev, device_options), {config::IntroducedIn{15, 2, 0}}},
   { "DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev, diag_device_name), {}},
   { "HardwareEndOfFile", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), {config::DefaultValue{"on"}, config::Code{CAP_EOF}}},
+  { "HardwareImmediateEndOfFile", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), {config::IntroducedIn{26, 0, 0}, config::DefaultValue{"on"}, config::Code{CAP_WEOFI}}},
   { "HardwareEndOfMedium", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), {config::DefaultValue{"on"}, config::Code{CAP_EOM}}},
   { "BackwardSpaceRecord", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), {config::DefaultValue{"on"}, config::Code{CAP_BSR}}},
   { "BackwardSpaceFile", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), {config::DefaultValue{"on"}, config::Code{CAP_BSF}}},

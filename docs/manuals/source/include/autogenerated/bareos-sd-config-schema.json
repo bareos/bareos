@@ -593,6 +593,13 @@
           "default_value": "on",
           "equals": true
         },
+        "HardwareImmediateEndOfFile": {
+          "datatype": "BIT",
+          "code": 27,
+          "default_value": "on",
+          "equals": true,
+          "versions": "26.0.0-"
+        },
         "HardwareEndOfMedium": {
           "datatype": "BIT",
           "code": 5,
