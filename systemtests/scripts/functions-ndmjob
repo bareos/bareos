@@ -28,13 +28,18 @@
 #   NDMJOB_DIR     working directory for config, logs, pid and dumpdates
 #
 # Optional variables:
-#   NDMJOB_ROBOT_DIR  directory of the robot simulator, its drives and
-#                     changer are announced to the DMA if set
+#   NDMJOB_ROBOT_DIRS  array of robot simulator directories; their drives and
+#                      changers are announced to the DMA if set
+#   NDMJOB_ROBOT_DIR   directory of a single robot simulator, used when
+#                      NDMJOB_ROBOT_DIRS is not set
 #
 # The NDMP credentials of ndmjob are hardcoded to ndmp/ndmp.
 
 ndmjob_write_config()
 {
+  local robot_dir
+  local -a robot_dirs=()
+
   # v3attr/v4attr: backup/recover filelist, incremental, fh_file and
   # recover filehist
   cat >"${NDMJOB_DIR}/ndmjob.conf" <<'END_OF_CONFIG'
@@ -50,20 +55,26 @@ END_OF_CONFIG
 
   # tape drives and changer of the robot simulator, reported to the DMA via
   # NDMP_CONFIG_GET_TAPE_INFO and NDMP_CONFIG_GET_SCSI_INFO
-  if [ -n "${NDMJOB_ROBOT_DIR:-}" ]; then
+  if declare -p NDMJOB_ROBOT_DIRS >/dev/null 2>&1; then
+    robot_dirs=("${NDMJOB_ROBOT_DIRS[@]}")
+  elif [ -n "${NDMJOB_ROBOT_DIR:-}" ]; then
+    robot_dirs=("${NDMJOB_ROBOT_DIR}")
+  fi
+
+  for robot_dir in "${robot_dirs[@]}"; do
     cat >>"${NDMJOB_DIR}/ndmjob.conf" <<END_OF_CONFIG
 [tape ndmjob-simulated-tape]
-	device ${NDMJOB_ROBOT_DIR}/drive0
+	device ${robot_dir}/drive0
 	v3attr 0x3
 	v4attr 0x3
 [tape ndmjob-simulated-tape]
-	device ${NDMJOB_ROBOT_DIR}/drive1
+	device ${robot_dir}/drive1
 	v3attr 0x3
 	v4attr 0x3
 [scsi ndmjob-simulated-robot]
-	device ${NDMJOB_ROBOT_DIR}
+	device ${robot_dir}
 END_OF_CONFIG
-  fi
+  done
 }
 
 ndmjob_is_listening()

@@ -51,6 +51,10 @@ run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/full.out"
 expect_grep "Termination:.*Backup OK" "${log_home}/full.out" \
   "full backup did not succeed"
+expect_grep "${NDMJOB_ROBOT1_DIR}/drive0" "${log_home}/full.out" \
+  "drive 0 of robot 1 was not discovered"
+expect_grep "${NDMJOB_ROBOT1_DIR}/drive1" "${log_home}/full.out" \
+  "drive 1 of robot 1 was not discovered"
 expect_grep "${NDMP_FILESYSTEM}/testfile2" "${log_home}/list.out" \
   "file history of the full backup is missing"
 

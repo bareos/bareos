@@ -42,16 +42,24 @@ make_ndmp_data_full
 save_ndmp_reference
 
 start_ndmjob
-setup_ndmjob_robot "${NDMJOB_ROBOT_DIR}"
+setup_ndmjob_robot "${NDMJOB_ROBOT1_DIR}"
+setup_ndmjob_robot "${NDMJOB_ROBOT2_DIR}"
 
 bin/bareos start
 bin/bareos status
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${tmp}/setup.out
+@$out ${tmp}/robot1-status.out
 status storage=ndmjob
-update slots storage=ndmjob drive=0
-label barcodes storage=ndmjob drive=0 pool=ndmp-tape yes
+@$out ${tmp}/robot2-status.out
+status storage=ndmjob-robot2
+@$out ${tmp}/setup.out
+update slots storage=ndmjob
+update slots storage=ndmjob-robot2
+label barcodes storage=ndmjob drive=0 slot=1-2 pool=ndmp-tape yes
+label barcodes storage=ndmjob drive=1 slot=3-5 pool=ndmp-tape yes
+label barcodes storage=ndmjob-robot2 drive=0 slot=6-7 pool=ndmp-tape-robot2 yes
+label barcodes storage=ndmjob-robot2 drive=1 slot=8-10 pool=ndmp-tape-robot2 yes
 wait
 messages
 list volumes
@@ -59,7 +67,24 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-if ! grep -q "PTAG00XX" "${tmp}/setup.out"; then
-  echo "labeling the volumes of the ndmjob robot failed" >&2
+for drive in \
+  "${NDMJOB_ROBOT1_DIR}/drive0" "${NDMJOB_ROBOT1_DIR}/drive1"; do
+  if ! grep -Fq "${drive}" "${tmp}/robot1-status.out"; then
+    echo "drive ${drive} is missing from robot 1" >&2
+    exit 1
+  fi
+done
+
+for drive in \
+  "${NDMJOB_ROBOT2_DIR}/drive0" "${NDMJOB_ROBOT2_DIR}/drive1"; do
+  if ! grep -Fq "${drive}" "${tmp}/robot2-status.out"; then
+    echo "drive ${drive} is missing from robot 2" >&2
+    exit 1
+  fi
+done
+
+if ! grep -q "PTAG00XX" "${tmp}/setup.out" \
+  || ! grep -q "PTAG09XX" "${tmp}/setup.out"; then
+  echo "labeling the volumes of both ndmjob robots failed" >&2
   exit 1
 fi

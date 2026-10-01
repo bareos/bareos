@@ -45,6 +45,7 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 restore select jobid=2 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump
 mark ${NDMP_FILESYSTEM}/incremental
 done
+1
 yes
 wait
 messages

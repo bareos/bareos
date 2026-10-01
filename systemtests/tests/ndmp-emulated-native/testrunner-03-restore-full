@@ -43,6 +43,7 @@ rm -rf "${NDMP_FILESYSTEM}"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
 restore jobid=1 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump all done yes
+1
 wait
 messages
 END_OF_DATA
