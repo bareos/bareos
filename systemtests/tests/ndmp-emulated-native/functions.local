@@ -45,7 +45,9 @@ save_ndmp_reference()
 # compare the restored full backup in $1 with the reference
 check_ndmp_data_full()
 {
-  diff -r --no-dereference "${NDMP_REFERENCE}" "$1"
+  # diff of FreeBSD 13 has no --no-dereference, check the symlink explicitly
+  diff -r "${NDMP_REFERENCE}" "$1" \
+    && [ "$(readlink "$1/sub/link")" = "../testfile" ]
 }
 
 # NDMP_NATIVE jobs only involve the director and ndmjob, so the generic
