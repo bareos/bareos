@@ -405,7 +405,7 @@ Without proper setup and maintenance, your Catalog may continue to grow indefini
 .. _FreeSpacePostgres:
 
 Free space needed with PostgreSQL Database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To ensure that all PostgreSQL maintenance operations like vacuuming and reindexing roll out smoothly we highly recommend not to fill the disk containing the postgresql data directory to more than 50% during normal operation.
 If this is not possible, you might need to make more space available at least temporary when the database is being upgraded to a new schema version.
@@ -433,6 +433,91 @@ To check how much temp files and bytes have been used you can run the following 
    +---------+------------+---------------+
    Enter SQL query:
    End query mode.
+   *
+
+
+.. _CheckSpaceUsedPostgres:
+
+Check space used by Bareos PostgreSQL database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To know what space is used by Bareos Postgresql database you can use traditional method,
+
+
+Another way is to query the database itself:
+
+.. code-block:: bconsole
+   :caption: SQL query to show global used space
+
+   *.sql query="SELECT pg_size_pretty(pg_database_size('bareos'));
+     Automatically selected Catalog: mycatalog
+     Using Catalog "mycatalog"
+     +-----------------+
+     | pg_size_pretty |
+     +-----------------+
+     | 22 GB          |
+     +-----------------+
+   *
+
+.. code-block:: bconsole
+   :caption: SQL query to show table and indexes used space
+
+   *sqlquery
+     SELECT ut.relname,
+         pg_size_pretty(pg_total_relation_size(ut.relname::text)) AS total_sz,
+         pg_size_pretty(pg_table_size(ut.relname::text)) AS tbl_sz,
+         pg_size_pretty(pg_indexes_size(ut.relname::text)) AS idx_sz,
+         pgc.reltuples::bigint,
+         CASE
+           WHEN (pgc.reltuples < 0) THEN 0
+           ELSE (pg_total_relation_size(ut.relname::text) / (pgc.reltuples+1))::int
+         END AS bytes_per_row,
+         ut.n_dead_tup,
+         ut.last_vacuum,
+         ut.last_autovacuum,
+         ut.last_analyze,
+         ut.last_autoanalyze
+     FROM
+         pg_stat_user_tables AS ut,
+         pg_class AS pgc
+     WHERE
+         pgc.relname = ut.relname AND ut.relname != 'batch'
+     ORDER BY
+         pg_total_relation_size(ut.relname::text) DESC;
+
+     +--------------------+------------+------------+------------+---------------+------------+-------------+-------------------------------+--------------+-------------------------------+
+     | relname            | total_sz   | idx_sz     | reltuples  | bytes_per_row | n_dead_tup | last_vacuum | last_autovacuum               | last_analyze | last_autoanalyze              |
+     +--------------------+------------+------------+------------+---------------+------------+-------------+-------------------------------+--------------+-------------------------------+
+     | file               | 20 GB      | 15 GB      | 29,595,856 |           727 |      1,944 |             | 2026-10-01 03:19:23.570283+02 |              | 2026-09-28 03:35:13.9632+02   |
+     | path               | 1145 MB    | 665 MB     |  3,611,785 |           333 |          0 |             |                               |              |                               |
+     | pathvisibility     | 421 MB     | 169 MB     |  4,304,377 |           102 |         90 |             | 2026-10-01 03:19:24.553676+02 |              | 2026-09-28 07:02:40.367119+02 |
+     | pathhierarchy      | 102 MB     | 59 MB      |  1,198,871 |            89 |          0 |             |                               |              |                               |
+     | log                | 8944 kB    | 3992 kB    |     26,610 |           344 |        141 |             | 2026-10-01 03:18:00.151209+02 |              | 2026-09-28 03:32:39.254961+02 |
+     | jobhisto           | 3248 kB    | 248 kB     |     13,704 |           243 |          0 |             |                               |              |                               |
+     | job                | 344 kB     | 112 kB     |        426 |           825 |         47 |             | 2026-09-28 03:32:39.122009+02 |              | 2026-10-01 07:03:01.133554+02 |
+     | jobmedia           | 328 kB     | 200 kB     |        978 |           343 |         67 |             | 2026-09-30 07:02:53.467968+02 |              | 2026-10-01 07:03:01.136504+02 |
+     | media              | 272 kB     | 64 kB      |        124 |         2,228 |         31 |             | 2026-10-01 01:17:59.438922+02 |              | 2026-10-01 07:03:01.141084+02 |
+     | fileset            | 96 kB      | 32 kB      |         19 |         4,915 |         13 |             |                               |              | 2026-10-01 03:18:00.06821+02  |
+     | pool               | 88 kB      | 32 kB      |         12 |         6,932 |         42 |             |                               |              | 2026-09-30 01:17:51.972202+02 |
+     | client             | 80 kB      | 32 kB      |          5 |        13,653 |         32 |             |                               |              | 2026-09-29 01:17:45.174584+02 |
+     | storage            | 64 kB      | 16 kB      |         15 |         4,096 |          0 |             | 2026-09-29 09:32:47.244068+02 |              | 2026-09-22 12:17:01.660203+02 |
+     | device             | 64 kB      | 16 kB      |         43 |         1,489 |          0 |             |                               |              |                               |
+     | status             | 64 kB      | 16 kB      |         21 |         2,979 |          0 |             |                               |              |                               |
+     | mediatype          | 64 kB      | 16 kB      |         16 |         3,855 |          0 |             |                               |              |                               |
+     | restoreobject      | 56 kB      | 32 kB      |          0 |        57,344 |          0 |             |                               |              |                               |
+     | version            | 40 kB      | 0 bytes    |          1 |        20,480 |          0 |             |                               |              |                               |
+     | devicestats        | 40 kB      | 0 bytes    |          6 |         5,851 |          0 |             |                               |              |                               |
+     | basefiles          | 16 kB      | 16 kB      |          0 |        16,384 |          0 |             |                               |              |                               |
+     | ndmpjobenvironment | 16 kB      | 8192 bytes |          0 |        16,384 |          0 |             |                               |              |                               |
+     | locationlog        | 16 kB      | 8192 bytes |          0 |        16,384 |          0 |             |                               |              |                               |
+     | location           | 16 kB      | 8192 bytes |          0 |        16,384 |          0 |             |                               |              |                               |
+     | ndmplevelmap       | 16 kB      | 8192 bytes |          0 |        16,384 |          0 |             |                               |              |                               |
+     | counters           | 16 kB      | 8192 bytes |          0 |        16,384 |          0 |             |                               |              |                               |
+     | quota              | 8192 bytes | 8192 bytes |          0 |         8,192 |          0 |             |                               |              |                               |
+     | lstat              | 0 bytes    | 0 bytes    |          0 |             0 |          0 |             |                               |              |                               |
+     | jobstats           | 0 bytes    | 0 bytes    |          0 |             0 |          0 |             |                               |              |                               |
+     | tapealerts         | 0 bytes    | 0 bytes    |          0 |             0 |          0 |             |                               |              |                               |
+     +--------------------+------------+------------+------------+---------------+------------+-------------+-------------------------------+--------------+-------------------------------+
    *
 
 
@@ -471,7 +556,7 @@ More details on this subject can be found in the PostgreSQL documentation. The p
 .. _PostgresSize:
 
 What To Do When The Database Keeps Growing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Especially when a high number of files are being backed up or when working with high retention periods, it is probable that default autovacuuming will not be triggered.
 When starting to use Bareos with an empty Database, it is normal that the file table and other tables grow, but the growth rate should drop as soon as jobs are deleted by retention or pruning.
@@ -497,6 +582,12 @@ This make sense because vacuuming has a performance impact. While it is possible
    root@localhost# su postgres -c 'psql -d bareos -c "ALTER TABLE public.file SET (autovacuum_vacuum_scale_factor = 0.02);"'
 
 To learn more details about autovacuum see https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM
+
+.. note::
+
+   :sinceVersion:`26.0.0:` table `File` and table `Path` have their autovacuum option set to 2%.
+
+
 
 The following example shows how to configure running VACUUM on the file table by using an admin-job in Bareos. The job will be scheduled to run at a time that should not run in parallel with normal backup jobs, here by scheduling it to run after the BackupCatalog job.
 
