@@ -48,8 +48,14 @@ struct TlsConfigProvider {
 
 class Tls {
  public:
+  Tls() = default;
+
+  Tls(const Tls& other) = delete;
+  Tls(Tls&& other) = delete;
+  Tls& operator=(const Tls& other) = delete;
+  Tls& operator=(Tls&& other) = delete;
+
   virtual ~Tls() = default;
-  Tls(Tls& other) = delete;
 
   enum class ImplementationType
   {
@@ -81,9 +87,6 @@ class Tls {
 
   virtual bool KtlsSendStatus() = 0;
   virtual bool KtlsRecvStatus() = 0;
-
- protected:
-  Tls() = default;
 };
 
 #endif  // BAREOS_LIB_TLS_H_
