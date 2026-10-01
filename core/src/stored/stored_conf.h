@@ -105,6 +105,8 @@ class StorageResource
   utime_t heartbeat_interval = {0};     /**< Interval to send hb to FD */
   utime_t checkpoint_interval = {0};    /**< Interval to save */
   utime_t client_wait = {0};            /**< Time to wait for FD to connect */
+  utime_t ndmp_connect_wait = {0};      /**< Time to wait for NDMP DMA to
+                                       connect */
   uint32_t max_network_buffer_size = 0; /**< Max network buf size */
   bool autoxflateonreplication
       = false; /**< Perform autoxflation when replicating data
