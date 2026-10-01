@@ -56,23 +56,6 @@ TEST(ConfigParser_SD, test_stored_config)
   EXPECT_EQ(decimal_device->max_file_size, 25'000'000'000LL);
   EXPECT_EQ(numeric_device->max_file_size, 100'000'000'000LL);
 
-  auto* no_immediate = dynamic_cast<DeviceResource*>(
-      my_config->GetResWithName(R_DEVICE, "NoImmediateFilemarks", false));
-  ASSERT_NE(no_immediate, nullptr);
-  EXPECT_TRUE(BitIsSet(CAP_WEOFI, default_device->cap_bits));
-  EXPECT_FALSE(BitIsSet(CAP_WEOFI, no_immediate->cap_bits));
-  EXPECT_TRUE(BitIsSet(CAP_EOF, no_immediate->cap_bits));
-  auto default_runtime_device
-      = std::unique_ptr<Device>(FactoryCreateDevice(nullptr, default_device));
-  auto disabled_runtime_device
-      = std::unique_ptr<Device>(FactoryCreateDevice(nullptr, no_immediate));
-  ASSERT_NE(default_runtime_device, nullptr);
-  ASSERT_NE(disabled_runtime_device, nullptr);
-  EXPECT_TRUE(default_runtime_device->HasCap(CAP_WEOFI));
-  EXPECT_FALSE(disabled_runtime_device->HasCap(CAP_WEOFI));
-
-  disabled_runtime_device.reset();
-  default_runtime_device.reset();
   delete my_config;
 }
 

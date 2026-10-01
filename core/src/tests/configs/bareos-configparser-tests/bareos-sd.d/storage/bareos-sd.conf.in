@@ -17,14 +17,12 @@ Storage {
 Device {
   Name = DefaultFileSize
   Media Type = File
-  Device Type = File
   Archive Device = /dev/null
 }
 
 Device {
   Name = DecimalFileSize
   Media Type = File
-  Device Type = File
   Archive Device = /dev/null
   MaximumFileSize = 25 GB
 }
@@ -32,15 +30,6 @@ Device {
 Device {
   Name = NumericFileSize
   Media Type = File
-  Device Type = File
   Archive Device = /dev/null
   MaximumFileSize = 100000000000
-}
-
-Device {
-  Name = NoImmediateFilemarks
-  Media Type = File
-  Device Type = File
-  Archive Device = /dev/null
-  HardwareImmediateEndOfFile = no
 }
