@@ -25,7 +25,7 @@ export WRAP_TAR_DIR="@WRAP_TAR_DIR@"
 export NDMJOB_PORT="@ndmjob_port@"
 export NDMJOB_DIR="${tmp}/ndmjob"
 # directory of the ndmjob robot simulator, see storage/ndmjob.conf.in
-export NDMJOB_ROBOT_DIR="${NDMJOB_DIR}/robot"
+export NDMJOB_ROBOT_DIR="@NDMJOB_ROBOT_DIR@"
 # the filesystem backed up via NDMP, see fileset/ndmp-fileset.conf.in
 export NDMP_FILESYSTEM="${tmp}/ndmp-data"
 
