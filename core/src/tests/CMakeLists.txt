@@ -349,6 +349,7 @@ if(NOT client-only)
     test_config_parser_sd LINK_LIBRARIES Bareos::SD Bareos::LibSD Bareos::Lib
                                          GTest::gtest_main
   )
+  bareos_add_test(test_device_init LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
   bareos_add_test(
     test_db_list_ctx LINK_LIBRARIES Bareos::Lib Bareos::SQL GTest::gtest_main
   )

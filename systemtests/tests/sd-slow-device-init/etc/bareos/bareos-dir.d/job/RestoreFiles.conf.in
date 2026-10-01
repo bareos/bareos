@@ -1,0 +1,11 @@
+Job {
+  Name = "RestoreFiles"
+  Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
+  Type = Restore
+  Client = bareos-fd
+  FileSet = SelfTest
+  Storage = File
+  Pool = Incremental
+  Messages = Standard
+  Where = @tmp@/bareos-restores
+}

@@ -27,6 +27,7 @@
 
 #include "include/bareos.h"
 #include "stored/stored.h"
+#include "stored/device_init.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
@@ -387,6 +388,14 @@ extern "C" void* statistics_thread_runner(void*)
       foreach_res (device_resource, R_DEVICE) {
         if (device_resource->collectstats) {
           Device* dev;
+
+          /* Devices are initialized in the background. Until that has
+           * finished the device object is still being set up and must not be
+           * read here. dev->initiated is not sufficient, as it is already set
+           * while FactoryCreateDevice() still runs dev->setup(). */
+          if (DeviceInitInProgress(device_resource->init_state.load())) {
+            continue;
+          }
 
           dev = device_resource->dev;
           if (dev && dev->initiated) {
