@@ -78,49 +78,57 @@
   }
 
 // TLS Settings for Certificate only
-#define TLS_CERT_CONFIG(res)                                                  \
-  {                                                                           \
-      "TlsVerifyPeer",                                                        \
-      CFG_TYPE_VERIFY_PEER,                                                   \
-      ITEM(res, tls_cert_.verify_peer_),                                      \
-      {                                                                       \
-          config::DefaultValue{"IfAvailable"},                                \
-          config::Description{                                                \
-              "If disabled, all certificates will be accepted. If enabled, "  \
-              "the CN of a certificate must the Address or in the \"TLS "     \
-              "Allowed CN\" list and it must be signed by a known CA."},      \
-      },                                                                      \
-  },                                                                          \
-      {"TlsCaCertificateFile",                                                \
-       CFG_TYPE_STDSTRDIR,                                                    \
-       ITEM(res, tls_cert_.ca_certfile_),                                     \
-       {config::Description{                                                  \
-           "Path of a PEM encoded TLS CA certificate(s) file."}}},            \
-      {"TlsCaCertificateDir",                                                 \
-       CFG_TYPE_STDSTRDIR,                                                    \
-       ITEM(res, tls_cert_.ca_certdir_),                                      \
-       {config::Description{"Path of a TLS CA certificate directory."}}},     \
-      {"TlsCertificateRevocationList",                                        \
-       CFG_TYPE_STDSTRDIR,                                                    \
-       ITEM(res, tls_cert_.crlfile_),                                         \
-       {config::Description{"Path of a Certificate Revocation List file."}}}, \
-      {"TlsCertificate",                                                      \
-       CFG_TYPE_STDSTRDIR,                                                    \
-       ITEM(res, tls_cert_.certfile_),                                        \
-       {config::Description{"Path of a PEM encoded TLS certificate."}}},      \
-      {"TlsKey",                                                              \
-       CFG_TYPE_STDSTRDIR,                                                    \
-       ITEM(res, tls_cert_.keyfile_),                                         \
-       {config::Description{                                                  \
-           "Path of a PEM encoded private key. It must correspond to the "    \
-           "specified \"TLS Certificate\"."}}},                               \
-  {                                                                           \
-    "TlsAllowedCn", CFG_TYPE_STR_VECTOR,                                      \
-        ITEM(res, tls_cert_.allowed_certificate_common_names_),               \
-    {                                                                         \
-      config::Description{                                                    \
-          "\"Common Name\"s (CNs) of the allowed peer certificates."}         \
-    }                                                                         \
+#define TLS_CERT_CONFIG(res)                                                   \
+  {                                                                            \
+      "TlsVerifyPeer",                                                         \
+      CFG_TYPE_VERIFY_PEER,                                                    \
+      ITEM(res, tls_cert_.verify_peer_),                                       \
+      {config::DefaultValue{"IfAvailable"},                                    \
+       config::Description{                                                    \
+           "A verified peer certificate is a certificate whose chain is "      \
+           "verified via a known CA (see \"Tls Ca Certificate File\" and "     \
+           "\"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is "       \
+           "nonempty, its \"Common Name\" (CN) is found within it. If \"TLS "  \
+           "Allowed CN\" is empty, then server certificates only count as "    \
+           "verified if either its \"Subject Alternative Name\" (SAN) or its " \
+           "CN is equal to the address used for the connection.\n"             \
+           "If this is set to \"No\", then certificates are not required nor " \
+           "do they need to be verified.\n"                                    \
+           "If this is set to \"If Available\", then certificates are not "    \
+           "required, but only verified certificates are accepted if they "    \
+           "are sent over.  If this is set to \"Yes\", then verified "         \
+           "certificates are required."}},                                     \
+  },                                                                           \
+      {"TlsCaCertificateFile",                                                 \
+       CFG_TYPE_STDSTRDIR,                                                     \
+       ITEM(res, tls_cert_.ca_certfile_),                                      \
+       {config::Description{                                                   \
+           "Path of a PEM encoded TLS CA certificate(s) file."}}},             \
+      {"TlsCaCertificateDir",                                                  \
+       CFG_TYPE_STDSTRDIR,                                                     \
+       ITEM(res, tls_cert_.ca_certdir_),                                       \
+       {config::Description{"Path of a TLS CA certificate directory."}}},      \
+      {"TlsCertificateRevocationList",                                         \
+       CFG_TYPE_STDSTRDIR,                                                     \
+       ITEM(res, tls_cert_.crlfile_),                                          \
+       {config::Description{"Path of a Certificate Revocation List file."}}},  \
+      {"TlsCertificate",                                                       \
+       CFG_TYPE_STDSTRDIR,                                                     \
+       ITEM(res, tls_cert_.certfile_),                                         \
+       {config::Description{"Path of a PEM encoded TLS certificate."}}},       \
+      {"TlsKey",                                                               \
+       CFG_TYPE_STDSTRDIR,                                                     \
+       ITEM(res, tls_cert_.keyfile_),                                          \
+       {config::Description{                                                   \
+           "Path of a PEM encoded private key. It must correspond to the "     \
+           "specified \"TLS Certificate\"."}}},                                \
+  {                                                                            \
+    "TlsAllowedCn", CFG_TYPE_STR_VECTOR,                                       \
+        ITEM(res, tls_cert_.allowed_certificate_common_names_),                \
+    {                                                                          \
+      config::Description{                                                     \
+          "\"Common Name\"s (CNs) of the allowed peer certificates."}          \
+    }                                                                          \
   }
 
 #endif  // BAREOS_LIB_TLS_RESOURCE_ITEMS_H_
