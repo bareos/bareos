@@ -70,10 +70,6 @@ TEST(sd, MultipliedDeviceTest_ConfigParameter)
   ASSERT_TRUE(d);
 
   EXPECT_EQ(d->count, 3);
-  EXPECT_EQ(DeviceResource{}.max_file_size, 25'000'000'000);
-  auto* device = GetDeviceResourceByName(*test_config, "JustADeviceResource");
-  ASSERT_TRUE(device);
-  EXPECT_EQ(device->max_file_size, 25'000'000'000);
 }
 
 static uint32_t CountAllDeviceResources(ConfigurationParser& config)

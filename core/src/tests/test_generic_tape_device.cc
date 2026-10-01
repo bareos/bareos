@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#if defined(HAVE_MINGW)
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
+#else
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
+#endif
 
 #include "stored/backends/generic_tape_device.h"
 #include "stored/stored.h"
@@ -30,7 +35,8 @@ namespace {
 
 class TestTapeDevice : public generic_tape_device {
  public:
-  explicit TestTapeDevice(int write_error) : write_error_(write_error)
+  explicit TestTapeDevice(bool immediate_supported)
+      : immediate_supported_(immediate_supported)
   {
     errmsg = GetMemory(256);
     prt_name = GetMemory(32);
@@ -49,43 +55,54 @@ class TestTapeDevice : public generic_tape_device {
     EXPECT_EQ(request, static_cast<ioctl_req_t>(MTIOCTOP));
     auto* mt_com = reinterpret_cast<mtop*>(op);
     operations.push_back(mt_com->mt_op);
-    if (write_error_) {
-      errno = write_error_;
+#if defined(MTWEOFI)
+    if (mt_com->mt_op == MTWEOFI && !immediate_supported_) {
+      errno = ENOTTY;
       return -1;
     }
+#endif
     return 0;
   }
 
   std::vector<short> operations;
 
  private:
-  int write_error_;
+  bool immediate_supported_;
 };
 
 }  // namespace
 
-TEST(GenericTapeDevice, weof_reports_failed_filemark_without_retry)
+TEST(GenericTapeDevice, weof_uses_immediate_ioctl_or_falls_back)
 {
-  for (int write_error : {EIO, ENOTTY}) {
-    TestTapeDevice dev{write_error};
+  TestTapeDevice dev{/*immediate_supported=*/false};
 
-    EXPECT_FALSE(dev.weof(1));
+  ASSERT_TRUE(dev.weof(1));
 
-    ASSERT_EQ(dev.operations.size(), 1U);
-    EXPECT_EQ(dev.operations[0], MTWEOFI);
-    EXPECT_EQ(dev.GetFile(), 0U);
-    EXPECT_EQ(dev.GetBlockNum(), 0U);
-  }
+#if defined(MTWEOFI)
+  ASSERT_EQ(dev.operations.size(), 2U);
+  EXPECT_EQ(dev.operations[0], MTWEOFI);
+  EXPECT_EQ(dev.operations[1], MTWEOF);
+#else
+  ASSERT_EQ(dev.operations.size(), 1U);
+  EXPECT_EQ(dev.operations[0], MTWEOF);
+#endif
+  EXPECT_EQ(dev.GetFile(), 1U);
+  EXPECT_EQ(dev.GetBlockNum(), 0U);
 }
 
-TEST(GenericTapeDevice, weof_writes_immediate_filemark)
+TEST(GenericTapeDevice, weof_uses_immediate_ioctl_when_supported)
 {
-  TestTapeDevice dev{/*write_error=*/0};
+  TestTapeDevice dev{/*immediate_supported=*/true};
 
   ASSERT_TRUE(dev.weof(2));
 
+#if defined(MTWEOFI)
   ASSERT_EQ(dev.operations.size(), 1U);
   EXPECT_EQ(dev.operations[0], MTWEOFI);
+#else
+  ASSERT_EQ(dev.operations.size(), 1U);
+  EXPECT_EQ(dev.operations[0], MTWEOF);
+#endif
   EXPECT_EQ(dev.GetFile(), 2U);
   EXPECT_EQ(dev.GetBlockNum(), 0U);
 }

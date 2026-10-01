@@ -37,6 +37,7 @@ class unix_tape_device : public generic_tape_device {
 
   int d_ioctl(int fd, ioctl_req_t request, char* op) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
+  bool d_flush(DeviceControlRecord* dcr) override;
 };
 
 } /* namespace storagedaemon */
