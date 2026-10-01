@@ -10,4 +10,5 @@ Client {
   Auth Type = MD5                           # Clear == Clear Text, MD5 == Challenge protocol
   Username = "ndmp"                         # ndmjob has the credentials hardcoded
   Password = "ndmp"
+  Maximum Concurrent Jobs = 2
 }
