@@ -25,6 +25,13 @@ if(TARGET ndmjob AND TARGET wrap_tar)
   set(NDMJOB_BINARY "${ndmjob_output_dir}/ndmjob")
   get_target_output_dir(WRAP_TAR_DIR wrap_tar)
 
+  # the director limits the tape device and changer names to 127 chars
+  set(NDMJOB_ROBOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp/ndmjob/robot)
+  string(LENGTH "${NDMJOB_ROBOT_DIR}/drive1" ndmjob_drive_length)
+  if(ndmjob_drive_length GREATER 127)
+    set(NDMJOB_ROBOT_DIR /tmp/${BASENAME}-ndmjob-robot)
+  endif()
+
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()

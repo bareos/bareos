@@ -32,5 +32,7 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 stop_ndmjob
+# the robot directory may be outside of ${tmp}, see CMakeLists.txt
+rm -rf "${NDMJOB_ROBOT_DIR}"
 
 "${BAREOS_SCRIPTS_DIR}"/cleanup

@@ -10,6 +10,6 @@ Storage {
   Autochanger = yes
   MediaType = NDMP-Tape
 
-  Device = "@current_test_directory@/tmp/ndmjob/robot/drive0"  # tape file of the ndmjob robot simulator
-  NDMP Changer Device = "@current_test_directory@/tmp/ndmjob/robot"  # directory of the ndmjob robot simulator
+  Device = "@NDMJOB_ROBOT_DIR@/drive0"  # tape file of the ndmjob robot simulator
+  NDMP Changer Device = "@NDMJOB_ROBOT_DIR@"  # directory of the ndmjob robot simulator
 }
