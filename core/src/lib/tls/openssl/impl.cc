@@ -643,7 +643,7 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
   } else {
     if (!TlsPostconnectVerifyHost(cert.get(), bsock->host())) {
       Qmsg1(jcr, M_FATAL, 0,
-            "TLS host certificate verification failed. Host name \"%s\""
+            "TLS host certificate verification failed. Host name \"%s\" "
             "did not match presented certificate\n",
             bsock->host());
       return false;
