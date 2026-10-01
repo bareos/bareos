@@ -40,6 +40,7 @@
 #include "wraplib.h"
 
 #include <dirent.h>
+#include <stddef.h>
 #include <sys/time.h>
 
 #define TAR_BLOCK 512
