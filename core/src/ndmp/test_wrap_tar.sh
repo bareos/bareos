@@ -75,7 +75,8 @@ dd if="${work}/full.img" bs=1 skip="${offset}" count=6 2>/dev/null \
   <"${work}/full.img"
 diff -r "${src}" "${work}/all" || fail "full restore differs"
 [ "$(readlink "${work}/all/link")" = "file" ] || fail "symlink not restored"
-[ "$(stat -c %a "${work}/all/sub")" = "750" ] || fail "mode not restored"
+[ -n "$(find "${work}/all/sub" -prune -perm 0750)" ] \
+  || fail "mode not restored"
 
 # restore a single file to a different name
 "${WRAP_TAR}" -x -E "FILESYSTEM=${src}" /sub/random @0 "${work}/single/r" \

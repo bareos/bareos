@@ -79,17 +79,20 @@ start_ndmjob()
   mkdir -p "${NDMJOB_DIR}"
   ndmjob_write_config
 
+  # job control puts the daemon into its own process group, so stop_ndmjob
+  # can terminate all forked children (setsid is not available everywhere)
+  set -m
   (
     cd "${NDMJOB_DIR}" || exit 1
     export PATH="${WRAP_TAR_DIR}:${PATH}"
     export WRAP_TAR_DUMPDATES="${NDMJOB_DIR}/dumpdates"
-    # own session, so stop_ndmjob can terminate all forked children
-    exec setsid "${NDMJOB_BINARY}" -o daemon \
+    exec "${NDMJOB_BINARY}" -o daemon \
       -o config-file="${NDMJOB_DIR}/ndmjob.conf" \
       -p "${NDMJOB_PORT}" -d 7 \
       >"${NDMJOB_DIR}/ndmjob.out" 2>&1 </dev/null
   ) &
   echo $! >"${NDMJOB_DIR}/ndmjob.pid"
+  set +m
 
   while ! ndmjob_is_listening; do
     timeout=$((timeout - 1))
@@ -111,7 +114,7 @@ stop_ndmjob()
   [ -f "${pidfile}" ] || return 0
   pid="$(cat "${pidfile}")"
   if [ -n "${pid}" ]; then
-    # the daemon is a session leader, its process group id is its pid
+    # the daemon is a process group leader, its process group id is its pid
     kill -TERM -- "-${pid}" 2>/dev/null || :
     for _ in 1 2 3 4 5 6 7 8 9 10; do
       kill -0 -- "-${pid}" 2>/dev/null || break
