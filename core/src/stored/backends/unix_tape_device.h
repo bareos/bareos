@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@ class unix_tape_device : public generic_tape_device {
 
   int d_ioctl(int fd, ioctl_req_t request, char* op) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
+  bool d_flush(DeviceControlRecord* dcr) override;
 };
 
 } /* namespace storagedaemon */
