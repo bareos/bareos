@@ -40,6 +40,7 @@ class win32_tape_device : public generic_tape_device {
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
+  bool d_flush(DeviceControlRecord* dcr) override;
   int TapeOp(struct mtop* mt_com);
   int TapeGet(struct mtget* mt_com);
   int TapePos(struct mtpos* mt_com);

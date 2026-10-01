@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,10 +80,10 @@ class DeviceResource : public BareosResource {
                                                                  direction */
   utime_t vol_poll_interval{
       300}; /**< Interval between polling volume during mount */
-  int64_t max_file_size{25'000'000'000}; /**< Max file size in bytes */
-  int64_t volume_capacity{0};            /**< Advisory capacity */
-  int64_t max_spool_size{0};             /**< Max spool size for all jobs */
-  int64_t max_job_spool_size{0}; /**< Max spool size for any single job */
+  int64_t max_file_size{100'000'000'000}; /**< Max file size in bytes */
+  int64_t volume_capacity{0};        /**< Advisory capacity */
+  int64_t max_spool_size{0};         /**< Max spool size for all jobs */
+  int64_t max_job_spool_size{0};     /**< Max spool size for any single job */
 
   char* mount_point;     /**< Mount point for require mount devices */
   char* mount_command;   /**< Mount command */
