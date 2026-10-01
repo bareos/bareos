@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore a full backup to some absolute location
+# back up and restore using the second two-drive robot
 #
 
 TestName="$(basename "$(pwd)")"
@@ -37,13 +37,33 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 start_test
 
-restore_path="${tmp}/bareos-restores-absolute"
-rm -rf "${restore_path}"
+jobid=$(($(last_jobid_or_zero) + 1))
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/backup.out
+run job=${NDMPCLIENT}-native level=Full pool=ndmp-tape-robot2 storage=ndmjob-robot2 yes
+wait jobid=${jobid}
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/backup.out"
+expect_grep "Termination:.*Backup OK" "${log_home}/backup.out" \
+  "backup using robot 2 did not succeed"
+expect_grep "${NDMJOB_ROBOT2_DIR}/drive0" "${log_home}/backup.out" \
+  "drive 0 of robot 2 was not discovered"
+expect_grep "${NDMJOB_ROBOT2_DIR}/drive1" "${log_home}/backup.out" \
+  "drive 1 of robot 2 was not discovered"
+expect_grep "Using Robot host:device.*${NDMJOB_ROBOT2_DIR}" \
+  "${log_home}/backup.out" "robot 2 was not used for the backup"
+
+rm -rf "${NDMP_FILESYSTEM}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
-restore jobid=1 client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDump where=^${restore_path} all done yes
-1
+restore jobid=${jobid} client=${NDMPCLIENT} fileset=ndmp-fileset restorejob=NDMPRestoreDumpRobot2 all done yes
+2
 wait
 messages
 END_OF_DATA
@@ -52,8 +72,11 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore.out"
 expect_grep "Termination:.*Restore OK" "${log_home}/restore.out" \
-  "restore did not succeed"
+  "restore using robot 2 did not succeed"
+expect_grep "Using Robot host:device.*${NDMJOB_ROBOT2_DIR}" \
+  "${log_home}/restore.out" "robot 2 was not used for the restore"
 
-check_ndmp_data_full "${restore_path}"
+check_ndmp_data_full "${NDMP_FILESYSTEM}"
+check_no_running_jobs
 
 end_test
