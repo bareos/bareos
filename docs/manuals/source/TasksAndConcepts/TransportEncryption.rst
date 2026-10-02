@@ -80,14 +80,14 @@ otherwise this verification step will always fail.
 
 If :strong:`TLS Allowed CN`\  is non empty, Bareos will then check that the
 certificates *Common Name* (CN) is included in that list.
+
+.. warning:: This check is case sensitive!
+
 Otherwise, if :strong:`TLS Allowed CN`\  is empty and we are in a client
 context, Bareos will check that the :strong:`Address`\  it connects to is stored in the
 certificates CN or *Subject Alternative Name* (SAN).
 
-.. warning:: The CN and SAN checks are case sensitive!
-
 If any of these checks fail, the connection is terminated.
-
 
 Example TLS Configuration Files
 -------------------------------
