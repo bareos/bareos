@@ -26,14 +26,17 @@
 #ifndef BAREOS_BAREOS_SETUP_SETUP_STEPS_H_
 #define BAREOS_BAREOS_SETUP_SETUP_STEPS_H_
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "command_runner.h"
 #include "os_detector.h"
 
 /** Validate the small set of values accepted from the wizard. */
 bool IsSupportedSetupPlatform(const std::string& distro,
-                              const std::string& package_manager);
+                              PackageManager package_manager);
 
 /**
  * Check whether the package manager is one the wizard can drive.
@@ -43,7 +46,7 @@ bool IsSupportedSetupPlatform(const std::string& distro,
  * manager therefore cannot be installed at all, while an unknown
  * distribution can still be handled through a manual repository choice.
  */
-bool IsSupportedPackageManager(const std::string& package_manager);
+bool IsSupportedPackageManager(PackageManager package_manager);
 
 bool IsSafeSetupIdentifier(const std::string& value);
 
@@ -51,7 +54,7 @@ bool IsSafeSetupIdentifier(const std::string& value);
 std::string GenerateSetupSecret(size_t length = 32);
 
 /** Remove credentials and bearer tokens from command output. */
-std::string RedactSetupSecrets(std::string value,
+std::string RedactSetupSecrets(std::string_view value,
                                const std::vector<std::string>& secrets);
 
 /**
@@ -62,6 +65,7 @@ std::string RedactSetupSecrets(std::string value,
  * re-parsed or executed.
  */
 std::string JoinCommandForDisplay(const std::vector<std::string>& argv);
+std::string JoinCommandForDisplay(const SetupCommand& command);
 
 /** Accept only requests whose Origin header matches the Host header of the
  * same request (i.e. same-origin), regardless of which address/port the
@@ -75,33 +79,33 @@ std::string CapFirst(std::string s);
 std::string Trim(std::string value);
 
 /** Build the fixed package list used by the setup wizard. */
-std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr);
+std::vector<std::string> BuildDefaultPackageList(PackageManager pkg_mgr);
 
 /** Build the package list without tape support packages. */
 std::vector<std::string> BuildPackageListWithoutTapeStorage(
-    const std::string& pkg_mgr);
+    PackageManager pkg_mgr);
 
 /** Build the Bareos package list without the local PostgreSQL server package.
  */
 std::vector<std::string> BuildPackageListWithoutPostgresServer(
-    const std::string& pkg_mgr);
+    PackageManager pkg_mgr);
 
 /**
  * Return the Bareos catalog scripts that must be run manually. Debian/Ubuntu
  * packages initialize the catalog through dbconfig-common during package
  * configuration, so apt does not need the manual scripts.
  */
-std::vector<std::string> BuildCatalogInitScripts(const std::string& pkg_mgr);
+std::vector<std::string> BuildCatalogInitScripts(PackageManager pkg_mgr);
 
 /**
  * Build the command needed to initialize a fresh PostgreSQL data directory,
  * if the package manager's PostgreSQL package requires one (e.g. Red
- * Hat/SUSE family "postgresql-setup --initdb"). Returns an empty vector when
+ * Hat/SUSE family "postgresql-setup --initdb"). Returns std::nullopt when
  * no separate initialization step is required (e.g. Debian/Ubuntu, whose
  * postgresql package initializes a default cluster automatically on
  * install).
  */
-std::vector<std::string> BuildPostgresInitCmd();
+std::optional<SetupCommand> BuildPostgresInitCmd(const SetupContext& context);
 
 /**
  * Wrap a Bareos catalog script (create_bareos_database,
@@ -111,7 +115,7 @@ std::vector<std::string> BuildPostgresInitCmd();
  * the postgres user, not root, since they rely on PostgreSQL peer
  * authentication as that OS user.
  */
-std::vector<std::string> BuildRunAsPostgresCmd(const std::string& script);
+SetupCommand BuildRunAsPostgresCmd(const std::string& script);
 
 /** Build the repository OS path segment for the detected distribution. */
 std::string BuildRepoOsPath(const std::string& distro,
@@ -149,20 +153,17 @@ bool IsValidRepoOsPath(const std::string& value);
 std::vector<std::string> SuggestRepoOsPaths(const OsInfo& info);
 
 // Build the command to download and run add_bareos_repositories.sh.
-std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
-                                         const std::string& version,
-                                         const std::string& repo_type,
-                                         bool read_curl_config_from_stdin
-                                         = false,
-                                         const std::string& release = {});
+SetupCommand BuildAddRepoCmd(const std::string& distro,
+                             const std::string& version,
+                             const std::string& repo_type,
+                             bool read_curl_config_from_stdin = false,
+                             const std::string& release = {});
 
 /** Build the add-repository command for an explicit repository OS path. */
-std::vector<std::string> BuildAddRepoCmdForPath(const std::string& repo_os_path,
-                                                const std::string& repo_type,
-                                                bool read_curl_config_from_stdin
-                                                = false,
-                                                const std::string& release
-                                                = {});
+SetupCommand BuildAddRepoCmdForPath(const std::string& repo_os_path,
+                                    const std::string& repo_type,
+                                    bool read_curl_config_from_stdin = false,
+                                    const std::string& release = {});
 
 /**
  * Build a probe that checks whether a repository OS path actually exists.
@@ -170,16 +171,15 @@ std::vector<std::string> BuildAddRepoCmdForPath(const std::string& repo_os_path,
  * Run before adding the repository so that a wrong manual choice fails
  * immediately with a clear message instead of part-way through the install.
  */
-std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
-                                               const std::string& repo_type,
-                                               bool read_curl_config_from_stdin
-                                               = false,
-                                               const std::string& release = {});
+SetupCommand BuildRepoPathProbeCmd(const std::string& repo_os_path,
+                                   const std::string& repo_type,
+                                   bool read_curl_config_from_stdin = false,
+                                   const std::string& release = {});
 
 /** Build the command that retrieves the Subscription release directory index.
  */
-std::vector<std::string> BuildSubscriptionReleaseIndexCmd(
-    bool read_curl_config_from_stdin = false);
+SetupCommand BuildSubscriptionReleaseIndexCmd(bool read_curl_config_from_stdin
+                                              = false);
 
 /**
  * Extract the highest numeric release directory version from a Subscription
@@ -200,7 +200,7 @@ std::string BuildCurlUserConfig(const std::string& login,
  * command: their authenticated repository-script download is the only
  * connectivity and credential check, avoiding an unauthenticated 401 probe.
  */
-std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type);
+std::optional<SetupCommand> BuildNetworkCheckCmd(const std::string& repo_type);
 
 /** Path of the admin console resource created by setup. */
 std::string SetupAdminConfigPath();
@@ -215,31 +215,29 @@ std::vector<std::string> SetupOwnedConfigPaths();
  * Build the privileged check that only succeeds when the given path does
  * not exist yet.
  */
-std::vector<std::string> BuildFileAbsentCheckCmd(const std::string& path);
+SetupCommand BuildFileAbsentCheckCmd(const std::string& path);
 
 /** Build the user-facing error listing pre-existing configuration files. */
 std::string BuildExistingSetupConfigError(
     const std::vector<std::string>& existing_paths);
 
 /** Build a zypper command that checks whether the mtx package is available. */
-std::vector<std::string> BuildMtxAvailabilityCheckCmd();
+SetupCommand BuildMtxAvailabilityCheckCmd();
 
 /** Return the web server service name used by the distribution packages. */
-std::string BuildWebServerServiceName(const std::string& pkg_mgr);
+std::string BuildWebServerServiceName(PackageManager pkg_mgr);
 
 /** Return commands that activate HTTPS for the packaged WebUI web server. */
-std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
-    const std::string& pkg_mgr);
+std::vector<SetupCommand> BuildWebServerHttpsSetupCmds(PackageManager pkg_mgr);
 
 /**
  * Build the conditional SELinux setup required by HTTPD to reach the WebUI
  * proxy. The command is a no-op unless SELinux is enforcing.
  */
-std::vector<std::string> BuildWebUiSelinuxSetupCmd();
+SetupCommand BuildWebUiSelinuxSetupCmd();
 
 /** Return canonical Bareos daemon unit names for enable/start/status checks. */
-std::vector<std::string> BuildBareosDaemonServiceNames(
-    const std::string& pkg_mgr);
+std::vector<std::string> BuildBareosDaemonServiceNames(PackageManager pkg_mgr);
 
 /**
  * Build the command to refresh package metadata after adding the Bareos
@@ -247,11 +245,10 @@ std::vector<std::string> BuildBareosDaemonServiceNames(
  * installable; repository helpers for other package managers refresh metadata
  * themselves when packages are installed.
  */
-std::vector<std::string> BuildPackageCacheUpdateCmd(const std::string& pkg_mgr);
+std::optional<SetupCommand> BuildPackageCacheUpdateCmd(PackageManager pkg_mgr);
 
 // Build the package install command for the detected package manager.
-std::vector<std::string> BuildInstallCmd(
-    const std::string& pkg_mgr,
-    const std::vector<std::string>& packages);
+SetupCommand BuildInstallCmd(PackageManager pkg_mgr,
+                             const std::vector<std::string>& packages);
 
 #endif  // BAREOS_BAREOS_SETUP_SETUP_STEPS_H_

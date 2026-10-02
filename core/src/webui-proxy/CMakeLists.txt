@@ -25,13 +25,13 @@ find_package(Jansson REQUIRED)
 add_library(webui-proxy-objects OBJECT)
 target_sources(
   webui-proxy-objects
-  PRIVATE bareos_base64.cc http_protocol.cc director_connection.cc
-          proxy_config.cc proxy_auth_session.cc proxy_log.cc proxy_session.cc
-          ws_codec.cc
+  PRIVATE bareos_base64.cc director_connection.cc proxy_config.cc
+          proxy_auth_session.cc proxy_log.cc proxy_session.cc
 )
 target_link_libraries(
-  webui-proxy-objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-                              Jansson::Jansson Threads::Threads
+  webui-proxy-objects
+  PRIVATE Bareos::Lib Bareos::HttpProtocol Bareos::WebSocket OpenSSL::SSL
+          OpenSSL::Crypto Jansson::Jansson Threads::Threads
 )
 
 add_executable(
@@ -46,8 +46,9 @@ target_compile_definitions(
 )
 
 target_link_libraries(
-  bareos-webui-proxy PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-                             Jansson::Jansson Threads::Threads CLI11::CLI11
+  bareos-webui-proxy
+  PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+          Threads::Threads CLI11::CLI11 Bareos::HttpProtocol Bareos::WebSocket
 )
 
 configure_file(
@@ -82,13 +83,19 @@ if(BUILD_TESTING AND GTest_FOUND)
     tests/test_proxy_config.cc
     tests/test_proxy_log.cc
     tests/test_proxy_session.cc
-    tests/test_ws_codec.cc
     $<TARGET_OBJECTS:webui-proxy-objects>
   )
   target_link_libraries(
     test_webui_proxy
-    PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
-            GTest::gtest GTest::gtest_main Threads::Threads
+    PRIVATE Bareos::Lib
+            Bareos::HttpProtocol
+            Bareos::WebSocket
+            OpenSSL::SSL
+            OpenSSL::Crypto
+            Jansson::Jansson
+            GTest::gtest
+            GTest::gtest_main
+            Threads::Threads
   )
   gtest_discover_tests(test_webui_proxy)
 endif()

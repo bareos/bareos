@@ -25,8 +25,8 @@
 #include <algorithm>
 #include <cerrno>
 #include <cctype>
+#include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <regex>
 #include <set>
 #include <sstream>
@@ -135,17 +135,11 @@ void FillRandomBytes(std::vector<unsigned char>& random)
       continue;
     }
     if (result < 0 && errno == EINTR) continue;
-    break;
-  }
-  if (offset == random.size()) return;
-
-  std::ifstream urandom("/dev/urandom", std::ios::binary);
-  if (!urandom) { throw std::runtime_error("Unable to open /dev/urandom"); }
-  urandom.read(reinterpret_cast<char*>(random.data() + offset),
-               static_cast<std::streamsize>(random.size() - offset));
-  if (!urandom) {
-    throw std::runtime_error(
-        "Unable to obtain cryptographically secure random data");
+    if (result == 0) {
+      throw std::runtime_error("getrandom() returned no data");
+    }
+    throw std::runtime_error("getrandom() failed: "
+                             + std::string(std::strerror(errno)));
   }
 }
 
@@ -165,7 +159,7 @@ std::string Trim(std::string value)
   return value;
 }
 
-std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
+std::vector<std::string> BuildDefaultPackageList(PackageManager pkg_mgr)
 {
   std::vector<std::string> packages = {"bareos-filedaemon",
                                        "bareos-director",
@@ -177,25 +171,34 @@ std::vector<std::string> BuildDefaultPackageList(const std::string& pkg_mgr)
                                        "bareos-webui-new",
                                        "bareos-webui-proxy",
                                        "policycoreutils"};
-  if (pkg_mgr == "dnf" || pkg_mgr == "yum") { packages.push_back("mod_ssl"); }
+  if (pkg_mgr == PackageManager::Dnf || pkg_mgr == PackageManager::Yum) {
+    packages.push_back("mod_ssl");
+  }
   // The Bareos catalog packages do not pull in a local PostgreSQL server
   // (Bareos also supports remote catalogs), so the wizard has to add it
   // explicitly for a single-host setup. Package names/splits differ by
   // distribution family.
-  if (pkg_mgr == "apt") {
-    // Debian/Ubuntu's "postgresql" metapackage includes both server and
-    // client (psql) and auto-initializes a default cluster on install.
-    packages.push_back("postgresql");
-  } else {
-    // Fedora/RHEL/openSUSE family: postgresql-server pulls in the
-    // postgresql client package (providing psql) as a dependency.
-    packages.push_back("postgresql-server");
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      // Debian/Ubuntu's "postgresql" metapackage includes both server and
+      // client (psql) and auto-initializes a default cluster on install.
+      packages.push_back("postgresql");
+      break;
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+    case PackageManager::Zypper:
+      // Fedora/RHEL/openSUSE family: postgresql-server pulls in the
+      // postgresql client package (providing psql) as a dependency.
+      packages.push_back("postgresql-server");
+      break;
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
   }
   return packages;
 }
 
 std::vector<std::string> BuildPackageListWithoutTapeStorage(
-    const std::string& pkg_mgr)
+    PackageManager pkg_mgr)
 {
   auto packages = BuildDefaultPackageList(pkg_mgr);
   packages.erase(
@@ -205,7 +208,7 @@ std::vector<std::string> BuildPackageListWithoutTapeStorage(
 }
 
 std::vector<std::string> BuildPackageListWithoutPostgresServer(
-    const std::string& pkg_mgr)
+    PackageManager pkg_mgr)
 {
   auto packages = BuildDefaultPackageList(pkg_mgr);
   packages.erase(std::remove_if(packages.begin(), packages.end(),
@@ -217,25 +220,34 @@ std::vector<std::string> BuildPackageListWithoutPostgresServer(
   return packages;
 }
 
-std::vector<std::string> BuildCatalogInitScripts(const std::string& pkg_mgr)
+std::vector<std::string> BuildCatalogInitScripts(PackageManager pkg_mgr)
 {
-  if (pkg_mgr == "apt") return {};
-  return {"/usr/lib/bareos/scripts/create_bareos_database",
-          "/usr/lib/bareos/scripts/make_bareos_tables",
-          "/usr/lib/bareos/scripts/grant_bareos_privileges"};
-}
-
-std::vector<std::string> BuildPostgresInitCmd()
-{
-  if (IsToolInPath("postgresql-setup")) {
-    return {"postgresql-setup", "--initdb"};
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      return {};
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+    case PackageManager::Zypper:
+      return {"/usr/lib/bareos/scripts/create_bareos_database",
+              "/usr/lib/bareos/scripts/make_bareos_tables",
+              "/usr/lib/bareos/scripts/grant_bareos_privileges"};
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
   }
-  return {};
+  throw std::invalid_argument("Unsupported package manager");
 }
 
-std::vector<std::string> BuildRunAsPostgresCmd(const std::string& script)
+std::optional<SetupCommand> BuildPostgresInitCmd(const SetupContext& context)
 {
-  return {"su", "postgres", "-c", script};
+  if (context.IsToolAvailable(SetupTool::PostgresqlSetup)) {
+    return PostgresqlSetup({"--initdb"});
+  }
+  return std::nullopt;
+}
+
+SetupCommand BuildRunAsPostgresCmd(const std::string& script)
+{
+  return Su({"postgres", "-c", script});
 }
 
 std::string BuildRepoOsPath(const std::string& distro,
@@ -250,11 +262,11 @@ std::string BuildRepoOsPath(const std::string& distro,
   return CapFirst(distro) + "_" + version;
 }
 
-std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
-                                         const std::string& version,
-                                         const std::string& repo_type,
-                                         bool read_curl_config_from_stdin,
-                                         const std::string& release)
+SetupCommand BuildAddRepoCmd(const std::string& distro,
+                             const std::string& version,
+                             const std::string& repo_type,
+                             bool read_curl_config_from_stdin,
+                             const std::string& release)
 {
   return BuildAddRepoCmdForPath(BuildRepoOsPath(distro, version), repo_type,
                                 read_curl_config_from_stdin, release);
@@ -332,48 +344,46 @@ std::vector<std::string> SuggestRepoOsPaths(const OsInfo& info)
   return suggestions;
 }
 
-std::vector<std::string> BuildAddRepoCmdForPath(
-    const std::string& repo_os_path,
-    const std::string& repo_type,
-    bool read_curl_config_from_stdin,
-    const std::string& release)
+SetupCommand BuildAddRepoCmdForPath(const std::string& repo_os_path,
+                                    const std::string& repo_type,
+                                    bool read_curl_config_from_stdin,
+                                    const std::string& release)
 {
   const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
                                  + repo_os_path + "/add_bareos_repositories.sh";
 
-  std::vector<std::string> command
-      = {"curl", "--fail", "--silent", "--show-error", "--location"};
+  SetupCommand command
+      = Curl({"--fail", "--silent", "--show-error", "--location"});
   if (read_curl_config_from_stdin)
-    command.insert(command.end(), {"--config", "-"});
-  command.emplace_back(script_url);
+    command.arguments.insert(command.arguments.end(), {"--config", "-"});
+  command.arguments.emplace_back(script_url);
   return command;
 }
 
-std::vector<std::string> BuildRepoPathProbeCmd(const std::string& repo_os_path,
-                                               const std::string& repo_type,
-                                               bool read_curl_config_from_stdin,
-                                               const std::string& release)
+SetupCommand BuildRepoPathProbeCmd(const std::string& repo_os_path,
+                                   const std::string& repo_type,
+                                   bool read_curl_config_from_stdin,
+                                   const std::string& release)
 {
   const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
                                  + repo_os_path + "/add_bareos_repositories.sh";
 
-  std::vector<std::string> command
-      = {"curl",   "--fail",     "--silent", "--show-error", "--location",
-         "--head", "--max-time", "15",       "--output",     "/dev/null"};
+  SetupCommand command
+      = Curl({"--fail", "--silent", "--show-error", "--location", "--head",
+              "--max-time", "15", "--output", "/dev/null"});
   if (read_curl_config_from_stdin)
-    command.insert(command.end(), {"--config", "-"});
-  command.emplace_back(script_url);
+    command.arguments.insert(command.arguments.end(), {"--config", "-"});
+  command.arguments.emplace_back(script_url);
   return command;
 }
 
-std::vector<std::string> BuildSubscriptionReleaseIndexCmd(
-    bool read_curl_config_from_stdin)
+SetupCommand BuildSubscriptionReleaseIndexCmd(bool read_curl_config_from_stdin)
 {
-  std::vector<std::string> command
-      = {"curl", "--fail", "--silent", "--show-error", "--location"};
+  SetupCommand command
+      = Curl({"--fail", "--silent", "--show-error", "--location"});
   if (read_curl_config_from_stdin)
-    command.insert(command.end(), {"--config", "-"});
-  command.emplace_back("https://download.bareos.com/bareos/release/");
+    command.arguments.insert(command.arguments.end(), {"--config", "-"});
+  command.arguments.emplace_back("https://download.bareos.com/bareos/release/");
   return command;
 }
 
@@ -398,26 +408,18 @@ std::string BuildCurlUserConfig(const std::string& login,
   return "user = " + CurlConfigQuote(login + ":" + password) + "\n";
 }
 
-std::vector<std::string> BuildNetworkCheckCmd(const std::string& repo_type)
+std::optional<SetupCommand> BuildNetworkCheckCmd(const std::string& repo_type)
 {
-  if (repo_type != "community") return {};
+  if (repo_type != "community") return std::nullopt;
 
   // The trailing slash avoids a redirect, and --location handles one anyway
   // if the layout ever changes. --output discards the response: this only
   // checks reachability, and letting curl write a response body to stdout
   // both floods the install log with raw HTTP and makes the check fail with
   // a write error if anything goes wrong on the receiving end.
-  return {"curl",
-          "--fail",
-          "--silent",
-          "--show-error",
-          "--location",
-          "--head",
-          "--max-time",
-          "15",
-          "--output",
-          "/dev/null",
-          "https://download.bareos.org/current/"};
+  return Curl({"--fail", "--silent", "--show-error", "--location", "--head",
+               "--max-time", "15", "--output", "/dev/null",
+               "https://download.bareos.org/current/"});
 }
 
 std::string SetupAdminConfigPath()
@@ -430,12 +432,12 @@ std::vector<std::string> SetupOwnedConfigPaths()
   return {SetupAdminConfigPath()};
 }
 
-std::vector<std::string> BuildFileAbsentCheckCmd(const std::string& path)
+SetupCommand BuildFileAbsentCheckCmd(const std::string& path)
 {
   // The wizard-owned configuration directories are usually root-only, so
   // the check has to run through the privileged command runner instead of
   // stat()ing the path directly.
-  return {"sh", "-c", "test ! -e \"$1\"", "bareos-setup", path};
+  return Sh({"-c", "test ! -e \"$1\"", "bareos-setup", path});
 }
 
 std::string BuildExistingSetupConfigError(
@@ -449,113 +451,155 @@ std::string BuildExistingSetupConfigError(
   return message.str();
 }
 
-std::vector<std::string> BuildMtxAvailabilityCheckCmd()
+SetupCommand BuildMtxAvailabilityCheckCmd()
 {
-  return {"zypper", "--non-interactive", "search", "--match-exact",
-          "--type", "package",           "mtx"};
+  return Zypper({"--non-interactive", "search", "--match-exact", "--type",
+                 "package", "mtx"});
 }
 
-std::string BuildWebServerServiceName(const std::string& pkg_mgr)
+std::string BuildWebServerServiceName(PackageManager pkg_mgr)
 {
-  return (pkg_mgr == "apt" || pkg_mgr == "zypper") ? "apache2" : "httpd";
-}
-
-std::vector<std::vector<std::string>> BuildWebServerHttpsSetupCmds(
-    const std::string& pkg_mgr)
-{
-  if (pkg_mgr == "apt") {
-    return {{"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}};
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+    case PackageManager::Zypper:
+      return "apache2";
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+      return "httpd";
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
   }
-  if (pkg_mgr == "zypper") {
-    return {{"a2enmod", "ssl"},
-            {"a2enflag", "SSL"},
-            {"sh", "-c",
-             "install -d -m 0755 /etc/apache2/ssl.crt && "
-             "install -d -m 0700 /etc/apache2/ssl.key && "
-             "test -s /etc/apache2/ssl.crt/bareos-setup.crt || "
-             "openssl req -x509 -nodes -newkey rsa:2048 -days 397 "
-             "-subj /CN=localhost "
-             "-keyout /etc/apache2/ssl.key/bareos-setup.key "
-             "-out /etc/apache2/ssl.crt/bareos-setup.crt && "
-             "chmod 0600 /etc/apache2/ssl.key/bareos-setup.key && "
-             "cat >/etc/apache2/vhosts.d/bareos-setup-ssl.conf <<'EOF'\n"
-             "<IfDefine SSL>\n"
-             "<IfDefine !NOSSL>\n"
-             "<VirtualHost _default_:443>\n"
-             "  DocumentRoot \"/srv/www/htdocs\"\n"
-             "  ErrorLog /var/log/apache2/error_log\n"
-             "  TransferLog /var/log/apache2/access_log\n"
-             "  SSLEngine on\n"
-             "  SSLCertificateFile /etc/apache2/ssl.crt/bareos-setup.crt\n"
-             "  SSLCertificateKeyFile /etc/apache2/ssl.key/bareos-setup.key\n"
-             "</VirtualHost>\n"
-             "</IfDefine>\n"
-             "</IfDefine>\n"
-             "EOF"}};
-  }
-  return {};
+  throw std::invalid_argument("Unsupported package manager");
 }
 
-std::vector<std::string> BuildWebUiSelinuxSetupCmd()
+std::vector<SetupCommand> BuildWebServerHttpsSetupCmds(PackageManager pkg_mgr)
 {
-  return {
-      "sh",
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      return {A2enmod({"ssl"}), A2ensite({"default-ssl"})};
+    case PackageManager::Zypper:
+      return {
+          A2enmod({"ssl"}), A2enflag({"SSL"}),
+          Sh({"-c",
+              "install -d -m 0755 /etc/apache2/ssl.crt && "
+              "install -d -m 0700 /etc/apache2/ssl.key && "
+              "test -s /etc/apache2/ssl.crt/bareos-setup.crt || "
+              "openssl req -x509 -nodes -newkey rsa:2048 -days 397 "
+              "-subj /CN=localhost "
+              "-keyout /etc/apache2/ssl.key/bareos-setup.key "
+              "-out /etc/apache2/ssl.crt/bareos-setup.crt && "
+              "chmod 0600 /etc/apache2/ssl.key/bareos-setup.key && "
+              "cat >/etc/apache2/vhosts.d/bareos-setup-ssl.conf <<'EOF'\n"
+              "<IfDefine SSL>\n"
+              "<IfDefine !NOSSL>\n"
+              "<VirtualHost _default_:443>\n"
+              "  DocumentRoot \"/srv/www/htdocs\"\n"
+              "  ErrorLog /var/log/apache2/error_log\n"
+              "  TransferLog /var/log/apache2/access_log\n"
+              "  SSLEngine on\n"
+              "  SSLCertificateFile /etc/apache2/ssl.crt/bareos-setup.crt\n"
+              "  SSLCertificateKeyFile /etc/apache2/ssl.key/bareos-setup.key\n"
+              "</VirtualHost>\n"
+              "</IfDefine>\n"
+              "</IfDefine>\n"
+              "EOF"})};
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+      return {};
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
+  }
+  throw std::invalid_argument("Unsupported package manager");
+}
+
+SetupCommand BuildWebUiSelinuxSetupCmd()
+{
+  return Sh({
       "-c",
       "if command -v getenforce >/dev/null 2>&1 && "
       "[ \"$(getenforce)\" = Enforcing ]; then "
       "setsebool -P httpd_can_network_connect on; "
       "fi",
-  };
+  });
 }
 
-std::vector<std::string> BuildBareosDaemonServiceNames(
-    const std::string& pkg_mgr)
+std::vector<std::string> BuildBareosDaemonServiceNames(PackageManager pkg_mgr)
 {
-  if (pkg_mgr == "apt") {
-    return {"bareos-director", "bareos-storage", "bareos-filedaemon"};
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      return {"bareos-director", "bareos-storage", "bareos-filedaemon"};
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+    case PackageManager::Zypper:
+      return {"bareos-dir", "bareos-sd", "bareos-fd"};
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
   }
-  return {"bareos-dir", "bareos-sd", "bareos-fd"};
+  throw std::invalid_argument("Unsupported package manager");
 }
 
-std::vector<std::string> BuildPackageCacheUpdateCmd(const std::string& pkg_mgr)
+std::optional<SetupCommand> BuildPackageCacheUpdateCmd(PackageManager pkg_mgr)
 {
-  if (pkg_mgr == "apt") { return {"apt-get", "update"}; }
-  if (pkg_mgr == "zypper") {
-    return {"zypper", "--non-interactive", "--gpg-auto-import-keys", "refresh"};
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      return AptGet({"update"});
+    case PackageManager::Zypper:
+      return Zypper({"--non-interactive", "--gpg-auto-import-keys", "refresh"});
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+      return std::nullopt;
+    case PackageManager::Unknown:
+      throw std::invalid_argument("Unsupported package manager: unknown");
   }
-  return {};
+  throw std::invalid_argument("Unsupported package manager");
 }
 
-std::vector<std::string> BuildInstallCmd(
-    const std::string& pkg_mgr,
-    const std::vector<std::string>& packages)
+SetupCommand BuildInstallCmd(PackageManager pkg_mgr,
+                             const std::vector<std::string>& packages)
 {
+  if (pkg_mgr == PackageManager::Unknown) {
+    return Echo({"Unsupported package manager: "
+                 + std::string(PackageManagerName(pkg_mgr))});
+  }
   const auto& selected_packages
       = packages.empty() ? BuildDefaultPackageList(pkg_mgr) : packages;
 
-  if (pkg_mgr == "apt") {
-    std::vector<std::string> cmd = {"apt-get", "install", "-y"};
-    cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
-    return cmd;
-  } else if (pkg_mgr == "dnf") {
-    std::vector<std::string> cmd = {"dnf", "install", "-y"};
-    cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
-    return cmd;
-  } else if (pkg_mgr == "yum") {
-    std::vector<std::string> cmd = {"yum", "install", "-y"};
-    cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
-    return cmd;
-  } else if (pkg_mgr == "zypper") {
-    std::vector<std::string> cmd
-        = {"zypper", "--non-interactive", "--gpg-auto-import-keys", "install"};
-    cmd.insert(cmd.end(), selected_packages.begin(), selected_packages.end());
-    return cmd;
+  std::vector<std::string> arguments;
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      arguments = {"install", "-y"};
+      break;
+    case PackageManager::Dnf:
+      arguments = {"install", "-y"};
+      break;
+    case PackageManager::Yum:
+      arguments = {"install", "-y"};
+      break;
+    case PackageManager::Zypper:
+      arguments = {"--non-interactive", "--gpg-auto-import-keys", "install"};
+      break;
+    case PackageManager::Unknown:
+      return Echo({"Unsupported package manager: unknown"});
   }
-  return {"echo", "Unsupported package manager: " + pkg_mgr};
+  arguments.insert(arguments.end(), selected_packages.begin(),
+                   selected_packages.end());
+  switch (pkg_mgr) {
+    case PackageManager::Apt:
+      return AptGet(std::move(arguments));
+    case PackageManager::Dnf:
+      return Dnf(std::move(arguments));
+    case PackageManager::Yum:
+      return Yum(std::move(arguments));
+    case PackageManager::Zypper:
+      return Zypper(std::move(arguments));
+    case PackageManager::Unknown:
+      return Echo({"Unsupported package manager"});
+  }
+  throw std::logic_error("Invalid package manager");
 }
 
 bool IsSupportedSetupPlatform(const std::string& distro,
-                              const std::string& package_manager)
+                              PackageManager package_manager)
 {
   static const std::set<std::string> supported{
       "almalinux",
@@ -576,10 +620,18 @@ bool IsSupportedSetupPlatform(const std::string& distro,
          && IsSupportedPackageManager(package_manager);
 }
 
-bool IsSupportedPackageManager(const std::string& package_manager)
+bool IsSupportedPackageManager(PackageManager package_manager)
 {
-  return package_manager == "apt" || package_manager == "dnf"
-         || package_manager == "yum" || package_manager == "zypper";
+  switch (package_manager) {
+    case PackageManager::Apt:
+    case PackageManager::Dnf:
+    case PackageManager::Yum:
+    case PackageManager::Zypper:
+      return true;
+    case PackageManager::Unknown:
+      return false;
+  }
+  return false;
 }
 
 bool IsSafeSetupIdentifier(const std::string& value)
@@ -607,18 +659,19 @@ std::string GenerateSetupSecret(size_t length)
   return result;
 }
 
-std::string RedactSetupSecrets(std::string value,
+std::string RedactSetupSecrets(std::string_view value,
                                const std::vector<std::string>& secrets)
 {
+  std::string redacted{value};
   for (const auto& secret : secrets) {
     if (secret.empty()) continue;
     size_t pos = 0;
-    while ((pos = value.find(secret, pos)) != std::string::npos) {
-      value.replace(pos, secret.size(), "[redacted]");
+    while ((pos = redacted.find(secret, pos)) != std::string::npos) {
+      redacted.replace(pos, secret.size(), "[redacted]");
       pos += sizeof("[redacted]") - 1;
     }
   }
-  return value;
+  return redacted;
 }
 
 std::string JoinCommandForDisplay(const std::vector<std::string>& argv)
@@ -644,6 +697,11 @@ std::string JoinCommandForDisplay(const std::vector<std::string>& argv)
     result += '\'';
   }
   return result;
+}
+
+std::string JoinCommandForDisplay(const SetupCommand& command)
+{
+  return JoinCommandForDisplay(command.Argv());
 }
 
 bool IsValidSetupOrigin(const std::string& origin, const std::string& host)

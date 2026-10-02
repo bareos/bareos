@@ -21,75 +21,183 @@
 #include "command_runner.h"
 
 #include <array>
+#include <cassert>
 #include <cerrno>
-#include <chrono>
+#include <cstdint>
 #include <cstring>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <thread>
 #include <vector>
 #include <utility>
 
 #include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
+namespace {
+
+constexpr int kExecFailureExitCode = 127;
+
+enum class ToolRequirement
+{
+  Startup,
+  PackageManager,
+  PostInstall,
+  Optional
+};
+
+constexpr std::uint8_t PackageManagerBit(PackageManager package_manager)
+{
+  return static_cast<std::uint8_t>(1U
+                                   << static_cast<unsigned>(package_manager));
+}
+
+constexpr std::uint8_t kAptAndZypper
+    = PackageManagerBit(PackageManager::Apt)
+      | PackageManagerBit(PackageManager::Zypper);
+
+struct ToolDefinition {
+  SetupTool tool;
+  std::string_view name;
+  ToolRequirement requirement;
+  PackageManager package_manager = PackageManager::Unknown;
+  uint8_t post_install_package_managers = 0;
+};
+
+// This catalog also records external programs called by shell snippets:
+// OpenSSL, chmod, and cat are used by SUSE HTTPS setup; getenforce and
+// setsebool are guarded by the SELinux check.
+constexpr std::array<ToolDefinition, static_cast<size_t>(SetupTool::Count)>
+    kToolDefinitions{{
+        {SetupTool::Bash, "bash", ToolRequirement::Startup},
+        {SetupTool::Curl, "curl", ToolRequirement::Startup},
+        {SetupTool::Install, "install", ToolRequirement::Startup},
+        {SetupTool::Chown, "chown", ToolRequirement::Startup},
+        {SetupTool::Systemctl, "systemctl", ToolRequirement::Startup},
+        {SetupTool::Su, "su", ToolRequirement::Startup},
+        {SetupTool::Sh, "sh", ToolRequirement::Startup},
+        {SetupTool::AptGet, "apt-get", ToolRequirement::PackageManager,
+         PackageManager::Apt},
+        {SetupTool::Dnf, "dnf", ToolRequirement::PackageManager,
+         PackageManager::Dnf},
+        {SetupTool::Yum, "yum", ToolRequirement::PackageManager,
+         PackageManager::Yum},
+        {SetupTool::Zypper, "zypper", ToolRequirement::PackageManager,
+         PackageManager::Zypper},
+        {SetupTool::Rm, "rm", ToolRequirement::Startup},
+        {SetupTool::PostgresqlSetup, "postgresql-setup",
+         ToolRequirement::Optional},
+        {SetupTool::A2enmod, "a2enmod", ToolRequirement::PostInstall,
+         PackageManager::Unknown, kAptAndZypper},
+        {SetupTool::A2ensite, "a2ensite", ToolRequirement::PostInstall,
+         PackageManager::Unknown, PackageManagerBit(PackageManager::Apt)},
+        {SetupTool::A2enflag, "a2enflag", ToolRequirement::PostInstall,
+         PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
+        {SetupTool::Echo, "echo", ToolRequirement::Optional},
+        {SetupTool::Sudo, "sudo", ToolRequirement::Optional},
+        {SetupTool::OpenSSL, "openssl", ToolRequirement::PostInstall,
+         PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
+        {SetupTool::Chmod, "chmod", ToolRequirement::PostInstall,
+         PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
+        {SetupTool::Cat, "cat", ToolRequirement::PostInstall,
+         PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
+        {SetupTool::Getenforce, "getenforce", ToolRequirement::Optional},
+        {SetupTool::Setsebool, "setsebool", ToolRequirement::Optional},
+        {SetupTool::XdgOpen, "xdg-open", ToolRequirement::Optional},
+        {SetupTool::Open, "open", ToolRequirement::Optional},
+        {SetupTool::SensibleBrowser, "sensible-browser",
+         ToolRequirement::Optional},
+    }};
+
+static_assert([] {
+  for (size_t i = 0; i < kToolDefinitions.size(); ++i) {
+    if (static_cast<size_t>(kToolDefinitions[i].tool) != i) { return false; }
+  }
+  return true;
+}());
+
+const ToolDefinition& Definition(SetupTool tool)
+{
+  const auto index = static_cast<size_t>(tool);
+  if (index >= kToolDefinitions.size()) {
+    throw std::invalid_argument("Invalid bareos-setup command tool");
+  }
+  return kToolDefinitions[index];
+}
+
+std::optional<std::string> FindToolPath(SetupTool tool)
+{
+  const char* path_env = getenv("PATH");
+  if (path_env == nullptr) { return std::nullopt; }
+
+  std::istringstream stream(path_env);
+  std::string directory;
+  const std::string name(Definition(tool).name);
+  while (std::getline(stream, directory, ':')) {
+    if (directory.empty()) { continue; }
+    const std::string candidate = directory + "/" + name;
+    if (access(candidate.c_str(), X_OK) == 0) { return candidate; }
+  }
+  return std::nullopt;
+}
+
+SetupCommand MakeCommand(SetupTool tool, std::vector<std::string> arguments)
+{
+  (void)Definition(tool);
+  return {tool, std::move(arguments)};
+}
+
+}  // namespace
+
+std::vector<std::string> SetupCommand::Argv() const
+{
+  std::vector<std::string> argv;
+  argv.reserve(arguments.size() + 1);
+  argv.emplace_back(Definition(tool).name);
+  argv.insert(argv.end(), arguments.begin(), arguments.end());
+  return argv;
+}
+
+#define DEFINE_SETUP_TOOL_WRAPPER(wrapper, tool)               \
+  SetupCommand wrapper(std::vector<std::string> arguments)     \
+  {                                                            \
+    return MakeCommand(SetupTool::tool, std::move(arguments)); \
+  }
+
+DEFINE_SETUP_TOOL_WRAPPER(Bash, Bash)
+DEFINE_SETUP_TOOL_WRAPPER(Curl, Curl)
+DEFINE_SETUP_TOOL_WRAPPER(Install, Install)
+DEFINE_SETUP_TOOL_WRAPPER(Chown, Chown)
+DEFINE_SETUP_TOOL_WRAPPER(Systemctl, Systemctl)
+DEFINE_SETUP_TOOL_WRAPPER(Su, Su)
+DEFINE_SETUP_TOOL_WRAPPER(Sh, Sh)
+DEFINE_SETUP_TOOL_WRAPPER(AptGet, AptGet)
+DEFINE_SETUP_TOOL_WRAPPER(Dnf, Dnf)
+DEFINE_SETUP_TOOL_WRAPPER(Yum, Yum)
+DEFINE_SETUP_TOOL_WRAPPER(Zypper, Zypper)
+DEFINE_SETUP_TOOL_WRAPPER(Rm, Rm)
+DEFINE_SETUP_TOOL_WRAPPER(PostgresqlSetup, PostgresqlSetup)
+DEFINE_SETUP_TOOL_WRAPPER(A2enmod, A2enmod)
+DEFINE_SETUP_TOOL_WRAPPER(A2ensite, A2ensite)
+DEFINE_SETUP_TOOL_WRAPPER(A2enflag, A2enflag)
+DEFINE_SETUP_TOOL_WRAPPER(Echo, Echo)
+DEFINE_SETUP_TOOL_WRAPPER(XdgOpen, XdgOpen)
+DEFINE_SETUP_TOOL_WRAPPER(Open, Open)
+DEFINE_SETUP_TOOL_WRAPPER(SensibleBrowser, SensibleBrowser)
+
+#undef DEFINE_SETUP_TOOL_WRAPPER
+
 bool IsRoot() { return geteuid() == 0; }
 
-bool PrimeSudoTicket()
-{
-  if (IsRoot()) return true;
-  // Run "sudo -v" with the controlling terminal inherited (unlike the
-  // /dev/null-redirected commands below), so the user can be prompted for
-  // their password interactively exactly once. A successful run caches a
-  // sudo timestamp ticket that later non-interactive "sudo" calls reuse.
-  const pid_t pid = fork();
-  if (pid < 0) return false;
-  if (pid == 0) {
-    execlp("sudo", "sudo", "-v", nullptr);
-    const char* msg = strerror(errno);
-    [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
-    _exit(127);
-  }
-  int status = 0;
-  waitpid(pid, &status, 0);
-  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-
-void StartSudoKeepAlive()
-{
-  if (IsRoot()) return;
-  std::thread([] {
-    for (;;) {
-      std::this_thread::sleep_for(std::chrono::seconds(60));
-      const pid_t pid = fork();
-      if (pid < 0) continue;
-      if (pid == 0) {
-        const int devnull = open("/dev/null", O_RDWR);
-        if (devnull >= 0) {
-          dup2(devnull, STDIN_FILENO);
-          dup2(devnull, STDOUT_FILENO);
-          dup2(devnull, STDERR_FILENO);
-          close(devnull);
-        }
-        execlp("sudo", "sudo", "-v", nullptr);
-        _exit(127);
-      }
-      int status = 0;
-      waitpid(pid, &status, 0);
-    }
-  }).detach();
-}
-
 // Drain available bytes from fd into line buffer, calling cb on complete lines.
-static void DrainFd(int fd,
+static bool DrainFd(int fd,
                     std::string& buf,
-                    const std::string& stream,
-                    OutputCallback& cb)
+                    std::string_view stream,
+                    OutputCallback& cb,
+                    int& read_error)
 {
   std::array<char, 4096> tmp{};
   // Read until the pipe is drained. A single read() would truncate output
@@ -104,39 +212,63 @@ static void DrainFd(int fd,
     }
     if (n < 0 && errno == EINTR) continue;
     if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
-    break;
+    if (n < 0) read_error = errno;
+    return false;
   }
   // Emit complete lines
   size_t pos;
   while ((pos = buf.find('\n')) != std::string::npos) {
-    std::string line = buf.substr(0, pos);
+    std::string_view line(buf.data(), pos);
     // Strip trailing \r
-    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
     cb(line, stream);
     buf.erase(0, pos + 1);
   }
+  return true;
 }
 
-static int RunCommandImpl(const std::vector<std::string>& argv,
-                          const std::string* input,
-                          bool use_sudo,
-                          OutputCallback cb)
+static int RunCommandImpl(
+    const SetupCommand& command,
+    const std::string* input,
+    bool run_as_root,
+    OutputCallback cb,
+    const std::function<std::optional<std::string>(SetupTool)>&
+        resolve_tool_path)
 {
-  // Build final argv with optional sudo prefix. Already running as root
-  // makes sudo pointless (and would add an avoidable dependency on the
-  // sudo binary being installed), so it is skipped in that case.
-  std::vector<std::string> full_argv;
-  if (use_sudo && !IsRoot()) full_argv.push_back("sudo");
-  full_argv.insert(full_argv.end(), argv.begin(), argv.end());
+  const auto command_path = resolve_tool_path(command.tool);
+  if (!command_path) {
+    throw std::runtime_error("Command is not available in PATH: "
+                             + std::string(Definition(command.tool).name));
+  }
+
+  // Use the same registered lookup for sudo as for ordinary commands.
+  std::string executable_path = *command_path;
+  std::vector<std::string> exec_argv;
+  if (run_as_root && !IsRoot()) {
+    const auto sudo_path = resolve_tool_path(SetupTool::Sudo);
+    if (!sudo_path) {
+      throw std::runtime_error("Command is not available in PATH: sudo");
+    }
+    executable_path = *sudo_path;
+    exec_argv.emplace_back(Definition(SetupTool::Sudo).name);
+    exec_argv.emplace_back(*command_path);
+  } else {
+    exec_argv.emplace_back(Definition(command.tool).name);
+  }
+  exec_argv.insert(exec_argv.end(), command.arguments.begin(),
+                   command.arguments.end());
 
   // Build C-style argv
   std::vector<const char*> cargv;
-  cargv.reserve(full_argv.size() + 1);
-  for (const auto& s : full_argv) cargv.push_back(s.c_str());
+  cargv.reserve(exec_argv.size() + 1);
+  for (const auto& s : exec_argv) cargv.push_back(s.c_str());
+  // execv() requires argv to end with a null pointer.
   cargv.push_back(nullptr);
 
   // Create stdout, stderr, and (when requested) stdin pipes.
   int pipe_out[2], pipe_err[2], pipe_in[2] = {-1, -1};
+  // Input is written before output is drained; larger data could deadlock
+  // if the child fills stdout or stderr before reading stdin.
   if (input != nullptr && input->size() > PIPE_BUF) {
     throw std::invalid_argument("command stdin exceeds PIPE_BUF");
   }
@@ -163,7 +295,7 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
     }
     // Redirect stdin from /dev/null so sudo doesn't hang asking for password
     if (input == nullptr) {
-      // execvp() inherits the current environment and will block on stdin
+      // The child inherits the current environment and can block on stdin
       // when a command asks for interactive input, so /dev/null keeps the
       // child non-interactive even if the parent is attached to a terminal.
       int devnull = open("/dev/null", O_RDONLY);
@@ -172,11 +304,11 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
         close(devnull);
       }
     }
-    execvp(cargv[0], const_cast<char* const*>(cargv.data()));
-    // execvp failed — write error to stderr and exit
+    execv(executable_path.c_str(), const_cast<char* const*>(cargv.data()));
+    // execv failed — write error to stderr and exit
     const char* msg = strerror(errno);
     [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
-    _exit(127);
+    _exit(kExecFailureExitCode);
   }
 
   // Parent
@@ -205,104 +337,153 @@ static int RunCommandImpl(const std::vector<std::string>& argv,
 
   std::string buf_out, buf_err;
   bool out_open = true, err_open = true;
+  int output_error = 0;
 
   while (out_open || err_open) {
     struct pollfd fds[2] = {
-        {pipe_out[0], POLLIN, 0},
-        {pipe_err[0], POLLIN, 0},
+        {out_open ? pipe_out[0] : -1, POLLIN, 0},
+        {err_open ? pipe_err[0] : -1, POLLIN, 0},
     };
     int nfds = poll(fds, 2, 500);
     if (nfds < 0) {
       if (errno == EINTR) continue;
+      output_error = errno;
       break;
     }
-    if (fds[0].revents & POLLIN) DrainFd(pipe_out[0], buf_out, "stdout", cb);
-    if (fds[1].revents & POLLIN) DrainFd(pipe_err[0], buf_err, "stderr", cb);
-    if (fds[0].revents & POLLHUP) {
-      DrainFd(pipe_out[0], buf_out, "stdout", cb);
+    if (out_open && (fds[0].revents & (POLLIN | POLLHUP))) {
+      if (!DrainFd(pipe_out[0], buf_out, "stdout", cb, output_error)) {
+        close(pipe_out[0]);
+        out_open = false;
+      }
+    }
+    if (err_open && (fds[1].revents & (POLLIN | POLLHUP))) {
+      if (!DrainFd(pipe_err[0], buf_err, "stderr", cb, output_error)) {
+        close(pipe_err[0]);
+        err_open = false;
+      }
+    }
+    if (out_open && (fds[0].revents & (POLLERR | POLLNVAL))) {
+      if (output_error == 0)
+        output_error = (fds[0].revents & POLLNVAL) ? EBADF : EIO;
+      close(pipe_out[0]);
       out_open = false;
     }
-    if (fds[1].revents & POLLHUP) {
-      DrainFd(pipe_err[0], buf_err, "stderr", cb);
+    if (err_open && (fds[1].revents & (POLLERR | POLLNVAL))) {
+      if (output_error == 0)
+        output_error = (fds[1].revents & POLLNVAL) ? EBADF : EIO;
+      close(pipe_err[0]);
       err_open = false;
     }
-    if (fds[0].revents & (POLLERR | POLLNVAL)) out_open = false;
-    if (fds[1].revents & (POLLERR | POLLNVAL)) err_open = false;
   }
 
   // Flush any remaining partial lines
   if (!buf_out.empty()) cb(buf_out, "stdout");
   if (!buf_err.empty()) cb(buf_err, "stderr");
 
-  close(pipe_out[0]);
-  close(pipe_err[0]);
+  if (out_open) close(pipe_out[0]);
+  if (err_open) close(pipe_err[0]);
 
   int status = 0;
   waitpid(pid, &status, 0);
+  if (output_error != 0) {
+    throw std::runtime_error("Failed to read command output: "
+                             + std::string(strerror(output_error)));
+  }
   return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
 }
 
-int RunCommand(const std::vector<std::string>& argv,
-               bool use_sudo,
-               OutputCallback cb)
+SetupContext::SetupContext(bool dry_run) : dry_run_(dry_run) {}
+
+bool SetupContext::dry_run() const { return dry_run_; }
+
+std::optional<std::string> SetupContext::ToolPath(SetupTool tool) const
 {
-  return RunCommandImpl(argv, nullptr, use_sudo, std::move(cb));
-}
-
-int RunCommandWithInput(const std::vector<std::string>& argv,
-                        const std::string& input,
-                        bool use_sudo,
-                        OutputCallback cb)
-{
-  return RunCommandImpl(argv, &input, use_sudo, std::move(cb));
-}
-
-static std::string DefaultPathSearch()
-{
-  const char* path_env = getenv("PATH");
-  if (path_env != nullptr && path_env[0] != '\0') return path_env;
-
-  char path[PATH_MAX]{};
-  const auto length = confstr(_CS_PATH, path, sizeof(path));
-  if (length > 0 && path[0] != '\0') return std::string(path, length - 1);
-
-  return "/usr/bin:/bin";
-}
-
-bool IsToolInPath(const std::string& name)
-{
-  if (name.empty()) return false;
-  // An absolute or relative path is checked directly rather than
-  // searched for in PATH.
-  if (name.find('/') != std::string::npos) {
-    struct stat st{};
-    return stat(name.c_str(), &st) == 0 && (st.st_mode & S_IXUSR);
+  const auto index = static_cast<size_t>(tool);
+  if (index >= tool_paths_.size()) {
+    throw std::invalid_argument("Invalid bareos-setup command tool");
   }
-  const std::string path = DefaultPathSearch();
-  std::istringstream stream(path);
-  std::string dir;
-  while (std::getline(stream, dir, ':')) {
-    if (dir.empty()) continue;
-    const std::string candidate = dir + "/" + name;
-    struct stat st{};
-    if (stat(candidate.c_str(), &st) == 0 && S_ISREG(st.st_mode)
-        && (st.st_mode & S_IXUSR)) {
-      return true;
+  std::lock_guard lock(tool_paths_mutex_);
+  auto& path = tool_paths_[index];
+  if (path && access(path->c_str(), X_OK) == 0) return path;
+  path = FindToolPath(tool);
+  return path;
+}
+
+bool SetupContext::IsToolAvailable(SetupTool tool) const
+{
+  return ToolPath(tool).has_value();
+}
+
+std::vector<std::string> SetupContext::MissingRequiredTools(
+    PackageManager pkg_mgr) const
+{
+  std::vector<std::string> missing;
+  for (const auto& definition : kToolDefinitions) {
+    const bool required
+        = definition.requirement == ToolRequirement::Startup
+          || (definition.requirement == ToolRequirement::PackageManager
+              && definition.package_manager == pkg_mgr);
+    if (required && !IsToolAvailable(definition.tool)) {
+      missing.emplace_back(definition.name);
     }
   }
-  return false;
+  return missing;
 }
 
-std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr)
+std::vector<std::string> SetupContext::MissingPostInstallTools(
+    PackageManager pkg_mgr) const
 {
-  std::vector<std::string> required
-      = {"curl", "bash", "install", "chown", "systemctl", "su", "sh"};
-  if (!pkg_mgr.empty() && pkg_mgr != "unknown") required.push_back(pkg_mgr);
-  if (pkg_mgr == "apt") required.push_back("apt-get");
-
   std::vector<std::string> missing;
-  for (const auto& tool : required) {
-    if (!IsToolInPath(tool)) missing.push_back(tool);
+  const auto package_manager_bit = PackageManagerBit(pkg_mgr);
+  for (const auto& definition : kToolDefinitions) {
+    const bool required
+        = definition.requirement == ToolRequirement::PostInstall
+          && (definition.post_install_package_managers & package_manager_bit);
+    if (required && !IsToolAvailable(definition.tool)) {
+      missing.emplace_back(definition.name);
+    }
   }
   return missing;
+}
+
+int SetupContext::RunImpl(const SetupCommand& command,
+                          const std::string* input,
+                          bool run_as_root,
+                          OutputCallback output,
+                          CommandLogCallback log_command,
+                          PreviewCallback preview) const
+{
+  if (log_command) log_command(command, dry_run_, input != nullptr);
+  if (dry_run_) {
+    if (preview) preview(input != nullptr);
+    return 0;
+  }
+  return RunCommandImpl(command, input, run_as_root, std::move(output),
+                        [this](SetupTool tool) { return ToolPath(tool); });
+}
+
+int SetupContext::Run(const SetupCommand& command,
+                      bool run_as_root,
+                      OutputCallback output,
+                      CommandLogCallback log_command,
+                      PreviewCallback preview) const
+{
+  return RunImpl(command, nullptr, run_as_root, std::move(output),
+                 std::move(log_command), std::move(preview));
+}
+
+int SetupContext::RunWithInput(const SetupCommand& command,
+                               const std::string& input,
+                               bool run_as_root,
+                               OutputCallback output,
+                               CommandLogCallback log_command,
+                               PreviewCallback preview) const
+{
+  return RunImpl(command, &input, run_as_root, std::move(output),
+                 std::move(log_command), std::move(preview));
+}
+
+void SetupContext::Remove(const std::filesystem::path& path) const
+{
+  if (!dry_run_) std::filesystem::remove(path);
 }

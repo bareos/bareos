@@ -32,13 +32,12 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <openssl/evp.h>
-
-#include "lib/bpoll.h"
 
 namespace {
 
@@ -62,7 +61,9 @@ void WriteAll(int fd, const void* buf, size_t len, Clock::time_point deadline)
 {
   const auto* p = static_cast<const uint8_t*>(buf);
   while (len > 0) {
-    WaitForSocket(fd, POLLOUT, deadline, "write to peer");
+    if (deadline != Clock::time_point::max()) {
+      WaitForSocket(fd, POLLOUT, deadline, "write to peer");
+    }
     const ssize_t n = ::send(fd, p, len, MSG_NOSIGNAL);
     if (n < 0) {
       if (errno == EINTR) { continue; }
@@ -92,12 +93,16 @@ void ReadAll(int fd,
   }
 
   while (len > 0) {
-    WaitForSocket(fd, POLLIN, deadline, action);
+    if (deadline != Clock::time_point::max()) {
+      WaitForSocket(fd, POLLIN, deadline, action);
+    }
     const ssize_t n = ::recv(fd, p, len, 0);
     if (n < 0) {
       if (errno == EINTR) { continue; }
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        WaitForSocket(fd, POLLIN, deadline, action);
+        if (deadline != Clock::time_point::max()) {
+          WaitForSocket(fd, POLLIN, deadline, action);
+        }
         continue;
       }
       throw std::runtime_error("WebSocket: recv failed");
@@ -142,6 +147,9 @@ size_t ReadChunk(int fd,
 
 Clock::time_point MakeDeadline(std::chrono::milliseconds timeout)
 {
+  if (timeout <= std::chrono::milliseconds::zero()) {
+    return Clock::time_point::max();
+  }
   return Clock::now() + timeout;
 }
 
@@ -269,12 +277,14 @@ WsCodec::WsCodec(int fd,
                  std::chrono::milliseconds io_timeout,
                  std::chrono::milliseconds handshake_timeout,
                  size_t max_frame_payload_size,
-                 size_t max_message_size)
+                 size_t max_message_size,
+                 std::string pending_input)
     : fd_(fd)
     , io_timeout_(io_timeout)
     , handshake_timeout_(handshake_timeout)
     , max_frame_payload_size_(max_frame_payload_size)
     , max_message_size_(max_message_size)
+    , pending_input_(std::move(pending_input))
 {
 }
 
@@ -299,10 +309,20 @@ WsCodec WsCodec::Accept(int fd,
                         size_t max_message_size)
 {
   WsCodec codec(fd, io_timeout, handshake_timeout, max_frame_payload_size,
-                max_message_size);
-  codec.pending_input_ = std::move(pending_input);
+                max_message_size, std::move(pending_input));
   codec.Handshake(request_headers);
   return codec;
+}
+
+WsCodec WsCodec::FromUpgradedConnection(int fd,
+                                        std::string pending_input,
+                                        std::chrono::milliseconds io_timeout,
+                                        size_t max_frame_payload_size,
+                                        size_t max_message_size)
+{
+  return WsCodec(fd, io_timeout, std::chrono::milliseconds::zero(),
+                 max_frame_payload_size, max_message_size,
+                 std::move(pending_input));
 }
 
 std::optional<std::string_view> WsCodec::RequestHeader(

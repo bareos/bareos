@@ -26,69 +26,134 @@
 #ifndef BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_
 #define BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_
 
+#include <array>
+#include <filesystem>
 #include <functional>
+#include <initializer_list>
+#include <mutex>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
+
+#include "os_detector.h"
 
 /** Called for each output line.  stream is "stdout" or "stderr". */
 using OutputCallback
-    = std::function<void(const std::string& line, const std::string& stream)>;
+    = std::function<void(std::string_view line, std::string_view stream)>;
+
+enum class SetupTool
+{
+  Bash,
+  Curl,
+  Install,
+  Chown,
+  Systemctl,
+  Su,
+  Sh,
+  AptGet,
+  Dnf,
+  Yum,
+  Zypper,
+  Rm,
+  PostgresqlSetup,
+  A2enmod,
+  A2ensite,
+  A2enflag,
+  Echo,
+  Sudo,
+  OpenSSL,
+  Chmod,
+  Cat,
+  Getenforce,
+  Setsebool,
+  XdgOpen,
+  Open,
+  SensibleBrowser,
+  Count
+};
+
+/** A command can only name an executable through its registered wrapper. */
+struct SetupCommand {
+  SetupTool tool;
+  std::vector<std::string> arguments;
+
+  std::vector<std::string> Argv() const;
+  bool operator==(const SetupCommand&) const = default;
+};
+
+using CommandLogCallback
+    = std::function<void(const SetupCommand&, bool dry_run, bool has_input)>;
+using PreviewCallback = std::function<void(bool has_input)>;
 
 /**
- * Run a command (argv list), optionally prefixed with "sudo".
- * Calls cb for every output line from stdout and stderr as they arrive.
- * Returns the exit code of the child process.
- * Throws std::runtime_error on fork/exec failure.
+ * Own the execution mode and resolved executable paths for one setup run.
+ * Dry runs log commands without executing them; Remove() is a no-op in that
+ * mode. Missing executables are looked up again later so tools installed by
+ * the package-install step can be resolved when first used.
  */
-int RunCommand(const std::vector<std::string>& argv,
-               bool use_sudo,
-               OutputCallback cb);
+class SetupContext {
+ public:
+  explicit SetupContext(bool dry_run = false);
 
-/**
- * Run an argv command while supplying up to PIPE_BUF bytes on stdin.
- *
- * This limit guarantees that the complete input can be written before output
- * draining begins, preventing a bidirectional pipe deadlock.
- */
-int RunCommandWithInput(const std::vector<std::string>& argv,
-                        const std::string& input,
-                        bool use_sudo,
-                        OutputCallback cb);
+  bool dry_run() const;
+  bool IsToolAvailable(SetupTool tool) const;
+  std::vector<std::string> MissingRequiredTools(PackageManager pkg_mgr) const;
+  std::vector<std::string> MissingPostInstallTools(
+      PackageManager pkg_mgr) const;
+
+  int Run(const SetupCommand& command,
+          bool run_as_root,
+          OutputCallback output,
+          CommandLogCallback log_command = {},
+          PreviewCallback preview = {}) const;
+  int RunWithInput(const SetupCommand& command,
+                   const std::string& input,
+                   bool run_as_root,
+                   OutputCallback output,
+                   CommandLogCallback log_command = {},
+                   PreviewCallback preview = {}) const;
+
+  void Remove(const std::filesystem::path& path) const;
+
+ private:
+  std::optional<std::string> ToolPath(SetupTool tool) const;
+  int RunImpl(const SetupCommand& command,
+              const std::string* input,
+              bool run_as_root,
+              OutputCallback output,
+              CommandLogCallback log_command,
+              PreviewCallback preview) const;
+
+  bool dry_run_;
+  mutable std::mutex tool_paths_mutex_;
+  mutable std::array<std::optional<std::string>,
+                     static_cast<size_t>(SetupTool::Count)>
+      tool_paths_{};
+};
+
+SetupCommand Bash(std::vector<std::string> arguments);
+SetupCommand Curl(std::vector<std::string> arguments);
+SetupCommand Install(std::vector<std::string> arguments);
+SetupCommand Chown(std::vector<std::string> arguments);
+SetupCommand Systemctl(std::vector<std::string> arguments);
+SetupCommand Su(std::vector<std::string> arguments);
+SetupCommand Sh(std::vector<std::string> arguments);
+SetupCommand AptGet(std::vector<std::string> arguments);
+SetupCommand Dnf(std::vector<std::string> arguments);
+SetupCommand Yum(std::vector<std::string> arguments);
+SetupCommand Zypper(std::vector<std::string> arguments);
+SetupCommand Rm(std::vector<std::string> arguments);
+SetupCommand PostgresqlSetup(std::vector<std::string> arguments);
+SetupCommand A2enmod(std::vector<std::string> arguments);
+SetupCommand A2ensite(std::vector<std::string> arguments);
+SetupCommand A2enflag(std::vector<std::string> arguments);
+SetupCommand Echo(std::vector<std::string> arguments);
+SetupCommand XdgOpen(std::vector<std::string> arguments);
+SetupCommand Open(std::vector<std::string> arguments);
+SetupCommand SensibleBrowser(std::vector<std::string> arguments);
 
 /** True if this process is currently running as root (effective UID 0). */
 bool IsRoot();
-
-/**
- * Ensure a sudo authentication ticket is cached for the current user,
- * prompting for a password on the controlling terminal if necessary.
- * Returns false if authentication failed (e.g. no controlling terminal,
- * wrong password, or the user is not permitted to use sudo).
- * Always returns true without prompting when already running as root.
- */
-bool PrimeSudoTicket();
-
-/**
- * Start a detached background thread that refreshes the sudo ticket
- * every 60 seconds for the remainder of the process lifetime, so that
- * long-running wizard sessions never run into an expired ticket
- * mid-install. No-op when already running as root.
- */
-void StartSudoKeepAlive();
-
-/**
- * True if a program named "name" can be found in one of the directories
- * listed in the PATH environment variable and is executable.
- */
-bool IsToolInPath(const std::string& name);
-
-/**
- * Verify that all external command-line tools bareos-setup depends on
- * are installed and reachable via PATH. "pkg_mgr" is the package manager
- * binary to additionally require (e.g. "dnf", "apt", "zypper" -- as
- * detected for the current host; "apt" implies "apt-get" is also
- * required since both are invoked depending on the operation).
- * Returns the list of missing tool names (empty if none are missing).
- */
-std::vector<std::string> MissingRequiredTools(const std::string& pkg_mgr);
 
 #endif  // BAREOS_BAREOS_SETUP_COMMAND_RUNNER_H_

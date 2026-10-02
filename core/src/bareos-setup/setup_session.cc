@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -53,8 +54,8 @@ struct SetupProgress {
 };
 
 struct SessionContext {
+  SetupContext& setup;
   bool peer_is_loopback = true;
-  bool dry_run = false;
 };
 
 const std::string kAdminConfigPath = SetupAdminConfigPath();
@@ -89,7 +90,7 @@ void Error(WsCodec& ws, const std::string& step, const std::string& message)
 }
 
 void Output(WsCodec& ws,
-            const std::string& line,
+            std::string_view line,
             const std::vector<std::string>& secrets = {})
 {
   const auto safe = RedactSetupSecrets(line, secrets);
@@ -199,38 +200,38 @@ std::vector<std::string> SecretsFor(
   return secrets;
 }
 
-int Run(const std::vector<std::string>& command,
+int Run(const SetupCommand& command,
         WsCodec& ws,
         const SessionContext& context,
         const std::vector<std::string>& secrets = {})
 {
-  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
-  if (context.dry_run) {
-    Output(ws, "[preview] dry run: command not executed.");
-    return 0;
-  }
-  return RunCommand(
+  return context.setup.Run(
       command, true,
-      [&ws, &secrets](const std::string& line, const std::string&) {
+      [&ws, &secrets](std::string_view line, std::string_view) {
         Output(ws, line, secrets);
-      });
+      },
+      [&ws, &secrets](const SetupCommand& logged_command, bool, bool) {
+        Output(ws, "$ " + JoinCommandForDisplay(logged_command), secrets);
+      },
+      [&ws](bool) { Output(ws, "[preview] dry run: command not executed."); });
 }
 
-int RunWithInput(const std::vector<std::string>& command,
+int RunWithInput(const SetupCommand& command,
                  const std::string& input,
                  WsCodec& ws,
                  const SessionContext& context,
                  const std::vector<std::string>& secrets = {})
 {
-  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
-  if (context.dry_run) {
-    Output(ws, "[preview] dry run: command not executed; stdin redacted.");
-    return 0;
-  }
-  return RunCommandWithInput(
+  return context.setup.RunWithInput(
       command, input, true,
-      [&ws, &secrets](const std::string& line, const std::string&) {
+      [&ws, &secrets](std::string_view line, std::string_view) {
         Output(ws, line, secrets);
+      },
+      [&ws, &secrets](const SetupCommand& logged_command, bool, bool) {
+        Output(ws, "$ " + JoinCommandForDisplay(logged_command), secrets);
+      },
+      [&ws](bool) {
+        Output(ws, "[preview] dry run: command not executed; stdin redacted.");
       });
 }
 
@@ -240,16 +241,22 @@ std::string DiscoverSubscriptionRelease(WsCodec& ws,
                                         const std::string& curl_config)
 {
   const auto command = BuildSubscriptionReleaseIndexCmd(true);
-  Output(ws, "$ " + JoinCommandForDisplay(command), secrets);
-  if (context.dry_run) return "newest-release";
-
   std::string index;
-  const int result = RunCommandWithInput(
+  const int result = context.setup.RunWithInput(
       command, curl_config, true,
-      [&index](const std::string& line, const std::string&) {
+      [&index](std::string_view line, std::string_view) {
         index += line;
         index += '\n';
+      },
+      [&ws, &secrets](const SetupCommand& logged_command, bool dry_run, bool) {
+        if (dry_run) {
+          Output(ws, "[preview] " + JoinCommandForDisplay(logged_command),
+                 secrets);
+        } else {
+          Output(ws, "$ " + JoinCommandForDisplay(logged_command), secrets);
+        }
       });
+  if (context.setup.dry_run()) return "newest-release";
   if (result != 0) {
     throw std::runtime_error(
         "Unable to retrieve the Bareos Subscription release index.");
@@ -351,12 +358,12 @@ int InstallRepository(WsCodec& ws,
         "Remote browser sessions must not send subscription credentials. "
         "They are requested securely on the bareos-setup terminal.");
   }
-  if (repo_type == "subscription" && !context.dry_run
+  if (repo_type == "subscription" && !context.setup.dry_run()
       && context.peer_is_loopback && (login.empty() || password.empty())) {
     throw std::runtime_error("Subscription credentials are required.");
   }
   if (repo_type == "subscription" && !context.peer_is_loopback) {
-    if (context.dry_run) {
+    if (context.setup.dry_run()) {
       Output(ws,
              "Dry run: subscription credentials would be requested on the "
              "bareos-setup terminal, not in this browser.");
@@ -369,14 +376,17 @@ int InstallRepository(WsCodec& ws,
   }
 
   std::vector<std::string> secrets;
-  if (repo_type == "subscription" && !context.dry_run)
+  if (repo_type == "subscription" && !context.setup.dry_run())
     secrets = SecretsFor(message, {login, password});
   else
     secrets = SecretsFor(message);
   if (repo_type == "community") {
     Output(ws, "Checking connectivity to the Bareos download server...");
-    const int reachable
-        = Run(BuildNetworkCheckCmd(repo_type), ws, context, secrets);
+    const auto network_check = BuildNetworkCheckCmd(repo_type);
+    if (!network_check) {
+      throw std::logic_error("Community repository check command is missing");
+    }
+    const int reachable = Run(*network_check, ws, context, secrets);
     if (reachable != 0) { return reachable; }
   } else {
     Output(ws,
@@ -386,7 +396,7 @@ int InstallRepository(WsCodec& ws,
 
   const bool use_curl_config = repo_type == "subscription";
   const std::string curl_config
-      = context.dry_run ? "" : BuildCurlUserConfig(login, password);
+      = context.setup.dry_run() ? "" : BuildCurlUserConfig(login, password);
   const std::string release
       = use_curl_config
             ? DiscoverSubscriptionRelease(ws, context, secrets, curl_config)
@@ -415,28 +425,30 @@ int InstallRepository(WsCodec& ws,
   auto command = BuildAddRepoCmdForPath(repo_os_path, repo_type,
                                         use_curl_config, release);
   const std::filesystem::path script
-      = context.dry_run ? std::filesystem::path{"bareos-setup-repository.sh"}
-                        : RuntimeFile("repository");
-  command.insert(command.end() - 1, {"--output", script.string()});
+      = context.setup.dry_run()
+            ? std::filesystem::path{"bareos-setup-repository.sh"}
+            : RuntimeFile("repository");
+  command.arguments.insert(command.arguments.end() - 1,
+                           {"--output", script.string()});
   const int download = use_curl_config ? RunWithInput(command, curl_config, ws,
                                                       context, secrets)
                                        : Run(command, ws, context, secrets);
   if (download != 0) {
-    if (!context.dry_run) std::filesystem::remove(script);
+    context.setup.Remove(script);
     return download;
   }
   Output(ws, "Installing the approved Bareos repository.");
-  const int result = Run({"bash", script.string()}, ws, context, secrets);
-  if (!context.dry_run) std::filesystem::remove(script);
+  const int result = Run(Bash({script.string()}), ws, context, secrets);
+  context.setup.Remove(script);
   if (result != 0) return result;
   {
     std::lock_guard lock(Progress().mutex);
     Progress().repo_os_path = repo_os_path;
   }
   const auto update_cmd = BuildPackageCacheUpdateCmd(os.pkg_mgr);
-  if (!update_cmd.empty()) {
+  if (update_cmd) {
     Output(ws, "Refreshing package metadata.");
-    return Run(update_cmd, ws, context);
+    return Run(*update_cmd, ws, context);
   }
   return 0;
 }
@@ -450,12 +462,12 @@ int InstallPackages(WsCodec& ws, const SessionContext& context)
         "Bareos cannot be installed on this system.");
   }
 
-  if (os.pkg_mgr == "apt") {
+  if (os.pkg_mgr == PackageManager::Apt) {
     Output(ws, "Installing PostgreSQL package.");
     if (Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), ws, context) != 0) {
       return 1;
     }
-    if (Run({"systemctl", "enable", "--now", "postgresql"}, ws, context) != 0) {
+    if (Run(Systemctl({"enable", "--now", "postgresql"}), ws, context) != 0) {
       return 1;
     }
     Output(ws, "Installing the fixed Bareos package set.");
@@ -492,10 +504,11 @@ int InitializeCatalog(WsCodec& ws, const SessionContext& context)
   // a permission error), treat it the same as "not present" rather than
   // letting a filesystem_error exception propagate out of this step.
   std::error_code marker_error;
-  if (context.dry_run || !std::filesystem::exists(marker, marker_error)) {
-    const auto init_cmd = BuildPostgresInitCmd();
-    if (!init_cmd.empty() && Run(init_cmd, ws, context) != 0) return 1;
-    if (Run({"systemctl", "enable", "--now", "postgresql"}, ws, context) != 0) {
+  if (context.setup.dry_run()
+      || !std::filesystem::exists(marker, marker_error)) {
+    const auto init_cmd = BuildPostgresInitCmd(context.setup);
+    if (init_cmd && Run(*init_cmd, ws, context) != 0) return 1;
+    if (Run(Systemctl({"enable", "--now", "postgresql"}), ws, context) != 0) {
       return 1;
     }
     // Non-Debian packages need the manual catalog scripts. Debian/Ubuntu
@@ -504,7 +517,7 @@ int InitializeCatalog(WsCodec& ws, const SessionContext& context)
       if (Run(BuildRunAsPostgresCmd(script), ws, context) != 0) return 1;
     }
     const int marker_result
-        = Run({"install", "-D", "-m", "0640", "/dev/null", marker.string()}, ws,
+        = Run(Install({"-D", "-m", "0640", "/dev/null", marker.string()}), ws,
               context);
     if (marker_result != 0) return marker_result;
   } else {
@@ -513,34 +526,38 @@ int InitializeCatalog(WsCodec& ws, const SessionContext& context)
   // The daemons need a working, privilege-granted catalog before they can
   // start successfully, so enable/start them here (idempotent) rather than
   // right after package installation.
-  auto enable_daemons
-      = std::vector<std::string>{"systemctl", "enable", "--now"};
+  auto enable_daemons = Systemctl({"enable", "--now"});
   const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
-  enable_daemons.insert(enable_daemons.end(), daemon_services.begin(),
-                        daemon_services.end());
+  enable_daemons.arguments.insert(enable_daemons.arguments.end(),
+                                  daemon_services.begin(),
+                                  daemon_services.end());
   return Run(enable_daemons, ws, context);
 }
 
 int CreateAdmin(WsCodec& ws, const SessionContext& context)
 {
   constexpr std::string_view username = "admin";
-  if (!context.dry_run) {
+  if (!context.setup.dry_run()) {
     EnsureNoExistingSetupConfigs(ws, context, {kAdminConfigPath});
   }
-  if (context.dry_run) {
-    const std::vector<std::string> write_argv
-        = {"install", "-D",         "-m",
-           "0640",    "/dev/stdin", std::string{kAdminConfigPath}};
-    Output(ws, "$ " + JoinCommandForDisplay(write_argv));
-    Output(ws,
-           "[preview] dry run: would create initial admin console "
-           "configuration with a generated password.");
-    if (Run({"chown", "root:bareos", std::string{kAdminConfigPath}}, ws,
-            context)
+  if (context.setup.dry_run()) {
+    const auto write_command = Install(
+        {"-D", "-m", "0640", "/dev/stdin", std::string{kAdminConfigPath}});
+    context.setup.RunWithInput(
+        write_command, "", true, [](std::string_view, std::string_view) {},
+        [&ws](const SetupCommand& logged_command, bool, bool) {
+          Output(ws, "$ " + JoinCommandForDisplay(logged_command));
+        },
+        [&ws](bool) {
+          Output(ws,
+                 "[preview] dry run: would create initial admin console "
+                 "configuration with a generated password.");
+        });
+    if (Run(Chown({"root:bareos", std::string{kAdminConfigPath}}), ws, context)
         != 0) {
       return 1;
     }
-    if (Run({"systemctl", "restart", "bareos-dir"}, ws, context) != 0) {
+    if (Run(Systemctl({"restart", "bareos-dir"}), ws, context) != 0) {
       return 1;
     }
     Send(ws, json_pack("{s:s,s:s,s:b}", "type", "admin_credentials", "username",
@@ -558,24 +575,27 @@ int CreateAdmin(WsCodec& ws, const SessionContext& context)
       "  TLS Enable = No\n"
         "}\n";
   const std::string path{kAdminConfigPath};
-  const std::vector<std::string> write_argv
-      = {"install", "-D", "-m", "0640", "/dev/stdin", path};
-  Output(ws, "$ " + JoinCommandForDisplay(write_argv), {password});
-  const int write_result = RunCommandWithInput(
-      write_argv, resource, true,
-      [&ws, &password](const std::string& line, const std::string&) {
+  const auto write_command = Install({"-D", "-m", "0640", "/dev/stdin", path});
+  const int write_result = context.setup.RunWithInput(
+      write_command, resource, true,
+      [&ws, &password](std::string_view line, std::string_view) {
         Output(ws, line, {password});
+      },
+      [&ws, &password](const SetupCommand& logged_command, bool, bool) {
+        Output(ws, "$ " + JoinCommandForDisplay(logged_command), {password});
+      },
+      [&ws](bool) {
+        Output(ws, "[preview] dry run: command not executed; stdin redacted.");
       });
   if (write_result != 0) return write_result;
   {
     std::lock_guard lock(Progress().mutex);
     Progress().admin_config_created = true;
   }
-  if (Run({"chown", "root:bareos", path}, ws, context, {password}) != 0) {
+  if (Run(Chown({"root:bareos", path}), ws, context, {password}) != 0) {
     return 1;
   }
-  if (Run({"systemctl", "restart", "bareos-dir"}, ws, context, {password})
-      != 0) {
+  if (Run(Systemctl({"restart", "bareos-dir"}), ws, context, {password}) != 0) {
     return 1;
   }
   {
@@ -598,11 +618,21 @@ int CreateAdmin(WsCodec& ws, const SessionContext& context)
 int ConfigureProxy(WsCodec& ws, const SessionContext& context)
 {
   const auto os = DetectOs();
+  if (!context.setup.dry_run()) {
+    const auto missing = context.setup.MissingPostInstallTools(os.pkg_mgr);
+    if (!missing.empty()) {
+      std::ostringstream message;
+      message << "Required post-install tool(s) not found in PATH:";
+      for (const auto& tool : missing) message << " " << tool;
+      Output(ws, message.str());
+      return 1;
+    }
+  }
   // No configuration file is written: the built-in defaults of
   // bareos-webui-proxy already describe exactly the layout this setup
   // creates, and the service falls back to them when no file exists. Any
   // configuration an administrator placed there is therefore left alone.
-  if (Run({"systemctl", "enable", "--now", "bareos-webui-proxy"}, ws, context)
+  if (Run(Systemctl({"enable", "--now", "bareos-webui-proxy"}), ws, context)
       != 0) {
     return 1;
   }
@@ -611,15 +641,14 @@ int ConfigureProxy(WsCodec& ws, const SessionContext& context)
     if (Run(command, ws, context) != 0) return 1;
   }
   if (Run(BuildWebUiSelinuxSetupCmd(), ws, context) != 0) return 1;
-  if (Run({"systemctl", "enable", "--now",
-           BuildWebServerServiceName(os.pkg_mgr)},
+  if (Run(Systemctl({"enable", "--now", BuildWebServerServiceName(os.pkg_mgr)}),
           ws, context)
       != 0) {
     return 1;
   }
   if (!https_setup_cmds.empty()
-      && Run({"systemctl", "restart", BuildWebServerServiceName(os.pkg_mgr)},
-             ws, context)
+      && Run(Systemctl({"restart", BuildWebServerServiceName(os.pkg_mgr)}), ws,
+             context)
              != 0) {
     return 1;
   }
@@ -644,9 +673,9 @@ int RunSmokeTest(WsCodec& ws, const SessionContext& context)
   auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
   services.emplace_back("bareos-webui-proxy");
   for (const auto& service : services) {
-    if (Run({"systemctl", "is-active", service}, ws, context) != 0) return 1;
+    if (Run(Systemctl({"is-active", service}), ws, context) != 0) return 1;
   }
-  if (Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)}, ws,
+  if (Run(Systemctl({"is-active", BuildWebServerServiceName(os.pkg_mgr)}), ws,
           context)
       != 0) {
     return 1;
@@ -658,7 +687,7 @@ int RunSmokeTest(WsCodec& ws, const SessionContext& context)
 int RunStep(WsCodec& ws,
             const std::string& step,
             json_t* message,
-            const SessionContext& context = {})
+            const SessionContext& context)
 {
   if (step == "repository") return InstallRepository(ws, message, context);
   if (step == "packages") return InstallPackages(ws, context);
@@ -700,16 +729,17 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
                  "{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s,s:b,s:b,s:b,s:b,"
                  "s:b,s:b,s:s,s:o,s:o}",
                  "type", "state", "distro", os.distro.c_str(), "version",
-                 os.version.c_str(), "package_manager", os.pkg_mgr.c_str(),
-                 "pretty_name", os.pretty_name.c_str(), "arch", os.arch.c_str(),
-                 "codename", os.codename.c_str(), "hostname", hostname.c_str(),
-                 "completed", completed, "finished", Progress().finished,
-                 "setup_version", BAREOS_FULL_VERSION, "peer_is_loopback",
-                 context.peer_is_loopback, "dry_run", context.dry_run,
+                 os.version.c_str(), "package_manager",
+                 PackageManagerName(os.pkg_mgr), "pretty_name",
+                 os.pretty_name.c_str(), "arch", os.arch.c_str(), "codename",
+                 os.codename.c_str(), "hostname", hostname.c_str(), "completed",
+                 completed, "finished", Progress().finished, "setup_version",
+                 BAREOS_FULL_VERSION, "peer_is_loopback",
+                 context.peer_is_loopback, "dry_run", context.setup.dry_run(),
                  "subscription_credentials_in_browser",
-                 context.peer_is_loopback && !context.dry_run,
+                 context.peer_is_loopback && !context.setup.dry_run(),
                  "subscription_credentials_on_terminal",
-                 !context.peer_is_loopback && !context.dry_run,
+                 !context.peer_is_loopback && !context.setup.dry_run(),
                  "platform_supported", platform_supported,
                  "package_manager_supported", pkg_mgr_supported, "repo_os_path",
                  repo_os_path.c_str(), "known_repo_os_paths", known_paths,
@@ -728,15 +758,15 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
       std::lock_guard lock(Progress().mutex);
       remove_admin = Progress().admin_config_created;
     }
-    if (context.dry_run) {
+    if (context.setup.dry_run()) {
       Output(ws, "[preview] dry run: rollback effects not executed.");
     } else {
       if (remove_admin) {
-        Run({"rm", "-f", std::string{kAdminConfigPath}}, ws, context);
+        Run(Rm({"-f", std::string{kAdminConfigPath}}), ws, context);
       }
     }
     std::lock_guard lock(Progress().mutex);
-    if (!context.dry_run) {
+    if (!context.setup.dry_run()) {
       Progress().completed.clear();
       Progress().failed_step.clear();
       Progress().finished = false;
@@ -760,7 +790,7 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
   }
   {
     std::lock_guard lock(Progress().mutex);
-    if (!context.dry_run && Progress().completed.contains(step)) {
+    if (!context.setup.dry_run() && Progress().completed.contains(step)) {
       Send(ws, json_pack("{s:s,s:s,s:i}", "type", "done", "step", step.c_str(),
                          "exit_code", 0));
       return;
@@ -773,11 +803,11 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
     Error(ws, step, error.what());
     return;
   }
-  if (result == 0 && !context.dry_run) {
+  if (result == 0 && !context.setup.dry_run()) {
     std::lock_guard lock(Progress().mutex);
     Progress().completed.insert(step);
     if (step == "smoke_test") Progress().finished = true;
-  } else if (result != 0 && !context.dry_run) {
+  } else if (result != 0 && !context.setup.dry_run()) {
     std::lock_guard lock(Progress().mutex);
     Progress().failed_step = step;
   }
@@ -793,8 +823,9 @@ int RunSetupStepForTests(int fd,
                          bool peer_is_loopback,
                          bool dry_run)
 {
-  WsCodec ws(fd);
-  const SessionContext context{peer_is_loopback, dry_run};
+  WsCodec ws = WsCodec::FromUpgradedConnection(fd);
+  SetupContext setup_context(dry_run);
+  const SessionContext context{setup_context, peer_is_loopback};
   json_error_t error{};
   json_t* message = json_loads(json_message.c_str(), 0, &error);
   if (!message) message = json_object();
@@ -803,10 +834,23 @@ int RunSetupStepForTests(int fd,
   return result;
 }
 
-void RunSetupSession(int fd, bool dry_run, bool peer_is_loopback)
+void RunSetupSession(int fd,
+                     SetupContext& setup_context,
+                     bool peer_is_loopback,
+                     std::string request_headers,
+                     std::string pending_input)
 {
-  WsCodec ws(fd);
-  const SessionContext context{peer_is_loopback, dry_run};
+  WsCodec ws = [&] {
+    if (request_headers.empty()) {
+      return WsCodec::FromUpgradedConnection(fd, std::move(pending_input));
+    }
+    constexpr auto kSetupMaxWebSocketSize = 16 * 1024 * 1024;
+    return WsCodec::Accept(fd, request_headers, std::move(pending_input),
+                           std::chrono::milliseconds::zero(),
+                           std::chrono::seconds(5), kSetupMaxWebSocketSize,
+                           kSetupMaxWebSocketSize);
+  }();
+  const SessionContext context{setup_context, peer_is_loopback};
   try {
     while (!ws.IsClosed()) {
       const auto text = ws.RecvMessage();

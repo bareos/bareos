@@ -20,37 +20,56 @@
 */
 #include "os_detector.h"
 
+#include <cctype>
 #include <cstring>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <sys/utsname.h>
 #include <unistd.h>
 
-/** Strip leading/trailing whitespace and optional surrounding quotes,
- * handling the shell-style escaping used by os-release values. */
-static std::string Unquote(std::string s)
+const char* PackageManagerName(PackageManager package_manager)
 {
-  const auto trim = [](std::string value) {
-    const auto begin = value.find_first_not_of(" \t\r\n");
-    if (begin == std::string::npos) return std::string{};
-    const auto end = value.find_last_not_of(" \t\r\n");
-    return value.substr(begin, end - begin + 1);
-  };
+  switch (package_manager) {
+    case PackageManager::Unknown:
+      return "unknown";
+    case PackageManager::Apt:
+      return "apt";
+    case PackageManager::Dnf:
+      return "dnf";
+    case PackageManager::Yum:
+      return "yum";
+    case PackageManager::Zypper:
+      return "zypper";
+  }
+  return "unknown";
+}
 
-  s = trim(s);
-  if (s.empty()) return {};
+static std::string_view Trim(std::string_view value)
+{
+  const auto is_space = [](unsigned char ch) { return std::isspace(ch) != 0; };
+  while (!value.empty() && is_space(value.front())) value.remove_prefix(1);
+  while (!value.empty() && is_space(value.back())) value.remove_suffix(1);
+  return value;
+}
 
-  const char quote = s.front();
-  if ((quote == '"' || quote == '\'') && s.size() >= 2 && s.back() == quote)
-    s = s.substr(1, s.size() - 2);
+/** Remove os-release quotes and interpret backslash escapes. */
+static std::string Unquote(std::string_view value)
+{
+  value = Trim(value);
+  if (value.size() >= 2 && (value.front() == '"' || value.front() == '\'')
+      && value.back() == value.front()) {
+    value.remove_prefix(1);
+    value.remove_suffix(1);
+  }
 
   std::string unescaped;
-  unescaped.reserve(s.size());
+  unescaped.reserve(value.size());
   bool escaping = false;
-  for (const char ch : s) {
+  for (const char ch : value) {
     if (escaping) {
       unescaped.push_back(ch);
       escaping = false;
@@ -68,12 +87,24 @@ static std::string Unquote(std::string s)
 }
 
 /** Split a whitespace separated os-release value list into its entries. */
-static std::vector<std::string> SplitWords(const std::string& value)
+static std::vector<std::string> SplitWords(std::string_view value)
 {
   std::vector<std::string> words;
-  std::istringstream stream(value);
-  std::string word;
-  while (stream >> word) words.push_back(word);
+  size_t offset = 0;
+  while (offset < value.size()) {
+    while (offset < value.size()
+           && std::isspace(static_cast<unsigned char>(value[offset])) != 0) {
+      ++offset;
+    }
+    const size_t word_begin = offset;
+    while (offset < value.size()
+           && std::isspace(static_cast<unsigned char>(value[offset])) == 0) {
+      ++offset;
+    }
+    if (word_begin != offset) {
+      words.emplace_back(value.substr(word_begin, offset - word_begin));
+    }
+  }
   return words;
 }
 
@@ -83,10 +114,13 @@ OsInfo ParseOsRelease(const std::string& content)
   std::istringstream stream(content);
   std::string line;
   while (std::getline(stream, line)) {
-    auto eq = line.find('=');
+    const std::string_view trimmed_line = Trim(line);
+    // os-release comment lines begin with '#'; blank lines have no '='.
+    if (trimmed_line.empty() || trimmed_line.front() == '#') continue;
+    const auto eq = trimmed_line.find('=');
     if (eq == std::string::npos) continue;
-    auto key = Unquote(line.substr(0, eq));
-    auto val = Unquote(line.substr(eq + 1));
+    auto key = Unquote(trimmed_line.substr(0, eq));
+    auto val = Unquote(trimmed_line.substr(eq + 1));
     if (key == "ID")
       info.distro = val;
     else if (key == "ID_LIKE")
@@ -121,15 +155,13 @@ OsInfo DetectOs()
   // Detect package manager
   if (access("/usr/bin/apt-get", X_OK) == 0
       || access("/bin/apt-get", X_OK) == 0) {
-    info.pkg_mgr = "apt";
+    info.pkg_mgr = PackageManager::Apt;
   } else if (access("/usr/bin/dnf", X_OK) == 0) {
-    info.pkg_mgr = "dnf";
+    info.pkg_mgr = PackageManager::Dnf;
   } else if (access("/usr/bin/yum", X_OK) == 0) {
-    info.pkg_mgr = "yum";
+    info.pkg_mgr = PackageManager::Yum;
   } else if (access("/usr/bin/zypper", X_OK) == 0) {
-    info.pkg_mgr = "zypper";
-  } else {
-    info.pkg_mgr = "unknown";
+    info.pkg_mgr = PackageManager::Zypper;
   }
 
   return info;

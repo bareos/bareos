@@ -35,11 +35,10 @@
 #include "command_runner.h"
 #include "os_detector.h"
 #include "setup_session.h"
-#include "ws_codec.h"
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
 {
-  EXPECT_EQ(BuildDefaultPackageList("dnf"),
+  EXPECT_EQ(BuildDefaultPackageList(PackageManager::Dnf),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
@@ -50,7 +49,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
 {
-  EXPECT_EQ(BuildDefaultPackageList("apt"),
+  EXPECT_EQ(BuildDefaultPackageList(PackageManager::Apt),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
@@ -60,7 +59,7 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
 {
-  EXPECT_EQ(BuildDefaultPackageList("zypper"),
+  EXPECT_EQ(BuildDefaultPackageList(PackageManager::Zypper),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
@@ -70,19 +69,19 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
 {
-  EXPECT_EQ(BuildPackageListWithoutPostgresServer("apt"),
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer(PackageManager::Apt),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
                 "bareos-webui-proxy", "policycoreutils"}));
-  EXPECT_EQ(BuildPackageListWithoutPostgresServer("dnf"),
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer(PackageManager::Dnf),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
                 "bareos-database-tools", "bareos-tools", "bareos-webui-new",
                 "bareos-webui-proxy", "policycoreutils", "mod_ssl"}));
-  EXPECT_EQ(BuildPackageListWithoutPostgresServer("zypper"),
+  EXPECT_EQ(BuildPackageListWithoutPostgresServer(PackageManager::Zypper),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
@@ -92,13 +91,13 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
 {
-  EXPECT_EQ(BuildPackageListWithoutTapeStorage("zypper"),
+  EXPECT_EQ(BuildPackageListWithoutTapeStorage(PackageManager::Zypper),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-dedupable", "bareos-database-tools",
                 "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
                 "policycoreutils", "postgresql-server"}));
-  EXPECT_EQ(BuildPackageListWithoutTapeStorage("dnf"),
+  EXPECT_EQ(BuildPackageListWithoutTapeStorage(PackageManager::Dnf),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-dedupable", "bareos-database-tools",
@@ -108,14 +107,16 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
 
 TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)
 {
-  EXPECT_TRUE(BuildCatalogInitScripts("apt").empty());
-  EXPECT_EQ(BuildCatalogInitScripts("dnf"),
+  EXPECT_TRUE(BuildCatalogInitScripts(PackageManager::Apt).empty());
+  EXPECT_EQ(BuildCatalogInitScripts(PackageManager::Dnf),
             (std::vector<std::string>{
                 "/usr/lib/bareos/scripts/create_bareos_database",
                 "/usr/lib/bareos/scripts/make_bareos_tables",
                 "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
-  EXPECT_EQ(BuildCatalogInitScripts("yum"), BuildCatalogInitScripts("dnf"));
-  EXPECT_EQ(BuildCatalogInitScripts("zypper"), BuildCatalogInitScripts("dnf"));
+  EXPECT_EQ(BuildCatalogInitScripts(PackageManager::Yum),
+            BuildCatalogInitScripts(PackageManager::Dnf));
+  EXPECT_EQ(BuildCatalogInitScripts(PackageManager::Zypper),
+            BuildCatalogInitScripts(PackageManager::Dnf));
 }
 
 namespace {
@@ -128,7 +129,8 @@ namespace {
 // its argv so tests behave the same whether they run as root or not.
 class FakeToolPath {
  public:
-  explicit FakeToolPath(const std::vector<std::string>& tools)
+  explicit FakeToolPath(const std::vector<std::string>& tools,
+                        bool include_system_path = true)
   {
     std::string pattern
         = (std::filesystem::temp_directory_path() / "bareos-setup-test-XXXXXX")
@@ -159,7 +161,9 @@ class FakeToolPath {
     }
     const char* current = getenv("PATH");
     old_path_ = current != nullptr ? current : "";
-    setenv("PATH", (dir_.string() + ":" + old_path_).c_str(), 1);
+    const std::string path
+        = include_system_path ? dir_.string() + ":" + old_path_ : dir_.string();
+    setenv("PATH", path.c_str(), 1);
   }
 
   ~FakeToolPath()
@@ -192,75 +196,125 @@ class FakeToolPath {
 TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
 {
   // "sh" is guaranteed to exist on every supported Linux platform.
-  EXPECT_TRUE(IsToolInPath("sh"));
+  SetupContext context;
+  EXPECT_TRUE(context.IsToolAvailable(SetupTool::Sh));
 }
 
 TEST(BareosSetupCommandRunner, DoesNotFindNonexistentTool)
 {
-  EXPECT_FALSE(IsToolInPath("definitely-not-a-real-tool-xyz"));
+  FakeToolPath fake_tools({}, false);
+  SetupContext context;
+  EXPECT_FALSE(context.IsToolAvailable(SetupTool::Sh));
 }
 
 TEST(BareosSetupCommandRunner, DeliversBoundedStandardInput)
 {
   std::string output;
+  SetupContext context;
   EXPECT_EQ(
-      RunCommandWithInput({"sh", "-c", "cat"}, "setup input", false,
-                          [&output](const std::string& line,
-                                    const std::string&) { output += line; }),
+      context.RunWithInput(Sh({"-c", "cat"}), "setup input", false,
+                           [&output](std::string_view line, std::string_view) {
+                             output += line;
+                           }),
       0);
   EXPECT_EQ(output, "setup input");
 }
 
 TEST(BareosSetupCommandRunner, RejectsInputExceedingPipeBuf)
 {
+  SetupContext context;
   EXPECT_THROW(
-      RunCommandWithInput({"sh", "-c", "cat"}, std::string(PIPE_BUF + 1, 'x'),
-                          false, [](const std::string&, const std::string&) {}),
+      context.RunWithInput(Sh({"-c", "cat"}), std::string(PIPE_BUF + 1, 'x'),
+                           false, [](std::string_view, std::string_view) {}),
       std::invalid_argument);
 }
 
-TEST(WsCodec, RejectsOversizedFramesBeforePayloadAllocation)
+TEST(BareosSetupCommandRunner, SetupContextOwnsDryRunAndRemovalBehavior)
 {
-  int sockets[2];
-  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  std::string pattern = (std::filesystem::temp_directory_path()
+                         / "bareos-setup-context-remove-XXXXXX")
+                            .string();
+  std::vector<char> buffer(pattern.begin(), pattern.end());
+  buffer.push_back('\0');
+  const int fd = mkstemp(buffer.data());
+  ASSERT_GE(fd, 0);
+  close(fd);
+  const std::filesystem::path path{buffer.data()};
 
-  constexpr uint64_t oversized_payload = 16ULL * 1024 * 1024 + 1;
-  const std::array<unsigned char, 10> header{
-      0x81,
-      127,
-      static_cast<unsigned char>(oversized_payload >> 56),
-      static_cast<unsigned char>(oversized_payload >> 48),
-      static_cast<unsigned char>(oversized_payload >> 40),
-      static_cast<unsigned char>(oversized_payload >> 32),
-      static_cast<unsigned char>(oversized_payload >> 24),
-      static_cast<unsigned char>(oversized_payload >> 16),
-      static_cast<unsigned char>(oversized_payload >> 8),
-      static_cast<unsigned char>(oversized_payload),
-  };
-  ASSERT_EQ(write(sockets[1], header.data(), header.size()),
-            static_cast<ssize_t>(header.size()));
-  WsCodec codec(sockets[0]);
-  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
+  SetupContext dry_context(true);
+  bool command_logged = false;
+  bool preview_called = false;
+  EXPECT_EQ(dry_context.Run(
+                Sh({"-c", "exit 1"}), false,
+                [](std::string_view, std::string_view) {},
+                [&command_logged](const SetupCommand&, bool dry_run, bool) {
+                  command_logged = dry_run;
+                },
+                [&preview_called](bool) { preview_called = true; }),
+            0);
+  EXPECT_TRUE(command_logged);
+  EXPECT_TRUE(preview_called);
+  dry_context.Remove(path);
+  EXPECT_TRUE(std::filesystem::exists(path));
 
-  close(sockets[0]);
-  close(sockets[1]);
+  SetupContext live_context;
+  live_context.Remove(path);
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
+TEST(BareosSetupCommandRunner, SetupContextRefreshesMissingToolPaths)
+{
+  FakeToolPath empty_path({}, false);
+  SetupContext context;
+  EXPECT_FALSE(context.IsToolAvailable(SetupTool::SensibleBrowser));
+  {
+    FakeToolPath installed_tool({"sensible-browser"}, false);
+    EXPECT_TRUE(context.IsToolAvailable(SetupTool::SensibleBrowser));
+    EXPECT_EQ(context.Run(SensibleBrowser({}), false,
+                          [](std::string_view, std::string_view) {}),
+              0);
+  }
+  EXPECT_FALSE(context.IsToolAvailable(SetupTool::SensibleBrowser));
 }
 
 TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
 {
-  // "sh" is used here as a stand-in package manager name since it is
-  // always present, so this exercises the "all tools found" path.
   FakeToolPath fake_tools(
-      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
-  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh", "apt-get"});
+  SetupContext context;
+  EXPECT_TRUE(context.MissingRequiredTools(PackageManager::Apt).empty());
 }
 
 TEST(BareosSetupCommandRunner, ReportsMissingPackageManager)
 {
-  const auto missing = MissingRequiredTools("definitely-not-a-real-tool-xyz");
-  EXPECT_NE(std::find(missing.begin(), missing.end(),
-                      "definitely-not-a-real-tool-xyz"),
-            missing.end());
+  FakeToolPath fake_tools(
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
+  SetupContext context;
+  const auto missing = context.MissingRequiredTools(PackageManager::Zypper);
+  EXPECT_NE(std::find(missing.begin(), missing.end(), "zypper"), missing.end());
+}
+
+TEST(BareosSetupCommandRunner, ChecksPackageSpecificPostInstallTools)
+{
+  {
+    FakeToolPath fake_tools({"a2enmod", "a2ensite"}, false);
+    SetupContext context;
+    EXPECT_TRUE(context.MissingPostInstallTools(PackageManager::Apt).empty());
+  }
+  {
+    FakeToolPath fake_tools({"a2enmod", "a2enflag", "openssl", "chmod", "cat"},
+                            false);
+    SetupContext context;
+    EXPECT_TRUE(
+        context.MissingPostInstallTools(PackageManager::Zypper).empty());
+  }
+  {
+    FakeToolPath fake_tools({"a2enmod", "a2ensite", "a2enflag"}, false);
+    SetupContext context;
+    const auto missing
+        = context.MissingPostInstallTools(PackageManager::Zypper);
+    EXPECT_EQ(missing, (std::vector<std::string>{"openssl", "chmod", "cat"}));
+  }
 }
 
 TEST(BareosSetupCommandRunner, RequiresSuForRunningCatalogScriptsAsPostgres)
@@ -269,19 +323,21 @@ TEST(BareosSetupCommandRunner, RequiresSuForRunningCatalogScriptsAsPostgres)
   // "postgres" OS user) can be started at all; verify it is part of the
   // fixed required-tools set regardless of the detected package manager.
   FakeToolPath fake_tools(
-      {"curl", "bash", "install", "chown", "systemctl", "su", "sh"});
-  ASSERT_TRUE(IsToolInPath("su"));
-  EXPECT_TRUE(MissingRequiredTools("sh").empty());
+      {"curl", "bash", "install", "chown", "systemctl", "su", "sh", "dnf"});
+  SetupContext context;
+  ASSERT_TRUE(context.IsToolAvailable(SetupTool::Su));
+  EXPECT_TRUE(context.MissingRequiredTools(PackageManager::Dnf).empty());
 }
 
 TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
 {
-  const auto init_cmd = BuildPostgresInitCmd();
-  if (IsToolInPath("postgresql-setup")) {
-    EXPECT_EQ(init_cmd,
-              (std::vector<std::string>{"postgresql-setup", "--initdb"}));
+  SetupContext context;
+  const auto init_cmd = BuildPostgresInitCmd(context);
+  if (context.IsToolAvailable(SetupTool::PostgresqlSetup)) {
+    ASSERT_TRUE(init_cmd);
+    EXPECT_EQ(*init_cmd, PostgresqlSetup({"--initdb"}));
   } else {
-    EXPECT_TRUE(init_cmd.empty());
+    EXPECT_FALSE(init_cmd);
   }
 }
 
@@ -289,47 +345,43 @@ TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
 {
   EXPECT_EQ(
       BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/create_bareos_database"),
-      (std::vector<std::string>{
-          "su", "postgres", "-c",
-          "/usr/lib/bareos/scripts/create_bareos_database"}));
+      Su({"postgres", "-c", "/usr/lib/bareos/scripts/create_bareos_database"}));
   EXPECT_EQ(
       BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/make_bareos_tables"),
-      (std::vector<std::string>{"su", "postgres", "-c",
-                                "/usr/lib/bareos/scripts/make_bareos_tables"}));
+      Su({"postgres", "-c", "/usr/lib/bareos/scripts/make_bareos_tables"}));
   EXPECT_EQ(
       BuildRunAsPostgresCmd("/usr/lib/bareos/scripts/grant_bareos_privileges"),
-      (std::vector<std::string>{
-          "su", "postgres", "-c",
+      Su({"postgres", "-c",
           "/usr/lib/bareos/scripts/grant_bareos_privileges"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsNetworkCheckCmdForCommunityRepo)
 {
   const auto command = BuildNetworkCheckCmd("community");
+  ASSERT_TRUE(command);
+  const auto argv = command->Argv();
 
   // The URL must end in a slash so the check does not merely observe a
   // redirect, and the response must be discarded rather than written to
   // stdout: a reachability probe has no use for the body, and writing it
   // made curl fail with "client returned ERROR on write" in the installer.
-  EXPECT_EQ(command.back(), "https://download.bareos.org/current/");
-  EXPECT_NE(std::find(command.begin(), command.end(), "--location"),
-            command.end());
-  const auto output = std::find(command.begin(), command.end(), "--output");
-  ASSERT_NE(output, command.end());
+  EXPECT_EQ(argv.back(), "https://download.bareos.org/current/");
+  EXPECT_NE(std::find(argv.begin(), argv.end(), "--location"), argv.end());
+  const auto output = std::find(argv.begin(), argv.end(), "--output");
+  ASSERT_NE(output, argv.end());
   EXPECT_EQ(*(output + 1), "/dev/null");
 }
 
 TEST(BareosSetupStepsShared, BuildsNoUnauthenticatedSubscriptionNetworkCheck)
 {
-  EXPECT_TRUE(BuildNetworkCheckCmd("subscription").empty());
+  EXPECT_FALSE(BuildNetworkCheckCmd("subscription"));
 }
 
 TEST(BareosSetupStepsShared, BuildsMtxAvailabilityCheck)
 {
-  EXPECT_EQ(
-      BuildMtxAvailabilityCheckCmd(),
-      (std::vector<std::string>{"zypper", "--non-interactive", "search",
-                                "--match-exact", "--type", "package", "mtx"}));
+  EXPECT_EQ(BuildMtxAvailabilityCheckCmd(),
+            Zypper({"--non-interactive", "search", "--match-exact", "--type",
+                    "package", "mtx"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsOpenSuseRepositoryPath)
@@ -356,67 +408,69 @@ TEST(BareosSetupStepsShared, BuildsUbuntuRepositoryPath)
 
 TEST(BareosSetupStepsShared, SupportsOpenSuseLeapPlatform)
 {
-  EXPECT_TRUE(IsSupportedSetupPlatform("opensuse-leap", "zypper"));
-  EXPECT_FALSE(IsSupportedSetupPlatform("opensuse", "zypper"));
-  EXPECT_TRUE(IsSupportedSetupPlatform("sles", "zypper"));
+  EXPECT_TRUE(
+      IsSupportedSetupPlatform("opensuse-leap", PackageManager::Zypper));
+  EXPECT_FALSE(IsSupportedSetupPlatform("opensuse", PackageManager::Zypper));
+  EXPECT_TRUE(IsSupportedSetupPlatform("sles", PackageManager::Zypper));
 }
 
 TEST(BareosSetupStepsShared, BuildsWebServerServiceNameForPackageManager)
 {
-  EXPECT_EQ(BuildWebServerServiceName("apt"), "apache2");
-  EXPECT_EQ(BuildWebServerServiceName("dnf"), "httpd");
-  EXPECT_EQ(BuildWebServerServiceName("yum"), "httpd");
-  EXPECT_EQ(BuildWebServerServiceName("zypper"), "apache2");
+  EXPECT_EQ(BuildWebServerServiceName(PackageManager::Apt), "apache2");
+  EXPECT_EQ(BuildWebServerServiceName(PackageManager::Dnf), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName(PackageManager::Yum), "httpd");
+  EXPECT_EQ(BuildWebServerServiceName(PackageManager::Zypper), "apache2");
 }
 
 TEST(BareosSetupStepsShared, BuildsWebServerHttpsSetup)
 {
-  EXPECT_EQ(BuildWebServerHttpsSetupCmds("apt"),
-            (std::vector<std::vector<std::string>>{
-                {"a2enmod", "ssl"}, {"a2ensite", "default-ssl"}}));
-  const auto zypper_cmds = BuildWebServerHttpsSetupCmds("zypper");
+  EXPECT_EQ(
+      BuildWebServerHttpsSetupCmds(PackageManager::Apt),
+      (std::vector<SetupCommand>{A2enmod({"ssl"}), A2ensite({"default-ssl"})}));
+  const auto zypper_cmds = BuildWebServerHttpsSetupCmds(PackageManager::Zypper);
   ASSERT_EQ(zypper_cmds.size(), 3U);
-  EXPECT_EQ(zypper_cmds[0], (std::vector<std::string>{"a2enmod", "ssl"}));
-  EXPECT_EQ(zypper_cmds[1], (std::vector<std::string>{"a2enflag", "SSL"}));
-  ASSERT_EQ(zypper_cmds[2].size(), 3U);
-  EXPECT_EQ(zypper_cmds[2][0], "sh");
-  EXPECT_EQ(zypper_cmds[2][1], "-c");
-  EXPECT_NE(zypper_cmds[2][2].find("bareos-setup-ssl.conf"), std::string::npos);
-  EXPECT_NE(zypper_cmds[2][2].find("SSLEngine on"), std::string::npos);
-  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("dnf").empty());
-  EXPECT_TRUE(BuildWebServerHttpsSetupCmds("yum").empty());
+  EXPECT_EQ(zypper_cmds[0], A2enmod({"ssl"}));
+  EXPECT_EQ(zypper_cmds[1], A2enflag({"SSL"}));
+  ASSERT_EQ(zypper_cmds[2].arguments.size(), 2U);
+  EXPECT_EQ(zypper_cmds[2].tool, SetupTool::Sh);
+  EXPECT_EQ(zypper_cmds[2].arguments[0], "-c");
+  EXPECT_NE(zypper_cmds[2].arguments[1].find("bareos-setup-ssl.conf"),
+            std::string::npos);
+  EXPECT_NE(zypper_cmds[2].arguments[1].find("SSLEngine on"),
+            std::string::npos);
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds(PackageManager::Dnf).empty());
+  EXPECT_TRUE(BuildWebServerHttpsSetupCmds(PackageManager::Yum).empty());
 }
 
 TEST(BareosSetupStepsShared, BuildsBareosDaemonServicesForPackageManager)
 {
-  EXPECT_EQ(BuildBareosDaemonServiceNames("apt"),
+  EXPECT_EQ(BuildBareosDaemonServiceNames(PackageManager::Apt),
             (std::vector<std::string>{"bareos-director", "bareos-storage",
                                       "bareos-filedaemon"}));
-  EXPECT_EQ(BuildBareosDaemonServiceNames("dnf"),
+  EXPECT_EQ(BuildBareosDaemonServiceNames(PackageManager::Dnf),
             (std::vector<std::string>{"bareos-dir", "bareos-sd", "bareos-fd"}));
-  EXPECT_EQ(BuildBareosDaemonServiceNames("yum"),
-            BuildBareosDaemonServiceNames("dnf"));
-  EXPECT_EQ(BuildBareosDaemonServiceNames("zypper"),
-            BuildBareosDaemonServiceNames("dnf"));
+  EXPECT_EQ(BuildBareosDaemonServiceNames(PackageManager::Yum),
+            BuildBareosDaemonServiceNames(PackageManager::Dnf));
+  EXPECT_EQ(BuildBareosDaemonServiceNames(PackageManager::Zypper),
+            BuildBareosDaemonServiceNames(PackageManager::Dnf));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageCacheUpdateForAptAndZypper)
 {
-  EXPECT_EQ(BuildPackageCacheUpdateCmd("apt"),
-            (std::vector<std::string>{"apt-get", "update"}));
-  EXPECT_EQ(BuildPackageCacheUpdateCmd("zypper"),
-            (std::vector<std::string>{"zypper", "--non-interactive",
-                                      "--gpg-auto-import-keys", "refresh"}));
-  EXPECT_TRUE(BuildPackageCacheUpdateCmd("dnf").empty());
-  EXPECT_TRUE(BuildPackageCacheUpdateCmd("yum").empty());
+  EXPECT_EQ(BuildPackageCacheUpdateCmd(PackageManager::Apt),
+            std::optional<SetupCommand>{AptGet({"update"})});
+  EXPECT_EQ(BuildPackageCacheUpdateCmd(PackageManager::Zypper),
+            std::optional<SetupCommand>{Zypper(
+                {"--non-interactive", "--gpg-auto-import-keys", "refresh"})});
+  EXPECT_FALSE(BuildPackageCacheUpdateCmd(PackageManager::Dnf));
+  EXPECT_FALSE(BuildPackageCacheUpdateCmd(PackageManager::Yum));
 }
 
 TEST(BareosSetupStepsShared, BuildsZypperInstallWithAutoKeyImport)
 {
-  EXPECT_EQ(BuildInstallCmd("zypper", {"bareos-director"}),
-            (std::vector<std::string>{"zypper", "--non-interactive",
-                                      "--gpg-auto-import-keys", "install",
-                                      "bareos-director"}));
+  EXPECT_EQ(BuildInstallCmd(PackageManager::Zypper, {"bareos-director"}),
+            Zypper({"--non-interactive", "--gpg-auto-import-keys", "install",
+                    "bareos-director"}));
 }
 
 TEST(BareosSetupStepsShared, JoinsSimpleCommandForDisplayWithoutQuoting)
@@ -442,13 +496,12 @@ TEST(BareosSetupStepsShared, BuildsSubscriptionRepoCommandWithoutCredentials)
 {
   const auto command
       = BuildAddRepoCmd("sles", "16.0", "subscription", true, "25");
+  const auto argv = command.Argv();
 
-  EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
-            command.end() - 3);
-  EXPECT_EQ(std::find(command.begin(), command.end(), "-"), command.end() - 2);
-  EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
-            command.end());
-  EXPECT_EQ(command.back(),
+  EXPECT_EQ(std::find(argv.begin(), argv.end(), "--config"), argv.end() - 3);
+  EXPECT_EQ(std::find(argv.begin(), argv.end(), "-"), argv.end() - 2);
+  EXPECT_EQ(std::find(argv.begin(), argv.end(), "login:hunter2"), argv.end());
+  EXPECT_EQ(argv.back(),
             "https://download.bareos.com/bareos/release/25/SUSE_16/"
             "add_bareos_repositories.sh");
 }
@@ -480,14 +533,16 @@ TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
   // The check itself is a privileged shell command, because the wizard
   // config directories are not readable for unprivileged users.
   const auto existing_cmd = BuildFileAbsentCheckCmd(admin_path.string());
-  ASSERT_EQ(existing_cmd.size(), 5U);
-  EXPECT_EQ(existing_cmd[0], "sh");
-  EXPECT_EQ(existing_cmd[4], admin_path.string());
-  EXPECT_NE(RunCommand(existing_cmd, false,
-                       [](const std::string&, const std::string&) {}),
+  const auto existing_argv = existing_cmd.Argv();
+  ASSERT_EQ(existing_argv.size(), 5U);
+  EXPECT_EQ(existing_argv[0], "sh");
+  EXPECT_EQ(existing_argv[4], admin_path.string());
+  SetupContext context;
+  EXPECT_NE(context.Run(existing_cmd, false,
+                        [](std::string_view, std::string_view) {}),
             0);
-  EXPECT_EQ(RunCommand(BuildFileAbsentCheckCmd(absent_path.string()), false,
-                       [](const std::string&, const std::string&) {}),
+  EXPECT_EQ(context.Run(BuildFileAbsentCheckCmd(absent_path.string()), false,
+                        [](std::string_view, std::string_view) {}),
             0);
 
   const std::string message
@@ -740,7 +795,8 @@ TEST(BareosSetupSessionOrchestration, ProxyStepWritesNoProxyConfiguration)
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
   FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl", "a2enmod",
-                           "a2ensite", "a2enflag", "sh"});
+                           "a2ensite", "a2enflag", "openssl", "chmod", "cat",
+                           "sh"});
   ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
@@ -776,14 +832,16 @@ TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
   const auto install_cmd = BuildInstallCmd(os.pkg_mgr, {"bareos-filedaemon"});
-  ASSERT_FALSE(install_cmd.empty());
-  FakeToolPath fake_tools({"sudo", install_cmd.front(), "systemctl", "zypper"});
+  const auto install_argv = install_cmd.Argv();
+  ASSERT_FALSE(install_argv.empty());
+  FakeToolPath fake_tools(
+      {"sudo", install_argv.front(), "systemctl", "zypper"});
   RunStepDiscardingOutput("packages");
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
   EXPECT_NE(std::find_if(commands.begin(), commands.end(),
                          [&install_cmd](const auto& line) {
-                           return line.find(install_cmd.front())
+                           return line.find(install_cmd.Argv().front())
                                   != std::string::npos;
                          }),
             commands.end());
@@ -814,8 +872,9 @@ TEST(BareosSetupSessionOrchestration,
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
-  FakeToolPath fake_tools(
-      {"sudo", "curl", "bash", os.pkg_mgr, "apt-get", "zypper", "dnf", "yum"});
+  FakeToolPath fake_tools({"sudo", "curl", "bash",
+                           PackageManagerName(os.pkg_mgr), "apt-get", "zypper",
+                           "dnf", "yum"});
   const std::string json_message = "{\"distro\":\"" + os.distro
                                    + "\",\"version\":\"" + os.version
                                    + "\",\"repository\":\"subscription\"}";
@@ -959,6 +1018,8 @@ TEST(BareosSetupStepsShared, ParsesOsReleaseWithoutIdLike)
 TEST(BareosSetupStepsShared, ParsesOsReleaseWithSingleQuotesAndEscapes)
 {
   const auto info = ParseOsRelease(
+      "# ignored comment=with a value\n"
+      "\n"
       "ID='debian'\n"
       "VERSION_ID='13'\n"
       "PRETTY_NAME='Debian GNU/Linux \"bookworm\"'\n"
@@ -971,13 +1032,21 @@ TEST(BareosSetupStepsShared, ParsesOsReleaseWithSingleQuotesAndEscapes)
             (std::vector<std::string>{"rhel", "centos", "fedora"}));
 }
 
+TEST(BareosSetupStepsShared, ParsesEscapedOsReleaseCharacters)
+{
+  const auto info = ParseOsRelease(
+      "  ID = \"debian\"\n"
+      "PRETTY_NAME=\"Test \\$release\\\"\"\n");
+  EXPECT_EQ(info.distro, "debian");
+  EXPECT_EQ(info.pretty_name, "Test $release\"");
+}
+
 TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
 {
   // DetectOs() must never throw: the wizard has to stay usable on systems
   // without /etc/os-release so it can offer a manual repository choice.
   const auto info = DetectOs();
   EXPECT_FALSE(info.arch.empty());
-  EXPECT_FALSE(info.pkg_mgr.empty());
 }
 
 TEST(BareosSetupStepsShared, ValidatesRepositoryOsPaths)
@@ -1067,8 +1136,9 @@ TEST(BareosSetupStepsShared, SuggestsNothingForAnUnrelatedDistribution)
 TEST(BareosSetupStepsShared, BuildsAddRepoCommandForAnExplicitPath)
 {
   const auto command = BuildAddRepoCmdForPath("EL_10", "community");
+  const auto argv = command.Argv();
 
-  EXPECT_EQ(command.back(),
+  EXPECT_EQ(argv.back(),
             "https://download.bareos.org/current/EL_10/"
             "add_bareos_repositories.sh");
   EXPECT_EQ(BuildAddRepoCmdForPath("EL_10", "community"),
@@ -1079,13 +1149,12 @@ TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
 {
   const auto command
       = BuildRepoPathProbeCmd("SUSE_16", "subscription", true, "25");
+  const auto argv = command.Argv();
 
-  EXPECT_NE(std::find(command.begin(), command.end(), "--head"), command.end());
-  EXPECT_EQ(std::find(command.begin(), command.end(), "--config"),
-            command.end() - 3);
-  EXPECT_EQ(std::find(command.begin(), command.end(), "login:hunter2"),
-            command.end());
-  EXPECT_EQ(command.back(),
+  EXPECT_NE(std::find(argv.begin(), argv.end(), "--head"), argv.end());
+  EXPECT_EQ(std::find(argv.begin(), argv.end(), "--config"), argv.end() - 3);
+  EXPECT_EQ(std::find(argv.begin(), argv.end(), "login:hunter2"), argv.end());
+  EXPECT_EQ(argv.back(),
             "https://download.bareos.com/bareos/release/25/SUSE_16/"
             "add_bareos_repositories.sh");
 }
@@ -1132,22 +1201,19 @@ TEST(BareosSetupStepsShared, RejectsInvalidSubscriptionReleaseIndex)
 TEST(BareosSetupStepsShared, BuildsSubscriptionReleaseIndexCommand)
 {
   const auto command = BuildSubscriptionReleaseIndexCmd(true);
-  EXPECT_EQ(command.back(), "https://download.bareos.com/bareos/release/");
-  EXPECT_NE(std::find(command.begin(), command.end(), "--config"),
-            command.end());
+  const auto argv = command.Argv();
+  EXPECT_EQ(argv.back(), "https://download.bareos.com/bareos/release/");
+  EXPECT_NE(std::find(argv.begin(), argv.end(), "--config"), argv.end());
 }
 
 TEST(BareosSetupStepsShared, BuildsEnforcingSelinuxWebUiCommand)
 {
   EXPECT_EQ(BuildWebUiSelinuxSetupCmd(),
-            (std::vector<std::string>{
-                "sh",
-                "-c",
+            Sh({"-c",
                 "if command -v getenforce >/dev/null 2>&1 && "
                 "[ \"$(getenforce)\" = Enforcing ]; then "
                 "setsebool -P httpd_can_network_connect on; "
-                "fi",
-            }));
+                "fi"}));
 }
 
 TEST(BareosSetupStepsShared, IdentifiesSuseRepositoryPaths)
@@ -1162,11 +1228,21 @@ TEST(BareosSetupStepsShared, SeparatesPackageManagerFromDistributionSupport)
 {
   // An unknown distribution can still be installed through a manual
   // repository choice, but an unknown package manager cannot.
-  EXPECT_TRUE(IsSupportedPackageManager("apt"));
-  EXPECT_TRUE(IsSupportedPackageManager("zypper"));
-  EXPECT_FALSE(IsSupportedPackageManager("unknown"));
-  EXPECT_FALSE(IsSupportedPackageManager("pkg"));
-  EXPECT_FALSE(IsSupportedSetupPlatform("eurolinux", "dnf"));
+  EXPECT_TRUE(IsSupportedPackageManager(PackageManager::Apt));
+  EXPECT_TRUE(IsSupportedPackageManager(PackageManager::Zypper));
+  EXPECT_FALSE(IsSupportedPackageManager(PackageManager::Unknown));
+  EXPECT_FALSE(IsSupportedSetupPlatform("eurolinux", PackageManager::Dnf));
+  EXPECT_THROW(BuildDefaultPackageList(PackageManager::Unknown),
+               std::invalid_argument);
+}
+
+TEST(BareosSetupStepsShared, NamesPackageManagers)
+{
+  EXPECT_STREQ(PackageManagerName(PackageManager::Apt), "apt");
+  EXPECT_STREQ(PackageManagerName(PackageManager::Dnf), "dnf");
+  EXPECT_STREQ(PackageManagerName(PackageManager::Yum), "yum");
+  EXPECT_STREQ(PackageManagerName(PackageManager::Zypper), "zypper");
+  EXPECT_STREQ(PackageManagerName(PackageManager::Unknown), "unknown");
 }
 
 TEST(BareosSetupSessionOrchestration, RepositoryStepRejectsOverrideWhenDetected)
@@ -1236,8 +1312,9 @@ TEST(BareosSetupSessionOrchestration,
 TEST(BareosSetupStepsShared, DiscardsProbeResponseBodies)
 {
   const auto command = BuildRepoPathProbeCmd("EL_10", "community");
-  const auto output = std::find(command.begin(), command.end(), "--output");
-  ASSERT_NE(output, command.end());
+  const auto argv = command.Argv();
+  const auto output = std::find(argv.begin(), argv.end(), "--output");
+  ASSERT_NE(output, argv.end());
   EXPECT_EQ(*(output + 1), "/dev/null");
 }
 
@@ -1249,12 +1326,12 @@ TEST(BareosSetupStepsShared, CapturesCommandOutputLargerThanTheReadBuffer)
   constexpr int kLines = 4000;
   std::string collected;
   int lines = 0;
-  const int rc = RunCommand(
-      {"sh", "-c",
-       "i=0; while [ $i -lt " + std::to_string(kLines)
-           + " ]; do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
-             "i=$((i+1)); done"},
-      false, [&](const std::string& line, const std::string&) {
+  SetupContext context;
+  const int rc = context.Run(
+      Sh({"-c", "i=0; while [ $i -lt " + std::to_string(kLines)
+                    + " ]; do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
+                      "i=$((i+1)); done"}),
+      false, [&](std::string_view line, std::string_view) {
         collected += line;
         ++lines;
       });

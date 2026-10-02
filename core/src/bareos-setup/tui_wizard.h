@@ -26,7 +26,9 @@
 #ifndef BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
 #define BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
 
+#include "command_runner.h"
+
 /** Run the interactive terminal wizard. Returns 0 on success. */
-int RunTuiWizard(bool dry_run);
+int RunTuiWizard(SetupContext& context);
 
 #endif  // BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
