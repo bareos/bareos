@@ -111,10 +111,10 @@ The URL must include the distribution directory containing
 ``add_bareos_repositories.sh``. The downloaded helper's ``URL`` assignment is
 replaced with the supplied URL, so packages are installed from the CI build
 instead of the public repository. Only use trusted repositories: their helpers
-are executed as root. HTTPS verifies the server certificate; HTTP is supported
-for trusted internal CI networks. Credentials in URLs, query parameters, and
-multiple repositories are not supported. Helpers without a ``URL`` assignment
-fail explicitly.
+are executed as root. Repository URLs must use HTTPS, and redirects to other
+protocols are rejected. Credentials in URLs, query parameters, and multiple
+repositories are not supported. Helpers without a ``URL`` assignment fail
+explicitly.
 
 This mode uses the same installation steps as the TUI: package installation,
 local PostgreSQL and catalog initialization, base configuration, service
@@ -150,10 +150,16 @@ destroy the catalog initialized by the installer.
 
 .. _section-bareos-setup-unknown-distribution:
 
-Unrecognized distributions
+Unsupported distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Bareos publishes repositories for a fixed set of distributions. If :command:`bareos-setup` cannot identify the running distribution, for example on a derivative or a rebuild, it does not abort. Instead it offers a manual choice of the repository to install from, in both the web wizard and the TUI. A distribution that declares a compatible family through ``ID_LIKE`` in :file:`/etc/os-release` is used to preselect a matching suggestion.
+Bareos publishes repositories for a fixed set of distributions. If
+:command:`bareos-setup` cannot identify or automatically support the running
+distribution, for example on a derivative, a rebuild, or openSUSE Tumbleweed,
+it does not abort. Instead it offers a manual choice of the repository to
+install from, in both the web wizard and the TUI. A distribution that declares
+a compatible family through ``ID_LIKE`` in :file:`/etc/os-release` is used to
+preselect a matching suggestion.
 
 The following repositories can be selected:
 
@@ -179,7 +185,10 @@ The selected repository is checked for availability before it is added, so a wro
 
    Installing a Bareos repository that was built for a different distribution is neither tested nor supported. Only do this if you know that the selected repository is binary compatible with the running system.
 
-A manual choice is only offered when the distribution is not recognized. It is not possible to override the repository on a distribution that :command:`bareos-setup` detects, because that could only produce a mismatched installation.
+A manual choice is offered when the distribution is not automatically
+supported. It is not possible to override the repository on a distribution
+that :command:`bareos-setup` supports automatically, because that could only
+produce a mismatched installation.
 
 The package manager cannot be chosen manually. If none of :command:`apt`, :command:`dnf`, :command:`yum` or :command:`zypper` is present, :command:`bareos-setup` cannot install Bareos on that system and reports this instead of continuing.
 

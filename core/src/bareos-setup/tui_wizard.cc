@@ -230,8 +230,7 @@ static int RunWizard(SetupContext& context,
 
   std::string repo_os_path;
   if (unattended) {
-    // Explicit CI URLs already include the repository's distribution path.
-    repo_os_path = BuildRepoOsPath(os.distro, os.version);
+    // The explicit CI URL already includes its repository path.
   } else if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     repo_os_path = BuildRepoOsPath(os.distro, os.version);
   } else {
@@ -342,9 +341,9 @@ static int RunWizard(SetupContext& context,
   } else {
     const auto& url = unattended->repository_urls.front();
     std::cout << "Adding CI repository " << url << "\n";
-    const auto download
-        = Curl({"--fail", "--silent", "--show-error", "--location",
-                url + "/add_bareos_repositories.sh"});
+    const auto download = Curl({"--fail", "--silent", "--show-error",
+                                "--location", "--proto-redir", "=https",
+                                url + "/add_bareos_repositories.sh"});
     std::string script;
     if (context.Run(download, true,
                     [&script](std::string_view line, std::string_view stream) {
@@ -548,7 +547,7 @@ int RunUnattendedSetup(SetupContext& context,
   for (const auto& url : options.repository_urls) {
     if (!IsValidSetupRepositoryUrl(url) || url.ends_with('/')) {
       std::cerr
-          << "Use an HTTP(S) --repo-url including the distribution path, "
+          << "Use an HTTPS --repo-url including the distribution path, "
              "without credentials, query parameters or a trailing slash.\n";
       return 1;
     }

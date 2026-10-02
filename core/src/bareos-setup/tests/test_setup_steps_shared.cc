@@ -42,11 +42,9 @@
 TEST(BareosSetupStepsShared, ValidatesCustomRepositoryUrls)
 {
   EXPECT_TRUE(IsValidSetupRepositoryUrl("https://ci.example:8443/pr/42/EL_9"));
-  EXPECT_TRUE(
-      IsValidSetupRepositoryUrl("http://ci.example/build/xUbuntu_24.04"));
   for (const auto* url :
-       {"", "file:///tmp/repo", "https://",
-        "https://user:password@example/repo",
+       {"", "http://ci.example/build/xUbuntu_24.04", "file:///tmp/repo",
+        "https://", "https://user:password@example/repo",
         "https://example/repo?token=secret", "https://example/repo\nURL=bad",
         "https://example/$(touch_bad)", "https://example/repo';exit 0"}) {
     EXPECT_FALSE(IsValidSetupRepositoryUrl(url)) << url;
@@ -60,9 +58,9 @@ TEST(BareosSetupStepsShared, RewritesOnlyRepositoryUrlAssignment)
         "URL=\"https://download.bareos.org/current/EL_9\"\n"
         "echo \"$URL\"\n";
   EXPECT_EQ(
-      RewriteSetupRepositoryScript(script, "http://ci.example/pr/42/EL_9"),
+      RewriteSetupRepositoryScript(script, "https://ci.example/pr/42/EL_9"),
       "#!/bin/sh\nDOWNLOADSERVER=\"download.bareos.org\"\n"
-      "URL='http://ci.example/pr/42/EL_9'\necho \"$URL\"\n");
+      "URL='https://ci.example/pr/42/EL_9'\necho \"$URL\"\n");
   EXPECT_THROW(
       RewriteSetupRepositoryScript("echo no_url\n", "https://ci.example/EL_9"),
       std::runtime_error);
@@ -245,6 +243,8 @@ TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   options.repository_urls = {"https://ci.example/Debian_12/"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  options.repository_urls = {"http://ci.example/Debian_12"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   options.repository_urls = {"https://ci.example/Debian_12"};
   options.extra_packages = {"--allow-unauthenticated"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
@@ -261,6 +261,7 @@ TEST(BareosSetupUnattended, DryRunInstallsFullServerWithoutPrompts)
   const int result = RunUnattendedSetup(context, options);
   const auto output = testing::internal::GetCapturedStdout();
   EXPECT_EQ(result, 0);
+  EXPECT_NE(output.find("--proto-redir =https"), std::string::npos);
   EXPECT_NE(output.find("bareos-storage-droplet"), std::string::npos);
   EXPECT_NE(output.find("bareos-webui-proxy"), std::string::npos);
   EXPECT_NE(output.find("is-active"), std::string::npos);
@@ -660,8 +661,8 @@ TEST(BareosSetupStepsShared, BuildsMtxAvailabilityCheck)
 TEST(BareosSetupStepsShared, BuildsOpenSuseRepositoryPath)
 {
   EXPECT_EQ(BuildRepoOsPath("opensuse-leap", "15.6"), "SUSE_15");
-  EXPECT_EQ(BuildRepoOsPath("opensuse-tumbleweed", "20260828"),
-            "SUSE_20260828");
+  EXPECT_THROW(BuildRepoOsPath("opensuse-tumbleweed", "20260828"),
+               std::invalid_argument);
 }
 
 TEST(BareosSetupStepsShared, BuildsSlesRepositoryPath)
@@ -683,6 +684,18 @@ TEST(BareosSetupStepsShared, SupportsOpenSuseLeapPlatform)
 {
   EXPECT_TRUE(
       IsSupportedSetupPlatform("opensuse-leap", PackageManager::Zypper));
+}
+
+TEST(BareosSetupStepsShared, RequiresManualRepositoryChoiceForTumbleweed)
+{
+  EXPECT_FALSE(
+      IsSupportedSetupPlatform("opensuse-tumbleweed", PackageManager::Zypper));
+  OsInfo tumbleweed;
+  tumbleweed.distro = "opensuse-tumbleweed";
+  tumbleweed.version = "20260828";
+  const auto paths = SuggestRepoOsPaths(tumbleweed);
+  ASSERT_FALSE(paths.empty());
+  EXPECT_EQ(paths.front(), "SUSE_16");
   EXPECT_FALSE(IsSupportedSetupPlatform("opensuse", PackageManager::Zypper));
   EXPECT_TRUE(IsSupportedSetupPlatform("sles", PackageManager::Zypper));
 }
@@ -1430,6 +1443,24 @@ TEST(BareosSetupStepsShared, BuildsSubscriptionProbeWithoutCredentialsInArgv)
   EXPECT_EQ(argv.back(),
             "https://download.bareos.com/bareos/release/25/SUSE_16/"
             "add_bareos_repositories.sh");
+}
+
+TEST(BareosSetupStepsShared, HttpsCurlCommandsDisallowDowngradeRedirects)
+{
+  const auto expect_https_redirects = [](const SetupCommand& command) {
+    const auto argv = command.Argv();
+    const auto option = std::find(argv.begin(), argv.end(), "--proto-redir");
+    ASSERT_NE(option, argv.end());
+    ASSERT_NE(option + 1, argv.end());
+    EXPECT_EQ(*(option + 1), "=https");
+  };
+
+  expect_https_redirects(BuildAddRepoCmdForPath("EL_9", "community"));
+  expect_https_redirects(BuildRepoPathProbeCmd("EL_9", "community"));
+  expect_https_redirects(BuildSubscriptionReleaseIndexCmd());
+  const auto network_check = BuildNetworkCheckCmd("community");
+  ASSERT_TRUE(network_check);
+  expect_https_redirects(*network_check);
 }
 
 TEST(BareosSetupStepsShared, SelectsLatestSubscriptionRelease)
