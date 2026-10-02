@@ -44,6 +44,7 @@ $this->headTitle($title);
    <?php
       $form->prepare();
       echo $this->form()->openTag($form);
+      echo $this->formRow($form->get('csrf'));
    ?>
 
    <div class="row centered text-centered">
