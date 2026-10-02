@@ -108,7 +108,8 @@ int main(int argc, char* argv[])
 
   int port = 19101;
   app.add_option("--port,-p", port, "TCP port to listen on")
-      ->default_val(19101);
+      ->default_val(19101)
+      ->check(CLI::Range(1, 65535));
 
   std::string listen_address;
   const std::string listen_description
