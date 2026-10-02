@@ -125,7 +125,7 @@ TEST(messages_resource, send_message_to_all_configured_destinations)
   ASSERT_NE(messages, nullptr);
 
   // initialize message handler
-  InitMsg(NULL, messages);
+  InitMsg(messages);
 
   // this object cleans up all files at exit
   LogFiles cleanup;

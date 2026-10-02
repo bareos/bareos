@@ -66,7 +66,7 @@ int main(int argc, char** argv)
   FilesetResource* dir_fileset = (FilesetResource*)my_config->GetResWithName(
       R_FILESET, filesetname.c_str());
 
-  InitMsg(nullptr, nullptr);
+  InitMsg(nullptr);
 
   if (!dir_fileset) {
     std::cerr << filesetname.c_str() << ": Fileset not found\n"

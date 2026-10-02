@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,9 +75,11 @@ BAREOS_IMPORT FILE* con_fd;       /* Console file descriptor */
 BAREOS_IMPORT brwlock_t con_lock; /* Console lock structure */
 
 void MyNameIs(int argc, const char* const argv[], const char* name);
+
 void InitMsg(JobControlRecord* jcr,
              MessagesResource* msg,
-             job_code_callback_t job_code_callback = NULL);
+             job_code_callback_t job_code_callback);
+void InitMsg(MessagesResource* msg);
 void TermMsg(void);
 void CloseMsg(JobControlRecord* jcr);
 void DispatchMessage(JobControlRecord* jcr,
