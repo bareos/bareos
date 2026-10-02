@@ -24,7 +24,7 @@
  *
  * Usage: bareos-setup [--port PORT] [--listen ADDRESS] [--no-browser]
  *                     [--tui] [--dry]
- *        bareos-setup --unattended --repo-url URL [--without-webui]
+ *        bareos-setup --unattended [--override-repo-url URL] [--without-webui]
  *                     [--extra-package PACKAGE] [--dry]
  */
 #include <array>
@@ -151,8 +151,10 @@ int main(int argc, char* argv[])
   unattended_option->excludes("--port");
   unattended_option->excludes("--no-browser");
   UnattendedSetupOptions unattended_options;
-  app.add_option("--repo-url", unattended_options.repository_urls,
-                 "CI repository URL including the distribution path")
+  app.add_option("--override-repo-url",
+                 unattended_options.override_repository_urls,
+                 "Override the repository helper's URL (HTTPS, including "
+                 "the distribution path); defaults to the Community repository")
       ->needs(unattended_option);
   app.add_option("--extra-package", unattended_options.extra_packages,
                  "Additional package to install (repeatable)")

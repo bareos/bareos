@@ -104,17 +104,29 @@ browser, HTTP listener, or terminal prompts:
 
 .. code-block:: shell-session
 
-   root@host:~# ./bareos-setup --unattended \
-       --repo-url https://ci.example/packages/build/Debian_12
+   root@host:~# ./bareos-setup --unattended
 
-The URL must include the distribution directory containing
+Without a repository override, setup selects the Community repository for the
+detected distribution and executes its repository helper unchanged, using the
+helper's embedded ``URL`` assignment. Unsupported distributions require an
+explicit override instead of an interactive repository selection.
+
+For a CI staging repository, pass an explicit override:
+
+.. code-block:: shell-session
+
+   root@host:~# ./bareos-setup --unattended \
+       --override-repo-url https://ci.example/packages/build/Debian_12
+
+The override URL must include the distribution directory containing
 ``add_bareos_repositories.sh``. The downloaded helper's ``URL`` assignment is
 replaced with the supplied URL, so packages are installed from the CI build
 instead of the public repository. Only use trusted repositories: their helpers
 are executed as root. Repository URLs must use HTTPS, and redirects to other
 protocols are rejected. Credentials in URLs, query parameters, and multiple
-repositories are not supported. Helpers without a ``URL`` assignment fail
-explicitly.
+repositories are not supported. With an explicit override, helpers without a
+``URL`` assignment fail explicitly. Without an override, no ``URL`` assignment
+is required or rewritten.
 
 This mode uses the same installation steps as the TUI: package installation,
 local PostgreSQL and catalog initialization, base configuration, service

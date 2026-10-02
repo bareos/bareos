@@ -229,8 +229,9 @@ if(BUILD_TESTING AND GTest_FOUND)
   add_test(
     NAME bareos-setup:unattended-dry-run
     COMMAND
-      bareos-setup --unattended --dry --repo-url https://ci.example/build/EL_9
-      --extra-package bareos --extra-package bareos-storage-droplet
+      bareos-setup --unattended --dry --override-repo-url
+      https://ci.example/build/EL_9 --extra-package bareos --extra-package
+      bareos-storage-droplet
   )
   set_tests_properties(
     bareos-setup:unattended-dry-run
@@ -238,7 +239,7 @@ if(BUILD_TESTING AND GTest_FOUND)
                "bareos-storage-droplet;systemctl is-active bareos-webui-proxy"
   )
   add_test(NAME bareos-setup:unattended-without-webui
-           COMMAND bareos-setup --unattended --dry --repo-url
+           COMMAND bareos-setup --unattended --dry --override-repo-url
                    https://ci.example/build/EL_9 --without-webui
   )
   set_tests_properties(
@@ -246,14 +247,18 @@ if(BUILD_TESTING AND GTest_FOUND)
     PROPERTIES PASS_REGULAR_EXPRESSION "systemctl is-active bareos"
                FAIL_REGULAR_EXPRESSION "bareos-webui;HTTP listener"
   )
-  add_test(NAME bareos-setup:unattended-missing-repository
+  add_test(NAME bareos-setup:unattended-default-repository
            COMMAND bareos-setup --unattended --dry
+  )
+  set_tests_properties(
+    bareos-setup:unattended-default-repository
+    PROPERTIES PASS_REGULAR_EXPRESSION "download.bareos.org/current"
+               FAIL_REGULAR_EXPRESSION "would override;Subscription login"
   )
   add_test(NAME bareos-setup:unattended-excludes-tui
            COMMAND bareos-setup --unattended --tui --dry
   )
   set_tests_properties(
-    bareos-setup:unattended-missing-repository
     bareos-setup:unattended-excludes-tui PROPERTIES WILL_FAIL TRUE
   )
 endif()
