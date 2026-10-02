@@ -18,6 +18,26 @@ GDB="@GDB@"
 DBX="@DBX@"
 MDB="@MDB@"
 
+LIB="@scriptdir@/bareos-config-lib.sh"
+if ! [ -r "${LIB}" ]; then
+  get_local_hostname()
+  {
+    # put actual short hostname in configuration files
+    if [ -n "$(command -v uname)" ]; then
+      hname=$(uname -n)
+    fi
+    if [ -z "${hname}" ] && [ -f '/etc/hostname' ]; then
+      hname="$(cut -d '.' -f1 '/etc/hostname')"
+    fi
+    if [ -z "${hname}" ]; then
+      # set to "localhost"
+      hname='localhost'
+    fi
+    echo "${hname}"
+  }
+fi
+. "${LIB}"
+
 #
 # Try to generate a core dump for postmortem analyzing.
 #
@@ -101,7 +121,7 @@ esac
 #
 # Send the stack trace info to someone for analyzing or at least letting someone know we crashed.
 #
-PNAME="${PNAME} on $(hostname)"
+PNAME="${PNAME} on $(get_local_hostname)"
 # Environment variable:
 #   BAREOS_BTRACEBACK_SMTP_CMD is a shell expression that is used to notify
 #     you about the crash.  It evaluated via sh, and receives the title as its
@@ -110,4 +130,4 @@ PNAME="${PNAME} on $(hostname)"
 #     You can set this to e.g. /bin/true to disable the send, or set it to
 #     'cat >> mylog' to append it to some log.
 : "${BAREOS_BTRACEBACK_SMTP_CMD:=timeout -k 5s 30 \"@sbindir@/bsmtp\" -h \"@smtp_host@\" -f \"@dump_email@\" -s \"\$0\" \"@dump_email@\"}"
-/bin/sh -c "${BAREOS_BTRACEBACK_SMTP_CMD}" "Bareos ${DEBUGGER} traceback of ${PNAME}" <"${WD}/bareos.$2.traceback"
+/bin/sh -c "${BAREOS_BTRACEBACK_SMTP_CMD}" "Bareos ${DEBUGGER} traceback of ${PNAME}" <"${WD}/bareos.$2.traceback || echo \"bstmp failed, please send the content of ${WD}/bareos.$2.traceback to bareos support\""
