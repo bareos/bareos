@@ -139,12 +139,14 @@ their existing scripts. Update tests also retain their existing scripts.
 Supply exactly one ``REPOURL``; the CI scripts append their existing distribution
 mapping to it.
 
-Stage a portable binary built from the same source revision as the packages
-and for the target VM's architecture. Set ``BAREOS_SETUP_SOURCE`` to its
-executable path on the Jenkins host to copy it alongside the CI scripts, or set ``BAREOS_SETUP_BINARY``
-to an executable already present on the target. By default, the scripts use
-``bareos-setup`` in their own directory. A missing binary fails the opted-in
-installation rather than silently falling back to bash.
+Publish a portable binary built from the same source revision as the packages
+and for the target architecture. Set ``BAREOS_SETUP_URL`` to its HTTPS download
+URL, for example
+``https://jenkins-stash.bareos.com/jenkins-bareos-PR-2784-61/bareos-setup-x86_64``.
+The CI scripts download and run it inside the test VM or container, then remove
+the temporary executable. Downloads and redirects are restricted to HTTPS.
+A missing URL or failed download fails the opted-in installation rather than
+silently falling back to bash.
 
 The installer owns the base catalog, generated administrator, and service
 startup. CI-specific resources, PHP WebUI test configuration, and daemon
