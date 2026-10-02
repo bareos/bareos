@@ -435,14 +435,14 @@ void ConfigureTlsForPeerVerification(
     const std::vector<std::string>& allowed_client_common_names)
 {
   cons_dir_config->tls_enable_ = true;
-  cons_dir_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  cons_dir_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
   cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
   cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
   cons_dir_config->tls_cert_.crlfile_.clear();
 
   dir_cons_config->tls_enable_ = true;
-  dir_cons_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Always;
+  dir_cons_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Required;
   dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
   dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
   dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();

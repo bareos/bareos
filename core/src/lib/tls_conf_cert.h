@@ -27,17 +27,17 @@
 
 enum class VerifyPeerSetting
 {
-  Never,        // we do not verify the peer at all
-  IfAvailable,  // we only verify the peer when we received a certificate
-  Always,       // we always verify the peer
+  Disabled,
+  IfCertificatePresented,
+  Required,
 };
 
 namespace {
 constexpr std::pair<std::string_view, VerifyPeerSetting>
     VerifyPeerSettingByName[] = {
-        {"IfAvailable", VerifyPeerSetting::IfAvailable},
-        {"Yes", VerifyPeerSetting::Always},
-        {"No", VerifyPeerSetting::Never},
+        {"Required", VerifyPeerSetting::Required},
+        {"IfCertificatePresented", VerifyPeerSetting::IfCertificatePresented},
+        {"Disabled", VerifyPeerSetting::Disabled},
 };
 
 inline std::string as_str(VerifyPeerSetting to_convert)

@@ -590,18 +590,18 @@ bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
 
   cert_ptr cert{SSL_get_peer_certificate(ssl())};
   switch (verify_peer_) {
-    case VerifyPeerSetting::Never: {
+    case VerifyPeerSetting::Disabled: {
       Dmsg0(200, "We do not check the peer\n");
       return true;
     } break;
-    case VerifyPeerSetting::IfAvailable: {
+    case VerifyPeerSetting::IfCertificatePresented: {
       if (!cert) {
         Dmsg0(200,
               "Peer did not present a TLS certificate -> skipping check\n");
         return true;
       }
     } break;
-    case VerifyPeerSetting::Always: {
+    case VerifyPeerSetting::Required: {
       if (!cert) {
         Qmsg0(jcr, M_ERROR, 0, "Peer failed to present a TLS certificate\n");
         return false;
@@ -649,18 +649,18 @@ bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
 
   cert_ptr cert{SSL_get_peer_certificate(ssl())};
   switch (verify_peer_) {
-    case VerifyPeerSetting::Never: {
+    case VerifyPeerSetting::Disabled: {
       Dmsg0(200, "We do not check the peer\n");
       return true;
     } break;
-    case VerifyPeerSetting::IfAvailable: {
+    case VerifyPeerSetting::IfCertificatePresented: {
       if (!cert) {
         Dmsg0(200,
               "Peer did not present a TLS certificate -> skipping check\n");
         return true;
       }
     } break;
-    case VerifyPeerSetting::Always: {
+    case VerifyPeerSetting::Required: {
       if (!cert) {
         Qmsg0(jcr, M_ERROR, 0, "Peer failed to present a TLS certificate\n");
         return false;
@@ -885,7 +885,7 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
                         T_("Error loading certificate verification stores"));
       return {};
     }
-  } else if (verify_peer != VerifyPeerSetting::Never) {
+  } else if (verify_peer != VerifyPeerSetting::Disabled) {
     /* At least one CA is required for peer verification */
     Dmsg0(100, T_("Either a certificate file or a directory must be"
                   " specified as a verification store\n"));
@@ -970,14 +970,14 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
   }
 
   switch (verify_peer) {
-    case VerifyPeerSetting::Never: {
+    case VerifyPeerSetting::Disabled: {
       SSL_CTX_set_verify(openssl_ctx_.get(), SSL_VERIFY_NONE, NULL);
     } break;
-    case VerifyPeerSetting::IfAvailable: {
+    case VerifyPeerSetting::IfCertificatePresented: {
       SSL_CTX_set_verify(openssl_ctx_.get(), SSL_VERIFY_PEER,
                          OpensslVerifyPeer);
     } break;
-    case VerifyPeerSetting::Always: {
+    case VerifyPeerSetting::Required: {
       // NOTE: SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
       //  But the verification will still fail later when we do our own check!
       SSL_CTX_set_verify(openssl_ctx_.get(),

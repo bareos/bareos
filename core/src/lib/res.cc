@@ -1194,10 +1194,10 @@ void ConfigurationParser::StoreVerifyPeer(lexer* lc,
      * as soon as those deprecated options are removed. */
     switch (parse_conf_bool(lc)) {
       case parse_bool_result::True: {
-        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Always);
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Required);
       } break;
       case parse_bool_result::False: {
-        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Never);
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Disabled);
       } break;
       case parse_bool_result::Error: {
         std::string alternatives;
@@ -1891,7 +1891,7 @@ static bool HasDefaultValue(const ResourceItem& item)
         break;
       case CFG_TYPE_VERIFY_PEER:
         is_default = (GetItemVariable<VerifyPeerSetting>(item)
-                      == VerifyPeerSetting::Never);
+                      == VerifyPeerSetting::Disabled);
         break;
       default:
         break;

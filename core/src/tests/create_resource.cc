@@ -44,7 +44,7 @@ console::DirectorResource* CreateAndInitializeNewDirectorResource()
   dir->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   dir->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   dir->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   dir->resource_name_ = (char*)"director";
   dir->password_.encoding = p_encoding_md5;
   dir->password_.value = (char*)"verysecretpassword";
@@ -59,7 +59,7 @@ console::ConsoleResource* CreateAndInitializeNewConsoleResource()
   cons->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   cons->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   cons->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  cons->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  cons->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   cons->resource_name_ = (char*)"clientname";
   cons->password_.encoding = p_encoding_md5;
   cons->password_.value = (char*)"verysecretpassword";
@@ -76,7 +76,7 @@ directordaemon::ConsoleResource* CreateAndInitializeNewConsoleResource()
   cons->tls_cert_.certfile_ = CERTDIR "/console.bareos.org-cert.pem";
   cons->tls_cert_.keyfile_ = CERTDIR "/console.bareos.org-key.pem";
   cons->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  cons->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  cons->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   cons->resource_name_ = (char*)"clientname";
   cons->password_.encoding = p_encoding_md5;
   cons->password_.value = (char*)"verysecretpassword";
@@ -94,7 +94,7 @@ directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
   store->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   store->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   store->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  store->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  store->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   store->resource_name_ = (char*)"storage";
   return store;
 }
@@ -108,7 +108,7 @@ directordaemon::DirectorResource* CreateAndInitializeNewDirectorResource()
   dir->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   dir->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   dir->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   dir->DIRsrc_addr = 0;
   dir->resource_name_ = (char*)"director";
   dir->password_.encoding = p_encoding_md5;
@@ -126,7 +126,7 @@ storagedaemon::DirectorResource* CreateAndInitializeNewDirectorResource()
   dir->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   dir->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   dir->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  dir->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   dir->resource_name_ = (char*)"director";
   return dir;
 }
@@ -139,7 +139,7 @@ storagedaemon::StorageResource* CreateAndInitializeNewStorageResource()
   store->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";
   store->tls_cert_.keyfile_ = CERTDIR "/bareos-dir.bareos.org-key.pem";
   store->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
-  store->tls_cert_.verify_peer_ = VerifyPeerSetting::Never;
+  store->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
   store->resource_name_ = (char*)"storage";
   return store;
 }
