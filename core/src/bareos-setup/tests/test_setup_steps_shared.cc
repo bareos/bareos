@@ -327,9 +327,9 @@ TEST(BareosSetupUnattended, RunsRepositoryPackagesCatalogAndDaemonSteps)
   EXPECT_NE(std::find(commands.begin(), commands.end(),
                       "systemctl enable --now postgresql"),
             commands.end());
-  EXPECT_NE(
-      std::find(commands.begin(), commands.end(), "postgresql-setup --initdb"),
-      commands.end());
+  EXPECT_NE(std::find(commands.begin(), commands.end(),
+                      "exec postgresql-setup --initdb"),
+            commands.end());
   EXPECT_TRUE(
       std::any_of(commands.begin(), commands.end(), [](const auto& command) {
         return command.find("install") != std::string::npos
@@ -609,10 +609,71 @@ TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
   const auto init_cmd = BuildPostgresInitCmd(context);
   if (context.IsToolAvailable(SetupTool::PostgresqlSetup)) {
     ASSERT_TRUE(init_cmd);
-    EXPECT_EQ(*init_cmd, PostgresqlSetup({"--initdb"}));
+    EXPECT_EQ(init_cmd->tool, SetupTool::Bash);
   } else {
     EXPECT_FALSE(init_cmd);
   }
+}
+
+TEST(BareosSetupStepsShared, InitializesOnlyFreshPostgresDataDirectories)
+{
+  FakeToolPath tools({"systemctl", "postgresql-setup", "sudo"});
+  SetupContext context;
+  const auto temporary_file = context.CreateTemporaryFile("postgres-init-test");
+  const auto data = temporary_file.parent_path() / "data with spaces";
+  tools.SetToolScript("systemctl", "printf '%s\\n' 'OTHER=value \"PGDATA="
+                                       + data.string() + "\"'\n");
+  const auto command = BuildPostgresInitCmd(context);
+  ASSERT_TRUE(command);
+  std::string output;
+  const auto run = [&]() {
+    output.clear();
+    return context.Run(*command, false,
+                       [&](std::string_view line, std::string_view) {
+                         output += std::string(line) + "\n";
+                       });
+  };
+
+  EXPECT_EQ(run(), 0) << output;
+  std::filesystem::create_directory(data);
+  EXPECT_EQ(run(), 0) << output;
+  EXPECT_EQ(tools.LoggedCommands(),
+            (std::vector<std::string>{"postgresql-setup --initdb",
+                                      "postgresql-setup --initdb"}));
+
+  const auto sentinel = data / ".existing-data";
+  std::ofstream(sentinel) << "preserve me";
+  EXPECT_NE(run(), 0);
+  EXPECT_NE(output.find("not empty"), std::string::npos);
+  EXPECT_TRUE(std::filesystem::exists(sentinel));
+
+  std::ofstream(data / "PG_VERSION");
+  EXPECT_NE(run(), 0);
+  std::ofstream(data / "PG_VERSION") << "17\n";
+  EXPECT_EQ(run(), 0);
+  EXPECT_NE(output.find("Using existing PostgreSQL cluster"),
+            std::string::npos);
+  EXPECT_EQ(tools.LoggedCommands().size(), 2);
+
+  std::filesystem::remove(data / "PG_VERSION");
+  std::filesystem::remove(sentinel);
+  std::filesystem::remove(data);
+  tools.SetToolScript("postgresql-setup", "exit 23\n");
+  EXPECT_EQ(run(), 23);
+  tools.SetToolScript(
+      "systemctl",
+      "echo PGDATA=" + temporary_file.parent_path().string() + "/plain-data\n");
+  EXPECT_EQ(run(), 23);
+
+  tools.SetToolScript("systemctl", "exit 19\n");
+  EXPECT_EQ(run(), 19);
+  tools.SetToolScript("systemctl", "echo OTHER=value\n");
+  EXPECT_NE(run(), 0);
+  EXPECT_NE(output.find("Cannot determine"), std::string::npos);
+  tools.SetToolScript("systemctl", "echo PGDATA=relative/path\n");
+  EXPECT_NE(run(), 0);
+  EXPECT_NE(output.find("absolute path"), std::string::npos);
+  context.Remove(temporary_file);
 }
 
 TEST(BareosSetupStepsShared, BuildsRunAsPostgresCmd)
@@ -927,7 +988,7 @@ TEST(BareosSetupSessionOrchestration,
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
   FakeToolPath fake_tools(
-      {"sudo", "postgresql-setup", "systemctl", "su", "install"});
+      {"sudo", "bash", "postgresql-setup", "systemctl", "su", "install"});
   ASSERT_EQ(RunStepDiscardingOutput("catalog"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());

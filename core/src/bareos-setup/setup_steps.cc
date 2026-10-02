@@ -240,7 +240,38 @@ std::vector<std::string> BuildCatalogInitScripts(PackageManager pkg_mgr)
 std::optional<SetupCommand> BuildPostgresInitCmd(const SetupContext& context)
 {
   if (context.IsToolAvailable(SetupTool::PostgresqlSetup)) {
-    return PostgresqlSetup({"--initdb"});
+    // Inspect the service's PGDATA as root, just like postgresql-setup does.
+    return Bash({"-c", R"postgres(
+environment=$(systemctl show --property=Environment --value postgresql) || exit $?
+pgdata_pattern='(^|[[:space:]])("PGDATA=([^"\\]+)"|PGDATA=([^[:space:]"\\]+))($|[[:space:]])'
+if [[ $environment =~ $pgdata_pattern ]]; then
+  pgdata=${BASH_REMATCH[3]:-${BASH_REMATCH[4]}}
+else
+  echo "Cannot determine PostgreSQL PGDATA from the postgresql service." >&2
+  exit 1
+fi
+if [[ $pgdata != /* ]]; then
+  echo "PostgreSQL PGDATA must be an absolute path: $pgdata" >&2
+  exit 1
+fi
+if [[ -f "$pgdata/PG_VERSION" && -s "$pgdata/PG_VERSION" ]]; then
+  echo "Using existing PostgreSQL cluster in $pgdata."
+  exit 0
+fi
+if [[ -e $pgdata || -L $pgdata ]]; then
+  if [[ ! -d $pgdata || ! -r $pgdata || ! -x $pgdata ]]; then
+    echo "Cannot inspect PostgreSQL data directory: $pgdata" >&2
+    exit 1
+  fi
+  shopt -s nullglob dotglob
+  entries=("$pgdata"/*)
+  if (( ${#entries[@]} != 0 )); then
+    echo "PostgreSQL data directory is not empty and has no valid PG_VERSION: $pgdata" >&2
+    exit 1
+  fi
+fi
+exec postgresql-setup --initdb
+)postgres"});
   }
   return std::nullopt;
 }

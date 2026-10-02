@@ -120,6 +120,10 @@ This mode uses the same installation steps as the TUI: package installation,
 local PostgreSQL and catalog initialization, base configuration, service
 enablement/startup, and active-service checks. It requires a fresh server and
 does not upgrade an existing installation or overwrite setup-owned configuration.
+An existing local PostgreSQL cluster is reused. Where ``postgresql-setup``
+is required, the installer checks the service's ``PGDATA`` directory and
+initializes it only if it is missing or empty. A nonempty directory without
+a nonempty ``PG_VERSION`` file is rejected without removing existing data.
 The generated WebUI administrator password is not printed in CI logs; it is
 stored in :file:`/etc/bareos/bareos-dir.d/console/admin.conf`.
 
