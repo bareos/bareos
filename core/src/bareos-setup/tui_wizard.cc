@@ -250,6 +250,18 @@ static int RunWizard(SetupContext& context,
   }
   const bool manual_repo_choice
       = !IsSupportedSetupPlatform(os.distro, os.pkg_mgr);
+  auto tape = unattended ? unattended->tape : TapeSupportOptions{};
+  if (!unattended) {
+    tape.enabled = Prompt("Install tape support? (yes/no)", "yes") == "yes";
+    if (tape.enabled) {
+      tape.allow_repositories
+          = Prompt(
+                "Allow enabling vendor dependency repositories if needed "
+                "(entitled RHEL or registered SUSE PackageHub)? (yes/no)",
+                "no")
+            == "yes";
+    }
+  }
 
   if (!override_repository) {
     const auto repository
@@ -409,16 +421,15 @@ static int RunWizard(SetupContext& context,
   auto packages = os.pkg_mgr == PackageManager::Apt
                       ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
                       : BuildDefaultPackageList(os.pkg_mgr);
-  if (IsSuseRepoOsPath(repo_os_path)
-      || (unattended && os.pkg_mgr == PackageManager::Zypper)) {
-    std::cout << "Checking whether the mtx package is available.\n";
-    if (!Run(BuildMtxAvailabilityCheckCmd(), context)) {
-      std::cout << "Warning: mtx is not available from the configured SUSE "
-                   "repositories, so bareos-storage-tape cannot be "
-                   "installed.\n";
-      packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
-    }
+  if (PrepareTapeSupport(context, os, tape,
+                         [](std::string_view line, std::string_view stream) {
+                           (stream == "stderr" ? std::cerr : std::cout)
+                               << line << "\n";
+                         })
+      != 0) {
+    return 1;
   }
+  if (!tape.enabled) { std::erase(packages, "bareos-storage-tape"); }
   const bool webui = !unattended || unattended->webui;
   if (!webui) {
     std::erase_if(packages, [](const std::string& package) {
@@ -544,7 +555,15 @@ static int RunWizard(SetupContext& context,
   return 0;
 }
 
-int RunTuiWizard(SetupContext& context) { return RunWizard(context, nullptr); }
+int RunTuiWizard(SetupContext& context)
+{
+  try {
+    return RunWizard(context, nullptr);
+  } catch (const std::exception& error) {
+    std::cerr << "Setup failed: " << error.what() << "\n";
+    return 1;
+  }
+}
 
 int RunUnattendedSetup(SetupContext& context,
                        const UnattendedSetupOptions& options)
@@ -568,6 +587,15 @@ int RunUnattendedSetup(SetupContext& context,
       std::cerr << "Invalid extra package name.\n";
       return 1;
     }
+    if (!options.tape.enabled && package == "bareos-storage-tape") {
+      std::cerr << "--without-tape-support conflicts with extra package "
+                   "bareos-storage-tape.\n";
+      return 1;
+    }
+  }
+  if (!options.tape.enabled && options.tape.allow_repositories) {
+    std::cerr << "Repository consent requires tape support to be enabled.\n";
+    return 1;
   }
   try {
     return RunWizard(context, &options);

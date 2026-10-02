@@ -51,6 +51,7 @@ struct SetupProgress {
   // Repository OS path resolved by the repository step; may be a manual
   // choice on distributions the wizard does not recognise.
   std::string repo_os_path;
+  std::optional<TapeSupportOptions> tape;
 };
 
 struct SessionContext {
@@ -309,17 +310,6 @@ std::string ResolveRepoOsPath(const OsInfo& os, const std::string& requested)
   return requested;
 }
 
-/** The repository path resolved by the repository step, if it already ran. */
-std::string StoredRepoOsPath(const OsInfo& os)
-{
-  {
-    std::lock_guard lock(Progress().mutex);
-    if (!Progress().repo_os_path.empty()) return Progress().repo_os_path;
-  }
-  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) return {};
-  return BuildRepoOsPath(os.distro, os.version);
-}
-
 int InstallRepository(WsCodec& ws,
                       json_t* message,
                       const SessionContext& context)
@@ -440,9 +430,30 @@ int InstallRepository(WsCodec& ws,
   return 0;
 }
 
-int InstallPackages(WsCodec& ws, const SessionContext& context)
+TapeSupportOptions TapeOptions(json_t* message)
+{
+  TapeSupportOptions options;
+  for (const auto* key : {"tape_support", "allow_tape_repositories"}) {
+    const auto* value = json_object_get(message, key);
+    if (value && !json_is_boolean(value)) {
+      throw std::runtime_error(std::string(key) + " must be a boolean.");
+    }
+  }
+  if (const auto* value = json_object_get(message, "tape_support")) {
+    options.enabled = json_is_true(value);
+  }
+  options.allow_repositories
+      = json_is_true(json_object_get(message, "allow_tape_repositories"));
+  if (!options.enabled && options.allow_repositories) {
+    throw std::runtime_error("Repository consent requires tape support.");
+  }
+  return options;
+}
+
+int InstallPackages(WsCodec& ws, json_t* message, const SessionContext& context)
 {
   const auto os = DetectOs();
+  auto tape = TapeOptions(message);
   if (!IsSupportedPackageManager(os.pkg_mgr)) {
     throw std::runtime_error(
         "No supported package manager (apt, dnf, yum or zypper) was found. "
@@ -457,25 +468,18 @@ int InstallPackages(WsCodec& ws, const SessionContext& context)
     if (Run(Systemctl({"enable", "--now", "postgresql"}), ws, context) != 0) {
       return 1;
     }
-    Output(ws, "Installing the fixed Bareos package set.");
-    return Run(
-        BuildInstallCmd(os.pkg_mgr,
-                        BuildPackageListWithoutPostgresServer(os.pkg_mgr)),
-        ws, context);
   }
 
-  auto packages = BuildDefaultPackageList(os.pkg_mgr);
-  // Keyed on the repository family rather than the distribution ID so that a
-  // manually selected SUSE repository gets the same treatment.
-  if (IsSuseRepoOsPath(StoredRepoOsPath(os))) {
-    Output(ws, "Checking whether the mtx package is available.");
-    if (Run(BuildMtxAvailabilityCheckCmd(), ws, context) != 0) {
-      Output(ws,
-             "Warning: mtx is not available from the configured SUSE "
-             "repositories, so bareos-storage-tape cannot be installed.");
-      packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
-    }
+  auto packages = os.pkg_mgr == PackageManager::Apt
+                      ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
+                      : BuildDefaultPackageList(os.pkg_mgr);
+  if (PrepareTapeSupport(
+          context.setup, os, tape,
+          [&](std::string_view line, std::string_view) { Output(ws, line); })
+      != 0) {
+    return 1;
   }
+  if (!tape.enabled) std::erase(packages, "bareos-storage-tape");
 
   Output(ws, "Installing the fixed Bareos package set.");
   return Run(BuildInstallCmd(os.pkg_mgr, packages), ws, context);
@@ -677,7 +681,7 @@ int RunStep(WsCodec& ws,
             const SessionContext& context)
 {
   if (step == "repository") return InstallRepository(ws, message, context);
-  if (step == "packages") return InstallPackages(ws, context);
+  if (step == "packages") return InstallPackages(ws, message, context);
   if (step == "catalog") return InitializeCatalog(ws, context);
   if (step == "admin") return CreateAdmin(ws, context);
   if (step == "proxy") return ConfigureProxy(ws, context);
@@ -712,25 +716,30 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
     const std::string repo_os_path
         = platform_supported ? BuildRepoOsPath(os.distro, os.version)
                              : std::string{};
-    Send(ws, json_pack(
-                 "{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s,s:b,s:b,s:b,s:b,"
-                 "s:b,s:b,s:s,s:o,s:o}",
-                 "type", "state", "distro", os.distro.c_str(), "version",
-                 os.version.c_str(), "package_manager",
-                 PackageManagerName(os.pkg_mgr), "pretty_name",
-                 os.pretty_name.c_str(), "arch", os.arch.c_str(), "codename",
-                 os.codename.c_str(), "hostname", hostname.c_str(), "completed",
-                 completed, "finished", Progress().finished, "setup_version",
-                 BAREOS_FULL_VERSION, "peer_is_loopback",
-                 context.peer_is_loopback, "dry_run", context.setup.dry_run(),
-                 "subscription_credentials_in_browser",
-                 context.peer_is_loopback && !context.setup.dry_run(),
-                 "subscription_credentials_on_terminal",
-                 !context.peer_is_loopback && !context.setup.dry_run(),
-                 "platform_supported", platform_supported,
-                 "package_manager_supported", pkg_mgr_supported, "repo_os_path",
-                 repo_os_path.c_str(), "known_repo_os_paths", known_paths,
-                 "suggested_repo_os_paths", suggested_paths));
+    Send(
+        ws,
+        json_pack(
+            "{s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:s,s:o,s:b,s:s,s:b,s:b,s:b,s:b,"
+            "s:b,s:b,s:s,s:o,s:o,s:b,s:b}",
+            "type", "state", "distro", os.distro.c_str(), "version",
+            os.version.c_str(), "package_manager",
+            PackageManagerName(os.pkg_mgr), "pretty_name",
+            os.pretty_name.c_str(), "arch", os.arch.c_str(), "codename",
+            os.codename.c_str(), "hostname", hostname.c_str(), "completed",
+            completed, "finished", Progress().finished, "setup_version",
+            BAREOS_FULL_VERSION, "peer_is_loopback", context.peer_is_loopback,
+            "dry_run", context.setup.dry_run(),
+            "subscription_credentials_in_browser",
+            context.peer_is_loopback && !context.setup.dry_run(),
+            "subscription_credentials_on_terminal",
+            !context.peer_is_loopback && !context.setup.dry_run(),
+            "platform_supported", platform_supported,
+            "package_manager_supported", pkg_mgr_supported, "repo_os_path",
+            repo_os_path.c_str(), "known_repo_os_paths", known_paths,
+            "suggested_repo_os_paths", suggested_paths, "tape_support",
+            Progress().tape.value_or(TapeSupportOptions{}).enabled,
+            "allow_tape_repositories",
+            Progress().tape.value_or(TapeSupportOptions{}).allow_repositories));
     return;
   }
   if (action == "close") {
@@ -760,6 +769,7 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
       Progress().finished = false;
       Progress().admin_password.clear();
       Progress().admin_config_created = false;
+      Progress().tape.reset();
     }
     Send(ws, json_pack("{s:s}", "type", "rollback_complete"));
     return;
@@ -780,6 +790,21 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
   {
     std::lock_guard lock(Progress().mutex);
     if (!context.setup.dry_run() && Progress().completed.contains(step)) {
+      if (step == "packages") {
+        try {
+          const auto options = TapeOptions(message);
+          if (!Progress().tape || options.enabled != Progress().tape->enabled
+              || options.allow_repositories
+                     != Progress().tape->allow_repositories) {
+            Error(ws, step,
+                  "Package choices cannot change after installation.");
+            return;
+          }
+        } catch (const std::exception& error) {
+          Error(ws, step, error.what());
+          return;
+        }
+      }
       Send(ws, json_pack("{s:s,s:s,s:i}", "type", "done", "step", step.c_str(),
                          "exit_code", 0));
       return;
@@ -795,6 +820,7 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
   if (result == 0 && !context.setup.dry_run()) {
     std::lock_guard lock(Progress().mutex);
     Progress().completed.insert(step);
+    if (step == "packages") Progress().tape = TapeOptions(message);
     if (step == "smoke_test") Progress().finished = true;
   } else if (result != 0 && !context.setup.dry_run()) {
     std::lock_guard lock(Progress().mutex);

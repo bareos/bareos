@@ -50,8 +50,11 @@ export const useSetupStore = defineStore('setup', () => {
   const repoOsPath = ref('')
   const repoOsPathAcknowledged = ref(false)
   const admin = ref(null)
+  const tapeSupport = ref(true)
+  const allowTapeRepositories = ref(false)
   return {
     state, repository, repositoryLogin, repositoryPassword,
-    repoOsPath, repoOsPathAcknowledged, admin
+    repoOsPath, repoOsPathAcknowledged, admin,
+    tapeSupport, allowTapeRepositories
   }
 })

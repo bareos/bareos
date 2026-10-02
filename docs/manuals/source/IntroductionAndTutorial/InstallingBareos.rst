@@ -143,6 +143,43 @@ Use ``--extra-package PACKAGE`` for additional test packages,
 ``--without-webui`` for a server without the WebUI, and ``--dry`` to preview
 commands without changing the host.
 
+Tape support and additional repositories
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Tape support is enabled by default. Use ``--without-tape-support`` to omit
+``bareos-storage-tape`` while retaining disk storage and the rest of the server.
+This does not remove tape packages already installed. Requesting that package
+explicitly with ``--extra-package`` conflicts with the opt-out.
+The terminal wizard offers a tape-support prompt; the web wizard has a
+corresponding checkbox.
+
+Enabling tape does not authorize adding third-party or vendor repositories.
+Use ``--allow-tape-repositories`` (or the separate terminal/web permission) to
+allow approved vendor repositories when dependencies are missing. This option
+cannot be combined with ``--without-tape-support``. No repositories are enabled
+when the required packages are already installed or available.
+
+Automatic repository activation is currently limited to:
+
+* RHEL 9 and 10 on x86_64/aarch64: enable the official BaseOS and AppStream
+  repositories through ``subscription-manager``. A valid entitlement is
+  required. Dependency queries require the package manager's ``repoquery``
+  support, provided by ``dnf-plugins-core`` when it is not already available.
+* Registered SLES/SLED 15.6 and 15.7 on x86_64/aarch64: enable
+  ``PackageHub/<version>/<architecture>`` using ``SUSEConnect``.
+
+The installer refreshes metadata and checks dependencies again after activation.
+Registration, metadata, signing, or repository-activation errors stop installation.
+Other platforms require manually configured repositories when dependencies
+are unavailable; the installer does not mix packages from unrelated distributions.
+Without repository consent, the existing SUSE missing-``mtx`` warning and
+tape-omission behavior is retained.
+
+Unregistered Red Hat UBI repositories may omit ``mt-st`` and ``mtx``.
+Adding EPEL alone is not a solution for these dependencies. Use
+``--without-tape-support`` on such systems, or configure an entitled RHEL
+environment. Repository consent does not register or purchase an entitlement.
+
 In ``ci-scripts``, set ``USE_BAREOS_SETUP=yes`` in the Jenkins CI parameters.
 The new path applies to Linux ``bareos-postgresql`` and ``bareos-all-daemons``
 tests for package versions 25 and newer. Client-only, universal-client,
@@ -150,6 +187,13 @@ Univention, legacy database, older-version, FreeBSD, and Windows tests retain
 their existing scripts. Update tests also retain their existing scripts.
 Supply exactly one ``REPOURL``; the CI scripts append their existing distribution
 mapping to it.
+
+``BAREOS_SETUP_TAPE_SUPPORT`` defaults to ``yes``. Jenkins sets it to ``auto``:
+only environments with the shipped UBI repository file omit tape support;
+other EL/RHEL environments retain it. ``BAREOS_SETUP_ALLOW_TAPE_REPOSITORIES``
+defaults to ``no``. The optional Jenkins ``testTapeRepositories`` parameter
+adds a separate EL server test with both tape support and repository consent,
+requiring an entitled environment where UBI lacks the dependencies.
 
 Publish a portable binary built from the same source revision as the packages
 and for the target architecture. Set ``BAREOS_SETUP_URL`` to its HTTPS download

@@ -27,11 +27,13 @@
 #define BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
 
 #include "command_runner.h"
+#include "setup_steps.h"
 
 struct UnattendedSetupOptions {
   std::vector<std::string> override_repository_urls;
   std::vector<std::string> extra_packages;
   bool webui = true;
+  TapeSupportOptions tape;
 };
 
 /** Run the interactive terminal wizard. Returns 0 on success. */
