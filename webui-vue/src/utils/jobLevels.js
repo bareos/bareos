@@ -19,12 +19,14 @@
    02110-1301, USA.
  */
 
+import { messageId } from '../i18n/messageId.js'
+
 const JOB_LEVEL_INFO = {
-  F: { badge: 'F', color: 'positive', labelKey: 'Full' },
-  I: { badge: 'I', color: 'blue-10', labelKey: 'Incremental' },
-  D: { badge: 'D', color: 'orange', labelKey: 'Differential' },
-  V: { badge: 'V', color: 'purple', labelKey: 'Virtual Full' },
-  B: { badge: 'B', color: 'grey', labelKey: 'Base' },
+  F: { badge: 'F', color: 'positive', labelKey: messageId('Full') },
+  I: { badge: 'I', color: 'blue-10', labelKey: messageId('Incremental') },
+  D: { badge: 'D', color: 'orange', labelKey: messageId('Differential') },
+  V: { badge: 'V', color: 'purple', labelKey: messageId('Virtual Full') },
+  B: { badge: 'B', color: 'grey', labelKey: messageId('Base') },
 }
 
 const JOB_LEVEL_CODE_BY_NAME = {

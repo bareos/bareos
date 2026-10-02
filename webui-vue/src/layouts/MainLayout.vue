@@ -7,13 +7,17 @@
       <q-scroll-area class="col">
         <!-- Drawer header -->
         <div class="q-pa-md row items-center">
-          <span style="height:32px; margin-right:8px; display:inline-flex; align-items:center">
-            <img :src="bareosLogo" alt="Bareos" style="height:32px" />
+          <router-link to="/dashboard" class="text-white"
+                       style="display:inline-flex; align-items:center; text-decoration:none"
+                       @click="drawerOpen = false">
+            <span style="height:32px; margin-right:8px; display:inline-flex; align-items:center">
+              <img :src="bareosLogo" alt="Bareos" style="height:32px" />
+            </span>
+            <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
+              Bareos
+            </span>
             <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
-          </span>
-          <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-            BAREOS
-          </span>
+          </router-link>
         </div>
         <q-separator dark />
 
@@ -89,6 +93,17 @@
             <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
             <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
           </q-item>
+          <template v-if="buildInfo.promote">
+            <q-item v-for="offering in MENU_OFFERINGS" :key="offering.id"
+                    clickable v-ripple
+                    tag="a" :href="offering.url" target="_blank"
+                    rel="noopener noreferrer"
+                    :data-testid="`drawer-offering-${offering.id}`"
+                    @click="drawerOpen = false">
+              <q-item-section avatar><q-icon :name="offering.icon" /></q-item-section>
+              <q-item-section>{{ t(offering.label) }}</q-item-section>
+            </q-item>
+          </template>
           <q-separator dark />
           <q-item clickable v-ripple @click="logout">
             <q-item-section avatar><q-icon name="logout" /></q-item-section>
@@ -104,17 +119,19 @@
 
         <!-- Hamburger (mobile / tablet) -->
         <q-btn v-if="$q.screen.lt.md" flat round dense icon="menu" color="white"
+               :title="t('Open navigation menu')" :aria-label="t('Open navigation menu')"
                class="q-mr-sm" @click="drawerOpen = !drawerOpen" />
 
         <!-- Logo -->
-        <router-link to="/dashboard" style="display:inline-flex; align-items:center">
+        <router-link to="/dashboard" class="text-white"
+                     style="display:inline-flex; align-items:center; text-decoration:none">
           <img :src="bareosLogo" alt="Bareos"
                style="height:36px; margin-right:8px;" />
+          <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
+            Bareos
+          </span>
           <q-tooltip>Bareos WebUI {{ appVersion }}</q-tooltip>
         </router-link>
-        <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
-          BAREOS
-        </span>
 
         <!-- Main nav tabs (desktop only) -->
         <q-tabs v-if="!$q.screen.lt.md" dense align="left"
@@ -135,6 +152,7 @@
           dense
           :icon="directorUpdateAlert.icon"
           :color="directorUpdateAlert.color"
+          :aria-label="directorUpdateAlert.message"
           :href="RELEASE_INFO_PAGE_URL"
           target="_blank"
           rel="noopener noreferrer"
@@ -174,7 +192,8 @@
             </q-menu>
           </q-btn>
 
-          <q-btn flat color="white" :label="accountMenuLabel" icon="person" no-caps>
+          <q-btn flat color="white" :label="accountMenuLabel" icon="person" no-caps
+                 data-testid="account-menu">
             <q-menu>
               <q-list dense style="min-width:180px">
                 <q-item
@@ -208,6 +227,14 @@
                   <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
                   <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
                 </q-item>
+                <template v-if="buildInfo.promote">
+                  <q-item v-for="offering in MENU_OFFERINGS" :key="offering.id"
+                          clickable tag="a" :href="offering.url" target="_blank" rel="noopener noreferrer" v-close-popup
+                          :data-testid="`menu-offering-${offering.id}`">
+                    <q-item-section avatar><q-icon :name="offering.icon" /></q-item-section>
+                    <q-item-section>{{ t(offering.label) }}</q-item-section>
+                  </q-item>
+                </template>
                 <q-separator />
                 <q-item clickable v-close-popup @click="logout">
                   <q-item-section avatar><q-icon name="logout" /></q-item-section>
@@ -219,6 +246,28 @@
         </template>
 
       </q-toolbar>
+      <div
+        v-if="buildInfo.promote && !buildInfo.ribbonDismissed"
+        class="unsupported-build-ribbon row items-center justify-center no-wrap"
+        data-testid="unsupported-build-ribbon"
+      >
+        <q-icon name="warning" size="14px" class="q-mr-xs" />
+        <span class="ellipsis">
+          {{ t(UNSUPPORTED_BUILD_TEXT) }}.
+          <a :href="EVALUATION_URL" target="_blank" rel="noopener noreferrer">
+            {{ t('Try the subscription release for free') }} →
+          </a>
+        </span>
+        <q-btn
+          flat round dense size="xs" icon="close"
+          class="unsupported-build-ribbon-close"
+          :aria-label="t('Close')"
+          data-testid="unsupported-build-ribbon-close"
+          @click="closeUnsupportedRibbon"
+        >
+          <q-tooltip>{{ t('Hide until the next login') }}</q-tooltip>
+        </q-btn>
+      </div>
     </q-header>
 
     <q-page-container>
@@ -257,6 +306,19 @@
 
       <q-space />
 
+      <template v-if="buildInfo.promote">
+        <a
+          :href="EVALUATION_URL" target="_blank" rel="noopener noreferrer"
+          class="statusbar-offering gt-xs"
+          data-testid="statusbar-commercial-offering"
+        >
+          <q-icon name="rocket_launch" size="13px" />
+          {{ t('Unsupported build') }} · {{ t('Try the subscription release') }}
+          <q-tooltip>{{ offeringTooltip }}</q-tooltip>
+        </a>
+        <span class="gt-xs" style="opacity:.4">|</span>
+      </template>
+
       <!-- session info -->
       <template v-if="accountDirectorSessions.length > 0">
         <q-icon name="person" size="13px" style="opacity:.7" />
@@ -276,6 +338,7 @@ import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import DirectorScopeMenuContent from '../components/DirectorScopeMenuContent.vue'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useConsoleSessionsStore } from '../stores/consoleSessions.js'
@@ -291,11 +354,24 @@ import {
   useReleaseInfoStore,
 } from '../stores/releaseInfo.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { useBuildInfoStore } from '../stores/buildInfo.js'
+import {
+  COMMERCIAL_OFFERINGS,
+  EVALUATION_URL,
+  MENU_OFFERINGS,
+  UNSUPPORTED_BUILD_TEXT,
+  closedRibbonNotification,
+  buildKindLabel,
+} from '../utils/commercialOffering.js'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
 const consoleSessions = useConsoleSessionsStore()
 const director = useDirectorStore()
+const buildInfo = useBuildInfoStore()
+const offeringTooltip = computed(() => (
+  `${t(buildKindLabel(buildInfo.kind))} · ${t('Available from bareos.com')}: ${COMMERCIAL_OFFERINGS.map(offering => t(offering.label)).join(', ')}`
+))
 const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
@@ -473,8 +549,8 @@ const mainNavItems = computed(() => [
   { label: t('Clients'), to: '/clients', icon: 'devices', testId: 'nav-clients', drawerTestId: 'drawer-nav-clients' },
   { label: t('Schedules'), to: '/schedules', icon: 'schedule', testId: 'nav-schedules', drawerTestId: 'drawer-nav-schedules' },
   { label: t('Storages'), to: '/storages', icon: 'storage', testId: 'nav-storages', drawerTestId: 'drawer-nav-storages' },
+  { label: t('Pools'), to: '/pools', icon: 'inventory_2', testId: 'nav-pools', drawerTestId: 'drawer-nav-pools' },
   { label: t('Director'), to: '/director', icon: 'settings', testId: 'nav-director', drawerTestId: 'drawer-nav-director' },
-  { label: t('Analytics'), to: '/analytics', icon: 'bar_chart', testId: 'nav-analytics', drawerTestId: 'drawer-nav-analytics' },
 ])
 
 onMounted(() => {
@@ -520,18 +596,61 @@ const dirStatusLabel = computed(() => ({
   disconnected:   t('Offline'),
 }[director.status] ?? t('Offline')))
 
-async function refreshDirectorVersion() {
-  if (!director.isConnected) {
+let buildInfoRefreshGeneration = 0
+
+async function fetchDirectorStatus(directorName) {
+  if (directorName === currentDirector.value && director.isConnected) {
+    return director.call('status director')
+  }
+
+  const credentials = auth.getCredentials(directorName)
+  if (!credentials) {
+    throw new Error(`No credentials for director "${directorName}".`)
+  }
+
+  const client = await createDirectorCommandClient(credentials)
+  try {
+    return await client.call('status director')
+  } finally {
+    client.disconnect()
+  }
+}
+
+async function refreshDirectorVersions() {
+  const generation = ++buildInfoRefreshGeneration
+  const directorNames = accountDirectorSessions.value.map(session => session.director)
+  buildInfo.retain(directorNames)
+
+  if (!directorNames.length) {
     directorVersion.value = ''
     return
   }
-  try {
-    const status = await director.call('status director')
-    directorVersion.value = status?.header?.version ?? ''
-  } catch {
-    directorVersion.value = ''
+
+  const results = await Promise.allSettled(
+    directorNames.map(async directorName => ({
+      director: directorName,
+      status: await fetchDirectorStatus(directorName),
+    })),
+  )
+
+  if (generation !== buildInfoRefreshGeneration) return
+
+  directorVersion.value = ''
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    const { director: directorName, status } = result.value
+    buildInfo.recordStatus(directorName, status)
+    if (directorName === currentDirector.value) {
+      directorVersion.value = status?.header?.version ?? ''
+    }
   }
 }
+
+watch(
+  () => accountDirectorSessions.value.map(session => session.director),
+  () => { refreshDirectorVersions() },
+  { immediate: true },
+)
 
 watch(
   () => [...activeDirectors.value],
@@ -546,7 +665,7 @@ watch(
   (status) => {
     if (status === 'connected') {
       releaseInfo.refresh().catch(() => {})
-      refreshDirectorVersion()
+      refreshDirectorVersions()
     } else if (status !== 'connecting' && status !== 'authenticating') {
       directorVersion.value = ''
     }
@@ -577,6 +696,11 @@ const directorUpdateAlert = computed(() => {
   return { color, icon, message }
 })
 
+function closeUnsupportedRibbon() {
+  buildInfo.setRibbonDismissed(true)
+  $q.notify(closedRibbonNotification(t))
+}
+
 async function logout() {
   try {
     await deleteProxySession()
@@ -591,6 +715,46 @@ async function logout() {
 </script>
 
 <style scoped>
+.unsupported-build-ribbon {
+  position: relative;
+  min-height: 24px;
+  padding: 2px 36px;
+  background: #ffb300;
+  color: rgba(0, 0, 0, 0.87);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.unsupported-build-ribbon a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.unsupported-build-ribbon-close {
+  position: absolute;
+  right: 8px;
+}
+
+.statusbar-offering {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+body.bareos-unsupported-build .statusbar-offering {
+  color: #ffca28;
+  font-weight: 600;
+}
+
+.statusbar-offering:hover,
+.statusbar-offering:focus-visible {
+  text-decoration: underline;
+}
+
 .director-scope-control {
   max-width: 15rem;
 }
