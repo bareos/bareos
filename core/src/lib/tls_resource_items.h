@@ -81,21 +81,10 @@
 #define TLS_CERT_CONFIG(res)                                                   \
   {                                                                            \
     "TlsVerifyPeer", CFG_TYPE_VERIFY_PEER, ITEM(res, tls_cert_.verify_peer_), {\
-      config::DefaultValue{"IfAvailable"},                                     \
-      config::Description{                                                     \
-        "A verified peer certificate is a certificate whose chain is "         \
-        "verified via a known CA (see \"Tls Ca Certificate File\" and "        \
-        "\"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is "          \
-        "nonempty, its \"Common Name\" (CN) is found within it. If \"TLS "     \
-        "Allowed CN\" is empty, then server certificates only count as "       \
-        "verified if either its \"Subject Alternative Name\" (SAN) or its "    \
-        "CN is equal to the address used for the connection.\n"                \
-        "If this is set to \"No\", then certificates are not required nor "    \
-        "do they need to be verified.\n"                                       \
-        "If this is set to \"If Available\", then certificates are not "       \
-        "required, but only verified certificates are accepted if they "       \
-        "are sent over.  If this is set to \"Yes\", then verified "            \
-        "certificates are required."}                                          \
+      config::DefaultValue{"IfCertificatePresented"},                                     \
+      config::Description{"Disabled: Peer certificates are neither required nor verified when presented.\n" \
+          "IfCertificatePresented: Peer certificates are not required, but are verified when presented.\n" \
+          "Required: Peer certificates are required and verified.\n"}   \
   }},                                                                          \
   {                                                                            \
     "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR,                                \
