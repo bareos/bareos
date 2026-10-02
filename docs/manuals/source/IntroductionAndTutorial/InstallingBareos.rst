@@ -144,7 +144,7 @@ Use ``--extra-package PACKAGE`` for additional test packages,
 commands without changing the host.
 
 Tape support and additional repositories
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Tape support is enabled by default. Use ``--without-tape-support`` to omit
 ``bareos-storage-tape`` while retaining disk storage and the rest of the server.
