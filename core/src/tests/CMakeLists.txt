@@ -411,6 +411,10 @@ if(HAVE_WIN32)
     ADDITIONAL_SOURCES compat_old_conversion.cc
     LINK_LIBRARIES Bareos::Lib GTest::gtest_main
   )
+  bareos_add_test(
+    test_separate_path_and_file
+    LINK_LIBRARIES Bareos::Lib Bareos::Findlib GTest::gtest_main
+  )
 endif()
 if(ENABLE_BCONSOLE)
   bareos_add_test(
