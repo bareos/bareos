@@ -53,6 +53,10 @@
 #  include <poll.h>
 #endif
 
+#ifndef HAVE_WIN32
+#  include <syslog.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
 #include <array>
@@ -236,17 +240,37 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
     if (sock.fd < 0) {
       BErrNo be;
       char tmp[1024];
+      /* Being unable to bind a configured address/port is a fatal
+       * startup condition: the daemon would otherwise silently skip
+       * starting its socket server (or, for the director, exit with a
+       * success status), leaving no trace of the failure in the
+       * journal/init script. M_ERROR_TERM guarantees the message is
+       * always dispatched (also via syslog) and terminates the daemon
+       * with a failure exit code. */
 #ifdef HAVE_WIN32
-      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
             WSAGetLastError());
 #else
-      Emsg2(M_ERROR, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
+      Emsg2(M_ERROR_TERM, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
             be.bstrerror());
 #endif
       return {};
     } else {
+      char tmp[1024];
+      /* Report each successfully bound address/port so that a running
+       * daemon leaves a positive trace of what it is listening on
+       * instead of just silence. Also written directly to syslog,
+       * since the M_INFO message may be filtered by the configured
+       * Messages resource and stdout is redirected to /dev/null once
+       * the daemon has detached (see daemon_start()). */
+      Emsg2(M_INFO, 0, T_("Listening on address %s port %d.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port));
+#ifndef HAVE_WIN32
+      syslog(LOG_DAEMON | LOG_INFO, "Listening on address %s port %d.",
+             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port));
+#endif
       bound_sockets.emplace_back(std::move(sock));
     }
   }

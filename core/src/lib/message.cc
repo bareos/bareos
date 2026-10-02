@@ -637,12 +637,21 @@ void DispatchMessage(JobControlRecord* jcr,
     return;
   }
 
-  // For serious errors make sure message is printed or logged
+  /* For serious errors make sure message is printed or logged.
+   * stdout is unreliable here: once the daemon has forked into the
+   * background (daemon_start()), stdin/stdout/stderr are redirected to
+   * /dev/null, so anything written to stdout after that point is lost.
+   * Always mirror these severities to syslog as well, so the failure is
+   * still visible (e.g. in the systemd journal or via classic syslog)
+   * regardless of whether the daemon runs in the foreground or has
+   * already daemonized. */
   if (type == M_ABORT || type == M_ERROR_TERM || type == M_CONFIG_ERROR) {
     fputs(dt, stdout);
     fputs(msg, stdout);
     fflush(stdout);
-    if (type == M_ABORT) { syslog(LOG_DAEMON | LOG_ERR, "%s", msg); }
+    if (type == M_ABORT || type == M_ERROR_TERM) {
+      syslog(LOG_DAEMON | LOG_ERR, "%s", msg);
+    }
   }
 
   // Now figure out where to send the message
