@@ -28,17 +28,23 @@
 
 #include <string>
 
+#include "command_runner.h"
+
 /**
- * Handle one WebSocket connection (fd is already upgraded).
+ * Handle one WebSocket connection. If request_headers is non-empty, validate
+ * and complete the WebSocket upgrade before reading messages.
  * Reads JSON messages from the browser, executes actions, and sends
  * JSON responses.  Returns when the connection is closed.
  *
- * When dry_run is true, commands are printed to the output stream
- * instead of being executed; exit_code is always reported as 0.
+ * SetupContext owns dry-run behavior and resolved executable paths for this
+ * connection. pending_input contains bytes read past the end of
+ * request_headers.
  */
 void RunSetupSession(int fd,
-                     bool dry_run = false,
-                     bool peer_is_loopback = true);
+                     SetupContext& context,
+                     bool peer_is_loopback = true,
+                     std::string request_headers = {},
+                     std::string pending_input = {});
 
 /**
  * Test-only entry point: execute a single setup step (as identified by

@@ -68,65 +68,76 @@ std::string PromptSecret(const std::string& label)
   return value;
 }
 
-bool Run(const std::vector<std::string>& command,
-         bool dry_run,
+bool Run(const SetupCommand& command,
+         SetupContext& context,
          const std::vector<std::string>& secrets = {})
 {
-  if (dry_run) {
-    std::cout << "[preview] "
-              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
-              << "\n";
-    return true;
-  }
-  return RunCommand(command, true,
-                    [&secrets](const std::string& line, const std::string&) {
-                      std::cout << RedactSetupSecrets(line, secrets) << "\n";
-                    })
-         == 0;
-}
-
-bool RunWithInput(const std::vector<std::string>& command,
-                  const std::string& input,
-                  bool dry_run,
-                  const std::vector<std::string>& secrets = {})
-{
-  if (dry_run) {
-    std::cout << "[preview] "
-              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
-              << "\n";
-    return true;
-  }
-  return RunCommandWithInput(
-             command, input, true,
-             [&secrets](const std::string& line, const std::string&) {
+  return context.Run(
+             command, true,
+             [&secrets](std::string_view line, std::string_view) {
                std::cout << RedactSetupSecrets(line, secrets) << "\n";
+             },
+             [&secrets](const SetupCommand& logged_command, bool dry_run,
+                        bool) {
+               if (dry_run) {
+                 std::cout << "[preview] "
+                           << RedactSetupSecrets(
+                                  JoinCommandForDisplay(logged_command),
+                                  secrets)
+                           << "\n";
+               }
              })
          == 0;
 }
 
-std::string DiscoverSubscriptionRelease(bool dry_run,
+bool RunWithInput(const SetupCommand& command,
+                  const std::string& input,
+                  SetupContext& context,
+                  const std::vector<std::string>& secrets = {})
+{
+  return context.RunWithInput(
+             command, input, true,
+             [&secrets](std::string_view line, std::string_view) {
+               std::cout << RedactSetupSecrets(line, secrets) << "\n";
+             },
+             [&secrets](const SetupCommand& logged_command, bool dry_run,
+                        bool) {
+               if (dry_run) {
+                 std::cout << "[preview] "
+                           << RedactSetupSecrets(
+                                  JoinCommandForDisplay(logged_command),
+                                  secrets)
+                           << "\n";
+               }
+             })
+         == 0;
+}
+
+std::string DiscoverSubscriptionRelease(SetupContext& context,
                                         const std::string& curl_config,
                                         const std::vector<std::string>& secrets)
 {
   const auto command = BuildSubscriptionReleaseIndexCmd(true);
-  if (dry_run) {
-    std::cout << "[preview] "
-              << RedactSetupSecrets(JoinCommandForDisplay(command), secrets)
-              << "\n";
-    return "newest-release";
-  }
-
   std::string index;
-  if (RunCommandWithInput(
+  if (context.RunWithInput(
           command, curl_config, true,
-          [&index](const std::string& line, const std::string&) {
+          [&index](std::string_view line, std::string_view) {
             index += line;
             index += '\n';
+          },
+          [&secrets](const SetupCommand& logged_command, bool dry_run, bool) {
+            if (dry_run) {
+              std::cout << "[preview] "
+                        << RedactSetupSecrets(
+                               JoinCommandForDisplay(logged_command), secrets)
+                        << "\n";
+            }
           })
       != 0) {
     throw std::runtime_error(
         "Unable to retrieve the Bareos Subscription release index.");
   }
+  if (context.dry_run()) return "newest-release";
   const auto release = ParseLatestSubscriptionRelease(index);
   if (release.empty()) {
     throw std::runtime_error(
@@ -192,7 +203,7 @@ std::string PromptRepoOsPath(const OsInfo& os)
 
 }  // namespace
 
-int RunTuiWizard(bool dry_run)
+int RunTuiWizard(SetupContext& context)
 {
   std::cout << "Bareos Setup\n\n";
   const auto os = DetectOs();
@@ -202,9 +213,11 @@ int RunTuiWizard(bool dry_run)
     return 1;
   }
   if (os.pretty_name.empty()) {
-    std::cout << "Detected an unknown distribution (" << os.pkg_mgr << ")\n";
+    std::cout << "Detected an unknown distribution ("
+              << PackageManagerName(os.pkg_mgr) << ")\n";
   } else {
-    std::cout << "Detected " << os.pretty_name << " (" << os.pkg_mgr << ")\n";
+    std::cout << "Detected " << os.pretty_name << " ("
+              << PackageManagerName(os.pkg_mgr) << ")\n";
   }
 
   std::string repo_os_path;
@@ -228,7 +241,7 @@ int RunTuiWizard(bool dry_run)
   }
   std::string login;
   std::string password;
-  if (repository == "subscription" && !dry_run) {
+  if (repository == "subscription" && !context.dry_run()) {
     login = Prompt("Subscription login");
     password = PromptSecret("Subscription password");
     if (login.empty() || password.empty()) return 1;
@@ -236,8 +249,12 @@ int RunTuiWizard(bool dry_run)
 
   if (repository == "community") {
     std::cout << "Checking connectivity to the Bareos download server...\n";
-    if (!Run(BuildNetworkCheckCmd(repository), dry_run)) return 1;
-  } else if (dry_run) {
+    const auto network_check = BuildNetworkCheckCmd(repository);
+    if (!network_check) {
+      throw std::logic_error("Community repository check command is missing");
+    }
+    if (!Run(*network_check, context)) return 1;
+  } else if (context.dry_run()) {
     std::cout << "Dry run: subscription credentials would be requested before "
                  "the repository script download.\n";
   } else {
@@ -246,7 +263,7 @@ int RunTuiWizard(bool dry_run)
   }
 
   std::filesystem::path repository_script;
-  if (dry_run) {
+  if (context.dry_run()) {
     repository_script = "bareos-setup-repository.sh";
   } else {
     std::string pattern = (std::filesystem::temp_directory_path()
@@ -266,15 +283,15 @@ int RunTuiWizard(bool dry_run)
 
   const bool use_curl_config = repository == "subscription";
   const std::string curl_config
-      = dry_run ? "" : BuildCurlUserConfig(login, password);
+      = context.dry_run() ? "" : BuildCurlUserConfig(login, password);
   std::string release;
   try {
     release = use_curl_config ? DiscoverSubscriptionRelease(
-                                    dry_run, curl_config, {login, password})
+                                    context, curl_config, {login, password})
                               : "";
   } catch (const std::runtime_error& error) {
     std::cerr << error.what() << "\n";
-    if (!dry_run) std::filesystem::remove(repository_script);
+    context.Remove(repository_script);
     return 1;
   }
   if (manual_repo_choice) {
@@ -284,8 +301,8 @@ int RunTuiWizard(bool dry_run)
                                                  use_curl_config, release);
     const bool reachable
         = use_curl_config
-              ? RunWithInput(probe_cmd, curl_config, dry_run, {login, password})
-              : Run(probe_cmd, dry_run);
+              ? RunWithInput(probe_cmd, curl_config, context, {login, password})
+              : Run(probe_cmd, context);
     if (!reachable) {
       std::cerr << "The Bareos repository \"" << repo_os_path
                 << "\" could not be reached. Select a repository that matches "
@@ -293,72 +310,81 @@ int RunTuiWizard(bool dry_run)
                 << (use_curl_config
                         ? " and check your subscription credentials.\n"
                         : ".\n");
-      if (!dry_run) std::filesystem::remove(repository_script);
+      context.Remove(repository_script);
       return 1;
     }
   }
   auto add_repo_cmd = BuildAddRepoCmdForPath(repo_os_path, repository,
                                              use_curl_config, release);
-  add_repo_cmd.insert(add_repo_cmd.end() - 1,
-                      {"--output", repository_script.string()});
+  add_repo_cmd.arguments.insert(add_repo_cmd.arguments.end() - 1,
+                                {"--output", repository_script.string()});
   const bool repo_downloaded = use_curl_config
                                    ? RunWithInput(add_repo_cmd, curl_config,
-                                                  dry_run, {login, password})
-                                   : Run(add_repo_cmd, dry_run);
+                                                  context, {login, password})
+                                   : Run(add_repo_cmd, context);
   if (!repo_downloaded) {
-    if (!dry_run) std::filesystem::remove(repository_script);
+    context.Remove(repository_script);
     return 1;
   }
-  if (!Run({"bash", repository_script.string()}, dry_run)) {
-    if (!dry_run) std::filesystem::remove(repository_script);
+  if (!Run(Bash({repository_script.string()}), context)) {
+    context.Remove(repository_script);
     return 1;
   }
-  if (!dry_run) std::filesystem::remove(repository_script);
+  context.Remove(repository_script);
   const auto update_cmd = BuildPackageCacheUpdateCmd(os.pkg_mgr);
-  if (!update_cmd.empty()) {
+  if (update_cmd) {
     std::cout << "Refreshing package metadata.\n";
-    if (!Run(update_cmd, dry_run)) return 1;
+    if (!Run(*update_cmd, context)) return 1;
   }
 
-  if (os.pkg_mgr == "apt") {
+  if (os.pkg_mgr == PackageManager::Apt) {
     std::cout << "Installing PostgreSQL package.\n";
-    if (!Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), dry_run)) return 1;
-    if (!Run({"systemctl", "enable", "--now", "postgresql"}, dry_run)) {
+    if (!Run(BuildInstallCmd(os.pkg_mgr, {"postgresql"}), context)) return 1;
+    if (!Run(Systemctl({"enable", "--now", "postgresql"}), context)) {
       return 1;
     }
   }
-  auto packages = os.pkg_mgr == "apt"
+  auto packages = os.pkg_mgr == PackageManager::Apt
                       ? BuildPackageListWithoutPostgresServer(os.pkg_mgr)
                       : BuildDefaultPackageList(os.pkg_mgr);
   if (IsSuseRepoOsPath(repo_os_path)) {
     std::cout << "Checking whether the mtx package is available.\n";
-    if (!Run(BuildMtxAvailabilityCheckCmd(), dry_run)) {
+    if (!Run(BuildMtxAvailabilityCheckCmd(), context)) {
       std::cout << "Warning: mtx is not available from the configured SUSE "
                    "repositories, so bareos-storage-tape cannot be "
                    "installed.\n";
       packages = BuildPackageListWithoutTapeStorage(os.pkg_mgr);
     }
   }
-  if (!Run(BuildInstallCmd(os.pkg_mgr, packages), dry_run)) {
+  if (!Run(BuildInstallCmd(os.pkg_mgr, packages), context)) {
     std::cerr << "Package installation failed.\n";
     return 1;
   }
+  if (!context.dry_run()) {
+    const auto missing = context.MissingPostInstallTools(os.pkg_mgr);
+    if (!missing.empty()) {
+      std::cerr << "Required post-install tool(s) not found in PATH:";
+      for (const auto& tool : missing) std::cerr << " " << tool;
+      std::cerr << "\nInstall the missing tool(s) and try again.\n";
+      return 1;
+    }
+  }
   std::string admin_password;
-  if (!dry_run) {
-    const auto init_cmd = BuildPostgresInitCmd();
-    if (!init_cmd.empty() && !Run(init_cmd, false)) return 1;
-    if (!Run({"systemctl", "enable", "--now", "postgresql"}, false)) return 1;
+  if (!context.dry_run()) {
+    const auto init_cmd = BuildPostgresInitCmd(context);
+    if (init_cmd && !Run(*init_cmd, context)) return 1;
+    if (!Run(Systemctl({"enable", "--now", "postgresql"}), context)) return 1;
     // Non-Debian packages need the manual catalog scripts. Debian/Ubuntu
     // packages run dbconfig-common during package configuration instead.
     for (const auto& script : BuildCatalogInitScripts(os.pkg_mgr)) {
-      if (!Run(BuildRunAsPostgresCmd(script), false)) return 1;
+      if (!Run(BuildRunAsPostgresCmd(script), context)) return 1;
     }
   }
 
-  if (!dry_run) {
+  if (!context.dry_run()) {
     std::vector<std::string> existing_configs;
     for (const auto& path : SetupOwnedConfigPaths()) {
-      if (!Run(BuildFileAbsentCheckCmd(path), false)) {
+      if (!Run(BuildFileAbsentCheckCmd(path), context)) {
         existing_configs.push_back(path);
       }
     }
@@ -370,65 +396,66 @@ int RunTuiWizard(bool dry_run)
     const std::string resource
         = "Console {\n  Name = admin\n  Password = \"" + admin_password
           + "\"\n  Profile = \"webui-admin\"\n  TLS Enable = No\n}\n";
-    if (RunCommandWithInput({"install", "-D", "-m", "0640", "/dev/stdin",
-                             "/etc/bareos/bareos-dir.d/console/admin.conf"},
-                            resource, true,
-                            [](const std::string&, const std::string&) {})
+    if (context.RunWithInput(
+            Install({"-D", "-m", "0640", "/dev/stdin",
+                     "/etc/bareos/bareos-dir.d/console/admin.conf"}),
+            resource, true, [](std::string_view, std::string_view) {})
         != 0) {
       return 1;
     }
-    if (!Run({"chown", "root:bareos",
-              "/etc/bareos/bareos-dir.d/console/admin.conf"},
-             false)) {
+    if (!Run(Chown({"root:bareos",
+                    "/etc/bareos/bareos-dir.d/console/admin.conf"}),
+             context)) {
       return 1;
     }
-    if (!Run({"systemctl", "restart", "bareos-dir"}, false)) return 1;
+    if (!Run(Systemctl({"restart", "bareos-dir"}), context)) return 1;
     // No bareos-webui-proxy.ini is written: the proxy's built-in defaults
     // already match this layout and are used when no file exists.
   } else {
     const std::string admin_path
         = "/etc/bareos/bareos-dir.d/console/admin.conf";
-    if (!Run({"install", "-D", "-m", "0640", "/dev/stdin", admin_path}, true)) {
+    if (!Run(Install({"-D", "-m", "0640", "/dev/stdin", admin_path}),
+             context)) {
       return 1;
     }
     std::cout << "[preview] dry run: would create initial admin console "
                  "configuration with a generated password.\n";
-    if (!Run({"chown", "root:bareos", admin_path}, true)) return 1;
-    if (!Run({"systemctl", "restart", "bareos-dir"}, true)) return 1;
+    if (!Run(Chown({"root:bareos", admin_path}), context)) return 1;
+    if (!Run(Systemctl({"restart", "bareos-dir"}), context)) return 1;
   }
-  auto enable_services
-      = std::vector<std::string>{"systemctl", "enable", "--now"};
+  auto enable_services = Systemctl({"enable", "--now"});
   const auto daemon_services = BuildBareosDaemonServiceNames(os.pkg_mgr);
-  enable_services.insert(enable_services.end(), daemon_services.begin(),
-                         daemon_services.end());
-  enable_services.emplace_back("bareos-webui-proxy");
-  if (!Run(enable_services, dry_run)) { return 1; }
+  enable_services.arguments.insert(enable_services.arguments.end(),
+                                   daemon_services.begin(),
+                                   daemon_services.end());
+  enable_services.arguments.emplace_back("bareos-webui-proxy");
+  if (!Run(enable_services, context)) { return 1; }
   const auto https_setup_cmds = BuildWebServerHttpsSetupCmds(os.pkg_mgr);
   for (const auto& command : https_setup_cmds) {
-    if (!Run(command, dry_run)) return 1;
+    if (!Run(command, context)) return 1;
   }
-  if (!Run(BuildWebUiSelinuxSetupCmd(), dry_run)) return 1;
-  if (!Run({"systemctl", "enable", "--now",
-            BuildWebServerServiceName(os.pkg_mgr)},
-           dry_run)) {
+  if (!Run(BuildWebUiSelinuxSetupCmd(), context)) return 1;
+  if (!Run(
+          Systemctl({"enable", "--now", BuildWebServerServiceName(os.pkg_mgr)}),
+          context)) {
     return 1;
   }
   if (!https_setup_cmds.empty()
-      && !Run({"systemctl", "restart", BuildWebServerServiceName(os.pkg_mgr)},
-              dry_run)) {
+      && !Run(Systemctl({"restart", BuildWebServerServiceName(os.pkg_mgr)}),
+              context)) {
     return 1;
   }
   auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
   services.emplace_back("bareos-webui-proxy");
   for (const auto& service : services) {
-    if (!Run({"systemctl", "is-active", service}, dry_run)) return 1;
+    if (!Run(Systemctl({"is-active", service}), context)) return 1;
   }
-  if (!Run({"systemctl", "is-active", BuildWebServerServiceName(os.pkg_mgr)},
-           dry_run)) {
+  if (!Run(Systemctl({"is-active", BuildWebServerServiceName(os.pkg_mgr)}),
+           context)) {
     return 1;
   }
   std::cout << "\nSetup complete. WebUI username: admin\n";
-  if (dry_run) {
+  if (context.dry_run()) {
     std::cout << "Dry run only: no WebUI admin password was generated.\n";
   } else {
     std::cout << "Initial WebUI password: " << admin_password << "\n";

@@ -20,7 +20,7 @@
  */
 /**
  * @file
- * Minimal RFC 6455 WebSocket server codec for the webui proxy.
+ * RFC 6455 WebSocket server codec shared by server frontends.
  *
  * Handles:
  *  - HTTP upgrade handshake (SHA-1 accept key via OpenSSL)
@@ -31,10 +31,11 @@
  *  - Unmasked outbound frames (server never masks per RFC 6455)
  *  - 7-bit, 16-bit, and 64-bit payload length encoding
  */
-#ifndef BAREOS_WEBUI_PROXY_WS_CODEC_H_
-#define BAREOS_WEBUI_PROXY_WS_CODEC_H_
+#ifndef BAREOS_WEBSOCKET_WS_CODEC_H_
+#define BAREOS_WEBSOCKET_WS_CODEC_H_
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -44,7 +45,8 @@
 class WsCodec {
  public:
   /* Perform the HTTP/WebSocket upgrade handshake and return the upgraded
-   * connection. Throws std::runtime_error on failure. */
+   * connection. A zero io_timeout disables frame I/O deadlines. Throws
+   * std::runtime_error on failure. */
   static WsCodec Accept(int fd,
                         std::chrono::milliseconds io_timeout
                         = std::chrono::seconds(30),
@@ -61,6 +63,14 @@ class WsCodec {
                         = std::chrono::seconds(5),
                         size_t max_frame_payload_size = 1024 * 1024,
                         size_t max_message_size = 4 * 1024 * 1024);
+  /* Wrap an already-upgraded connection, preserving any bytes buffered after
+   * the HTTP headers. A zero io_timeout disables frame I/O deadlines. */
+  static WsCodec FromUpgradedConnection(
+      int fd,
+      std::string pending_input = {},
+      std::chrono::milliseconds io_timeout = std::chrono::milliseconds::zero(),
+      size_t max_frame_payload_size = 16 * 1024 * 1024,
+      size_t max_message_size = 16 * 1024 * 1024);
 
   /* Read one complete WebSocket message (text frame, possibly fragmented).
    * Transparently handles ping/pong and close frames.
@@ -84,7 +94,8 @@ class WsCodec {
           std::chrono::milliseconds io_timeout,
           std::chrono::milliseconds handshake_timeout,
           size_t max_frame_payload_size,
-          size_t max_message_size);
+          size_t max_message_size,
+          std::string pending_input = {});
   void Handshake(std::optional<std::string_view> request_headers
                  = std::nullopt);
 
@@ -109,4 +120,4 @@ class WsCodec {
   void SendFrame(uint8_t opcode, std::string_view payload, bool fin = true);
 };
 
-#endif  // BAREOS_WEBUI_PROXY_WS_CODEC_H_
+#endif  // BAREOS_WEBSOCKET_WS_CODEC_H_

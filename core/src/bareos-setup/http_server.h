@@ -31,18 +31,22 @@
 #include <functional>
 #include <string>
 
-/** Called once per accepted WebSocket connection with the raw fd. */
-using WsHandler = std::function<void(int fd, bool peer_is_loopback)>;
+/** Called with the fd, parsed request headers, and any bytes read past them. */
+using WsHandler = std::function<void(int fd,
+                                     bool peer_is_loopback,
+                                     std::string request_headers,
+                                     std::string pending_input)>;
 
 /**
  * Listen on the given address/port and serve requests.
  * - HTTP GET: returns embedded asset (or index.html for unknown paths).
- * - WebSocket upgrade: calls ws_handler with the connected fd.
+ * - WebSocket upgrade: validates setup access, then passes the fd, headers,
+ *   and any already-read frame bytes to ws_handler.
  * Runs until RequestHttpServerShutdown() is called or the process is killed.
  *
- * @param bind_address IPv4 address to bind to (e.g. "127.0.0.1" for
- *   loopback-only, the secure default, or "0.0.0.0" to listen on all
- *   interfaces so the wizard can be reached from other hosts).
+ * @param bind_address Numeric IPv4 or IPv6 address to bind to (e.g.
+ *   "127.0.0.1" for loopback-only, the secure default, or "0.0.0.0"/"::"
+ *   to listen on all interfaces of that address family).
  */
 void RunHttpServer(const std::string& bind_address,
                    int port,

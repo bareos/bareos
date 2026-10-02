@@ -28,13 +28,24 @@
 #include <string>
 #include <vector>
 
+enum class PackageManager
+{
+  Unknown,
+  Apt,
+  Dnf,
+  Yum,
+  Zypper
+};
+
+const char* PackageManagerName(PackageManager package_manager);
+
 struct OsInfo {
   std::string distro;       // ID from os-release, e.g. "ubuntu"
   std::string version;      // VERSION_ID, e.g. "24.04"
   std::string codename;     // VERSION_CODENAME, e.g. "noble"
   std::string pretty_name;  // PRETTY_NAME
   std::string arch;         // uname machine, e.g. "x86_64"
-  std::string pkg_mgr;      // "apt" | "dnf" | "yum" | "zypper" | "unknown"
+  PackageManager pkg_mgr{PackageManager::Unknown};
 
   // ID_LIKE from os-release, split on whitespace, e.g. {"rhel", "centos"}.
   // Derivatives use this to declare the family they are compatible with.

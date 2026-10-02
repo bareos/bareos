@@ -25,6 +25,7 @@
  * Usage: bareos-setup [--port PORT] [--listen ADDRESS] [--no-browser]
  *                     [--tui] [--dry]
  */
+#include <array>
 #include <cctype>
 #include <cstdlib>
 #include <iomanip>
@@ -32,16 +33,26 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
+#include <arpa/inet.h>
 #include <CLI/CLI.hpp>
+#include <netinet/in.h>
 #include <unistd.h>
 
+#include "command_runner.h"
 #include "http_server.h"
+#include "os_detector.h"
 #include "setup_session.h"
 #include "setup_steps.h"
 #include "tui_wizard.h"
-#include "command_runner.h"
-#include "os_detector.h"
+
+namespace {
+
+constexpr char kIpv4LoopbackAddress[] = "127.0.0.1";
+constexpr char kIpv6LoopbackAddress[] = "::1";
+
+}  // namespace
 
 /** Percent-encode a string for safe use as a URL query value. The setup
  * token alphabet includes characters (e.g. '#', '@') that are otherwise
@@ -62,16 +73,25 @@ static std::string UrlEncode(const std::string& value)
   return encoded.str();
 }
 
-static void OpenBrowser(const std::string& display_host,
+static void OpenBrowser(SetupContext& context,
+                        const std::string& url_host,
                         int port,
                         const std::string& token)
 {
-  std::string url = "http://" + display_host + ":" + std::to_string(port)
+  std::string url = "http://" + url_host + ":" + std::to_string(port)
                     + "/?token=" + UrlEncode(token);
-  // Try common browser launchers in order
-  for (const char* cmd : {"xdg-open", "open", "sensible-browser"}) {
-    if (execlp(cmd, cmd, url.c_str(), nullptr) == 0) return;
-    // execlp only returns on failure
+  const std::array<SetupCommand, 3> commands{XdgOpen({url}), Open({url}),
+                                             SensibleBrowser({url})};
+  for (const auto& command : commands) {
+    if (!context.IsToolAvailable(command.tool)) continue;
+    try {
+      if (context.Run(command, false, [](std::string_view, std::string_view) {})
+          == 0) {
+        return;
+      }
+    } catch (const std::runtime_error& error) {
+      std::cerr << "Could not launch browser: " << error.what() << "\n";
+    }
   }
   std::cerr << "Could not open browser automatically.\n"
             << "Open this URL manually: " << url << "\n";
@@ -79,7 +99,10 @@ static void OpenBrowser(const std::string& display_host,
 
 int main(int argc, char* argv[])
 {
-  CLI::App app{"Bareos Setup Wizard", "bareos-setup"};
+  CLI::App app{
+      "Configure a Bareos installation using a temporary web UI "
+      "or an interactive terminal wizard.",
+      "bareos-setup"};
   app.set_version_flag("--version", BAREOS_FULL_VERSION);
   app.footer(std::string("Version: ") + BAREOS_FULL_VERSION);
 
@@ -87,16 +110,21 @@ int main(int argc, char* argv[])
   app.add_option("--port,-p", port, "TCP port to listen on")
       ->default_val(19101);
 
-  std::string listen_address = "127.0.0.1";
-  app.add_option("--listen,-l", listen_address,
-                 "IPv4 address for the temporary setup web UI listener. "
-                 "Defaults to 127.0.0.1 (loopback only, the secure default). "
-                 "To reach the wizard from another host, prefer forwarding "
-                 "the port over SSH (ssh -L 19101:127.0.0.1:19101 root@host) "
-                 "rather than binding to a reachable interface: the setup "
-                 "wizard speaks plain HTTP and executes privileged commands.")
-      ->default_val("127.0.0.1")
-      ->excludes("--tui");
+  std::string listen_address;
+  const std::string listen_description
+      = std::string("IPv4 or IPv6 address for the temporary setup web UI "
+                      "listener. Defaults to ")
+        + kIpv4LoopbackAddress
+        + " (loopback only, the secure default). To reach the wizard from "
+            "another host, prefer forwarding the port over SSH "
+            "(ssh -L <port>:"
+        + kIpv4LoopbackAddress
+        + ":<port> root@host) rather than binding to a reachable interface: "
+            "the setup wizard speaks plain HTTP and executes privileged "
+            "commands.";
+  CLI::Option* listen_option
+      = app.add_option("--listen,-l", listen_address, listen_description)
+            ->default_val(kIpv4LoopbackAddress);
 
   bool no_browser = false;
   app.add_flag("--no-browser", no_browser,
@@ -104,24 +132,47 @@ int main(int argc, char* argv[])
 
   bool dry_run = false;
   app.add_flag("--dry", dry_run,
-               "Dry-run mode: print commands instead of executing them");
+               "Print the commands instead of executing them");
 
   bool tui = false;
-  app.add_flag("--tui", tui,
-               "Run as interactive terminal wizard instead of web UI")
-      ->excludes("--listen");
+  CLI::Option* tui_option = app.add_flag(
+      "--tui", tui, "Run as interactive terminal wizard instead of web UI");
+  listen_option->excludes(tui_option);
+  tui_option->excludes(listen_option);
 
   CLI11_PARSE(app, argc, argv);
+  SetupContext setup_context(dry_run);
 
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
 
-  const bool listen_all_interfaces = (listen_address == "0.0.0.0");
-  if (!tui && listen_address != "127.0.0.1" && listen_address != "localhost") {
+  if (listen_address == "localhost") {
+    // Give localhost a deterministic IPv4 meaning; pass ::1 to bind IPv6.
+    listen_address = kIpv4LoopbackAddress;
+  }
+
+  in_addr ipv4_address{};
+  in6_addr ipv6_address{};
+  const bool is_ipv4
+      = inet_pton(AF_INET, listen_address.c_str(), &ipv4_address) == 1;
+  const bool is_ipv6
+      = inet_pton(AF_INET6, listen_address.c_str(), &ipv6_address) == 1;
+  if (!is_ipv4 && !is_ipv6) {
+    std::cerr << "Fatal: invalid listen address: " << listen_address << "\n";
+    return 1;
+  }
+
+  const bool listen_all_interfaces
+      = (is_ipv4 && ipv4_address.s_addr == htonl(INADDR_ANY))
+        || (is_ipv6 && IN6_IS_ADDR_UNSPECIFIED(&ipv6_address));
+  const bool listen_loopback
+      = (is_ipv4 && (ntohl(ipv4_address.s_addr) & 0xff000000U) == 0x7f000000U)
+        || (is_ipv6 && IN6_IS_ADDR_LOOPBACK(&ipv6_address));
+  if (!tui && !listen_loopback) {
     std::cerr << "Warning: listening on " << listen_address
-              << " instead of the "
-              << "default 127.0.0.1. The setup wizard executes privileged "
+              << " instead of the default " << kIpv4LoopbackAddress
+              << ". The setup wizard executes privileged "
                  "commands as root and speaks plain HTTP, so the setup "
                  "token in the URL is the only access control; only do "
                  "this on a trusted network.\n"
@@ -129,18 +180,32 @@ int main(int argc, char* argv[])
                  "keeps the wizard on loopback and encrypts the "
                  "connection:\n"
                  "  ssh -L "
-              << port << ":127.0.0.1:" << port << " root@<this-host>\n";
+              << port << ":" << kIpv4LoopbackAddress << ":" << port
+              << " root@<this-host>\n";
   }
-  if (listen_address == "localhost") listen_address = "127.0.0.1";
+
+  // Privileged steps (package install, service management, catalog
+  // creation, ...) require root. Dry-run only prints commands and does not
+  // need elevated privileges.
+  if (!setup_context.dry_run() && !IsRoot()) {
+    std::cerr << "Fatal: bareos-setup must be run as root. Use --dry to "
+                 "print the commands without executing them.\n";
+    return 1;
+  }
 
   // Fail fast with a clear message if a required external tool (curl,
   // systemctl, the detected package manager, ...) is missing, instead
   // of surfacing a raw exec failure deep inside an install step later.
   // Dry-run only previews commands and never executes anything, so the
   // check is skipped in that mode.
-  if (!dry_run) {
+  if (!setup_context.dry_run()) {
     const auto os = DetectOs();
-    const auto missing = MissingRequiredTools(os.pkg_mgr);
+    if (!IsSupportedPackageManager(os.pkg_mgr)) {
+      std::cerr << "Fatal: no supported package manager (apt-get, dnf, yum, "
+                   "zypper) was found.\n";
+      return 1;
+    }
+    const auto missing = setup_context.MissingRequiredTools(os.pkg_mgr);
     if (!missing.empty()) {
       std::cerr << "Fatal: required tool(s) not found in PATH:";
       for (const auto& tool : missing) std::cerr << " " << tool;
@@ -149,43 +214,19 @@ int main(int argc, char* argv[])
     }
   }
 
-  // Privileged steps (package install, service management, catalog
-  // creation, ...) always execute as root. When not already root, obtain
-  // a sudo ticket once here -- interactively, on the real terminal -- so
-  // the user is prompted for their password exactly once, instead of
-  // requiring sudoers configuration (e.g. NOPASSWD) up front. A background
-  // thread then keeps the ticket alive for the rest of the run.
-  if (!dry_run && !IsRoot()) {
-    std::cout << "Administrator privileges are required to continue.\n";
-    if (!PrimeSudoTicket()) {
-      std::cerr << "Fatal: could not obtain sudo privileges. Run "
-                   "bareos-setup as root, or as a user allowed to "
-                   "authenticate with sudo from this terminal.\n";
-      return 1;
-    }
-    StartSudoKeepAlive();
-  }
-
-  // TUI mode: run interactively in the terminal, no HTTP server.
-  if (tui) return RunTuiWizard(dry_run);
+  if (tui) return RunTuiWizard(setup_context);
 
   const std::string setup_token = GenerateSetupSecret(32);
-  // Use the literal 127.0.0.1 for the displayed/opened URL, never
-  // "localhost": the server only ever binds an IPv4 socket, but many
-  // systems resolve "localhost" to the IPv6 loopback address (::1)
-  // first. When the browser is separated from the server by a NAT/port
-  // -forwarding layer (e.g. a container's published port), an IPv6
-  // connection attempt can succeed at the TCP layer yet still get reset
-  // once traffic reaches the IPv4-only listener, since there is no
-  // matching IPv6 socket to hand it off to. "0.0.0.0" itself is not a
-  // URL a browser can open either, so it maps to 127.0.0.1 too --
-  // the server always accepts loopback connections regardless of
-  // --listen.
+  // Use a loopback URL for wildcard binds, in the same address family.
+  // Wildcard addresses are not usable destinations in a browser URL.
   const std::string display_host
-      = (listen_all_interfaces || listen_address == "127.0.0.1")
-            ? "127.0.0.1"
+      = listen_all_interfaces
+            ? (is_ipv6 ? kIpv6LoopbackAddress : kIpv4LoopbackAddress)
             : listen_address;
-  const std::string setup_url = "http://" + display_host + ":"
+  const std::string url_host = display_host.find(':') == std::string::npos
+                                   ? display_host
+                                   : "[" + display_host + "]";
+  const std::string setup_url = "http://" + url_host + ":"
                                 + std::to_string(port)
                                 + "/?token=" + UrlEncode(setup_token);
 
@@ -202,15 +243,20 @@ int main(int argc, char* argv[])
     if (child == 0) {
       // Child: wait briefly then open browser
       sleep(1);
-      OpenBrowser(display_host, port, setup_token);
+      SetupContext browser_context;
+      OpenBrowser(browser_context, url_host, port, setup_token);
       _exit(0);
     }
   }
 
   try {
     RunHttpServer(listen_address, port, setup_token,
-                  [dry_run](int fd, bool peer_is_loopback) {
-                    RunSetupSession(fd, dry_run, peer_is_loopback);
+                  [&setup_context](int fd, bool peer_is_loopback,
+                                   std::string request_headers,
+                                   std::string pending_input) {
+                    RunSetupSession(fd, setup_context, peer_is_loopback,
+                                    std::move(request_headers),
+                                    std::move(pending_input));
                   });
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << "\n";
