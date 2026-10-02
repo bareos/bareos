@@ -28,7 +28,17 @@
 
 #include "command_runner.h"
 
+struct UnattendedSetupOptions {
+  std::vector<std::string> repository_urls;
+  std::vector<std::string> extra_packages;
+  bool webui = true;
+};
+
 /** Run the interactive terminal wizard. Returns 0 on success. */
 int RunTuiWizard(SetupContext& context);
+
+/** Install a complete Linux server without prompts or printing credentials. */
+int RunUnattendedSetup(SetupContext& context,
+                       const UnattendedSetupOptions& options);
 
 #endif  // BAREOS_BAREOS_SETUP_TUI_WIZARD_H_

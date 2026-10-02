@@ -78,6 +78,14 @@ std::string CapFirst(std::string s);
 /** Trim leading and trailing whitespace. */
 std::string Trim(std::string value);
 
+/** Validate a custom repository URL without credentials or shell syntax. */
+bool IsValidSetupRepositoryUrl(const std::string& value);
+
+/** Point a downloaded repository helper at its CI mirror, or fail explicitly.
+ */
+std::string RewriteSetupRepositoryScript(const std::string& script,
+                                         const std::string& repository_url);
+
 /** Build the fixed package list used by the setup wizard. */
 std::vector<std::string> BuildDefaultPackageList(PackageManager pkg_mgr);
 

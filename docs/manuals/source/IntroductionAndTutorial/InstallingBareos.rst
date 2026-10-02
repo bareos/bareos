@@ -96,6 +96,58 @@ The TUI asks whether to use the Bareos Community or Bareos Subscription reposito
 
 At the end of a successful TUI installation, the generated WebUI administrator password is printed in the terminal. Store it safely.
 
+Unattended installation (Jenkins)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``--unattended`` to install a complete Linux server without starting a
+browser, HTTP listener, or terminal prompts:
+
+.. code-block:: shell-session
+
+   root@host:~# ./bareos-setup --unattended \
+       --repo-url https://ci.example/packages/build/Debian_12
+
+The URL must include the distribution directory containing
+``add_bareos_repositories.sh``. The downloaded helper's ``URL`` assignment is
+replaced with the supplied URL, so packages are installed from the CI build
+instead of the public repository. Only use trusted repositories: their helpers
+are executed as root. HTTPS verifies the server certificate; HTTP is supported
+for trusted internal CI networks. Credentials in URLs, query parameters, and
+multiple repositories are not supported. Helpers without a ``URL`` assignment
+fail explicitly.
+
+This mode uses the same installation steps as the TUI: package installation,
+local PostgreSQL and catalog initialization, base configuration, service
+enablement/startup, and active-service checks. It requires a fresh server and
+does not upgrade an existing installation or overwrite setup-owned configuration.
+The generated WebUI administrator password is not printed in CI logs; it is
+stored in :file:`/etc/bareos/bareos-dir.d/console/admin.conf`.
+
+Use ``--extra-package PACKAGE`` for additional test packages,
+``--without-webui`` for a server without the WebUI, and ``--dry`` to preview
+commands without changing the host.
+
+In ``ci-scripts``, set ``USE_BAREOS_SETUP=yes`` in the Jenkins CI parameters.
+The new path applies to Linux ``bareos-postgresql`` and ``bareos-all-daemons``
+tests for package versions 25 and newer. Client-only, universal-client,
+Univention, legacy database, older-version, FreeBSD, and Windows tests retain
+their existing scripts. Update tests also retain their existing scripts.
+Supply exactly one ``REPOURL``; the CI scripts append their existing distribution
+mapping to it.
+
+Stage a portable binary built from the same source revision as the packages
+and for the target VM's architecture. Set ``BAREOS_SETUP_SOURCE`` to its
+executable path on the Jenkins host to copy it alongside the CI scripts, or set ``BAREOS_SETUP_BINARY``
+to an executable already present on the target. By default, the scripts use
+``bareos-setup`` in their own directory. A missing binary fails the opted-in
+installation rather than silently falling back to bash.
+
+The installer owns the base catalog, generated administrator, and service
+startup. CI-specific resources, PHP WebUI test configuration, and daemon
+restarts after test configuration changes remain in the CI scripts. In
+particular, the old catalog drop/create sequence is skipped so it cannot
+destroy the catalog initialized by the installer.
+
 .. _section-bareos-setup-unknown-distribution:
 
 Unrecognized distributions

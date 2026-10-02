@@ -200,7 +200,8 @@ if(BUILD_TESTING AND GTest_FOUND)
   add_executable(
     test_bareos_setup_steps
     tests/test_setup_steps_shared.cc setup_steps.cc command_runner.cc
-    os_detector.cc setup_session.cc http_server.cc "${EMBEDDED_ASSETS_CC}"
+    os_detector.cc setup_session.cc http_server.cc tui_wizard.cc
+    "${EMBEDDED_ASSETS_CC}"
   )
   add_dependencies(test_bareos_setup_steps bareos-setup-vue-build)
   target_compile_features(test_bareos_setup_steps PRIVATE cxx_std_20)
@@ -223,5 +224,36 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   gtest_discover_tests(
     test_bareos_setup_steps TEST_PREFIX gtest: DISCOVERY_TIMEOUT 120
+  )
+
+  add_test(
+    NAME bareos-setup:unattended-dry-run
+    COMMAND
+      bareos-setup --unattended --dry --repo-url https://ci.example/build/EL_9
+      --extra-package bareos --extra-package bareos-storage-droplet
+  )
+  set_tests_properties(
+    bareos-setup:unattended-dry-run
+    PROPERTIES PASS_REGULAR_EXPRESSION
+               "bareos-storage-droplet;systemctl is-active bareos-webui-proxy"
+  )
+  add_test(NAME bareos-setup:unattended-without-webui
+           COMMAND bareos-setup --unattended --dry --repo-url
+                   https://ci.example/build/EL_9 --without-webui
+  )
+  set_tests_properties(
+    bareos-setup:unattended-without-webui
+    PROPERTIES PASS_REGULAR_EXPRESSION "systemctl is-active bareos"
+               FAIL_REGULAR_EXPRESSION "bareos-webui;HTTP listener"
+  )
+  add_test(NAME bareos-setup:unattended-missing-repository
+           COMMAND bareos-setup --unattended --dry
+  )
+  add_test(NAME bareos-setup:unattended-excludes-tui
+           COMMAND bareos-setup --unattended --tui --dry
+  )
+  set_tests_properties(
+    bareos-setup:unattended-missing-repository
+    bareos-setup:unattended-excludes-tui PROPERTIES WILL_FAIL TRUE
   )
 endif()
