@@ -89,6 +89,21 @@ static AclData acl_data;
 static XattrData xattr_data;
 static alist<DelayedDataStream*>* delayed_streams = nullptr;
 
+/* Tracks the (VolSessionId, VolSessionTime, FileIndex) of the last
+ * successfully extracted file's attribute record. A backup plugin that
+ * only learns a file's real size after writing its data resends a
+ * corrected STREAM_UNIX_ATTRIBUTES(_EX) record for the same FileIndex,
+ * on the medium after that file's data (and digest). By the time it
+ * arrives, the file has already been fully extracted and closed with
+ * the first (only available) attribute record; re-processing the
+ * resend would re-open/truncate the just-extracted file with no more
+ * data left to write into it. Mirrors filed/restore.cc's attribute_seen
+ * guard. */
+static bool attribute_seen = false;
+static uint32_t attribute_vol_session_id = 0;
+static uint32_t attribute_vol_session_time = 0;
+static int32_t attribute_file_index = 0;
+
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
 static uint64_t fileAddr = 0; /* file write address */
@@ -526,6 +541,20 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         ClosePreviousStream();
         extract = false;
       }
+
+      /* Ignore a corrected-attributes resend for the file we just
+       * extracted; see the attribute_seen comment above. */
+      if (attribute_seen && attribute_vol_session_id == rec->VolSessionId
+          && attribute_vol_session_time == rec->VolSessionTime
+          && attribute_file_index == rec->FileIndex) {
+        Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
+              rec->FileIndex);
+        break;
+      }
+      attribute_seen = true;
+      attribute_vol_session_id = rec->VolSessionId;
+      attribute_vol_session_time = rec->VolSessionTime;
+      attribute_file_index = rec->FileIndex;
 
       if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
                                   attr)) {

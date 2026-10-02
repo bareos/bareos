@@ -252,6 +252,16 @@ struct FindFilesPacket {
   struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
   bool cmd_plugin{false}; /**< Set if we have a command plugin */
   bool opt_plugin{false}; /**< Set if we have an option plugin */
+  /** Ask SaveFile() to not send the "end of plugin data" marker itself, so
+   * the caller can resend corrected attributes (same FileIndex) before
+   * that marker is sent. Used by PluginSave() to keep any attribute resend
+   * inside the same start/end plugin-data bracket, since the restore-side
+   * plugin state machine ties the createFile lifecycle to that bracket. */
+  bool defer_plugin_name_end{false};
+  /** Set by SaveFile() when it deferred sending the "end of plugin data"
+   * marker because of defer_plugin_name_end above; the caller is then
+   * responsible for sending it (via SendPluginName(jcr, sd, false)). */
+  bool plugin_name_end_pending{false};
   alist<const char*> fstypes;          /**< Allowed file system types */
   alist<const char*> drivetypes;       /**< Allowed drive types */
 

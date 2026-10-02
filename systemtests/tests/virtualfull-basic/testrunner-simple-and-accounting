@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,11 @@ set -u
 #  via a virtualfull.  Afterwards check that the virtualfull
 #  worked via a restore.
 #
+# Also confirms "status subscriptions accounting" reports the same
+# file count/byte total before and after the Virtual Full consolidation
+# (the consolidated File rows must still de-duplicate to the same
+# accounted totals).
+#
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -39,6 +44,37 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
+
+refresh_and_wait_for_subscription_accounting()
+{
+  local report=$1 expected_chain_size=$2
+
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out "${test_home}/accounting-refresh-request.out"
+refresh subscriptions accounting
+END_OF_DATA
+  run_bconsole "${tmp}/bconcmds"
+
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${report}
+status subscriptions accounting client=bareos-fd fileset=SelfTest
+END_OF_DATA
+    run_bconsole "${tmp}/bconcmds"
+    if grep -qF "Background refresh worker: idle." "${report}" \
+      && grep -qF "Real (File.LStat-based) subscription accounting report" \
+        "${report}" \
+      && grep -qF "${expected_chain_size} jobs in chain)." "${report}"; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "timed out waiting for subscription accounting refresh" >&2
+  cat "${test_home}/accounting-refresh-request.out" >&2
+  cat "${report}" >&2
+  return 1
+}
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
@@ -68,6 +104,8 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/incr.out"
+refresh_and_wait_for_subscription_accounting \
+  "${test_home}/accounting-before-virtual-full.out" 2
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${test_home}/virtual.out
@@ -84,6 +122,8 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${test_home}/virtual.out"
+refresh_and_wait_for_subscription_accounting \
+  "${test_home}/accounting-after-virtual-full.out" 1
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @# make sure we really restore the virtualfull
@@ -103,6 +143,46 @@ check_log "${test_home}/restore.out"
 check_for_zombie_jobs storage=File
 
 check_restore_diff "${BackupDirectory}" "${test_home}/bareos-restores"
+
+read_accounting_totals()
+{
+  local report=$1 line logical_line files bytes rule logical_bytes
+  line="$(grep "bareos-fd / SelfTest:" "$report" || true)"
+  logical_line="$(grep "Logical size (st_size):" "$report" || true)"
+
+  if [[ "$line" =~ ([0-9,]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+), ]]; then
+    files="${BASH_REMATCH[1]//,/}"
+    bytes="${BASH_REMATCH[2]//,/}"
+    rule="${BASH_REMATCH[3]}"
+    if [[ "$logical_line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
+      logical_bytes="${BASH_REMATCH[1]//,/}"
+    else
+      echo "Could not parse logical size from ${report}: ${logical_line}" >&2
+      return 1
+    fi
+    printf '%s:%s:%s\n' \
+      "$files" "$bytes" "${rule}:${logical_bytes}"
+    return
+  fi
+
+  echo "Could not parse subscription accounting output in ${report}: ${line}" >&2
+  return 1
+}
+
+if ! accounting_before=$(
+  read_accounting_totals "${test_home}/accounting-before-virtual-full.out"
+); then
+  estat=1
+elif ! accounting_after=$(
+  read_accounting_totals "${test_home}/accounting-after-virtual-full.out"
+); then
+  estat=1
+elif [[ "$accounting_before" != "$accounting_after" ]]; then
+  echo "Subscription accounting changed after Virtual Full:" >&2
+  echo "  before: ${accounting_before}" >&2
+  echo "  after:  ${accounting_after}" >&2
+  estat=1
+fi
 
 if on_windows_host; then
   expected_file_count=".."

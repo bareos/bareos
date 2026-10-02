@@ -53,6 +53,7 @@ target_sources(
   PRIVATE acquire.cc
           ansi_label.cc
           askdir.cc
+          attribute_dedup.cc
           autochanger.cc
           autochanger_resource.cc
           block.cc

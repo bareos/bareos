@@ -421,6 +421,29 @@ CREATE TABLE JobStats (
     JobBytes          BIGINT      DEFAULT 0
 );
 
+CREATE TABLE SubscriptionAccountingSnapshot (
+    SnapshotId        SMALLINT    PRIMARY KEY,
+    LastAttempt       TIMESTAMP   WITHOUT TIME ZONE,
+    LastSuccess       TIMESTAMP   WITHOUT TIME ZONE,
+    LastError         TEXT
+);
+
+INSERT INTO SubscriptionAccountingSnapshot (SnapshotId)
+VALUES (1);
+
+CREATE TABLE SubscriptionAccounting (
+    ClientName        TEXT        NOT NULL,
+    FileSetName       TEXT        NOT NULL,
+    Excluded          BOOLEAN     NOT NULL,
+    ExclusionReason   TEXT,
+    Files             NUMERIC(20, 0) NOT NULL DEFAULT 0,
+    Bytes             NUMERIC(20, 0) NOT NULL DEFAULT 0,
+    LogicalBytes      NUMERIC(20, 0) NOT NULL DEFAULT 0,
+    Rule              TEXT,
+    JobsInChain       INTEGER     NOT NULL DEFAULT 0,
+    PRIMARY KEY (ClientName, FileSetName)
+);
+
 CREATE TABLE TapeAlerts (
     DeviceId          INTEGER     DEFAULT 0,
     SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
@@ -635,7 +658,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions
