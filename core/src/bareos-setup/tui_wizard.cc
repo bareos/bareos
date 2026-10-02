@@ -266,19 +266,14 @@ int RunTuiWizard(SetupContext& context)
   if (context.dry_run()) {
     repository_script = "bareos-setup-repository.sh";
   } else {
-    std::string pattern = (std::filesystem::temp_directory_path()
-                           / "bareos-setup-repository-XXXXXX")
-                              .string();
-    std::vector<char> name(pattern.begin(), pattern.end());
-    name.push_back('\0');
-    const int fd = ::mkstemp(name.data());
-    if (fd < 0) {
+    try {
+      repository_script
+          = context.CreateTemporaryFile("bareos-setup-repository");
+    } catch (const std::runtime_error& error) {
       std::cerr << "Unable to create a private repository setup file.\n";
+      std::cerr << error.what() << "\n";
       return 1;
     }
-    ::close(fd);
-    ::chmod(name.data(), 0600);
-    repository_script = name.data();
   }
 
   const bool use_curl_config = repository == "subscription";

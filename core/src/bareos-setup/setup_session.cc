@@ -72,6 +72,12 @@ SetupProgress& Progress()
   return progress;
 }
 
+std::mutex& SetupOperationMutex()
+{
+  static std::mutex mutex;
+  return mutex;
+}
+
 std::string Dump(json_t* value)
 {
   char* text = json_dumps(value, JSON_COMPACT);
@@ -101,25 +107,6 @@ std::string StringField(json_t* object, const char* key)
 {
   const auto* value = json_object_get(object, key);
   return json_is_string(value) ? json_string_value(value) : "";
-}
-
-std::filesystem::path RuntimeFile(const std::string& prefix)
-{
-  const char* runtime = std::getenv("XDG_RUNTIME_DIR");
-  std::filesystem::path directory
-      = runtime && *runtime ? runtime : ".bareos-setup-runtime";
-  if (!std::filesystem::exists(directory)) {
-    std::filesystem::create_directories(directory);
-    ::chmod(directory.c_str(), 0700);
-  }
-  std::string pattern = (directory / (prefix + "-XXXXXX")).string();
-  std::vector<char> name(pattern.begin(), pattern.end());
-  name.push_back('\0');
-  const int fd = ::mkstemp(name.data());
-  if (fd < 0) throw std::runtime_error("Unable to create a private setup file");
-  ::close(fd);
-  ::chmod(name.data(), 0600);
-  return name.data();
 }
 
 std::string LocalHostname()
@@ -427,7 +414,7 @@ int InstallRepository(WsCodec& ws,
   const std::filesystem::path script
       = context.setup.dry_run()
             ? std::filesystem::path{"bareos-setup-repository.sh"}
-            : RuntimeFile("repository");
+            : context.setup.CreateTemporaryFile("bareos-setup-repository");
   command.arguments.insert(command.arguments.end() - 1,
                            {"--output", script.string()});
   const int download = use_curl_config ? RunWithInput(command, curl_config, ws,
@@ -753,6 +740,7 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
     return;
   }
   if (action == "rollback") {
+    std::lock_guard operation_lock(SetupOperationMutex());
     bool remove_admin = false;
     {
       std::lock_guard lock(Progress().mutex);
@@ -788,6 +776,7 @@ void Handle(WsCodec& ws, json_t* message, const SessionContext& context)
     Error(ws, step, "Unknown setup step.");
     return;
   }
+  std::lock_guard operation_lock(SetupOperationMutex());
   {
     std::lock_guard lock(Progress().mutex);
     if (!context.setup.dry_run() && Progress().completed.contains(step)) {

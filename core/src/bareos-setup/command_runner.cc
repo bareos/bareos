@@ -20,8 +20,10 @@
 */
 #include "command_runner.h"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
+#include <cctype>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -34,6 +36,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -483,7 +486,70 @@ int SetupContext::RunWithInput(const SetupCommand& command,
                  std::move(log_command), std::move(preview));
 }
 
+std::filesystem::path SetupContext::CreateTemporaryFile(
+    std::string_view prefix) const
+{
+  if (dry_run_) {
+    throw std::logic_error("Cannot create a temporary file in dry-run mode");
+  }
+  if (prefix.empty()
+      || !std::all_of(prefix.begin(), prefix.end(), [](unsigned char c) {
+           return std::isalnum(c) || c == '-' || c == '_';
+         })) {
+    throw std::invalid_argument("Invalid temporary file prefix");
+  }
+
+  struct stat directory_status{};
+  if (stat("/tmp", &directory_status) != 0 || !S_ISDIR(directory_status.st_mode)
+      || directory_status.st_uid != 0
+      || (directory_status.st_mode & S_ISVTX) == 0) {
+    throw std::runtime_error(
+        "Temporary files require a root-owned sticky /tmp directory");
+  }
+
+  std::string directory_pattern = "/tmp/" + std::string(prefix) + "-XXXXXX";
+  std::vector<char> directory_name(directory_pattern.begin(),
+                                   directory_pattern.end());
+  directory_name.push_back('\0');
+  if (mkdtemp(directory_name.data()) == nullptr) {
+    throw std::runtime_error("Unable to create a private setup directory: "
+                             + std::string(strerror(errno)));
+  }
+
+  std::string file_pattern
+      = std::string(directory_name.data()) + "/script-XXXXXX";
+  std::vector<char> file_name(file_pattern.begin(), file_pattern.end());
+  file_name.push_back('\0');
+  const int fd = mkstemp(file_name.data());
+  if (fd < 0) {
+    const int error = errno;
+    rmdir(directory_name.data());
+    throw std::runtime_error("Unable to create a private setup file: "
+                             + std::string(strerror(error)));
+  }
+  if (close(fd) != 0) {
+    const int error = errno;
+    unlink(file_name.data());
+    rmdir(directory_name.data());
+    throw std::runtime_error("Unable to close a private setup file: "
+                             + std::string(strerror(error)));
+  }
+  const std::filesystem::path path{file_name.data()};
+  {
+    std::lock_guard lock(temporary_files_mutex_);
+    temporary_file_directories_.emplace(path, directory_name.data());
+  }
+  return path;
+}
+
 void SetupContext::Remove(const std::filesystem::path& path) const
 {
-  if (!dry_run_) std::filesystem::remove(path);
+  if (dry_run_) return;
+  std::filesystem::remove(path);
+  std::lock_guard lock(temporary_files_mutex_);
+  const auto directory = temporary_file_directories_.find(path);
+  if (directory != temporary_file_directories_.end()) {
+    std::filesystem::remove(directory->second);
+    temporary_file_directories_.erase(directory);
+  }
 }

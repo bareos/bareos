@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <functional>
 #include <initializer_list>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -114,6 +115,7 @@ class SetupContext {
                    CommandLogCallback log_command = {},
                    PreviewCallback preview = {}) const;
 
+  std::filesystem::path CreateTemporaryFile(std::string_view prefix) const;
   void Remove(const std::filesystem::path& path) const;
 
  private:
@@ -130,6 +132,9 @@ class SetupContext {
   mutable std::array<std::optional<std::string>,
                      static_cast<size_t>(SetupTool::Count)>
       tool_paths_{};
+  mutable std::mutex temporary_files_mutex_;
+  mutable std::map<std::filesystem::path, std::filesystem::path>
+      temporary_file_directories_;
 };
 
 SetupCommand Bash(std::vector<std::string> arguments);

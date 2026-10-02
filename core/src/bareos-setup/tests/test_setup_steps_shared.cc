@@ -277,6 +277,28 @@ TEST(BareosSetupCommandRunner, SetupContextRefreshesMissingToolPaths)
   EXPECT_FALSE(context.IsToolAvailable(SetupTool::SensibleBrowser));
 }
 
+TEST(BareosSetupCommandRunner, CreatesTemporaryFilesInProtectedDirectory)
+{
+  SetupContext context;
+  const auto path = context.CreateTemporaryFile("bareos-setup-test");
+  EXPECT_EQ(path.parent_path().parent_path(), "/tmp");
+  const auto permissions = std::filesystem::status(path).permissions();
+  EXPECT_EQ(
+      permissions & std::filesystem::perms::all,
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write);
+  const auto directory_permissions
+      = std::filesystem::status(path.parent_path()).permissions();
+  EXPECT_EQ(directory_permissions & std::filesystem::perms::all,
+            std::filesystem::perms::owner_all);
+  context.Remove(path);
+  EXPECT_FALSE(std::filesystem::exists(path));
+  EXPECT_FALSE(std::filesystem::exists(path.parent_path()));
+
+  SetupContext dry_context(true);
+  EXPECT_THROW(dry_context.CreateTemporaryFile("bareos-setup-test"),
+               std::logic_error);
+}
+
 TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
 {
   FakeToolPath fake_tools(
