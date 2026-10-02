@@ -549,6 +549,10 @@ int wrap_parse_msg(char* buf, struct wrap_msg_buf* wmsg)
     return wrap_parse_data_read_msg(buf, wmsg);
   }
 
+  if (c1 == 'R' && c2 == 'R') { /* recovery_result */
+    return wrap_parse_recovery_result_msg(buf, wmsg);
+  }
+
   return -1;
 }
 
@@ -1082,6 +1086,42 @@ int wrap_send_data_read(FILE* fp, uint64_t offset, uint64_t length)
   if (!fp) return -1;
 
   fprintf(fp, "DR %lld %lld\n", (int64_t)offset, (int64_t)length);
+  fflush(fp);
+
+  return 0;
+}
+
+int wrap_parse_recovery_result_msg(char* buf, struct wrap_msg_buf* wmsg)
+{
+  struct wrap_recovery_result* res = &wmsg->body.recovery_result;
+  char* scan = buf + 3;
+  char* end;
+
+  wmsg->msg_type = WRAP_MSGTYPE_RECOVERY_RESULT;
+
+  while (*scan && *scan == ' ') scan++;
+  if (*scan == 0) return -1;
+
+  res->rr_errno = (int)strtol(scan, &end, 0);
+  if (end == scan || (*end != ' ' && *end != 0)) return -1;
+  scan = end;
+  while (*scan == ' ') scan++;
+
+  /* "RR 0 " reports the whole image (empty original path) */
+  if (wrap_cstr_to_str(scan, res->path, sizeof res->path) < 0) return -2;
+
+  return 0;
+}
+
+int wrap_send_recovery_result(FILE* fp, int rr_errno, char* path)
+{
+  struct wrap_msg_buf wmsg;
+  struct wrap_recovery_result* res = &wmsg.body.recovery_result;
+
+  if (!fp) return -1;
+
+  wrap_cstr_from_str(path, res->path, sizeof res->path);
+  fprintf(fp, "RR %d %s\n", rr_errno, res->path);
   fflush(fp);
 
   return 0;

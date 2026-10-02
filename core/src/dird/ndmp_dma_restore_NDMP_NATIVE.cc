@@ -45,6 +45,9 @@
 #  include "dird/ndmp_dma_restore_common.h"
 #  include "dird/ndmp_dma_generic.h"
 
+#  include <algorithm>
+#  include <vector>
+
 namespace directordaemon {
 
 /*
@@ -53,7 +56,7 @@ namespace directordaemon {
  */
 static inline bool fill_restore_environment_ndmp_native(
     JobControlRecord* jcr,
-    int32_t current_fi,
+    JobId_t JobId,
     struct ndm_job_param* job)
 {
   ndmp9_pval pv;
@@ -65,11 +68,7 @@ static inline bool fill_restore_environment_ndmp_native(
   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
 
-  /* Selected JobIds are stored in jcr->JobIds, comma separated
-   * We use the first jobid to get the environment string */
-
-  JobId_t JobId{str_to_uint32(jcr->JobIds)};
-  if (JobId <= 0) {
+  if (JobId == 0) {
     Jmsg(jcr, M_FATAL, 0, "Impossible JobId: %d", JobId);
     return false;
   }
@@ -139,8 +138,8 @@ static inline bool fill_restore_environment_ndmp_native(
   ndma_store_env_list(&job->env_tab, &pv);
 
   if (ndmp_filesystem
-      && SetFilesToRestoreNdmpNative(jcr, job, current_fi,
-                                     destination_path.c_str(), ndmp_filesystem)
+      && SetFilesToRestoreNdmpNative(jcr, job, JobId, destination_path.c_str(),
+                                     ndmp_filesystem)
              == 0) {
     Jmsg(jcr, M_INFO, 0,
          T_("No files selected for restore, preparing namelist for full image "
@@ -159,7 +158,7 @@ static inline bool fill_restore_environment_ndmp_native(
 // See in the tree with selected files what files were selected to be restored.
 int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
                                 struct ndm_job_param* job,
-                                int32_t,
+                                JobId_t JobId,
                                 const char* restore_prefix,
                                 const char* ndmp_filesystem)
 {
@@ -181,8 +180,11 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
      *
      * Restoring a whole directory using this mechanism is much more efficient
      * than creating an namelist entry for every single file and directory below
-     * the selected one. */
-    if (node->extract) {
+     * the selected one.
+     *
+     * Every backup job has its own image, so only the files whose selected
+     * version was saved by JobId can be recovered from the current image. */
+    if (node->extract && node->JobId == JobId) {
       PmStrcpy(restore_pathname, node->fname);
       // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
@@ -222,11 +224,10 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
   return cnt;
 }
 
-// Execute native NDMP restore.
-static bool DoNdmpNativeRestore(JobControlRecord* jcr)
+// Recover the selected files from the backup image of a single job.
+static bool DoNdmpNativeRestoreImage(JobControlRecord* jcr, JobId_t JobId)
 {
   NIS* nis = NULL;
-  int32_t current_fi = 0;
   struct ndm_session ndmp_sess;
   struct ndm_job_param ndmp_job;
   bool session_initialized = false;
@@ -264,7 +265,9 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 
   // Get media from database and put into ndmmmedia table
 
-  GetNdmmediaInfoFromDatabase(&ndmp_job.media_tab, jcr);
+  if (!GetNdmmediaInfoFromDatabase(&ndmp_job.media_tab, jcr, JobId)) {
+    goto cleanup_ndmp;
+  }
 
   for (ndmmedia* media = ndmp_job.media_tab.head; media; media = media->next) {
     ndmmedia_to_str(media, mediabuf);
@@ -318,7 +321,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
 
-  if (!fill_restore_environment_ndmp_native(jcr, current_fi,
+  if (!fill_restore_environment_ndmp_native(jcr, JobId,
                                             &ndmp_sess.control_acb->job)) {
     Jmsg(jcr, M_ERROR, 0, T_("ERROR in fill_restore_environment\n"));
     goto cleanup_ndmp;
@@ -339,22 +342,30 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   ndmp_sess.conn_open = 1;
   ndmp_sess.conn_authorized = 1;
 
-  // Let the DMA perform its magic.
-  if (ndmca_control_agent(&ndmp_sess) != 0) {
-    Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_control_agent\n"));
-    goto cleanup_ndmp;
-  }
+  {
+    // Let the DMA perform its magic.
+    bool session_ok = ndmca_control_agent(&ndmp_sess) == 0;
 
-  if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
-    Jmsg(jcr, M_ERROR, 0,
-         "could not free ndmp tape device %s from job %" PRIu32,
-         ndmp_job.tape_device, jcr->JobId);
-  }
+    // Account the recovered files also when the session failed.
+    bool stats_ok
+        = ExtractPostRestoreStatsNdmpNative(jcr, &ndmp_sess, session_ok);
 
-  // See if there were any errors during the restore.
-  if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
-    Jmsg(jcr, M_ERROR, 0, T_("ERROR in ExtractPostRestoreStats\n"));
-    goto cleanup_ndmp;
+    if (!session_ok) {
+      Jmsg(jcr, M_ERROR, 0, T_("ERROR in ndmca_control_agent\n"));
+      goto cleanup_ndmp;
+    }
+
+    if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
+      Jmsg(jcr, M_ERROR, 0,
+           "could not free ndmp tape device %s from job %" PRIu32,
+           ndmp_job.tape_device, jcr->JobId);
+    }
+
+    // See if there were any errors during the restore.
+    if (!stats_ok) {
+      Jmsg(jcr, M_ERROR, 0, T_("ERROR in ExtractPostRestoreStats\n"));
+      goto cleanup_ndmp;
+    }
   }
 
   // Reset the NDMP session states.
@@ -402,6 +413,67 @@ cleanup_ndmp:
   }
 cleanup:
   free(nis);
+  return retval;
+}
+
+std::vector<JobId_t> NdmpNativeJobsToRestore(const char* JobIds,
+                                             TREE_ROOT* restore_tree_root)
+{
+  std::vector<JobId_t> jobs;
+  const char* p = JobIds;
+  JobId_t JobId;
+  while (p && GetNextJobidFromList(&p, &JobId) > 0) {
+    if (JobId != 0) { jobs.push_back(JobId); }
+  }
+
+  if (!restore_tree_root) { return jobs; }
+
+  std::vector<JobId_t> needed;
+  bool anything_selected = false;
+  for (tree_node* node = FirstTreeNode(restore_tree_root); node;
+       node = NextTreeNode(node)) {
+    if (!node->extract) { continue; }
+    anything_selected = true;
+    if (std::find(needed.begin(), needed.end(), node->JobId) == needed.end()) {
+      needed.push_back(node->JobId);
+    }
+  }
+  if (!anything_selected) { return jobs; }
+
+  std::erase_if(jobs, [&needed](JobId_t id) {
+    return std::find(needed.begin(), needed.end(), id) == needed.end();
+  });
+  return jobs;
+}
+
+/* Execute native NDMP restore.
+ *
+ * Every NDMP_NATIVE backup job wrote its own image, so the images of all
+ * jobs (full, differential, incremental) that contain a selected file are
+ * recovered one after another, oldest first. */
+static bool DoNdmpNativeRestore(JobControlRecord* jcr)
+{
+  bool retval = true;
+  std::vector<JobId_t> jobs
+      = NdmpNativeJobsToRestore(jcr->JobIds, jcr->dir_impl->restore_tree_root);
+
+  if (jobs.empty()) {
+    Jmsg(jcr, M_FATAL, 0, T_("No JobIds to restore from\n"));
+    retval = false;
+  }
+
+  for (JobId_t JobId : jobs) {
+    if (jcr->IsJobCanceled()) {
+      retval = false;
+      break;
+    }
+    Jmsg(jcr, M_INFO, 0, T_("Recovering the NDMP image of JobId %" PRIu32 "\n"),
+         JobId);
+    if (!DoNdmpNativeRestoreImage(jcr, JobId)) {
+      retval = false;
+      break;
+    }
+  }
 
   FreeTree(jcr->dir_impl->restore_tree_root);
   jcr->dir_impl->restore_tree_root = NULL;

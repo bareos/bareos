@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,7 @@ namespace directordaemon {
  * is needed for direct access recovery (DAR) and Directory DAR (DDAR)
  */
 void NdmpStoreAttributeRecord(JobControlRecord* jcr,
+                              int32_t FileIndex,
                               char* fname,
                               char* linked_fname,
                               char* attributes,
@@ -58,56 +59,33 @@ void NdmpStoreAttributeRecord(JobControlRecord* jcr,
                               uint64_t Node,
                               uint64_t Fhinfo)
 {
-  AttributesDbRecord* ar;
-  bool ndmp_bareos_backup;
+  /* Use an own record instead of jcr->ar. With NDMP_BAREOS jcr->ar belongs
+   * to the storage daemon message thread, which stores the attributes of the
+   * virtual NDMP archive file asynchronously. Sharing it lets the file
+   * history inherit an uninitialized or foreign JobId and FileIndex. */
+  AttributesDbRecord ar;
 
-  ndmp_bareos_backup = (jcr->getJobProtocol() == PT_NDMP_BAREOS);
-  /* when doing NDMP native backup, we do not get any attributes from the SD
-   * so we need to create an attribute record */
-  if (!jcr->ar) {
-    jcr->ar = (AttributesDbRecord*)malloc(sizeof(AttributesDbRecord));
-    jcr->ar->Digest = NULL;
-  }
+  ar.JobId = jcr->JobId;
+  ar.FileIndex = FileIndex;
+  ar.fname = fname;
+  ar.attr = attributes;
+  ar.Stream = STREAM_UNIX_ATTRIBUTES;
+  ar.FileType = FileType;
+  ar.DeltaSeq = 0;
 
-  ar = jcr->ar;
-  if (jcr->cached_attribute) {
-    Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-    if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
-      Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
-            jcr->db->strerror());
-      return;
-    }
-    jcr->cached_attribute = false;
-  }
-
-  /* When we do NDMP_BAREOS backup, we only update some fields of this structure
-   * the rest is already filled before by initial attributes saved by the tape
-   * agent in the storage daemon.
-   *
-   * With NDMP_NATIVE Backup, we do not get any attributes before so we need to
-   * fill everything we need here */
-  if (ndmp_bareos_backup) {
-    jcr->ar->fname = fname;
-    jcr->ar->link = linked_fname;
-    jcr->ar->attr = attributes;
-    jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
-    jcr->ar->FileType = FileType;
+  if (jcr->getJobProtocol() == PT_NDMP_BAREOS) {
+    /* the files are hardlinked to the virtual NDMP archive file, which the
+     * storage daemon saved with the same FileIndex */
+    ar.link = linked_fname;
   } else {
-    jcr->ar->JobId = jcr->JobId;
-    jcr->ar->fname = fname;
-    jcr->ar->attr = attributes;
-    jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
-    jcr->ar->FileType = FileType;
-    jcr->ar->Fhinfo = Fhinfo;
-    jcr->ar->Fhnode = Node;
-    jcr->ar->FileIndex = 1;
-    jcr->ar->DeltaSeq = 0;
+    // NDMP_NATIVE needs fhinfo and node for direct access recovery (DAR)
+    ar.Fhinfo = Fhinfo;
+    ar.Fhnode = Node;
   }
 
-  if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, ar)) {
+  if (DbLocker _{jcr->db}; !jcr->db->CreateAttributesRecord(jcr, &ar)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error: ERR=%s"),
           jcr->db->strerror());
-    return;
   }
 }
 

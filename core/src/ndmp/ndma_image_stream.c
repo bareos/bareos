@@ -198,7 +198,7 @@ ndmp9_error ndmis_audit_data_connect(struct ndm_session* sess,
   mine_ep = &is->data_ep;
   peer_ep = &is->tape_ep;
 
-  return ndmis_audit_ep_listen(sess, addr_type, reason, mine_ep, peer_ep);
+  return ndmis_audit_ep_connect(sess, addr_type, reason, mine_ep, peer_ep);
 }
 
 ndmp9_error ndmis_audit_tape_connect(struct ndm_session* sess,
@@ -221,7 +221,7 @@ ndmp9_error ndmis_audit_tape_connect(struct ndm_session* sess,
   mine_ep = &is->tape_ep;
   peer_ep = &is->data_ep;
 
-  return ndmis_audit_ep_listen(sess, addr_type, reason, mine_ep, peer_ep);
+  return ndmis_audit_ep_connect(sess, addr_type, reason, mine_ep, peer_ep);
 }
 
 ndmp9_error ndmis_data_listen(struct ndm_session* sess,

@@ -547,6 +547,53 @@ again:
 void ndmp9_fstat_from_wrap_fstat(ndmp9_file_stat* fstat9,
                                  struct wrap_fstat* fstatw);
 
+static ndmp9_recovery_status ndmda_recovery_status_from_errno(int err)
+{
+  switch (err) {
+    case 0:
+      return NDMP9_RECOVERY_SUCCESSFUL;
+    case EPERM:
+    case EACCES:
+    case EROFS:
+      return NDMP9_RECOVERY_FAILED_PERMISSION;
+    case ENOENT:
+      return NDMP9_RECOVERY_FAILED_NOT_FOUND;
+    case ENOTDIR:
+      return NDMP9_RECOVERY_FAILED_NO_DIRECTORY;
+    case ENOMEM:
+      return NDMP9_RECOVERY_FAILED_OUT_OF_MEMORY;
+    case EIO:
+    case ENOSPC:
+      return NDMP9_RECOVERY_FAILED_IO_ERROR;
+    default:
+      return NDMP9_RECOVERY_FAILED_UNDEFINED_ERROR;
+  }
+}
+
+/*
+ * The formatter reports the result of one name list entry. Remember it in
+ * the entry and tell the control agent (NDMP_LOG_FILE).
+ */
+static void ndmda_recovery_result(struct ndm_session* sess,
+                                  int rr_errno,
+                                  char* path)
+{
+  struct ndm_data_agent* da = sess->data_acb;
+  struct ndm_nlist_entry* entry;
+  ndmp9_recovery_status status = ndmda_recovery_status_from_errno(rr_errno);
+
+  for (entry = da->nlist_tab.head; entry; entry = entry->next) {
+    if (entry->result_err == NDMP9_UNDEFINED_ERR
+        && strcmp(entry->name.original_path, path) == 0) {
+      entry->result_err = rr_errno ? NDMP9_FILE_NOT_FOUND_ERR : NDMP9_NO_ERR;
+      entry->result_count++;
+      break;
+    }
+  }
+
+  ndma_notify_log_file(sess, path, status);
+}
+
 int ndmda_wrap_in(struct ndm_session* sess, char* wrap_line)
 {
   struct wrap_msg_buf _wmsg, *wmsg = &_wmsg;
@@ -593,9 +640,13 @@ int ndmda_wrap_in(struct ndm_session* sess, char* wrap_line)
                            wmsg->body.data_read.length);
       break;
 
+    case WRAP_MSGTYPE_RECOVERY_RESULT:
+      ndmda_recovery_result(sess, wmsg->body.recovery_result.rr_errno,
+                            wmsg->body.recovery_result.path);
+      break;
+
     case WRAP_MSGTYPE_ADD_ENV:
     case WRAP_MSGTYPE_DATA_STATS:
-    case WRAP_MSGTYPE_RECOVERY_RESULT:
       ndmalogf(sess, 0, 2, "Unimplemented wrap: %s", wrap_line);
       break;
   }
