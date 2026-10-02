@@ -130,6 +130,7 @@ enum
   CFG_TYPE_STR_VECTOR = 32,         /* std::vector<std::string> of any string */
   CFG_TYPE_STR_VECTOR_OF_DIRS = 33, /* std::vector<std::string> of directories */
   CFG_TYPE_DIR_OR_CMD = 34,         /* Directory or command (starting with "|") */
+  CFG_TYPE_VERIFY_PEER = 35,        /* Verify Peer Setting */
   /* clang-format on */
 
   // Director resource types. handlers in dird_conf.
@@ -411,6 +412,7 @@ class ConfigurationParser {
   void StoreTime(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreBit(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreBool(lexer* lc, const ResourceItem* item, int index, int pass);
+  void StoreVerifyPeer(lexer* lc, const ResourceItem* item, int index, int);
   void StoreLabel(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreAddresses(lexer* lc, const ResourceItem* item, int index, int pass);
   void StoreAddressesAddress(lexer* lc,
@@ -539,5 +541,8 @@ global_resource::Type GlobalTypeFromLocalType(const ResourceTable* table,
                                               uint32_t type);
 int32_t LocalTypeFromGlobalType(const ResourceTable* table,
                                 global_resource::Type type);
+
+std::optional<VerifyPeerSetting> parse_verify_peer_setting(
+    std::string_view input);
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_

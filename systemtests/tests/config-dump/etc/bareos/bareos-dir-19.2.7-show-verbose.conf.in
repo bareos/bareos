@@ -23,7 +23,7 @@ Director {
   Auditing = yes
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 }
 
 Client {
@@ -49,7 +49,7 @@ Client {
   # NdmpUseLmdb = yes
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 }
 
 JobDefs {
@@ -257,7 +257,7 @@ Storage {
   # MaximumConcurrentReadJobs = 0
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 }
 
 Catalog {
@@ -507,7 +507,7 @@ Console {
   # UsePamAuthentication = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 }
 
 Console {
@@ -517,7 +517,7 @@ Console {
   # UsePamAuthentication = no
   TlsEnable = no
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 }
 
 #Console {
@@ -527,5 +527,5 @@ Console {
   # UsePamAuthentication = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfAvailable
 #}
