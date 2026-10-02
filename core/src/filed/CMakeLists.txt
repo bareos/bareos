@@ -21,6 +21,10 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 include(BareosWindowsResource)
 
+option(FD_CLIENT_SLEEP_INHIBITION
+       "Enable FD sleep inhibition during backup/restore jobs" ON
+)
+
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic
@@ -55,10 +59,54 @@ target_sources(
           filed_utils.cc
 )
 
+if(FD_CLIENT_SLEEP_INHIBITION)
+  if(HAVE_WIN32)
+    target_sources(fd_objects_common PRIVATE os_suspension_win32.cc)
+  elseif(HAVE_LINUX_OS)
+    if(NOT HAVE_SYSTEMD)
+      message(
+        FATAL_ERROR
+          "FD_CLIENT_SLEEP_INHIBITION requires systemd support on Linux. "
+          "Set -DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+      )
+    endif()
+    if(NOT HAVE_SYSTEMD_SD_BUS_H)
+      message(
+        FATAL_ERROR
+          "FD_CLIENT_SLEEP_INHIBITION requires <systemd/sd-bus.h> on Linux. "
+          "Install systemd development headers or set "
+          "-DFD_CLIENT_SLEEP_INHIBITION=OFF to disable manually."
+      )
+    endif()
+    target_sources(fd_objects_common PRIVATE os_suspension_linux.cc)
+    target_include_directories(
+      fd_objects_common PRIVATE ${SYSTEMD_INCLUDE_DIRS}
+    )
+    target_compile_options(fd_objects_common PRIVATE ${SYSTEMD_CFLAGS_OTHER})
+    if(SYSTEMD_LIBRARIES)
+      target_link_libraries(fd_objects_common PRIVATE ${SYSTEMD_LIBRARIES})
+    else()
+      target_link_libraries(fd_objects_common PRIVATE systemd)
+    endif()
+  elseif(HAVE_DARWIN_OS)
+    target_sources(fd_objects_common PRIVATE os_suspension_darwin.cc)
+    target_link_libraries(fd_objects_common PRIVATE "-framework IOKit")
+  else()
+    target_sources(fd_objects_common PRIVATE os_suspension.cc)
+  endif()
+else()
+  target_sources(fd_objects_common PRIVATE os_suspension.cc)
+endif()
+
 target_link_libraries(
   fd_objects_common PRIVATE Bareos::Lib Bareos::Findlib Bareos::Fastlz
                             ZLIB::ZLIB
 )
+if(FD_CLIENT_SLEEP_INHIBITION)
+  target_compile_definitions(
+    fd_objects_common PRIVATE FILED_CLIENT_SLEEP_INHIBITION=1
+  )
+endif()
 if(HAVE_LMDB)
   target_link_libraries(fd_objects_common PRIVATE bareoslmdb)
 endif()
