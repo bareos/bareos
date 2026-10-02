@@ -112,7 +112,10 @@ std::vector<std::string> BuildCatalogInitScripts(PackageManager pkg_mgr);
  * Hat/SUSE family "postgresql-setup --initdb"). Returns std::nullopt when
  * no separate initialization step is required (e.g. Debian/Ubuntu, whose
  * postgresql package initializes a default cluster automatically on
- * install).
+ * install). The command reads PGDATA from the postgresql service, reuses
+ * an existing cluster with a nonempty PG_VERSION file, and refuses to
+ * initialize a nonempty directory without that marker. Service startup
+ * subsequently checks whether the existing cluster can actually be used.
  */
 std::optional<SetupCommand> BuildPostgresInitCmd(const SetupContext& context);
 
