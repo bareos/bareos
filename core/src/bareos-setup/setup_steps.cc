@@ -538,6 +538,37 @@ std::vector<std::string> BuildBareosDaemonServiceNames(PackageManager pkg_mgr)
   throw std::invalid_argument("Unsupported package manager");
 }
 
+bool IsValidSetupRepositoryUrl(const std::string& value)
+{
+  static const std::regex url(
+      R"(^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~%+/-]+)*/*$)");
+  return std::regex_match(value, url);
+}
+
+std::string RewriteSetupRepositoryScript(const std::string& script,
+                                         const std::string& repository_url)
+{
+  if (!IsValidSetupRepositoryUrl(repository_url)) {
+    throw std::invalid_argument("Invalid custom repository URL");
+  }
+  std::istringstream input(script);
+  std::string result;
+  std::string line;
+  bool replaced = false;
+  while (std::getline(input, line)) {
+    if (line.starts_with("URL=")) {
+      line = "URL='" + repository_url + "'";
+      replaced = true;
+    }
+    result += line + "\n";
+  }
+  if (!replaced) {
+    throw std::runtime_error(
+        "Repository helper has no URL assignment; cannot use the CI mirror");
+  }
+  return result;
+}
+
 std::optional<SetupCommand> BuildPackageCacheUpdateCmd(PackageManager pkg_mgr)
 {
   switch (pkg_mgr) {

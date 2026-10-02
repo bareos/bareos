@@ -27,6 +27,8 @@
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <sys/socket.h>
 #include <thread>
@@ -35,6 +37,38 @@
 #include "command_runner.h"
 #include "os_detector.h"
 #include "setup_session.h"
+#include "tui_wizard.h"
+
+TEST(BareosSetupStepsShared, ValidatesCustomRepositoryUrls)
+{
+  EXPECT_TRUE(IsValidSetupRepositoryUrl("https://ci.example:8443/pr/42/EL_9"));
+  EXPECT_TRUE(
+      IsValidSetupRepositoryUrl("http://ci.example/build/xUbuntu_24.04"));
+  for (const auto* url :
+       {"", "file:///tmp/repo", "https://",
+        "https://user:password@example/repo",
+        "https://example/repo?token=secret", "https://example/repo\nURL=bad",
+        "https://example/$(touch_bad)", "https://example/repo';exit 0"}) {
+    EXPECT_FALSE(IsValidSetupRepositoryUrl(url)) << url;
+  }
+}
+
+TEST(BareosSetupStepsShared, RewritesOnlyRepositoryUrlAssignment)
+{
+  const std::string script
+      = "#!/bin/sh\nDOWNLOADSERVER=\"download.bareos.org\"\n"
+        "URL=\"https://download.bareos.org/current/EL_9\"\n"
+        "echo \"$URL\"\n";
+  EXPECT_EQ(
+      RewriteSetupRepositoryScript(script, "http://ci.example/pr/42/EL_9"),
+      "#!/bin/sh\nDOWNLOADSERVER=\"download.bareos.org\"\n"
+      "URL='http://ci.example/pr/42/EL_9'\necho \"$URL\"\n");
+  EXPECT_THROW(
+      RewriteSetupRepositoryScript("echo no_url\n", "https://ci.example/EL_9"),
+      std::runtime_error);
+  EXPECT_THROW(RewriteSetupRepositoryScript(script, "file:///tmp/repo"),
+               std::invalid_argument);
+}
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
 {
@@ -176,6 +210,13 @@ class FakeToolPath {
   FakeToolPath(const FakeToolPath&) = delete;
   FakeToolPath& operator=(const FakeToolPath&) = delete;
 
+  void SetToolScript(const std::string& tool, const std::string& script)
+  {
+    std::ofstream out(dir_ / tool);
+    out << "#!/bin/sh\n" << script;
+    if (!out) throw std::runtime_error("Writing fake tool failed");
+  }
+
   std::vector<std::string> LoggedCommands() const
   {
     std::vector<std::string> lines;
@@ -192,6 +233,216 @@ class FakeToolPath {
 };
 
 }  // namespace
+
+TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "systemctl", "sudo"});
+  SetupContext context;
+  UnattendedSetupOptions options;
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  options.repository_urls
+      = {"https://ci.example/Debian_12/", "https://ci.example/Debian_13"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  options.repository_urls = {"https://ci.example/Debian_12/"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  options.repository_urls = {"https://ci.example/Debian_12"};
+  options.extra_packages = {"--allow-unauthenticated"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+}
+
+TEST(BareosSetupUnattended, DryRunInstallsFullServerWithoutPrompts)
+{
+  SetupContext context(true);
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  options.extra_packages = {"bareos-storage-droplet"};
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_NE(output.find("bareos-storage-droplet"), std::string::npos);
+  EXPECT_NE(output.find("bareos-webui-proxy"), std::string::npos);
+  EXPECT_NE(output.find("is-active"), std::string::npos);
+  EXPECT_EQ(output.find("Repository (community/subscription)"),
+            std::string::npos);
+  EXPECT_EQ(output.find("Initial WebUI password:"), std::string::npos);
+}
+
+TEST(BareosSetupUnattended, CanOmitWebUiWithoutOmittingCatalogOrDaemons)
+{
+  SetupContext context(true);
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.webui = false;
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_NE(output.find("postgresql"), std::string::npos);
+  EXPECT_NE(output.find("bareos-director"), std::string::npos);
+  EXPECT_NE(output.find("is-active"), std::string::npos);
+  EXPECT_EQ(output.find("bareos-webui"), std::string::npos);
+  EXPECT_EQ(output.find("admin.conf"), std::string::npos);
+}
+
+TEST(BareosSetupUnattended, StopsIfRepositoryDownloadFails)
+{
+  FakeToolPath tools(
+      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl", "sudo"});
+  tools.SetToolScript("curl", "exit 23\n");
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+}
+
+TEST(BareosSetupUnattended, StopsIfRepositoryHelperCannotBeRewritten)
+{
+  FakeToolPath tools(
+      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl", "sudo"});
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  ASSERT_EQ(tools.LoggedCommands().size(), 1);
+  EXPECT_TRUE(tools.LoggedCommands().front().starts_with("curl "));
+}
+
+TEST(BareosSetupUnattended, RunsRepositoryPackagesCatalogAndDaemonSteps)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
+                      "systemctl", "su", "sudo", "postgresql-setup"});
+  tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.webui = false;
+  EXPECT_EQ(RunUnattendedSetup(context, options), 0);
+  const auto commands = tools.LoggedCommands();
+  ASSERT_FALSE(commands.empty());
+  EXPECT_TRUE(commands.front().starts_with("bash "));
+  EXPECT_NE(std::find(commands.begin(), commands.end(),
+                      "systemctl enable --now postgresql"),
+            commands.end());
+  EXPECT_NE(
+      std::find(commands.begin(), commands.end(), "postgresql-setup --initdb"),
+      commands.end());
+  EXPECT_TRUE(
+      std::any_of(commands.begin(), commands.end(), [](const auto& command) {
+        return command.find("install") != std::string::npos
+               && command.find("bareos-director") != std::string::npos;
+      }));
+  EXPECT_FALSE(std::filesystem::exists(commands.front().substr(5)));
+}
+
+TEST(BareosSetupUnattended, ConfiguresWebUiWithoutPrintingAdminPassword)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
+                      "systemctl", "su", "sudo", "postgresql-setup", "sh",
+                      "install", "chown", "a2enmod", "a2ensite", "a2enflag",
+                      "openssl", "chmod", "cat"});
+  tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(output.find("Initial WebUI password:"), std::string::npos);
+  EXPECT_EQ(output.find("Password ="), std::string::npos);
+  EXPECT_NE(output.find("not printed in unattended logs"), std::string::npos);
+  const auto commands = tools.LoggedCommands();
+  EXPECT_NE(std::find(commands.begin(), commands.end(),
+                      "systemctl is-active bareos-webui-proxy"),
+            commands.end());
+  EXPECT_TRUE(
+      std::any_of(commands.begin(), commands.end(), [](const auto& command) {
+        return command.starts_with("install ")
+               && command.find("console/admin.conf") != std::string::npos;
+      }));
+}
+
+TEST(BareosSetupUnattended, PropagatesServiceVerificationFailure)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
+                      "systemctl", "su", "sudo", "postgresql-setup"});
+  tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
+  tools.SetToolScript("systemctl",
+                      "if [ \"$1\" = is-active ]; then exit 9; fi\nexit 0\n");
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.webui = false;
+  testing::internal::CaptureStderr();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(result, 1);
+  EXPECT_NE(output.find("Command failed (exit 9): systemctl is-active"),
+            std::string::npos);
+}
+
+TEST(BareosSetupUnattended, ReportsAdminConfigurationWriteFailure)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
+                      "systemctl", "su", "sudo", "postgresql-setup", "sh",
+                      "install", "chown", "a2enmod", "a2ensite", "a2enflag",
+                      "openssl", "chmod", "cat"});
+  tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
+  tools.SetToolScript("install", "exit 19\n");
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  testing::internal::CaptureStderr();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(result, 1);
+  EXPECT_NE(output.find("Command failed (exit 19): install"),
+            std::string::npos);
+  EXPECT_EQ(output.find("Password ="), std::string::npos);
+}
+
+TEST(BareosSetupUnattended, PropagatesPackageInstallationFailure)
+{
+  FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
+                      "systemctl", "su", "sudo", "postgresql-setup"});
+  tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
+  for (const auto* tool : {"apt-get", "dnf", "yum", "zypper"}) {
+    tools.SetToolScript(tool, "exit 17\n");
+  }
+  SetupContext context;
+  UnattendedSetupOptions options;
+  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.webui = false;
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  const auto commands = tools.LoggedCommands();
+  EXPECT_FALSE(
+      std::any_of(commands.begin(), commands.end(), [](const auto& command) {
+        return command.find("is-active") != std::string::npos
+               || command.find("create_bareos_database") != std::string::npos;
+      }));
+}
+
+TEST(BareosSetupTui, PreservesInteractiveCommunityDryRun)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "Interactive test needs a recognized Linux distribution";
+  }
+  SetupContext context(true);
+  std::istringstream input("community\n");
+  auto* original_input = std::cin.rdbuf(input.rdbuf());
+  testing::internal::CaptureStdout();
+  const int result = RunTuiWizard(context);
+  std::cin.rdbuf(original_input);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_NE(output.find("Repository (community/subscription)"),
+            std::string::npos);
+  EXPECT_NE(output.find("bareos-webui-proxy"), std::string::npos);
+}
 
 TEST(BareosSetupCommandRunner, FindsToolPresentInPath)
 {

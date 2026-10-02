@@ -24,6 +24,8 @@
  *
  * Usage: bareos-setup [--port PORT] [--listen ADDRESS] [--no-browser]
  *                     [--tui] [--dry]
+ *        bareos-setup --unattended --repo-url URL [--without-webui]
+ *                     [--extra-package PACKAGE] [--dry]
  */
 #include <array>
 #include <cctype>
@@ -101,7 +103,7 @@ int main(int argc, char* argv[])
 {
   CLI::App app{
       "Configure a Bareos installation using a temporary web UI "
-      "or an interactive terminal wizard.",
+      "or an interactive terminal wizard, or install unattended.",
       "bareos-setup"};
   app.set_version_flag("--version", BAREOS_FULL_VERSION);
   app.footer(std::string("Version: ") + BAREOS_FULL_VERSION);
@@ -140,6 +142,25 @@ int main(int argc, char* argv[])
       "--tui", tui, "Run as interactive terminal wizard instead of web UI");
   listen_option->excludes(tui_option);
   tui_option->excludes(listen_option);
+
+  bool unattended = false;
+  auto* unattended_option = app.add_flag(
+      "--unattended", unattended, "Install a Linux server without prompts");
+  unattended_option->excludes(tui_option);
+  unattended_option->excludes(listen_option);
+  unattended_option->excludes("--port");
+  unattended_option->excludes("--no-browser");
+  UnattendedSetupOptions unattended_options;
+  app.add_option("--repo-url", unattended_options.repository_urls,
+                 "CI repository URL including the distribution path")
+      ->needs(unattended_option);
+  app.add_option("--extra-package", unattended_options.extra_packages,
+                 "Additional package to install (repeatable)")
+      ->needs(unattended_option);
+  bool without_webui = false;
+  app.add_flag("--without-webui", without_webui,
+               "Do not install or configure the WebUI")
+      ->needs(unattended_option);
 
   CLI11_PARSE(app, argc, argv);
   SetupContext setup_context(dry_run);
@@ -215,6 +236,14 @@ int main(int argc, char* argv[])
     }
   }
 
+  if (unattended) {
+    unattended_options.webui = !without_webui;
+    if (setenv("DEBIAN_FRONTEND", "noninteractive", 1) != 0) {
+      std::cerr << "Fatal: cannot set noninteractive package installation.\n";
+      return 1;
+    }
+    return RunUnattendedSetup(setup_context, unattended_options);
+  }
   if (tui) return RunTuiWizard(setup_context);
 
   const std::string setup_token = GenerateSetupSecret(32);
