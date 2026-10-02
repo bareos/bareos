@@ -98,6 +98,7 @@ CREATE TABLE Job
     FilesetId         INTEGER     DEFAULT 0,
     PriorJobid        INTEGER     DEFAULT 0,
     PurgedFiles       SMALLINT    DEFAULT 0,
+    HasBase           SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
     Comment           TEXT,
@@ -109,6 +110,18 @@ CREATE INDEX job_name_idx ON job (Name);
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
 CREATE INDEX jobhisto_idx ON JobHisto (StartTime);
+
+CREATE TABLE basefiles
+(
+    BaseId            BIGSERIAL   NOT NULL,
+    JobId             INTEGER     NOT NULL,
+    FileId            BIGINT      NOT NULL,
+    FileIndex         INTEGER,
+    BaseJobId         INTEGER,
+    PRIMARY KEY (BaseId)
+);
+
+CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
 CREATE TABLE Location (
     LocationId        SERIAL      NOT NULL,
@@ -613,7 +626,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2260;
-INSERT INTO Version (VersionId) VALUES (2260);
+DELETE FROM Version WHERE VersionId<=2250;
+INSERT INTO Version (VersionId) VALUES (2250);
 
 -- Make sure we have appropriate permissions

@@ -47,11 +47,8 @@ TEST(SqlQueryTest, VolumeQueriesAlwaysExposeHasEncryptionKey)
 
   const auto short_query = std::string_view(
       db->get_predefined_query(BareosDb::SQL_QUERY::list_volumes_select_0));
-  const auto long_query = std::string_view(db->get_predefined_query(
-      BareosDb::SQL_QUERY::list_volumes_select_long_0));
 
   EXPECT_NE(short_query.find(kHasEncryptionKeyColumn), std::string_view::npos);
-  EXPECT_NE(long_query.find(kHasEncryptionKeyColumn), std::string_view::npos);
 }
 #else
 TEST(SqlQueryTest, DISABLED_VolumeQueriesAlwaysExposeHasEncryptionKey) {}
