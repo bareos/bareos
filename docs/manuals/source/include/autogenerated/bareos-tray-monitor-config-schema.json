@@ -101,7 +101,7 @@
           "code": 0,
           "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
+          "description": "A verified peer certificate is a certificate whose chain is verified via a known CA (see \"Tls Ca Certificate File\" and \"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is nonempty, its \"Common Name\" (CN) is found within it. If \"TLS Allowed CN\" is empty, then server certificates only count as verified if either its \"Subject Alternative Name\" (SAN) or its CN is equal to the address used for the connection.\nIf this is set to \"No\", then certificates are not required nor do they need to be verified.\nIf this is set to \"If Available\", then certificates are not required, but only verified certificates are accepted if they are sent over.  If this is set to \"Yes\", then verified certificates are required."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -228,7 +228,7 @@
           "code": 0,
           "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
+          "description": "A verified peer certificate is a certificate whose chain is verified via a known CA (see \"Tls Ca Certificate File\" and \"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is nonempty, its \"Common Name\" (CN) is found within it. If \"TLS Allowed CN\" is empty, then server certificates only count as verified if either its \"Subject Alternative Name\" (SAN) or its CN is equal to the address used for the connection.\nIf this is set to \"No\", then certificates are not required nor do they need to be verified.\nIf this is set to \"If Available\", then certificates are not required, but only verified certificates are accepted if they are sent over.  If this is set to \"Yes\", then verified certificates are required."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -361,7 +361,7 @@
           "code": 0,
           "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
+          "description": "A verified peer certificate is a certificate whose chain is verified via a known CA (see \"Tls Ca Certificate File\" and \"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is nonempty, its \"Common Name\" (CN) is found within it. If \"TLS Allowed CN\" is empty, then server certificates only count as verified if either its \"Subject Alternative Name\" (SAN) or its CN is equal to the address used for the connection.\nIf this is set to \"No\", then certificates are not required nor do they need to be verified.\nIf this is set to \"If Available\", then certificates are not required, but only verified certificates are accepted if they are sent over.  If this is set to \"Yes\", then verified certificates are required."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -510,7 +510,7 @@
           "code": 0,
           "default_value": "IfAvailable",
           "equals": true,
-          "description": "If disabled, all certificates will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list and it must be signed by a known CA."
+          "description": "A verified peer certificate is a certificate whose chain is verified via a known CA (see \"Tls Ca Certificate File\" and \"Tls Ca Certificate Dir\"), and, if \"TLS Allowed CN\" is nonempty, its \"Common Name\" (CN) is found within it. If \"TLS Allowed CN\" is empty, then server certificates only count as verified if either its \"Subject Alternative Name\" (SAN) or its CN is equal to the address used for the connection.\nIf this is set to \"No\", then certificates are not required nor do they need to be verified.\nIf this is set to \"If Available\", then certificates are not required, but only verified certificates are accepted if they are sent over.  If this is set to \"Yes\", then verified certificates are required."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
