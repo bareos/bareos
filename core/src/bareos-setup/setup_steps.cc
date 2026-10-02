@@ -281,6 +281,153 @@ SetupCommand BuildRunAsPostgresCmd(const std::string& script)
   return Su({"postgres", "-c", script});
 }
 
+std::vector<SetupCommand> BuildTapeRepositoryCommands(const OsInfo& os)
+{
+  if (os.arch != "x86_64" && os.arch != "aarch64") {
+    throw std::runtime_error(
+        "No approved tape dependency repository mapping for this architecture. "
+        "Configure vendor repositories manually or disable tape support.");
+  }
+  if (os.distro == "rhel"
+      && (MajorVersion(os.version) == "9"
+          || MajorVersion(os.version) == "10")) {
+    const auto prefix = "rhel-" + MajorVersion(os.version) + "-for-" + os.arch;
+    return {{SetupTool::SubscriptionManager,
+             {"repos", "--enable=" + prefix + "-baseos-rpms",
+              "--enable=" + prefix + "-appstream-rpms"}}};
+  }
+  if ((os.distro == "sles" || os.distro == "sled")
+      && (os.version == "15.6" || os.version == "15.7")) {
+    return {{SetupTool::SuseConnect,
+             {"-p", "PackageHub/" + os.version + "/" + os.arch}}};
+  }
+  throw std::runtime_error(
+      "No approved automatic tape dependency repositories for this platform. "
+      "Use an entitled RHEL system or registered SLES with PackageHub, "
+      "configure repositories manually, or disable tape support.");
+}
+
+int PrepareTapeSupport(const SetupContext& context,
+                       const OsInfo& os,
+                       TapeSupportOptions& options,
+                       OutputCallback output)
+{
+  if (!options.enabled) {
+    output("Tape support disabled; bareos-storage-tape will not be installed.",
+           "stdout");
+    return 0;
+  }
+  const auto run = [&](const SetupCommand& command) {
+    const int result = context.Run(
+        command, true, output, [&](const SetupCommand& logged, bool dry, bool) {
+          if (dry)
+            output("[preview] " + JoinCommandForDisplay(logged), "stdout");
+        });
+    if (result != 0) {
+      output("Command failed (exit " + std::to_string(result)
+                 + "): " + JoinCommandForDisplay(command),
+             "stderr");
+    }
+    return result;
+  };
+  if (!options.allow_repositories) {
+    if (os.pkg_mgr == PackageManager::Zypper
+        && run(BuildMtxAvailabilityCheckCmd()) != 0) {
+      output(
+          "Warning: mtx is not available from the configured SUSE "
+          "repositories; installing without tape support. Enable approved "
+          "dependency repositories explicitly to install tape support.",
+          "stdout");
+      options.enabled = false;
+    }
+    return 0;
+  }
+  if (os.pkg_mgr != PackageManager::Dnf && os.pkg_mgr != PackageManager::Yum
+      && os.pkg_mgr != PackageManager::Zypper) {
+    output("Tape dependencies use the existing repositories on this platform.",
+           "stdout");
+    return 0;
+  }
+  const auto refresh = os.pkg_mgr == PackageManager::Zypper
+                           ? Zypper({"--non-interactive", "refresh"})
+                       : os.pkg_mgr == PackageManager::Dnf
+                           ? Dnf({"makecache", "--refresh"})
+                           : Yum({"makecache"});
+  const auto available = [&]() -> std::optional<bool> {
+    if (context.dry_run()) return false;
+    if (os.pkg_mgr == PackageManager::Zypper) {
+      const int result
+          = context.Run(BuildMtxAvailabilityCheckCmd(), true, output);
+      if (result == 0) return true;
+      // zypper's documented "no matching capability" status.
+      if (result == 104) return false;
+      output(
+          "Cannot query tape dependencies; repair zypper repositories first.",
+          "stderr");
+      return std::nullopt;
+    }
+    std::set<std::string> names;
+    const auto collect = [&](std::string_view line, std::string_view stream) {
+      if (stream == "stdout" && (line == "mt-st" || line == "mtx")) {
+        names.emplace(line);
+      } else if (stream == "stderr") {
+        output(line, stream);
+      }
+    };
+    const int installed = context.Run(
+        {SetupTool::Rpm, {"-qa", "--qf", "%{NAME}\n"}}, true, collect);
+    if (installed != 0) {
+      output("Cannot query installed tape dependencies.", "stderr");
+      return std::nullopt;
+    }
+    if (names.size() == 2) return true;
+    const std::vector<std::string> arguments{"--quiet", "repoquery", "--qf",
+                                             "%{name}", "mt-st",     "mtx"};
+    const int result = context.Run(
+        os.pkg_mgr == PackageManager::Dnf ? Dnf(arguments) : Yum(arguments),
+        true, collect);
+    if (result != 0) {
+      output(
+          "Cannot query tape dependencies. Install the vendor's repoquery "
+          "plugin (dnf-plugins-core for DNF) and repair repository errors.",
+          "stderr");
+      return std::nullopt;
+    }
+    return names.size() == 2;
+  };
+  // Do not enable repositories if the dependencies are already installed.
+  auto ready = available();
+  if (!ready) return 1;
+  if (*ready) return 0;
+  if (run(refresh) != 0) return 1;
+  ready = available();
+  if (!ready) return 1;
+  if (*ready) return 0;
+  const auto commands = BuildTapeRepositoryCommands(os);
+  output(
+      "Explicit consent: enabling vendor tape dependency repositories. "
+      "RHEL requires an entitlement; SUSE PackageHub requires registration.",
+      "stdout");
+  for (const auto& command : commands) {
+    output("Vendor repository command: " + JoinCommandForDisplay(command),
+           "stdout");
+    if (run(command) != 0) return 1;
+  }
+  if (run(refresh) != 0) return 1;
+  if (!context.dry_run()) {
+    ready = available();
+    if (!ready || !*ready) {
+      output(
+          "Tape dependencies are still unavailable after enabling vendor "
+          "repositories. Check entitlements and repository contents, or "
+          "disable tape support.",
+          "stderr");
+      return 1;
+    }
+  }
+  return 0;
+}
+
 std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version)
 {

@@ -239,6 +239,20 @@ std::string BuildExistingSetupConfigError(
 /** Build a zypper command that checks whether the mtx package is available. */
 SetupCommand BuildMtxAvailabilityCheckCmd();
 
+struct TapeSupportOptions {
+  bool enabled = true;
+  bool allow_repositories = false;
+};
+
+/** Only return verified vendor repository commands; unknown mappings fail. */
+std::vector<SetupCommand> BuildTapeRepositoryCommands(const OsInfo& os);
+
+/** Prepare tape dependencies with separate repository consent. */
+int PrepareTapeSupport(const SetupContext& context,
+                       const OsInfo& os,
+                       TapeSupportOptions& options,
+                       OutputCallback output);
+
 /** Return the web server service name used by the distribution packages. */
 std::string BuildWebServerServiceName(PackageManager pkg_mgr);
 

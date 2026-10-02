@@ -258,6 +258,24 @@ if(BUILD_TESTING AND GTest_FOUND)
   add_test(NAME bareos-setup:unattended-excludes-tui
            COMMAND bareos-setup --unattended --tui --dry
   )
+  add_test(
+    NAME bareos-setup:unattended-without-tape-support
+    COMMAND
+      bareos-setup --unattended --dry --override-repo-url
+      https://ci.example/build/EL_9 --without-tape-support --without-webui
+  )
+  set_tests_properties(
+    bareos-setup:unattended-without-tape-support
+    PROPERTIES PASS_REGULAR_EXPRESSION "Tape support disabled"
+               FAIL_REGULAR_EXPRESSION "install[^\n]*bareos-storage-tape"
+  )
+  add_test(NAME bareos-setup:unattended-tape-consent-conflict
+           COMMAND bareos-setup --unattended --dry --without-tape-support
+                   --allow-tape-repositories
+  )
+  set_tests_properties(
+    bareos-setup:unattended-tape-consent-conflict PROPERTIES WILL_FAIL TRUE
+  )
   set_tests_properties(
     bareos-setup:unattended-excludes-tui PROPERTIES WILL_FAIL TRUE
   )

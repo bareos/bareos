@@ -113,6 +113,10 @@ constexpr std::array<ToolDefinition, static_cast<size_t>(SetupTool::Count)>
         {SetupTool::Open, "open", ToolRequirement::Optional},
         {SetupTool::SensibleBrowser, "sensible-browser",
          ToolRequirement::Optional},
+        {SetupTool::Rpm, "rpm", ToolRequirement::Optional},
+        {SetupTool::SubscriptionManager, "subscription-manager",
+         ToolRequirement::Optional},
+        {SetupTool::SuseConnect, "SUSEConnect", ToolRequirement::Optional},
     }};
 
 static_assert([] {

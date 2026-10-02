@@ -71,6 +71,9 @@ enum class SetupTool
   XdgOpen,
   Open,
   SensibleBrowser,
+  Rpm,
+  SubscriptionManager,
+  SuseConnect,
   Count
 };
 

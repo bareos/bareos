@@ -163,6 +163,17 @@ int main(int argc, char* argv[])
   app.add_flag("--without-webui", without_webui,
                "Do not install or configure the WebUI")
       ->needs(unattended_option);
+  bool without_tape_support = false;
+  auto* without_tape_option
+      = app.add_flag("--without-tape-support", without_tape_support,
+                     "Do not install tape storage support");
+  without_tape_option->needs(unattended_option);
+  app.add_flag("--allow-tape-repositories",
+               unattended_options.tape.allow_repositories,
+               "Allow enabling approved vendor repositories for tape "
+               "dependencies; requires vendor registration/entitlement")
+      ->needs(unattended_option)
+      ->excludes(without_tape_option);
 
   CLI11_PARSE(app, argc, argv);
   SetupContext setup_context(dry_run);
@@ -240,6 +251,7 @@ int main(int argc, char* argv[])
 
   if (unattended) {
     unattended_options.webui = !without_webui;
+    unattended_options.tape.enabled = !without_tape_support;
     if (setenv("DEBIAN_FRONTEND", "noninteractive", 1) != 0) {
       std::cerr << "Fatal: cannot set noninteractive package installation.\n";
       return 1;

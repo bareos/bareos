@@ -343,6 +343,186 @@ TEST(BareosSetupUnattended, CanOmitWebUiWithoutOmittingCatalogOrDaemons)
   EXPECT_EQ(output.find("admin.conf"), std::string::npos);
 }
 
+TEST(BareosSetupUnattended, CanDisableTapeWithoutChangingOtherPackages)
+{
+  SetupContext context(true);
+  UnattendedSetupOptions options;
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
+  options.tape.enabled = false;
+  options.extra_packages = {"bareos"};
+  testing::internal::CaptureStdout();
+  EXPECT_EQ(RunUnattendedSetup(context, options), 0);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(output.find("dnf install -y bareos-filedaemon bareos-director "
+                        "bareos-storage bareos-storage-tape"),
+            std::string::npos);
+  std::istringstream lines(output);
+  std::string line;
+  while (std::getline(lines, line)) {
+    if (line.find("install") != std::string::npos
+        && line.find("[preview]") != std::string::npos) {
+      EXPECT_EQ(line.find("bareos-storage-tape"), std::string::npos);
+    }
+  }
+  EXPECT_NE(output.find("bareos-storage-dedupable"), std::string::npos);
+  EXPECT_NE(output.find("postgresql"), std::string::npos);
+  options.extra_packages = {"bareos-storage-tape"};
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+  options.extra_packages.clear();
+  options.tape.allow_repositories = true;
+  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
+}
+
+TEST(BareosSetupTape, BuildsOnlyVerifiedVendorRepositoryCommands)
+{
+  OsInfo os;
+  os.distro = "rhel";
+  os.version = "9.4";
+  os.arch = "x86_64";
+  EXPECT_EQ(BuildTapeRepositoryCommands(os),
+            (std::vector<SetupCommand>{
+                {SetupTool::SubscriptionManager,
+                 {"repos", "--enable=rhel-9-for-x86_64-baseos-rpms",
+                  "--enable=rhel-9-for-x86_64-appstream-rpms"}}}));
+  os.distro = "sles";
+  os.version = "15.6";
+  EXPECT_EQ(BuildTapeRepositoryCommands(os),
+            (std::vector<SetupCommand>{
+                {SetupTool::SuseConnect, {"-p", "PackageHub/15.6/x86_64"}}}));
+  os.version = "16";
+  EXPECT_THROW(BuildTapeRepositoryCommands(os), std::runtime_error);
+  os.distro = "rocky";
+  os.version = "9";
+  EXPECT_THROW(BuildTapeRepositoryCommands(os), std::runtime_error);
+  os.distro = "rhel";
+  os.arch = "unknown";
+  EXPECT_THROW(BuildTapeRepositoryCommands(os), std::runtime_error);
+}
+
+TEST(BareosSetupTape, SkipsPreparationWithoutTapeOrRepositoryConsent)
+{
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  SetupContext context;
+  OsInfo os;
+  os.pkg_mgr = PackageManager::Dnf;
+  TapeSupportOptions options;
+  const auto output = [](std::string_view, std::string_view) {};
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  for (const auto manager : {PackageManager::Apt, PackageManager::Dnf,
+                             PackageManager::Yum, PackageManager::Zypper}) {
+    os.pkg_mgr = manager;
+    options = {false, false};
+    EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+    const auto packages = BuildPackageListWithoutTapeStorage(manager);
+    EXPECT_EQ(
+        std::count(packages.begin(), packages.end(), "bareos-storage-tape"), 0);
+    EXPECT_EQ(std::count(packages.begin(), packages.end(), "bareos-storage"),
+              1);
+  }
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+}
+
+TEST(BareosSetupTape, AddsRepositoriesOnlyForMissingDependenciesWithConsent)
+{
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  SetupContext context;
+  OsInfo os;
+  os.distro = "rhel";
+  os.version = "9.4";
+  os.arch = "x86_64";
+  os.pkg_mgr = PackageManager::Dnf;
+  TapeSupportOptions options{true, true};
+  const auto marker = context.CreateTemporaryFile("tape-repository-test");
+  std::filesystem::remove(marker);
+  const auto output = [](std::string_view, std::string_view) {};
+  tools.SetToolScript("rpm", "printf 'mt-st\\nmtx\\n'\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+
+  tools.SetToolScript("rpm", "exit 0\n");
+  tools.SetToolScript("dnf",
+                      "if [ \"$2\" = repoquery ]; then "
+                      "printf 'mt-st\\nmtx\\n'; fi\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+
+  // Queries return no providers until the vendor repository is enabled.
+  tools.SetToolScript("dnf", "if [ \"$2\" = repoquery ] && [ -e '"
+                                 + marker.string()
+                                 + "' ]; then printf 'mt-st\\nmtx\\n'; fi\n");
+  tools.SetToolScript("subscription-manager",
+                      "touch '" + marker.string() + "'\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  ASSERT_TRUE(std::filesystem::exists(marker));
+  std::filesystem::remove(marker);
+
+  tools.SetToolScript("subscription-manager", "exit 19\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  tools.SetToolScript("subscription-manager", "exit 0\n");
+  // A successful repository command without providers must still fail.
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  tools.SetToolScript("rpm", "exit 2\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  tools.SetToolScript("rpm", "exit 0\n");
+  tools.SetToolScript("dnf", "exit 23\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  context.Remove(marker);
+}
+
+TEST(BareosSetupTape, RetainsSuseFallbackOnlyWithoutRepositoryConsent)
+{
+  FakeToolPath tools({"zypper", "SUSEConnect", "sudo"});
+  SetupContext context;
+  OsInfo os;
+  os.distro = "sles";
+  os.version = "15.6";
+  os.arch = "x86_64";
+  os.pkg_mgr = PackageManager::Zypper;
+  tools.SetToolScript("zypper", "exit 104\n");
+  const auto output = [](std::string_view, std::string_view) {};
+  TapeSupportOptions options;
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  EXPECT_FALSE(options.enabled);
+  options = {true, true};
+  // Refresh failure is not a dependency-absence fallback.
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  EXPECT_TRUE(options.enabled);
+  tools.SetToolScript("zypper",
+                      "if [ \"$2\" = refresh ]; then exit 0; fi\nexit 104\n");
+  tools.SetToolScript("SUSEConnect", "exit 19\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 1);
+  tools.SetToolScript("zypper", "exit 0\n");
+  tools.SetToolScript("SUSEConnect", "exit 19\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+  tools.SetToolScript(
+      "zypper",
+      "if [ \"$2\" = refresh ] || "
+      "[ -f \"$(dirname \"$0\")/SUSEConnect.enabled\" ]; then exit 0; fi\n"
+      "exit 104\n");
+  tools.SetToolScript("SUSEConnect", "touch \"$0.enabled\"\n");
+  EXPECT_EQ(PrepareTapeSupport(context, os, options, output), 0);
+}
+
+TEST(BareosSetupTape, PreviewsRepositoryChangesWithoutExecution)
+{
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  SetupContext context(true);
+  OsInfo os;
+  os.distro = "rhel";
+  os.version = "10";
+  os.arch = "aarch64";
+  os.pkg_mgr = PackageManager::Dnf;
+  TapeSupportOptions options{true, true};
+  std::string output;
+  EXPECT_EQ(PrepareTapeSupport(context, os, options,
+                               [&](std::string_view line, std::string_view) {
+                                 output += std::string(line) + "\n";
+                               }),
+            0);
+  EXPECT_NE(output.find("subscription-manager repos"), std::string::npos);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+}
+
 TEST(BareosSetupUnattended, StopsIfRepositoryDownloadFails)
 {
   FakeToolPath tools(
@@ -489,7 +669,7 @@ TEST(BareosSetupTui, PreservesInteractiveCommunityDryRun)
     GTEST_SKIP() << "Interactive test needs a recognized Linux distribution";
   }
   SetupContext context(true);
-  std::istringstream input("community\n");
+  std::istringstream input("yes\nno\ncommunity\n");
   auto* original_input = std::cin.rdbuf(input.rdbuf());
   testing::internal::CaptureStdout();
   const int result = RunTuiWizard(context);
@@ -1078,6 +1258,21 @@ TEST(BareosSetupSessionOrchestration,
   }
 }
 
+TEST(BareosSetupSessionOrchestration, ValidatesTapeChoicesBeforeCommands)
+{
+  FakeToolPath tools({"sudo", "apt-get", "dnf", "yum", "zypper", "systemctl"});
+  EXPECT_THROW(
+      RunStepDiscardingOutput("packages", R"({"tape_support":"false"})"),
+      std::runtime_error);
+  EXPECT_THROW(RunStepDiscardingOutput(
+                   "packages",
+                   R"({"tape_support":false,"allow_tape_repositories":true})"),
+               std::runtime_error);
+  EXPECT_TRUE(tools.LoggedCommands().empty());
+  EXPECT_EQ(RunStepDiscardingOutput("packages", R"({"tape_support":false})",
+                                    true, true),
+            0);
+}
 TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
 {
   const std::string dir_path = (std::filesystem::temp_directory_path()

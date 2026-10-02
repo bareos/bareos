@@ -213,6 +213,16 @@
           Packages will be installed from the
           <span class="text-weight-medium">{{ effectiveRepoOsPath }}</span> repository.
         </div>
+        <q-checkbox v-model="store.tapeSupport" label="Install tape support"
+          :disable="installStarted || store.state.completed.includes('packages')" />
+        <q-checkbox v-model="store.allowTapeRepositories"
+          label="Allow enabling vendor repositories for tape dependencies"
+          :disable="!store.tapeSupport || installStarted || store.state.completed.includes('packages')" />
+        <div class="text-caption text-grey-7">
+          Separate permission is required to enable entitled RHEL BaseOS/AppStream
+          or registered SUSE PackageHub repositories if tape dependencies are missing.
+          Unregistered UBI systems must use existing approved repositories or omit tape support.
+        </div>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'progress'" flat bordered><q-card-section>
         <q-list dense bordered separator>
@@ -623,6 +633,8 @@ function payload() {
     distro: store.state.distro,
     version: store.state.version,
     repo_os_path: store.state.platform_supported ? '' : store.repoOsPath,
+    tape_support: store.tapeSupport,
+    allow_tape_repositories: store.tapeSupport && store.allowTapeRepositories,
   }
 }
 function start(stepToRun = 'repository') {
@@ -665,6 +677,10 @@ watch(messages, list => {
   const message = list[list.length - 1]; if (!message) return
   if (message.type === 'state') {
     Object.assign(store.state, message)
+    if (store.state.completed.includes('packages')) {
+      store.tapeSupport = message.tape_support
+      store.allowTapeRepositories = message.allow_tape_repositories
+    }
     if (!store.state.platform_supported && !store.repoOsPath) {
       store.repoOsPath = (message.suggested_repo_os_paths || [])[0] || ''
     }
