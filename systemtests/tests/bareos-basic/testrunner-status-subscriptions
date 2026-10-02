@@ -18,7 +18,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-
 set -e
 set -o pipefail
 set -u
@@ -164,6 +163,59 @@ SELECT * FROM Job;
 @$out $tmp/status-subscriptions-countbased.txt
 status subscriptions
 
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/status-subscriptions-no-snapshot.json
+status subscriptions all
+@$out ${NULL_DEV}
+.api 0
+
+sqlquery sharedsession
+INSERT INTO SubscriptionAccounting
+  (ClientName, FileSetName, Excluded, Bytes)
+SELECT DISTINCT c.Name, f.FileSet, false, 5000000000000
+FROM Job j JOIN Client c USING (ClientId)
+JOIN FileSet f USING (FileSetId);
+UPDATE SubscriptionAccountingSnapshot
+SET LastSuccess=CURRENT_TIMESTAMP, LastAttempt=CURRENT_TIMESTAMP,
+    LastError=NULL WHERE SnapshotId=1;
+
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/status-subscriptions-measured.json
+status subscriptions all
+@$out $tmp/status-subscriptions-measured-client.json
+status subscriptions client=file-only
+@$out ${NULL_DEV}
+.api 0
+
+sqlquery sharedsession
+UPDATE SubscriptionAccounting SET Excluded=true
+WHERE ClientName='file-only' AND FileSetName='file2';
+DELETE FROM SubscriptionAccounting
+WHERE ClientName='file-only' AND FileSetName='file3';
+UPDATE SubscriptionAccountingSnapshot
+SET LastSuccess=CURRENT_TIMESTAMP - INTERVAL '25 hours',
+    LastError='simulated refresh failure' WHERE SnapshotId=1;
+
+@$out $tmp/status-subscriptions-mixed.txt
+status subscriptions
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/status-subscriptions-mixed.json
+status subscriptions all anonymize
+@$out $tmp/status-subscriptions-accounting-stale.json
+status subscriptions accounting
+@$out ${NULL_DEV}
+.api 0
+
+sqlquery sharedsession
+DELETE FROM SubscriptionAccounting WHERE ClientName IN
+  (SELECT Name FROM Client WHERE ClientId >= 10000);
+UPDATE SubscriptionAccountingSnapshot
+SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL
+WHERE SnapshotId=1;
+
 @$out $tmp/status-subscriptions-cleanup.txt
 sqlquery sharedsession
 DROP VIEW Job;
@@ -174,9 +226,67 @@ DELETE FROM Fileset WHERE FileSetId >= 10000;
 END_OF_DATA
 run_bconsole
 
+python3 - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+
+def result(name):
+    output = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(output[output.index("{"):])[0]["result"]
+
+empty = result("no-snapshot")["subscription_accounting"]
+assert empty["source"] == "estimated" and empty["estimated_combinations"] == 33
+assert not empty["calculated_at"]
+assert not empty["multiple_catalogs"]
+
+measured = result("measured")
+assert measured["subscription_accounting"]["source"] == "measured"
+assert measured["subscription_accounting"]["estimated_combinations"] == 0
+assert measured["unit-summary"]["used"] == "165"
+assert next(row for row in measured["unit-clients"] if row["client"] == "file-only")["size_gb"] == "15000.00"
+
+client = result("measured-client")
+assert client["subscription_accounting"]["source"] == "measured"
+assert client["subscription_accounting"]["combinations"] == 3
+assert all(row["size_gb"] == "5000.00" for row in client["unit-detail"])
+
+mixed = result("mixed")
+assert mixed["subscription_accounting"]["source"] == "mixed"
+assert mixed["subscription_accounting"]["estimated_combinations"] == 2
+assert mixed["subscription_accounting"]["stale"]
+assert mixed["subscription_accounting"]["refresh_failed"]
+assert mixed["unit-summary"]["used"] == "156"
+assert next(row for row in mixed["unit-clients"] if row["client"] == "Client 10000")["size_gb"] == "5002.00"
+assert "file-only" not in (tmp / "status-subscriptions-mixed.json").read_text()
+assert measured["checksum"] != mixed["checksum"]
+
+snapshot = result("accounting-stale")["accounting_snapshot"]
+assert snapshot["stale"] and snapshot["last_refresh_error"] == "simulated refresh failure"
+
+text = (tmp / "status-subscriptions-mixed.txt").read_text()
+assert "estimates for 2 of 33" in text
+assert "more than 24 hours old" in text
+assert "latest subscription accounting refresh failed" in text.lower()
+PY
+
 # remove lines starting with @ so output is comparable
-sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscriptions-*.txt
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes include estimates for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
 sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-*.json
+python3 - "$tmp" <<'PY'
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+for path in tmp.glob("status-subscriptions-*.json"):
+    if (pathlib.Path("expected") / path.name).exists():
+        output = path.read_text()
+        start = output.index('    "subscription_accounting": {')
+        end = output.index("    },\n", start) + len("    },\n")
+        path.write_text(output[:start] + output[end:])
+PY
 
 for f in expected/status-subscriptions-*.txt expected/status-subscriptions-*.json; do
   f="$(basename "$f")"

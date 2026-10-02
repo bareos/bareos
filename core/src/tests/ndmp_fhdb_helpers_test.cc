@@ -94,17 +94,24 @@ TEST(ndmp_fhdb_helpers, invalid_size_is_not_guessed)
 
 TEST(ndmp_fhdb_helpers, out_of_range_size_is_rejected_not_truncated)
 {
-  // An untrusted/misbehaving NDMP data server could report a size that
-  // does not fit into st_size (a signed field) or that would overflow
-  // the ceil(size/512) block-rounding arithmetic. Such a value must be
-  // rejected outright (left at 0/"unknown"), not sign-flipped or wrapped
-  // into a bogus small/negative value.
   ndmp9_file_stat fstat = MakeRegularFileStat();
   fstat.size.valid = NDMP9_VALIDITY_VALID;
   fstat.size.value = std::numeric_limits<uint64_t>::max();
 
   struct stat statp = DecodeConvertedFstat(fstat);
 
-  EXPECT_EQ(statp.st_size, 0);
+  EXPECT_EQ(statp.st_size, -1);
   EXPECT_EQ(statp.st_blocks, 0);
+}
+
+TEST(ndmp_fhdb_helpers, largest_representable_size_is_not_rejected)
+{
+  ndmp9_file_stat fstat = MakeRegularFileStat();
+  fstat.size.valid = NDMP9_VALIDITY_VALID;
+  fstat.size.value = static_cast<uint64_t>(std::numeric_limits<off_t>::max());
+
+  struct stat statp = DecodeConvertedFstat(fstat);
+
+  EXPECT_EQ(statp.st_size, std::numeric_limits<off_t>::max());
+  EXPECT_EQ(statp.st_blocks, std::numeric_limits<off_t>::max() / 512 + 1);
 }

@@ -200,19 +200,25 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 
     // Derive size/blocks from the reported file size, when known.
     // Do not guess when the NDMP data server didn't report a size.
-    // fstat->size.value comes from the (untrusted) NDMP data server as an
-    // unsigned 64-bit quantity; reject values that would not fit into
-    // st_size (a signed type) or that would overflow the block rounding
-    // below, rather than risk a sign-flip or signed-integer overflow when
-    // it is later reinterpreted as bytes (e.g. by accounting code).
-    if (fstat->size.valid == NDMP9_VALIDITY_VALID
-        && fstat->size.value
-               <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max())
-                      - 511) {
-      uint64_t blocks = (fstat->size.value + 511) / 512; /* ceil(size/512) */
-      statp.st_size = static_cast<decltype(statp.st_size)>(fstat->size.value);
-      statp.st_blksize = 512;
-      statp.st_blocks = static_cast<decltype(statp.st_blocks)>(blocks);
+    // An explicitly reported but unrepresentable size must not look like
+    // a valid empty file to accounting. Preserve it as an invalid stat.
+    if (fstat->size.valid == NDMP9_VALIDITY_VALID) {
+      if (fstat->size.value > static_cast<uint64_t>(
+              std::numeric_limits<decltype(statp.st_size)>::max())) {
+        statp.st_size = -1;
+      } else {
+        uint64_t blocks
+            = fstat->size.value / 512 + (fstat->size.value % 512 != 0);
+        if (blocks > static_cast<uint64_t>(
+                std::numeric_limits<decltype(statp.st_blocks)>::max())) {
+          statp.st_size = -1;
+        } else {
+          statp.st_size
+              = static_cast<decltype(statp.st_size)>(fstat->size.value);
+          statp.st_blksize = 512;
+          statp.st_blocks = static_cast<decltype(statp.st_blocks)>(blocks);
+        }
+      }
     }
   }
 

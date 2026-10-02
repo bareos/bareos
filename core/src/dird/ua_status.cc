@@ -53,6 +53,7 @@
 #include "lib/version.h"
 
 #include <memory>
+#include <optional>
 #include <vector>
 #include <algorithm>
 
@@ -493,8 +494,9 @@ static bool show_scheduled_preview(UaContext*,
   return true;
 }
 
-std::string get_subscription_status_checksum_source_text(UaContext* ua,
-                                                         const char* timestamp)
+std::optional<std::string> get_subscription_status_checksum_source_text(
+    UaContext* ua,
+    const char* timestamp)
 {
   const std::string salt("SECRETSALT");
   PoolMem subscriptions(PM_MESSAGE);
@@ -506,11 +508,115 @@ std::string get_subscription_status_checksum_source_text(UaContext* ua,
       ua->db->get_predefined_query(
           BareosDb::SQL_QUERY::subscription_with_clause_0),
       me->subscriptions);
-  ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST, false);
+  if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST,
+                            false)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return std::nullopt;
+  }
   std::string checksum_source
       = salt + "\n" + timestamp + "\n" + subscriptions.c_str();
   Dmsg1(500, "status_subscription summary=%s\n", checksum_source.c_str());
   return checksum_source;
+}
+
+class SubscriptionReportTransaction {
+ public:
+  explicit SubscriptionReportTransaction(UaContext* ua) : ua_(ua), lock_(ua->db)
+  {
+  }
+
+  bool Begin()
+  {
+    if (!ua_->db->SqlExec("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")) {
+      ua_->ErrorMsg("%s\n", ua_->db->strerror());
+      return false;
+    }
+    active_ = true;
+    return true;
+  }
+
+  bool Commit()
+  {
+    if (!ua_->db->SqlExec("COMMIT")) {
+      ua_->ErrorMsg("%s\n", ua_->db->strerror());
+      return false;
+    }
+    active_ = false;
+    return true;
+  }
+
+  ~SubscriptionReportTransaction()
+  {
+    if (active_ && !ua_->db->SqlExec("ROLLBACK")) {
+      ua_->ErrorMsg("%s\n", ua_->db->strerror());
+    }
+  }
+
+ private:
+  UaContext* ua_;
+  // Keep other users of a shared catalog connection outside our transaction.
+  DbLocker lock_;
+  bool active_{false};
+};
+
+struct SubscriptionReportCoverage {
+  std::string calculated_at;
+  uint64_t combinations{0};
+  uint64_t estimated{0};
+  bool stale{true};
+  bool refresh_failed{false};
+  bool found{false};
+};
+
+static int SubscriptionReportCoverageHandler(void* ctx, int, char** row)
+{
+  auto* coverage = static_cast<SubscriptionReportCoverage*>(ctx);
+  coverage->calculated_at = row[0] ? row[0] : "";
+  coverage->stale = !row[1] || bstrcmp(row[1], "true");
+  coverage->refresh_failed = row[2] && bstrcmp(row[2], "true");
+  coverage->combinations = str_to_uint64(row[3]);
+  coverage->estimated = str_to_uint64(row[4]);
+  coverage->found = true;
+  return 0;
+}
+
+static bool GetSubscriptionReportCoverage(UaContext* ua,
+                                          const char* client,
+                                          SubscriptionReportCoverage* coverage)
+{
+  std::string filter;
+  if (client) {
+    auto escaped = ua->db->EscapeString(ua->jcr, client);
+    if (!escaped) {
+      ua->ErrorMsg(T_("Could not escape subscription client name.\n"));
+      return false;
+    }
+    filter = " WHERE client_name='" + *escaped + "'";
+  }
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "%s SELECT COALESCE(to_char(s.LastSuccess, "
+       "'YYYY-MM-DD HH24:MI:SS'), ''), "
+       "(s.LastSuccess IS NULL OR s.LastSuccess < CURRENT_TIMESTAMP - "
+       "INTERVAL '24 hours')::text, (s.LastError IS NOT NULL)::text, "
+       "t.combinations::text, t.estimated::text "
+       "FROM SubscriptionAccountingSnapshot s CROSS JOIN "
+       "(SELECT COUNT(*) AS combinations, "
+       "COUNT(*) FILTER (WHERE estimated) AS estimated "
+       "FROM client_detail%s) t WHERE s.SnapshotId=1",
+       ua->db->get_predefined_query(
+           BareosDb::SQL_QUERY::subscription_with_clause_0),
+       filter.c_str());
+  if (!ua->db->SqlQuery(query.c_str(), SubscriptionReportCoverageHandler,
+                        coverage)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  if (!coverage->found) {
+    ua->ErrorMsg(T_("Subscription accounting snapshot metadata is missing.\n"));
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -546,6 +652,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   const bool kw_plugins = (FindArg(ua, NT_("plugins")) > 0);
   const bool kw_clients = (FindArg(ua, NT_("clients")) > 0);
   const bool kw_client = (FindArgWithValue(ua, NT_("client")) > 0);
+  const char* client = kw_client ? GetArgValue(ua, NT_("client")) : nullptr;
 
   if (kw_unknown) {
     ua->ErrorMsg(
@@ -558,11 +665,71 @@ static bool DoSubscriptionStatus(UaContext* ua)
       ua->ErrorMsg(
           "Parameter 'client=' provided. Ignoring other parameters.\n");
     }
-    const char* client = GetArgValue(ua, NT_("client"));
     if (std::string errmsg; !IsNameValid(client, errmsg)) {
       ua->ErrorMsg(T_("Client name invalid: %s"), errmsg.c_str());
       return false;
     }
+  }
+
+  SubscriptionReportTransaction transaction(ua);
+  if (!transaction.Begin()) { return false; }
+
+  SubscriptionReportCoverage coverage;
+  if (!GetSubscriptionReportCoverage(ua, client, &coverage)) { return false; }
+  auto config = my_config->GetCurrentConfiguration();
+  auto* first_catalog
+      = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
+  const bool multiple_catalogs
+      = first_catalog && config->GetNextRes(R_CATALOG, first_catalog);
+  const char* source = coverage.calculated_at.empty() ? "estimated"
+                       : coverage.estimated == 0      ? "measured"
+                       : coverage.estimated == coverage.combinations
+                           ? "estimated"
+                           : "mixed";
+  ua->send->ObjectStart("subscription_accounting");
+  ua->send->ObjectKeyValue("source", source);
+  ua->send->ObjectKeyValue("calculated_at", coverage.calculated_at.c_str());
+  ua->send->ObjectKeyValueBool("stale", coverage.stale);
+  ua->send->ObjectKeyValueBool("refresh_failed", coverage.refresh_failed);
+  ua->send->ObjectKeyValueBool("multiple_catalogs", multiple_catalogs);
+  ua->send->ObjectKeyValue("estimated_combinations", coverage.estimated);
+  ua->send->ObjectKeyValue("combinations", coverage.combinations);
+  ua->send->ObjectEnd();
+
+  if (multiple_catalogs) {
+    ua->WarningMsg(
+        T_("Subscription accounting does not support multiple catalogs; "
+           "only the first configured catalog is refreshed. This report "
+           "reads the selected catalog and may be empty or stale.\n"));
+  }
+  if (coverage.estimated > 0) {
+    ua->WarningMsg(T_("Subscription sizes include estimates for %llu of "
+                      "%llu Client/FileSet combinations.\n"),
+                   static_cast<unsigned long long>(coverage.estimated),
+                   static_cast<unsigned long long>(coverage.combinations));
+  }
+  if (!coverage.calculated_at.empty()) {
+    ua->SendMsg(T_("Subscription accounting snapshot: %s.\n"),
+                coverage.calculated_at.c_str());
+    if (coverage.stale) {
+      ua->WarningMsg(
+          T_("Subscription accounting snapshot is more than "
+             "24 hours old.\n"));
+    }
+    if (coverage.refresh_failed) {
+      ua->WarningMsg(
+          T_("Latest subscription accounting refresh failed; "
+             "using the last successful snapshot.\n"));
+    }
+  } else {
+    ua->WarningMsg(
+        T_("No subscription accounting snapshot is available; "
+           "all sizes are estimates.\n"));
+    if (coverage.refresh_failed) {
+      ua->WarningMsg(T_("Latest subscription accounting refresh failed.\n"));
+    }
+  }
+  if (kw_client) {
     ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"), client);
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_client_detail_2>(
@@ -571,11 +738,13 @@ static bool DoSubscriptionStatus(UaContext* ua)
             BareosDb::SQL_QUERY::subscription_with_clause_0),
         client);
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                         "unit-detail", true);
+    if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                              "unit-detail", true)) {
+      return false;
+    }
     ua->SendMsg(
         T_("All plugin jobs and the first non-plugin job are counted.\n"));
-    return true;
+    return transaction.Commit();
   }
 
   char now[30] = {0};
@@ -600,8 +769,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
         kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                         "unit-detail", true);
+    if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                              "unit-detail", true)) {
+      return false;
+    }
   }
   if (kw_all || kw_clients) {
     ua->SendMsg(T_("\nBackup unit report aggregated by client:\n"));
@@ -613,8 +784,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
         kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                         "unit-clients", true);
+    if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                              "unit-clients", true)) {
+      return false;
+    }
 
     ua->SendMsg(
         T_("For a detailed per-client report run 'status subscriptions "
@@ -627,8 +800,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
         query, ua->db->get_predefined_query(
                    BareosDb::SQL_QUERY::subscription_with_clause_0));
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                         "unit-plugins", true);
+    if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                              "unit-plugins", true)) {
+      return false;
+    }
   }
 
   ua->SendMsg(T_("\nBackup unit summary:\n"));
@@ -638,16 +813,19 @@ static bool DoSubscriptionStatus(UaContext* ua)
       ua->db->get_predefined_query(
           BareosDb::SQL_QUERY::subscription_with_clause_0),
       me->subscriptions);
-  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), VERT_LIST,
-                       "unit-summary", true, BareosDb::CollapseMode::Collapse);
-  std::string checksum_source
-      = get_subscription_status_checksum_source_text(ua, now);
-  auto checksum = compute_hash(checksum_source);
+  if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), VERT_LIST,
+                            "unit-summary", true,
+                            BareosDb::CollapseMode::Collapse)) {
+    return false;
+  }
+  auto checksum_source = get_subscription_status_checksum_source_text(ua, now);
+  if (!checksum_source) { return false; }
+  auto checksum = compute_hash(*checksum_source);
   if (checksum) {
     ua->send->ObjectKeyValue("checksum", "Checksum: ", checksum->c_str(),
                              "%s\n");
   }
-  return true;
+  return transaction.Commit();
 }
 
 static void DoConfigurationStatus(UaContext* ua)

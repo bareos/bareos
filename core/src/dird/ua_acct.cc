@@ -579,7 +579,7 @@ int SnapshotMetadataHandler(void* ctx, int, char** row)
   metadata->timestamp = row[0] ? row[0] : "";
   metadata->last_error = row[1] ? row[1] : "";
   metadata->has_snapshot = !metadata->timestamp.empty();
-  metadata->stale = row[2] == nullptr || bstrcmp(row[2], "t");
+  metadata->stale = row[2] == nullptr || bstrcmp(row[2], "true");
   return 0;
 }
 
@@ -773,6 +773,11 @@ void* SubscriptionAccountingThread(void*)
     pthread_mutex_unlock(&accounting_mutex);
     return nullptr;
   }
+  if (config->GetNextRes(R_CATALOG, catalog)) {
+    Jmsg(nullptr, M_WARNING, 0,
+         T_("Subscription accounting does not support multiple catalogs; "
+            "only the first configured catalog will be refreshed.\n"));
+  }
 
   JobControlRecord* jcr = NewDirectorJcr(config);
   jcr->dir_impl->res.catalog = catalog;
@@ -839,6 +844,15 @@ bool DoSubscriptionAccounting(UaContext* ua)
   if (!OpenDb(ua)) {
     ua->ErrorMsg("Failed to open db.\n");
     return false;
+  }
+  auto config = my_config->GetCurrentConfiguration();
+  auto* first_catalog
+      = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
+  if (first_catalog && config->GetNextRes(R_CATALOG, first_catalog)) {
+    ua->WarningMsg(
+        T_("Subscription accounting does not support multiple catalogs; "
+           "only the first configured catalog is refreshed. This report "
+           "reads the selected catalog and may be empty or stale.\n"));
   }
 
   const char* client_filter = GetArgValue(ua, NT_("client"));

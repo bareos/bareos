@@ -1736,7 +1736,18 @@ status subscriptions
 
    This shows a combined list of clients and plugins, together with the
    use-count of the plugins and the aggregated amount of backed up frontend
-   data (in gigabytes).
+   data (in gigabytes). Sizes use the last successful accounting snapshot
+   for Client/FileSet combinations with measured data. Missing or excluded
+   combinations retain the former job-level estimate, and the report
+   labels such totals as partially estimated. Before the first successful
+   accounting refresh, all sizes are estimates. The text report and
+   structured ``subscription_accounting`` object show the snapshot time,
+   how many combinations are estimated, and warnings when the snapshot is
+   older than 24 hours or the latest refresh failed. The existing count
+   of backup units is unchanged; volume-based units are calculated from
+   these measured or estimated sizes. Each report reads its metadata,
+   detail, summary, and checksum from a consistent catalog snapshot,
+   even if a background refresh completes while it is being generated.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
@@ -1844,14 +1855,14 @@ status subscriptions
      In the current version there is no unknown data and detail is now the
      default.
 
-   To get a real, catalog-based accounting report instead of the estimate
-   above, use the keyword ``accounting`` (e.g.
-   :bcommand:`status subscriptions accounting`). Unlike the report above,
-   which estimates backed up data from job-level totals, this mode displays
-   the latest successfully calculated snapshot of exact file counts and
-   sizes for every Client/FileSet combination. The snapshot is refreshed by
-   a background worker when requested. Running the status command does not
-   start a calculation.
+   To see the underlying per-Client/FileSet file counts and byte totals,
+   use the keyword ``accounting`` (e.g.
+   :bcommand:`status subscriptions accounting`). The existing report above
+   reuses these snapshot sizes where available, but retains its plugin
+   grouping and count-based unit rules. The accounting mode displays the
+   latest successfully calculated snapshot for every Client/FileSet
+   combination. The snapshot is refreshed by a background worker when
+   requested. Running either status command does not start a calculation.
 
    The standard Director configuration shipped with Bareos already includes
    the ``SubscriptionAccounting`` Admin Job and its daily Schedule. The
@@ -1894,11 +1905,16 @@ status subscriptions
    and logical bytes, based on ``st_size``. Allocated bytes are sparse-file
    aware and approximate what :command:`du` would report on the client;
    logical bytes represent the sum of the backed-up file lengths and are
-   independent of filesystem allocation and compression. Both describe
-   files in the most recent backup chain, not the sum of everything that
-   has ever been transferred by every backup job. A file saved unchanged
-   by successive Incrementals is counted only once, using its newest
-   version; a file recorded as deleted by accurate mode is not counted.
+   independent of filesystem allocation and compression. The primary
+   accounting figure intentionally counts allocated source data, not the
+   virtual length of sparse files: a sparse file can therefore contribute
+   much less than its ``st_size``, even when restored as a file of that
+   length. Neither figure measures bytes transferred during backup or
+   guarantees the allocation of the restored copy. Both describe files in
+   the most recent backup chain, not the sum of everything that has ever
+   been transferred by every backup job. A file saved unchanged by
+   successive Incrementals is counted only once, using its newest version;
+   a file recorded as deleted by accurate mode is not counted.
 
    .. code-block:: bconsole
       :caption: status subscriptions accounting
@@ -1942,6 +1958,12 @@ status subscriptions
 
    .. limitation:: status subscriptions accounting has its own limitations
 
+      - Multiple Catalog resources are not supported: the background worker
+        refreshes only the first configured Catalog, while the status report
+        reads the selected Catalog. The Director logs a warning and the
+        subscription status commands warn when multiple catalogs are
+        configured. Other catalogs may have no current accounting snapshot,
+        and totals do not span catalogs.
       - Client/FileSet combinations without a usable backup chain (e.g. all
         of their File information has been purged, or no Full backup ever
         completed) are excluded from the report entirely rather than
@@ -1958,7 +1980,12 @@ status subscriptions
         ordinary Full backup would.
       - Delta-plugin multi-part files (:config:option:`dir/job/accurate`
         + delta plugins) are not specially merged in this first version;
-        only the latest JobId's File row per path is used.
+        only the latest JobId's File row per path is used. The Hyper-V
+        plugin uses these parts to restore changed virtual-disk ranges.
+        Its disk File rows use ``st_size`` for virtual disk capacity and
+        ``st_blocks`` for sector size, not allocated blocks. On Windows
+        clients, the report therefore counts virtual disk capacity for
+        such rows rather than the allocated size of the virtual disk.
       - A running report cannot be cancelled once started; the console
         command executes synchronously to completion. The only way to
         stop it is to terminate the console connection itself (e.g.
@@ -1980,9 +2007,9 @@ status subscriptions
       documented limitations (see above).
 
    .. note::
-      :bcommand:`status subscriptions` report can also be obtained using |webui|
-      see :ref:`WebuiSubscription` for more information about how to generate
-      and download the report.
+      The Vue WebUI subscription page uses :bcommand:`status subscriptions
+      all` and displays the same measured/estimated and snapshot warnings.
+      Its PDF and JSON downloads include the accounting provenance.
 
 status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated
