@@ -97,7 +97,7 @@ The TUI asks whether to use the Bareos Community or Bareos Subscription reposito
 At the end of a successful TUI installation, the generated WebUI administrator password is printed in the terminal. Store it safely.
 
 Unattended installation (Jenkins)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``--unattended`` to install a complete Linux server without starting a
 browser, HTTP listener, or terminal prompts:
