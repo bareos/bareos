@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
 #include "stored/read_ctx.h"
 #include "stored/stored_conf.h"
 #include "lib/thread_util.h"
+#include "stored/device_wait_policy.h"
 #include "stored/reserve.h"
 
 template <typename T> class alist;
@@ -49,15 +50,6 @@ struct ReadSession {
   uint32_t read_EndFile{};
   uint32_t read_StartBlock{};
   uint32_t read_EndBlock{};
-};
-
-struct DeviceWaitTimes {
-  int32_t min_wait{};
-  int32_t max_wait{};
-  int32_t max_num_wait{};
-  int32_t wait_sec{};
-  int32_t rem_wait_sec{};
-  int32_t num_wait{};
 };
 
 }  // namespace storagedaemon
@@ -99,7 +91,7 @@ struct StoredJcrImpl {
   uint64_t RemainingQuota{};      /**< Available bytes to use as quota */
 
   storagedaemon::ReadSession read_session;
-  storagedaemon::DeviceWaitTimes device_wait_times;
+  storagedaemon::DeviceWaitBudget device_wait_budget;
 };
 /* clang-format on */
 
