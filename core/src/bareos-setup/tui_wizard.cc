@@ -229,11 +229,19 @@ static int RunWizard(SetupContext& context,
   }
 
   std::string repo_os_path;
-  if (unattended) {
+  const bool override_repository
+      = unattended && !unattended->override_repository_urls.empty();
+  if (override_repository) {
     // The explicit CI URL already includes its repository path.
   } else if (IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     repo_os_path = BuildRepoOsPath(os.distro, os.version);
   } else {
+    if (unattended) {
+      std::cerr << "No automatically supported repository for this platform. "
+                   "Provide --override-repo-url including the distribution "
+                   "path.\n";
+      return 1;
+    }
     repo_os_path = PromptRepoOsPath(os);
     if (repo_os_path.empty()) {
       std::cerr << "No Bareos repository selected.\n";
@@ -243,9 +251,11 @@ static int RunWizard(SetupContext& context,
   const bool manual_repo_choice
       = !IsSupportedSetupPlatform(os.distro, os.pkg_mgr);
 
-  if (!unattended) {
+  if (!override_repository) {
     const auto repository
-        = Prompt("Repository (community/subscription)", "subscription");
+        = unattended
+              ? "community"
+              : Prompt("Repository (community/subscription)", "subscription");
     if (repository != "community" && repository != "subscription") {
       std::cerr << "Choose community or subscription.\n";
       return 1;
@@ -339,8 +349,8 @@ static int RunWizard(SetupContext& context,
     }
     context.Remove(repository_script);
   } else {
-    const auto& url = unattended->repository_urls.front();
-    std::cout << "Adding CI repository " << url << "\n";
+    const auto& url = unattended->override_repository_urls.front();
+    std::cout << "Overriding repository URL with " << url << "\n";
     const auto download = Curl({"--fail", "--silent", "--show-error",
                                 "--location", "--proto-redir", "=https",
                                 url + "/add_bareos_repositories.sh"});
@@ -539,15 +549,16 @@ int RunTuiWizard(SetupContext& context) { return RunWizard(context, nullptr); }
 int RunUnattendedSetup(SetupContext& context,
                        const UnattendedSetupOptions& options)
 {
-  if (options.repository_urls.size() != 1) {
-    std::cerr << "Unattended setup requires exactly one --repo-url. "
+  if (options.override_repository_urls.size() > 1) {
+    std::cerr << "Unattended setup accepts at most one --override-repo-url. "
                  "Repository helpers overwrite their repository definitions.\n";
     return 1;
   }
-  for (const auto& url : options.repository_urls) {
+  for (const auto& url : options.override_repository_urls) {
     if (!IsValidSetupRepositoryUrl(url) || url.ends_with('/')) {
       std::cerr
-          << "Use an HTTPS --repo-url including the distribution path, "
+          << "Use an HTTPS --override-repo-url including the distribution "
+             "path, "
              "without credentials, query parameters or a trailing slash.\n";
       return 1;
     }

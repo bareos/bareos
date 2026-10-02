@@ -237,25 +237,81 @@ TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
   FakeToolPath tools({"curl", "bash", "apt-get", "systemctl", "sudo"});
   SetupContext context;
   UnattendedSetupOptions options;
-  EXPECT_EQ(RunUnattendedSetup(context, options), 1);
-  options.repository_urls
+  options.override_repository_urls
       = {"https://ci.example/Debian_12/", "https://ci.example/Debian_13"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
-  options.repository_urls = {"https://ci.example/Debian_12/"};
+  options.override_repository_urls = {"https://ci.example/Debian_12/"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
-  options.repository_urls = {"http://ci.example/Debian_12"};
+  options.override_repository_urls = {"http://ci.example/Debian_12"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
-  options.repository_urls = {"https://ci.example/Debian_12"};
+  options.override_repository_urls = {"https://ci.example/Debian_12"};
   options.extra_packages = {"--allow-unauthenticated"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   EXPECT_TRUE(tools.LoggedCommands().empty());
+}
+
+TEST(BareosSetupUnattended, UsesCommunityRepositoryWithoutOverrideOrPrompts)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "No automatically supported repository on this platform";
+  }
+  SetupContext context(true);
+  UnattendedSetupOptions options;
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_NE(output.find("https://download.bareos.org/current/"
+                        + BuildRepoOsPath(os.distro, os.version)
+                        + "/add_bareos_repositories.sh"),
+            std::string::npos);
+  EXPECT_EQ(output.find("override the helper's URL"), std::string::npos);
+  EXPECT_EQ(output.find("Repository (community/subscription)"),
+            std::string::npos);
+}
+
+TEST(BareosSetupUnattended, RunsUnmodifiedHelperWithoutUrlAssignment)
+{
+  const auto os = DetectOs();
+  if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
+    GTEST_SKIP() << "No automatically supported repository on this platform";
+  }
+  FakeToolPath tools({"curl", "apt-get", "dnf", "yum", "zypper", "systemctl",
+                      "su", "sudo", "postgresql-setup"});
+  tools.SetToolScript("curl", R"(
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = --output ]; then
+    printf '%s\n' '#!/bin/sh' 'echo unchanged-helper' > "$2"
+    exit 0
+  fi
+  shift
+done
+exit 0
+)");
+  // Leave bash real so the downloaded script is actually executed.
+  SetupContext context;
+  const auto marker = context.CreateTemporaryFile("unmodified-helper-test");
+  tools.SetToolScript("systemctl",
+                      "echo PGDATA=" + marker.parent_path().string() + "\n");
+  UnattendedSetupOptions options;
+  options.webui = false;
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  // Stop at PostgreSQL initialization rather than touching a real cluster.
+  EXPECT_EQ(result, 1);
+  EXPECT_NE(output.find("unchanged-helper"), std::string::npos);
+  EXPECT_EQ(output.find("Repository helper has no URL assignment"),
+            std::string::npos);
+  context.Remove(marker);
 }
 
 TEST(BareosSetupUnattended, DryRunInstallsFullServerWithoutPrompts)
 {
   SetupContext context(true);
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  options.override_repository_urls = {"https://ci.example/build/Debian_12"};
   options.extra_packages = {"bareos-storage-droplet"};
   testing::internal::CaptureStdout();
   const int result = RunUnattendedSetup(context, options);
@@ -274,7 +330,7 @@ TEST(BareosSetupUnattended, CanOmitWebUiWithoutOmittingCatalogOrDaemons)
 {
   SetupContext context(true);
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   options.webui = false;
   testing::internal::CaptureStdout();
   const int result = RunUnattendedSetup(context, options);
@@ -294,7 +350,7 @@ TEST(BareosSetupUnattended, StopsIfRepositoryDownloadFails)
   tools.SetToolScript("curl", "exit 23\n");
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  options.override_repository_urls = {"https://ci.example/build/Debian_12"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   EXPECT_TRUE(tools.LoggedCommands().empty());
 }
@@ -305,7 +361,7 @@ TEST(BareosSetupUnattended, StopsIfRepositoryHelperCannotBeRewritten)
       {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl", "sudo"});
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/Debian_12"};
+  options.override_repository_urls = {"https://ci.example/build/Debian_12"};
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   ASSERT_EQ(tools.LoggedCommands().size(), 1);
   EXPECT_TRUE(tools.LoggedCommands().front().starts_with("curl "));
@@ -318,7 +374,7 @@ TEST(BareosSetupUnattended, RunsRepositoryPackagesCatalogAndDaemonSteps)
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   options.webui = false;
   EXPECT_EQ(RunUnattendedSetup(context, options), 0);
   const auto commands = tools.LoggedCommands();
@@ -347,7 +403,7 @@ TEST(BareosSetupUnattended, ConfiguresWebUiWithoutPrintingAdminPassword)
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   testing::internal::CaptureStdout();
   const int result = RunUnattendedSetup(context, options);
   const auto output = testing::internal::GetCapturedStdout();
@@ -375,7 +431,7 @@ TEST(BareosSetupUnattended, PropagatesServiceVerificationFailure)
                       "if [ \"$1\" = is-active ]; then exit 9; fi\nexit 0\n");
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   options.webui = false;
   testing::internal::CaptureStderr();
   const int result = RunUnattendedSetup(context, options);
@@ -395,7 +451,7 @@ TEST(BareosSetupUnattended, ReportsAdminConfigurationWriteFailure)
   tools.SetToolScript("install", "exit 19\n");
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   testing::internal::CaptureStderr();
   const int result = RunUnattendedSetup(context, options);
   const auto output = testing::internal::GetCapturedStderr();
@@ -415,7 +471,7 @@ TEST(BareosSetupUnattended, PropagatesPackageInstallationFailure)
   }
   SetupContext context;
   UnattendedSetupOptions options;
-  options.repository_urls = {"https://ci.example/build/EL_9"};
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
   options.webui = false;
   EXPECT_EQ(RunUnattendedSetup(context, options), 1);
   const auto commands = tools.LoggedCommands();

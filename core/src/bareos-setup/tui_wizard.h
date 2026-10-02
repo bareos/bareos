@@ -29,7 +29,7 @@
 #include "command_runner.h"
 
 struct UnattendedSetupOptions {
-  std::vector<std::string> repository_urls;
+  std::vector<std::string> override_repository_urls;
   std::vector<std::string> extra_packages;
   bool webui = true;
 };
