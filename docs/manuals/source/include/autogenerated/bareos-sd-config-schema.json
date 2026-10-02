@@ -92,7 +92,7 @@
           "code": 0,
           "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "Disabled: Peer certificates are neither required nor verified when presented.\nIfCertificatePresented: Peer certificates are not required, but are verified when presented.\nRequired: Peer certificates are required and verified.\n"
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -505,7 +505,7 @@
           "code": 0,
           "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "Disabled: Peer certificates are neither required nor verified when presented.\nIfCertificatePresented: Peer certificates are not required, but are verified when presented.\nRequired: Peer certificates are required and verified.\n"
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",

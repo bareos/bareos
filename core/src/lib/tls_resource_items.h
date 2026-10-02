@@ -82,9 +82,9 @@
   {                                                                            \
     "TlsVerifyPeer", CFG_TYPE_VERIFY_PEER, ITEM(res, tls_cert_.verify_peer_), {\
       config::DefaultValue{"IfCertificatePresented"},                                     \
-      config::Description{"Disabled: Peer certificates are neither required nor verified when presented.\n" \
-          "IfCertificatePresented: Peer certificates are not required, but are verified when presented.\n" \
-          "Required: Peer certificates are required and verified.\n"}   \
+      config::Description{"Disabled\n   Peer certificates are neither required nor verified when presented.\n" \
+          "IfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\n" \
+          "Required\n    Peer certificates are required and verified."}   \
   }},                                                                          \
   {                                                                            \
     "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR,                                \
