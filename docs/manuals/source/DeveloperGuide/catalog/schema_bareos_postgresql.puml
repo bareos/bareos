@@ -10,7 +10,7 @@
   skinparam linetype ortho
 
   entity Path {
-    **PathId** : SERIAL
+    **PathId** : BIGSERIAL
     --
     Path : text
   }
@@ -20,7 +20,7 @@
     --
     FileIndex : INTEGER
     **JobId** : INTEGER
-    **PathId** :INTEGER
+    **PathId** :BIGINT
     DeltaSeq : SMALLINT
     MarkId : INTEGER
     Fhinfo : NUMERIC(20)
@@ -262,13 +262,13 @@
   }
 
   entity PathHierarchy {
-    **PathId** : INTEGER
+    **PathId** : BIGINT
     --
-    PPathId : INTEGER
+    PPathId : BIGINT
   }
 
   entity PathVisibility {
-    **PathId** : INTEGER
+    **PathId** : BIGINT
     **JobId** : INTEGER
     --
     Size : BIGINT
