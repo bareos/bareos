@@ -78,7 +78,8 @@ std::string CapFirst(std::string s);
 /** Trim leading and trailing whitespace. */
 std::string Trim(std::string value);
 
-/** Validate a custom repository URL without credentials or shell syntax. */
+/** Validate an HTTPS custom repository URL without credentials or shell syntax.
+ */
 bool IsValidSetupRepositoryUrl(const std::string& value);
 
 /** Point a downloaded repository helper at its CI mirror, or fail explicitly.
@@ -125,7 +126,10 @@ std::optional<SetupCommand> BuildPostgresInitCmd(const SetupContext& context);
  */
 SetupCommand BuildRunAsPostgresCmd(const std::string& script);
 
-/** Build the repository OS path segment for the detected distribution. */
+/**
+ * Build the repository OS path segment for the detected distribution.
+ * Throws if the distribution has no stable automatically supported path.
+ */
 std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version);
 

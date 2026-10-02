@@ -254,8 +254,11 @@ std::string BuildRepoOsPath(const std::string& distro,
                             const std::string& version)
 {
   if (IsElDistro(distro)) return "EL_" + MajorVersion(version);
-  if (distro == "opensuse-leap" || distro == "opensuse-tumbleweed"
-      || distro == "sles") {
+  if (distro == "opensuse-tumbleweed") {
+    throw std::invalid_argument(
+        "openSUSE Tumbleweed requires a manual repository choice");
+  }
+  if (distro == "opensuse-leap" || distro == "sles") {
     return "SUSE_" + MajorVersion(version);
   }
   if (distro == "ubuntu") return "xUbuntu_" + version;
@@ -352,8 +355,8 @@ SetupCommand BuildAddRepoCmdForPath(const std::string& repo_os_path,
   const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
                                  + repo_os_path + "/add_bareos_repositories.sh";
 
-  SetupCommand command
-      = Curl({"--fail", "--silent", "--show-error", "--location"});
+  SetupCommand command = Curl({"--fail", "--silent", "--show-error",
+                               "--location", "--proto-redir", "=https"});
   if (read_curl_config_from_stdin)
     command.arguments.insert(command.arguments.end(), {"--config", "-"});
   command.arguments.emplace_back(script_url);
@@ -368,9 +371,9 @@ SetupCommand BuildRepoPathProbeCmd(const std::string& repo_os_path,
   const std::string script_url = RepoBaseUrl(repo_type, release) + "/"
                                  + repo_os_path + "/add_bareos_repositories.sh";
 
-  SetupCommand command
-      = Curl({"--fail", "--silent", "--show-error", "--location", "--head",
-              "--max-time", "15", "--output", "/dev/null"});
+  SetupCommand command = Curl(
+      {"--fail", "--silent", "--show-error", "--location", "--head",
+       "--proto-redir", "=https", "--max-time", "15", "--output", "/dev/null"});
   if (read_curl_config_from_stdin)
     command.arguments.insert(command.arguments.end(), {"--config", "-"});
   command.arguments.emplace_back(script_url);
@@ -379,8 +382,8 @@ SetupCommand BuildRepoPathProbeCmd(const std::string& repo_os_path,
 
 SetupCommand BuildSubscriptionReleaseIndexCmd(bool read_curl_config_from_stdin)
 {
-  SetupCommand command
-      = Curl({"--fail", "--silent", "--show-error", "--location"});
+  SetupCommand command = Curl({"--fail", "--silent", "--show-error",
+                               "--location", "--proto-redir", "=https"});
   if (read_curl_config_from_stdin)
     command.arguments.insert(command.arguments.end(), {"--config", "-"});
   command.arguments.emplace_back("https://download.bareos.com/bareos/release/");
@@ -417,8 +420,9 @@ std::optional<SetupCommand> BuildNetworkCheckCmd(const std::string& repo_type)
   // checks reachability, and letting curl write a response body to stdout
   // both floods the install log with raw HTTP and makes the check fail with
   // a write error if anything goes wrong on the receiving end.
-  return Curl({"--fail", "--silent", "--show-error", "--location", "--head",
-               "--max-time", "15", "--output", "/dev/null",
+  return Curl({"--fail", "--silent", "--show-error", "--location",
+               "--proto-redir", "=https", "--head", "--max-time", "15",
+               "--output", "/dev/null",
                "https://download.bareos.org/current/"});
 }
 
@@ -541,7 +545,7 @@ std::vector<std::string> BuildBareosDaemonServiceNames(PackageManager pkg_mgr)
 bool IsValidSetupRepositoryUrl(const std::string& value)
 {
   static const std::regex url(
-      R"(^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~%+/-]+)*/*$)");
+      R"(^https://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~%+/-]+)*/*$)");
   return std::regex_match(value, url);
 }
 
@@ -633,19 +637,8 @@ bool IsSupportedSetupPlatform(const std::string& distro,
                               PackageManager package_manager)
 {
   static const std::set<std::string> supported{
-      "almalinux",
-      "centos",
-      "debian",
-      "fedora",
-      "ol",
-      "openela",
-      "oracle",
-      "rhel",
-      "rocky",
-      "sles",
-      "ubuntu",
-      "opensuse-leap",
-      "opensuse-tumbleweed",
+      "almalinux", "centos", "debian", "fedora", "ol",     "openela",
+      "oracle",    "rhel",   "rocky",  "sles",   "ubuntu", "opensuse-leap",
   };
   return supported.contains(distro)
          && IsSupportedPackageManager(package_manager);
