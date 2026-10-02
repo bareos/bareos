@@ -52,6 +52,7 @@
  */
 
 #include <algorithm>
+#include <filesystem>
 #include <string_view>
 
 #include "include/bareos.h"
@@ -66,6 +67,7 @@
 #include "lib/ascii_control_characters.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
+#include "lib/alist.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
 
@@ -544,13 +546,10 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   int rindex = rcode;
   BareosResource* last;
 
-  /* Remove resource from list.
-   *
-   * Note: this is intended for removing a resource that has just been added,
-   * but proven to be incorrect (added by console command "configure add").
-   * For a general approach, a check if this resource is referenced by other
-   * resource_definitions must be added. If it is referenced, don't remove it.
-   */
+  // Only safe for rolling back a resource just added and not yet visible
+  // elsewhere: a running job keeps raw pointers to resources, so freeing a
+  // live one here would dangle them. See
+  // directordaemon::ConfigureDeleteResource().
   last = nullptr;
   for (BareosResource* res
        = loaded_configuration->configuration_resources_[rindex];
@@ -575,6 +574,68 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 
   // Resource with this name not found
   return false;
+}
+
+std::vector<ResourceReference> ConfigurationParser::FindResourceReferences(
+    int rcode,
+    const BareosResource* target)
+{
+  std::vector<ResourceReference> references;
+
+  if (!target) { return references; }
+
+  for (int t = 0; t < r_num_; t++) {
+    const ResourceTable& table = resource_definitions_[t];
+    if (!table.items) { continue; }
+
+    for (BareosResource* res
+         = loaded_configuration->configuration_resources_[t];
+         res; res = res->next_) {
+      if (res == target) { continue; }
+
+      for (int i = 0; table.items[i].name; i++) {
+        const ResourceItem& item = table.items[i];
+        if (item.code != rcode) { continue; }
+
+        // Skip a value inherited (not set) by this resource, e.g. a Job's
+        // Client from a JobDefs -- the JobDefs itself is reported instead.
+        if (BitIsSet(i, res->inherit_content_)) { continue; }
+
+        // Pass res explicitly: the single-argument GetItemVariable() reads
+        // through the parser's "currently filling in" pointer instead.
+        switch (item.type) {
+          case CFG_TYPE_RES: {
+            BareosResource* referenced
+                = GetItemVariable<BareosResource*>(item, res);
+            if (referenced == target) {
+              references.push_back({static_cast<int>(table.rcode),
+                                    res->resource_name_, item.name, &item});
+            }
+            break;
+          }
+          case CFG_TYPE_ALIST_RES: {
+            alist<BareosResource*>* list
+                = GetItemVariable<alist<BareosResource*>*>(item, res);
+            if (list) {
+              for (auto* referenced : *list) {
+                if (referenced == target) {
+                  references.push_back({static_cast<int>(table.rcode),
+                                        res->resource_name_, item.name,
+                                        &item});
+                  break;
+                }
+              }
+            }
+            break;
+          }
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  return references;
 }
 
 bool ConfigurationParser::DumpResources(bool sendit(void* sock,
@@ -659,6 +720,18 @@ bool ConfigurationParser::GetPathOfResource(PoolMem& path,
   rel_path.bsprintf(config_include_naming_format_.c_str(), component,
                     resourcetype_lowercase.c_str(), name);
   PathAppend(path, rel_path);
+
+  // IsNameValid() permits '.' and '/' in component/resourcetype/name, and
+  // PathAppend() does no ".." handling; refuse a result that escapes
+  // config_dir_ (lexically -- the path need not exist yet).
+  std::filesystem::path resolved
+      = std::filesystem::path(path.c_str()).lexically_normal();
+  std::filesystem::path base
+      = std::filesystem::path(config_dir_).lexically_normal();
+  std::filesystem::path relative_to_base = resolved.lexically_relative(base);
+  if (relative_to_base.empty() || *relative_to_base.begin() == "..") {
+    return false;
+  }
 
   return true;
 }

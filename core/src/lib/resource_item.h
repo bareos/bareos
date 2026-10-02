@@ -228,16 +228,31 @@ struct ResourceItem {
   }
 };
 
+// Code inspecting a resource outside of parsing should name it explicitly
+// rather than use the no-res overloads below, which read the parser's own
+// "currently filling in" pointer and would otherwise be steered by this call.
+static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item,
+                                                     BareosResource* res)
+{
+  char* base = reinterpret_cast<char*>(res);
+  return static_cast<void*>(base + item.offset);
+}
+
 static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)
 {
-  char* base = reinterpret_cast<char*>(*item.allocated_resource);
-  return static_cast<void*>(base + item.offset);
+  return CalculateAddressOfMemberVariable(item, *item.allocated_resource);
+}
+
+template <typename P>
+P GetItemVariable(const ResourceItem& item, BareosResource* res)
+{
+  void* p = CalculateAddressOfMemberVariable(item, res);
+  return *(static_cast<typename std::remove_reference<P>::type*>(p));
 }
 
 template <typename P> P GetItemVariable(const ResourceItem& item)
 {
-  void* p = CalculateAddressOfMemberVariable(item);
-  return *(static_cast<typename std::remove_reference<P>::type*>(p));
+  return GetItemVariable<P>(item, *item.allocated_resource);
 }
 
 template <typename P> P GetItemVariablePointer(const ResourceItem& item)
