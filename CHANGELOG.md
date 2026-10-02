@@ -110,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2777]
 - bareosfd: fix misusing the python api [PR #2810]
 - plugins: (debian) add missing data from /etc/postgresql [PR #2827]
+- traymon: fix crash when trying to connecting to fd/sd [PR #2857]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2411,4 +2412,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
+[PR #2857]: https://github.com/bareos/bareos/pull/2857
 [unreleased]: https://github.com/bareos/bareos/tree/master
