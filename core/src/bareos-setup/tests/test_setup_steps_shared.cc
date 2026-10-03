@@ -662,6 +662,51 @@ TEST(BareosSetupUnattended, PropagatesPackageInstallationFailure)
       }));
 }
 
+TEST(BareosSetupBoris, SelectsArtworkUsingLocalePrecedence)
+{
+  const auto ascii = BorisArtwork("C", "", "");
+  const auto utf8 = BorisArtwork("C.UTF-8", "", "");
+  EXPECT_NE(ascii, utf8);
+  EXPECT_EQ(BorisArtwork("", "", ""), ascii);
+  EXPECT_EQ(BorisArtwork("POSIX", "", "en_US.UTF-8"), ascii);
+  EXPECT_EQ(BorisArtwork("C", "en_US.UTF-8", "en_US.UTF-8"), ascii);
+  EXPECT_EQ(BorisArtwork("", "C", "en_US.UTF-8"), ascii);
+  EXPECT_EQ(BorisArtwork("", "en_US.utf8", "C"), utf8);
+  EXPECT_EQ(BorisArtwork("", "", "en_US.UTF-8"), utf8);
+  EXPECT_EQ(BorisArtwork("en_US.UtF-8@modifier", "C", "C"), utf8);
+  EXPECT_EQ(BorisArtwork("UTF8", "", ""), utf8);
+  EXPECT_EQ(BorisArtwork("en_US", "", ""), ascii);
+  EXPECT_EQ(BorisArtwork("en_US.ISO-8859-1", "", ""), ascii);
+  EXPECT_EQ(BorisArtwork("en_US.UTF-8-invalid", "", ""), ascii);
+  EXPECT_TRUE(std::all_of(ascii.begin(), ascii.end(),
+                          [](unsigned char c) { return c < 128; }));
+  EXPECT_EQ(std::count(ascii.begin(), ascii.end(), '\n'), 17);
+  EXPECT_EQ(std::count(utf8.begin(), utf8.end(), '\n'), 17);
+  EXPECT_TRUE(ascii.starts_with("               /\\\n"));
+  EXPECT_TRUE(utf8.starts_with("               ╱╲\n"));
+  EXPECT_NE(utf8.find("╱════════╲"), std::string_view::npos);
+  EXPECT_NE(ascii.find("/========\\"), std::string_view::npos);
+}
+
+TEST(BareosSetupBoris, PrintsOnceInUnattendedDryRun)
+{
+  SetupContext context(true);
+  UnattendedSetupOptions options;
+  options.override_repository_urls = {"https://ci.example/build/EL_9"};
+  const char* lc_all = std::getenv("LC_ALL");
+  const char* lc_ctype = std::getenv("LC_CTYPE");
+  const char* lang = std::getenv("LANG");
+  const auto art = BorisArtwork(lc_all ? lc_all : "", lc_ctype ? lc_ctype : "",
+                                lang ? lang : "");
+  testing::internal::CaptureStdout();
+  const int result = RunUnattendedSetup(context, options);
+  const auto output = testing::internal::GetCapturedStdout();
+  EXPECT_EQ(result, 0);
+  EXPECT_TRUE(output.starts_with(art));
+  EXPECT_EQ(output.find(art, art.size()), std::string::npos);
+  EXPECT_EQ(output.find("Bareos Setup\n"), art.size());
+}
+
 TEST(BareosSetupTui, PreservesInteractiveCommunityDryRun)
 {
   const auto os = DetectOs();
@@ -679,6 +724,13 @@ TEST(BareosSetupTui, PreservesInteractiveCommunityDryRun)
   EXPECT_NE(output.find("Repository (community/subscription)"),
             std::string::npos);
   EXPECT_NE(output.find("bareos-webui-proxy"), std::string::npos);
+  const char* lc_all = std::getenv("LC_ALL");
+  const char* lc_ctype = std::getenv("LC_CTYPE");
+  const char* lang = std::getenv("LANG");
+  const auto art = BorisArtwork(lc_all ? lc_all : "", lc_ctype ? lc_ctype : "",
+                                lang ? lang : "");
+  EXPECT_TRUE(output.starts_with(art));
+  EXPECT_EQ(output.find(art, art.size()), std::string::npos);
 }
 
 TEST(BareosSetupCommandRunner, FindsToolPresentInPath)

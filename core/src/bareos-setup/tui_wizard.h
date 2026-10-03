@@ -26,8 +26,14 @@
 #ifndef BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
 #define BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
 
+#include <string_view>
+
 #include "command_runner.h"
 #include "setup_steps.h"
+
+std::string_view BorisArtwork(std::string_view lc_all,
+                              std::string_view lc_ctype,
+                              std::string_view lang);
 
 struct UnattendedSetupOptions {
   std::vector<std::string> override_repository_urls;

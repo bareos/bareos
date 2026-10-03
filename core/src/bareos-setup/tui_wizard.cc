@@ -210,9 +210,68 @@ std::string PromptRepoOsPath(const OsInfo& os)
 
 }  // namespace
 
+std::string_view BorisArtwork(std::string_view lc_all,
+                              std::string_view lc_ctype,
+                              std::string_view lang)
+{
+  const auto locale = !lc_all.empty()     ? lc_all
+                      : !lc_ctype.empty() ? lc_ctype
+                                          : lang;
+  const auto dot = locale.find('.');
+  auto encoding
+      = dot == std::string_view::npos ? locale : locale.substr(dot + 1);
+  encoding = encoding.substr(0, encoding.find('@'));
+  std::string normalized(encoding);
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  if (normalized == "utf-8" || normalized == "utf8") {
+    return R"boris(               ╱╲
+              ╱  ╲__
+             ╱      ╲
+            ╱   ╱╲___╲
+           ╱════════╲
+      ╭──╮╱__________╲
+      │  ╰╯  ●    ●  ╲        ╲ │ ╱
+      ╰╮     ╭────╮  │       ── ✧ ──
+       │     │ ᴥ  │  │         ╱ │ ╲
+       ╰╮    ╰─┬──╯ ╭╯           │
+       ╱╰───────────╯╲____╭──╮───│
+      ╱ ╱   ╭────╮   ╭───╰──╯   │
+     ╱ ╱    │    │   │╲         │
+    ╱_✧╲    ╰────╯   ╱✧╲
+   ╱____╲   ╭──╮    ╱___╲
+        ╰───╯  ╰────╯
+
+)boris";
+  }
+  return R"boris(               /\
+              /  \__
+             /      \
+            /   /\___\
+           /========\
+      .--./__________\
+      |  \/  o    o  \        \ | /
+      '-.    .----.  |       -- * --
+        |    | oo |  |         / | \
+        '.   '--+-' .'           |
+        /'---------' \____.--.---|
+       / /   .----.   .---'--'   |
+      / /    |    |   |\        |
+     /_* \   '----'   / *\
+    /_____\  .--.    /____\
+          '--'  '----'
+
+)boris";
+}
+
 static int RunWizard(SetupContext& context,
                      const UnattendedSetupOptions* unattended)
 {
+  const char* lc_all = std::getenv("LC_ALL");
+  const char* lc_ctype = std::getenv("LC_CTYPE");
+  const char* lang = std::getenv("LANG");
+  std::cout << BorisArtwork(lc_all ? lc_all : "", lc_ctype ? lc_ctype : "",
+                            lang ? lang : "");
   std::cout << "Bareos Setup\n\n";
   const auto os = DetectOs();
   if (!IsSupportedPackageManager(os.pkg_mgr)) {
