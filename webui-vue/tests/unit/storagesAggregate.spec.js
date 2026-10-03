@@ -23,7 +23,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedAutochangerStorages,
-  fetchAggregatedStoragesState,
+  fetchAggregatedPoolsState,
+  fetchAggregatedStorages,
+  mergeStorageConfig,
 } from '../../src/composables/storagesAggregate.js'
 
 class FakeWebSocket {
@@ -71,106 +73,85 @@ describe('storages aggregate helpers', () => {
     vi.useRealTimers()
   })
 
-  it('merges storages, pools, and volumes across multiple directors', async () => {
-    const loading = fetchAggregatedStoragesState(
+  function respond(socket, commands, command, data) {
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'response', id: commands.get(command), data }),
+    })
+  }
+
+  function respondError(socket, commands, command, message) {
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'error', id: commands.get(command), message }),
+    })
+  }
+
+  async function openSockets(expectedCommands) {
+    const sockets = FakeWebSocket.instances.slice(0, 2)
+    for (const socket of sockets) {
+      socket.open()
+      socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    }
+    await vi.waitFor(() => {
+      for (const socket of sockets) {
+        expect(socket.sent).toHaveLength(expectedCommands + 1)
+      }
+    })
+    return sockets.map(socket => ({
+      socket,
+      commands: new Map(socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })),
+    }))
+  }
+
+  it('merges catalog storages with the director configuration', () => {
+    expect(mergeStorageConfig(
+      [
+        { storageid: '1', name: 'File', autochanger: '0' },
+        { storageid: '2', name: 'Removed', autochanger: '1' },
+      ],
       {
-        username: 'admin',
-        password: 'secret',
+        File: { name: 'File', address: 'sd1', port: 9103, mediatype: 'File' },
+        Tape: { name: 'Tape', address: 'sd2', mediatype: 'LTO', autochanger: true, enabled: false },
+      }
+    )).toEqual([
+      {
+        storageid: '1', name: 'File', autochanger: '0', inconfig: true,
+        address: 'sd1', port: '9103', mediatype: 'File', enabled: true,
       },
+      { storageid: '2', name: 'Removed', autochanger: '1' },
+      {
+        name: 'Tape', inconfig: true, address: 'sd2', mediatype: 'LTO',
+        autochanger: true, enabled: false,
+      },
+    ])
+  })
+
+  it('keeps catalog storages when show storages is unavailable', () => {
+    expect(mergeStorageConfig([{ name: 'File', autochanger: '1' }], null)).toEqual([
+      { name: 'File', autochanger: '1' },
+    ])
+  })
+
+  it('merges storages across multiple directors', async () => {
+    const loading = fetchAggregatedStorages(
+      { username: 'admin', password: 'secret' },
       ['prod-a', 'prod-b']
     )
 
-    const socketA = FakeWebSocket.instances[0]
-    const socketB = FakeWebSocket.instances[1]
-    socketA.open()
-    socketB.open()
+    const [a, b] = await openSockets(2)
 
-    socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
-    await vi.waitFor(() => {
-      expect(socketA.sent).toHaveLength(4)
-      expect(socketB.sent).toHaveLength(4)
+    respond(a.socket, a.commands, 'list storages', {
+      storages: [{ name: 'store-a', autochanger: '0' }],
     })
-
-    const socketCommands = (socket) => new Map(
-      socket.sent.slice(1).map((payload) => {
-        const command = JSON.parse(payload)
-        return [command.command, command.id]
-      })
-    )
-
-    const commandsA = socketCommands(socketA)
-    const commandsB = socketCommands(socketB)
-
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('list storages'),
-        data: {
-          storages: [{ name: 'store-a', autochanger: '0', enabled: '1' }],
-        },
-      }),
+    respond(a.socket, a.commands, 'show storages', {
+      storages: { 'store-a': { name: 'store-a', address: 'sd-a', mediatype: 'File' } },
     })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('llist pools'),
-        data: {
-          pools: [{
-            name: 'Full',
-            numvols: '1',
-            maxvols: '10',
-            prunablevolumes: '1',
-            prunablejobs: '2',
-            prunablebytes: '33',
-          }],
-        },
-      }),
+    respond(b.socket, b.commands, 'list storages', {
+      storages: [{ name: 'store-b', autochanger: '1' }],
     })
-    socketA.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsA.get('llist volumes'),
-        data: {
-          volumes: [{ volumename: 'Vol-A', pool: 'Full', volbytes: '11' }],
-        },
-      }),
-    })
-
-    socketB.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsB.get('list storages'),
-        data: {
-          storages: [{ name: 'store-b', autochanger: '1', enabled: '0' }],
-        },
-      }),
-    })
-    socketB.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsB.get('llist pools'),
-        data: {
-          pools: [{
-            name: 'Full',
-            numvols: '2',
-            maxvols: '20',
-            prunablevolumes: '0',
-            prunablejobs: '0',
-            prunablebytes: '0',
-          }],
-        },
-      }),
-    })
-    socketB.onmessage?.({
-      data: JSON.stringify({
-        type: 'response',
-        id: commandsB.get('llist volumes'),
-        data: {
-          volumes: [{ volumename: 'Vol-B', pool: 'Full', volbytes: '22' }],
-        },
-      }),
-    })
+    respondError(b.socket, b.commands, 'show storages', 'show: permission denied')
 
     await expect(loading).resolves.toEqual({
       storages: [
@@ -178,6 +159,9 @@ describe('storages aggregate helpers', () => {
           scopeKey: 'prod-a:store-a',
           director: 'prod-a',
           name: 'store-a',
+          address: 'sd-a',
+          mediatype: 'File',
+          autochanger: false,
           enabled: true,
         }),
         expect.objectContaining({
@@ -185,9 +169,49 @@ describe('storages aggregate helpers', () => {
           director: 'prod-b',
           name: 'store-b',
           autochanger: true,
-          enabled: false,
+          enabled: true,
         }),
       ],
+      directorErrors: [],
+    })
+  })
+
+  it('merges pools and volumes across multiple directors', async () => {
+    const loading = fetchAggregatedPoolsState(
+      { username: 'admin', password: 'secret' },
+      ['prod-a', 'prod-b']
+    )
+
+    const [a, b] = await openSockets(2)
+
+    respond(a.socket, a.commands, 'llist pools', {
+      pools: [{
+        name: 'Full',
+        numvols: '1',
+        maxvols: '10',
+        prunablevolumes: '1',
+        prunablejobs: '2',
+        prunablebytes: '33',
+      }],
+    })
+    respond(a.socket, a.commands, 'llist volumes', {
+      volumes: [{ volumename: 'Vol-A', pool: 'Full', volbytes: '11', comment: 'offsite' }],
+    })
+    respond(b.socket, b.commands, 'llist pools', {
+      pools: [{
+        name: 'Full',
+        numvols: '2',
+        maxvols: '20',
+        prunablevolumes: '0',
+        prunablejobs: '0',
+        prunablebytes: '0',
+      }],
+    })
+    respond(b.socket, b.commands, 'llist volumes', {
+      volumes: [{ volumename: 'Vol-B', pool: 'Full', volbytes: '22' }],
+    })
+
+    await expect(loading).resolves.toEqual({
       pools: [
         expect.objectContaining({
           scopeKey: 'prod-a:Full',
@@ -212,6 +236,7 @@ describe('storages aggregate helpers', () => {
           director: 'prod-a',
           volumename: 'Vol-A',
           volbytes: 11,
+          comment: 'offsite',
         }),
         expect.objectContaining({
           scopeKey: 'prod-b:Vol-B',
