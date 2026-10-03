@@ -680,12 +680,22 @@ TEST(BareosSetupBoris, SelectsArtworkUsingLocalePrecedence)
   EXPECT_EQ(BorisArtwork("en_US.UTF-8-invalid", "", ""), ascii);
   EXPECT_TRUE(std::all_of(ascii.begin(), ascii.end(),
                           [](unsigned char c) { return c < 128; }));
-  EXPECT_EQ(std::count(ascii.begin(), ascii.end(), '\n'), 17);
-  EXPECT_EQ(std::count(utf8.begin(), utf8.end(), '\n'), 17);
+  EXPECT_EQ(std::count(ascii.begin(), ascii.end(), '\n'), 18);
+  EXPECT_EQ(std::count(utf8.begin(), utf8.end(), '\n'), 18);
   EXPECT_TRUE(ascii.starts_with("               /\\\n"));
   EXPECT_TRUE(utf8.starts_with("               ╱╲\n"));
   EXPECT_NE(utf8.find("╱════════╲"), std::string_view::npos);
   EXPECT_NE(ascii.find("/========\\"), std::string_view::npos);
+  EXPECT_NE(ascii.find("       / /    <|>     .---'--'  |\n"),
+            std::string_view::npos);
+  EXPECT_NE(utf8.find("      ╱ ╱     ┼      ╭───╰──╯   │\n"),
+            std::string_view::npos);
+  EXPECT_TRUE(
+      ascii.ends_with("         '------------'\n"
+                      "          (___)  (___)\n\n"));
+  EXPECT_TRUE(
+      utf8.ends_with("        ╰───────────╯\n"
+                     "          ╰──╯ ╰──╯\n\n"));
 }
 
 TEST(BareosSetupBoris, PrintsOnceInUnattendedDryRun)
