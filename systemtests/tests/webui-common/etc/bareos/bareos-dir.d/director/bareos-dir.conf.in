@@ -2,6 +2,9 @@ Director {                            # define myself
   Name = bareos-dir
   QueryFile = "@scriptdir@/query.sql"
   Maximum Concurrent Jobs = 10
+  # The web UI opens several director sessions in parallel, and in
+  # multi-director mode two director names share this one daemon.
+  Maximum Console Connections = 100
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes

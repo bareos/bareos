@@ -19,16 +19,23 @@
    02110-1301, USA.
  */
 
-import { restorePluginHints } from '../data/restorePluginHints.js'
+import { quoteDirectorString } from './directorStrings.js'
 import { resolveJobLevelCode } from './jobLevels.js'
+
+export const DEFAULT_RELOCATION_SAMPLE_PATH = 'C:/Users/Alice/Documents/report.pdf'
 
 export function getRestoreBrowserPlaceholder({
   browserError,
   loadingBrowser,
+  buildingCache,
   hasSelectedJob,
 }) {
   if (browserError) {
     return 'error'
+  }
+
+  if (buildingCache && hasSelectedJob) {
+    return 'building-cache'
   }
 
   if (loadingBrowser && hasSelectedJob) {
@@ -111,17 +118,21 @@ export function filterRestoreSourceClients(clients, directorName) {
 export function buildRestoreSourceQuery(query, {
   clientName,
   directorName,
+  filesetName,
   jobid,
   mergeJobs,
   mergeFilesets,
+  sourceMode,
 } = {}) {
   const nextQuery = { ...query }
 
   delete nextQuery.client
   delete nextQuery.director
+  delete nextQuery.fileset
   delete nextQuery.jobid
   delete nextQuery.mergejobs
   delete nextQuery.mergefilesets
+  delete nextQuery.mode
 
   if (clientName) {
     nextQuery.client = clientName
@@ -129,6 +140,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (directorName) {
     nextQuery.director = directorName
+  }
+
+  if (filesetName) {
+    nextQuery.fileset = filesetName
   }
 
   if (jobid !== null && jobid !== undefined && jobid !== '') {
@@ -141,6 +156,10 @@ export function buildRestoreSourceQuery(query, {
 
   if (typeof mergeFilesets === 'boolean') {
     nextQuery.mergefilesets = mergeFilesets ? '1' : '0'
+  }
+
+  if (sourceMode === 'latest' || sourceMode === 'browse') {
+    nextQuery.mode = sourceMode
   }
 
   return nextQuery
@@ -207,11 +226,332 @@ export function buildRestoreBvfsRestoreCommand({
   return parts.join(' ')
 }
 
+export function buildRestoreRunCommand({
+  restoreJob,
+  backupClient,
+  restoreClient,
+  storage,
+  bootstrap,
+  files,
+  catalog,
+  backupFormat,
+  where,
+  regexWhere,
+  replace,
+  pluginOptions,
+  comment,
+  when,
+  priority,
+  yes = false,
+} = {}) {
+  let command = `run job=${quoteDirectorString(restoreJob ?? '')}`
+
+  const appendQuoted = (key, value) => {
+    if (value === null || value === undefined || value === '') {
+      return
+    }
+    command += ` ${key}=${quoteDirectorString(value)}`
+  }
+
+  appendQuoted('client', backupClient)
+  appendQuoted('restoreclient', restoreClient)
+  appendQuoted('storage', storage)
+  appendQuoted('bootstrap', bootstrap)
+
+  if (Number.isInteger(files) && files > 0) {
+    command += ` files=${files}`
+  }
+
+  appendQuoted('catalog', catalog)
+  appendQuoted('backupformat', backupFormat)
+
+  if (regexWhere) {
+    appendQuoted('regexwhere', regexWhere)
+  } else {
+    appendQuoted('where', where)
+  }
+
+  if (replace) {
+    command += ` replace=${replace}`
+  }
+
+  appendQuoted('pluginoptions', pluginOptions)
+  appendQuoted('comment', comment)
+  appendQuoted('when', when)
+
+  if (Number.isInteger(priority) && priority > 0) {
+    command += ` priority=${priority}`
+  }
+
+  if (yes) {
+    command += ' yes'
+  }
+
+  return command
+}
+
+export function buildRestoreCommand({
+  bvfsPath,
+  backupClient,
+  restoreClient,
+  restoreJob,
+  where,
+  regexWhere,
+  replace,
+  pluginOptions,
+  when,
+  priority,
+  yes = false,
+} = {}) {
+  let command = `restore file=?${bvfsPath ?? ''}`
+
+  const appendQuoted = (key, value) => {
+    if (value === null || value === undefined || value === '') {
+      return
+    }
+    command += ` ${key}=${quoteDirectorString(value)}`
+  }
+
+  appendQuoted('client', backupClient)
+  appendQuoted('restoreclient', restoreClient)
+  appendQuoted('restorejob', restoreJob)
+
+  if (regexWhere) {
+    appendQuoted('regexwhere', regexWhere)
+  } else {
+    appendQuoted('where', where)
+  }
+
+  appendQuoted('replace', replace)
+  appendQuoted('pluginoptions', pluginOptions)
+  appendQuoted('when', when)
+
+  if (Number.isInteger(priority) && priority > 0) {
+    command += ` priority=${priority}`
+  }
+
+  if (yes) {
+    command += ' yes'
+  }
+
+  return command
+}
+
+function escapeRegexWherePart(value) {
+  return String(value ?? '').replace(/[!\\]/g, '\\$&')
+}
+
+export function buildRegexWhereFromRelocationRules({
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+} = {}) {
+  const parts = []
+  if (stripPrefix) {
+    parts.push(`!${escapeRegexWherePart(stripPrefix)}!!i`)
+  }
+  if (addSuffix) {
+    parts.push(`!([^/])$!$1${escapeRegexWherePart(addSuffix)}!`)
+  }
+  if (addPrefix) {
+    parts.push(`!^!${escapeRegexWherePart(addPrefix)}!`)
+  }
+  return parts.join(',')
+}
+
+export function buildRegexWhereFromRelocationMode({
+  relocationMode = 'none',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+  regexWhere = '',
+} = {}) {
+  if (relocationMode === 'where') {
+    relocationMode = 'none'
+  }
+
+  switch (relocationMode) {
+    case 'windows-drive':
+      return sourceDrive && targetDrive
+        ? `!^${escapeRegexWherePart(sourceDrive)}!${escapeRegexWherePart(targetDrive)}!i`
+        : ''
+    case 'replace-prefix':
+      return sourcePrefix && targetPrefix
+        ? `!^${escapeRegexWherePart(sourcePrefix)}!${escapeRegexWherePart(targetPrefix)}!i`
+        : ''
+    case 'strip-prefix':
+      return stripPrefix ? `!${escapeRegexWherePart(stripPrefix)}!!i` : ''
+    case 'add-suffix':
+      return addSuffix ? `!([^/])$!$1${escapeRegexWherePart(addSuffix)}!` : ''
+    case 'custom-regex':
+    case 'regex':
+      return regexWhere
+    case 'rules':
+      return buildRegexWhereFromRelocationRules({
+        stripPrefix,
+        addPrefix: addPrefix || targetPrefix,
+        addSuffix,
+      })
+    default:
+      return ''
+  }
+}
+
+export function resolveRestoreRegexWhere({
+  relocationMode = 'none',
+  regexWhere = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
+} = {}) {
+  return buildRegexWhereFromRelocationMode({
+    relocationMode,
+    regexWhere,
+    stripPrefix,
+    addPrefix,
+    addSuffix,
+    sourceDrive,
+    targetDrive,
+    sourcePrefix,
+    targetPrefix,
+  })
+}
+
+function unescapeRegexWherePart(value) {
+  return String(value ?? '').replace(/\\([!\\])/g, '$1')
+}
+
+function parseRegexWhereExpression(expression) {
+  const text = String(expression ?? '')
+  if (!text) {
+    return []
+  }
+
+  const parts = []
+  let offset = 0
+  while (offset < text.length) {
+    const delimiter = text[offset]
+    if (!delimiter || delimiter === ',' || delimiter.match(/\s/)) {
+      offset += 1
+      continue
+    }
+
+    const fields = []
+    let field = ''
+    let escaped = false
+    offset += 1
+    while (offset < text.length && fields.length < 2) {
+      const char = text[offset]
+      if (escaped) {
+        field += `\\${char}`
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === delimiter) {
+        fields.push(field)
+        field = ''
+      } else {
+        field += char
+      }
+      offset += 1
+    }
+
+    let flags = ''
+    while (offset < text.length && text[offset] !== ',') {
+      flags += text[offset]
+      offset += 1
+    }
+    if (offset < text.length && text[offset] === ',') {
+      offset += 1
+    }
+
+    if (fields.length === 2) {
+      parts.push({
+        pattern: unescapeRegexWherePart(fields[0]),
+        replacement: unescapeRegexWherePart(fields[1]),
+        flags,
+      })
+    }
+  }
+  return parts
+}
+
+function applyRegexWherePreview(samplePath, regexWhere) {
+  let result = String(samplePath ?? '')
+  for (const part of parseRegexWhereExpression(regexWhere)) {
+    try {
+      const flags = part.flags.includes('i') ? 'i' : ''
+      result = result.replace(new RegExp(part.pattern, flags), part.replacement)
+    } catch {
+      return regexWhere || result
+    }
+  }
+  return result
+}
+
+export function previewRelocatedPath({
+  samplePath = '',
+  relocationSample = '',
+  relocationMode = 'none',
+  where = '',
+  regexWhere = '',
+  stripPrefix = '',
+  addPrefix = '',
+  addSuffix = '',
+  sourceDrive = 'C:',
+  targetDrive = 'D:',
+  sourcePrefix = '',
+  targetPrefix = '',
+} = {}) {
+  const previewPath = samplePath || relocationSample
+
+  if (relocationMode === 'where' || relocationMode === 'none') {
+    return where || previewPath || ''
+  }
+
+  if (relocationMode === 'rules') {
+    let result = String(previewPath ?? '')
+    if (stripPrefix && result.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
+      result = result.slice(stripPrefix.length)
+    }
+    if (addSuffix && result.length > 0) {
+      result += addSuffix
+    }
+    if (addPrefix) {
+      result = `${addPrefix}${result}`
+    }
+    return result
+  }
+
+  const resolvedRegexWhere = buildRegexWhereFromRelocationMode({
+    relocationMode,
+    regexWhere,
+    stripPrefix,
+    addPrefix,
+    addSuffix,
+    sourceDrive,
+    targetDrive,
+    sourcePrefix,
+    targetPrefix,
+  })
+  return applyRegexWherePreview(previewPath, resolvedRegexWhere)
+}
+
 export function buildRestoreBackupOption(
   backup,
   {
     formatBytes = value => String(value),
+    formatTime = value => value,
     filesLabel = 'files',
+    showClient = false,
   } = {}
 ) {
   const jobid = backup?.jobid ?? ''
@@ -220,9 +560,13 @@ export function buildRestoreBackupOption(
   const starttime = backup?.starttime ?? ''
   const jobbytes = Number(backup?.jobbytes ?? 0)
   const jobfiles = Number(backup?.jobfiles ?? 0)
+  const client = backup?.client ?? ''
+  const fileset = backup?.fileset ?? ''
+  const displayStarttime = formatTime(starttime)
   const secondary = [
     jobid !== '' ? `#${jobid}` : '',
-    starttime,
+    showClient && client ? client : '',
+    displayStarttime,
     Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
     Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
   ].filter(Boolean).join(' · ')
@@ -235,8 +579,334 @@ export function buildRestoreBackupOption(
     level,
     levelCode: resolveJobLevelCode(level),
     starttime,
+    displayStarttime,
+    client,
+    fileset,
     secondary,
+    absoluteSecondary: [
+      jobid !== '' ? `#${jobid}` : '',
+      showClient && client ? client : '',
+      starttime,
+      Number.isFinite(jobbytes) && jobbytes > 0 ? formatBytes(jobbytes) : '',
+      Number.isFinite(jobfiles) && jobfiles > 0 ? `${jobfiles} ${filesLabel}` : '',
+    ].filter(Boolean).join(' · '),
   }
+}
+
+// Narrows a list of raw backup job records (as returned by either a
+// per-client `llist backups` call or the client-agnostic `llist jobs`
+// browse-all-clients fallback) down to the ones matching the optional
+// fileset name and "at or before" start-time filters used by the restore
+// Source panel. `beforeFilter` is compared as a string prefix against the
+// catalog's `YYYY-MM-DD HH:MM:SS` starttime so a plain date (`YYYY-MM-DD`)
+// or a full timestamp both work.
+export function filterRestoreBackupsByCriteria(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const list = Array.isArray(backups) ? backups : []
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  const normalizedBefore = typeof beforeFilter === 'string' ? beforeFilter.trim() : ''
+
+  return list.filter((backup) => {
+    if (normalizedFileset && String(backup?.fileset ?? '') !== normalizedFileset) {
+      return false
+    }
+
+    if (normalizedBefore) {
+      const starttime = String(backup?.starttime ?? '')
+      if (!starttime || starttime > normalizedBefore) {
+        return false
+      }
+    }
+
+    return true
+  })
+}
+
+export function buildRestoreClientFilesetOptions(backups) {
+  const tuples = new Map()
+
+  for (const backup of Array.isArray(backups) ? backups : []) {
+    const client = String(backup?.client ?? '').trim()
+    const fileset = String(backup?.fileset ?? '').trim()
+    if (!client || !fileset) {
+      continue
+    }
+
+    const key = `${client}\u0000${fileset}`
+    const starttime = String(backup?.starttime ?? '')
+    const previous = tuples.get(key)
+    if (!previous || starttime > previous.latestStarttime) {
+      tuples.set(key, {
+        value: key,
+        label: `${fileset}@${client}`,
+        client,
+        fileset,
+        latestStarttime: starttime,
+      })
+    }
+  }
+
+  return [...tuples.values()].sort((left, right) => (
+    left.client.localeCompare(right.client)
+    || left.fileset.localeCompare(right.fileset)
+  ))
+}
+
+export function buildRestoreBackupChainOptions(
+  backups,
+  jobids,
+  {
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  const ids = Array.isArray(jobids)
+    ? jobids
+    : (typeof jobids === 'string' ? jobids.split(',') : [])
+  const wantedJobIds = new Set(
+    ids
+      .map(jobid => String(jobid ?? '').trim())
+      .filter(Boolean)
+  )
+
+  if (wantedJobIds.size === 0 || !Array.isArray(backups)) {
+    return []
+  }
+
+  return backups
+    .filter(backup => wantedJobIds.has(String(backup?.jobid ?? '').trim()))
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
+export function buildRestoreTimelinePoints(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  return filterRestoreBackupsByCriteria(backups, { filesetFilter })
+    .map(backup => buildRestoreBackupOption(backup, { formatBytes, formatTime }))
+    .sort((left, right) => (
+      left.starttime.localeCompare(right.starttime)
+      || Number(left.jobid) - Number(right.jobid)
+    ))
+}
+
+export function resolveRestoreTimelineSelection(points, selectedJobid) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selected = points.find(point => (
+      String(point?.jobid ?? '') === String(selectedJobid)
+    ))
+    if (selected) {
+      return selected
+    }
+  }
+
+  return points[points.length - 1] ?? null
+}
+
+// Steps to the previous/next individual restore point (backup job) in the
+// chronologically-sorted `points` list (as returned by
+// buildRestoreTimelinePoints), regardless of which restore chain each point
+// belongs to. Used for the "Older"/"Newer" navigation in the Restore
+// wizard's Custom source view, so those buttons walk backup jobs one at a
+// time instead of jumping whole restore chains.
+export function resolveAdjacentRestoreTimelinePoint(points, currentJobid, direction) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  const currentIndex = points.findIndex(point => (
+    String(point?.jobid ?? '') === String(currentJobid ?? '')
+  ))
+  if (currentIndex === -1) {
+    return null
+  }
+
+  const offset = direction === 'older' ? -1 : 1
+  return points[currentIndex + offset] ?? null
+}
+
+// 1-based position of `currentJobid` within the chronologically-sorted
+// `points` list, alongside the total count — e.g. to show "Restore point 3
+// of 12". Returns null if the job isn't found (or there are no points).
+export function resolveRestoreTimelinePointPosition(points, currentJobid) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null
+  }
+
+  const currentIndex = points.findIndex(point => (
+    String(point?.jobid ?? '') === String(currentJobid ?? '')
+  ))
+  if (currentIndex === -1) {
+    return null
+  }
+
+  return { current: currentIndex + 1, total: points.length }
+}
+
+export function buildRestoreBackupChains(
+  backups,
+  {
+    filesetFilter = '',
+    formatBytes = value => String(value),
+    formatTime = value => value,
+  } = {}
+) {
+  const points = buildRestoreTimelinePoints(backups, {
+    filesetFilter,
+    formatBytes,
+    formatTime,
+  })
+  const chains = []
+  let currentChain = null
+
+  for (const point of points) {
+    const startsChain = resolveJobLevelCode(point.level) === 'F' || !currentChain
+    if (startsChain) {
+      currentChain = {
+        value: String(point.jobid ?? `chain-${chains.length}`),
+        label: point.displayStarttime
+          ? `Full #${point.jobid} · ${point.displayStarttime}`
+          : `Full #${point.jobid}`,
+        rootJobid: point.jobid,
+        rootStarttime: point.starttime,
+        rootDisplayStarttime: point.displayStarttime,
+        jobs: [],
+      }
+      chains.push(currentChain)
+    }
+
+    currentChain.jobs.push(point)
+  }
+
+  return chains.map((chain, index) => {
+    const latestJob = chain.jobs[chain.jobs.length - 1] ?? null
+    return {
+      ...chain,
+      index,
+      latestJobid: latestJob?.jobid ?? null,
+      latestStarttime: latestJob?.starttime ?? chain.rootStarttime,
+      jobCount: chain.jobs.length,
+    }
+  })
+}
+
+export function resolveRestoreBackupChain(chains, selectedJobid) {
+  if (!Array.isArray(chains) || chains.length === 0) {
+    return null
+  }
+
+  if (selectedJobid !== null && selectedJobid !== undefined && selectedJobid !== '') {
+    const selectedChain = chains.find(chain => (
+      Array.isArray(chain?.jobs)
+      && chain.jobs.some(job => String(job?.jobid ?? '') === String(selectedJobid))
+    ))
+    if (selectedChain) {
+      return selectedChain
+    }
+  }
+
+  return chains[chains.length - 1] ?? null
+}
+
+export function resolveAdjacentRestoreBackupChain(chains, currentChain, direction) {
+  if (!Array.isArray(chains) || chains.length === 0 || !currentChain) {
+    return null
+  }
+
+  const currentIndex = chains.findIndex(chain => chain?.value === currentChain?.value)
+  if (currentIndex === -1) {
+    return null
+  }
+
+  const offset = direction === 'older' ? -1 : 1
+  return chains[currentIndex + offset] ?? null
+}
+
+// Resolves the newest backup job matching a client's already-loaded backup
+// list, narrowed to a specific fileset (required -- restoring "the latest
+// backup" only makes sense for a single client+fileset tuple) and an
+// optional "at or before" date, for the Restore page's "Latest Backup"
+// selection mode. Returns the jobid, or null if no fileset filter is given
+// or nothing matches. Backups are compared by starttime (falling back to
+// jobid as a tie-breaker), independent of any pre-existing sort order in
+// the input list.
+export function resolveLatestRestoreBackup(backups, {
+  filesetFilter = '',
+  beforeFilter = '',
+} = {}) {
+  const normalizedFileset = typeof filesetFilter === 'string' ? filesetFilter.trim() : ''
+  if (!normalizedFileset) {
+    return null
+  }
+
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter: normalizedFileset,
+    beforeFilter,
+  })
+
+  if (matches.length === 0) {
+    return null
+  }
+
+  const sortKey = backup => (
+    `${String(backup?.starttime ?? '')}#${String(backup?.jobid ?? '').padStart(12, '0')}`
+  )
+
+  const latest = matches.reduce((best, candidate) => (
+    sortKey(candidate) > sortKey(best) ? candidate : best
+  ))
+
+  return latest?.jobid ?? null
+}
+
+// True if a Full-level backup exists for the given fileset at or before the
+// given start time -- used by the Restore page's "Latest Backup" mode to
+// decide whether to show a "no Full backup found in this chain" warning.
+// The actual restore chain merging (.bvfs_get_jobids ... all) is still
+// performed server-side exactly as for a manually-picked job; this is only
+// a best-effort, client-side hint for the user.
+export function hasRestoreFullBackupInChain(backups, {
+  filesetFilter = '',
+  uptoStarttime = '',
+} = {}) {
+  const matches = filterRestoreBackupsByCriteria(backups, {
+    filesetFilter,
+    beforeFilter: uptoStarttime,
+  })
+
+  return matches.some(backup => resolveJobLevelCode(backup?.level) === 'F')
+}
+
+// Builds the sorted, de-duplicated `{ label, value }` options for the
+// restore Source panel's fileset filter from the catalog's `list filesets`
+// response.
+export function buildRestoreFilesetOptions(filesets) {
+  const names = new Set()
+
+  for (const [, fileset] of normalizeRestoreFilesetEntries(filesets)) {
+    const filesetName = fileset?.name ?? ''
+    if (filesetName) {
+      names.add(filesetName)
+    }
+  }
+
+  return [...names]
+    .sort((left, right) => left.localeCompare(right))
+    .map(name => ({ label: name, value: name }))
 }
 
 export function resolveRestoreBackupOption(options, jobid) {
@@ -349,36 +1019,187 @@ function normalizeRestorePluginHintAlias(value) {
   return String(value ?? '').trim().toLowerCase()
 }
 
-function extractRestorePluginDefinitionOption(definition, key) {
+export function extractRestorePluginDefinitionOption(definition, key) {
   const raw = String(definition?.raw ?? '')
   const match = raw.match(new RegExp(`:${key}=([^:]+)`, 'i'))
   return match?.[1]?.trim() ?? ''
 }
 
-const restorePluginHintAliases = new Map(
-  Object.entries(restorePluginHints).flatMap(([hintId, hint]) => ([
-    [normalizeRestorePluginHintAlias(hintId), hintId],
-    ...(hint.aliases ?? []).map(alias => [normalizeRestorePluginHintAlias(alias), hintId]),
-  ]))
-)
+// Builds { normalizedAlias -> hintId } for a { id: hint } dataset (as
+// fetched from the director's ".pluginhints" command, or an injected test
+// fixture with the same shape). Memoized per dataset object identity since
+// callers (Vue computed properties) may re-invoke resolution functions on
+// every render with the same, unchanged dataset reference.
+const restorePluginHintAliasesByDataset = new WeakMap()
 
-export function resolveRestorePluginHintId(definition) {
-  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
-  const moduleMatch = restorePluginHintAliases.get(
-    normalizeRestorePluginHintAlias(moduleName)
+function getRestorePluginHintAliases(hintsById) {
+  const hints = hintsById ?? {}
+  const cached = restorePluginHintAliasesByDataset.get(hints)
+  if (cached) {
+    return cached
+  }
+
+  const aliases = new Map(
+    Object.entries(hints).flatMap(([hintId, hint]) => ([
+      [normalizeRestorePluginHintAlias(hintId), hintId],
+      ...(hint?.aliases ?? []).map(alias => [normalizeRestorePluginHintAlias(alias), hintId]),
+    ]))
   )
+  restorePluginHintAliasesByDataset.set(hints, aliases)
+  return aliases
+}
+
+// hintsById is the { id: hint } dataset fetched from the director's
+// ".pluginhints" command (see stores/pluginHints.js) -- the single source
+// of truth for plugin restore hints. Pass an explicit fixture in tests.
+export function resolveRestorePluginHintId(definition, hintsById) {
+  const aliases = getRestorePluginHintAliases(hintsById)
+  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
+  const moduleMatch = aliases.get(normalizeRestorePluginHintAlias(moduleName))
   if (moduleMatch) {
     return moduleMatch
   }
 
   const directPluginName = normalizeRestorePluginHintAlias(definition?.pluginName)
-  const directMatch = restorePluginHintAliases.get(directPluginName)
+  const directMatch = aliases.get(directPluginName)
   if (directMatch) {
     return directMatch
   }
 
   return null
 }
+
+// Resolves a human-readable plugin name for display, preferring the
+// module_name-derived hint (e.g. "VMware") over the generic plugin loader
+// name (e.g. "bpipe", "python-fd", "grpc") that the FileSet actually invokes.
+export function resolveRestorePluginDisplayName(definition, hintsById) {
+  const hintId = resolveRestorePluginHintId(definition, hintsById)
+  return (hintId && hintsById?.[hintId]?.displayName) || definition?.pluginName || ''
+}
+
+// -- Structured Plugin Options editor model --------------------------------
+//
+// Mirrors core/src/dird/restore_plugin_hints.h's ParsePluginOptionsBlock/
+// BuildPluginOptionsBlock/ParsePluginOptionsDocument/
+// BuildPluginOptionsDocument (C++). The wire format is
+// "pluginname:key1=value1:key2=value2:...", one block per plugin; a
+// document (the interactive "pluginoptions=" value) is one or more
+// blocks separated by newlines, each still addressing exactly one
+// plugin (see GetPluginName() in filed/fd_plugins.cc, and
+// SendPluginOptions() in dird/fd_cmds.cc which sends one "pluginoptions"
+// protocol command per block).
+
+// Parses one "pluginname:key1=value1:key2=value2:..." block into
+// { pluginName, options: [{ key, value }] }. Options without "=" are
+// kept as flag-style options with an empty value.
+export function parsePluginOptionsBlock(block) {
+  const text = typeof block === 'string' ? block : ''
+  const separatorIndex = text.indexOf(':')
+  const pluginName = separatorIndex === -1 ? text : text.slice(0, separatorIndex)
+
+  const options = []
+  if (separatorIndex !== -1) {
+    for (const part of text.slice(separatorIndex + 1).split(':')) {
+      if (!part) {
+        continue
+      }
+      const equalsIndex = part.indexOf('=')
+      options.push(equalsIndex === -1
+        ? { key: part, value: '' }
+        : { key: part.slice(0, equalsIndex), value: part.slice(equalsIndex + 1) })
+    }
+  }
+
+  return { pluginName, options }
+}
+
+// Inverse of parsePluginOptionsBlock(): joins the plugin name and
+// options back into a single "pluginname:key=value:..." string.
+export function buildPluginOptionsBlock(block, separator = ':') {
+  const pluginName = block?.pluginName ?? ''
+  const options = Array.isArray(block?.options) ? block.options : []
+
+  let result = pluginName
+  for (const { key, value } of options) {
+    result += separator + key + (value ? `=${value}` : '')
+  }
+  return result
+}
+
+// Builds a starting { pluginName, options } block for a freshly-opened
+// Plugin Options editor, seeded from a FileSet's detected plugin
+// definition: the plugin loader name (e.g. "python"), plus -- if
+// present -- its "module_name=" option as a pre-filled row (e.g. for
+// "python:module_name=bareos-fd-vmware:file=...", this returns
+// { pluginName: "python", options: [{ key: "module_name",
+// value: "bareos-fd-vmware" }] }). Mirrors
+// BuildInitialPluginOptionsBlock() in dird/restore_plugin_hints.cc.
+// Other backup-only options (file=, reader=, ...) are intentionally
+// not copied, since they describe the backup source rather than
+// restore options.
+export function buildInitialPluginOptionsBlock(definition) {
+  const pluginName = definition?.pluginName ?? ''
+  const moduleName = extractRestorePluginDefinitionOption(definition, 'module_name')
+  const options = moduleName ? [{ key: 'module_name', value: moduleName }] : []
+  return { pluginName, options }
+}
+
+// Parses a full interactive "pluginoptions" document: one or more
+// blocks separated by newlines. Empty lines are skipped.
+export function parsePluginOptionsDocument(document) {
+  const text = typeof document === 'string' ? document : ''
+  return text.split('\n').filter(line => line.length > 0).map(parsePluginOptionsBlock)
+}
+
+// Inverse of parsePluginOptionsDocument(): joins blocks back into a
+// single newline-separated document.
+export function buildPluginOptionsDocument(blocks, separator = ':') {
+  return (Array.isArray(blocks) ? blocks : [])
+    .map(block => buildPluginOptionsBlock(block, separator))
+    .join('\n')
+}
+
+// Looks up the known hint (option names/statuses/descriptions) for a
+// plugin options block's editable plugin-name field, matching it the
+// same way resolveRestorePluginHintId() matches a FileSet's plugin
+// loader name (direct id/alias match; case-insensitive).
+export function findRestorePluginHintIdForBlockName(pluginName, hintsById) {
+  return resolveRestorePluginHintId({ pluginName }, hintsById)
+}
+
+// Resolves the hint for a whole plugin options block (name + options),
+// preferring a "module_name=" option row over the bare plugin name --
+// the same module_name-aware resolution resolveRestorePluginHintId()
+// already does for FileSet plugin definitions. Mirrors
+// ResolvePluginOptionsBlockHint() in dird/restore_plugin_hints.cc.
+// Fixes a bug where python-wrapped plugin blocks (module_name stored
+// as a row, not baked into pluginName) resolved to the generic
+// "python" loader hint instead of their real, curated hint.
+export function resolveBlockPluginHintId(block, hintsById) {
+  const raw = buildPluginOptionsBlock(block, ':')
+  return resolveRestorePluginHintId({ raw, pluginName: block?.pluginName }, hintsById)
+}
+
+// Finds, among a FileSet's detected plugin definitions, the one (if
+// any) whose resolved hint id matches the given hintId -- mirrors
+// FindMatchingPluginDefinition() in dird/restore_plugin_hints.cc. Used
+// to source the "already in FileSet" option group's current values for
+// a Plugin Options editor block.
+//
+// Note: matching is purely by resolved hint identity, so if the
+// FileSet contains more than one definition of the same plugin type,
+// the first one found is used regardless of which block is being
+// edited. This is acceptable since the group is purely informational
+// (an example of already-configured values for that plugin type).
+export function findMatchingRestorePluginDefinition(hintId, definitions, hintsById) {
+  if (!hintId) {
+    return null
+  }
+  return (definitions ?? []).find(
+    definition => resolveRestorePluginHintId(definition, hintsById) === hintId
+  ) ?? null
+}
+
 
 export function buildRestorePluginOptionExample(pluginHint) {
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
@@ -390,26 +1211,66 @@ export function buildRestorePluginOptionExample(pluginHint) {
   return exampleOptions.join(pluginHint?.optionSeparator ?? ':')
 }
 
-export function getRestorePluginHints(pluginInfo) {
+// Buckets a hint's known options into three groups, mirroring
+// CategorizePluginOptions() in dird/restore_plugin_hints.cc:
+// - alreadyInFileset: options whose key is already present in the
+//   FileSet's own detected plugin definition (filesetOptionKeys) --
+//   shown read-only with their current FileSet value elsewhere.
+// - required: status === "required" options not already in the
+//   FileSet.
+// - optional: everything else, not already in the FileSet.
+// An option present in the FileSet is never also listed as required
+// or optional (already-in-fileset takes priority).
+export function categorizePluginOptions(pluginHint, filesetOptionKeys = []) {
+  const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
+  const filesetKeys = new Set(filesetOptionKeys ?? [])
+
+  const alreadyInFileset = []
+  const required = []
+  const optional = []
+
+  for (const option of options) {
+    if (filesetKeys.has(option.name)) {
+      alreadyInFileset.push(option)
+    } else if (option.status === 'required') {
+      required.push(option)
+    } else {
+      optional.push(option)
+    }
+  }
+
+  return { alreadyInFileset, required, optional }
+}
+
+// True when any of the hint's options is itself a config/defaults-file
+// path that can already supply other options' values (e.g.
+// "config_file", "mycnf", "defaultsfile"), mirroring
+// HintProvidesDefaultsElsewhere() in dird/restore_plugin_hints.cc.
+export function hintProvidesDefaultsElsewhere(pluginHint) {
+  const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
+  return options.some(option => option.providesDefaults === true)
+}
+
+export function getRestorePluginHints(pluginInfo, hintsById) {
   if (!pluginInfo) {
     return []
   }
 
   const hintIds = [...new Set(
     (pluginInfo.definitions ?? [])
-      .map(resolveRestorePluginHintId)
+      .map(definition => resolveRestorePluginHintId(definition, hintsById))
       .filter(Boolean)
   )]
 
   return hintIds.map((hintId) => ({
     id: hintId,
-    ...restorePluginHints[hintId],
-    example: buildRestorePluginOptionExample(restorePluginHints[hintId]),
+    ...hintsById[hintId],
+    example: buildRestorePluginOptionExample(hintsById[hintId]),
   }))
 }
 
-export function getAllRestorePluginHints() {
-  return Object.entries(restorePluginHints)
+export function getAllRestorePluginHints(hintsById) {
+  return Object.entries(hintsById ?? {})
     .map(([hintId, hint]) => ({
       id: hintId,
       ...hint,
@@ -418,7 +1279,7 @@ export function getAllRestorePluginHints() {
     .sort((left, right) => left.displayName.localeCompare(right.displayName))
 }
 
-export function buildRestorePluginFilesetDetails(filesets) {
+export function buildRestorePluginFilesetDetails(filesets, hintsById) {
   const pluginFilesets = new Map()
 
   for (const [name, fileset] of normalizeRestoreFilesetEntries(filesets)) {
@@ -439,13 +1300,18 @@ export function buildRestorePluginFilesetDetails(filesets) {
       description: fileset?.description ?? '',
       hasPlugin: definitions.length > 0,
       definitions,
-      pluginNames: [...new Set(definitions.map(definition => definition.pluginName).filter(Boolean))],
+      pluginNames: [...new Set(
+        definitions
+          .map(definition => resolveRestorePluginDisplayName(definition, hintsById))
+          .filter(Boolean)
+      )],
       optionKeys: [...new Set(definitions.flatMap(definition => definition.optionKeys))],
     })
   }
 
   return pluginFilesets
 }
+
 
 export function restoreBackupHasPluginOptions(backup) {
   return backup?.pluginjob === true
