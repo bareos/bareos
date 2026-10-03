@@ -143,6 +143,13 @@ Use ``--extra-package PACKAGE`` for additional test packages,
 ``--without-webui`` for a server without the WebUI, and ``--dry`` to preview
 commands without changing the host.
 
+Terminal and unattended modes display Boris the wizard once at startup,
+including dry runs and redirected output. The banner uses UTF-8 line art when
+the first nonempty locale setting among ``LC_ALL``, ``LC_CTYPE``, and ``LANG``
+specifies UTF-8; otherwise it uses plain ASCII. A terminal font with the
+appropriate glyphs is needed to display the UTF-8 version correctly.
+Browser mode, ``--help``, and ``--version`` do not display the terminal artwork.
+
 Tape support and additional repositories
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -213,7 +220,7 @@ destroy the catalog initialized by the installer.
 .. _section-bareos-setup-unknown-distribution:
 
 Unsupported distributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Bareos publishes repositories for a fixed set of distributions. If
 :command:`bareos-setup` cannot identify or automatically support the running
