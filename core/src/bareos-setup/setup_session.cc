@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
@@ -842,11 +843,10 @@ int RunSetupStepForTests(int fd,
   SetupContext setup_context(dry_run);
   const SessionContext context{setup_context, peer_is_loopback};
   json_error_t error{};
-  json_t* message = json_loads(json_message.c_str(), 0, &error);
-  if (!message) message = json_object();
-  const int result = RunStep(ws, step, message, context);
-  json_decref(message);
-  return result;
+  std::unique_ptr<json_t, decltype(&json_decref)> message(
+      json_loads(json_message.c_str(), 0, &error), &json_decref);
+  if (!message) message.reset(json_object());
+  return RunStep(ws, step, message.get(), context);
 }
 
 void RunSetupSession(int fd,
