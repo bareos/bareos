@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,7 +87,7 @@ bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
   mr->VolJobs = mr->VolFiles = mr->VolBlocks = mr->VolErrors = 0;
-  mr->VolBytes = 1;
+  mr->VolBytes = 0;
   mr->FirstWritten = mr->LastWritten = 0;
   mr->RecycleCount++;
   mr->set_first_written = true;
