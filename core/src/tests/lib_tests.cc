@@ -326,3 +326,16 @@ TEST(BareosVersion, try_parse)
 #undef BAD
 #undef GOOD
 }
+
+TEST(util, split_string_view)
+{
+#define EXPECT_VEC(Expr, ...) \
+  EXPECT_EQ((Expr), (std::vector<std::string_view> __VA_ARGS__))
+  EXPECT_VEC(split_string_view("a,b,c", ','), {"a", "b", "c"});
+  EXPECT_VEC(split_string_view("a,b,", ','), {"a", "b", ""});
+  EXPECT_VEC(split_string_view("a,bc", ','), {"a", "bc"});
+  EXPECT_VEC(split_string_view("", ','), {});
+  EXPECT_VEC(split_string_view("abc", ','), {"abc"});
+  EXPECT_VEC(split_string_view(",a,,c", ','), {"", "a", "", "c"});
+#undef EXPECT_VEC
+}

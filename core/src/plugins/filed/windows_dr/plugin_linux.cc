@@ -65,8 +65,8 @@ const PluginInformation my_info = {
     .plugin_date = "July 2025",
     .plugin_version = "1.0.0",
     .plugin_description
-    = "This plugin allows you to backup your windows system for disaster "
-      "recovery.",
+    = "This plugin allows you to restore your windows disaster "
+      "recovery image.",
     .plugin_usage = R"(barri-fd:<target>,
   where <target> is one of the following:
     files=file1,file2,file3 - restore the disks to the chosen files
@@ -654,6 +654,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 
     if (ending_start == path.npos) {
       fatal_msg(ctx, "cannot restore '{}': unknown file ending", path);
+      return bRC_Error;
     }
 
     auto ending = path.substr(ending_start);
