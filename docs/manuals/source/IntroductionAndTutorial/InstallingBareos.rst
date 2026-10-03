@@ -187,36 +187,6 @@ Adding EPEL alone is not a solution for these dependencies. Use
 ``--without-tape-support`` on such systems, or configure an entitled RHEL
 environment. Repository consent does not register or purchase an entitlement.
 
-In ``ci-scripts``, set ``USE_BAREOS_SETUP=yes`` in the Jenkins CI parameters.
-The new path applies to Linux ``bareos-postgresql`` and ``bareos-all-daemons``
-tests for package versions 25 and newer. Client-only, universal-client,
-Univention, legacy database, older-version, FreeBSD, and Windows tests retain
-their existing scripts. Update tests also retain their existing scripts.
-Supply exactly one ``REPOURL``; the CI scripts append their existing distribution
-mapping to it.
-
-``BAREOS_SETUP_TAPE_SUPPORT`` defaults to ``yes``. Jenkins sets it to ``auto``:
-only environments with the shipped UBI repository file omit tape support;
-other EL/RHEL environments retain it. ``BAREOS_SETUP_ALLOW_TAPE_REPOSITORIES``
-defaults to ``no``. The optional Jenkins ``testTapeRepositories`` parameter
-adds a separate EL server test with both tape support and repository consent,
-requiring an entitled environment where UBI lacks the dependencies.
-
-Publish a portable binary built from the same source revision as the packages
-and for the target architecture. Set ``BAREOS_SETUP_URL`` to its HTTPS download
-URL, for example
-``https://jenkins-stash.bareos.com/jenkins-bareos-PR-2784-61/bareos-setup-x86_64``.
-The CI scripts download and run it inside the test VM or container, then remove
-the temporary executable. Downloads and redirects are restricted to HTTPS.
-A missing URL or failed download fails the opted-in installation rather than
-silently falling back to bash.
-
-The installer owns the base catalog, generated administrator, and service
-startup. CI-specific resources, PHP WebUI test configuration, and daemon
-restarts after test configuration changes remain in the CI scripts. In
-particular, the old catalog drop/create sequence is skipped so it cannot
-destroy the catalog initialized by the installer.
-
 .. _section-bareos-setup-unknown-distribution:
 
 Unsupported distributions
