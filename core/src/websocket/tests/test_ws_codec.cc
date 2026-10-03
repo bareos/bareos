@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-#include "../ws_codec.h"
+#include "ws_codec.h"
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -218,6 +218,52 @@ TEST(WsCodec, HandshakePreservesBufferedFrameData)
   EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
             std::string::npos);
   EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, HandshakeWithParsedHeadersPreservesBufferedFrameData)
+{
+  SocketPair sockets;
+  const auto frame = BuildMaskedFrame(0x1u, "A");
+
+  WsCodec codec = WsCodec::Accept(sockets.local(), kValidHandshakeRequest,
+                                  frame, std::chrono::milliseconds(50),
+                                  std::chrono::milliseconds(50));
+  const auto response = ReadSome(sockets.peer());
+  EXPECT_NE(response.find("HTTP/1.1 101 Switching Protocols"),
+            std::string::npos);
+  EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, UpgradedConnectionReadsBufferedFrameData)
+{
+  SocketPair sockets;
+  const auto frame = BuildMaskedFrame(0x1u, "A");
+
+  auto codec = WsCodec::FromUpgradedConnection(sockets.local(), frame);
+  EXPECT_EQ(codec.RecvMessage(), "A");
+}
+
+TEST(WsCodec, UpgradedConnectionRejectsOversizedFrame)
+{
+  SocketPair sockets;
+  constexpr uint64_t oversized_payload = 1025;
+  const std::array<unsigned char, 10> header{
+      0x81,
+      127,
+      static_cast<unsigned char>(oversized_payload >> 56),
+      static_cast<unsigned char>(oversized_payload >> 48),
+      static_cast<unsigned char>(oversized_payload >> 40),
+      static_cast<unsigned char>(oversized_payload >> 32),
+      static_cast<unsigned char>(oversized_payload >> 24),
+      static_cast<unsigned char>(oversized_payload >> 16),
+      static_cast<unsigned char>(oversized_payload >> 8),
+      static_cast<unsigned char>(oversized_payload),
+  };
+  WriteAll(sockets.peer(), header.data(), header.size());
+
+  auto codec = WsCodec::FromUpgradedConnection(
+      sockets.local(), {}, std::chrono::milliseconds(50), 1024, 1024);
+  EXPECT_THROW(codec.RecvMessage(), std::runtime_error);
 }
 
 TEST(WsCodec, RejectsOversizedSingleFramePayload)

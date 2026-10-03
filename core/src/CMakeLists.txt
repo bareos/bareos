@@ -55,7 +55,12 @@ if(NOT HAVE_WIN32
    AND NOT HAVE_DARWIN_OS
    AND NOT client-only
 )
+  add_subdirectory(http)
+  add_subdirectory(websocket)
   add_subdirectory(webui-proxy)
+  if(ENABLE_BAREOS_SETUP)
+    add_subdirectory(bareos-setup)
+  endif()
 endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
