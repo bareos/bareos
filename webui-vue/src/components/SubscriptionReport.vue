@@ -7,6 +7,39 @@
       <div class="subscription-print-date">{{ t('Generated') }}: {{ generatedAt }}</div>
     </div>
 
+    <div v-if="data.subscription_accounting" class="q-mb-md">
+      <div>
+        {{ t('Size source') }}:
+        {{ data.subscription_accounting.source === 'measured'
+          ? t('Measured')
+          : data.subscription_accounting.source === 'mixed'
+            ? t('Measured and estimated')
+            : t('Estimated') }}
+      </div>
+      <div v-if="data.subscription_accounting.calculated_at">
+        {{ t('Accounting snapshot') }}: {{ data.subscription_accounting.calculated_at }}
+      </div>
+      <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0" class="text-warning">
+        {{ t('Estimated sizes for {count} of {total} Client/FileSet combinations', {
+          count: data.subscription_accounting.estimated_combinations,
+          total: data.subscription_accounting.combinations,
+        }) }}
+      </div>
+      <div v-if="!data.subscription_accounting.calculated_at" class="text-warning">
+        {{ t('No accounting snapshot is available; all sizes are estimates.') }}
+      </div>
+      <div v-if="data.subscription_accounting.calculated_at && data.subscription_accounting.stale"
+           class="text-warning">
+        {{ t('Accounting snapshot is more than 24 hours old.') }}
+      </div>
+      <div v-if="data.subscription_accounting.refresh_failed" class="text-warning">
+        {{ t('Latest accounting refresh failed.') }}
+      </div>
+      <div v-if="data.subscription_accounting.multiple_catalogs" class="text-warning">
+        {{ t('Multiple catalogs are not supported; only the first configured catalog is refreshed.') }}
+      </div>
+    </div>
+
     <!-- Meta info -->
     <table class="sub-meta-table q-mb-md">
       <tbody>
