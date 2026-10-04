@@ -267,7 +267,7 @@ import sys
 text = pathlib.Path(sys.argv[1]).read_text()
 result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
 row = result["accounting"][0]
-print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"])
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
 PY
 )"
 if [[ -z "$line" ]]; then
@@ -374,7 +374,7 @@ import sys
 text = pathlib.Path(sys.argv[1]).read_text()
 result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
 row = result["accounting"][0]
-print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"])
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
 PY
 )"
 if [[ -z "$line" ]]; then
