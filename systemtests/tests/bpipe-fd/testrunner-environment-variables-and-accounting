@@ -45,7 +45,7 @@ END_OF_DATA
     if grep -qF "Background refresh worker: idle." "$report" \
       && grep -qF "Real (File.LStat-based) subscription accounting report" \
         "$report" \
-      && grep -qF "${expected_chain_size} jobs in chain)." "$report"; then
+      && grep -qE "^SelfTest@bareos-fd[[:space:]]+.*[[:space:]]${expected_chain_size}$" "$report"; then
       return 0
     fi
     sleep 1
@@ -180,20 +180,16 @@ done
 
 if on_windows_host; then
   accounted_bytes=$payload_bytes
-  accounting_rule=st_size
+  accounting_rule=S
 else
   accounted_bytes=$((payload_blocks * 512))
-  accounting_rule='st_blocks\*512'
+  accounting_rule=B
 fi
 
 expect_grep \
-  "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 2 jobs in chain)\\." \
+  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*2$" \
   "${runner_tmp}/accounting-before-virtual-full.out" \
   "Subscription accounting did not count the original bpipe backup correctly"
-expect_grep \
-  "Logical size (st_size): ${payload_bytes} bytes\\." \
-  "${runner_tmp}/accounting-before-virtual-full.out" \
-  "Subscription accounting reported an incorrect logical bpipe size"
 
 virtual_full_log="${runner_tmp}/virtual-full.out"
 virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
@@ -234,14 +230,9 @@ expect_not_grep \
   "Virtual Full dropped the bpipe digest: corrected attributes reached the Director after the digest"
 
 expect_grep \
-  "bareos-fd / SelfTest: 1 files, ${accounted_bytes} bytes accounted (rule: ${accounting_rule}, 1 jobs in chain)\\." \
+  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*1$" \
   "${runner_tmp}/virtual-full-accounting.out" \
   "Subscription accounting changed after bpipe consolidation"
-expect_grep \
-  "Logical size (st_size): ${payload_bytes} bytes\\." \
-  "${runner_tmp}/virtual-full-accounting.out" \
-  "Subscription accounting reported an incorrect logical bpipe size" \
-  "after consolidation"
 
 cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
 

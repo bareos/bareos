@@ -33,6 +33,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
 #include "dird/ua_acct.h"
+#include "dird/subscription_accounting_table.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "dird/director_jcr_impl.h"
@@ -920,6 +921,7 @@ bool DoSubscriptionAccounting(UaContext* ua)
   uint64_t grand_total_files = 0;
   uint32_t accounted_tuples = 0;
   uint32_t excluded_tuples = 0;
+  std::vector<SubscriptionAccountingTableRow> table_rows;
 
   // Structured (.api 2 / WebUI) output, in addition to the plain-text
   // report above. ObjectKeyValue()/ArrayStart()/... calls are no-ops for
@@ -933,8 +935,9 @@ bool DoSubscriptionAccounting(UaContext* ua)
                                ? T_("no per-file data available (NDMP file "
                                     "history may be disabled)")
                                : T_("no usable backup chain found");
-      ua->SendMsg(T_("%s / %s: %s -- excluded (not guessed).\n"),
-                  row.ClientName.c_str(), row.FileSetName.c_str(), reason);
+      table_rows.push_back({row.FileSetName + "@" + row.ClientName, "-", "-",
+                            "-", "-", "-",
+                            std::string(T_("Excluded: ")) + reason});
       ua->send->ObjectStart();
       ua->send->ObjectKeyValue("client", row.ClientName.c_str());
       ua->send->ObjectKeyValue("fileset", row.FileSetName.c_str());
@@ -948,17 +951,14 @@ bool DoSubscriptionAccounting(UaContext* ua)
       continue;
     }
 
-    char ec1[50], ec2[50];
-    ua->SendMsg(
-        T_("%s / %s: %s files, %s bytes accounted (rule: %s, %zu jobs in "
-           "chain).\n"),
-        row.ClientName.c_str(), row.FileSetName.c_str(),
-        edit_uint64_with_commas(row.files, ec1),
-        edit_uint64_with_commas(row.bytes, ec2), row.rule.c_str(),
-        static_cast<size_t>(row.jobs_in_chain));
-
-    ua->SendMsg(T_("  Logical size (st_size): %s bytes.\n"),
-                edit_uint64_with_commas(row.logical_bytes, ec1));
+    char files[50], bytes[50], logical[50], jobs[50];
+    table_rows.push_back(
+        {row.FileSetName + "@" + row.ClientName,
+         edit_uint64_with_commas(row.files, files),
+         std::string(edit_uint64_with_suffix(row.bytes, bytes)) + "B",
+         std::string(edit_uint64_with_suffix(row.logical_bytes, logical)) + "B",
+         SubscriptionAccountingRuleCode(row.rule),
+         edit_uint64_with_commas(row.jobs_in_chain, jobs), ""});
 
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue("client", row.ClientName.c_str());
@@ -995,6 +995,26 @@ bool DoSubscriptionAccounting(UaContext* ua)
   }
 
   ua->send->ArrayEnd("accounting");
+
+  char total_files[50], total_bytes[50], total_logical[50];
+  const auto table = FormatSubscriptionAccountingTable(
+      {T_("FileSet@Client"), T_("Files"), T_("Accounted size"),
+       T_("Logical size"), T_("Rule"), T_("Chain jobs"), T_("Status / Reason")},
+      table_rows,
+      {T_("TOTAL"), edit_uint64_with_commas(grand_total_files, total_files),
+       std::string(edit_uint64_with_suffix(grand_total_bytes, total_bytes))
+           + "B",
+       std::string(
+           edit_uint64_with_suffix(grand_total_logical_bytes, total_logical))
+           + "B",
+       "", "", ""},
+      excluded_tuples > 0);
+  ua->SendMsg("%s", table.c_str());
+  ua->SendMsg(
+      T_("\nRule:\n"
+         "  B = allocated size (st_blocks * 512 bytes)\n"
+         "  S = logical size (st_size)\n"
+         "Size units are decimal (1 KB = 1,000 bytes).\n"));
 
   char ec1[50], ec2[50];
   ua->SendMsg(T_("\nGrand total: %s files, %s bytes across %u accounted "

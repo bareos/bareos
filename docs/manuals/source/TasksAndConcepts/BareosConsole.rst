@@ -1922,10 +1922,17 @@ status subscriptions
       *<input>status subscriptions accounting</input>
 
       Real (File.LStat-based) subscription accounting report from snapshot at 2026-09-30 12:00:00:
-      linux-fd / system: 128,532 files, 24,318,732,288 bytes accounted (rule: st_blocks*512, 4 jobs in chain).
-        Logical size (st_size): 25,004,123,456 bytes.
-      windows-fd / system: 84,221 files, 12,004,556,800 bytes accounted (rule: st_size, 3 jobs in chain).
-        Logical size (st_size): 12,004,556,800 bytes.
+      FileSet@Client       Files  Accounted size  Logical size  Rule  Chain jobs
+      -----------------  -------  --------------  ------------  ----  ----------
+      system@linux-fd    128,532        24.31 GB      25.00 GB  B              4
+      system@windows-fd   84,221        12.00 GB      12.00 GB  S              3
+      -----------------  -------  --------------  ------------  ----  ----------
+      TOTAL              212,753        36.32 GB      37.00 GB
+
+      Rule:
+        B = allocated size (st_blocks * 512 bytes)
+        S = logical size (st_size)
+      Size units are decimal (1 KB = 1,000 bytes).
 
       Grand total: 212,753 files, 36,323,289,088 bytes across 2 accounted Client/FileSet combination(s)
       Logical size total (st_size): 37,008,680,256 bytes
@@ -1934,6 +1941,15 @@ status subscriptions
    can be used to restrict the report to a single client and/or fileset,
    for example
    :bcommand:`status subscriptions accounting client=linux-fd`.
+
+   The console table identifies each combination as ``FileSet@Client``.
+   ``Accounted size`` follows the rule shown in the legend; ``Logical size``
+   always represents file lengths. Sizes in the table use shortened decimal
+   units, while JSON and the grand totals retain exact byte counts.
+   ``Chain jobs`` is the number of jobs used in the calculation, not a list
+   of JobIds. Excluded combinations appear in the same table with ``-`` for
+   unavailable values and a ``Status / Reason`` column explaining the
+   exclusion. This column is omitted when no combinations are excluded.
 
    The report includes the snapshot calculation time. A snapshot older than
    24 hours is flagged as stale. If the latest background refresh failed,

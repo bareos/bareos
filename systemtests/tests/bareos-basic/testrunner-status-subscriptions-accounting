@@ -135,8 +135,8 @@ catalog_accounted_totals()
 check_logical_size()
 {
   local report="$1" expected="$2" line actual
-  line="$(grep -m1 "Logical size (st_size):" "$report" || true)"
-  if [[ "$line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
+  line="$(grep -m1 '"logical_bytes"' "$report.json" || true)"
+  if [[ "$line" =~ \"logical_bytes\":\ ([0-9]+) ]]; then
     actual="${BASH_REMATCH[1]//,/}"
     if [[ "$actual" -ne "$expected" ]]; then
       echo "status subscriptions accounting reported logical size ${actual}," \
@@ -167,6 +167,10 @@ wait_for_accounting_result()
 @$out $report
 status subscriptions accounting client=bareos-fd fileset=AcctTest
 status subscriptions accounting client=does-not-exist
+@$out ${NULL_DEV}
+.api 2
+@$out $report.json
+status subscriptions accounting client=bareos-fd fileset=AcctTest
 END_OF_DATA
     run_bconsole
     if grep -qE "$expected" "$report"; then
@@ -232,7 +236,7 @@ check_for_zombie_jobs storage=File
 record_file_stats "immediately after Full"
 refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
-  "bareos-fd / AcctTest: [1-9][0-9,]* files"
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 record_catalog_stats "full"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals full)
@@ -254,11 +258,22 @@ fi
 # can change as the filesystem commits or compresses data, so compare the
 # report to the LStat values stored in the catalog by that backup instead
 # of sampling the live files before or after it.
-line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"])
+PY
+)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
   estat=1
-elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 1\ jobs\ in\ chain\)\. ]]; then
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 1$ ]]; then
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
@@ -328,7 +343,7 @@ check_for_zombie_jobs storage=File
 record_file_stats "immediately after Incremental"
 refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting-incremental.log" \
-  "bareos-fd / AcctTest: [1-9][0-9,]* files"
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 record_catalog_stats "incremental"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals incremental)
@@ -350,11 +365,22 @@ fi
 check_logical_size "$tmp/status-subscriptions-accounting-incremental.log" \
   "$raw_bytes"
 
-line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting-incremental.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"])
+PY
+)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest after the incremental!" >&2
   estat=1
-elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 2\ jobs\ in\ chain\)\. ]]; then
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 2$ ]]; then
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
