@@ -560,10 +560,12 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       return false;
     }
 
-    if (scan.saw_opaque_plugin_image
-        || (scan.saw_virtual_ndmp_archive && scan.files == 0)) {
+    if (scan.saw_opaque_plugin_image) {
       row.excluded = true;
-      row.exclusion_reason = "no_per_file_data";
+      row.exclusion_reason = "opaque_backup_image";
+    } else if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+      row.excluded = true;
+      row.exclusion_reason = "ndmp_no_file_history";
     } else {
       row.files = scan.files;
       row.bytes = scan.bytes;
@@ -940,10 +942,15 @@ bool DoSubscriptionAccounting(UaContext* ua)
 
   for (const AccountingRow& row : rows) {
     if (row.excluded) {
-      const char* reason = row.exclusion_reason == "no_per_file_data"
-                               ? T_("no per-file data available (NDMP file "
-                                    "history may be disabled)")
-                               : T_("no usable backup chain found");
+      const char* reason
+          = row.exclusion_reason == "ndmp_no_file_history"
+                ? T_("no per-file data available (NDMP file "
+                     "history may be disabled)")
+            : row.exclusion_reason == "no_per_file_data"
+                ? T_("no measurable per-file data available")
+            : row.exclusion_reason == "opaque_backup_image"
+                ? T_("opaque backup image; using job-level estimate")
+                : T_("no usable backup chain found");
       table_rows.push_back({row.FileSetName + "@" + row.ClientName, "-", "-",
                             "-", "-", "-",
                             std::string(T_("Excluded: ")) + reason});

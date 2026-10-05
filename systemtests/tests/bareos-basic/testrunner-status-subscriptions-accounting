@@ -437,7 +437,7 @@ def result(name):
 
 opaque = result("opaque")
 row = next(row for row in opaque["accounting"] if row["fileset"] == "AcctTest")
-assert row["excluded"] and row["exclusion_reason"] == "no_per_file_data"
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
 report = result("opaque-all")
 assert report["subscription_accounting"]["estimated_combinations"] > 0
 for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
@@ -488,7 +488,7 @@ import sys
 text = pathlib.Path(sys.argv[1]).read_text()
 result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
 row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
-assert row["excluded"] and row["exclusion_reason"] == "no_per_file_data"
+assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history"
 PY
 
 if [[ "${estat:-0}" -ne 0 ]]; then
