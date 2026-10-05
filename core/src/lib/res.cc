@@ -1170,24 +1170,6 @@ void ConfigurationParser::StoreBool(lexer* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-namespace {
-constexpr std::pair<std::string_view, VerifyPeerSetting>
-    VerifyPeerSettingByName[] = {
-        {"IfAvailable", VerifyPeerSetting::IfAvailable},
-        {"Yes", VerifyPeerSetting::Always},
-        {"No", VerifyPeerSetting::Never},
-};
-
-std::string as_str(VerifyPeerSetting to_convert)
-{
-  for (auto& [name, setting] : VerifyPeerSettingByName) {
-    if (to_convert == setting) { return std::string{name}; }
-  }
-
-  return "<UNKNOWN>";
-}
-};  // namespace
-
 std::optional<VerifyPeerSetting> parse_verify_peer_setting(
     std::string_view input)
 {
