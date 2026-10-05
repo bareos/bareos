@@ -63,6 +63,9 @@ struct Authenticator {
     JobControlRecord* jcr;
     BareosSocket* socket;
     const TlsResource* target;
+
+    std::span<std::unique_ptr<Prover>> provers;
+    std::span<std::unique_ptr<Verifier>> verifiers;
   };
 
   struct InboundArgs {
