@@ -45,3 +45,18 @@ export function subscriptionRemainingSummary(unitSummary) {
     isOverLimit: false,
   }
 }
+
+export function subscriptionSnapshotAge(snapshot, reportTime, elapsedMs = 0) {
+  const parse = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value ?? '')) return NaN
+    const date = new Date(value.replace(' ', 'T') + 'Z')
+    if (Number.isNaN(date.getTime())) return NaN
+    return date.toISOString() === value.replace(' ', 'T') + '.000Z'
+      ? date.getTime() : NaN
+  }
+  // Compare Director-local timestamps in the same civil time frame, not in
+  // the browser timezone.
+  const age = parse(reportTime) - parse(snapshot?.calculated_at) + elapsedMs
+  if (!Number.isFinite(age) || age < 0) return null
+  return { milliseconds: age, stale: age > 24 * 60 * 60 * 1000 }
+}

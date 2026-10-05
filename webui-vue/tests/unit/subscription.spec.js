@@ -20,7 +20,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { subscriptionRemainingSummary } from '../../src/utils/subscription.js'
+import { subscriptionRemainingSummary, subscriptionSnapshotAge } from '../../src/utils/subscription.js'
 
 describe('subscription helpers', () => {
   it('keeps non-negative remaining values as remaining', () => {
@@ -29,6 +29,7 @@ describe('subscription helpers', () => {
       labelKey: 'Remaining',
       isOverLimit: false,
     })
+
     expect(subscriptionRemainingSummary({ remaining: '4' })).toEqual({
       value: '4',
       labelKey: 'Remaining',
@@ -41,6 +42,24 @@ describe('subscription helpers', () => {
       value: '1',
       labelKey: 'Over Limit',
       isOverLimit: true,
+    })
+  })
+
+  describe('accounting snapshot age', () => {
+    const snapshot = { calculated_at: '2026-10-04 08:00:00' }
+    it('uses Director timestamps rather than the browser timezone', () => {
+      expect(subscriptionSnapshotAge(snapshot, '2026-10-04 09:00:00'))
+        .toEqual({ milliseconds: 3600000, stale: false })
+    })
+    it('is stale strictly above 24 hours, including elapsed viewing time', () => {
+      expect(subscriptionSnapshotAge(snapshot, '2026-10-05 08:00:00').stale).toBe(false)
+      expect(subscriptionSnapshotAge(snapshot, '2026-10-05 08:00:00', 1000).stale).toBe(true)
+    })
+    it('does not invent an age for missing, invalid or future snapshots', () => {
+      expect(subscriptionSnapshotAge(null, '2026-10-05 08:00:00')).toBeNull()
+      expect(subscriptionSnapshotAge({ calculated_at: 'invalid' }, '2026-10-05 08:00:00')).toBeNull()
+      expect(subscriptionSnapshotAge({ calculated_at: '2026-02-30 08:00:00' }, '2026-10-05 08:00:00')).toBeNull()
+      expect(subscriptionSnapshotAge(snapshot, '2026-10-03 08:00:00')).toBeNull()
     })
   })
 })

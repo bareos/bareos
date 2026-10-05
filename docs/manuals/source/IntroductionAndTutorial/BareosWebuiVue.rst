@@ -86,6 +86,26 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+Subscription accounting
+-----------------------
+
+On **Director -> Subscriptions**, the accounting snapshot age appears beside
+**Run accounting now**. The age turns red when the snapshot is older than
+24 hours; the timestamp is available as a tooltip. Missing or invalid snapshot
+times are displayed as unavailable.
+
+The button requests ``refresh subscriptions accounting`` on the selected
+Director. It queues a background calculation rather than waiting for it
+synchronously. The page shows queued/running status and automatically reloads
+subscription totals when the worker finishes. Refresh failures are displayed
+explicitly; the previous successful snapshot remains available.
+
+The console needs permission for the ``refresh`` and ``status`` commands and
+access to the client, job and FileSet resources required by accounting.
+The button is disabled for Directors without accounting snapshot support.
+Polling stops when leaving the tab or changing Director; this does not cancel
+the server-side calculation. PDF exports contain the age but not the action.
+
 Configuring multiple directors
 ------------------------------
 

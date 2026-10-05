@@ -598,8 +598,26 @@
               :kind="buildInfo.kind"
               class="q-mb-md"
             />
-            <template v-if="!subscriptionError && subscriptionData">
-              <SubscriptionReport :data="subscriptionData" />
+            <template v-if="subscriptionData">
+              <SubscriptionReport :data="subscriptionData">
+                <template #accounting-action>
+                  <q-btn color="primary" no-caps icon="calculate"
+                         :label="t('Run accounting now')"
+                         :loading="accountingBusy"
+                         :disable="!canRunAccounting || subscriptionLoading"
+                         @click="runAccounting" />
+                  <span v-if="accountingBusy">
+                    {{ accountingState === 'running' ? t('Accounting is running') : t('Accounting is queued') }}
+                  </span>
+                  <span v-if="!subscriptionData.subscription_accounting" class="text-warning">
+                    {{ t('Accounting is not supported by this Director.') }}
+                  </span>
+                  <span v-else-if="!canRunAccounting && !accountingBusy" class="text-warning">
+                    {{ t('Accounting refresh requires refresh command permission.') }}
+                  </span>
+                </template>
+              </SubscriptionReport>
+              <div v-if="accountingError" class="text-negative" role="alert">{{ accountingError }}</div>
 
               <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
               <div class="row q-gutter-sm q-mb-md q-mt-md">
@@ -710,6 +728,7 @@ import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
 import CommercialOfferingCard from '../components/CommercialOfferingCard.vue'
 import { useBuildInfoStore } from '../stores/buildInfo.js'
+import { useSubscriptionAccounting } from '../composables/useSubscriptionAccounting.js'
 import TableSkeleton from '../components/TableSkeleton.vue'
 
 const validTabs = new Set(['status', 'messages', 'catalog', 'subscription'])
@@ -1241,17 +1260,49 @@ onUnmounted(() => { clearInterval(_statusTimer) })
 const subscriptionLoading = ref(false)
 const subscriptionError   = ref(null)
 const subscriptionData    = ref(null)
+let subscriptionRequest = 0
+const {
+  busy: accountingBusy, state: accountingState, error: accountingError,
+  run: runAccounting, stop: stopAccounting,
+} = useSubscriptionAccounting({
+  call: command => director.call(command),
+  onComplete: async () => {
+    await refreshSubscription()
+    if (subscriptionError.value) throw new Error(subscriptionError.value)
+  },
+  t,
+  canRun: () => canRunAccounting.value,
+})
+const canRunAccounting = computed(() => (
+  director.isConnected && !!subscriptionData.value?.subscription_accounting
+  && directorCommandAllowed(acl.commands, 'refresh')
+))
+watch(() => [tab.value, currentSingletonDirector.value, director.isConnected], () => {
+  subscriptionRequest++
+  stopAccounting()
+  subscriptionData.value = null
+  subscriptionError.value = null
+  subscriptionLoading.value = false
+}, { flush: 'sync' })
+onUnmounted(stopAccounting)
 
 async function refreshSubscription() {
+  const request = ++subscriptionRequest
+  const target = currentSingletonDirector.value
   subscriptionLoading.value = true
   subscriptionError.value   = null
   try {
     await ensureSingletonTabDirector()
-    subscriptionData.value = await director.call('status subscriptions all')
+    await acl.ensureLoaded()
+    if (request !== subscriptionRequest || target !== currentSingletonDirector.value || tab.value !== 'subscription') return
+    const data = await director.call('status subscriptions all')
+    if (request === subscriptionRequest && target === currentSingletonDirector.value && tab.value === 'subscription') {
+      subscriptionData.value = data
+    }
   } catch (e) {
-    subscriptionError.value = e.message
+    if (request === subscriptionRequest) subscriptionError.value = e.message
   } finally {
-    subscriptionLoading.value = false
+    if (request === subscriptionRequest) subscriptionLoading.value = false
   }
 }
 
