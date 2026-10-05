@@ -444,6 +444,53 @@ for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
     assert report[key] == result("opaque-legacy")[key], key
 PY
 
+# An NDMP stream container has the same stat, but actual file-history rows
+# describe its contents. Preserve their measured accounting.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@NDMP/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["files"] == 3
+assert row["logical_bytes"] == 1513
+assert row["bytes"] > 0
+PY
+
+# With file history absent, the NDMP container alone must still fall back.
+run_bconsole - <<END_OF_DATA
+.sql query="DELETE FROM File WHERE JobId IN (SELECT j.JobId FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest') AND PathId NOT IN (SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-no-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-no-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "no_per_file_data"
+PY
+
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
   if [[ -f "$tmp/accounting-source-stats.log" ]]; then
