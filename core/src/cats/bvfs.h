@@ -84,11 +84,11 @@ class Bvfs {
   }
 
   /* Get the root point */
-  DBId_t get_root();
+  PathId_t get_root();
 
   /* It's much better to access Path though their PathId, it
    * avoids mistakes with string encoding */
-  void ChDir(DBId_t pathid)
+  void ChDir(PathId_t pathid)
   {
     ResetOffset();
     pwd_id = pathid;
@@ -102,7 +102,9 @@ class Bvfs {
   void GetAllFileVersions(const char* path,
                           const char* fname,
                           const char* client);
-  void GetAllFileVersions(DBId_t pathid, const char* fname, const char* client);
+  void GetAllFileVersions(PathId_t pathid,
+                          const char* fname,
+                          const char* client);
 
   void SetSeeAllVersions(bool val) { see_all_versions = val; }
 
@@ -142,7 +144,7 @@ class Bvfs {
   uint32_t offset;
   uint32_t nb_record; /* number of records of the last query */
   POOLMEM* pattern;
-  DBId_t pwd_id;     /* Current pathid */
+  PathId_t pwd_id;   /* Current pathid */
   POOLMEM* prev_dir; /* ls_dirs query returns all versions, take the 1st one */
   Attributes* attr;  /* Can be use by handler to call DecodeStat() */
 

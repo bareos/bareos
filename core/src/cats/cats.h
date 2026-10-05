@@ -200,7 +200,7 @@ struct AttributesDbRecord {
   uint32_t DeltaSeq = 0;
   JobId_t JobId = 0;
   DBId_t ClientId = 0;
-  DBId_t PathId = 0;
+  PathId_t PathId = 0;
   FileId_t FileId = 0;
   char* Digest = nullptr;
   int DigestType = 0;
@@ -227,7 +227,7 @@ struct FileDbRecord {
   FileId_t FileId = 0;
   uint32_t FileIndex = 0;
   JobId_t JobId = 0;
-  DBId_t PathId = 0;
+  PathId_t PathId = 0;
   JobId_t MarkId = 0;
   uint32_t DeltaSeq = 0;
   char LStat[256]{0};
@@ -509,7 +509,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool disabled_batch_insert_
       = false;                 /**< Explicitly disabled batch insert mode ? */
   bool is_private_ = false;    /**< Private connection ? */
-  uint32_t cached_path_id = 0; /**< Cached path id */
+  PathId_t cached_path_id = 0; /**< Cached path id */
   uint32_t last_hash_key_ = 0; /**< Last hash key lookup on query table */
   POOLMEM* fname = nullptr;    /**< Filename only */
   POOLMEM* path = nullptr;     /**< Path only */
@@ -688,7 +688,7 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* sql_get.cc */
  private:
-  int GetPathRecord(JobControlRecord* jcr);
+  PathId_t GetPathRecord(JobControlRecord* jcr);
   bool GetFileRecord(JobControlRecord* jcr,
                      JobDbRecord* jr,
                      FileDbRecord* fdbr);
@@ -696,7 +696,7 @@ class BareosDb : public BareosDbQueryEnum {
  public:
   bool GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst);
   bool GetMediaIdsInPool(PoolDbRecord* pool_record, std::vector<DBId_t>* lst);
-  int GetPathRecord(JobControlRecord* jcr, const char* new_path);
+  PathId_t GetPathRecord(JobControlRecord* jcr, const char* new_path);
   bool GetPoolRecord(JobControlRecord* jcr, PoolDbRecord* pdbr);
   bool GetStorageRecord(JobControlRecord* jcr, StorageDbRecord* sdbr);
   bool GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr);
