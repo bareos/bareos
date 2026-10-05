@@ -486,8 +486,17 @@ LIMIT 20
 /* 0042_uar_create_temp */
 R"SQL(CREATE TEMPORARY TABLE
        temp (
-          JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime
-          TEXT, VolumeName TEXT, StartFile INTEGER, VolSessionId INTEGER, VolSessionTime INTEGER
+          JobId INTEGER NOT NULL,
+          JobTDate BIGINT,
+          ClientId INTEGER,
+          Level CHAR,
+          JobFiles INTEGER,
+          JobBytes BIGINT,
+          StartTime TEXT,
+          VolumeName TEXT,
+          StartFile INTEGER,
+          VolSessionId INTEGER,
+          VolSessionTime INTEGER
        )
 )SQL",
 
