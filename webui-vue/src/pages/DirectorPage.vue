@@ -601,8 +601,8 @@
             <template v-if="subscriptionData">
               <SubscriptionReport :data="subscriptionData">
                 <template #accounting-action>
-                  <q-btn color="primary" no-caps icon="calculate"
-                         :label="t('Run accounting now')"
+                  <q-btn flat dense size="sm" color="primary" no-caps icon="calculate"
+                         :label="t('Start accounting now')"
                          :loading="accountingBusy"
                          :disable="!canRunAccounting || subscriptionLoading"
                          @click="runAccounting" />

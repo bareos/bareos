@@ -410,6 +410,40 @@ else
   estat=1
 fi
 
+# Replace one real catalog file with the opaque image attributes used by
+# barri/NDMP, leaving other measurable files (such as plugin logs) in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A -B BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-opaque.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-opaque-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-opaque-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+opaque = result("opaque")
+row = next(row for row in opaque["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "no_per_file_data"
+report = result("opaque-all")
+assert report["subscription_accounting"]["estimated_combinations"] > 0
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert report[key] == result("opaque-legacy")[key], key
+PY
+
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
   if [[ -f "$tmp/accounting-source-stats.log" ]]; then

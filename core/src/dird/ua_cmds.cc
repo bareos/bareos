@@ -474,7 +474,7 @@ static struct ua_cmdstruct commands[] = {
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
          "catalog | "
-         "subscriptions [clients] [plugins] [all] [anonymize] "
+         "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
          "[client=<client-name>] | "
          "subscriptions accounting [client=<client-name>] "
          "[fileset=<fileset-name>] | "

@@ -57,6 +57,7 @@ client_detail AS (
     ON sa.clientname = c.name
     AND sa.filesetname = f.fileset
     AND NOT sa.excluded
+    AND %s
     AND EXISTS (
       SELECT 1 FROM SubscriptionAccountingSnapshot
       WHERE snapshotid = 1 AND lastsuccess IS NOT NULL

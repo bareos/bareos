@@ -505,7 +505,8 @@ static bool show_scheduled_preview(UaContext*,
 
 std::optional<std::string> get_subscription_status_checksum_source_text(
     UaContext* ua,
-    const char* timestamp)
+    const char* timestamp,
+    const char* with_clause)
 {
   const std::string salt("SECRETSALT");
   PoolMem subscriptions(PM_MESSAGE);
@@ -513,10 +514,7 @@ std::optional<std::string> get_subscription_status_checksum_source_text(
   OutputFormatter output_text
       = OutputFormatter(pm_append, &subscriptions, nullptr, nullptr);
   ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_total_2>(
-      query,
-      ua->db->get_predefined_query(
-          BareosDb::SQL_QUERY::subscription_with_clause_0),
-      me->subscriptions);
+      query, with_clause, me->subscriptions);
   if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST,
                             false)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
@@ -593,6 +591,7 @@ static int SubscriptionReportCoverageHandler(void* ctx, int, char** row)
 
 static bool GetSubscriptionReportCoverage(UaContext* ua,
                                           const char* client,
+                                          const char* with_clause,
                                           SubscriptionReportCoverage* coverage)
 {
   std::string filter;
@@ -618,9 +617,7 @@ static bool GetSubscriptionReportCoverage(UaContext* ua,
        "(SELECT COUNT(*) AS combinations, "
        "COUNT(*) FILTER (WHERE estimated) AS estimated "
        "FROM client_detail%s) t WHERE s.SnapshotId=1",
-       ua->db->get_predefined_query(
-           BareosDb::SQL_QUERY::subscription_with_clause_0),
-       filter.c_str());
+       with_clause, filter.c_str());
   if (!ua->db->SqlQuery(query.c_str(), SubscriptionReportCoverageHandler,
                         coverage)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
@@ -651,6 +648,11 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   if (FindArg(ua, NT_("accounting")) > 0) {
+    if (FindArg(ua, NT_("legacy")) > 0) {
+      ua->ErrorMsg(
+          T_("Parameters 'accounting' and 'legacy' cannot be combined.\n"));
+      return false;
+    }
     return DoSubscriptionAccounting(ua);
   }
 
@@ -660,6 +662,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
 
   const bool kw_detail = (FindArg(ua, NT_("detail")) > 0);
+  const bool kw_legacy = (FindArg(ua, NT_("legacy")) > 0);
   const bool kw_unknown = (FindArg(ua, NT_("unknown")) > 0);
   const bool kw_all = (FindArg(ua, NT_("all")) > 0);
   const bool kw_anon = (FindArg(ua, NT_("anonymize")) > 0);
@@ -689,14 +692,21 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (!transaction.Begin()) { return false; }
 
   SubscriptionReportCoverage coverage;
-  if (!GetSubscriptionReportCoverage(ua, client, &coverage)) { return false; }
+  PoolMem with_clause(PM_MESSAGE);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_with_clause_1>(
+      with_clause, kw_legacy ? "false" : "true");
+  if (!GetSubscriptionReportCoverage(ua, client, with_clause.c_str(),
+                                     &coverage)) {
+    return false;
+  }
   auto config = my_config->GetCurrentConfiguration();
   auto* first_catalog
       = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
   const bool multiple_catalogs
       = first_catalog && config->GetNextRes(R_CATALOG, first_catalog);
-  const char* source = coverage.calculated_at.empty() ? "estimated"
-                       : coverage.estimated == 0      ? "measured"
+  const char* source = kw_legacy                        ? "legacy"
+                       : coverage.calculated_at.empty() ? "estimated"
+                       : coverage.estimated == 0        ? "measured"
                        : coverage.estimated == coverage.combinations
                            ? "estimated"
                            : "mixed";
@@ -719,13 +729,18 @@ static bool DoSubscriptionStatus(UaContext* ua)
            "only the first configured catalog is refreshed. This report "
            "reads the selected catalog and may be empty or stale.\n"));
   }
-  if (coverage.estimated > 0) {
+  if (kw_legacy) {
+    ua->SendMsg(
+        T_("Legacy subscription accounting: using latest Full job sizes; "
+           "the accounting snapshot is unchanged.\n"));
+  }
+  if (!kw_legacy && coverage.estimated > 0) {
     ua->WarningMsg(T_("Subscription sizes include estimates for %llu of "
                       "%llu Client/FileSet combinations.\n"),
                    static_cast<unsigned long long>(coverage.estimated),
                    static_cast<unsigned long long>(coverage.combinations));
   }
-  if (!coverage.calculated_at.empty()) {
+  if (!kw_legacy && !coverage.calculated_at.empty()) {
     ua->SendMsg(T_("Subscription accounting snapshot: %s.\n"),
                 coverage.calculated_at.c_str());
     if (coverage.stale) {
@@ -738,7 +753,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
           T_("Latest subscription accounting refresh failed; "
              "using the last successful snapshot.\n"));
     }
-  } else {
+  } else if (!kw_legacy) {
     ua->WarningMsg(
         T_("No subscription accounting snapshot is available; "
            "all sizes are estimates.\n"));
@@ -750,10 +765,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"), client);
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_client_detail_2>(
-        query,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0),
-        client);
+        query, with_clause.c_str(), client);
 
     if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                               "unit-detail", true)) {
@@ -780,10 +792,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_3>(
-        query,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0),
-        kw_anon ? "client_anon" : "client_name",
+        query, with_clause.c_str(), kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
     if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
@@ -795,10 +804,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(T_("\nBackup unit report aggregated by client:\n"));
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_client_total_3>(
-        query,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0),
-        kw_anon ? "client_anon" : "client_name",
+        query, with_clause.c_str(), kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
     if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
@@ -814,8 +820,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(T_("\nBackup unit report aggregated by plugin:\n"));
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_plugin_total_1>(
-        query, ua->db->get_predefined_query(
-                   BareosDb::SQL_QUERY::subscription_with_clause_0));
+        query, with_clause.c_str());
 
     if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                               "unit-plugins", true)) {
@@ -826,16 +831,14 @@ static bool DoSubscriptionStatus(UaContext* ua)
   ua->SendMsg(T_("\nBackup unit summary:\n"));
   PoolMem query(PM_MESSAGE);
   ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_units_total_2>(
-      query,
-      ua->db->get_predefined_query(
-          BareosDb::SQL_QUERY::subscription_with_clause_0),
-      me->subscriptions);
+      query, with_clause.c_str(), me->subscriptions);
   if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), VERT_LIST,
                             "unit-summary", true,
                             BareosDb::CollapseMode::Collapse)) {
     return false;
   }
-  auto checksum_source = get_subscription_status_checksum_source_text(ua, now);
+  auto checksum_source = get_subscription_status_checksum_source_text(
+      ua, now, with_clause.c_str());
   if (!checksum_source) { return false; }
   auto checksum = compute_hash(*checksum_source);
   if (checksum) {

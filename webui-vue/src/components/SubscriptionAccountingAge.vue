@@ -19,11 +19,11 @@
    02110-1301, USA.
 -->
 <template>
-  <div class="row items-center q-gutter-sm q-mb-md">
+  <div class="row items-center q-gutter-sm q-mb-md text-caption">
     <span :class="{ 'text-negative': snapshot?.stale || age?.stale }"
           :title="snapshot?.calculated_at || undefined">
       {{ t('Accounting snapshot age') }}:
-      {{ age ? t('{hours}h {minutes}m {seconds}s', duration) : t('Unavailable') }}
+      {{ age ? t('{hours}h {minutes}m', duration) : t('Unavailable') }}
     </span>
     <slot />
   </div>
@@ -46,13 +46,13 @@ watch(() => [props.snapshot, props.reportTime], () => {
   receivedAt.value = Date.now()
   now.value = receivedAt.value
 })
-onMounted(() => { timer = setInterval(() => { now.value = Date.now() }, 1000) })
+onMounted(() => { timer = setInterval(() => { now.value = Date.now() }, 60000) })
 onUnmounted(() => clearInterval(timer))
 const age = computed(() => subscriptionSnapshotAge(
   props.snapshot, props.reportTime, now.value - receivedAt.value,
 ))
 const duration = computed(() => {
-  const seconds = Math.floor((age.value?.milliseconds ?? 0) / 1000)
-  return { hours: Math.floor(seconds / 3600), minutes: Math.floor(seconds / 60) % 60, seconds: seconds % 60 }
+  const minutes = Math.floor((age.value?.milliseconds ?? 0) / 60000)
+  return { hours: Math.floor(minutes / 60), minutes: minutes % 60 }
 })
 </script>
