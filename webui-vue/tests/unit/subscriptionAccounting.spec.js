@@ -153,11 +153,11 @@ describe('accounting refresh', () => {
         const host = document.createElement('div')
         const app = createApp({
           render: () => h(SubscriptionReport, { data },
-            interactive ? { 'accounting-action': () => h('button', 'Run accounting now') } : {}),
+            interactive ? { 'accounting-action': () => h('button', 'Start accounting now') } : {}),
         })
         app.mount(host)
         try {
-          expect(host.textContent).toContain('Accounting snapshot age: 1h 0m 0s')
+          expect(host.textContent).toContain('Accounting snapshot age: 1h 0m')
           expect(!!host.querySelector('button')).toBe(interactive)
         } finally {
           app.unmount()
@@ -173,11 +173,11 @@ describe('accounting refresh', () => {
       })
       app.mount(host)
       try {
-        expect(host.textContent).toContain('24h 0m 0s')
+        expect(host.textContent).toContain('24h 0m')
         expect(host.querySelector('.text-negative')).toBeNull()
-        await vi.advanceTimersByTimeAsync(1000)
+        await vi.advanceTimersByTimeAsync(60000)
         await nextTick()
-        expect(host.textContent).toContain('24h 0m 1s')
+        expect(host.textContent).toContain('24h 1m')
         expect(host.querySelector('.text-negative')).not.toBeNull()
         expect(host.querySelector('span').title).toBe('2026-10-04 08:00:00')
         expect(host.querySelector('button')).toBeNull()
