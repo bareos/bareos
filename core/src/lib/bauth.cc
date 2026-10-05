@@ -367,11 +367,13 @@ bool BareosConnect(JobControlRecord* jcr,
     return false;
   }
 
-  if (!auth->authenticate_outbound({
-          .jcr = jcr,
-          .socket = socket,
-          .info = info,
-      })) {
+  auto ps = info->select_provers(ConnectionType::Insecure);
+  auto vs = info->select_verifiers(ConnectionType::Insecure);
+  if (!auth->authenticate_outbound({.jcr = jcr,
+                                    .socket = socket,
+                                    .target = res,
+                                    .provers = ps,
+                                    .verifiers = vs})) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
   }
@@ -566,12 +568,16 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
   if (tls_established) { connection_type = ConnectionType::Untrusted; }
   if (tls_psk_used) { connection_type = ConnectionType::Trusted; }
 
-  auth::DefaultAuthenticator auth{info->select_provers(connection_type),
-                                  info->select_verifiers(connection_type)};
+  auto ps = info->select_provers(connection_type);
+  auto vs = info->select_verifiers(connection_type);
+
+  auth::DefaultAuthenticator auth{};
   if (!auth.authenticate_inbound({
           .socket = socket,
           .remote_version = parsed_hello->bareos_version,
           .target = tls_resource,
+          .provers = ps,
+          .verifiers = vs,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return std::nullopt;
@@ -949,7 +955,7 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
 
 bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
-  auto* target = args.info->tls_settings();
+  auto* target = args.target;
 
   TlsPolicy remote_policy{kBnetTlsUnknown};
   TlsPolicy local_policy = target->GetPolicy();
@@ -1066,19 +1072,16 @@ Md5Authenticator::Md5Authenticator(std::string identity)
 
 bool NewAuthenticator::authenticate_outbound(OutboundArgs args)
 {
-  if (!Respond(args.socket, provers)) { return false; }
-  return Challenge(args.socket, verifiers);
+  if (!Respond(args.socket, args.provers)) { return false; }
+  return Challenge(args.socket, args.verifiers);
 }
 bool NewAuthenticator::authenticate_inbound(InboundArgs args)
 {
-  if (!Challenge(args.socket, verifiers)) { return false; }
-  return Respond(args.socket, provers);
+  if (!Challenge(args.socket, args.verifiers)) { return false; }
+  return Respond(args.socket, args.provers);
 }
 
-DefaultAuthenticator::DefaultAuthenticator(
-    std::vector<std::unique_ptr<auth::Prover>> ps,
-    std::vector<std::unique_ptr<auth::Verifier>> vs)
-    : provers{std::move(ps)}, verifiers{std::move(vs)}
+std::optional<Md5Authenticator> GetMd5(auto provers, auto verifiers)
 {
   auth::CramMd5::Prover* md5_claim{};
   auth::CramMd5::Verifier* md5_verifier{};
@@ -1099,10 +1102,13 @@ DefaultAuthenticator::DefaultAuthenticator(
     }
   }
 
+
   if (md5_claim && md5_verifier
       && md5_claim->cram_name() == md5_verifier->cram_name()) {
-    legacy_auth.emplace(md5_claim->cram_name());
+    return Md5Authenticator{md5_claim->cram_name()};
   }
+
+  return {};
 }
 
 bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
@@ -1117,10 +1123,10 @@ bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
   std::string_view prefix{buffer + sizeof(uint32_t), new_auth_prefix.size()};
 
   if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
-    NewAuthenticator auth{provers, verifiers};
+    NewAuthenticator auth{};
     auto result = auth.authenticate_outbound(args);
     return result;
-  } else if (legacy_auth) {
+  } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
     return legacy_auth->authenticate_outbound(args);
   } else {
     return false;
@@ -1129,9 +1135,9 @@ bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
 bool DefaultAuthenticator::authenticate_inbound(InboundArgs args)
 {
   if (args.remote_version >= VERSION_HEX(26U, 0U, 0U)) {
-    NewAuthenticator auth{provers, verifiers};
+    NewAuthenticator auth{};
     return auth.authenticate_inbound(args);
-  } else if (legacy_auth) {
+  } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
     return legacy_auth->authenticate_inbound(args);
   } else {
     return false;

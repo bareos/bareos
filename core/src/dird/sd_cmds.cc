@@ -44,6 +44,7 @@
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/bnet.h"
+#include "lib/connect_accept.h"
 #include "lib/edit.h"
 #include "lib/global_resource.h"
 #include "lib/parse_conf.h"
@@ -142,9 +143,11 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
   sd->SetEnableKtls(myself->enable_ktls);
 
+  DefaultConnectionInfo info{*store};
+
   if (!BareosConnect<global_resource::Type::Director,
                      global_resource::Type::Storage>(
-          jcr, sd.get(), myself->resource_name_, store)) {
+          jcr, sd.get(), myself->resource_name_, &info)) {
     sd->close();
     return false;
   }

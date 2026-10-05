@@ -62,8 +62,8 @@ struct Authenticator {
   struct OutboundArgs {
     JobControlRecord* jcr;
     BareosSocket* socket;
-    const TlsResource* target;
 
+    const TlsResource* target;
     std::span<std::unique_ptr<Prover>> provers;
     std::span<std::unique_ptr<Verifier>> verifiers;
   };
@@ -71,7 +71,10 @@ struct Authenticator {
   struct InboundArgs {
     BareosSocket* socket;
     uint32_t remote_version;
+
     const TlsResource* target;
+    std::span<std::unique_ptr<Prover>> provers;
+    std::span<std::unique_ptr<Verifier>> verifiers;
   };
 
   virtual bool authenticate_outbound(OutboundArgs args) = 0;
@@ -99,31 +102,13 @@ struct Md5Authenticator : Authenticator {
 };
 
 struct NewAuthenticator : Authenticator {
-  std::span<std::unique_ptr<Prover>> provers;
-  std::span<std::unique_ptr<Verifier>> verifiers;
-
-  NewAuthenticator() = default;
-  NewAuthenticator(std::span<std::unique_ptr<Prover>> ps,
-                   std::span<std::unique_ptr<Verifier>> vs)
-      : provers{ps}, verifiers{vs}
-  {
-  }
-
   bool authenticate_outbound(OutboundArgs args) override;
   bool authenticate_inbound(InboundArgs args) override;
 };
 
 struct DefaultAuthenticator : Authenticator {
-  DefaultAuthenticator(std::vector<std::unique_ptr<Prover>> ps,
-                       std::vector<std::unique_ptr<Verifier>> vs);
-
   bool authenticate_outbound(OutboundArgs args) override;
   bool authenticate_inbound(InboundArgs args) override;
-
- private:
-  std::vector<std::unique_ptr<Prover>> provers;
-  std::vector<std::unique_ptr<Verifier>> verifiers;
-  std::optional<Md5Authenticator> legacy_auth;
 };
 };  // namespace auth
 
