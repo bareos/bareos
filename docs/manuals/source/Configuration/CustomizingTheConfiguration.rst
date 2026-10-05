@@ -1082,7 +1082,18 @@ When parsing the resource directives, Bareos classifies the data according to th
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
+.. config:datatype:: VERIFY_PEER
 
+   Determines whether peer certificates are verified and required.
+
+   Disabled
+        Peer certificates are neither required nor verified.
+
+   IfCertificatePresented
+        Peer certificates are not required, but verified when they are received.
+
+   Required
+        Peer certificates are required and verified.
 
 .. _VarsChapter:
 

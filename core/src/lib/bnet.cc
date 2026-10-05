@@ -107,12 +107,8 @@ bool BnetSend(BareosSocket* bsock) { return bsock->send(); }
  *  Returns: true  on success
  *           false on failure
  */
-bool BnetTlsServer(BareosSocket* bsock,
-                   std::shared_ptr<Tls> tls,
-                   const std::vector<std::string>& verify_list)
+bool BnetTlsServer(BareosSocket* bsock, std::shared_ptr<Tls> tls)
 {
-  JobControlRecord* jcr = bsock->jcr();
-
   if (!tls) {
     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockAccept\n");
     goto err;
@@ -121,15 +117,6 @@ bool BnetTlsServer(BareosSocket* bsock,
   if (!tls->TlsBsockAccept(bsock)) {
     Qmsg0(bsock->jcr(), M_FATAL, 0, T_("TLS Negotiation failed.\n"));
     goto err;
-  }
-
-  if (!verify_list.empty()) {
-    if (!tls->TlsPostconnectVerifyCn(jcr, verify_list)) {
-      Qmsg1(bsock->jcr(), M_FATAL, 0,
-            T_("TLS certificate verification failed."
-               " Peer certificate did not match a required commonName\n"));
-      goto err;
-    }
   }
 
   bsock->LockMutex();
@@ -149,40 +136,16 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(BareosSocket* bsock,
-                   std::shared_ptr<Tls> tls,
-                   bool VerifyPeer,
-                   const std::vector<std::string>& verify_list)
+bool BnetTlsClient(JobControlRecord* jcr,
+                   BareosSocket* bsock,
+                   std::shared_ptr<Tls> tls)
 {
-  JobControlRecord* jcr = bsock->jcr();
-
   if (!tls) {
     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockConnect\n");
     goto err;
   }
 
-  if (!tls->TlsBsockConnect(bsock)) { goto err; }
-
-  if (VerifyPeer) {
-    /* If there's an Allowed CN verify list, use that to validate the remote
-     * certificate's CN. Otherwise, we use standard host/CN matching. */
-    if (!verify_list.empty()) {
-      if (!tls->TlsPostconnectVerifyCn(jcr, verify_list)) {
-        Qmsg1(bsock->jcr(), M_FATAL, 0,
-              T_("TLS certificate verification failed."
-                 " Peer certificate did not match a required commonName\n"));
-        goto err;
-      }
-    } else {
-      if (!tls->TlsPostconnectVerifyHost(jcr, bsock->host())) {
-        Qmsg1(bsock->jcr(), M_FATAL, 0,
-              T_("TLS host certificate verification failed. Host name \"%s\" "
-                 "did not match presented certificate\n"),
-              bsock->host());
-        goto err;
-      }
-    }
-  }
+  if (!tls->TlsBsockConnect(jcr, bsock)) { goto err; }
 
   bsock->LockMutex();
   bsock->tls_conn = std::move(tls);

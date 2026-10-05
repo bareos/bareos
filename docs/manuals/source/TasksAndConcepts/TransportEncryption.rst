@@ -30,36 +30,24 @@ Additional configuration directives have been added to all the daemons (Director
    Require TLS connection. This is enabled by default. If :strong:`TlsRequire`\ =no, Bareos can fall back to unencrypted cleartext connections for compatibility with clients before Bareos-18.2.
 
 :config:option:`dir/director/TlsCertificate`\
-   The full path and filename of a PEM encoded TLS certificate. It can be used as either a client or server certificate. It is used because PEM files are base64 encoded and hence ASCII text based rather than binary. They may also contain encrypted information.
+   The full path and filename of a PEM encoded TLS certificate. It can be used as either a client or server certificate.
 
 :config:option:`dir/director/TlsKey`\
    The full path and filename of a PEM encoded TLS private key. It must correspond to the certificate specified in the :strong:`TLS Certificate`\  configuration directive.
 
 :config:option:`dir/director/TlsVerifyPeer`\
-   Request and verify the peers certificate.
-
-   In server context, unless the :strong:`TLS Allowed CN`\  configuration directive is specified, any client certificate signed by a known-CA will be accepted.
-
-   In client context, the server certificate CommonName attribute is checked against the :strong:`Address`\  and :strong:`TLS Allowed CN`\  configuration directives.
+   This setting governs whether peer certificates are required and if they are verified by bareos.
+   See :ref:`TlsCertificateVerify` for details on how bareos verifiers certificates.
+   By default peer certificates are not required, but they are verified if they are sent.
 
 :config:option:`dir/director/TlsAllowedCn`\
-   Common name attribute of allowed peer certificates. If :strong:`TLS Verify Peer`\ =yes, all connection request certificates will be checked against this list.
-
-   This directive may be specified more than once as all parameters will we concatenated.
+   Common name attribute of allowed peer certificates.  This directive may be specified more than once as all parameters will we concatenated.
 
 :config:option:`dir/director/TlsCaCertificateFile`\
    The full path and filename specifying a PEM encoded TLS CA certificate(s). Multiple certificates are permitted in the file.
 
-   In a client context, one of :strong:`TLS CA Certificate File`\  or :strong:`TLS CA Certificate Dir`\  is required.
-
-   In a server context, it is only required if :strong:`TLS Verify Peer`\  is used.
-
 :config:option:`dir/director/TlsCaCertificateDir`\
    Full path to TLS CA certificate directory. In the current implementation, certificates must be stored PEM encoded with OpenSSL-compatible hashes, which is the subject name’s hash and an extension of .0.
-
-   In a client context, one of :strong:`TLS CA Certificate File`\  or :strong:`TLS CA Certificate Dir`\  is required.
-
-   In a server context, it is only required if :strong:`TLS Verify Peer`\  is used.
 
 :config:option:`dir/director/TlsDhFile`\
    Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications. DH key exchange adds an additional level of security because the key used for encryption/decryption by the server and the client is computed on each end and thus is never passed over the network if Diffie-Hellman key exchange is used. Even if DH key exchange is not used, the encryption/decryption key is always passed encrypted. This directive is only valid within a server context.
@@ -79,6 +67,27 @@ To get a trusted certificate (CA or Certificate Authority signed certificate), y
 Bareos is known to work well with RSA certificates.
 
 You can use programs like `xca <https://github.com/chris2511/xca/>`_ or TinyCA to easily manage your own CA with a Graphical User Interface.
+
+.. _TlsCertificateVerify:
+
+How Bareos verifies certificates
+--------------------------------
+
+Bareos first checks that the certificate is signed by a known *Certificate
+Authority* (CA).  To do so you must set at least one of
+:strong:`TLS CA Certificate File`\  or :strong:`TLS CA Certificate Dir`,
+otherwise this verification step will always fail.
+
+If :strong:`TLS Allowed CN`\  is non empty, Bareos will then check that the
+certificates *Common Name* (CN) is included in that list.
+
+.. warning:: The check to determine whether the certificate's Common Name (CN) is included in the `TLS Allowed CN` list is case-sensitive.
+
+Otherwise, if :strong:`TLS Allowed CN`\  is empty and we are in a client
+context, Bareos will check that the :strong:`Address`\  it connects to is stored in the
+certificates CN or *Subject Alternative Name* (SAN).
+
+If any of these checks fail, the connection is terminated.
 
 Example TLS Configuration Files
 -------------------------------

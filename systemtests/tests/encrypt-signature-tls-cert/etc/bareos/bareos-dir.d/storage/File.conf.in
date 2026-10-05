@@ -5,4 +5,11 @@ Storage {
   Device = FileStorage
   Media Type = File
   Port = @sd_port@
+
+  TLS Enable = yes
+  TLS Require = yes
+  TLS Verify Peer = no
+  TLS Certificate = "@tls_dir_certificate@"
+  TLS Key = @tls_dir_key@
+  TLS CA Certificate File = "@tls_ca_certificate@"
 }
