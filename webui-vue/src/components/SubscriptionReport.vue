@@ -19,7 +19,7 @@
       <div v-if="data.subscription_accounting.calculated_at">
         {{ t('Accounting snapshot') }}: {{ data.subscription_accounting.calculated_at }}
       </div>
-      <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0" class="text-warning">
+      <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0">
         {{ t('Estimated sizes for {count} of {total} Client/FileSet combinations', {
           count: data.subscription_accounting.estimated_combinations,
           total: data.subscription_accounting.combinations,

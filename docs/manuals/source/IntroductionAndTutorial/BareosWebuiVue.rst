@@ -109,6 +109,9 @@ access to the client, job and FileSet resources required by accounting.
 The button is disabled for Directors without accounting snapshot support.
 Polling stops when leaving the tab or changing Director; this does not cancel
 the server-side calculation. PDF exports contain the age but not the action.
+The number of combinations using estimated sizes is normal information, since
+job-level fallback is expected for opaque backup images. Stale snapshots and
+failed refreshes remain warnings.
 
 Configuring multiple directors
 ------------------------------

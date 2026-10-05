@@ -144,6 +144,30 @@ describe('accounting refresh', () => {
   })
 
   describe('snapshot age display', () => {
+    it('shows expected estimates as information while retaining failure warnings', () => {
+      const host = document.createElement('div')
+      const app = createApp(SubscriptionReport, {
+        data: {
+          subscription_accounting: {
+            source: 'mixed', calculated_at: '2026-10-05 08:00:00',
+            estimated_combinations: 1, combinations: 6, refresh_failed: true,
+          },
+        },
+      })
+      app.mount(host)
+      try {
+        const estimate = [...host.querySelectorAll('div')].find(
+          element => element.textContent.trim() === 'Estimated sizes for 1 of 6 Client/FileSet combinations',
+        )
+        expect(estimate).toBeDefined()
+        expect(estimate.classList.contains('text-warning')).toBe(false)
+        expect([...host.querySelectorAll('.text-warning')].some(
+          element => element.textContent.includes('Latest accounting refresh failed.'),
+        )).toBe(true)
+      } finally {
+        app.unmount()
+      }
+    })
     it('keeps the age in reports but renders the action only when supplied', () => {
       const data = {
         subscription_accounting: { calculated_at: '2026-10-04 08:00:00', age_seconds: 3600 },

@@ -1790,6 +1790,11 @@ status subscriptions
    treating its logs as the complete backup size.
    NDMP stream containers are ignored when actual per-file history is
    available; those combinations continue to use measured file sizes.
+   Opaque plugin images use the distinct ``opaque_backup_image`` exclusion
+   reason and a job-level estimate. The NDMP file-history explanation applies
+   only to NDMP containers without measurable file history
+   (``ndmp_no_file_history``). Older snapshots with the ambiguous
+   ``no_per_file_data`` reason show a generic explanation until refreshed.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
