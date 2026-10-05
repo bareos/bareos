@@ -1743,8 +1743,12 @@ status subscriptions
    accounting refresh, all sizes are estimates. The text report and
    structured ``subscription_accounting`` object show the snapshot time,
    how many combinations are estimated, and warnings when the snapshot is
-   older than 24 hours or the latest refresh failed. The existing count
-   of backup units is unchanged; volume-based units are calculated from
+   older than 24 hours or the latest refresh failed.
+   The structured object also supplies ``age_seconds`` when a snapshot
+   exists, computed in the catalog's time frame rather than from the
+   Director's local report timestamp.
+   The existing count of backup units is unchanged; volume-based units are
+   calculated from
    these measured or estimated sizes. Each report reads its metadata,
    detail, summary, and checksum from a consistent catalog snapshot,
    even if a background refresh completes while it is being generated.
