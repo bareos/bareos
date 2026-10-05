@@ -136,10 +136,9 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
     return {FileAccountingKind::kNonRegular, 0, 0};
   }
 
-  /* The Storage Daemon creates a synthetic regular-file row for the entire
-   * NDMP stream (stored/ndmp_tape.cc:BndmpCreateVirtualFile). Its deliberately
-   * invalid size and fixed block fields distinguish it from backed-up files;
-   * do not count this container as user data. */
+  /* NDMP and barri use this synthetic stat for an opaque backup image.
+   * Its unknown size prevents measuring the entire combination, even if
+   * accompanying log files have valid sizes. */
   if ((statp.st_mode & 07777) == 0700 && statp.st_size == -1
       && statp.st_blksize == 4096 && statp.st_blocks == 1) {
     return {FileAccountingKind::kVirtualNdmpArchive, 0, 0};
@@ -552,7 +551,7 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       return false;
     }
 
-    if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+    if (scan.saw_virtual_ndmp_archive) {
       row.excluded = true;
       row.exclusion_reason = "no_per_file_data";
     } else {

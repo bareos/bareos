@@ -1023,7 +1023,7 @@ R"SQL(BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE
 R"SQL(COMMIT
 )SQL",
 
-/* 0080_subscription_with_clause_0 */
+/* 0080_subscription_with_clause_1 */
 R"SQL(WITH
 fileset_plugin AS (
   SELECT
@@ -1073,6 +1073,7 @@ client_detail AS (
     ON sa.clientname = c.name
     AND sa.filesetname = f.fileset
     AND NOT sa.excluded
+    AND %s
     AND EXISTS (
       SELECT 1 FROM SubscriptionAccountingSnapshot
       WHERE snapshotid = 1 AND lastsuccess IS NOT NULL

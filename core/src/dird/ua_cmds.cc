@@ -450,7 +450,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
-         "subscriptions [clients] [plugins] [all] [anonymize] "
+         "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
          "[client=<client-name>] | "
          "subscriptions accounting [client=<client-name>] "
          "[fileset=<fileset-name>] | "

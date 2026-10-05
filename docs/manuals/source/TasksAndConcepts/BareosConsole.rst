@@ -1752,6 +1752,19 @@ status subscriptions
    these measured or estimated sizes. Each report reads its metadata,
    detail, summary, and checksum from a consistent catalog snapshot,
    even if a background refresh completes while it is being generated.
+   For comparison, append ``legacy`` (for example,
+   ``status subscriptions all legacy``) to use the original latest successful
+   Full job sizes, ``max(ReadBytes, JobBytes)``, instead of snapshot sizes.
+   Counts, aggregation and unit calculation remain unchanged. The snapshot
+   is neither refreshed nor modified; structured output identifies this
+   mode with ``subscription_accounting.source = "legacy"``. This option
+   also works with ``clients``, ``plugins``, ``client=`` and ``anonymize``,
+   but cannot be combined with ``accounting``.
+   A Client/FileSet chain containing an opaque backup image (for example,
+   barri or an NDMP stream with unknown file size) uses the job-level
+   fallback even when accompanying log files have measurable attributes.
+   The entire combination is excluded from measured accounting rather than
+   treating its logs as the complete backup size.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
