@@ -36,7 +36,7 @@ Director {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -77,7 +77,7 @@ Client {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -118,7 +118,7 @@ Client {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -159,7 +159,7 @@ Client {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -1249,7 +1249,7 @@ Storage {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -1717,7 +1717,7 @@ Console {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -1748,7 +1748,7 @@ Console {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = IfAvailable
+  # TlsVerifyPeer = IfCertificatePresented
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
@@ -1779,7 +1779,7 @@ Console {
   # TlsCipherSuites = ""
   # TlsDhFile = ""
   # TlsProtocol = ""
-  # TlsVerifyPeer = No
+  # TlsVerifyPeer = Disabled
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
   # TlsCertificateRevocationList = ""
