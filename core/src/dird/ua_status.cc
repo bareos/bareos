@@ -570,6 +570,7 @@ class SubscriptionReportTransaction {
 
 struct SubscriptionReportCoverage {
   std::string calculated_at;
+  uint64_t age_seconds{0};
   uint64_t combinations{0};
   uint64_t estimated{0};
   bool stale{true};
@@ -585,6 +586,7 @@ static int SubscriptionReportCoverageHandler(void* ctx, int, char** row)
   coverage->refresh_failed = row[2] && bstrcmp(row[2], "true");
   coverage->combinations = str_to_uint64(row[3]);
   coverage->estimated = str_to_uint64(row[4]);
+  coverage->age_seconds = row[5] ? str_to_uint64(row[5]) : 0;
   coverage->found = true;
   return 0;
 }
@@ -606,9 +608,12 @@ static bool GetSubscriptionReportCoverage(UaContext* ua,
   Mmsg(query,
        "%s SELECT COALESCE(to_char(s.LastSuccess, "
        "'YYYY-MM-DD HH24:MI:SS'), ''), "
-       "(s.LastSuccess IS NULL OR s.LastSuccess < CURRENT_TIMESTAMP - "
-       "INTERVAL '24 hours')::text, (s.LastError IS NOT NULL)::text, "
-       "t.combinations::text, t.estimated::text "
+       "(s.LastSuccess IS NULL OR s.LastSuccess < "
+       "CURRENT_TIMESTAMP::timestamp - INTERVAL '24 hours')::text, "
+       "(s.LastError IS NOT NULL)::text, "
+       "t.combinations::text, t.estimated::text, "
+       "GREATEST(0, FLOOR(EXTRACT(EPOCH FROM "
+       "(CURRENT_TIMESTAMP::timestamp - s.LastSuccess))))::bigint::text "
        "FROM SubscriptionAccountingSnapshot s CROSS JOIN "
        "(SELECT COUNT(*) AS combinations, "
        "COUNT(*) FILTER (WHERE estimated) AS estimated "
@@ -698,6 +703,9 @@ static bool DoSubscriptionStatus(UaContext* ua)
   ua->send->ObjectStart("subscription_accounting");
   ua->send->ObjectKeyValue("source", source);
   ua->send->ObjectKeyValue("calculated_at", coverage.calculated_at.c_str());
+  if (!coverage.calculated_at.empty()) {
+    ua->send->ObjectKeyValue("age_seconds", coverage.age_seconds);
+  }
   ua->send->ObjectKeyValueBool("stale", coverage.stale);
   ua->send->ObjectKeyValueBool("refresh_failed", coverage.refresh_failed);
   ua->send->ObjectKeyValueBool("multiple_catalogs", multiple_catalogs);

@@ -61,7 +61,7 @@ describe('accounting refresh', () => {
     const call = vi.fn().mockResolvedValueOnce({})
       .mockResolvedValueOnce(worker('queued'))
       .mockResolvedValueOnce(worker('running'))
-      .mockResolvedValueOnce(worker('idle'))
+      .mockResolvedValue(worker('idle'))
     const accounting = setup(call)
     await accounting.run()
     expect(call.mock.calls.map(args => args[0])).toEqual([
@@ -77,7 +77,7 @@ describe('accounting refresh', () => {
   })
   it('reports refresh failure instead of announcing success', async () => {
     const accounting = setup(vi.fn().mockResolvedValueOnce({})
-      .mockResolvedValueOnce(worker('idle', { last_refresh_error: 'database error' })))
+      .mockResolvedValue(worker('idle', { last_refresh_error: 'database error' })))
     await accounting.run()
     expect(accounting.error.value).toBe('database error')
     expect(accounting.busy.value).toBe(false)
@@ -86,7 +86,7 @@ describe('accounting refresh', () => {
     vi.useFakeTimers()
     const accounting = setup(vi.fn().mockResolvedValueOnce({})
       .mockResolvedValueOnce(worker('running', { available: false }))
-      .mockResolvedValueOnce(worker('idle')))
+      .mockResolvedValue(worker('idle')))
     await accounting.run()
     expect(accounting.busy.value).toBe(true)
     expect(accounting.error.value).toBeNull()
@@ -96,11 +96,21 @@ describe('accounting refresh', () => {
   })
   it('surfaces failure to reload the completed report', async () => {
     const accounting = setup(vi.fn().mockResolvedValueOnce({})
-      .mockResolvedValueOnce(worker('idle')))
+      .mockResolvedValue(worker('idle')))
     accounting.onComplete.mockRejectedValue(new Error('report reload failed'))
     await accounting.run()
     expect(accounting.error.value).toBe('report reload failed')
     expect(accounting.busy.value).toBe(false)
+  })
+  it('discards a previous error sampled just before a successful retry finished', async () => {
+    const call = vi.fn().mockResolvedValueOnce({})
+      .mockResolvedValueOnce(worker('idle', { last_refresh_error: 'old error' }))
+      .mockResolvedValueOnce(worker('idle'))
+    const accounting = setup(call)
+    await accounting.run()
+    expect(accounting.error.value).toBeNull()
+    expect(accounting.onComplete).toHaveBeenCalledTimes(1)
+    expect(call).toHaveBeenCalledTimes(3)
   })
   it('does not poll when the Director changes during the refresh command', async () => {
     let resolve
@@ -118,7 +128,7 @@ describe('accounting refresh', () => {
     [{}, 'Accounting worker status is unavailable.'],
     [worker('idle', { available: false }), 'No accounting snapshot is available.'],
   ])('surfaces unavailable status %j', async (response, message) => {
-    const accounting = setup(vi.fn().mockResolvedValueOnce({}).mockResolvedValueOnce(response))
+    const accounting = setup(vi.fn().mockResolvedValueOnce({}).mockResolvedValue(response))
     await accounting.run()
     expect(accounting.error.value).toBe(message)
   })
@@ -136,7 +146,7 @@ describe('accounting refresh', () => {
   describe('snapshot age display', () => {
     it('keeps the age in reports but renders the action only when supplied', () => {
       const data = {
-        subscription_accounting: { calculated_at: '2026-10-04 08:00:00' },
+        subscription_accounting: { calculated_at: '2026-10-04 08:00:00', age_seconds: 3600 },
         'report-time': '2026-10-04 09:00:00',
       }
       for (const interactive of [false, true]) {
@@ -158,7 +168,7 @@ describe('accounting refresh', () => {
       vi.useFakeTimers()
       const host = document.createElement('div')
       const app = createApp(SubscriptionAccountingAge, {
-        snapshot: { calculated_at: '2026-10-04 08:00:00' },
+        snapshot: { calculated_at: '2026-10-04 08:00:00', age_seconds: 86400 },
         reportTime: '2026-10-05 08:00:00',
       })
       app.mount(host)

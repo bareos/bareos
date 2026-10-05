@@ -171,6 +171,7 @@ status subscriptions all
 .api 0
 
 sqlquery sharedsession
+SET TIME ZONE 'Etc/GMT+12';
 INSERT INTO SubscriptionAccounting
   (ClientName, FileSetName, Excluded, Bytes)
 SELECT DISTINCT c.Name, f.FileSet, false, 5000000000000
@@ -215,6 +216,7 @@ DELETE FROM SubscriptionAccounting WHERE ClientName IN
 UPDATE SubscriptionAccountingSnapshot
 SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL
 WHERE SnapshotId=1;
+RESET TIME ZONE;
 
 @$out $tmp/status-subscriptions-cleanup.txt
 sqlquery sharedsession
@@ -240,11 +242,14 @@ def result(name):
 empty = result("no-snapshot")["subscription_accounting"]
 assert empty["source"] == "estimated" and empty["estimated_combinations"] == 33
 assert not empty["calculated_at"]
+assert "age_seconds" not in empty
 assert not empty["multiple_catalogs"]
 
 measured = result("measured")
 assert measured["subscription_accounting"]["source"] == "measured"
 assert measured["subscription_accounting"]["estimated_combinations"] == 0
+assert 0 <= measured["subscription_accounting"]["age_seconds"] < 60
+assert not measured["subscription_accounting"]["stale"]
 assert measured["unit-summary"]["used"] == "165"
 assert next(row for row in measured["unit-clients"] if row["client"] == "file-only")["size_gb"] == "15000.00"
 
@@ -257,6 +262,7 @@ mixed = result("mixed")
 assert mixed["subscription_accounting"]["source"] == "mixed"
 assert mixed["subscription_accounting"]["estimated_combinations"] == 2
 assert mixed["subscription_accounting"]["stale"]
+assert 90000 <= mixed["subscription_accounting"]["age_seconds"] < 90060
 assert mixed["subscription_accounting"]["refresh_failed"]
 assert mixed["unit-summary"]["used"] == "156"
 assert next(row for row in mixed["unit-clients"] if row["client"] == "Client 10000")["size_gb"] == "5002.00"
