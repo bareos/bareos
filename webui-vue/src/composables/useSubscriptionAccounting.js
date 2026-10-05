@@ -40,7 +40,14 @@ export function useSubscriptionAccounting({ call, onComplete, canRun, t }) {
     try {
       const result = await call('status subscriptions accounting')
       if (token !== generation) return
-      const snapshot = result?.accounting_snapshot
+      let snapshot = result?.accounting_snapshot
+      if (snapshot?.refresh_thread_state === 'idle') {
+        // Metadata is read before worker state. Fetch again after observing
+        // idle so a just-completed retry cannot retain the previous error.
+        const confirmed = await call('status subscriptions accounting')
+        if (token !== generation) return
+        snapshot = confirmed?.accounting_snapshot
+      }
       if (!snapshot || !['idle', 'queued', 'running', 'unavailable'].includes(snapshot.refresh_thread_state)) {
         throw new Error(t('Accounting worker status is unavailable.'))
       }

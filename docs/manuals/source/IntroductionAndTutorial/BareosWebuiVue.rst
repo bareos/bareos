@@ -92,7 +92,10 @@ Subscription accounting
 On **Director -> Subscriptions**, the accounting snapshot age appears beside
 **Run accounting now**. The age turns red when the snapshot is older than
 24 hours; the timestamp is available as a tooltip. Missing or invalid snapshot
-times are displayed as unavailable.
+times are displayed as unavailable. The age is supplied by the catalog, so
+different Director and database time zones do not affect it. Directors that
+do not supply the age display it as unavailable rather than estimating it
+from timezone-less timestamps.
 
 The button requests ``refresh subscriptions accounting`` on the selected
 Director. It queues a background calculation rather than waiting for it
