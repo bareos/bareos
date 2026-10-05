@@ -69,6 +69,7 @@ bool BareosConnect(JobControlRecord* jcr,
   auto qualified_name
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
+
   Authenticator auth{};
 
   return BareosConnect(jcr, socket, qualified_name, info, hello, &auth,
@@ -83,7 +84,6 @@ struct DefaultConnectionInfo : ConnectionInfo {
       ConnectionType type) override;
   std::vector<std::unique_ptr<auth::Verifier>> select_verifiers(
       ConnectionType type) override;
-
 
   TlsResource tls;
 };

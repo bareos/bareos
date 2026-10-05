@@ -1473,9 +1473,10 @@ static bool StorageCmd(JobControlRecord* jcr)
       } break;
     }
 
+    DefaultConnectionInfo info{custom};
     if (!BareosConnect<global_resource::Type::Client,
                        global_resource::Type::Storage>(
-            jcr, storage_daemon_socket, jcr->Job, &custom, cleartext_auth)) {
+            jcr, storage_daemon_socket, jcr->Job, &info, cleartext_auth)) {
       Jmsg(jcr, M_FATAL, 0,
            T_("Failed to authenticate with Storage daemon.\n"));
       goto bail_out;
@@ -2039,9 +2040,10 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 
   director_socket->SetEnableKtls(me->enable_ktls);
 
+  DefaultConnectionInfo info{*dir_res};
   if (!BareosConnect<global_resource::Type::Client,
                      global_resource::Type::Director>(
-          jcr, director_socket.get(), me->resource_name_, dir_res)) {
+          jcr, director_socket.get(), me->resource_name_, &info)) {
     Dmsg0(100, "Could not connect to director\n");
     return nullptr;
   }
