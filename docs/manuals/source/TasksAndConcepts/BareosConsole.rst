@@ -1765,6 +1765,8 @@ status subscriptions
    fallback even when accompanying log files have measurable attributes.
    The entire combination is excluded from measured accounting rather than
    treating its logs as the complete backup size.
+   NDMP stream containers are ignored when actual per-file history is
+   available; those combinations continue to use measured file sizes.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in

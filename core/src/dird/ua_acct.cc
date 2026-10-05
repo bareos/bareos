@@ -47,6 +47,7 @@
 #include <limits>
 #include <pthread.h>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -136,9 +137,8 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
     return {FileAccountingKind::kNonRegular, 0, 0};
   }
 
-  /* NDMP and barri use this synthetic stat for an opaque backup image.
-   * Its unknown size prevents measuring the entire combination, even if
-   * accompanying log files have valid sizes. */
+  /* NDMP and barri share this synthetic stat. The caller distinguishes
+   * NDMP containers with per-file history from opaque plugin images. */
   if ((statp.st_mode & 07777) == 0700 && statp.st_size == -1
       && statp.st_blksize == 4096 && statp.st_blocks == 1) {
     return {FileAccountingKind::kVirtualNdmpArchive, 0, 0};
@@ -240,11 +240,13 @@ struct FileScanCtx {
   uint64_t files{0};
   bool aborted{false};
   bool saw_virtual_ndmp_archive{false};
+  bool saw_opaque_plugin_image{false};
 };
 
 int FileRowHandler(void* ctx, int, char** row)
 {
   // row[0]=JobId row[1]=PathId row[2]=Name row[3]=FileIndex row[4]=LStat
+  // row[5]=full catalog filename
   auto* c = static_cast<FileScanCtx*>(ctx);
   if (c->cancel && c->cancel->load()) {
     c->aborted = true;
@@ -280,7 +282,12 @@ int FileRowHandler(void* ctx, int, char** row)
     /* Non-regular catalog metadata and the synthetic NDMP stream container
      * are not billable user files. */
     if (file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
-      c->saw_virtual_ndmp_archive = true;
+      const std::string_view filename = row[5] ? row[5] : "";
+      if (filename.starts_with("/@NDMP/")) {
+        c->saw_virtual_ndmp_archive = true;
+      } else {
+        c->saw_opaque_plugin_image = true;
+      }
     }
     return 0;
   }
@@ -464,9 +471,11 @@ bool ScanFilesForChain(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "SELECT DISTINCT ON (File.PathId, File.Name)"
-       " File.JobId, File.PathId, File.Name, File.FileIndex, File.LStat FROM "
+       " File.JobId, File.PathId, File.Name, File.FileIndex, File.LStat,"
+       " Path.Path || File.Name FROM "
        "File"
-       " JOIN Job USING (JobId) WHERE File.JobId IN (%s)"
+       " JOIN Job USING (JobId) JOIN Path USING (PathId)"
+       " WHERE File.JobId IN (%s)"
        " ORDER BY File.PathId, File.Name, Job.JobTDate DESC,"
        " File.JobId DESC",
        jobid_list.c_str());
@@ -551,7 +560,8 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       return false;
     }
 
-    if (scan.saw_virtual_ndmp_archive) {
+    if (scan.saw_opaque_plugin_image
+        || (scan.saw_virtual_ndmp_archive && scan.files == 0)) {
       row.excluded = true;
       row.exclusion_reason = "no_per_file_data";
     } else {
