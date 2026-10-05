@@ -319,16 +319,18 @@ bool cram_md5_handshake(JobControlRecord* jcr,
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    const std::string& qualified_name,
-                   const TlsResource* res,
+                   ConnectionInfo* info,
                    std::string_view hello_msg,
                    auth::Authenticator* auth,
                    bool cleartext_authentication)
 {
   ASSERT(jcr);
   ASSERT(socket);
-  ASSERT(res);
+  ASSERT(info);
 
   auth_timer timer{socket};
+
+  const TlsResource* res = info->tls_settings();
 
   if (res->IsTlsConfigured() && !cleartext_authentication) {
     auto tls = ParameterizeAndInitTlsConnectionAsAClient(
@@ -368,7 +370,7 @@ bool BareosConnect(JobControlRecord* jcr,
   if (!auth->authenticate_outbound({
           .jcr = jcr,
           .socket = socket,
-          .target = res,
+          .info = info,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
@@ -947,11 +949,13 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
 
 bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
 {
+  auto* target = args.info->tls_settings();
+
   TlsPolicy remote_policy{kBnetTlsUnknown};
-  TlsPolicy local_policy = args.target->GetPolicy();
+  TlsPolicy local_policy = target->GetPolicy();
   if (args.socket->tls_conn) { local_policy = kBnetTlsAuto; }
   if (!cram_md5_handshake(args.jcr, args.socket, cram_identity.c_str(),
-                          args.target->password_.value, local_policy, false,
+                          target->password_.value, local_policy, false,
                           &remote_policy)) {
     return false;
   }
@@ -990,7 +994,7 @@ bool Md5Authenticator::authenticate_outbound(OutboundArgs args)
         return false;
       }
 
-      if (args.target->authenticate_) {
+      if (target->authenticate_) {
         args.socket->CloseTlsConnectionAndFreeMemory();
       }
     } break;
