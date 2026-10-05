@@ -41,6 +41,10 @@
     </div>
 
     <!-- Meta info -->
+    <SubscriptionAccountingAge :snapshot="data.subscription_accounting"
+                               :report-time="data['report-time']">
+      <slot name="accounting-action" />
+    </SubscriptionAccountingAge>
     <table class="sub-meta-table q-mb-md">
       <tbody>
         <tr><th>{{ t('Version') }}</th>     <td>{{ data.version }}</td></tr>
@@ -158,6 +162,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useI18n } from 'vue-i18n'
 import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
 import { subscriptionRemainingSummary } from '../utils/subscription.js'
+import SubscriptionAccountingAge from './SubscriptionAccountingAge.vue'
 
 const props = defineProps({
   data:      { type: Object, required: true },
