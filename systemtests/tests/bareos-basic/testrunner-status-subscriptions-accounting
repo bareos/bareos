@@ -410,6 +410,81 @@ else
   estat=1
 fi
 
+# Zero length plus one block is valid outside MSSQL's virtual namespace.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A QAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-empty-regular.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-empty-regular.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["logical_bytes"] == 513
+PY
+
+# The same placeholder under MSSQL's namespace must fall back for the whole
+# combination, even when other measurable files remain in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@MSSQL/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@MSSQL/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-mssql-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-mssql-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+row = next(row for row in result("mssql")["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert result("mssql-all")[key] == result("mssql-legacy")[key], key
+PY
+
+# A genuinely empty file without the MSSQL block-size marker stays measurable.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql-empty.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-mssql-empty.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+PY
+
 # Replace one real catalog file with the opaque image attributes used by
 # barri/NDMP, leaving other measurable files (such as plugin logs) in the chain.
 run_bconsole - <<END_OF_DATA
