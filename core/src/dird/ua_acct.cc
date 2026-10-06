@@ -93,8 +93,9 @@ static_assert(!IsUnknownStatField(uint64_t{0}));
  *                  socket) catalog row -- not billable subscription
  *                  data, silently excluded from the report (not an
  *                  error).
- * kVirtualNdmpArchive -- the synthetic whole-stream NDMP file, which has
- *                  placeholder attributes and is not a user file.
+ * kUnmeasurableStream -- a virtual backup stream with placeholder size
+ *                  attributes; the caller determines whether per-file
+ *                  history is available or a job-level fallback is needed.
  * kInvalidStat  -- the stat field the platform's rule needs is unusable
  *                  (unknown/overflowing); the caller must abort the
  *                  report rather than under-report silently.
@@ -103,7 +104,7 @@ enum class FileAccountingKind
 {
   kRegular,
   kNonRegular,
-  kVirtualNdmpArchive,
+  kUnmeasurableStream,
   kInvalidStat
 };
 
@@ -116,7 +117,8 @@ struct FileAccountingResult {
 };
 
 FileAccountingResult AccountedBytesForFile(const std::string& lstat,
-                                           bool is_windows)
+                                           bool is_windows,
+                                           std::string_view filename)
 {
   if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
 
@@ -141,7 +143,14 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
    * NDMP containers with per-file history from opaque plugin images. */
   if ((statp.st_mode & 07777) == 0700 && statp.st_size == -1
       && statp.st_blksize == 4096 && statp.st_blocks == 1) {
-    return {FileAccountingKind::kVirtualNdmpArchive, 0, 0};
+    return {FileAccountingKind::kUnmeasurableStream, 0, 0};
+  }
+
+  // MSSQL VDI uses zero as a placeholder, not as the backup stream size.
+  if (filename.starts_with("/@MSSQL/") && (statp.st_mode & 07777) == 0700
+      && statp.st_size == 0 && statp.st_blksize == 65536
+      && statp.st_blocks == 1) {
+    return {FileAccountingKind::kUnmeasurableStream, 0, 0};
   }
 
   if (IsUnknownStatField(statp.st_size)) {
@@ -261,8 +270,8 @@ int FileRowHandler(void* ctx, int, char** row)
    * last backup" entry -- exclude it, don't count stale bytes. */
   if (FileIndex == 0) { return 0; }
 
-  FileAccountingResult file_result
-      = AccountedBytesForFile(row[4] ? row[4] : "", c->is_windows);
+  FileAccountingResult file_result = AccountedBytesForFile(
+      row[4] ? row[4] : "", c->is_windows, row[5] ? row[5] : "");
   if (file_result.kind == FileAccountingKind::kInvalidStat) {
     c->ua->ErrorMsg(
         T_("%s / %s: invalid file attributes for FileIndex=%u "
@@ -278,10 +287,10 @@ int FileRowHandler(void* ctx, int, char** row)
     return 1;
   }
   if (file_result.kind == FileAccountingKind::kNonRegular
-      || file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
-    /* Non-regular catalog metadata and the synthetic NDMP stream container
-     * are not billable user files. */
-    if (file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
+      || file_result.kind == FileAccountingKind::kUnmeasurableStream) {
+    /* Non-regular metadata and opaque streams cannot provide per-file
+     * measurements. NDMP may supply separate file-history rows. */
+    if (file_result.kind == FileAccountingKind::kUnmeasurableStream) {
       const std::string_view filename = row[5] ? row[5] : "";
       if (filename.starts_with("/@NDMP/")) {
         c->saw_virtual_ndmp_archive = true;

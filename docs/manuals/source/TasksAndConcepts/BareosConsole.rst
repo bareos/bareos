@@ -1772,6 +1772,9 @@ status subscriptions
    only to NDMP containers without measurable file history
    (``ndmp_no_file_history``). Older snapshots with the ambiguous
    ``no_per_file_data`` reason show a generic explanation until refreshed.
+   MSSQL VDI streams under ``/@MSSQL/`` with the plugin's zero-size
+   placeholder attributes also use this fallback. The plugin need not be
+   changed, and ordinary empty files are not treated as opaque streams.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
