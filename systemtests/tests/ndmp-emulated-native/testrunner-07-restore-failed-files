@@ -57,8 +57,13 @@ wait
 messages
 END_OF_DATA
 
-run_bconsole "${tmp}/bconcmds"
-chmod 0755 "${readonly_dir}"
+if run_bconsole "${tmp}/bconcmds"; then
+  chmod 0755 "${readonly_dir}"
+else
+  run_status=$?
+  chmod 0755 "${readonly_dir}"
+  exit "${run_status}"
+fi
 
 expect_grep "Termination:.*Restore Error" \
   "${log_home}/restore.out" "restore did not fail"
