@@ -1062,12 +1062,13 @@ Md5Authenticator::Md5Authenticator(std::string identity)
 }
 
 
-bool NewAuthenticator::authenticate_outbound(OutboundArgs args)
+bool NewAuthenticator::authenticate_outbound(
+    std::span<std::unique_ptr<Prover>> provers,
+    std::span<std::unique_ptr<Verifier>> verifiers,
+    OutboundArgs args)
 {
-  // if (!Respond(args.socket, args.provers)) { return false; }
-  // return Challenge(args.socket, args.verifiers);
-  (void)args;
-  return false;
+  if (!Respond(args.socket, provers)) { return false; }
+  return Challenge(args.socket, verifiers);
 }
 bool NewAuthenticator::authenticate_inbound(InboundArgs args)
 {
@@ -1118,7 +1119,7 @@ bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
 
   if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
     NewAuthenticator auth{};
-    auto result = auth.authenticate_outbound(args);
+    auto result = auth.authenticate_outbound({}, {}, args);
     return result;
     // } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
     //   return legacy_auth->authenticate_outbound(args);
@@ -1154,4 +1155,35 @@ DefaultConnectionInfo::select_verifiers(ConnectionType)
   res.emplace_back(std::make_unique<auth::CramMd5::Verifier>(
       get_default_cram_identity(), tls.password_.value));
   return res;
+}
+
+
+bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)
+{
+  auto* socket = args.socket;
+
+  static constexpr std::string_view new_auth_prefix = "auth:";
+
+  // messages start with a uint32_t length
+  char buffer[sizeof(uint32_t) + new_auth_prefix.size()] = {};
+
+  std::string_view prefix{buffer + sizeof(uint32_t), new_auth_prefix.size()};
+
+  if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
+    auth::Algorithms algs;
+
+    auto identity = get_default_cram_identity();
+    auto password = args.target->password_.value;
+
+    algs.add<auth::CramMd5::Prover>(identity, password);
+    algs.add<auth::CramMd5::Verifier>(identity, password);
+
+
+    auth::NewAuthenticator auth{};
+    auto result = auth.authenticate_outbound(algs.prover, algs.verifier, args);
+    return result;
+  } else {
+    auth::Md5Authenticator auth;
+    return auth.authenticate_outbound(args);
+  }
 }

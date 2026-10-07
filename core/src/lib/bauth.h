@@ -74,11 +74,20 @@ struct Algorithms {
   std::vector<std::unique_ptr<Verifier>> verifier;
 
   template <typename T, typename... Args>
-    requires std::is_base_of<T, Prover>
-  Algorithms& add_prover(Args... args)
+    requires(std::is_base_of_v<Prover, T> != std::is_base_of_v<Verifier, T>)
+  T& add(Args&&... args)
   {
-    prover.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
-    return *this;
+    if constexpr (std::is_base_of_v<Prover, T>) {
+      auto p = std::make_unique<T>(std::forward<Args>(args)...);
+      auto ptr = p.get();
+      prover.emplace_back(std::move(p));
+      return *ptr;
+    } else {
+      auto v = std::make_unique<T>(std::forward<Args>(args)...);
+      auto ptr = v.get();
+      verifier.emplace_back(std::move(v));
+      return *ptr;
+    }
   }
 };
 
@@ -92,13 +101,12 @@ struct Authenticator {
     std::span<std::unique_ptr<Verifier>> verifiers;
   };
 
-  virtual bool authenticate_outbound(OutboundArgs args) = 0;
   virtual bool authenticate_inbound(InboundArgs args) = 0;
   virtual ~Authenticator() = default;
 };
 
 struct Md5Authenticator : Authenticator {
-  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_outbound(OutboundArgs args);
   bool authenticate_inbound(InboundArgs args) override;
 
   Md5Authenticator();
@@ -117,12 +125,14 @@ struct Md5Authenticator : Authenticator {
 };
 
 struct NewAuthenticator : Authenticator {
-  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
+                             std::span<std::unique_ptr<Verifier>> verifiers,
+                             OutboundArgs args);
   bool authenticate_inbound(InboundArgs args) override;
 };
 
 struct DefaultAuthenticator : Authenticator {
-  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_outbound(OutboundArgs args);
   bool authenticate_inbound(InboundArgs args) override;
 };
 };  // namespace auth
