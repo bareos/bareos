@@ -108,6 +108,7 @@ CREATE TABLE Job
 );
 
 CREATE INDEX job_name_idx ON job (Name);
+CREATE INDEX job_starttime_idx ON job (StartTime);
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);

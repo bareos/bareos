@@ -5,6 +5,8 @@ begin;
 alter table Path set (autovacuum_vacuum_scale_factor = 0.02);
 alter table File set (autovacuum_vacuum_scale_factor = 0.02);
 
+create index job_starttime_idx on job (StartTime);
+
 -- update the schema version
 update Version set VersionId = 2260;
 
