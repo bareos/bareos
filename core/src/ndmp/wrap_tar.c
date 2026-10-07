@@ -758,6 +758,7 @@ static int extract_member(struct wrap_tar* wt,
       char buf[64 * 1024];
       uint64_t left = size;
       int fd;
+      int write_errno = 0;
 
       if (make_parent(path) < 0) goto error;
       unlink(path);
@@ -765,13 +766,23 @@ static int extract_member(struct wrap_tar* wt,
       if (fd < 0) goto error;
       while (left > 0) {
         size_t n = left > sizeof buf ? sizeof buf : (size_t)left;
-        if (image_read(wt, buf, n) < 0 || write_all(fd, buf, n) < 0) {
+        if (image_read(wt, buf, n) < 0) {
           close(fd);
           goto error;
+        }
+        if (!write_errno && write_all(fd, buf, n) < 0) {
+          write_errno = errno ? errno : EIO;
         }
         left -= n;
       }
       close(fd);
+      if (write_errno) {
+        wt->last_errno = write_errno;
+        wrap_log(wccb, "restore of %s failed: %s", dest,
+                 strerror(write_errno));
+        wt->n_extract_errors++;
+        return image_skip(wt, padded(size) - size);
+      }
       set_attributes(path, h, 0);
       return image_skip(wt, padded(size) - size);
     }
