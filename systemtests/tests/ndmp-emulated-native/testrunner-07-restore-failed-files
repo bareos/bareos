@@ -67,7 +67,8 @@ fi
 
 expect_grep "Termination:.*Restore Error" \
   "${log_home}/restore.out" "restore did not fail"
-expect_grep "failed to recover 7 of 7 files" "${log_home}/restore.out" \
+expected_files="$(find "${NDMP_REFERENCE}" -mindepth 1 -exec printf . \; | wc -c | tr -d '[:space:]')"
+expect_grep "failed to recover ${expected_files} of ${expected_files} files" "${log_home}/restore.out" \
   "failed files were not reported"
 expect_grep "Files Restored: *0$" "${log_home}/restore.out" \
   "failed files were counted as restored"

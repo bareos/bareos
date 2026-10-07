@@ -18,7 +18,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# Round trip test for the wrap_tar NDMP formatter used by ndmjob.
+# Round trip and selective hard-link recovery test for the ndmjob formatter.
 # usage: test_wrap_tar.sh /path/to/wrap_tar
 
 set -e
@@ -43,6 +43,8 @@ echo "hello" >"${src}/file"
 head -c 300000 /dev/urandom >"${src}/sub/random"
 echo "long" >"${longdir}/file-with-a-long-path"
 ln -s file "${src}/link"
+ln "${src}/file" "${src}/hardlink"
+ln "${src}/file" "${src}/sub/hardlink"
 chmod 0750 "${src}/sub"
 
 export WRAP_TAR_DUMPDATES="${work}/dumpdates"
@@ -75,6 +77,10 @@ dd if="${work}/full.img" bs=1 skip="${offset}" count=6 2>/dev/null \
   <"${work}/full.img"
 diff -r "${src}" "${work}/all" || fail "full restore differs"
 [ "$(readlink "${work}/all/link")" = "file" ] || fail "symlink not restored"
+[ "${work}/all/file" -ef "${work}/all/hardlink" ] \
+  || fail "hardlink not restored"
+[ "${work}/all/file" -ef "${work}/all/sub/hardlink" ] \
+  || fail "nested hardlink not restored"
 [ -n "$(find "${work}/all/sub" -prune -perm 0750)" ] \
   || fail "mode not restored"
 
@@ -90,6 +96,17 @@ cmp "${src}/sub/random" "${work}/single/r" || fail "single restore differs"
   <"${work}/full.img"
 cmp "${src}/sub/random" "${work}/dir/random" || fail "dir restore differs"
 [ ! -e "${work}/dir/file" ] || fail "dir restore restored too much"
+[ -f "${work}/dir/hardlink" ] \
+  || fail "directory restore lost its hardlink member"
+cmp "${src}/file" "${work}/dir/hardlink" || fail "selected hardlink differs"
+
+# Selecting link names must not require selecting their archive target.
+"${WRAP_TAR}" -x -E "FILESYSTEM=${src}" \
+  /hardlink @- "${work}/links/one" /sub/hardlink @- "${work}/links/two" \
+  <"${work}/full.img"
+[ "${work}/links/one" -ef "${work}/links/two" ] \
+  || fail "selective restore lost hardlink relationship"
+cmp "${src}/file" "${work}/links/one" || fail "selective hardlink differs"
 
 # every name list entry gets a recovery result, the most specific entry wins
 "${WRAP_TAR}" -x -I "${work}/rr.idx" -E "FILESYSTEM=${src}" \
