@@ -144,6 +144,16 @@ def check(report, phase):
         assert mssql["excluded"], mssql
         assert mssql["exclusion_reason"] == "opaque_backup_image", mssql
 
+    for fileset in fixture["vmware"]["filesets"]:
+        vmware = next(
+            row
+            for row in response["accounting"]
+            if row["client"] == fixture["vmware"]["client"]["name"]
+            and row["fileset"] == fileset["name"]
+        )
+        assert vmware["excluded"], vmware
+        assert vmware["exclusion_reason"] == "opaque_backup_image", vmware
+
 
 if __name__ == "__main__":
     action = sys.argv[1]
@@ -152,6 +162,8 @@ if __name__ == "__main__":
         import_case("barri", "full") if phase == "full" else None
         import_case("windows", phase)
         import_case("mssql", phase)
+        if phase == "full":
+            import_case("vmware", phase)
     elif action == "check":
         check(sys.argv[3], sys.argv[2])
     else:
