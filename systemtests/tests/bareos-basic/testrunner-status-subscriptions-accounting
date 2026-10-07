@@ -583,8 +583,8 @@ END_OF_DATA
     "$tmp/status-subscriptions-real-ndmp-${phase}.json"
 done
 
-# Import a privacy-reduced sample of actual Barri and Windows catalog
-# attributes from a supplied catalog dump. The encoded LStat values are
+# Import privacy-reduced samples of actual Barri, Windows, and MSSQL
+# catalog attributes from supplied dumps. The encoded LStat values are
 # preserved; names and paths are anonymized in the fixture.
 for phase in full incremental; do
   "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py import "$phase" \

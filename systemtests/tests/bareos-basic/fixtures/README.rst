@@ -50,7 +50,7 @@ The accounting test imports Fulls first and checks the snapshot, then
 imports Incrementals and checks again. It requires no running NDMP server.
 
 Barri and Windows catalog samples
-----------------------------------
+---------------------------------
 
 ``plugin-backups.json`` contains selected catalog rows from the local
 PostgreSQL dump supplied for this test. It uses the successful Barri Full
@@ -69,3 +69,22 @@ not a full catalog export. Expected Windows totals are computed directly
 from the selected decoded ``st_size`` values. The test verifies the Barri
 opaque-image fallback and that Windows accounting uses logical size over
 the Full/Incremental chain.
+
+MSSQL VDI catalog samples
+-------------------------
+
+The ``mssql`` section contains the File rows from successful Full and
+Incremental backups of two databases in ``mssqlbackup.sql``: a normal
+database and one using FILESTREAM. Their encoded ``LStat`` fields and
+job-level file/byte totals are preserved. Client/FileSet names, database
+names, file names, and timestamps are anonymized; paths retain the
+``/@MSSQL/`` namespace required to identify the virtual VDI stream, while
+the database path components are replaced. FileSet text contains only the
+plugin declaration and no connection credentials.
+
+MSSQL VDI records use zero as a placeholder ``st_size`` and encode the
+virtual-stream marker with mode 0700, ``st_blksize=65536`` and
+``st_blocks=1``. The accounting regression imports both Full/Incremental
+chains and verifies they are excluded from measured per-file totals so
+subscription reporting uses the job-level estimate rather than counting
+the zero placeholder as an empty file.

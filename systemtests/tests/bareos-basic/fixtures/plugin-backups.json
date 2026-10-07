@@ -174,5 +174,105 @@
       "incremental_has_resized_existing_file": true,
       "incremental_has_new_file": true
     }
+  },
+  "mssql": {
+    "client": {
+      "name": "acct-mssql-fixture",
+      "uname": "Windows Server"
+    },
+    "filesets": [
+      {
+        "name": "AcctMssqlNormal",
+        "text": "FileSet {\n  Name = \"AcctMssqlNormal\"\n  Include {\n    Plugin = \"mssqlvdi:\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 30,
+            "jobfiles": 1,
+            "jobbytes": 3932160,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlNormal/",
+                "name": "full.bak",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiHX BqxiHX BqxiHX A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          },
+          {
+            "type": "B",
+            "level": "I",
+            "jobstatus": "T",
+            "jobtdate": 40,
+            "jobfiles": 1,
+            "jobbytes": 655360,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlNormal/",
+                "name": "log.trn",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiHi BqxiHi BqxiHi A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AcctMssqlFileStream",
+        "text": "FileSet {\n  Name = \"AcctMssqlFileStream\"\n  Include {\n    Plugin = \"mssqlvdi:\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 50,
+            "jobfiles": 1,
+            "jobbytes": 4521984,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlFileStream/",
+                "name": "full.bak",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiIC BqxiIC BqxiIC A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          },
+          {
+            "type": "B",
+            "level": "I",
+            "jobstatus": "T",
+            "jobtdate": 60,
+            "jobfiles": 1,
+            "jobbytes": 851968,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlFileStream/",
+                "name": "log.trn",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiIO BqxiIO BqxiIO A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

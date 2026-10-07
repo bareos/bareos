@@ -40,51 +40,65 @@ def sql_command(query):
 def import_case(case_name, phase):
     fixture = json.loads(FIXTURE.read_text())[case_name]
     client = fixture["client"]
-    fileset = fixture["fileset"]
+    filesets = fixture.get("filesets")
+    if filesets is None:
+        filesets = [dict(fixture["fileset"], jobs=fixture["jobs"])]
     if phase == "full":
         sql_command(
             "INSERT INTO Client (Name, Uname) VALUES "
             f"({sql_literal(client['name'])}, {sql_literal(client['uname'])})"
         )
-        sql_command(
-            "INSERT INTO FileSet (FileSet, FileSetText, Md5, CreateTime) VALUES "
-            f"({sql_literal(fileset['name'])}, {sql_literal(fileset['text'])}, "
-            "'0', CURRENT_TIMESTAMP)"
-        )
-        jobs = fixture["jobs"][:1]
-    else:
-        jobs = fixture["jobs"][1:]
+        for fileset in filesets:
+            sql_command(
+                "INSERT INTO FileSet (FileSet, FileSetText, Md5, CreateTime) "
+                "VALUES "
+                f"({sql_literal(fileset['name'])}, "
+                f"{sql_literal(fileset['text'])}, '0', CURRENT_TIMESTAMP)"
+            )
 
-    for job in jobs:
-        name = f"{client['name']}-{job['level']}"
-        sql_command(
-            "INSERT INTO Job (Job, Name, Type, Level, ClientId, JobStatus, "
-            "JobTDate, FileSetId) "
-            f"SELECT {sql_literal(name)}, {sql_literal(name)}, "
-            f"{sql_literal(job['type'])}, {sql_literal(job['level'])}, "
-            f"ClientId, {sql_literal(job['jobstatus'])}, "
-            f"{sql_literal(job['jobtdate'])}, FileSetId "
-            f"FROM Client CROSS JOIN FileSet "
-            f"WHERE Client.Name={sql_literal(client['name'])} "
-            f"AND FileSet.FileSet={sql_literal(fileset['name'])}"
-        )
-        for path in sorted({row["path"] for row in job["files"]}):
+    for fileset in filesets:
+        jobs = fileset.get("jobs", fixture.get("jobs", []))
+        jobs = jobs[:1] if phase == "full" else jobs[1:]
+        for job in jobs:
+            name = f"{client['name']}-{fileset['name']}-{job['level']}"
             sql_command(
-                "INSERT INTO Path (Path) SELECT "
-                f"{sql_literal(path)} WHERE NOT EXISTS "
-                f"(SELECT 1 FROM Path WHERE Path={sql_literal(path)})"
+                "INSERT INTO Job (Job, Name, Type, Level, ClientId, JobStatus, "
+                "JobTDate, JobFiles, JobBytes, FileSetId) "
+                f"SELECT {sql_literal(name)}, {sql_literal(name)}, "
+                f"{sql_literal(job['type'])}, {sql_literal(job['level'])}, "
+                f"ClientId, {sql_literal(job['jobstatus'])}, "
+                f"{sql_literal(job['jobtdate'])}, "
+                f"{job.get('jobfiles', 0)}, {job.get('jobbytes', 0)}, "
+                "FileSetId "
+                f"FROM Client CROSS JOIN FileSet "
+                f"WHERE Client.Name={sql_literal(client['name'])} "
+                f"AND FileSet.FileSet={sql_literal(fileset['name'])}"
             )
-        for row in job["files"]:
-            columns = ("fileindex", "name", "lstat", "md5", "deltaseq", "fhinfo", "fhnode")
-            sql_command(
-                "INSERT INTO File (JobId, PathId, FileIndex, Name, LStat, "
-                "Md5, DeltaSeq, Fhinfo, Fhnode) "
-                "SELECT JobId, PathId, "
-                + ", ".join(sql_literal(row[key]) for key in columns)
-                + " FROM Job CROSS JOIN Path "
-                f"WHERE Job.Job={sql_literal(name)} "
-                f"AND Path.Path={sql_literal(row['path'])}"
-            )
+            for path in sorted({row["path"] for row in job["files"]}):
+                sql_command(
+                    "INSERT INTO Path (Path) SELECT "
+                    f"{sql_literal(path)} WHERE NOT EXISTS "
+                    f"(SELECT 1 FROM Path WHERE Path={sql_literal(path)})"
+                )
+            for row in job["files"]:
+                columns = (
+                    "fileindex",
+                    "name",
+                    "lstat",
+                    "md5",
+                    "deltaseq",
+                    "fhinfo",
+                    "fhnode",
+                )
+                sql_command(
+                    "INSERT INTO File (JobId, PathId, FileIndex, Name, LStat, "
+                    "Md5, DeltaSeq, Fhinfo, Fhnode) "
+                    "SELECT JobId, PathId, "
+                    + ", ".join(sql_literal(row[key]) for key in columns)
+                    + " FROM Job CROSS JOIN Path "
+                    f"WHERE Job.Job={sql_literal(name)} "
+                    f"AND Path.Path={sql_literal(row['path'])}"
+                )
 
 
 def result(report):
@@ -96,18 +110,20 @@ def check(report, phase):
     fixture = json.loads(FIXTURE.read_text())
     response = result(report)
     barri = next(
-        row for row in response["accounting"]
+        row
+        for row in response["accounting"]
         if row["client"] == fixture["barri"]["client"]["name"]
         and row["fileset"] == fixture["barri"]["fileset"]["name"]
     )
     assert barri["excluded"], barri
-    assert barri["exclusion_reason"] == fixture["barri"]["expected"][
-        "exclusion_reason"
-    ], barri
+    assert (
+        barri["exclusion_reason"] == fixture["barri"]["expected"]["exclusion_reason"]
+    ), barri
 
     windows_fixture = fixture["windows"]
     windows = next(
-        row for row in response["accounting"]
+        row
+        for row in response["accounting"]
         if row["client"] == windows_fixture["client"]["name"]
         and row["fileset"] == windows_fixture["fileset"]["name"]
     )
@@ -118,6 +134,16 @@ def check(report, phase):
     for key, value in expected.items():
         assert windows[key] == value, (key, windows, expected)
 
+    for fileset in fixture["mssql"]["filesets"]:
+        mssql = next(
+            row
+            for row in response["accounting"]
+            if row["client"] == fixture["mssql"]["client"]["name"]
+            and row["fileset"] == fileset["name"]
+        )
+        assert mssql["excluded"], mssql
+        assert mssql["exclusion_reason"] == "opaque_backup_image", mssql
+
 
 if __name__ == "__main__":
     action = sys.argv[1]
@@ -125,6 +151,7 @@ if __name__ == "__main__":
         phase = sys.argv[2]
         import_case("barri", "full") if phase == "full" else None
         import_case("windows", phase)
+        import_case("mssql", phase)
     elif action == "check":
         check(sys.argv[3], sys.argv[2])
     else:
