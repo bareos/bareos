@@ -566,6 +566,23 @@ row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
 assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history"
 PY
 
+# Real NDMP_BAREOS and NDMP_NATIVE catalog exports from PR #2855.
+# Import each Full first, then its Incremental, to verify both baselines
+# and latest-file de-duplication without needing an NDMP server here.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py import "$phase" \
+    >"$tmp/ndmp-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/ndmp-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-real-ndmp-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py check "$phase" \
+    "$tmp/status-subscriptions-real-ndmp-${phase}.json"
+done
+
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
   if [[ -f "$tmp/accounting-source-stats.log" ]]; then
