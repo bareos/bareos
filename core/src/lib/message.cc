@@ -199,6 +199,11 @@ void SetDbType(const char* name)
   catalog_db = strdup(name);
 }
 
+void SetJobCodeCallback(job_code_callback_t job_code_callback)
+{
+  message_job_code_callback = job_code_callback;
+}
+
 /*
  * Initialize message handler for a daemon or a Job
  * We make a copy of the MessagesResource resource passed, so it belongs
@@ -207,13 +212,10 @@ void SetDbType(const char* name)
  * NULL for jcr -> initialize global messages for daemon
  * non-NULL     -> initialize jcr using Message resource
  */
-void InitJobMsg(JobControlRecord* jcr,
-                MessagesResource* msg,
-                job_code_callback_t job_code_callback)
+void InitJobMsg(JobControlRecord* jcr, MessagesResource* msg)
 {
   ASSERT(jcr);
   ASSERT(msg);
-  message_job_code_callback = job_code_callback;
 
   jcr->jcr_msgs = new MessagesResource;
   msg->DuplicateResourceTo(*jcr->jcr_msgs);
@@ -222,8 +224,6 @@ void InitJobMsg(JobControlRecord* jcr,
 
 void InitDaemonMsg(MessagesResource* msg)
 {
-  message_job_code_callback = NULL;
-
   std::unique_lock _{daemon_msg_mutex};
 
   if (!msg) {
