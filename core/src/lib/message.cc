@@ -1186,7 +1186,6 @@ void e_msg(const char* file,
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 {
   va_list ap;
-  MessagesResource* msgs;
   uint32_t JobId = 0;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
@@ -1217,7 +1216,6 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     return;
   }
 
-  msgs = NULL;
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   if (jcr) {
@@ -1225,29 +1223,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     if (!jcr->dequeuing_msgs) { /* Avoid recursion */
       DequeueMessages(jcr);
     }
-    msgs = jcr->jcr_msgs;
     JobId = jcr->JobId;
-  }
-
-  {
-    /* This lock does not make the code correct, it only makes sure
-     * that we do not crash.
-     * We should select the correct msgs resource _once_ and then
-     * check it & pass it to dispatch message, but the code is written
-     * in a way where this is not easily possible. */
-    std::shared_lock lock{daemon_msg_mutex, std::defer_lock};
-    if (!msgs) {
-      lock.lock();
-      msgs = daemon_msgs; /* if no jcr, we use daemon handler */
-    }
-
-    /* Check if we have a message destination defined.
-     * We always report M_ABORT, M_ERROR_TERM and M_CONFIG_ERROR*/
-    if (msgs
-        && (type != M_ABORT && type != M_ERROR_TERM && type != M_CONFIG_ERROR)
-        && !BitIsSet(type, msgs->send_msg_types_)) {
-      return; /* no destination */
-    }
   }
 
   switch (type) {
