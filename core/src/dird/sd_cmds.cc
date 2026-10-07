@@ -143,11 +143,9 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
 
   sd->SetEnableKtls(myself->enable_ktls);
 
-  DefaultConnectionInfo info{*store};
-
   if (!BareosConnect<global_resource::Type::Director,
                      global_resource::Type::Storage>(
-          jcr, sd.get(), myself->resource_name_, &info)) {
+          jcr, sd.get(), myself->resource_name_, store)) {
     sd->close();
     return false;
   }

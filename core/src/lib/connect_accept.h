@@ -51,18 +51,16 @@ struct ConnectionInfo {
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    const std::string& qualified_name,
-                   ConnectionInfo* info,
+                   const TlsResource* res,
+                   auth::OutboundAuthenticator* auth,
                    std::string_view hello_msg,
-                   auth::Authenticator* auth,
                    bool cleartext_authentication = false);
 
-template <global_resource::Type type,
-          global_resource::Type target_type,
-          typename Authenticator = auth::DefaultAuthenticator>
+template <global_resource::Type type, global_resource::Type target_type>
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    std::string_view name,
-                   ConnectionInfo* info,
+                   const TlsResource* res,
                    bool cleartext_authentication = false)
 {
   using formatter = hello_formatter<type, target_type>;
@@ -70,9 +68,37 @@ bool BareosConnect(JobControlRecord* jcr,
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
 
-  Authenticator auth{};
+  struct outbound : auth::OutboundAuthenticator {
+    bool authenticate(auth::OutboundArgs args) override
+    {
+      auto* socket = args.socket;
 
-  return BareosConnect(jcr, socket, qualified_name, info, hello, &auth,
+      static constexpr std::string_view new_auth_prefix = "auth:";
+
+      // messages start with a uint32_t length
+      char buffer[sizeof(uint32_t) + new_auth_prefix.size()] = {};
+
+      std::string_view prefix{buffer + sizeof(uint32_t),
+                              new_auth_prefix.size()};
+
+      if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
+        auth::CramMd5::Prover prover{};
+        auth::CramMd5::Verifier verifier{};
+
+
+        auth::NewAuthenticator auth{};
+        auto result = auth.authenticate_outbound(args);
+        return result;
+      } else {
+        auth::Md5Authenticator auth;
+        return auth.authenticate_outbound(args);
+      }
+    }
+  };
+
+  outbound auth;
+
+  return BareosConnect(jcr, socket, qualified_name, res, &auth, hello,
                        cleartext_authentication);
 }
 

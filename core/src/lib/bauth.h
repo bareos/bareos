@@ -25,6 +25,7 @@
 #include "lib/bsock.h"
 
 #include <span>
+#include <type_traits>
 #include <vector>
 #include <string_view>
 
@@ -58,16 +59,30 @@ struct Prover {
 };  // namespace auth
 
 namespace auth {
+struct OutboundArgs {
+  JobControlRecord* jcr;
+  BareosSocket* socket;
+  const TlsResource* target;
+};
+
+struct OutboundAuthenticator {
+  virtual bool authenticate(OutboundArgs args) = 0;
+};
+
+struct Algorithms {
+  std::vector<std::unique_ptr<Prover>> prover;
+  std::vector<std::unique_ptr<Verifier>> verifier;
+
+  template <typename T, typename... Args>
+    requires std::is_base_of<T, Prover>
+  Algorithms& add_prover(Args... args)
+  {
+    prover.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
+    return *this;
+  }
+};
+
 struct Authenticator {
-  struct OutboundArgs {
-    JobControlRecord* jcr;
-    BareosSocket* socket;
-
-    const TlsResource* target;
-    std::span<std::unique_ptr<Prover>> provers;
-    std::span<std::unique_ptr<Verifier>> verifiers;
-  };
-
   struct InboundArgs {
     BareosSocket* socket;
     uint32_t remote_version;
