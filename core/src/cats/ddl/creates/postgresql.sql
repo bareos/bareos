@@ -6,6 +6,7 @@ CREATE TABLE Path
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
+ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE UNIQUE INDEX path_name_idx ON Path (Path);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
@@ -36,6 +37,7 @@ CREATE TABLE File (
    Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
+ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- This index is important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
@@ -635,7 +637,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions
