@@ -837,7 +837,7 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bconsole");
-  InitMsg(nullptr);
+  InitDaemonMsg(nullptr);
   working_directory = "/tmp";
   g_args = GetPoolMemory(PM_FNAME);
 

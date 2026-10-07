@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-fd");
-  InitMsg(nullptr);
+  InitDaemonMsg(nullptr);
   daemon_start_time = time(nullptr);
 
   CLI::App fd_app;

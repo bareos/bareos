@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");
-  InitMsg(nullptr); /* initialize message handler */
+  InitDaemonMsg(nullptr); /* initialize message handler */
   daemon_start_time = time(nullptr);
 
   console_command = RunConsoleCommand;
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
     return BEXIT_SUCCESS;
   }
 
-  InitMsg(me->messages); /* open daemon message handler */
+  InitDaemonMsg(me->messages); /* open daemon message handler */
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work

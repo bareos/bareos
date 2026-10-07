@@ -201,7 +201,7 @@ static void InitEnvironment(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "tray-monitor");
-  InitMsg(nullptr);
+  InitDaemonMsg(nullptr);
   signal(SIGINT, intHandler);
   working_directory = "/tmp";
   OSDependentInit();

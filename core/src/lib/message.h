@@ -76,10 +76,10 @@ BAREOS_IMPORT brwlock_t con_lock; /* Console lock structure */
 
 void MyNameIs(int argc, const char* const argv[], const char* name);
 
-void InitMsg(JobControlRecord* jcr,
-             MessagesResource* msg,
-             job_code_callback_t job_code_callback);
-void InitMsg(MessagesResource* msg);
+void InitJobMsg(JobControlRecord* jcr,
+                MessagesResource* msg,
+                job_code_callback_t job_code_callback);
+void InitDaemonMsg(MessagesResource* msg);
 void TermMsg(void);
 void CloseMsg(JobControlRecord* jcr);
 void DispatchMessage(JobControlRecord* jcr,

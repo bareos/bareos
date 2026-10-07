@@ -145,7 +145,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
     // See if we should suppress all output.
     if (!suppress_output) {
-      InitMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
+      InitJobMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
     } else {
       jcr->suppress_output = true;
     }

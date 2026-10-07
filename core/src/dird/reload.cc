@@ -228,7 +228,7 @@ bool DoReloadConfig()
     assert(me);
     my_config->own_resource_ = me;
   }
-  InitMsg(me->messages);
+  InitDaemonMsg(me->messages);
   SetWorkingDirectory(me->working_directory);
   StartStatisticsThread();
   UnlockJobs();
