@@ -30,8 +30,23 @@ if(TARGET ndmjob AND TARGET wrap_tar)
   set(NDMJOB_ROBOT2_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp/ndmjob/robot2)
   string(LENGTH "${NDMJOB_ROBOT2_DIR}/drive1" ndmjob_drive_length)
   if(ndmjob_drive_length GREATER 127)
-    set(NDMJOB_ROBOT1_DIR /tmp/${BASENAME}-ndmjob-robot1)
-    set(NDMJOB_ROBOT2_DIR /tmp/${BASENAME}-ndmjob-robot2)
+    string(SHA1 ndmjob_dir_hash "${CMAKE_CURRENT_BINARY_DIR}")
+    string(SUBSTRING "${ndmjob_dir_hash}" 0 8 ndmjob_dir_hash)
+    string(LENGTH "/tmp/${ndmjob_dir_hash}-ndmjob-robot2/drive1"
+           ndmjob_fallback_fixed_length)
+    math(EXPR ndmjob_fallback_basename_length
+         "127 - ${ndmjob_fallback_fixed_length}")
+    string(LENGTH "${BASENAME}" ndmjob_basename_length)
+    if(ndmjob_basename_length GREATER ndmjob_fallback_basename_length)
+      string(SUBSTRING "${BASENAME}" 0 ${ndmjob_fallback_basename_length}
+             ndmjob_fallback_basename)
+    else()
+      set(ndmjob_fallback_basename "${BASENAME}")
+    endif()
+    set(NDMJOB_ROBOT1_DIR
+        /tmp/${ndmjob_fallback_basename}-${ndmjob_dir_hash}-ndmjob-robot1)
+    set(NDMJOB_ROBOT2_DIR
+        /tmp/${ndmjob_fallback_basename}-${ndmjob_dir_hash}-ndmjob-robot2)
   endif()
 
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
