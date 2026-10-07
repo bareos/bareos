@@ -583,6 +583,23 @@ END_OF_DATA
     "$tmp/status-subscriptions-real-ndmp-${phase}.json"
 done
 
+# Import privacy-reduced samples of actual Barri, Windows, and MSSQL
+# catalog attributes from supplied dumps. The encoded LStat values are
+# preserved; names and paths are anonymized in the fixture.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py import "$phase" \
+    >"$tmp/plugin-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/plugin-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-plugin-fixtures-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py check \
+    "$phase" "$tmp/status-subscriptions-plugin-fixtures-${phase}.json"
+done
+
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
   if [[ -f "$tmp/accounting-source-stats.log" ]]; then

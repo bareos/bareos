@@ -1,0 +1,278 @@
+{
+  "provenance": {
+    "source": "user-supplied local Bareos PostgreSQL catalog dump",
+    "generated": "2026-10-07",
+    "privacy": "Client/FileSet/Job names, paths, file names, MD5 values and FileHistory IDs anonymized; selected encoded LStat values preserved exactly."
+  },
+  "barri": {
+    "client": {
+      "name": "acct-barri-fixture",
+      "uname": "Windows"
+    },
+    "fileset": {
+      "name": "AcctBarriFixture",
+      "text": "FileSet {\n  Name = \"AcctBarriFixture\"\n  Include {\n    Plugin = \"barri:\"\n  }\n}\n"
+    },
+    "jobs": [
+      {
+        "type": "B",
+        "level": "F",
+        "jobstatus": "T",
+        "jobtdate": 1,
+        "files": [
+          {
+            "path": "/accounting-fixtures/barri/65eba12ff5a78377/",
+            "name": "entry",
+            "fileindex": 1,
+            "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/barri/646f7ae4b1f78659/",
+            "name": "entry",
+            "fileindex": 2,
+            "lstat": "A A IHA A A A A LR7H BAA LS BqxDhN BqxDhN BqxDhN A A d",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          }
+        ]
+      }
+    ],
+    "expected": {
+      "excluded": true,
+      "exclusion_reason": "opaque_backup_image"
+    },
+    "selected_source_job_level": "F"
+  },
+  "windows": {
+    "client": {
+      "name": "acct-windows-fixture",
+      "uname": "Windows Server"
+    },
+    "fileset": {
+      "name": "AcctWindowsFixture",
+      "text": "FileSet {\n  Name = \"AcctWindowsFixture\"\n  Include {\n    File = \"/accounting-fixtures/windows/\"\n  }\n}\n"
+    },
+    "jobs": [
+      {
+        "type": "B",
+        "level": "F",
+        "jobstatus": "T",
+        "jobtdate": 10,
+        "files": [
+          {
+            "path": "/accounting-fixtures/windows/44d2d3e63679ba90/",
+            "name": "entry",
+            "fileindex": 2604,
+            "lstat": "CgxRG2 BAAAAAXrP IH/ B A A g DG BAA B BqV7jR BqV7jR BqVvCT A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/32d0d0daa0281e43/",
+            "name": "entry",
+            "fileindex": 67877,
+            "lstat": "CgxRG2 BAAAAAIUW IH/ C A A g UAA BAA U BglkiA BglkiA BglkiA A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/06b8160036ac4a56/",
+            "name": "entry",
+            "fileindex": 2606,
+            "lstat": "CgxRG2 BAAAAAXrC IH/ B A A g A BAA A BqVvCT BqVvCT BqVvCT A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/db6216a7072e8ac0/",
+            "name": "entry",
+            "fileindex": 51969,
+            "lstat": "CgxRG2 BAAAAATDl IH/ E A A g 4A BAA B Bgllsz Bgllsz Bgllsz A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/28fb3d095626632d/",
+            "name": "entry",
+            "fileindex": 67878,
+            "lstat": "A A EH/ A A A Q A BAA A BglkiB BglkiB BqVv4t A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/bf635be166079ca0/",
+            "name": "entry",
+            "fileindex": 3769,
+            "lstat": "A A KH/ A A A gACQW A BAA A BqVvCR BqVvCR BqVvCR A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          }
+        ]
+      },
+      {
+        "type": "B",
+        "level": "I",
+        "jobstatus": "T",
+        "jobtdate": 20,
+        "files": [
+          {
+            "path": "/accounting-fixtures/windows/44d2d3e63679ba90/",
+            "name": "entry",
+            "fileindex": 883,
+            "lstat": "CgxRG2 BAAAAAXrP IH/ B A A g ES BAA B BqWDyW BqWDyW BqVvCT A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          },
+          {
+            "path": "/accounting-fixtures/windows/c985331111c2ca4f/",
+            "name": "entry",
+            "fileindex": 2816,
+            "lstat": "CgxRG2 IAAAAAYDe IH/ B A A CAg EAA BAA E BqWCQw BqWCQw BqWCP0 A A L",
+            "md5": "0",
+            "deltaseq": 0,
+            "fhinfo": 0,
+            "fhnode": 0
+          }
+        ]
+      }
+    ],
+    "expected": [
+      {
+        "files": 4,
+        "bytes": 85702,
+        "logical_bytes": 85702
+      },
+      {
+        "files": 5,
+        "bytes": 102162,
+        "logical_bytes": 102162
+      }
+    ],
+    "selection": {
+      "full_job_level": "F",
+      "incremental_job_level": "I",
+      "incremental_has_resized_existing_file": true,
+      "incremental_has_new_file": true
+    }
+  },
+  "mssql": {
+    "client": {
+      "name": "acct-mssql-fixture",
+      "uname": "Windows Server"
+    },
+    "filesets": [
+      {
+        "name": "AcctMssqlNormal",
+        "text": "FileSet {\n  Name = \"AcctMssqlNormal\"\n  Include {\n    Plugin = \"mssqlvdi:\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 30,
+            "jobfiles": 1,
+            "jobbytes": 3932160,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlNormal/",
+                "name": "full.bak",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiHX BqxiHX BqxiHX A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          },
+          {
+            "type": "B",
+            "level": "I",
+            "jobstatus": "T",
+            "jobtdate": 40,
+            "jobfiles": 1,
+            "jobbytes": 655360,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlNormal/",
+                "name": "log.trn",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiHi BqxiHi BqxiHi A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AcctMssqlFileStream",
+        "text": "FileSet {\n  Name = \"AcctMssqlFileStream\"\n  Include {\n    Plugin = \"mssqlvdi:\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 50,
+            "jobfiles": 1,
+            "jobbytes": 4521984,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlFileStream/",
+                "name": "full.bak",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiIC BqxiIC BqxiIC A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          },
+          {
+            "type": "B",
+            "level": "I",
+            "jobstatus": "T",
+            "jobtdate": 60,
+            "jobfiles": 1,
+            "jobbytes": 851968,
+            "files": [
+              {
+                "path": "/@MSSQL/default/AcctMssqlFileStream/",
+                "name": "log.trn",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A A QAA B BqxiIO BqxiIO BqxiIO A A L",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
