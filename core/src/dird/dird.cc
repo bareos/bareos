@@ -140,6 +140,8 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");
+
+  SetJobCodeCallback(job_code_callback_director);
   InitDaemonMsg(nullptr); /* initialize message handler */
   daemon_start_time = time(nullptr);
 
