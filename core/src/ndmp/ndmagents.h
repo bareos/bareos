@@ -874,9 +874,7 @@ extern void ndmda_fh_flush(struct ndm_session* sess);
 extern int ndmda_pipe_fork_exec(struct ndm_session* sess,
                                 char* cmd,
                                 int is_backup);
-extern int ndmda_add_to_cmd_with_escapes(char* cmd, char* word, char* special);
-extern int ndmda_add_to_cmd(char* cmd, char* word);
-extern int ndmda_add_to_cmd_allow_file_wildcards(char* cmd, char* word);
+extern int ndmda_add_to_cmd(char** cmd, const char* word);
 
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 

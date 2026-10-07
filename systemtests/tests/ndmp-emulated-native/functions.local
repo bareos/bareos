@@ -31,6 +31,8 @@ make_ndmp_data_full()
   cp "${BAREOS_STORAGEDAEMON_BINARY}" "${NDMP_FILESYSTEM}/testfile2"
   echo "file in a subdirectory" >"${NDMP_FILESYSTEM}/sub/dir/file"
   ln -s ../testfile "${NDMP_FILESYSTEM}/sub/link"
+  # Include special files, link groups and unusual names in every full backup.
+  tar -xzf ../../data/weird-files.tar.gz -C "${NDMP_FILESYSTEM}"
 }
 
 # copy of the data at the time of the full backup
@@ -45,9 +47,7 @@ save_ndmp_reference()
 # compare the restored full backup in $1 with the reference
 check_ndmp_data_full()
 {
-  # diff of FreeBSD 13 has no --no-dereference, check the symlink explicitly
-  diff -r "${NDMP_REFERENCE}" "$1" \
-    && [ "$(readlink "$1/sub/link")" = "../testfile" ]
+  bareos_diff -s "${NDMP_REFERENCE}" -d "$1"
 }
 
 # NDMP_NATIVE jobs only involve the director and ndmjob, so the generic

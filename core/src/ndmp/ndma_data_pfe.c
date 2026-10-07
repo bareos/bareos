@@ -36,6 +36,7 @@
 
 
 #include "ndmagents.h"
+#include <stdint.h>
 
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 
@@ -166,41 +167,43 @@ int ndmda_pipe_fork_exec(struct ndm_session* sess, char* cmd, int is_backup)
   return rc; /* PID */
 }
 
-int ndmda_add_to_cmd_with_escapes(char* cmd, char* word, char* special)
+int ndmda_add_to_cmd(char** cmd, const char* word)
 {
-  char* cmd_lim = &cmd[NDMDA_MAX_CMD - 3];
+  size_t old_length = *cmd ? strlen(*cmd) : 0;
+  size_t length;
   char* p;
-  int c;
+  char* grown;
 
-  p = cmd;
-  while (*p) p++;
-  if (p != cmd) *p++ = ' ';
-
-  /* an empty word must survive sh(1) word splitting as an empty argument */
-  if (*word == 0) {
-    if (p + 2 >= cmd_lim) return -1; /* overflow */
-    *p++ = '\'';
-    *p++ = '\'';
+  if (old_length > SIZE_MAX - 4) {
+    errno = EOVERFLOW;
+    return -1;
   }
-
-  while ((c = *word++) != 0) {
-    if (p >= cmd_lim) return -1; /* overflow */
-    if (c == '\\' || strchr(special, c)) *p++ = '\\';
-    *p++ = c;
+  length = old_length + 4;
+  for (const char* s = word; *s; s++) {
+    size_t extra = *s == '\'' ? 4 : 1;
+    if (length > SIZE_MAX - extra) {
+      errno = EOVERFLOW;
+      return -1;
+    }
+    length += extra;
   }
+  grown = realloc(*cmd, length);
+  if (!grown) return -1;
+  *cmd = grown;
+  p = grown + old_length;
+  if (old_length) *p++ = ' ';
+  *p++ = '\'';
+  for (; *word; word++) {
+    if (*word == '\'') {
+      memcpy(p, "'\\''", 4);
+      p += 4;
+    } else {
+      *p++ = *word;
+    }
+  }
+  *p++ = '\'';
   *p = 0;
-
   return 0;
-}
-
-int ndmda_add_to_cmd(char* cmd, char* word)
-{
-  return ndmda_add_to_cmd_with_escapes(cmd, word, " \t`'\"*?[]$");
-}
-
-int ndmda_add_to_cmd_allow_file_wildcards(char* cmd, char* word)
-{
-  return ndmda_add_to_cmd_with_escapes(cmd, word, " \t`'\"$");
 }
 
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */

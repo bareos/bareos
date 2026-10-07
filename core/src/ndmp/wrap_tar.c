@@ -77,6 +77,20 @@ struct tar_header {
 
 _Static_assert(sizeof(struct tar_header) == TAR_BLOCK, "bad tar header size");
 
+struct saved_hardlink {
+  dev_t device;
+  ino_t inode;
+  char* name;
+  struct saved_hardlink* next;
+};
+
+struct cached_file {
+  char* name;
+  char path[WRAP_MAX_PATH];
+  char restored[WRAP_MAX_PATH];
+  struct cached_file* next;
+};
+
 struct wrap_tar {
   struct wrap_ccb* wccb;
   int fd;
@@ -90,6 +104,9 @@ struct wrap_tar {
   /* recovery: per name list entry, was a member restored, first errno */
   int file_seen[WRAP_MAX_FILE];
   int file_errno[WRAP_MAX_FILE];
+  struct saved_hardlink* hardlinks;
+  struct cached_file* cached_files;
+  char cache_directory[WRAP_MAX_PATH];
 };
 
 /*
@@ -429,6 +446,29 @@ static int backup_entry(struct wrap_tar* wt,
     snprintf(name, sizeof name, ".%s", rel);
     h.typeflag = '0';
     size = (uint64_t)st->st_size;
+    if (st->st_nlink > 1) {
+      struct saved_hardlink* saved;
+      for (saved = wt->hardlinks; saved; saved = saved->next) {
+        if (saved->device == st->st_dev && saved->inode == st->st_ino) break;
+      }
+      if (saved) {
+        snprintf(target, sizeof target, "%s", saved->name);
+        h.typeflag = '1';
+        size = 0;
+      } else {
+        saved = malloc(sizeof *saved);
+        if (!saved) return -1;
+        saved->name = strdup(name);
+        if (!saved->name) {
+          free(saved);
+          return -1;
+        }
+        saved->device = st->st_dev;
+        saved->inode = st->st_ino;
+        saved->next = wt->hardlinks;
+        wt->hardlinks = saved;
+      }
+    }
   } else if (S_ISLNK(st->st_mode)) {
     ssize_t n = readlink(abs, target, sizeof target - 1);
     if (n < 0) {
@@ -752,6 +792,67 @@ static int extract_member(struct wrap_tar* wt,
   snprintf(path, sizeof path, "%s", dest);
 
   switch (h->typeflag) {
+    case '1': {
+      char source[WRAP_MAX_PATH];
+      const char* rel = linkname;
+      struct stat st;
+      struct cached_file* cached = NULL;
+      if (rel[0] == '.' && rel[1] == '/') rel++;
+      if (unsafe_path(rel)) {
+        errno = EINVAL;
+        goto error;
+      }
+      if (map_destination(wccb, rel, source, sizeof source) < 0) {
+        for (cached = wt->cached_files; cached; cached = cached->next) {
+          if (strcmp(cached->name, rel) == 0) break;
+        }
+        if (!cached) {
+          errno = ENOENT;
+          goto error;
+        }
+        snprintf(source, sizeof source, "%s",
+                 cached->restored[0] ? cached->restored : cached->path);
+      }
+      if (make_parent(source) < 0 || make_parent(path) < 0) goto error;
+      if (lstat(source, &st) < 0) goto error;
+      if (!S_ISREG(st.st_mode)) {
+        errno = EINVAL;
+        goto error;
+      }
+      unlink(path);
+      if (link(source, path) < 0) {
+        char buf[64 * 1024];
+        int input;
+        int output;
+        int copy_error = 0;
+        ssize_t count;
+        if (errno != EXDEV || !cached) goto error;
+        input = open(source, O_RDONLY);
+        if (input < 0) goto error;
+        output = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+        if (output < 0) {
+          close(input);
+          goto error;
+        }
+        while ((count = read_full(input, buf, sizeof buf)) > 0) {
+          if (write_all(output, buf, (size_t)count) < 0) {
+            copy_error = errno;
+            break;
+          }
+        }
+        if (count < 0) copy_error = errno;
+        close(input);
+        if (close(output) < 0 && !copy_error) copy_error = errno;
+        if (copy_error) {
+          errno = copy_error;
+          goto error;
+        }
+        set_attributes(path, h, 0);
+      }
+      if (cached) snprintf(cached->restored, sizeof cached->restored, "%s", path);
+      return image_skip(wt, padded(size));
+    }
+
     case '5':
       if (mkdir_p(path, 0755) < 0) goto error;
       set_attributes(path, h, 0);
@@ -957,11 +1058,11 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
     len = strlen(rel);
     while (len > 0 && rel[len - 1] == '/') rel[--len] = 0;
 
-    if (h.typeflag == '1' || h.typeflag == '3' || h.typeflag == '4') {
-      /* hard links and devices are never created by our backup */
+    if (h.typeflag == '3' || h.typeflag == '4') {
+      /* devices are never created by our backup */
       wrap_log(wccb, "skipping unsupported member type %c for %s", h.typeflag,
                rel);
-      if (image_skip(wt, padded(h.typeflag == '1' ? 0 : size)) < 0) rc = -1;
+      if (image_skip(wt, padded(size)) < 0) rc = -1;
     } else if (unsafe_path(rel)) {
       wrap_log(wccb, "refusing unsafe path %s", rel);
       wt->n_errors++;
@@ -985,6 +1086,47 @@ static int wrap_tar_recover(struct wrap_tar* wt, int filehist_only)
         wt->file_seen[entry] = 1;
         if (wt->n_extract_errors != errors && !wt->file_errno[entry]) {
           wt->file_errno[entry] = wt->last_errno;
+        }
+      }
+    } else if (h.typeflag == '0' || h.typeflag == 0) {
+      /* An unselected regular member may be the target of a selected hardlink. */
+      struct cached_file* cached = calloc(1, sizeof *cached);
+      int fd;
+      if (!wt->cache_directory[0]) {
+        const char* tmpdir = getenv("TMPDIR");
+        if (snprintf(wt->cache_directory, sizeof wt->cache_directory,
+                     "%s/wrap-tar-XXXXXX", tmpdir && *tmpdir ? tmpdir : "/tmp")
+            >= (int)sizeof wt->cache_directory
+            || !mkdtemp(wt->cache_directory)) {
+          wt->cache_directory[0] = 0;
+          free(cached);
+          rc = -1;
+          break;
+        }
+      }
+      if (!cached) {
+        rc = -1;
+      } else {
+        cached->name = strdup(rel);
+        if (snprintf(cached->path, sizeof cached->path, "%s/file-XXXXXX",
+                     wt->cache_directory) >= (int)sizeof cached->path
+            || !cached->name) {
+          free(cached->name);
+          free(cached);
+          rc = -1;
+        } else if ((fd = mkstemp(cached->path)) < 0) {
+          free(cached->name);
+          free(cached);
+          rc = -1;
+        } else {
+          close(fd);
+          cached->next = wt->cached_files;
+          wt->cached_files = cached;
+          {
+            int errors = wt->n_extract_errors;
+            if (extract_member(wt, &h, cached->path, "", size) < 0
+                || wt->n_extract_errors != errors) rc = -1;
+          }
         }
       }
     } else {
@@ -1067,6 +1209,20 @@ int main(int argc, char* argv[])
   }
 
   if (wccb.index_fp) fclose(wccb.index_fp);
+  while (wt.hardlinks) {
+    struct saved_hardlink* saved = wt.hardlinks;
+    wt.hardlinks = saved->next;
+    free(saved->name);
+    free(saved);
+  }
+  while (wt.cached_files) {
+    struct cached_file* cached = wt.cached_files;
+    wt.cached_files = cached->next;
+    unlink(cached->path);
+    free(cached->name);
+    free(cached);
+  }
+  if (wt.cache_directory[0]) rmdir(wt.cache_directory);
 
   if (rc < 0) {
     fprintf(stderr, "%s: operation failed\n", argv[0]);
