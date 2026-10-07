@@ -156,7 +156,7 @@ void htableImpl::stats()
     p = table[i];
     j = 0;
     while (p) {
-      p = (hlink*)(p->next);
+      p = p->next;
       j++;
     }
     if (j > max) { max = j; }
@@ -188,7 +188,7 @@ void htableImpl::grow_table()
    * collision chain ourselves. We do use next() for getting
    * to the next bucket. */
   for (void* item = first(); item;) {
-    cur = (hlink*)((char*)item + loffset);
+    cur = reinterpret_cast<hlink*>((char*)item + loffset);
     next_item = cur->next; /* Save link overwritten by insert */
     switch (cur->key_type) {
       case KEY_TYPE_CHAR:
@@ -234,7 +234,7 @@ bool htableImpl::insert(char* key, void* item)
   ASSERT(index < buckets);
   Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
-  hp = (hlink*)(((char*)item) + loffset);
+  hp = reinterpret_cast<hlink*>(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
         "Insert hp=%p index=%" PRIu32 " item=%p offset=%" PRIuz "\n", hp, index,
@@ -272,7 +272,7 @@ bool htableImpl::insert(uint32_t key, void* item)
   ASSERT(index < buckets);
   Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
-  hp = (hlink*)(((char*)item) + loffset);
+  hp = reinterpret_cast<hlink*>(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
         "Insert hp=%p index=%" PRIu32 " item=%p offset=%" PRIuz "\n", hp, index,
@@ -312,7 +312,7 @@ bool htableImpl::insert(uint64_t key, void* item)
   ASSERT(index < buckets);
   Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
-  hp = (hlink*)(((char*)item) + loffset);
+  hp = reinterpret_cast<hlink*>(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
         "Insert hp=%p index=%" PRIu32 " item=%p offset=%" PRIuz "\n", hp, index,
@@ -352,7 +352,7 @@ bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
   ASSERT(index < buckets);
   Dmsg2(debuglevel, "Insert: hash=0x%" PRIx64 " index=%" PRIu32 "\n",
         cast(hash), index);
-  hp = (hlink*)(((char*)item) + loffset);
+  hp = reinterpret_cast<hlink*>(((char*)item) + loffset);
 
   Dmsg4(debuglevel,
         "Insert hp=%p index=%" PRIu32 " item=%p offset=%" PRIuz "\n", hp, index,
@@ -383,7 +383,7 @@ bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
 void* htableImpl::lookup(char* key)
 {
   HashIndex(key);
-  for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
+  for (hlink* hp = table[index]; hp; hp = hp->next) {
     ASSERT(hp->key_type == KEY_TYPE_CHAR);
     if (hash == hp->hash && bstrcmp(key, hp->key.char_key)) {
       Dmsg1(debuglevel, "lookup return %p\n", ((char*)hp) - loffset);
@@ -397,7 +397,7 @@ void* htableImpl::lookup(char* key)
 void* htableImpl::lookup(uint32_t key)
 {
   HashIndex(key);
-  for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
+  for (hlink* hp = table[index]; hp; hp = hp->next) {
     ASSERT(hp->key_type == KEY_TYPE_UINT32);
     if (hash == hp->hash && key == hp->key.uint32_key) {
       Dmsg1(debuglevel, "lookup return %p\n", ((char*)hp) - loffset);
@@ -411,7 +411,7 @@ void* htableImpl::lookup(uint32_t key)
 void* htableImpl::lookup(uint64_t key)
 {
   HashIndex(key);
-  for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
+  for (hlink* hp = table[index]; hp; hp = hp->next) {
     ASSERT(hp->key_type == KEY_TYPE_UINT64);
     if (hash == hp->hash && key == hp->key.uint64_key) {
       Dmsg1(debuglevel, "lookup return %p\n", ((char*)hp) - loffset);
@@ -425,7 +425,7 @@ void* htableImpl::lookup(uint64_t key)
 void* htableImpl::lookup(uint8_t* key, uint32_t key_len)
 {
   HashIndex(key, key_len);
-  for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
+  for (hlink* hp = table[index]; hp; hp = hp->next) {
     ASSERT(hp->key_type == KEY_TYPE_BINARY);
     if (hash == hp->hash && memcmp(key, hp->key.binary_key, hp->key_len) == 0) {
       Dmsg1(debuglevel, "lookup return %p\n", ((char*)hp) - loffset);
@@ -439,7 +439,7 @@ void* htableImpl::lookup(uint8_t* key, uint32_t key_len)
 void* htableImpl::next()
 {
   Dmsg1(debuglevel, "Enter next: walkptr=%p\n", walkptr);
-  if (walkptr) { walkptr = (hlink*)(walkptr->next); }
+  if (walkptr) { walkptr = walkptr->next; }
 
   while (!walkptr && walk_index < buckets) {
     walkptr = table[walk_index++];

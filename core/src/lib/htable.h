@@ -52,7 +52,7 @@ union hlink_key {
 };
 
 struct hlink {
-  void* next;          /* Next hash item */
+  hlink* next;         /* Next hash item */
   key_type_t key_type; /* Type of key used to hash */
   union hlink_key key; /* Key for this item */
   uint32_t key_len;    /* Length of key for this item */
