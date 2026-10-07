@@ -27,27 +27,6 @@
 #include "lib/bauth/cram_md5.h"
 #include "lib/tls.h"
 
-enum class ConnectionType
-{
-  /* This connection is insecure, we do not know who we are talking to */
-  Insecure,
-  /* The connection is secure, but we do not trust the other side yet. */
-  Untrusted,
-  /* The connection is secure and we trust the other side. */
-  Trusted,
-};
-
-struct ConnectionInfo {
-  virtual const TlsResource* tls_settings() = 0;
-  virtual std::vector<std::unique_ptr<auth::Prover>> select_provers(
-      ConnectionType type)
-      = 0;
-  virtual std::vector<std::unique_ptr<auth::Verifier>> select_verifiers(
-      ConnectionType type)
-      = 0;
-  virtual ~ConnectionInfo() = default;
-};
-
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    const std::string& qualified_name,
@@ -78,20 +57,8 @@ bool BareosConnect(JobControlRecord* jcr,
                        cleartext_authentication);
 }
 
-struct DefaultConnectionInfo : ConnectionInfo {
-  DefaultConnectionInfo(TlsResource res) : tls{std::move(res)} {}
-
-  const TlsResource* tls_settings() override { return &tls; };
-  std::vector<std::unique_ptr<auth::Prover>> select_provers(
-      ConnectionType type) override;
-  std::vector<std::unique_ptr<auth::Verifier>> select_verifiers(
-      ConnectionType type) override;
-
-  TlsResource tls;
-};
-
 struct ConnectionInfoProvider {
-  virtual std::unique_ptr<ConnectionInfo>
+  virtual std::unique_ptr<auth::InboundAuthenticator>
   get_info_for(global_resource::Type type, std::string_view idenity) = 0;
 };
 
