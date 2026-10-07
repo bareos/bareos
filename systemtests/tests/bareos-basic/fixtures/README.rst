@@ -120,3 +120,26 @@ data; DeltaSeq is not an allocation-size value. The regression imports both
 jobs and verifies the opaque configuration rows cause this combination to
 use the job-level estimate rather than treating the synthetic
 configuration sizes as measured data.
+
+Seeding an existing catalog
+---------------------------
+
+Run this from the fixtures directory to add the anonymized Barri, Windows,
+MSSQL, VMware, Hyper-V and NDMP catalog samples:
+
+.. code-block:: console
+
+   psql -X -v ON_ERROR_STOP=1 -d <catalog> -f accounting-fixtures-seed.sql
+
+The script is rerunnable: it updates matching fixture job/file metadata and
+assigns recent timestamps so the jobs appear in current accounting reports.
+It creates Client, FileSet, Job, Path and File rows only; it does not add
+media or backup payloads, so the seeded jobs cannot be restored. Review the
+synthetic ``acct-*-fixture`` and ``acct-ndmp-*`` names before running it
+against a production catalog.
+
+For legibility in the two-decimal-precision unit report, the seed script
+scales Windows and NDMP regular-file ``st_size`` and ``st_blocks`` values
+and NDMP and MSSQL job ``JobBytes``/``ReadBytes`` by 4096. The checked-in
+regression fixtures remain unmodified; this scale applies only to the
+standalone seed data and does not represent the source backup sizes.
