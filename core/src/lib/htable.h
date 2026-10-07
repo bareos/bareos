@@ -93,6 +93,9 @@ class htableImpl {
   void* next();    /* Get next item in table */
   void stats();    /* Print stats about the table */
   uint32_t size(); /* Return size of table */
+
+  /* The amount of elements the table can hold without growing */
+  uint32_t capacity() { return max_items - 1; }
 };
 
 struct htable_binary_key {
