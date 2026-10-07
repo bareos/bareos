@@ -48,3 +48,24 @@ archive containers do not cause fallback when file history is present.
 
 The accounting test imports Fulls first and checks the snapshot, then
 imports Incrementals and checks again. It requires no running NDMP server.
+
+Barri and Windows catalog samples
+----------------------------------
+
+``plugin-backups.json`` contains selected catalog rows from the local
+PostgreSQL dump supplied for this test. It uses the successful Barri Full
+job that included an opaque image and a regular file, plus a successful
+Windows Full and Incremental pair. The Incremental sample includes a
+changed existing file and a new file; the Full sample also contains a
+zero-length file, a sparse/logically larger file, a directory and a
+symlink.
+
+The encoded ``LStat`` attributes are copied unchanged from those real
+catalog records. Client/FileSet/Job identifiers and file names/paths are
+anonymized; FileSet text is reduced to the plugin/filesystem declaration
+needed by the test, and irrelevant checksums/FileHistory IDs are removed.
+The fixture is a deliberately selected subset of each real catalog job,
+not a full catalog export. Expected Windows totals are computed directly
+from the selected decoded ``st_size`` values. The test verifies the Barri
+opaque-image fallback and that Windows accounting uses logical size over
+the Full/Incremental chain.
