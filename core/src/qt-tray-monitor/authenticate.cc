@@ -97,10 +97,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
       // monitor password here, not the director one ...
       custom.password_.value = monitor->password.value;
 
-      DefaultConnectionInfo info{custom};
       if (!BareosConnect<global_resource::Type::Console,
                          global_resource::Type::Director>(
-              jcr, sock, monitor->resource_name_, &info)) {
+              jcr, sock, monitor->resource_name_, &custom)) {
         Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
              dir->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;
@@ -129,10 +128,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
       auto* fd = jcr->file_bsock;
       auto* client = static_cast<ClientResource*>(item->resource());
 
-      DefaultConnectionInfo info{*client};
       if (!BareosConnect<global_resource::Type::Director,
                          global_resource::Type::Client>(
-              jcr, fd, monitor->resource_name_, &info)) {
+              jcr, fd, monitor->resource_name_, client)) {
         Jmsg(jcr, M_FATAL, 0, "Failed to authenticate with %s\n",
              client->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;
@@ -159,10 +157,9 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
       auto* sd = jcr->store_bsock;
       auto* storage = static_cast<StorageResource*>(item->resource());
 
-      DefaultConnectionInfo info{*storage};
       if (!BareosConnect<global_resource::Type::Director,
                          global_resource::Type::Storage>(
-              jcr, sd, monitor->resource_name_, &info)) {
+              jcr, sd, monitor->resource_name_, storage)) {
         Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate with %s\n"),
              storage->resource_name_);
         return AuthenticationResult::kCramMd5HandshakeFailed;

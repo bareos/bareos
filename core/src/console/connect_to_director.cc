@@ -63,10 +63,9 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
     local_tls_resource = director_resource;
   }
 
-  DefaultConnectionInfo info{*local_tls_resource};
   if (!BareosConnect<global_resource::Type::Console,
                      global_resource::Type::Director>(&jcr, UA_sock, name,
-                                                      &info)) {
+                                                      local_tls_resource)) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;

@@ -319,18 +319,16 @@ bool cram_md5_handshake(JobControlRecord* jcr,
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    const std::string& qualified_name,
-                   ConnectionInfo* info,
+                   const TlsResource* res,
+                   auth::OutboundAuthenticator* auth,
                    std::string_view hello_msg,
-                   auth::Authenticator* auth,
                    bool cleartext_authentication)
 {
   ASSERT(jcr);
   ASSERT(socket);
-  ASSERT(info);
+  ASSERT(res);
 
   auth_timer timer{socket};
-
-  const TlsResource* res = info->tls_settings();
 
   if (res->IsTlsConfigured() && !cleartext_authentication) {
     auto tls = ParameterizeAndInitTlsConnectionAsAClient(
@@ -367,13 +365,7 @@ bool BareosConnect(JobControlRecord* jcr,
     return false;
   }
 
-  auto ps = info->select_provers(ConnectionType::Insecure);
-  auto vs = info->select_verifiers(ConnectionType::Insecure);
-  if (!auth->authenticate_outbound({.jcr = jcr,
-                                    .socket = socket,
-                                    .target = res,
-                                    .provers = ps,
-                                    .verifiers = vs})) {
+  if (!auth->authenticate({.jcr = jcr, .socket = socket, .target = res})) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return false;
   }
@@ -1072,8 +1064,10 @@ Md5Authenticator::Md5Authenticator(std::string identity)
 
 bool NewAuthenticator::authenticate_outbound(OutboundArgs args)
 {
-  if (!Respond(args.socket, args.provers)) { return false; }
-  return Challenge(args.socket, args.verifiers);
+  // if (!Respond(args.socket, args.provers)) { return false; }
+  // return Challenge(args.socket, args.verifiers);
+  (void)args;
+  return false;
 }
 bool NewAuthenticator::authenticate_inbound(InboundArgs args)
 {
@@ -1126,8 +1120,8 @@ bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
     NewAuthenticator auth{};
     auto result = auth.authenticate_outbound(args);
     return result;
-  } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
-    return legacy_auth->authenticate_outbound(args);
+    // } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
+    //   return legacy_auth->authenticate_outbound(args);
   } else {
     return false;
   }

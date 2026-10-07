@@ -634,20 +634,18 @@ static bool connect_to_server(std::string console_name,
     TlsResource custom = *cons_dir_config;
     custom.password_.value = console_password.data();
 
-    DefaultConnectionInfo info{custom};
-
     bool auth_success = [&] {
       if (!cleartext_auth) {
         return BareosConnect<global_resource::Type::Console,
                              global_resource::Type::Director>(
-            &jcr, UA_sock.get(), console_name, &info, cleartext_auth);
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       } else {
         /* old style tls is only supported for clients,
          * so we need to connect as a client*/
 
         return BareosConnect<global_resource::Type::Client,
                              global_resource::Type::Director>(
-            &jcr, UA_sock.get(), console_name, &info, cleartext_auth);
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       }
     }();
 

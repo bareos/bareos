@@ -1688,11 +1688,9 @@ static bool ReplicateCmd(JobControlRecord* jcr)
     } break;
   }
 
-  DefaultConnectionInfo info{custom};
-
   if (!BareosConnect<global_resource::Type::Storage,
                      global_resource::Type::Storage>(
-          jcr, storage_daemon_socket.get(), JobName, &info, cleartext_auth)) {
+          jcr, storage_daemon_socket.get(), JobName, &custom, cleartext_auth)) {
     Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
     connect_state(ReplicateCmdState::kError);
     return false;
@@ -1789,10 +1787,9 @@ static bool PassiveCmd(JobControlRecord* jcr)
       } break;
     }
 
-    DefaultConnectionInfo info{custom};
     if (!BareosConnect<global_resource::Type::Storage,
                        global_resource::Type::Client>(
-            jcr, fd, jcr->Job, &info, cleartext_authentication)) {
+            jcr, fd, jcr->Job, &custom, cleartext_authentication)) {
       Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate File daemon.\n"));
       jcr->file_bsock = NULL;
       goto bail_out;
