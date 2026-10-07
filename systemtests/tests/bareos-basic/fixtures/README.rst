@@ -73,7 +73,7 @@ the Full/Incremental chain.
 MSSQL VDI catalog samples
 -------------------------
 
-The ``mssql`` section contains the File rows from successful Full and
+The ``mssql`` section contains File rows from successful Full and
 Incremental backups of two databases in ``mssqlbackup.sql``: a normal
 database and one using FILESTREAM. Their encoded ``LStat`` fields and
 job-level file/byte totals are preserved. Client/FileSet names, database
@@ -88,3 +88,16 @@ virtual-stream marker with mode 0700, ``st_blksize=65536`` and
 chains and verifies they are excluded from measured per-file totals so
 subscription reporting uses the job-level estimate rather than counting
 the zero placeholder as an empty file.
+
+VMware catalog samples
+----------------------
+
+The ``vmware`` section contains selected ``.nvram`` and ``.vmdk`` File rows
+from three successful Full backups made with the Python VMware plugin.
+Their encoded ``LStat`` values, job file counts, and job byte totals are
+preserved. Client, FileSet, Job, VM names and paths are anonymized; only
+the VMware plugin module declaration is retained in the minimal FileSet
+text. The original VMware rows use the same opaque-image stat marker as
+other virtual backup streams. The accounting regression verifies that
+these rows are excluded from measured per-file totals and use the
+job-level estimate instead.

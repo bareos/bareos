@@ -274,5 +274,121 @@
         ]
       }
     ]
+  },
+  "vmware": {
+    "client": {
+      "name": "acct-vmware-fixture",
+      "uname": "Linux"
+    },
+    "filesets": [
+      {
+        "name": "AcctVmwareFixtureA",
+        "text": "FileSet {\n  Name = \"AcctVmwareFixtureA\"\n  Include {\n    Plugin = \"python:module_name=bareos-fd-vmware\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 70,
+            "jobfiles": 6,
+            "jobbytes": 2678079734,
+            "files": [
+              {
+                "path": "/accounting-fixtures/vmware/4f17a02cd23f986e/",
+                "name": "guest.nvram",
+                "fileindex": 4,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/vmware/4f17a02cd23f986e/",
+                "name": "guest.vmdk",
+                "fileindex": 6,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AcctVmwareFixtureB",
+        "text": "FileSet {\n  Name = \"AcctVmwareFixtureB\"\n  Include {\n    Plugin = \"python:module_name=bareos-fd-vmware\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 80,
+            "jobfiles": 6,
+            "jobbytes": 3234873847,
+            "files": [
+              {
+                "path": "/accounting-fixtures/vmware/a30ef45ae89e4a76/",
+                "name": "guest.nvram",
+                "fileindex": 4,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/vmware/a30ef45ae89e4a76/",
+                "name": "guest.vmdk",
+                "fileindex": 6,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "AcctVmwareFixtureC",
+        "text": "FileSet {\n  Name = \"AcctVmwareFixtureC\"\n  Include {\n    Plugin = \"python:module_name=bareos-fd-vmware\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 90,
+            "jobfiles": 6,
+            "jobbytes": 2540715711,
+            "files": [
+              {
+                "path": "/accounting-fixtures/vmware/98061845d52b320a/",
+                "name": "guest.nvram",
+                "fileindex": 4,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/vmware/98061845d52b320a/",
+                "name": "guest.vmdk",
+                "fileindex": 6,
+                "lstat": "A A IHA A A A A -B BAA B BqxDhN BqxDhN BqxDhN A A d",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }
