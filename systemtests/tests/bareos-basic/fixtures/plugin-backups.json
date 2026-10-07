@@ -390,5 +390,119 @@
         ]
       }
     ]
+  },
+  "hyperv": {
+    "client": {
+      "name": "acct-hyperv-fixture",
+      "uname": "Windows Server"
+    },
+    "filesets": [
+      {
+        "name": "AcctHypervFixture",
+        "text": "FileSet {\n  Name = \"AcctHypervFixture\"\n  Include {\n    Plugin = \"hyper-v:vmname=fixture-vm\"\n  }\n}\n",
+        "jobs": [
+          {
+            "type": "B",
+            "level": "F",
+            "jobstatus": "T",
+            "jobtdate": 100,
+            "jobfiles": 7,
+            "jobbytes": 1166220216,
+            "files": [
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmrs",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A -B BAA B BqxjDT BqxjDT BqxjDT A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmgs",
+                "fileindex": 2,
+                "lstat": "A A IHA A A A A -B BAA B BqxjDT BqxjDT BqxjDT A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmcx",
+                "fileindex": 3,
+                "lstat": "A A IHA A A A A -B BAA B BqxjDT BqxjDT BqxjDT A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/virtual-disk/",
+                "name": "fixture-disk.vhdx",
+                "fileindex": 4,
+                "lstat": "A A IHA A A A A KAAAAA CAAAA IA BqxjDT BqxjDT BqxjDT A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          },
+          {
+            "type": "B",
+            "level": "I",
+            "jobstatus": "T",
+            "jobtdate": 110,
+            "jobfiles": 7,
+            "jobbytes": 260726,
+            "files": [
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmrs",
+                "fileindex": 1,
+                "lstat": "A A IHA A A A A -B BAA B BqxjFO BqxjFO BqxjFO A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmgs",
+                "fileindex": 2,
+                "lstat": "A A IHA A A A A -B BAA B BqxjFO BqxjFO BqxjFO A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/vm-config/",
+                "name": "fixture-vm.vmcx",
+                "fileindex": 3,
+                "lstat": "A A IHA A A A A -B BAA B BqxjFO BqxjFO BqxjFO A A f",
+                "md5": "0",
+                "deltaseq": 0,
+                "fhinfo": 0,
+                "fhnode": 0
+              },
+              {
+                "path": "/accounting-fixtures/hyperv/virtual-disk/",
+                "name": "fixture-disk.vhdx",
+                "fileindex": 4,
+                "lstat": "A A IHA A A A A KAAAAA IAAA IA BqxjFO BqxjFO BqxjFO A A f",
+                "md5": "0",
+                "deltaseq": 1,
+                "fhinfo": 0,
+                "fhnode": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

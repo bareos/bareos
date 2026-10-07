@@ -101,3 +101,22 @@ text. The original VMware rows use the same opaque-image stat marker as
 other virtual backup streams. The accounting regression verifies that
 these rows are excluded from measured per-file totals and use the
 job-level estimate instead.
+
+Hyper-V catalog sample
+----------------------
+
+The ``hyperv`` section contains the VM configuration and virtual disk File
+rows from a successful Full and Incremental backup run performed on
+2026-10-07. It preserves the encoded ``LStat`` values and the source job's
+file counts and byte totals. Client, FileSet, Job, VM and disk names and
+paths are anonymized; the FileSet retains only the ``hyper-v`` plugin
+directive with a placeholder VM name.
+
+The three VM configuration rows use the plugin's synthetic unmeasurable
+stream attributes, while the ``.vhdx`` row preserves the virtual capacity,
+block size and sector size returned by the Hyper-V plugin. Its Incremental
+row also retains the source ``DeltaSeq=1`` marker for changed-range restore
+data; DeltaSeq is not an allocation-size value. The regression imports both
+jobs and verifies the opaque configuration rows cause this combination to
+use the job-level estimate rather than treating the synthetic
+configuration sizes as measured data.
