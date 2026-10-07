@@ -730,7 +730,13 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
     converted.assign(shadow_path.get());
   } else {
     // add literal path prefix to allow 32k paths
-    converted.insert(0, L"\\\\?\\"sv);
+    if (converted.size() >= 2 && IsPathSeparator(converted[0])
+        && IsPathSeparator(converted[1])) {
+      converted.erase(0, 2);
+      converted.insert(0, L"\\\\?\\UNC\\"sv);
+    } else {
+      converted.insert(0, L"\\\\?\\"sv);
+    }
   }
 
 
