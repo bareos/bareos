@@ -26,6 +26,7 @@
  * the main program
  */
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/sql.h"
@@ -282,6 +283,7 @@ int main(int argc, char* argv[])
     return BEXIT_SUCCESS;
   }
 
+  CloseMsg(nullptr);           /* close temp message handler */
   InitDaemonMsg(me->messages); /* open daemon message handler */
 
   if (my_config->HasWarnings()) {
