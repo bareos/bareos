@@ -207,9 +207,9 @@ void SetDbType(const char* name)
  * NULL for jcr -> initialize global messages for daemon
  * non-NULL     -> initialize jcr using Message resource
  */
-void InitMsg(JobControlRecord* jcr,
-             MessagesResource* msg,
-             job_code_callback_t job_code_callback)
+void InitJobMsg(JobControlRecord* jcr,
+                MessagesResource* msg,
+                job_code_callback_t job_code_callback)
 {
   ASSERT(jcr);
   ASSERT(msg);
@@ -220,7 +220,7 @@ void InitMsg(JobControlRecord* jcr,
   Dmsg2(250, "Copied message resource %p\n", msg);
 }
 
-void InitMsg(MessagesResource* msg)
+void InitDaemonMsg(MessagesResource* msg)
 {
   message_job_code_callback = NULL;
 

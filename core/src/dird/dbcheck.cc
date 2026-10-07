@@ -787,7 +787,7 @@ int main(int argc, char* argv[])
   INIT_LANGUAGES("");
 
   MyNameIs(argc, argv, "dbcheck");
-  InitMsg(nullptr); /* setup message handler */
+  InitDaemonMsg(nullptr); /* setup message handler */
 
   OSDependentInit();
 

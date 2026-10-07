@@ -188,8 +188,8 @@ bool CheckResources()
   }
 
   if (OK) {
-    CloseMsg(nullptr);     /* close temp message handler */
-    InitMsg(me->messages); /* open user specified message handler */
+    CloseMsg(nullptr);           /* close temp message handler */
+    InitDaemonMsg(me->messages); /* open user specified message handler */
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
     }
