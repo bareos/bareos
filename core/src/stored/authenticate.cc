@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/bauth.h"
 #include "lib/connect_accept.h"
 #include "lib/s_password.h"
 #include "stored/stored.h"
@@ -41,7 +42,7 @@
 
 namespace storagedaemon {
 
-std::unique_ptr<ConnectionInfo> Auth::get_info_for(
+std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
     global_resource::Type auth_type,
     std::string_view name)
 {

@@ -388,7 +388,7 @@ struct TlsWrapper : public TlsConfigProvider {
   }
 
   struct result {
-    ConnectionInfo* info{};
+    auth::InboundAuthenticator* info{};
     std::optional<std::string> bad_name{};
     std::optional<global_resource::Type> bad_type{};
   };
@@ -412,7 +412,7 @@ struct TlsWrapper : public TlsConfigProvider {
   }
 
  private:
-  std::unique_ptr<ConnectionInfo> info;
+  std::unique_ptr<auth::InboundAuthenticator> info;
   global_resource::Type psk_type{};
   std::string psk_name{};
 
@@ -556,20 +556,15 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
     }
   }
 
-  ConnectionType connection_type = ConnectionType::Insecure;
-  if (tls_established) { connection_type = ConnectionType::Untrusted; }
-  if (tls_psk_used) { connection_type = ConnectionType::Trusted; }
+  auth::ConnectionType connection_type = auth::ConnectionType::Insecure;
+  if (tls_established) { connection_type = auth::ConnectionType::Untrusted; }
+  if (tls_psk_used) { connection_type = auth::ConnectionType::Trusted; }
 
-  auto ps = info->select_provers(connection_type);
-  auto vs = info->select_verifiers(connection_type);
-
-  auth::DefaultAuthenticator auth{};
-  if (!auth.authenticate_inbound({
+  if (!info->authenticate({
           .socket = socket,
           .remote_version = parsed_hello->bareos_version,
           .target = tls_resource,
-          .provers = ps,
-          .verifiers = vs,
+          .type = connection_type,
       })) {
     Emsg1(M_ERROR, 0, T_("Bad authentication from %s.\n"), socket->who());
     return std::nullopt;
@@ -1072,8 +1067,10 @@ bool NewAuthenticator::authenticate_outbound(
 }
 bool NewAuthenticator::authenticate_inbound(InboundArgs args)
 {
-  if (!Challenge(args.socket, args.verifiers)) { return false; }
-  return Respond(args.socket, args.provers);
+  // if (!Challenge(args.socket, args.verifiers)) { return false; }
+  // return Respond(args.socket, args.provers);
+  (void)args;
+  return false;
 }
 
 std::optional<Md5Authenticator> GetMd5(auto provers, auto verifiers)
@@ -1140,22 +1137,22 @@ bool DefaultAuthenticator::authenticate_inbound(InboundArgs args)
 }
 }  // namespace auth
 
-std::vector<std::unique_ptr<auth::Prover>>
-DefaultConnectionInfo::select_provers(ConnectionType)
-{
-  std::vector<std::unique_ptr<auth::Prover>> res;
-  res.emplace_back(std::make_unique<auth::CramMd5::Prover>(
-      get_default_cram_identity(), tls.password_.value));
-  return res;
-}
-std::vector<std::unique_ptr<auth::Verifier>>
-DefaultConnectionInfo::select_verifiers(ConnectionType)
-{
-  std::vector<std::unique_ptr<auth::Verifier>> res;
-  res.emplace_back(std::make_unique<auth::CramMd5::Verifier>(
-      get_default_cram_identity(), tls.password_.value));
-  return res;
-}
+// std::vector<std::unique_ptr<auth::Prover>>
+// DefaultConnectionInfo::select_provers(ConnectionType)
+// {
+//   std::vector<std::unique_ptr<auth::Prover>> res;
+//   res.emplace_back(std::make_unique<auth::CramMd5::Prover>(
+//       get_default_cram_identity(), tls.password_.value));
+//   return res;
+// }
+// std::vector<std::unique_ptr<auth::Verifier>>
+// DefaultConnectionInfo::select_verifiers(ConnectionType)
+// {
+//   std::vector<std::unique_ptr<auth::Verifier>> res;
+//   res.emplace_back(std::make_unique<auth::CramMd5::Verifier>(
+//       get_default_cram_identity(), tls.password_.value));
+//   return res;
+// }
 
 
 bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)

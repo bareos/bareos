@@ -65,8 +65,31 @@ struct OutboundArgs {
   const TlsResource* target;
 };
 
+enum class ConnectionType
+{
+  /* This connection is insecure, we do not know who we are talking to */
+  Insecure,
+  /* The connection is secure, but we do not trust the other side yet. */
+  Untrusted,
+  /* The connection is secure and we trust the other side. */
+  Trusted,
+};
+
+struct InboundArgs {
+  BareosSocket* socket;
+  uint32_t remote_version;
+  const TlsResource* target;
+  ConnectionType type;
+};
+
 struct OutboundAuthenticator {
   virtual bool authenticate(OutboundArgs args) = 0;
+};
+
+struct InboundAuthenticator {
+  virtual bool authenticate(InboundArgs args) = 0;
+  virtual const TlsResource* tls_settings() = 0;
+  virtual ~InboundAuthenticator() = default;
 };
 
 struct Algorithms {
@@ -92,15 +115,6 @@ struct Algorithms {
 };
 
 struct Authenticator {
-  struct InboundArgs {
-    BareosSocket* socket;
-    uint32_t remote_version;
-
-    const TlsResource* target;
-    std::span<std::unique_ptr<Prover>> provers;
-    std::span<std::unique_ptr<Verifier>> verifiers;
-  };
-
   virtual bool authenticate_inbound(InboundArgs args) = 0;
   virtual ~Authenticator() = default;
 };

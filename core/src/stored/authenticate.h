@@ -22,6 +22,7 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
+#include "lib/bauth.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
 #include "lib/connect_accept.h"
@@ -33,8 +34,9 @@ namespace storagedaemon {
 struct Auth : ::ConnectionInfoProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  std::unique_ptr<ConnectionInfo> get_info_for(global_resource::Type type,
-                                               std::string_view name) override;
+  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
