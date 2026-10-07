@@ -55,7 +55,7 @@ class ConsoleController extends AbstractRestfulController
         }
 
         $this->bsock = $this->getServiceLocator()->get('director');
-        $command = isset($data['command']) ? $data['command'] : null;
+        $command = $this->params()->fromPost('command');
 
         try{
             $this->result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, $command);
