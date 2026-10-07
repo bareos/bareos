@@ -45,8 +45,9 @@ struct DirectorAuth : ::ConnectionInfoProvider {
   {
   }
 
-  std::unique_ptr<ConnectionInfo> get_info_for(global_resource::Type type,
-                                               std::string_view name) override;
+  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {

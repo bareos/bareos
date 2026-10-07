@@ -25,6 +25,7 @@
 #define BAREOS_FILED_AUTHENTICATE_H_
 
 #include "filed/filed_conf.h"
+#include "lib/bauth.h"
 #include "lib/bsock.h"
 #include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
@@ -35,8 +36,9 @@ namespace filedaemon {
 struct Auth : ::ConnectionInfoProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  std::unique_ptr<ConnectionInfo> get_info_for(global_resource::Type type,
-                                               std::string_view name) override;
+  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
