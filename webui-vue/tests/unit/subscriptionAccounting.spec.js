@@ -144,7 +144,7 @@ describe('accounting refresh', () => {
   })
 
   describe('snapshot age display', () => {
-    it('shows expected estimates as information while retaining failure warnings', () => {
+    it('shows job-based sizes as information while retaining failure warnings', () => {
       const host = document.createElement('div')
       const app = createApp(SubscriptionReport, {
         data: {
@@ -157,13 +157,44 @@ describe('accounting refresh', () => {
       app.mount(host)
       try {
         const estimate = [...host.querySelectorAll('div')].find(
-          element => element.textContent.trim() === 'Estimated sizes for 1 of 6 Client/FileSet combinations',
+          element => element.textContent.trim() === 'Job-based sizes for 1 of 6 Client/FileSet combinations',
         )
         expect(estimate).toBeDefined()
+        expect(host.textContent).toContain('Size source: File-based and job-based')
         expect(estimate.classList.contains('text-warning')).toBe(false)
         expect([...host.querySelectorAll('.text-warning')].some(
           element => element.textContent.includes('Latest accounting refresh failed.'),
         )).toBe(true)
+      } finally {
+        app.unmount()
+      }
+    })
+    it.each([
+      ['measured', 'File-based'],
+      ['estimated', 'Job-based'],
+      ['legacy', 'Job-based'],
+    ])('labels the %s size source as %s', (source, label) => {
+      const host = document.createElement('div')
+      const app = createApp(SubscriptionReport, {
+        data: {
+          subscription_accounting: { source, calculated_at: '2026-10-05 08:00:00' },
+        },
+      })
+      app.mount(host)
+      try {
+        expect(host.textContent).toContain(`Size source: ${label}`)
+      } finally {
+        app.unmount()
+      }
+    })
+    it('describes sizes without a snapshot as job-based', () => {
+      const host = document.createElement('div')
+      const app = createApp(SubscriptionReport, {
+        data: { subscription_accounting: { source: 'estimated' } },
+      })
+      app.mount(host)
+      try {
+        expect(host.textContent).toContain('No accounting snapshot is available; all sizes are job-based.')
       } finally {
         app.unmount()
       }

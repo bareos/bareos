@@ -1760,19 +1760,19 @@ status subscriptions
    This shows a combined list of clients and plugins, together with the
    use-count of the plugins and the aggregated amount of backed up frontend
    data (in gigabytes). Sizes use the last successful accounting snapshot
-   for Client/FileSet combinations with measured data. Missing or excluded
-   combinations retain the former job-level estimate, and the report
-   labels such totals as partially estimated. Before the first successful
-   accounting refresh, all sizes are estimates. The text report and
+   for Client/FileSet combinations with file-based data. Missing or excluded
+   combinations retain the former job-based size, and the report
+   identifies how many combinations use job-based sizes. Before the first
+   successful accounting refresh, all sizes are job-based. The text report and
    structured ``subscription_accounting`` object show the snapshot time,
-   how many combinations are estimated, and warnings when the snapshot is
+   how many combinations are job-based, and warnings when the snapshot is
    older than 24 hours or the latest refresh failed.
    The structured object also supplies ``age_seconds`` when a snapshot
    exists, computed in the catalog's time frame rather than from the
    Director's local report timestamp.
    The existing count of backup units is unchanged; volume-based units are
    calculated from
-   these measured or estimated sizes. Each report reads its metadata,
+   these file-based or job-based sizes. Each report reads its metadata,
    detail, summary, and checksum from a consistent catalog snapshot,
    even if a background refresh completes while it is being generated.
    For comparison, append ``legacy`` (for example,
@@ -1784,14 +1784,14 @@ status subscriptions
    also works with ``clients``, ``plugins``, ``client=`` and ``anonymize``,
    but cannot be combined with ``accounting``.
    A Client/FileSet chain containing an opaque backup image (for example,
-   barri or an NDMP stream with unknown file size) uses the job-level
+   barri or an NDMP stream with unknown file size) uses the job-based
    fallback even when accompanying log files have measurable attributes.
-   The entire combination is excluded from measured accounting rather than
+   The entire combination is excluded from file-based accounting rather than
    treating its logs as the complete backup size.
    NDMP stream containers are ignored when actual per-file history is
-   available; those combinations continue to use measured file sizes.
+   available; those combinations continue to use file-based sizes.
    Opaque plugin images use the distinct ``opaque_backup_image`` exclusion
-   reason and a job-level estimate. The NDMP file-history explanation applies
+   reason and a job-based size. The NDMP file-history explanation applies
    only to NDMP containers without measurable file history
    (``ndmp_no_file_history``). Older snapshots with the ambiguous
    ``no_per_file_data`` reason show a generic explanation until refreshed.

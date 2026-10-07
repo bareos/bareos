@@ -731,11 +731,12 @@ static bool DoSubscriptionStatus(UaContext* ua)
   }
   if (kw_legacy) {
     ua->SendMsg(
-        T_("Legacy subscription accounting: using latest Full job sizes; "
+        T_("Legacy subscription accounting: using job-based sizes from "
+           "the latest Full jobs; "
            "the accounting snapshot is unchanged.\n"));
   }
   if (!kw_legacy && coverage.estimated > 0) {
-    ua->WarningMsg(T_("Subscription sizes include estimates for %llu of "
+    ua->WarningMsg(T_("Subscription sizes are job-based for %llu of "
                       "%llu Client/FileSet combinations.\n"),
                    static_cast<unsigned long long>(coverage.estimated),
                    static_cast<unsigned long long>(coverage.combinations));
@@ -756,7 +757,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   } else if (!kw_legacy) {
     ua->WarningMsg(
         T_("No subscription accounting snapshot is available; "
-           "all sizes are estimates.\n"));
+           "all sizes are job-based.\n"));
     if (coverage.refresh_failed) {
       ua->WarningMsg(T_("Latest subscription accounting refresh failed.\n"));
     }

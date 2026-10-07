@@ -304,13 +304,13 @@ snapshot = result("accounting-stale")["accounting_snapshot"]
 assert snapshot["stale"] and snapshot["last_refresh_error"] == "simulated refresh failure"
 
 text = (tmp / "status-subscriptions-mixed.txt").read_text()
-assert "estimates for 2 of 33" in text
+assert "job-based for 2 of 33" in text
 assert "more than 24 hours old" in text
 assert "latest subscription accounting refresh failed" in text.lower()
 PY
 
 # remove lines starting with @ so output is comparable
-sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes include estimates for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes are job-based for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
 sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-*.json
 "${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
 import pathlib

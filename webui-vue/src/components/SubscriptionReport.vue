@@ -11,22 +11,22 @@
       <div>
         {{ t('Size source') }}:
         {{ data.subscription_accounting.source === 'measured'
-          ? t('Measured')
+          ? t('File-based')
           : data.subscription_accounting.source === 'mixed'
-            ? t('Measured and estimated')
-            : t('Estimated') }}
+            ? t('File-based and job-based')
+            : t('Job-based') }}
       </div>
       <div v-if="data.subscription_accounting.calculated_at">
         {{ t('Accounting snapshot') }}: {{ data.subscription_accounting.calculated_at }}
       </div>
       <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0">
-        {{ t('Estimated sizes for {count} of {total} Client/FileSet combinations', {
+        {{ t('Job-based sizes for {count} of {total} Client/FileSet combinations', {
           count: data.subscription_accounting.estimated_combinations,
           total: data.subscription_accounting.combinations,
         }) }}
       </div>
       <div v-if="!data.subscription_accounting.calculated_at" class="text-warning">
-        {{ t('No accounting snapshot is available; all sizes are estimates.') }}
+        {{ t('No accounting snapshot is available; all sizes are job-based.') }}
       </div>
       <div v-if="data.subscription_accounting.calculated_at && data.subscription_accounting.stale"
            class="text-warning">
