@@ -43,6 +43,7 @@
 #include "include/bareos.h"
 #include "lib/btime.h"
 #include <math.h>
+#include <string_view>
 
 #if defined(HAVE_MSVC)
 void Blocaltime(const time_t* timep, struct tm* tm)
@@ -147,6 +148,29 @@ static bool DateIsValid(const tm& datetime)
   return true;
 }
 
+/* True if the string following the seconds field is either empty or a
+ * fractional-seconds suffix (a '.' followed by one or more digits), e.g.
+ * the ".914399" microseconds suffix Postgres appends by default to
+ * `timestamp` columns with sub-second precision. Such a suffix is ignored
+ * (truncated to whole seconds), anything else is treated as invalid
+ * trailing garbage. */
+constexpr bool IsIgnorableTimeSuffix(std::string_view suffix)
+{
+  if (suffix.empty()) { return true; }
+  if (suffix[0] != '.') { return false; }
+  for (std::size_t i = 1; i < suffix.size(); ++i) {
+    if (suffix[i] < '0' || suffix[i] > '9') { return false; }
+  }
+  return suffix.size() > 1;
+}
+
+static_assert(IsIgnorableTimeSuffix(""));
+static_assert(IsIgnorableTimeSuffix(".914399"));
+static_assert(IsIgnorableTimeSuffix(".0"));
+static_assert(!IsIgnorableTimeSuffix("."));
+static_assert(!IsIgnorableTimeSuffix(":10"));
+static_assert(!IsIgnorableTimeSuffix("adfddf"));
+
 // Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
 utime_t StrToUtime(const char* str)
 {
@@ -163,7 +187,7 @@ utime_t StrToUtime(const char* str)
                &datetime.tm_mon, &datetime.tm_mday, &datetime.tm_hour,
                &datetime.tm_min, &datetime.tm_sec, trailinggarbage)
        != 7)
-      || trailinggarbage[0] != '\0') {
+      || !IsIgnorableTimeSuffix(trailinggarbage)) {
     return 0;
   }
 

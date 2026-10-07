@@ -33,6 +33,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
 #include "dird/ua_acct.h"
+#include "dird/subscription_accounting_table.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
 #include "dird/director_jcr_impl.h"
@@ -46,6 +47,7 @@
 #include <limits>
 #include <pthread.h>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -91,8 +93,9 @@ static_assert(!IsUnknownStatField(uint64_t{0}));
  *                  socket) catalog row -- not billable subscription
  *                  data, silently excluded from the report (not an
  *                  error).
- * kVirtualNdmpArchive -- the synthetic whole-stream NDMP file, which has
- *                  placeholder attributes and is not a user file.
+ * kUnmeasurableStream -- a virtual backup stream with placeholder size
+ *                  attributes; the caller determines whether per-file
+ *                  history is available or a job-level fallback is needed.
  * kInvalidStat  -- the stat field the platform's rule needs is unusable
  *                  (unknown/overflowing); the caller must abort the
  *                  report rather than under-report silently.
@@ -101,7 +104,7 @@ enum class FileAccountingKind
 {
   kRegular,
   kNonRegular,
-  kVirtualNdmpArchive,
+  kUnmeasurableStream,
   kInvalidStat
 };
 
@@ -114,7 +117,8 @@ struct FileAccountingResult {
 };
 
 FileAccountingResult AccountedBytesForFile(const std::string& lstat,
-                                           bool is_windows)
+                                           bool is_windows,
+                                           std::string_view filename)
 {
   if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
 
@@ -135,13 +139,18 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
     return {FileAccountingKind::kNonRegular, 0, 0};
   }
 
-  /* The Storage Daemon creates a synthetic regular-file row for the entire
-   * NDMP stream (stored/ndmp_tape.cc:BndmpCreateVirtualFile). Its deliberately
-   * invalid size and fixed block fields distinguish it from backed-up files;
-   * do not count this container as user data. */
+  /* NDMP and barri share this synthetic stat. The caller distinguishes
+   * NDMP containers with per-file history from opaque plugin images. */
   if ((statp.st_mode & 07777) == 0700 && statp.st_size == -1
       && statp.st_blksize == 4096 && statp.st_blocks == 1) {
-    return {FileAccountingKind::kVirtualNdmpArchive, 0, 0};
+    return {FileAccountingKind::kUnmeasurableStream, 0, 0};
+  }
+
+  // MSSQL VDI uses zero as a placeholder, not as the backup stream size.
+  if (filename.starts_with("/@MSSQL/") && (statp.st_mode & 07777) == 0700
+      && statp.st_size == 0 && statp.st_blksize == 65536
+      && statp.st_blocks == 1) {
+    return {FileAccountingKind::kUnmeasurableStream, 0, 0};
   }
 
   if (IsUnknownStatField(statp.st_size)) {
@@ -240,11 +249,13 @@ struct FileScanCtx {
   uint64_t files{0};
   bool aborted{false};
   bool saw_virtual_ndmp_archive{false};
+  bool saw_opaque_plugin_image{false};
 };
 
 int FileRowHandler(void* ctx, int, char** row)
 {
   // row[0]=JobId row[1]=PathId row[2]=Name row[3]=FileIndex row[4]=LStat
+  // row[5]=full catalog filename
   auto* c = static_cast<FileScanCtx*>(ctx);
   if (c->cancel && c->cancel->load()) {
     c->aborted = true;
@@ -259,8 +270,8 @@ int FileRowHandler(void* ctx, int, char** row)
    * last backup" entry -- exclude it, don't count stale bytes. */
   if (FileIndex == 0) { return 0; }
 
-  FileAccountingResult file_result
-      = AccountedBytesForFile(row[4] ? row[4] : "", c->is_windows);
+  FileAccountingResult file_result = AccountedBytesForFile(
+      row[4] ? row[4] : "", c->is_windows, row[5] ? row[5] : "");
   if (file_result.kind == FileAccountingKind::kInvalidStat) {
     c->ua->ErrorMsg(
         T_("%s / %s: invalid file attributes for FileIndex=%u "
@@ -276,11 +287,16 @@ int FileRowHandler(void* ctx, int, char** row)
     return 1;
   }
   if (file_result.kind == FileAccountingKind::kNonRegular
-      || file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
-    /* Non-regular catalog metadata and the synthetic NDMP stream container
-     * are not billable user files. */
-    if (file_result.kind == FileAccountingKind::kVirtualNdmpArchive) {
-      c->saw_virtual_ndmp_archive = true;
+      || file_result.kind == FileAccountingKind::kUnmeasurableStream) {
+    /* Non-regular metadata and opaque streams cannot provide per-file
+     * measurements. NDMP may supply separate file-history rows. */
+    if (file_result.kind == FileAccountingKind::kUnmeasurableStream) {
+      const std::string_view filename = row[5] ? row[5] : "";
+      if (filename.starts_with("/@NDMP/")) {
+        c->saw_virtual_ndmp_archive = true;
+      } else {
+        c->saw_opaque_plugin_image = true;
+      }
     }
     return 0;
   }
@@ -464,9 +480,11 @@ bool ScanFilesForChain(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "SELECT DISTINCT ON (File.PathId, File.Name)"
-       " File.JobId, File.PathId, File.Name, File.FileIndex, File.LStat FROM "
+       " File.JobId, File.PathId, File.Name, File.FileIndex, File.LStat,"
+       " Path.Path || File.Name FROM "
        "File"
-       " JOIN Job USING (JobId) WHERE File.JobId IN (%s)"
+       " JOIN Job USING (JobId) JOIN Path USING (PathId)"
+       " WHERE File.JobId IN (%s)"
        " ORDER BY File.PathId, File.Name, Job.JobTDate DESC,"
        " File.JobId DESC",
        jobid_list.c_str());
@@ -551,9 +569,12 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       return false;
     }
 
-    if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+    if (scan.saw_opaque_plugin_image) {
       row.excluded = true;
-      row.exclusion_reason = "no_per_file_data";
+      row.exclusion_reason = "opaque_backup_image";
+    } else if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+      row.excluded = true;
+      row.exclusion_reason = "ndmp_no_file_history";
     } else {
       row.files = scan.files;
       row.bytes = scan.bytes;
@@ -920,6 +941,7 @@ bool DoSubscriptionAccounting(UaContext* ua)
   uint64_t grand_total_files = 0;
   uint32_t accounted_tuples = 0;
   uint32_t excluded_tuples = 0;
+  std::vector<SubscriptionAccountingTableRow> table_rows;
 
   // Structured (.api 2 / WebUI) output, in addition to the plain-text
   // report above. ObjectKeyValue()/ArrayStart()/... calls are no-ops for
@@ -929,12 +951,17 @@ bool DoSubscriptionAccounting(UaContext* ua)
 
   for (const AccountingRow& row : rows) {
     if (row.excluded) {
-      const char* reason = row.exclusion_reason == "no_per_file_data"
+      const char* reason = row.exclusion_reason == "ndmp_no_file_history"
                                ? T_("no per-file data available (NDMP file "
                                     "history may be disabled)")
+                           : row.exclusion_reason == "no_per_file_data"
+                               ? T_("no measurable per-file data available")
+                           : row.exclusion_reason == "opaque_backup_image"
+                               ? T_("opaque backup image; using job-based size")
                                : T_("no usable backup chain found");
-      ua->SendMsg(T_("%s / %s: %s -- excluded (not guessed).\n"),
-                  row.ClientName.c_str(), row.FileSetName.c_str(), reason);
+      table_rows.push_back({row.FileSetName + "@" + row.ClientName, "-", "-",
+                            "-", "-", "-",
+                            std::string(T_("Excluded: ")) + reason});
       ua->send->ObjectStart();
       ua->send->ObjectKeyValue("client", row.ClientName.c_str());
       ua->send->ObjectKeyValue("fileset", row.FileSetName.c_str());
@@ -948,17 +975,14 @@ bool DoSubscriptionAccounting(UaContext* ua)
       continue;
     }
 
-    char ec1[50], ec2[50];
-    ua->SendMsg(
-        T_("%s / %s: %s files, %s bytes accounted (rule: %s, %zu jobs in "
-           "chain).\n"),
-        row.ClientName.c_str(), row.FileSetName.c_str(),
-        edit_uint64_with_commas(row.files, ec1),
-        edit_uint64_with_commas(row.bytes, ec2), row.rule.c_str(),
-        static_cast<size_t>(row.jobs_in_chain));
-
-    ua->SendMsg(T_("  Logical size (st_size): %s bytes.\n"),
-                edit_uint64_with_commas(row.logical_bytes, ec1));
+    char files[50], bytes[50], logical[50], jobs[50];
+    table_rows.push_back(
+        {row.FileSetName + "@" + row.ClientName,
+         edit_uint64_with_commas(row.files, files),
+         std::string(edit_uint64_with_suffix(row.bytes, bytes)) + "B",
+         std::string(edit_uint64_with_suffix(row.logical_bytes, logical)) + "B",
+         SubscriptionAccountingRuleCode(row.rule),
+         edit_uint64_with_commas(row.jobs_in_chain, jobs), ""});
 
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue("client", row.ClientName.c_str());
@@ -995,6 +1019,26 @@ bool DoSubscriptionAccounting(UaContext* ua)
   }
 
   ua->send->ArrayEnd("accounting");
+
+  char total_files[50], total_bytes[50], total_logical[50];
+  const auto table = FormatSubscriptionAccountingTable(
+      {T_("FileSet@Client"), T_("Files"), T_("Accounted size"),
+       T_("Logical size"), T_("Rule"), T_("Chain jobs"), T_("Status / Reason")},
+      table_rows,
+      {T_("TOTAL"), edit_uint64_with_commas(grand_total_files, total_files),
+       std::string(edit_uint64_with_suffix(grand_total_bytes, total_bytes))
+           + "B",
+       std::string(
+           edit_uint64_with_suffix(grand_total_logical_bytes, total_logical))
+           + "B",
+       "", "", ""},
+      excluded_tuples > 0);
+  ua->SendMsg("%s", table.c_str());
+  ua->SendMsg(
+      T_("\nRule:\n"
+         "  B = allocated size (st_blocks * 512 bytes)\n"
+         "  S = logical size (st_size)\n"
+         "Size units are decimal (1 KB = 1,000 bytes).\n"));
 
   char ec1[50], ec2[50];
   ua->SendMsg(T_("\nGrand total: %s files, %s bytes across %u accounted "

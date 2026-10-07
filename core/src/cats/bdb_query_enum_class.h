@@ -87,13 +87,16 @@ class BareosDbQueryEnum {
     list_volumes_select_long_0 = 76,
     bvfs_lock_pathhierarchy_0 = 77,
     bvfs_unlock_tables_0 = 78,
-    subscription_with_clause_0 = 79,
+    subscription_with_clause_1 = 79,
     subscription_units_total_2 = 80,
     subscription_units_3 = 81,
     subscription_units_client_total_3 = 82,
     subscription_units_plugin_total_1 = 83,
     subscription_client_detail_2 = 84,
-    SQL_QUERY_NUMBER = 85
+    list_jobs_count_last = 85,
+    uar_sel_client_fileset_tuples_1 = 86,
+    uar_sel_client_fileset_fulls_3 = 87,
+    SQL_QUERY_NUMBER = 88
   };
 };
 

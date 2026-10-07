@@ -11,22 +11,22 @@
       <div>
         {{ t('Size source') }}:
         {{ data.subscription_accounting.source === 'measured'
-          ? t('Measured')
+          ? t('File-based')
           : data.subscription_accounting.source === 'mixed'
-            ? t('Measured and estimated')
-            : t('Estimated') }}
+            ? t('File-based and job-based')
+            : t('Job-based') }}
       </div>
       <div v-if="data.subscription_accounting.calculated_at">
         {{ t('Accounting snapshot') }}: {{ data.subscription_accounting.calculated_at }}
       </div>
-      <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0" class="text-warning">
-        {{ t('Estimated sizes for {count} of {total} Client/FileSet combinations', {
+      <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0">
+        {{ t('Job-based sizes for {count} of {total} Client/FileSet combinations', {
           count: data.subscription_accounting.estimated_combinations,
           total: data.subscription_accounting.combinations,
         }) }}
       </div>
       <div v-if="!data.subscription_accounting.calculated_at" class="text-warning">
-        {{ t('No accounting snapshot is available; all sizes are estimates.') }}
+        {{ t('No accounting snapshot is available; all sizes are job-based.') }}
       </div>
       <div v-if="data.subscription_accounting.calculated_at && data.subscription_accounting.stale"
            class="text-warning">
@@ -41,6 +41,10 @@
     </div>
 
     <!-- Meta info -->
+    <SubscriptionAccountingAge :snapshot="data.subscription_accounting"
+                               :report-time="data['report-time']">
+      <slot name="accounting-action" />
+    </SubscriptionAccountingAge>
     <table class="sub-meta-table q-mb-md">
       <tbody>
         <tr><th>{{ t('Version') }}</th>     <td>{{ data.version }}</td></tr>
@@ -158,6 +162,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useI18n } from 'vue-i18n'
 import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
 import { subscriptionRemainingSummary } from '../utils/subscription.js'
+import SubscriptionAccountingAge from './SubscriptionAccountingAge.vue'
 
 const props = defineProps({
   data:      { type: Object, required: true },

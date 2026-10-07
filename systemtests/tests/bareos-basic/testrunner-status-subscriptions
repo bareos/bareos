@@ -167,10 +167,13 @@ status subscriptions
 .api 2
 @$out $tmp/status-subscriptions-no-snapshot.json
 status subscriptions all
+@$out $tmp/status-subscriptions-legacy-baseline-client.json
+status subscriptions client=file-only
 @$out ${NULL_DEV}
 .api 0
 
 sqlquery sharedsession
+SET TIME ZONE 'Etc/GMT+12';
 INSERT INTO SubscriptionAccounting
   (ClientName, FileSetName, Excluded, Bytes)
 SELECT DISTINCT c.Name, f.FileSet, false, 5000000000000
@@ -186,8 +189,20 @@ SET LastSuccess=CURRENT_TIMESTAMP, LastAttempt=CURRENT_TIMESTAMP,
 status subscriptions all
 @$out $tmp/status-subscriptions-measured-client.json
 status subscriptions client=file-only
+@$out $tmp/status-subscriptions-legacy.json
+status subscriptions all legacy
+@$out $tmp/status-subscriptions-legacy-client.json
+status subscriptions client=file-only legacy
+@$out $tmp/status-subscriptions-legacy-clients.json
+status subscriptions clients legacy anonymize
+@$out $tmp/status-subscriptions-legacy-plugins.json
+status subscriptions plugins legacy
+@$out $tmp/status-subscriptions-after-legacy.json
+status subscriptions all
 @$out ${NULL_DEV}
 .api 0
+@$out $tmp/status-subscriptions-invalid-legacy.txt
+status subscriptions accounting legacy
 
 sqlquery sharedsession
 UPDATE SubscriptionAccounting SET Excluded=true
@@ -215,6 +230,7 @@ DELETE FROM SubscriptionAccounting WHERE ClientName IN
 UPDATE SubscriptionAccountingSnapshot
 SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL
 WHERE SnapshotId=1;
+RESET TIME ZONE;
 
 @$out $tmp/status-subscriptions-cleanup.txt
 sqlquery sharedsession
@@ -226,7 +242,7 @@ DELETE FROM Fileset WHERE FileSetId >= 10000;
 END_OF_DATA
 run_bconsole
 
-python3 - "$tmp" <<'PY'
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
 import json
 import pathlib
 import sys
@@ -240,11 +256,14 @@ def result(name):
 empty = result("no-snapshot")["subscription_accounting"]
 assert empty["source"] == "estimated" and empty["estimated_combinations"] == 33
 assert not empty["calculated_at"]
+assert "age_seconds" not in empty
 assert not empty["multiple_catalogs"]
 
 measured = result("measured")
 assert measured["subscription_accounting"]["source"] == "measured"
 assert measured["subscription_accounting"]["estimated_combinations"] == 0
+assert 0 <= measured["subscription_accounting"]["age_seconds"] < 60
+assert not measured["subscription_accounting"]["stale"]
 assert measured["unit-summary"]["used"] == "165"
 assert next(row for row in measured["unit-clients"] if row["client"] == "file-only")["size_gb"] == "15000.00"
 
@@ -253,10 +272,28 @@ assert client["subscription_accounting"]["source"] == "measured"
 assert client["subscription_accounting"]["combinations"] == 3
 assert all(row["size_gb"] == "5000.00" for row in client["unit-detail"])
 
+legacy = result("legacy")
+assert legacy["subscription_accounting"]["source"] == "legacy"
+assert legacy["subscription_accounting"]["estimated_combinations"] == 33
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert legacy[key] == result("no-snapshot")[key], key
+assert legacy["unit-summary"] != measured["unit-summary"]
+assert result("legacy-client")["unit-detail"] == result("legacy-baseline-client")["unit-detail"]
+legacy_clients = result("legacy-clients")["unit-clients"]
+assert all(row["client"].startswith("Client ") or row["client"] == "TOTAL" for row in legacy_clients)
+assert sorted(row["size_gb"] for row in legacy_clients) == sorted(row["size_gb"] for row in legacy["unit-clients"])
+assert result("legacy-plugins")["unit-plugins"] == legacy["unit-plugins"]
+after_legacy = result("after-legacy")
+assert after_legacy["unit-summary"] == measured["unit-summary"]
+assert after_legacy["subscription_accounting"]["calculated_at"] == measured["subscription_accounting"]["calculated_at"]
+assert after_legacy["subscription_accounting"]["source"] == "measured"
+assert "cannot be combined" in (tmp / "status-subscriptions-invalid-legacy.txt").read_text()
+
 mixed = result("mixed")
 assert mixed["subscription_accounting"]["source"] == "mixed"
 assert mixed["subscription_accounting"]["estimated_combinations"] == 2
 assert mixed["subscription_accounting"]["stale"]
+assert 90000 <= mixed["subscription_accounting"]["age_seconds"] < 90060
 assert mixed["subscription_accounting"]["refresh_failed"]
 assert mixed["unit-summary"]["used"] == "156"
 assert next(row for row in mixed["unit-clients"] if row["client"] == "Client 10000")["size_gb"] == "5002.00"
@@ -267,15 +304,15 @@ snapshot = result("accounting-stale")["accounting_snapshot"]
 assert snapshot["stale"] and snapshot["last_refresh_error"] == "simulated refresh failure"
 
 text = (tmp / "status-subscriptions-mixed.txt").read_text()
-assert "estimates for 2 of 33" in text
+assert "job-based for 2 of 33" in text
 assert "more than 24 hours old" in text
 assert "latest subscription accounting refresh failed" in text.lower()
 PY
 
 # remove lines starting with @ so output is comparable
-sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes include estimates for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes are job-based for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
 sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-*.json
-python3 - "$tmp" <<'PY'
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
 import pathlib
 import sys
 

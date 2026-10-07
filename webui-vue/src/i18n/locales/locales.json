@@ -1,0 +1,20 @@
+{
+  "default": "en_EN",
+  "locales": [
+    { "value": "cn_CN", "label": "Chinese" },
+    { "value": "cs_CZ", "label": "Czech" },
+    { "value": "nl_BE", "label": "Dutch/Belgium" },
+    { "value": "en_EN", "label": "English" },
+    { "value": "fr_FR", "label": "French" },
+    { "value": "de_DE", "label": "German" },
+    { "value": "hu_HU", "label": "Hungarian" },
+    { "value": "it_IT", "label": "Italian" },
+    { "value": "pl_PL", "label": "Polish" },
+    { "value": "pt_BR", "label": "Portuguese (BR)" },
+    { "value": "ru_RU", "label": "Russian" },
+    { "value": "sk_SK", "label": "Slovak" },
+    { "value": "es_ES", "label": "Spanish" },
+    { "value": "tr_TR", "label": "Turkish" },
+    { "value": "uk_UA", "label": "Ukrainian" }
+  ]
+}

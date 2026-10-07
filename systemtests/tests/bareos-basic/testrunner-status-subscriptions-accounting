@@ -135,8 +135,8 @@ catalog_accounted_totals()
 check_logical_size()
 {
   local report="$1" expected="$2" line actual
-  line="$(grep -m1 "Logical size (st_size):" "$report" || true)"
-  if [[ "$line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
+  line="$(grep -m1 '"logical_bytes"' "$report.json" || true)"
+  if [[ "$line" =~ \"logical_bytes\":\ ([0-9]+) ]]; then
     actual="${BASH_REMATCH[1]//,/}"
     if [[ "$actual" -ne "$expected" ]]; then
       echo "status subscriptions accounting reported logical size ${actual}," \
@@ -167,6 +167,10 @@ wait_for_accounting_result()
 @$out $report
 status subscriptions accounting client=bareos-fd fileset=AcctTest
 status subscriptions accounting client=does-not-exist
+@$out ${NULL_DEV}
+.api 2
+@$out $report.json
+status subscriptions accounting client=bareos-fd fileset=AcctTest
 END_OF_DATA
     run_bconsole
     if grep -qE "$expected" "$report"; then
@@ -232,7 +236,7 @@ check_for_zombie_jobs storage=File
 record_file_stats "immediately after Full"
 refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
-  "bareos-fd / AcctTest: [1-9][0-9,]* files"
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 record_catalog_stats "full"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals full)
@@ -254,11 +258,22 @@ fi
 # can change as the filesystem commits or compresses data, so compare the
 # report to the LStat values stored in the catalog by that backup instead
 # of sampling the live files before or after it.
-line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting.log" || true)"
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
+PY
+)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
   estat=1
-elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 1\ jobs\ in\ chain\)\. ]]; then
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 1$ ]]; then
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
@@ -328,7 +343,7 @@ check_for_zombie_jobs storage=File
 record_file_stats "immediately after Incremental"
 refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting-incremental.log" \
-  "bareos-fd / AcctTest: [1-9][0-9,]* files"
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 record_catalog_stats "incremental"
 read -r catalog_files catalog_bytes catalog_logical_bytes \
   < <(catalog_accounted_totals incremental)
@@ -350,11 +365,22 @@ fi
 check_logical_size "$tmp/status-subscriptions-accounting-incremental.log" \
   "$raw_bytes"
 
-line="$(grep "bareos-fd / AcctTest:" "$tmp/status-subscriptions-accounting-incremental.log" || true)"
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting-incremental.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
+PY
+)"
 if [[ -z "$line" ]]; then
   echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest after the incremental!" >&2
   estat=1
-elif [[ "$line" =~ ([0-9]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+),\ 2\ jobs\ in\ chain\)\. ]]; then
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 2$ ]]; then
   files="${BASH_REMATCH[1]}"
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
@@ -383,6 +409,196 @@ else
     "the expected format (expected exactly 2 jobs in chain): ${line}" >&2
   estat=1
 fi
+
+# Zero length plus one block is valid outside MSSQL's virtual namespace.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A QAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-empty-regular.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-empty-regular.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["logical_bytes"] == 513
+PY
+
+# The same placeholder under MSSQL's namespace must fall back for the whole
+# combination, even when other measurable files remain in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@MSSQL/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@MSSQL/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-mssql-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-mssql-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+row = next(row for row in result("mssql")["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert result("mssql-all")[key] == result("mssql-legacy")[key], key
+PY
+
+# A genuinely empty file without the MSSQL block-size marker stays measurable.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql-empty.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-mssql-empty.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+PY
+
+# Replace one real catalog file with the opaque image attributes used by
+# barri/NDMP, leaving other measurable files (such as plugin logs) in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A -B BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-opaque.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-opaque-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-opaque-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+opaque = result("opaque")
+row = next(row for row in opaque["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
+report = result("opaque-all")
+assert report["subscription_accounting"]["estimated_combinations"] > 0
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert report[key] == result("opaque-legacy")[key], key
+PY
+
+# An NDMP stream container has the same stat, but actual file-history rows
+# describe its contents. Preserve their measured accounting.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@NDMP/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["files"] == 3
+assert row["logical_bytes"] == 1513
+assert row["bytes"] > 0
+PY
+
+# With file history absent, the NDMP container alone must still fall back.
+run_bconsole - <<END_OF_DATA
+.sql query="DELETE FROM File WHERE JobId IN (SELECT j.JobId FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest') AND PathId NOT IN (SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-no-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-no-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history"
+PY
+
+# Real NDMP_BAREOS and NDMP_NATIVE catalog exports from PR #2855.
+# Import each Full first, then its Incremental, to verify both baselines
+# and latest-file de-duplication without needing an NDMP server here.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py import "$phase" \
+    >"$tmp/ndmp-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/ndmp-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-real-ndmp-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py check "$phase" \
+    "$tmp/status-subscriptions-real-ndmp-${phase}.json"
+done
+
+# Import privacy-reduced samples of actual Barri, Windows, and MSSQL
+# catalog attributes from supplied dumps. The encoded LStat values are
+# preserved; names and paths are anonymized in the fixture.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py import "$phase" \
+    >"$tmp/plugin-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/plugin-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-plugin-fixtures-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py check \
+    "$phase" "$tmp/status-subscriptions-plugin-fixtures-${phase}.json"
+done
 
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2

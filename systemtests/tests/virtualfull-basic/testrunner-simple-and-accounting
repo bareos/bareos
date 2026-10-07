@@ -59,12 +59,16 @@ END_OF_DATA
     cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${report}
 status subscriptions accounting client=bareos-fd fileset=SelfTest
+@$out ${NULL_DEV}
+.api 2
+@$out $report.json
+status subscriptions accounting client=bareos-fd fileset=SelfTest
 END_OF_DATA
     run_bconsole "${tmp}/bconcmds"
     if grep -qF "Background refresh worker: idle." "${report}" \
       && grep -qF "Real (File.LStat-based) subscription accounting report" \
         "${report}" \
-      && grep -qF "${expected_chain_size} jobs in chain)." "${report}"; then
+      && grep -qE "^SelfTest@bareos-fd[[:space:]]+.*[[:space:]]${expected_chain_size}$" "${report}"; then
       return 0
     fi
     sleep 1
@@ -146,27 +150,16 @@ check_restore_diff "${BackupDirectory}" "${test_home}/bareos-restores"
 
 read_accounting_totals()
 {
-  local report=$1 line logical_line files bytes rule logical_bytes
-  line="$(grep "bareos-fd / SelfTest:" "$report" || true)"
-  logical_line="$(grep "Logical size (st_size):" "$report" || true)"
+  "${PYTHON_EXECUTABLE}" - "$1.json" <<'PY'
+import json
+import pathlib
+import sys
 
-  if [[ "$line" =~ ([0-9,]+)\ files,\ ([0-9,]+)\ bytes\ accounted\ \(rule:\ ([^,]+), ]]; then
-    files="${BASH_REMATCH[1]//,/}"
-    bytes="${BASH_REMATCH[2]//,/}"
-    rule="${BASH_REMATCH[3]}"
-    if [[ "$logical_line" =~ Logical\ size\ \(st_size\):\ ([0-9,]+)\ bytes\. ]]; then
-      logical_bytes="${BASH_REMATCH[1]//,/}"
-    else
-      echo "Could not parse logical size from ${report}: ${logical_line}" >&2
-      return 1
-    fi
-    printf '%s:%s:%s\n' \
-      "$files" "$bytes" "${rule}:${logical_bytes}"
-    return
-  fi
-
-  echo "Could not parse subscription accounting output in ${report}: ${line}" >&2
-  return 1
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(":".join(str(row[key]) for key in ("files", "bytes", "rule", "logical_bytes")))
+PY
 }
 
 if ! accounting_before=$(

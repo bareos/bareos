@@ -54,6 +54,14 @@ asterisk (*). Generally, for all commands, you can simply enter the command name
 program will prompt you for the necessary arguments. Alternatively, in most cases, you may enter
 the command followed by arguments. The general format is:
 
+When standard output is a capable terminal, :command:`bconsole` uses color to
+distinguish prompts, selections, informational messages, warnings, and errors.
+Set the :envvar:`NO_COLOR` environment variable to disable color. Color is also
+disabled for terminals that identify themselves as ``dumb`` and on Windows
+consoles without virtual-terminal support. Redirected output and files written
+by ``@output`` or ``@tee`` do not contain terminal color sequences. Textual
+selection markers remain present when color is enabled.
+
 
 
 ::
@@ -950,6 +958,8 @@ list
       list jobmedia
       list jobmedia jobid=<id>
       list jobmedia job=<job-name>
+      list jobmedia volume=<volume-name>
+      list volumeusage volume=<volume-name>
       list files jobid=<id>
       list files job=<job-name>
       list media jobid=<jobid>
@@ -1319,6 +1329,19 @@ restore
    restore job configured. However, for certain cases, such as a varying list of RunScript
    specifications, multiple restore jobs may be configured.
    The restorejob argument allows the selection of one of these jobs.
+
+   When selecting a restore point via the guided FileSet@Client picker, each candidate restore
+   point is shown with its timestamp/age, JobId, the distinct job name(s) that make up its backup
+   chain, and the anchor Full job's own file count and size. By default, restoring a selected
+   restore point uses the whole resolved backup chain (Full plus any Differential/Incremental
+   jobs up to that point). The **restorepointmode** argument controls this:
+
+   restorepointmode=chain
+      Restore the whole resolved backup chain up to the selected restore point (default).
+
+   restorepointmode=job
+      Restore only the anchor Full job of the selected restore point, bypassing chain/dependency
+      resolution entirely.
 
    For more details, see the :ref:`Restore chapter <RestoreChapter>`.
 
@@ -1737,17 +1760,44 @@ status subscriptions
    This shows a combined list of clients and plugins, together with the
    use-count of the plugins and the aggregated amount of backed up frontend
    data (in gigabytes). Sizes use the last successful accounting snapshot
-   for Client/FileSet combinations with measured data. Missing or excluded
-   combinations retain the former job-level estimate, and the report
-   labels such totals as partially estimated. Before the first successful
-   accounting refresh, all sizes are estimates. The text report and
+   for Client/FileSet combinations with file-based data. Missing or excluded
+   combinations retain the former job-based size, and the report
+   identifies how many combinations use job-based sizes. Before the first
+   successful accounting refresh, all sizes are job-based. The text report and
    structured ``subscription_accounting`` object show the snapshot time,
-   how many combinations are estimated, and warnings when the snapshot is
-   older than 24 hours or the latest refresh failed. The existing count
-   of backup units is unchanged; volume-based units are calculated from
-   these measured or estimated sizes. Each report reads its metadata,
+   how many combinations are job-based, and warnings when the snapshot is
+   older than 24 hours or the latest refresh failed.
+   The structured object also supplies ``age_seconds`` when a snapshot
+   exists, computed in the catalog's time frame rather than from the
+   Director's local report timestamp.
+   The existing count of backup units is unchanged; volume-based units are
+   calculated from
+   these file-based or job-based sizes. Each report reads its metadata,
    detail, summary, and checksum from a consistent catalog snapshot,
    even if a background refresh completes while it is being generated.
+   For comparison, append ``legacy`` (for example,
+   ``status subscriptions all legacy``) to use the original latest successful
+   Full job sizes, ``max(ReadBytes, JobBytes)``, instead of snapshot sizes.
+   Counts, aggregation and unit calculation remain unchanged. The snapshot
+   is neither refreshed nor modified; structured output identifies this
+   mode with ``subscription_accounting.source = "legacy"``. This option
+   also works with ``clients``, ``plugins``, ``client=`` and ``anonymize``,
+   but cannot be combined with ``accounting``.
+   A Client/FileSet chain containing an opaque backup image (for example,
+   barri or an NDMP stream with unknown file size) uses the job-based
+   fallback even when accompanying log files have measurable attributes.
+   The entire combination is excluded from file-based accounting rather than
+   treating its logs as the complete backup size.
+   NDMP stream containers are ignored when actual per-file history is
+   available; those combinations continue to use file-based sizes.
+   Opaque plugin images use the distinct ``opaque_backup_image`` exclusion
+   reason and a job-based size. The NDMP file-history explanation applies
+   only to NDMP containers without measurable file history
+   (``ndmp_no_file_history``). Older snapshots with the ambiguous
+   ``no_per_file_data`` reason show a generic explanation until refreshed.
+   MSSQL VDI streams under ``/@MSSQL/`` with the plugin's zero-size
+   placeholder attributes also use this fallback. The plugin need not be
+   changed, and ordinary empty files are not treated as opaque streams.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
@@ -1922,10 +1972,17 @@ status subscriptions
       *<input>status subscriptions accounting</input>
 
       Real (File.LStat-based) subscription accounting report from snapshot at 2026-09-30 12:00:00:
-      linux-fd / system: 128,532 files, 24,318,732,288 bytes accounted (rule: st_blocks*512, 4 jobs in chain).
-        Logical size (st_size): 25,004,123,456 bytes.
-      windows-fd / system: 84,221 files, 12,004,556,800 bytes accounted (rule: st_size, 3 jobs in chain).
-        Logical size (st_size): 12,004,556,800 bytes.
+      FileSet@Client       Files  Accounted size  Logical size  Rule  Chain jobs
+      -----------------  -------  --------------  ------------  ----  ----------
+      system@linux-fd    128,532        24.31 GB      25.00 GB  B              4
+      system@windows-fd   84,221        12.00 GB      12.00 GB  S              3
+      -----------------  -------  --------------  ------------  ----  ----------
+      TOTAL              212,753        36.32 GB      37.00 GB
+
+      Rule:
+        B = allocated size (st_blocks * 512 bytes)
+        S = logical size (st_size)
+      Size units are decimal (1 KB = 1,000 bytes).
 
       Grand total: 212,753 files, 36,323,289,088 bytes across 2 accounted Client/FileSet combination(s)
       Logical size total (st_size): 37,008,680,256 bytes
@@ -1934,6 +1991,15 @@ status subscriptions
    can be used to restrict the report to a single client and/or fileset,
    for example
    :bcommand:`status subscriptions accounting client=linux-fd`.
+
+   The console table identifies each combination as ``FileSet@Client``.
+   ``Accounted size`` follows the rule shown in the legend; ``Logical size``
+   always represents file lengths. Sizes in the table use shortened decimal
+   units, while JSON and the grand totals retain exact byte counts.
+   ``Chain jobs`` is the number of jobs used in the calculation, not a list
+   of JobIds. Excluded combinations appear in the same table with ``-`` for
+   unavailable values and a ``Status / Reason`` column explaining the
+   exclusion. This column is omitted when no combinations are excluded.
 
    The report includes the snapshot calculation time. A snapshot older than
    24 hours is flagged as stale. If the latest background refresh failed,
@@ -2120,6 +2186,24 @@ update
          Volume from Pool
          All Volumes from Pool
          All Volumes from all Pools
+         Comment
+
+   You can set a free-text comment on a volume with :bcommand:`update
+   volume=<volume-name> comment="<text>"` and on a job with
+   :bcommand:`update jobid=<jobid> comment="<text>"`. Use ``comment=""`` to
+   clear it. The comments are shown by :bcommand:`llist volume` and
+   :bcommand:`llist jobs`.
+
+   :bcommand:`update volume=<volume-name> volstatus=<status>` refuses
+   status changes that would lose data or make a volume unusable:
+
+   - `Recycle` can only be set on a `Purged` volume, because a recycled
+     volume is relabelled and its data is lost. Purge the volume first.
+   - `Cleaning` can only be set on a volume the catalog has no jobs for,
+     because cleaning volumes are never used for backups.
+
+   Add the ``force`` keyword to override these checks. Setting the status
+   a volume already has does not change the catalog.
 
    You can add, remove or rotate a volume encryption key using :bcommand:`update
    volume=<volume-name> encrypt=<yes/no/rotate>` for :ref:`scsicrypto-sd`.
@@ -2157,16 +2241,17 @@ update
    .. code-block:: bconsole
       :caption: update
 
-      update  volume=<volume-name> [volstatus=<status>]
+      update  volume=<volume-name> [volstatus=<status> [force]]
               [volretention=<time-def>] [pool=<pool-name>]
-              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
+              [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]
+              [comment=<text>] |
               pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
               [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
               [actiononpurge=<action>] [encrypt=<yes/no/rotate>] |
               slots [storage=<storage-name>] [scan] |
               jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
               [client=<client-name>] [filesetid=<fileset-id>]
-              [jobtype=<job-type>] |
+              [jobtype=<job-type>] [comment=<text>] |
               stats [days=<number>]
 
 use

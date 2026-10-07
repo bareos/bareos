@@ -21,13 +21,17 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildVolumeTapeSegments,
   buildVolumeDetailsQuery,
   resolveVolumeDetailsDirectorOrigin,
   resolveVolumeDetailsJobOrigin,
   resolveVolumeDetailsPoolOrigin,
-  resolveVolumeDetailsStoragesOrigin,
+  resolveVolumeDetailsPoolsOrigin,
   volumeEncryptionKey,
+  volumeFileIndexLabel,
   volumeHasEncryptionKey,
+  volumeMediaPositionLabel,
+  volumeUsageSegmentsFromResponse,
 } from '../../src/utils/volumes.js'
 
 describe('volume encryption helpers', () => {
@@ -54,16 +58,16 @@ describe('volume encryption helpers', () => {
       directorTarget: 'prod-b',
       jobId: 42,
       poolName: 'Full',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
     })).toEqual({
       director: 'prod-a',
       directorTab: 'catalog',
       directorTarget: 'prod-b',
       jobId: '42',
       poolName: 'Full',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
     })
 
     expect(buildVolumeDetailsQuery({
@@ -111,14 +115,121 @@ describe('volume encryption helpers', () => {
   })
 
   it('resolves an optional storages origin for volume details routes', () => {
-    expect(resolveVolumeDetailsStoragesOrigin({
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+    expect(resolveVolumeDetailsPoolsOrigin({
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
     })).toEqual({
       tab: 'volumes',
       scopeDirector: 'prod-a',
     })
 
-    expect(resolveVolumeDetailsStoragesOrigin({})).toBeNull()
+    expect(resolveVolumeDetailsPoolsOrigin({})).toBeNull()
+  })
+})
+
+describe('volume tape usage helpers', () => {
+  it('extracts volume usage segments from supported response shapes', () => {
+    const segments = [{ jobid: 1 }]
+
+    expect(volumeUsageSegmentsFromResponse(segments)).toBe(segments)
+    expect(volumeUsageSegmentsFromResponse({ segments })).toBe(segments)
+    expect(volumeUsageSegmentsFromResponse({ volumeusage: { segments } })).toBe(segments)
+    expect(volumeUsageSegmentsFromResponse({})).toEqual([])
+  })
+
+  it('formats FileIndex and media position labels', () => {
+    expect(volumeFileIndexLabel({ firstindex: 1, lastindex: 10 })).toBe('1–10')
+    expect(volumeFileIndexLabel({ firstindex: 7, lastindex: 7 })).toBe('7')
+    expect(volumeFileIndexLabel({})).toBe('—')
+
+    expect(volumeMediaPositionLabel({
+      startfile: 0,
+      startblock: 10,
+      endfile: 0,
+      endblock: 99,
+    })).toBe('0:10–0:99')
+    expect(volumeMediaPositionLabel({})).toBe('—')
+  })
+
+  it('orders tape segments by physical media position', () => {
+    const segments = buildVolumeTapeSegments([
+      { jobmediaid: 3, jobid: 30, startfile: 1, startblock: 0, jobbytes: 10 },
+      { jobmediaid: 1, jobid: 10, startfile: 0, startblock: 100, jobbytes: 10 },
+      { jobmediaid: 2, jobid: 20, startfile: 0, startblock: 200, jobbytes: 10 },
+    ])
+
+    expect(segments.map(segment => segment.jobid)).toEqual(['10', '20', '30'])
+  })
+
+  it('uses JobMedia bytes for percentages and merges job metadata', () => {
+    const segments = buildVolumeTapeSegments([
+      {
+        jobmediaid: 1,
+        jobid: 10,
+        firstindex: 1,
+        lastindex: 10,
+        startfile: 0,
+        startblock: 100,
+        jobbytes: 25,
+      },
+      {
+        jobmediaid: 2,
+        jobid: 20,
+        firstindex: 1,
+        lastindex: 5,
+        startfile: 0,
+        startblock: 200,
+        jobbytes: 75,
+      },
+    ], [
+      { jobid: 10, name: 'BackupA', client: 'a-fd', jobstatus: 'T' },
+      { jobid: 20, name: 'BackupB', client: 'b-fd', jobstatus: 'W' },
+    ])
+
+    expect(segments[0]).toMatchObject({
+      jobid: '10',
+      name: 'BackupA',
+      client: 'a-fd',
+      status: 'T',
+      fileIndexLabel: '1–10',
+      pct: 25,
+    })
+    expect(segments[1].pct).toBe(75)
+  })
+
+  it('falls back to FileIndex spans when JobMedia bytes are missing', () => {
+    const segments = buildVolumeTapeSegments([
+      { jobmediaid: 1, jobid: 10, firstindex: 1, lastindex: 10 },
+      { jobmediaid: 2, jobid: 20, firstindex: 1, lastindex: 30 },
+    ])
+
+    expect(segments[0].pct).toBe(25)
+    expect(segments[1].pct).toBe(75)
+  })
+
+  it('builds lanes for five parallel overlapping JobMedia ranges', () => {
+    const segments = buildVolumeTapeSegments([
+      { jobmediaid: 1, jobid: 101, firstindex: 1, lastindex: 10, startblock: 100, endblock: 500, jobbytes: 10 },
+      { jobmediaid: 2, jobid: 102, firstindex: 1, lastindex: 10, startblock: 200, endblock: 600, jobbytes: 10 },
+      { jobmediaid: 3, jobid: 103, firstindex: 1, lastindex: 10, startblock: 300, endblock: 700, jobbytes: 10 },
+      { jobmediaid: 4, jobid: 104, firstindex: 1, lastindex: 10, startblock: 400, endblock: 800, jobbytes: 10 },
+      { jobmediaid: 5, jobid: 105, firstindex: 1, lastindex: 10, startblock: 500, endblock: 900, jobbytes: 10 },
+    ])
+
+    expect(segments.every(segment => segment.hasOverlaps)).toBe(true)
+    expect(segments.map(segment => segment.colorIndex)).toEqual([0, 1, 2, 3, 4])
+    expect(segments[0]).toMatchObject({ leftPct: 0, widthPct: 50 })
+    expect(segments[4]).toMatchObject({ leftPct: 50, widthPct: 50 })
+  })
+
+  it('uses stable colors for repeated ranges from the same job', () => {
+    const segments = buildVolumeTapeSegments([
+      { jobmediaid: 1, jobid: 101, startblock: 100, endblock: 200, jobbytes: 10 },
+      { jobmediaid: 2, jobid: 102, startblock: 300, endblock: 400, jobbytes: 10 },
+      { jobmediaid: 3, jobid: 101, startblock: 500, endblock: 600, jobbytes: 10 },
+    ])
+
+    expect(segments.map(segment => segment.colorIndex)).toEqual([0, 1, 0])
+    expect(segments.some(segment => segment.hasOverlaps)).toBe(false)
   })
 })
