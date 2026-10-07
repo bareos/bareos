@@ -144,6 +144,21 @@ if command -v tar >/dev/null; then
     fail "unsafe path accepted"
   fi
   [ ! -e "${work}/evil-restore/x" ] || fail "unsafe path restored"
+
+  mkdir -p "${work}/symlink-source" "${work}/symlink-outside" \
+    "${work}/symlink-payload"
+  ln -s "${work}/symlink-outside" "${work}/symlink-source/escape"
+  echo escaped >"${work}/symlink-payload/pwn"
+  tar -cf "${work}/symlink.img" --no-recursion \
+    -C "${work}/symlink-source" escape \
+    --transform='s|^pwn$|escape/pwn|' \
+    -C "${work}/symlink-payload" pwn
+  "${WRAP_TAR}" -x -I "${work}/symlink.idx" -E "FILESYSTEM=/" \
+    /escape @- "${work}/symlink-restore/escape" <"${work}/symlink.img" \
+    || fail "symlink extraction made the formatter fail"
+  grep -q "^RR 20 /escape$" "${work}/symlink.idx" \
+    || fail "symlink parent was not rejected"
+  [ ! -e "${work}/symlink-outside/pwn" ] || fail "symlink escaped restore root"
 fi
 
 echo "wrap_tar test passed"

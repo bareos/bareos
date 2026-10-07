@@ -673,19 +673,37 @@ static int map_destination(struct wrap_ccb* wccb,
   return best;
 }
 
+static int mkdir_if_missing(char* path, mode_t mode)
+{
+  struct stat st;
+
+  if (mkdir(path, mode) == 0) return 0;
+  if (errno != EEXIST) return -1;
+  if (lstat(path, &st) < 0) return -1;
+  if (!S_ISDIR(st.st_mode)) {
+    errno = ENOTDIR;
+    return -1;
+  }
+  return 0;
+}
+
 static int mkdir_p(char* path, mode_t mode)
 {
   for (char* p = path + 1; *p; p++) {
+    int rc;
+    int saved_errno;
+
     if (*p != '/') continue;
     *p = 0;
-    if (mkdir(path, mode) < 0 && errno != EEXIST) {
-      *p = '/';
+    rc = mkdir_if_missing(path, mode);
+    saved_errno = errno;
+    *p = '/';
+    if (rc < 0) {
+      errno = saved_errno;
       return -1;
     }
-    *p = '/';
   }
-  if (mkdir(path, mode) < 0 && errno != EEXIST) return -1;
-  return 0;
+  return mkdir_if_missing(path, mode);
 }
 
 static int make_parent(const char* path)
