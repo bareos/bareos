@@ -56,6 +56,10 @@ bool BareosConnect(JobControlRecord* jcr,
                    std::string_view hello_msg,
                    bool cleartext_authentication = false);
 
+struct Md5OutboundAuthenticator : auth::OutboundAuthenticator {
+  bool authenticate(auth::OutboundArgs args) override;
+};
+
 template <global_resource::Type type, global_resource::Type target_type>
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
@@ -68,35 +72,7 @@ bool BareosConnect(JobControlRecord* jcr,
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
 
-  struct outbound : auth::OutboundAuthenticator {
-    bool authenticate(auth::OutboundArgs args) override
-    {
-      auto* socket = args.socket;
-
-      static constexpr std::string_view new_auth_prefix = "auth:";
-
-      // messages start with a uint32_t length
-      char buffer[sizeof(uint32_t) + new_auth_prefix.size()] = {};
-
-      std::string_view prefix{buffer + sizeof(uint32_t),
-                              new_auth_prefix.size()};
-
-      if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
-        auth::CramMd5::Prover prover{};
-        auth::CramMd5::Verifier verifier{};
-
-
-        auth::NewAuthenticator auth{};
-        auto result = auth.authenticate_outbound(args);
-        return result;
-      } else {
-        auth::Md5Authenticator auth;
-        return auth.authenticate_outbound(args);
-      }
-    }
-  };
-
-  outbound auth;
+  Md5OutboundAuthenticator auth;
 
   return BareosConnect(jcr, socket, qualified_name, res, &auth, hello,
                        cleartext_authentication);
