@@ -1120,7 +1120,7 @@ int wrap_send_recovery_result(FILE* fp, int rr_errno, char* path)
 
   if (!fp) return -1;
 
-  wrap_cstr_from_str(path, res->path, sizeof res->path);
+  if (wrap_cstr_from_str(path, res->path, sizeof res->path) < 0) return -1;
   fprintf(fp, "RR %d %s\n", rr_errno, res->path);
   fflush(fp);
 
