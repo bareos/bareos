@@ -154,6 +154,16 @@ def check(report, phase):
         assert vmware["excluded"], vmware
         assert vmware["exclusion_reason"] == "opaque_backup_image", vmware
 
+    for fileset in fixture["hyperv"]["filesets"]:
+        hyperv = next(
+            row
+            for row in response["accounting"]
+            if row["client"] == fixture["hyperv"]["client"]["name"]
+            and row["fileset"] == fileset["name"]
+        )
+        assert hyperv["excluded"], hyperv
+        assert hyperv["exclusion_reason"] == "opaque_backup_image", hyperv
+
 
 if __name__ == "__main__":
     action = sys.argv[1]
@@ -164,6 +174,7 @@ if __name__ == "__main__":
         import_case("mssql", phase)
         if phase == "full":
             import_case("vmware", phase)
+            import_case("hyperv", phase)
     elif action == "check":
         check(sys.argv[3], sys.argv[2])
     else:
