@@ -99,10 +99,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
     } break;
   }
 
-  DefaultConnectionInfo info{*client};
-
   if (!BareosConnect<Type::Director, Type::Client>(
-          jcr, fd, myself->resource_name_, &info, old_style_tls)) {
+          jcr, fd, myself->resource_name_, client, old_style_tls)) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Error connecting to File daemon at \"%s:%d\". ERR=%s\n"),
          fd->host(), fd->port(), fd->bstrerror());
