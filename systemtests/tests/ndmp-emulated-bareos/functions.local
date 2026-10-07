@@ -41,7 +41,8 @@ export NDMP_REFERENCE="${tmp}/ndmp-reference"
 save_ndmp_reference()
 {
   rm -rf "${NDMP_REFERENCE}"
-  cp -a "${NDMP_FILESYSTEM}" "${NDMP_REFERENCE}"
+  mkdir -p "${NDMP_REFERENCE}"
+  tar -cpf - -C "${NDMP_FILESYSTEM}" . | tar -xpf - -C "${NDMP_REFERENCE}"
 }
 
 # compare the restored full backup in $1 with the reference
