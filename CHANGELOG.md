@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix(dird): accept extended labels after purge truncate [PR #2815]
 - webui-proxy: include <cstdint> for int32_t in director_connection.h [PR #2826]
 - bareoslib: add new value for Verify Peer and set it as the default [PR #2854]
+- dird: fix reload related crash [PR #2768]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2397,6 +2398,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2763]: https://github.com/bareos/bareos/pull/2763
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
 [PR #2765]: https://github.com/bareos/bareos/pull/2765
+[PR #2768]: https://github.com/bareos/bareos/pull/2768
 [PR #2771]: https://github.com/bareos/bareos/pull/2771
 [PR #2772]: https://github.com/bareos/bareos/pull/2772
 [PR #2777]: https://github.com/bareos/bareos/pull/2777
