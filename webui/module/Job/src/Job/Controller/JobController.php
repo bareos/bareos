@@ -25,7 +25,6 @@
 
 namespace Job\Controller;
 
-use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Json\Json;
@@ -78,16 +77,6 @@ class JobController extends AbstractActionController
         }
 
         $action = $this->params()->fromPost('action');
-        if (!empty($action)) {
-            $actionForm = new ActionForm();
-            $actionForm->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
-                error_log('Rejected job action request: ' . json_encode($actionForm->getMessages()));
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-        }
 
         $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : ($_SESSION['bareos']['jobview_period'] ? $_SESSION['bareos']['jobview_period'] : 7);
         $status = $this->params()->fromQuery('status') ? $this->params()->fromQuery('status') : 'all';
@@ -253,15 +242,6 @@ class JobController extends AbstractActionController
             return $this->getResponse();
         }
 
-        $actionForm = new ActionForm();
-        $actionForm->setData($this->getRequest()->getPost());
-        if (!$actionForm->isValid()) {
-            error_log('Rejected job cancellation request: ' . json_encode($actionForm->getMessages()));
-            $this->getResponse()->setStatusCode(400);
-            $this->getResponse()->setContent('Invalid request.');
-            return $this->getResponse();
-        }
-
         $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
         $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
@@ -335,15 +315,6 @@ class JobController extends AbstractActionController
         if (empty($action)) {
             return new ViewModel();
         } else {
-            $actionForm = new ActionForm();
-            $actionForm->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
-                error_log('Rejected job resource action request: ' . json_encode($actionForm->getMessages()));
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {

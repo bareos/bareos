@@ -45,16 +45,6 @@ class LoginForm extends Form
 
         parent::__construct('login');
 
-        $this->add(array(
-            'name' => 'csrf',
-            'type' => 'Laminas\Form\Element\Csrf',
-            'options' => array(
-                'csrf_options' => array(
-                    'timeout' => 3600,
-                ),
-            ),
-        ));
-
         if (count($this->directors) == 1) {
             $this->add(
                 array(
@@ -174,16 +164,6 @@ class LoginForm extends Form
                 'attributes' => array(
                     'value' => 'false',
                     'id' => 'bareos_updates'
-                ),
-            )
-        );
-
-        $this->add(
-            array(
-                'name' => 'csrf',
-                'type' => 'Laminas\Form\Element\Csrf',
-                'options' => array(
-                    'csrf_options' => array('timeout' => 3600),
                 ),
             )
         );

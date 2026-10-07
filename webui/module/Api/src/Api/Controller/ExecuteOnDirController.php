@@ -25,7 +25,6 @@
 
 namespace Api\Controller;
 
-use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractRestfulController;
 use Laminas\View\Model\JsonModel;
 use Exception;
@@ -53,13 +52,6 @@ class ExecuteOnDirController extends AbstractRestfulController
                     )
                 )
             );
-        }
-
-        $form = new ActionForm();
-        $form->setData($data);
-        if (!$form->isValid()) {
-            $this->getResponse()->setStatusCode(400);
-            return new JsonModel(array('error' => 'Invalid request.'));
         }
 
         $this->bsock = $this->getServiceLocator()->get('director');

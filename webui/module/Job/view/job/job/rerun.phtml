@@ -240,31 +240,26 @@ $this->headTitle($title);
 
          $('#dir-messages').empty()
 
-         refreshCsrfToken(function(token) {
-            $.ajax({
-               url: url,
-               type: 'POST',
-               data: {
-                  action: 'rerun',
-                  jobs: s,
-                  csrf: token
-               },
-               dataType: 'json',
-               timeout: 10000,
-               success: function(data) {
-                  data.forEach((item) => {
-                     $('#dir-messages').append('<p>' + item + '</p>')
-                  })
-               },
-               error: function() {
-                  console.log('Error fetching data.')
-               },
-               parsererror: function() {
-                  console.log('Error parsing data.')
-               }
-            });
-         }, function(error) {
-            console.log(error);
+         $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+               action: 'rerun',
+               jobs: s
+            },
+            dataType: 'json',
+            timeout: 10000,
+            success: function(data) {
+               data.forEach((item) => {
+                  $('#dir-messages').append('<p>' + item + '</p>')
+               })
+            },
+            error: function() {
+               console.log('Error fetching data.')
+            },
+            parsererror: function() {
+               console.log('Error parsing data.')
+            }
          });
       }
    }

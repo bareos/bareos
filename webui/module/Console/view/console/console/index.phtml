@@ -67,34 +67,26 @@ function send(cmd) {
       focusScreen();
    } else {
       $('.prompt').hide();
-      refreshCsrfToken(function(token) {
-         var request = $.ajax({
-            method: "POST",
-            url: "<?php echo $this->url('api/console', array(), array()); ?>",
-            data: {
-               "action": "execute",
-               "command": cmd,
-               "csrf": token
-            },
-            dataType: "json",
-         });
-         request.done(function(msg) {
-            $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
-            $('.prompt').show();
-            document.getElementById('cli').value = "";
-            focusScreen();
-         });
-         request.fail(function(xhr) {
-            var message = xhr.statusText || "Request failed";
-            if(xhr.status) {
-               message += " (HTTP " + xhr.status + ")";
-            }
-            $("<div class='output'></div>").text(message).insertBefore(".prompt");
-            $('.prompt').show();
-            focusScreen();
-         });
-      }, function(error) {
-         $("<div class='output'></div>").text(error).insertBefore(".prompt");
+      var request = $.ajax({
+         method: "POST",
+         url: "<?php echo $this->url('api/console', array(), array()); ?>",
+         data: {
+            "command": cmd
+         },
+         dataType: "json",
+      });
+      request.done(function(msg) {
+         $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
+         $('.prompt').show();
+         document.getElementById('cli').value = "";
+         focusScreen();
+      });
+      request.fail(function(xhr) {
+         var message = xhr.statusText || "Request failed";
+         if(xhr.status) {
+            message += " (HTTP " + xhr.status + ")";
+         }
+         $("<div class='output'></div>").text(message).insertBefore(".prompt");
          $('.prompt').show();
          focusScreen();
       });

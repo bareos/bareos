@@ -25,7 +25,6 @@
 
 namespace Client\Controller;
 
-use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Exception;
@@ -81,15 +80,6 @@ class ClientController extends AbstractActionController
         if (empty($action)) {
             return new ViewModel();
         } else {
-            $form = new ActionForm();
-            $form->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$form->isValid()) {
-                error_log('Rejected client action request: ' . json_encode($form->getMessages()));
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {

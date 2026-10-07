@@ -34,7 +34,6 @@ include 'version.php';
 
 <head>
 <meta charset="utf-8">
-<meta name="csrf-token" content="<?php echo $this->escapeHtmlAttr((new \Application\Form\ActionForm())->get('csrf')->getValue()); ?>" data-refresh-url="<?php echo $this->url('api/csrf'); ?>">
 
 <?php echo $this->headTitle($_SESSION['bareos']['director'],'APPEND')->setSeparator(' | ')->setAutoEscape(false) ?>
 
@@ -62,7 +61,10 @@ include 'version.php';
    ->prependFile($this->basePath() . '/js/jquery.min.js', 'text/javascript')
    ->prependFile($this->basePath() . '/js/moment.min.js')
    ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9'))
-   ->prependFile($this->basePath() . '/js/html5shiv.js', 'text/javascript', array('conditional' => 'lt IE 9'));
+   ->prependFile($this->basePath() . '/js/html5shiv.js', 'text/javascript', array('conditional' => 'lt IE 9'))
+   // Loaded here as well as per view, because the logout form in this layout
+   // uses submitActionPostForm().
+   ->prependFile($this->basePath() . '/js/custom-functions.js');
 ?>
 
 </head>
@@ -116,7 +118,6 @@ include 'version.php';
                   <li role="separator" class="divider"></li>
                   <li>
                      <form method="post" action="<?php echo $this->url('auth', array('action' => 'logout')); ?>" onsubmit="return submitActionPostForm(this)">
-                        <?php echo $this->formHidden((new \Application\Form\ActionForm())->get('csrf')); ?>
                         <button type="submit" class="btn btn-link"><?php echo $this->translate("Logout"); ?></button>
                      </form>
                   </li>

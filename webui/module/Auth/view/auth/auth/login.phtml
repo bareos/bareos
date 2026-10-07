@@ -44,7 +44,6 @@ $this->headTitle($title);
    <?php
       $form->prepare();
       echo $this->form()->openTag($form);
-      echo $this->formRow($form->get('csrf'));
    ?>
 
    <div class="row centered text-centered">
@@ -151,7 +150,6 @@ $this->headTitle($title);
    </div>
 
    <?php
-      echo $this->formHidden($form->get('csrf'));
       echo $this->form()->closeTag();
    ?>
 

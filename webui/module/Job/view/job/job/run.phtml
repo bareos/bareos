@@ -53,7 +53,6 @@ $this->headTitle($title);
    $form->prepare();
    $form->setAttribute('class','form-horizontal');
    echo $this->form()->openTag($form);
-   echo $this->formRow($form->get('csrf'));
 ?>
 
 <div class="row">
@@ -159,7 +158,6 @@ $this->headTitle($title);
 </div>
 
 <?php
-   echo $this->formHidden($form->get('csrf'));
    echo $this->form()->closeTag($form);
 ?>
 

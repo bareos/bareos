@@ -153,7 +153,6 @@ else : ?>
 $form->prepare();
 $form->setAttribute('class', 'form-horizontal');
 echo $this->form()->openTag($form);
-echo $this->formRow($form->get('csrf'));
 ?>
       <div class="row">
         <div class="col-md-3">
@@ -213,7 +212,6 @@ echo '</strong>';
       </div>
 
 <?php
-   echo $this->formHidden($form->get('csrf'));
    echo $this->form()->closeTag($form);
 ?>
 

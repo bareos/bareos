@@ -50,16 +50,6 @@ class StorageForm extends Form
             ),
         ));
 
-        $this->add(array(
-            'name' => 'csrf',
-            'type' => 'Laminas\Form\Element\Csrf',
-            'options' => array(
-                'csrf_options' => array(
-                    'timeout' => 3600,
-                ),
-            ),
-        ));
-
         // storage
         $this->add(array(
             'name' => 'storage',
@@ -127,14 +117,6 @@ class StorageForm extends Form
                 'value' => _('Submit'),
                 'id' => 'submit'
             )
-        ));
-
-        $this->add(array(
-            'name' => 'csrf',
-            'type' => 'Laminas\Form\Element\Csrf',
-            'options' => array(
-                'csrf_options' => array('timeout' => 3600),
-            ),
         ));
     }
 

@@ -25,7 +25,6 @@
 
 namespace Storage\Controller;
 
-use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Json\Json;
@@ -126,16 +125,6 @@ class StorageController extends AbstractActionController
 
         $action = $this->params()->fromPost('action');
         $storagename = $this->params()->fromRoute('id');
-
-        if (!empty($action)) {
-            $actionForm = new ActionForm();
-            $actionForm->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$actionForm->isValid()) {
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-        }
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');

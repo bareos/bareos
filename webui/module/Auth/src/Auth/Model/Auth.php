@@ -91,17 +91,6 @@ class Auth implements InputFilterAwareInterface
                 ),
             ));
 
-            $inputFilter->add(array(
-                'name' => 'csrf',
-                'required' => true,
-                'validators' => array(
-                    array(
-                        'name' => 'Laminas\Validator\Csrf',
-                        'options' => array('name' => 'csrf', 'timeout' => 3600),
-                    ),
-                ),
-            ));
-
             $this->inputFilter = $inputFilter;
         }
 

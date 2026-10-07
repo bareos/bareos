@@ -78,7 +78,6 @@ $this->headTitle($title);
             $form->setAttribute('action', $this->url('storage', array('action' => 'details', 'id' => $this->storagename)));
             echo $this->form()->openTag($form);
             echo $this->formRow($form->get('action'));
-            echo $this->formRow($form->get('csrf'));
             echo $this->formRow($form->get('storage'));
             echo $this->formRow($form->get('pool'));
             echo '<p class="help-block">'.$this->translate("Assign media to this pool.").'</p>';
@@ -103,7 +102,6 @@ $this->headTitle($title);
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
          <?php
             echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
-            echo $this->formHidden($form->get('csrf'));
             echo $this->form()->closeTag($form);
          ?>
       </div>

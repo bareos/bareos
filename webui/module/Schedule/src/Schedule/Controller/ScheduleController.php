@@ -25,7 +25,6 @@
 
 namespace Schedule\Controller;
 
-use Application\Form\ActionForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\Json\Json;
@@ -82,16 +81,6 @@ class ScheduleController extends AbstractActionController
 
         $action = $this->params()->fromPost('action');
         $schedulename = $this->params()->fromPost('schedule');
-
-        if (!empty($action)) {
-            $form = new ActionForm();
-            $form->setData($this->getRequest()->getPost());
-            if (!$this->getRequest()->isPost() || !$form->isValid()) {
-                $this->getResponse()->setStatusCode(400);
-                $this->getResponse()->setContent('Invalid request.');
-                return $this->getResponse();
-            }
-        }
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
