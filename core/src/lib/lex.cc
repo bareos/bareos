@@ -177,7 +177,9 @@ lexer* LexCloseFile(lexer* lf)
   free(lf->fname);
   FreeMemory(lf->line);
   FreeMemory(lf->str);
+  FreeMemory(lf->peeked_line);
   lf->line = NULL;
+  lf->peeked_line = NULL;
   if (of) {
     // this is just an extremely bad idea, but it is kinda entangled
     // with the rest of the code.
@@ -236,6 +238,8 @@ static inline lexer* lex_add(lexer* lf,
   lf->fname = strdup(filename ? filename : "");
   lf->line = GetMemory(1024);
   lf->str = GetMemory(256);
+  lf->peeked_line = GetMemory(1024);
+  lf->has_peeked_line = false;
   lf->str_max_len = SizeofPoolMemory(lf->str);
   lf->state = lex_none;
   lf->ch = L_EOL;
@@ -331,8 +335,14 @@ int LexGetChar(lexer* lf)
   }
 
   if (lf->ch == L_EOL) {
-    // See if we are really reading a file otherwise we have reached EndOfFile.
-    if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
+    if (lf->has_peeked_line) {
+      /* Reuse the peeked line if we have it. */
+      POOLMEM* tmp = lf->line;
+      lf->line = lf->peeked_line;
+      lf->peeked_line = tmp;
+      lf->has_peeked_line = false;
+    } else if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
+      // See if we are really reading a file otherwise we reached EndOfFile.
       lf->ch = L_EOF;
       if (lf->next) {
         if (lf->fd) { LexCloseFile(lf); }
@@ -500,35 +510,24 @@ static uint64_t scan_pint64(lexer* lf, char* str)
   return val;
 }
 
-class TemporaryBuffer {
- public:
-  TemporaryBuffer(FILE* fd) : buf(GetPoolMemory(PM_NAME)), fd_(fd)
-  {
-    pos_ = ftell(fd_);
-  }
-  ~TemporaryBuffer()
-  {
-    FreePoolMemory(buf);
-    fseek(fd_, pos_, SEEK_SET);
-  }
-  POOLMEM* buf;
-
- private:
-  FILE* fd_;
-  long pos_;
-};
-
 static bool NextLineContinuesWithQuotes(lexer* lf)
 {
-  TemporaryBuffer t(lf->fd);
+  if (!lf->fd) { return false; }
 
-  if (bfgets(t.buf, lf->fd) != NULL) {
-    int i = 0;
-    while (t.buf[i] != '\0') {
-      if (t.buf[i] == '"') { return true; }
-      if (t.buf[i] != ' ' && t.buf[i] != '\t') { return false; }
-      ++i;
-    };
+  /* Read the next line into the lexer's lookahead buffer, so that it can be
+   * consumed later by LexGetChar(). We cannot use ftell()/fseek() to peek at
+   * the input, as this does not work for pipes (@|...) and would silently drop
+   * the line that was read ahead. */
+  if (!lf->has_peeked_line) {
+    if (bfgets(lf->peeked_line, lf->fd) == NULL) { return false; }
+    lf->has_peeked_line = true;
+  }
+
+  for (int i = 0; lf->peeked_line[i] != '\0'; ++i) {
+    if (lf->peeked_line[i] == '"') { return true; }
+    if (lf->peeked_line[i] != ' ' && lf->peeked_line[i] != '\t') {
+      return false;
+    }
   }
   return false;
 }
@@ -775,8 +774,8 @@ int LexGetToken(lexer* lf, int expect)
           break;
         }
         if (ch == '"') {
-          if (NextLineContinuesWithQuotes(lf)
-              || CurrentLineContinuesWithQuotes(lf)) {
+          if (CurrentLineContinuesWithQuotes(lf)
+              || NextLineContinuesWithQuotes(lf)) {
             continue_string = true;
             lf->state = lex_none;
             continue;
