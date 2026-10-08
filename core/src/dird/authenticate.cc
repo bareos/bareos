@@ -134,7 +134,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-std::unique_ptr<ConnectionInfo> DirectorAuth::get_info_for(
+std::unique_ptr<auth::InboundAuthenticator> DirectorAuth::get_info_for(
     global_resource::Type auth_type,
     std::string_view name)
 {
@@ -171,7 +171,7 @@ std::unique_ptr<ConnectionInfo> DirectorAuth::get_info_for(
       data.res = res;
 
       type = inbound_type::Client;
-      return std::make_unique<DefaultConnectionInfo>(*res);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(*res);
     } break;
     case global_resource::Type::Console: {
       Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
@@ -225,7 +225,7 @@ std::unique_ptr<ConnectionInfo> DirectorAuth::get_info_for(
 
       type = inbound_type::Console;
 
-      return std::make_unique<DefaultConnectionInfo>(data.tls);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(data.tls);
     } break;
     default: {
     }

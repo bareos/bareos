@@ -1065,15 +1065,18 @@ bool NewAuthenticator::authenticate_outbound(
   if (!Respond(args.socket, provers)) { return false; }
   return Challenge(args.socket, verifiers);
 }
-bool NewAuthenticator::authenticate_inbound(InboundArgs args)
+bool NewAuthenticator::authenticate_inbound(
+    std::span<std::unique_ptr<Prover>> provers,
+    std::span<std::unique_ptr<Verifier>> verifiers,
+    InboundArgs args)
 {
-  // if (!Challenge(args.socket, args.verifiers)) { return false; }
-  // return Respond(args.socket, args.provers);
-  (void)args;
-  return false;
+  if (!Challenge(args.socket, verifiers)) { return false; }
+  return Respond(args.socket, provers);
 }
 
-std::optional<Md5Authenticator> GetMd5(auto provers, auto verifiers)
+std::optional<Md5Authenticator> GetMd5(
+    std::span<std::unique_ptr<Prover>> provers,
+    std::span<std::unique_ptr<Verifier>> verifiers)
 {
   auth::CramMd5::Prover* md5_claim{};
   auth::CramMd5::Verifier* md5_verifier{};
@@ -1103,56 +1106,26 @@ std::optional<Md5Authenticator> GetMd5(auto provers, auto verifiers)
   return {};
 }
 
-bool DefaultAuthenticator::authenticate_outbound(OutboundArgs args)
+bool DefaultInboundAuthenticator::authenticate(InboundArgs args)
 {
-  auto* socket = args.socket;
+  Algorithms algs;
 
-  static constexpr std::string_view new_auth_prefix = "auth:";
+  auto identity = get_default_cram_identity();
+  auto password = tls.password_.value;
 
-  // messages start with a uint32_t length
-  char buffer[sizeof(uint32_t) + new_auth_prefix.size()] = {};
+  algs.add<CramMd5::Prover>(identity, password);
+  algs.add<CramMd5::Verifier>(identity, password);
 
-  std::string_view prefix{buffer + sizeof(uint32_t), new_auth_prefix.size()};
-
-  if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
-    NewAuthenticator auth{};
-    auto result = auth.authenticate_outbound({}, {}, args);
-    return result;
-    // } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
-    //   return legacy_auth->authenticate_outbound(args);
-  } else {
-    return false;
-  }
-}
-bool DefaultAuthenticator::authenticate_inbound(InboundArgs args)
-{
   if (args.remote_version >= VERSION_HEX(26U, 0U, 0U)) {
     NewAuthenticator auth{};
-    return auth.authenticate_inbound(args);
-  } else if (auto legacy_auth = GetMd5(args.provers, args.verifiers)) {
+    return auth.authenticate_inbound(algs.prover, algs.verifier, args);
+  } else if (auto legacy_auth = GetMd5(algs.prover, algs.verifier)) {
     return legacy_auth->authenticate_inbound(args);
   } else {
     return false;
   }
 }
 }  // namespace auth
-
-// std::vector<std::unique_ptr<auth::Prover>>
-// DefaultConnectionInfo::select_provers(ConnectionType)
-// {
-//   std::vector<std::unique_ptr<auth::Prover>> res;
-//   res.emplace_back(std::make_unique<auth::CramMd5::Prover>(
-//       get_default_cram_identity(), tls.password_.value));
-//   return res;
-// }
-// std::vector<std::unique_ptr<auth::Verifier>>
-// DefaultConnectionInfo::select_verifiers(ConnectionType)
-// {
-//   std::vector<std::unique_ptr<auth::Verifier>> res;
-//   res.emplace_back(std::make_unique<auth::CramMd5::Verifier>(
-//       get_default_cram_identity(), tls.password_.value));
-//   return res;
-// }
 
 
 bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)
@@ -1174,7 +1147,6 @@ bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)
 
     algs.add<auth::CramMd5::Prover>(identity, password);
     algs.add<auth::CramMd5::Verifier>(identity, password);
-
 
     auth::NewAuthenticator auth{};
     auto result = auth.authenticate_outbound(algs.prover, algs.verifier, args);
