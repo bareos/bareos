@@ -114,33 +114,44 @@ struct Algorithms {
   }
 };
 
-struct Md5Authenticator {
-  bool authenticate_outbound(OutboundArgs args);
-  bool authenticate_inbound(InboundArgs args);
+namespace Version1 {
+/* a cram-md5 challenge consists of three parts:
+ *  - a current timestamp,
+ *  - a random value, and
+ *  - some way to identify our own challenges
+ * cram_identity is used for the third part.  It makes sure
+ * that you cannot use us, to solve our own challenge.
+ * This value can be anything, but it should always be the same for the
+ * livetime of the program, otherwise it will not do its job!
+ * This string shall _NOT_ contain whitespace! */
+bool authenticate_outbound(std::string_view identity, OutboundArgs args);
+bool authenticate_inbound(std::string_view identity, InboundArgs args);
+};  // namespace Version1
 
-  Md5Authenticator();
-  Md5Authenticator(std::string identity);
+namespace Version2 {
+// introduced in 26.0.0
+bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
+                           std::span<std::unique_ptr<Verifier>> verifiers,
+                           OutboundArgs args);
+bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
+                          std::span<std::unique_ptr<Verifier>> verifiers,
+                          InboundArgs args);
 
-  /* a cram-md5 challenge consists of three parts:
-   *  - a current timestamp,
-   *  - a random value, and
-   *  - some way to identify our own challenges
-   * cram_identity is used for the third part.  It makes sure
-   * that you cannot use us, to solve our own challenge.
-   * This value can be anything, but it should always be the same for the
-   * livetime of the program, otherwise it will not do its job!
-   * This string shall _NOT_ contain whitespace! */
-  std::string cram_identity;
-};
+};  // namespace Version2
 
-struct NewAuthenticator {
-  bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
-                             std::span<std::unique_ptr<Verifier>> verifiers,
-                             OutboundArgs args);
-  bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
-                            std::span<std::unique_ptr<Verifier>> verifiers,
-                            InboundArgs args);
-};
+
+/* these will automatically use the correct one (Version1, Version2, ...)
+ * depending on the remote.  The identity for Version1 is taken from
+ * a cram-md5 prover/verifier pair.  If no such pair exists, then no fallback
+ * is used. */
+bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
+                          std::span<std::unique_ptr<Verifier>> verifiers,
+                          InboundArgs args);
+
+bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
+                           std::span<std::unique_ptr<Verifier>> verifiers,
+                           OutboundArgs args);
+
 };  // namespace auth
 
 #endif  // BAREOS_LIB_BAUTH_H_

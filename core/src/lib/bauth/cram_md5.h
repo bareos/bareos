@@ -23,6 +23,7 @@
 #define BAREOS_LIB_BAUTH_CRAM_MD5_H_
 
 #include "lib/bauth.h"
+#include "lib/util.h"
 
 namespace auth::CramMd5 {
 struct Verifier : public auth::Verifier {
@@ -31,6 +32,7 @@ struct Verifier : public auth::Verifier {
   Verifier(std::string name, std::string pass)
       : my_name{std::move(name)}, password{std::move(pass)}
   {
+    BashSpaces(my_name.data());
   }
 
   std::string_view name() const override;
@@ -65,6 +67,7 @@ struct Prover : public auth::Prover {
   Prover(std::string name, std::string pass)
       : my_name{std::move(name)}, password{std::move(pass)}
   {
+    BashSpaces(my_name.data());
   }
 
   using Base = auth::Prover;
