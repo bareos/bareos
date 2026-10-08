@@ -295,3 +295,83 @@ and
  f.pathid = p.pathid
 order by size desc
 limit %2;
+
+# 23
+:Show bareos database size
+select
+ pg_size_pretty(
+  pg_database_size(
+   current_database()
+  )
+)
+as catalog_size;
+
+# 24
+:Show tables and indexes used space, total tuples, dead tuples, vacuum, analyse informations
+select
+ ut.relname,
+ pg_size_pretty(pg_total_relation_size(ut.relname::text)) AS total_sz,
+ pg_size_pretty(pg_table_size(ut.relname::text)) AS tbl_sz,
+ pg_size_pretty(pg_indexes_size(ut.relname::text)) AS idx_sz,
+ pgc.reltuples::bigint,
+ CASE
+  WHEN (pgc.reltuples < 0) THEN 0
+  ELSE (pg_total_relation_size(ut.relname::text) / (pgc.reltuples+1))::int
+ END AS bytes_per_row,
+ ut.n_dead_tup,
+ ut.last_vacuum,
+ ut.last_autovacuum,
+ ut.last_analyze,
+ ut.last_autoanalyze
+FROM
+ pg_stat_user_tables AS ut,
+ pg_class AS pgc
+WHERE
+ pgc.relname = ut.relname AND ut.relname != 'batch'
+ORDER BY
+ pg_total_relation_size(ut.relname::text) DESC;
+
+# 25
+:Show next value of tables sequences and purcentage exhaust
+WITH seq AS (
+    SELECT
+        t.relname AS table_name,
+        a.attname AS column_name,
+        pg_sequence_last_value(ps.seqrelid) AS last_value,
+        ps.seqmax                           AS seq_max,
+        CASE a.atttypid
+            WHEN 'int2'::regtype THEN 32767::bigint
+            WHEN 'int4'::regtype THEN 2147483647::bigint
+            WHEN 'int8'::regtype THEN 9223372036854775807::bigint
+        END                                 AS col_max
+    FROM pg_sequence ps
+    JOIN pg_depend d
+      ON d.objid      = ps.seqrelid
+     AND d.classid    = 'pg_class'::regclass
+     AND d.refclassid = 'pg_class'::regclass
+     AND d.deptype    = 'a'
+    JOIN pg_class     t ON t.oid = d.refobjid
+    JOIN pg_attribute a ON a.attrelid = t.oid
+                       AND a.attnum   = d.refobjsubid
+    WHERE t.relnamespace = 'public'::regnamespace
+      AND t.relkind IN ('r', 'p')
+)
+SELECT
+    table_name,
+    column_name,
+    last_value,
+    seq_max,
+    col_max,
+    round(last_value * 100.0 / least(seq_max, col_max), 2) AS pct_used
+FROM seq
+ORDER BY pct_used DESC NULLS LAST;
+
+
+# 26
+:Show temporary number of files and bytes used
+select
+ datname,
+ temp_files,
+ temp_bytes
+from pg_stat_database
+where datname=current_database();
