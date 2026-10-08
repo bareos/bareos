@@ -201,7 +201,10 @@ std::string accurate_opts_as_str(std::uint64_t);
  * first argument to the FindFiles callback subroutine.
  */
 /* clang-format off */
+class FileList;
 struct FindFilesPacket {
+  FileList* file_list{nullptr};
+  bool journal_changed{false};
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
   char* link_or_dir{nullptr};               /**< Link if file linked, or canonical directory path */

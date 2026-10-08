@@ -39,6 +39,7 @@
 #include "find.h"
 #include "findlib/match.h"
 #include "findlib/find_one.h"
+#include "findlib/filelist.h"
 #include "findlib/hardlink.h"
 #include "findlib/fstype.h"
 #include "findlib/drivetype.h"
@@ -324,7 +325,11 @@ bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   /* In special mode (like accurate backup), the programmer can
    * choose his comparison function. */
-  if (ff_pkt->CheckFct) { return ff_pkt->CheckFct(jcr, ff_pkt); }
+  if (ff_pkt->CheckFct) {
+    bool changed = ff_pkt->CheckFct(jcr, ff_pkt);
+    return changed || ff_pkt->journal_changed;
+  }
+  if (ff_pkt->journal_changed) { return true; }
 
   // For normal backups (incr/diff), we use this default behaviour
   if (ff_pkt->incremental
@@ -655,6 +660,33 @@ static inline int process_directory(JobControlRecord* jcr,
   ff_pkt->link_or_dir = ff_pkt->fname; /* reset "link" */
 
   // Descend into or "recurse" into the directory to read all the files in it.
+  if (ff_pkt->file_list) {
+    const auto* children = ff_pkt->file_list->Children(fname);
+    if (children) {
+      rtn_stat = 1;
+      std::string prefix(link);
+      for (const auto& name : *children) {
+        if (jcr->IsJobCanceled()) { break; }
+        std::string child = prefix + name;
+        if (!FileIsExcluded(ff_pkt, child.data())) {
+          rtn_stat = FindOneFile(jcr, ff_pkt, HandleFile, child.data(),
+                                 our_device, false);
+          if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
+        }
+      }
+      free(link);
+      HandleFile(jcr, dir_ff_pkt, top_level);
+      if (dir_ff_pkt->linked) {
+        dir_ff_pkt->linked->FileIndex = dir_ff_pkt->FileIndex;
+      }
+      FreeDirFfPkt(dir_ff_pkt);
+      if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
+        RestoreFileTimes(ff_pkt, fname);
+      }
+      ff_pkt->volhas_attrlist = volhas_attrlist;
+      return rtn_stat;
+    }
+  }
   errno = 0;
   if ((directory = opendir(fname)) == NULL) {
     ff_pkt->type = FT_NOOPEN;
@@ -896,6 +928,11 @@ int FindOneFile(JobControlRecord* jcr,
   int rtn_stat;
   bool done = false;
 
+  ff_pkt->journal_changed = false;
+  if (ff_pkt->file_list && ff_pkt->file_list->Unchanged(jcr, ff_pkt, fname)) {
+    return 1;
+  }
+  ff_pkt->journal_changed = ff_pkt->file_list != nullptr && ff_pkt->incremental;
   ff_pkt->link_or_dir = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
