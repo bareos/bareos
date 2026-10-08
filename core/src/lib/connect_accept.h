@@ -39,6 +39,22 @@ struct Md5OutboundAuthenticator : auth::OutboundAuthenticator {
   bool authenticate(auth::OutboundArgs args) override;
 };
 
+
+struct Md5InboundAuthenticator : auth::InboundAuthenticator {
+  Md5InboundAuthenticator(TlsResource res);
+  Md5InboundAuthenticator(std::string identity, TlsResource res)
+      : tls{std::move(res)}, cram_identity{std::move(identity)}
+  {
+  }
+
+  bool authenticate(auth::InboundArgs args) override;
+  const TlsResource* tls_settings() override { return &tls; }
+
+ private:
+  TlsResource tls;
+  std::string cram_identity;
+};
+
 template <global_resource::Type type, global_resource::Type target_type>
 bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
@@ -61,20 +77,6 @@ struct ConnectionInfoProvider {
   virtual std::unique_ptr<auth::InboundAuthenticator>
   get_info_for(global_resource::Type type, std::string_view idenity) = 0;
 };
-
-namespace auth {
-/* The default inbound authenticator: it holds the TlsResource that was selected
- * for the incoming connection and performs the secondary (CRAM-MD5 or new)
- * authentication for it. */
-struct DefaultInboundAuthenticator : InboundAuthenticator {
-  DefaultInboundAuthenticator(TlsResource res) : tls{std::move(res)} {}
-
-  bool authenticate(InboundArgs args) override;
-  const TlsResource* tls_settings() override { return &tls; }
-
-  TlsResource tls;
-};
-}  // namespace auth
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         global_resource::Type type,

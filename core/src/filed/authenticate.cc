@@ -116,7 +116,7 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
       data.res = res;
 
       type = inbound_type::Director;
-      return std::make_unique<auth::DefaultInboundAuthenticator>(*data.res);
+      return std::make_unique<Md5InboundAuthenticator>(*data.res);
     } break;
     case global_resource::Type::Job: {
       auto* jcr = get_jcr_for_authentication(name);
@@ -137,7 +137,7 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
       data.job.password_.value = jcr->sd_auth_key;
 
       type = inbound_type::Storage;
-      return std::make_unique<auth::DefaultInboundAuthenticator>(data.job);
+      return std::make_unique<Md5InboundAuthenticator>(data.job);
     } break;
     default: {
     } break;
