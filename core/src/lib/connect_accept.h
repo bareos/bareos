@@ -39,7 +39,6 @@ struct Md5OutboundAuthenticator : auth::OutboundAuthenticator {
   bool authenticate(auth::OutboundArgs args) override;
 };
 
-
 struct Md5InboundAuthenticator : auth::InboundAuthenticator {
   Md5InboundAuthenticator(TlsResource res);
   Md5InboundAuthenticator(std::string identity, TlsResource res)
@@ -68,7 +67,6 @@ bool BareosConnect(JobControlRecord* jcr,
   auto hello = formatter::format(name);
 
   Md5OutboundAuthenticator auth;
-
   return BareosConnect(jcr, socket, qualified_name, res, &auth, hello,
                        cleartext_authentication);
 }
