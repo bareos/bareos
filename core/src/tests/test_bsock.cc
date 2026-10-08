@@ -523,7 +523,7 @@ struct dummy_auth : ::ConnectionInfoProvider {
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return std::make_unique<auth::DefaultInboundAuthenticator>(std::move(res));
+    return std::make_unique<Md5InboundAuthenticator>("server", std::move(res));
   }
 
   std::string name;
