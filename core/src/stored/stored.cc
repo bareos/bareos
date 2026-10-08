@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-sd");
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
   daemon_start_time = time(nullptr);
 
   // Sanity checks
@@ -373,8 +373,8 @@ static int CheckResources()
   if (OK) { OK = InitAutochangers(); }
 
   if (OK) {
-    CloseMsg(nullptr);              /* close temp message handler */
-    InitMsg(nullptr, me->messages); /* open daemon message handler */
+    CloseMsg(nullptr);           /* close temp message handler */
+    InitDaemonMsg(me->messages); /* open daemon message handler */
     SetWorkingDirectory(me->working_directory);
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);

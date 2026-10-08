@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -130,7 +130,7 @@ TEST(messages_resource, send_message_to_all_configured_destinations)
   ASSERT_NE(messages, nullptr);
 
   // initialize message handler
-  InitMsg(NULL, messages);
+  InitDaemonMsg(messages);
 
   // this object cleans up all files at exit
   LogFiles cleanup;

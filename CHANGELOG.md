@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: size SQL escape buffers dynamically [PR #2839]
 - dird: fix cancel duplicate crash [PR #2843]
 - fix(dird): accept extended labels after purge truncate [PR #2851]
+- dird: fix reload related crash [PR #2865]
 
 ## [25.1.1] - 2026-09-03
 
@@ -2378,4 +2379,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2839]: https://github.com/bareos/bareos/pull/2839
 [PR #2843]: https://github.com/bareos/bareos/pull/2843
 [PR #2851]: https://github.com/bareos/bareos/pull/2851
+[PR #2865]: https://github.com/bareos/bareos/pull/2865
 [unreleased]: https://github.com/bareos/bareos/tree/master
