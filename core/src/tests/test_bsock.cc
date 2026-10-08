@@ -599,6 +599,15 @@ static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
   EXPECT_STREQ(orig_msg.c_str(), received_msg.c_str());
 }
 
+struct LegacyOutboundAuthenticator : auth::OutboundAuthenticator {
+  bool authenticate(auth::OutboundArgs args) override
+  {
+    auto identity = "old-client";
+
+    return auth::Version1::authenticate_outbound(identity, args);
+  }
+};
+
 #if CLIENT_AS_A_THREAD
 static int connect_to_server(std::string console_name,
                              std::string console_password,
@@ -640,12 +649,19 @@ static bool connect_to_server(std::string console_name,
                              global_resource::Type::Director>(
             &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       } else {
-        /* old style tls is only supported for clients,
-         * so we need to connect as a client*/
+        /* old style tls is only supported for clients, so we need to connect
+         * as a client.  We also have to tell the director that we are an old
+         * version, as its only supported for _old_ clients! */
 
-        return BareosConnect<global_resource::Type::Client,
-                             global_resource::Type::Director>(
-            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
+        using formatter = hello_formatter<global_resource::Type::Client,
+                                          global_resource::Type::Director>;
+        auto qualified_name = global_resource::QualifiedName(
+            formatter::auth_type, console_name);
+
+        LegacyOutboundAuthenticator auth;
+        return BareosConnect(
+            &jcr, UA_sock.get(), qualified_name, &custom, &auth,
+            "Hello Client {} FdProtocolVersion=54 calling\n", cleartext_auth);
       }
     }();
 
