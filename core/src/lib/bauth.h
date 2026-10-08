@@ -114,14 +114,9 @@ struct Algorithms {
   }
 };
 
-struct Authenticator {
-  virtual bool authenticate_inbound(InboundArgs args) = 0;
-  virtual ~Authenticator() = default;
-};
-
-struct Md5Authenticator : Authenticator {
+struct Md5Authenticator {
   bool authenticate_outbound(OutboundArgs args);
-  bool authenticate_inbound(InboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args);
 
   Md5Authenticator();
   Md5Authenticator(std::string identity);
@@ -138,16 +133,13 @@ struct Md5Authenticator : Authenticator {
   std::string cram_identity;
 };
 
-struct NewAuthenticator : Authenticator {
+struct NewAuthenticator {
   bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
                              std::span<std::unique_ptr<Verifier>> verifiers,
                              OutboundArgs args);
-  bool authenticate_inbound(InboundArgs args) override;
-};
-
-struct DefaultAuthenticator : Authenticator {
-  bool authenticate_outbound(OutboundArgs args);
-  bool authenticate_inbound(InboundArgs args) override;
+  bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
+                            std::span<std::unique_ptr<Verifier>> verifiers,
+                            InboundArgs args);
 };
 };  // namespace auth
 

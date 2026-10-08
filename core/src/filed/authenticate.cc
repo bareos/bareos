@@ -54,7 +54,7 @@ namespace filedaemon {
  *  54 29Oct15 - Added getSecureEraseCmd
  */
 
-std::unique_ptr<ConnectionInfo> Auth::get_info_for(
+std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
     global_resource::Type auth_type,
     std::string_view name)
 {
@@ -116,7 +116,7 @@ std::unique_ptr<ConnectionInfo> Auth::get_info_for(
       data.res = res;
 
       type = inbound_type::Director;
-      return std::make_unique<DefaultConnectionInfo>(*data.res);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(*data.res);
     } break;
     case global_resource::Type::Job: {
       auto* jcr = get_jcr_for_authentication(name);
@@ -137,7 +137,7 @@ std::unique_ptr<ConnectionInfo> Auth::get_info_for(
       data.job.password_.value = jcr->sd_auth_key;
 
       type = inbound_type::Storage;
-      return std::make_unique<DefaultConnectionInfo>(data.job);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(data.job);
     } break;
     default: {
     } break;

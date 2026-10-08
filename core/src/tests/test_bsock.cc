@@ -503,7 +503,7 @@ struct dummy_auth : ::ConnectionInfoProvider {
   {
   }
 
-  std::unique_ptr<ConnectionInfo> get_info_for(
+  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
       global_resource::Type type,
       std::string_view res_name) override
   {
@@ -523,7 +523,7 @@ struct dummy_auth : ::ConnectionInfoProvider {
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return std::make_unique<DefaultConnectionInfo>(std::move(res));
+    return std::make_unique<auth::DefaultInboundAuthenticator>(std::move(res));
   }
 
   std::string name;
