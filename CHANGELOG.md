@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui-proxy: include <cstdint> for int32_t in director_connection.h [PR #2826]
 - bareoslib: add new value for Verify Peer and set it as the default [PR #2854]
 - dird: fix reload related crash [PR #2768]
+- macos: update to 26, introduce arm64 architecture [PR #2834]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2415,6 +2416,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
+[PR #2834]: https://github.com/bareos/bareos/pull/2834
 [PR #2854]: https://github.com/bareos/bareos/pull/2854
 [PR #2857]: https://github.com/bareos/bareos/pull/2857
 [unreleased]: https://github.com/bareos/bareos/tree/master
