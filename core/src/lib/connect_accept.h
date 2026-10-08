@@ -62,6 +62,20 @@ struct ConnectionInfoProvider {
   get_info_for(global_resource::Type type, std::string_view idenity) = 0;
 };
 
+namespace auth {
+/* The default inbound authenticator: it holds the TlsResource that was selected
+ * for the incoming connection and performs the secondary (CRAM-MD5 or new)
+ * authentication for it. */
+struct DefaultInboundAuthenticator : InboundAuthenticator {
+  DefaultInboundAuthenticator(TlsResource res) : tls{std::move(res)} {}
+
+  bool authenticate(InboundArgs args) override;
+  const TlsResource* tls_settings() override { return &tls; }
+
+  TlsResource tls;
+};
+}  // namespace auth
+
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         global_resource::Type type,
                                         const TlsResource* initial_tls,

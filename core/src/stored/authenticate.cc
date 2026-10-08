@@ -28,6 +28,7 @@
 #include "include/bareos.h"
 #include "lib/bauth.h"
 #include "lib/connect_accept.h"
+#include "lib/global_resource.h"
 #include "lib/s_password.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -75,7 +76,7 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
       data.job.password_.value = jcr->sd_auth_key;
 
       type = inbound_type::Job;
-      return std::make_unique<DefaultConnectionInfo>(data.job);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(data.job);
     } break;
     case global_resource::Type::Director: {
       auto* res = dynamic_cast<DirectorResource*>(
@@ -115,7 +116,7 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
       data.res = res;
 
       type = inbound_type::Director;
-      return std::make_unique<DefaultConnectionInfo>(*res);
+      return std::make_unique<auth::DefaultInboundAuthenticator>(*res);
     } break;
     default: {
     } break;
