@@ -120,15 +120,10 @@ bool AccurateFinish(JobControlRecord* jcr)
   }
 
   if (jcr->accurate && jcr->fd_impl->file_list) {
-    if (!jcr->is_JobLevel(L_FULL)) {
-      retval = jcr->fd_impl->file_list->SendDeletedList();
-    }
+    ASSERT(!jcr->is_JobLevel(L_FULL));
+    retval = jcr->fd_impl->file_list->SendDeletedList();
 
     AccurateFree(jcr);
-    if (jcr->is_JobLevel(L_FULL)) {
-      Jmsg(jcr, M_INFO, 0, T_("Space saved with Base jobs: %" PRIu64 " MB\n"),
-           jcr->fd_impl->base_size / (1024 * 1024));
-    }
   }
 
   return retval;
@@ -290,17 +285,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     }
   }
 
-  /* In Incr/Diff accurate mode, we mark all files as seen
-   * When in Full+Base mode, we mark only if the file match exactly */
-  if (jcr->getJobLevel() == L_FULL) {
-    if (!file_changed) {
-      // Compute space saved with basefile.
-      jcr->fd_impl->base_size += ff_pkt->statp.st_size;
-      jcr->fd_impl->file_list->MarkFileAsSeen(payload);
-    }
-  } else {
-    jcr->fd_impl->file_list->MarkFileAsSeen(payload);
-  }
+  jcr->fd_impl->file_list->MarkFileAsSeen(payload);
 
 bail_out:
   return file_changed;
