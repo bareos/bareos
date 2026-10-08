@@ -936,6 +936,7 @@ int FindOneFile(JobControlRecord* jcr,
   ff_pkt->link_or_dir = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
+    if (ff_pkt->file_list && !top_level && errno == ENOENT) { return 1; }
     // Cannot stat file
     ff_pkt->type = FT_NOSTAT;
     ff_pkt->ff_errno = errno;

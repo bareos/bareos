@@ -54,6 +54,15 @@ static_assert(!UsableNtfsCursor({6, 10}, {7, 20}, 10));
 static_assert(!UsableNtfsCursor({7, 21}, {7, 20}, 10));
 static_assert(FOPTS_BYTES >= (FO_NTFS_CHANGE_JOURNAL / 8) + 1);
 
+TEST(NtfsFileList, ScopesPathsToIncludeRoot)
+{
+  EXPECT_TRUE(IsNtfsPathWithinRoot("c:/data/file", "c:/data"));
+  EXPECT_TRUE(IsNtfsPathWithinRoot("c:/data", "c:/data"));
+  EXPECT_FALSE(IsNtfsPathWithinRoot("c:/database/file", "c:/data"));
+  EXPECT_FALSE(IsNtfsPathWithinRoot("c:/other/file", "c:/data"));
+  EXPECT_TRUE(IsNtfsPathWithinRoot("c:/data/file", ""));
+}
+
 TEST(NtfsFileList, ResolvesReferencesAndMovedDirectoryDescendants)
 {
   NtfsReferenceMap map;
@@ -93,54 +102,67 @@ TEST(NtfsFileList, DoesNotReuseMftSequenceNumbers)
   EXPECT_FALSE(map.Path(21));
 }
 
-TEST(NtfsFileList, CoalescedOpenWritesAndUnknownHistoryAreNotSkipped)
+TEST(NtfsFileList, OnlyPersistedOrRecentUnclosedFilesAreIncluded)
 {
   NtfsReferenceMap map;
   map.root = 5;
-  map.records.emplace(20, NtfsRecord{5, "open", false});
+  map.records.emplace(20, NtfsRecord{5, "previously-open", false, 1});
   map.records.emplace(21, NtfsRecord{5, "closed", false});
   map.records.emplace(22, NtfsRecord{5, "unknown-history", false});
-  map.records.emplace(23, NtfsRecord{5, "newly-reopened", false});
+  map.records.emplace(23, NtfsRecord{5, "newly-reopened", false, 104});
+  map.records.emplace(24, NtfsRecord{5, "recently-open", false, 101});
   map.Observe(20, 1, false, 100);
   map.Observe(21, 2, true, 100);
-  map.Observe(23, 3, true, 100);
-  map.Observe(23, 4, false, 100);
-  map.IncludeUnclosedFiles();
+  map.Observe(23, 103, true, 100);
+  map.Observe(23, 104, false, 100);
+  auto uncertain = map.IncludeUnclosedFiles(100, {20});
+  EXPECT_EQ(uncertain, (std::unordered_set<uint64_t>{20, 23, 24}));
   EXPECT_TRUE(map.Changed(20));
   EXPECT_FALSE(map.Changed(21));
-  EXPECT_TRUE(map.Changed(22));
+  EXPECT_FALSE(map.Changed(22));
   EXPECT_TRUE(map.Changed(23));
+  EXPECT_TRUE(map.Changed(24));
   map.Observe(21, 100, true, 100);
   EXPECT_TRUE(map.Changed(21));
 }
 
 TEST(NtfsFileList, CheckpointRoundTripAndJobIdentity)
 {
+  NtfsCheckpoint expected{{17, 12345}, {20, 21}};
   std::stringstream text;
-  WriteNtfsCheckpoint(text, "job|volume|root with spaces", {17, 12345});
-  auto cursor = ReadNtfsCheckpoint(text, "job|volume|root with spaces");
-  ASSERT_TRUE(cursor);
-  EXPECT_EQ(cursor->journal, 17);
-  EXPECT_EQ(cursor->next, 12345);
+  WriteNtfsCheckpoint(text, "job|volume|root with spaces", expected);
+  auto checkpoint = ReadNtfsCheckpoint(text, "job|volume|root with spaces");
+  ASSERT_TRUE(checkpoint);
+  EXPECT_EQ(checkpoint->cursor.journal, 17);
+  EXPECT_EQ(checkpoint->cursor.next, 12345);
+  EXPECT_EQ(checkpoint->uncertain, expected.uncertain);
   std::stringstream wrong;
-  WriteNtfsCheckpoint(wrong, "other-job|volume|root", {17, 12345});
+  WriteNtfsCheckpoint(wrong, "other-job|volume|root", expected);
   EXPECT_FALSE(ReadNtfsCheckpoint(wrong, "job|volume|root"));
   for (const std::string malformed :
-       {"", "\"scope\" 1", "\"scope\" 1 -2", "\"scope\" 1 2 garbage",
-        "\"scope\" invalid 2"}) {
+       {"", "\"scope\" 1", "\"scope\" 1 -2 0", "\"scope\" 1 2 0 garbage",
+        "\"scope\" invalid 2 0", "\"scope\" 1 2 2 9"}) {
     std::stringstream input(malformed);
     EXPECT_FALSE(ReadNtfsCheckpoint(input, "scope"));
   }
+  std::stringstream legacy("\"scope\" 1 2");
+  EXPECT_FALSE(ReadNtfsCheckpoint(legacy, "scope"));
 }
 
 class UnchangedFileList : public FileList {
  public:
   bool Prepare(JobControlRecord*, FindFilesPacket*, const char*) override
-  { return true; }
+  {
+    return true;
+  }
   const std::vector<std::string>* Children(const char*) const override
-  { return nullptr; }
+  {
+    return nullptr;
+  }
   bool Unchanged(JobControlRecord*, FindFilesPacket*, const char*) override
-  { return true; }
+  {
+    return true;
+  }
 };
 
 TEST(NtfsFileList, UnchangedFilesDoNotStatOrCallTimestampComparison)

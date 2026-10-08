@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <istream>
 #include <ostream>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -38,6 +39,19 @@ struct NtfsCursor {
   int64_t next{};
 };
 
+struct NtfsCheckpoint {
+  NtfsCursor cursor;
+  std::unordered_set<uint64_t> uncertain;
+};
+
+inline bool IsNtfsPathWithinRoot(std::string_view path_key,
+                                 std::string_view root_key)
+{
+  return root_key.empty() || path_key == root_key
+         || (path_key.size() > root_key.size() && path_key.starts_with(root_key)
+             && path_key[root_key.size()] == '/');
+}
+
 constexpr bool UsableNtfsCursor(NtfsCursor saved,
                                 NtfsCursor current,
                                 int64_t first)
@@ -46,26 +60,39 @@ constexpr bool UsableNtfsCursor(NtfsCursor saved,
          && saved.next <= current.next;
 }
 
-inline std::optional<NtfsCursor> ReadNtfsCheckpoint(std::istream& input,
-                                                    const std::string& scope)
+inline std::optional<NtfsCheckpoint> ReadNtfsCheckpoint(
+    std::istream& input,
+    const std::string& scope)
 {
   std::string identity;
-  NtfsCursor cursor;
-  if (!(input >> std::quoted(identity) >> cursor.journal >> cursor.next)
-      || identity != scope || cursor.next < 0) {
+  NtfsCheckpoint checkpoint;
+  uint64_t count{};
+  if (!(input >> std::quoted(identity) >> checkpoint.cursor.journal
+        >> checkpoint.cursor.next >> count)
+      || identity != scope || checkpoint.cursor.next < 0) {
     return std::nullopt;
+  }
+  for (uint64_t i = 0; i < count; ++i) {
+    uint64_t reference{};
+    if (!(input >> reference)) { return std::nullopt; }
+    checkpoint.uncertain.insert(reference);
   }
   input >> std::ws;
   if (!input.eof()) { return std::nullopt; }
-  return cursor;
+  return checkpoint;
 }
 
 inline void WriteNtfsCheckpoint(std::ostream& output,
                                 const std::string& scope,
-                                NtfsCursor cursor)
+                                const NtfsCheckpoint& checkpoint)
 {
   output << std::quoted(scope) << '\n'
-         << cursor.journal << ' ' << cursor.next << '\n';
+         << checkpoint.cursor.journal << ' ' << checkpoint.cursor.next << '\n'
+         << checkpoint.uncertain.size();
+  for (uint64_t reference : checkpoint.uncertain) {
+    output << ' ' << reference;
+  }
+  output << '\n';
 }
 
 struct NtfsRecord {
@@ -86,18 +113,29 @@ class NtfsReferenceMap {
   void Observe(uint64_t id, int64_t usn, bool final_close, int64_t since)
   {
     if (usn >= since) { changed.insert(id); }
-    if (final_close) {
-      closed.insert(id);
-    } else {
-      closed.erase(id);
+    if (usn >= since) {
+      if (final_close) {
+        closed.insert(id);
+      } else {
+        closed.erase(id);
+      }
     }
   }
 
-  void IncludeUnclosedFiles()
+  std::unordered_set<uint64_t> IncludeUnclosedFiles(
+      int64_t since,
+      const std::unordered_set<uint64_t>& previously_uncertain)
   {
+    std::unordered_set<uint64_t> uncertain;
     for (const auto& [id, record] : records) {
-      if (!record.directory && !closed.contains(id)) { changed.insert(id); }
+      if (record.directory || closed.contains(id)
+          || (record.usn < since && !previously_uncertain.contains(id))) {
+        continue;
+      }
+      changed.insert(id);
+      uncertain.insert(id);
     }
+    return uncertain;
   }
 
   std::optional<std::string> Path(uint64_t id) const
@@ -145,7 +183,7 @@ class NtfsFileList : public FileList {
  private:
   std::unordered_map<std::string, std::vector<std::string>> children_;
   std::unordered_set<std::string> unchanged_;
-  std::unordered_map<std::wstring, NtfsCursor> checkpoints_;
+  std::unordered_map<std::wstring, NtfsCheckpoint> checkpoints_;
   std::unordered_map<std::wstring, std::string> checkpoint_scopes_;
 };
 #endif

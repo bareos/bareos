@@ -357,6 +357,31 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
                                   filesystem, 64)) {
       throw WindowsError("NTFS volume lookup");
     }
+    std::wstring mount_path_w(mount);
+    std::wstring normalized_original = original;
+    if (normalized_original.empty() || normalized_original.back() != L'\\') {
+      normalized_original.push_back(L'\\');
+    }
+    if (normalized_original.size() < mount_path_w.size()
+        || CompareStringOrdinal(normalized_original.data(),
+                                static_cast<int>(mount_path_w.size()),
+                                mount_path_w.data(),
+                                static_cast<int>(mount_path_w.size()), TRUE)
+               != CSTR_EQUAL) {
+      throw std::runtime_error("include path is outside its volume mount");
+    }
+    std::wstring relative_root_w
+        = normalized_original.substr(mount_path_w.size());
+    for (auto& c : relative_root_w) {
+      if (c == L'\\') { c = L'/'; }
+    }
+    std::string relative_root = Utf8(relative_root_w);
+    while (!relative_root.empty() && relative_root.back() == '/') {
+      relative_root.pop_back();
+    }
+    if (!relative_root.empty() && relative_root.front() != '/') {
+      relative_root.insert(relative_root.begin(), '/');
+    }
     if (std::wstring(filesystem) != L"NTFS") {
       throw std::runtime_error("volume is not NTFS");
     }
@@ -408,15 +433,16 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
     data = Query(enumeration_volume);
     NtfsCursor current{data.UsnJournalID, data.NextUsn};
     int64_t since = 0;
-    std::optional<NtfsCursor> saved;
+    std::optional<NtfsCheckpoint> saved;
     if (ff->incremental) {
       std::string scope
           = Scope(jcr->fd_impl->PrevJob, volume_name, root, selection);
       std::ifstream input(StatePath(scope));
-      auto cursor = ReadNtfsCheckpoint(input, scope);
-      if (cursor && UsableNtfsCursor(*cursor, current, data.FirstUsn)) {
-        saved = *cursor;
-        since = cursor->next;
+      auto checkpoint = ReadNtfsCheckpoint(input, scope);
+      if (checkpoint
+          && UsableNtfsCursor(checkpoint->cursor, current, data.FirstUsn)) {
+        saved = *checkpoint;
+        since = checkpoint->cursor.next;
       } else {
         Jmsg(jcr, M_WARNING, 0,
              T_("No valid NTFS checkpoint for %s and previous job %s; "
@@ -436,12 +462,15 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
     uint64_t root_id
         = (uint64_t{info.nFileIndexHigh} << 32) | info.nFileIndexLow;
     auto map = Enumerate(jcr, enumeration_volume, root_id, since);
-    if (saved) {
-      ReadChanges(jcr, enumeration_volume, map, *saved, current, data.FirstUsn);
-      // Writes to an already-open file can be coalesced without a new USN.
-      // Unknown history is not proof that a file was closed.
-      map.IncludeUnclosedFiles();
-    }
+    int64_t journal_since = saved ? saved->cursor.next : data.FirstUsn;
+    ReadChanges(jcr, enumeration_volume, map,
+                NtfsCursor{current.journal, journal_since}, current,
+                data.FirstUsn);
+    const std::unordered_set<uint64_t> no_uncertain_files;
+    const auto& previously_uncertain
+        = saved ? saved->uncertain : no_uncertain_files;
+    auto uncertain
+        = map.IncludeUnclosedFiles(journal_since, previously_uncertain);
 
     std::string mount_path = Utf8(mount);
     for (auto& c : mount_path) {
@@ -449,8 +478,13 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
     }
     while (mount_path.back() == '/') { mount_path.pop_back(); }
     children_[Key(mount_path.c_str())];
+    std::string include_root = mount_path + relative_root;
+    std::string include_root_key = Key(include_root.c_str());
+    std::string relative_root_key
+        = relative_root.empty() ? std::string() : Key(relative_root.c_str());
     std::unordered_map<std::string, std::string> spellings;
     std::unordered_set<std::string> changed_directories;
+    std::unordered_set<uint64_t> scoped_uncertain;
     for (const auto& [id, record] : map.records) {
       if (jcr->IsJobCanceled()) {
         throw std::runtime_error("job canceled during namespace discovery");
@@ -460,10 +494,13 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
       if ((id & 0x0000ffffffffffffULL) < 16) { continue; }
       auto relative = map.Path(id);
       if (!relative) { relative = PathById(enumeration_volume, id); }
-      // $Extend and System Volume Information hold filesystem/VSS metadata
-      // that is neither part of the backup namespace nor openable by name.
-      if (relative->starts_with("/$Extend/")
-          || relative->starts_with("/System Volume Information")) {
+      bool path_in_include_root
+          = IsNtfsPathWithinRoot(Key(relative->c_str()), relative_root_key);
+      // A file outside the root may still have a hard-link name inside it.
+      if (record.directory && !path_in_include_root) { continue; }
+      if (path_in_include_root
+          && (relative->starts_with("/$Extend/")
+              || relative->starts_with("/System Volume Information"))) {
         continue;
       }
       std::string path = mount_path + *relative;
@@ -485,6 +522,10 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
         for (auto& c : path) {
           if (c == '\\') { c = '/'; }
         }
+        if (!IsNtfsPathWithinRoot(Key(path.c_str()), include_root_key)) {
+          continue;
+        }
+        if (uncertain.contains(id)) { scoped_uncertain.insert(id); }
         auto [spelling, inserted] = spellings.emplace(Key(path.c_str()), path);
         if (!inserted && spelling->second != path) {
           throw std::runtime_error("case-sensitive NTFS namespace");
@@ -493,7 +534,7 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
         children_[Key(path.substr(0, slash).c_str())].push_back(
             path.substr(slash + 1));
         auto parent = path.substr(0, slash);
-        while (parent.size() > mount_path.size()) {
+        while (parent.size() > include_root.size()) {
           auto separator = parent.find_last_of('/');
           if (separator == std::string::npos) {
             throw std::runtime_error("invalid volume-relative file name");
@@ -510,19 +551,18 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
         if (saved && !record.directory && !map.Changed(id)) {
           unchanged_.insert(Key(path.c_str()));
         }
-        // An alias can have a different parent chain from the MFT's primary
-        // name.
-        std::erase_if(unchanged_, [&](std::string path) {
-          auto slash = path.find_last_of('/');
-          while (slash != std::string::npos) {
-            path.resize(slash);
-            if (changed_directories.contains(path)) { return true; }
-            slash = path.find_last_of('/');
-          }
-          return false;
-        });
       }
     }
+    // An alias can have a different parent chain from the MFT's primary name.
+    std::erase_if(unchanged_, [&](std::string path) {
+      auto slash = path.find_last_of('/');
+      while (slash != std::string::npos) {
+        path.resize(slash);
+        if (changed_directories.contains(path)) { return true; }
+        slash = path.find_last_of('/');
+      }
+      return false;
+    });
     auto after = Query(enumeration_volume);
     if (!UsableNtfsCursor(current, {after.UsnJournalID, after.NextUsn},
                           after.FirstUsn)) {
@@ -534,7 +574,7 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
     }
     // The checkpoint precedes live discovery, never its end.
     auto scope = Scope(jcr->Job, volume_name, root, selection);
-    checkpoints_[StatePath(scope)] = current;
+    checkpoints_[StatePath(scope)] = {current, scoped_uncertain};
     checkpoint_scopes_[StatePath(scope)] = scope;
     Jmsg(jcr, M_INFO, 0, T_("Using NTFS %s discovery for %s.\n"),
          saved ? "journal" : "MFT", root);
