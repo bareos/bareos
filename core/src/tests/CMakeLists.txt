@@ -464,6 +464,8 @@ if(NOT MSVC)
 endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
+bareos_add_test(test_lex LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
 bareos_add_test(test_poolmem LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 if(NOT client-only)
