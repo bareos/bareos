@@ -578,7 +578,9 @@ namespace auth {
 static constexpr int debuglevel = 100;
 
 struct challenge {
-  std::string name;
+  std::string internal_name;  // this is used when talking to the server
+  std::string display_name;   // this can be shown to the user
+  std::string type;           // this is used to select the handler
   std::string challenge;
 };
 
@@ -606,10 +608,13 @@ bool ParseChallenges(std::vector<challenge>& challenges,
   json_t* entry;
   json_array_foreach(challenges_json, index, entry)
   {
-    const char* name;
+    const char* internal_name;
     const char* challenge;
-    if (json_unpack_ex(entry, &err, 0, "{s:s, s:s}", "name", &name, "challenge",
-                       &challenge)
+    const char* display_name;
+    const char* type;
+    if (json_unpack_ex(entry, &err, 0, "{s:s, s:s, s:s, s:s}", "internal_name",
+                       &internal_name, "challenge", &challenge, "type", &type,
+                       "display_name", &display_name)
         < 0) {
       Dmsg0(100, "Could not parse %lldth challenge entry from: %.*s\n", index,
             static_cast<int>(challenges_str.size()), challenges_str.data());
@@ -617,7 +622,10 @@ bool ParseChallenges(std::vector<challenge>& challenges,
       return false;
     }
 
-    challenges.emplace_back(name, challenge);
+    Dmsg0(200, "Received challenge { internal_name: '%s', display_name: '%s', type: '%s', challenge: '%s' }\n",
+          internal_name, display_name, type, challenge);
+
+    challenges.emplace_back(internal_name, display_name, type, challenge);
   }
 
   json_decref(challenges_json);
@@ -631,12 +639,6 @@ bool Challenge(BareosSocket* socket,
   auto* possibilities = json_array();
   if (!possibilities) { return false; }
   for (auto& verifier : verifiers) {
-    auto* challenge = json_object();
-    if (!challenge) {
-      json_decref(possibilities);
-      return false;
-    }
-
     auto name = verifier->name();
     auto chal = verifier->generate_challenge();
 
@@ -647,23 +649,26 @@ bool Challenge(BareosSocket* socket,
 
     if (length < 0) {
       Dmsg0(100, "Could not transform challenge into b64\n");
-      json_decref(challenge);
       json_decref(possibilities);
       return false;
     }
 
     chal64.resize(length);
 
-    if (json_object_set_new(challenge, "name",
-                            json_stringn(name.data(), name.size()))
-            < 0
-        || json_object_set_new(challenge, "challenge",
-                               json_stringn(chal64.data(), chal64.size()))
-               < 0) {
-      json_decref(challenge);
+    json_error_t err{};
+
+    // s% = const char* data + size_t length
+    json_t* challenge = json_pack_ex(
+        &err, 0, "{s:s%, s:s%, s:s%, s:s%}", "internal_name", name.data(),
+        name.size(), "challenge", chal64.data(), chal64.size(), "type",
+        name.data(), name.size(), "display_name", name.data(), name.size());
+    if (!challenge) {
+      Dmsg0(100, "Could not format challenge '%.*s' from: %s\n",
+            (int)name.size(), name.data(), err.text);
       json_decref(possibilities);
       return false;
     }
+
     json_array_append_new(possibilities, challenge);
   }
 
@@ -829,7 +834,7 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
     // so we want to take the first one thats offered by the server
     for (auto& claim : provers) {
       for (auto& chal : challenges) {
-        if (claim->name() == chal.name) {
+        if (claim->name() == chal.type) {
           // we found the best fit!
           return {claim.get(), &chal};
         }
@@ -844,7 +849,9 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
     lists << "Client:\n";
     for (auto& claim : provers) { lists << " - " << claim->name() << "\n"; }
     lists << "Server:\n";
-    for (auto& chal : challenges) { lists << " - " << chal.name << "\n"; }
+    for (auto& chal : challenges) {
+      lists << " - " << chal.internal_name << " (" << chal.type << ")" << "\n";
+    }
 
     Dmsg0(100, "Could not find a single match for auth:\n%s\n\n",
           lists.str().c_str());
@@ -852,7 +859,7 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
   }
 
   ASSERT(chall);
-  Dmsg0(100, "Trying challenge %s\n", chall->name.c_str());
+  Dmsg0(100, "Trying challenge %s\n", chall->internal_name.c_str());
 
   std::string request_b64{chall->challenge};
 
@@ -865,7 +872,7 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
   for (;;) {
     response.clear();
     if (request_b64 == "2000 AUTH OK") {
-      Dmsg0(100, "Server is happy with %s\n", chall->name.c_str());
+      Dmsg0(100, "Server is happy with %s\n", chall->internal_name.c_str());
       break;
     } else {
       request.resize(request_b64.size() + 1);
@@ -884,7 +891,8 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
 
 
       if (!chosen->step(response, request)) {
-        Dmsg0(100, "%s step failed: %s\n", chall->name.c_str(), chosen->err());
+        Dmsg0(100, "%s step failed: %s\n", chall->internal_name.c_str(),
+              chosen->err());
         return false;
       }
 
@@ -895,22 +903,22 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
 
       if (response_b64_length < 0) {
         Dmsg0(100, "Could not base64 encode response for %s\n",
-              chall->name.c_str());
+              chall->internal_name.c_str());
         return false;
       }
 
       response_b64.resize(response_b64_length);
 
-      if (!socket->fsend("%s: %s\n", chall->name.c_str(),
+      if (!socket->fsend("%s: %s\n", chall->internal_name.c_str(),
                          response_b64.c_str())) {
-        Dmsg0(100, "Could not send response for %s: %s\n", chall->name.c_str(),
-              socket->bstrerror());
+        Dmsg0(100, "Could not send response for %s: %s\n",
+              chall->internal_name.c_str(), socket->bstrerror());
         return false;
       }
 
       if (socket->recv() < 0) {
         Dmsg0(100, "Could not receive request for %s: %s\n",
-              chall->name.c_str(), socket->bstrerror());
+              chall->internal_name.c_str(), socket->bstrerror());
         return false;
       }
 
@@ -919,12 +927,12 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
                          socket->msg + socket->message_length);
 
       if (request_b64.empty()) {
-        Dmsg0(100, "empty request_b64 for %s\n", chall->name.c_str());
+        Dmsg0(100, "empty request_b64 for %s\n", chall->internal_name.c_str());
         return false;
       }
 
       if (request_b64.back() != '\n') {
-        Dmsg0(100, "missing NL for %s\n", chall->name.c_str());
+        Dmsg0(100, "missing NL for %s\n", chall->internal_name.c_str());
         return false;
       }
 
@@ -933,11 +941,11 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
   }
 
   if (!chosen->done()) {
-    Dmsg0(100, "Server finished early for %s\n", chall->name.c_str());
+    Dmsg0(100, "Server finished early for %s\n", chall->internal_name.c_str());
     return false;
   }
 
-  Dmsg0(100, "Finished %s auth successfully\n", chall->name.c_str());
+  Dmsg0(100, "Finished %s auth successfully\n", chall->internal_name.c_str());
   return true;
 }
 
