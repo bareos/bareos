@@ -69,7 +69,7 @@ What it enforces:
 - Copyright headers, no trailing whitespace, no DOS line endings, no merge conflict markers
 
 ## Copyright Headers
-Every new source file **must** include an AGPLv3 copyright header. Use the year of creation. See any existing `.cc` or `.py` file for the canonical header format. The `bareos-check-sources` tool will flag missing or incorrect headers.
+Every new source file **must** include an AGPLv3 copyright header. Use the year of creation. See any existing `.cc` or `.py` file for the canonical header format. The `bareos-check-sources` tool will flag missing or incorrect headers. Date spans in copyright headers are always given as two years, e.g. 2026-2026, never as just a single year.
 
 ## Key Source Locations
 | Component | Entry Point |
