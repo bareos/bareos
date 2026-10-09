@@ -576,7 +576,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
         ASSERT(ar->PathId);
         goto bail_out;
       }
-      ar->PathId = str_to_int64(row[0]);
+      ar->PathId = str_to_uint64(row[0]);
       SqlFreeResult();
       if (ar->PathId != cached_path_id) {
         cached_path_id = ar->PathId;
@@ -938,7 +938,7 @@ bool BareosDb::CreateFileRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   /* clang-format off */
   Mmsg(cmd,
        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
-       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%" PRIu64 ",%" PRIu64 ")",
+       "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%" PRIu64 ",'%s','%s','%s',%u,%" PRIu64 ",%" PRIu64 ")",
        ar->FileIndex, ar->JobId, ar->PathId, esc_filename->c_str(),
        ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
   /* clang-format on */

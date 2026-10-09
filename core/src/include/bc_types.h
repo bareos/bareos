@@ -72,7 +72,8 @@ typedef __int64 ino_t;
  *  64 bits is the FileId_t
  */
 typedef uint64_t FileId_t;
-typedef uint32_t DBId_t; /* general DB id type */
+typedef uint64_t PathId_t; /* Path id type */
+typedef uint32_t DBId_t;   /* general DB id type */
 #define PRIdbid PRIu32
 typedef uint32_t JobId_t;
 
