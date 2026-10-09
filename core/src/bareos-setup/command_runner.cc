@@ -199,6 +199,17 @@ DEFINE_SETUP_TOOL_WRAPPER(SensibleBrowser, SensibleBrowser)
 
 bool IsRoot() { return geteuid() == 0; }
 
+[[noreturn]] static void ChildSetupFailure(int fd, const char* operation)
+{
+  constexpr char prefix[] = "bareos-setup: failed to ";
+  constexpr char newline[] = "\n";
+  [[maybe_unused]] auto prefix_write = write(fd, prefix, sizeof(prefix) - 1);
+  [[maybe_unused]] auto operation_write
+      = write(fd, operation, strlen(operation));
+  [[maybe_unused]] auto newline_write = write(fd, newline, sizeof(newline) - 1);
+  _exit(kExecFailureExitCode);
+}
+
 // Drain available bytes from fd into line buffer, calling cb on complete lines.
 static bool DrainFd(int fd,
                     std::string& buf,
@@ -291,13 +302,19 @@ static int RunCommandImpl(
     // Child
     close(pipe_out[0]);
     close(pipe_err[0]);
-    dup2(pipe_out[1], STDOUT_FILENO);
-    dup2(pipe_err[1], STDERR_FILENO);
+    if (dup2(pipe_out[1], STDOUT_FILENO) < 0) {
+      ChildSetupFailure(pipe_err[1], "redirect stdout");
+    }
+    if (dup2(pipe_err[1], STDERR_FILENO) < 0) {
+      ChildSetupFailure(pipe_err[1], "redirect stderr");
+    }
     close(pipe_out[1]);
     close(pipe_err[1]);
     if (input != nullptr) {
       close(pipe_in[1]);
-      dup2(pipe_in[0], STDIN_FILENO);
+      if (dup2(pipe_in[0], STDIN_FILENO) < 0) {
+        ChildSetupFailure(STDERR_FILENO, "redirect stdin");
+      }
       close(pipe_in[0]);
     }
     // Redirect stdin from /dev/null so sudo doesn't hang asking for password
@@ -306,10 +323,12 @@ static int RunCommandImpl(
       // when a command asks for interactive input, so /dev/null keeps the
       // child non-interactive even if the parent is attached to a terminal.
       int devnull = open("/dev/null", O_RDONLY);
-      if (devnull >= 0) {
-        dup2(devnull, STDIN_FILENO);
+      if (devnull < 0) { ChildSetupFailure(STDERR_FILENO, "open /dev/null"); }
+      if (dup2(devnull, STDIN_FILENO) < 0) {
         close(devnull);
+        ChildSetupFailure(STDERR_FILENO, "redirect stdin from /dev/null");
       }
+      close(devnull);
     }
     execv(executable_path.c_str(), const_cast<char* const*>(cargv.data()));
     // execv failed — write error to stderr and exit
