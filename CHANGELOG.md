@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareoslib: add new value for Verify Peer and set it as the default [PR #2854]
 - dird: fix reload related crash [PR #2768]
 - macos: update to 26, introduce arm64 architecture [PR #2834]
+- Update vulnerable Vue dependencies [PR #2868]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2423,4 +2424,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2854]: https://github.com/bareos/bareos/pull/2854
 [PR #2857]: https://github.com/bareos/bareos/pull/2857
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
+[PR #2868]: https://github.com/bareos/bareos/pull/2868
 [unreleased]: https://github.com/bareos/bareos/tree/master
