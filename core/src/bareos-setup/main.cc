@@ -277,13 +277,10 @@ int main(int argc, char* argv[])
   if (no_browser) {
     std::cout << "Open this URL in your browser: " << setup_url << "\n"
               << std::flush;
-  }
-
-  // Fork before starting the server so the child opens the browser
-  // after the parent has started listening.
-  pid_t child = -1;
-  if (!no_browser) {
-    child = fork();
+  } else {
+    // Fork before starting the server so the child opens the browser
+    // after the parent has started listening.
+    pid_t child = fork();
     if (child == 0) {
       // Child: wait briefly then open browser
       sleep(1);
