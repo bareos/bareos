@@ -449,9 +449,7 @@ bool DotBvfsRestoreCmd(UaContext* ua, const char*)
  */
 bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
 {
-  int i;
   DBId_t pathid = 0;
-  char* pattern = NULL;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
@@ -466,15 +464,12 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
     return false;
   }
 
-  if ((i = FindArgWithValue(ua, "pattern")) >= 0) { pattern = ua->argv[i]; }
-
   if (!ua->guid) { ua->guid = new_guid_list(); }
 
   Bvfs fs(ua->jcr, ua->db);
   fs.SetJobids(filtered_jobids.c_str());
   fs.SetHandler(BvfsResultHandler, ua);
   fs.SetLimit(limit);
-  if (pattern) { fs.SetPattern(pattern); }
   if (pathid) {
     fs.ChDir(pathid);
   } else {

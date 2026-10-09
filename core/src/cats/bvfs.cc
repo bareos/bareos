@@ -173,12 +173,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
-       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
-       "UNION "
-       "SELECT PathId, BaseFiles.JobId "
-       "FROM BaseFiles JOIN File AS F USING (FileId) "
-       "WHERE BaseFiles.JobId = %s) AS B",
-       jobid, jobid);
+       "FROM File WHERE JobId = %s",
+       jobid);
 
   if (!QueryDb(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %" PRIu32 "\n",
@@ -585,19 +581,17 @@ static void build_ls_files_query(JobControlRecord*,
                                  PoolMem& query,
                                  const char* JobId,
                                  const char* PathId,
-                                 const char* filter,
                                  int64_t limit,
                                  int64_t offset)
 {
-  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(
-      query, JobId, PathId, JobId, PathId, filter, limit, offset);
+  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(query, JobId, PathId,
+                                                      limit, offset);
 }
 
 // Returns true if we have files to read
 bool Bvfs::ls_files()
 {
   char pathid[50];
-  PoolMem filter(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
   Dmsg1(dbglevel, "ls_files(%" PRIdbid ")\n", pwd_id);
@@ -606,12 +600,7 @@ bool Bvfs::ls_files()
   if (!pwd_id) { ChDir(get_root()); }
 
   edit_uint64(pwd_id, pathid);
-  if (*pattern) {
-    db->FillQuery<BareosDb::SQL_QUERY::match_query2>(filter, pattern);
-  }
-
-  build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit,
-                       offset);
+  build_ls_files_query(jcr, db, query, jobids, pathid, limit, offset);
   nb_record = db->BvfsBuildLsFileQuery(query, list_entries, user_data);
 
   return nb_record == limit;
@@ -760,20 +749,6 @@ bool Bvfs::compute_restore_list(char* fileid,
          escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    /* A directory can have files from a BaseJob */
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate, BaseFiles.FileIndex, "
-         "File.Name, File.PathId, BaseFiles.FileId "
-         "FROM BaseFiles "
-         "JOIN File USING (FileId) "
-         "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s' AND BaseFiles.JobId IN (%s) ",
-         escaped_path_like->c_str(), jobids);
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */

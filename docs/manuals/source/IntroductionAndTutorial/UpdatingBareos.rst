@@ -446,13 +446,19 @@ Detailed information can then be found in the log file :file:`/var/log/bareos/ba
 
 Take a look into the :ref:`Release Notes <releasenotes>` to see which Bareos updates do require a database scheme update.
 
-
 .. warning::
 
-   Especially the upgrade to Bareos >= 17.2.0 restructures the **File** database table.
-   In larger installations this is very time consuming (up to several hours or days)
-   and temporarily doubles the amount of required database disk space.
+   **Upgrade to Bareos 26:** Base Jobs have been deprecated since Bareos 23, and creating new
+   Base Job backups has not been possible since Bareos 24. Bareos 26 removes the catalog schema
+   support for Base Jobs. If the catalog's :strong:`BaseFiles` table still contains data, the
+   schema update will stop rather than delete it automatically; the administrator must decide
+   how to proceed.
 
+   If you still need the data covered by Base Jobs, restore the required data while the existing
+   catalog is available, then run a regular Full backup that does not use Base Jobs and verify
+   that it can be restored independently. This preserves the data, but not the Base Job-based
+   restore history. The :strong:`BaseFiles` table must be empty before the schema update can
+   proceed.
 
 .. _section-UpdateDatabaseDebianDistributions:
 
