@@ -30,8 +30,8 @@ target_sources(
 )
 target_link_libraries(
   webui-proxy-objects
-  PRIVATE Bareos::Lib Bareos::HttpProtocol Bareos::WebSocket OpenSSL::SSL
-          OpenSSL::Crypto Jansson::Jansson Threads::Threads
+  PRIVATE Bareos::Lib Bareos::HttpProtocol Bareos::HttpServer Bareos::WebSocket
+          OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson Threads::Threads
 )
 
 add_executable(
@@ -47,8 +47,15 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos-webui-proxy
-  PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
-          Threads::Threads CLI11::CLI11 Bareos::HttpProtocol Bareos::WebSocket
+  PRIVATE Bareos::Lib
+          OpenSSL::SSL
+          OpenSSL::Crypto
+          Jansson::Jansson
+          Threads::Threads
+          CLI11::CLI11
+          Bareos::HttpProtocol
+          Bareos::HttpServer
+          Bareos::WebSocket
 )
 
 configure_file(
@@ -89,6 +96,7 @@ if(BUILD_TESTING AND GTest_FOUND)
     test_webui_proxy
     PRIVATE Bareos::Lib
             Bareos::HttpProtocol
+            Bareos::HttpServer
             Bareos::WebSocket
             OpenSSL::SSL
             OpenSSL::Crypto

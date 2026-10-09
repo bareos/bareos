@@ -100,9 +100,15 @@ add_custom_command(
 # bareos-setup executable
 # ---------------------------------------------------------------------------
 set(SETUP_SOURCES
-    main.cc http_server.cc setup_session.cc setup_steps.cc command_runner.cc
+    main.cc
+    http_server.cc
+    setup_session.cc
+    setup_steps.cc
+    command_runner.cc
     browser_launcher.cc
-    os_detector.cc tui_wizard.cc "${EMBEDDED_ASSETS_CC}"
+    os_detector.cc
+    tui_wizard.cc
+    "${EMBEDDED_ASSETS_CC}"
 )
 
 add_executable(bareos-setup ${SETUP_SOURCES})
@@ -124,7 +130,8 @@ target_include_directories(
                        "${CMAKE_CURRENT_BINARY_DIR}"
 )
 target_link_libraries(
-  bareos-setup PRIVATE Bareos::HttpProtocol Bareos::WebSocket
+  bareos-setup PRIVATE Bareos::HttpProtocol Bareos::HttpServer
+                       Bareos::WebSocket
 )
 
 # ---------------------------------------------------------------------------
@@ -200,9 +207,15 @@ if(BUILD_TESTING AND GTest_FOUND)
 
   add_executable(
     test_bareos_setup_steps
-    tests/test_setup_steps_shared.cc setup_steps.cc command_runner.cc
+    tests/test_setup_steps_shared.cc
+    tests/test_http_server.cc
+    setup_steps.cc
+    command_runner.cc
     browser_launcher.cc
-    os_detector.cc setup_session.cc http_server.cc tui_wizard.cc
+    os_detector.cc
+    setup_session.cc
+    http_server.cc
+    tui_wizard.cc
     "${EMBEDDED_ASSETS_CC}"
   )
   add_dependencies(test_bareos_setup_steps bareos-setup-vue-build)
@@ -221,8 +234,9 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_link_libraries(
     test_bareos_setup_steps
-    PRIVATE Bareos::HttpProtocol Bareos::WebSocket GTest::gtest_main
-            Threads::Threads OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+    PRIVATE Bareos::HttpProtocol Bareos::HttpServer Bareos::WebSocket
+            GTest::gtest_main Threads::Threads OpenSSL::SSL OpenSSL::Crypto
+            Jansson::Jansson
   )
   gtest_discover_tests(
     test_bareos_setup_steps TEST_PREFIX gtest: DISCOVERY_TIMEOUT 120

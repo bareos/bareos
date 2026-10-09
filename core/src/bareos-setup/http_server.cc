@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "http_server.h"
+#include "http/http_server.h"
 
 #include <atomic>
 #include <cctype>
@@ -41,6 +41,7 @@
 #include <unistd.h>
 
 #include "embedded_assets.h"
+#include "http_server.h"
 #include "http_protocol.h"
 #include "setup_steps.h"
 
@@ -141,62 +142,11 @@ void RunHttpServer(const std::string& bind_address,
                    WsHandler ws_handler)
 {
   g_shutdown_requested = false;
-  sockaddr_storage address{};
-  socklen_t address_len;
-  int address_family;
-  if (inet_pton(AF_INET, bind_address.c_str(),
-                &reinterpret_cast<sockaddr_in*>(&address)->sin_addr)
-      == 1) {
-    auto* ipv4_address = reinterpret_cast<sockaddr_in*>(&address);
-    ipv4_address->sin_family = AF_INET;
-    ipv4_address->sin_port = htons(static_cast<uint16_t>(port));
-    address_len = sizeof(*ipv4_address);
-    address_family = AF_INET;
-  } else if (inet_pton(AF_INET6, bind_address.c_str(),
-                       &reinterpret_cast<sockaddr_in6*>(&address)->sin6_addr)
-             == 1) {
-    auto* ipv6_address = reinterpret_cast<sockaddr_in6*>(&address);
-    ipv6_address->sin6_family = AF_INET6;
-    ipv6_address->sin6_port = htons(static_cast<uint16_t>(port));
-    address_len = sizeof(*ipv6_address);
-    address_family = AF_INET6;
-  } else {
-    throw std::runtime_error("Invalid listen address: " + bind_address);
-  }
-
-  int srv = socket(address_family, SOCK_STREAM, 0);
-  if (srv < 0) {
-    throw std::runtime_error("socket() failed: "
-                             + std::string(std::strerror(errno)));
-  }
-
-  int opt = 1;
-  setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-
-  if (address_family == AF_INET6) {
-    int ipv6_only = 1;
-    if (setsockopt(srv, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
-                   sizeof(ipv6_only))
-        < 0) {
-      const int error = errno;
-      close(srv);
-      throw std::runtime_error("setsockopt(IPV6_V6ONLY) failed: "
-                               + std::string(std::strerror(error)));
-    }
-  }
-
-  if (bind(srv, reinterpret_cast<sockaddr*>(&address), address_len) < 0) {
-    const int error = errno;
-    close(srv);
-    throw std::runtime_error("bind() failed on " + bind_address + ":"
-                             + std::to_string(port) + ": "
-                             + std::strerror(error));
-  }
-  if (listen(srv, 16) < 0) {
-    const int error = errno;
-    close(srv);
-    throw std::runtime_error("listen() failed: "
-                             + std::string(std::strerror(error)));
+  auto listen_sockets = CreateHttpListenSockets(
+      bind_address, static_cast<uint16_t>(port), 16, true);
+  const int srv = listen_sockets.front();
+  for (size_t i = 1; i < listen_sockets.size(); ++i) {
+    close(listen_sockets[i]);
   }
   g_server_fd = srv;
 
