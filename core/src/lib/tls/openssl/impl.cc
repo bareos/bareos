@@ -771,7 +771,7 @@ int TlsOpenSsl::TlsBsockPeekn(const BareosSocket*, char* ptr, int32_t nbytes)
     return 0;
   }
 
-  return SSL_peek(openssl_, ptr, nbytes);
+  return SSL_peek(openssl_.get(), ptr, nbytes);
 }
 
 bool TlsOpenSsl::KtlsSendStatus()
@@ -1080,7 +1080,7 @@ void print_options(const TlsResource* res)
 auto TlsOpenSsl::IsPskIdentityInUse(std::string_view identity) const
     -> PskIdentityStatus
 {
-  auto* psk_used = SSL_get_psk_identity(openssl_);
+  auto* psk_used = SSL_get_psk_identity(openssl_.get());
   if (!psk_used) { return PskIdentityStatus::NoIdentityInUse; }
   if (identity != psk_used) {
     return PskIdentityStatus::DifferentIdentityInUse;
