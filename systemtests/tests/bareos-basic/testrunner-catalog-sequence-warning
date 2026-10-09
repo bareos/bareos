@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
@@ -18,15 +19,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-#CTEST nolock
 set -e
 set -o pipefail
 set -u
-#
-# test some ACL restrictions
-#
-TestName="$(basename "$(pwd)")"
-export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
@@ -34,29 +29,30 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# The ceiling of 70% of the int32 maximum value.
+seq_70_pct=1503238553
+status_output="${tmp}/catalog-sequence-warning.log"
+
 start_test
 
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf >${logdir}/acl-none.log
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status.conf >${logdir}/acl-status.log
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status-conf.conf >${logdir}/acl-status-conf.log
+cat <<EOF >"${tmp}/bconcmds"
+.sql query="SELECT setval('job_jobid_seq', $((seq_70_pct - 1)), true);"
 
-export estat=0
+reload
+@$out ${status_output}
+status configuration
+EOF
+run_bconsole "${tmp}/bconcmds"
 
-set_error()
-{
+if ! grep -Fq \
+  "Catalog \"MyCatalog\": sequence \"job_jobid_seq\" for job.jobid will reach its maximum value soon (next value: ${seq_70_pct}, maximum value: 2147483647)." \
+  "${status_output}"; then
+  echo "Catalog sequence warning was not reported" >&2
+  cat "${status_output}" >&2
   estat=1
-  echo "ACL-test failed, see ${logdir}/$1 for details"
-}
-
-grep -q "status: is an invalid command" ${logdir}/acl-none.log \
-  || set_error "acl-none.log"
-
-grep -q "status conf: is an invalid command" ${logdir}/acl-status.log \
-  || set_error "acl-status.log"
-
-# this will match "No configuration.." and "Configuration ..."
-# which matches for all database types
-grep -q "onfiguration warnings detected" ${logdir}/acl-status-conf.log \
-  || set_error "acl-status-conf.log"
+fi
 
 end_test

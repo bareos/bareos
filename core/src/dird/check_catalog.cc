@@ -30,7 +30,110 @@
 #include "dird/ua_db.h"
 #include "lib/parse_conf.h"
 
+#include <charconv>
+#include <string_view>
+
 namespace directordaemon {
+
+namespace {
+
+constexpr char kCatalogSequenceWarningQuery[] = R"sql(
+WITH sequences AS (
+    SELECT
+        seq.relname AS sequence_name,
+        table_.relname AS table_name,
+        attribute.attname AS column_name,
+        CASE
+            WHEN pg_sequence_last_value(sequence_data.seqrelid) IS NULL
+                THEN sequence_data.seqstart
+            ELSE pg_sequence_last_value(sequence_data.seqrelid)
+                 + sequence_data.seqincrement
+        END AS next_value,
+        least(
+            sequence_data.seqmax,
+            CASE attribute.atttypid
+                WHEN 'int4'::regtype THEN 2147483647::bigint
+                WHEN 'int8'::regtype THEN 9223372036854775807::bigint
+            END) AS max_value
+    FROM pg_sequence AS sequence_data
+    JOIN pg_class AS seq ON seq.oid = sequence_data.seqrelid
+    JOIN pg_depend AS dependency
+      ON dependency.objid = sequence_data.seqrelid
+     AND dependency.classid = 'pg_class'::regclass
+     AND dependency.refclassid = 'pg_class'::regclass
+     AND dependency.deptype = 'a'
+    JOIN pg_class AS table_ ON table_.oid = dependency.refobjid
+    JOIN pg_attribute AS attribute
+      ON attribute.attrelid = table_.oid
+     AND attribute.attnum = dependency.refobjsubid
+    WHERE table_.relnamespace = 'public'::regnamespace
+      AND table_.relkind IN ('r', 'p')
+      AND attribute.atttypid IN ('int4'::regtype, 'int8'::regtype)
+      AND sequence_data.seqincrement > 0
+      AND NOT sequence_data.seqcycle
+)
+SELECT sequence_name, table_name, column_name, next_value, max_value
+FROM sequences
+ORDER BY next_value::numeric / max_value DESC;
+)sql";
+
+struct CatalogSequenceWarningContext {
+  const CatalogResource* catalog;
+  bool invalid_result = false;
+};
+
+int AddCatalogSequenceWarning(void* ctx, int fields, char** row)
+{
+  auto* context = static_cast<CatalogSequenceWarningContext*>(ctx);
+  if (fields != 5 || !row[0] || !row[1] || !row[2] || !row[3] || !row[4]) {
+    context->invalid_result = true;
+    return 1;
+  }
+
+  uint64_t next_value;
+  uint64_t maximum_value;
+  const auto [next_end, next_error] = std::from_chars(
+      row[3], row[3] + std::string_view(row[3]).size(), next_value);
+  const auto [maximum_end, maximum_error] = std::from_chars(
+      row[4], row[4] + std::string_view(row[4]).size(), maximum_value);
+  if (next_error != std::errc{} || *next_end != '\0'
+      || maximum_error != std::errc{} || *maximum_end != '\0') {
+    context->invalid_result = true;
+    return 1;
+  }
+
+  if (!CatalogSequenceAtWarningThreshold(next_value, maximum_value)) {
+    return 0;
+  }
+
+  PoolMem warning(PM_MESSAGE);
+  Mmsg(warning,
+       T_("Catalog \"%s\": sequence \"%s\" for %s.%s will reach its maximum "
+          "value soon (next value: %s, maximum value: %s)."),
+       context->catalog->resource_name_, row[0], row[1], row[2], row[3],
+       row[4]);
+  my_config->AddWarning(warning.c_str());
+  return 0;
+}
+
+void CheckCatalogSequences(BareosDb* db, const CatalogResource* catalog)
+{
+  CatalogSequenceWarningContext context{catalog};
+  if (!db->SqlQuery(kCatalogSequenceWarningQuery, AddCatalogSequenceWarning,
+                    &context)) {
+    Jmsg(nullptr, M_WARNING, 0,
+         T_("Could not check sequences in Catalog \"%s\", database \"%s\": "
+            "%s\n"),
+         catalog->resource_name_, catalog->db_name, db->strerror());
+  } else if (context.invalid_result) {
+    Jmsg(nullptr, M_WARNING, 0,
+         T_("Could not interpret sequence information in Catalog \"%s\", "
+            "database \"%s\".\n"),
+         catalog->resource_name_, catalog->db_name);
+  }
+}
+
+}  // namespace
 
 /**
  * In this routine,
@@ -91,6 +194,8 @@ bool CheckCatalog(cat_op mode)
       db->CloseDatabase(NULL);
       continue;
     }
+
+    CheckCatalogSequences(db, catalog);
 
     /* Loop over all pools, defining/updating them in each database */
     PoolResource* pool;
