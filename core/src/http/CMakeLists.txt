@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2026 Bareos GmbH & Co. KG
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -22,4 +22,11 @@ add_library(Bareos::HttpProtocol ALIAS bareos-http-protocol)
 target_compile_features(bareos-http-protocol PUBLIC cxx_std_20)
 target_include_directories(
   bareos-http-protocol PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+add_library(bareos-http-server STATIC http_server.cc)
+add_library(Bareos::HttpServer ALIAS bareos-http-server)
+target_compile_features(bareos-http-server PUBLIC cxx_std_20)
+target_include_directories(
+  bareos-http-server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 )
