@@ -54,8 +54,9 @@ namespace filedaemon {
  *  54 29Oct15 - Added getSecureEraseCmd
  */
 
-const TlsResource* Auth::get(global_resource::Type auth_type,
-                             std::string_view name)
+std::unique_ptr<ConnectionInfo> Auth::get_info_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   auto* myself
       = dynamic_cast<ClientResource*>(p->GetNextRes(R_CLIENT, nullptr));
@@ -115,7 +116,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       data.res = res;
 
       type = inbound_type::Director;
-      return data.res;
+      return std::make_unique<DefaultConnectionInfo>(*data.res);
     } break;
     case global_resource::Type::Job: {
       auto* jcr = get_jcr_for_authentication(name);
@@ -136,7 +137,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       data.job.password_.value = jcr->sd_auth_key;
 
       type = inbound_type::Storage;
-      return &data.job;
+      return std::make_unique<DefaultConnectionInfo>(data.job);
     } break;
     default: {
     } break;

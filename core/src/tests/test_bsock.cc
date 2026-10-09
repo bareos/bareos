@@ -497,14 +497,15 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth : ::TlsConfigProvider {
+struct dummy_auth : ::ConnectionInfoProvider {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view res_name) override
+  std::unique_ptr<ConnectionInfo> get_info_for(
+      global_resource::Type type,
+      std::string_view res_name) override
   {
     Dmsg1(10, "Cons->Dir: received %s:%s",
           std::string{global_resource::GetNameFromType(type)}.c_str(),
@@ -518,16 +519,15 @@ struct dummy_auth : ::TlsConfigProvider {
     // As such we can not check this:
     // if (res_name != name) { return nullptr; }
 
+    TlsResource res{};
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return &res;
+    return std::make_unique<DefaultConnectionInfo>(std::move(res));
   }
 
   std::string name;
   std::string password;
-
-  TlsResource res{};
 };
 
 static void start_bareos_server(std::promise<bool>* promise,
