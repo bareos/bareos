@@ -27,6 +27,7 @@
  */
 
 #include "lib/bauth.h"
+#include "lib/connect_accept.h"
 #include "lib/hello.h"
 #include "monitoritem.h"
 #include "authenticate.h"

@@ -424,7 +424,7 @@ unsigned int psk_server_cb(SSL* ssl,
   }
 
   // , std::span<unsigned char>(psk_output, max_psk_len)
-  auto* tls_res = data->get(type, name);
+  auto* tls_res = data->get_tls_config_for(type, name);
 
   if (!tls_res) { return ERROR_RETURN; }
 

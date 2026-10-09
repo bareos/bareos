@@ -21,9 +21,43 @@
 #ifndef BAREOS_LIB_BAUTH_H_
 #define BAREOS_LIB_BAUTH_H_
 
-#include "lib/bsock.h"
 #include "lib/hello.h"
+#include "lib/bsock.h"
 
+#include <span>
+#include <vector>
+#include <string_view>
+
+namespace auth {
+enum Status
+{
+  InProgress,
+  Done,
+  Error,
+};
+
+struct Verifier {
+  virtual std::string_view name() const = 0;
+  virtual std::vector<char> generate_challenge() = 0;
+  virtual Status step(std::vector<char>& request, std::span<const char> data)
+      = 0;
+  virtual const char* err() const = 0;
+
+  virtual ~Verifier() = default;
+};
+
+struct Prover {
+  virtual std::string_view name() const = 0;
+  virtual bool step(std::vector<char>& response, std::span<const char> data)
+      = 0;
+  virtual const char* err() const = 0;
+  virtual bool done() const = 0;
+
+  virtual ~Prover() = default;
+};
+};  // namespace auth
+
+namespace auth {
 struct Authenticator {
   struct OutboundArgs {
     JobControlRecord* jcr;
@@ -33,6 +67,7 @@ struct Authenticator {
 
   struct InboundArgs {
     BareosSocket* socket;
+    uint32_t remote_version;
     const TlsResource* target;
   };
 
@@ -60,43 +95,33 @@ struct Md5Authenticator : Authenticator {
   std::string cram_identity;
 };
 
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   const std::string& qualified_name,
-                   const TlsResource* res,
-                   std::string_view hello_msg,
-                   Authenticator* auth,
-                   bool cleartext_authentication = false);
+struct NewAuthenticator : Authenticator {
+  std::span<std::unique_ptr<Prover>> provers;
+  std::span<std::unique_ptr<Verifier>> verifiers;
 
-template <global_resource::Type type, global_resource::Type target_type>
-bool BareosConnect(JobControlRecord* jcr,
-                   BareosSocket* socket,
-                   std::string_view name,
-                   const TlsResource* res,
-                   bool cleartext_authentication = false)
-{
-  using formatter = hello_formatter<type, target_type>;
-  auto qualified_name
-      = global_resource::QualifiedName(formatter::auth_type, name);
-  auto hello = formatter::format(name);
-  Md5Authenticator auth{qualified_name};
-  return BareosConnect(jcr, socket, qualified_name, res, hello, &auth,
-                       cleartext_authentication);
-}
+  NewAuthenticator() = default;
+  NewAuthenticator(std::span<std::unique_ptr<Prover>> ps,
+                   std::span<std::unique_ptr<Verifier>> vs)
+      : provers{ps}, verifiers{vs}
+  {
+  }
 
-std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
-                                        global_resource::Type type,
-                                        const TlsResource* initial_tls,
-                                        TlsConfigProvider* provider,
-                                        Authenticator* auth);
+  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args) override;
+};
 
-static inline auto BareosAccept(BareosSocket* socket,
-                                global_resource::Type type,
-                                const TlsResource* initial_tls,
-                                TlsConfigProvider* provider)
-{
-  Md5Authenticator auth{};
-  return BareosAccept(socket, type, initial_tls, provider, &auth);
-}
+struct DefaultAuthenticator : Authenticator {
+  DefaultAuthenticator(std::vector<std::unique_ptr<Prover>> ps,
+                       std::vector<std::unique_ptr<Verifier>> vs);
+
+  bool authenticate_outbound(OutboundArgs args) override;
+  bool authenticate_inbound(InboundArgs args) override;
+
+ private:
+  std::vector<std::unique_ptr<Prover>> provers;
+  std::vector<std::unique_ptr<Verifier>> verifiers;
+  std::optional<Md5Authenticator> legacy_auth;
+};
+};  // namespace auth
 
 #endif  // BAREOS_LIB_BAUTH_H_

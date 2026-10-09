@@ -24,16 +24,17 @@
 
 #include "lib/bsock.h"
 #include "include/jcr.h"
+#include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
 #include "stored/stored_conf.h"
 
 namespace storagedaemon {
 
-struct Auth : ::TlsConfigProvider {
+struct Auth : ::ConnectionInfoProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view name) override;
+  std::unique_ptr<ConnectionInfo> get_info_for(global_resource::Type type,
+                                               std::string_view name) override;
 
   enum class inbound_type
   {
