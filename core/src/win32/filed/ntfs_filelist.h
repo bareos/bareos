@@ -44,12 +44,19 @@ struct NtfsCheckpoint {
   std::unordered_set<uint64_t> uncertain;
 };
 
-inline bool IsNtfsPathWithinRoot(std::string_view path_key,
-                                 std::string_view root_key)
+constexpr bool IsNtfsPathWithinRoot(std::string_view path_key,
+                                    std::string_view root_key)
 {
   return root_key.empty() || path_key == root_key
          || (path_key.size() > root_key.size() && path_key.starts_with(root_key)
              && path_key[root_key.size()] == '/');
+}
+
+constexpr bool IsNtfsMetadataPath(std::string_view relative_path_key)
+{
+  return IsNtfsPathWithinRoot(relative_path_key, "/$extend")
+         || IsNtfsPathWithinRoot(relative_path_key,
+                                 "/system volume information");
 }
 
 constexpr bool UsableNtfsCursor(NtfsCursor saved,

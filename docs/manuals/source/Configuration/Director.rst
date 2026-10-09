@@ -1109,6 +1109,15 @@ The directives within an Options resource may be one of the following:
    Directory selection, exclusions, hard links, and Accurate deletion
    bookkeeping continue through the normal backup pipeline.
 
+   NTFS metadata under ``$Extend`` and ``System Volume Information`` at the
+   volume root is excluded from discovery, regardless of the Include root.
+   These paths are not probed for hard-link names.
+
+   Each Include root logs the discovery mode (MFT or journal) before MFT
+   enumeration starts and confirms its use after discovery completes.
+   If discovery fails, the job log reports the reason for falling back to
+   directory traversal.
+
    Example::
 
       Include {

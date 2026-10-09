@@ -450,6 +450,9 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
              root, jcr->fd_impl->PrevJob);
       }
     }
+    Jmsg(jcr, M_INFO, 0,
+         T_("Starting NTFS %s discovery for %s; enumerating the MFT.\n"),
+         saved ? "journal" : "MFT", root);
     Handle directory{CreateFileW(
         enumeration_root.c_str(), FILE_READ_ATTRIBUTES,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
@@ -494,15 +497,13 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
       if ((id & 0x0000ffffffffffffULL) < 16) { continue; }
       auto relative = map.Path(id);
       if (!relative) { relative = PathById(enumeration_volume, id); }
+      auto relative_key = Key(relative->c_str());
+      // Metadata must be excluded even outside a subdirectory Include root.
+      if (IsNtfsMetadataPath(relative_key)) { continue; }
       bool path_in_include_root
-          = IsNtfsPathWithinRoot(Key(relative->c_str()), relative_root_key);
+          = IsNtfsPathWithinRoot(relative_key, relative_root_key);
       // A file outside the root may still have a hard-link name inside it.
       if (record.directory && !path_in_include_root) { continue; }
-      if (path_in_include_root
-          && (relative->starts_with("/$Extend/")
-              || relative->starts_with("/System Volume Information"))) {
-        continue;
-      }
       std::string path = mount_path + *relative;
       std::vector<std::wstring> names;
       if (record.directory) {
@@ -518,10 +519,12 @@ bool NtfsFileList::Prepare(JobControlRecord* jcr,
         }
       }
       for (const auto& name : names) {
-        path = mount_path + Utf8(name);
-        for (auto& c : path) {
+        auto relative_name = Utf8(name);
+        for (auto& c : relative_name) {
           if (c == '\\') { c = '/'; }
         }
+        if (IsNtfsMetadataPath(Key(relative_name.c_str()))) { continue; }
+        path = mount_path + relative_name;
         if (!IsNtfsPathWithinRoot(Key(path.c_str()), include_root_key)) {
           continue;
         }

@@ -53,6 +53,16 @@ static_assert(!UsableNtfsCursor({7, 9}, {7, 20}, 10));
 static_assert(!UsableNtfsCursor({6, 10}, {7, 20}, 10));
 static_assert(!UsableNtfsCursor({7, 21}, {7, 20}, 10));
 static_assert(FOPTS_BYTES >= (FO_NTFS_CHANGE_JOURNAL / 8) + 1);
+static_assert(IsNtfsMetadataPath("/system volume information"));
+static_assert(IsNtfsMetadataPath(
+    "/system volume information/3{3808876b-c176-4e48-b7ae-04046e6cc752}"));
+static_assert(IsNtfsMetadataPath("/$extend"));
+static_assert(IsNtfsMetadataPath("/$extend/$usnjrnl"));
+static_assert(!IsNtfsMetadataPath("/system volume information-user/file"));
+static_assert(!IsNtfsMetadataPath("/$extended/file"));
+static_assert(!IsNtfsMetadataPath("/program files/bareos/file"));
+static_assert(!IsNtfsMetadataPath("/data/system volume information/file"));
+static_assert(!IsNtfsMetadataPath("/data/$extend/file"));
 
 TEST(NtfsFileList, ScopesPathsToIncludeRoot)
 {
