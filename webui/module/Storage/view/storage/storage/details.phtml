@@ -75,8 +75,10 @@ $this->headTitle($title);
          <?php
             $form->prepare();
             $form->setAttribute('class','form-horizontal');
-            $form->setAttribute('action', $this->url('storage', array('action' => 'details', 'id' => $this->storagename), array('query' => array('action'=> 'label'))));
+            $form->setAttribute('action', $this->url('storage', array('action' => 'details', 'id' => $this->storagename)));
             echo $this->form()->openTag($form);
+            echo $this->formRow($form->get('action'));
+            echo $this->formRow($form->get('csrf'));
             echo $this->formRow($form->get('storage'));
             echo $this->formRow($form->get('pool'));
             echo '<p class="help-block">'.$this->translate("Assign media to this pool.").'</p>';
@@ -198,6 +200,8 @@ $this->headTitle($title);
 
    var basePath = "<?php echo $this->basePath(); ?>";
    var result = '<?php echo $this->escapeJs(str_replace(array("\n","\r"), "", $this->result)); ?>';
+   var storageName = <?php echo json_encode($this->storagename); ?>;
+   var storageActionUrl = <?php echo json_encode($this->url('storage', array('action' => 'details', 'id' => $this->storagename))); ?>;
 
    function attachImportExportSlotsTable() {
       $('#ie_slots').bootstrapTable({
@@ -237,7 +241,7 @@ $this->headTitle($title);
                      return '';
                   }
                   else {
-                     return '<span id="import-action"><a class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=import&storage=' . $this->storagename . '&srcslots='; ?>' + row.slotnr + '" title="<?php echo $this->translate("Import"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a></span>';
+                     return actionPostButton(storageActionUrl, { action: 'import', storage: storageName, srcslots: row.slotnr }, <?php echo json_encode($this->translate("Import")); ?>, 'glyphicon-import');
                   }
                }
             }
@@ -284,7 +288,7 @@ $this->headTitle($title);
                      return '';
                   }
                   else {
-                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=release&storage=' . $this->storagename . '&srcslots='; ?>' + row.slotnr + '"title="<?php echo $this->translate("Release"); ?>" id="btn-1"><span class="glyphicon glyphicon-eject"></span></a>';
+                     return actionPostButton(storageActionUrl, { action: 'release', storage: storageName, srcslots: row.slotnr }, <?php echo json_encode($this->translate("Release")); ?>, 'glyphicon-eject');
                   }
                }
             }
@@ -412,7 +416,7 @@ $this->headTitle($title);
                      return '';
                   }
                   else {
-                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=export&storage=' . $this->storagename . '&srcslots='; ?>' + row.slotnr + '" title="<?php echo $this->translate("Export"); ?>" id="btn-1"><span class="glyphicon glyphicon-export"></span></a>';
+                     return actionPostButton(storageActionUrl, { action: 'export', storage: storageName, srcslots: row.slotnr }, <?php echo json_encode($this->translate("Export")); ?>, 'glyphicon-export');
                   }
                }
             }
@@ -441,12 +445,12 @@ $this->headTitle($title);
 
       $('#ie-toolbar').on('click', '#btn-import-all', function() {
          $('#spinner').fadeIn('normal');
-         window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=import&storage=" . $this->storagename; ?>');
+         $(actionPostButton(storageActionUrl, { action: 'import', storage: storageName }, '', '')).appendTo('body').submit();
       });
 
       $('#slots-toolbar').on('click', '#btn-update-slots', function() {
          $('#spinner').fadeIn('normal');
-         window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=updateslots&storage=" . $this->storagename; ?>');
+         $(actionPostButton(storageActionUrl, { action: 'updateslots', storage: storageName }, '', '')).appendTo('body').submit();
       });
 
       $('#ie_slots').on('click', '#btn-1', function() {

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -236,29 +236,35 @@ $this->headTitle($title);
       if (s.length === 0) {
         $("#modal-004").modal();
       } else {
-         let url = "<?php echo $this->url('api/execute', array(), array()) . '?command=rerun&jobs=" + s + "'; ?>";
+         let url = "<?php echo $this->url('api/execute', array(), array()); ?>";
 
          $('#dir-messages').empty()
 
-         $.ajax({
-            url: url,
-            type: 'POST',
-            dataType: 'json',
-            timeout: 10000,
-            success: function(data) {
-               data.forEach((item) => {
-                  $('#dir-messages').append('<p>' + item + '</p>')
-               })
-            },
-            error: function() {
-               console.log('Error fetching data.')
-            },
-            timeout: function() {
-               console.log('Timeout fetching data.')
-            },
-            parsererror: function() {
-               console.log('Error parsing data.')
-            }
+         refreshCsrfToken(function(token) {
+            $.ajax({
+               url: url,
+               type: 'POST',
+               data: {
+                  action: 'rerun',
+                  jobs: s,
+                  csrf: token
+               },
+               dataType: 'json',
+               timeout: 10000,
+               success: function(data) {
+                  data.forEach((item) => {
+                     $('#dir-messages').append('<p>' + item + '</p>')
+                  })
+               },
+               error: function() {
+                  console.log('Error fetching data.')
+               },
+               parsererror: function() {
+                  console.log('Error parsing data.')
+               }
+            });
+         }, function(error) {
+            console.log(error);
          });
       }
    }

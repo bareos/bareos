@@ -44,6 +44,8 @@ if (strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
 }
 
 $directors = null;
+$cookie_secure = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+    || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 
 // Check for existing directors.ini and parse if present
 if (!file_exists($directors_ini)) {
@@ -268,10 +270,12 @@ return array(
             'options' => array(
                 'use_cookies' => true,
                 'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
+                'cookie_httponly' => true,
+                'cookie_secure' => $cookie_secure,
+                'cookie_samesite' => 'Strict',
                 'gc_maxlifetime' => '3600',
                 'cache_expire' => 3600,
-                'remember_me_seconds' => 3600,
-                'use_cookies' => true
+                'remember_me_seconds' => 3600
             ),
         ),
         'storage' => 'Laminas\Session\Storage\SessionArrayStorage',
