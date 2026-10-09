@@ -28,6 +28,7 @@
 
 #include "include/bareos.h"
 #include "stored/device_status_information.h"
+#include "stored/device_init.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
@@ -219,13 +220,14 @@ static void ListDevices(JobControlRecord* jcr,
     sp->send(msg, len);
 
     for (auto* device_resource : changer->device_resources) {
-      if (device_resource->dev) {
+      if (DeviceInitInProgress(device_resource->init_state.load())) {
+        len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
+      } else if (device_resource->dev) {
         len = Mmsg(msg, "   %s\n", device_resource->dev->print_name());
-        sp->send(msg, len);
       } else {
         len = Mmsg(msg, "   %s\n", device_resource->resource_name_);
-        sp->send(msg, len);
       }
+      sp->send(msg, len);
     }
   }
 
@@ -235,6 +237,23 @@ static void ListDevices(JobControlRecord* jcr,
       continue;
     }
     if (device_resource->count > 1) { continue; }
+
+    /* While the device is being initialized in the background its Device
+     * object may not be looked at by other threads. */
+    DeviceInitState init_state = device_resource->init_state.load();
+    if (DeviceInitInProgress(init_state)) {
+      len = Mmsg(msg,
+                 init_state == DeviceInitState::Pending
+                     ? T_("\nDevice \"%s\" is waiting to be initialized.\n")
+                     : T_("\nDevice \"%s\" is being initialized.\n"),
+                 device_resource->resource_name_);
+      sp->send(msg, len);
+      if (!sp->api) {
+        len = PmStrcpy(msg, "==\n");
+        sp->send(msg, len);
+      }
+      continue;
+    }
 
     dev = device_resource->dev;
     if (dev && dev->IsOpen()) {
@@ -326,7 +345,10 @@ static void ListDevices(JobControlRecord* jcr,
         sp->send(msg, len);
         SendBlockedStatus(dev, sp);
       } else {
-        len = Mmsg(msg, T_("\nDevice \"%s\" is not open or does not exist.\n"),
+        len = Mmsg(msg,
+                   init_state == DeviceInitState::Failed
+                       ? T_("\nDevice \"%s\" could not be initialized.\n")
+                       : T_("\nDevice \"%s\" is not open or does not exist.\n"),
                    device_resource->resource_name_);
         sp->send(msg, len);
       }
