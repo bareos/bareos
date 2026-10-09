@@ -1,0 +1,47 @@
+#
+# The NDMP TAPE agent is the Bareos Storage Daemon itself,
+# accessed via NDMP on its NDMP port.
+#
+Storage {
+  Name = ndmpfile
+  Address = @hostname@
+  Port = @sd2_port@                         # NDMP Port of the Bareos SD
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                         # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "ndmpadmin"                    # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Password = "ndmppassword"                 # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Device = FileStorage
+  Media Type = file
+  PairedStorage = LocalfileStorage
+}
+
+Storage {
+  Name = LocalfileStorage
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  Port = @sd_port@
+}
+
+Storage {
+  Name = ndmpfile-copy
+  Address = @hostname@
+  Port = @sd2_port@
+  Protocol = NDMPv4
+  Auth Type = Clear
+  Username = "ndmpadmin"
+  Password = "ndmppassword"
+  Device = FileStorage
+  Media Type = file
+  PairedStorage = ndmpfile-copytarget
+}
+
+Storage {
+  Name = ndmpfile-copytarget
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage2
+  Media Type = File
+  Port = @sd_port@
+}

@@ -237,7 +237,10 @@ static ndmp9_error ndmjob_tape_open(struct ndm_session* sess,
   if (touch_tape_lockfile(drive_name) < 0) return NDMP9_DEVICE_BUSY_ERR;
 
   fd = open(drive_name, omode);
-  if (fd < 0) { return NDMP9_PERMISSION_ERR; }
+  if (fd < 0) {
+    unlink_tape_lockfile(drive_name);
+    return NDMP9_PERMISSION_ERR;
+  }
 
   snprintf(pos_symlink_name, sizeof(pos_symlink_name), "%s.pos", drive_name);
   if (st.st_size == 0) {
@@ -249,12 +252,14 @@ static ndmp9_error ndmjob_tape_open(struct ndm_session* sess,
       gap.prev_size = 0;
       if (write(fd, &gap, sizeof gap) < (int)sizeof gap) {
         close(fd);
+        unlink_tape_lockfile(drive_name);
         return NDMP9_IO_ERR;
       }
 
       gap.rectype = SIMU_GAP_RT_EOT;
       if (write(fd, &gap, sizeof gap) < (int)sizeof gap) {
         close(fd);
+        unlink_tape_lockfile(drive_name);
         return NDMP9_IO_ERR;
       }
       lseek(fd, (off_t)0, 0);
@@ -266,18 +271,21 @@ static ndmp9_error ndmjob_tape_open(struct ndm_session* sess,
   rc = read(fd, &gap, sizeof gap);
   if (rc != sizeof gap) {
     close(fd);
+    unlink_tape_lockfile(drive_name);
     return NDMP9_NO_TAPE_LOADED_ERR;
   }
 
 #if 1
   if (gap.magic != SIMU_GAP_MAGIC) {
     close(fd);
+    unlink_tape_lockfile(drive_name);
     return NDMP9_IO_ERR;
   }
 #else
   if (gap.magic != SIMU_GAP_MAGIC || gap.rectype != SIMU_GAP_RT_BOT ||
       gap.size != 0) {
     close(fd);
+    unlink_tape_lockfile(drive_name);
     return NDMP9_IO_ERR;
   }
 #endif
@@ -328,9 +336,8 @@ static ndmp9_error ndmjob_tape_close(struct ndm_session* sess)
   struct ndm_tape_agent* ta = sess->tape_acb;
   off_t cur_pos;
 
-  /* TODO this is not called on an EOF from the DMA, so the lockfile
-   * will remain, although the spec says the tape service should be
-   * automatically closed */
+  /* also called by ndma_server_session() when the DMA disconnects without
+   * closing the tape, so the lockfile does not remain */
 
   if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
@@ -957,7 +964,7 @@ static void robot_state_load(struct ndm_session* sess, struct robot_state* rs)
     robot_state_init(rs);
     return;
   }
-  if (read(fd, (void*)rs, (sizeof(*rs)) < sizeof(*rs))) {
+  if (read(fd, (void*)rs, sizeof(*rs)) < (ssize_t)sizeof(*rs)) {
     robot_state_init(rs);
     close(fd);
     return;
@@ -977,7 +984,7 @@ static int robot_state_save(struct ndm_session* sess, struct robot_state* rs)
   snprintf(filename, sizeof filename, "%s/state", sess->robot_acb->sim_dir);
   fd = open(filename, O_WRONLY | O_TRUNC | O_CREAT, 0666);
   if (fd < 0) return -1;
-  if (write(fd, (void*)rs, (sizeof(*rs)) < sizeof(*rs))) {
+  if (write(fd, (void*)rs, sizeof(*rs)) < (ssize_t)sizeof(*rs)) {
     close(fd);
     return -1;
   }
@@ -1143,6 +1150,21 @@ static ndmp9_error execute_cdb_test_unit_ready(
   return NDMP9_NO_ERR;
 }
 
+static ndmp9_error execute_cdb_initialize_element_status(
+    struct ndm_session* sess,
+    ndmp9_execute_cdb_request* request,
+    ndmp9_execute_cdb_reply* reply)
+{
+  if (request->cdb.cdb_len != 6)
+    return scsi_fail_with_sense_code(sess, reply, SCSI_STATUS_CHECK_CONDITION,
+                                     SCSI_SENSE_KEY_ILLEGAL_REQUEST,
+                                     ASQ_INVALID_FIELD_IN_CDB);
+
+  /* the simulated inventory is always up to date */
+
+  return NDMP9_NO_ERR;
+}
+
 static ndmp9_error execute_cdb_inquiry(struct ndm_session* sess,
                                        ndmp9_execute_cdb_request* request,
                                        ndmp9_execute_cdb_reply* reply)
@@ -1194,7 +1216,7 @@ static ndmp9_error execute_cdb_mode_sense_6(struct ndm_session* sess,
   int page, subpage;
   char* response;
   int response_len;
-  char* p;
+  unsigned char* p;
 
   if (request->cdb.cdb_len != 6 || request->data_dir != NDMP9_SCSI_DATA_DIR_IN)
     return scsi_fail_with_sense_code(sess, reply, SCSI_STATUS_CHECK_CONDITION,
@@ -1211,9 +1233,10 @@ static ndmp9_error execute_cdb_mode_sense_6(struct ndm_session* sess,
             SCSI_SENSE_KEY_ILLEGAL_REQUEST, ASQ_INVALID_FIELD_IN_CDB);
 
       response_len = 24;
-      p = response = NDMOS_API_MALLOC(response_len);
+      response = NDMOS_API_MALLOC(response_len);
       if (!response) return NDMP9_NO_MEM_ERR;
       NDMOS_API_BZERO(response, response_len);
+      p = (unsigned char*)response;
       *(p++) = response_len;
       *(p++) = 0;    /* reserved medium type */
       *(p++) = 0;    /* reserved device-specific parameter */
@@ -1438,6 +1461,8 @@ static struct {
 } cdb_executors[] = {
     {SCSI_CMD_TEST_UNIT_READY, execute_cdb_test_unit_ready},
     {SCSI_CMD_INQUIRY, execute_cdb_inquiry},
+    {SCSI_CMD_INITIALIZE_ELEMENT_STATUS,
+     execute_cdb_initialize_element_status},
     {SCSI_CMD_MODE_SENSE_6, execute_cdb_mode_sense_6},
     {SCSI_CMD_READ_ELEMENT_STATUS, execute_cdb_read_element_status},
     {SCSI_CMD_MOVE_MEDIUM, execute_cdb_move_medium},
@@ -1456,6 +1481,7 @@ static ndmp9_error ndmjob_scsi_open(struct ndm_session* sess, char* name)
   if (stat(name, &st) < 0) return NDMP9_NO_DEVICE_ERR;
   if (!S_ISDIR(st.st_mode)) return NDMP9_NO_DEVICE_ERR;
 
+  if (ra->sim_dir) NDMOS_API_FREE(ra->sim_dir);
   ra->sim_dir = NDMOS_API_STRDUP(name);
   ra->scsi_state.error = NDMP9_NO_ERR;
 
