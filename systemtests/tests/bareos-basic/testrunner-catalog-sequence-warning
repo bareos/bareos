@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# The ceiling of 70% of the int32 maximum value.
+seq_70_pct=1503238553
+status_output="${tmp}/catalog-sequence-warning.log"
+
+start_test
+
+cat <<EOF >"${tmp}/bconcmds"
+.sql query="SELECT setval('job_jobid_seq', $((seq_70_pct - 1)), true);"
+
+reload
+@$out ${status_output}
+status configuration
+EOF
+run_bconsole "${tmp}/bconcmds"
+
+if ! grep -Fq \
+  "Catalog \"MyCatalog\": sequence \"job_jobid_seq\" for job.jobid will reach its maximum value soon (next value: ${seq_70_pct}, maximum value: 2147483647)." \
+  "${status_output}"; then
+  echo "Catalog sequence warning was not reported" >&2
+  cat "${status_output}" >&2
+  estat=1
+fi
+
+end_test
