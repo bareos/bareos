@@ -21,6 +21,7 @@
 #include "os_detector.h"
 
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -108,6 +109,26 @@ static std::vector<std::string> SplitWords(std::string_view value)
   return words;
 }
 
+static bool IsExecutableInPath(std::string_view name)
+{
+  const char* path_env = std::getenv("PATH");
+  if (path_env == nullptr) return false;
+
+  std::string_view path(path_env);
+  while (!path.empty()) {
+    const size_t separator = path.find(':');
+    const auto directory = path.substr(0, separator);
+    if (!directory.empty()) {
+      const std::string candidate
+          = std::string(directory) + "/" + std::string(name);
+      if (access(candidate.c_str(), X_OK) == 0) return true;
+    }
+    if (separator == std::string_view::npos) break;
+    path.remove_prefix(separator + 1);
+  }
+  return false;
+}
+
 OsInfo ParseOsRelease(const std::string& content)
 {
   OsInfo info;
@@ -152,15 +173,14 @@ OsInfo DetectOs()
   struct utsname uts{};
   if (uname(&uts) == 0) info.arch = uts.machine;
 
-  // Detect package manager
-  if (access("/usr/bin/apt-get", X_OK) == 0
-      || access("/bin/apt-get", X_OK) == 0) {
+  // Detect only package managers that command execution can resolve in PATH.
+  if (IsExecutableInPath("apt-get")) {
     info.pkg_mgr = PackageManager::Apt;
-  } else if (access("/usr/bin/dnf", X_OK) == 0) {
+  } else if (IsExecutableInPath("dnf")) {
     info.pkg_mgr = PackageManager::Dnf;
-  } else if (access("/usr/bin/yum", X_OK) == 0) {
+  } else if (IsExecutableInPath("yum")) {
     info.pkg_mgr = PackageManager::Yum;
-  } else if (access("/usr/bin/zypper", X_OK) == 0) {
+  } else if (IsExecutableInPath("zypper")) {
     info.pkg_mgr = PackageManager::Zypper;
   }
 
