@@ -315,3 +315,59 @@ TEST(WsCodec, RecvMessageTimesOutWhenFramePayloadStalls)
     EXPECT_NE(std::string(error.what()).find("timeout"), std::string::npos);
   }
 }
+
+TEST(WsCodec, ReassemblesFragmentedTextMessage)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto first = BuildMaskedFrame(0x1u, "hello ", false);
+  const auto continuation = BuildMaskedFrame(0x0u, "world");
+  WriteAll(sockets.peer(), first.data(), first.size());
+  WriteAll(sockets.peer(), continuation.data(), continuation.size());
+
+  EXPECT_EQ(codec.RecvMessage(), "hello world");
+}
+
+TEST(WsCodec, RepliesToPingBeforeReceivingNextMessage)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto ping = BuildMaskedFrame(0x9u, "keepalive");
+  const auto text = BuildMaskedFrame(0x1u, "message");
+  WriteAll(sockets.peer(), ping.data(), ping.size());
+  WriteAll(sockets.peer(), text.data(), text.size());
+
+  EXPECT_EQ(codec.RecvMessage(), "message");
+  const auto pong = ReadSome(sockets.peer());
+  ASSERT_EQ(pong.size(), 11u);
+  EXPECT_EQ(static_cast<uint8_t>(pong[0]), 0x8Au);
+  EXPECT_EQ(static_cast<uint8_t>(pong[1]), 9u);
+  EXPECT_EQ(pong.substr(2), "keepalive");
+}
+
+TEST(WsCodec, RepliesToCloseAndMarksConnectionClosed)
+{
+  SocketPair sockets;
+  WriteAll(sockets.peer(), kValidHandshakeRequest.data(),
+           kValidHandshakeRequest.size());
+  WsCodec codec = AcceptCodec(sockets);
+  (void)ReadSome(sockets.peer());
+
+  const auto close = BuildMaskedFrame(0x8u, "");
+  WriteAll(sockets.peer(), close.data(), close.size());
+
+  EXPECT_TRUE(codec.RecvMessage().empty());
+  EXPECT_TRUE(codec.IsClosed());
+  const auto response = ReadSome(sockets.peer());
+  ASSERT_EQ(response.size(), 2u);
+  EXPECT_EQ(static_cast<uint8_t>(response[0]), 0x88u);
+  EXPECT_EQ(static_cast<uint8_t>(response[1]), 0u);
+}
