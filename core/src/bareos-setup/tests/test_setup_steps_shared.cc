@@ -39,6 +39,7 @@
 #include "os_detector.h"
 #include "setup_session.h"
 #include "tui_wizard.h"
+#include "ws_codec.h"
 
 TEST(BareosSetupStepsShared, ValidatesCustomRepositoryUrls)
 {
@@ -233,7 +234,6 @@ class FakeToolPath {
 
 }  // namespace
 
-TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
 TEST(BareosSetupBrowserLauncher, ReportsFailureWhenAvailableLaunchersFail)
 {
   FakeToolPath tools({"xdg-open", "open", "sensible-browser"}, false);
@@ -248,6 +248,7 @@ TEST(BareosSetupBrowserLauncher, ReportsFailureWhenAvailableLaunchersFail)
   EXPECT_FALSE(TryOpenBrowser(context, "http://127.0.0.1:19101/?token=test"));
 }
 
+TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "systemctl", "sudo"});
   SetupContext context;
@@ -862,6 +863,35 @@ TEST(BareosSetupCommandRunner, CreatesTemporaryFilesInProtectedDirectory)
   SetupContext dry_context(true);
   EXPECT_THROW(dry_context.CreateTemporaryFile("bareos-setup-test"),
                std::logic_error);
+}
+
+TEST(BareosSetupSession, ReportsDryRunStateOverWebSocket)
+{
+  int sockets[2];
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  SetupContext context(true);
+  std::thread session([&] {
+    RunSetupSession(sockets[0], context);
+    close(sockets[0]);
+  });
+
+  try {
+    WsCodec client = WsCodec::FromUpgradedConnection(sockets[1]);
+    client.SendText(R"({"action":"state"})");
+    const auto state = client.RecvMessage();
+    EXPECT_NE(state.find("\"dry_run\":true"), std::string::npos);
+    EXPECT_NE(state.find("\"subscription_credentials_in_browser\":false"),
+              std::string::npos);
+
+    client.SendClose();
+  } catch (...) {
+    shutdown(sockets[1], SHUT_RDWR);
+    close(sockets[1]);
+    session.join();
+    throw;
+  }
+  close(sockets[1]);
+  session.join();
 }
 
 TEST(BareosSetupCommandRunner, ReportsNoMissingToolsWhenAllPresent)
@@ -1722,6 +1752,13 @@ TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
   // without /etc/os-release so it can offer a manual repository choice.
   const auto info = DetectOs();
   EXPECT_FALSE(info.arch.empty());
+}
+
+TEST(BareosSetupStepsShared, DetectsPackageManagerFromPath)
+{
+  FakeToolPath tools({"dnf"}, false);
+
+  EXPECT_EQ(DetectOs().pkg_mgr, PackageManager::Dnf);
 }
 
 TEST(BareosSetupStepsShared, ValidatesRepositoryOsPaths)
