@@ -79,6 +79,7 @@ struct mtop {
 #define MTCOMPRESSION 32 /* Control compression with SCSI mode page 15.  */
 #define MTSETPART 33     /* Change the active tape partition.  */
 #define MTMKPART 34      /* Format the tape with one or two partitions.  */
+#define MTWEOFI 35       /* Write an end-of-file mark in immediate mode */
 
 /* structure for MTIOCGET - mag tape get status command */
 
@@ -210,22 +211,22 @@ struct mtconfiginfo {
    There is room for more generic status bits here, but I don't
    know which of them are reserved. At least three or so should
    be added to make this really useful.  */
-#define GMT_EOF(x) ((x)&0x80000000)
-#define GMT_BOT(x) ((x)&0x40000000)
-#define GMT_EOT(x) ((x)&0x20000000)
-#define GMT_SM(x) ((x)&0x10000000)  /* DDS setmark */
-#define GMT_EOD(x) ((x)&0x08000000) /* DDS EOD */
-#define GMT_WR_PROT(x) ((x)&0x04000000)
+#define GMT_EOF(x) ((x) & 0x80000000)
+#define GMT_BOT(x) ((x) & 0x40000000)
+#define GMT_EOT(x) ((x) & 0x20000000)
+#define GMT_SM(x) ((x) & 0x10000000)  /* DDS setmark */
+#define GMT_EOD(x) ((x) & 0x08000000) /* DDS EOD */
+#define GMT_WR_PROT(x) ((x) & 0x04000000)
 /* #define GMT_ ?       ((x) & 0x02000000) */
-#define GMT_ONLINE(x) ((x)&0x01000000)
-#define GMT_D_6250(x) ((x)&0x00800000)
-#define GMT_D_1600(x) ((x)&0x00400000)
-#define GMT_D_800(x) ((x)&0x00200000)
+#define GMT_ONLINE(x) ((x) & 0x01000000)
+#define GMT_D_6250(x) ((x) & 0x00800000)
+#define GMT_D_1600(x) ((x) & 0x00400000)
+#define GMT_D_800(x) ((x) & 0x00200000)
 /* #define GMT_ ?       ((x) & 0x00100000) */
 /* #define GMT_ ?       ((x) & 0x00080000) */
-#define GMT_DR_OPEN(x) ((x)&0x00040000) /* Door open (no tape).  */
+#define GMT_DR_OPEN(x) ((x) & 0x00040000) /* Door open (no tape).  */
 /* #define GMT_ ?       ((x) & 0x00020000) */
-#define GMT_IM_REP_EN(x) ((x)&0x00010000) /* Immediate report mode.*/
+#define GMT_IM_REP_EN(x) ((x) & 0x00010000) /* Immediate report mode.*/
 /* 16 generic status bits unused.  */
 
 
