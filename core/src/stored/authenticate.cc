@@ -26,6 +26,9 @@
  */
 
 #include "include/bareos.h"
+#include "lib/bauth.h"
+#include "lib/connect_accept.h"
+#include "lib/global_resource.h"
 #include "lib/s_password.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
@@ -40,8 +43,9 @@
 
 namespace storagedaemon {
 
-const TlsResource* Auth::get(global_resource::Type auth_type,
-                             std::string_view name)
+std::unique_ptr<auth::InboundAuthenticator> Auth::get_info_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   auto* myself
       = dynamic_cast<StorageResource*>(p->GetNextRes(R_STORAGE, nullptr));
@@ -72,7 +76,7 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
       data.job.password_.value = jcr->sd_auth_key;
 
       type = inbound_type::Job;
-      return &data.job;
+      return std::make_unique<Md5InboundAuthenticator>(data.job);
     } break;
     case global_resource::Type::Director: {
       auto* res = dynamic_cast<DirectorResource*>(
@@ -108,12 +112,11 @@ const TlsResource* Auth::get(global_resource::Type auth_type,
         }
       }
 
-
       auto& data = director.emplace();
       data.res = res;
 
       type = inbound_type::Director;
-      return res;
+      return std::make_unique<Md5InboundAuthenticator>(*res);
     } break;
     default: {
     } break;

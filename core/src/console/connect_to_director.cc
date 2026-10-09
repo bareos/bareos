@@ -25,6 +25,8 @@
 #include "console/console_output.h"
 #include "console/console_conf.h"
 #include "include/jcr.h"
+#include "lib/bauth.h"
+#include "lib/connect_accept.h"
 #include "lib/global_resource.h"
 #include "lib/bstringlist.h"
 #include "lib/bsock_tcp.h"

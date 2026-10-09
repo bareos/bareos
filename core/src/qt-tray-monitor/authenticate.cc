@@ -26,6 +26,8 @@
  * Nicolas Boichat, August MMIV
  */
 
+#include "lib/bauth.h"
+#include "lib/connect_accept.h"
 #include "lib/hello.h"
 #include "monitoritem.h"
 #include "authenticate.h"
@@ -154,6 +156,7 @@ AuthenticationResult AuthenticateWithDaemon(MonitorItem* item,
     case R_STORAGE: {
       auto* sd = jcr->store_bsock;
       auto* storage = static_cast<StorageResource*>(item->resource());
+
       if (!BareosConnect<global_resource::Type::Director,
                          global_resource::Type::Storage>(
               jcr, sd, monitor->resource_name_, storage)) {

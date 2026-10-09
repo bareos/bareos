@@ -92,9 +92,10 @@ static bool ScriptDirAllowed(JobControlRecord*,
     }
   }
 
-  Dmsg2(200,
-        "ScriptDirAllowed: script %s %s allowed by Allowed Script Dir setting",
-        script->command.c_str(), (allowed) ? "" : "NOT");
+  Dmsg2(
+      200,
+      "ScriptDirAllowed: script %s %s allowed by Allowed Script Dir setting\n",
+      script->command.c_str(), (allowed) ? "" : "NOT");
 
   return allowed;
 }
