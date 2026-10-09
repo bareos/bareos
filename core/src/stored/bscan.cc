@@ -35,6 +35,7 @@
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
 #include "stored/stored_jcr_impl.h"
+#include "stored/attribute_dedup.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
@@ -56,6 +57,9 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/compression.h"
+#include <map>
+#include <utility>
+#include <vector>
 
 /* Dummy functions */
 namespace storagedaemon {
@@ -97,6 +101,8 @@ static bool UpdateDigestRecord(BareosDb* db,
                                char* digest,
                                DeviceRecord* rec,
                                int type);
+static bool ProcessBufferedAttributeRecord(DeviceRecord* rec);
+static void FlushPendingAttributeGroup(std::pair<uint32_t, uint32_t> key);
 
 /* Local variables */
 static Device* dev = nullptr;
@@ -114,6 +120,20 @@ static FileDbRecord fr;
 static Session_Label label;
 static Session_Label elabel;
 static Attributes* attr;
+
+/* Buffers STREAM_UNIX_ATTRIBUTES(_EX) and digest records for the file
+ * currently being scanned, keyed by (VolSessionId, VolSessionTime), so that
+ * a plugin's corrected-attributes resend -- which arrives on the medium
+ * *after* the file's digest, see fd_plugins.cc/PluginSave() -- does not
+ * create a second File row nor leave the digest attached to the superseded
+ * (uncorrected) row. Mirrors DoAppendData()'s ProcessedFile buffering in
+ * append.cc and is flushed in the same de-duplicated order via
+ * SelectAttributesToSend(). Restore object records are not buffered here;
+ * they are unrelated to attribute resends and continue to be processed
+ * immediately. */
+static std::map<std::pair<uint32_t, uint32_t>, ProcessedFile>
+    pending_attribute_groups;
+
 
 static time_t lasttime = 0;
 
@@ -467,6 +487,149 @@ static inline bool UnpackRestoreObject(JobControlRecord*,
 }
 
 /**
+ * Returns true if this record type must be buffered per FileIndex before
+ * being applied to the catalog (see FlushPendingAttributeGroup()) instead
+ * of being processed immediately: STREAM_UNIX_ATTRIBUTES(_EX) and every
+ * digest stream. Restore objects and data streams are not buffered; they
+ * are unrelated to the plugin attribute-resend mechanism and continue to
+ * be processed immediately.
+ */
+static bool IsBufferedAttributeStream(int32_t masked_stream)
+{
+  switch (masked_stream) {
+    case STREAM_UNIX_ATTRIBUTES:
+    case STREAM_UNIX_ATTRIBUTES_EX:
+    case STREAM_MD5_DIGEST:
+    case STREAM_SHA1_DIGEST:
+    case STREAM_SHA256_DIGEST:
+    case STREAM_SHA512_DIGEST:
+    case STREAM_XXH128_DIGEST:
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Applies one previously buffered (or standalone) attribute or digest
+ * record to the catalog. This is exactly what bscan used to do inline in
+ * RecordCb()'s switch before buffering was introduced; it is called from
+ * FlushPendingAttributeGroup() in de-duplicated order, so a digest always
+ * lands on the File row created from the surviving (last) attribute
+ * record.
+ */
+static bool ProcessBufferedAttributeRecord(DeviceRecord* rec)
+{
+  char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
+
+  switch (rec->maskedStream) {
+    case STREAM_UNIX_ATTRIBUTES:
+    case STREAM_UNIX_ATTRIBUTES_EX: {
+      JobControlRecord* mjcr
+          = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
+      if (!mjcr) {
+        if (mr.VolJobs > 0) {
+          Pmsg2(000,
+                T_("Could not find Job for SessId=%" PRIu32 " SessTime=%" PRIu32
+                   " record.\n"),
+                rec->VolSessionId, rec->VolSessionTime);
+        } else {
+          ignored_msgs++;
+        }
+        return true;
+      }
+
+      if (!UnpackAttributesRecord(bjcr, rec->Stream, rec->data, rec->data_len,
+                                  attr)) {
+        Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
+      }
+
+      if (g_verbose > 1) {
+        DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp),
+                   &attr->LinkFI);
+        BuildAttrOutputFnames(bjcr, attr);
+        PrintLsOutput(bjcr, attr);
+      }
+      fr.JobId = mjcr->JobId;
+      fr.FileId = 0;
+      num_files++;
+      if (g_verbose && (num_files & 0x7FFF) == 0) {
+        char ed1[30], ed2[30], ed3[30], ed4[30];
+        Pmsg4(000, T_("%s file records. At file:blk=%s:%s bytes=%s\n"),
+              edit_uint64_with_commas(num_files, ed1),
+              edit_uint64_with_commas(rec->File, ed2),
+              edit_uint64_with_commas(rec->Block, ed3),
+              edit_uint64_with_commas(mr.VolBytes, ed4));
+      }
+      CreateFileAttributesRecord(db, mjcr, attr->fname, attr->lname, attr->type,
+                                 attr->attr, rec);
+      FreeJcr(mjcr);
+      break;
+    }
+
+    case STREAM_MD5_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_MD5_SIZE, true);
+      if (g_verbose > 1) { Pmsg1(000, T_("Got MD5 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_MD5);
+      break;
+
+    case STREAM_SHA1_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_SHA1_SIZE, true);
+      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA1 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA1);
+      break;
+
+    case STREAM_SHA256_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_SHA256_SIZE, true);
+      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA256 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA256);
+      break;
+
+    case STREAM_SHA512_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_SHA512_SIZE, true);
+      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA512 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA512);
+      break;
+
+    case STREAM_XXH128_DIGEST:
+      BinToBase64(digest, sizeof(digest), (char*)rec->data,
+                  CRYPTO_DIGEST_XXH128_SIZE, true);
+      if (g_verbose > 1) { Pmsg1(000, T_("Got XXH128 record: %s\n"), digest); }
+      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_XXH128);
+      break;
+
+    default:
+      break;
+  }
+
+  return true;
+}
+
+/**
+ * Flushes (applies to the catalog) all records buffered for the given
+ * job's current FileIndex, in SelectAttributesToSend() order -- i.e. any
+ * digest is applied after the surviving (last) Unix-attribute record, so
+ * it lands on the right File row. No-op if nothing is buffered for key.
+ */
+static void FlushPendingAttributeGroup(std::pair<uint32_t, uint32_t> key)
+{
+  auto it = pending_attribute_groups.find(key);
+  if (it == pending_attribute_groups.end()) { return; }
+
+  for (std::size_t i : SelectAttributesToSend(it->second.GetAttributes())) {
+    DeviceRecord record = it->second.GetAttributes()[i].GetData();
+    record.maskedStream = record.Stream & STREAMMASK_TYPE;
+    ProcessBufferedAttributeRecord(&record);
+  }
+
+  pending_attribute_groups.erase(it);
+}
+
+/**
  * Returns: true  if OK
  *          false if error
  */
@@ -479,7 +642,6 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   DeviceBlock* block = dcr->block;
   PoolMem sql_buffer;
   db_int64_ctx jmr_count;
-  char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
   if (rec->data_len > 0) {
     mr.VolBytes
@@ -692,6 +854,12 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             break;
           }
 
+          /* Flush any attribute/digest records still buffered for this
+           * job's last file (e.g. a plugin's corrected-attributes resend
+           * whose flush was still pending) before finalizing the job. */
+          FlushPendingAttributeGroup(
+              std::make_pair(rec->VolSessionId, rec->VolSessionTime));
+
           // Do the final update to the Job record
           UpdateJobRecord(db, &jr, &elabel, rec);
 
@@ -712,6 +880,20 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         break;
 
       case EOT_LABEL: /* end of all tapes */
+        /* Flush any attribute/digest records still buffered for any job
+         * (defensive: covers a truncated/interrupted volume where no
+         * EOS_LABEL was seen for one or more jobs). Collect the keys first
+         * since FlushPendingAttributeGroup() erases from the map, which
+         * must not happen while iterating it. */
+        {
+          std::vector<std::pair<uint32_t, uint32_t>> pending_keys;
+          pending_keys.reserve(pending_attribute_groups.size());
+          for (auto& entry : pending_attribute_groups) {
+            pending_keys.push_back(entry.first);
+          }
+          for (auto& key : pending_keys) { FlushPendingAttributeGroup(key); }
+        }
+
         // Wiffle through all jobs still open and close them.
         if (update_db) {
           for (auto mdcr : my_dev->attached_dcrs) {
@@ -762,37 +944,31 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   dcr = mjcr->sd_impl->read_dcr;
   if (dcr->VolFirstIndex == 0) { dcr->VolFirstIndex = block->FirstIndex; }
 
+  /* Buffer STREAM_UNIX_ATTRIBUTES(_EX) and digest records for this
+   * FileIndex instead of processing them immediately, so a plugin's
+   * corrected-attributes resend (which arrives on the medium after the
+   * file's digest) does not create a duplicate File row nor leave the
+   * digest attached to the superseded (uncorrected) row. See
+   * FlushPendingAttributeGroup()/ProcessBufferedAttributeRecord(). */
+  if (IsBufferedAttributeStream(rec->maskedStream)) {
+    auto key = std::make_pair(rec->VolSessionId, rec->VolSessionTime);
+    auto it = pending_attribute_groups.find(key);
+    if (it != pending_attribute_groups.end()
+        && it->second.GetFileIndex() != rec->FileIndex) {
+      FlushPendingAttributeGroup(key);
+      it = pending_attribute_groups.end();
+    }
+    if (it == pending_attribute_groups.end()) {
+      it = pending_attribute_groups.emplace(key, ProcessedFile{rec->FileIndex})
+               .first;
+    }
+    it->second.AddAttribute(rec);
+    FreeJcr(mjcr);
+    return true;
+  }
+
   // File Attributes stream
   switch (rec->maskedStream) {
-    case STREAM_UNIX_ATTRIBUTES:
-    case STREAM_UNIX_ATTRIBUTES_EX:
-      if (!UnpackAttributesRecord(my_bjcr, rec->Stream, rec->data,
-                                  rec->data_len, attr)) {
-        Emsg0(M_ERROR_TERM, 0, T_("Cannot continue.\n"));
-      }
-
-      if (g_verbose > 1) {
-        DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp),
-                   &attr->LinkFI);
-        BuildAttrOutputFnames(my_bjcr, attr);
-        PrintLsOutput(my_bjcr, attr);
-      }
-      fr.JobId = mjcr->JobId;
-      fr.FileId = 0;
-      num_files++;
-      if (g_verbose && (num_files & 0x7FFF) == 0) {
-        char ed1[30], ed2[30], ed3[30], ed4[30];
-        Pmsg4(000, T_("%s file records. At file:blk=%s:%s bytes=%s\n"),
-              edit_uint64_with_commas(num_files, ed1),
-              edit_uint64_with_commas(rec->File, ed2),
-              edit_uint64_with_commas(rec->Block, ed3),
-              edit_uint64_with_commas(mr.VolBytes, ed4));
-      }
-      CreateFileAttributesRecord(db, mjcr, attr->fname, attr->lname, attr->type,
-                                 attr->attr, rec);
-      FreeJcr(mjcr);
-      break;
-
     case STREAM_RESTORE_OBJECT:
       if (!UnpackRestoreObject(my_bjcr, rec->Stream, rec->data, rec->data_len,
                                &rop)) {
@@ -852,41 +1028,6 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_WIN32_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len;
       FreeJcr(mjcr); /* done using JobControlRecord */
-      break;
-
-    case STREAM_MD5_DIGEST:
-      BinToBase64(digest, sizeof(digest), (char*)rec->data,
-                  CRYPTO_DIGEST_MD5_SIZE, true);
-      if (g_verbose > 1) { Pmsg1(000, T_("Got MD5 record: %s\n"), digest); }
-      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_MD5);
-      break;
-
-    case STREAM_SHA1_DIGEST:
-      BinToBase64(digest, sizeof(digest), (char*)rec->data,
-                  CRYPTO_DIGEST_SHA1_SIZE, true);
-      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA1 record: %s\n"), digest); }
-      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA1);
-      break;
-
-    case STREAM_SHA256_DIGEST:
-      BinToBase64(digest, sizeof(digest), (char*)rec->data,
-                  CRYPTO_DIGEST_SHA256_SIZE, true);
-      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA256 record: %s\n"), digest); }
-      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA256);
-      break;
-
-    case STREAM_SHA512_DIGEST:
-      BinToBase64(digest, sizeof(digest), (char*)rec->data,
-                  CRYPTO_DIGEST_SHA512_SIZE, true);
-      if (g_verbose > 1) { Pmsg1(000, T_("Got SHA512 record: %s\n"), digest); }
-      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_SHA512);
-      break;
-
-    case STREAM_XXH128_DIGEST:
-      BinToBase64(digest, sizeof(digest), (char*)rec->data,
-                  CRYPTO_DIGEST_XXH128_SIZE, true);
-      if (g_verbose > 1) { Pmsg1(000, T_("Got XXH128 record: %s\n"), digest); }
-      UpdateDigestRecord(db, digest, rec, CRYPTO_DIGEST_XXH128);
       break;
 
     case STREAM_ENCRYPTED_SESSION_DATA:

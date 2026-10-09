@@ -101,7 +101,8 @@ static int send_data(JobControlRecord* jcr,
                      DIGEST* signature_digest);
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
-                             int& data_stream);
+                             int& data_stream,
+                             bool reuse_file_index);
 #if defined(WIN32_VSS)
 static void CloseVssBackupSession(JobControlRecord* jcr);
 #endif
@@ -847,7 +848,14 @@ good_rtn:
 bail_out:
   if (jcr->IsIncomplete() || jcr->IsJobCanceled()) { rtnstat = 0; }
   if (plugin_started) {
-    SendPluginName(jcr, sd, false); /* signal end of plugin data */
+    if (ff_pkt->defer_plugin_name_end) {
+      /* Let the caller (PluginSave()) send the "end of plugin data" marker
+       * later, once it has had a chance to resend corrected attributes
+       * (same FileIndex) while still inside this bracket. */
+      ff_pkt->plugin_name_end_pending = true;
+    } else {
+      SendPluginName(jcr, sd, false); /* signal end of plugin data */
+    }
   }
   if (ff_pkt->opt_plugin) {
     jcr->fd_impl->plugin_sp = NULL; /* sp is local to this function */
@@ -1602,7 +1610,8 @@ static std::optional<int32_t> get_next_findex(JobControlRecord* jcr)
 
 bool EncodeAndSendAttributes(JobControlRecord* jcr,
                              FindFilesPacket* ff_pkt,
-                             int& data_stream)
+                             int& data_stream,
+                             bool reuse_file_index)
 {
   BareosSocket* sd = jcr->store_bsock;
   PoolMem attribs(PM_NAME), attribsExBuf(PM_NAME);
@@ -1637,7 +1646,12 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname,
         attribs.c_str(), attribsEx);
 
-  if (std::optional findex = get_next_findex(jcr)) {
+  if (reuse_file_index) {
+    /* This is a corrected re-send of the attributes of the file that was
+     * assigned the current jcr->JobFiles/ff_pkt->FileIndex just before
+     * (e.g. a plugin reporting the real st_size/st_blocks once its
+     * endBackupFile() returns) -- do not consume a new FileIndex. */
+  } else if (std::optional findex = get_next_findex(jcr)) {
     ff_pkt->FileIndex = *findex;
     PmStrcpy(jcr->fd_impl->last_fname, ff_pkt->fname);
   } else {

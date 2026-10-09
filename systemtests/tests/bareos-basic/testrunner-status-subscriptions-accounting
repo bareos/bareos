@@ -1,0 +1,614 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+#
+# Test the output of "status subscriptions accounting", the real,
+# File.LStat-based accounting report, against a backup of a handful of
+# files with known, exact sizes -- including one whose size is not a
+# multiple of 512 bytes, to exercise the block-rounding path -- plus a
+# directory and a symlink to confirm non-regular catalog rows are
+# excluded from the file count and byte total. Also runs a second,
+# Incremental job with one file resized to confirm the multi-job chain
+# de-duplication (latest JobTDate wins per catalog path) still works.
+#
+record_file_stats()
+{
+  local phase="$1" f
+  if on_windows_host; then
+    return
+  fi
+
+  {
+    echo "=== source stat: ${phase} ==="
+    date
+    for f in "$tmp"/acct-data/file-*.bin; do
+      if [ "$(uname -s)" == FreeBSD ]; then
+        stat -f \
+          'path=%N size=%z blocks=%b blksize=%k inode=%i mtime=%m ctime=%c' \
+          "$f"
+      else
+        stat -c \
+          'path=%n size=%s blocks=%b block-unit=%B inode=%i mtime=%Y ctime=%Z' \
+          "$f"
+      fi
+    done
+  } >>"$tmp/accounting-source-stats.log" 2>&1
+}
+
+record_filesystem_info()
+{
+  local dataset
+  if on_windows_host; then
+    return
+  fi
+
+  {
+    echo "=== filesystem ==="
+    uname -a
+    df -T "$tmp/acct-data" || df "$tmp/acct-data"
+    dataset="$(df -P "$tmp/acct-data" | awk 'END { print $1 }')"
+    if command -v zfs >/dev/null 2>&1; then
+      echo "=== ZFS dataset: ${dataset} ==="
+      zfs get -H -o name,property,value \
+        compression,recordsize,dedup,sync,logicalused,used "$dataset" \
+        || true
+    fi
+  } >>"$tmp/accounting-source-stats.log" 2>&1
+}
+
+record_catalog_stats()
+{
+  local phase="$1"
+  run_bconsole - <<END_OF_DATA || true
+@$out $tmp/accounting-catalog-${phase}.log
+.sql query="SELECT 'CATALOG_ROW jobid=' || j.JobId || \
+' level=' || j.Level || ' jobtdate=' || j.JobTDate || \
+' pathid=' || f.PathId || ' file=' || f.Name || \
+' fileindex=' || f.FileIndex || ' size=' || s.st_size || \
+' blocks=' || s.st_blocks || ' mtime=' || s.st_mtime \
+FROM File f JOIN Job j USING (JobId) \
+JOIN FileSet fs USING (FileSetId) \
+CROSS JOIN LATERAL decode_lstat( \
+f.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
+WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
+AND f.Name IN ( \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
+ORDER BY j.JobTDate, j.JobId, f.PathId, f.Name"
+.sql query="SELECT 'SELECTED_ROW jobid=' || recent.JobId || \
+' jobtdate=' || recent.JobTDate || ' pathid=' || recent.PathId || \
+' file=' || recent.Name || ' fileindex=' || recent.FileIndex || \
+' size=' || s.st_size || ' blocks=' || s.st_blocks || \
+' mtime=' || s.st_mtime \
+FROM (SELECT DISTINCT ON (f.PathId, f.Name) \
+f.JobId, j.JobTDate, f.PathId, f.Name, f.FileIndex, f.LStat \
+FROM File f JOIN Job j USING (JobId) \
+JOIN FileSet fs USING (FileSetId) \
+WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
+AND f.Name IN ( \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
+ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC) recent \
+CROSS JOIN LATERAL decode_lstat( \
+recent.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
+ORDER BY recent.PathId, recent.Name"
+END_OF_DATA
+}
+
+catalog_accounted_totals()
+{
+  local phase="$1" row size blocks files=0 bytes=0 logical_bytes=0
+  while IFS= read -r row; do
+    if [[ "$row" =~ SELECTED_ROW.*size=([0-9]+)\ blocks=([0-9]+)\ mtime= ]]; then
+      size="${BASH_REMATCH[1]}"
+      blocks="${BASH_REMATCH[2]}"
+      files=$((files + 1))
+      logical_bytes=$((logical_bytes + size))
+      if on_windows_host; then
+        bytes=$((bytes + size))
+      else
+        bytes=$((bytes + blocks * 512))
+      fi
+    fi
+  done <"$tmp/accounting-catalog-${phase}.log"
+  echo "$files $bytes $logical_bytes"
+}
+
+check_logical_size()
+{
+  local report="$1" expected="$2" line actual
+  line="$(grep -m1 '"logical_bytes"' "$report.json" || true)"
+  if [[ "$line" =~ \"logical_bytes\":\ ([0-9]+) ]]; then
+    actual="${BASH_REMATCH[1]//,/}"
+    if [[ "$actual" -ne "$expected" ]]; then
+      echo "status subscriptions accounting reported logical size ${actual}," \
+        "expected ${expected}!" >&2
+      estat=1
+    fi
+  else
+    echo "status subscriptions accounting did not report a logical size!" >&2
+    estat=1
+  fi
+}
+
+refresh_accounting_snapshot()
+{
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/accounting-adminjob.out
+run job=SubscriptionAccounting yes
+wait
+END_OF_DATA
+  run_bconsole
+}
+
+wait_for_accounting_result()
+{
+  local report="$1" expected="$2"
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $report
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions accounting client=does-not-exist
+@$out ${NULL_DEV}
+.api 2
+@$out $report.json
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+END_OF_DATA
+    run_bconsole
+    if grep -qE "$expected" "$report"; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "timed out waiting for subscription accounting snapshot containing ${expected}" >&2
+  if [[ -f "$tmp/accounting-adminjob.out" ]]; then
+    cat "$tmp/accounting-adminjob.out" >&2
+  fi
+  return 1
+}
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+JobName=backup-acct-test
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+rm -rf "$tmp/acct-data"
+mkdir -p "$tmp/acct-data"
+
+# Known, exact sizes (bytes): one below one block, one exactly one block,
+# one spanning into a second (non-512-aligned -- exercises rounding up).
+generate_testdata "$tmp/acct-data/file-1byte.bin" --size=1
+generate_testdata "$tmp/acct-data/file-512bytes.bin" --size=512
+generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=1000
+raw_bytes=$((1 + 512 + 1000))
+record_filesystem_info
+record_file_stats "after Full test-data creation"
+
+# An (empty) subdirectory and a symlink, both explicitly included in the
+# AcctTest fileset alongside the three regular files above. Their catalog
+# File rows (FT_DIREND / FT_LNK) are not regular files, so they must not
+# add to the reported file count or byte total (see ua_acct.cc's
+# S_ISREG() check). Symlinks aren't created on Windows hosts here; a
+# missing path is simply skipped by the backup (job status Warning, not
+# Error), so the exclusion is only actively exercised on POSIX hosts.
+mkdir -p "$tmp/acct-data/subdir"
+if ! on_windows_host; then
+  ln -sf file-1byte.bin "$tmp/acct-data/symlink-to-file"
+fi
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $tmp/status-subscriptions-accounting.log
+run job=$JobName level=Full yes
+wait
+messages
+END_OF_DATA
+
+record_file_stats "immediately before Full"
+run_bconsole
+check_for_zombie_jobs storage=File
+record_file_stats "immediately after Full"
+refresh_accounting_snapshot
+wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
+record_catalog_stats "full"
+read -r catalog_files catalog_bytes catalog_logical_bytes \
+  < <(catalog_accounted_totals full)
+if [[ "$catalog_files" -ne 3 ]]; then
+  echo "catalog contained ${catalog_files} selected regular files" \
+    "after the Full, expected 3!" >&2
+  estat=1
+fi
+if [[ "$catalog_logical_bytes" -ne "$raw_bytes" ]]; then
+  echo "catalog logical size was ${catalog_logical_bytes} bytes after the Full," \
+    "expected ${raw_bytes}!" >&2
+  estat=1
+fi
+
+# The accounting rule differs per client platform (see ua_acct.cc): a
+# Windows client's st_blocks is a purely synthetic value derived from
+# st_size, so the report uses st_size directly there (exact, deterministic
+# match against the known raw byte total). On other platforms st_blocks
+# can change as the filesystem commits or compresses data, so compare the
+# report to the LStat values stored in the catalog by that backup instead
+# of sampling the live files before or after it.
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
+PY
+)"
+if [[ -z "$line" ]]; then
+  echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest!" >&2
+  estat=1
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 1$ ]]; then
+  files="${BASH_REMATCH[1]}"
+  bytes="${BASH_REMATCH[2]//,/}"
+  actual_rule="${BASH_REMATCH[3]}"
+  if [[ "$files" -ne 3 ]]; then
+    echo "status subscriptions accounting reported ${files} files, expected 3!" >&2
+    estat=1
+  fi
+  check_logical_size "$tmp/status-subscriptions-accounting.log" "$raw_bytes"
+  if on_windows_host; then
+    if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected '${raw_bytes} bytes (rule: st_size)'!" >&2
+      estat=1
+    fi
+  else
+    expected_bytes="$catalog_bytes"
+    if [[ "$actual_rule" != 'st_blocks*512' ||
+      "$bytes" -ne "$expected_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})'," \
+        "expected '${expected_bytes} bytes (rule: st_blocks*512)'!" >&2
+      estat=1
+    fi
+  fi
+else
+  echo "status subscriptions accounting report line did not match the expected format:" \
+    "${line}" >&2
+  estat=1
+fi
+
+if ! grep -q "No matching Client/FileSet combinations found." \
+  "$tmp/status-subscriptions-accounting.log"; then
+  echo "status subscriptions accounting did not exclude a non-existing client as expected!" >&2
+  estat=1
+fi
+
+# Now grow the chain to two jobs: rewrite one file with a much larger
+# size and run an Incremental. This exercises the "latest JobTDate wins
+# per (PathId, Name)" de-duplication across multiple jobs in the chain
+# (now done server-side via a DISTINCT ON query, see ua_acct.cc), instead
+# of only ever seeing a single-job chain where every path is trivially
+# unique. The file count must stay at 3 (same catalog paths, not new
+# ones. The catalog check below confirms that the selected row for the
+# resized file comes from the Incremental. Its st_blocks may not increase
+# on filesystems that compress data, so the expected total is computed
+# from the selected catalog rows rather than compared to the Full total.
+# Ensure the resized file's mtime is unambiguously newer than the Full
+# backup's "since" reference time (whole-second granularity), otherwise
+# the Incremental may not detect it as changed.
+sleep 2
+generate_testdata "$tmp/acct-data/file-1000bytes.bin" --size=65536
+raw_bytes=$((1 + 512 + 65536))
+record_file_stats \
+  "after Incremental test-data creation"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $tmp/status-subscriptions-accounting-incremental.log
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+
+record_file_stats "immediately before Incremental"
+run_bconsole
+check_for_zombie_jobs storage=File
+record_file_stats "immediately after Incremental"
+refresh_accounting_snapshot
+wait_for_accounting_result "$tmp/status-subscriptions-accounting-incremental.log" \
+  "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
+record_catalog_stats "incremental"
+read -r catalog_files catalog_bytes catalog_logical_bytes \
+  < <(catalog_accounted_totals incremental)
+if [[ "$catalog_files" -ne 3 ]]; then
+  echo "catalog contained ${catalog_files} selected regular files" \
+    "after the Incremental, expected 3!" >&2
+  estat=1
+fi
+if [[ "$catalog_logical_bytes" -ne "$raw_bytes" ]]; then
+  echo "catalog logical size was ${catalog_logical_bytes} bytes after the Incremental," \
+    "expected ${raw_bytes}!" >&2
+  estat=1
+fi
+if ! grep -Eq 'SELECTED_ROW .*file=file-1000bytes\.bin .*size=65536 ' \
+  "$tmp/accounting-catalog-incremental.log"; then
+  echo "catalog did not select the resized file from the Incremental!" >&2
+  estat=1
+fi
+check_logical_size "$tmp/status-subscriptions-accounting-incremental.log" \
+  "$raw_bytes"
+
+line="$(
+  "${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-accounting-incremental.log.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = result["accounting"][0]
+print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
+PY
+)"
+if [[ -z "$line" ]]; then
+  echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest after the incremental!" >&2
+  estat=1
+elif [[ "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ 2$ ]]; then
+  files="${BASH_REMATCH[1]}"
+  bytes="${BASH_REMATCH[2]//,/}"
+  actual_rule="${BASH_REMATCH[3]}"
+  if [[ "$files" -ne 3 ]]; then
+    echo "status subscriptions accounting reported ${files} files after the incremental, expected 3 (chain dedup broken)!" >&2
+    estat=1
+  fi
+  if on_windows_host; then
+    if [[ "$actual_rule" != "st_size" || "$bytes" -ne "$raw_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
+        "expected '${raw_bytes} bytes (rule: st_size)' (chain dedup broken)!" >&2
+      estat=1
+    fi
+  else
+    expected_bytes="$catalog_bytes"
+    if [[ "$actual_rule" != 'st_blocks*512' ||
+      "$bytes" -ne "$expected_bytes" ]]; then
+      echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' after the incremental," \
+        "expected '${expected_bytes} bytes (rule: st_blocks*512)'" \
+        "(chain dedup broken)!" >&2
+      estat=1
+    fi
+  fi
+else
+  echo "status subscriptions accounting report line after the incremental did not match" \
+    "the expected format (expected exactly 2 jobs in chain): ${line}" >&2
+  estat=1
+fi
+
+# Zero length plus one block is valid outside MSSQL's virtual namespace.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A QAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-empty-regular.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-empty-regular.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["logical_bytes"] == 513
+PY
+
+# The same placeholder under MSSQL's namespace must fall back for the whole
+# combination, even when other measurable files remain in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@MSSQL/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@MSSQL/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-mssql-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-mssql-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+row = next(row for row in result("mssql")["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert result("mssql-all")[key] == result("mssql-legacy")[key], key
+PY
+
+# A genuinely empty file without the MSSQL block-size marker stays measurable.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A A BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-mssql-empty.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-mssql-empty.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+PY
+
+# Replace one real catalog file with the opaque image attributes used by
+# barri/NDMP, leaving other measurable files (such as plugin logs) in the chain.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='A A IHA B A A A -B BAA B A A A A A A' WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-opaque.json
+status subscriptions accounting
+@$out $tmp/status-subscriptions-opaque-all.json
+status subscriptions all
+@$out $tmp/status-subscriptions-opaque-legacy.json
+status subscriptions all legacy
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
+import json
+import pathlib
+import sys
+
+tmp = pathlib.Path(sys.argv[1])
+def result(name):
+    text = (tmp / f"status-subscriptions-{name}.json").read_text()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+
+opaque = result("opaque")
+row = next(row for row in opaque["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image"
+report = result("opaque-all")
+assert report["subscription_accounting"]["estimated_combinations"] > 0
+for key in ("unit-summary", "unit-detail", "unit-clients", "unit-plugins"):
+    assert report[key] == result("opaque-legacy")[key], key
+PY
+
+# An NDMP stream container has the same stat, but actual file-history rows
+# describe its contents. Preserve their measured accounting.
+run_bconsole - <<END_OF_DATA
+.sql query="INSERT INTO Path (Path) VALUES ('/@NDMP/accounting-test/')"
+.sql query="UPDATE File SET PathId=(SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/') WHERE FileId=(SELECT MAX(f.FileId) FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert not row["excluded"]
+assert row["files"] == 3
+assert row["logical_bytes"] == 1513
+assert row["bytes"] > 0
+PY
+
+# With file history absent, the NDMP container alone must still fall back.
+run_bconsole - <<END_OF_DATA
+.sql query="DELETE FROM File WHERE JobId IN (SELECT j.JobId FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest') AND PathId NOT IN (SELECT PathId FROM Path WHERE Path='/@NDMP/accounting-test/')"
+END_OF_DATA
+refresh_accounting_snapshot
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-ndmp-no-history.json
+status subscriptions accounting
+END_OF_DATA
+"${PYTHON_EXECUTABLE}" - "$tmp/status-subscriptions-ndmp-no-history.json" <<'PY'
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "AcctTest")
+assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history"
+PY
+
+# Real NDMP_BAREOS and NDMP_NATIVE catalog exports from PR #2855.
+# Import each Full first, then its Incremental, to verify both baselines
+# and latest-file de-duplication without needing an NDMP server here.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py import "$phase" \
+    >"$tmp/ndmp-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/ndmp-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-real-ndmp-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./ndmp_accounting_fixture.py check "$phase" \
+    "$tmp/status-subscriptions-real-ndmp-${phase}.json"
+done
+
+# Import privacy-reduced samples of actual Barri, Windows, and MSSQL
+# catalog attributes from supplied dumps. The encoded LStat values are
+# preserved; names and paths are anonymized in the fixture.
+for phase in full incremental; do
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py import "$phase" \
+    >"$tmp/plugin-accounting-import-${phase}.bcon"
+  run_bconsole "$tmp/plugin-accounting-import-${phase}.bcon"
+  refresh_accounting_snapshot
+  run_bconsole - <<END_OF_DATA
+.api 2
+@$out $tmp/status-subscriptions-plugin-fixtures-${phase}.json
+status subscriptions accounting
+END_OF_DATA
+  "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py check \
+    "$phase" "$tmp/status-subscriptions-plugin-fixtures-${phase}.json"
+done
+
+if [[ "${estat:-0}" -ne 0 ]]; then
+  echo "=== accounting source/filesystem diagnostics ===" >&2
+  if [[ -f "$tmp/accounting-source-stats.log" ]]; then
+    cat "$tmp/accounting-source-stats.log" >&2
+  fi
+  echo "=== catalog after Full ===" >&2
+  cat "$tmp/accounting-catalog-full.log" >&2
+  echo "=== catalog after Incremental ===" >&2
+  cat "$tmp/accounting-catalog-incremental.log" >&2
+fi
+
+end_test

@@ -80,6 +80,17 @@ static Session_Label sessrec;
 static uint32_t num_files = 0;
 static Attributes* attr;
 
+/* Tracks the (VolSessionId, VolSessionTime, FileIndex) of the last
+ * listed file's attribute record, so a backup plugin's corrected
+ * STREAM_UNIX_ATTRIBUTES(_EX) resend for the same FileIndex (see
+ * fd_plugins.cc) is not listed/counted a second time. Mirrors
+ * filed/restore.cc's attribute_seen guard. */
+static bool attribute_seen = false;
+static uint32_t attribute_vol_session_id = 0;
+static uint32_t attribute_vol_session_time = 0;
+static int32_t attribute_file_index = 0;
+
+
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
 
@@ -408,6 +419,20 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
   switch (t_rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
+      /* Ignore a corrected-attributes resend for a file already
+       * listed/counted; see the attribute_seen comment above. */
+      if (attribute_seen && attribute_vol_session_id == t_rec->VolSessionId
+          && attribute_vol_session_time == t_rec->VolSessionTime
+          && attribute_file_index == t_rec->FileIndex) {
+        Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
+              t_rec->FileIndex);
+        break;
+      }
+      attribute_seen = true;
+      attribute_vol_session_id = t_rec->VolSessionId;
+      attribute_vol_session_time = t_rec->VolSessionTime;
+      attribute_file_index = t_rec->FileIndex;
+
       if (!UnpackAttributesRecord(jcr, t_rec->Stream, t_rec->data,
                                   t_rec->data_len, attr)) {
         if (!forge_on) {

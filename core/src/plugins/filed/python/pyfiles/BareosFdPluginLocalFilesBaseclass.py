@@ -122,6 +122,10 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         mystatp.st_uid = statp.st_uid
         mystatp.st_gid = statp.st_gid
         mystatp.st_size = statp.st_size
+        if hasattr(statp, "st_blocks"):
+            mystatp.st_blocks = statp.st_blocks
+        if hasattr(statp, "st_blksize"):
+            mystatp.st_blksize = statp.st_blksize
         mystatp.st_atime = int(statp.st_atime)
         mystatp.st_mtime = int(statp.st_mtime)
         mystatp.st_ctime = int(statp.st_ctime)

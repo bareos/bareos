@@ -1,0 +1,228 @@
+{
+  "provenance": {
+    "emulator_pr": 2855,
+    "emulator_commit": "b2f98af6682b97b68370642a3f4e5522d24ee1bc",
+    "stat_conversion_commit": "5f1dfd5b1dd9a2ddb0921c4724ffb8835a3251e1",
+    "generated": "2026-10-07",
+    "mode": "NDMP_NATIVE",
+    "normalization": "source path prefix only; LStat unchanged"
+  },
+  "client": {
+    "name": "ndmjob",
+    "uname": ""
+  },
+  "fileset": {
+    "fileset": "ndmp-fileset",
+    "filesettext": "FileSet {\n  Name = \"ndmp-fileset\"\n  Include {\n    Options {\n      HardLinks = No\n      AclSupport = Yes\n      XattrSupport = Yes\n      Meta = \"HIST=F\"\n      Meta = \"DIRECT=N\"\n      Meta = \"UPDATE=Y\"\n      Meta = \"BUTYPE=DUMP\"\n    }\n    File = \"/ndmp-accounting/native\"\n  }\n}\n\n",
+    "md5": "M5Fov7xDZ+A/zj/E4nMORA",
+    "createtime": "2026-10-07T07:32:48"
+  },
+  "jobs": [
+    {
+      "type": "B",
+      "level": "F",
+      "jobstatus": "T",
+      "starttime": "2026-10-07T07:32:50",
+      "endtime": "2026-10-07T07:32:52",
+      "jobtdate": 1791351172,
+      "jobfiles": 8,
+      "jobbytes": 10240,
+      "readbytes": 0,
+      "files": [
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/",
+          "name": "empty",
+          "lstat": "A A IGk A Pp Pp A A IA A BqxdmA BqxdmA BqxdmA B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 512,
+          "fhnode": 80555457
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/",
+          "name": "full",
+          "lstat": "A A IGk QB Pp Pp A QB IA D Bqxdl+ BqxdmA BqxdmA B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 1024,
+          "fhnode": 80571780
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/",
+          "name": "",
+          "lstat": "A A EHt d Pp Pp A d IA B Bqxdl+ Bqxdl+ Bqxdl+ B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 3072,
+          "fhnode": 551422092
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/dir/",
+          "name": "",
+          "lstat": "A A EHt S Pp Pp A S IA B Bqxdl+ Bqxdl+ Bqxdl+ B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 3584,
+          "fhnode": 1074824607
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/dir/",
+          "name": "file",
+          "lstat": "A A IGk Po Pp Pp A Po IA C Bqxdl+ BqxdmA BqxdmA B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 4096,
+          "fhnode": 1075647978
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/",
+          "name": "link",
+          "lstat": "A A KH/ L Pp Pp A L IA B Bqxdl+ Bqxdl+ Bqxdl+ B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 5632,
+          "fhnode": 551485322
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/",
+          "name": "testfile",
+          "lstat": "A A IHt B Pp Pp A B IA B Bqxdl+ BqxdmA BqxdmA B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 6144,
+          "fhnode": 80571781
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/",
+          "name": "testfile2",
+          "lstat": "A A IHt IA Pp Pp A IA IA B Bqxdl+ BqxdmA BqxdmA B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 7168,
+          "fhnode": 80571782
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "level": "I",
+      "jobstatus": "T",
+      "starttime": "2026-10-07T07:32:56",
+      "endtime": "2026-10-07T07:32:57",
+      "jobtdate": 1791351177,
+      "jobfiles": 4,
+      "jobbytes": 71680,
+      "readbytes": 0,
+      "files": [
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/",
+          "name": "incremental",
+          "lstat": "A A IGk IB Pp Pp A IB IA C BqxdmH BqxdmH BqxdmH B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 512,
+          "fhnode": 80555459
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/",
+          "name": "",
+          "lstat": "A A EHt d Pp Pp A d IA B Bqxdl+ Bqxdl+ Bqxdl+ B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 2048,
+          "fhnode": 551422092
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/dir/",
+          "name": "",
+          "lstat": "A A EHt S Pp Pp A S IA B Bqxdl+ Bqxdl+ Bqxdl+ B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 2560,
+          "fhnode": 1074824607
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/native/sub/dir/",
+          "name": "file",
+          "lstat": "A A IGk QAB Pp Pp A QAB IA CB BqxdmD BqxdmH BqxdmH B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 3072,
+          "fhnode": 1075647978
+        }
+      ]
+    }
+  ],
+  "expected": [
+    {
+      "files": 5,
+      "logical_bytes": 2538,
+      "bytes": 3584,
+      "source_files": [
+        {
+          "name": "empty",
+          "size": 0
+        },
+        {
+          "name": "full",
+          "size": 1025
+        },
+        {
+          "name": "sub/dir/file",
+          "size": 1000
+        },
+        {
+          "name": "testfile",
+          "size": 1
+        },
+        {
+          "name": "testfile2",
+          "size": 512
+        }
+      ]
+    },
+    {
+      "files": 6,
+      "logical_bytes": 67588,
+      "bytes": 69632,
+      "source_files": [
+        {
+          "name": "empty",
+          "size": 0
+        },
+        {
+          "name": "full",
+          "size": 1025
+        },
+        {
+          "name": "incremental",
+          "size": 513
+        },
+        {
+          "name": "sub/dir/file",
+          "size": 65537
+        },
+        {
+          "name": "testfile",
+          "size": 1
+        },
+        {
+          "name": "testfile2",
+          "size": 512
+        }
+      ]
+    }
+  ]
+}

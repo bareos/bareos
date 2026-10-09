@@ -45,6 +45,9 @@
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
 
+#include <limits>
+#include <optional>
+
 #ifdef HAVE_MSVC
 #  define PATH_MAX MAX_PATH
 #endif
@@ -68,8 +71,33 @@ namespace filedaemon {
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool);
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*);
+uint64_t PluginBlocksFromSize(uint64_t size);
+void FillMissingPluginStatBlocks(struct stat& statp);
+bool PluginSizeNeedsFdFallback(const struct stat& statp);
+bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected);
+std::optional<PluginFileSizeBlocks> FdCountedFileSizeBlocks(
+    const struct stat& original_statp,
+    bool save_status,
+    bool job_canceled,
+    bool data_was_read,
+    uint64_t read_bytes_before,
+    uint64_t read_bytes_after);
+bool EncodeAndSendAttributes(JobControlRecord*,
+                             FindFilesPacket*,
+                             int&,
+                             bool reuse_file_index);
+bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value);
+PluginContext* NewTestPluginContext(JobControlRecord* jcr);
+void FreeTestPluginContext(PluginContext* ctx);
+std::optional<PluginFileSizeBlocks> TestGetCorrectedFileSizeBlocks(
+    PluginContext* ctx);
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
+
+bool EncodeAndSendAttributes(JobControlRecord*, FindFilesPacket*, int&, bool)
+{
+  return true;
+}
 
 bool AccurateMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
@@ -80,6 +108,153 @@ bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
+
+TEST(fd, fill_missing_plugin_stat_blocks)
+{
+  EXPECT_EQ(PluginBlocksFromSize(0), 0);
+  EXPECT_EQ(PluginBlocksFromSize(1), 1);
+  EXPECT_EQ(PluginBlocksFromSize(512), 1);
+  EXPECT_EQ(PluginBlocksFromSize(513), 2);
+
+  // Plugin reported a real size but left st_blocks at 0: derive it.
+  struct stat statp{};
+  statp.st_size = 513;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Exact multiple of 512 should not round up an extra block.
+  statp = {};
+  statp.st_size = 1024;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Plugin already provided real block-allocation data: don't overwrite it.
+  statp = {};
+  statp.st_size = 100000;
+  statp.st_blocks = 7;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 7);
+
+  // Unknown size (e.g. streaming plugin still filling it in): don't guess.
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+
+  // Legitimate empty file: nothing to derive.
+  statp = {};
+  statp.st_size = 0;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+
+  statp = {};
+  statp.st_size = 0;
+  statp.st_blocks = -1;
+  EXPECT_TRUE(PluginSizeNeedsFdFallback(statp));
+}
+
+TEST(fd, plugin_file_size_blocks_validation)
+{
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, 3}));
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, 0}));
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{0, 0}));
+
+  EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{-1, 0}));
+  EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, -1}));
+}
+
+TEST(fd, fd_counted_plugin_size_blocks_fallback)
+{
+  struct stat statp{};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+
+  std::optional<PluginFileSizeBlocks> corrected
+      = FdCountedFileSizeBlocks(statp, true, false, true, 100, 1334);
+
+  ASSERT_TRUE(corrected.has_value());
+  EXPECT_EQ(corrected->size, 1234);
+  EXPECT_EQ(corrected->blocks, 3);
+
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+  corrected = FdCountedFileSizeBlocks(statp, true, false, true, 100, 100);
+  ASSERT_TRUE(corrected.has_value());
+  EXPECT_EQ(corrected->size, 0);
+  EXPECT_EQ(corrected->blocks, 0);
+}
+
+TEST(fd, fd_counted_plugin_size_blocks_fallback_is_bounded)
+{
+  struct stat statp{};
+  statp.st_size = 1234;
+  statp.st_blocks = 3;
+
+  EXPECT_FALSE(
+      FdCountedFileSizeBlocks(statp, true, false, true, 100, 1334).has_value());
+
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+  EXPECT_FALSE(FdCountedFileSizeBlocks(statp, false, false, true, 100, 1334)
+                   .has_value());
+  EXPECT_FALSE(
+      FdCountedFileSizeBlocks(statp, true, true, true, 100, 1334).has_value());
+  EXPECT_FALSE(FdCountedFileSizeBlocks(statp, true, false, false, 100, 1334)
+                   .has_value());
+  EXPECT_FALSE(
+      FdCountedFileSizeBlocks(statp, true, false, true, 1334, 100).has_value());
+  EXPECT_FALSE(
+      FdCountedFileSizeBlocks(
+          statp, true, false, true, 0,
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 1)
+          .has_value());
+}
+
+TEST(fd, bareos_set_value_file_size_blocks)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks corrected{1234, 3};
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, &corrected), bRC_OK);
+
+  auto stored = TestGetCorrectedFileSizeBlocks(ctx);
+  ASSERT_TRUE(stored.has_value());
+  EXPECT_EQ(stored->size, 1234);
+  EXPECT_EQ(stored->blocks, 3);
+
+  FreeTestPluginContext(ctx);
+}
+
+TEST(fd, bareos_set_value_file_size_blocks_rejects_invalid)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks invalid{-1, 0};
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, &invalid), bRC_Error);
+  EXPECT_FALSE(TestGetCorrectedFileSizeBlocks(ctx).has_value());
+
+  FreeTestPluginContext(ctx);
+}
+
+TEST(fd, bareos_set_value_file_size_blocks_rejects_null_args)
+{
+  JobControlRecord mjcr;
+  PluginContext* ctx = NewTestPluginContext(&mjcr);
+
+  PluginFileSizeBlocks corrected{1234, 3};
+  EXPECT_EQ(bareosSetValue(nullptr, bVarFileSizeBlocks, &corrected), bRC_Error);
+  EXPECT_EQ(bareosSetValue(ctx, bVarFileSizeBlocks, nullptr), bRC_Error);
+
+  FreeTestPluginContext(ctx);
+}
 
 TEST(fd, fd_plugins)
 {

@@ -1023,7 +1023,7 @@ R"SQL(BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE
 R"SQL(COMMIT
 )SQL",
 
-/* 0080_subscription_with_clause_0 */
+/* 0080_subscription_with_clause_1 */
 R"SQL(WITH
 fileset_plugin AS (
   SELECT
@@ -1061,13 +1061,23 @@ client_detail AS (
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
     f.fileset AS fileset,
-    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    COALESCE(sa.bytes, GREATEST(j.readbytes::bigint, j.jobbytes::bigint)) / 10^9 AS size_gb,
+    sa.clientname IS NULL AS estimated,
     f.plugin AS plugin
   FROM job j
   INNER JOIN client c
     ON c.clientid = j.clientid
   INNER JOIN fileset_plugin f
     ON j.filesetid = f.filesetid
+  LEFT JOIN SubscriptionAccounting sa
+    ON sa.clientname = c.name
+    AND sa.filesetname = f.fileset
+    AND NOT sa.excluded
+    AND %s
+    AND EXISTS (
+      SELECT 1 FROM SubscriptionAccountingSnapshot
+      WHERE snapshotid = 1 AND lastsuccess IS NOT NULL
+    )
   WHERE jobid IN (
     SELECT
       MAX(j.jobid) AS jobid

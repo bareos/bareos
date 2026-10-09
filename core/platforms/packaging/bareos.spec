@@ -1098,6 +1098,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 "%{configtemplatedir}/bareos-dir.d/fileset/Windows All Drives.conf"
 %{configtemplatedir}/bareos-dir.d/job/backup-bareos-fd.conf
 %{configtemplatedir}/bareos-dir.d/job/BackupCatalog.conf
+%{configtemplatedir}/bareos-dir.d/job/SubscriptionAccounting.conf
 %{configtemplatedir}/bareos-dir.d/jobdefs/DefaultJob.conf
 %{configtemplatedir}/bareos-dir.d/job/RestoreFiles.conf
 %{configtemplatedir}/bareos-dir.d/messages/Daemon.conf
@@ -1111,6 +1112,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-dir.d/profile/webui-readonly.conf
 %{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 %{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycle.conf
+%{configtemplatedir}/bareos-dir.d/schedule/SubscriptionAccounting.conf
 %{configtemplatedir}/bareos-dir.d/storage/File.conf
 %{configtemplatedir}/bareos-dir.d/storage/File.conf.example
 %if 0%{?build_qt_monitor}
@@ -1729,6 +1731,7 @@ if [ $1 -gt 1 ]; then
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Windows All Drives.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/backup-bareos-fd.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/BackupCatalog.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/SubscriptionAccounting.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/jobdefs/DefaultJob.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreFiles.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Daemon.conf"
@@ -1740,6 +1743,7 @@ if [ $1 -gt 1 ]; then
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/profile/operator.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycle.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/SubscriptionAccounting.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
   fi
@@ -1776,6 +1780,7 @@ exit 0
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Windows All Drives.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/backup-bareos-fd.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/BackupCatalog.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/SubscriptionAccounting.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/jobdefs/DefaultJob.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreFiles.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Daemon.conf"
@@ -1787,6 +1792,7 @@ exit 0
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/profile/operator.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycle.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/SubscriptionAccounting.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
 %logging_end
