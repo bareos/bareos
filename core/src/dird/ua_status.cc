@@ -865,19 +865,6 @@ static void DoCatalogStatus(UaContext* ua)
     return;
   }
 
-  if (ua->db->GetTypeIndex() != SQL_TYPE_POSTGRESQL) {
-    errors.emplace_back(
-        T_("status catalog currently supports only PostgreSQL catalogs."));
-    if (ua->api) {
-      EmitCatalogStatusApi(ua, "unavailable", checked_at, false, 0, false,
-                           tables, errors);
-    } else {
-      EmitCatalogStatusText(ua, "unavailable", checked_at, false, 0, tables,
-                            errors);
-    }
-    return;
-  }
-
   total_available = QueryCatalogTotalSize(ua, total_bytes, errors);
   tables_available = QueryLargestTables(ua, tables, errors);
 
