@@ -35,6 +35,7 @@
 #include <unistd.h>
 
 #include "command_runner.h"
+#include "browser_launcher.h"
 #include "os_detector.h"
 #include "setup_session.h"
 #include "tui_wizard.h"
@@ -233,6 +234,20 @@ class FakeToolPath {
 }  // namespace
 
 TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
+TEST(BareosSetupBrowserLauncher, ReportsFailureWhenAvailableLaunchersFail)
+{
+  FakeToolPath tools({"xdg-open", "open", "sensible-browser"}, false);
+  tools.SetToolScript("xdg-open", "exit 1\n");
+  tools.SetToolScript("open", "exit 1\n");
+  tools.SetToolScript("sensible-browser", "exit 1\n");
+  SetupContext context;
+
+  EXPECT_TRUE(context.IsToolAvailable(SetupTool::XdgOpen));
+  EXPECT_TRUE(context.IsToolAvailable(SetupTool::Open));
+  EXPECT_TRUE(context.IsToolAvailable(SetupTool::SensibleBrowser));
+  EXPECT_FALSE(TryOpenBrowser(context, "http://127.0.0.1:19101/?token=test"));
+}
+
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "systemctl", "sudo"});
   SetupContext context;

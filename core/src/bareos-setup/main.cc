@@ -42,6 +42,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#include "browser_launcher.h"
 #include "command_runner.h"
 #include "http_server.h"
 #include "os_detector.h"
@@ -73,30 +74,6 @@ static std::string UrlEncode(const std::string& value)
     }
   }
   return encoded.str();
-}
-
-static void OpenBrowser(SetupContext& context,
-                        const std::string& url_host,
-                        int port,
-                        const std::string& token)
-{
-  std::string url = "http://" + url_host + ":" + std::to_string(port)
-                    + "/?token=" + UrlEncode(token);
-  const std::array<SetupCommand, 3> commands{XdgOpen({url}), Open({url}),
-                                             SensibleBrowser({url})};
-  for (const auto& command : commands) {
-    if (!context.IsToolAvailable(command.tool)) continue;
-    try {
-      if (context.Run(command, false, [](std::string_view, std::string_view) {})
-          == 0) {
-        return;
-      }
-    } catch (const std::runtime_error& error) {
-      std::cerr << "Could not launch browser: " << error.what() << "\n";
-    }
-  }
-  std::cerr << "Could not open browser automatically.\n"
-            << "Open this URL manually: " << url << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -282,10 +259,16 @@ int main(int argc, char* argv[])
     // after the parent has started listening.
     pid_t child = fork();
     if (child == 0) {
-      // Child: wait briefly then open browser
+      // Wait for the parent to bind and listen before opening the browser.
       sleep(1);
       SetupContext browser_context;
-      OpenBrowser(browser_context, url_host, port, setup_token);
+      const std::string browser_url = "http://" + url_host + ":"
+                                      + std::to_string(port)
+                                      + "/?token=" + UrlEncode(setup_token);
+      if (!TryOpenBrowser(browser_context, browser_url)) {
+        std::cerr << "Could not open browser automatically.\n"
+                  << "Open this URL manually: " << browser_url << "\n";
+      }
       _exit(0);
     }
   }
