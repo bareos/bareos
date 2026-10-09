@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: add machine readable version to client hello; deprecate TlsAuthenticate [PR #2752]
 - core: move complete authentication into the library; remove support for old consoles (<18.2) [PR #2765]
 - core: remove setlocale initialization [PR #2819]
+- core: remove `basefiles` support, including tables [PR #2536]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -2327,6 +2328,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [PR #2527]: https://github.com/bareos/bareos/pull/2527
 [PR #2531]: https://github.com/bareos/bareos/pull/2531
+[PR #2536]: https://github.com/bareos/bareos/pull/2536
 [PR #2537]: https://github.com/bareos/bareos/pull/2537
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
 [PR #2546]: https://github.com/bareos/bareos/pull/2546
