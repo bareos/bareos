@@ -467,7 +467,7 @@ bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
   StopTimer();
 
   if (ret <= 0) {
-    Dmsg1(100, "Error while receiving response message: %s", msg);
+    Dmsg1(100, "Error while receiving response message: %s\n", msg);
     return false;
   }
 
