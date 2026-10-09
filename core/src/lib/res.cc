@@ -1170,6 +1170,59 @@ void ConfigurationParser::StoreBool(lexer* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
+std::optional<VerifyPeerSetting> parse_verify_peer_setting(
+    std::string_view input)
+{
+  return parse_enum<VerifyPeerSetting>(input, VerifyPeerSettingByName);
+}
+
+void ConfigurationParser::StoreVerifyPeer(lexer* lc,
+                                          const ResourceItem* item,
+                                          int index,
+                                          int)
+{
+  LexGetToken(lc, BCT_NAME);
+  std::optional setting = parse_verify_peer_setting(lc->str);
+
+  if (setting) {
+    SetItemVariable<VerifyPeerSetting>(*item, *setting);
+  } else {
+    /* VerifyPeerSetting was a bool previously.
+     * To make sure that configurations do not break, we fallback to parsing
+     * bools. */
+    switch (parse_conf_bool(lc)) {
+      case parse_bool_result::True: {
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Required);
+      } break;
+      case parse_bool_result::False: {
+        SetItemVariable<VerifyPeerSetting>(*item, VerifyPeerSetting::Disabled);
+      } break;
+      case parse_bool_result::Error: {
+        std::string alternatives;
+
+        static_assert(std::size(VerifyPeerSettingByName) >= 2);
+
+        auto setting_count = std::size(VerifyPeerSettingByName);
+
+        for (size_t i = 0; i < setting_count - 1; ++i) {
+          alternatives += VerifyPeerSettingByName[i].first;
+          alternatives += ", ";
+        }
+
+        alternatives += "or ";
+        alternatives += VerifyPeerSettingByName[setting_count - 1].first;
+
+
+        scan_err(lc, "Expect %s, got: %s", alternatives.c_str(), lc->str);
+      } break;
+    }
+  }
+
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
 // Store Tape Label Type (BAREOS, ANSI, IBM)
 void ConfigurationParser::StoreLabel(lexer* lc,
                                      const ResourceItem* item,
@@ -1470,6 +1523,9 @@ bool ConfigurationParser::StoreResource(int type,
       break;
     case CFG_TYPE_BOOL:
       StoreBool(lc, item, index, pass);
+      break;
+    case CFG_TYPE_VERIFY_PEER:
+      StoreVerifyPeer(lc, item, index, pass);
       break;
     case CFG_TYPE_TIME:
       StoreTime(lc, item, index, pass);
@@ -1773,6 +1829,15 @@ static bool HasDefaultValue(const ResourceItem& item)
         is_default = (GetItemVariable<bool>(item) == default_value);
         break;
       }
+
+      case CFG_TYPE_VERIFY_PEER: {
+        auto default_value = parse_verify_peer_setting(item.default_value);
+
+
+        is_default
+            = (GetItemVariable<VerifyPeerSetting>(item) == default_value);
+        break;
+      }
       default:
         break;
     }
@@ -1821,6 +1886,10 @@ static bool HasDefaultValue(const ResourceItem& item)
         break;
       case CFG_TYPE_BOOL:
         is_default = (GetItemVariable<bool>(item) == false);
+        break;
+      case CFG_TYPE_VERIFY_PEER:
+        is_default = (GetItemVariable<VerifyPeerSetting>(item)
+                      == VerifyPeerSetting::Disabled);
         break;
       default:
         break;
@@ -1965,6 +2034,12 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     }
     case CFG_TYPE_BOOL: {
       send.KeyBool(item.name, GetItemVariable<bool>(item), inherited);
+      break;
+    }
+    case CFG_TYPE_VERIFY_PEER: {
+      VerifyPeerSetting setting = GetItemVariable<VerifyPeerSetting>(item);
+      auto value = as_str(setting);
+      send.KeyString(item.name, value, inherited);
       break;
     }
     case CFG_TYPE_STR_VECTOR:
@@ -2222,6 +2297,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_STR_VECTOR, "STRING_LIST", "string list"},
     {CFG_TYPE_STR_VECTOR_OF_DIRS, "DIRECTORY_LIST", "directory list"},
     {CFG_TYPE_DIR_OR_CMD, "DIRECTORY_OR_COMMAND", "Directory or command"},
+    {CFG_TYPE_VERIFY_PEER, "VERIFY_PEER", "verify peer setting"},
 
     // Director resource types. handlers in dird_conf.
     {CFG_TYPE_ACL, "ACL", "User Access Control List"},

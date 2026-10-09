@@ -2,6 +2,11 @@
 -- start transaction
 begin;
 
+alter table Path set (autovacuum_vacuum_scale_factor = 0.02);
+alter table File set (autovacuum_vacuum_scale_factor = 0.02);
+
+create index job_starttime_idx on job (StartTime);
+
 CREATE TABLE SubscriptionAccountingSnapshot (
     SnapshotId        SMALLINT    PRIMARY KEY,
     LastAttempt       TIMESTAMP   WITHOUT TIME ZONE,
@@ -25,7 +30,8 @@ CREATE TABLE SubscriptionAccounting (
     PRIMARY KEY (ClientName, FileSetName)
 );
 
-UPDATE Version SET VersionId = 2260;
+-- update the schema version
+update Version set VersionId = 2260;
 
 commit;
 set client_min_messages = warning;

@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
   InitStackDump();
 
   MyNameIs(argc, argv, "bscan");
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
 
   OSDependentInit();
 

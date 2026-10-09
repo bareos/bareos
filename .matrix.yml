@@ -113,10 +113,11 @@ OS:
       ARCH:
         - amd64
   MacOS:
-    "15":
+    "26":
       TYPE: macos
       ARCH:
         - x64
+        - arm64
   win:
     native:
       TYPE: win-native

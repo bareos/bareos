@@ -120,7 +120,7 @@ static const ResourceItem client_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
   { "Address", CFG_TYPE_STR, ITEM(res_client, address), {config::Required{}}},
   { "Port", CFG_TYPE_PINT32, ITEM(res_client, FDport), {config::DefaultValue{FD_DEFAULT_PORT}, config::Alias{"FdPort"}}},
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client, password), {config::Required{}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client, password_), {config::Required{}}},
     TLS_COMMON_CONFIG(res_client),
     TLS_CERT_CONFIG(res_client),
   {}
@@ -136,7 +136,7 @@ static const ResourceItem store_items[] = {
   { "Description", CFG_TYPE_STR, ITEM(res_store, description_), {}},
   { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
   { "Address", CFG_TYPE_STR, ITEM(res_store, address), {config::Required{}, config::Alias{"SdAddress"}}},
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password), {config::Required{}, config::Alias{"SdPassword"}}},
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store, password_), {config::Required{}, config::Alias{"SdPassword"}}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
   {}
@@ -232,14 +232,14 @@ static void FreeResource(BareosResource* res, int type)
       ClientResource* p = dynamic_cast<ClientResource*>(res);
       assert(p);
       if (p->address) { free(p->address); }
-      if (p->password.value) { free(p->password.value); }
+      if (p->password_.value) { free(p->password_.value); }
       break;
     }
     case R_STORAGE: {
       StorageResource* p = dynamic_cast<StorageResource*>(res);
       assert(p);
       if (p->address) { free(p->address); }
-      if (p->password.value) { free(p->password.value); }
+      if (p->password_.value) { free(p->password_.value); }
       break;
     }
     case R_CONSOLE_FONT: {

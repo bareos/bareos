@@ -6,6 +6,7 @@ CREATE TABLE Path
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
+ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE UNIQUE INDEX path_name_idx ON Path (Path);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
@@ -36,6 +37,7 @@ CREATE TABLE File (
    Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
+ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- This index is important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
@@ -106,6 +108,7 @@ CREATE TABLE Job
 );
 
 CREATE INDEX job_name_idx ON job (Name);
+CREATE INDEX job_starttime_idx ON job (StartTime);
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);

@@ -139,8 +139,6 @@ bool CheckResources()
     return false;
   }
 
-  CloseMsg(nullptr);              /* close temp message handler */
-  InitMsg(nullptr, me->messages); /* open daemon message handler */
   if (me->secure_erase_cmdline) {
     SetSecureEraseCmdline(me->secure_erase_cmdline);
   }
@@ -221,6 +219,9 @@ bool DoReloadConfig()
     backup_container->SetNext(my_config->GetCurrentConfiguration());
 
     Dmsg0(10, "Director's configuration file reread successfully.\n");
+
+    CloseMsg(nullptr); /* close old handler */
+    InitDaemonMsg(me->messages);
   } else {  // parse config failed
     Jmsg(nullptr, M_ERROR, 0, T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());

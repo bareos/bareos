@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 
   working_directory = "/tmp";
   MyNameIs(argc, argv, "bls");
-  InitMsg(nullptr, nullptr); /* initialize message handler */
+  InitDaemonMsg(nullptr); /* initialize message handler */
 
   OSDependentInit();
 

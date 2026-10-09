@@ -69,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: fix cancel duplicate crash [PR #2833]
 - fix(dird): accept extended labels after purge truncate [PR #2815]
 - webui-proxy: include <cstdint> for int32_t in director_connection.h [PR #2826]
+- bareoslib: add new value for Verify Peer and set it as the default [PR #2854]
+- dird: fix reload related crash [PR #2768]
+- macos: update to 26, introduce arm64 architecture [PR #2834]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -110,6 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2777]
 - bareosfd: fix misusing the python api [PR #2810]
 - plugins: (debian) add missing data from /etc/postgresql [PR #2827]
+- traymon: fix crash when trying to connecting to fd/sd [PR #2857]
+- cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2395,6 +2400,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2763]: https://github.com/bareos/bareos/pull/2763
 [PR #2764]: https://github.com/bareos/bareos/pull/2764
 [PR #2765]: https://github.com/bareos/bareos/pull/2765
+[PR #2768]: https://github.com/bareos/bareos/pull/2768
 [PR #2771]: https://github.com/bareos/bareos/pull/2771
 [PR #2772]: https://github.com/bareos/bareos/pull/2772
 [PR #2777]: https://github.com/bareos/bareos/pull/2777
@@ -2411,4 +2417,8 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2827]: https://github.com/bareos/bareos/pull/2827
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
+[PR #2834]: https://github.com/bareos/bareos/pull/2834
+[PR #2854]: https://github.com/bareos/bareos/pull/2854
+[PR #2857]: https://github.com/bareos/bareos/pull/2857
+[PR #2866]: https://github.com/bareos/bareos/pull/2866
 [unreleased]: https://github.com/bareos/bareos/tree/master

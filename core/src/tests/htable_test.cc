@@ -86,3 +86,36 @@ TEST(htable, htable)
 struct RbListJobControlRecord {
   char* buf;
 };
+
+TEST(htable_impl, Growth)
+{
+  struct value {
+    /* we chose a structure that does not have link as its first member
+     * so that the offset is not 0.  This is done so we can test that
+     * growth does _not_ accidentially reset the offset to 0. */
+    char x{};
+    hlink link{};
+  };
+
+
+  htableImpl impl{offsetof(value, link)};
+
+  std::vector<value> pre_growth_links;
+  pre_growth_links.resize(impl.capacity());
+
+  for (uint64_t i = 0; i < pre_growth_links.size(); ++i) {
+    ASSERT_TRUE(impl.insert(i, &pre_growth_links[i]));
+    ASSERT_EQ(impl.capacity(), pre_growth_links.size())
+        << "Growth at insert " << i + 1 << "/" << pre_growth_links.size();
+  }
+
+  value threshold;
+  ASSERT_TRUE(impl.insert(pre_growth_links.size(), &threshold));
+
+
+  EXPECT_GT(impl.capacity(), pre_growth_links.size());
+
+  // we want to make sure that inserting still works after the growth
+  value next;
+  EXPECT_TRUE(impl.insert(pre_growth_links.size() + 1, &next));
+}

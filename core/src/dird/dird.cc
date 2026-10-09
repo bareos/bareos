@@ -26,6 +26,7 @@
  * the main program
  */
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/sql.h"
@@ -141,7 +142,9 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");
-  InitMsg(nullptr, nullptr); /* initialize message handler */
+
+  SetJobCodeCallback(job_code_callback_director);
+  InitDaemonMsg(nullptr); /* initialize message handler */
   daemon_start_time = time(nullptr);
 
   console_command = RunConsoleCommand;
@@ -282,6 +285,9 @@ int main(int argc, char* argv[])
     TerminateDird(BEXIT_SUCCESS);
     return BEXIT_SUCCESS;
   }
+
+  CloseMsg(nullptr);           /* close temp message handler */
+  InitDaemonMsg(me->messages); /* open daemon message handler */
 
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work

@@ -1107,6 +1107,18 @@ static void PropagateResource(const ResourceItem* items,
           SetBit(i, dest->inherit_content_);
           break;
         }
+        case CFG_TYPE_VERIFY_PEER: {
+          VerifyPeerSetting *def_bvalue, *bvalue;
+
+          // Handle bool fields
+
+          def_bvalue = (VerifyPeerSetting*)((char*)(source) + offset);
+          bvalue = (VerifyPeerSetting*)((char*)dest + offset);
+          *bvalue = *def_bvalue;
+          dest->SetMemberPresent(items[i].name);
+          SetBit(i, dest->inherit_content_);
+          break;
+        }
         case CFG_TYPE_AUTOPASSWORD: {
           s_password *s_pwd, *d_pwd;
 

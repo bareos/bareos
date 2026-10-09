@@ -99,7 +99,6 @@ class ClientResource
 
   uint32_t FDport = 0; /* Where File daemon listens */
   char* address = nullptr;
-  s_password password;
 };
 
 // Store Resource
@@ -112,7 +111,6 @@ class StorageResource
 
   uint32_t SDport = 0; /* port where Directors connect */
   char* address = nullptr;
-  s_password password;
 };
 
 class ConsoleFontResource

@@ -114,6 +114,7 @@ thread_local std::vector<python_thread_state> tl_threadstates{};
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
+PyObject* bareosfd_module{nullptr};
 PyThreadState* mainThreadState{nullptr};
 
 /* Return this threads thread state for interp if it exists.  Returns
@@ -987,8 +988,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   Py_DECREF(pluginPath);
 
   /* import the bareosfd module */
-  PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-  if (!bareosfdModule) {
+  bareosfd_module = PyImport_ImportModule("bareosfd");
+  if (!bareosfd_module) {
     printf("loading of bareosfd extension module failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
@@ -1028,6 +1029,7 @@ bRC unloadPlugin()
   std::unique_lock _{finalize_lock};
   if (mainThreadState) {
     PyEval_RestoreThread(mainThreadState);
+    Py_DECREF(bareosfd_module);
     Py_Finalize();
     mainThreadState = nullptr;
   }
