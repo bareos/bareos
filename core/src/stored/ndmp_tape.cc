@@ -48,6 +48,7 @@
 #  include "stored/stored_jcr_impl.h"
 #  include "stored/label.h"
 #  include "stored/mount.h"
+#  include "stored/ndmp_session_registry.h"
 #  include "stored/read_record.h"
 #  include "stored/spool.h"
 #  include "lib/address_conf.h"
@@ -496,21 +497,6 @@ static int BndmpSimuFlushWeof(struct ndm_session* sess)
   return 0;
 }
 
-// Search the JCRs for one with the given security key.
-static inline JobControlRecord* get_jcr_by_security_key(char* security_key)
-{
-  JobControlRecord* jcr;
-
-  foreach_jcr (jcr) {
-    if (bstrcmp(jcr->sd_auth_key, security_key)) {
-      jcr->IncUseCount();
-      break;
-    }
-  }
-  endeach_jcr(jcr);
-  return jcr;
-}
-
 extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
                                        char* drive_name,
                                        int will_write)
@@ -528,7 +514,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
 
   // Lookup the jobid the drive_name should contain a valid authentication key.
   *filesystem++ = '\0';
-  if (!(jcr = get_jcr_by_security_key(drive_name))) {
+  if (!(jcr = AcquireJcrByNdmpSessionToken(drive_name))) {
     Jmsg1(NULL, M_FATAL, 0,
           T_("NDMP tape open failed: Security Key not found: %s\n"),
           drive_name);
@@ -752,8 +738,8 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
     }
   }
 
-  pthread_cond_signal(
-      &jcr->sd_impl->job_end_wait); /* wake any waiting thread */
+  *jcr->sd_impl->job_ended.lock() = true;
+  jcr->sd_impl->job_end_wait.notify_one(); /* wake any waiting thread */
 
   ndmos_tape_initialize(sess);
 
