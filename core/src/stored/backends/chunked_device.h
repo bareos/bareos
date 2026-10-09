@@ -59,9 +59,9 @@ struct DeviceStatusInformation;
 /*
  * Maximum number of chunks per volume.
  * When you change this make sure you update the %04d format
- * used in the code to format the chunk numbers e.g. 0000-9999
+ * used in the code to format the chunk numbers e.g. 00000-32767
  */
-#define MAX_CHUNKS 10000
+#define MAX_CHUNKS 32768
 
 /*
  * Busy wait retry for inflight chunks.
