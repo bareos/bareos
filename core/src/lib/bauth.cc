@@ -622,7 +622,9 @@ bool ParseChallenges(std::vector<challenge>& challenges,
       return false;
     }
 
-    Dmsg0(200, "Received challenge { internal_name: '%s', display_name: '%s', type: '%s', challenge: '%s' }\n",
+    Dmsg0(200,
+          "Received challenge { internal_name: '%s', display_name: '%s', type: "
+          "'%s', challenge: '%s' }\n",
           internal_name, display_name, type, challenge);
 
     challenges.emplace_back(internal_name, display_name, type, challenge);
