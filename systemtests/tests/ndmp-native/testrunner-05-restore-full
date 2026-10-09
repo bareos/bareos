@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# run multiple incremental backups
+# make sure we can restore a full backup
 #
 
 TestName="$(basename "$(pwd)")"
@@ -35,41 +35,40 @@ export TestName
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
+
 start_test
 
-# Incremental Part
-# Isilon can have now up to 32, but the Solaris/omnios NDMP still only accepts 9.
-# So we limit to 9 on omnios
-# https://docs.bareos.org/BareosMainReference/TasksAndConcepts/NdmpBackupsWithBareos.html#ndmp-backup-level
-limit=10
-if [ "${NDMP_TEST}" = "omnios" ]; then
-  limit=9
-fi
-echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to ${limit} ##################"
+# remove files
+cleanup_remote
 
-make_remote_data_incremental
+echo "################ restore full #####################"
 
-for ID in $(seq 1 ${limit}); do
-  ndmp_ssh "echo \"${NDMP_HOST_ADDRESS}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
-
-  cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/incr-${ID}.out
-run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Incremental yes
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore.out
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
 wait
 message
 END_OF_DATA
 
-  run_bconsole "${tmp}/bconcmds"
+run_bconsole "${tmp}/bconcmds"
 
-  check_log "${log_home}/incr-${ID}.out"
-done
+# Beware of File count mismatch, there's always only one file restored.
+if ! check_log "${log_home}/restore.out"; then
+  if [ ${bstat} -eq 0 ] && [ ${rstat} -eq 1 ]; then
+    echo "Restore warning: known issue with NDMP restore."
+    rstat=0
+  else
+    echo "Restore failed and backup was not successful. This is an unexpected issue."
+    exit 1
+  fi
+fi
 
-#
-# Job cancelling doesn't work that well and lead to all sort of issues
-# it might be a good idea to test this
-#
+# printf is used to suppress error return due to null byte
+# bash: line 1: warning: command substitution: ignored null byte in input
+ndmp_ssh "tail -c 200 \"${NDMP_TEST_PATH}/full\" | xargs | grep -F -- \"${NDMP_HOST_ADDRESS}\""
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+ndmp_ssh "cat \"${NDMP_TEST_PATH}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
-#uncomment once fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

@@ -567,13 +567,23 @@ int ndmca_mover_stop(struct ndm_session* sess)
 int ndmca_connect_close(struct ndm_session* sess)
 {
   struct ndmconn* conn = sess->plumb.tape;
+  struct ndm_control_agent* ca = sess->control_acb;
+  int result = 0;
   int rc;
+
+  if (ca->robot_is_open) {
+    rc = ndmscsi_close(sess->plumb.robot);
+    ca->robot_is_open = 0;
+    if (rc) result = rc;
+  }
+
+  if (!conn) return result;
 
   NDMC_WITH_NO_REPLY(ndmp9_connect_close, NDMP9VER)
   rc = NDMC_CALL(conn);
   NDMC_ENDWITH
 
-  return rc;
+  return rc ? rc : result;
 }
 
 int ndmca_mover_set_window(struct ndm_session* sess,
