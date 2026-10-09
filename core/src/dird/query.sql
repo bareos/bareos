@@ -332,19 +332,25 @@ ORDER BY
  pg_total_relation_size(ut.relname::text) DESC;
 
 # 25
-:Show next value of tables sequences and purcentage exhaust
+:Show next value of table sequences and percentage exhaustion
 WITH seq AS (
     SELECT
+        seq.relname AS sequence_name,
         t.relname AS table_name,
         a.attname AS column_name,
-        pg_sequence_last_value(ps.seqrelid) AS last_value,
-        ps.seqmax                           AS seq_max,
-        CASE a.atttypid
-            WHEN 'int2'::regtype THEN 32767::bigint
-            WHEN 'int4'::regtype THEN 2147483647::bigint
-            WHEN 'int8'::regtype THEN 9223372036854775807::bigint
-        END                                 AS col_max
+        CASE
+            WHEN pg_sequence_last_value(ps.seqrelid) IS NULL
+                THEN ps.seqstart
+            ELSE pg_sequence_last_value(ps.seqrelid) + ps.seqincrement
+        END AS next_value,
+        least(
+            ps.seqmax,
+            CASE a.atttypid
+                WHEN 'int4'::regtype THEN 2147483647::bigint
+                WHEN 'int8'::regtype THEN 9223372036854775807::bigint
+            END) AS max_value
     FROM pg_sequence ps
+    JOIN pg_class seq ON seq.oid = ps.seqrelid
     JOIN pg_depend d
       ON d.objid      = ps.seqrelid
      AND d.classid    = 'pg_class'::regclass
@@ -355,14 +361,17 @@ WITH seq AS (
                        AND a.attnum   = d.refobjsubid
     WHERE t.relnamespace = 'public'::regnamespace
       AND t.relkind IN ('r', 'p')
+      AND a.atttypid IN ('int4'::regtype, 'int8'::regtype)
+      AND ps.seqincrement > 0
+      AND NOT ps.seqcycle
 )
 SELECT
+    sequence_name,
     table_name,
     column_name,
-    last_value,
-    seq_max,
-    col_max,
-    round(last_value * 100.0 / least(seq_max, col_max), 2) AS pct_used
+    next_value,
+    max_value,
+    round(next_value * 100.0 / max_value, 2) AS pct_used
 FROM seq
 ORDER BY pct_used DESC NULLS LAST;
 
