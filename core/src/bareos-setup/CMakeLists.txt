@@ -101,6 +101,7 @@ add_custom_command(
 # ---------------------------------------------------------------------------
 set(SETUP_SOURCES
     main.cc http_server.cc setup_session.cc setup_steps.cc command_runner.cc
+    browser_launcher.cc
     os_detector.cc tui_wizard.cc "${EMBEDDED_ASSETS_CC}"
 )
 
@@ -200,6 +201,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   add_executable(
     test_bareos_setup_steps
     tests/test_setup_steps_shared.cc setup_steps.cc command_runner.cc
+    browser_launcher.cc
     os_detector.cc setup_session.cc http_server.cc tui_wizard.cc
     "${EMBEDDED_ASSETS_CC}"
   )
