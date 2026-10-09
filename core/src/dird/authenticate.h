@@ -26,6 +26,7 @@
 #include "dird/ua.h"
 #include "lib/bsock.h"
 #include "dird/dird_conf.h"
+#include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
 
 #include <string>
@@ -39,13 +40,13 @@ class UaContext;
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 
-struct DirectorAuth : ::TlsConfigProvider {
+struct DirectorAuth : ::ConnectionInfoProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
   {
   }
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view name) override;
+  std::unique_ptr<ConnectionInfo> get_info_for(global_resource::Type type,
+                                               std::string_view name) override;
 
   enum class inbound_type
   {

@@ -52,6 +52,7 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/bauth/cram_md5.h"
 
 #include <array>
 
@@ -132,8 +133,9 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
-                                     std::string_view name)
+std::unique_ptr<ConnectionInfo> DirectorAuth::get_info_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   char tbuf[MAX_TIME_LENGTH];
   bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL));
@@ -168,7 +170,7 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
       data.res = res;
 
       type = inbound_type::Client;
-      return res;
+      return std::make_unique<DefaultConnectionInfo>(*res);
     } break;
     case global_resource::Type::Console: {
       Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
@@ -221,7 +223,8 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
       }
 
       type = inbound_type::Console;
-      return &data.tls;
+
+      return std::make_unique<DefaultConnectionInfo>(data.tls);
     } break;
     default: {
     }
