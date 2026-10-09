@@ -196,7 +196,7 @@ bool CramMd5Handshake::CramMd5Response()
     return false;
   }
 
-  Dmsg1(100, "cram-get received: %s", bs_->msg);
+  Dmsg1(100, "cram-get received: %s\n", bs_->msg);
   chal.check_size(bs_->message_length);
   if (bs_->IsBnetDumpEnabled()) {
     std::vector<char> destination_qualified_name(256);
@@ -214,7 +214,7 @@ bool CramMd5Handshake::CramMd5Response()
                        destination_qualified_name.data())
                < 2) {  // minimum 2
       if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
-        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
+        Dmsg1(debuglevel_, "Cannot scan challenge: %s\n", bs_->msg);
         bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
         result = HandshakeResult::FORMAT_MISMATCH;
