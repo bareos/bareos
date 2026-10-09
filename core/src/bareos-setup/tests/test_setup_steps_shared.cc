@@ -1754,11 +1754,59 @@ TEST(BareosSetupStepsShared, DetectsOsWithoutFailingOnUnknownSystems)
   EXPECT_FALSE(info.arch.empty());
 }
 
-TEST(BareosSetupStepsShared, DetectsPackageManagerFromPath)
+TEST(BareosSetupStepsShared, SelectsPackageManagerFromDistribution)
 {
-  FakeToolPath tools({"dnf"}, false);
+  FakeToolPath tools({"apt-get", "dnf", "yum", "zypper"}, false);
 
-  EXPECT_EQ(DetectOs().pkg_mgr, PackageManager::Dnf);
+  OsInfo debian;
+  debian.distro = "debian";
+  EXPECT_EQ(DetectPackageManager(debian), PackageManager::Apt);
+
+  OsInfo fedora;
+  fedora.distro = "fedora";
+  EXPECT_EQ(DetectPackageManager(fedora), PackageManager::Dnf);
+
+  OsInfo suse;
+  suse.distro = "opensuse-leap";
+  EXPECT_EQ(DetectPackageManager(suse), PackageManager::Zypper);
+}
+
+TEST(BareosSetupStepsShared, SelectsPackageManagerFromIdLike)
+{
+  FakeToolPath tools({"apt-get", "dnf", "yum", "zypper"}, false);
+
+  OsInfo mint;
+  mint.distro = "linuxmint";
+  mint.id_like = {"ubuntu", "debian"};
+  EXPECT_EQ(DetectPackageManager(mint), PackageManager::Apt);
+
+  OsInfo rocky;
+  rocky.distro = "rocky";
+  rocky.id_like = {"rhel", "fedora"};
+  EXPECT_EQ(DetectPackageManager(rocky), PackageManager::Dnf);
+}
+
+TEST(BareosSetupStepsShared, UsesYumWhenDnfIsUnavailableOnRpmFamily)
+{
+  FakeToolPath tools({"apt-get", "yum", "zypper"}, false);
+
+  OsInfo rhel;
+  rhel.distro = "rhel";
+  EXPECT_EQ(DetectPackageManager(rhel), PackageManager::Yum);
+}
+
+TEST(BareosSetupStepsShared, DoesNotGuessForUnknownOrMissingPackageManager)
+{
+  FakeToolPath tools({"apt-get", "dnf", "yum", "zypper"}, false);
+
+  OsInfo unknown;
+  unknown.distro = "nixos";
+  EXPECT_EQ(DetectPackageManager(unknown), PackageManager::Unknown);
+
+  OsInfo debian;
+  debian.distro = "debian";
+  FakeToolPath no_apt({"dnf"}, false);
+  EXPECT_EQ(DetectPackageManager(debian), PackageManager::Unknown);
 }
 
 TEST(BareosSetupStepsShared, ValidatesRepositoryOsPaths)

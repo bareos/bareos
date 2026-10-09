@@ -61,6 +61,12 @@ struct OsInfo {
 OsInfo ParseOsRelease(const std::string& content);
 
 /**
+ * Select the package manager expected by the distribution and verify that it
+ * is executable on PATH.
+ */
+PackageManager DetectPackageManager(const OsInfo& os);
+
+/**
  * Detect the host OS.
  *
  * A missing or unreadable /etc/os-release is not an error: the returned

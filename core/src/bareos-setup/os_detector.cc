@@ -129,6 +129,63 @@ static bool IsExecutableInPath(std::string_view name)
   return false;
 }
 
+namespace {
+
+enum class PackageManagerFamily
+{
+  Unknown,
+  Apt,
+  Rpm,
+  Suse
+};
+
+PackageManagerFamily GetPackageManagerFamily(std::string_view distro)
+{
+  if (distro == "debian" || distro == "ubuntu") {
+    return PackageManagerFamily::Apt;
+  }
+  if (distro == "fedora" || distro == "rhel" || distro == "centos"
+      || distro == "almalinux" || distro == "rocky" || distro == "ol"
+      || distro == "oracle" || distro == "openela" || distro == "amzn") {
+    return PackageManagerFamily::Rpm;
+  }
+  if (distro == "sles" || distro == "sled" || distro == "suse"
+      || distro == "opensuse" || distro == "opensuse-leap"
+      || distro == "opensuse-tumbleweed" || distro == "opensuse-microos") {
+    return PackageManagerFamily::Suse;
+  }
+  return PackageManagerFamily::Unknown;
+}
+
+}  // namespace
+
+PackageManager DetectPackageManager(const OsInfo& os)
+{
+  auto family = GetPackageManagerFamily(os.distro);
+  if (family == PackageManagerFamily::Unknown) {
+    for (const auto& distro : os.id_like) {
+      family = GetPackageManagerFamily(distro);
+      if (family != PackageManagerFamily::Unknown) break;
+    }
+  }
+
+  switch (family) {
+    case PackageManagerFamily::Apt:
+      return IsExecutableInPath("apt-get") ? PackageManager::Apt
+                                           : PackageManager::Unknown;
+    case PackageManagerFamily::Rpm:
+      if (IsExecutableInPath("dnf")) return PackageManager::Dnf;
+      if (IsExecutableInPath("yum")) return PackageManager::Yum;
+      return PackageManager::Unknown;
+    case PackageManagerFamily::Suse:
+      return IsExecutableInPath("zypper") ? PackageManager::Zypper
+                                          : PackageManager::Unknown;
+    case PackageManagerFamily::Unknown:
+      return PackageManager::Unknown;
+  }
+  return PackageManager::Unknown;
+}
+
 OsInfo ParseOsRelease(const std::string& content)
 {
   OsInfo info;
@@ -173,16 +230,7 @@ OsInfo DetectOs()
   struct utsname uts{};
   if (uname(&uts) == 0) info.arch = uts.machine;
 
-  // Detect only package managers that command execution can resolve in PATH.
-  if (IsExecutableInPath("apt-get")) {
-    info.pkg_mgr = PackageManager::Apt;
-  } else if (IsExecutableInPath("dnf")) {
-    info.pkg_mgr = PackageManager::Dnf;
-  } else if (IsExecutableInPath("yum")) {
-    info.pkg_mgr = PackageManager::Yum;
-  } else if (IsExecutableInPath("zypper")) {
-    info.pkg_mgr = PackageManager::Zypper;
-  }
+  info.pkg_mgr = DetectPackageManager(info);
 
   return info;
 }
