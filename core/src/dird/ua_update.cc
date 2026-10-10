@@ -38,10 +38,12 @@
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
+#include "dird/ua_prune.h"
 #include "dird/ua_select.h"
 #include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "dird/volstatus_change.h"
 #include "volume_key.h"
 
 namespace directordaemon {
@@ -128,7 +130,34 @@ bool UpdateCmd(UaContext* ua, const char*)
   return true;
 }
 
-static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
+static bool VolumeHasJobs(UaContext* ua, const MediaDbRecord* mr)
+{
+  PoolMem query(PM_MESSAGE);
+  s_count_ctx cnt;
+  cnt.count = 0;
+  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%" PRIdbid " LIMIT 1",
+       mr->MediaId);
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str(), DelCountHandler,
+                                            static_cast<void*>(&cnt))) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return true;  // assume the worst
+  }
+  return cnt.count != 0;
+}
+
+static VolStatusChange CheckVolStatusChange(UaContext* ua,
+                                            const MediaDbRecord* mr,
+                                            const char* requested)
+{
+  bool has_jobs
+      = VolStatusEquals(requested, NT_("Cleaning")) && VolumeHasJobs(ua, mr);
+  return CheckVolStatusChange(mr->VolStatus, requested, has_jobs);
+}
+
+static void UpdateVolstatus(UaContext* ua,
+                            const char* val,
+                            MediaDbRecord* mr,
+                            bool force)
 {
   PoolMem query(PM_MESSAGE);
   const char* kw[] = {NT_("Append"),   NT_("Archive"),
@@ -147,16 +176,45 @@ static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
   }
   if (!found) {
     ua->ErrorMsg(T_("Invalid VolStatus specified: %s\n"), val);
+    return;
+  }
+
+  switch (CheckVolStatusChange(ua, mr, kw[i])) {
+    case VolStatusChange::kUnchanged:
+      ua->InfoMsg(T_("Volume status is already: %s\n"), mr->VolStatus);
+      return;
+    case VolStatusChange::kRecycleRequiresPurged:
+      if (!force) {
+        ua->ErrorMsg(
+            T_("Volume \"%s\" has status %s. Only Purged volumes can be set "
+               "to Recycle, as recycling relabels the volume and loses its "
+               "data. Purge the volume first or add \"force\".\n"),
+            mr->VolumeName, mr->VolStatus);
+        return;
+      }
+      break;
+    case VolStatusChange::kCleaningRequiresEmptyVolume:
+      if (!force) {
+        ua->ErrorMsg(
+            T_("Volume \"%s\" still contains jobs. Only volumes without jobs "
+               "can be set to Cleaning, as cleaning volumes are never used "
+               "for backups. Add \"force\" to override.\n"),
+            mr->VolumeName);
+        return;
+      }
+      break;
+    case VolStatusChange::kAllowed:
+      break;
+  }
+
+  char ed1[50];
+  bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
+  Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s", mr->VolStatus,
+       edit_int64(mr->MediaId, ed1));
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
+    ua->ErrorMsg("%s", ua->db->strerror());
   } else {
-    char ed1[50];
-    bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
-    Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s",
-         mr->VolStatus, edit_int64(mr->MediaId, ed1));
-    if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
-      ua->ErrorMsg("%s", ua->db->strerror());
-    } else {
-      ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
-    }
+    ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
   }
 }
 
@@ -601,6 +659,27 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
+static void UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
+{
+  PoolMem query(PM_MESSAGE);
+  char ed1[50];
+
+  DbLocker _{ua->db};
+  auto esc = ua->db->EscapeString(ua->jcr, val);
+  if (!esc) {
+    ua->ErrorMsg(T_("Could not escape comment.\n"));
+    return;
+  }
+  Mmsg(query, "UPDATE Media SET Comment='%s' WHERE MediaId=%s", esc->c_str(),
+       edit_int64(mr->MediaId, ed1));
+  if (!ua->db->SqlQuery(query.c_str())) {
+    ua->ErrorMsg(T_("Error updating media record Comment: ERR=%s"),
+                 ua->db->strerror());
+  } else {
+    ua->InfoMsg(T_("New Comment is: %s\n"), val);
+  }
+}
+
 /**
  * Update a media record -- allows you to change the
  *  Volume status. E.g. if you want BAREOS to stop
@@ -633,9 +712,12 @@ static bool UpdateVolume(UaContext* ua)
                       NT_("ActionOnPurge"), /* 14 */
                       NT_("Storage"),       /* 15 */
                       NT_("Encrypt"),       /* 16 */
+                      NT_("Comment"),       /* 17 */
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
+
+  const bool force = FindArg(ua, NT_("force")) > 0;
 
   for (i = 0; kw[i]; i++) {
     int j;
@@ -647,7 +729,7 @@ static bool UpdateVolume(UaContext* ua)
       if (i != AllFromPool && !SelectMediaDbr(ua, &mr)) { return false; }
       switch (i) {
         case 0:
-          UpdateVolstatus(ua, ua->argv[j], &mr);
+          UpdateVolstatus(ua, ua->argv[j], &mr, force);
           break;
         case 1:
           UpdateVolretention(ua, ua->argv[j], &mr);
@@ -702,6 +784,9 @@ static bool UpdateVolume(UaContext* ua)
         case 16:
           UpdateVolEncryption(ua, ua->argv[j], &mr);
           break;
+        case 17:
+          UpdateVolComment(ua, ua->argv[j], &mr);
+          break;
       }
       done = true;
     }
@@ -737,12 +822,13 @@ static bool UpdateVolume(UaContext* ua)
     AddPrompt(ua, T_("RecyclePool"));                /* 15 */
     AddPrompt(ua, T_("Action On Purge"));            /* 16 */
     AddPrompt(ua, T_("Storage"));                    /* 17 */
-    AddPrompt(ua, T_("Done"));                       /* 18 */
+    AddPrompt(ua, T_("Comment"));                    /* 18 */
+    AddPrompt(ua, T_("Done"));                       /* 19 */
     i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
      * a Volume record */
-    if (i != 12 && i != 13 && i != 18) {
+    if (i != 12 && i != 13 && i != 19) {
       if (!SelectMediaDbr(ua, &mr)) { /* Get Volume record */
         return false;
       }
@@ -753,22 +839,21 @@ static bool UpdateVolume(UaContext* ua)
         /* Modify Volume Status */
         ua->InfoMsg(T_("Current Volume status is: %s\n"), mr.VolStatus);
         StartPrompt(ua, T_("Possible Values are:\n"));
-        AddPrompt(ua, NT_("Append"));
-        AddPrompt(ua, NT_("Archive"));
-        AddPrompt(ua, NT_("Disabled"));
-        AddPrompt(ua, NT_("Full"));
-        AddPrompt(ua, NT_("Used"));
-        AddPrompt(ua, NT_("Cleaning"));
-        if (bstrcmp(mr.VolStatus, NT_("Purged"))) {
-          AddPrompt(ua, NT_("Recycle"));
+        for (const char* status :
+             {NT_("Append"), NT_("Archive"), NT_("Disabled"), NT_("Full"),
+              NT_("Used"), NT_("Cleaning"), NT_("Recycle"), NT_("Read-Only")}) {
+          auto change = CheckVolStatusChange(ua, &mr, status);
+          if (change == VolStatusChange::kAllowed
+              || (force && change != VolStatusChange::kUnchanged)) {
+            AddPrompt(ua, status);
+          }
         }
-        AddPrompt(ua, NT_("Read-Only"));
         if (DoPrompt(ua, "", T_("Choose new Volume Status"), ua->cmd,
                      sizeof(mr.VolStatus))
             < 0) {
           return true;
         }
-        UpdateVolstatus(ua, ua->cmd, &mr);
+        UpdateVolstatus(ua, ua->cmd, &mr, force);
         break;
       case 1: /* Retention */
         ua->InfoMsg(T_("Current retention period is: %s\n"),
@@ -932,6 +1017,11 @@ static bool UpdateVolume(UaContext* ua)
         ua->InfoMsg(T_("New Storage is: %s\n"), sr.Name);
         return true;
 
+      case 18:
+        if (!GetCmd(ua, T_("Enter new Comment: "))) { return false; }
+        UpdateVolComment(ua, ua->cmd, &mr);
+        break;
+
       default: /* Done or error */
         ua->InfoMsg(T_("Selection terminated.\n"));
         return true;
@@ -1001,12 +1091,14 @@ static bool UpdateJob(UaContext* ua)
   char* job_name = NULL;
   char* start_time = NULL;
   char job_type = '\0';
+  const char* comment = nullptr;
   DBId_t fileset_id = 0;
   const char* kw[] = {NT_("starttime"), /* 0 */
                       NT_("client"),    /* 1 */
                       NT_("filesetid"), /* 2 */
                       NT_("jobname"),   /* 3 */
                       NT_("jobtype"),   /* 4 */
+                      NT_("comment"),   /* 5 */
                       NULL};
 
   Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -1041,13 +1133,35 @@ static bool UpdateJob(UaContext* ua)
         case 4: /* Job Type */
           job_type = ua->argv[j][0];
           break;
+        case 5: /* Comment */
+          comment = ua->argv[j];
+          break;
       }
     }
   }
-  if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-    ua->ErrorMsg(T_(
-        "Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
+  if (!client_name && !start_time && !fileset_id && !job_name && !job_type
+      && !comment) {
+    ua->ErrorMsg(
+        T_("Neither Client, StartTime, Filesetid, JobType, Name nor Comment "
+           "specified.\n"));
     return false;
+  }
+  if (comment) {
+    auto esc = ua->db->EscapeString(ua->jcr, comment);
+    if (!esc) {
+      ua->ErrorMsg(T_("Could not escape comment.\n"));
+      return false;
+    }
+    Mmsg(cmd, "UPDATE Job SET Comment='%s' WHERE JobId=%s", esc->c_str(),
+         edit_int64(jr.JobId, ed1));
+    if (!ua->db->SqlQuery(cmd.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
+    ua->InfoMsg(T_("New Comment is: %s\n"), comment);
+    if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
+      return true;
+    }
   }
   if (client_name) {
     if (!GetClientDbr(ua, &cr)) { return false; }

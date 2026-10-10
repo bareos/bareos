@@ -86,6 +86,7 @@ target_sources(
           recycle.cc
           reload.cc
           restore.cc
+          restore_options.cc
           run_conf.cc
           run_on_incoming_connect_interval.cc
           sd_cmds.cc
@@ -109,11 +110,16 @@ target_sources(
           ua_purge.cc
           ua_query.cc
           ua_restore.cc
+          ua_restore_point_display.cc
+          restore_plugin_hints.cc
           ua_run.cc
           ua_select.cc
           ua_server.cc
           ua_status.cc
           ua_tree.cc
+          ua_tree_browser.cc
+          ua_visual_busy.cc
+          volume_usage.cc
           ua_update.cc
           vbackup.cc
           verify.cc

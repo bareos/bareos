@@ -46,6 +46,10 @@ How to update files in `module/Application/language` if there were changes in so
 Run the script `webui/scripts/localization_update.sh` to scan for changes and generate new \*.po(t) files.
 The Bareos team takes care of this task and the synchronization with POEditor.
 
+These gettext instructions apply only to the classic PHP WebUI. The
+independent JSON and POEditor workflow for the Vue WebUI is documented in
+:ref:`section-dev-webui-vue`.
+
 .. _section-dev-webui-command-usage-in-modules:
 
 Command usage in modules and the according ACL requirements
