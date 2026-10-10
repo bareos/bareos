@@ -154,7 +154,8 @@ async function selectQOptionByFilterText(
       const option = page.locator(`[id="${listboxId}"]`).getByRole('option').first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await expect(option).toContainText(filterText, { ignoreCase: true })
-      await option.click()
+      // a short timeout lets a detached option fail fast so the retry can run
+      await option.click({ timeout: Math.max(optionTimeoutMs, 5000) })
       break
     } catch (error) {
       if (page.isClosed() || attempt === 2) {
