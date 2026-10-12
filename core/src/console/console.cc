@@ -34,6 +34,8 @@
 #include "console/console_output.h"
 #include "console/connect_to_director.h"
 #include "include/jcr.h"
+#include "lib/bauth.h"
+#include "lib/bauth/cram_md5.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bnet_network_dump.h"
@@ -827,6 +829,22 @@ static bool ExaminePamAuthentication(
 }
 #endif /* HAVE_PAM */
 
+struct ConsoleAuthenticator : auth::OutboundAuthenticator {
+  bool authenticate(auth::OutboundArgs args) override
+  {
+    auth::Algorithms algs;
+
+    auto identity = my_name;
+    auto password = args.target->password_.value;
+    algs.add<auth::CramMd5::Prover>(identity, password);
+    algs.add<auth::CramMd5::Verifier>(identity, password);
+
+    return authenticate_outbound(algs.prover, algs.verifier, args);
+
+    return false;
+  }
+};
+
 int main(int argc, char* argv[])
 {
   INIT_LANGUAGES("");
@@ -1011,7 +1029,9 @@ int main(int argc, char* argv[])
   BStringList response_args;
 
   JobControlRecord jcr;
-  g_UA_sock = ConnectToDirector(jcr, heart_beat, response_args, response_id);
+  ConsoleAuthenticator auth;
+  g_UA_sock
+      = ConnectToDirector(jcr, heart_beat, response_args, response_id, &auth);
   if (!g_UA_sock) {
     ConsoleOutput(T_("Failed to connect to Director. Giving up.\n"));
     TerminateConsole(0);
