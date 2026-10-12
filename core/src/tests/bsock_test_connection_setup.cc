@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "lib/connect_accept.h"
 #include "testing_dir_common.h"
 
 #include "console/console_conf.h"
@@ -95,8 +96,11 @@ static PBareosSocket ConnectToDirector(JobControlRecord& jcr)
   BStringList args;
   uint32_t response_id = kMessageIdUnknown;
 
-  PBareosSocket UA_sock(console::ConnectToDirector(jcr, 0, args, response_id),
-                        [](BareosSocket* p) { delete p; });
+  Md5OutboundAuthenticator auth{};
+
+  PBareosSocket UA_sock(
+      console::ConnectToDirector(jcr, 0, args, response_id, &auth),
+      [](BareosSocket* p) { delete p; });
 
   EXPECT_EQ(response_id, kMessageIdOk);
 
