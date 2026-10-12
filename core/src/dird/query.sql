@@ -281,55 +281,53 @@ LIMIT %3;
 :List the top largest files for a JobId
 *Enter jobid:
 *Enter limit (recommended <= 100):
-select
+SELECT
  ls.st_size as size,
  p.path,
  f.name
-from
+FROM
  file f,
  path p,
  decode_lstat(f.lstat, array['st_size']) ls
-where
+WHERE
  f.jobid = %1
-and
+AND
  f.pathid = p.pathid
-order by size desc
+ORDER BY SIZE DESC
 limit %2;
 
 # 23
 :Show bareos database size
-select
+SELECT
  pg_size_pretty(
   pg_database_size(
    current_database()
   )
 )
-as catalog_size;
+AS catalog_size;
 
 # 24
 :Show tables and indexes used space, total tuples, dead tuples, vacuum, analyse informations
-select
+SELECT
  ut.relname,
- pg_size_pretty(pg_total_relation_size(ut.relname::text)) AS total_sz,
- pg_size_pretty(pg_table_size(ut.relname::text)) AS tbl_sz,
- pg_size_pretty(pg_indexes_size(ut.relname::text)) AS idx_sz,
+ pg_size_pretty(pg_total_relation_size(ut.relid)) AS total_sz,
+ pg_size_pretty(pg_table_size(ut.relid)) AS tbl_sz,
+ pg_size_pretty(pg_indexes_size(ut.relid)) AS idx_sz,
  pgc.reltuples::bigint,
  CASE
   WHEN (pgc.reltuples < 0) THEN 0
-  ELSE (pg_total_relation_size(ut.relname::text) / (pgc.reltuples+1))::int
+  ELSE (pg_total_relation_size(ut.relid) / (pgc.reltuples+1))::int
  END AS bytes_per_row,
  ut.n_dead_tup,
  ut.last_vacuum,
  ut.last_autovacuum,
  ut.last_analyze,
  ut.last_autoanalyze
-FROM
- pg_stat_user_tables AS ut,
- pg_class AS pgc
-WHERE
- pgc.relname = ut.relname AND ut.relname != 'batch'
+FROM pg_stat_user_tables AS ut
+JOIN pg_class AS pgc ON pgc.oid = ut.relid
+WHERE ut.relname != 'batch'
 ORDER BY
- pg_total_relation_size(ut.relname::text) DESC;
+ pg_total_relation_size(ut.relid) DESC;
 
 # 25
 :Show next value of table sequences and percentage exhaustion
@@ -338,11 +336,8 @@ WITH seq AS (
         seq.relname AS sequence_name,
         t.relname AS table_name,
         a.attname AS column_name,
-        CASE
-            WHEN pg_sequence_last_value(ps.seqrelid) IS NULL
-                THEN ps.seqstart
-            ELSE pg_sequence_last_value(ps.seqrelid) + ps.seqincrement
-        END AS next_value,
+        pg_sequence_last_value(ps.seqrelid) AS last_value,
+        ps.seqincrement,
         least(
             ps.seqmax,
             CASE a.atttypid
@@ -355,7 +350,7 @@ WITH seq AS (
       ON d.objid      = ps.seqrelid
      AND d.classid    = 'pg_class'::regclass
      AND d.refclassid = 'pg_class'::regclass
-     AND d.deptype    = 'a'
+     AND d.deptype IN ('a', 'i')
     JOIN pg_class     t ON t.oid = d.refobjid
     JOIN pg_attribute a ON a.attrelid = t.oid
                        AND a.attnum   = d.refobjsubid
@@ -364,23 +359,35 @@ WITH seq AS (
       AND a.atttypid IN ('int4'::regtype, 'int8'::regtype)
       AND ps.seqincrement > 0
       AND NOT ps.seqcycle
+),
+next_values AS (
+    SELECT
+        sequence_name,
+        table_name,
+        column_name,
+        CASE
+            WHEN last_value IS NULL THEN NULL
+            ELSE last_value::numeric + seqincrement::numeric
+        END AS next_value,
+        max_value
+    FROM seq
 )
 SELECT
     sequence_name,
     table_name,
     column_name,
-    next_value,
+    coalesce(next_value::text, 'unknown') AS next_value,
     max_value,
     round(next_value * 100.0 / max_value, 2) AS pct_used
-FROM seq
-ORDER BY pct_used DESC NULLS LAST;
+FROM next_values
+ORDER BY next_value / max_value DESC NULLS LAST;
 
 
 # 26
 :Show temporary number of files and bytes used
-select
+SELECT
  datname,
  temp_files,
  temp_bytes
-from pg_stat_database
-where datname=current_database();
+FROM pg_stat_database
+WHERE datname=current_database();

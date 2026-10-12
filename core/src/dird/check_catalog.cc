@@ -43,12 +43,8 @@ WITH sequences AS (
         seq.relname AS sequence_name,
         table_.relname AS table_name,
         attribute.attname AS column_name,
-        CASE
-            WHEN pg_sequence_last_value(sequence_data.seqrelid) IS NULL
-                THEN sequence_data.seqstart
-            ELSE pg_sequence_last_value(sequence_data.seqrelid)
-                 + sequence_data.seqincrement
-        END AS next_value,
+        pg_sequence_last_value(sequence_data.seqrelid) AS last_value,
+        sequence_data.seqincrement,
         least(
             sequence_data.seqmax,
             CASE attribute.atttypid
@@ -61,7 +57,7 @@ WITH sequences AS (
       ON dependency.objid = sequence_data.seqrelid
      AND dependency.classid = 'pg_class'::regclass
      AND dependency.refclassid = 'pg_class'::regclass
-     AND dependency.deptype = 'a'
+     AND dependency.deptype IN ('a', 'i')
     JOIN pg_class AS table_ ON table_.oid = dependency.refobjid
     JOIN pg_attribute AS attribute
       ON attribute.attrelid = table_.oid
@@ -71,10 +67,23 @@ WITH sequences AS (
       AND attribute.atttypid IN ('int4'::regtype, 'int8'::regtype)
       AND sequence_data.seqincrement > 0
       AND NOT sequence_data.seqcycle
+),
+next_values AS (
+    SELECT
+        sequence_name,
+        table_name,
+        column_name,
+        CASE
+            WHEN last_value IS NULL THEN NULL
+            ELSE last_value::numeric + seqincrement::numeric
+        END AS next_value,
+        max_value
+    FROM sequences
 )
 SELECT sequence_name, table_name, column_name, next_value, max_value
-FROM sequences
-ORDER BY next_value::numeric / max_value DESC;
+FROM next_values
+WHERE next_value IS NOT NULL
+ORDER BY next_value / max_value DESC;
 )sql";
 
 struct CatalogSequenceWarningContext {
@@ -90,8 +99,8 @@ int AddCatalogSequenceWarning(void* ctx, int fields, char** row)
     return 1;
   }
 
-  uint64_t next_value;
-  uint64_t maximum_value;
+  uint64_t next_value = 0;
+  uint64_t maximum_value = 0;
   const auto [next_end, next_error] = std::from_chars(
       row[3], row[3] + std::string_view(row[3]).size(), next_value);
   const auto [maximum_end, maximum_error] = std::from_chars(
