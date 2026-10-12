@@ -48,6 +48,7 @@ struct Md5InboundAuthenticator : auth::InboundAuthenticator {
 
   bool authenticate(auth::InboundArgs args) override;
   const TlsResource* tls_settings() override { return &tls; }
+  const char* identity() { return cram_identity.c_str(); }
 
  private:
   TlsResource tls;
@@ -59,6 +60,7 @@ bool BareosConnect(JobControlRecord* jcr,
                    BareosSocket* socket,
                    std::string_view name,
                    const TlsResource* res,
+                   auth::OutboundAuthenticator* auth,
                    bool cleartext_authentication = false)
 {
   using formatter = hello_formatter<type, target_type>;
@@ -66,9 +68,20 @@ bool BareosConnect(JobControlRecord* jcr,
       = global_resource::QualifiedName(formatter::auth_type, name);
   auto hello = formatter::format(name);
 
-  Md5OutboundAuthenticator auth;
-  return BareosConnect(jcr, socket, qualified_name, res, &auth, hello,
+  return BareosConnect(jcr, socket, qualified_name, res, auth, hello,
                        cleartext_authentication);
+}
+
+template <global_resource::Type type, global_resource::Type target_type>
+bool BareosConnect(JobControlRecord* jcr,
+                   BareosSocket* socket,
+                   std::string_view name,
+                   const TlsResource* res,
+                   bool cleartext_authentication = false)
+{
+  Md5OutboundAuthenticator auth;
+  return BareosConnect<type, target_type>(jcr, socket, name, res, &auth,
+                                          cleartext_authentication);
 }
 
 struct ConnectionInfoProvider {
