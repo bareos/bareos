@@ -38,7 +38,8 @@ namespace console {
 BareosSocket* ConnectToDirector(JobControlRecord& jcr,
                                 utime_t heart_beat,
                                 BStringList& response_args,
-                                uint32_t& response_id)
+                                uint32_t& response_id,
+                                auth::OutboundAuthenticator* auth)
 {
   BareosSocketTCP* UA_sock = new BareosSocketTCP;
   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon",
@@ -64,8 +65,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   }
 
   if (!BareosConnect<global_resource::Type::Console,
-                     global_resource::Type::Director>(&jcr, UA_sock, name,
-                                                      local_tls_resource)) {
+                     global_resource::Type::Director>(
+          &jcr, UA_sock, name, local_tls_resource, auth)) {
     delete UA_sock;
     UA_sock = nullptr;
     jcr.dir_bsock = nullptr;
