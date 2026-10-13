@@ -1149,6 +1149,13 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       char* table)
 {
   StripTrailingJunk(table);
+  if (!CheckTempBvfsTableName(table)) {
+    ua->ErrorMsg(
+        "Could not insert table '%s': it is not a valid bvfs "
+        "table name.\n",
+        table);
+    return false;
+  }
 
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table>(
       rx->query, table);
