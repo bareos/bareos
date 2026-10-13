@@ -1148,4 +1148,6 @@ int ListResult(JobControlRecord* jcr,
                BareosDb* mdb,
                OutputFormatter* send,
                e_list_type type);
+
+bool CheckTempBvfsTableName(char* output_table);
 #endif  // BAREOS_CATS_CATS_H_

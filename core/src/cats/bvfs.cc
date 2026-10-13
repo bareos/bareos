@@ -642,7 +642,7 @@ static int GetNextIdFromList(char** p, int64_t* Id)
   return 1;
 }
 
-static bool CheckTemp(char* output_table)
+bool CheckTempBvfsTableName(char* output_table)
 {
   if (output_table[0] == 'b' && output_table[1] == '2'
       && IsAnInteger(output_table + 2)) {
@@ -659,7 +659,7 @@ void Bvfs::clear_cache()
 bool Bvfs::DropRestoreList(char* output_table)
 {
   PoolMem query(PM_MESSAGE);
-  if (CheckTemp(output_table)) {
+  if (CheckTempBvfsTableName(output_table)) {
     Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
     db->SqlQuery(query.c_str());
     return true;
@@ -685,7 +685,7 @@ bool Bvfs::compute_restore_list(char* fileid,
       || (!*hardlink && !*fileid && !*dirid && !*hardlink)) {
     return false;
   }
-  if (!CheckTemp(output_table)) { return false; }
+  if (!CheckTempBvfsTableName(output_table)) { return false; }
 
   DbLocker _{db};
 
