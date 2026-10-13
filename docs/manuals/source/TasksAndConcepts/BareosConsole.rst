@@ -606,13 +606,13 @@ configure
       that is defined inline in :file:`bareos-dir.conf` cannot be deleted this way,
       and the command will say so instead of reporting a removal that did not happen.
 
-      The whole file is removed, not just the resource named on the command line.
-      A file written by :bcommand:`configure add`\  only ever contains the one
-      resource, but a hand-written one may contain several, and those are then
-      removed along with it. The command reports every resource that disappeared
-      from the configuration besides the one that was asked for, and in that case
-      keeps the removed file as :file:`<...>.conf.deleted` so that the definitions
-      that went with it can be moved back into the configuration.
+      The file must define exactly the resource named on the command line. A file
+      written by :bcommand:`configure add`\  only ever contains the one resource,
+      but a hand-written one may contain several. If removing the file would remove
+      any other resource as well, or would not remove the named resource at all,
+      the deletion is rolled back: the file is moved back into place, the
+      configuration is reloaded again, and the command lists the other resources
+      the file defines. Move the resource into its own file first.
 
       Because the deletion is enacted by a reload, it has all the effects of
       :bcommand:`reload`\  and not just the removal of one resource. The whole
@@ -637,23 +637,16 @@ configure
 
       If another resource still references the resource to be deleted (for example
       a Job resource that references a Client via its :config:option:`Dir/Job/Client`\
-      directive), the command refuses to delete it and lists the referencing resources.
+      directive), the reload fails on the dangling reference and the deletion is
+      rolled back as described above; the |dir| log names the referencing resource.
       There is no override for this: remove or update the referencing resource(s)
       first (for example with :bcommand:`configure delete`\  on the referencing
-      Job), then delete the resource. The referencing resources are listed in full,
-      without applying the console's ACLs to them, so that the console is not left
-      unable to act on a refusal it cannot see the reason for.
-
-      A Job that takes the directive from a JobDefs is not listed; the JobDefs that
-      holds it is listed instead, since that is the resource whose file has to be
-      changed to remove the reference.
+      Job), then delete the resource.
 
       Deleting a Client also removes the |fd| export file that
       :bcommand:`configure add`\  created for it below
-      :file:`<CONFIGDIR>/bareos-dir-export/client/`, since that file contains a
-      copy of the |dir| password. This applies to every Client that the deletion
-      removes, including one that was defined in the same file as the resource that
-      was named.
+      :file:`<CONFIGDIR>/bareos-dir-export/client/`, since that file contains the
+      secret shared between the |dir| and the |fd|.
 
       The console needs access to the :bcommand:`configure`\  command, and, for
       resource types that have a corresponding ACL directive (Job, Client,

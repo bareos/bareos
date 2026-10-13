@@ -190,18 +190,6 @@ struct DatatypeName {
   const char* description;
 };
 
-// Describes a directive of one resource that points at another resource,
-// as found by ConfigurationParser::FindResourceReferences().
-struct ResourceReference {
-  int rcode{};
-  std::string resource_name;
-  std::string directive_name;
-
-  // The item the reference was found through; null for references with no
-  // backing ResourceItem, e.g. a director's per-Run Pool/Storage overrides.
-  const ResourceItem* item{};
-};
-
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
   friend class ConfigParserStateMachine;
@@ -279,10 +267,8 @@ class ConfigurationParser {
                     int pass,
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
+  // Modifies the resource tables: only call with the resource lock held.
   bool RemoveResource(int rcode, const char* name);
-  std::vector<ResourceReference> FindResourceReferences(
-      int rcode,
-      const BareosResource* target);
   bool DumpResources(sender* sendit,
                      void* sock,
                      const std::string& res_type_name,

@@ -31,45 +31,15 @@
 #include <iterator>
 
 namespace {
-// Stand-in for DoReloadConfig() (installed via ConfigureReloadConfig by the
-// fixture below): just the configuration swap/rollback, without the
-// catalog/statistics/scheduler side effects a unit test can't provide.
-bool TestReloadConfig()
-{
-  using namespace directordaemon;
-
-  ResLocker _{my_config};
-
-  auto backup = my_config->BackupCurrentConfiguration();
-
-  my_config->err_type_ = M_ERROR;
-  my_config->ClearWarnings();
-
-  bool ok = my_config->ParseConfig();
-  if (ok) {
-    backup->SetNext(my_config->GetCurrentConfiguration());
-  } else {
-    my_config->RestoreConfiguration(std::move(backup));
-  }
-
-  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-  my_config->own_resource_ = me;
-
-  return ok;
-}
-
-// Copies the configure_delete fixture into a fresh temporary directory, so
-// that each test gets its own on-disk copy and can safely unlink files
-// without affecting other tests or later runs of the same test.
+/* Copies the configure_delete fixture into a fresh temporary directory, so
+ * that each test gets its own on-disk copy and can safely unlink files
+ * without affecting other tests or later runs of the same test. The fixture
+ * is a complete director configuration (no Catalog), so the deletes below
+ * go through the real DoReloadConfig(). */
 class TempConfigureDeleteConfig {
  public:
   TempConfigureDeleteConfig()
   {
-    // Restored on destruction so a test that installs its own stand-in
-    // (see RestoresConfigFileWhenReloadFails) doesn't leak it to the next one.
-    saved_reload_config_ = directordaemon::ConfigureReloadConfig;
-    directordaemon::ConfigureReloadConfig = TestReloadConfig;
-
     char tmpl[] = "/tmp/bareos-configure-delete-XXXXXX";
     char* created = mkdtemp(tmpl);
     if (created) {
@@ -83,8 +53,6 @@ class TempConfigureDeleteConfig {
 
   ~TempConfigureDeleteConfig()
   {
-    directordaemon::ConfigureReloadConfig = saved_reload_config_;
-
     if (!path_.empty()) {
       std::error_code ec;
       std::filesystem::remove_all(path_, ec);
@@ -99,11 +67,10 @@ class TempConfigureDeleteConfig {
 
  private:
   std::string path_;
-  bool (*saved_reload_config_)() = nullptr;
 };
 
-// Fills in ua->cmd/argc/argk/argv the way bconsole would, so tests can
-// exercise ConfigureCmd()'s own argument parsing.
+/* Fills in ua->cmd/argc/argk/argv the way bconsole would, so tests can
+ * exercise ConfigureCmd()'s own argument parsing. */
 void FakeConfigureCmd(directordaemon::UaContext* ua, const std::string& cmd)
 {
   PmStrcpy(ua->cmd, cmd.c_str());
@@ -128,8 +95,8 @@ bool CaptureSend(void* ctx, const char* fmt, ...)
   return true;
 }
 
-// Swaps in an output formatter that appends to a string, so a test can
-// assert on console output where the on-disk effect alone isn't enough.
+/* Swaps in an output formatter that appends to a string, so a test can
+ * assert on console output where the on-disk effect alone isn't enough. */
 class CapturedConsole {
  public:
   explicit CapturedConsole(directordaemon::UaContext* ua) : ua_{ua}
@@ -209,10 +176,10 @@ TEST(ConfigureDelete, DeletesUnreferencedResource)
 
 TEST(ConfigureDelete, KeepsDeletedResourceAliveForRunningJob)
 {
-  // Holds a resource pointer the way a running job does
-  // (DirectorJcrImpl::used_config_for_job); a regression to removing it in
-  // place fails EXPECT_EQ outright, and EXPECT_STREQ catches the
-  // use-after-free under AddressSanitizer.
+  /* Holds a resource pointer the way a running job does
+   * (DirectorJcrImpl::used_config_for_job); a regression to removing it in
+   * place fails EXPECT_EQ outright, and EXPECT_STREQ catches the
+   * use-after-free under AddressSanitizer. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -252,15 +219,16 @@ TEST(ConfigureDelete, KeepsDeletedResourceAliveForRunningJob)
 
 TEST(ConfigureDelete, RestoresConfigFileWhenReloadFails)
 {
-  // A failed reload must restore the resource file exactly, mode included --
-  // moved aside and back rather than read and rewritten. The mode is set to
-  // something other than configure_write_resource()'s 0640, so a regression
-  // to rewriting the contents fails here.
+  /* A failed reload must restore the resource file exactly, mode included --
+   * moved aside and back rather than read and rewritten. The mode is set to
+   * something other than configure_write_resource()'s 0640, so a regression
+   * to rewriting the contents fails here. The reload fails because the
+   * client is still referenced by testjob. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
@@ -271,7 +239,7 @@ TEST(ConfigureDelete, RestoresConfigFileWhenReloadFails)
 
   PoolMem path(PM_FNAME);
   ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
-      path, NULL, res_table->name, "unreferenced-fd", false));
+      path, NULL, res_table->name, "referenced-fd", false));
 
   using std::filesystem::perms;
   constexpr perms owner_only = perms::owner_read | perms::owner_write;
@@ -282,24 +250,19 @@ TEST(ConfigureDelete, RestoresConfigFileWhenReloadFails)
       = std::filesystem::status(path.c_str()).permissions();
   ASSERT_FALSE(content_before.empty());
 
-  static int reload_calls;
-  reload_calls = 0;
-  directordaemon::ConfigureReloadConfig = [] {
-    reload_calls++;
-    return false;
-  };
-
-  EXPECT_FALSE(directordaemon::ConfigureDeleteResource(ua, res_table,
-                                                       "unreferenced-fd"));
+  CapturedConsole console(ua);
+  EXPECT_FALSE(
+      directordaemon::ConfigureDeleteResource(ua, res_table, "referenced-fd"));
 
   /* The file really was moved aside and the reload really was attempted --
    * without this the checks below would also pass if the delete had bailed
    * out before touching anything. */
-  EXPECT_EQ(reload_calls, 1);
+  EXPECT_NE(console.text().find("rolled back"), std::string::npos)
+      << console.text();
 
   // The resource is still there, in the configuration and on disk ...
   EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                      "unreferenced-fd"),
+                                                      "referenced-fd"),
             nullptr);
   ASSERT_TRUE(std::filesystem::exists(path.c_str()));
   EXPECT_EQ(ReadWholeFile(path.c_str()), content_before);
@@ -333,8 +296,8 @@ TEST(ConfigureDelete, ErrorsOnUnknownResource)
 
 TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInName)
 {
-  // IsNameValid() permits '.' and '/' in a resource name; a name that
-  // embeds ".." must not let GetPathOfResource() escape config_dir_.
+  /* IsNameValid() permits '.' and '/' in a resource name; a name that
+   * embeds ".." must not let GetPathOfResource() escape config_dir_. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -343,18 +306,17 @@ TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInName)
 
   PoolMem path(PM_FNAME);
   EXPECT_FALSE(directordaemon::my_config->GetPathOfResource(
-      path, NULL, "client", "../../../../../../../../etc/cron.d/evil",
-      false));
+      path, NULL, "client", "../../../../../../../../etc/cron.d/evil", false));
 }
 
 TEST(ConfigureDelete, RefusesToDeleteResourceNameAliasingAnotherResource)
 {
-  // "a/../unreferenced-fd" is a distinct loaded resource (its own literal
-  // name), but as the last component of config_include_naming_format_ it
-  // resolves to the same file as the real "unreferenced-fd" -- still inside
-  // config_dir_, so GetPathOfResource()'s containment check alone would not
-  // catch it. ConfigureDeleteResource() must refuse a name containing '/'
-  // before ever computing that path.
+  /* "a/../unreferenced-fd" is a distinct loaded resource (its own literal
+   * name), but as the last component of config_include_naming_format_ it
+   * resolves to the same file as the real "unreferenced-fd" -- still inside
+   * config_dir_, so GetPathOfResource()'s containment check alone would not
+   * catch it. ConfigureDeleteResource() must refuse a name containing '/'
+   * before ever computing that path. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -369,16 +331,15 @@ TEST(ConfigureDelete, RefusesToDeleteResourceNameAliasingAnotherResource)
   ASSERT_NE(res_table, nullptr);
 
   ASSERT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                       "a/../unreferenced-fd"),
-           nullptr);
+                                                      "a/../unreferenced-fd"),
+            nullptr);
 
-  EXPECT_FALSE(
-      ConfigureDeleteResource(ua, res_table, "a/../unreferenced-fd"));
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "a/../unreferenced-fd"));
 
   // The aliased, real resource and its file must be untouched.
   EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                       "unreferenced-fd"),
-           nullptr);
+                                                      "unreferenced-fd"),
+            nullptr);
   PoolMem path(PM_FNAME);
   ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
       path, NULL, res_table->name, "unreferenced-fd", false));
@@ -389,33 +350,35 @@ TEST(ConfigureDelete, RefusesToDeleteResourceNameAliasingAnotherResource)
 
 TEST(ConfigureDelete, GetFdExportBasedirRejectsDotAndDotDot)
 {
-  // clientname sits as its own path segment here, so a bare ".." isn't
-  // caught by GetPathOfResource()'s containment check (it never leaves
-  // config_dir_); GetFdExportBasedir() must refuse it directly.
+  /* clientname sits as its own path segment here, so a bare ".." isn't
+   * caught by GetPathOfResource()'s containment check (it never leaves
+   * config_dir_); GetFdExportBasedir() must refuse it directly. */
   PoolMem basedir(PM_FNAME);
-  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, ".."));
-  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, "."));
+  EXPECT_NE(directordaemon::GetFdExportBasedir(basedir, ".."), nullptr);
+  EXPECT_NE(directordaemon::GetFdExportBasedir(basedir, "."), nullptr);
 
-  EXPECT_TRUE(directordaemon::GetFdExportBasedir(basedir, "some-client"));
+  EXPECT_EQ(directordaemon::GetFdExportBasedir(basedir, "some-client"),
+            nullptr);
   EXPECT_STREQ(basedir.c_str(),
-              "bareos-dir-export/client/some-client/bareos-fd.d");
+               "bareos-dir-export/client/some-client/bareos-fd.d");
 }
 
 TEST(ConfigureDelete, GetFdExportBasedirRejectsEmbeddedSlash)
 {
-  // "a/../victim" stays inside config_dir_ (containment check passes) but
-  // aliases the real "victim" client's export directory. clientname must be
-  // rejected outright, not just checked for escaping.
+  /* "a/../victim" stays inside config_dir_ (containment check passes) but
+   * aliases the real "victim" client's export directory. clientname must be
+   * rejected outright, not just checked for escaping. */
   PoolMem basedir(PM_FNAME);
-  EXPECT_FALSE(directordaemon::GetFdExportBasedir(basedir, "a/../victim"));
+  EXPECT_NE(directordaemon::GetFdExportBasedir(basedir, "a/../victim"),
+            nullptr);
 }
 
 TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInComponent)
 {
-  // GetFdExportBasedir() now rejects any '/' in clientname outright, so a
-  // component built from it can no longer carry an escape in practice, but
-  // GetPathOfResource() must still refuse one on its own component
-  // argument, as a caller-independent backstop.
+  /* GetFdExportBasedir() now rejects any '/' in clientname outright, so a
+   * component built from it can no longer carry an escape in practice, but
+   * GetPathOfResource() must still refuse one on its own component
+   * argument, as a caller-independent backstop. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -430,14 +393,13 @@ TEST(ConfigureDelete, GetPathOfResourceRejectsTraversalInComponent)
 
 TEST(ConfigureDelete, RefusesToDeleteReferencedResource)
 {
-  // There is no override: deleting the config file while a reference
-  // remains would leave that reference dangling on the next reload/restart,
-  // so the caller must remove or update the referencing resource first.
+  /* The reload fails to parse the dangling reference and rolls back: the
+   * resource stays loaded and its file is moved back into place. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
@@ -446,19 +408,29 @@ TEST(ConfigureDelete, RefusesToDeleteReferencedResource)
       = directordaemon::my_config->GetResourceTable("client");
   ASSERT_NE(res_table, nullptr);
 
+  PoolMem path(PM_FNAME);
+  ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
+      path, NULL, res_table->name, "referenced-fd", false));
+
+  CapturedConsole console(ua);
   EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "referenced-fd"));
+  EXPECT_NE(console.text().find("rolled back"), std::string::npos)
+      << "expected the reload to fail and roll back, got:\n"
+      << console.text();
   EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                       "referenced-fd"),
             nullptr);
+  EXPECT_TRUE(std::filesystem::exists(path.c_str()));
+  EXPECT_FALSE(std::filesystem::exists(std::string(path.c_str()) + ".deleted"));
 
   delete ua;
 }
 
 TEST(ConfigureDelete, DeletesResourceAfterReferenceRemoved)
 {
-  // Deleting the referencing Job resource first (exercising the same
-  // ConfigureDeleteResource() for a different resource type) clears the
-  // reference, after which the previously-blocked Client delete succeeds.
+  /* Deleting the referencing Job resource first (exercising the same
+   * ConfigureDeleteResource() for a different resource type) clears the
+   * reference, after which the previously-blocked Client delete succeeds. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -491,42 +463,10 @@ TEST(ConfigureDelete, DeletesResourceAfterReferenceRemoved)
   delete ua;
 }
 
-TEST(ConfigureDelete, FindsResourceReferences)
-{
-  InitDirGlobals();
-  TempConfigureDeleteConfig config;
-  ASSERT_FALSE(config.path().empty());
-  PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
-
-  BareosResource* referenced_client = directordaemon::my_config->GetResWithName(
-      directordaemon::R_CLIENT, "referenced-fd");
-  ASSERT_NE(referenced_client, nullptr);
-
-  std::vector<ResourceReference> references
-      = directordaemon::my_config->FindResourceReferences(
-          directordaemon::R_CLIENT, referenced_client);
-  ASSERT_EQ(references.size(), 1u);
-  EXPECT_EQ(references[0].rcode, directordaemon::R_JOB);
-  EXPECT_STREQ(references[0].resource_name.c_str(), "testjob");
-  EXPECT_STREQ(references[0].directive_name.c_str(), "Client");
-  ASSERT_NE(references[0].item, nullptr);
-  EXPECT_STREQ(references[0].item->name, "Client");
-
-  BareosResource* unreferenced_client
-      = directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                  "unreferenced-fd");
-  ASSERT_NE(unreferenced_client, nullptr);
-  EXPECT_TRUE(directordaemon::my_config
-                  ->FindResourceReferences(directordaemon::R_CLIENT,
-                                           unreferenced_client)
-                  .empty());
-}
-
 TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
 {
-  // Deleting a client must also remove the FD export file "configure add
-  // client" writes (see ConfigureCreateFdResource()), not leave it behind.
+  /* Deleting a client must also remove the FD export file "configure add
+   * client" writes (see ConfigureCreateFdResource()), not leave it behind. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -557,8 +497,8 @@ TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
                                                       "unreferenced-fd"));
   EXPECT_FALSE(std::filesystem::exists(export_path.c_str()));
 
-  // All three levels that existed only for this client's export go too;
-  // the shared parent must survive.
+  /* All three levels that existed only for this client's export go too;
+   * the shared parent must survive. */
   const std::filesystem::path director_dir
       = std::filesystem::path{export_path.c_str()}.parent_path();
   const std::filesystem::path fd_dir = director_dir.parent_path();
@@ -574,15 +514,14 @@ TEST(ConfigureDelete, RemovesFiledaemonExportOnClientDelete)
 
 TEST(ConfigureDelete, KeepsForeignFileInFiledaemonExportDirectory)
 {
-  // A stale export left under a previous Director name (plaintext password)
-  // must stop the prune and warn -- the warning is what needs asserting,
-  // since the on-disk state alone doesn't distinguish that from silently
-  // walking away.
+  /* A stale export left under a previous Director name (it holds a shared
+   * secret too) must stop the directory cleanup and be reported, not
+   * silently left behind. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
@@ -621,18 +560,19 @@ TEST(ConfigureDelete, KeepsForeignFileInFiledaemonExportDirectory)
   EXPECT_TRUE(std::filesystem::exists(stale));
   EXPECT_TRUE(std::filesystem::exists(director_dir));
 
-  // ... and the user was told, rather than left with a stray password file.
-  EXPECT_NE(console.text().find("is not empty"), std::string::npos)
+  // ... and the user was told which directory could not be removed.
+  EXPECT_NE(
+      console.text().find("failed to remove filedaemon export directory \""
+                          + director_dir.string() + "\""),
+      std::string::npos)
       << "expected a warning about the leftover export, got:\n"
       << console.text();
 
   delete ua;
 }
 
-TEST(ConfigureDelete, NamesTheJobdefsThatHoldsAnInheritedReference)
+TEST(ConfigureDelete, RefusesToDeleteResourceReferencedFromJobDefs)
 {
-  // A Job inheriting Client from a JobDefs has no Client directive of its
-  // own to remove; the JobDefs that holds it must be reported instead.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -656,47 +596,91 @@ TEST(ConfigureDelete, NamesTheJobdefsThatHoldsAnInheritedReference)
          "}\n";
 
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
-  /* CheckResources() -> PopulateJobdefaults() does this in the running
-   * director; the test harness only parses. */
-  directordaemon::JobResource* inheriting_job
-      = (directordaemon::JobResource*)directordaemon::my_config->GetResWithName(
-          directordaemon::R_JOB, "inheriting-job");
-  ASSERT_NE(inheriting_job, nullptr);
-  ASSERT_TRUE(directordaemon::PropagateJobdefs(directordaemon::R_JOB,
-                                               inheriting_job));
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
 
-  BareosResource* client = directordaemon::my_config->GetResWithName(
-      directordaemon::R_CLIENT, "unreferenced-fd");
-  ASSERT_NE(client, nullptr);
-  // The Job really does point at the Client, inherited or not.
-  ASSERT_EQ((BareosResource*)inheriting_job->client, client);
+  const ResourceTable* res_table
+      = directordaemon::my_config->GetResourceTable("client");
+  ASSERT_NE(res_table, nullptr);
 
-  std::vector<ResourceReference> references
-      = directordaemon::my_config->FindResourceReferences(
-          directordaemon::R_CLIENT, client);
+  PoolMem path(PM_FNAME);
+  ASSERT_TRUE(directordaemon::my_config->GetPathOfResource(
+      path, NULL, res_table->name, "unreferenced-fd", false));
 
-  ASSERT_EQ(references.size(), 1u);
-  EXPECT_EQ(references[0].rcode, directordaemon::R_JOBDEFS);
-  EXPECT_STREQ(references[0].resource_name.c_str(), "inheriting-defs");
-  EXPECT_STREQ(references[0].directive_name.c_str(), "Client");
+  CapturedConsole console(ua);
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "unreferenced-fd"));
+  EXPECT_NE(console.text().find("rolled back"), std::string::npos)
+      << "expected the reload to fail and roll back, got:\n"
+      << console.text();
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "unreferenced-fd"),
+            nullptr);
+  EXPECT_TRUE(std::filesystem::exists(path.c_str()));
+
+  delete ua;
 }
 
-TEST(ConfigureDelete, ReportsResourcesRemovedAsCollateral)
+TEST(ConfigureDelete, RefusesToDeleteResourceReferencedFromScheduleRun)
 {
-  // A hand-written file can define more than one resource, unlike
-  // "configure add"'s one-per-file convention; deleting one takes the
-  // others with it, and that must be reported, not lost silently.
+  /* A Run override is parsed by StoreRun(), not as an ordinary resource
+   * directive, but must block the delete just the same. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
 
-  const std::filesystem::path shared_file
-      = std::filesystem::path{config.path()} / "bareos-dir.d" / "client"
-        / "collateral-fd.conf";
+  const std::filesystem::path config_dir
+      = std::filesystem::path{config.path()} / "bareos-dir.d";
+  std::ofstream{config_dir / "pool" / "run-pool.conf"}
+      << "Pool {\n"
+         "  Name = run-pool\n"
+         "  Pool Type = Backup\n"
+         "}\n";
+  std::filesystem::create_directory(config_dir / "schedule");
+  std::ofstream{config_dir / "schedule" / "nightly.conf"}
+      << "Schedule {\n"
+         "  Name = nightly\n"
+         "  Run = Full Pool=run-pool daily at 01:00\n"
+         "}\n";
+
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  ASSERT_TRUE(client_config);
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
+
+  const ResourceTable* res_table
+      = directordaemon::my_config->GetResourceTable("pool");
+  ASSERT_NE(res_table, nullptr);
+
+  CapturedConsole console(ua);
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "run-pool"));
+  EXPECT_NE(console.text().find("rolled back"), std::string::npos)
+      << "expected the reload to fail and roll back, got:\n"
+      << console.text();
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_POOL,
+                                                      "run-pool"),
+            nullptr);
+  EXPECT_TRUE(std::filesystem::exists(config_dir / "pool" / "run-pool.conf"));
+
+  delete ua;
+}
+
+TEST(ConfigureDelete, RefusesToDeleteResourceSharingItsFile)
+{
+  /* A hand-written file can define more than one resource, unlike
+   * "configure add"'s one-per-file convention; removing the file would take
+   * the others with it, so the deletion is rolled back instead. */
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+
+  const std::filesystem::path shared_file = std::filesystem::path{config.path()}
+                                            / "bareos-dir.d" / "client"
+                                            / "shared-fd.conf";
   std::ofstream{shared_file} << "Client {\n"
-                                "  Name = collateral-fd\n"
+                                "  Name = shared-fd\n"
                                 "  Address = localhost\n"
                                 "  Password = \"secret\"\n"
                                 "}\n"
@@ -708,7 +692,7 @@ TEST(ConfigureDelete, ReportsResourcesRemovedAsCollateral)
                                 "}\n";
 
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
@@ -719,112 +703,85 @@ TEST(ConfigureDelete, ReportsResourcesRemovedAsCollateral)
 
   // Both are loaded, and neither is referenced by anything.
   ASSERT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                      "collateral-fd"),
+                                                      "shared-fd"),
             nullptr);
   ASSERT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                       "tagalong-fd"),
             nullptr);
 
   CapturedConsole console(ua);
-  EXPECT_TRUE(ConfigureDeleteResource(ua, res_table, "collateral-fd"));
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "shared-fd"));
 
-  // The delete went through, and took the other resource in the file too.
-  EXPECT_EQ(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
-                                                      "collateral-fd"),
+  // Rolled back: both resources are still loaded, the file is back ...
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "shared-fd"),
             nullptr);
-  EXPECT_EQ(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                       "tagalong-fd"),
             nullptr);
-  EXPECT_FALSE(std::filesystem::exists(shared_file));
+  EXPECT_TRUE(std::filesystem::exists(shared_file));
+  EXPECT_FALSE(
+      std::filesystem::exists(shared_file.string() + std::string{".deleted"}));
 
-  // The user was told which resource went with it ...
+  // ... and the user was told what else the file defines.
   EXPECT_NE(console.text().find("tagalong-fd"), std::string::npos)
-      << "expected the collaterally removed resource to be named, got:\n"
-      << console.text();
-
-  /* ... and the file was kept rather than unlinked, so its definitions are
-   * still recoverable. */
-  const std::filesystem::path stashed
-      = shared_file.string() + std::string{".deleted"};
-  ASSERT_TRUE(std::filesystem::exists(stashed));
-  std::ifstream stashed_stream{stashed};
-  const std::string stashed_content{
-      std::istreambuf_iterator<char>{stashed_stream},
-      std::istreambuf_iterator<char>{}};
-  EXPECT_NE(stashed_content.find("tagalong-fd"), std::string::npos);
-  EXPECT_NE(console.text().find(stashed.string()), std::string::npos)
-      << "expected the kept file to be named, got:\n"
+      << "expected the other resource in the file to be named, got:\n"
       << console.text();
 
   delete ua;
 }
 
-TEST(ConfigureDelete, RemovesFiledaemonExportOfCollaterallyRemovedClient)
+TEST(ConfigureDelete, RefusesToDeleteResourceNotDefinedInItsFile)
 {
-  // A client collaterally removed is as gone as the one that was named, so
-  // its export (plaintext Director password, CWE-459) must go too.
+  /* The file named after the resource can hold a different resource while
+   * the requested one lives elsewhere; removing that file would remove the
+   * wrong resource, so the deletion is rolled back. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
 
-  const std::filesystem::path shared_file
-      = std::filesystem::path{config.path()} / "bareos-dir.d" / "client"
-        / "collateral-fd.conf";
-  std::ofstream{shared_file} << "Client {\n"
-                                "  Name = collateral-fd\n"
-                                "  Address = localhost\n"
-                                "  Password = \"secret\"\n"
-                                "}\n"
-                                "\n"
-                                "Client {\n"
-                                "  Name = tagalong-fd\n"
-                                "  Address = localhost\n"
-                                "  Password = \"secret\"\n"
-                                "}\n";
+  const std::filesystem::path client_dir
+      = std::filesystem::path{config.path()} / "bareos-dir.d" / "client";
+  std::ofstream{client_dir / "misnamed-fd.conf"} << "Client {\n"
+                                                    "  Name = other-fd\n"
+                                                    "  Address = localhost\n"
+                                                    "  Password = \"secret\"\n"
+                                                    "}\n";
+  std::ofstream{client_dir / "other-fd.conf"} << "Client {\n"
+                                                 "  Name = misnamed-fd\n"
+                                                 "  Address = localhost\n"
+                                                 "  Password = \"secret\"\n"
+                                                 "}\n";
 
   PConfigParser client_config(DirectorPrepareResources(config.path()));
-  if (!client_config) { return; }
+  ASSERT_TRUE(client_config);
 
   JobControlRecord jcr{};
   directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
-
-  // Both clients were added the way "configure add client" would.
-  ASSERT_TRUE(directordaemon::ConfigureCreateFdResource(ua, "collateral-fd"));
-  ASSERT_TRUE(directordaemon::ConfigureCreateFdResource(ua, "tagalong-fd"));
-
-  const char* dirname = directordaemon::me->resource_name_;
-  auto export_path_of = [&](const char* clientname) {
-    PoolMem basedir(PM_FNAME);
-    basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-    PoolMem export_path(PM_FNAME);
-    EXPECT_TRUE(directordaemon::my_config->GetPathOfResource(
-        export_path, basedir.c_str(), "director", dirname, false));
-    return std::filesystem::path{export_path.c_str()};
-  };
-
-  const std::filesystem::path target_export = export_path_of("collateral-fd");
-  const std::filesystem::path tagalong_export = export_path_of("tagalong-fd");
-  ASSERT_TRUE(std::filesystem::exists(target_export));
-  ASSERT_TRUE(std::filesystem::exists(tagalong_export));
 
   const ResourceTable* res_table
       = directordaemon::my_config->GetResourceTable("client");
   ASSERT_NE(res_table, nullptr);
 
-  EXPECT_TRUE(ConfigureDeleteResource(ua, res_table, "collateral-fd"));
+  CapturedConsole console(ua);
+  EXPECT_FALSE(ConfigureDeleteResource(ua, res_table, "misnamed-fd"));
+  EXPECT_NE(console.text().find("is not defined in"), std::string::npos)
+      << console.text();
 
-  // Neither client is configured any longer, so neither export may remain.
-  EXPECT_FALSE(std::filesystem::exists(target_export));
-  EXPECT_FALSE(std::filesystem::exists(tagalong_export));
-  EXPECT_FALSE(std::filesystem::exists(tagalong_export.parent_path()));
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "misnamed-fd"),
+            nullptr);
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "other-fd"),
+            nullptr);
+  EXPECT_TRUE(std::filesystem::exists(client_dir / "misnamed-fd.conf"));
 
   delete ua;
 }
 
-TEST(ConfigureDelete, RemovesStashedFileWhenNothingElseWasLost)
+TEST(ConfigureDelete, RemovesStashedFileAfterSuccessfulDelete)
 {
-  // Counterpart to the test above: nothing else lost means no ".deleted"
-  // copy should be left behind either.
+  // A successful delete must not leave the ".deleted" copy behind.
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -850,9 +807,9 @@ TEST(ConfigureDelete, RemovesStashedFileWhenNothingElseWasLost)
   delete ua;
 }
 
-// The tests below go through ConfigureCmd() rather than
-// ConfigureDeleteResource() directly, to also cover its argument parsing
-// and "configure" output wrapping.
+/* The tests below go through ConfigureCmd() rather than
+ * ConfigureDeleteResource() directly, to also cover its argument parsing
+ * and "configure" output wrapping. */
 
 TEST(ConfigureDelete, CmdDeletesUnreferencedResource)
 {
@@ -876,8 +833,8 @@ TEST(ConfigureDelete, CmdDeletesUnreferencedResource)
 
 TEST(ConfigureDelete, CmdAcceptsNameAsResourceTypeValue)
 {
-  // "configure delete client=foo" must be the same request as
-  // "configure delete client name=foo".
+  /* "configure delete client=foo" must be the same request as
+   * "configure delete client name=foo". */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());
@@ -916,6 +873,40 @@ TEST(ConfigureDelete, CmdMissingNameFailsWithUsage)
   delete ua;
 }
 
+TEST(ConfigureDelete, CmdRejectsAmbiguousOrExtraArguments)
+{
+  /* Neither name may silently win when both forms are given, and unknown
+   * arguments are not ignored. */
+  InitDirGlobals();
+  TempConfigureDeleteConfig config;
+  ASSERT_FALSE(config.path().empty());
+  PConfigParser client_config(DirectorPrepareResources(config.path()));
+  ASSERT_TRUE(client_config);
+
+  JobControlRecord jcr{};
+  directordaemon::UaContext* ua = new directordaemon::UaContext(&jcr);
+
+  for (const char* cmd :
+       {"configure delete client=unreferenced-fd name=spare-fd",
+        "configure delete client name=unreferenced-fd name=spare-fd",
+        "configure delete client name=unreferenced-fd yes",
+        "configure delete client=unreferenced-fd yes",
+        "configure delete client address=unreferenced-fd",
+        "configure delete client name="}) {
+    FakeConfigureCmd(ua, cmd);
+    EXPECT_FALSE(directordaemon::ConfigureCmd(ua, nullptr)) << cmd;
+  }
+
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "unreferenced-fd"),
+            nullptr);
+  EXPECT_NE(directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
+                                                      "spare-fd"),
+            nullptr);
+
+  delete ua;
+}
+
 TEST(ConfigureDelete, CmdRefusesReferencedResource)
 {
   InitDirGlobals();
@@ -938,8 +929,8 @@ TEST(ConfigureDelete, CmdRefusesReferencedResource)
 
 TEST(ConfigureDelete, CmdRejectsDirectorResource)
 {
-  // Checked in ConfigureDelete() itself, so only reachable through
-  // ConfigureCmd(), never through ConfigureDeleteResource() directly.
+  /* Checked in ConfigureDelete() itself, so only reachable through
+   * ConfigureCmd(), never through ConfigureDeleteResource() directly. */
   InitDirGlobals();
   TempConfigureDeleteConfig config;
   ASSERT_FALSE(config.path().empty());

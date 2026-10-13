@@ -37,10 +37,10 @@
 #include <cerrno>
 #include <cstring>
 #include <filesystem>
+#include <iterator>
 #include <set>
 #include <string>
 #include <system_error>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -259,27 +259,26 @@ static inline bool ConfigureCreateFdResourceString(UaContext* ua,
   return true;
 }
 
+/* Builds the directory "configure add client" exports the File Daemon's
+ * Director resource for clientname to. Returns nullptr on success, otherwise
+ * why clientname cannot be used: it becomes a path component of its own, so
+ * a '/' in it could point at another client's directory and "." or ".."
+ * would point at a parent directory. */
+static inline const char* GetFdExportBasedir(PoolMem& basedir,
+                                             const char* clientname)
+{
+  if (strchr(clientname, '/')) { return T_("it contains a \"/\""); }
+  if (strcmp(clientname, ".") == 0 || strcmp(clientname, "..") == 0) {
+    return T_("it is \".\" or \"..\"");
+  }
+  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
+  return nullptr;
+}
+
 /**
  * Create a bareos-fd director resource file
  * that corresponds to our client definition.
  */
-// Shared by ConfigureCreateFdResource() and ConfigureRemoveFdExport().
-// clientname must be a single path component: it lands as its own segment
-// here, so a '/' in it (e.g. "a/../victim") can alias another client's
-// directory without ever escaping config_dir_, and a bare "." or ".."
-// isn't neutralized by anything after it the way name in
-// config_include_naming_format_ is.
-static inline bool GetFdExportBasedir(PoolMem& basedir,
-                                      const char* clientname)
-{
-  if (strchr(clientname, '/') || strcmp(clientname, ".") == 0
-      || strcmp(clientname, "..") == 0) {
-    return false;
-  }
-  basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-  return true;
-}
-
 static inline bool ConfigureCreateFdResource(UaContext* ua,
                                              const char* clientname)
 {
@@ -297,16 +296,12 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
     return false;
   }
 
-  // Use me, not GetNextRes(R_DIRECTOR, NULL): this runs unlocked and
-  // GetNextRes() doesn't take the resource lock.
-  if (!GetFdExportBasedir(basedir, clientname)) {
-    ua->ErrorMsg(
-        T_("Client name \"%s\" cannot be used to build a filedaemon export "
-           "path.\n"),
-        clientname);
+  // Get the path where the resource should get stored.
+  if (const char* error = GetFdExportBasedir(basedir, clientname)) {
+    ua->ErrorMsg(T_("Cannot export client \"%s\": %s.\n"), clientname, error);
     return false;
   }
-  dirname = me->resource_name_;
+  dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->resource_name_;
   if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(),
                                        "director", dirname, error_if_exists,
                                        create_directories)) {
@@ -335,65 +330,56 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
   return true;
 }
 
-// Removes the FD export file "configure add client" writes (plaintext
-// Director password, CWE-459 if left behind). Best-effort: the Client
-// resource is already gone by the time this runs, so there's nothing to
-// roll back.
+/* Removes the file ConfigureCreateFdResource() wrote for clientname, as it
+ * contains the secret shared between Director and File Daemon. Best-effort:
+ * the Client resource is already gone, so there is nothing to roll back. */
 static inline void ConfigureRemoveFdExport(UaContext* ua,
                                            const char* clientname)
 {
   PoolMem basedir(PM_FNAME);
   PoolMem path(PM_FNAME);
 
-  // me is set by CheckResources(), which the preceding reload had to pass.
-  const char* dirname = me->resource_name_;
-
-  // GetPathOfResource() catches escapes GetFdExportBasedir() itself doesn't.
-  if (!GetFdExportBasedir(basedir, clientname)
-      || !my_config->GetPathOfResource(path, basedir.c_str(), "director",
-                                       dirname, false)) {
-    Dmsg1(200,
-         "Could not determine filedaemon export file path for client "
-         "\"%s\"; skipping export removal.\n",
-         clientname);
+  if (const char* error = GetFdExportBasedir(basedir, clientname)) {
+    ua->WarningMsg(T_("Not removing the filedaemon export of client \"%s\": "
+                      "%s.\n"),
+                   clientname, error);
+    return;
+  }
+  const char* dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->resource_name_;
+  if (!my_config->GetPathOfResource(path, basedir.c_str(), "director", dirname,
+                                    false)) {
+    ua->WarningMsg(
+        T_("Could not determine the filedaemon export file of client \"%s\", "
+           "not removing it.\n"),
+        clientname);
     return;
   }
 
   std::error_code ec;
   std::filesystem::path export_file{path.c_str()};
-  std::filesystem::remove(export_file, ec);
-  if (ec) {
-    ua->WarningMsg(T_("failed to remove filedaemon export file \"%s\": %s\n"),
-                   path.c_str(), ec.message().c_str());
+  if (!std::filesystem::remove(export_file, ec)) {
+    if (ec) {
+      ua->WarningMsg(T_("failed to remove filedaemon export file \"%s\": %s\n"),
+                     path.c_str(), ec.message().c_str());
+    } else {
+      Dmsg1(200, "No filedaemon export file \"%s\" to remove.\n", path.c_str());
+    }
     return;
   }
 
-  // Prune the three now-possibly-empty directory levels above; remove()
-  // refuses non-empty ones, so this can't touch anything still in use.
+  /* Also remove the directories <client>/bareos-fd.d/director that only
+   * existed for this file. remove() fails on a directory that is not empty,
+   * so anything else stored there is kept. */
   std::filesystem::path dir = export_file.parent_path();
-  for (int level = 0; level < 3; level++) {
-    ec.clear();
-    if (std::filesystem::remove(dir, ec)) {
-      dir = dir.parent_path();
-      continue;
-    }
-
-    // ec stays clear when the path was already gone -- nothing to report.
-    if (ec == std::errc::directory_not_empty) {
-      if (level == 0) {
+  for (int level = 0; level < 3; level++, dir = dir.parent_path()) {
+    if (!std::filesystem::remove(dir, ec)) {
+      if (ec) {
         ua->WarningMsg(
-            T_("Filedaemon export directory \"%s\" is not empty. It may still "
-               "hold an export written under a different Director resource "
-               "name, which contains a copy of the Director password. Please "
-               "remove it manually.\n"),
-            dir.c_str());
+            T_("failed to remove filedaemon export directory \"%s\": %s\n"),
+            dir.c_str(), ec.message().c_str());
       }
-    } else if (ec) {
-      ua->WarningMsg(
-          T_("failed to remove filedaemon export directory \"%s\": %s\n"),
-          dir.c_str(), ec.message().c_str());
+      return;
     }
-    return;
   }
 }
 
@@ -533,93 +519,11 @@ static inline bool ConfigureAdd(UaContext* ua, int resource_type_parameter)
   return result;
 }
 
-/**
- * FindResourceReferences() can't see a Schedule's per-Run Pool/Storage/
- * Messages overrides (CFG_TYPE_RUN, not CFG_TYPE_RES); scan those here so a
- * resource referenced only via a Run override isn't deleted from under a
- * Schedule. Also enumerated in dird_conf.cc's PrintConfigRun() and in
- * ua_status.cc; update all three if RunResource gains an override field.
- */
-static inline void FindRunResourceReferences(
-    int rcode,
-    const BareosResource* target,
-    std::vector<ResourceReference>* references)
-{
-  ScheduleResource* sched = nullptr;
-  foreach_res (sched, R_SCHEDULE) {
-    for (RunResource* run = sched->run; run; run = run->next) {
-      auto check = [&](BareosResource* referenced, const char* directive) {
-        if (referenced == target) {
-          references->push_back({R_SCHEDULE, sched->resource_name_, directive});
-        }
-      };
-      switch (rcode) {
-        case R_POOL:
-          check(run->pool, "Pool");
-          check(run->full_pool, "FullBackupPool");
-          check(run->vfull_pool, "VirtualFullBackupPool");
-          check(run->inc_pool, "IncrementalBackupPool");
-          check(run->diff_pool, "DifferentialBackupPool");
-          check(run->next_pool, "NextPool");
-          break;
-        case R_STORAGE:
-          check(run->storage, "Storage");
-          break;
-        case R_MSGS:
-          check(run->msgs, "Messages");
-          break;
-        default:
-          break;
-      }
-    }
-  }
-}
-
-// Indirection so tests (core/src/tests/configure.cc) can substitute a
-// reload that only swaps the configuration, skipping DoReloadConfig()'s
-// catalog/statistics/scheduler side effects. The director never reassigns it.
-static bool (*ConfigureReloadConfig)() = DoReloadConfig;
-
-// Collapses identical (type, name, directive) triples: a resource can be
-// reached by both the generic scan and the Run scan, or by several Run lines.
-static inline void ConfigureDedupReferences(
-    std::vector<ResourceReference>* references)
-{
-  auto key = [](const ResourceReference& ref) {
-    return std::tie(ref.rcode, ref.resource_name, ref.directive_name);
-  };
-  auto less = [&key](const ResourceReference& a, const ResourceReference& b) {
-    return key(a) < key(b);
-  };
-  auto equal = [&key](const ResourceReference& a, const ResourceReference& b) {
-    return key(a) == key(b);
-  };
-
-  std::sort(references->begin(), references->end(), less);
-  references->erase(std::unique(references->begin(), references->end(), equal),
-                    references->end());
-}
-
-static inline void ConfigureSendReferences(
-    UaContext* ua,
-    const std::vector<ResourceReference>& references)
-{
-  ua->send->ArrayStart("references");
-  for (const auto& ref : references) {
-    ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("resource", my_config->ResToStr(ref.rcode));
-    ua->send->ObjectKeyValue("name", ref.resource_name.c_str());
-    ua->send->ObjectKeyValue("directive", ref.directive_name.c_str());
-    ua->send->ObjectEnd();
-  }
-  ua->send->ArrayEnd("references");
-}
-
 using ResourceKey = std::pair<int, std::string>;
 
-// Every loaded resource as (type, name) pairs, so a before/after compare
-// around the reload can report collateral removals from a shared file
-// instead of losing them silently. Caller must hold the resource lock.
+/* Every loaded resource as (type, name) pairs, so a before/after compare
+ * around the reload shows what removing the file actually removed. Caller
+ * must hold the resource lock. */
 static std::set<ResourceKey> ConfigureResourceNames()
 {
   std::set<ResourceKey> names;
@@ -634,18 +538,26 @@ static std::set<ResourceKey> ConfigureResourceNames()
   return names;
 }
 
-static inline void ConfigureSendAlsoRemoved(
-    UaContext* ua,
-    const std::vector<ResourceKey>& also_removed)
+/* Moves the config resource file back and reloads, after a reload without it
+ * succeeded but removed the wrong set of resources. */
+static inline void ConfigureUndoDelete(UaContext* ua,
+                                       const char* path,
+                                       const char* stashed_path)
 {
-  ua->send->ArrayStart("also_removed");
-  for (const auto& [rcode, resource_name] : also_removed) {
-    ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("resource", my_config->ResToStr(rcode));
-    ua->send->ObjectKeyValue("name", resource_name.c_str());
-    ua->send->ObjectEnd();
+  if (rename(stashed_path, path) != 0) {
+    ua->ErrorMsg(
+        T_("Could not restore config resource file \"%s\" from \"%s\": %s. "
+           "Restore it manually and run \"reload\".\n"),
+        path, stashed_path, strerror(errno));
+    return;
   }
-  ua->send->ArrayEnd("also_removed");
+  if (!DoReloadConfig()) {
+    ua->ErrorMsg(
+        T_("Config resource file \"%s\" was restored, but reloading the "
+           "configuration failed. Run \"reload\" to bring the running "
+           "configuration back in sync with the configuration on disk.\n"),
+        path);
+  }
 }
 
 /**
@@ -656,10 +568,9 @@ static inline void ConfigureSendAlsoRemoved(
  * reachable from a job would leave it dangling. DoReloadConfig() performs
  * the generation swap that keeps old resources alive for jobs still using
  * them (DirectorJcrImpl::used_config_for_job, dird/reload.cc), giving this
- * the same safety properties as "reload". The reference check below is
- * only an early, friendlier error -- the reload itself is what actually
- * validates the deletion, by failing to parse if a concurrently added
- * resource still references the one being removed.
+ * the same safety properties as "reload". There is no separate reference
+ * check: if another resource still references the one being removed, the
+ * reload fails to parse and the deletion is rolled back.
  */
 static inline bool ConfigureDeleteResource(UaContext* ua,
                                            const ResourceTable* res_table,
@@ -669,45 +580,27 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
   PoolMem stashed_path(PM_FNAME);
   std::set<ResourceKey> names_before;
 
-  // Released before DoReloadConfig(): it takes LockJobs() then the resource
-  // lock, so holding this across the call would invert that order.
+  /* Released before DoReloadConfig(): it takes LockJobs() then the resource
+   * lock, so holding this across the call would invert that order. */
   {
     ResLocker _{my_config};
 
-    BareosResource* res = my_config->GetResWithName(res_table->rcode, name);
-    if (!res) {
+    if (!my_config->GetResWithName(res_table->rcode, name)) {
       ua->ErrorMsg(T_("Resource \"%s\" with name \"%s\" does not exist.\n"),
                    res_table->name, name);
       return false;
     }
 
-    // name is the last, ".conf"-suffixed component of
-    // config_include_naming_format_, so a bare ".." in it is harmless, but
-    // an embedded '/' (e.g. "a/../victim") can still alias another
-    // resource's file -- landing inside config_dir_, so GetPathOfResource()'s
-    // containment check below does not see it as an escape.
+    /* name is the last, ".conf"-suffixed component of
+     * config_include_naming_format_, so a bare ".." in it is harmless, but
+     * an embedded '/' (e.g. "a/../victim") can still alias another
+     * resource's file -- landing inside config_dir_, so GetPathOfResource()'s
+     * containment check below does not see it as an escape. */
     if (strchr(name, '/')) {
       ua->ErrorMsg(
           T_("Resource \"%s\" with name \"%s\" cannot be deleted: its name "
              "contains a \"/\".\n"),
           res_table->name, name);
-      return false;
-    }
-
-    std::vector<ResourceReference> references
-        = my_config->FindResourceReferences(res_table->rcode, res);
-    FindRunResourceReferences(res_table->rcode, res, &references);
-    ConfigureDedupReferences(&references);
-    if (!references.empty()) {
-      ua->send->ObjectStart("delete");
-      ua->send->ObjectKeyValue("resource", res_table->name);
-      ua->send->ObjectKeyValue("name", name);
-      ConfigureSendReferences(ua, references);
-      ua->send->ObjectEnd("delete");
-      ua->ErrorMsg(
-          T_("Resource \"%s\" with name \"%s\" is still referenced by %zu "
-             "other resource(s). Remove or update those first.\n"),
-          res_table->name, name, references.size());
       return false;
     }
 
@@ -734,18 +627,6 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
    * reload below then fails to parse and rolls back. */
   stashed_path.bsprintf("%s.deleted", path.c_str());
 
-  // rename() would silently replace a stash kept by an earlier collateral
-  // removal (see "also_removed" below); refuse instead of losing it.
-  if (std::filesystem::exists(stashed_path.c_str())) {
-    ua->ErrorMsg(
-        T_("A stashed copy of a previously removed configuration file "
-           "already exists at \"%s\". It was kept because removing it had "
-           "also removed other resources from the configuration. Recover or "
-           "remove it manually before deleting \"%s\" again.\n"),
-        stashed_path.c_str(), path.c_str());
-    return false;
-  }
-
   if (rename(path.c_str(), stashed_path.c_str()) != 0) {
     if (errno == ENOENT) {
       ua->ErrorMsg(
@@ -759,12 +640,12 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     return false;
   }
 
-  // On failure DoReloadConfig() already restored the previous generation;
-  // only the file needs moving back to leave disk and memory consistent.
-  if (!ConfigureReloadConfig()) {
-    // Checked before restoring: DoReloadConfig() also returns false when a
-    // reload was already running (its is_reloading guard), which may have
-    // enacted this removal already, not just on a parse failure.
+  /* On failure DoReloadConfig() already restored the previous generation;
+   * only the file needs moving back to leave disk and memory consistent. */
+  if (!DoReloadConfig()) {
+    /* Checked before restoring: DoReloadConfig() also returns false when a
+     * reload was already running (its is_reloading guard), which may have
+     * enacted this removal already, not just on a parse failure. */
     bool still_loaded
         = my_config->GetResWithName(res_table->rcode, name) != nullptr;
 
@@ -780,9 +661,10 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
       // Parse errors go to the Director log via Jmsg(), same as "reload".
       ua->ErrorMsg(
           T_("Reloading the configuration without resource \"%s\" with name "
-             "\"%s\" failed, the deletion was rolled back. See the Director "
-             "log for the errors found while parsing. Please correct the "
-             "configuration and try again.\n"),
+             "\"%s\" failed, the deletion was rolled back. Most likely it is "
+             "still referenced by another resource; remove or update that "
+             "resource first. See the Director log for the errors found "
+             "while parsing.\n"),
           res_table->name, name);
     } else {
       ua->ErrorMsg(
@@ -797,73 +679,58 @@ static inline bool ConfigureDeleteResource(UaContext* ua,
     return false;
   }
 
-  // The removed file may have defined more than the requested resource;
-  // find what else went missing before the stash -- its only copy -- is
-  // unlinked.
-  std::vector<ResourceKey> also_removed;
+  /* Exactly the requested resource must be gone now. Anything else missing
+   * means the file defined more than that one resource; the resource still
+   * being loaded means it was not defined in that file at all. Either way,
+   * put the file back and reload again rather than leave the deletion half
+   * done. */
+  std::vector<ResourceKey> removed;
   {
     ResLocker _{my_config};
 
     std::set<ResourceKey> names_after = ConfigureResourceNames();
-    for (const auto& before : names_before) {
-      if (before.first == static_cast<int>(res_table->rcode)
-          && before.second == name) {
-        continue;
-      }
-      if (!names_after.count(before)) { also_removed.push_back(before); }
-    }
+    std::set_difference(names_before.begin(), names_before.end(),
+                        names_after.begin(), names_after.end(),
+                        std::back_inserter(removed));
   }
 
-  if (also_removed.empty()) {
-    if (unlink(stashed_path.c_str()) != 0) {
-      ua->WarningMsg(T_("failed to remove config resource file \"%s\": %s\n"),
-                     stashed_path.c_str(), strerror(errno));
+  const ResourceKey target{static_cast<int>(res_table->rcode), name};
+  if (removed.size() != 1 || removed.front() != target) {
+    ConfigureUndoDelete(ua, path.c_str(), stashed_path.c_str());
+    if (std::find(removed.begin(), removed.end(), target) == removed.end()) {
+      ua->ErrorMsg(
+          T_("Resource \"%s\" with name \"%s\" is not defined in config "
+             "resource file \"%s\", the deletion was rolled back.\n"),
+          res_table->name, name, path.c_str());
+      return false;
     }
-  } else {
-    // Kept for recovery rather than unlinked; not rolling back since the
-    // new configuration is already live and a second reload could itself fail.
-    ua->WarningMsg(
-        T_("Removing config resource file \"%s\" also removed the following "
-           "resource(s) from the configuration:\n"),
-        path.c_str());
-    for (const auto& [rcode, resource_name] : also_removed) {
-      ua->WarningMsg(T_("  %s \"%s\"\n"), my_config->ResToStr(rcode),
-                     resource_name.c_str());
-    }
-    ua->WarningMsg(
-        T_("They were most likely defined in the same file, which has "
-           "therefore been kept as \"%s\". Move the definitions you want to "
-           "keep back into the configuration and reload, then remove that "
-           "file. Note that the reload also enacts unrelated changes made to "
-           "the configuration on disk since the last one, so a resource "
-           "removed there shows up here as well.\n"),
-        stashed_path.c_str());
-  }
-
-  if (my_config->GetResWithName(res_table->rcode, name)) {
-    ua->WarningMsg(
-        T_("Removed config resource file \"%s\", but resource \"%s\" with name "
-           "\"%s\" is still defined elsewhere in the configuration.\n"),
+    ua->ErrorMsg(
+        T_("Removing config resource file \"%s\" would also remove other "
+           "resources, the deletion was rolled back. Move resource \"%s\" "
+           "with name \"%s\" into its own file first. Also removed would "
+           "be:\n"),
         path.c_str(), res_table->name, name);
+    for (const auto& [rcode, resource_name] : removed) {
+      if (ResourceKey{rcode, resource_name} == target) { continue; }
+      ua->ErrorMsg(T_("  %s \"%s\"\n"), my_config->ResToStr(rcode),
+                   resource_name.c_str());
+    }
+    return false;
   }
 
-  // Also remove any FD export file(s) "configure add client" created --
-  // for the requested client and any collaterally removed one.
-  if (res_table->rcode == R_CLIENT) { ConfigureRemoveFdExport(ua, name); }
-  for (const auto& [rcode, resource_name] : also_removed) {
-    if (rcode == R_CLIENT) {
-      ConfigureRemoveFdExport(ua, resource_name.c_str());
-    }
+  if (unlink(stashed_path.c_str()) != 0) {
+    ua->WarningMsg(T_("failed to remove config resource file \"%s\": %s\n"),
+                   stashed_path.c_str(), strerror(errno));
   }
+
+  // Also remove the FD export file "configure add client" created.
+  if (res_table->rcode == R_CLIENT) { ConfigureRemoveFdExport(ua, name); }
 
   ua->send->ObjectStart("delete");
   ua->send->ObjectKeyValue("resource", res_table->name);
   ua->send->ObjectKeyValue("name", name);
   ua->send->ObjectKeyValue("filename", path.c_str(),
                            "Removed resource config file \"%s\".\n");
-  // Emitted even when empty, so callers can tell "nothing else removed"
-  // from "this version doesn't report it".
-  ConfigureSendAlsoRemoved(ua, also_removed);
   ua->send->ObjectEnd("delete");
 
   return true;
@@ -876,9 +743,9 @@ static inline void ConfigureDeleteUsage(UaContext* ua)
          "       configure delete <resourcetype>=<name>\n"));
 }
 
-// The ACL for an individual resource of this type, or Num_ACL if none exists
-// (dird_conf.h); for those, "configure" command access is all that gates
-// this, same as "configure add".
+/* The ACL for an individual resource of this type, or Num_ACL if none exists
+ * (dird_conf.h); for those, "configure" command access is all that gates
+ * this, same as "configure add". */
 static inline int ConfigureAclForResource(int rcode)
 {
   switch (rcode) {
@@ -920,22 +787,25 @@ static inline bool ConfigureDelete(UaContext* ua, int resource_type_parameter)
     return false;
   }
 
-  // Accept both "delete client=foo" and "delete client name=foo", matching
-  // how "configure add" accepts the name.
+  /* Accept exactly "delete client=foo" or "delete client name=foo", matching
+   * how "configure add" accepts the name. Anything else, e.g. both forms at
+   * once or extra arguments, is rejected rather than silently ignored. */
   const char* name = nullptr;
-  int name_index = FindArgWithValue(ua, NT_("name"));
-  if (name_index >= 0) {
-    name = ua->argv[name_index];
-  } else {
+  const int name_parameter = resource_type_parameter + 1;
+  if (ua->argc == name_parameter) {
     name = ua->argv[resource_type_parameter];
+  } else if (ua->argc == name_parameter + 1
+             && !ua->argv[resource_type_parameter]
+             && Bstrcasecmp(ua->argk[name_parameter], NT_("name"))) {
+    name = ua->argv[name_parameter];
   }
-  if (!name) {
+  if (!name || !*name) {
     ConfigureDeleteUsage(ua);
     return false;
   }
 
-  // Deleting also needs access to the specific resource, not just the
-  // "configure" command (unlike "configure add"); mirrors "configure export".
+  /* Deleting also needs access to the specific resource, not just the
+   * "configure" command (unlike "configure add"), like "configure export". */
   int acl = ConfigureAclForResource(res_table->rcode);
   if (acl != Num_ACL && !ua->AclAccessOk(acl, name, true)) {
     ua->ErrorMsg(T_("No access to %s \"%s\".\n"), res_table->name, name);

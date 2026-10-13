@@ -88,8 +88,8 @@ class Json(PythonBareosBase):
         """
         Deletes a resource added via configure_add.
 
-        If the resource is still referenced by another loaded resource,
-        "configure delete" refuses to delete it; there is no override. The
+        If the resource is still referenced by another resource, the reload
+        fails and "configure delete" rolls back; there is no override. The
         referencing resource(s) must be removed or updated first.
         """
         result = director.call("configure delete {}".format(cmd))
