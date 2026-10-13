@@ -528,7 +528,7 @@ R"SQL(SHOW max_connections
 )SQL",
 
 /* 0047_bvfs_select */
-R"SQL(CREATE TABLE %s AS
+R"SQL(CREATE TEMPORARY TABLE %s AS
   (SELECT JobId,
           FileIndex,
           FileId
