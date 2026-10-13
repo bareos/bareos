@@ -1232,28 +1232,28 @@ static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
    * space. This makes handling zero length filenames
    * easier.
    */
-  rx->fnl = p - f;
-  if (rx->fnl > 0) {
+  auto fnl = p - f;
+  if (fnl > 0) {
     auto escaped_fname = ua->db->EscapeString(
-        ua->jcr, std::string_view{f, static_cast<size_t>(rx->fnl)});
+        ua->jcr, std::string_view{f, static_cast<size_t>(fnl)});
     if (!escaped_fname) { return false; }
     rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
     PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
-    rx->fnl = 0;
+    fnl = 0;
   }
 
-  rx->pnl = f - name;
-  if (rx->pnl > 0) {
+  auto pnl = f - name;
+  if (pnl > 0) {
     auto escaped_path = ua->db->EscapeString(
-        ua->jcr, std::string_view{name, static_cast<size_t>(rx->pnl)});
+        ua->jcr, std::string_view{name, static_cast<size_t>(pnl)});
     if (!escaped_path) { return false; }
     rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
     PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
-    rx->pnl = 0;
+    pnl = 0;
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
