@@ -708,10 +708,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
   db->SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
-  db->SqlQuery(query.c_str());
-
-  Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
+  Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
 
   if (*fileid) { /* Select files with their direct id */
     init = true;
