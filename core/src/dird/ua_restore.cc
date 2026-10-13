@@ -1154,8 +1154,15 @@ static bool InsertDirIntoFindexList(UaContext* ua,
     ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
   } else {
+    auto escaped = ua->db->EscapeString(ua->jcr, dir);
+
+    if (!escaped) {
+      ua->ErrorMsg("Could not escape '%s'.\n", dir);
+      return false;
+    }
+
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir>(
-        rx->query, rx->JobIds, dir, rx->ClientName);
+        rx->query, rx->JobIds, escaped->c_str(), rx->ClientName);
   }
 
   // Find and insert jobid and File Index
