@@ -82,7 +82,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
                                     char* date);
-static void InsertOneFileOrDir(UaContext* ua,
+static bool InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
                                char* date,
@@ -630,9 +630,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
-    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
+    for (auto& file : files) {
+      if (!InsertOneFileOrDir(ua, rx, file, date, false)) { return 0; }
+    }
 
-    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+    for (auto& dir : dirs) {
+      if (!InsertOneFileOrDir(ua, rx, dir, date, true)) { return 0; }
+    }
 
     if (files.size() + dirs.size() == 0) {
       /* If only fileregex but no specific files or dirs were specified
@@ -964,7 +968,7 @@ std::string CompensateShortDate(const char* cmd)
 }
 
 // Insert a single file, or read a list of files from a file
-static void InsertOneFileOrDir(UaContext* ua,
+static bool InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
                                char* date,
@@ -976,11 +980,16 @@ static void InsertOneFileOrDir(UaContext* ua,
 
   switch (*p) {
     case '<':
+      if (ua->user_acl) {
+        ua->ErrorMsg(
+            "Only the default console may pass file lists to this command.\n");
+        return false;
+      }
       p++;
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
         ua->ErrorMsg(T_("Cannot open file %s: ERR=%s\n"), p, be.bstrerror());
-        break;
+        return false;
       }
       while (fgets(file, sizeof(file), ffd)) {
         line++;
@@ -988,11 +997,15 @@ static void InsertOneFileOrDir(UaContext* ua,
           if (!InsertDirIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         } else {
           if (!InsertFileIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         }
       }
@@ -1000,16 +1013,18 @@ static void InsertOneFileOrDir(UaContext* ua,
       break;
     case '?':
       p++;
-      InsertTableIntoFindexList(ua, rx, p);
+      return InsertTableIntoFindexList(ua, rx, p);
       break;
     default:
       if (dir) {
-        InsertDirIntoFindexList(ua, rx, p, date);
+        return InsertDirIntoFindexList(ua, rx, p, date);
       } else {
-        InsertFileIntoFindexList(ua, rx, p, date);
+        return InsertFileIntoFindexList(ua, rx, p, date);
       }
       break;
   }
+
+  return true;
 }
 
 /**
@@ -1038,12 +1053,13 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
-                 ua->db->strerror());
+    Dmsg0(100, "Query failed: %s. ERR=%s\n", rx->query, ua->db->strerror());
+    ua->ErrorMsg("Querying for database record failed.\n");
   }
   if (!rx->found) {
-    ua->ErrorMsg(T_("No database record found for: %s\n"), file);
-    return true;
+    Dmsg0(100, "No database record found for: %s\n", file);
+    ua->ErrorMsg("Database record not found for file.\n");
+    return false;
   }
   return true;
 }
