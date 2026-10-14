@@ -1117,8 +1117,17 @@ static bool InsertTableIntoFindexList(UaContext* ua,
     return false;
   }
 
+  /* the table is always temporary, so to make sure we do not mess up,
+   * we add `pg_temp.` schema to enforce that we use the temporary table
+   * setup by .bvfs_restore. */
+
+  std::string temp_table;
+  temp_table += "pg_temp.";
+  temp_table += table;
+
   ua->db->FillQuery(rx->query,
-                    BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table, table);
+                    BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table,
+                    temp_table.c_str());
 
   // Find and insert jobid and File Index
   rx->found = false;

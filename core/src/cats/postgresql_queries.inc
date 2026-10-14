@@ -629,7 +629,7 @@ R"SQL(CREATE TEMPORARY TABLE %s AS
                           Name) JobId,
                          FileIndex,
                          FileId
-      FROM btemp%s
+      FROM pg_temp.btemp%s
       ORDER BY PathId,
                Name,
                JobTDate DESC) AS T
