@@ -104,7 +104,9 @@ static void NotifyTerminationWaiter()
   if (termination_event != nullptr) { SetEvent(termination_event); }
 }
 
-static void FinishClientInitiatedWait() { TerminateFiled(BEXIT_SUCCESS); }
+// The thread that called TerminateFiled() owns cleanup and exit(); returning
+// here would race it with a second TerminateFiled() and a failure exit code.
+static void FinishClientInitiatedWait() { Sleep(INFINITE); }
 
 static void CloseTerminationNotification()
 {
