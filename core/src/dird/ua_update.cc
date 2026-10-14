@@ -42,6 +42,7 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 
+
 namespace directordaemon {
 
 /* Forward referenced functions */
@@ -200,6 +201,11 @@ static void UpdateVolmaxjobs(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
   char ed1[50];
+  // at most 9 digits so that the value always fits the catalog column
+  if (!IsAnInteger(val) || strlen(val) > 9) {
+    ua->ErrorMsg(T_("Invalid maximum jobs specified: %s\n"), val);
+    return;
+  }
 
   Mmsg(query, "UPDATE Media SET MaxVolJobs=%s WHERE MediaId=%s", val,
        edit_int64(mr->MediaId, ed1));
@@ -214,6 +220,11 @@ static void UpdateVolmaxfiles(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
   char ed1[50];
+  // at most 9 digits so that the value always fits the catalog column
+  if (!IsAnInteger(val) || strlen(val) > 9) {
+    ua->ErrorMsg(T_("Invalid maximum files specified: %s\n"), val);
+    return;
+  }
 
   Mmsg(query, "UPDATE Media SET MaxVolFiles=%s WHERE MediaId=%s", val,
        edit_int64(mr->MediaId, ed1));
@@ -957,6 +968,8 @@ static bool UpdateJob(UaContext* ua)
   if (fileset_id) { jr.FileSetId = fileset_id; }
   if (job_name) { bstrncpy(jr.Name, job_name, MAX_NAME_LENGTH); }
   if (job_type) { jr.JobType = job_type; }
+  auto escaped_job_name = ua->db->EscapeString(ua->jcr, jr.Name);
+  if (!escaped_job_name) { return false; }
   if (start_time) {
     utime_t delta_start;
 
@@ -980,8 +993,8 @@ static bool UpdateJob(UaContext* ua)
   Mmsg(cmd,
        "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
        "EndTime='%s',JobTDate=%s, FileSetId='%s', Type='%c' WHERE JobId=%s",
-       jr.Name, edit_int64(jr.ClientId, ed1), jr.cStartTime, jr.cSchedTime,
-       jr.cEndTime, edit_uint64(jr.JobTDate, ed2),
+       escaped_job_name->c_str(), edit_int64(jr.ClientId, ed1), jr.cStartTime,
+       jr.cSchedTime, jr.cEndTime, edit_uint64(jr.JobTDate, ed2),
        edit_uint64(jr.FileSetId, ed3), jr.JobType, edit_int64(jr.JobId, ed4));
   if (!ua->db->SqlQuery(cmd.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());

@@ -564,6 +564,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     switch (j) {
       case 0: /* jobid */
         if (!HasValue(ua, i)) { return 0; }
+        if (!Is_a_number_list(ua->argv[i])) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+          return 0;
+        }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
         PmStrcat(rx->JobIds, ua->argv[i]);
         bstrncpy(rx->last_jobid, ua->argv[i], sizeof(rx->last_jobid));
@@ -706,6 +710,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
           return 0;
         }
+        if (*ua->cmd && !Is_a_number_list(ua->cmd)) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+          return 0;
+        }
         PmStrcpy(rx->JobIds, ua->cmd);
         break;
       case 3: /* Enter an SQL list command */
@@ -783,6 +791,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         } else if (GetCmd(
                        ua,
                        T_("Enter JobId(s), comma separated, to restore: "))) {
+          if (*ua->cmd && ua->cmd[0] != '.' && !Is_a_number_list(ua->cmd)) {
+            ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+            return 0;
+          }
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
           bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
