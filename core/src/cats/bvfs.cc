@@ -690,7 +690,9 @@ bool Bvfs::compute_restore_list(char* fileid,
   DbLocker _{db};
 
   /* Cleanup old tables first */
-  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.btemp%s", output_table);
+  db->SqlQuery(query.c_str());
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.b2%s", output_table);
   db->SqlQuery(query.c_str());
 
   Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
