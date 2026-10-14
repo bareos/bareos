@@ -48,6 +48,7 @@
 
 #include <array>
 #include <string>
+#include <sstream>
 
 namespace directordaemon {
 
@@ -1421,36 +1422,42 @@ static inline bool parse_level_selection_param(PoolMem& selection,
 }
 
 static inline bool parse_fileset_selection_param(PoolMem& selection,
-                                                 UaContext* ua,
-                                                 bool listall)
+                                                 UaContext* ua)
 {
   PmStrcpy(selection, "");
-  if (const char* fileset = GetArgValue(ua, "fileset");
-      (fileset != nullptr && Bstrcasecmp(fileset, "any"))
-      || (fileset == nullptr && listall)) {
+  const char* fileset = GetArgValue(ua, "fileset");
+  if (!fileset || Bstrcasecmp(fileset, "any")) {
     FilesetResource* fs;
-    PoolMem temp(PM_MESSAGE);
+
+    std::stringstream temp;
 
     foreach_res (fs, R_FILESET) {
       if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_, false)) {
         continue;
       }
-      if (selection.strlen() == 0) {
-        temp.bsprintf("AND (FileSet='%s'", fs->resource_name_);
-      } else {
-        temp.bsprintf(" OR FileSet='%s'", fs->resource_name_);
-      }
-      PmStrcat(selection, temp.c_str());
+
+      temp << "'" << fs->resource_name_ << "',";
     }
-    PmStrcat(selection, ") ");
-  } else if (fileset != nullptr) {
+
+    auto list = temp.str();
+    if (!list.empty()) {
+      // remove the trailing comma
+      list.pop_back();
+    }
+
+    // resource names are safe to insert without escaping
+    selection.bsprintf("AND FileSet IN (%s)", list.c_str());
+  } else {
+    ASSERT(fileset);
     if (!ua->AclAccessOk(FileSet_ACL, fileset, true)) {
       ua->ErrorMsg(T_("Access to specified FileSet not allowed.\n"));
       return false;
-    } else {
-      selection.bsprintf("AND FileSet='%s' ", fileset);
     }
+    selection.bsprintf("AND FileSet='%s' ", fileset);
   }
+
+  // we should not leave this function without having set a filter!
+  ASSERT(selection.size() != 0);
   return true;
 }
 
@@ -1473,7 +1480,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
 
   /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job
    * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
-  selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
+  selection.bsprintf("AND Job.Type IN ('B', 'A', 'a') AND Client.Name='%s' ",
                      clientname);
 
   // Build a selection pattern based on the jobstatus and level arguments.
@@ -1483,7 +1490,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
   parse_level_selection_param(temp, ua, "");
   PmStrcat(selection, temp.c_str());
 
-  if (!parse_fileset_selection_param(temp, ua, true)) { return false; }
+  if (!parse_fileset_selection_param(temp, ua)) { return false; }
   PmStrcat(selection, temp.c_str());
 
   // Build a criteria pattern if the order and/or limit argument are given.
