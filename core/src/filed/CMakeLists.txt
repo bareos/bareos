@@ -21,8 +21,14 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 include(BareosWindowsResource)
 
-option(FD_CLIENT_SLEEP_INHIBITION
-       "Enable FD sleep inhibition during backup/restore jobs" ON
+set(fd_sleep_inhibition_default ON)
+if(HAVE_LINUX_OS AND NOT (HAVE_SYSTEMD AND HAVE_SYSTEMD_SD_BUS_H))
+  set(fd_sleep_inhibition_default OFF)
+endif()
+option(
+  FD_CLIENT_SLEEP_INHIBITION
+  "Enable FD sleep inhibition during backup/restore jobs (default: ON where supported)"
+  ${fd_sleep_inhibition_default}
 )
 
 if(HAVE_WIN32)
