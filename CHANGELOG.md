@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: fix reload related crash [PR #2768]
 - macos: update to 26, introduce arm64 architecture [PR #2834]
 - Update vulnerable Vue dependencies [PR #2868]
+- lib: make socket bind failures fatal and syslog-visible [PR #2808]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2411,6 +2412,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2785]: https://github.com/bareos/bareos/pull/2785
 [PR #2797]: https://github.com/bareos/bareos/pull/2797
 [PR #2799]: https://github.com/bareos/bareos/pull/2799
+[PR #2808]: https://github.com/bareos/bareos/pull/2808
 [PR #2810]: https://github.com/bareos/bareos/pull/2810
 [PR #2813]: https://github.com/bareos/bareos/pull/2813
 [PR #2814]: https://github.com/bareos/bareos/pull/2814
