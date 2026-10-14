@@ -84,6 +84,13 @@ There are a lot of options, and as a point of reference, most people will want t
 -  Item 7 allows you to specify one or more filenames (complete path required) to be restored. Each filename is entered one at a time or if you prefix a filename with the less-than symbol (<) Bareos will read that file and assume it is a list of filenames to be restored. If you prefix the filename with a question mark (?), then the filename will be interpreted as an SQL table name, and Bareos will include the rows of that table in the list to be restored. The table must contain the JobId in the
    first column and the FileIndex in the second column. This table feature is intended for external programs that want to build their own list of files to be restored. The filename entry mode is terminated by entering a blank line.
 
+   .. note::
+      Only default consoles may use the **file=<** option to read in a filelist from a file.
+
+   .. note::
+      The table used in the **file=?** option needs to be a temporary table that fits the naming convention
+      used by **.bvfs_restore**; see :ref:`bvfs_restore`.
+
 -  Item 8 allows you to specify a date and time before entering the filenames. See Item 7 above for more details.
 
 -  Item 9 allows you find the JobIds of the most recent backup for a client. This is much like option 5 (it uses the same code), but those JobIds are retained internally as if you had entered them manually. You may then select item 11 (see below) to restore one or more directories.
