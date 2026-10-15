@@ -1,0 +1,8 @@
+Storage {
+  Name = bareos-sd
+  Plugin Directory = "@SD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "autoxflate"
+  Working Directory =  "@working_dir@"
+  Port = @sd_port@
+  @sd_backend_config@
+}

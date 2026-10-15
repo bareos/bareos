@@ -85,21 +85,22 @@ int get_tape_info_cb(struct ndm_session* sess,
     for (i = 0; i < n_info; i++) {
       Dmsg2(100, "  %s %s\n", what, info[i].model);
 
-      ndmp_deviceinfo_t* devinfo = new (ndmp_deviceinfo_t);
-      devinfo->JobIdUsingDevice = 0;
-
-      ndmp9_device_capability* info_dc;
-      info_dc = info[i].caplist.caplist_val;
-      devinfo->model = info[i].model;
-      devinfo->device = info_dc->device;
-      store->runtime_storage_status->ndmp_deviceinfo.push_back(*devinfo);
-
       for (j = 0; j < info[i].caplist.caplist_len; j++) {
         ndmp9_device_capability* dc;
         uint32_t attr;
         dc = &info[i].caplist.caplist_val[j];
         Dmsg1(100, "    device     %s\n", dc->device);
 
+        for (const auto& configured_device : store->devices) {
+          if (configured_device.name == dc->device) {
+            ndmp_deviceinfo_t devinfo;
+            devinfo.model = info[i].model;
+            devinfo.device = dc->device;
+            store->runtime_storage_status->ndmp_deviceinfo.push_back(
+                std::move(devinfo));
+            break;
+          }
+        }
 
         if (!strcmp(what, "tape\n")) {
 #  ifndef NDMOS_OPTION_NO_NDMP3

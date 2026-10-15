@@ -309,7 +309,7 @@ static int cfg_device(struct cfg_cb* cb,
   if (!ent) n_ent = 0;
 
   for (i = 0; i < n_ent; i++) {
-    if (strcmp(ent[i].model, (*pp)[i].model) == 0) {
+    if (strcmp(ent[i].model, cb->sv[1]) == 0) {
       ent += i;
       goto got_model;
     }
