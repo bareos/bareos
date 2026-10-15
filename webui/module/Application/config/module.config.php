@@ -5,7 +5,7 @@
  *
  * @link      http://github.com/zendframework/ZendSkeletonApplication for the canonical source repository
  * @copyright Copyright (c) 2005-2013 Zend Technologies USA Inc. (http://www.zend.com)
- * @copyright Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+ * @copyright Copyright (C) 2016-2026 Bareos GmbH & Co. KG
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -64,10 +64,17 @@ return array(
             'translator' => 'Laminas\I18n\Translator\TranslatorServiceFactory',
             'navigation' => 'Laminas\Navigation\Service\DefaultNavigationFactory',
             'director' => 'Bareos\BSock\BareosBSockServiceFactory',
+            'Application\Listener\SameOrigin' => 'Application\Listener\SameOriginListenerFactory',
         ),
         'aliases' => array(),
         'invokables' => array(),
     ),
+    'listeners' => array(
+        'Application\Listener\SameOrigin',
+    ),
+    // Proxies whose X-Forwarded-* headers are believed. A listed proxy can
+    // choose which origin the webui believes a request came from.
+    'trusted_proxies' => array(),
     'translator' => array(
         'locale' => 'en_EN',
         'translation_file_patterns' => array(
