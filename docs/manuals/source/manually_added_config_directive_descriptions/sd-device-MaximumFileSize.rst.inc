@@ -36,6 +36,11 @@ wanted data:
    Seek time in seconds to the n-th filemark on a tape with 1 GB between
    filemarks.
 
+The seek time does not grow linearly because LTO drives use linear serpentine
+recording: data is written in many parallel tracks, alternating in direction
+from one end of the tape to the other, so the distance the drive has to wind
+depends on where the filemark lies on its track.
+
 This directive creates EOF marks only on tape media. However, regardless
 of the medium type (tape, disk, USB, etc.), each time the Maximum File Size
 is exceeded, a record is added to the catalog database to permit seeking
