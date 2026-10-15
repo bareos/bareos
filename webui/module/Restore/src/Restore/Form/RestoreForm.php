@@ -247,6 +247,15 @@ class RestoreForm extends Form
                 'disabled' => true
             )
         ));
+
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array('timeout' => 3600),
+            ),
+        ));
+
     }
 
     /**

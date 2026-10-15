@@ -115,6 +115,14 @@ class RunJobForm extends Form
                 'id' => 'submit'
             )
         ));
+
+        $this->add(array(
+            'name' => 'csrf',
+            'type' => 'Laminas\Form\Element\Csrf',
+            'options' => array(
+                'csrf_options' => array('timeout' => 3600),
+            ),
+        ));
     }
 
     private function addSelectElement(string $name, string $label, array $valueOptions, $value): void

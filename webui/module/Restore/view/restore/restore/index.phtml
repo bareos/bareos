@@ -212,6 +212,7 @@ echo '</strong>';
       </div>
 
 <?php
+   echo $this->formHidden($form->get('csrf'));
    echo $this->form()->closeTag($form);
 ?>
 
