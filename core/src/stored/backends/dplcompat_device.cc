@@ -24,6 +24,8 @@
 
 #include "stored/stored.h"
 #include "stored/sd_backends.h"
+#include <string_view>
+
 #include "chunked_device.h"
 #include "lib/edit.h"
 #include "dplcompat_device.h"
@@ -45,14 +47,29 @@ std::string get_chunk_name(storagedaemon::chunk_io_request* request)
 {
   return fmt::format(FMT_STRING("{:04d}"), request->chunk);
 }
-bool is_chunk_name(const std::string& name)
+constexpr bool is_chunk_name(std::string_view name)
 {
-  if (name.length() != 4) { return false; }
+  // The formatter has a minimum width of four; the index is uint16_t.
+  if (name.length() < 4 || name.length() > 5) { return false; }
+  if (name.length() > 4 && name.front() == '0') { return false; }
+  unsigned int index = 0;
   for (char c : name) {
     if (c < '0' || c > '9') { return false; }
+    index = index * 10 + static_cast<unsigned int>(c - '0');
   }
-  return true;
+  return index <= 65535;
 }
+
+static_assert(is_chunk_name("0000"));
+static_assert(is_chunk_name("9999"));
+static_assert(is_chunk_name("10000"));
+static_assert(is_chunk_name("18000"));
+static_assert(is_chunk_name("65535"));
+static_assert(!is_chunk_name("65536"));
+static_assert(!is_chunk_name("00000"));
+static_assert(!is_chunk_name("123"));
+static_assert(!is_chunk_name("1/000"));
+static_assert(!is_chunk_name("10000.tmp"));
 
 static const utl::options option_defaults{
     {"chunksize", "10 MB"}, {"iothreads", "0"},       {"ioslots", "10"},
