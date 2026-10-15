@@ -519,18 +519,63 @@ Tapespeed and blocksizes
 .. index:: Blocksize; optimize
 
 .. note::
+
+   With the defaults of Bareos :sinceVersion:`26.0.0: Immediate tape filemarks and tape speed`,
+   the :config:option:`sd/device/MaximumBlockSize` and
+   :config:option:`sd/device/MaximumFileSize` are already configured for good
+   tape performance. We do not recommend changing either of them.
+
+.. note::
   As of Bareos 23, the default block size has been increased to 1 MiB (1.048.576 bytes).
   This should provide optimal tape performance in the default configuration and remedy the need to tune block sizes.
-  The original chapter has been preserved in its original state for reference.
+  The block size part of the original chapter has been preserved in its original state for reference.
+  The section about filemarks and Maximum File Size was added in Bareos :sinceVersion:`26.0.0: Immediate tape filemarks and tape speed`.
 
 
-The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_
-discusses how :strong:`Maximum File Size`\  and :strong:`Maximum Block Size`\
-historically affected tape speed. Since Bareos
-:sinceVersion:`26.0.0: Immediate tape filemarks and tape speed`, filemarks
-are written in immediate mode by default, so they no longer stall writes
-while the drive flushes its buffer. Increasing :config:option:`sd/device/MaximumFileSize` for
-tape write speed is no longer necessary; it can be left at its default value.
+.. warning::
+
+   The `Bareos Whitepaper Tape Speed Tuning <https://www.bareos.com/whitepapers/optimizing-the-tape-speed.pdf>`_
+   is outdated. It describes how :strong:`Maximum File Size`\  and
+   :strong:`Maximum Block Size`\  affected tape speed in older Bareos
+   versions. The information in this chapter reflects the current behavior.
+
+Filemarks and Maximum File Size
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since Bareos :sinceVersion:`26.0.0: Immediate tape filemarks and tape speed`,
+filemarks on tape are written in immediate mode where the operating system
+supports it. The drive then does not flush its buffer to tape for
+each filemark. On other platforms, or if the drive rejects the immediate
+filemark, Bareos writes a regular (non-immediate) filemark instead.
+
+Measurements on an LTO-6 drive show that each non-immediate filemark
+delays writing by about 6 seconds, which is why large values of
+:config:option:`sd/device/MaximumFileSize` were previously recommended.
+With immediate filemarks no delay is measurable, so the value does not need
+to be increased for write speed and can be left at its default:
+
+.. figure:: /include/images/tape-filemark-write-time.png
+
+   Time in seconds to write 100 GB for different Maximum File Size
+   values (in GB), with and without immediate filemarks.
+
+A larger value means fewer positioning points, so restoring data
+from the middle of a volume can take longer. The default of 25 GiB is a
+compromise between filemark seek time and the time needed to read up to the
+wanted data:
+
+.. figure:: /include/images/tape-filemark-seek-time.png
+
+   Seek time in seconds to the n-th filemark on a tape with 1 GB between
+   filemarks.
+
+The seek time does not grow linearly because LTO drives use linear serpentine
+recording: data is written in many parallel tracks, alternating in direction
+from one end of the tape to the other, so the distance the drive has to wind
+depends on where the filemark lies on its track.
+
+Block size
+~~~~~~~~~~
 
 While it is no problem to change the :config:option:`sd/device/MaximumFileSize`\  parameter, unfortunately it is not possible to change the :config:option:`sd/device/MaximumBlockSize`\  parameter, because the previously written tapes would become unreadable in the new setup. It would require that the :config:option:`sd/device/MaximumBlockSize`\  parameter is switched back to the old value to be able to read the old volumes, but of
 course then the new volumes would be unreadable.
