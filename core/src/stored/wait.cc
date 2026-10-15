@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,17 @@
  * Code for WaitForSysop() pulled from askdir.c
  */
 
+#include <algorithm>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+
 #include "include/bareos.h" /* pull in global headers */
 #include "stored/stored.h"  /* pull in Storage Daemon headers */
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
+#include "stored/device_wait_policy.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"
@@ -42,8 +49,8 @@ namespace storagedaemon {
 
 const int debuglevel = 400;
 
-static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
+static std::mutex device_release_mutex;
+static std::condition_variable wait_device_release;
 
 /**
  * Wait for SysOp to mount a tape on a specific device
@@ -203,49 +210,66 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
 /**
  * Wait for any device to be released, then we return, so
- * higher level code can rescan possible devices.  Since there
- * could be a job waiting for a drive to free up, we wait a maximum
- * of 1 minute then retry just in case a broadcast was lost, and
- * we return to rescan the devices.
+ * higher level code can rescan possible devices.
  *
- * Returns: true  if a device has changed state
- *          false if the total wait time has expired.
+ * Releasing a device wakes the waiting jobs, so the wait normally ends as
+ * soon as there is something to rescan. It still ends after max_wait at the
+ * latest, in case such a wakeup was ever missed.
+ *
+ * Every wait is charged against the total time the job may spend waiting for
+ * a device, so a job that never gets one eventually gives up instead of
+ * staying in the reservation loop forever.
+ *
+ * Returns: true  if the caller should rescan devices
+ *          false if the job used up the time it may spend waiting.
  */
-bool WaitForDevice(JobControlRecord* jcr, int& retries)
+bool WaitForDevice(JobControlRecord* jcr,
+                   int& retries,
+                   std::chrono::seconds max_wait)
 {
-  struct timeval tv;
-  struct timespec timeout;
-  int status = 0;
   bool ok = true;
-  const int max_wait_time = 1 * 60; /* wait 1 minute */
   char ed1[50];
+  auto& budget = jcr->sd_impl->device_wait_budget;
 
   Dmsg0(debuglevel, "Enter WaitForDevice\n");
-  lock_mutex(device_release_mutex);
+
+  std::unique_lock lock(device_release_mutex);
 
   if (++retries % 5 == 0) {
-    /* Print message every 5 minutes */
+    // Print message every 5 waits
     Jmsg(jcr, M_MOUNT, 0, T_("JobId=%s, Job %s waiting to reserve a device.\n"),
          edit_uint64(jcr->JobId, ed1), jcr->Job);
   }
 
-  gettimeofday(&tv, NULL);
-  timeout.tv_nsec = tv.tv_usec * 1000;
-  timeout.tv_sec = tv.tv_sec + max_wait_time;
+  const auto wait_for = NextDeviceWait(budget, max_wait);
 
-  Dmsg0(debuglevel, "Going to wait for a device.\n");
+  Dmsg1(debuglevel, "Going to wait %lld ms for a device.\n",
+        static_cast<long long>(wait_for.count()));
 
-  /* Wait required time */
-  status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
-                                  &timeout);
-  Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
+  /* The wait may return earlier or later than asked, so measure how long it
+   * really took instead of assuming it lasted exactly wait_for. */
+  const auto start = std::chrono::steady_clock::now();
+  const bool signalled = wait_device_release.wait_for(lock, wait_for)
+                         == std::cv_status::no_timeout;
+  const auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start);
 
-  unlock_mutex(device_release_mutex);
+  lock.unlock();
+
+  if (signalled) {
+    /* A device was released, so the caller rescans. The time spent here is
+     * charged, but a signal on its own never ends the job. */
+    ConsumeDeviceWait(budget, waited);
+  } else {
+    // The granted time elapsed, so this wait counts as a full round.
+    ok = ConsumeDeviceWait(budget, waited, kMinTimedOutWaitCharge);
+  }
+
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
   return ok;
 }
 
 // Signal the above WaitForDevice function.
-void ReleaseDeviceCond() { pthread_cond_broadcast(&wait_device_release); }
+void ReleaseDeviceCond() { wait_device_release.notify_all(); }
 
 } /* namespace storagedaemon */
