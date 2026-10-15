@@ -38,6 +38,7 @@
 #include "include/jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"
+#include "findlib/filelist.h"
 #include "lib/util.h"
 #include <string>
 
@@ -64,6 +65,9 @@ static std::string fopts_as_str(char (&flags)[FOPTS_BYTES])
   if (BitIsSet(FO_SHA1, flags)) { join(s, sep, "SHA1"); }
   if (BitIsSet(FO_PORTABLE, flags)) { join(s, sep, "PORTABLE"); }
   if (BitIsSet(FO_MTIMEONLY, flags)) { join(s, sep, "MTIMEONLY"); }
+  if (BitIsSet(FO_NTFS_CHANGE_JOURNAL, flags)) {
+    join(s, sep, "NTFS_CHANGE_JOURNAL");
+  }
   if (BitIsSet(FO_KEEPATIME, flags)) { join(s, sep, "KEEPATIME"); }
   if (BitIsSet(FO_EXCLUDE, flags)) { join(s, sep, "EXCLUDE"); }
   if (BitIsSet(FO_ACL, flags)) { join(s, sep, "ACL"); }
@@ -226,10 +230,29 @@ int FindFiles(JobControlRecord* jcr,
 
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
+        FileList* file_list = ff->file_list;
+        bool journal_requested = false;
+        for (int j = 0; j < incexe->opts_list.size(); ++j) {
+          auto* fo = static_cast<findFOPTS*>(incexe->opts_list.get(j));
+          journal_requested |= BitIsSet(FO_NTFS_CHANGE_JOURNAL, fo->flags);
+        }
+        if (!journal_requested
+            || (file_list && !file_list->Prepare(jcr, ff, fname))) {
+          ff->file_list = nullptr;
+        }
+        if (journal_requested && !file_list) {
+          Jmsg(jcr, M_WARNING, 0,
+               T_("NTFS journal discovery unavailable; using directory "
+                  "traversal.\n"));
+        }
         if (FindOneFile(jcr, ff, OurCallback, ff->top_fname, (dev_t)-1, true)
             == 0) {
+          ff->file_list = file_list;
+          ff->journal_changed = false;
           return 0; /* error return */
         }
+        ff->file_list = file_list;
+        ff->journal_changed = false;
         if (jcr->IsJobCanceled()) { return 0; }
       }
 
