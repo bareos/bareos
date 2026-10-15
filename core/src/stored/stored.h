@@ -32,10 +32,10 @@
 const int sd_debuglevel = 300;
 
 #include "include/config.h"
-#if __has_include(<mtio.h>)
-#  include <mtio.h>
-#elif defined(HAVE_LINUX_OS) && __has_include(<linux/mtio.h>)
+#if defined(HAVE_LINUX_OS) && __has_include(<linux/mtio.h>)
 #  include <linux/mtio.h>
+#elif __has_include(<mtio.h>)
+#  include <mtio.h>
 #elif __has_include(<sys/mtio.h>)
 #  ifdef HAVE_AIX_OS
 #    define _MTEXTEND_H 1
