@@ -79,9 +79,8 @@ class DeviceResource : public BareosResource {
   IODirection autoinflate{IODirection::NONE}; /**< auto inflation in this IO
                                                                  direction */
   utime_t vol_poll_interval{
-      300}; /**< Interval between polling volume during mount */
-  int64_t max_file_size{25LL * 1024 * 1024
-                        * 1024}; /**< Max file size in bytes */
+      300};                 /**< Interval between polling volume during mount */
+  int64_t max_file_size{0}; /**< Max file size in bytes */
   int64_t volume_capacity{0};    /**< Advisory capacity */
   int64_t max_spool_size{0};     /**< Max spool size for all jobs */
   int64_t max_job_spool_size{0}; /**< Max spool size for any single job */

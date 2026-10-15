@@ -51,7 +51,6 @@ TEST(ConfigParser_SD, test_stored_config)
   ASSERT_NE(default_device, nullptr);
   ASSERT_NE(decimal_device, nullptr);
   ASSERT_NE(numeric_device, nullptr);
-  EXPECT_EQ(DeviceResource{}.max_file_size, 25LL * 1024 * 1024 * 1024);
   EXPECT_EQ(default_device->max_file_size, 25LL * 1024 * 1024 * 1024);
   EXPECT_EQ(decimal_device->max_file_size, 25'000'000'000LL);
   EXPECT_EQ(numeric_device->max_file_size, 100'000'000'000LL);
