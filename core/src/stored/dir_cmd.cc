@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/bauth.h"
 #include "lib/hello.h"
 #include "stored/append.h"
 #include "stored/stored.h"
