@@ -127,7 +127,7 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
-    "13":
+    "15":
       TYPE: freebsd
       ARCH:
         - amd64
