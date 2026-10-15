@@ -44,8 +44,6 @@ if (strlen(getenv('BAREOS_WEBUI_CONFDIR')) > 0) {
 }
 
 $directors = null;
-$cookie_secure = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
-    || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
 
 // Check for existing directors.ini and parse if present
 if (!file_exists($directors_ini)) {
@@ -95,7 +93,10 @@ function read_configuration_ini($configuration_ini)
         ),
         'experimental' => array(
             'configuration_resource_graph' => false
-        )
+        ),
+        // Reverse proxies from which X-Forwarded-Proto and X-Forwarded-Host
+        // are accepted. See Application\Listener\SameOriginListener.
+        'trusted_proxies' => array()
     );
 
     // Check for existing configuration.ini and parse if present
@@ -135,6 +136,9 @@ function read_configuration_ini($configuration_ini)
         }
         if (isset($configuration['experimental']['configuration_resource_graph'])) {
             $result['experimental']['configuration_resource_graph'] = $configuration['experimental']['configuration_resource_graph'];
+        }
+        if (isset($configuration['trusted_proxies']['addresses'])) {
+            $result['trusted_proxies'] = $configuration['trusted_proxies']['addresses'];
         }
     }
 
@@ -245,9 +249,20 @@ function read_directors_ini($directors, $directors_ini)
     return $arr;
 }
 
+$configuration = read_configuration_ini($configuration_ini);
+
+// By path: no module autoloaders registered yet.
+require_once __DIR__ . '/../../module/Application/src/Application/Http/RequestOrigin.php';
+
+// Secure only for a request that arrived over TLS. Shares the trusted_proxies
+// decision with the CSRF listener so the two cannot disagree.
+$cookie_secure = (new Application\Http\RequestOrigin(
+    $configuration['trusted_proxies']
+))->isHttps();
+
 return array(
     'directors' => read_directors_ini($directors, $directors_ini),
-    'configuration' => read_configuration_ini($configuration_ini),
+    'configuration' => $configuration,
     'service_manager' => array(
         'factories' => array(
             'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',
