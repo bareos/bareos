@@ -42,6 +42,8 @@ TEST(ConfigParser_SD, test_stored_config)
 
   my_config->DumpResources(PrintMessage, NULL);
 
+  // Maximum File Size default and unit parsing, see the Device resources in
+  // bareos-sd.conf.in
   auto* default_device = dynamic_cast<DeviceResource*>(
       my_config->GetResWithName(R_DEVICE, "DefaultFileSize", false));
   auto* decimal_device = dynamic_cast<DeviceResource*>(
