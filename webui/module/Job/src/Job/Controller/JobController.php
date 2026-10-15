@@ -239,6 +239,7 @@ class JobController extends AbstractActionController
         if (!$this->getRequest()->isPost()) {
             $this->getResponse()->setStatusCode(405);
             $this->getResponse()->getHeaders()->addHeaderLine('Allow', 'POST');
+            $this->getResponse()->setContent('Method Not Allowed.');
             return $this->getResponse();
         }
 
