@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 #ifndef BAREOS_DIRD_CHECK_CATALOG_H_
 #define BAREOS_DIRD_CHECK_CATALOG_H_
 
+#include <cstdint>
+
 namespace directordaemon {
 
 typedef enum
@@ -33,6 +35,16 @@ typedef enum
 } cat_op;
 
 bool CheckCatalog(cat_op mode);
+
+constexpr bool CatalogSequenceAtWarningThreshold(uint64_t next_value,
+                                                 uint64_t maximum_value)
+{
+  if (maximum_value == 0) { return false; }
+
+  const uint64_t warning_threshold
+      = maximum_value / 10 * 7 + (maximum_value % 10 * 7 + 9) / 10;
+  return next_value >= warning_threshold;
+}
 
 }  // namespace directordaemon
 

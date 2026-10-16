@@ -266,7 +266,7 @@ static inline bool BvfsParseArgVersion(UaContext* ua,
 }
 
 static bool BvfsParseArg(UaContext* ua,
-                         DBId_t* pathid,
+                         PathId_t* pathid,
                          char** path,
                          char** jobid,
                          int* limit,
@@ -281,7 +281,7 @@ static bool BvfsParseArg(UaContext* ua,
   for (int i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], NT_("pathid"))) {
       if (ua->argv[i] && Is_a_number(ua->argv[i])) {
-        *pathid = str_to_int64(ua->argv[i]);
+        *pathid = str_to_uint64(ua->argv[i]);
       }
     }
 
@@ -408,7 +408,7 @@ bool DotBvfsCleanupCmd(UaContext* ua, const char*)
 // .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
 bool DotBvfsRestoreCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   char* empty = (char*)"";
   int limit = 2000, offset = 0;
   int i = 0;
@@ -449,7 +449,7 @@ bool DotBvfsRestoreCmd(UaContext* ua, const char*)
  */
 bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
@@ -492,7 +492,7 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
  */
 bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
@@ -541,7 +541,7 @@ bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
  */
 bool DotBvfsVersionsCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL, *client = NULL, *fname = NULL;
   bool copies = false, versions = false;

@@ -113,25 +113,25 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
          "File.JobId=Job.JobId AND File.PathId=%s AND "
          "File.Name='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
          "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
-         edit_int64(fdbr->PathId, ed1), esc_filename->c_str(),
+         edit_uint64(fdbr->PathId, ed1), esc_filename->c_str(),
          edit_int64(jr->ClientId, ed3));
   } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
     Mmsg(cmd,
          "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE "
          "File.JobId=%s AND File.PathId=%s AND "
          "File.Name='%s' AND File.FileIndex=%u",
-         edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2),
+         edit_int64(fdbr->JobId, ed1), edit_uint64(fdbr->PathId, ed2),
          esc_filename->c_str(), jr->FileIndex);
   } else {
     Mmsg(cmd,
          "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE "
          "File.JobId=%s AND File.PathId=%s AND "
          "File.Name='%s'",
-         edit_int64(fdbr->JobId, ed1), edit_int64(fdbr->PathId, ed2),
+         edit_int64(fdbr->JobId, ed1), edit_uint64(fdbr->PathId, ed2),
          esc_filename->c_str());
   }
   Dmsg3(450,
-        "Get_file_record JobId=%" PRIdbid " Filename=%s PathId=%" PRIdbid "\n",
+        "Get_file_record JobId=%" PRIdbid " Filename=%s PathId=%" PRIu64 "\n",
         fdbr->JobId, esc_filename->c_str(), fdbr->PathId);
 
   Dmsg1(100, "Query=%s\n", cmd);
@@ -150,13 +150,14 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
         if (num_rows > 1) {
           Mmsg3(errmsg,
                 T_("GetFileRecord want 1 got rows=%d PathId=%s Filename=%s\n"),
-                num_rows, edit_int64(fdbr->PathId, ed1), esc_filename->c_str());
+                num_rows, edit_uint64(fdbr->PathId, ed1),
+                esc_filename->c_str());
           Dmsg1(000, "=== Problem!  %s", errmsg);
         }
       }
     } else {
       Mmsg2(errmsg, T_("File record for PathId=%s Filename=%s not found.\n"),
-            edit_int64(fdbr->PathId, ed1), esc_filename->c_str());
+            edit_uint64(fdbr->PathId, ed1), esc_filename->c_str());
     }
     SqlFreeResult();
   } else {
@@ -173,10 +174,10 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
  *
  *   DO NOT use Jmsg in this routine (see notes for GetFileRecord)
  */
-int BareosDb::GetPathRecord(JobControlRecord* jcr)
+PathId_t BareosDb::GetPathRecord(JobControlRecord* jcr)
 {
   SQL_ROW row;
-  DBId_t PathId = 0;
+  PathId_t PathId = 0;
   int num_rows;
 
   auto escaped_path
@@ -202,10 +203,10 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
       if ((row = SqlFetchRow()) == NULL) {
         Mmsg1(errmsg, T_("error fetching row: %s\n"), sql_strerror());
       } else {
-        PathId = str_to_int64(row[0]);
+        PathId = str_to_uint64(row[0]);
         if (PathId <= 0) {
           Mmsg2(errmsg, T_("Get DB path record %s found bad record: %s\n"), cmd,
-                edit_int64(PathId, ed1));
+                edit_uint64(PathId, ed1));
           PathId = 0;
         } else {
           if (PathId != cached_path_id) {
@@ -225,7 +226,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
   return PathId;
 }
 
-int BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
+PathId_t BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
 {
   CheckOwnership();
   PmStrcpy(path, new_path);
