@@ -37,13 +37,13 @@
             :to="tile.jobsQuery !== null ? { name: 'jobs', query: tile.jobsQuery } : undefined"
             :style="tile.style"
             style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
-            :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
+            :title="`${tile.name}\n${formatBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
             <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
               <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 {{ tile.name }}
               </div>
               <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
+                {{ treemapMode === 'bytes' ? formatBytes(tile.bytes) : formatFileCount(tile.files) }}
               </div>
             </div>
           </component>
@@ -83,13 +83,13 @@
             :to="{ name: 'jobs', query: tile.jobsQuery }"
             :style="tile.style"
             style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;transition:opacity .2s;color:inherit;text-decoration:none"
-            :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
+            :title="`${tile.name}\n${formatBytes(tile.bytes)} · ${formatFileCount(tile.files)}`">
             <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
               <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 {{ tile.name }}
               </div>
               <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                {{ clientTreemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatFileCount(tile.files) }}
+                {{ clientTreemapMode === 'bytes' ? formatBytes(tile.bytes) : formatFileCount(tile.files) }}
               </div>
             </div>
           </router-link>
@@ -151,7 +151,6 @@ const props = defineProps({
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
-const fmtBytes = formatBytes
 const { t } = useI18n()
 const router = useRouter()
 const treemapMode = ref('bytes')
@@ -257,7 +256,7 @@ const overallStats = computed(() => {
     },
     {
       label: t('Total Bytes'),
-      value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)),
+      value: formatBytes(j.reduce((a, x) => a + x.bytes, 0)),
       color: 'blue-7',
       jobsQuery: null,
     },
