@@ -476,7 +476,7 @@ static bool ReadSelectionInput(FILE* input,
     event = "key:text:";
     event.push_back(static_cast<char>(input_byte));
   }
-  if (event.empty()) { event = "key:cancel"; }
+  if (event.empty()) { event = "key:noop"; }
 
   PmStrcpy(socket->msg, event.c_str());
   socket->message_length = event.size();
