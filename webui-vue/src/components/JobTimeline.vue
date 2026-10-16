@@ -119,7 +119,7 @@
                   <div v-if="run.endtime">{{ t('End') }}: {{ run.endtime }}</div>
                   <div>{{ t('Duration') }}: {{ run.duration || '—' }}</div>
                   <div>{{ t('Files') }}: {{ formatNumber(run.files ?? 0, settings.locale) }}</div>
-                  <div>{{ t('Bytes') }}: {{ fmtBytes(run.bytes ?? 0) }}</div>
+                  <div>{{ t('Bytes') }}: {{ formatBytes(run.bytes ?? 0) }}</div>
                 </q-tooltip>
               </div>
             </div>
@@ -184,7 +184,7 @@
                   <div v-if="run.endtime">{{ t('End') }}: {{ run.endtime }}</div>
                   <div>{{ t('Duration') }}: {{ run.duration || '—' }}</div>
                   <div>{{ t('Files') }}: {{ formatNumber(run.files ?? 0, settings.locale) }}</div>
-                  <div>{{ t('Bytes') }}: {{ fmtBytes(run.bytes ?? 0) }}</div>
+                  <div>{{ t('Bytes') }}: {{ formatBytes(run.bytes ?? 0) }}</div>
                 </q-tooltip>
               </div>
             </div>
@@ -256,7 +256,6 @@ const router  = useRouter()
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
-const fmtBytes = formatBytes
 const { t } = useI18n()
 const currentDirector = computed(() => auth.user?.director || settings.directorName || '')
 const timelineDirectors = computed(() => (
