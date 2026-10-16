@@ -107,6 +107,13 @@ The command :bcommand:`.help` shows a complete list of all dot commands.
 
    -  List all message resources
 
+-  ``.pluginhints [ fileset=<fileset-name> | jobid=<jobid> ]``
+
+   -  List known restore plugin hints (display name, manual URL, option
+      documentation). With ``fileset=`` or ``jobid=``, also resolve the
+      plugin definitions used by that FileSet/job against the known
+      hints.
+
 -  ``.pools``
 
    -  List all pool resources
