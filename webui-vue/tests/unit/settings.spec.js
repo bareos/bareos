@@ -264,6 +264,7 @@ describe('settings store', () => {
     settings.setSelectedDirectors(['dir-a', 'dir-b'])
     settings.setTableRowsPerPage('jobs.list', 42)
     settings.setTableSort('jobs.defs', { sortBy: 'name', descending: false })
+    settings.setTableFilter('storages.volumes', 'LTO-1')
     settings.clientBackupWarningFailedJobs = 4
     const snapshot = settings.exportSettings()
 
@@ -273,6 +274,7 @@ describe('settings store', () => {
     settings.setSelectedDirectors(['other-dir'])
     settings.setTableRowsPerPage('jobs.list', 5)
     settings.setTableSort('jobs.defs', { sortBy: 'type', descending: true })
+    settings.setTableFilter('storages.volumes', 'other')
     settings.clientBackupWarningFailedJobs = 9
 
     settings.importSettings(snapshot)
@@ -283,6 +285,7 @@ describe('settings store', () => {
     expect(settings.getTableRowsPerPage('jobs.list', 0)).toBe(42)
     expect(settings.getTableSort('jobs.defs', {}))
       .toEqual({ sortBy: 'name', descending: false })
+    expect(settings.getTableFilter('storages.volumes', '')).toBe('LTO-1')
     expect(settings.clientBackupWarningFailedJobs).toBe(4)
   })
 
