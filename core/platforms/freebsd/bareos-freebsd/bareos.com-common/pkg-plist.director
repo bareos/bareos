@@ -8,6 +8,7 @@
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/Windows All Drives.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/backup-bareos-fd.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/BackupCatalog.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/SubscriptionAccounting.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/jobdefs/DefaultJob.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/RestoreFiles.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/messages/Daemon.conf
@@ -21,6 +22,7 @@
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/profile/webui-readonly.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/WeeklyCycle.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/SubscriptionAccounting.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf.example
 %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-webui-proxy.ini
