@@ -356,6 +356,7 @@ export const useSettingsStore = defineStore('settings', () => {
       selectedDirectors: selectedDirectors.value,
       tableRowsPerPage: tableRowsPerPage.value,
       tableSort: tableSort.value,
+      tableFilter: tableFilter.value,
       tableHiddenColumns: tableHiddenColumns.value,
       tableFlags: tableFlags.value,
       schedulesViewMode: schedulesViewMode.value,
@@ -397,6 +398,9 @@ export const useSettingsStore = defineStore('settings', () => {
     }
     if ('tableSort' in data) {
       tableSort.value = normalizeTableSort(data.tableSort)
+    }
+    if ('tableFilter' in data) {
+      tableFilter.value = normalizeTableFilter(data.tableFilter)
     }
     if ('tableHiddenColumns' in data) {
       tableHiddenColumns.value = normalizeTableHiddenColumns(data.tableHiddenColumns)
