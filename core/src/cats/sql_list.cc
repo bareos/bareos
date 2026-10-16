@@ -258,31 +258,18 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
     PmStrcat(where, filter.c_str());
   }
 
+  // The vertical list additionally shows the MediaId.
   DbLocker _{this};
-  if (type == VERT_LIST) {
-    Mmsg(cmd,
-         "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
-         "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-         "JobMedia.EndBlock,JobMedia.JobBytes,"
-         "Job.Name AS jobname,Client.Name AS clientname "
-         "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
-         "JOIN Job ON Job.JobId=JobMedia.JobId "
-         "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-         "WHERE 1=1 %s",
-         where.c_str());
-
-  } else {
-    Mmsg(cmd,
-         "SELECT JobMediaId,JobId,Media.VolumeName,FirstIndex,LastIndex,"
-         "StartFile,JobMedia.EndFile,StartBlock,JobMedia.EndBlock,"
-         "JobMedia.JobBytes,"
-         "Job.Name AS jobname,Client.Name AS clientname "
-         "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
-         "JOIN Job ON Job.JobId=JobMedia.JobId "
-         "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-         "WHERE 1=1 %s",
-         where.c_str());
-  }
+  Mmsg(cmd,
+       "SELECT JobMediaId,JobId,%sMedia.VolumeName,"
+       "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
+       "JobMedia.EndBlock,JobMedia.JobBytes,"
+       "Job.Name AS jobname,Client.Name AS clientname "
+       "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
+       "JOIN Job ON Job.JobId=JobMedia.JobId "
+       "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+       "WHERE 1=1 %s",
+       type == VERT_LIST ? "Media.MediaId," : "", where.c_str());
   if (!QueryDb(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobmedia");
