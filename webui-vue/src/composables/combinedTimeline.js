@@ -25,7 +25,10 @@ import {
   normaliseJob,
   overlayRuntimeStatuses,
 } from './useDirectorFetch.js'
-import { createDirectorCommandClient } from './directorAggregate.js'
+import {
+  fulfilledDirectorValues,
+  runDirectorAggregates,
+} from './directorAggregateRunner.js'
 
 function scheduleScopeKey(director, schedule) {
   return `${director}:${schedule ?? ''}`
@@ -36,48 +39,39 @@ export async function fetchCombinedTimelineData(
   directors,
   { jobDays, schedulerRange }
 ) {
-  const results = await Promise.allSettled(
-    (directors ?? []).map(async (directorName) => {
-      const client = await createDirectorCommandClient({
-        ...credentials,
+  const results = await runDirectorAggregates(
+    credentials,
+    directors ?? [],
+    async ({ client, director: directorName }) => {
+      const [jobsResult, statusResult, schedulerResult] = await Promise.all([
+        client.call(`llist jobs days=${jobDays}`),
+        client.call('status director'),
+        client.call(
+          `status scheduler days=${schedulerRange.from},${schedulerRange.to}`
+        ),
+      ])
+      const jobs = directorCollection(jobsResult?.jobs).map((job) => ({
+        ...normaliseJob(job),
         director: directorName,
-      })
+      }))
+      const actualJobs = jobs.some(job => isRunningJobStatus(job.status))
+        ? overlayRuntimeStatuses(jobs, statusResult?.running)
+        : jobs
+      const scheduledRuns = (
+        Array.isArray(schedulerResult?.preview) ? schedulerResult.preview : []
+      ).map((run, index) => ({
+        ...run,
+        director: directorName,
+        scheduleKey: scheduleScopeKey(directorName, run?.schedule),
+        scheduleDisplay: run?.schedule ?? '',
+        scopeKey: `${directorName}:preview:${run?.schedule ?? ''}:${run?.job ?? index}:${run?.runtime ?? index}`,
+      }))
 
-      try {
-        const [jobsResult, statusResult, schedulerResult] = await Promise.all([
-          client.call(`llist jobs days=${jobDays}`),
-          client.call('status director'),
-          client.call(
-            `status scheduler days=${schedulerRange.from},${schedulerRange.to}`
-          ),
-        ])
-        const jobs = directorCollection(jobsResult?.jobs).map((job) => ({
-          ...normaliseJob(job),
-          director: directorName,
-        }))
-        const actualJobs = jobs.some(job => isRunningJobStatus(job.status))
-          ? overlayRuntimeStatuses(jobs, statusResult?.running)
-          : jobs
-        const scheduledRuns = (
-          Array.isArray(schedulerResult?.preview) ? schedulerResult.preview : []
-        ).map((run, index) => ({
-          ...run,
-          director: directorName,
-          scheduleKey: scheduleScopeKey(directorName, run?.schedule),
-          scheduleDisplay: run?.schedule ?? '',
-          scopeKey: `${directorName}:preview:${run?.schedule ?? ''}:${run?.job ?? index}:${run?.runtime ?? index}`,
-        }))
-
-        return { actualJobs, scheduledRuns }
-      } finally {
-        client.disconnect()
-      }
-    })
+      return { actualJobs, scheduledRuns }
+    }
   )
 
-  const fulfilled = results
-    .filter(result => result.status === 'fulfilled')
-    .map(result => result.value)
+  const fulfilled = fulfilledDirectorValues(results)
 
   if (fulfilled.length === 0 && results.some(result => result.status === 'rejected')) {
     throw results.find(result => result.status === 'rejected').reason
