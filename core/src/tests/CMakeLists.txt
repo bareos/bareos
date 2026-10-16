@@ -433,6 +433,7 @@ if(ENABLE_BCONSOLE)
   bareos_add_test(
     test_ua_restore_point_display LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+  bareos_add_test(test_ua_run_helpers LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
 
 # Keep alphabetically ordered
