@@ -115,6 +115,24 @@ TEST(VolumeUsage, DetectsFiveParallelOverlappingJobs)
   EXPECT_EQ(BuildVolumeUsageRangeBar(segments[4], segments, 9), "    55555");
 }
 
+TEST(VolumeUsage, SharedBoundaryBlockIsNotAnOverlap)
+{
+  // Sequential jobs share the block where one ends and the next starts.
+  std::vector<VolumeUsageSegment> touching{
+      MakeSegment(1, 10, 10, 101, 100, 200),
+      MakeSegment(1, 10, 10, 102, 200, 300),
+      MakeSegment(1, 10, 10, 103, 300, 400),
+  };
+  EXPECT_FALSE(HasOverlappingVolumeUsageRanges(touching));
+
+  // Starting one block before the previous range ends is concurrent use.
+  std::vector<VolumeUsageSegment> overlapping{
+      MakeSegment(1, 10, 10, 101, 100, 200),
+      MakeSegment(1, 10, 10, 102, 199, 300),
+  };
+  EXPECT_TRUE(HasOverlappingVolumeUsageRanges(overlapping));
+}
+
 TEST(VolumeUsage, ReusesMarkersForRepeatedJobRanges)
 {
   std::vector<VolumeUsageSegment> segments{
