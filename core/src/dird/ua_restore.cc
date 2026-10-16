@@ -55,6 +55,7 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <string>
 #include <string_view>
 #include <vector>
 #include <optional>
@@ -1537,16 +1538,26 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, date);
 }
 
+// Tuple rows are ordered, so rows of one tuple are adjacent.
+struct ClientFilesetTupleHandlerCtx {
+  UaContext* ua = nullptr;
+  std::string last_tuple;
+};
+
 static int ClientFilesetTupleHandler(void* ctx, int, char** row)
 {
-  UaContext* ua = (UaContext*)ctx;
-  if (!row[0] || !row[1]) { return 0; }
+  auto* handler_ctx = static_cast<ClientFilesetTupleHandlerCtx*>(ctx);
+  UaContext* ua = handler_ctx->ua;
+  if (!row[0] || !row[1] || !row[2]) { return 0; }
   if (!ua->AclAccessOk(Client_ACL, row[0])
-      || !ua->AclAccessOk(FileSet_ACL, row[1])) {
+      || !ua->AclAccessOk(FileSet_ACL, row[1])
+      || !ua->AclAccessOk(Job_ACL, row[2])) {
     return 0;
   }
   PoolMem tuple(PM_NAME);
   Mmsg(tuple, "%s@%s", row[1], row[0]);
+  if (handler_ctx->last_tuple == tuple.c_str()) { return 0; }
+  handler_ctx->last_tuple = tuple.c_str();
   AddPrompt(ua, tuple.c_str());
   return 0;
 }
@@ -1614,7 +1625,9 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       rx->query, filter_name);
   StartPrompt(ua,
               T_("The following FileSet@Client combinations have backups:\n"));
-  if (!ua->db->SqlQuery(rx->query, ClientFilesetTupleHandler, (void*)ua)) {
+  ClientFilesetTupleHandlerCtx tuple_ctx{ua, {}};
+  if (!ua->db->SqlQuery(rx->query, ClientFilesetTupleHandler,
+                        (void*)&tuple_ctx)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
