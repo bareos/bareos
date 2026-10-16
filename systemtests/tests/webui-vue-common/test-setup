@@ -220,3 +220,8 @@ fi
 
 echo "webui-vue proxy listening on ws://127.0.0.1:${proxy_port}"
 echo "webui-vue frontend listening on ${BAREOS_WEBUI_BASE_URL}"
+
+# Keep every freshly-created webui-vue environment immediately usable for
+# restore testing, including when test-setup is invoked directly for manual
+# testing rather than through CTest.
+./testrunner-create-backup
