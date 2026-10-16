@@ -376,19 +376,17 @@ several things to help determine the cause of the problem.
 
 Please consider the following information when testing tape speed:
 
-#. Please set the tape drive device :config:option:`sd/device/MaximumFileSize` to a reasonable value.
-   For LTO-7 a value of 200 GiB should work pretty good.
-   When Bareos writes to tape, it adds a **file-mark** after :config:option:`sd/device/MaximumFileSize`
-   Bytes to the tape to improve search times on restore. By default these file-marks are written in
-   immediate mode (i.e. the syscall will only return after the file mark was physically written to
-   the tape). Thus every file-mark implies a buffer-flush of the drive which significantly reduces
-   the total write speed.
-   Modern tape drives have internal buffers of 1 GiB and more and a write speed of 400MB/s.
-   With :config:option:`sd/device/MaximumFileSize = 200G`, such a tape drive will write a file mark
-   every 512 seconds or roughly 9 minutes.
-
-   Bigger values of :config:option:`sd/device/MaximumFileSize` will increase the total backup speed,
-   but will also increase the restore time of single file restores.
+#. When Bareos writes to tape, it adds a **filemark** after writing
+   :config:option:`sd/device/MaximumFileSize` bytes to improve positioning
+   during restores. Since Bareos
+   :sinceVersion:`26.0.0: Immediate tape filemarks and troubleshooting`,
+   filemarks are written in immediate mode by default; they do not wait
+   for the drive's buffer to flush and therefore no longer reduce tape
+   write speed in normal operation. You
+   can leave :config:option:`sd/device/MaximumFileSize` at its default
+   value instead of increasing it for performance. Larger values still
+   mean fewer positioning points and can increase single-file restore
+   times.
 
 #. Do tape performance tests with incompressible random data, everything else will produce bogus
    results that are totally misleading. The data size must also be bigger than the buffer size of

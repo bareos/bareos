@@ -329,7 +329,12 @@ bool generic_tape_device::offline()
 }
 
 /**
- * Write an end of file on the device
+ * Write one or more end-of-file marks on the device.
+ *
+ * Where supported (MTWEOFI), write immediate filemarks, which do not wait
+ * for the drive's buffer to reach tape. If writing a single immediate
+ * filemark fails, retry with a non-immediate one, which flushes the buffer.
+ * Without MTWEOFI, non-immediate filemarks are used.
  *
  * Returns: true on success
  *          false on failure
@@ -356,9 +361,23 @@ bool generic_tape_device::weof(int num)
 
   ClearEof();
   ClearEot();
-  mt_com.mt_op = MTWEOF;
   mt_com.mt_count = num;
+#ifdef MTWEOFI
+  mt_com.mt_op = MTWEOFI;
   status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
+  /* The driver does not tell us if the immediate mode was rejected. A failed
+   * attempt for more than one filemark may have written some of them, so a
+   * retry is only safe for a single filemark. */
+  if (status < 0 && num == 1) {
+    Dmsg1(129, "Immediate filemark failed on %s, trying non-immediate\n",
+          prt_name);
+    mt_com.mt_op = MTWEOF;
+    status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
+  }
+#else
+  mt_com.mt_op = MTWEOF;
+  status = d_ioctl(fd, MTIOCTOP, (char*)&mt_com);
+#endif
   if (status == 0) {
     block_num = 0;
     file += num;
