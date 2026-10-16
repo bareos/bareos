@@ -195,6 +195,7 @@ const char list_cmd_usage[] = NT_(
     "jobmedia jobid=<jobid> | "
     "jobmedia ujobid=<complete_name> | "
     "jobmedia volume=<volume-name> | "
+    "volumeusage volume=<volume-name> | "
     "jobtotals | "
     "jobstatistics jobid=<jobid> | "
     "log [client=<client-name>] [reverse] | "
@@ -504,10 +505,10 @@ static struct ua_cmdstruct commands[] = {
     {NT_("update"), UpdateCmd,
      T_("Update volume, pool, slots, job or statistics"),
      NT_("[volume=<volume-name> "
-         "[volstatus=<status>] [volretention=<time-def>] "
+         "[volstatus=<status> [force]] [volretention=<time-def>] "
          "[actiononpurge=<action>] [encrypt=<yes/no/rotate>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] "
-         "[inchanger=<yes/no>]] "
+         "[inchanger=<yes/no>] [comment=<text>]] "
          "| [pool=<pool-name> "
          "[maxvolbytes=<size>] [maxvolfiles=<nb>] [maxvoljobs=<nb>]"
          "[enabled=<yes/no>] [recyclepool=<pool-name>] "
@@ -515,7 +516,8 @@ static struct ua_cmdstruct commands[] = {
          "slots [storage=<storage-name>] [scan]] "
          "| [jobid=<jobid> [jobname=<name>] [starttime=<time-def>] "
          "[client=<client-name>] "
-         "[filesetid=<fileset-id>] [jobtype=<job-type>]] "
+         "[filesetid=<fileset-id>] [jobtype=<job-type>] "
+         "[comment=<text>]] "
          "| [stats [days=<number>]]"),
      true, true},
     {NT_("use"), use_cmd, T_("Use specific catalog"), NT_("catalog=<catalog>"),

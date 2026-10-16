@@ -65,4 +65,12 @@ bool IsAclEntryValid(const char* acl, PoolMem& msg);
 bool IsAclEntryValid(const char* acl);
 std::string SizeAsSiPrefixFormat(uint64_t value_in);
 
+/**
+ * Format a byte count as a compact size string of at most 7 characters.
+ * Values below 1 KiB are printed as bytes; larger values are rounded to
+ * the nearest integer in the largest applicable binary unit, with a
+ * single-letter suffix (K/M/G/T/P/E).
+ */
+std::string SizeAsCompact7Format(uint64_t value_in);
+
 #endif  // BAREOS_LIB_EDIT_H_
