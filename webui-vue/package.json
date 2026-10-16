@@ -8,7 +8,9 @@
   },
   "scripts": {
     "generate:version": "node scripts/generate-bareos-version.mjs",
-    "generate:i18n": "node scripts/generate-webui-i18n.mjs",
+    "generate:i18n": "node scripts/generate-webui-i18n.mjs --write",
+    "update:i18n": "node scripts/generate-webui-i18n.mjs --write",
+    "check:i18n": "node scripts/generate-webui-i18n.mjs --check",
     "dev": "npm run generate:version && vite",
     "build": "npm run generate:version && env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
     "preview": "vite preview",
@@ -17,9 +19,15 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "grid-layout-plus": "^1.1.1",
     "pinia": "^2.1.0",
     "quasar": "^2.16.0",
     "vue": "^3.4.0",
+    "vue-chartjs": "^5.3.4",
     "vue-i18n": "^11.3.2",
     "vue-router": "^4.3.0"
   },

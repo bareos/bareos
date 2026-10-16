@@ -142,3 +142,45 @@ TEST(scheduler_job_item_queue, runtime_undefined)
   }
   EXPECT_TRUE(failed);
 }
+
+TEST(RunResource, NextScheduleTimeSkipsPastMinutesInCurrentHour)
+{
+  RunResource run;
+  // Trigger on all days, months, weeks, weekdays
+  for (int i = 0; i < 31; ++i) { SetBit(i, run.date_time_mask.mday); }
+  for (int i = 0; i < 7; ++i) { SetBit(i, run.date_time_mask.wday); }
+  for (int i = 0; i < 12; ++i) { SetBit(i, run.date_time_mask.month); }
+  for (int i = 0; i < 5; ++i) { SetBit(i, run.date_time_mask.wom); }
+  for (int i = 0; i < 54; ++i) { SetBit(i, run.date_time_mask.woy); }
+  // Only trigger at 14:00
+  SetBit(14, run.date_time_mask.hour);
+  run.minute = 0;
+
+  // Set start time to 14:30 today
+  struct tm tm_start = {};
+  time_t now = time(nullptr);
+  Blocaltime(&now, &tm_start);
+  tm_start.tm_hour = 14;
+  tm_start.tm_min = 30;
+  tm_start.tm_sec = 0;
+  tm_start.tm_isdst = -1;
+  time_t start_1430 = mktime(&tm_start);
+
+  // 14:00 today is in the past; next run must be tomorrow at 14:00 (not today
+  // at 14:00)
+  auto next = run.NextScheduleTime(start_1430, 2);
+  ASSERT_TRUE(next.has_value());
+  EXPECT_GE(next.value(), start_1430);
+
+  struct tm tm_res = {};
+  Blocaltime(&next.value(), &tm_res);
+  EXPECT_EQ(tm_res.tm_hour, 14);
+  EXPECT_EQ(tm_res.tm_min, 0);
+
+  // Check that if start is 14:00 or earlier, today's 14:00 IS returned
+  tm_start.tm_min = 0;
+  time_t start_1400 = mktime(&tm_start);
+  auto next_exact = run.NextScheduleTime(start_1400, 1);
+  ASSERT_TRUE(next_exact.has_value());
+  EXPECT_EQ(next_exact.value(), start_1400);
+}

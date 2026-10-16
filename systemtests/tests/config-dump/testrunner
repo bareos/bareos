@@ -71,7 +71,7 @@ END_OF_DATA
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
 
-  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
+  BAREOS_CONFIG_DIR="${configfile}" ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
 
   print_debug "*** end   $DESC"
 }

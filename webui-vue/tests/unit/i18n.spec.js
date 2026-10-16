@@ -23,14 +23,14 @@ import { describe, expect, it } from 'vitest'
 import { translate } from '../../src/i18n/index.js'
 
 describe('webui translations', () => {
-  it('reuses PHP WebUI translations for shared labels', () => {
+  it('loads seeded translations from the independent JSON catalogs', () => {
     expect(translate('de_DE', 'Restore')).toBe('Wiederherstellen')
     expect(translate('de_DE', 'Schedules')).toBe('Zeitpläne')
     expect(translate('de_DE', 'Storages')).toBe('Speicher')
   })
 
   it('falls back to the English msgid for Vue-only labels', () => {
-    expect(translate('de_DE', 'Advanced connection settings')).toBe('Advanced connection settings')
+    expect(translate('de_DE', 'Configuration Status')).toBe('Configuration Status')
     expect(translate('de_DE', 'Cancel failed: {message}', { message: 'boom' })).toBe('Cancel failed: boom')
     expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
     expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')

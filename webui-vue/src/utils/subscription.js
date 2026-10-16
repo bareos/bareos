@@ -45,3 +45,11 @@ export function subscriptionRemainingSummary(unitSummary) {
     isOverLimit: false,
   }
 }
+
+export function subscriptionSnapshotAge(snapshot, reportTime, elapsedMs = 0) {
+  const seconds = snapshot?.age_seconds
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return null
+  const age = seconds * 1000 + elapsedMs
+  if (!Number.isFinite(age) || age < 0) return null
+  return { milliseconds: age, stale: age > 24 * 60 * 60 * 1000 }
+}
