@@ -983,6 +983,8 @@ import { directorCollection } from '../composables/useDirectorFetch.js'
 import { BVFS_UPDATE_TIMEOUT_MS } from '../utils/directorCommandSocket.js'
 import { fetchAggregatedClients } from '../composables/clientsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { useFilteredOptions } from '../composables/useFilteredOptions.js'
+import { formatMode, formatMtime } from '../utils/fileFormat.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { usePluginHintsStore } from '../stores/pluginHints.js'
@@ -1150,41 +1152,15 @@ const clientOptions = computed(() =>
   }))
 )
 
-const filteredClientOptions = ref([])
-watch(clientOptions, (options) => { filteredClientOptions.value = options }, { immediate: true })
-
-function filterClientOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredClientOptions.value = clientOptions.value
-      return
-    }
-    const needle = value.toLowerCase()
-    filteredClientOptions.value = clientOptions.value.filter(option => (
-      option.label.toLowerCase().includes(needle)
-    ))
-  })
-}
+const { filtered: filteredClientOptions, filter: filterClientOptions }
+  = useFilteredOptions(clientOptions)
 
 const restoreClientOptions = computed(() =>
   restoreClients.value.map(client => ({ label: client.name, value: client.name }))
 )
 
-const filteredRestoreClientOptions = ref([])
-watch(restoreClientOptions, (options) => { filteredRestoreClientOptions.value = options }, { immediate: true })
-
-function filterRestoreClientOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredRestoreClientOptions.value = restoreClientOptions.value
-      return
-    }
-    const needle = value.toLowerCase()
-    filteredRestoreClientOptions.value = restoreClientOptions.value.filter(option => (
-      option.label.toLowerCase().includes(needle)
-    ))
-  })
-}
+const { filtered: filteredRestoreClientOptions, filter: filterRestoreClientOptions }
+  = useFilteredOptions(restoreClientOptions)
 
 const destinationBrowseDialog = ref({
   open:    false,
@@ -1536,21 +1512,8 @@ const restoreJobOptions = computed(() =>
   restoreJobs.value.map(j => ({ label: j.name, value: j.name }))
 )
 
-const filteredRestoreJobOptions = ref([])
-watch(restoreJobOptions, (options) => { filteredRestoreJobOptions.value = options }, { immediate: true })
-
-function filterRestoreJobOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredRestoreJobOptions.value = restoreJobOptions.value
-      return
-    }
-    const needle = value.toLowerCase()
-    filteredRestoreJobOptions.value = restoreJobOptions.value.filter(
-      opt => opt.label.toLowerCase().includes(needle)
-    )
-  })
-}
+const { filtered: filteredRestoreJobOptions, filter: filterRestoreJobOptions }
+  = useFilteredOptions(restoreJobOptions)
 
 async function loadRestoreJobs() {
   if (!sourceDirector.value) {
@@ -1622,25 +1585,8 @@ const sourceFilesetFilter = ref('')
 const latestSourceOptions = computed(() => (
   buildRestoreClientFilesetOptions(allClientBackups.value)
 ))
-const filteredLatestSourceOptions = ref([])
-watch(latestSourceOptions, (options) => {
-  filteredLatestSourceOptions.value = options
-}, { immediate: true })
-
-function filterLatestSourceOptions(value, update) {
-  update(() => {
-    if (!value) {
-      filteredLatestSourceOptions.value = latestSourceOptions.value
-      return
-    }
-
-    const needle = value.toLowerCase()
-    filteredLatestSourceOptions.value = latestSourceOptions.value.filter(option => (
-      option.label.toLowerCase().includes(needle)
-    ))
-  })
-}
-
+const { filtered: filteredLatestSourceOptions, filter: filterLatestSourceOptions }
+  = useFilteredOptions(latestSourceOptions)
 const selectedLatestSourceOption = computed(() => (
   latestSourceOptions.value.find(option => option.value === sourceLatestTupleKey.value) ?? null
 ))
@@ -2730,38 +2676,6 @@ function resetAll() {
   backups.value = []
   rawPluginFilesets.value = null
   activeStep.value = 1
-}
-
-function formatMtime(ts) {
-  if (!ts) return ''
-  const d = new Date(ts * 1000)
-  const yyyy = d.getFullYear()
-  const mm   = (d.getMonth() + 1).toString().padStart(2, '0')
-  const dd   = d.getDate().toString().padStart(2, '0')
-  const hh   = d.getHours().toString().padStart(2, '0')
-  const min  = d.getMinutes().toString().padStart(2, '0')
-  const ss   = d.getSeconds().toString().padStart(2, '0')
-  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`
-}
-
-function formatMode(mode) {
-  if (!mode) return ''
-  const types = { 0o040000: 'd', 0o120000: 'l', 0o060000: 'b',
-                  0o020000: 'c', 0o010000: 'p', 0o140000: 's' }
-  let type = '-'
-  for (const [mask, ch] of Object.entries(types)) {
-    if ((mode & 0o170000) === Number(mask)) { type = ch; break }
-  }
-  const bits = 'rwxrwxrwx'
-  let perms = ''
-  for (let i = 8; i >= 0; i--) {
-    perms += (mode >> i) & 1 ? bits[8 - i] : '-'
-  }
-  // setuid/setgid/sticky
-  if (mode & 0o4000) perms = perms.slice(0, 2) + (perms[2] === 'x' ? 's' : 'S') + perms.slice(3)
-  if (mode & 0o2000) perms = perms.slice(0, 5) + (perms[5] === 'x' ? 's' : 'S') + perms.slice(6)
-  if (mode & 0o1000) perms = perms.slice(0, 8) + (perms[8] === 'x' ? 't' : 'T')
-  return type + perms
 }
 
 function fileIcon(name) {
