@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: fix reload related crash [PR #2865]
 - backport catreq: fix sanity check [PR #2871]
 - Update vulnerable Vue dependencies [PR #2870]
+- .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2875]
 
 ## [25.1.1] - 2026-09-03
 
@@ -2384,4 +2385,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2865]: https://github.com/bareos/bareos/pull/2865
 [PR #2870]: https://github.com/bareos/bareos/pull/2870
 [PR #2871]: https://github.com/bareos/bareos/pull/2871
+[PR #2875]: https://github.com/bareos/bareos/pull/2875
 [unreleased]: https://github.com/bareos/bareos/tree/master
