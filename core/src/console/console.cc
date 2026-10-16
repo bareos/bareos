@@ -319,24 +319,28 @@ struct TerminalSelectionScreenGuard {
 };
 #endif
 
+// Read one plain line from a file/pipe (e.g. scripted bconcmds input) into
+// the socket message buffer, echoing it to the terminal.
+static bool ReadScriptedLine(FILE* input, BareosSocket* socket)
+{
+  int len = SizeofPoolMemory(socket->msg) - 1;
+  if (fgets(socket->msg, len, input) == NULL) { return false; }
+  ConsoleOutput(socket->msg); /* echo to terminal */
+  StripTrailingJunk(socket->msg);
+  socket->message_length = strlen(socket->msg);
+  return true;
+}
+
 static bool ReadSelectionInput(FILE* input,
                                BareosSocket* socket,
                                bool input_is_interactive_tty)
 {
   if (!input_is_interactive_tty) {
-    // Reading from a file/pipe (e.g. scripted bconcmds input): read a plain
-    // line the same way the main command loop does for non-tty input (see
-    // ReadAndProcessInput() above). GetCmd()/readline() must not be used
-    // here: on Windows, the readline-win32 port ignores redirected stdin
-    // and blocks waiting for real console input instead of consuming the
-    // next scripted line, hanging any restore that reaches this selection
-    // menu.
-    int len = SizeofPoolMemory(socket->msg) - 1;
-    if (fgets(socket->msg, len, input) == NULL) { return false; }
-    ConsoleOutput(socket->msg); /* echo to terminal */
-    StripTrailingJunk(socket->msg);
-    socket->message_length = strlen(socket->msg);
-    return true;
+    // GetCmd()/readline() must not be used here: on Windows, the
+    // readline-win32 port ignores redirected stdin and blocks waiting for
+    // real console input instead of consuming the next scripted line,
+    // hanging any restore that reaches this selection menu.
+    return ReadScriptedLine(input, socket);
   }
 
 #if !defined(HAVE_WIN32)
@@ -650,15 +654,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       status = GetCmd(input, prompt, UA_sock, 30);
     } else {
       // Reading input from a file
-      int len = SizeofPoolMemory(UA_sock->msg) - 1;
-      if (fgets(UA_sock->msg, len, input) == NULL) {
-        status = -1;
-      } else {
-        ConsoleOutput(UA_sock->msg); /* echo to terminal */
-        StripTrailingJunk(UA_sock->msg);
-        UA_sock->message_length = strlen(UA_sock->msg);
-        status = 1;
-      }
+      status = ReadScriptedLine(input, UA_sock) ? 1 : -1;
     }
     if (status < 0) {
       break;                  /* error or interrupt */
