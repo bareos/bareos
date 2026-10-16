@@ -113,6 +113,7 @@ target_sources(
           ua_restore_point_display.cc
           restore_plugin_hints.cc
           ua_run.cc
+          ua_run_helpers.cc
           ua_select.cc
           ua_server.cc
           ua_status.cc
