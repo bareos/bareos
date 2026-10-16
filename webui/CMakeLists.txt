@@ -124,6 +124,16 @@ else()
   message("PHP not found")
 endif()
 
+# CSRF decision table for Application\Listener\SameOriginListener; standalone.
+if(PHP)
+  add_test(
+    NAME webui-same-origin-test
+    COMMAND
+      "${PHP}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/regress/webui-same-origin-test.php"
+  )
+endif()
+
 if(NOT client-only)
   install(FILES version.php init_autoloader.php
           DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui

@@ -96,7 +96,10 @@ function read_configuration_ini($configuration_ini)
         ),
         'jobview' => array(
             'period' => 7
-        )
+        ),
+        // Reverse proxies from which X-Forwarded-Proto and X-Forwarded-Host
+        // are accepted. See Application\Listener\SameOriginListener.
+        'trusted_proxies' => array()
     );
 
     // Check for existing configuration.ini and parse if present
@@ -139,6 +142,9 @@ function read_configuration_ini($configuration_ini)
         }
         if (isset($configuration['jobview']['period'])) {
             $result['jobview']['period'] = $configuration['jobview']['period'];
+        }
+        if (isset($configuration['trusted_proxies']['addresses'])) {
+            $result['trusted_proxies'] = $configuration['trusted_proxies']['addresses'];
         }
     }
     return $result;
@@ -248,9 +254,20 @@ function read_directors_ini($directors, $directors_ini)
     return $arr;
 }
 
+$configuration = read_configuration_ini($configuration_ini);
+
+// By path: no module autoloaders registered yet.
+require_once __DIR__ . '/../../module/Application/src/Application/Http/RequestOrigin.php';
+
+// Secure only for a request that arrived over TLS. Shares the trusted_proxies
+// decision with the CSRF listener so the two cannot disagree.
+$cookie_secure = (new Application\Http\RequestOrigin(
+    $configuration['trusted_proxies']
+))->isHttps();
+
 return array(
     'directors' => read_directors_ini($directors, $directors_ini),
-    'configuration' => read_configuration_ini($configuration_ini),
+    'configuration' => $configuration,
     'service_manager' => array(
         'factories' => array(
             'Laminas\Session\Config\ConfigInterface' => 'Laminas\Session\Service\SessionConfigFactory',
@@ -268,10 +285,12 @@ return array(
             'options' => array(
                 'use_cookies' => true,
                 'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
+                'cookie_httponly' => true,
+                'cookie_secure' => $cookie_secure,
+                'cookie_samesite' => 'Strict',
                 'gc_maxlifetime' => '3600',
                 'cache_expire' => 3600,
-                'remember_me_seconds' => 3600,
-                'use_cookies' => true
+                'remember_me_seconds' => 3600
             ),
         ),
         'storage' => 'Laminas\Session\Storage\SessionArrayStorage',
