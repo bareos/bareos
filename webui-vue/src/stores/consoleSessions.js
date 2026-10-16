@@ -23,6 +23,7 @@ import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { DEFAULT_DIRECTOR_NAME, useAuthStore } from './auth.js'
 import { defaultDirectorWsUrl } from '../utils/directorCommandSocket.js'
+import { sanitizeTerminalOutput } from '../utils/terminalSanitize.js'
 
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
@@ -359,7 +360,10 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
     // selection frame (with its real ANSI reverse-video/background-color
     // escape codes) so xterm.js renders the exact same highlighted menu
     // a native bconsole would.
-    writeToTerminal(director, `\x1B[2J\x1B[H${message.text}`)
+    writeToTerminal(
+      director,
+      `\x1B[2J\x1B[H${sanitizeTerminalOutput(message.text)}`,
+    )
     return {
       outputText: '',
       promptText: '',
@@ -546,7 +550,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
   function appendLines(director, text, cls = '', continueLine = false) {
     const session = getSession(director)
-    const normalizedText = filterConsoleNoiseText(text)
+    const normalizedText = sanitizeTerminalOutput(
+      filterConsoleNoiseText(text),
+    )
     if (!normalizedText) {
       return
     }
