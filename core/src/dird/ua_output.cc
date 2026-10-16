@@ -1351,6 +1351,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       const char* volume_name = GetArgValue(ua, NT_("volume"));
+      /* The trailing jobname/clientname columns only carry the ACL checks
+       * and are hidden from the output. */
+      const int acl_col = (llist == VERT_LIST) ? 11 : 10;
+      SetHiddenColumnAclFilter(ua, acl_col, Job_ACL);
+      SetHiddenColumnAclFilter(ua, acl_col + 1, Client_ACL);
       ua->db->ListJobmediaRecords(ua->jcr, jobid, volume_name, ua->send.get(),
                                   llist);
       return true;
