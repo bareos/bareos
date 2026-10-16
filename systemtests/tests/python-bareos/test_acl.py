@@ -83,29 +83,82 @@ class PythonBareosAclTest(bareos_unittest.Json):
             password=bareos_password,
             **self.director_extra_options
         )
+        console_bareos_fd_json = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=console_bareos_fd_username,
+            password=bareos_password,
+            **self.director_extra_options
+        )
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_bareos_fd_json.call(".clientbrowse client=test2-fd path=/")
 
         result = console_bareos_fd.call("restore")
         logger.debug(str(result))
 
         #
-        # restore: 1: List last 20 Jobs run
+        # restore: 1: Select a FileSet@Client combination (latest backup)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected.
+        #
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        # The latest restore point is now selected automatically,
+        # without any further interactive prompt.
+        self.assertIn(b"Automatically selected restore point:", result)
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 2: Select a FileSet@Client combination (custom restore
+        # point)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected. Since more than one restore
+        # chain exists, the interactive restore chain picker is shown
+        # and we select the first (newest) one manually.
+        #
+        result = console_bareos_fd.call("2")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        self.assertIn(b"Select restore point", result)
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 13: List last 20 Jobs run
         #
         # This requires access to the "sqlquery" command,
         # which this console does not have.
         #
-        result = console_bareos_fd.call("1")
+        result = console_bareos_fd.call("13")
         logger.debug(str(result))
         self.assertEqual(b"SQL query not authorized.", result.strip())
 
         result = console_bareos_fd.call("restore")
 
         #
-        # restore: 2: List Jobs where a given File is saved
+        # restore: 14: List Jobs where a given File is saved
         #
         # Only the bareos-fd client should be accessable
         # and is therefore autoselected.
         #
-        result = console_bareos_fd.call("2")
+        result = console_bareos_fd.call("14")
         logger.debug(str(result))
         self.assertIn(b"Automatically selected Client: bareos-fd", result)
         result = console_bareos_fd.call("Makefile")
