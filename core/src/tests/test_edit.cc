@@ -21,6 +21,8 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 
+#include <limits>
+
 #include "lib/edit.h"
 #include "lib/scan.h"
 
@@ -53,6 +55,32 @@ TEST(edit, convert_number_to_siunits)
   ASSERT_STREQ(
       SizeAsSiPrefixFormat(exi + pebi + tebi + gibi + mebi + kibi + 1).c_str(),
       "1 e 1 p 1 t 1 g 1 m 1 k 1");
+}
+
+TEST(edit, convert_number_to_compact7)
+{
+  // Values below 1 KiB are printed as bytes; larger values use the largest
+  // applicable binary unit rounded to the nearest integer.
+  ASSERT_STREQ(SizeAsCompact7Format(0).c_str(), "0");
+  ASSERT_STREQ(SizeAsCompact7Format(1).c_str(), "1");
+  ASSERT_STREQ(SizeAsCompact7Format(1023).c_str(), "1023");
+  ASSERT_STREQ(SizeAsCompact7Format(kibi).c_str(), "1K");
+  ASSERT_STREQ(SizeAsCompact7Format(mebi).c_str(), "1M");
+  ASSERT_STREQ(SizeAsCompact7Format(gibi).c_str(), "1G");
+  ASSERT_STREQ(SizeAsCompact7Format(tebi).c_str(), "1T");
+  ASSERT_STREQ(SizeAsCompact7Format(pebi).c_str(), "1P");
+  ASSERT_STREQ(SizeAsCompact7Format(exi).c_str(), "1E");
+  ASSERT_STREQ(SizeAsCompact7Format(29004 * kibi).c_str(), "28M");
+  ASSERT_STREQ(SizeAsCompact7Format(mebi - 512).c_str(), "1M");
+  ASSERT_STREQ(SizeAsCompact7Format(10000000).c_str(), "10M");
+
+  // Every result must be at most 7 characters wide, across the full
+  // 64-bit range.
+  for (uint64_t value :
+       {uint64_t{0}, uint64_t{1}, uint64_t{1023}, uint64_t{10000000}, kibi,
+        mebi, gibi, tebi, pebi, exi, std::numeric_limits<uint64_t>::max()}) {
+    EXPECT_LE(SizeAsCompact7Format(value).size(), 7u) << value;
+  }
 }
 
 // kibibyte
