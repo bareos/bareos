@@ -84,7 +84,8 @@ export function compareVolumeToPoolDefaults(volume, pool) {
       volumeValue: normalisePoolDefaultValue(volume[field.volumeKey]),
       poolValue: normalisePoolDefaultValue(pool[field.poolKey]),
     }))
-    .filter(entry => entry.volumeValue !== entry.poolValue)
+    // Unset is stored as 0 or NULL; those are the same default.
+    .filter(entry => (entry.volumeValue ?? 0) !== (entry.poolValue ?? 0))
 }
 
 /**
