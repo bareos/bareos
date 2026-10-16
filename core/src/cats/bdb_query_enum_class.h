@@ -80,7 +80,7 @@ class BareosDbQueryEnum {
     list_volumes_select_long_0 = 69,
     bvfs_lock_pathhierarchy_0 = 70,
     bvfs_unlock_tables_0 = 71,
-    subscription_with_clause_0 = 72,
+    subscription_with_clause_1 = 72,
     subscription_units_total_2 = 73,
     subscription_units_3 = 74,
     subscription_units_client_total_3 = 75,

@@ -491,6 +491,10 @@ endif()
 bareos_add_test(
   test_output_formatter LINK_LIBRARIES GTest::gtest_main Bareos::Lib
 )
+bareos_add_test(stat_utils_test LINK_LIBRARIES GTest::gtest_main)
+bareos_add_test(
+  test_subscription_accounting_table LINK_LIBRARIES GTest::gtest_main
+)
 
 if(NOT HAVE_BIG_ENDIAN)
   bareos_add_test(
