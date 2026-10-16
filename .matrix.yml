@@ -122,10 +122,6 @@ OS:
       TYPE: freebsd
       ARCH:
         - amd64
-    "13":
-      TYPE: freebsd
-      ARCH:
-        - amd64
   MacOS:
     "15":
       TYPE: macos
