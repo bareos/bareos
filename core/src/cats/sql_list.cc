@@ -263,16 +263,24 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
     Mmsg(cmd,
          "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
          "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-         "JobMedia.EndBlock,JobMedia.JobBytes "
-         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
+         "JobMedia.EndBlock,JobMedia.JobBytes,"
+         "Job.Name AS jobname,Client.Name AS clientname "
+         "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
+         "JOIN Job ON Job.JobId=JobMedia.JobId "
+         "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+         "WHERE 1=1 %s",
          where.c_str());
 
   } else {
     Mmsg(cmd,
          "SELECT JobMediaId,JobId,Media.VolumeName,FirstIndex,LastIndex,"
          "StartFile,JobMedia.EndFile,StartBlock,JobMedia.EndBlock,"
-         "JobMedia.JobBytes "
-         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
+         "JobMedia.JobBytes,"
+         "Job.Name AS jobname,Client.Name AS clientname "
+         "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
+         "JOIN Job ON Job.JobId=JobMedia.JobId "
+         "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+         "WHERE 1=1 %s",
          where.c_str());
   }
   if (!QueryDb(jcr, cmd)) { return; }
