@@ -663,8 +663,14 @@ static void UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
   char ed1[50];
+  PoolDbRecord pr;
 
   DbLocker _{ua->db};
+  pr.PoolId = mr->PoolId;
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)
+      || !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+    return;
+  }
   auto esc = ua->db->EscapeString(ua->jcr, val);
   if (!esc) {
     ua->ErrorMsg(T_("Could not escape comment.\n"));
@@ -1147,6 +1153,15 @@ static bool UpdateJob(UaContext* ua)
     return false;
   }
   if (comment) {
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) { return false; }
+    if (jr.ClientId) {
+      ClientDbRecord job_client;
+      job_client.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &job_client)
+          || !ua->AclAccessOk(Client_ACL, job_client.Name, true)) {
+        return false;
+      }
+    }
     auto esc = ua->db->EscapeString(ua->jcr, comment);
     if (!esc) {
       ua->ErrorMsg(T_("Could not escape comment.\n"));
