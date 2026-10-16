@@ -1162,13 +1162,13 @@ ON Job.JobId = LastJob.MaxJobId
 )SQL",
 
 /* 0088_uar_sel_client_fileset_tuples_1 */
-R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet
+R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet, Job.Name
   FROM Job, Client, FileSet
  WHERE Job.ClientId   = Client.ClientId
    AND Job.FileSetId  = FileSet.FileSetId
    AND Job.JobStatus IN ('T','W')
    AND Job.Type       = '%c'
- ORDER BY Client.Name, FileSet.FileSet
+ ORDER BY Client.Name, FileSet.FileSet, Job.Name
 )SQL",
 
 /* 0089_uar_sel_client_fileset_fulls_3 */
