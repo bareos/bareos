@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: size SQL escape buffers dynamically [PR #2840]
 - fix(dird): accept extended labels after purge truncate [PR #2852]
 - backport: catreq: fix sanity check [PR #2872]
+- .matrix.yml: remove EOL FreeBSD 13 [PR #2876]
 
 ## [24.0.11] - 2026-09-03
 
@@ -2066,4 +2067,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2840]: https://github.com/bareos/bareos/pull/2840
 [PR #2852]: https://github.com/bareos/bareos/pull/2852
 [PR #2872]: https://github.com/bareos/bareos/pull/2872
+[PR #2876]: https://github.com/bareos/bareos/pull/2876
 [unreleased]: https://github.com/bareos/bareos/tree/master
