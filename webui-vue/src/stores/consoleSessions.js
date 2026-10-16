@@ -47,6 +47,7 @@ const RESTORE_TREE_COMPLETION_COMMANDS = {
   delete: '.lsmark',
   unmark: '.lsmark',
 }
+const ANSI_ESCAPE_SEQUENCE_RE = /\x1B\[[0-?]*[ -/]*[@-~]/g
 const COMPLETION_KEYWORDS = [
   { key: 'pool=', cmd: '.pool' },
   { key: 'nextpool=', cmd: '.pool' },
@@ -74,11 +75,19 @@ function createSession(director) {
     currentPrompt: '* ',
     output: [],
     outputLineOpen: false,
+    selectionActive: false,
+    selectionBusy: false,
+    selectionText: '',
+    selectionLines: [],
     cmd: '',
     cursorPos: 0,
     history: [],
     historyIdx: -1,
     initialized: false,
+    // Last terminal size (rows/cols) reported by the browser's xterm.js
+    // instance. Kept here (rather than only sent once) so it can be
+    // resent to the Director as soon as a session (re)connects.
+    terminalSize: null,
   })
 }
 
@@ -155,6 +164,46 @@ function filterConsoleNoiseText(text) {
     .filter(line => !CONSOLE_NOISE_LINES.has(line))
 
   return filteredLines.join('\n')
+}
+
+function normalizeSelectionText(text) {
+  // The Director marks the selected line with a literal "> " prefix (in
+  // addition to the ANSI reverse-video escape codes) so that plain-text
+  // consumers — including screen readers and braille displays that don't
+  // render ANSI attributes — can tell which item is selected. Stripping
+  // the escape codes here is therefore sufficient to produce readable
+  // plain text; the marker itself is already part of the raw text.
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(ANSI_ESCAPE_SEQUENCE_RE, '')
+}
+
+// Matches the Director's per-line selection marker: an optional plain-text
+// indicator (e.g. "> ") immediately followed by the ANSI reverse-video
+// start code. Anything before the escape code is captured as the line's
+// indent so it can be re-applied without the raw ">" character, since the
+// WebUI conveys "selected" visually via full-row highlighting and via
+// aria-current instead of a text marker.
+const ANSI_INVERSE_SELECTED_LINE_RE = /^([^\x1B]*)\x1B\[7m(.*)$/
+
+function parseSelectionLines(text) {
+  return String(text ?? '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(line => {
+      const match = line.match(ANSI_INVERSE_SELECTED_LINE_RE)
+      if (match) {
+        const indent = match[1].replace(/[^ \t]/g, ' ')
+        return {
+          text: (indent + match[2]).replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+          selected: true,
+        }
+      }
+      return {
+        text: line.replace(ANSI_ESCAPE_SEQUENCE_RE, ''),
+        selected: false,
+      }
+    })
 }
 
 function parseHelpCompletionItems(text) {
@@ -291,7 +340,42 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
   }
 }
 
-function applyRawConsoleResponse(session, director, appendLines, message) {
+function applyRawConsoleResponse(session, director, appendLines, writeToTerminal, message) {
+  if (message.prompt === 'select' || message.prompt === 'select_busy') {
+    if (!session.selectionActive) {
+      // Entering an interactive selection: switch the terminal to the
+      // alternate screen buffer, mirroring bconsole's
+      // TerminalSelectionScreenGuard (console.cc), so normal scrollback
+      // is preserved underneath and restored automatically on exit.
+      writeToTerminal(director, '\x1B[?1049h')
+    }
+    session.selectionActive = true
+    session.selectionBusy = message.prompt === 'select_busy'
+    session.selectionText = normalizeSelectionText(message.text)
+    session.selectionLines = parseSelectionLines(message.text)
+    session.currentPrompt = ''
+    // Clear the screen and home the cursor before each redraw, mirroring
+    // the BNET_START_SELECT handling in console.cc, then forward the raw
+    // selection frame (with its real ANSI reverse-video/background-color
+    // escape codes) so xterm.js renders the exact same highlighted menu
+    // a native bconsole would.
+    writeToTerminal(director, `\x1B[2J\x1B[H${message.text}`)
+    return {
+      outputText: '',
+      promptText: '',
+    }
+  }
+
+  if (session.selectionActive) {
+    // Leaving interactive selection: return to the main screen buffer and
+    // start normal output on a fresh line.
+    writeToTerminal(director, '\x1B[?1049l\r\n')
+  }
+
+  session.selectionActive = false
+  session.selectionBusy = false
+  session.selectionText = ''
+  session.selectionLines = []
   const isStreamingChunk = message.prompt === 'more'
   const {
     outputText,
@@ -335,6 +419,18 @@ function buildRestoreTreeCompletionRequest(command) {
 export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   const sessions = reactive({})
   const runtimes = new Map()
+  // Per-director raw-text sink registered by the Console page once it has
+  // mounted an xterm.js instance for that director's tab. Kept outside the
+  // reactive session objects since it holds a plain function reference,
+  // not session state.
+  const terminalWriters = new Map()
+  // Bounded per-director replay buffer of everything ever written to the
+  // terminal (raw ANSI bytes, in order). Used to reproduce a director's
+  // terminal contents when the Console page (re)mounts a terminal for it,
+  // e.g. after switching tabs. Kept as plain arrays (not reactive state)
+  // since only string concatenation/replay is needed, never rendering.
+  const terminalLogs = new Map()
+  const TERMINAL_LOG_MAX_CHARS = 200_000
 
   const directors = computed(() => Object.keys(sessions))
 
@@ -354,6 +450,100 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     return runtimes.get(director || DEFAULT_DIRECTOR_NAME)
   }
 
+  function setTerminalWriter(director, writer) {
+    const normalizedDirector = director || DEFAULT_DIRECTOR_NAME
+    if (writer) {
+      terminalWriters.set(normalizedDirector, writer)
+      // Replay everything written so far so a freshly mounted terminal
+      // (e.g. after switching Director tabs) reproduces the existing
+      // session content instead of starting blank.
+      const log = terminalLogs.get(normalizedDirector)
+      if (log && log.length) {
+        writer(log.join(''))
+      }
+    } else {
+      terminalWriters.delete(normalizedDirector)
+    }
+  }
+
+  function writeToTerminal(director, text) {
+    if (!text) {
+      return
+    }
+    const normalizedDirector = director || DEFAULT_DIRECTOR_NAME
+
+    let log = terminalLogs.get(normalizedDirector)
+    if (!log) {
+      log = []
+      terminalLogs.set(normalizedDirector, log)
+    }
+    log.push(text)
+    let logLength = log.reduce((total, chunk) => total + chunk.length, 0)
+    while (logLength > TERMINAL_LOG_MAX_CHARS && log.length > 1) {
+      logLength -= log.shift().length
+    }
+
+    terminalWriters.get(normalizedDirector)?.(text)
+  }
+
+  // Leaves interactive selection mode, restoring the terminal to the
+  // main screen buffer if it was switched to the alternate one (see
+  // applyRawConsoleResponse's 'select' handling above). Must be called
+  // on every path that can end a selection -- not just the classic
+  // "raw response with a non-select prompt" success path -- so an
+  // error, a command timeout, or an unexpected WebSocket close never
+  // leaves the user stuck on the alternate buffer with no way back to
+  // their normal scrollback.
+  function exitSelectionMode(session, director) {
+    if (session.selectionActive) {
+      writeToTerminal(director, '\x1B[?1049l\r\n')
+    }
+    session.selectionActive = false
+    session.selectionBusy = false
+    session.selectionText = ''
+    session.selectionLines = []
+  }
+
+  // Sends the browser-reported terminal size to the Director using the
+  // same symbolic protocol a native bconsole TTY client already uses (see
+  // ua_dotcmds.cc's DotTerminalsizeCmd and
+  // ua_tree_browser_internal.h's ParseTerminalResizeInput) — no proxy or
+  // Director protocol changes are required.
+  function setTerminalSize(director, rows, cols) {
+    const session = getSession(director)
+    if (!(rows > 0) || !(cols > 0)) {
+      return
+    }
+    session.terminalSize = { rows, cols }
+    sendTerminalSizeIfConnected(director)
+  }
+
+  function sendTerminalSizeIfConnected(director) {
+    const session = getSession(director)
+    const runtime = getRuntime(director)
+    if (
+      !session.terminalSize
+      || !runtime.ws
+      || runtime.ws.readyState !== WebSocket.OPEN
+      || runtime.closing
+    ) {
+      return
+    }
+
+    const { rows, cols } = session.terminalSize
+    if (session.selectionActive) {
+      // Inside an interactive selection/dialog, size updates travel over
+      // the same symbolic key-event channel as arrow keys etc.
+      sendSelectionEvent(director, `resize:${rows}:${cols}`)
+    } else {
+      // At the main prompt, this is a normal (silent) dot-command — it
+      // produces no output, exactly like the DotTerminalsizeCmd doc
+      // comment describes ("Produces no output, since it is not meant to
+      // be user-visible.").
+      sendCommand(director, `.terminalsize ${rows} ${cols} color`)
+    }
+  }
+
   function appendLines(director, text, cls = '', continueLine = false) {
     const session = getSession(director)
     const normalizedText = filterConsoleNoiseText(text)
@@ -361,16 +551,23 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       return
     }
 
+    // Forward the raw (ANSI-preserving) text verbatim to the mounted
+    // xterm.js terminal, if any. xterm performs the actual ANSI/SGR
+    // interpretation (colors, backgrounds, reverse video, cursor
+    // movement) — this store no longer parses escape codes for display.
+    writeToTerminal(director, normalizedText)
+
     if (!continueLine) {
       session.outputLineOpen = false
     }
 
     const appendLine = (line) => {
+      const cleanLine = line.replace(ANSI_ESCAPE_SEQUENCE_RE, '')
       const lastLine = session.output[session.output.length - 1]
       if (session.outputLineOpen && lastLine && lastLine.cls === cls) {
-        lastLine.text += line
+        lastLine.text += cleanLine
       } else {
-        session.output.push({ text: line, cls })
+        session.output.push({ text: cleanLine, cls })
       }
     }
 
@@ -394,21 +591,27 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
   }
 
+  // Notices are always complete lines of their own. They must be
+  // terminated explicitly: the terminal writer redraws the live input
+  // line afterwards, which starts with "\r\x1B[K" and would otherwise
+  // erase an unterminated notice right after writing it.
   function appendInfo(director, text) {
-    appendLines(director, text, 'console-info')
+    appendLines(director, `${text}\n`, 'console-info')
   }
 
   function appendErr(director, text) {
-    appendLines(director, text, 'console-err')
+    appendLines(director, `${text}\n`, 'console-err')
   }
 
   function appendCommand(director, text) {
     const session = getSession(director)
+    const echoedLine = `${session.currentPrompt}${text}`
     session.output.push({
-      text: `${session.currentPrompt}${text}`,
+      text: echoedLine,
       cls: 'console-cmd',
     })
     session.outputLineOpen = false
+    writeToTerminal(director, `${echoedLine}\n`)
   }
 
   function rejectAll(director, reason) {
@@ -457,6 +660,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     runtime.ws = null
     session.status = 'disconnected'
     session.currentPrompt = '* '
+    exitSelectionMode(session, director)
     if (options.resetInitialized) {
       session.initialized = false
     }
@@ -522,6 +726,10 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           director,
           `Connected to ${msg.director} — type 'help' for commands, click here to type.`
         )
+        // Mirror bconsole's initial SendTerminalSize() call so the
+        // Director knows the browser's terminal size from the start of
+        // the session (affects table/menu formatting width).
+        sendTerminalSizeIfConnected(director)
         return
       }
 
@@ -548,7 +756,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             msg.text
           )
         } else {
-          const isStreamingChunk = msg.prompt === 'more'
+          const isStreamingChunk = msg.prompt === 'more' || msg.prompt === 'select_busy'
           if (!isStreamingChunk) {
             const entry = runtime.pendingCmds.get(msg.id)
             if (entry) {
@@ -557,7 +765,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
             }
           }
 
-          applyRawConsoleResponse(session, director, appendLines, msg)
+          applyRawConsoleResponse(session, director, appendLines, writeToTerminal, msg)
         }
 
         return
@@ -569,6 +777,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           clearTimeout(entry.timer)
           runtime.pendingCmds.delete(msg.id)
         }
+        exitSelectionMode(session, director)
         appendErr(director, msg.message)
       }
     }
@@ -599,6 +808,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           appendInfo(director, 'Console disconnected.')
         }
       }
+      exitSelectionMode(session, director)
       rejectAll(director, 'WebSocket closed')
       clearTimeout(runtime.exitDisconnectTimer)
       runtime.exitDisconnectTimer = null
@@ -613,6 +823,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     session.output = []
     session.outputLineOpen = false
+    terminalLogs.set(director || DEFAULT_DIRECTOR_NAME, [])
     appendInfo(director, 'Console cleared.')
   }
 
@@ -639,6 +850,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       }
 
       runtime.pendingCmds.delete(id)
+      exitSelectionMode(session, director)
       appendErr(director, 'Command timed out.')
     }, timeoutMs)
 
@@ -698,6 +910,14 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     return true
   }
 
+  function sendSelectionEvent(director, event) {
+    const session = getSession(director)
+    if (!session.selectionActive || session.selectionBusy) {
+      return false
+    }
+    return sendCommand(director, event)
+  }
+
   function disconnectAll(options = {}) {
     for (const director of directors.value) {
       disconnectSession(director, options)
@@ -715,7 +935,10 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     disconnectAll,
     clearOutput,
     sendCommand,
+    sendSelectionEvent,
     requestCompletion,
+    setTerminalWriter,
+    setTerminalSize,
   }
 })
 

@@ -1160,3 +1160,48 @@ INNER JOIN (
 ON Job.JobId = LastJob.MaxJobId
 ;
 )SQL",
+
+/* 0088_uar_sel_client_fileset_tuples_1 */
+R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet
+  FROM Job, Client, FileSet
+ WHERE Job.ClientId   = Client.ClientId
+   AND Job.FileSetId  = FileSet.FileSetId
+   AND Job.JobStatus IN ('T','W')
+   AND Job.Type       = '%c'
+ ORDER BY Client.Name, FileSet.FileSet
+)SQL",
+
+/* 0089_uar_sel_client_fileset_fulls_3 */
+R"SQL(WITH completed_jobs AS (
+  SELECT JobId, Name, Level, StartTime, JobFiles, JobBytes
+    FROM Job
+   WHERE ClientId = %s
+     AND FileSetId = %s
+     AND JobStatus IN ('T','W')
+     AND Type = '%c'
+),
+full_backups AS (
+  SELECT JobId,
+         StartTime AS FullStartTime,
+         JobFiles AS FullJobFiles,
+         JobBytes AS FullJobBytes,
+         LEAD(StartTime) OVER (ORDER BY StartTime) AS NextFullStartTime
+    FROM completed_jobs
+   WHERE Level = 'F'
+)
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
+       full_backups.FullJobFiles,
+       full_backups.FullJobBytes
+  FROM full_backups
+  JOIN completed_jobs
+    ON completed_jobs.StartTime >= full_backups.FullStartTime
+   AND (full_backups.NextFullStartTime IS NULL
+        OR completed_jobs.StartTime < full_backups.NextFullStartTime)
+ GROUP BY full_backups.JobId, full_backups.FullStartTime,
+          full_backups.FullJobFiles, full_backups.FullJobBytes
+ ORDER BY full_backups.FullStartTime DESC
+)SQL",
