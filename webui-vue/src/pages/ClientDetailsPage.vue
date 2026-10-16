@@ -88,7 +88,7 @@
               </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
-                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <div>{{ formatBytes(props.row.bytes) }}</div>
                   <q-linear-progress
                     :value="bytesGauge(props.row.bytes)"
                     color="primary" track-color="grey-3"
@@ -141,7 +141,6 @@ const router        = useRouter()
 const auth          = useAuthStore()
 const director      = useDirectorStore()
 const settings      = useSettingsStore()
-const fmtBytes      = formatBytes
 const { t } = useI18n()
 const requestedDirector = computed(() => (
   typeof route.query.director === 'string' ? route.query.director : ''

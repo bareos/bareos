@@ -320,7 +320,7 @@
               </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
-                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <div>{{ formatBytes(props.row.bytes) }}</div>
                   <q-linear-progress
                     v-if="isRunning(props.row.status)"
                     indeterminate
@@ -771,7 +771,6 @@ const clientFilterInput = ref(clientFilter.value)
 const jobFilterOptions = ref([])
 const clientFilterOptions = ref([])
 const directorErrors = ref([])
-const fmtBytes  = formatBytes
 const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 const fmtSpeed  = formatSpeed
 const jobsRowsPerPageOptions = [10, 25, 50]
