@@ -2050,6 +2050,64 @@ static void ApplyPriorityChange(JobControlRecord* jcr, int direction)
   jcr->JobPriority = std::max(priority, 1);
 }
 
+static std::string FormatOptionRowLine(std::string_view label,
+                                       std::string_view value,
+                                       bool selected,
+                                       bool advanced,
+                                       size_t value_width,
+                                       size_t value_offset)
+{
+  std::string line = selected ? "> " : "  ";
+  if (advanced) { line += "  "; }
+  line += FitRestoreOptionText(label, 22);
+  if (line.size() < kRestoreOptionLabelColumn) {
+    line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+  }
+  line += selected ? ScrollRestoreOptionText(value, value_width, value_offset)
+                   : FitRestoreOptionText(value, value_width);
+  return line;
+}
+
+// Rows need action, label, value and advanced members; the row with the
+// run_now_action is separated from the rows above it.
+template <typename Row, typename Action>
+static std::string RenderOptionRowsScreen(UaContext* ua,
+                                          const char* title,
+                                          const char* description,
+                                          const std::vector<Row>& rows,
+                                          size_t cursor,
+                                          size_t value_offset,
+                                          Action run_now_action,
+                                          const char* footer)
+{
+  size_t width = RestoreOptionsScreenWidth(ua);
+  size_t value_width = RestoreOptionValueWidth(ua);
+  std::string screen;
+  screen.reserve(rows.size() * 80);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kTop, title);
+  screen += RestoreOptionsFrameLine(width, description, ua->supports_color);
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kMiddle);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    const auto& row = rows[i];
+    if (row.action == run_now_action && i > 0) {
+      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
+    }
+    screen += RestoreOptionsFrameLine(
+        width,
+        FormatOptionRowLine(row.label, row.value, i == cursor, row.advanced,
+                            value_width, value_offset),
+        ua->supports_color, i == cursor);
+  }
+  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
+                                      FrameBorderStyle::kBottom);
+  screen += RestoreOptionsHelpLine(width, footer, ua->supports_color);
+  RemoveFinalNewline(&screen);
+  return screen;
+}
+
 static std::string RenderBackupOptionsScreen(UaContext* ua,
                                              JobControlRecord* jcr,
                                              RunContext& rc,
@@ -2057,42 +2115,11 @@ static std::string RenderBackupOptionsScreen(UaContext* ua,
                                              bool advanced_expanded,
                                              size_t value_offset)
 {
-  std::vector<BackupOptionRow> rows
-      = BuildBackupOptionRows(jcr, rc, advanced_expanded);
-  size_t width = RestoreOptionsScreenWidth(ua);
-  size_t value_width = RestoreOptionValueWidth(ua);
-  std::string screen;
-  screen.reserve(rows.size() * 80);
-  screen += RestoreOptionsFrameBorder(
-      width, ua->supports_color, FrameBorderStyle::kTop, T_("Run Backup Job"));
-  screen += RestoreOptionsFrameLine(
-      width, T_("Review the backup parameters below before starting the job."),
-      ua->supports_color);
-  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
-                                      FrameBorderStyle::kMiddle);
-
-  for (size_t i = 0; i < rows.size(); ++i) {
-    const auto& row = rows[i];
-    if (row.action == BackupOptionAction::kRunNow && i > 0) {
-      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
-    }
-    std::string line = i == cursor ? "> " : "  ";
-    line += row.advanced ? "  " : "";
-    line += FitRestoreOptionText(row.label, 22);
-    if (line.size() < kRestoreOptionLabelColumn) {
-      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
-    }
-    line += i == cursor
-                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
-                : FitRestoreOptionText(row.value, value_width);
-    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
-                                      i == cursor);
-  }
-  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
-                                      FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kRunDialogFooter, ua->supports_color);
-  RemoveFinalNewline(&screen);
-  return screen;
+  return RenderOptionRowsScreen(
+      ua, T_("Run Backup Job"),
+      T_("Review the backup parameters below before starting the job."),
+      BuildBackupOptionRows(jcr, rc, advanced_expanded), cursor, value_offset,
+      BackupOptionAction::kRunNow, kRunDialogFooter);
 }
 
 static int SelectBackupOptionVisual(UaContext* ua,
@@ -2334,44 +2361,11 @@ static std::string RenderRestoreOptionsScreen(UaContext* ua,
                                               bool advanced_expanded,
                                               size_t value_offset)
 {
-  std::vector<RestoreOptionRow> rows
-      = BuildRestoreOptionRows(jcr, rc, advanced_expanded);
-  size_t width = RestoreOptionsScreenWidth(ua);
-  size_t value_width = RestoreOptionValueWidth(ua);
-  std::string screen;
-  screen.reserve(rows.size() * 80);
-  screen += RestoreOptionsFrameBorder(
-      width, ua->supports_color, FrameBorderStyle::kTop, T_("Restore Options"));
-  screen += RestoreOptionsFrameLine(
-      width, T_("Review the restore parameters below before starting the job."),
-      ua->supports_color);
-  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
-                                      FrameBorderStyle::kMiddle);
-
-  for (size_t i = 0; i < rows.size(); ++i) {
-    const auto& row = rows[i];
-    if (row.action == RestoreOptionAction::kRunNow && i > 0) {
-      screen += RestoreOptionsFrameLine(width, "", ua->supports_color);
-    }
-    std::string line;
-    line += i == cursor ? "> " : "  ";
-    line += row.advanced ? "  " : "";
-    line += FitRestoreOptionText(row.label, 22);
-    if (line.size() < kRestoreOptionLabelColumn) {
-      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
-    }
-    line += i == cursor
-                ? ScrollRestoreOptionText(row.value, value_width, value_offset)
-                : FitRestoreOptionText(row.value, value_width);
-    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
-                                      i == cursor);
-  }
-  screen += RestoreOptionsFrameBorder(width, ua->supports_color,
-                                      FrameBorderStyle::kBottom);
-  screen += RestoreOptionsHelpLine(width, kRestoreDialogFooter,
-                                   ua->supports_color);
-  RemoveFinalNewline(&screen);
-  return screen;
+  return RenderOptionRowsScreen(
+      ua, T_("Restore Options"),
+      T_("Review the restore parameters below before starting the job."),
+      BuildRestoreOptionRows(jcr, rc, advanced_expanded), cursor, value_offset,
+      RestoreOptionAction::kRunNow, kRestoreDialogFooter);
 }
 
 static std::string FormatRunScheduleField(int value, int width)
@@ -2785,16 +2779,11 @@ static std::string RenderRelocationEditorScreen(
     if (editing && i == cursor && row.action == editing_action) {
       value = std::string(edit_buffer);
     }
-    std::string line = i == cursor ? "> " : "  ";
-    line += FitRestoreOptionText(row.label, 22);
-    if (line.size() < kRestoreOptionLabelColumn) {
-      line.append(kRestoreOptionLabelColumn - line.size(), ' ');
-    }
-    line += i == cursor
-                ? ScrollRestoreOptionText(value, value_width, value_offset)
-                : FitRestoreOptionText(value, value_width);
-    screen += RestoreOptionsFrameLine(width, line, ua->supports_color,
-                                      i == cursor);
+    screen += RestoreOptionsFrameLine(
+        width,
+        FormatOptionRowLine(row.label, value, i == cursor, false, value_width,
+                            value_offset),
+        ua->supports_color, i == cursor);
   }
   screen += RestoreOptionsFrameBorder(width, ua->supports_color,
                                       FrameBorderStyle::kBottom);
