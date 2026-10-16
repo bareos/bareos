@@ -4,6 +4,9 @@ import {
   fetchCurrentSession,
   SESSION_AUTH_PASSWORD,
 } from '../utils/sessionApi.js'
+import { clearClientsCache } from '../composables/clientsAggregate.js'
+import { clearFilesetsCache } from '../composables/filesetsAggregate.js'
+import { clearSchedulesShowCache } from '../composables/schedulesAggregate.js'
 
 export const DEFAULT_DIRECTOR_NAME = 'bareos-dir'
 
@@ -165,6 +168,11 @@ export const useAuthStore = defineStore('auth', () => {
     directorUsers.value = {}
     _password.value = ''
     initialized.value = true
+    // Prevent a subsequent user session from seeing this user's cached
+    // catalog data (clients/filesets/schedules) within the cache TTL window.
+    clearClientsCache()
+    clearFilesetsCache()
+    clearSchedulesShowCache()
   }
 
   async function restoreSession(force = false, preferredDirector = '') {
