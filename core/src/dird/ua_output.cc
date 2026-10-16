@@ -40,8 +40,10 @@
 #include "dird/next_vol.h"
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
+#include "dird/ua_output_pool_internal.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_select.h"
+#include "dird/volume_usage.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -73,9 +75,221 @@ static bool ParseListBackupsCmd(UaContext* ua,
 const int kDefaultLogLines = 5;
 const int kDefaultNumberOfDays = 50;
 
+using directordaemon::pool_list_internal::kPoolListColumnCount;
+using directordaemon::pool_list_internal::kPoolListColumns;
+using directordaemon::pool_list_internal::kPoolListNameIndex;
+using directordaemon::pool_list_internal::kPoolListPoolIdIndex;
+
+static_assert(directordaemon::pool_list_internal::PoolListColumnsAreUnique(),
+              "pool list columns and keys must be unique");
+static_assert(kPoolListPoolIdIndex == 0, "poolid must be the first column");
+static_assert(kPoolListNameIndex == 1, "name must be the second column");
+static_assert(
+    directordaemon::pool_list_internal::PoolListColumnIndex("maxvolfiles")
+        < kPoolListColumnCount,
+    "the volume defaults must be part of the pool listing");
+static_assert(
+    directordaemon::pool_list_internal::PoolListColumnIndex("nosuchcolumn")
+        == kPoolListColumnCount,
+    "unknown keys must not resolve to a column");
+
 struct PoolListRow {
-  std::array<std::string, 19> fields;
+  std::array<std::string, kPoolListColumnCount> fields;
 };
+
+static uint64_t ToUint64(const char* value)
+{
+  if (!value || !*value) { return 0; }
+  return strtoull(value, nullptr, 10);
+}
+
+// Some JobMedia records are bookkeeping placeholders (e.g. created on
+// volume switch) that never got a real range written to them. They all
+// collapse to the same degenerate zero position/index, so they falsely
+// "overlap" every other segment and only add noise to the output.
+static bool IsEmptyVolumeUsageSegment(const VolumeUsageSegment& segment)
+{
+  return segment.jobbytes == 0 && segment.firstindex == 0
+         && segment.lastindex == 0 && segment.startfile == 0
+         && segment.startblock == 0 && segment.endfile == 0
+         && segment.endblock == 0;
+}
+
+static size_t VolumeUsageBarWidth(const UaContext* ua)
+{
+  constexpr size_t kFallbackWidth = 60;
+  constexpr size_t kMinWidth = 20;
+  constexpr size_t kMaxWidth = 100;
+
+  if (ua->terminal_width <= 10) { return kFallbackWidth; }
+
+  return std::clamp(static_cast<size_t>(ua->terminal_width - 10), kMinWidth,
+                    kMaxWidth);
+}
+
+static bool QueryVolumeUsageSegments(UaContext* ua,
+                                     const char* volume_name,
+                                     std::vector<VolumeUsageSegment>& segments)
+{
+  const auto escaped_volume_name = ua->db->EscapeString(ua->jcr, volume_name);
+  if (!escaped_volume_name) { return false; }
+
+  PoolMem query(PM_MESSAGE);
+  query.bsprintf(
+      "SELECT JobMedia.JobMediaId,JobMedia.JobId,Job.Name,Client.Name,"
+      "Media.VolumeName,JobMedia.FirstIndex,JobMedia.LastIndex,"
+      "JobMedia.StartFile,JobMedia.EndFile,JobMedia.StartBlock,"
+      "JobMedia.EndBlock,JobMedia.JobBytes "
+      "FROM JobMedia "
+      "JOIN Media ON Media.MediaId=JobMedia.MediaId "
+      "JOIN Job ON Job.JobId=JobMedia.JobId "
+      "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+      "WHERE Media.VolumeName='%s' "
+      "ORDER BY JobMedia.StartFile,JobMedia.StartBlock,JobMedia.JobMediaId",
+      escaped_volume_name->c_str());
+
+  struct QueryContext {
+    UaContext* ua;
+    std::vector<VolumeUsageSegment>* segments;
+  } ctx{ua, &segments};
+
+  auto handler = [](void* context, int, char** row) {
+    auto* query_context = static_cast<QueryContext*>(context);
+    UaContext* callback_ua = query_context->ua;
+    const char* job_name = row[2] ? row[2] : "";
+    const char* client_name = row[3] ? row[3] : "";
+
+    if (!callback_ua->AclAccessOk(Job_ACL, job_name, false)
+        || (client_name[0]
+            && !callback_ua->AclAccessOk(Client_ACL, client_name, false))) {
+      return 0;
+    }
+
+    VolumeUsageSegment segment;
+    segment.jobmediaid = ToUint64(row[0]);
+    segment.jobid = ToUint64(row[1]);
+    segment.job = job_name;
+    segment.client = client_name;
+    segment.volumename = row[4] ? row[4] : "";
+    segment.firstindex = ToUint64(row[5]);
+    segment.lastindex = ToUint64(row[6]);
+    segment.startfile = ToUint64(row[7]);
+    segment.endfile = ToUint64(row[8]);
+    segment.startblock = ToUint64(row[9]);
+    segment.endblock = ToUint64(row[10]);
+    segment.jobbytes = ToUint64(row[11]);
+    if (!IsEmptyVolumeUsageSegment(segment)) {
+      query_context->segments->push_back(std::move(segment));
+    }
+    return 0;
+  };
+
+  if (!ua->db->SqlQuery(query.c_str(), handler, &ctx)) { return false; }
+
+  AssignVolumeUsageWeights(segments);
+  AssignVolumeUsageMarkersByJob(segments);
+  return true;
+}
+
+static void EmitVolumeUsageJson(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->ObjectStart("volumeusage");
+  ua->send->ObjectKeyValue("volumename", volume_name, "%s\n");
+  ua->send->ObjectKeyValue("hasoverlaps",
+                           HasOverlappingVolumeUsageRanges(segments) ? 1 : 0);
+  ua->send->ArrayStart("segments");
+  for (const auto& segment : segments) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("marker", std::string(1, segment.marker).c_str(),
+                             "%s\n");
+    ua->send->ObjectKeyValue("jobmediaid", segment.jobmediaid);
+    ua->send->ObjectKeyValue("jobid", segment.jobid);
+    ua->send->ObjectKeyValue("job", segment.job.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("client", segment.client.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("volumename", segment.volumename.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("firstindex", segment.firstindex);
+    ua->send->ObjectKeyValue("lastindex", segment.lastindex);
+    ua->send->ObjectKeyValue("startfile", segment.startfile);
+    ua->send->ObjectKeyValue("endfile", segment.endfile);
+    ua->send->ObjectKeyValue("startblock", segment.startblock);
+    ua->send->ObjectKeyValue("endblock", segment.endblock);
+    ua->send->ObjectKeyValue("jobbytes", segment.jobbytes);
+    ua->send->ObjectKeyValue("weight", segment.weight);
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("segments");
+  ua->send->ObjectEnd("volumeusage");
+}
+
+static void EmitVolumeUsageText(UaContext* ua,
+                                const char* volume_name,
+                                const std::vector<VolumeUsageSegment>& segments)
+{
+  ua->send->Decoration(T_("Volume usage for %s\n"), volume_name);
+  if (segments.empty()) {
+    ua->send->Decoration(T_("  No JobMedia records found.\n"));
+    return;
+  }
+
+  const size_t bar_width = VolumeUsageBarWidth(ua);
+  const bool overlapping = HasOverlappingVolumeUsageRanges(segments);
+  if (overlapping) {
+    ua->send->Decoration(T_("  Overlapping JobMedia ranges detected.\n"));
+    ua->send->Decoration(
+        T_("  Each lane is a seek range for a job; other jobs may have blocks "
+           "inside that range.\n"));
+  } else {
+    ua->send->Decoration("  [%s]\n",
+                         BuildVolumeUsageTapeBar(segments, bar_width).c_str());
+  }
+  ua->send->Decoration(
+      T_("  Mk JobId Job Name              FileIndex   Media position"
+         "       Bytes\n"));
+  ua->send->Decoration(
+      T_("  -- ----- --------------------- ----------- --------------------"
+         " --------\n"));
+
+  char bytes[edit::min_buffer_size];
+  for (const auto& segment : segments) {
+    if (overlapping) {
+      ua->send->Decoration(
+          "  %c  [%s]\n", segment.marker,
+          BuildVolumeUsageRangeBar(segment, segments, bar_width).c_str());
+    }
+    PoolMem index_range(PM_FNAME);
+    index_range.bsprintf("%" PRIu64 "-%" PRIu64, segment.firstindex,
+                         segment.lastindex);
+    PoolMem media_range(PM_FNAME);
+    media_range.bsprintf("%" PRIu64 ":%" PRIu64 "-%" PRIu64 ":%" PRIu64,
+                         segment.startfile, segment.startblock, segment.endfile,
+                         segment.endblock);
+    ua->send->Decoration("  %c  %5" PRIu64 " %-21.21s %-11s %-20s %s\n",
+                         segment.marker, segment.jobid, segment.job.c_str(),
+                         index_range.c_str(), media_range.c_str(),
+                         edit_uint64_with_suffix(segment.jobbytes, bytes));
+  }
+}
+
+static bool ListVolumeUsage(UaContext* ua, e_list_type)
+{
+  const char* volume_name = GetArgValue(ua, NT_("volume"));
+  if (!volume_name || !*volume_name) {
+    ua->ErrorMsg(T_("volume name missing\n"));
+    return false;
+  }
+
+  std::vector<VolumeUsageSegment> segments;
+  if (!QueryVolumeUsageSegments(ua, volume_name, segments)) { return false; }
+
+  if (ua->api == API_MODE_JSON) {
+    EmitVolumeUsageJson(ua, volume_name, segments);
+  } else {
+    EmitVolumeUsageText(ua, volume_name, segments);
+  }
+  return true;
+}
 
 static bool QueryPoolListRows(UaContext* ua,
                               PoolDbRecord* pool,
@@ -86,11 +300,12 @@ static bool QueryPoolListRows(UaContext* ua,
 
   auto escaped_pool_name = ua->db->EscapeString(ua->jcr, pool->Name);
   if (!escaped_pool_name) { return false; }
-  Mmsg(select,
-       "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-       "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,"
-       "MaxVolBytes,AutoPrune,Recycle,PoolType,LabelFormat,Enabled,"
-       "ScratchPoolId,RecyclePoolId,LabelType ");
+  std::string columns;
+  for (const auto& column : kPoolListColumns) {
+    if (!columns.empty()) { columns += ","; }
+    columns.append(column.column);
+  }
+  Mmsg(select, "SELECT %s ", columns.c_str());
   if (pool->Name[0] != 0) {
     query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
                    escaped_pool_name->c_str());
@@ -135,25 +350,10 @@ static void EmitPoolFields(UaContext* ua,
     ua->send->ObjectKeyValue(key, "%s: ", value, "%s\n");
   };
 
-  emit_field("poolid", row.fields[0].c_str());
-  emit_field("name", row.fields[1].c_str());
-  emit_field("numvols", row.fields[2].c_str());
-  emit_field("maxvols", row.fields[3].c_str());
-  emit_field("useonce", row.fields[4].c_str());
-  emit_field("usecatalog", row.fields[5].c_str());
-  emit_field("acceptanyvolume", row.fields[6].c_str());
-  emit_field("volretention", row.fields[7].c_str());
-  emit_field("voluseduration", row.fields[8].c_str());
-  emit_field("maxvoljobs", row.fields[9].c_str());
-  emit_field("maxvolbytes", row.fields[10].c_str());
-  emit_field("autoprune", row.fields[11].c_str());
-  emit_field("recycle", row.fields[12].c_str());
-  emit_field("pooltype", row.fields[13].c_str());
-  emit_field("labelformat", row.fields[14].c_str());
-  emit_field("enabled", row.fields[15].c_str());
-  emit_field("scratchpoolid", row.fields[16].c_str());
-  emit_field("recyclepoolid", row.fields[17].c_str());
-  emit_field("labeltype", row.fields[18].c_str());
+  for (std::size_t i = 0; i < kPoolListColumns.size(); ++i) {
+    emit_field(std::string(kPoolListColumns[i].key).c_str(),
+               row.fields[i].c_str());
+  }
   emit_field("prunablevolumes", prunable_volumes.c_str());
   emit_field("prunablejobs", prunable_jobs.c_str());
   emit_field("prunablebytes", prunable_bytes.c_str());
@@ -525,6 +725,7 @@ bool show_cmd(UaContext* ua, const char*)
  *  list jobmedia jobid=nnn
  *  list jobmedia ujobid=uname
  *  list jobmedia volume=name
+ *  list volumeusage volume=name
  *  list joblog jobid=<nn>
  *  list joblog job=name
  *  list joblog jobids=<nn,nn,...> - joblog rows for several jobs in one query
@@ -1162,6 +1363,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   }
 
+  if (Bstrcasecmp(ua->argk[1], NT_("volumeusage"))) {
+    return ListVolumeUsage(ua, llist);
+  }
+
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
     if (GetArgValue(ua, NT_("jobids"))) {
@@ -1238,14 +1443,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->send->ArrayStart("pools");
       for (const auto& row : rows) {
         PoolDbRecord pool_record;
-        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
-        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+        pool_record.PoolId
+            = str_to_int64(row.fields[kPoolListPoolIdIndex].c_str());
+        bstrncpy(pool_record.Name, row.fields[kPoolListNameIndex].c_str(),
                  sizeof(pool_record.Name));
 
         PoolPruneSummary prune_summary;
         if (!GetPoolPruneSummary(ua, &pool_record, &prune_summary)) {
           ua->ErrorMsg(T_("Failed to compute prune summary for pool %s.\n"),
-                       row.fields[1].c_str());
+                       row.fields[kPoolListNameIndex].c_str());
           ua->send->ArrayEnd("pools");
           return false;
         }
@@ -1263,14 +1469,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       ua->send->ArrayStart("pools");
       for (const auto& row : rows) {
         PoolDbRecord pool_record;
-        pool_record.PoolId = str_to_int64(row.fields[0].c_str());
-        bstrncpy(pool_record.Name, row.fields[1].c_str(),
+        pool_record.PoolId
+            = str_to_int64(row.fields[kPoolListPoolIdIndex].c_str());
+        bstrncpy(pool_record.Name, row.fields[kPoolListNameIndex].c_str(),
                  sizeof(pool_record.Name));
 
         PoolPruneReport report;
         if (!GetPoolPruneReport(ua, &pool_record, &report)) {
           ua->ErrorMsg(T_("Failed to compute prune details for pool %s.\n"),
-                       row.fields[1].c_str());
+                       row.fields[kPoolListNameIndex].c_str());
           ua->send->ArrayEnd("pools");
           return false;
         }

@@ -447,6 +447,36 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   return result;
 }
 
+// Compact, fixed-upper-bound (7 character) byte count formatter. Values below
+// 1 KiB are printed as bytes; larger values use the largest applicable
+// binary unit and are rounded to the nearest integer.
+std::string SizeAsCompact7Format(uint64_t value_in)
+{
+  static const char kSuffix[] = "KMGTPE";
+
+  uint64_t divisor = 1;
+  size_t unit = 0;
+  while (unit < sizeof(kSuffix) - 1 && value_in / divisor >= 1024) {
+    divisor *= 1024;
+    ++unit;
+  }
+
+  if (unit == 0) { return std::to_string(value_in); }
+
+  uint64_t rounded = value_in / divisor;
+  if (value_in % divisor >= divisor / 2) { ++rounded; }
+
+  // Rounding near a unit boundary can produce 1024 of the current unit.
+  if (rounded >= 1024 && unit < sizeof(kSuffix) - 1) {
+    divisor *= 1024;
+    ++unit;
+    rounded = value_in / divisor;
+    if (value_in % divisor >= divisor / 2) { ++rounded; }
+  }
+
+  return std::to_string(rounded) + kSuffix[unit - 1];
+}
+
 
 /*
  * Convert a size in bytes to uint64_t

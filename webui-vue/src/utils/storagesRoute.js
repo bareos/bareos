@@ -22,11 +22,17 @@
 export const AUTOCHANGER_STORAGE_QUERY_KEY = 'autochangerStorage'
 export const AUTOCHANGER_DIRECTOR_QUERY_KEY = 'autochangerDirector'
 
-export function buildStoragesTabQuery(query, tab) {
+export const POOLS_TABS = ['pools', 'volumes']
+
+export function normalisePoolsTab(value) {
+  return POOLS_TABS.includes(value) ? value : 'pools'
+}
+
+export function buildPoolsTabQuery(query, tab) {
   const next = { ...query }
   delete next.tab
 
-  if (tab && tab !== 'storages') {
+  if (tab && tab !== 'pools') {
     next.tab = tab
   }
 
@@ -50,8 +56,67 @@ export function withStoragesScopeDirectorQuery(query, director) {
   return next
 }
 
-export function buildAutochangerSelectionQuery(query, storage) {
-  const next = buildStoragesTabQuery(query, 'autochangers')
+/**
+ * Query key holding the storage selected in the master-detail storages page.
+ */
+export const STORAGE_SELECTION_QUERY_KEY = 'storage'
+
+/**
+ * Writes the selected storage into the query, or clears the selection when
+ * no storage is given. Unrelated keys (such as `scopeDirector`) are kept.
+ */
+export function withStorageSelectionQuery(query, storage) {
+  const next = { ...query }
+
+  delete next[STORAGE_SELECTION_QUERY_KEY]
+  delete next.director
+
+  if (!storage?.name) {
+    return next
+  }
+
+  next[STORAGE_SELECTION_QUERY_KEY] = storage.name
+
+  if (storage.director) {
+    next.director = storage.director
+  }
+
+  return next
+}
+
+/**
+ * Reads the selected storage back out of the query.
+ */
+export function resolveStorageSelectionQuery(query) {
+  const name = query?.[STORAGE_SELECTION_QUERY_KEY]
+  if (typeof name !== 'string' || !name) {
+    return null
+  }
+
+  return {
+    name,
+    director: typeof query?.director === 'string' ? query.director : '',
+  }
+}
+
+/**
+ * Route location showing a storage on the storages page. Autochanger
+ * management is part of that page, so links that used to target a dedicated
+ * autochanger route resolve here as well.
+ */
+export function buildAutochangerLocation(storage, query = {}) {
+  return {
+    name: 'storages',
+    query: withStorageSelectionQuery(query, storage),
+  }
+}
+
+/**
+ * Query marking that a details page was opened from the autochanger view,
+ * so its breadcrumb can link back there.
+ */
+export function buildAutochangerOriginQuery(query, storage) {
+  const next = { ...query }
 
   delete next[AUTOCHANGER_STORAGE_QUERY_KEY]
   delete next[AUTOCHANGER_DIRECTOR_QUERY_KEY]
