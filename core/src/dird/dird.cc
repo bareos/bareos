@@ -38,6 +38,7 @@
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
 #include "dird/stats.h"
+#include "dird/ua_acct.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -381,6 +382,7 @@ int main(int argc, char* argv[])
       DbDebugPrint); /* used to debug BareosDb connection after fatal signal */
 
   StartStatisticsThread();
+  StartSubscriptionAccountingThread();
 
   Dmsg0(200, "Start UA server\n");
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
@@ -417,6 +419,7 @@ static
   DestroyConfigureUsageString();
   StopSocketServer();
   StopStatisticsThread();
+  StopSubscriptionAccountingThread();
   StopWatchdog();
   DbSqlPoolDestroy();
   UnloadDirPlugins();
