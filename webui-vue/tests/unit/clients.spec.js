@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
+  parseClientStatusSummary,
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
   resolveClientsListQuery,
@@ -74,7 +75,6 @@ describe('clients route helpers', () => {
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
     })).toEqual({
-      tab: 'timeline',
       scopeDirector: 'prod-a',
     })
 
@@ -125,5 +125,33 @@ describe('clients route helpers', () => {
     expect(resolveClientsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
     expect(resolveClientsScopeDirector({ scopeDirector: 42 })).toBe('')
     expect(resolveClientsScopeDirector({})).toBe('')
+  })
+
+  it('parses a concise client status summary from raw status text', () => {
+    expect(parseClientStatusSummary(`
+bareos-fd Version: 26.0.0 (27Apr26)
+No Jobs running.
+Errors: 0
+Warnings: 0
+    `)).toEqual({
+      reachable: true,
+      version: '26.0.0 (27Apr26)',
+      runningJobs: 0,
+      warningCount: 0,
+      errorCount: 0,
+    })
+
+    expect(parseClientStatusSummary(`
+Failed to connect to Client.
+1 Job running.
+Warning: could not stat file
+Fatal error: connection refused
+    `)).toEqual({
+      reachable: false,
+      version: '',
+      runningJobs: 1,
+      warningCount: 1,
+      errorCount: 2,
+    })
   })
 })

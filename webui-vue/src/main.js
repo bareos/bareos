@@ -9,6 +9,9 @@ import App from './App.vue'
 import router from './router/index.js'
 import { i18n } from './i18n/index.js'
 import { useSettingsStore } from './stores/settings.js'
+import { installStaleBuildReloadHandling } from './utils/staleBuildReload.js'
+
+installStaleBuildReloadHandling(router)
 
 const app = createApp(App)
 const pinia = createPinia()
