@@ -52,7 +52,7 @@ function decorateRecentBackups(entries, director) {
   }))
 }
 
-export function decorateScheduledBackups(response, director) {
+function decorateScheduledBackups(response, director) {
   const schedules = new Map(
     (Array.isArray(response?.schedules) ? response.schedules : [])
       .map(schedule => [schedule?.name, schedule])
@@ -151,10 +151,11 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
     }
   })
 
+  const values = fulfilledDirectorValues(results)
   const data = {
-    clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
-    recentBackups: fulfilledDirectorValues(results).flatMap(value => value.recentBackups),
-    scheduledBackups: fulfilledDirectorValues(results).flatMap(value => value.scheduledBackups),
+    clients: sortClients(values.flatMap(value => value.clients)),
+    recentBackups: values.flatMap(value => value.recentBackups),
+    scheduledBackups: values.flatMap(value => value.scheduledBackups),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
   clientsCache.set(cacheKey, data, fetchGeneration)
