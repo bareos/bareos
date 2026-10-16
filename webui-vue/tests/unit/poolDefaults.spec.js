@@ -127,6 +127,17 @@ describe('poolDefaults', () => {
     expect(differences.map(entry => entry.field.id)).toEqual(['maxblocksize'])
   })
 
+  it('treats NULL, empty and 0 as the same unset default', () => {
+    const unsetVolume = volume({ maxvolbytes: null, maxvoljobs: '' })
+
+    expect(compareVolumeToPoolDefaults(unsetVolume, pool())).toEqual([])
+    expect(compareVolumeToPoolDefaults(pool(), unsetVolume)).toEqual([])
+    expect(
+      compareVolumeToPoolDefaults(unsetVolume, pool({ maxvolbytes: '1024' }))
+        .map(entry => entry.field.id)
+    ).toEqual(['maxvolbytes'])
+  })
+
   it('returns nothing without a volume or a pool', () => {
     expect(compareVolumeToPoolDefaults(null, pool())).toEqual([])
     expect(compareVolumeToPoolDefaults(volume(), null)).toEqual([])
