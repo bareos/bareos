@@ -1126,6 +1126,16 @@ list files jobid=nn
 
 list jobmedia
    List the media information for each Job run.
+   Use ``jobid=<id>`` or ``volume=<volume-name>`` to limit the output.
+
+.. index::
+   single: Console; Command; list volumeusage
+
+list volumeusage volume=name
+   Show a tape-style overview of the JobMedia seek ranges and FileIndex
+   ranges stored on the selected volume.  With concurrent jobs, these
+   ranges can overlap because blocks from other jobs may be written inside
+   the same seek range.
 
 .. index::
    single: Console; Command; messages
