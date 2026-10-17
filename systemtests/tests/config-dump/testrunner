@@ -45,6 +45,7 @@ dump_config()
   print_debug "*** start $DESC"
 
   "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc >$tmp/bareos-dir-xc-${ext}.conf
+
   BAREOS_CONFIG_DIR="${configfile}" ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
 
   cat <<END_OF_DATA >$tmp/bconcmds
@@ -148,6 +149,10 @@ export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
+
+# The pidfile prevents spurious test failures that can occur when a script
+# tries to stop a daemon while that daemon just forked a child.
+export BAREOS_PIDFILE_PREFIX="${working}/config-dump-"
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
