@@ -45,7 +45,11 @@ dump_config()
   print_debug "*** start $DESC"
 
   "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc >$tmp/bareos-dir-xc-${ext}.conf
-  BAREOS_CONFIG_DIR="${configfile}" ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
+
+  # The pidfile prevents spurious test failures that can occur when a script
+  # tries to stop a daemon while that daemon just forked a child.
+  BAREOS_PIDFILE_PREFIX="${working}/config-dump-" \
+    BAREOS_CONFIG_DIR="${configfile}" ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
 
   cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log-${ext}.out
@@ -71,7 +75,8 @@ END_OF_DATA
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
 
-  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
+  BAREOS_PIDFILE_PREFIX="${working}/config-dump-" \
+    ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
 
   print_debug "*** end   $DESC"
 }
