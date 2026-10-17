@@ -120,7 +120,13 @@ killproc()
   fi
 
   # Find pid.
-  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
+  if [ -n "${BAREOS_PIDFILE:-}" ] && [ ! -f "${BAREOS_PIDFILE}" ]; then
+    # The daemon removes its pidfile on exit. Looking it up by name instead
+    # could stop a daemon that belongs to another test.
+    success "already stopped"
+    return 0
+  fi
+  if [ -n "${BAREOS_PIDFILE:-}" ]; then
     pid=$(pidfromfile "${BAREOS_PIDFILE}")
     # Get base program name
     base=$(basename "$1")
