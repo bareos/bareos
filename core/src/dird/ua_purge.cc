@@ -542,7 +542,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     } else {
       PurgeJobsFromCatalog(ua, jobids.c_str());
       ua->InfoMsg(
-          T_("%" PRIuz " Jobs%s on Volume \"%s\" purged from catalog.\n"),
+          T_("%" PRIuz " Job%s on Volume \"%s\" purged from catalog.\n"),
           lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
     }
   }
