@@ -280,6 +280,13 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+  if(HAVE_NDMP)
+    bareos_add_test(
+      ndmp_native_restore_test
+      LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib Bareos::SQL
+                     GTest::gtest_main
+    )
+  endif()
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(

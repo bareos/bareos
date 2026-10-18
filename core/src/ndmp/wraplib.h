@@ -393,6 +393,8 @@ extern int wrap_parse_add_env_msg(char* buf, struct wrap_msg_buf* wmsg);
 extern int wrap_send_add_env(FILE* fp, char* name, char* value);
 extern int wrap_parse_data_read_msg(char* buf, struct wrap_msg_buf* wmsg);
 extern int wrap_send_data_read(FILE* fp, uint64_t offset, uint64_t length);
+extern int wrap_parse_recovery_result_msg(char* buf, struct wrap_msg_buf* wmsg);
+extern int wrap_send_recovery_result(FILE* fp, int rr_errno, char* path);
 
 
 /*

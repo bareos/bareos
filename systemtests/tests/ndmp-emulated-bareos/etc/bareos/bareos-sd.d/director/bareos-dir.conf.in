@@ -1,0 +1,5 @@
+Director {
+  Name = bareos-dir
+  Password = "@sd_password@"
+  Description = "Director, who is permitted to contact this storage daemon."
+}

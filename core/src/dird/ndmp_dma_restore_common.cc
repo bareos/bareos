@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/restore.h"
+#include "dird/ndmp_dma_restore_common.h"
 
 #if HAVE_NDMP
 #  include "ndmp/ndmagents.h"
@@ -143,28 +144,52 @@ int NdmpEnvHandler(void* ctx, int, char** row)
   return 0;
 }
 
-// Extract any post backup statistics.
-bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess)
+// See if an error was raised during the restore session or on any media.
+static bool RestoreSessionSucceeded(struct ndm_session* sess)
 {
-  bool retval = true;
-  struct ndmmedia* media;
-
-  // See if an error was raised during the backup session.
   if (sess->error_raised) { return false; }
 
-  // See if there is any media error.
-  for (media = sess->control_acb->job.result_media_tab.head; media;
+  for (ndmmedia* media = sess->control_acb->job.result_media_tab.head; media;
        media = media->next) {
     if (media->media_open_error || media->media_io_error
         || media->label_io_error || media->label_mismatch
         || media->fmark_error) {
-      retval = false;
+      return false;
     }
   }
+  return true;
+}
+
+// Extract any post backup statistics.
+bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess)
+{
+  if (sess->error_raised) { return false; }
+  bool retval = RestoreSessionSucceeded(sess);
 
   // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_read;
   jcr->JobFiles++;
+
+  return retval;
+}
+
+bool ExtractPostRestoreStatsNdmpNative(JobControlRecord* jcr,
+                                       struct ndm_session* sess,
+                                       bool session_ok)
+{
+  const ndm_control_agent* ca = sess->control_acb;
+  bool retval = session_ok && RestoreSessionSucceeded(sess);
+  NdmpRecoveredFiles files = NdmpNativeRecoveredFiles(
+      ca->recover_log_file_count, ca->recover_log_file_ok, retval);
+
+  jcr->JobBytes += ca->job.bytes_read;
+  jcr->JobFiles += files.restored;
+  if (files.failed > 0) {
+    jcr->JobErrors += files.failed;
+    Jmsg(jcr, M_ERROR, 0,
+         T_("NDMP data server failed to recover %" PRIu32 " of %d files\n"),
+         files.failed, ca->recover_log_file_count);
+  }
 
   return retval;
 }
