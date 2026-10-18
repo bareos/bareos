@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,16 @@
  * Kern Sibbald, November MMII
  */
 
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <dirent.h>
+#include <fcntl.h>
+#include <spawn.h>
+#include <string>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <vector>
 #if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
@@ -37,6 +46,14 @@
 #include "lib/util.h"
 #include "lib/bpipe.h"
 
+extern char** environ;
+
+#if defined(__GLIBC_PREREQ)
+#  if __GLIBC_PREREQ(2, 34)
+#    define HAVE_POSIX_SPAWN_CLOSEFROM_NP 1
+#  endif
+#endif
+
 int execvp_errors[] = {EACCES,       ENOEXEC, EFAULT,  EINTR, E2BIG,
                        ENAMETOOLONG, ENOMEM,  ETXTBSY, ENOENT};
 int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
@@ -46,13 +63,124 @@ int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
 static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_arg);
 
 namespace {
-// Convert errno into an exit code for later analysis
-int get_error_code()
+std::vector<char*> BuildEnvironment(
+    const std::unordered_map<std::string, std::string>& env_vars,
+    std::vector<std::string>& environment)
 {
-  for (int i = 0; i < num_execvp_errors; i++) {
-    if (execvp_errors[i] == errno) { return 200 + i; /* exit code => errno */ }
+  for (char** entry = environ; *entry; ++entry) {
+    environment.emplace_back(*entry);
   }
-  return 255;  // unknown errno
+
+  for (const auto& [var_name, var_value] : env_vars) {
+    const std::string variable = var_name + "=";
+    const auto entry = std::find_if(
+        environment.begin(), environment.end(),
+        [&](const std::string& value) { return value.starts_with(variable); });
+    const std::string value = variable + var_value;
+    if (entry == environment.end()) {
+      environment.emplace_back(value);
+    } else {
+      *entry = value;
+    }
+  }
+
+  std::vector<char*> environment_pointers;
+  environment_pointers.reserve(environment.size() + 1);
+  for (auto& entry : environment) {
+    environment_pointers.push_back(entry.data());
+  }
+  environment_pointers.push_back(nullptr);
+  return environment_pointers;
+}
+
+/* Resolve `name` against the ':'-separated directories in `path`, mimicking
+ * the search execvp()/posix_spawnp() perform internally. If `name` already
+ * contains a slash it is returned unmodified (matching exec* semantics: no
+ * PATH search is done in that case). Returns an empty string if no
+ * executable, regular file was found, in which case the caller should fall
+ * back to using `name` unresolved.
+ *
+ * This is needed because posix_spawnp() searches the *calling* process's
+ * own PATH environment variable, not the (possibly overridden) PATH that
+ * is passed to the spawned process via envp. Without resolving the
+ * executable ourselves first, a caller-supplied PATH override (env_vars)
+ * would be ignored when locating the program to execute. */
+std::string ResolveAgainstPath(const std::string& name, const std::string& path)
+{
+  if (name.empty() || name.find('/') != std::string::npos) { return name; }
+
+  size_t start = 0;
+  while (start <= path.size()) {
+    size_t colon = path.find(':', start);
+    std::string dir = path.substr(
+        start, colon == std::string::npos ? std::string::npos : colon - start);
+    if (dir.empty()) { dir.push_back('.'); }
+
+    std::string candidate = dir + "/" + name;
+    struct stat st;
+    if (stat(candidate.c_str(), &st) == 0 && S_ISREG(st.st_mode)
+        && access(candidate.c_str(), X_OK) == 0) {
+      return candidate;
+    }
+
+    if (colon == std::string::npos) { break; }
+    start = colon + 1;
+  }
+  return {};
+}
+
+/* Return the file descriptors >= lowfd that are currently open in this
+ * process, by inspecting /proc/self/fd (Linux) or /dev/fd (most other Unix
+ * systems) if available.
+ *
+ * This is required because posix_spawn_file_actions_addclose() is, per
+ * POSIX, only portable for descriptors that are known to be open (closing
+ * an arbitrary, potentially-unopened, descriptor is explicitly called out
+ * as non-portable and can make the whole spawn fail). Blindly scheduling a
+ * close action for every number in a range therefore risks the child
+ * failing to start.
+ *
+ * Only needed on platforms without posix_spawn_file_actions_addclosefrom_np(),
+ * which handles this more efficiently in a single file action. */
+#if !defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
+std::vector<int> OpenDescriptorsFrom(int lowfd)
+{
+  std::vector<int> descriptors;
+
+  for (const char* dirname : {"/proc/self/fd", "/dev/fd"}) {
+    DIR* dir = opendir(dirname);
+    if (!dir) { continue; }
+
+    int dir_fd = dirfd(dir);
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+      char* end = nullptr;
+      long fd = strtol(entry->d_name, &end, 10);
+      if (end == entry->d_name || *end != '\0') { continue; }
+      if (fd < lowfd || fd == dir_fd) { continue; }
+      descriptors.push_back(static_cast<int>(fd));
+    }
+    closedir(dir);
+    break;
+  }
+
+  return descriptors;
+}
+#endif  // !defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
+
+int MovePipeDescriptorsAboveStandardStreams(int pipe_descriptors[2])
+{
+  for (int i = 0; i < 2; ++i) {
+    int& descriptor = pipe_descriptors[i];
+    if (descriptor > STDERR_FILENO) { continue; }
+
+    const int replacement = fcntl(descriptor, F_DUPFD, STDERR_FILENO + 1);
+    if (replacement == -1) { return errno; }
+
+    close(descriptor);
+    descriptor = replacement;
+  }
+  return 0;
 }
 }  // namespace
 
@@ -75,6 +203,11 @@ Bpipe* OpenBpipe(const char* prog,
   int mode_read, mode_write;
   Bpipe* bpipe;
   int save_errno;
+  posix_spawn_file_actions_t file_actions;
+  bool file_actions_initialized = false;
+  std::vector<std::string> environment;
+  std::vector<char*> environment_pointers;
+  std::vector<char*> shell_arguments;
 
   bpipe = (Bpipe*)malloc(sizeof(Bpipe));
   memset(bpipe, 0, sizeof(Bpipe));
@@ -94,6 +227,15 @@ Bpipe* OpenBpipe(const char* prog,
     errno = save_errno;
     return NULL;
   }
+  if (mode_write
+      && (save_errno = MovePipeDescriptorsAboveStandardStreams(writep)) != 0) {
+    close(writep[0]);
+    close(writep[1]);
+    free(bpipe);
+    FreePoolMemory(tprog);
+    errno = save_errno;
+    return NULL;
+  }
   if (mode_read && pipe(readp) == -1) {
     save_errno = errno;
     if (mode_write) {
@@ -105,69 +247,106 @@ Bpipe* OpenBpipe(const char* prog,
     errno = save_errno;
     return NULL;
   }
-
-  // Start worker process
-  switch (bpipe->worker_pid = fork()) {
-    case -1: /* error */
-      save_errno = errno;
-      if (mode_write) {
-        close(writep[0]);
-        close(writep[1]);
-      }
-      if (mode_read) {
-        close(readp[0]);
-        close(readp[1]);
-      }
-      free(bpipe);
-      FreePoolMemory(tprog);
-      errno = save_errno;
-      return NULL;
-
-    case 0: /* child */
-      if (mode_write) {
-        close(writep[1]);
-        dup2(writep[0], 0); /* Dup our write to his stdin */
-      }
-      if (mode_read) {
-        close(readp[0]);   /* Close unused child fds */
-        dup2(readp[1], 1); /* dup our read to his stdout */
-        if (dup_stderr) { dup2(readp[1], 2); /*   and his stderr */ }
-      }
-
-#if defined(HAVE_FCNTL_F_CLOSEM)
-      // fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
-      fcntl(3, F_CLOSEM);
-#elif defined(HAVE_CLOSEFROM)
-      // closefrom needs the lowest filedescriptor to close.
-      closefrom(3);
-#else
-      for (int i = 3; i <= 32; i++) { /* close any open file descriptors */
-        close(i);
-      }
-#endif
-
-      // merge environment variables into our environment
-      for (auto& [var_name, var_value] : env_vars) {
-        setenv(var_name.c_str(), var_value.c_str(), 1);
-      }
-
-      execvp(bargv[0], bargv); /* call the program */
-
-      // execvp will only return on error
-      perror("Program execution failed");
-
-#if defined(HAVE_DARWIN_OS)
-      // MacOS does not like std::quick_exit()
-      std::_Exit(get_error_code());
-#else
-      std::quick_exit(get_error_code());
-#endif
-
-    default: /* parent */
-      break;
+  if (mode_read
+      && (save_errno = MovePipeDescriptorsAboveStandardStreams(readp)) != 0) {
+    close(readp[0]);
+    close(readp[1]);
+    if (mode_write) {
+      close(writep[0]);
+      close(writep[1]);
+    }
+    free(bpipe);
+    FreePoolMemory(tprog);
+    errno = save_errno;
+    return NULL;
   }
 
+  save_errno = posix_spawn_file_actions_init(&file_actions);
+  file_actions_initialized = save_errno == 0;
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, writep[1]);
+  }
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, writep[0], 0);
+  }
+  if (save_errno == 0 && mode_write) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, writep[0]);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, readp[0]);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, readp[1], 1);
+  }
+  if (save_errno == 0 && mode_read && dup_stderr) {
+    save_errno = posix_spawn_file_actions_adddup2(&file_actions, readp[1], 2);
+  }
+  if (save_errno == 0 && mode_read) {
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, readp[1]);
+  }
+#if defined(HAVE_POSIX_SPAWN_CLOSEFROM_NP)
+  if (save_errno == 0) {
+    save_errno = posix_spawn_file_actions_addclosefrom_np(&file_actions, 3);
+  }
+#else
+  /* Portable fallback: only schedule close actions for descriptors that
+   * are actually open. posix_spawn_file_actions_addclose() is only
+   * portably usable on descriptors known to be open; closing an
+   * arbitrary range risks making the whole spawn fail (see POSIX
+   * rationale for posix_spawn_file_actions_addclose()). */
+  for (int fd : OpenDescriptorsFrom(3)) {
+    if (save_errno != 0) { break; }
+    save_errno = posix_spawn_file_actions_addclose(&file_actions, fd);
+  }
+#endif
+  if (save_errno == 0) {
+    environment_pointers = BuildEnvironment(env_vars, environment);
+
+    /* posix_spawnp() searches for the executable using this process's
+     * own PATH, not the (possibly overridden) PATH we just merged into
+     * environment_pointers for the child. Resolve the executable
+     * ourselves against the merged PATH first, so a caller-supplied
+     * PATH override in env_vars is honored. */
+    std::string merged_path;
+    for (const auto& entry : environment) {
+      if (entry.starts_with("PATH=")) {
+        merged_path = entry.substr(5);
+        break;
+      }
+    }
+    const std::string resolved = ResolveAgainstPath(bargv[0], merged_path);
+    if (!resolved.empty()) { bargv[0] = const_cast<char*>(resolved.c_str()); }
+
+    save_errno = posix_spawnp(&bpipe->worker_pid, bargv[0], &file_actions,
+                              nullptr, bargv, environment_pointers.data());
+    if (save_errno == ENOEXEC) {
+      shell_arguments.reserve(bargc + 2);
+      shell_arguments.push_back(const_cast<char*>("sh"));
+      for (int i = 0; i < bargc; ++i) { shell_arguments.push_back(bargv[i]); }
+      shell_arguments.push_back(nullptr);
+      save_errno
+          = posix_spawn(&bpipe->worker_pid, "/bin/sh", &file_actions, nullptr,
+                        shell_arguments.data(), environment_pointers.data());
+    }
+  }
+  if (file_actions_initialized) {
+    posix_spawn_file_actions_destroy(&file_actions);
+  }
   FreePoolMemory(tprog);
+
+  if (save_errno != 0) {
+    if (mode_write) {
+      close(writep[0]);
+      close(writep[1]);
+    }
+    if (mode_read) {
+      close(readp[0]);
+      close(readp[1]);
+    }
+    free(bpipe);
+    errno = save_errno;
+    return NULL;
+  }
 
   if (mode_read) {
     close(readp[1]);                    /* close unused parent fds */
