@@ -1162,6 +1162,7 @@ bool StoreData(JobControlRecord* jcr,
         BErrNo be;
         Jmsg2(jcr, M_ERROR, 0, T_("Write error on %s: %s\n"),
               jcr->fd_impl->last_fname, be.bstrerror(bfd->BErrNo));
+        return false;
       }
     }
   }
