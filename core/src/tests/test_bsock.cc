@@ -497,14 +497,15 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth : ::ConnectionInfoProvider {
+struct dummy_auth : ::AuthenticationProvider {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  auth::InboundAuthenticator* get_info_for(global_resource::Type type,
-                                           std::string_view res_name) override
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view res_name) override
   {
     Dmsg1(10, "Cons->Dir: received %s:%s",
           std::string{global_resource::GetNameFromType(type)}.c_str(),

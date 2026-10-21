@@ -33,11 +33,12 @@
 
 namespace filedaemon {
 
-struct Auth : ::ConnectionInfoProvider {
+struct Auth : ::AuthenticationProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  auth::InboundAuthenticator* get_info_for(global_resource::Type type,
-                                           std::string_view name) override;
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {

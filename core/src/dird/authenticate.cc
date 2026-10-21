@@ -134,7 +134,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-auth::InboundAuthenticator* DirectorAuth::get_info_for(
+auth::InboundAuthenticator* DirectorAuth::get_authenticator_for(
     global_resource::Type auth_type,
     std::string_view name)
 {

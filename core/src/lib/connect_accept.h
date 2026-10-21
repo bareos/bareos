@@ -93,15 +93,16 @@ bool BareosConnect(JobControlRecord* jcr,
                                           cleartext_authentication);
 }
 
-struct ConnectionInfoProvider {
-  virtual auth::InboundAuthenticator* get_info_for(global_resource::Type type,
-                                                   std::string_view idenity)
+struct AuthenticationProvider {
+  virtual auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view idenity)
       = 0;
 };
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         global_resource::Type type,
                                         const TlsResource* initial_tls,
-                                        ConnectionInfoProvider* provider);
+                                        AuthenticationProvider* provider);
 
 #endif  // BAREOS_LIB_CONNECT_ACCEPT_H_
