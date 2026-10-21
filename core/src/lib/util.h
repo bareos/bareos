@@ -302,11 +302,6 @@ template <fixed_string S> struct ci_string {
 
     return true;
   }
-
-  friend constexpr bool operator==(std::string_view lhs, ci_string rhs)
-  {
-    return rhs == lhs;
-  }
 };
 
 #endif  // BAREOS_LIB_UTIL_H_
