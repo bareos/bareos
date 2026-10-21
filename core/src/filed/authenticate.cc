@@ -54,8 +54,9 @@ namespace filedaemon {
  *  54 29Oct15 - Added getSecureEraseCmd
  */
 
-auth::InboundAuthenticator* Auth::get_info_for(global_resource::Type auth_type,
-                                               std::string_view name)
+auth::InboundAuthenticator* Auth::get_authenticator_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   auto* myself
       = dynamic_cast<ClientResource*>(p->GetNextRes(R_CLIENT, nullptr));

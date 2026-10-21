@@ -376,12 +376,12 @@ bool BareosConnect(JobControlRecord* jcr,
 }
 
 struct TlsWrapper : public TlsConfigProvider {
-  TlsWrapper(ConnectionInfoProvider* provider) : wrapped{provider} {}
+  TlsWrapper(AuthenticationProvider* provider) : wrapped{provider} {}
 
   const TlsResource* get_tls_config_for(global_resource::Type type,
                                         std::string_view name) override
   {
-    info = wrapped->get_info_for(type, name);
+    info = wrapped->get_authenticator_for(type, name);
     if (!info) { return nullptr; }
     psk_type = type;
     psk_name.assign(name);
@@ -389,7 +389,7 @@ struct TlsWrapper : public TlsConfigProvider {
   }
 
   struct result {
-    auth::InboundAuthenticator* info{};
+    auth::InboundAuthenticator* auth{};
     std::optional<std::string> bad_name{};
     std::optional<global_resource::Type> bad_type{};
   };
@@ -398,16 +398,16 @@ struct TlsWrapper : public TlsConfigProvider {
   {
     result res{};
     if (!info) {
-      info = wrapped->get_info_for(type, name);
+      info = wrapped->get_authenticator_for(type, name);
       psk_type = type;
       psk_name.assign(name);
-      res.info = info;
+      res.auth = info;
     } else if (psk_type != type) {
       res.bad_type = psk_type;
     } else if (name != psk_name) {
       res.bad_name = psk_name;
     } else {
-      res.info = info;
+      res.auth = info;
     }
     return res;
   }
@@ -417,14 +417,14 @@ struct TlsWrapper : public TlsConfigProvider {
   global_resource::Type psk_type{};
   std::string psk_name{};
 
-  ConnectionInfoProvider* wrapped;
+  AuthenticationProvider* wrapped;
 };
 
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         global_resource::Type my_type,
                                         const TlsResource* initial_tls,
-                                        ConnectionInfoProvider* provider)
+                                        AuthenticationProvider* provider)
 {
   if (!socket) {
     Emsg1(M_ERROR, 0, "socket is NULL in BareosAccept.\n");
@@ -490,7 +490,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
 
   auto found = wrapper.get_or_fetch(parsed_hello->type, parsed_hello->name);
 
-  if (!found.info) {
+  if (!found.auth) {
     if (found.bad_name) {
       Emsg1(M_ERROR, 0,
             "tls/cram name mismatch detected for %s (tls: %s vs hello: %s)!\n",
@@ -512,11 +512,12 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
     return std::nullopt;
   }
 
-  auto* info = found.info;
+  auto* authenticator = found.auth;
 
   bool tls_established = false;
   bool tls_psk_used = false;
 
+  // TODO: is this still needed ?
   if (socket->tls_conn) {
     tls_established = true;
     switch (socket->tls_conn->IsPskIdentityInUse(global_resource::QualifiedName(
@@ -538,7 +539,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
     }
   }
 
-  const TlsResource* tls_resource = info->tls_settings();
+  const TlsResource* tls_resource = authenticator->tls_settings();
 
   if (!tls_resource) {
     Emsg1(M_ERROR, 0, T_("Could not map identity to tls resource for %s.\n"),
@@ -561,7 +562,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
   if (tls_established) { connection_type = auth::ConnectionType::Untrusted; }
   if (tls_psk_used) { connection_type = auth::ConnectionType::Trusted; }
 
-  if (!info->authenticate({
+  if (!authenticator->authenticate({
           .socket = socket,
           .remote_version = parsed_hello->bareos_version,
           .target = tls_resource,

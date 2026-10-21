@@ -43,8 +43,9 @@
 
 namespace storagedaemon {
 
-auth::InboundAuthenticator* Auth::get_info_for(global_resource::Type auth_type,
-                                               std::string_view name)
+auth::InboundAuthenticator* Auth::get_authenticator_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   auto* myself
       = dynamic_cast<StorageResource*>(p->GetNextRes(R_STORAGE, nullptr));

@@ -40,13 +40,14 @@ class UaContext;
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 
-struct DirectorAuth : ::ConnectionInfoProvider {
+struct DirectorAuth : ::AuthenticationProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
   {
   }
 
-  auth::InboundAuthenticator* get_info_for(global_resource::Type type,
-                                           std::string_view name) override;
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
