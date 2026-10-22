@@ -32,27 +32,35 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-# The ceiling of 70% of the int32 maximum value.
-seq_70_pct=1503238553
-status_output="${tmp}/catalog-sequence-warning.log"
+pre_output="${tmp}/no-warning.log"
+post_output="${tmp}/catalog-sequence-warning.log"
 
 start_test
 
+# we should definitely be warning at 90% usage
 cat <<EOF >"${tmp}/bconcmds"
-.sql query="SELECT setval('job_jobid_seq', $((seq_70_pct - 1)), true);"
+@$out ${pre_output}
+status configuration
+
+.sql query=" SELECT setval('job_jobid_seq', (ceil(0.9 * 2::bigint^31 - 1))::bigint);"
 
 reload
-@$out ${status_output}
+@$out ${post_output}
 status configuration
 EOF
 run_bconsole "${tmp}/bconcmds"
 
-if ! grep -Fq \
-  "Catalog \"MyCatalog\": sequence \"job_jobid_seq\" for job.jobid will reach its maximum value soon (next value: ${seq_70_pct}, maximum value: 2147483647)." \
-  "${status_output}"; then
-  echo "Catalog sequence warning was not reported" >&2
-  cat "${status_output}" >&2
-  estat=1
-fi
+expect_not_grep "Configuration warnings detected" \
+  "${pre_output}" \
+  "Unexpected warnings were detected"
+expect_grep "Configuration warnings detected" \
+  "${post_output}" \
+  "no warnings were detected, but jobid sequence warning should have been issued"
+
+# we do not care about the exact format, the important points is that
+# job.jobid and MyCatalog are mentioned in the warning
+expect_grep "MyCatalog.*job\.jobid" \
+  "${post_output}" \
+  "MyCatalog or job.jobid were not mentioned in the warning"
 
 end_test

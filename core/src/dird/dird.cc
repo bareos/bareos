@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
 
   CatalogUtility util{mode};
 
-  if (!CheckCatalog(util)) {
+  if (!CheckAllCatalogs(util)) {
     if (util.error) { Jmsg(nullptr, M_ERROR, 0, "%s\n", util.error->c_str()); }
 
     Jmsg(nullptr, M_ERROR_TERM, 0, "Please correct the configuration in %s\n",
