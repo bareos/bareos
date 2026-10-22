@@ -45,6 +45,7 @@
 #include "lib/util.h"
 
 #include <bitset>
+#include <exception>
 #include <string>
 #include <string_view>
 #include <stdexcept>
@@ -1150,4 +1151,112 @@ int ListResult(JobControlRecord* jcr,
                e_list_type type);
 
 bool CheckTempBvfsTableName(char* output_table);
+template <typename F> struct arity;
+template <typename ResultType, typename Class, typename... Args>
+struct arity<ResultType (Class::*)(Args...)>
+    : std::integral_constant<std::size_t, sizeof...(Args)> {};
+template <typename ResultType, typename Class, typename... Args>
+struct arity<ResultType (Class::*)(Args...) const>
+    : std::integral_constant<std::size_t, sizeof...(Args)> {};
+template <typename ResultType, typename Class, typename... Args>
+struct arity<ResultType (Class::*)(Args...) noexcept>
+    : std::integral_constant<std::size_t, sizeof...(Args)> {};
+template <typename ResultType, typename Class, typename... Args>
+struct arity<ResultType (Class::*)(Args...) const noexcept>
+    : std::integral_constant<std::size_t, sizeof...(Args)> {};
+
+struct BadArgumentCount : std::runtime_error {
+  int received_count;
+  size_t expected_count;
+
+  BadArgumentCount(int count, size_t expected)
+      : runtime_error{make_error_string(count, expected)}
+      , received_count(count)
+      , expected_count(expected)
+  {
+  }
+
+  static std::string make_error_string(int count, size_t expected)
+  {
+    std::string err;
+
+    err += "Expected ";
+    err += std::to_string(expected);
+    err += " arguments but got ";
+    err += std::to_string(count);
+    err += " arguments";
+
+    return err;
+  }
+};
+
+struct DbFailure : std::runtime_error {
+  DbFailure(BareosDb* db) : runtime_error(make_error_string(db)) {}
+
+  static std::string make_error_string(BareosDb* db)
+  {
+    std::string err;
+
+    err += "Query failed: Err= ";
+    auto* dberr = db->strerror();
+    if (dberr) {
+      err += dberr;
+    } else {
+      err += "<unknown>";
+    }
+
+    return err;
+  }
+};
+
+
+namespace {
+template <typename F, std::size_t... Is>
+void invoke(F&& f, char const* const rows[], std::index_sequence<Is...>)
+{
+  f(rows[Is]...);
+};
+};  // namespace
+
+template <typename F> void run_query(BareosDb* db, const char* query, F&& f)
+{
+  static constexpr std::size_t N
+      = arity<decltype(&std::remove_cvref_t<F>::operator())>::value;
+  static_assert(N > 0);
+
+  struct InternalData {
+    F* f;
+    std::exception_ptr ptr{};
+  };
+
+  InternalData internal{&f};
+
+  if (!db->SqlQuery(
+          query,
+          +[](void* ctx, int row_count, char* row_data[]) -> int {
+            auto* data = static_cast<InternalData*>(ctx);
+
+            try {
+              if (row_count < 0 || static_cast<size_t>(row_count) != N) {
+                throw BadArgumentCount{row_count, N};
+              }
+
+              invoke(*data->f, row_data, std::make_index_sequence<N>());
+
+              return 0;
+            } catch (...) {
+              data->ptr = std::current_exception();
+              return 1;
+            }
+          },
+          &internal)) {
+    // The only way to end up here is if either the lambda threw an exception,
+    // or the db encountered some failure.
+    if (internal.ptr) {
+      std::rethrow_exception(std::move(internal.ptr));
+    } else {
+      throw DbFailure{db};
+    }
+  }
+}
 #endif  // BAREOS_CATS_CATS_H_
