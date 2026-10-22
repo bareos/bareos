@@ -210,7 +210,8 @@ bool DoReloadConfig()
   CatalogUtility util(UPDATE_CATALOG);
 
   // parse config successful
-  if (ok && CheckResources() && CheckCatalog(util) && InitializeSqlPooling()) {
+  if (ok && CheckResources() && CheckAllCatalogs(util)
+      && InitializeSqlPooling()) {
     Scheduler::GetMainScheduler().ClearQueue();
     reloaded = true;
 

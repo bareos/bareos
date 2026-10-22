@@ -53,7 +53,7 @@ struct CatalogUtility {
   std::optional<std::string> error;
 };
 
-bool CheckCatalog(CatalogUtility& util);
+bool CheckAllCatalogs(CatalogUtility& util);
 
 }  // namespace directordaemon
 

@@ -58,7 +58,9 @@ bool ParseDbInt(std::string_view text, std::int64_t* out)
   return true;
 }
 
-void CheckCatalogSequences(BareosDb* db, CatalogUtility& util)
+void CheckCatalogSequences(BareosDb* db,
+                           CatalogUtility& util,
+                           const CatalogResource* catalog)
 {
   PoolMem query;
   db->FillQuery<BareosDb::SQL_QUERY::get_sequences>(query);
@@ -121,10 +123,11 @@ void CheckCatalogSequences(BareosDb* db, CatalogUtility& util)
 
     if (info.next_value > warning_threshold) {
       util.warn(
-          "Sequence %s for column %s.%s has almost reached its maximum %zu vs "
-          "%zu",
-          info.sequence_name.c_str(), info.table_name.c_str(),
-          info.column_name.c_str(), info.next_value, info.max_value);
+          "Catalog \"%s\": Sequence %s for column %s.%s has almost reached its "
+          "maximum (next: %zu, max: %zu)",
+          catalog->resource_name_, info.sequence_name.c_str(),
+          info.table_name.c_str(), info.column_name.c_str(), info.next_value,
+          info.max_value);
     }
   }
 }
@@ -138,7 +141,7 @@ bool check(CatalogUtility& util, BareosDb* db, const CatalogResource* catalog)
   }
 
   try {
-    CheckCatalogSequences(db, util);
+    CheckCatalogSequences(db, util, catalog);
   } catch (const std::exception& e) {
     util.warn(
         "Could not check all sequences in Catalog \"%s\", database \"%s\": %s",
@@ -327,7 +330,7 @@ void CatalogUtility::err(const char* fmt, ...)
  * (mode=UPDATE_CATALOG)
  *  - we can synchronize, and fix old job records (mode=UPDATE_AND_FIX)
  */
-bool CheckCatalog(CatalogUtility& util)
+bool CheckAllCatalogs(CatalogUtility& util)
 {
   /* Loop over databases */
   CatalogResource* catalog;
