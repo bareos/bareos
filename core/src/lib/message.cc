@@ -80,7 +80,6 @@ job_code_callback_t message_job_code_callback = NULL;  // Only used by director
 
 std::shared_mutex daemon_msg_mutex;
 static MessagesResource* daemon_msgs; /* Global messages */
-static char* catalog_db = NULL;       /* Database type */
 static const char* log_timestamp_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, const char* msg) = NULL;
 static FILE* trace_fd = NULL;
@@ -191,12 +190,6 @@ void MyNameIs(int argc, const char* const argv[], const char* name)
     }
     Dmsg2(500, "exepath=%s\nexename=%s\n", exepath, exename);
   }
-}
-
-void SetDbType(const char* name)
-{
-  if (catalog_db != NULL) { free(catalog_db); }
-  catalog_db = strdup(name);
 }
 
 void SetJobCodeCallback(job_code_callback_t job_code_callback)
@@ -503,10 +496,6 @@ void TermMsg()
   if (trace_fd) {
     fclose(trace_fd);
     trace_fd = NULL;
-  }
-  if (catalog_db) {
-    free(catalog_db);
-    catalog_db = NULL;
   }
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
