@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: (debian) add missing data from /etc/postgresql [PR #2827]
 - traymon: fix crash when trying to connecting to fd/sd [PR #2857]
 - cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
+- dird: add some checks to user provided input [PR #2879]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2429,4 +2430,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
 [PR #2868]: https://github.com/bareos/bareos/pull/2868
 [PR #2874]: https://github.com/bareos/bareos/pull/2874
+[PR #2879]: https://github.com/bareos/bareos/pull/2879
 [unreleased]: https://github.com/bareos/bareos/tree/master
