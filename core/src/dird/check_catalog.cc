@@ -196,9 +196,6 @@ bool CheckCatalog(cat_op mode)
       db->SqlQuery<BareosDb::SQL_QUERY::cleanup_running_job>();
     }
 
-    /* Set type in global for debugging */
-    SetDbType(db->GetType());
-
     db->CloseDatabase(NULL);
   }
 
