@@ -464,7 +464,7 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
 Package: bareos-webui-new
 Architecture: all
 Depends: apache2 | httpd,
-   php-fpm (>= 7.0),
+   php-fpm (>= 7.3),
    php-date <bookworm> <bullseye> <noble> <jammy>,
    php-intl,
    php-json,
