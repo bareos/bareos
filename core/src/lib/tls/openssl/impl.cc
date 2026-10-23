@@ -80,7 +80,13 @@ class TlsOpenSsl : public Tls {
   int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) override;
   bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) override;
+  int TlsBsockPeekn(const BareosSocket* bsock,
+                    char* ptr,
+                    int32_t nbytes) override;
   void TlsBsockShutdown(BareosSocket* bsock) override;
+
+  PskIdentityStatus IsPskIdentityInUse(
+      std::string_view identity) const override;
 
   std::string TlsCipherGetName() const override;
   void TlsLogConninfo(JobControlRecord* jcr,
@@ -418,7 +424,7 @@ unsigned int psk_server_cb(SSL* ssl,
   }
 
   // , std::span<unsigned char>(psk_output, max_psk_len)
-  auto* tls_res = data->get(type, name);
+  auto* tls_res = data->get_tls_config_for(type, name);
 
   if (!tls_res) { return ERROR_RETURN; }
 
@@ -758,6 +764,16 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
   return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
 
+int TlsOpenSsl::TlsBsockPeekn(const BareosSocket*, char* ptr, int32_t nbytes)
+{
+  if (!openssl_) {
+    Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
+    return 0;
+  }
+
+  return SSL_peek(openssl_.get(), ptr, nbytes);
+}
+
 bool TlsOpenSsl::KtlsSendStatus()
 {
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
@@ -1061,6 +1077,17 @@ void print_options(const TlsResource* res)
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", as_str(cert.verify_peer_).c_str());
 }
 
+auto TlsOpenSsl::IsPskIdentityInUse(std::string_view identity) const
+    -> PskIdentityStatus
+{
+  auto* psk_used = SSL_get_psk_identity(openssl_.get());
+  if (!psk_used) { return PskIdentityStatus::NoIdentityInUse; }
+  if (identity != psk_used) {
+    return PskIdentityStatus::DifferentIdentityInUse;
+  }
+
+  return PskIdentityStatus::IsInUse;
+}
 };  // namespace
 
 std::unique_ptr<Tls> make_openssl_server_tls(const TlsResource* res,

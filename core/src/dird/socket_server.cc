@@ -34,6 +34,7 @@
 #include "dird/dird_globals.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
+#include "lib/bauth.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bnet_server_tcp.h"
