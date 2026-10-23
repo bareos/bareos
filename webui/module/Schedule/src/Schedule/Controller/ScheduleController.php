@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -79,8 +79,8 @@ class ScheduleController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
-        $schedulename = $this->params()->fromQuery('schedule');
+        $action = $this->params()->fromPost('action');
+        $schedulename = $this->params()->fromPost('schedule');
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
