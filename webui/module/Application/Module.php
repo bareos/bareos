@@ -25,6 +25,7 @@
 
 namespace Application;
 
+use Application\Http\RequestOrigin;
 use Laminas\Mvc\ModuleRouteListener;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Session\SessionManager;
@@ -146,6 +147,10 @@ class Module
                         if (isset($session['config'])) {
                             $class = isset($session['config']['class']) ? $session['config']['class'] : 'Laminas\Session\Config\SessionConfig';
                             $options = isset($session['config']['options']) ? $session['config']['options'] : array();
+
+                            // Secure only over TLS, before the session starts.
+                            $options['cookie_secure'] = (new RequestOrigin($config))->isHttps();
+
                             $sessionConfig = new $class();
                             $sessionConfig->setOptions($options);
                         }
