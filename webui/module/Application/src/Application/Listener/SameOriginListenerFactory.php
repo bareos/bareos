@@ -40,21 +40,6 @@ class SameOriginListenerFactory implements FactoryInterface
      */
     public function createService(ServiceLocatorInterface $serviceLocator, $requestedName = null)
     {
-        $config = $serviceLocator->get('config');
-        $trustedProxies = array();
-
-        // The shipped module default, which is empty.
-        if (isset($config['trusted_proxies'])) {
-            $trustedProxies = $config['trusted_proxies'];
-        }
-
-        // configuration.ini overrides it, so a proxied deployment needs no edit
-        // to the shipped module config.
-        if (isset($config['configuration']['trusted_proxies'])) {
-            $trustedProxies = $config['configuration']['trusted_proxies'];
-        }
-
-        // Passed on as configured; the listener normalizes it.
-        return new SameOriginListener($trustedProxies);
+        return new SameOriginListener($serviceLocator->get('config'));
     }
 }

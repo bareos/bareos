@@ -251,15 +251,6 @@ function read_directors_ini($directors, $directors_ini)
 
 $configuration = read_configuration_ini($configuration_ini);
 
-// By path: no module autoloaders registered yet.
-require_once __DIR__ . '/../../module/Application/src/Application/Http/RequestOrigin.php';
-
-// Secure only for a request that arrived over TLS. Shares the trusted_proxies
-// decision with the CSRF listener so the two cannot disagree.
-$cookie_secure = (new Application\Http\RequestOrigin(
-    $configuration['trusted_proxies']
-))->isHttps();
-
 return array(
     'directors' => read_directors_ini($directors, $directors_ini),
     'configuration' => $configuration,
@@ -281,7 +272,6 @@ return array(
                 'use_cookies' => true,
                 'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
                 'cookie_httponly' => true,
-                'cookie_secure' => $cookie_secure,
                 'cookie_samesite' => 'Strict',
                 'gc_maxlifetime' => '3600',
                 'cache_expire' => 3600,

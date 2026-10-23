@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 
 namespace Application;
 
+use Application\Http\RequestOrigin;
 use Zend\Mvc\ModuleRouteListener;
 use Zend\Mvc\MvcEvent;
 use Zend\Session\SessionManager;
@@ -141,6 +142,10 @@ class Module
                         if (isset($session['config'])) {
                             $class = isset($session['config']['class']) ? $session['config']['class'] : 'Zend\Session\Config\SessionConfig';
                             $options = isset($session['config']['options']) ? $session['config']['options'] : array();
+
+                            // Secure only over TLS, before the session starts.
+                            $options['cookie_secure'] = (new RequestOrigin($config))->isHttps();
+
                             $sessionConfig = new $class();
                             $sessionConfig->setOptions($options);
                         }
