@@ -75,7 +75,7 @@ class ClientController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
+        $action = $this->params()->fromPost('action');
 
         if (empty($action)) {
             return new ViewModel();
@@ -92,7 +92,7 @@ class ClientController extends AbstractActionController
             }
 
             if ($action == "enable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
                     if ($this->bsock) {
                         $this->bsock->disconnect();
@@ -122,7 +122,7 @@ class ClientController extends AbstractActionController
                     error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
                     if ($this->bsock) {
                         $this->bsock->disconnect();
