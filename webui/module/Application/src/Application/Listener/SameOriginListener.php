@@ -45,8 +45,8 @@ use Traversable;
  * origin where Fetch Metadata is unavailable. Neither present is a rejection.
  * Safe methods are exempt, see isSafeMethod().
  *
- * Scheme and host come from Application\Http\RequestOrigin, which global.php
- * also uses for the session cookie's Secure flag.
+ * Scheme and host come from Application\Http\RequestOrigin, which
+ * Application\Module also uses for the cookie's Secure flag.
  */
 class SameOriginListener extends AbstractListenerAggregate
 {
@@ -76,15 +76,15 @@ class SameOriginListener extends AbstractListenerAggregate
     /**
      * @var array
      */
-    protected $trustedProxies;
+    protected $config;
 
     /**
-     * @param array|string|null $trustedProxies
-     *   Proxies to believe X-Forwarded-* from; normalized here.
+     * @param array $config
+     *   Merged configuration; trusted_proxies is read from it.
      */
-    public function __construct($trustedProxies = array())
+    public function __construct(array $config = array())
     {
-        $this->trustedProxies = RequestOrigin::normalize($trustedProxies);
+        $this->config = $config;
     }
 
     /**
@@ -113,7 +113,7 @@ class SameOriginListener extends AbstractListenerAggregate
             return null;
         }
 
-        $status = self::classify($this->getServerParams($request), $this->trustedProxies);
+        $status = self::classify($this->getServerParams($request), $this->config);
         if ($status === self::OK) {
             return null;
         }
@@ -152,10 +152,10 @@ class SameOriginListener extends AbstractListenerAggregate
      * Whether a state-changing request proved it came from this origin.
      *
      * @param array $server
-     * @param array $trustedProxies
+     * @param array $config
      * @return string one of the status constants above
      */
-    public static function classify(array $server, array $trustedProxies = array()): string
+    public static function classify(array $server, array $config = array()): string
     {
         if (isset($server['HTTP_SEC_FETCH_SITE'])) {
             $site = strtolower(trim($server['HTTP_SEC_FETCH_SITE']));
@@ -167,7 +167,7 @@ class SameOriginListener extends AbstractListenerAggregate
 
         if (isset($server['HTTP_ORIGIN'])) {
             $origin = strtolower(trim($server['HTTP_ORIGIN']));
-            $expected = (new RequestOrigin($trustedProxies, $server))->origin();
+            $expected = (new RequestOrigin($config, $server))->origin();
             // An opaque origin is serialized as the literal string 'null' by
             // the browser and can never equal a real origin, so it lands here.
             if ($expected !== null && hash_equals($expected, $origin)) {

@@ -28,15 +28,14 @@ namespace Application\Http;
 /**
  * The scheme, host and origin a request arrived with, honoring reverse proxies.
  *
- * Shared by config/autoload/global.php (the session cookie's Secure flag) and
- * SameOriginListener (the Origin check), so the two cannot disagree about
- * whether a request arrived over TLS.
+ * Shared by Application\Module (the cookie's Secure flag) and
+ * SameOriginListener (the Origin check), so the two cannot disagree.
  *
- * One instance describes one request; the proxy list is normalized in the
- * constructor. X-Forwarded-* is believed only from a configured proxy
- * (REMOTE_ADDR), since a forwarded header can be set by anyone.
+ * One instance describes one request; the proxy list is read from the config
+ * and normalized in the constructor. X-Forwarded-* is believed only from a
+ * configured proxy (REMOTE_ADDR), since a forwarded header can be set by anyone.
  *
- * Deliberately framework-free: global.php requires it before autoloaders exist.
+ * Deliberately framework-free, so it can be required on its own.
  */
 class RequestOrigin
 {
@@ -54,15 +53,15 @@ class RequestOrigin
     private $trustedProxies;
 
     /**
-     * @param array|string|null $trustedProxies
-     *   Proxies to believe X-Forwarded-* from, normalized here. This list is the
+     * @param array $config
+     *   Merged configuration; trusted_proxies is read from it. This list is the
      *   whole trust boundary.
      * @param array|null $server
      *   Defaults to $_SERVER; null because PHP forbids a superglobal default.
      */
-    public function __construct($trustedProxies = array(), ?array $server = null)
+    public function __construct(array $config = array(), ?array $server = null)
     {
-        $this->trustedProxies = self::normalize($trustedProxies);
+        $this->trustedProxies = self::normalize(self::trustedProxiesFromConfig($config));
         $this->server = $server === null ? $_SERVER : $server;
     }
 
@@ -186,6 +185,22 @@ class RequestOrigin
         }
 
         return $normalized;
+    }
+
+    /**
+     * trusted_proxies from the merged config: module.config.php, overridden by
+     * configuration.ini.
+     *
+     * @param array $config
+     * @return array|string|null
+     */
+    private static function trustedProxiesFromConfig(array $config)
+    {
+        if (isset($config['configuration']['trusted_proxies'])) {
+            return $config['configuration']['trusted_proxies'];
+        }
+
+        return isset($config['trusted_proxies']) ? $config['trusted_proxies'] : array();
     }
 
     /**
