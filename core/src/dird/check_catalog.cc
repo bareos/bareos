@@ -47,8 +47,13 @@ struct SequenceInfo {
 
 bool ParseDbInt(std::string_view text, std::int64_t* out)
 {
-  auto result = std::from_chars(text.begin(), text.end(), *out);
-  if (result.ec != std::errc{} || result.ptr != text.end()) { return false; }
+  if (text.size() == 0) { return false; }
+
+  auto* start = text.data();
+  auto* end = text.data() + text.size();
+
+  auto result = std::from_chars(start, end, *out);
+  if (result.ec != std::errc{} || result.ptr != end) { return false; }
 
   return true;
 }
