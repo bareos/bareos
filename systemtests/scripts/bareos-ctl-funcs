@@ -120,15 +120,22 @@ killproc()
   fi
 
   # Find pid.
-  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
-    pid=$(pidfromfile "${BAREOS_PIDFILE}")
-    # Get base program name
-    base=$(basename "$1")
+  if [ -v BAREOS_PIDFILE ]; then
+    if [ ! -f "${BAREOS_PIDFILE}" ]; then
+      # The daemon removes its pidfile on exit.  So if the file is supposed to
+      # exist, but does not, then the daemon is already dead.
+      success "already stopped"
+      return 0
+    else
+      pid=$(pidfromfile "${BAREOS_PIDFILE}")
+      # Get base program name
+      base=$(basename "$1")
 
-    badpid=$(pidofproc "$base" "$2")
+      badpid=$(pidofproc "$base" "$2")
 
-    if [ "${pid}" != "${badpid}" ]; then
-      echo "Got ${pid} from pidfile; would have gotten ${badpid} from pidofproc" >&2
+      if [ "${pid}" != "${badpid}" ]; then
+        echo "Got ${pid} from pidfile; would have gotten ${badpid} from pidofproc" >&2
+      fi
     fi
   else
     # Get base program name
