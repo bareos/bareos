@@ -620,7 +620,7 @@ const char *BareosDbPostgresql::query_definitions[] = {
 ,
 
 /* 0047_bvfs_select.postgresql */
-"CREATE TABLE %s AS "
+"CREATE TEMPORARY TABLE %s AS "
   "(SELECT JobId, "
           "FileIndex, "
           "FileId "
