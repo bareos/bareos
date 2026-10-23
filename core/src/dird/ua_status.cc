@@ -652,12 +652,12 @@ static void DoConfigurationStatus(UaContext* ua)
                  ua->argk[0], ua->argk[1]);
   } else {
     if (my_config->HasWarnings()) {
-      ua->SendMsg(T_("Deprecated configuration settings detected:\n"));
+      ua->SendMsg(T_("Configuration warnings detected:\n"));
       for (auto& warning : my_config->GetWarnings()) {
         ua->SendMsg(" * %s\n", warning.c_str());
       }
     } else {
-      ua->SendMsg(T_("No deprecated configuration settings detected.\n"));
+      ua->SendMsg(T_("No configuration warnings detected.\n"));
     }
   }
 }
