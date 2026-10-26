@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [25.1.2] - 2026-10-26
 
 ### Breaking changes
 - running the Bareos WebUI behind a reverse-proxy now requires configuration of
@@ -1400,6 +1400,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [25.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F25.0.4
 [25.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F25.1.0
 [25.1.1]: https://github.com/bareos/bareos/releases/tag/Release%2F25.1.1
+[25.1.2]: https://github.com/bareos/bareos/releases/tag/Release%2F25.1.2
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -2401,4 +2402,3 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2875]: https://github.com/bareos/bareos/pull/2875
 [PR #2882]: https://github.com/bareos/bareos/pull/2882
 [PR #2883]: https://github.com/bareos/bareos/pull/2883
-[unreleased]: https://github.com/bareos/bareos/tree/master
