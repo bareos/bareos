@@ -41,6 +41,7 @@
 #  include "dird/ndmp_dma_backup_common.h"
 #  include "dird/ndmp_dma_generic.h"
 #  include "dird/ndmp_dma_storage.h"
+#  include "dird/ndmp_fileset_validation.h"
 
 #  define NDMP_NEED_ENV_KEYWORDS 1
 
@@ -221,25 +222,21 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
 
-  /* Only one include set of the fileset  is allowed in NATIVE mode as
+  /* Only one include set of the fileset is allowed in NATIVE mode as
    * in NDMP also per job only one filesystem can be backed up */
   fileset = jcr->dir_impl->res.fileset;
 
-  if (fileset->include_items.size() > 1) {
-    Jmsg(jcr, M_ERROR, 0,
-         "Exactly one include set is supported in NDMP NATIVE mode\n");
+  if (auto validation
+      = ValidateNdmpFileset(fileset->include_items.size(),
+                            fileset->include_items.size() > 0
+                                ? fileset->include_items[0]->name_list.size()
+                                : 0);
+      validation != NdmpFilesetValidation::kOk) {
+    Jmsg(jcr, M_ERROR, 0, "%s", NdmpFilesetValidationMessage(validation));
     return retval;
   }
 
   ie = fileset->include_items[0];
-
-  /* only one file = entry is allowed
-   * and it is the ndmp filesystem to be backed up */
-  if (ie->name_list.size() != 1) {
-    Jmsg(jcr, M_ERROR, 0,
-         "Exactly one  File specification is supported in NDMP NATIVE mode\n");
-    return retval;
-  }
 
   item = (char*)ie->name_list.first();
 
