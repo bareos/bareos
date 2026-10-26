@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -251,10 +251,8 @@ class SeleniumTest(unittest.TestCase):
         self.select_navbar_element("client")
 
         if self.client_status(self.client) == "Enabled":
-            # Disables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client,
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Disable"]' % self.client
             )
             if self.profile == "readonly":
                 self.wait_and_click(By.LINK_TEXT, "Back")
@@ -268,10 +266,8 @@ class SeleniumTest(unittest.TestCase):
         self.select_navbar_element("client")
 
         if self.client_status(self.client) == "Disabled":
-            # Enables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client,
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Enable"]' % self.client
             )
             if self.profile == "readonly":
                 self.wait_and_click(By.LINK_TEXT, "Back")
@@ -334,14 +330,11 @@ class SeleniumTest(unittest.TestCase):
 
     def test_rerun_job(self):
         self.login()
-        self.select_navbar_element("client")
-        self.wait_and_click(By.LINK_TEXT, self.client)
+        self.driver.get(self.base_url + "/client/details?client=" + self.client)
+        self.wait_for_spinner_absence()
         # Select first backup in list
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-        # Press on rerun button
-        self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-        # Accept confirmation dialog
-        self.driver.switch_to.alert.accept()
+        self.submit_action_form('//button[@title="Rerun"]')
         if self.profile == "readonly":
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
@@ -488,12 +481,15 @@ class SeleniumTest(unittest.TestCase):
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):
+        self.driver.get(self.base_url)
         self.wait_and_click(
-            By.CSS_SELECTOR,
-            "span.glyphicon.glyphicon-user",
-            [(By.CSS_SELECTOR, "div.navbar-header > button")],
+            By.XPATH,
+            '//span[contains(@class, "glyphicon-user")]/ancestor::a',
         )
-        self.wait_and_click(By.LINK_TEXT, "Logout")
+        self.wait_and_click(
+            By.XPATH,
+            '//form[@method="post"]//button[normalize-space()="Logout"]',
+        )
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
@@ -631,6 +627,16 @@ class SeleniumTest(unittest.TestCase):
             retry += 1
         logger.error("failed to click %s %s", by, value)
         raise FailedClickException(value)
+
+    def submit_action_form(self, button_xpath):
+        button = self.wait_for_element(By.XPATH, button_xpath)
+        form = button.find_element(By.XPATH, "./ancestor::form")
+        confirmation = form.get_attribute("data-confirmation")
+        button.click()
+        if confirmation:
+            alert = self.driver.switch_to_alert()
+            self.assertEqual(confirmation, alert.text)
+            alert.accept()
 
     def wait_for_element(self, by, value):
         logger = logging.getLogger()

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -176,6 +176,13 @@ class AuthController extends AbstractActionController
      */
     public function logoutAction()
     {
+        if (!$this->getRequest()->isPost()) {
+            $this->getResponse()->setStatusCode(405);
+            $this->getResponse()->getHeaders()->addHeaderLine('Allow', 'POST');
+            $this->getResponse()->setContent('Method Not Allowed.');
+            return $this->getResponse();
+        }
+
         $session = new Container('bareos');
         $session->getManager()->destroy();
         return $this->redirect()->toRoute('auth', array('action' => 'login'));

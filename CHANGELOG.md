@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cats: escape client list filter [PR #2824]
 - cats: size SQL escape buffers dynamically [PR #2841]
 - .matrix.yml: remove EOL FreeBSD 13 [PR #2877]
+- webui: fix CSRF vulnerabilities [PR #2885]
 
 ### Fixed
 - dird: add some checks to user provided input [PR #2880]
@@ -1802,4 +1803,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2841]: https://github.com/bareos/bareos/pull/2841
 [PR #2877]: https://github.com/bareos/bareos/pull/2877
 [PR #2880]: https://github.com/bareos/bareos/pull/2880
+[PR #2885]: https://github.com/bareos/bareos/pull/2885
 [unreleased]: https://github.com/bareos/bareos/tree/master

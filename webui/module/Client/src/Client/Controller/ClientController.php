@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -75,7 +75,7 @@ class ClientController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
+        $action = $this->params()->fromPost('action');
 
         if (empty($action)) {
             return new ViewModel();
@@ -87,7 +87,7 @@ class ClientController extends AbstractActionController
             }
 
             if ($action == "enable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -108,7 +108,7 @@ class ClientController extends AbstractActionController
                     echo $e->getMessage();
                 }
             } elseif ($action == "disable") {
-                $clientname = $this->params()->fromQuery('client');
+                $clientname = $this->params()->fromPost('client');
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
