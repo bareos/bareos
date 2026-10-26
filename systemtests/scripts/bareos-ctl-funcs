@@ -60,7 +60,7 @@ pidofproc()
 
   # Next try "pgrep"
   if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
-    pid=$(${PGREP} -f $base)
+    pid=$(${PGREP} -o -f $base)
     if [ "$pid" != "" ]; then
       echo $pid | cut -d' ' -f 1
       return 0

@@ -55,8 +55,8 @@ class ExecuteOnDirController extends AbstractRestfulController
         }
 
         $this->bsock = $this->getServiceLocator()->get('director');
-        $command = $this->params()->fromQuery('command');
-        $jobs = $this->params()->fromQuery('jobs');
+        $command = $this->params()->fromPost('command');
+        $jobs = $this->params()->fromPost('jobs');
 
         try{
             if ($command === "rerun") {

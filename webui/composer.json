@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "php": ">=5.3.23",
+        "php": ">=7.3",
         "laminas/laminas-stdlib": "2.7.*",
         "laminas/laminas-config": "2.6.*",
         "laminas/laminas-eventmanager": "2.6.*",

@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - lib: make socket bind failures fatal and syslog-visible [PR #2808]
 - .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2874]
 - lmdb: add optional system library [PR #2800]
+- webui: fix CSRF vulnerabilities [PR #2844]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2427,6 +2428,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
 [PR #2834]: https://github.com/bareos/bareos/pull/2834
+[PR #2844]: https://github.com/bareos/bareos/pull/2844
 [PR #2854]: https://github.com/bareos/bareos/pull/2854
 [PR #2857]: https://github.com/bareos/bareos/pull/2857
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
