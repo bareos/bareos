@@ -5,14 +5,25 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-### Changed
-- cats: escape client list filter [PR #2824]
-- cats: size SQL escape buffers dynamically [PR #2841]
-- .matrix.yml: remove EOL FreeBSD 13 [PR #2877]
-- webui: fix CSRF vulnerabilities [PR #2885]
+### Breaking changes
+- running the Bareos WebUI behind a reverse-proxy now requires configuration of
+  the trusted_proxies setting in the webui configuration
 
 ### Fixed
 - dird: add some checks to user provided input [PR #2880]
+- cats: escape client list filter [PR #2824]
+- cats: size SQL escape buffers dynamically [PR #2841]
+- webui: fix CSRF vulnerabilities [PR #2885]
+
+### Changed
+- .matrix.yml: remove EOL FreeBSD 13 [PR #2877]
+
+### Security
+- Fix SQL injection in restore command [PR #2880] [GHSA-m2qm-v5vc-5qwh](https://github.com/bareos/bareos/security/advisories/GHSA-m2qm-v5vc-5qwh)
+- Fix information disclosure in restore command [PR #2880] [GHSA-2p2p-6cfv-wvgm](https://github.com/bareos/bareos/security/advisories/GHSA-2p2p-6cfv-wvgm)
+- Fix possible SQL injection in list, llist bconsole commands [PR #2824] [GHSA-7xg8-c72r-8749](https://github.com/bareos/bareos/security/advisories/GHSA-7xg8-c72r-8749)
+- Fix stack buffer overflow in Director escaping the file daemon Uname [PR #2841] [GHSA-wrg9-8743-vhp2](https://github.com/bareos/bareos/security/advisories/GHSA-wrg9-8743-vhp2)
+- Fix Bareos WebUI allowing Cross-Site Request Forgery of administrative actions [PR #2885] [GHSA-m2rp-8jr9-qvp2](https://github.com/bareos/bareos/security/advisories/GHSA-m2rp-8jr9-qvp2)
 
 ## [23.1.8] - 2026-09-03
 
