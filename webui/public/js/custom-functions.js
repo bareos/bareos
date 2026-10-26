@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -100,4 +100,48 @@ function initDTLocale() {
    iJS.i18n.setlocale(dt_locale);
    iJS.i18n.bindtextdomain(dt_locale, dt_textdomain, "po");
    iJS.i18n.try_load_lang();
+}
+
+function submitActionPostForm(form) {
+   if(form.getAttribute('data-submitting') === 'true') {
+      return false;
+   }
+
+   let confirmation = form.getAttribute('data-confirmation');
+   if(confirmation && !confirm(confirmation)) {
+      return false;
+   }
+
+   form.setAttribute('data-submitting', 'true');
+   return true;
+}
+
+function escapeHtmlAttribute(value) {
+   return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+}
+
+function actionPostButton(url, parameters, title, icon, confirmation) {
+   let form = '<form method="post" action="' + escapeHtmlAttribute(url) +
+      '" style="display:inline" onsubmit="return submitActionPostForm(this)"';
+
+   if(confirmation) {
+      form += ' data-confirmation="' + escapeHtmlAttribute(confirmation) +
+         '"';
+   }
+   form += '>';
+
+   Object.keys(parameters).forEach(function(name) {
+      form += '<input type="hidden" name="' + escapeHtmlAttribute(name) + '" value="' +
+         escapeHtmlAttribute(parameters[name]) + '">';
+   });
+
+   form += '<button type="submit" class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" title="' +
+      escapeHtmlAttribute(title) + '" id="btn-1"><span class="glyphicon ' + escapeHtmlAttribute(icon) +
+      '"></span></button></form>';
+   return form;
 }
