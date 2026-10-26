@@ -4,6 +4,8 @@
 
 - [ ] Short description and the purpose of this PR is present _above this paragraph_
 - [ ] Your name is present in the AUTHORS file (optional)
+- [ ] If any part of your contribution was AI generated, you - as a human - reviewed and understood the AI generated parts.
+- [ ] That you are actually owner of the code that you are contributing (or allowed to do so for other reasons)
 
 If you have any questions or problems, please give a comment in the PR.
 
