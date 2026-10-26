@@ -261,8 +261,9 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
   // The vertical list additionally shows the MediaId.
   DbLocker _{this};
   Mmsg(cmd,
-       "SELECT JobMediaId,JobId,%sMedia.VolumeName,"
-       "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
+       "SELECT JobMedia.JobMediaId,JobMedia.JobId,%sMedia.VolumeName,"
+       "JobMedia.FirstIndex,JobMedia.LastIndex,JobMedia.StartFile,"
+       "JobMedia.EndFile,JobMedia.StartBlock,"
        "JobMedia.EndBlock,JobMedia.JobBytes,"
        "Job.Name AS jobname,Client.Name AS clientname "
        "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
