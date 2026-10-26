@@ -42,6 +42,14 @@ class StorageForm extends Form
         $this->pools = $pools;
         $this->drives = $drives;
 
+        $this->add(array(
+            'name' => 'action',
+            'type' => 'Zend\Form\Element\Hidden',
+            'attributes' => array(
+                'value' => 'label',
+            ),
+        ));
+
         // storage
         $this->add(array(
             'name' => 'storage',

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -76,6 +76,8 @@ class JobController extends AbstractActionController
             );
         }
 
+        $action = $this->params()->fromPost('action');
+
         $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : '7';
         $status = $this->params()->fromQuery('status') ? $this->params()->fromQuery('status') : 'all';
         $jobname = $this->params()->fromQuery('jobname') ? $this->params()->fromQuery('jobname') : 'all';
@@ -91,7 +93,6 @@ class JobController extends AbstractActionController
         $form = new JobForm($jobs, $jobname, $period, $status);
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
         if (empty($action)) {
             return new ViewModel(
                 array(
@@ -110,7 +111,7 @@ class JobController extends AbstractActionController
 
             if ($action == "rerun") {
                 try {
-                    $jobid = $this->params()->fromQuery('jobid');
+                    $jobid = $this->params()->fromPost('jobid');
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
                         $module_config['console_commands']['Job']['optional']
@@ -219,6 +220,13 @@ class JobController extends AbstractActionController
             );
         }
 
+        if (!$this->getRequest()->isPost()) {
+            $this->getResponse()->setStatusCode(405);
+            $this->getResponse()->getHeaders()->addHeaderLine('Allow', 'POST');
+            $this->getResponse()->setContent('Method Not Allowed.');
+            return $this->getResponse();
+        }
+
         $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
         $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
@@ -287,7 +295,7 @@ class JobController extends AbstractActionController
 
         $result = null;
 
-        $action = $this->params()->fromQuery('action');
+        $action = $this->params()->fromPost('action');
 
         if (empty($action)) {
             return new ViewModel();
@@ -299,7 +307,7 @@ class JobController extends AbstractActionController
             }
 
             if ($action == "queue") {
-                $jobname = $this->params()->fromQuery('job');
+                $jobname = $this->params()->fromPost('job');
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -320,7 +328,7 @@ class JobController extends AbstractActionController
                     echo $e->getMessage();
                 }
             } elseif ($action == "enable") {
-                $jobname = $this->params()->fromQuery('job');
+                $jobname = $this->params()->fromPost('job');
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -341,7 +349,7 @@ class JobController extends AbstractActionController
                     echo $e->getMessage();
                 }
             } elseif ($action == "disable") {
-                $jobname = $this->params()->fromQuery('job');
+                $jobname = $this->params()->fromPost('job');
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(

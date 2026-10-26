@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2020-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2020-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -493,8 +493,8 @@ function formatVolumeName(value, basePath) {
 function clientsActionButtonsFormatter(value, row, index, basePath) {
    let restoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/index?client=' + row.name + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
    let statusClientButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/status?client=' + row.name + '" title="' + iJS._("Status") + '" id="btn-1"><span class="glyphicon glyphicon-search"></span></a>';
-   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=disable&client=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/client/index?action=enable&client=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+   let disableButton = actionPostButton(basePath + '/client/index', { action: 'disable', client: row.name }, iJS._("Disable"), 'glyphicon-remove');
+   let enableButton = actionPostButton(basePath + '/client/index', { action: 'enable', client: row.name }, iJS._("Enable"), 'glyphicon-ok');
 
    if(row.enabled) {
       return restoreButton + '&nbsp;' + statusClientButton + '&nbsp;' + disableButton;
@@ -511,8 +511,8 @@ function clientActionButtonsFormatter(value, row, index, basePath) {
 }
 
 function scheduleActionButtonsFormatter(value, row, index, basePath) {
-   let disableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=disable&schedule=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-   let enableButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/schedule/index?action=enable&schedule=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+   let disableButton = actionPostButton(basePath + '/schedule/index', { action: 'disable', schedule: row.name }, iJS._("Disable"), 'glyphicon-remove');
+   let enableButton = actionPostButton(basePath + '/schedule/index', { action: 'enable', schedule: row.name }, iJS._("Enable"), 'glyphicon-ok');
 
    if(row.enabled) {
       return disableButton;
@@ -523,9 +523,9 @@ function scheduleActionButtonsFormatter(value, row, index, basePath) {
 
 function jobActionButtonsFormatter(value, row, index, basePath) {
    let jobDetailsButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/details/' + row.jobid + '" title="' + iJS._("View Job Details") + '" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>';
-   let jobRerunButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/index?action=rerun&jobid=' + row.jobid + '" title="' + iJS._('Rerun') + '" id="btn-1" onclick="return confirm(\'Rerun Job ID ' + row.jobid + '?\')"><span class="glyphicon glyphicon-repeat"></span></a>';
+   let jobRerunButton = actionPostButton(basePath + '/job/index', { action: 'rerun', jobid: row.jobid }, iJS._('Rerun'), 'glyphicon-repeat', 'Rerun Job ID ' + row.jobid + '?');
    let jobRestoreButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/restore/?mergefilesets=0&mergejobs=0&client=' + row.client + '&jobid=' + row.jobid + '" title="' + iJS._("Restore") + '" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>';
-   let jobCancelButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/cancel/' + row.jobid + '" title="' + iJS._("Cancel") + '" id="btn-1" onclick="return confirm(\'Cancel Job ID ' + row.jobid + '?\')"><span class="glyphicon glyphicon-remove"></span></a>';
+   let jobCancelButton = actionPostButton(basePath + '/job/cancel/' + row.jobid, { action: 'cancel' }, iJS._("Cancel"), 'glyphicon-remove', 'Cancel Job ID ' + row.jobid + '?');
 
    switch(row.jobstatus) {
       case 'T':
@@ -587,9 +587,9 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
 }
 
 function jobResourceActionButtonsFormatter(value, row, index, basePath) {
-   let runJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=queue&job=' + row.name + '" title="' + iJS._("Run") + '" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>';
-   let enableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=enable&job=' + row.name + '" title="' + iJS._("Enable") + '" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-   let disableJobButton = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="' + basePath + '/job/actions?action=disable&job=' + row.name + '" title="' + iJS._("Disable") + '" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+   let runJobButton = actionPostButton(basePath + '/job/actions', { action: 'queue', job: row.name }, iJS._("Run"), 'glyphicon-play');
+   let enableJobButton = actionPostButton(basePath + '/job/actions', { action: 'enable', job: row.name }, iJS._("Enable"), 'glyphicon-ok');
+   let disableJobButton = actionPostButton(basePath + '/job/actions', { action: 'disable', job: row.name }, iJS._("Disable"), 'glyphicon-remove');
 
    if(row.enabled) {
       return runJobButton + '&nbsp;' + disableJobButton;
