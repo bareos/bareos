@@ -5,21 +5,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+- running the Bareos WebUI behind a reverse-proxy now requires configuration of
+  the trusted_proxies setting in the webui configuration
+
 ### Fixed
 - plugins: (debian) add missing data from /etc/postgresql [PR #2828]
 - bareosfd: fix misusing the python api [PR #2817]
 - dird: add some checks to user provided input [PR #2882]
-
-### Changed
 - cats: escape client list filter [PR #2822]
 - cats: size SQL escape buffers dynamically [PR #2839]
 - dird: fix cancel duplicate crash [PR #2843]
 - fix(dird): accept extended labels after purge truncate [PR #2851]
 - dird: fix reload related crash [PR #2865]
 - backport catreq: fix sanity check [PR #2871]
-- Update vulnerable Vue dependencies [PR #2870]
-- .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2875]
 - webui: fix CSRF vulnerabilities [PR #2883]
+
+### Changed
+- .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2875]
+- Update Vue dependencies [PR #2870]
+
+### Security
+- Fix SQL injection in restore command [PR #2882] [GHSA-m2qm-v5vc-5qwh](https://github.com/bareos/bareos/security/advisories/GHSA-m2qm-v5vc-5qwh)
+- Fix information disclosure in restore command [PR #2882] [GHSA-2p2p-6cfv-wvgm](https://github.com/bareos/bareos/security/advisories/GHSA-2p2p-6cfv-wvgm)
+- Fix possible SQL injection in list, llist bconsole commands [PR #2822] [GHSA-7xg8-c72r-8749](https://github.com/bareos/bareos/security/advisories/GHSA-7xg8-c72r-8749)
+- Fix stack buffer overflow in Director escaping the file daemon Uname [PR #2839] [GHSA-wrg9-8743-vhp2](https://github.com/bareos/bareos/security/advisories/GHSA-wrg9-8743-vhp2)
+- Fix Bareos WebUI allowing Cross-Site Request Forgery of administrative actions [PR #2883] [GHSA-m2rp-8jr9-qvp2](https://github.com/bareos/bareos/security/advisories/GHSA-m2rp-8jr9-qvp2)
 
 ## [25.1.1] - 2026-09-03
 
