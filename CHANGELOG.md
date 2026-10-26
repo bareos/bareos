@@ -122,6 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - traymon: fix crash when trying to connecting to fd/sd [PR #2857]
 - cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
 - dird: add some checks to user provided input [PR #2879]
+- catalog: upgrade PathId field to bigint [PR #2858]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2431,6 +2432,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2844]: https://github.com/bareos/bareos/pull/2844
 [PR #2854]: https://github.com/bareos/bareos/pull/2854
 [PR #2857]: https://github.com/bareos/bareos/pull/2857
+[PR #2858]: https://github.com/bareos/bareos/pull/2858
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
 [PR #2868]: https://github.com/bareos/bareos/pull/2868
 [PR #2874]: https://github.com/bareos/bareos/pull/2874

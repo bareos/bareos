@@ -322,16 +322,29 @@ int main(int argc, char* argv[])
   // If we are in testing mode, we don't try to fix the catalog
   cat_op mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
-  if (!CheckCatalog(mode)) {
-    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         T_("Please correct the configuration in %s\n"),
+  CatalogUtility util{mode};
+
+  if (!CheckAllCatalogs(util)) {
+    if (util.error) { Jmsg(nullptr, M_ERROR, 0, "%s\n", util.error->c_str()); }
+
+    Jmsg(nullptr, M_ERROR_TERM, 0, "Please correct the configuration in %s\n",
          my_config->get_base_config_path().c_str());
 
     TerminateDird(BEXIT_SUCCESS);
     return BEXIT_SUCCESS;
   }
 
-  if (test_config) { TerminateDird(0); }
+  if (test_config) {
+    fprintf(stderr, T_("There are catalog warnings:\n"));
+    for (auto& warning : util.warnings) {
+      fprintf(stderr, " * %s\n", warning.c_str());
+    }
+    TerminateDird(0);
+  }
+
+  for (auto& warning : util.warnings) {
+    my_config->AddWarning(std::move(warning));
+  }
 
   if (!InitializeSqlPooling()) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
