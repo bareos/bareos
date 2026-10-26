@@ -671,7 +671,7 @@ Group:         Productivity/Archiving/Backup
 BuildRequires: httpd
 BuildRequires: httpd-devel
 
-Requires: php >= 7.0.0
+Requires: php >= 7.3.0
 Requires: php-fpm
 Requires: php-bz2
 Requires: php-ctype
