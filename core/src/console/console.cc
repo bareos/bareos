@@ -40,7 +40,7 @@
 #include "lib/bsock_tcp.h"
 #include "lib/bstringlist.h"
 #include "lib/cli.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/version.h"
 #include "lib/watchdog.h"
 #include "lib/bpipe.h"
@@ -817,8 +817,7 @@ static bool ExaminePamAuthentication(
     if (data.empty()) { return false; }
     g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamUserCredentials, data);
   } else {
-    g_UA_sock->FormatAndSendResponseMessage(kMessageIdPamInteractive,
-                                            std::string());
+    SendResponseMessage(g_UA_sock, kMessageIdPamInteractive, "");
     if (!ConsolePamAuthenticate(stdin, g_UA_sock)) {
       TerminateConsole(0);
       return false;
@@ -830,14 +829,11 @@ static bool ExaminePamAuthentication(
 
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "bconsole");
-  InitMsg(NULL, NULL);
+  InitDaemonMsg(nullptr);
   working_directory = "/tmp";
   g_args = GetPoolMemory(PM_FNAME);
 
@@ -1022,7 +1018,9 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  g_UA_sock->OutputCipherMessageString(ConsoleOutput);
+  auto cipher_str = g_UA_sock->GetCipherMessageString();
+  cipher_str += "\n";
+  ConsoleOutput(cipher_str.c_str());
 
   if (response_id == kMessageIdPamRequired) {
 #if defined(HAVE_PAM)

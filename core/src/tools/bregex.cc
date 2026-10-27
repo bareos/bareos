@@ -32,10 +32,7 @@
 
 int main(int argc, char** argv)
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   CLI::App bregex_app;
   InitCLIApp(bregex_app, "The Bareos Regular Expression tool.");

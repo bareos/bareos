@@ -20,15 +20,9 @@
 */
 
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#else
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
+#include "include/bareos.h"
 
 #include "cats/cats.h"
 #include "dird/dird_conf.h"
@@ -46,6 +40,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -162,8 +157,8 @@ class MockDatabase : public BareosDb {
   explicit MockDatabase(Mode mode) : mode_(mode) {}
   SqlFindResult FindLastJobStartTimeForJobAndClient(
       JobControlRecord* /*jcr*/,
-      std::string /*job_basename*/,
-      std::string /*client_name*/,
+      std::string_view /*job_basename*/,
+      std::string_view /*client_name*/,
       std::vector<char>& stime_out) override
   {
     switch (mode_) {
@@ -200,6 +195,17 @@ class MockDatabase : public BareosDb {
 
   const char* OpenDatabase() override { return "bad"; }
   void CloseDatabase(JobControlRecord* /*jcr*/) override {}
+  std::optional<std::string> EscapeString(JobControlRecord* /*jcr*/,
+                                          std::string_view old) override
+  {
+    std::string escaped;
+    escaped.reserve(old.size() * 2);
+    for (char c : old) {
+      if (c == '\'') { escaped.push_back('\''); }
+      escaped.push_back(c);
+    }
+    return escaped;
+  }
   void StartTransaction(JobControlRecord* /*jcr*/) override {}
   void EndTransaction(JobControlRecord* /*jcr*/) override {}
 

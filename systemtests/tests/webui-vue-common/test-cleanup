@@ -29,6 +29,10 @@ export TestName
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
+if [ -f "${working}/bareos-dir.trace" ]; then
+  cat "${working}/bareos-dir.trace"
+fi
+
 for pid_file in "${tmp}/webui-vue-frontend.pid" "${tmp}/webui-vue-proxy.pid"; do
   if [[ -f "${pid_file}" ]]; then
     pid="$(<"${pid_file}")"

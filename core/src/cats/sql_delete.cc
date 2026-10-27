@@ -51,11 +51,11 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 {
   SQL_ROW row;
   int num_rows;
-  char esc[MAX_ESCAPE_NAME_LENGTH];
 
   DbLocker _{this};
-  EscapeString(jcr, esc, pr->Name, strlen(pr->Name));
-  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
+  auto esc = EscapeString(jcr, pr->Name);
+  if (!esc) { return false; }
+  Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc->c_str());
   Dmsg1(10, "selectpool: %s\n", cmd);
 
   pr->PoolId = pr->NumVols = 0;
@@ -143,7 +143,7 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
  * associated with a particular Volume. It will
  * not delete the media record itself.
  * TODO: This function is broken and it doesn't purge
- *       File, BaseFiles, Log, ...
+ *       File, Log, ...
  *       We call it from relabel and delete volume=, both ensure
  *       that the volume is properly purged.
  */
@@ -210,9 +210,6 @@ void BareosDb::PurgeFiles(const char* jobids)
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobids);
-  SqlQuery(query.c_str());
-
-  Mmsg(query, "DELETE FROM BaseFiles WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());
 
   Mmsg(query, "UPDATE Job SET PurgedFiles=1 WHERE JobId IN (%s)", jobids);

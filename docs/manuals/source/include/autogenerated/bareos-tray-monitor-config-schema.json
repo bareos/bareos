@@ -49,7 +49,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {
@@ -64,7 +66,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections."
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -95,11 +97,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -174,7 +176,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {
@@ -189,7 +193,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections."
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -220,11 +224,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -305,7 +309,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {
@@ -320,7 +326,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections."
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -351,11 +357,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",
@@ -452,7 +458,9 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
+          "deprecated": true,
           "equals": true,
+          "versions": "-26.0.0",
           "description": "Use TLS only to authenticate, not for encryption."
         },
         "TlsEnable": {
@@ -467,7 +475,7 @@
           "code": 0,
           "default_value": "true",
           "equals": true,
-          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections. "
+          "description": "If set to \"no\", Bareos can fall back to use unencrypted connections."
         },
         "TlsCipherList": {
           "datatype": "STRING",
@@ -498,11 +506,11 @@
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
-          "datatype": "BOOLEAN",
+          "datatype": "VERIFY_PEER",
           "code": 0,
-          "default_value": "false",
+          "default_value": "IfCertificatePresented",
           "equals": true,
-          "description": "If disabled, all certificates signed by a known CA will be accepted. If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list."
+          "description": "Disabled\n   Peer certificates are neither required nor verified when presented.\nIfCertificatePresented\n    Peer certificates are not required, but are verified when presented.\nRequired\n    Peer certificates are required and verified."
         },
         "TlsCaCertificateFile": {
           "datatype": "DIRECTORY",

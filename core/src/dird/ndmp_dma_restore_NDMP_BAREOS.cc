@@ -418,7 +418,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                me->SDConnectTimeout, true)) {
       goto cleanup;
     }
     sd = jcr->store_bsock;

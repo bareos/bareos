@@ -34,16 +34,13 @@ TEST(DirectorToClientConnection, DoesNotConnectWhenDisabled)
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
 
-
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
       director_config->GetCurrentConfiguration());
 
-  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
+  auto* client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-no-connection"));
-  directordaemon::UaContext* ua = nullptr;
-
-  EXPECT_FALSE(ConnectToFileDaemon(jcr, 0, 0, false, ua));
+  EXPECT_FALSE(ConnectToFileDaemon(jcr, client, 0, 0, false));
 }
 
 TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
@@ -53,16 +50,16 @@ TEST(DirectorToClientConnection, DoesNotDowngradeToClearTextWhenTlsRequired)
       = std::string("configs/dir_fd_connection/dir_fd_no_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
       director_config->GetCurrentConfiguration());
 
-  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
+  auto* client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-no-downgrade"));
 
-  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
-  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
+  directordaemon::SetConnectionHandshakeMode(jcr, client, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr, client);
   EXPECT_TRUE(jcr->dir_impl->connection_handshake_try_
               == directordaemon::ClientConnectionHandshakeMode::kFailed);
   FreeJcr(jcr);
@@ -76,16 +73,16 @@ TEST(DirectorToClientConnection, DowngradesToClearTextWhenTlsNotRequired)
       = std::string("configs/dir_fd_connection/dir_fd_allow_tls_downgrade/");
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
   JobControlRecord* jcr = directordaemon::NewDirectorJcr(
       director_config->GetCurrentConfiguration());
 
-  jcr->dir_impl->res.client = static_cast<directordaemon::ClientResource*>(
+  auto* client = static_cast<directordaemon::ClientResource*>(
       directordaemon::my_config->GetResWithName(directordaemon::R_CLIENT,
                                                 "fd-allow-downgrade"));
 
-  directordaemon::SetConnectionHandshakeMode(jcr, nullptr);
-  directordaemon::UpdateFailedConnectionHandshakeMode(jcr);
+  directordaemon::SetConnectionHandshakeMode(jcr, client, nullptr);
+  directordaemon::UpdateFailedConnectionHandshakeMode(jcr, client);
   EXPECT_TRUE(
       jcr->dir_impl->connection_handshake_try_
       == directordaemon::ClientConnectionHandshakeMode::kCleartextFirst);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,13 +19,8 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "dird/ua.h"
 #include "include/jcr.h"
@@ -40,9 +35,9 @@ void FakeCmd(directordaemon::UaContext* ua, std::string cmd)
 
 class RerunArgumentsParsing : public testing::Test {
  protected:
-  void SetUp() override { ua = directordaemon::new_ua_context(&jcr); }
+  void SetUp() override { ua = new directordaemon::UaContext(&jcr); }
 
-  void TearDown() override { FreeUaContext(ua); }
+  void TearDown() override { delete ua; }
 
   void FakeRerunCommand(std::string arguments)
   {

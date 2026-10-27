@@ -145,7 +145,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
     // See if we should suppress all output.
     if (!suppress_output) {
-      InitMsg(jcr, jcr->dir_impl->res.messages, job_code_callback_director);
+      InitJobMsg(jcr, jcr->dir_impl->res.messages);
     } else {
       jcr->suppress_output = true;
     }
@@ -362,44 +362,35 @@ bool IsConnectingToClientAllowed(ClientResource* res)
   return res->conn_from_dir_to_fd;
 }
 
-bool IsConnectingToClientAllowed(JobControlRecord* jcr)
-{
-  return IsConnectingToClientAllowed(jcr->dir_impl->res.client);
-}
-
 bool IsConnectFromClientAllowed(ClientResource* res)
 {
   return res->conn_from_fd_to_dir;
 }
 
-bool IsClientTlsRequired(JobControlRecord* jcr)
+bool IsClientTlsRequired(ClientResource* res)
 {
-  return jcr->dir_impl->res.client->GetPolicy() == TlsPolicy::kBnetTlsRequired;
+  return res->GetPolicy() == TlsPolicy::kBnetTlsRequired;
 }
 
-bool IsConnectFromClientAllowed(JobControlRecord* jcr)
-{
-  return IsConnectFromClientAllowed(jcr->dir_impl->res.client);
-}
-
-bool UseWaitingClient(JobControlRecord* jcr, int timeout)
+bool UseWaitingClient(JobControlRecord* jcr,
+                      ClientResource* client,
+                      int timeout)
 {
   bool result = false;
   auto& connections = get_client_connections();
 
-  if (!IsConnectFromClientAllowed(jcr)) {
+  if (!IsConnectFromClientAllowed(client)) {
     Dmsg1(120, "Connection from client \"%s\" to director is not allowed.\n",
-          jcr->dir_impl->res.client->resource_name_);
+          client->resource_name_);
   } else {
-    auto connection
-        = connections.take_by_name(jcr->dir_impl->res.client->resource_name_,
-                                   std::chrono::seconds{timeout});
+    auto connection = connections.take_by_name(client->resource_name_,
+                                               std::chrono::seconds{timeout});
     if (connection) {
       jcr->file_bsock = connection->socket.release();
       jcr->dir_impl->FDVersion = connection->protocol_version;
       jcr->authenticated = true;
       Jmsg(jcr, M_INFO, 0, T_("Using Client Initiated Connection (%s).\n"),
-           jcr->dir_impl->res.client->resource_name_);
+           client->resource_name_);
       result = true;
     }
   }
@@ -759,10 +750,8 @@ static void JobMonitorWatchdog(watchdog_t* self)
     if (cancel) {
       Dmsg3(800, "Cancelling JobControlRecord %p jobid %" PRIu32 " (%s)\n", jcr,
             jcr->JobId, jcr->Job);
-      UaContext* ua = new_ua_context(jcr);
-      ua->jcr = control_jcr;
-      CancelJob(ua, jcr);
-      FreeUaContext(ua);
+      UaContext ua{control_jcr};
+      CancelJob(&ua, jcr);
       Dmsg2(800, "Have cancelled JobControlRecord %p Job=%" PRIu32 "\n", jcr,
             jcr->JobId);
     }
@@ -1001,14 +990,13 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
 
       if (cancel_dup || job->CancelRunningDuplicates) {
         // Zap the duplicated job djcr
-        UaContext* ua = new_ua_context(jcr);
+        UaContext ua{jcr};
         Jmsg(jcr, M_INFO, 0, T_("Cancelling duplicate JobId=%" PRIu32 ".\n"),
              djcr->JobId);
-        CancelJob(ua, djcr);
+        CancelJob(&ua, djcr);
         Bmicrosleep(0, 500000);
         djcr->setJobStatusWithPriorityCheck(JS_Canceled);
-        CancelJob(ua, djcr);
-        FreeUaContext(ua);
+        CancelJob(&ua, djcr);
         Dmsg2(800, "Cancel dup %p JobId=%" PRIu32 "\n", djcr, djcr->JobId);
       } else {
         // Zap current job
@@ -1455,7 +1443,6 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
-  jcr->dir_impl->jr.HasBase = jcr->HasBase;
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),
@@ -1790,23 +1777,22 @@ void CreateClones(JobControlRecord* jcr)
     JobResource* job = jcr->dir_impl->res.job;
     POOLMEM* cmd = GetPoolMemory(PM_FNAME);
 
-    UaContext* ua = new_ua_context(jcr);
-    ua->batch = true;
+    UaContext ua{jcr};
+    ua.batch = true;
     for (auto* runcmd : job->run_cmds) {
       cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
-      Mmsg(ua->cmd, "run %s cloned=yes", cmd);
-      Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);
-      ParseUaArgs(ua); /* parse command */
+      Mmsg(ua.cmd, "run %s cloned=yes", cmd);
+      Dmsg1(900, "=============== Clone cmd=%s\n", ua.cmd);
+      ParseUaArgs(&ua); /* parse command */
 
-      jobid = DoRunCmd(ua, ua->cmd);
+      jobid = DoRunCmd(&ua, ua.cmd);
       if (!jobid) {
         Jmsg(jcr, M_ERROR, 0, T_("Could not start clone job: \"%s\".\n"),
-             ua->cmd);
+             ua.cmd);
       } else {
         Jmsg(jcr, M_INFO, 0, T_("Clone JobId %" PRIu32 " started.\n"), jobid);
       }
     }
-    FreeUaContext(ua);
     FreePoolMemory(cmd);
   }
 }
@@ -1820,30 +1806,29 @@ void CreateClones(JobControlRecord* jcr)
 int CreateRestoreBootstrapFile(JobControlRecord* jcr, const JobDbRecord& job)
 {
   RestoreContext rx;
-  UaContext* ua;
   int files;
 
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = (char*)"";
   rx.bsr->JobId = job.JobId;
-  ua = new_ua_context(jcr);
-  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
-    files = -1;
-    goto bail_out;
+  {
+    UaContext ua{jcr};
+    if (!AddVolumeInformationToBsr(&ua, rx.bsr.get())) {
+      files = -1;
+      goto bail_out;
+    }
+    for (uint32_t fi = 1; fi <= job.JobFiles; fi++) { rx.bsr->fi->Add(fi); }
+    jcr->dir_impl->ExpectedFiles = WriteBsrFile(&ua, rx);
+    if (jcr->dir_impl->ExpectedFiles == 0) {
+      files = 0;
+      goto bail_out;
+    }
+    rx.bsr.reset(nullptr);
+    jcr->dir_impl->needs_sd = true;
+    return jcr->dir_impl->ExpectedFiles;
   }
-  for (uint32_t fi = 1; fi <= job.JobFiles; fi++) { rx.bsr->fi->Add(fi); }
-  jcr->dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  if (jcr->dir_impl->ExpectedFiles == 0) {
-    files = 0;
-    goto bail_out;
-  }
-  FreeUaContext(ua);
-  rx.bsr.reset(nullptr);
-  jcr->dir_impl->needs_sd = true;
-  return jcr->dir_impl->ExpectedFiles;
 
 bail_out:
-  FreeUaContext(ua);
   rx.bsr.reset(nullptr);
   return files;
 }
@@ -1851,17 +1836,17 @@ bail_out:
 /* TODO: redirect command output to job log */
 bool RunConsoleCommand(JobControlRecord*, const char* cmd)
 {
-  UaContext* ua;
   bool ok;
   JobControlRecord* ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
-  ua = new_ua_context(ljcr);
-  /* run from runscript and check if commands are authorized */
-  ua->runscript = true;
-  Mmsg(ua->cmd, "%s", cmd);
-  Dmsg1(100, "Console command: %s\n", ua->cmd);
-  ParseUaArgs(ua);
-  ok = Do_a_command(ua);
-  FreeUaContext(ua);
+  {
+    UaContext ua{ljcr};
+    /* run from runscript and check if commands are authorized */
+    ua.runscript = true;
+    Mmsg(ua.cmd, "%s", cmd);
+    Dmsg1(100, "Console command: %s\n", ua.cmd);
+    ParseUaArgs(&ua);
+    ok = Do_a_command(&ua);
+  }
   FreeJcr(ljcr);
   return ok;
 }

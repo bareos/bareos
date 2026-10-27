@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <atomic>
+#include "dird/dird_globals.h"
 
 namespace directordaemon {
 
@@ -138,8 +139,6 @@ bool CheckResources()
     return false;
   }
 
-  CloseMsg(nullptr);              /* close temp message handler */
-  InitMsg(nullptr, me->messages); /* open daemon message handler */
   if (me->secure_erase_cmdline) {
     SetSecureEraseCmdline(me->secure_erase_cmdline);
   }
@@ -208,20 +207,32 @@ bool DoReloadConfig()
   my_config->ClearWarnings();
   bool ok = my_config->ParseConfig();
 
+  CatalogUtility util(UPDATE_CATALOG);
+
   // parse config successful
-  if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)
+  if (ok && CheckResources() && CheckAllCatalogs(util)
       && InitializeSqlPooling()) {
     Scheduler::GetMainScheduler().ClearQueue();
     reloaded = true;
+
+    assert(!util.error);
+    for (auto& warning : util.warnings) {
+      my_config->AddWarning(std::move(warning));
+    }
 
     // make sure that jobs that keep the last configuration alive
     // also keep alive this config in case they (accidentally) access it.
     backup_container->SetNext(my_config->GetCurrentConfiguration());
 
     Dmsg0(10, "Director's configuration file reread successfully.\n");
+
+    CloseMsg(nullptr); /* close old handler */
+    InitDaemonMsg(me->messages);
   } else {  // parse config failed
+    if (util.error) { Jmsg(nullptr, M_ERROR, 0, "%s\n", util.error->c_str()); }
     Jmsg(nullptr, M_ERROR, 0, T_("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
+
     Jmsg(nullptr, M_ERROR, 0, T_("Resetting to previous configuration.\n"));
     my_config->RestoreConfiguration(std::move(backup_container));
     // me is changed above by CheckResources()

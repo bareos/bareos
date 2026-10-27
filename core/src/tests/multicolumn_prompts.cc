@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "dird/ua_select.h"
 #include "include/jcr.h"
@@ -33,9 +28,9 @@ using namespace directordaemon;
 
 class PromptsFormatting : public ::testing::Test {
  protected:
-  void SetUp() override { ua = new_ua_context(&jcr); }
+  void SetUp() override { ua = new UaContext(&jcr); }
 
-  void TearDown() override { FreeUaContext(ua); }
+  void TearDown() override { delete ua; }
 
   void PopulateUaWithPrompts(UaContext* t_ua, const char** list)
   {

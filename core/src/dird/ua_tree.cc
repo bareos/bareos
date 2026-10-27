@@ -123,17 +123,16 @@ static struct cmdstruct commands[] = {
 bool UserSelectFilesFromTree(TreeContext* tree)
 {
   POOLMEM* cwd;
-  UaContext* ua;
   BareosSocket* user;
   bool status;
 
   // Get a new context so we don't destroy restore command args
-  ua = new_ua_context(tree->ua->jcr);
-  ua->UA_sock = tree->ua->UA_sock; /* patch in UA socket */
-  ua->api = tree->ua->api;         /* keep API flag too */
-  user = ua->UA_sock;
+  UaContext ua{tree->ua->jcr};
+  ua.UA_sock = tree->ua->UA_sock; /* patch in UA socket */
+  ua.api = tree->ua->api;         /* keep API flag too */
+  user = ua.UA_sock;
 
-  ua->SendMsg(
+  ua.SendMsg(
       T_("\nYou are now entering file selection mode where you add (mark) and\n"
          "remove (unmark) files to be restored. No files are initially added, "
          "unless\n"
@@ -145,62 +144,60 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   tree->node = tree->root;
   cwd = tree_getpath(tree->node);
   if (cwd) {
-    ua->SendMsg(T_("cwd is: %s\n"), cwd);
+    ua.SendMsg(T_("cwd is: %s\n"), cwd);
     FreePoolMemory(cwd);
   }
 
   while (1) {
     int found, len, i;
-    if (!GetCmd(ua, "$ ", true)) { break; }
+    if (!GetCmd(&ua, "$ ", true)) { break; }
 
-    if (ua->api) { user->signal(BNET_CMD_BEGIN); }
+    if (ua.api) { user->signal(BNET_CMD_BEGIN); }
 
-    ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv,
-                  MAX_CMD_ARGS);
-    if (ua->argc == 0) {
-      ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                     ua->cmd);
-      if (ua->api) { user->signal(BNET_CMD_FAILED); }
+    ParseArgsOnly(ua.cmd, ua.args, &ua.argc, ua.argk, ua.argv, MAX_CMD_ARGS);
+    if (ua.argc == 0) {
+      ua.WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+                    ua.cmd);
+      if (ua.api) { user->signal(BNET_CMD_FAILED); }
       continue;
     }
 
     found = 0;
     status = false;
-    len = strlen(ua->argk[0]);
+    len = strlen(ua.argk[0]);
     for (i = 0; i < comsize; i++) { /* search for command */
-      if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+      if (bstrncasecmp(ua.argk[0], commands[i].key, len)) {
         // If we need to audit this event do it now.
-        if (ua->AuditEventWanted(commands[i].audit_event)) {
-          ua->LogAuditEventCmdline();
+        if (ua.AuditEventWanted(commands[i].audit_event)) {
+          ua.LogAuditEventCmdline();
         }
-        status = (*commands[i].func)(ua, tree); /* go execute command */
+        status = (*commands[i].func)(&ua, tree); /* go execute command */
         found = 1;
         break;
       }
     }
 
     if (!found) {
-      if (*ua->argk[0] == '.') {
+      if (*ua.argk[0] == '.') {
         /* Some unknown dot command -- probably .messages, ignore it */
         continue;
       }
-      ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
-                     ua->cmd);
-      if (ua->api) { user->signal(BNET_CMD_FAILED); }
+      ua.WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
+                    ua.cmd);
+      if (ua.api) { user->signal(BNET_CMD_FAILED); }
       continue;
     }
 
-    if (ua->api) { user->signal(BNET_CMD_OK); }
+    if (ua.api) { user->signal(BNET_CMD_OK); }
 
     if (!status) { break; }
   }
 
   user->signal(BNET_END_RTREE);
 
-  ua->UA_sock = NULL; /* don't release restore socket */
-  status = !ua->quit;
-  ua->quit = false;
-  FreeUaContext(ua); /* get rid of temp UA context */
+  ua.UA_sock = NULL; /* don't release restore socket */
+  status = !ua.quit;
+  ua.quit = false;
 
   return status;
 }

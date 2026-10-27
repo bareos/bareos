@@ -27,5 +27,4 @@ Director {                            # define myself
   TLS Certificate = "@tls_dir_certificate@"
   TLS Key = @tls_dir_key@
   TLS CA Certificate File = "@tls_ca_certificate@"
-
 }

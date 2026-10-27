@@ -218,7 +218,6 @@ class JobControlRecord {
   bool opt_plugin{};        /**< Set when processing an option Plugin = */
   bool keep_path_list{};    /**< Keep newly created path in a hash */
   bool accurate{};          /**< True if job is accurate */
-  bool HasBase{};           /**< True if job use base jobs */
   bool rerunning{};         /**< Rerunning an incomplete job */
   bool job_started{};       /**< Set when the job is actually started */
   bool suppress_output{};   /**< Set if this JobControlRecord should not output any Jmsgs */
@@ -234,8 +233,6 @@ class JobControlRecord {
   POOLMEM* attr{};      /**< Attribute string from SD */
   BareosDb* db{};       /**< database pointer */
   BareosDb* db_batch{}; /**< database pointer for batch and accurate */
-  uint64_t nb_base_files{};       /**< Number of base files */
-  uint64_t nb_base_files_used{};  /**< Number of useful files in base */
 
   AttributesDbRecord* ar{}; /**< DB attribute record */
   guid_list* id_list{};     /**< User/group id to name list */
@@ -276,7 +273,10 @@ BAREOS_IMPORT JobControlRecord* get_jcr_by_partial_name(char const* Job);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(char const* Job);
 BAREOS_IMPORT JobControlRecord* get_jcr_by_full_name(std::string_view job_name);
 BAREOS_IMPORT const char* JcrGetAuthenticateKey(const char* unified_job_name);
-TlsPolicy JcrGetTlsPolicy(const char* unified_job_name);
+
+BAREOS_IMPORT JobControlRecord* get_jcr_for_authentication(
+    std::string_view job_name);
+
 BAREOS_IMPORT std::size_t NumJobsRun();
 
 BAREOS_IMPORT void b_free_jcr(const char* file,

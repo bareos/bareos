@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,14 +19,8 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#else
-#  include "gtest/gtest.h"
-#  include "gmock/gmock.h"
-#endif
+#include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "include/fcntl_def.h"
 #include "lib/berrno.h"

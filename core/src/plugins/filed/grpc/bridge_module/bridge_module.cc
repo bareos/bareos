@@ -1610,11 +1610,6 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
 int main(int argc, char* argv[], char* envp[])
 {
-  // every (C) program is started in the C locale,
-  // so the following call ensures that we respect the users locale setting.
-  // This is necessary to ensure UTF-8 support as well.
-  setlocale(LC_ALL, "");
-
   (void)envp;
   (void)argv;
   if (argc != 1) {

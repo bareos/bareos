@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,13 +26,8 @@
  *
  * Philipp Storz, November 2017
  */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "lib/htable.h"
 
@@ -82,9 +77,7 @@ TEST(htable, htable)
     if (i == 10) { save_jcr = jcr; }
   }
   EXPECT_TRUE(item = (HTABLEJCR*)jcrtbl->lookup(save_jcr->key));
-  foreach_htable (jcr, jcrtbl) {
-    count++;
-  }
+  foreach_htable (jcr, jcrtbl) { count++; }
 
   delete jcrtbl;
   EXPECT_EQ(count, NITEMS);
@@ -93,3 +86,36 @@ TEST(htable, htable)
 struct RbListJobControlRecord {
   char* buf;
 };
+
+TEST(htable_impl, Growth)
+{
+  struct value {
+    /* we chose a structure that does not have link as its first member
+     * so that the offset is not 0.  This is done so we can test that
+     * growth does _not_ accidentially reset the offset to 0. */
+    char x{};
+    hlink link{};
+  };
+
+
+  htableImpl impl{offsetof(value, link)};
+
+  std::vector<value> pre_growth_links;
+  pre_growth_links.resize(impl.capacity());
+
+  for (uint64_t i = 0; i < pre_growth_links.size(); ++i) {
+    ASSERT_TRUE(impl.insert(i, &pre_growth_links[i]));
+    ASSERT_EQ(impl.capacity(), pre_growth_links.size())
+        << "Growth at insert " << i + 1 << "/" << pre_growth_links.size();
+  }
+
+  value threshold;
+  ASSERT_TRUE(impl.insert(pre_growth_links.size(), &threshold));
+
+
+  EXPECT_GT(impl.capacity(), pre_growth_links.size());
+
+  // we want to make sure that inserting still works after the growth
+  value next;
+  EXPECT_TRUE(impl.insert(pre_growth_links.size() + 1, &next));
+}

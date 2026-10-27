@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,13 +19,8 @@
    02110-1301, USA.
 */
 #include <cstring>
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include <memory>
 #include <stdlib.h>
@@ -84,7 +79,6 @@ TEST(bsock, bareossockettcp_standard_constructor_test)
   EXPECT_EQ(p->bwlimit_, 0);
   EXPECT_EQ(p->nb_bytes_, 0);
   EXPECT_EQ(p->last_tick_, 0);
-  EXPECT_EQ(p->tls_established_, false);
 }
 
 TEST(bsock, bareossockettcp_copy_constructor_test)
@@ -128,7 +122,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
   p->bwlimit_ = rand();
   p->nb_bytes_ = rand();
   p->last_tick_ = rand();
-  p->tls_established_ = true;
 
   /* copy p --> q */
   std::shared_ptr<BareosSocketTCP> q = std::make_shared<BareosSocketTCP>(*p);
@@ -170,7 +163,6 @@ TEST(bsock, bareossockettcp_copy_constructor_test)
   EXPECT_EQ(p->bwlimit_, q->bwlimit_);
   EXPECT_EQ(p->nb_bytes_, q->nb_bytes_);
   EXPECT_EQ(p->last_tick_, q->last_tick_);
-  EXPECT_EQ(p->tls_established_, q->tls_established_);
 
   /* prevent invalid test-adresses from being freed */
   p->src_addr = nullptr;

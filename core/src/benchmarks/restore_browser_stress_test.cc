@@ -18,13 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "benchmark/benchmark.h"
-#else
-#  include "include/bareos.h"
-#  include "benchmark/benchmark.h"
-#endif
+#include "include/bareos.h"
+#include "benchmark/benchmark.h"
 
 #include "dird/ua_tree.cc"
 #include "dird/ua_output.h"

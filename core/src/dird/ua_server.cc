@@ -30,7 +30,6 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/authenticate.h"
-#include "dird/authenticate_console.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
 #include "dird/pthread_detach_if_not_detached.h"
@@ -82,25 +81,18 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
 }
 
 // Handle Director User Agent commands
-void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
+void* HandleUserAgentClientRequest(UaContext* ua)
 {
   DetachIfNotDetached(pthread_self());
-
-  JobControlRecord* jcr = new_control_jcr("-Console-", JT_CONSOLE);
-
-  UaContext* ua = new_ua_context(jcr);
-  ua->UA_sock = user_agent_socket;
   SetJcrInThreadSpecificData(nullptr);
 
-  ConsoleConnectionLease lease;  // obtain lease to count connections
-  bool success = AuthenticateConsole(ua);
-
-  if (!success) { ua->quit = true; }
+  auto* jcr = ua->jcr;
+  auto* socket = ua->UA_sock;
 
   while (!ua->quit) {
-    if (ua->api) { user_agent_socket->signal(BNET_MAIN_PROMPT); }
+    if (ua->api) { socket->signal(BNET_MAIN_PROMPT); }
 
-    int status = user_agent_socket->recv();
+    int status = socket->recv();
     if (status >= 0) {
       PmStrcpy(ua->cmd, ua->UA_sock->msg);
       ParseUaArgs(ua);
@@ -117,29 +109,28 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
           } else if (!ua->gui && !ua->user_notified_msg_pending
                      && console_msg_pending) {
             if (ua->api) {
-              user_agent_socket->signal(BNET_MSGS_PENDING);
+              socket->signal(BNET_MSGS_PENDING);
             } else {
               bsendmsg(ua, T_("You have messages.\n"));
             }
             ua->user_notified_msg_pending = true;
           }
         }
-        if (!ua->api) {
-          user_agent_socket->signal(BNET_EOD); /* send end of command */
-        }
+        if (!ua->api) { socket->signal(BNET_EOD); /* send end of command */ }
       }
-    } else if (IsBnetStop(user_agent_socket)) {
+    } else if (IsBnetStop(socket)) {
       ua->quit = true;
     } else { /* signal */
-      user_agent_socket->signal(BNET_POLL);
+      socket->signal(BNET_POLL);
     }
   } /* while (!ua->quit) */
 
   CloseDb(ua);
-  FreeUaContext(ua);
+  delete ua;
   FreeJcr(jcr);
-  delete user_agent_socket;
+  delete socket;
 
   return NULL;
 }
+
 } /* namespace directordaemon */

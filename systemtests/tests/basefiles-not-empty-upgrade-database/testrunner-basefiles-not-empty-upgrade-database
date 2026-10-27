@@ -1,0 +1,50 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+# Verify that upgrading a schema-2250 catalog refuses to drop a non-empty
+# basefiles table.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+update_log="${current_test_directory}/update_bareos_tables.log"
+if "${BAREOS_SCRIPTS_DIR}/update_bareos_tables" -f >"${update_log}" 2>&1; then
+  echo "update_bareos_tables unexpectedly succeeded"
+  cat "${update_log}"
+  exit 1
+fi
+
+if ! grep -Fq \
+  "Refusing to drop non-empty basefiles table during 2250 to 2260 migration" \
+  "${update_log}"; then
+  echo "update_bareos_tables failed, but not for the expected reason"
+  cat "${update_log}"
+  exit 1
+fi
+
+if ! grep -Fq \
+  'Updating the database scheme' \
+  "${update_log}"; then
+  echo "migration error did not refer to the database upgrade documentation"
+  cat "${update_log}"
+  exit 1
+fi

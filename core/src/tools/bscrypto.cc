@@ -139,10 +139,7 @@ static void unwrap_key(char* keydata,
 
 int main(int argc, char* const* argv)
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   CLI::App bscrypto_app;
   InitCLIApp(bscrypto_app, "The Bareos encryption tool.");
@@ -292,7 +289,7 @@ int main(int argc, char* const* argv)
 
   CLI11_PARSE(bscrypto_app, argc, argv);
 
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
 
   if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
       && !reset_cache && device_name.empty()) {

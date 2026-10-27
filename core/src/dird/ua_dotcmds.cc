@@ -266,7 +266,7 @@ static inline bool BvfsParseArgVersion(UaContext* ua,
 }
 
 static bool BvfsParseArg(UaContext* ua,
-                         DBId_t* pathid,
+                         PathId_t* pathid,
                          char** path,
                          char** jobid,
                          int* limit,
@@ -281,7 +281,7 @@ static bool BvfsParseArg(UaContext* ua,
   for (int i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], NT_("pathid"))) {
       if (ua->argv[i] && Is_a_number(ua->argv[i])) {
-        *pathid = str_to_int64(ua->argv[i]);
+        *pathid = str_to_uint64(ua->argv[i]);
       }
     }
 
@@ -408,7 +408,7 @@ bool DotBvfsCleanupCmd(UaContext* ua, const char*)
 // .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
 bool DotBvfsRestoreCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   char* empty = (char*)"";
   int limit = 2000, offset = 0;
   int i = 0;
@@ -449,9 +449,7 @@ bool DotBvfsRestoreCmd(UaContext* ua, const char*)
  */
 bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
 {
-  int i;
-  DBId_t pathid = 0;
-  char* pattern = NULL;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
@@ -466,15 +464,12 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
     return false;
   }
 
-  if ((i = FindArgWithValue(ua, "pattern")) >= 0) { pattern = ua->argv[i]; }
-
   if (!ua->guid) { ua->guid = new_guid_list(); }
 
   Bvfs fs(ua->jcr, ua->db);
   fs.SetJobids(filtered_jobids.c_str());
   fs.SetHandler(BvfsResultHandler, ua);
   fs.SetLimit(limit);
-  if (pattern) { fs.SetPattern(pattern); }
   if (pathid) {
     fs.ChDir(pathid);
   } else {
@@ -497,7 +492,7 @@ bool DotBvfsLsfilesCmd(UaContext* ua, const char*)
  */
 bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL;
   PoolMem filtered_jobids(PM_FNAME);
@@ -546,7 +541,7 @@ bool DotBvfsLsdirsCmd(UaContext* ua, const char*)
  */
 bool DotBvfsVersionsCmd(UaContext* ua, const char*)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
   int limit = 2000, offset = 0;
   char *path = NULL, *jobid = NULL, *client = NULL, *fname = NULL;
   bool copies = false, versions = false;
@@ -765,8 +760,8 @@ bool DotJobstatusCmd(UaContext* ua, const char*)
                                                                 where.c_str());
 
   ua->send->ArrayStart("jobstatus");
-  retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,
-                                false);
+  retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send.get(),
+                                HORZ_LIST, false);
   ua->send->ArrayEnd("jobstatus");
 
   return retval;
@@ -1065,8 +1060,8 @@ bool DotSqlCmd(UaContext* ua, const char*)
       break;
     default:
       // General format
-      retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST,
-                                    false);
+      retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send.get(),
+                                    HORZ_LIST, false);
       break;
   }
 

@@ -97,6 +97,7 @@ Provides:   %{name}-fd
 Summary:    Common files, required by multiple Bareos packages
 Group:      Productivity/Archiving/Backup
 Provides:   %{name}-libs
+Requires:   coreutils
 Requires:   libstdc++
 Requires:   libgcc
 Requires:   zlib

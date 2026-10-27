@@ -18,16 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "lib/s_password.h"
+#include "lib/global_resource.h"
 #include "tests/bareos_test_sockets.h"
 #include "tests/init_openssl.h"
 #include <filesystem>
@@ -52,6 +49,8 @@
 #include "lib/bnet.h"
 #include "lib/bstringlist.h"
 #include "lib/version.h"
+#include "lib/bsock.h"
+#include "lib/tls_conf.h"
 
 #include "include/jcr.h"
 
@@ -78,18 +77,21 @@ static std::unique_ptr<console::DirectorResource> cons_dir_config;
 static std::unique_ptr<console::ConsoleResource> cons_cons_config;
 
 namespace {
-using EvpPkeyPtr = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
-using EvpPkeyCtxPtr
-    = std::unique_ptr<EVP_PKEY_CTX, decltype(&EVP_PKEY_CTX_free)>;
-using X509Ptr = std::unique_ptr<X509, decltype(&X509_free)>;
-using X509CrlPtr = std::unique_ptr<X509_CRL, decltype(&X509_CRL_free)>;
-using X509RevokedPtr
-    = std::unique_ptr<X509_REVOKED, decltype(&X509_REVOKED_free)>;
-using Asn1IntegerPtr
-    = std::unique_ptr<ASN1_INTEGER, decltype(&ASN1_INTEGER_free)>;
-using Asn1TimePtr = std::unique_ptr<ASN1_TIME, decltype(&ASN1_TIME_free)>;
-using X509ExtensionPtr
-    = std::unique_ptr<X509_EXTENSION, decltype(&X509_EXTENSION_free)>;
+
+#define UNIQUE_PTR(Type, Free) \
+  std::unique_ptr<Type, decltype([](Type* val) { Free(val); })>
+
+using EvpPkeyPtr = UNIQUE_PTR(EVP_PKEY, EVP_PKEY_free);
+using X509Ptr = UNIQUE_PTR(X509, X509_free);
+using EvpPkeyCtxPtr = UNIQUE_PTR(EVP_PKEY_CTX, EVP_PKEY_CTX_free);
+using X509NamePtr = UNIQUE_PTR(X509_NAME, X509_NAME_free);
+using X509CrlPtr = UNIQUE_PTR(X509_CRL, X509_CRL_free);
+using X509RevokedPtr = UNIQUE_PTR(X509_REVOKED, X509_REVOKED_free);
+using Asn1IntegerPtr = UNIQUE_PTR(ASN1_INTEGER, ASN1_INTEGER_free);
+using Asn1TimePtr = UNIQUE_PTR(ASN1_TIME, ASN1_TIME_free);
+using X509ExtensionPtr = UNIQUE_PTR(X509_EXTENSION, X509_EXTENSION_free);
+
+#undef UNIQUE_PTR
 
 struct GeneratedTlsArtifacts {
   std::filesystem::path directory;
@@ -191,26 +193,25 @@ bool WriteCrlPem(const std::filesystem::path& path,
 
 EvpPkeyPtr GenerateRsaKey(std::string* error)
 {
-  EvpPkeyCtxPtr ctx(EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr),
-                    EVP_PKEY_CTX_free);
+  EvpPkeyCtxPtr ctx{EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr)};
   if (!ctx) {
     *error = "Could not create key generation context: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
   if (EVP_PKEY_keygen_init(ctx.get()) <= 0
       || EVP_PKEY_CTX_set_rsa_keygen_bits(ctx.get(), 2048) <= 0) {
     *error = "Could not initialize RSA key generation: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
   EVP_PKEY* raw_key = nullptr;
   if (EVP_PKEY_keygen(ctx.get(), &raw_key) <= 0) {
     *error = "Could not generate RSA key: " + GetOpenSslError();
-    return {nullptr, EVP_PKEY_free};
+    return nullptr;
   }
 
-  return EvpPkeyPtr(raw_key, EVP_PKEY_free);
+  return EvpPkeyPtr{raw_key};
 }
 
 bool AddExtension(X509* cert,
@@ -224,9 +225,8 @@ bool AddExtension(X509* cert,
   X509V3_set_ctx(&ctx, issuer_cert ? issuer_cert : cert, cert, nullptr, nullptr,
                  0);
 
-  X509ExtensionPtr extension(
-      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value)),
-      X509_EXTENSION_free);
+  X509ExtensionPtr extension{
+      X509V3_EXT_conf_nid(nullptr, &ctx, nid, const_cast<char*>(value))};
   if (!extension) {
     *error = "Could not create X509 extension: " + GetOpenSslError();
     return false;
@@ -250,10 +250,10 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                             const char* extended_key_usage,
                             std::string* error)
 {
-  X509Ptr cert(X509_new(), X509_free);
+  X509Ptr cert{X509_new()};
   if (!cert) {
     *error = "Could not create X509 certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   if (X509_set_version(cert.get(), 2) != 1
@@ -264,25 +264,27 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
              == nullptr
       || X509_set_pubkey(cert.get(), subject_key) != 1) {
     *error = "Could not initialize X509 certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
-  X509_NAME* subject = X509_get_subject_name(cert.get());
+  X509NamePtr subject{X509_NAME_new()};
   if (!subject
-      || X509_NAME_add_entry_by_txt(
-             subject, "CN", MBSTRING_ASC,
-             reinterpret_cast<const unsigned char*>(common_name.data()), -1, -1,
-             0)
-             != 1) {
+      || (!common_name.empty()
+          && X509_NAME_add_entry_by_txt(
+                 subject.get(), "CN", MBSTRING_UTF8,
+                 reinterpret_cast<const unsigned char*>(common_name.data()),
+                 static_cast<int>(common_name.size()), -1, 0)
+                 != 1)
+      || X509_set_subject_name(cert.get(), subject.get()) != 1) {
     *error = "Could not set certificate subject: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
-  X509_NAME* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
-                                       : X509_get_subject_name(cert.get());
+  auto* issuer_name = issuer_cert ? X509_get_subject_name(issuer_cert)
+                                  : X509_get_subject_name(cert.get());
   if (!issuer_name || X509_set_issuer_name(cert.get(), issuer_name) != 1) {
     *error = "Could not set certificate issuer: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   if (is_ca) {
@@ -290,7 +292,7 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                       "critical,CA:TRUE", error)
         || !AddExtension(cert.get(), issuer_cert, NID_key_usage,
                          "critical,keyCertSign,cRLSign", error)) {
-      return {nullptr, X509_free};
+      return nullptr;
     }
   } else {
     if (!AddExtension(cert.get(), issuer_cert, NID_basic_constraints,
@@ -299,14 +301,14 @@ X509Ptr GenerateCertificate(EVP_PKEY* subject_key,
                          "critical,digitalSignature,keyEncipherment", error)
         || !AddExtension(cert.get(), issuer_cert, NID_ext_key_usage,
                          extended_key_usage, error)) {
-      return {nullptr, X509_free};
+      return nullptr;
     }
   }
 
   if (X509_sign(cert.get(), issuer_key ? issuer_key : subject_key, EVP_sha256())
       <= 0) {
     *error = "Could not sign certificate: " + GetOpenSslError();
-    return {nullptr, X509_free};
+    return nullptr;
   }
 
   return cert;
@@ -317,18 +319,18 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
                        long revoked_serial,
                        std::string* error)
 {
-  X509CrlPtr crl(X509_CRL_new(), X509_CRL_free);
+  X509CrlPtr crl{X509_CRL_new()};
   if (!crl) {
     *error = "Could not create X509 CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
-  Asn1TimePtr last_update(ASN1_TIME_new(), ASN1_TIME_free);
-  Asn1TimePtr next_update(ASN1_TIME_new(), ASN1_TIME_free);
-  Asn1TimePtr revocation_date(ASN1_TIME_new(), ASN1_TIME_free);
+  Asn1TimePtr last_update{ASN1_TIME_new()};
+  Asn1TimePtr next_update{ASN1_TIME_new()};
+  Asn1TimePtr revocation_date{ASN1_TIME_new()};
   if (!last_update || !next_update || !revocation_date) {
     *error = "Could not allocate ASN1_TIME objects";
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   if (X509_CRL_set_version(crl.get(), 1) != 1
@@ -340,14 +342,14 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
       || X509_CRL_set1_lastUpdate(crl.get(), last_update.get()) != 1
       || X509_CRL_set1_nextUpdate(crl.get(), next_update.get()) != 1) {
     *error = "Could not initialize CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
-  X509RevokedPtr revoked(X509_REVOKED_new(), X509_REVOKED_free);
-  Asn1IntegerPtr serial_number(ASN1_INTEGER_new(), ASN1_INTEGER_free);
+  X509RevokedPtr revoked{X509_REVOKED_new()};
+  Asn1IntegerPtr serial_number{ASN1_INTEGER_new()};
   if (!revoked || !serial_number) {
     *error = "Could not allocate revoked certificate entry";
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   if (ASN1_INTEGER_set(serial_number.get(), revoked_serial) != 1
@@ -356,21 +358,24 @@ X509CrlPtr GenerateCrl(X509* ca_cert,
              != 1
       || X509_CRL_add0_revoked(crl.get(), revoked.get()) != 1) {
     *error = "Could not add revoked certificate to CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
+
+  // X509_CRL_add0_revoked() takes ownership of revoked on succes
   revoked.release();
 
   if (X509_CRL_sort(crl.get()) != 1
       || X509_CRL_sign(crl.get(), ca_key, EVP_sha256()) <= 0) {
     *error = "Could not sign CRL: " + GetOpenSslError();
-    return {nullptr, X509_CRL_free};
+    return nullptr;
   }
 
   return crl;
 }
 
-bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
-                                           std::string* error)
+bool GenerateTlsArtifacts(GeneratedTlsArtifacts* artifacts,
+                          std::string_view client_common_name,
+                          std::string* error)
 {
   char temp_directory[] = "/tmp/bsock-crl-XXXXXX";
   char* created_directory = mkdtemp(temp_directory);
@@ -406,9 +411,9 @@ bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
   auto client_key = GenerateRsaKey(error);
   if (!client_key) { return false; }
 
-  auto client_cert = GenerateCertificate(client_key.get(), "bareos-client", 3,
-                                         30, ca_key.get(), ca_cert.get(), false,
-                                         "clientAuth", error);
+  auto client_cert = GenerateCertificate(client_key.get(), client_common_name,
+                                         3, 30, ca_key.get(), ca_cert.get(),
+                                         false, "clientAuth", error);
   if (!client_cert) { return false; }
 
   auto crl = GenerateCrl(ca_cert.get(), ca_key.get(), 3, error);
@@ -422,6 +427,28 @@ bool GenerateTlsArtifactsForRevocationTest(GeneratedTlsArtifacts* artifacts,
                                 error)
          && WriteCertificatePem(artifacts->ca_cert, ca_cert.get(), error)
          && WriteCrlPem(artifacts->crl, crl.get(), error);
+}
+
+void ConfigureTlsForPeerVerification(
+    const GeneratedTlsArtifacts& artifacts,
+    const std::filesystem::path& server_crl,
+    const std::vector<std::string>& allowed_client_common_names)
+{
+  cons_dir_config->tls_enable_ = true;
+  cons_dir_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Disabled;
+  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
+  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
+  cons_dir_config->tls_cert_.crlfile_.clear();
+
+  dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_cert_.verify_peer_ = VerifyPeerSetting::Required;
+  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
+  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
+  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
+  dir_cons_config->tls_cert_.crlfile_ = server_crl.string();
+  dir_cons_config->tls_cert_.allowed_certificate_common_names_
+      = allowed_client_common_names;
 }
 }  // namespace
 
@@ -451,10 +478,7 @@ void InitForTest()
   directordaemon::me = dir_dir_config.get();
   console::me = cons_cons_config.get();
 
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   debug_level = 0;
   SetTrace(0);
@@ -472,6 +496,39 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
+struct dummy_auth : ::TlsConfigProvider {
+  dummy_auth(std::string console_name, std::string console_password)
+      : name{std::move(console_name)}, password{std::move(console_password)}
+  {
+  }
+
+  const TlsResource* get(global_resource::Type type,
+                         std::string_view res_name) override
+  {
+    Dmsg1(10, "Cons->Dir: received %s:%s",
+          std::string{global_resource::GetNameFromType(type)}.c_str(),
+          std::string{res_name}.c_str());
+
+    // some tests use clients instead, so we should not check this
+    // if (type != global_resource::Type::Console) { return nullptr; }
+
+    // for some reason, the tests test some nonsensical stuff.
+    // E.g. they test that you _can_ login, even if you provide a different name
+    // As such we can not check this:
+    // if (res_name != name) { return nullptr; }
+
+    res = *dir_cons_config;
+    res.password_.value = password.data();
+
+    return &res;
+  }
+
+  std::string name;
+  std::string password;
+
+  TlsResource res{};
+};
+
 static void start_bareos_server(std::promise<bool>* promise,
                                 std::string console_name,
                                 std::string console_password,
@@ -485,44 +542,39 @@ static void start_bareos_server(std::promise<bool>* promise,
 
   std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
 
-  char* name = (char*)console_name.c_str();
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   bool success = false;
-  if (bs->recv() <= 0) {
-    Dmsg1(10, T_("Connection request from %s failed.\n"), bs->who());
-  } else if (bs->message_length < MIN_MSG_LEN
-             || bs->message_length > MAX_MSG_LEN) {
-    Dmsg2(10, T_("Invalid connection from %s. Len=%d\n"), bs->who(),
-          bs->message_length);
+
+  dummy_auth auth{console_name, console_password};
+
+  TlsResource console_res = *dir_cons_config;
+  console_res.password_ = {p_encoding_md5, console_password.data()};
+  // tls_enable = false, actually means tls_require = false
+  //                     for new-style connections
+  console_res.tls_enable_ = false;
+
+  if (!BareosAccept(bs.get(), global_resource::Type::Director, &console_res,
+                    &auth)) {
+    Dmsg0(10, "Server: inbound auth failed\n");
   } else {
-    Dmsg1(10, "Cons->Dir: %s", bs->msg);
-    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, password,
-                                           dir_cons_config.get())) {
-      Dmsg0(10, "Server: inbound auth failed\n");
+    bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
+              kBareosVersionStrings.Full, kBareosVersionStrings.Date);
+    Dmsg0(10, "Server: inbound auth successful\n");
+    std::string cipher;
+    if (bs->tls_conn) {
+      cipher = bs->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
+      cipher_server = cipher;
+    }
+    if (dir_cons_config->IsTlsConfigured()) {
+      Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
+                                     : "Tls failed to establish\n");
+      success = bs->TlsEstablished();
     } else {
-      bs->fsend(T_("1000 OK: %s Version: %s (%s)\n"), my_name,
-                kBareosVersionStrings.Full, kBareosVersionStrings.Date);
-      Dmsg0(10, "Server: inbound auth successful\n");
-      std::string cipher;
-      if (bs->tls_conn) {
-        cipher = bs->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Server used cipher: <%s>\n", cipher.c_str());
-        cipher_server = cipher;
+      Dmsg0(10, "Tls disabled by command\n");
+      if (bs->TlsEstablished()) {
+        Dmsg0(10, "bs->tls_established_ should be false but is true\n");
       }
-      if (dir_cons_config->IsTlsConfigured()) {
-        Dmsg0(10, bs->TlsEstablished() ? "Tls enable\n"
-                                       : "Tls failed to establish\n");
-        success = bs->TlsEstablished();
-      } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (bs->TlsEstablished()) {
-          Dmsg0(10, "bs->tls_established_ should be false but is true\n");
-        }
-        success = !bs->TlsEstablished();
-      }
+      success = !bs->TlsEstablished();
     }
   }
   if (success) { clone_a_server_socket(bs.get()); }
@@ -550,27 +602,22 @@ static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
 static int connect_to_server(std::string console_name,
                              std::string console_password,
                              std::string server_address,
-                             int server_port)
+                             int server_port,
+                             bool cleartext_auth = false)
 #else
 static bool connect_to_server(std::string console_name,
                               std::string console_password,
                               std::string server_address,
-                              int server_port)
+                              int server_port,
+                              bool cleartext_auth = false)
 #endif
 {
   utime_t heart_beat = 0;
 
   JobControlRecord jcr;
 
-  char* name = (char*)console_name.c_str();
-
-  s_password password;
-  password.encoding = p_encoding_md5;
-  password.value = (char*)console_password.c_str();
-
   std::shared_ptr<BareosSocketTCP> UA_sock(new BareosSocketTCP);
   UA_sock->sleep_time_after_authentication_error = 0;
-  jcr.dir_bsock = UA_sock.get();
 
   bool success = false;
 
@@ -582,37 +629,58 @@ static bool connect_to_server(std::string console_name,
     Dmsg0(10, "socket connect OK\n");
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
-    if (!UA_sock->ConsoleAuthenticateWithDirector(
-            &jcr, name, password, cons_dir_config.get(), console_name,
-            response_args, response_id)) {
-      Emsg0(M_ERROR, 0, "Authenticate Failed\n");
-    } else {
-      EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
-      Dmsg0(10, "Authenticate Connect to Server successful!\n");
-      std::string cipher;
-      if (UA_sock->tls_conn) {
-        cipher = UA_sock->tls_conn->TlsCipherGetName();
-        Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
-        cipher_client = cipher;
-      }
-      if (cons_dir_config->IsTlsConfigured()) {
-        Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
-                                            : "Tls failed to establish\n");
-        success = UA_sock->TlsEstablished();
+
+    TlsResource custom = *cons_dir_config;
+    custom.password_.value = console_password.data();
+
+    bool auth_success = [&] {
+      if (!cleartext_auth) {
+        return BareosConnect<global_resource::Type::Console,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       } else {
-        Dmsg0(10, "Tls disabled by command\n");
-        if (UA_sock->TlsEstablished()) {
-          Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
-        }
-        success = !UA_sock->TlsEstablished();
+        /* old style tls is only supported for clients,
+         * so we need to connect as a client*/
+
+        return BareosConnect<global_resource::Type::Client,
+                             global_resource::Type::Director>(
+            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       }
+    }();
+
+    if (!auth_success) {
+      Emsg0(M_ERROR, 0, "Authenticate Failed\n");
+      return false;
+    }
+
+    if (!UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
+                                                    response_args)) {
+      Emsg0(M_ERROR, 0, "Did not receive correct response\n");
+      return false;
+    }
+
+    EXPECT_EQ(response_id, kMessageIdOk) << "Received the wrong message id.";
+    Dmsg0(10, "Authenticate Connect to Server successful!\n");
+    std::string cipher;
+    if (UA_sock->tls_conn) {
+      cipher = UA_sock->tls_conn->TlsCipherGetName();
+      Dmsg1(10, "Client used cipher: <%s>\n", cipher.c_str());
+      cipher_client = cipher;
+    }
+    if (cons_dir_config->IsTlsConfigured()) {
+      Dmsg0(10, UA_sock->TlsEstablished() ? "Tls enable\n"
+                                          : "Tls failed to establish\n");
+      success = UA_sock->TlsEstablished();
+    } else {
+      Dmsg0(10, "Tls disabled by command\n");
+      if (UA_sock->TlsEstablished()) {
+        Dmsg0(10, "UA_sock->tls_established_ should be false but is true\n");
+      }
+      success = !UA_sock->TlsEstablished();
     }
   }
   if (success) { clone_a_client_socket(UA_sock); }
-  if (UA_sock) {
-    UA_sock->close();
-    jcr.dir_bsock = nullptr;
-  }
+  if (UA_sock) { UA_sock->close(); }
   return success;
 }
 
@@ -758,6 +826,41 @@ TEST(bsock, auth_works_with_tls_cert)
   EXPECT_TRUE(future.get());
 }
 
+TEST(bsock, auth_works_with_old_style_tls)
+{
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  cons_dir_config->tls_enable_ = true;
+  dir_cons_config->tls_enable_ = true;
+  dir_cons_config->tls_require_ = false;
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  Dmsg0(10, "starting listen thread...\n");
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  Dmsg0(10, "connecting to server\n");
+
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                ls->port, true));
+
+  server_thread.join();
+
+  EXPECT_TRUE(cipher_server == cipher_client);
+  EXPECT_TRUE(future.get());
+}
+
 TEST(bsock, auth_fails_with_revoked_tls_cert)
 {
   std::promise<bool> promise;
@@ -773,26 +876,13 @@ TEST(bsock, auth_fails_with_revoked_tls_cert)
 
   GeneratedTlsArtifacts artifacts;
   std::string error;
-  ASSERT_TRUE(GenerateTlsArtifactsForRevocationTest(&artifacts, &error))
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, "bareos-client", &error))
       << error;
 
   cipher_server.clear();
   cipher_client.clear();
 
-  cons_dir_config->tls_enable_ = true;
-  cons_dir_config->tls_cert_.verify_peer_ = false;
-  cons_dir_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  cons_dir_config->tls_cert_.certfile_ = artifacts.client_cert.string();
-  cons_dir_config->tls_cert_.keyfile_ = artifacts.client_key.string();
-  cons_dir_config->tls_cert_.crlfile_.clear();
-
-  dir_cons_config->tls_enable_ = true;
-  dir_cons_config->tls_cert_.verify_peer_ = true;
-  dir_cons_config->tls_cert_.ca_certfile_ = artifacts.ca_cert.string();
-  dir_cons_config->tls_cert_.certfile_ = artifacts.server_cert.string();
-  dir_cons_config->tls_cert_.keyfile_ = artifacts.server_key.string();
-  dir_cons_config->tls_cert_.crlfile_ = artifacts.crl.string();
-  dir_cons_config->tls_cert_.allowed_certificate_common_names_.clear();
+  ConfigureTlsForPeerVerification(artifacts, artifacts.crl, {});
 
   auto ls = create_listening_socket();
   ASSERT_NE(ls, std::nullopt);
@@ -802,6 +892,112 @@ TEST(bsock, auth_fails_with_revoked_tls_cert)
                             server_cons_password, HOST, std::ref(*ls));
 
   Dmsg0(10, "connecting to server\n");
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                 ls->port));
+
+  server_thread.join();
+  EXPECT_FALSE(future.get());
+}
+
+TEST(bsock, auth_works_with_utf8_tls_common_name)
+{
+  constexpr std::u8string_view client_common_name_utf8{u8"Bäreos Client"};
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+
+  std::string client_common_name{
+      reinterpret_cast<const char*>(client_common_name_utf8.data()),
+      client_common_name_utf8.size()};
+
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, client_common_name, &error))
+      << error;
+
+  ConfigureTlsForPeerVerification(artifacts, {}, {client_common_name});
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  EXPECT_TRUE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                ls->port));
+
+  server_thread.join();
+  EXPECT_TRUE(future.get());
+}
+
+TEST(bsock, auth_fails_with_missing_tls_common_name)
+{
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, "", &error)) << error;
+
+  ConfigureTlsForPeerVerification(artifacts, {}, {"bareos-client"});
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
+  EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
+                                 ls->port));
+
+  server_thread.join();
+  EXPECT_FALSE(future.get());
+}
+
+TEST(bsock, auth_fails_with_embedded_nul_tls_common_name)
+{
+  using namespace std::string_view_literals;
+  constexpr std::string_view client_common_name{"bareos\0client"sv};
+  std::promise<bool> promise;
+  std::future<bool> future = promise.get_future();
+
+  client_cons_name = "clientname";
+  client_cons_password = "verysecretpassword";
+
+  server_cons_name = client_cons_name;
+  server_cons_password = client_cons_password;
+
+  InitForTest();
+
+  GeneratedTlsArtifacts artifacts;
+  std::string error;
+  ASSERT_TRUE(GenerateTlsArtifacts(&artifacts, client_common_name, &error))
+      << error;
+
+  ConfigureTlsForPeerVerification(artifacts, {}, {"bareos"});
+
+  auto ls = create_listening_socket();
+  ASSERT_NE(ls, std::nullopt);
+
+  std::thread server_thread(start_bareos_server, &promise, server_cons_name,
+                            server_cons_password, HOST, std::ref(*ls));
+
   EXPECT_FALSE(connect_to_server(client_cons_name, client_cons_password, HOST,
                                  ls->port));
 
@@ -846,7 +1042,7 @@ TEST(BNet, FormatAndSendResponseMessage)
 
   std::string m("Test123");
 
-  test_sockets->client->FormatAndSendResponseMessage(kMessageIdOk, m);
+  SendResponseMessage(test_sockets->client.get(), kMessageIdOk, m.c_str());
 
   uint32_t id = kMessageIdUnknown;
   BStringList args;

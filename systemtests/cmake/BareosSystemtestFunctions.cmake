@@ -86,6 +86,10 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${scriptdir})
   file(MAKE_DIRECTORY ${working})
   file(MAKE_DIRECTORY ${archivedir})
+
+  if(BSMTP_TO_TEST)
+    create_symlink(${BSMTP_TO_TEST} ${sbindir}/bsmtp)
+  endif()
 endmacro()
 
 # create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->
@@ -1181,12 +1185,20 @@ function(systemtest_requires test required_test)
   )
 endfunction()
 
-function(add_requirement test_basename test requirement)
+function(add_requirements test_basename test)
   get_test_property("${test_basename}:${test}" FIXTURES_REQUIRED fixtures)
+  if(NOT fixtures)
+    # if no fixtures are defined yet, get_test_property returns NOTFOUND since
+    # list(APPEND) does not treat that value differently (but if does!) we need
+    # to empty it out, so that we do not add NOTFOUND to the list of fixtures
+    set(fixtures "")
+  endif()
+  foreach(req IN LISTS ARGN)
+    list(APPEND fixtures "${test_basename}/${req}-fixture")
+  endforeach()
+
   set_tests_properties(
-    "${test_basename}:${test}"
-    PROPERTIES FIXTURES_REQUIRED
-               "${fixtures};${test_basename}/${requirement}-fixture"
+    "${test_basename}:${test}" PROPERTIES FIXTURES_REQUIRED "${fixtures}"
   )
 endfunction()
 
@@ -1205,7 +1217,11 @@ function(add_alphabetic_requirements prefix test_subdir)
     CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
   )
 
-  list(SORT "${all_test_files}")
+  # Use natural sort, so e.g. testrunner-9-... sorts before testrunner-10-...,
+  # not just testrunner-01-.../testrunner-02-... Pass the variable name (not its
+  # dereferenced value), otherwise list(SORT) silently does nothing and
+  # all_test_files keeps whatever order file(GLOB ...) happened to return it in.
+  list(SORT all_test_files COMPARE NATURAL)
 
   set(all_tests "")
   foreach(file ${all_test_files})
@@ -1214,12 +1230,10 @@ function(add_alphabetic_requirements prefix test_subdir)
   endforeach()
 
   set(tests "${all_tests}")
-  set(prevs "${all_tests}")
+  set(prevs "")
 
-  list(POP_BACK prevs)
-  list(POP_FRONT tests)
-
-  foreach(iter IN ZIP_LISTS tests prevs)
-    add_requirement("${test_basename}" "${iter_0}" "${iter_1}")
+  foreach(test IN LISTS tests)
+    add_requirements("${test_basename}" "${test}" "${prevs}")
+    list(APPEND prevs "${test}")
   endforeach()
 endfunction()

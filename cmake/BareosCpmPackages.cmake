@@ -76,9 +76,9 @@ endif()
 
 CPMAddPackage(
   NAME utf8cpp
-  VERSION 2.3.4
+  VERSION 4.2.1
   GITHUB_REPOSITORY nemtrif/utfcpp
-  GIT_TAG "v4.0.4"
+  GIT_TAG "v4.2.1"
   EXCLUDE_FROM_ALL YES
 )
 

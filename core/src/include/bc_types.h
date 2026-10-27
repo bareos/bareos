@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ typedef long time_t;
 #    endif
 #  endif
 
-#  if __STDC__ && !defined(HAVE_MINGW)
+#  if __STDC__
 typedef _dev_t dev_t;
 #    if !defined(HAVE_WXCONSOLE)
 typedef __int64 ino_t;
@@ -72,7 +72,8 @@ typedef __int64 ino_t;
  *  64 bits is the FileId_t
  */
 typedef uint64_t FileId_t;
-typedef uint32_t DBId_t; /* general DB id type */
+typedef uint64_t PathId_t; /* Path id type */
+typedef uint32_t DBId_t;   /* general DB id type */
 #define PRIdbid PRIu32
 typedef uint32_t JobId_t;
 

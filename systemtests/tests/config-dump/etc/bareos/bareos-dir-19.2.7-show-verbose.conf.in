@@ -21,10 +21,9 @@ Director {
   # OmitDefaults = yes
   # NdmpLogLevel = 4
   Auditing = yes
-  # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 }
 
 Client {
@@ -48,10 +47,9 @@ Client {
   # NdmpLogLevel = 4
   # NdmpBlockSize = 63 k
   # NdmpUseLmdb = yes
-  # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 }
 
 JobDefs {
@@ -257,10 +255,9 @@ Storage {
   # CacheStatusInterval = 30 seconds
   # MaximumConcurrentJobs = 1
   # MaximumConcurrentReadJobs = 0
-  # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 }
 
 Catalog {
@@ -508,10 +505,9 @@ Console {
   JobACL = "*all*"
   CommandACL = "status", ".status"
   # UsePamAuthentication = no
-  # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 }
 
 Console {
@@ -519,10 +515,9 @@ Console {
   Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
   Profile = "webui-admin"
   # UsePamAuthentication = no
-  # TlsAuthenticate = no
   TlsEnable = no
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 }
 
 #Console {
@@ -530,8 +525,7 @@ Console {
 # Description = "root console definition"
 # Password = "[md5]1499042c6de7a645bcb4c21f3e05dc3a"
   # UsePamAuthentication = no
-  # TlsAuthenticate = no
   # TlsEnable = yes
   # TlsRequire = no
-  # TlsVerifyPeer = no
+  # TlsVerifyPeer = IfCertificatePresented
 #}

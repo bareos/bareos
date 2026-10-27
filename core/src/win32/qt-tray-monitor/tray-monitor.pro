@@ -21,7 +21,7 @@ INCLUDEPATH += ../.. ../../include ../include ../compat/include \
 VPATH        = ../../qt-tray-monitor
 
 LIBS        += -mwindows ../lib/libbareos.a ../lib/libbareos.dll libjansson.dll -lwsock32
-DEFINES     += HAVE_WIN32 HAVE_MINGW _STAT_DEFINED=1
+DEFINES     += HAVE_WIN32 _STAT_DEFINED=1
 
 RESOURCES    = main.qrc
 MOC_DIR      = moc

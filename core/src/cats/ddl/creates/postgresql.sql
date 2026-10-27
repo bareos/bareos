@@ -6,6 +6,7 @@ CREATE TABLE Path
 );
 
 ALTER TABLE Path ALTER COLUMN Path SET STATISTICS 1000;
+ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE UNIQUE INDEX path_name_idx ON Path (Path);
 
 -- We strongly recommend to avoid the temptation to add new indexes.
@@ -36,6 +37,7 @@ CREATE TABLE File (
    Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
+ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- This index is important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
@@ -98,7 +100,6 @@ CREATE TABLE Job
     FilesetId         INTEGER     DEFAULT 0,
     PriorJobid        INTEGER     DEFAULT 0,
     PurgedFiles       SMALLINT    DEFAULT 0,
-    HasBase           SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
     Comment           TEXT,
@@ -106,6 +107,7 @@ CREATE TABLE Job
 );
 
 CREATE INDEX job_name_idx ON job (Name);
+CREATE INDEX job_starttime_idx ON job (StartTime);
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
@@ -321,27 +323,6 @@ CREATE TABLE counters
     PRIMARY KEY (Counter)
 );
 
-CREATE TABLE basefiles
-(
-    BaseId            BIGSERIAL   NOT NULL,
-    JobId             INTEGER     NOT NULL,
-    FileId            BIGINT      NOT NULL,
-    FileIndex         INTEGER,
-    BaseJobId         INTEGER,
-    PRIMARY KEY (BaseId)
-);
-
-CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
-
--- This table seems to be obsolete
--- CREATE TABLE UnsavedFiles
--- (
---     UnsavedId         INTEGER     NOT NULL,
---     JobId             INTEGER     NOT NULL,
---     PathId            INTEGER     NOT NULL,
---     FilenameId        INTEGER     NOT NULL,
---     PRIMARY KEY (UnsavedId)
--- );
 
 CREATE TABLE PathHierarchy
 (
@@ -635,7 +616,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2250;
-INSERT INTO Version (VersionId) VALUES (2250);
+DELETE FROM Version WHERE VersionId<=2260;
+INSERT INTO Version (VersionId) VALUES (2260);
 
 -- Make sure we have appropriate permissions

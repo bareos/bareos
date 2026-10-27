@@ -234,7 +234,8 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_VOLUME_TO_CATALOG:
       // Start conversation with Storage daemon
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+      if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.read_storage, 10,
+                                  me->SDConnectTimeout, true)) {
         return false;
       }
       sd = jcr->store_bsock;
@@ -257,7 +258,8 @@ bool DoVerify(JobControlRecord* jcr)
 
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);
@@ -275,7 +277,8 @@ bool DoVerify(JobControlRecord* jcr)
     default:
       // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatusWithPriorityCheck(JS_Blocked);
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);
@@ -797,12 +800,18 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
             goto bail_out;
           }
           if (do_Digest != CRYPTO_DIGEST_NONE) {
-            jcr->db->EscapeString(jcr, buf.c_str(), Opts_Digest.c_str(),
-                                  strlen(Opts_Digest.c_str()));
-            if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
+            auto escaped_digest
+                = jcr->db->EscapeString(jcr, Opts_Digest.c_str());
+            if (!escaped_digest) {
+              Jmsg(jcr, M_FATAL, 0,
+                   T_("Failed to escape digest for catalog comparison.\n"));
+              goto bail_out;
+            }
+            if (!bstrcmp(escaped_digest->c_str(), fdbr.Digest)) {
               PrtFname(jcr);
               Jmsg(jcr, M_INFO, 0, T_("      %s differs. File=%s Cat=%s\n"),
-                   stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
+                   stream_to_ascii(stream), escaped_digest->c_str(),
+                   fdbr.Digest);
               jcr->setJobStatusWithPriorityCheck(JS_Differences);
             }
             do_Digest = CRYPTO_DIGEST_NONE;

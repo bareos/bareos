@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,10 +40,19 @@ fi
 
 rm -rf cmake-build
 
+PDEBUG="ON"    # we want the debug abi
+PGILLESS="OFF" # we need the gil
+
+# I think these options are already integrated into python
+# so you cannot actually require them (the builds do not exist anymore)
+PMALLOC="ANY"
+PUNICODE="ANY"
+
 cmake \
   -S . \
   -B cmake-build \
   -DENABLE_SANITIZERS=yes \
+  -DPython3_FIND_ABI="$PDEBUG;$PMALLOC;$PUNICODE;$PGILLESS" \
   -Dpostgresql=yes
 cmake --build cmake-build
 

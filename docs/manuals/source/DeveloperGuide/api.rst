@@ -700,11 +700,14 @@ Example:
     *.bvfs_versions jobid=0 client=localhost-fd pathid=1 fnane=toto
     1  49  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
 
+
+.. _bvfs_restore:
+
 Restore set of files
 ~~~~~~~~~~~~~~~~~~~~
 
-Bvfs allows you to create a SQL table that contains files that you want
-to restore. This table can be provided to a restore command with the
+Bvfs allows you to create a temporary SQL table that contains files that you
+want to restore. This table can be provided to a restore command with the
 file option.
 
 .. code-block:: bconsole
@@ -740,6 +743,8 @@ To drop the table used by the restore command, you can use the
 .. code-block:: bconsole
 
     *.bvfs_cleanup path=b20001
+
+It is also cleaned up automatically when the session ends.
 
 Clearing the BVFS Cache
 ~~~~~~~~~~~~~~~~~~~~~~~

@@ -34,14 +34,6 @@
 #include "include/dll_import_export.h"
 
 #if defined(HAVE_WIN32)
-/*
- * Commented out native.h include statement, which is not distributed with the
- * free version of VC++, and which is not used in bareos.
- *
- * #if !defined(HAVE_MINGW) // native.h not present on mingw
- * #include <native.h>
- * #endif
- */
 #  include <windef.h>
 #  include <string>
 #  include <unordered_map>

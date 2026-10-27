@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,9 +22,10 @@
 #ifndef BAREOS_FILED_SD_CMDS_H_
 #define BAREOS_FILED_SD_CMDS_H_
 
+#include "lib/bsock.h"
 namespace filedaemon {
 
-void* handle_stored_connection(BareosSocket* sd);
+void* handle_stored_connection(BareosSocket* sd, JobControlRecord* jcr);
 
 } /* namespace filedaemon */
 

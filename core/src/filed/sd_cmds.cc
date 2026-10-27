@@ -31,65 +31,16 @@
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
 #include "lib/bsock.h"
+#include "include/version_hex.h"
 
 namespace filedaemon {
 
 static int debuglevel = 100;
 
-void* handle_stored_connection(BareosSocket* sd)
+void* handle_stored_connection(BareosSocket* sd, JobControlRecord* jcr)
 {
-  JobControlRecord* jcr;
-  char job_name[MAX_NAME_LENGTH];
-
-  // Do a sanity check on the message received
-  if (sd->message_length < 25 || sd->message_length > 256) {
-    Dmsg1(000, "<filed: %s", sd->msg);
-    Emsg2(M_ERROR, 0, T_("Invalid connection from %s. Len=%d\n"), sd->who(),
-          sd->message_length);
-    Bmicrosleep(5, 0); /* make user wait 5 seconds */
-    sd->close();
-    delete sd;
-    return NULL;
-  }
-
-  if (bsscanf(sd->msg, "Hello Storage calling Start Job %127s", job_name)
-      != 1) {
-    char addr[64];
-    char* who = BnetGetPeer(sd, addr, sizeof(addr)) ? sd->who() : addr;
-
-    sd->msg[100] = 0;
-    Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", sd->who(),
-          sd->msg);
-    Jmsg2(NULL, M_FATAL, 0, T_("Bad Hello command from Director at %s: %s\n"),
-          who, sd->msg);
-    sd->close();
-    delete sd;
-    return NULL;
-  }
-
-  if (!(jcr = get_jcr_by_full_name(job_name))) {
-    Jmsg1(NULL, M_FATAL, 0, T_("SD connect failed: Job name not found: %s\n"),
-          job_name);
-    Dmsg1(3, "**** Job \"%s\" not found.\n", job_name);
-    sd->close();
-    delete sd;
-    return NULL;
-  }
-
-  Dmsg1(50, "Found Job %s\n", job_name);
-
   jcr->store_bsock = sd;
   jcr->store_bsock->SetJcr(jcr);
-
-  // Authenticate the Storage Daemon.
-  if (!AuthenticateStoragedaemon(jcr)) {
-    Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
-    Jmsg(jcr, M_FATAL, 0, T_("Unable to authenticate Storage daemon\n"));
-    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
-  } else {
-    Dmsg2(50, "OK Authentication jid=%" PRIu32 " Job %s\n", jcr->JobId,
-          jcr->Job);
-  }
 
   if (!jcr->max_bandwidth) {
     if (jcr->fd_impl->director->max_bandwidth_per_job) {
@@ -101,6 +52,8 @@ void* handle_stored_connection(BareosSocket* sd)
 
   sd->SetBwlimit(jcr->max_bandwidth);
   if (me->allow_bw_bursting) { sd->SetBwlimitBursting(); }
+  Dmsg0(debuglevel, "setting bandwidth to %" PRId64 "%s\n", jcr->max_bandwidth,
+        me->allow_bw_bursting ? " (with bursting)" : "");
 
   FreeJcr(jcr);
 

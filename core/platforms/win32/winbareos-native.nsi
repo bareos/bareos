@@ -658,8 +658,6 @@ SectionIn 1 2 3
   File "bareosfastlz.dll"
   File "bareosfind.dll"
   File "bareoslmdb.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   File "jansson.dll"
   File "libcrypto-3-x64.dll"
   File "libssl-3-x64.dll"
@@ -669,6 +667,7 @@ SectionIn 1 2 3
   File "xxhash.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   !cd "C:\tools\MSYS2\ucrt64\bin"
   File "sed.exe"
@@ -779,8 +778,6 @@ SectionIn 2
   File "bareosfind.dll"
   File "bareossd.dll"
   File "bareossql.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   File "jansson.dll"
   File "libcrypto-3-x64.dll"
   File "libssl-3-x64.dll"
@@ -810,8 +807,6 @@ SectionIn 2
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "autoxflate-sd.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   # File "python3-sd.dll"
 SectionEnd
 
@@ -859,8 +854,6 @@ SectionIn 2
   File "bareosfastlz.dll"
   File "bareosfind.dll"
   File "bareossql.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   File "jansson.dll"
   File "libcrypto-3-x64.dll"
   File "libssl-3-x64.dll"
@@ -869,6 +862,7 @@ SectionIn 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -1034,8 +1028,6 @@ SectionIn 1 2
   File "bz2.dll"
   File "double-conversion.dll"
   File "freetype.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   File "jansson.dll"
   File "libcrypto-3-x64.dll"
   File "libpng16.dll"
@@ -1046,6 +1038,7 @@ SectionIn 1 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   # qt stuff, some of them may be empty
   SetOutPath "$INSTDIR\platforms"
@@ -1170,8 +1163,6 @@ SectionIn 2
   File "bconsole.exe"
   File "bareos.dll"
   File "bareosfastlz.dll"
-  File "iconv-2.dll"
-  File "intl-8.dll"
   File "jansson.dll"
   File "libcrypto-3-x64.dll"
   File "libssl-3-x64.dll"
@@ -1181,6 +1172,7 @@ SectionIn 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 

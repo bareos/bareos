@@ -166,7 +166,6 @@ static bool DoTruncate(UaContext* ua,
 bool quit_cmd(UaContext* ua, const char* cmd);
 
 const char list_cmd_usage[] = NT_(
-    "basefiles ( jobid=<jobid> | ujobid=<complete_name> ) | "
     "backups client=<client-name> [fileset=<fileset-name>] "
     "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
     "[limit=<number>] [days=<number>] [hours=<number>] | "
@@ -859,7 +858,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               client->resource_name_, client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return true;
   }
@@ -908,7 +908,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return true;
   }
@@ -997,15 +997,13 @@ static bool SetipCmd(UaContext* ua, const char*)
   ClientResource* client;
   char buf[1024];
 
-  if ((!ua->user_acl) || (!ua->user_acl->corresponding_resource)) {
+  if ((!ua->user_acl) || (ua->user_acl->name.empty())) {
     ua->ErrorMsg(T_("No corresponding client found.\n"));
     return false;
   }
-  client = ua->GetClientResWithName(
-      ua->user_acl->corresponding_resource->resource_name_);
+  client = ua->GetClientResWithName(ua->user_acl->name.c_str());
   if (!client) {
-    ua->ErrorMsg(T_("Client \"%s\" not found.\n"),
-                 ua->user_acl->corresponding_resource->resource_name_);
+    ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->user_acl->name.c_str());
     return false;
   }
 
@@ -1141,7 +1139,7 @@ static void DoStorageSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return;
   }
@@ -1195,7 +1193,8 @@ static void DoClientSetdebug(UaContext* ua,
   ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               client->resource_name_, client->address, client->FDport);
 
-  if (!ConnectToFileDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
+                           false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return;
   }
@@ -1580,7 +1579,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   ua->SendMsg(T_("Connecting to Storage daemon %s at %s:%" PRIu32 "\n"),
               store->resource_name_, store->address, store->SDport);
 
-  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+  if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
     return false;
   }
@@ -1901,7 +1900,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
               jcr->dir_impl->res.client->resource_name_,
               jcr->dir_impl->res.client->address,
               jcr->dir_impl->res.client->FDport);
-  if (!ConnectToFileDaemon(jcr, 1, 15, false)) {
+  if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
     return false;
   }
@@ -1998,7 +1997,6 @@ static bool TruncateCmd(UaContext* ua, const char*)
 {
   bool result = false;
   int parsed_args = 1; /* start at 1, as command itself is also counted */
-  char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem tmp(PM_MESSAGE);
   PoolMem volumes(PM_MESSAGE);
   dbid_list mediaIds;
@@ -2065,11 +2063,12 @@ static bool TruncateCmd(UaContext* ua, const char*)
    * but this causes problems with parsing and ACL handling). */
   if (int i = FindArgWithValue(ua, "volume"); i >= 0) {
     if (IsNameValid(ua->argv[i])) {
-      ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
+      auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
+      if (!esc) { goto bail_out; }
       if (!*volumes.c_str()) {
-        Mmsg(tmp, "'%s'", esc);
+        Mmsg(tmp, "'%s'", esc->c_str());
       } else {
-        Mmsg(tmp, ",'%s'", esc);
+        Mmsg(tmp, ",'%s'", esc->c_str());
       }
       volumes.strcat(tmp.c_str());
       parsed_args++;
@@ -2105,8 +2104,8 @@ static bool TruncateCmd(UaContext* ua, const char*)
   }
 
   /* execute query and display result */
-  ua->db->ListSqlQuery(ua->jcr, tmp.c_str(), ua->send, HORZ_LIST, "volumes",
-                       true);
+  ua->db->ListSqlQuery(ua->jcr, tmp.c_str(), ua->send.get(), HORZ_LIST,
+                       "volumes", true);
 
   /* execute query to get media ids.
    * Second execution is only required,
@@ -2780,8 +2779,7 @@ static bool wait_cmd(UaContext* ua, const char*)
 static bool WhoAmICmd(UaContext* ua, const char*)
 {
   std::string message;
-  message = ua->user_acl ? ua->user_acl->corresponding_resource->resource_name_
-                         : "root";
+  message = ua->user_acl ? ua->user_acl->name.c_str() : "root";
   ua->send->ObjectKeyValue("whoami", message.c_str(), "%s\n");
   return true;
 }

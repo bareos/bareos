@@ -66,7 +66,7 @@ TEST(Pruning, TransformJobidsTobedeleted)
       director_config->GetCurrentConfiguration());
   jcr1->JobId = 1;
 
-  directordaemon::UaContext* ua = directordaemon::new_ua_context(jcr1);
+  directordaemon::UaContext* ua = new directordaemon::UaContext(jcr1);
   std::vector<JobId_t> pruninglist{0, 1, 2, 0, 3, 4, 5};
   std::string jobids_to_delete
       = directordaemon::PrepareJobidsTobedeleted(ua, pruninglist);
@@ -74,7 +74,7 @@ TEST(Pruning, TransformJobidsTobedeleted)
   EXPECT_EQ(jobids_to_delete, "2,3,4,5");
   EXPECT_EQ(pruninglist.size(), 4);
 
-  FreeUaContext(ua);
+  delete ua;
 }
 
 TEST(Pruning, SummarizePoolPruneJobs)

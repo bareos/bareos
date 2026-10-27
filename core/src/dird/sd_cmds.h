@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@ class StorageResource;
 struct vol_list_t;
 
 bool ConnectToStorageDaemon(JobControlRecord* jcr,
+                            StorageResource* store,
                             int retry_interval,
                             int max_retry_time,
                             bool verbose);

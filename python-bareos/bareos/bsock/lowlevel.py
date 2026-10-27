@@ -41,7 +41,6 @@ from bareos.bsock.constants import Constants
 from bareos.bsock.connectiontype import ConnectionType
 from bareos.bsock.protocolmessageids import ProtocolMessageIds
 from bareos.bsock.protocolmessages import ProtocolMessages
-from bareos.bsock.protocolversions import ProtocolVersions
 from bareos.util.bareosbase64 import BareosBase64
 from bareos.util.password import Password
 import bareos.exceptions
@@ -200,7 +199,6 @@ class LowLevel(object):
 
     def __connect(self):
         connected = False
-        connected_plain = False
         auth = False
         if self.tls_psk_require:
             if not self.is_tls_psk_available():
@@ -230,7 +228,6 @@ class LowLevel(object):
         if not connected:
             self.__connect_plain()
             connected = True
-            connected_plain = True
             self.logger.debug("Encryption: None")
 
         if connected:
@@ -238,24 +235,6 @@ class LowLevel(object):
                 auth = self.auth()
             except bareos.exceptions.PamAuthenticationError:
                 raise
-            except bareos.exceptions.AuthenticationError:
-                if (
-                    self.connection_type == ConnectionType.DIRECTOR
-                    and self.requested_protocol_version is None
-                    and self.get_protocol_version() > ProtocolVersions.bareos_12_4
-                ):
-                    # reconnect and try old protocol
-                    self.logger.warning(
-                        "Failed to connect using protocol version {0}. Trying protocol version {1}. ".format(
-                            self.get_protocol_version(), ProtocolVersions.bareos_12_4
-                        )
-                    )
-                    self.close()
-                    self.__connect_plain()
-                    self.protocol_messages.set_version(ProtocolVersions.bareos_12_4)
-                    auth = self.auth()
-                else:
-                    raise
 
         return auth
 
@@ -415,6 +394,10 @@ class LowLevel(object):
         )
         regex = bytes(bytearray(regex_str, "utf8"))
         incoming_message = self.recv_msg(regex)
+
+        if len(incoming_message) == 0 and self.status == Constants.BNET_TERMINATE:
+            raise bareos.exceptions.ConnectionLostError("received BNET_TERMINATE")
+
         match = re.search(regex, incoming_message, re.DOTALL)
         code = int(match.group(1))
         text = match.group(2)
@@ -586,10 +569,6 @@ class LowLevel(object):
 
         Returns:
            bytearray: Message retrieved via the connection.
-
-        Raises:
-            bareos.exceptions.SignalReceivedException:
-               If a Bareos signal is received.
         """
         self.__check_socket_connection()
         try:

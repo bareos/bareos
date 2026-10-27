@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,13 +32,11 @@ enum password_encoding
 };
 
 struct s_password {
-  enum password_encoding encoding;
-  char* value;
-  s_password()
+  enum password_encoding encoding
   {
-    encoding = p_encoding_undefined;
-    value = nullptr;
-  }
+    p_encoding_undefined
+  };
+  char* value{nullptr};
 };
 
 #endif  // BAREOS_LIB_S_PASSWORD_H_

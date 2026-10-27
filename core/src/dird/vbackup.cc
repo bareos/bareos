@@ -332,7 +332,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
   // Start conversation with Storage daemon
-  if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+  if (!ConnectToStorageDaemon(jcr, jcr->dir_impl->res.write_storage, 10,
+                              me->SDConnectTimeout, true)) {
     return false;
   }
 
@@ -392,14 +393,12 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   // Remove the successfully consolidated jobids from the database
   if (jcr->dir_impl->res.job->AlwaysIncremental
       && jcr->dir_impl->res.job->AlwaysIncrementalJobRetention) {
-    UaContext* ua;
-    ua = new_ua_context(jcr);
-    PurgeJobsFromCatalog(ua, jobids.c_str());
+    UaContext ua{jcr};
+    PurgeJobsFromCatalog(&ua, jobids.c_str());
     Jmsg(
         jcr, M_INFO, 0,
         T_("purged JobIds %s as they were consolidated into Job %" PRIu32 "\n"),
         jobids.c_str(), jcr->JobId);
-    FreeUaContext(ua);
   }
   return true;
 }
@@ -466,8 +465,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
          jcr->dir_impl->vf_jobids, jcr->JobId);
     PoolMem inner_query(PM_MESSAGE);
     jcr->db->FillQuery<
-        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob>(
-        inner_query, jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
+        BareosDbQueryEnum::SQL_QUERY::select_recent_version_from_jobids>(
+        inner_query, jcr->dir_impl->vf_jobids);
     std::string outer_query
         = "INSERT INTO File (FileIndex, JobId, PathId, LStat, MD5, Name) "s
           + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s
@@ -578,12 +577,11 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
     return false;
   }
 
-  UaContext* ua = new_ua_context(&jcr);
-  AddVolumeInformationToBsr(ua, rx.bsr.get());
-  jcr.dir_impl->ExpectedFiles = WriteBsrFile(ua, rx);
+  UaContext ua{&jcr};
+  AddVolumeInformationToBsr(&ua, rx.bsr.get());
+  jcr.dir_impl->ExpectedFiles = WriteBsrFile(&ua, rx);
   Dmsg1(10, "Found %" PRIu32 " files to consolidate.\n",
         jcr.dir_impl->ExpectedFiles);
-  FreeUaContext(ua);
   rx.bsr.reset(nullptr);
   return jcr.dir_impl->ExpectedFiles != 0;
 }

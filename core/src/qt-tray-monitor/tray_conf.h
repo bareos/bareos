@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #ifndef BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
 #define BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
 
+#include "lib/parse_conf.h"
 #include "lib/tls_conf.h"
 
 BAREOS_IMPORT ConfigurationParser* my_config;
@@ -98,7 +99,6 @@ class ClientResource
 
   uint32_t FDport = 0; /* Where File daemon listens */
   char* address = nullptr;
-  s_password password;
 };
 
 // Store Resource
@@ -111,7 +111,6 @@ class StorageResource
 
   uint32_t SDport = 0; /* port where Directors connect */
   char* address = nullptr;
-  s_password password;
 };
 
 class ConsoleFontResource

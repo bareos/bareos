@@ -77,9 +77,9 @@ class CramMd5Handshake {
 // Compute MD5(text) and return it as a lowercase hex string.
 std::string MakeCramMd5Key(const std::string& password);
 
-void hmac_md5(uint8_t* text,
+void hmac_md5(const uint8_t* text,
               int text_len,
-              uint8_t* key,
+              const uint8_t* key,
               int key_len,
               uint8_t* hmac);
 

@@ -26,6 +26,7 @@
  * the main program
  */
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "cats/sql.h"
@@ -56,6 +57,7 @@
 
 #include "lib/bregex.h"
 #include <dirent.h>
+#include <string_view>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
@@ -109,19 +111,17 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
                            utime_t mtime,
                            const char* msg)
 {
-  int length;
   char ed1[50];
   char dt[MAX_TIME_LENGTH];
-  PoolMem query(PM_MESSAGE), esc_msg(PM_MESSAGE);
+  PoolMem query(PM_MESSAGE);
 
   if (!jcr || !jcr->db || !jcr->db->IsConnected()) { return false; }
-  length = strlen(msg);
-  esc_msg.check_size(length * 2 + 1);
-  jcr->db->EscapeString(jcr, esc_msg.c_str(), msg, length);
+  auto esc_msg = jcr->db->EscapeString(jcr, msg);
+  if (!esc_msg) { return false; }
 
   bstrutime(dt, sizeof(dt), mtime);
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-       edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
+       edit_int64(jcr->JobId, ed1), dt, esc_msg->c_str());
 
   return jcr->db->SqlExec(query.c_str());
 }
@@ -137,14 +137,13 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
 
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");
-  InitMsg(nullptr, nullptr); /* initialize message handler */
+
+  SetJobCodeCallback(job_code_callback_director);
+  InitDaemonMsg(nullptr); /* initialize message handler */
   daemon_start_time = time(nullptr);
 
   console_command = RunConsoleCommand;
@@ -286,6 +285,9 @@ int main(int argc, char* argv[])
     return BEXIT_SUCCESS;
   }
 
+  CloseMsg(nullptr);           /* close temp message handler */
+  InitDaemonMsg(me->messages); /* open daemon message handler */
+
   if (my_config->HasWarnings()) {
     // messaging not initialized, so Jmsg with  M_WARNING doesn't work
     fprintf(stderr, T_("There are configuration warnings:\n"));
@@ -320,16 +322,29 @@ int main(int argc, char* argv[])
   // If we are in testing mode, we don't try to fix the catalog
   cat_op mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
-  if (!CheckCatalog(mode)) {
-    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         T_("Please correct the configuration in %s\n"),
+  CatalogUtility util{mode};
+
+  if (!CheckAllCatalogs(util)) {
+    if (util.error) { Jmsg(nullptr, M_ERROR, 0, "%s\n", util.error->c_str()); }
+
+    Jmsg(nullptr, M_ERROR_TERM, 0, "Please correct the configuration in %s\n",
          my_config->get_base_config_path().c_str());
 
     TerminateDird(BEXIT_SUCCESS);
     return BEXIT_SUCCESS;
   }
 
-  if (test_config) { TerminateDird(0); }
+  if (test_config) {
+    fprintf(stderr, T_("There are catalog warnings:\n"));
+    for (auto& warning : util.warnings) {
+      fprintf(stderr, " * %s\n", warning.c_str());
+    }
+    TerminateDird(0);
+  }
+
+  for (auto& warning : util.warnings) {
+    my_config->AddWarning(std::move(warning));
+  }
 
   if (!InitializeSqlPooling()) {
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,

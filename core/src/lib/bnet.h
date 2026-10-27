@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,11 @@
 #include "tls.h"
 #include "lib/address_conf.h"
 #include "include/compiler_macro.h"
+#include "lib/tls_conf_cert.h"
+
+#include <memory>
+#include <vector>
+#include <string>
 
 template <typename T> class dlist;
 
@@ -32,11 +37,10 @@ bool BnetSend(BareosSocket* bsock);
 bool BnetFsend(BareosSocket* bs, const char* fmt, ...) PRINTF_LIKE(2, 3);
 bool BnetSetBufferSize(BareosSocket* bs, uint32_t size, int rw);
 bool BnetSig(BareosSocket* bs, int sig);
-bool BnetTlsServer(BareosSocket* bsock,
-                   const std::vector<std::string>& verify_list);
-bool BnetTlsClient(BareosSocket* bsock,
-                   bool VerifyPeer,
-                   const std::vector<std::string>& verify_list);
+bool BnetTlsServer(BareosSocket* bsock, std::shared_ptr<Tls> tls);
+bool BnetTlsClient(JobControlRecord* jcr,
+                   BareosSocket* bsock,
+                   std::shared_ptr<Tls> tls);
 int BnetGetPeer(BareosSocket* bs, char* buf, socklen_t buflen);
 BareosSocket* dup_bsock(BareosSocket* bsock);
 const char* BnetStrerror(BareosSocket* bsock);
@@ -58,7 +62,7 @@ int NetConnect(int port);
 BareosSocket* BnetBind(int port);
 BareosSocket* BnetAccept(BareosSocket* bsock, char* who);
 
-enum : uint32_t
+enum ResponseId : uint32_t
 {
   kMessageIdUnknown = 0,
   kMessageIdProtokollError = 1,
@@ -83,11 +87,11 @@ bool EvaluateResponseMessageId(const std::string& message,
 bool ReceiveAndEvaluateResponseMessage(BareosSocket* bsock,
                                        uint32_t& id_out,
                                        BStringList& args_out);
-bool FormatAndSendResponseMessage(BareosSocket* bsock,
-                                  uint32_t id,
-                                  const std::string& str);
-bool FormatAndSendResponseMessage(BareosSocket* bsock,
-                                  uint32_t id,
-                                  const BStringList& list_of_agruments);
+
+bool SendResponseMessage(BareosSocket* socket, ResponseId id, const char* msg);
+bool FormatAndSendResponseMessage(BareosSocket* socket,
+                                  ResponseId id,
+                                  const char* fmt,
+                                  ...) PRINTF_LIKE(3, 4);
 
 #endif  // BAREOS_LIB_BNET_H_

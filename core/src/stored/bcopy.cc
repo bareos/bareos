@@ -73,14 +73,11 @@ static Session_Label g_sessrec{};
 
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
   InitStackDump();
 
   MyNameIs(argc, argv, "bcopy");
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
 
   CLI::App bcopy_app;
   InitCLIApp(bcopy_app, "The Bareos Volume Copy tool.", 2002);

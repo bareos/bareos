@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,20 +65,12 @@
 #  pragma warning(disable : 4996)  // Either disable all deprecation warnings,
 // #define _CRT_SECURE_NO_DEPRECATE // Or just turn off warnings about the newly
 // deprecated CRT functions.
-#elif !defined(HAVE_MINGW) && !defined(HAVE_WXCONSOLE)
+#elif !defined(HAVE_WXCONSOLE)
 #  define __STDC__ 1
 #endif
 
 #include <malloc.h>
 #include <direct.h>
-
-#if defined(HAVE_MINGW)
-/*
- * MINGW uses __declspec while Microsoft Visual C uses _declspec so map all
- * _declspec to __declspec
- */
-#  define _declspec __declspec
-#endif
 
 #include <winioctl.h>
 
@@ -90,18 +82,11 @@ void sleep(int);
 
 typedef UINT32 key_t;
 
-#if defined(HAVE_MINGW)
-#  if !defined(uid_t)
-typedef UINT32 uid_t;
-typedef UINT32 gid_t;
-#  endif
-#else
 typedef UINT32 uid_t;
 typedef UINT32 gid_t;
 typedef UINT32 mode_t;
 typedef INT64 ssize_t;
-#  define HAVE_SSIZE_T 1
-#endif /* HAVE_MINGW */
+#define HAVE_SSIZE_T 1
 
 #if defined(HAVE_MSVC)
 #  define NO_OLDNAMES
@@ -160,9 +145,7 @@ struct timezone {
 };
 #endif
 
-#ifndef HAVE_MINGW
 int strcasecmp(const char*, const char*);
-#endif
 int gettimeofday(struct timeval*, struct timezone*);
 
 #if !defined(EETXTBUSY)
@@ -343,16 +326,14 @@ extern "C" void syslog(int type, const char* fmt, ...);
 #  define LOG_DAEMON 0
 #endif
 
-#if !defined(HAVE_MINGW)
-#  define R_OK 04
-#  define W_OK 02
+#define R_OK 04
+#define W_OK 02
 int stat(const char*, struct stat*);
-#  if defined(__cplusplus)
-#    define access _access
+#if defined(__cplusplus)
+#  define access _access
 int execvp(const char*, char*[]);
 extern "C" void* __cdecl _alloca(size_t);
-#  endif
-#endif  // !HAVE_MINGW
+#endif
 
 #define getpid _getpid
 
@@ -368,10 +349,6 @@ char* win32_getcwd(char* buf, int maxlen);
 int win32_chdir(const char* buf);
 int win32_mkdir(const char* buf);
 int win32_fputs(const char* string, FILE* stream);
-#if defined(HAVE_MINGW)
-#  define unlink win32_unlink
-int win32_unlink(char const* filename);
-#endif
 int win32_chmod(const char*, mode_t, _dev_t);
 
 char* win32_cgets(char* buffer, int len);

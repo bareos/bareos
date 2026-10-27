@@ -199,10 +199,10 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
       const char* value;
 
       value = PyUnicode_AsUTF8(pyValue);
-      if (value) {
-        retval = setBareosValue(state, (bwDirVariable)var,
-                                static_cast<void*>(const_cast<char*>(value)));
-      }
+      if (!value) { return nullptr; }
+
+      retval = setBareosValue(state, (bwDirVariable)var,
+                              static_cast<void*>(const_cast<char*>(value)));
 
     } break;
     case bwDirVarPriority:
@@ -210,6 +210,8 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
       int value;
 
       value = PyLong_AsLong(pyValue);
+      if (PyErr_Occurred()) { return nullptr; }
+
       if (value >= 0) {
         retval = setBareosValue(state, (bwDirVariable)var, &value);
       }
@@ -302,6 +304,10 @@ static PyObject* PyBareosRegisterEvents(PyObject* module, PyObject* args)
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
+    if (PyErr_Occurred()) {
+      Py_DECREF(pySeq);
+      return nullptr;
+    }
 
     if (event >= directordaemon::bDirEventJobStart
         && event <= directordaemon::bDirEventGetScratch) {
@@ -348,6 +354,10 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* module, PyObject* args)
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
+    if (PyErr_Occurred()) {
+      Py_DECREF(pySeq);
+      return nullptr;
+    }
 
     if (event >= directordaemon::bDirEventJobStart
         && event <= directordaemon::bDirEventGetScratch) {

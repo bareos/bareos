@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -108,7 +108,7 @@ class PamLoginTest(bareos_unittest.Base):
                 **self.director_extra_options
             )
 
-    def test_login_with_not_wrong_password(self):
+    def test_login_with_wrong_password(self):
         """
         Verify bareos.bsock.DirectorConsole raises an AuthenticationError exception.
         """
@@ -168,17 +168,14 @@ class PamLoginTest(bareos_unittest.Base):
     def test_login_with_director_requires_pam_but_protocol_124(self):
         """
         When the Director tries to verify the PAM credentials,
-        but the console connects via protocol bareos_12.4,
-        the console first retrieves a "1000 OK",
-        but further communication fails.
-        In the end, a ConnectionLostError exception is raised.
-        Sometimes this occurs during initialization,
-        sometimes first the call command fails.
+        but the console connects via protocol bareos_12.4, the
+        connection is rejected because pre-18.2 consoles are no longer
+        supported.
         """
 
         bareos_password = bareos.bsock.Password(self.console_pam_password)
-        with self.assertRaises(bareos.exceptions.ConnectionLostError):
-            director = bareos.bsock.DirectorConsole(
+        with self.assertRaises(bareos.exceptions.AuthenticationError):
+            bareos.bsock.DirectorConsole(
                 address=self.director_address,
                 port=self.director_port,
                 protocolversion=ProtocolVersions.bareos_12_4,
@@ -186,4 +183,3 @@ class PamLoginTest(bareos_unittest.Base):
                 password=bareos_password,
                 **self.director_extra_options
             )
-            result = director.call("whoami").decode("utf-8")

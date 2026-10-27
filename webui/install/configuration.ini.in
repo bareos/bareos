@@ -82,3 +82,17 @@
 ; period in days that is preselected for the job list.
 ; Default:
 ;period=7
+
+;------------------------------------------------------------------------------
+; TRUSTED PROXIES
+;------------------------------------------------------------------------------
+; Proxies whose X-Forwarded-Proto and X-Forwarded-Host are believed, as plain
+; addresses. Needed behind a TLS terminating proxy, or every state-changing
+; request is answered with HTTP 403. A listed proxy can choose which origin the
+; webui believes a request came from, so only list proxies you control. Empty,
+; the default, when reached directly.
+; Default:
+[trusted_proxies]
+;addresses=
+;addresses=127.0.0.1, ::1
+;addresses=10.4.5.6

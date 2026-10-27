@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,13 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
+#include "gtest/gtest.h"
+#include "include/bareos.h"
 
 #include "bareos_test_sockets.h"
 #include "tests/bsock_test.h"
@@ -61,7 +56,7 @@ static int create_listening_server_socket(int port)
 
   int listen_file_descriptor;
 
-  if ((listen_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+  if ((listen_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("socket failed");
     return -2;
   }

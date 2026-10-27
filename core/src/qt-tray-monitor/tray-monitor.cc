@@ -194,14 +194,11 @@ void intHandler(int) { exit(0); }
 
 static void InitEnvironment(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "tray-monitor");
-  InitMsg(NULL, NULL);
+  InitDaemonMsg(nullptr);
   signal(SIGINT, intHandler);
   working_directory = "/tmp";
   OSDependentInit();

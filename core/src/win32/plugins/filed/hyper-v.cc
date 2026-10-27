@@ -2969,7 +2969,8 @@ static bool handle_restore_object(PluginContext* ctx,
                                   plugin_ctx* p_ctx,
                                   const filedaemon::restore_object_pkt* rop)
 {
-  switch (restore_object::name_to_type(rop->object_name)) {
+  switch (
+      restore_object::name_to_type(rop->object_name ? rop->object_name : "")) {
     case restore_object::Type::ReferencePoint: {
       json_error_t json_err;
 
@@ -3065,8 +3066,32 @@ static bool handle_restore_object(PluginContext* ctx,
       return true;
     }
     default: {
-      JFATAL(ctx, "unknown restore object with name '{}'", rop->object_name);
-      return false;
+      auto safe = [](char const* ptr) {
+        if (ptr) { return ptr; }
+        return "(null)";
+      };
+
+      std::string_view plugin_name = rop->plugin_name ? rop->plugin_name : "";
+
+      /* ROP with plugin_name set to *all* (e.g. VSS metadata) gets sent to
+       * every plugin; as we do not care about it, we just ignore it. */
+      if (plugin_name == "*all*") {
+        DBGC(ctx, "ignoring '{}' from *all*", safe(rop->object_name));
+        return true;
+        /* if we receive a ROP that we created ourselves, but that we do not
+         * recognize, then something really weird is going on, so we stop to
+         * be on the safe side. */
+      } else if (plugin_name.starts_with("hyper-v")) {
+        JFATAL(ctx, "unknown restore object with name '{}'",
+               safe(rop->object_name));
+        return false;
+        /* Bareos should not send us any other ROPs, so we log them just in
+         * case. */
+      } else {
+        JWARN(ctx, "unknown restore object with name '{}' from {}",
+              safe(rop->object_name), safe(rop->plugin_name));
+        return true;
+      }
     } break;
   }
 }

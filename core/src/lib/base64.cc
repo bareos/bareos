@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -117,13 +117,17 @@ int FromBase64(int64_t* value, char* where)
  * Encode binary data in bin of len bytes into
  * buf as base64 characters.
  *
- * If compatible is true, the BinToBase64 routine will be compatible
+ * If use_standard_encoding is true, the BinToBase64 routine will be compatible
  * with what the rest of the world uses.
  *
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible)
+int BinToBase64(char* buf,
+                int buflen,
+                const char* bin,
+                int binlen,
+                bool use_standard_encoding)
 {
   uint32_t reg, save, mask;
   int rem, i;
@@ -135,7 +139,7 @@ int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible)
   for (i = 0; i < binlen;) {
     if (rem < 6) {
       reg <<= 8;
-      if (compatible) {
+      if (use_standard_encoding) {
         reg |= (uint8_t)bin[i++];
       } else {
         reg |= (int8_t)bin[i++];
@@ -150,7 +154,7 @@ int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible)
   }
   if (rem && j < buflen) {
     mask = (1 << rem) - 1;
-    if (compatible) {
+    if (use_standard_encoding) {
       buf[j++] = base64_digits[(reg & mask) << (6 - rem)];
     } else {
       buf[j++] = base64_digits[reg & mask];
@@ -170,7 +174,7 @@ int BinToBase64(char* buf, int buflen, char* bin, int binlen, bool compatible)
  *  Returns: the number of characters stored not
  *           including the EOS
  */
-int Base64ToBin(char* dest, int dest_size, char* src, int srclen)
+int Base64ToBin(char* dest, int dest_size, const char* src, int srclen)
 {
   int nprbytes;
   uint8_t* bufout;

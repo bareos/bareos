@@ -32,6 +32,8 @@
 #include "cats/bvfs.h"
 #include "lib/edit.h"
 
+#include <string>
+#include <string_view>
 #include <unordered_set>
 
 #define dbglevel 10
@@ -65,7 +67,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
                                   char* org_pathid,
                                   char* new_path)
 {
-  uint64_t pathid = str_to_int64(org_pathid);
+  uint64_t pathid = str_to_uint64(org_pathid);
   char* bkp = path;
 
   Dmsg1(dbglevel, "BuildPathHierarchy(%s)\n", new_path);
@@ -104,7 +106,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
         Mmsg(cmd,
              "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%" PRIu64
              ",%" PRIu64 ")",
-             pathid, (uint64_t)parent.PathId);
+             pathid, parent.PathId);
         if (!InsertDb(jcr, cmd)) {
           goto bail_out; /* Can't insert the record, just leave */
         }
@@ -171,12 +173,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   Mmsg(cmd,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
-       "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
-       "UNION "
-       "SELECT PathId, BaseFiles.JobId "
-       "FROM BaseFiles JOIN File AS F USING (FileId) "
-       "WHERE BaseFiles.JobId = %s) AS B",
-       jobid, jobid);
+       "FROM File WHERE JobId = %s",
+       jobid);
 
   if (!QueryDb(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %" PRIu32 "\n",
@@ -480,11 +478,9 @@ void Bvfs::GetAllFileVersions(const char* path,
                               const char* fname,
                               const char* client)
 {
-  DBId_t pathid = 0;
-  char path_esc[MAX_ESCAPE_NAME_LENGTH];
+  PathId_t pathid = 0;
 
-  db->EscapeString(jcr, path_esc, path, strlen(path));
-  pathid = db->GetPathRecord(jcr, path_esc);
+  pathid = db->GetPathRecord(jcr, path);
   GetAllFileVersions(pathid, fname, client);
 }
 
@@ -492,17 +488,15 @@ void Bvfs::GetAllFileVersions(const char* path,
  * Get all file versions for a specified client
  * TODO: Handle basejobs using different client
  */
-void Bvfs::GetAllFileVersions(DBId_t pathid,
+void Bvfs::GetAllFileVersions(PathId_t pathid,
                               const char* fname,
                               const char* client)
 {
   char ed1[50];
-  char fname_esc[MAX_ESCAPE_NAME_LENGTH];
-  char client_esc[MAX_ESCAPE_NAME_LENGTH];
   PoolMem query(PM_MESSAGE);
   PoolMem filter(PM_MESSAGE);
 
-  Dmsg3(dbglevel, "GetAllFileVersions(%" PRIdbid ", %s, %s)\n", pathid, fname,
+  Dmsg3(dbglevel, "GetAllFileVersions(%" PRIu64 ", %s, %s)\n", pathid, fname,
         client);
 
   if (see_copies) {
@@ -511,18 +505,20 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
     Mmsg(filter, " AND Job.Type IN ('B', 'A', 'a') ");
   }
 
-  db->EscapeString(jcr, fname_esc, fname, strlen(fname));
-  db->EscapeString(jcr, client_esc, client, strlen(client));
+  auto fname_esc = db->EscapeString(jcr, fname);
+  if (!fname_esc) { return; }
+  auto client_esc = db->EscapeString(jcr, client);
+  if (!client_esc) { return; }
 
   db->FillQuery<BareosDb::SQL_QUERY::bvfs_versions_6>(
-      query, fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(),
-      limit, offset);
+      query, fname_esc->c_str(), edit_uint64(pathid, ed1), client_esc->c_str(),
+      filter.c_str(), limit, offset);
   db->SqlQuery(query.c_str(), list_entries, user_data);
 }
 
-DBId_t Bvfs::get_root()
+PathId_t Bvfs::get_root()
 {
-  int p;
+  PathId_t p;
 
   DbLocker _{db};
   p = db->GetPathRecord(jcr, "");
@@ -551,7 +547,7 @@ bool Bvfs::ls_dirs()
   PoolMem sub_dirs_query(PM_MESSAGE);
   PoolMem union_query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_dirs(%" PRIdbid ")\n", pwd_id);
+  Dmsg1(dbglevel, "ls_dirs(%" PRIu64 ")\n", pwd_id);
 
   if (*jobids == 0) { return false; }
 
@@ -585,33 +581,26 @@ static void build_ls_files_query(JobControlRecord*,
                                  PoolMem& query,
                                  const char* JobId,
                                  const char* PathId,
-                                 const char* filter,
                                  int64_t limit,
                                  int64_t offset)
 {
-  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(
-      query, JobId, PathId, JobId, PathId, filter, limit, offset);
+  db->FillQuery<BareosDb::SQL_QUERY::bvfs_list_files>(query, JobId, PathId,
+                                                      limit, offset);
 }
 
 // Returns true if we have files to read
 bool Bvfs::ls_files()
 {
   char pathid[50];
-  PoolMem filter(PM_MESSAGE);
   PoolMem query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_files(%" PRIdbid ")\n", pwd_id);
+  Dmsg1(dbglevel, "ls_files(%" PRIu64 ")\n", pwd_id);
   if (*jobids == 0) { return false; }
 
   if (!pwd_id) { ChDir(get_root()); }
 
   edit_uint64(pwd_id, pathid);
-  if (*pattern) {
-    db->FillQuery<BareosDb::SQL_QUERY::match_query2>(filter, pattern);
-  }
-
-  build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit,
-                       offset);
+  build_ls_files_query(jcr, db, query, jobids, pathid, limit, offset);
   nb_record = db->BvfsBuildLsFileQuery(query, list_entries, user_data);
 
   return nb_record == limit;
@@ -653,7 +642,7 @@ static int GetNextIdFromList(char** p, int64_t* Id)
   return 1;
 }
 
-static bool CheckTemp(char* output_table)
+bool CheckTempBvfsTableName(char* output_table)
 {
   if (output_table[0] == 'b' && output_table[1] == '2'
       && IsAnInteger(output_table + 2)) {
@@ -670,7 +659,7 @@ void Bvfs::clear_cache()
 bool Bvfs::DropRestoreList(char* output_table)
 {
   PoolMem query(PM_MESSAGE);
-  if (CheckTemp(output_table)) {
+  if (CheckTempBvfsTableName(output_table)) {
     Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
     db->SqlQuery(query.c_str());
     return true;
@@ -696,18 +685,17 @@ bool Bvfs::compute_restore_list(char* fileid,
       || (!*hardlink && !*fileid && !*dirid && !*hardlink)) {
     return false;
   }
-  if (!CheckTemp(output_table)) { return false; }
+  if (!CheckTempBvfsTableName(output_table)) { return false; }
 
   DbLocker _{db};
 
   /* Cleanup old tables first */
-  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.btemp%s", output_table);
+  db->SqlQuery(query.c_str());
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.%s", output_table);
   db->SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
-  db->SqlQuery(query.c_str());
-
-  Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
+  Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
 
   if (*fileid) { /* Select files with their direct id */
     init = true;
@@ -747,9 +735,8 @@ bool Bvfs::compute_restore_list(char* fileid,
     *p = '\0';
     tmp.strcat("%");
 
-    size_t len = strlen(tmp.c_str());
-    tmp2.check_size((len + 1) * 2);
-    db->EscapeString(jcr, tmp2.c_str(), tmp.c_str(), len);
+    auto escaped_path_like = db->EscapeString(jcr, tmp.c_str());
+    if (!escaped_path_like) { return false; }
 
     if (init) { query.strcat(" UNION "); }
 
@@ -758,23 +745,9 @@ bool Bvfs::compute_restore_list(char* fileid,
          "File.PathId, FileId "
          "FROM Path JOIN File USING (PathId) JOIN Job USING (JobId) "
          "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
+         escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    /* A directory can have files from a BaseJob */
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate, BaseFiles.FileIndex, "
-         "File.Name, File.PathId, BaseFiles.FileId "
-         "FROM BaseFiles "
-         "JOIN File USING (FileId) "
-         "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s' AND BaseFiles.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */

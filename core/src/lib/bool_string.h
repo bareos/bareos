@@ -24,6 +24,7 @@
 
 #include "include/bareos.h"
 
+#include <span>
 #include <string_view>
 #include <strings.h>
 
@@ -131,6 +132,23 @@ static inline parse_bool_result parse_conf_bool(
   }
 
   return result;
+}
+
+template <typename T>
+std::optional<T> parse_enum(
+    std::string_view input,
+    std::span<const std::pair<std::string_view, T>> entries)
+{
+  for (auto [name, value] : entries) {
+    if (name.size() == input.size()
+        && strncasecmp(name.data(), input.data(), input.size()) == 0) {
+      Dmsg0(500, "Mapped %.*s => %.*s\n", (int)input.size(), input.data(),
+            (int)name.size(), name.data());
+      return value;
+    }
+  }
+
+  return std::nullopt;
 }
 
 #endif  // BAREOS_LIB_BOOL_STRING_H_

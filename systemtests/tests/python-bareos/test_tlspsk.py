@@ -46,12 +46,10 @@ class PythonBareosTlsPskTest(bareos_unittest.Base):
     This test used the default protocol
     (opposite to the PythonBareosProtocol124Test class,
     which uses ProtocolVersions.bareos_12_4).
-    However, on authentication failures,
-    DirectorConsole falls back to ProtocolVersions.bareos_12_4.
 
     There are 4 cases to check:
     # console: notls, director: notls => login  (notls)
-    # console: notls, director: tls   => login! (notls)
+    # console: notls, director: tls   => nologin
     # console: tls, director: notls   => login  (tls!)
     # console: tls, director: tls     => login  (tls)
     """
@@ -96,39 +94,7 @@ class PythonBareosTlsPskTest(bareos_unittest.Base):
 
     def test_login_notls_tls(self):
         """
-        console: notls, director: tls => login
-
-        This works, because DirectorConsole falls back to the old protocol.
-        Set tls_psk_require=True, if this should not happen.
-        """
-
-        logger = logging.getLogger()
-
-        username = self.get_operator_username(tls=True)
-        password = self.get_operator_password(username)
-
-        director = bareos.bsock.DirectorConsole(
-            address=self.director_address,
-            port=self.director_port,
-            tls_psk_enable=False,
-            name=username,
-            password=password,
-            **self.director_extra_options
-        )
-
-        whoami = director.call("whoami").decode("utf-8")
-        self.assertEqual(username, whoami.rstrip())
-
-        # As there is no encryption,
-        # the socket should not contain a cipher() method.
-        self.assertFalse(hasattr(director.socket, "cipher"))
-
-    def test_login_notls_tls_fixedprotocolversion(self):
-        """
         console: notls, director: tls => nologin
-
-        As the protocolversion is set to a fixed value,
-        there will be no fallback to the old protocol.
         """
 
         logger = logging.getLogger()
@@ -139,7 +105,31 @@ class PythonBareosTlsPskTest(bareos_unittest.Base):
         with self.assertRaises(bareos.exceptions.AuthenticationError):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                director = bareos.bsock.DirectorConsole(
+                bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    tls_psk_enable=False,
+                    name=username,
+                    password=password,
+                    **self.director_extra_options
+                )
+
+    def test_login_notls_tls_fixedprotocolversion(self):
+        """
+        console: notls, director: tls => nologin
+
+        Fixed protocol versions also fail without TLS-PSK.
+        """
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username(tls=True)
+        password = self.get_operator_password(username)
+
+        with self.assertRaises(bareos.exceptions.AuthenticationError):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                bareos.bsock.DirectorConsole(
                     address=self.director_address,
                     port=self.director_port,
                     tls_psk_enable=False,

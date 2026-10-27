@@ -45,6 +45,7 @@
  */
 
 #include "lib/bool_string.h"
+#include "lib/default_console.h"
 #include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
@@ -60,7 +61,7 @@
 #include "lib/berrno.h"
 #include "lib/breg.h"
 #include "lib/tls_conf.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/keyword_table_s.h"
 #include "lib/util.h"
@@ -1100,6 +1101,18 @@ static void PropagateResource(const ResourceItem* items,
           // Handle bool fields
           def_bvalue = (bool*)((char*)(source) + offset);
           bvalue = (bool*)((char*)dest + offset);
+          *bvalue = *def_bvalue;
+          dest->SetMemberPresent(items[i].name);
+          SetBit(i, dest->inherit_content_);
+          break;
+        }
+        case CFG_TYPE_VERIFY_PEER: {
+          VerifyPeerSetting *def_bvalue, *bvalue;
+
+          // Handle bool fields
+
+          def_bvalue = (VerifyPeerSetting*)((char*)(source) + offset);
+          bvalue = (VerifyPeerSetting*)((char*)dest + offset);
           *bvalue = *def_bvalue;
           dest->SetMemberPresent(items[i].name);
           SetBit(i, dest->inherit_content_);
@@ -2174,7 +2187,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_con->tls_cert_.allowed_certificate_common_names_);
         p->user_acl.profiles = res_con->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -2187,7 +2199,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         return false;
       } else {
         p->user_acl.profiles = res_user->user_acl.profiles;
-        p->user_acl.corresponding_resource = p;
       }
       break;
     }
@@ -3610,12 +3621,9 @@ static bool AddResourceCopyToEndOfChain(int type,
   return my_config->AppendToResourcesChain(new_resource, type);
 }
 
-/*
- * Create a special Console named "*UserAgent*" with
- * root console password so that incoming console
- * connections can be handled in unique way
- *
- */
+/* Create a special Console resource for the root console with the
+ * root console password so that incoming console connections can be
+ * handled in unique way */
 static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
 {
   DirectorResource* dir_resource
@@ -3626,7 +3634,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
   c->password_.encoding = dir_resource->password_.encoding;
   c->password_.value = strdup(dir_resource->password_.value);
   c->tls_enable_ = true;
-  c->resource_name_ = strdup("*UserAgent*");
+  c->resource_name_ = strdup(DEFAULT_CONSOLE_NAME);
   c->description_ = strdup("root console definition");
   c->rcode_ = R_CONSOLE;
   c->rcode_str_ = "R_CONSOLE";
@@ -3662,7 +3670,7 @@ static void DumpResource(int type,
   OutputFormatter* output_formatter = nullptr;
   std::unique_ptr<OutputFormatter> output_formatter_local;
   if (ua) {
-    output_formatter = ua->send;
+    output_formatter = ua->send.get();
   } else {
     output_formatter_local
         = std::make_unique<OutputFormatter>(sendit, nullptr, nullptr, nullptr);
@@ -3788,7 +3796,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }
@@ -3802,7 +3809,6 @@ static void FreeResource(BareosResource* res, int type)
       for (int i = 0; i < Num_ACL; i++) {
         if (p->user_acl.ACL_lists[i]) {
           delete p->user_acl.ACL_lists[i];
-          p->user_acl.corresponding_resource = nullptr;
           p->user_acl.ACL_lists[i] = NULL;
         }
       }
@@ -3913,7 +3919,7 @@ static void FreeResource(BareosResource* res, int type)
       printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
   }
-  if (next_resource) { my_config->FreeResourceCb_(next_resource, type); }
+  if (next_resource) { FreeResource(next_resource, type); }
 }
 
 /**

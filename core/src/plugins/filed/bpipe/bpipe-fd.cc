@@ -660,6 +660,27 @@ static bRC plugin_has_valid_arguments(PluginContext* ctx)
     retval = bRC_Error;
   }
 
+  int is_accurate;
+  bRC rc
+      = bareos_core_functions->getBareosValue(ctx, bVarAccurate, &is_accurate);
+  if (rc == bRC_Error) {
+    Jmsg(ctx, M_FATAL,
+         T_("bpipe-fd: internal error getting accurate status.\n"));
+    Dmsg(ctx, debuglevel,
+         "bpipe-fd: internal error getting accurate status.\n");
+    retval = bRC_Error;
+  } else {
+    if (p_ctx->usesuffix && is_accurate != 0) {
+      Jmsg(ctx, M_FATAL,
+           T_("bpipe-fd: Accurate not allowed with usesuffix, "
+              "please disable in Job.\n"));
+      Dmsg(ctx, debuglevel,
+           "bpipe-fd: Accurate not allowed with usesuffix, "
+           "please disable in Job.\n");
+      retval = bRC_Error;
+    }
+  }
+
   return retval;
 }
 } /* namespace filedaemon */

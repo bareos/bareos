@@ -164,7 +164,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
     // Start conversation with Storage daemon
-    if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
+    if (!ConnectToStorageDaemon(jcr, store, 10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
     sd = jcr->store_bsock;
@@ -181,7 +181,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       jcr->dir_impl->keep_sd_auth_key
           = true; /* don't clear the sd_auth_key now */
 
-      if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
+      if (!ConnectToFileDaemon(jcr, jcr->dir_impl->res.client, 10,
+                               me->FDConnectTimeout, true)) {
         goto bail_out;
       }
       SendJobInfoToFileDaemon(jcr);

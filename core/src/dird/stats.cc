@@ -188,7 +188,7 @@ extern "C" void* statistics_thread(void*)
         }
 
         jcr->dir_impl->res.read_storage = store;
-        if (!ConnectToStorageDaemon(jcr, 2, 1, false)) { continue; }
+        if (!ConnectToStorageDaemon(jcr, store, 2, 1, false)) { continue; }
 
         StorageId = store->StorageId;
         sd = jcr->store_bsock;

@@ -46,6 +46,7 @@
 #include "lib/bstringlist.h"
 
 #include <netdb.h>
+#include "lib/mem_pool.h"
 #include "lib/tls.h"
 
 #ifndef INADDR_NONE
@@ -106,32 +107,20 @@ bool BnetSend(BareosSocket* bsock) { return bsock->send(); }
  *  Returns: true  on success
  *           false on failure
  */
-bool BnetTlsServer(BareosSocket* bsock,
-                   const std::vector<std::string>& verify_list)
+bool BnetTlsServer(BareosSocket* bsock, std::shared_ptr<Tls> tls)
 {
-  JobControlRecord* jcr = bsock->jcr();
-
-  if (!bsock->tls_conn_init) {
+  if (!tls) {
     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockAccept\n");
     goto err;
   }
 
-  if (!bsock->tls_conn_init->TlsBsockAccept(bsock)) {
+  if (!tls->TlsBsockAccept(bsock)) {
     Qmsg0(bsock->jcr(), M_FATAL, 0, T_("TLS Negotiation failed.\n"));
     goto err;
   }
 
-  if (!verify_list.empty()) {
-    if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
-      Qmsg1(bsock->jcr(), M_FATAL, 0,
-            T_("TLS certificate verification failed."
-               " Peer certificate did not match a required commonName\n"));
-      goto err;
-    }
-  }
-
   bsock->LockMutex();
-  bsock->tls_conn = std::move(bsock->tls_conn_init);
+  bsock->tls_conn = std::move(tls);
   bsock->UnlockMutex();
 
   Dmsg0(50, "TLS server negotiation established.\n");
@@ -147,42 +136,19 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool BnetTlsClient(BareosSocket* bsock,
-                   bool VerifyPeer,
-                   const std::vector<std::string>& verify_list)
+bool BnetTlsClient(JobControlRecord* jcr,
+                   BareosSocket* bsock,
+                   std::shared_ptr<Tls> tls)
 {
-  JobControlRecord* jcr = bsock->jcr();
-
-  if (!bsock->tls_conn_init) {
+  if (!tls) {
     Dmsg0(100, "No TLS Connection: Cannot call TlsBsockConnect\n");
     goto err;
   }
 
-  if (!bsock->tls_conn_init->TlsBsockConnect(bsock)) { goto err; }
-
-  if (VerifyPeer) {
-    /* If there's an Allowed CN verify list, use that to validate the remote
-     * certificate's CN. Otherwise, we use standard host/CN matching. */
-    if (!verify_list.empty()) {
-      if (!bsock->tls_conn_init->TlsPostconnectVerifyCn(jcr, verify_list)) {
-        Qmsg1(bsock->jcr(), M_FATAL, 0,
-              T_("TLS certificate verification failed."
-                 " Peer certificate did not match a required commonName\n"));
-        goto err;
-      }
-    } else {
-      if (!bsock->tls_conn_init->TlsPostconnectVerifyHost(jcr, bsock->host())) {
-        Qmsg1(bsock->jcr(), M_FATAL, 0,
-              T_("TLS host certificate verification failed. Host name \"%s\" "
-                 "did not match presented certificate\n"),
-              bsock->host());
-        goto err;
-      }
-    }
-  }
+  if (!tls->TlsBsockConnect(jcr, bsock)) { goto err; }
 
   bsock->LockMutex();
-  bsock->tls_conn = std::move(bsock->tls_conn_init);
+  bsock->tls_conn = std::move(tls);
   bsock->UnlockMutex();
 
   Dmsg0(50, "TLS client negotiation established.\n");
@@ -515,6 +481,31 @@ bool BareosSocket::ReceiveAndEvaluateResponseMessage(uint32_t& id_out,
   return EvaluateResponseMessageId(message, id_out, args_out);
 }
 
+bool SendResponseMessage(BareosSocket* socket, ResponseId id, const char* msg)
+{
+  socket->StartTimer(30);  // 30 seconds
+  bool ok = socket->fsend("%u%c%s", id,
+                          AsciiControlCharacters::RecordSeparator(), msg);
+  socket->StopTimer();
+  return ok;
+}
+
+bool FormatAndSendResponseMessage(BareosSocket* socket,
+                                  ResponseId id,
+                                  const char* fmt,
+                                  ...)
+{
+  va_list args;
+  va_start(args, fmt);
+
+  PoolMem formatted;
+  formatted.Bvsprintf(fmt, args);
+
+  va_end(args);
+
+  return SendResponseMessage(socket, id, formatted.c_str());
+}
+
 bool BareosSocket::FormatAndSendResponseMessage(
     uint32_t id,
     const BStringList& list_of_arguments)
@@ -531,13 +522,4 @@ bool BareosSocket::FormatAndSendResponseMessage(
   }
   StopTimer();
   return true;
-}
-
-bool BareosSocket::FormatAndSendResponseMessage(uint32_t id,
-                                                const std::string& str)
-{
-  BStringList message;
-  message << str;
-
-  return FormatAndSendResponseMessage(id, message);
 }

@@ -69,14 +69,11 @@ static std::string pidfile_path{};
 
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-fd");
-  InitMsg(nullptr, nullptr);
+  InitDaemonMsg(nullptr);
   daemon_start_time = time(nullptr);
 
   CLI::App fd_app;

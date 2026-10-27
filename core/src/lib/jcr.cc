@@ -600,6 +600,42 @@ JobControlRecord* get_jcr_by_full_name(std::string_view job)
   return jcr;
 }
 
+JobControlRecord* get_jcr_for_authentication(std::string_view job_name)
+{
+  auto* jcr = get_jcr_by_full_name(job_name);
+  if (!jcr) {
+    std::string name{job_name};
+    Emsg1(M_ERROR, 0, T_("Job for authentication not found: %s\n"),
+          name.c_str());
+    Dmsg1(3, "**** Job \"%s\" not found.\n", name.c_str());
+    return nullptr;
+  }
+
+  Dmsg1(50, "Found Job %s\n", jcr->Job);
+
+  if (jcr->authenticated) {
+    Jmsg2(jcr, M_FATAL, 0,
+          T_("Hey!!!! JobId %u Job %s already authenticated.\n"),
+          (uint32_t)jcr->JobId, jcr->Job);
+    Dmsg2(50, "Hey!!!! JobId %u Job %s already authenticated.\n",
+          (uint32_t)jcr->JobId, jcr->Job);
+    FreeJcr(jcr);
+    return nullptr;
+  }
+
+  if (!jcr->sd_auth_key || jcr->sd_auth_key[0] == 0
+      || strcmp(jcr->sd_auth_key, "dummy") == 0) {
+    Jmsg2(jcr, M_FATAL, 0, T_("Hey!!!! JobId %u Job %s has bad auth key.\n"),
+          (uint32_t)jcr->JobId, jcr->Job);
+    Dmsg2(50, "Hey!!!! JobId %u Job %s has bad auth key.\n",
+          (uint32_t)jcr->JobId, jcr->Job);
+    FreeJcr(jcr);
+    return nullptr;
+  }
+
+  return jcr;
+}
+
 JobControlRecord* get_jcr_by_full_name(char const* Job)
 {
   if (!Job) { return nullptr; }
@@ -624,29 +660,6 @@ const char* JcrGetAuthenticateKey(const char* unified_job_name)
   endeach_jcr(jcr);
 
   return auth_key;
-}
-
-TlsPolicy JcrGetTlsPolicy(const char* unified_job_name)
-{
-  if (!unified_job_name) { return kBnetTlsUnknown; }
-
-  TlsPolicy policy = kBnetTlsUnknown;
-  JobControlRecord* jcr;
-
-  foreach_jcr (jcr) {
-    if (bstrcmp(jcr->Job, unified_job_name)) {
-      policy = jcr->sd_tls_policy;
-      Dmsg4(debuglevel,
-            "Inc get_jcr jid=%" PRIu32 " UseCount=%d Job=%s TlsPolicy=%" PRIu32
-            "\n",
-            jcr->JobId, jcr->UseCount(), jcr->Job,
-            static_cast<uint32_t>(policy));
-      break;
-    }
-  }
-  endeach_jcr(jcr);
-
-  return policy;
 }
 
 static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)

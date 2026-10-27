@@ -610,6 +610,7 @@ static void do_truncate_on_purge(UaContext* ua,
 {
   bool ok = false;
   uint64_t VolBytes = 0;
+  uint32_t VolFiles = 0;
 
   // TODO: Return if not mr->Recycle ?
   if (!mr->Recycle) { return; }
@@ -648,7 +649,10 @@ static void do_truncate_on_purge(UaContext* ua,
   // Send relabel command, and check for valid response
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
-    if (bsscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
+    if (bsscanf(sd->msg, "3000 OK label. VolFiles=%lu VolBytes=%llu ",
+                &VolFiles, &VolBytes)
+            == 2
+        || bsscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
       ok = true;
     }
   }
@@ -682,7 +686,6 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
   MediaDbRecord mr;
   PoolDbRecord pr;
   BareosSocket* sd = NULL;
-  char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE), volumes(PM_MESSAGE);
 
   PmStrcpy(volumes, "");
@@ -693,11 +696,12 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char*)
       allpools = true;
     } else if (Bstrcasecmp(ua->argk[i], NT_("volume"))
                && IsNameValid(ua->argv[i])) {
-      ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
+      auto esc = ua->db->EscapeString(ua->jcr, ua->argv[i]);
+      if (!esc) { goto bail_out; }
       if (!*volumes.c_str()) {
-        Mmsg(buf, "'%s'", esc);
+        Mmsg(buf, "'%s'", esc->c_str());
       } else {
-        Mmsg(buf, ",'%s'", esc);
+        Mmsg(buf, ",'%s'", esc->c_str());
       }
       PmStrcat(volumes, buf.c_str());
     } else if (Bstrcasecmp(ua->argk[i], NT_("devicetype")) && ua->argv[i]) {

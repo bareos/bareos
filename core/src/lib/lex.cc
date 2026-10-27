@@ -239,6 +239,7 @@ static inline lexer* lex_add(lexer* lf,
   lf->str_max_len = SizeofPoolMemory(lf->str);
   lf->state = lex_none;
   lf->ch = L_EOL;
+  lf->caller_ctx = nf->caller_ctx;
 
   return lf;
 }

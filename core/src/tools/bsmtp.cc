@@ -169,12 +169,6 @@ static void chat(char* my_hostname,
 static long TzOffset([[maybe_unused]] time_t lnow, struct tm& tm)
 {
 #if defined(HAVE_WIN32)
-#  if defined(HAVE_MINGW)
-  __MINGW_IMPORT long _dstbias;
-#  endif
-#  if defined(MINGW64)
-#    define _tzset tzset
-#  endif
   /* Win32 code */
   long offset;
   _tzset();
@@ -237,10 +231,7 @@ std::pair<std::string, int> ParseHostAndPort(std::string val)
  */
 int main(int argc, char* argv[])
 {
-  setlocale(LC_ALL, "en_US");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("en_US");
 
   MyNameIs(argc, argv, "bsmtp");
 

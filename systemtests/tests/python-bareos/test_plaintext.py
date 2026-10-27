@@ -60,14 +60,23 @@ class PythonBareosPlainTest(bareos_unittest.Base):
         logger = logging.getLogger()
 
         bareos_password = bareos.bsock.Password(self.director_root_password)
-        director = bareos.bsock.DirectorConsole(
-            address=self.director_address,
-            port=self.director_port,
-            password=bareos_password,
-            **self.director_extra_options
-        )
-        whoami = director.call("whoami").decode("utf-8")
-        self.assertEqual("root", whoami.rstrip())
+        if bareos.bsock.DirectorConsole.is_tls_psk_available():
+            director = bareos.bsock.DirectorConsole(
+                address=self.director_address,
+                port=self.director_port,
+                password=bareos_password,
+                **self.director_extra_options
+            )
+            whoami = director.call("whoami").decode("utf-8")
+            self.assertEqual("root", whoami.rstrip())
+        else:
+            with self.assertRaises(bareos.exceptions.AuthenticationError):
+                bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    password=bareos_password,
+                    **self.director_extra_options
+                )
 
     def test_login_as_user(self):
         logger = logging.getLogger()
@@ -163,11 +172,13 @@ class PythonBareosPlainTest(bareos_unittest.Base):
         self.assertEqual(username, result.rstrip())
 
     def test_dot_help_accepts_full_as_flag_only(self):
-        bareos_password = bareos.bsock.Password(self.director_root_password)
+        username = self.get_operator_username(tls=False)
+        password = self.get_operator_password(username)
         director = bareos.bsock.DirectorConsole(
             address=self.director_address,
             port=self.director_port,
-            password=bareos_password,
+            name=username,
+            password=password,
             **self.director_extra_options
         )
 

@@ -249,7 +249,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     ${PROJECT_SOURCE_DIR}/src/win32/compat/include
   )
   if(MSVC)
-    link_libraries(Intl::Intl)
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()
@@ -702,7 +701,7 @@ message(
 message(
   "   VIXDISKLIB support:           ${VIXDISKLIB_FOUND} ${VIXDISKLIB_LIBRARIES} ${VIXDISKLIB_INCLUDE_DIRS} "
 )
-message("   LMDB support:                 ${lmdb} ")
+message("   LMDB support:                 ${lmdb} ${LMDB_VERSION}")
 message("   NDMP support:                 ${ndmp} ")
 message("   Build ndmjob binary:          ${build_ndmjob} ")
 message("   Build tray-monitor:           ${traymonitor} ")

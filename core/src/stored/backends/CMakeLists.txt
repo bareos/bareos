@@ -35,6 +35,7 @@ endmacro()
 
 add_library(chunked-device STATIC)
 target_sources(chunked-device PRIVATE ordered_cbuf.cc chunked_device.cc)
+target_link_libraries(chunked-device PUBLIC Bareos::Lib)
 
 add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)

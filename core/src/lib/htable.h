@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ union hlink_key {
 };
 
 struct hlink {
-  void* next;          /* Next hash item */
+  hlink* next;         /* Next hash item */
   key_type_t key_type; /* Type of key used to hash */
   union hlink_key key; /* Key for this item */
   uint32_t key_len;    /* Length of key for this item */
@@ -60,27 +60,26 @@ struct hlink {
 };
 
 class htableImpl {
-  hlink** table = nullptr;      /* Hash table */
-  size_t loffset = 0;           /* Link offset in item */
-  hlink* walkptr = nullptr;     /* Table walk pointer */
-  uint64_t hash = 0;            /* Temp storage */
-  uint32_t walk_index = 0;      /* Table walk index */
-  uint32_t num_items = 0;       /* Current number of items */
-  uint32_t max_items = 0;       /* Maximum items before growing */
-  uint32_t buckets = 0;         /* Size of hash table */
-  uint32_t index = 0;           /* Temp storage */
-  uint32_t mask = 0;            /* "Remainder" mask */
-  uint32_t rshift = 0;          /* Amount to shift down */
-  void HashIndex(char* key);    /* Produce hash key,index */
-  void HashIndex(uint32_t key); /* Produce hash key,index */
-  void HashIndex(uint64_t key); /* Produce hash key,index */
+  std::unique_ptr<hlink*[]> table = nullptr; /* Hash table */
+  size_t loffset = 0;                        /* Link offset in item */
+  hlink* walkptr = nullptr;                  /* Table walk pointer */
+  uint64_t hash = 0;                         /* Temp storage */
+  uint32_t walk_index = 0;                   /* Table walk index */
+  uint32_t num_items = 0;                    /* Current number of items */
+  uint32_t max_items = 0;                    /* Maximum items before growing */
+  uint32_t buckets = 0;                      /* Size of hash table */
+  uint32_t index = 0;                        /* Temp storage */
+  uint32_t mask = 0;                         /* "Remainder" mask */
+  uint32_t rshift = 0;                       /* Amount to shift down */
+  void HashIndex(char* key);                 /* Produce hash key,index */
+  void HashIndex(uint32_t key);              /* Produce hash key,index */
+  void HashIndex(uint64_t key);              /* Produce hash key,index */
   void HashIndex(uint8_t* key, uint32_t key_len); /* Produce hash key,index */
   void grow_table();                              /* Grow the table */
 
  public:
   htableImpl() = default;
-  htableImpl(size_t t_loffset, int tsize = 31);
-  ~htableImpl() { destroy(); }
+  htableImpl(size_t t_loffset, uint32_t tsize = 31);
   void init(int tsize = 31);
   bool insert(char* key, void* item);
   bool insert(uint32_t key, void* item);
@@ -90,11 +89,13 @@ class htableImpl {
   void* lookup(uint32_t key);
   void* lookup(uint64_t key);
   void* lookup(uint8_t* key, uint32_t key_len);
-  void* first(); /* Get first item in table */
-  void* next();  /* Get next item in table */
-  void destroy();
+  void* first();   /* Get first item in table */
+  void* next();    /* Get next item in table */
   void stats();    /* Print stats about the table */
   uint32_t size(); /* Return size of table */
+
+  /* The amount of elements the table can hold without growing */
+  uint32_t capacity() { return max_items - 1; }
 };
 
 struct htable_binary_key {

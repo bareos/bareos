@@ -565,7 +565,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
             BareosDb::SQL_QUERY::subscription_with_clause_0),
         client);
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                          "unit-detail", true);
     ua->SendMsg(
         T_("All plugin jobs and the first non-plugin job are counted.\n"));
@@ -594,7 +594,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
         kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                          "unit-detail", true);
   }
   if (kw_all || kw_clients) {
@@ -607,7 +607,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
         kw_anon ? "client_anon" : "client_name",
         kw_anon ? "client_id" : "client_name");
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                          "unit-clients", true);
 
     ua->SendMsg(
@@ -621,7 +621,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
         query, ua->db->get_predefined_query(
                    BareosDb::SQL_QUERY::subscription_with_clause_0));
 
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                          "unit-plugins", true);
   }
 
@@ -632,7 +632,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
       ua->db->get_predefined_query(
           BareosDb::SQL_QUERY::subscription_with_clause_0),
       me->subscriptions);
-  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
+  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), VERT_LIST,
                        "unit-summary", true, BareosDb::CollapseMode::Collapse);
   std::string checksum_source
       = get_subscription_status_checksum_source_text(ua, now);
@@ -652,12 +652,12 @@ static void DoConfigurationStatus(UaContext* ua)
                  ua->argk[0], ua->argk[1]);
   } else {
     if (my_config->HasWarnings()) {
-      ua->SendMsg(T_("Deprecated configuration settings detected:\n"));
+      ua->SendMsg(T_("Configuration warnings detected:\n"));
       for (auto& warning : my_config->GetWarnings()) {
         ua->SendMsg(" * %s\n", warning.c_str());
       }
     } else {
-      ua->SendMsg(T_("No deprecated configuration settings detected.\n"));
+      ua->SendMsg(T_("No configuration warnings detected.\n"));
     }
   }
 }

@@ -1,1 +1,1 @@
-DROP TABLE DelCandidates
+DROP TABLE IF EXISTS DelCandidates

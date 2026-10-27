@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,56 @@
 #include "include/bareos.h"
 #include "lib/tls_conf.h"
 
+namespace {
+bool bad_policy(TlsPolicy pol)
+{
+  switch (pol) {
+    case kBnetTlsNone:
+      [[fallthrough]];
+    case kBnetTlsEnabled:
+      [[fallthrough]];
+    case kBnetTlsRequired:
+      [[fallthrough]];
+    case kBnetTlsAuto: {
+      return false;
+    } break;
+    case kBnetTlsUnknown:
+      [[fallthrough]];
+    default: {
+      return true;
+    } break;
+  }
+}
+
+bool requires_tls(TlsPolicy pol)
+{
+  switch (pol) {
+    case kBnetTlsRequired: {
+      return true;
+    } break;
+    default: {
+      return false;
+    } break;
+  }
+}
+
+bool allows_tls(TlsPolicy pol)
+{
+  switch (pol) {
+    case kBnetTlsEnabled:
+      [[fallthrough]];
+    case kBnetTlsRequired:
+      [[fallthrough]];
+    case kBnetTlsAuto: {
+      return true;
+    } break;
+    default: {
+      return false;
+    } break;
+  }
+}
+}  // namespace
+
 bool TlsResource::IsTlsConfigured() const { return tls_enable_; }
 
 TlsPolicy TlsResource::GetPolicy() const
@@ -31,21 +81,38 @@ TlsPolicy TlsResource::GetPolicy() const
   return TlsPolicy::kBnetTlsRequired;
 }
 
-int TlsResource::SelectTlsPolicy(TlsPolicy remote_policy) const
+TlsStatus select_tls_status(TlsPolicy left, TlsPolicy right)
 {
-  if (remote_policy == TlsPolicy::kBnetTlsAuto) {
-    return TlsPolicy::kBnetTlsAuto;
-  }
-  TlsPolicy local_policy = GetPolicy();
+  if (bad_policy(left) || bad_policy(right)) { return TlsStatus::Error; }
 
-  if ((remote_policy == 0 && local_policy == 0)
-      || (remote_policy == 0 && local_policy == 1)
-      || (remote_policy == 1 && local_policy == 0)) {
-    return TlsPolicy::kBnetTlsNone;
+  bool left_require = requires_tls(left);
+  bool left_allow = allows_tls(left);
+
+  bool right_require = requires_tls(right);
+  bool right_allow = allows_tls(right);
+
+  if (left_require || right_require) {
+    if (!right_allow || !left_allow) {
+      // if one side requires it, but the other does not allow it,
+      // then we cannot continue
+      return TlsStatus::Error;
+    }
+
+    // since one side requires it, and the other side is fine with it,
+    // we need to create the tls connection
+    return TlsStatus::Enabled;
   }
-  if ((remote_policy == 0 && local_policy == 2)
-      || (remote_policy == 2 && local_policy == 0)) {
-    return TlsPolicy::kBnetTlsDeny;
+
+  if (!left_allow || !right_allow) {
+    // as neither side requires it, but one of them does not allow it
+    // we can only unify them, by disabling Tls
+
+    return TlsStatus::Disabled;
   }
-  return TlsPolicy::kBnetTlsEnabled;
+
+  // at this point we know:
+  // - neither side requires tls
+  // - both sides allow tls
+  // as such both Enabled/Disabled is ok.  By default we choose to use tls
+  return TlsStatus::Enabled;
 }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,9 +30,7 @@
 #include <QString>
 #include <QStringList>
 
-namespace Ui {
-class MainWindow;
-}
+#include "ui_mainwindow.h"
 
 class QPlainTextEdit;
 class MonitorTab;
@@ -51,19 +49,18 @@ class MainWindow : public QMainWindow {
  private:
   explicit MainWindow(QWidget* parent = 0);
   Q_DISABLE_COPY(MainWindow);
-  ~MainWindow();
 
   QPlainTextEdit* getTextEdit(const QString& tabRef);
   static MainWindow* mainWindowSingleton;
   static bool already_destroyed;
 
-  Ui::MainWindow* ui;
-  QMap<QString, MonitorTab*>* monitorTabMap;
+  std::unique_ptr<Ui::MainWindow> ui;
+  QMap<QString, MonitorTab*> monitorTabMap;
   SystemTrayIcon* systemTrayIcon;
 
   QStringList tabs;
   int nTabs;
-  bool* bRefs;
+  std::vector<bool> bRefs;
 
  public slots:
   /* auto-connected slots to the UI                */

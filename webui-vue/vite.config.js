@@ -7,6 +7,7 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  base: "./",
   plugins: [
     vue({ template: { transformAssetUrls } }),
     quasar({

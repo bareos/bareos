@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,6 @@ bool MainWindow::already_destroyed = false;
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , monitorTabMap(new QMap<QString, MonitorTab*>)
     , systemTrayIcon(new SystemTrayIcon(this))
 {
   /* Init the SystemTrayIcon first to have all its signals
@@ -58,19 +57,12 @@ MainWindow::MainWindow(QWidget* parent)
   while (ui->tabWidget->count()) { ui->tabWidget->removeTab(0); }
 
   nTabs = 100;
-  bRefs = new bool[nTabs];
+  bRefs.resize(nTabs);
   for (int i = 0; i < nTabs; i++) bRefs[i] = true;
 
 
   // Now show the tray icon, but leave the MainWindow hidden.
   systemTrayIcon->show();
-}
-
-MainWindow::~MainWindow()
-{
-  delete ui;
-  delete monitorTabMap;
-  delete bRefs;
 }
 
 MainWindow* MainWindow::instance()
@@ -99,7 +91,7 @@ void MainWindow::addTabs(QStringList tabRefs)
 
   for (int i = 0; i < tabRefs.count(); i++) {
     MonitorTab* tab = new MonitorTab(tabRefs[i], this);
-    monitorTabMap->insert(tabRefs[i], tab);  // tabRefs[i] used as reference
+    monitorTabMap.insert(tabRefs[i], tab);  // tabRefs[i] used as reference
     ui->tabWidget->addTab(tab->getTabWidget(), tabRefs[i]);
   }
 }
@@ -144,7 +136,7 @@ void MainWindow::on_pushButton_Close_clicked() { hide(); }
 
 QPlainTextEdit* MainWindow::getTextEdit(const QString& tabRef)
 {
-  MonitorTab* tab = monitorTabMap->value(tabRef);
+  MonitorTab* tab = monitorTabMap.value(tabRef);
 
   return (tab) ? tab->getTextEdit() : 0;
 }
@@ -172,7 +164,7 @@ void MainWindow::onStatusChanged(const QString& tabRef, int state)
 {
   int n = tabs.indexOf(tabRef);
 
-  MonitorTab* tab = monitorTabMap->value(tabRef);
+  MonitorTab* tab = monitorTabMap.value(tabRef);
 
   if (tab) {
     int idx = ui->tabWidget->indexOf(tab->getTabWidget());

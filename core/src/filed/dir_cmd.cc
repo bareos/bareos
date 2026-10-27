@@ -46,8 +46,9 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 #include "lib/edit.h"
+#include "lib/hello.h"
 #include "lib/path_list.h"
-#include "lib/qualified_resource_name_type_converter.h"
+#include "lib/global_resource.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/parse_conf.h"
@@ -57,6 +58,7 @@
 #include "lib/util.h"
 #include "filed/backup.h"
 #include "lib/compression.h"
+#include "filed/accurate.h"
 
 #if defined(WIN32_VSS)
 #  include "findlib/win32.h"
@@ -177,7 +179,7 @@ static struct s_fd_dir_cmds cmds[] = {
 
 // Commands send to director
 inline constexpr const char hello_client[]
-    = "Hello Client %s FdProtocolVersion=%d calling\n";
+    = "Hello Client %s FdProtocolVersion=%d calling Version=\"%u.%u.%u\"\n";
 
 // Responses received from the director
 inline constexpr const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
@@ -366,6 +368,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   if (jcr->authenticated) {
     /**********FIXME******* add command handler error code */
 
+    // set authenticated to false, so that storage daemons will be able to
+    // connect
+    jcr->authenticated = false;
+
     for (;;) {
       // Read command
       if (dir->recv() < 0) { break; /* connection terminated */ }
@@ -435,6 +441,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   // Clean up fileset
   CleanupFileset(jcr);
 
+  // make sure that accurate is cleaned up!
+  // this may not properly happen if e.g. the backup command fails
+  AccurateFree(jcr);
+
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
 
@@ -483,7 +493,7 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-void* handle_director_connection(BareosSocket* dir)
+void* handle_director_connection(BareosSocket* dir, DirectorResource* res)
 {
   JobControlRecord* jcr;
 
@@ -500,8 +510,8 @@ void* handle_director_connection(BareosSocket* dir)
 
   jcr = create_new_director_session(dir);
 
-  Dmsg0(120, "Calling Authenticate\n");
-  if (AuthenticateDirector(jcr)) { Dmsg0(120, "OK Authenticate\n"); }
+  jcr->fd_impl->director = res;
+  jcr->authenticated = true;
 
   return process_director_commands(jcr, dir);
 }
@@ -1435,33 +1445,47 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   jcr->store_bsock = storage_daemon_socket;
 
-  if (tls_policy == TlsPolicy::kBnetTlsAuto) {
-    std::string qualified_resource_name
-        = global_resource::QualifiedName(global_resource::Type::Job, jcr->Job);
+  {
+    TlsResource custom = *me;
+    custom.password_.value = jcr->sd_auth_key;
+    bool cleartext_auth = false;
+    switch (jcr->sd_tls_policy) {
+      case kBnetTlsNone: {
+        custom.tls_enable_ = false;
+      } break;
+      case kBnetTlsAuto: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+      } break;
+      case kBnetTlsEnabled: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = false;
+        cleartext_auth = true;
+      } break;
+      case kBnetTlsRequired: {
+        custom.tls_enable_ = true;
+        custom.tls_require_ = true;
+        cleartext_auth = true;
+      } break;
+      case kBnetTlsUnknown: {
+        goto bail_out;
+      } break;
+    }
 
-    storage_daemon_socket->SetEnableKtls(me->enable_ktls);
-
-    if (!storage_daemon_socket->DoTlsHandshake(
-            TlsPolicy::kBnetTlsAuto, me, false, qualified_resource_name.c_str(),
-            jcr->sd_auth_key, jcr)) {
-      jcr->store_bsock = nullptr;
+    if (!BareosConnect<global_resource::Type::Client,
+                       global_resource::Type::Storage>(
+            jcr, storage_daemon_socket, jcr->Job, &custom, cleartext_auth)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Failed to authenticate with Storage daemon.\n"));
       goto bail_out;
     }
   }
+  Dmsg0(110, "Authenticated with SD.\n");
 
   if (jcr->JobId != 0) {
     Jmsg(jcr, M_INFO, 0, "%s\n",
          storage_daemon_socket->GetCipherMessageString().c_str());
   }
-
-  storage_daemon_socket->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
-  storage_daemon_socket->fsend("Hello Start Job %s\n", jcr->Job);
-  if (!AuthenticateWithStoragedaemon(jcr)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Failed to authenticate Storage daemon.\n"));
-    goto bail_out;
-  }
-  Dmsg0(110, "Authenticated with SD.\n");
 
   // Send OK to Director
   return dir->fsend(OKstore);
@@ -2012,38 +2036,16 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
     return nullptr;
   }
 
-  if (dir_res->IsTlsConfigured()) {
-    std::string qualified_resource_name = global_resource::QualifiedName(
-        my_config->GlobalTypeFromLocalType(my_config->r_own_),
-        me->resource_name_);
-    if (qualified_resource_name.empty()) {
-      Dmsg0(100,
-            "Could not generate qualified resource name for a storage "
-            "resource\n");
-      return nullptr;
-    }
+  director_socket->SetEnableKtls(me->enable_ktls);
 
-    director_socket->SetEnableKtls(me->enable_ktls);
-
-    if (!director_socket->DoTlsHandshake(TlsPolicy::kBnetTlsAuto, dir_res,
-                                         false, qualified_resource_name.c_str(),
-                                         dir_res->password_.value, jcr)) {
-      Dmsg0(100, "Could not DoTlsHandshake() with director\n");
-      return nullptr;
-    }
-  }
-
-  Dmsg1(10, "Opened connection with Director %s\n", dir_res->resource_name_);
-  jcr->dir_bsock = director_socket.get();
-
-  director_socket->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
-  director_socket->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
-  if (!AuthenticateWithDirector(jcr, dir_res)) {
-    jcr->dir_bsock = nullptr;
+  if (!BareosConnect<global_resource::Type::Client,
+                     global_resource::Type::Director>(
+          jcr, director_socket.get(), me->resource_name_, dir_res)) {
+    Dmsg0(100, "Could not connect to director\n");
     return nullptr;
   }
 
+  jcr->dir_bsock = director_socket.get();
   director_socket->recv();
   ParseOkVersion(director_socket->msg);
 

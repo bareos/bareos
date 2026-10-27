@@ -51,6 +51,7 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <string_view>
 #include <vector>
 
 namespace directordaemon {
@@ -69,7 +70,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
-static void SplitPathAndFilename(UaContext* ua,
+static bool SplitPathAndFilename(UaContext* ua,
                                  RestoreContext* rx,
                                  char* fname);
 static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
@@ -81,11 +82,11 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
                                     const char* date);
-static void InsertOneFileOrDir(UaContext* ua,
-                               RestoreContext* rx,
-                               char* p,
-                               const char* date,
-                               bool dir);
+[[nodiscard]] static bool InsertOneFileOrDir(UaContext* ua,
+                                             RestoreContext* rx,
+                                             char* p,
+                                             const char* date,
+                                             bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
 static bool get_date(UaContext* ua, char* date, int date_len);
@@ -93,7 +94,6 @@ static int RestoreCountHandler(void* ctx, int num_fields, char** row);
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 static bool CheckAndSetFileregex(UaContext* ua,
                                  RestoreContext* rx,
                                  const char* regex);
@@ -116,7 +116,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.fname = GetPoolMemory(PM_FNAME);
   rx.JobIds = GetPoolMemory(PM_FNAME);
   rx.JobIds[0] = 0;
-  rx.BaseJobIds = GetPoolMemory(PM_FNAME);
   rx.query = GetPoolMemory(PM_FNAME);
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
@@ -216,7 +215,6 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 0: /* error */
       goto bail_out;
     case 1: /* selected by jobid */
-      GetAndDisplayBasejobs(ua, &rx);
       if (!BuildDirectoryTree(ua, &rx)) {
         ua->SendMsg(T_("Restore not done.\n"));
         goto bail_out;
@@ -367,25 +365,6 @@ bail_out:
   return false;
 }
 
-// Fill the rx->BaseJobIds and display the list
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
-{
-  db_list_ctx jobids;
-
-  if (!ua->db->GetUsedBaseJobids(ua->jcr, rx->JobIds, &jobids)) {
-    ua->WarningMsg("%s", ua->db->strerror());
-  }
-
-  if (!jobids.empty()) {
-    PoolMem query(PM_MESSAGE);
-
-    ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_print_jobs>(
-        query, jobids.GetAsString().c_str());
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-  }
-  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
-}
 
 static void free_rx(RestoreContext* rx)
 {
@@ -402,7 +381,6 @@ static void free_rx(RestoreContext* rx)
   }
 
   FreeAndNullPoolMemory(rx->JobIds);
-  FreeAndNullPoolMemory(rx->BaseJobIds);
   FreeAndNullPoolMemory(rx->fname);
   FreeAndNullPoolMemory(rx->path);
   FreeAndNullPoolMemory(rx->query);
@@ -633,6 +611,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     switch (j) {
       case 0: /* jobid */
         if (!HasValue(ua, i)) { return 0; }
+        if (!Is_a_number_list(ua->argv[i])) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+          return 0;
+        }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
 
         if (date_index >= 0) {
@@ -731,9 +713,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!GetClientName(ua, rx)) { return 0; }
 
-    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
+    for (auto& file : files) {
+      if (!InsertOneFileOrDir(ua, rx, file, date, false)) { return 0; }
+    }
 
-    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+    for (auto& dir : dirs) {
+      if (!InsertOneFileOrDir(ua, rx, dir, date, true)) { return 0; }
+    }
 
     if (files.size() + dirs.size() == 0) {
       /* If only fileregex but no specific files or dirs were specified
@@ -772,7 +758,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   /* If choice not already made above, prompt */
   for (; !done;) {
-    char* fname;
     int len;
     bool gui_save;
 
@@ -794,27 +779,32 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                             true);
         ua->jcr->gui = gui_save;
         done = false;
       } break;
-      case 1: /* list where a file is saved */
+      case 1: { /* list where a file is saved */
         if (!GetClientName(ua, rx)) { return 0; }
         if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
-        len = strlen(ua->cmd);
-        fname = (char*)malloc(len * 2 + 1);
-        ua->db->EscapeString(ua->jcr, fname, ua->cmd, len);
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(rx->query,
-                                                         rx->ClientName, fname);
-        free(fname);
+        std::string_view cmd_view{ua->cmd};
+        auto fname = ua->db->EscapeString(ua->jcr, cmd_view);
+        if (!fname) { return 0; }
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(
+            rx->query, rx->ClientName, fname->c_str());
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
+                             true);
         ua->jcr->gui = gui_save;
         done = false;
-        break;
+      } break;
       case 2: /* enter a list of JobIds */
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
+          return 0;
+        }
+        if (*ua->cmd && !Is_a_number_list(ua->cmd)) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
           return 0;
         }
         PmStrcpy(rx->JobIds, ua->cmd);
@@ -827,7 +817,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetCmd(ua, T_("Enter SQL list command: "))) { return 0; }
         gui_save = ua->jcr->gui;
         ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, HORZ_LIST, true);
+        ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send.get(), HORZ_LIST, true);
         ua->jcr->gui = gui_save;
         done = false;
         break;
@@ -851,7 +841,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */ {
@@ -866,7 +856,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, that_date, false);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, that_date, false);
         }
         return 2;
       }
@@ -893,6 +883,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         } else if (GetCmd(
                        ua,
                        T_("Enter JobId(s), comma separated, to restore: "))) {
+          if (*ua->cmd && !Is_a_number_list(ua->cmd)) {
+            ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+            return 0;
+          }
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
           bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
@@ -914,7 +908,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
         }
         return 2;
 
@@ -1051,11 +1045,11 @@ std::string CompensateShortDate(const char* cmd)
 }
 
 // Insert a single file, or read a list of files from a file
-static void InsertOneFileOrDir(UaContext* ua,
-                               RestoreContext* rx,
-                               char* p,
-                               const char* date,
-                               bool dir)
+[[nodiscard]] static bool InsertOneFileOrDir(UaContext* ua,
+                                             RestoreContext* rx,
+                                             char* p,
+                                             const char* date,
+                                             bool dir)
 {
   FILE* ffd;
   char file[5000];
@@ -1063,11 +1057,16 @@ static void InsertOneFileOrDir(UaContext* ua,
 
   switch (*p) {
     case '<':
+      if (ua->user_acl) {
+        ua->ErrorMsg(
+            "Only the default console may pass file lists to this command.\n");
+        return false;
+      }
       p++;
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
         ua->ErrorMsg(T_("Cannot open file %s: ERR=%s\n"), p, be.bstrerror());
-        break;
+        return false;
       }
       while (fgets(file, sizeof(file), ffd)) {
         line++;
@@ -1075,11 +1074,15 @@ static void InsertOneFileOrDir(UaContext* ua,
           if (!InsertDirIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         } else {
           if (!InsertFileIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         }
       }
@@ -1087,16 +1090,18 @@ static void InsertOneFileOrDir(UaContext* ua,
       break;
     case '?':
       p++;
-      InsertTableIntoFindexList(ua, rx, p);
+      return InsertTableIntoFindexList(ua, rx, p);
       break;
     default:
       if (dir) {
-        InsertDirIntoFindexList(ua, rx, p, date);
+        return InsertDirIntoFindexList(ua, rx, p, date);
       } else {
-        InsertFileIntoFindexList(ua, rx, p, date);
+        return InsertFileIntoFindexList(ua, rx, p, date);
       }
       break;
   }
+
+  return true;
 }
 
 /**
@@ -1110,7 +1115,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                                      const char* date)
 {
   StripTrailingNewline(file);
-  SplitPathAndFilename(ua, rx, file);
+  if (!SplitPathAndFilename(ua, rx, file)) { return false; }
 
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   if (*rx->JobIds == 0) {
@@ -1125,12 +1130,13 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
-                 ua->db->strerror());
+    Dmsg0(100, "Query failed: %s. ERR=%s\n", rx->query, ua->db->strerror());
+    ua->ErrorMsg("Querying for database record failed.\n");
   }
   if (!rx->found) {
-    ua->ErrorMsg(T_("No database record found for: %s\n"), file);
-    return true;
+    Dmsg0(100, "No database record found for: %s\n", file);
+    ua->ErrorMsg("Database record not found for file.\n");
+    return false;
   }
   return true;
 }
@@ -1148,8 +1154,15 @@ static bool InsertDirIntoFindexList(UaContext* ua,
     ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
   } else {
+    auto escaped = ua->db->EscapeString(ua->jcr, dir);
+
+    if (!escaped) {
+      ua->ErrorMsg("Could not escape '%s'.\n", dir);
+      return false;
+    }
+
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir>(
-        rx->query, rx->JobIds, dir, rx->ClientName);
+        rx->query, rx->JobIds, escaped->c_str(), rx->ClientName);
   }
 
   // Find and insert jobid and File Index
@@ -1171,9 +1184,24 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       char* table)
 {
   StripTrailingJunk(table);
+  if (!CheckTempBvfsTableName(table)) {
+    ua->ErrorMsg(
+        "Could not insert table '%s': it is not a valid bvfs "
+        "table name.\n",
+        table);
+    return false;
+  }
+
+  /* the table is always temporary, so to make sure we do not mess up,
+   * we add `pg_temp.` schema to enforce that we use the temporary table
+   * setup by .bvfs_restore. */
+
+  std::string temp_table;
+  temp_table += "pg_temp.";
+  temp_table += table;
 
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table>(
-      rx->query, table);
+      rx->query, temp_table.c_str());
 
   // Find and insert jobid and File Index
   rx->found = false;
@@ -1188,7 +1216,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   return true;
 }
 
-static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
+static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
 {
   char *p, *f;
 
@@ -1212,25 +1240,32 @@ static void SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
    * space. This makes handling zero length filenames
    * easier.
    */
-  rx->fnl = p - f;
-  if (rx->fnl > 0) {
-    rx->fname = CheckPoolMemorySize(rx->fname, 2 * (rx->fnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->fname, f, rx->fnl);
+  auto fnl = p - f;
+  if (fnl > 0) {
+    auto escaped_fname = ua->db->EscapeString(
+        ua->jcr, std::string_view{f, static_cast<size_t>(fnl)});
+    if (!escaped_fname) { return false; }
+    rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
+    PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
-    rx->fnl = 0;
+    fnl = 0;
   }
 
-  rx->pnl = f - name;
-  if (rx->pnl > 0) {
-    rx->path = CheckPoolMemorySize(rx->path, 2 * (rx->pnl) + 1);
-    ua->db->EscapeString(ua->jcr, rx->path, name, rx->pnl);
+  auto pnl = f - name;
+  if (pnl > 0) {
+    auto escaped_path = ua->db->EscapeString(
+        ua->jcr, std::string_view{name, static_cast<size_t>(pnl)});
+    if (!escaped_path) { return false; }
+    rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
+    PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
-    rx->pnl = 0;
+    pnl = 0;
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
+  return true;
 }
 
 static bool CheckAndSetFileregex(UaContext* ua,
@@ -1350,10 +1385,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  if (*rx->BaseJobIds) {
-    PmStrcat(rx->JobIds, ",");
-    PmStrcat(rx->JobIds, rx->BaseJobIds);
-  }
 
   /* Look at the first JobId on the list (presumably the oldest) and
    *  if it is marked purged, don't do the manual selection because
@@ -1639,7 +1670,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   if (rx->JobIds[0] != 0) {
     if (FindArg(ua, NT_("copies")) > 0) {
       // Display a list of all copies
-      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send, HORZ_LIST);
+      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send.get(),
+                                HORZ_LIST);
 
       if (FindArg(ua, NT_("yes")) > 0) {
         ua->pint32_val = 1;
@@ -1666,7 +1698,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     // Display a list of Jobs selected for this restore
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs_by_idlist>(rx->query,
                                                                     rx->JobIds);
-    ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
+    ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST, true);
 
     ok = true;
   } else {

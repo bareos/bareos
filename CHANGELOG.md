@@ -57,11 +57,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - devtools: pip-tools: update dependencies [PR #2736]
 - Don't break the build when npm audit fails [PR #2737]
 - Matrix: rename xUbuntu to Ubuntu [PR #2735]
+- cmake: fix add_alphabetic_requirements() no-op sort [PR #2756]
+- bpipe-fd: add safety check against using usesuffix option together with Accurate flag [PR #2745]
+- webui-vue: update nanoid to patched version [PR #2772]
+- webui-vue: remove unneeded newlines in bareos-audit.log [PR #2761]
+- webui-proxy: fix not bashing console name [PR #2757]
+- matrix: add Fedora45 and fix OpenSSL 4 build errors in TLS/crypto code [PR #2797]
+- cats: escape client list filter [PR #2814]
+- python-fd: allow multi __init__() [PR #2831]
+- cats: size SQL escape buffers dynamically [PR #2813]
+- dird: fix cancel duplicate crash [PR #2833]
+- fix(dird): accept extended labels after purge truncate [PR #2815]
+- webui-proxy: include <cstdint> for int32_t in director_connection.h [PR #2826]
+- bareoslib: add new value for Verify Peer and set it as the default [PR #2854]
+- dird: fix reload related crash [PR #2768]
+- macos: update to 26, introduce arm64 architecture [PR #2834]
+- Update vulnerable Vue dependencies [PR #2868]
+- lib: make socket bind failures fatal and syslog-visible [PR #2808]
+- .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2874]
+- lmdb: add optional system library [PR #2800]
+- webui: fix CSRF vulnerabilities [PR #2844]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
 - Disable EL 10 ARM64 and ULC OpenSSL 1.1 builds [PR #2665]
 - dird: remove unused write verify list [PR #2720]
+- core: add machine readable version to client hello; deprecate TlsAuthenticate [PR #2752]
+- core: move complete authentication into the library; remove support for old consoles (<18.2) [PR #2765]
+- core: remove setlocale initialization [PR #2819]
+- core: remove `basefiles` support, including tables [PR #2536]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -86,6 +110,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix proxmox plugin stalling virtual machines [PR #2733]
 - logrotate: add minsize 100k [PR #2731]
 - libcloud plugin: fix error when backing up an empty bucket [PR #2717]
+- cmake: fix alphabetic requirements when some tests are disabled [PR #2762]
+- new webui: Simplify configuration and improve robustness [PR #2754]
+- bvfs: fix stack buffer overflow in GetAllFileVersions [PR #2785]
+- dplcompat: fix SIGABRT when a chunk deletion fails during truncate [PR #2779]
+- core: script btraceback support environment variable [PR #2771]
+- stored: fix segfault on missing Changer Command" [PR #2763]
+- hyper-v: fix preventing other jobs from starting because of bad ROP handling [PR #2777]
+- bareosfd: fix misusing the python api [PR #2810]
+- plugins: (debian) add missing data from /etc/postgresql [PR #2827]
+- traymon: fix crash when trying to connecting to fd/sd [PR #2857]
+- cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
+- dird: add some checks to user provided input [PR #2879]
+- catalog: upgrade PathId field to bigint [PR #2858]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -104,6 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: fix sphinx-linkcheck warnings in our docs [PR #2706]
 - docs: promote eval subscription in release docs [PR #2712]
 - docs: update readme file and image [PR #2719]
+- docs: update volume add warning about delete rotate key [PR #2738]
+- docs: improve Plugin Names datatype [PR #2764]
+- publiccode.yml: Update for 25.1.1 [PR #2799]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2295,6 +2335,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [PR #2527]: https://github.com/bareos/bareos/pull/2527
 [PR #2531]: https://github.com/bareos/bareos/pull/2531
+[PR #2536]: https://github.com/bareos/bareos/pull/2536
 [PR #2537]: https://github.com/bareos/bareos/pull/2537
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
 [PR #2546]: https://github.com/bareos/bareos/pull/2546
@@ -2357,4 +2398,43 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2735]: https://github.com/bareos/bareos/pull/2735
 [PR #2736]: https://github.com/bareos/bareos/pull/2736
 [PR #2737]: https://github.com/bareos/bareos/pull/2737
+[PR #2738]: https://github.com/bareos/bareos/pull/2738
+[PR #2745]: https://github.com/bareos/bareos/pull/2745
+[PR #2752]: https://github.com/bareos/bareos/pull/2752
+[PR #2754]: https://github.com/bareos/bareos/pull/2754
+[PR #2756]: https://github.com/bareos/bareos/pull/2756
+[PR #2757]: https://github.com/bareos/bareos/pull/2757
+[PR #2761]: https://github.com/bareos/bareos/pull/2761
+[PR #2762]: https://github.com/bareos/bareos/pull/2762
+[PR #2763]: https://github.com/bareos/bareos/pull/2763
+[PR #2764]: https://github.com/bareos/bareos/pull/2764
+[PR #2765]: https://github.com/bareos/bareos/pull/2765
+[PR #2768]: https://github.com/bareos/bareos/pull/2768
+[PR #2771]: https://github.com/bareos/bareos/pull/2771
+[PR #2772]: https://github.com/bareos/bareos/pull/2772
+[PR #2777]: https://github.com/bareos/bareos/pull/2777
+[PR #2779]: https://github.com/bareos/bareos/pull/2779
+[PR #2785]: https://github.com/bareos/bareos/pull/2785
+[PR #2797]: https://github.com/bareos/bareos/pull/2797
+[PR #2799]: https://github.com/bareos/bareos/pull/2799
+[PR #2800]: https://github.com/bareos/bareos/pull/2800
+[PR #2808]: https://github.com/bareos/bareos/pull/2808
+[PR #2810]: https://github.com/bareos/bareos/pull/2810
+[PR #2813]: https://github.com/bareos/bareos/pull/2813
+[PR #2814]: https://github.com/bareos/bareos/pull/2814
+[PR #2815]: https://github.com/bareos/bareos/pull/2815
+[PR #2819]: https://github.com/bareos/bareos/pull/2819
+[PR #2826]: https://github.com/bareos/bareos/pull/2826
+[PR #2827]: https://github.com/bareos/bareos/pull/2827
+[PR #2831]: https://github.com/bareos/bareos/pull/2831
+[PR #2833]: https://github.com/bareos/bareos/pull/2833
+[PR #2834]: https://github.com/bareos/bareos/pull/2834
+[PR #2844]: https://github.com/bareos/bareos/pull/2844
+[PR #2854]: https://github.com/bareos/bareos/pull/2854
+[PR #2857]: https://github.com/bareos/bareos/pull/2857
+[PR #2858]: https://github.com/bareos/bareos/pull/2858
+[PR #2866]: https://github.com/bareos/bareos/pull/2866
+[PR #2868]: https://github.com/bareos/bareos/pull/2868
+[PR #2874]: https://github.com/bareos/bareos/pull/2874
+[PR #2879]: https://github.com/bareos/bareos/pull/2879
 [unreleased]: https://github.com/bareos/bareos/tree/master

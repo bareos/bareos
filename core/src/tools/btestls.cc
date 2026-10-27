@@ -98,10 +98,7 @@ int main(int argc, char* const* argv)
   char* exc = NULL;
   FILE* fd;
 
-  setlocale(LC_ALL, "");
-  tzset();
-  bindtextdomain("bareos", LOCALEDIR);
-  textdomain("bareos");
+  INIT_LANGUAGES("");
 
   while ((ch = getopt(argc, argv, "ad:e:i:q?")) != -1) {
     switch (ch) {

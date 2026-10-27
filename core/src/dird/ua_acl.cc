@@ -111,22 +111,24 @@ static inline bool CompareAclListValueWithItem(
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
-static inline std::optional<bool> FindInAclList(alist<const char*>* list,
-                                                int acl,
-                                                const char* item,
-                                                int item_length)
+static inline std::optional<bool> FindInAclList(
+    std::span<const std::string> list,
+    int acl,
+    const char* item,
+    int item_length)
 {
   // Search list for item
-  for (auto* list_value : list) {
+  for (auto& list_value : list) {
     // See if this is a deny acl.
-    if (*list_value == '!') {
-      if (CompareAclListValueWithItem(acl, list_value, list_value + 1, item,
+    if (list_value[0] == '!') {
+      if (CompareAclListValueWithItem(acl, list_value.c_str(),
+                                      list_value.c_str() + 1, item,
                                       item_length)) {
         return false;
       }
     } else {
-      if (CompareAclListValueWithItem(acl, list_value, list_value, item,
-                                      item_length)) {
+      if (CompareAclListValueWithItem(acl, list_value.c_str(),
+                                      list_value.c_str(), item, item_length)) {
         return true;
       }
     }
@@ -163,18 +165,7 @@ bool UaContext::AclAccessOk(int acl,
     goto bail_out;
   }
 
-  retval = FindInAclList(user_acl->ACL_lists[acl], acl, item, item_length);
-
-  /* If we didn't find a matching ACL try to use the profiles this console is
-   * connected to. */
-  if (!retval.has_value()) {
-    for (auto* profile : user_acl->profiles) {
-      retval = FindInAclList(profile->ACL_lists[acl], acl, item, item_length);
-
-      // If we found a match break the loop.
-      if (retval.has_value()) { break; }
-    }
-  }
+  retval = FindInAclList(user_acl->acl_lists[acl], acl, item, item_length);
 
 bail_out:
   if (audit_event && !retval.value_or(false)) {
@@ -190,35 +181,20 @@ bail_out:
  */
 bool UaContext::AclNoRestrictions(int acl)
 {
-  const char* list_value;
-
-  // If no console resource => default console and all is permitted
+  // If no user_acl => default console and all is permitted
   if (!user_acl) { return true; }
 
-  if (user_acl->ACL_lists[acl]) {
-    for (int i = 0; i < user_acl->ACL_lists[acl]->size(); i++) {
-      list_value = (char*)user_acl->ACL_lists[acl]->get(i);
+  for (auto& entry : user_acl->acl_lists[acl]) {
+    if (entry[0] == '!') { return false; }
 
-      if (*list_value == '!') { return false; }
-
-      if (Bstrcasecmp("*all*", list_value)) { return true; }
-    }
+    /* ACLs are only ever checked to the first match, so if we find *all*
+     * before any restriction is encountered (i.e. something starting with `!`),
+     * then everything is allowed, so we can stop here, e.g.:
+     *      *all*, !cmd => cmd is allowed! */
+    if (Bstrcasecmp("*all*", entry.c_str())) { return true; }
   }
 
-  for (auto* profile : user_acl->profiles) {
-    if (profile) {
-      if (profile->ACL_lists[acl]) {
-        for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
-          list_value = (char*)profile->ACL_lists[acl]->get(i);
-
-          if (*list_value == '!') { return false; }
-
-          if (Bstrcasecmp("*all*", list_value)) { return true; }
-        } /* for (int i = 0; */
-      } /* if (profile->ACL_lists[acl]) */
-    } /* if (profile) */
-  }
-
+  // if nothing is defined, then we reject everything
   return false;
 }
 

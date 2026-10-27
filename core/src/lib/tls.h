@@ -29,8 +29,8 @@
 #define BAREOS_LIB_TLS_H_
 
 #include "include/bareos.h"
-#include "lib/get_tls_psk_by_fqname_callback.h"
 #include "lib/crypto.h"
+#include "lib/global_resource.h"
 
 #include <memory>
 #include <span>
@@ -38,36 +38,37 @@
 class BareosSocket;
 class JobControlRecord;
 class PskCredentials;
+class TlsResource;
 
-struct TlsSecretProvider {
-  virtual unsigned int get_shared_secret_for(std::string_view idenity,
-                                             std::span<unsigned char> secret)
+struct TlsConfigProvider {
+  virtual const TlsResource* get(global_resource::Type type,
+                                 std::string_view idenity)
       = 0;
 };
 
 class Tls {
  public:
-  virtual ~Tls() = default;
-  Tls(Tls& other) = delete;
+  Tls() = default;
 
-  virtual bool init() = 0;
+  Tls(const Tls& other) = delete;
+  Tls(Tls&& other) = delete;
+  Tls& operator=(const Tls& other) = delete;
+  Tls& operator=(Tls&& other) = delete;
+
+  virtual ~Tls() = default;
 
   enum class ImplementationType
   {
     kUnknown,
     kOpenSsl
   };
-  static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type);
+  static std::unique_ptr<Tls> CreateServerContext(Tls::ImplementationType type,
+                                                  const TlsResource* res,
+                                                  TlsConfigProvider* config);
 
-  virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
-  virtual void SetTlsPskServerContext(TlsSecretProvider* config) = 0;
-
-  virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr, const char* host)
-      = 0;
-  virtual bool TlsPostconnectVerifyCn(
-      JobControlRecord* jcr,
-      const std::vector<std::string>& verify_list)
-      = 0;
+  static std::unique_ptr<Tls> CreateClientContext(Tls::ImplementationType type,
+                                                  const TlsResource* res,
+                                                  const PskCredentials* creds);
 
   virtual bool TlsBsockAccept(BareosSocket* bsock) = 0;
   virtual int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
@@ -75,7 +76,7 @@ class Tls {
 
   virtual int TlsPendingBytes() = 0;
   virtual int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) = 0;
-  virtual bool TlsBsockConnect(BareosSocket* bsock) = 0;
+  virtual bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) = 0;
   virtual void TlsBsockShutdown(BareosSocket* bsock) = 0;
   virtual void TlsLogConninfo(JobControlRecord* jcr,
                               const char* host,
@@ -84,27 +85,8 @@ class Tls {
       = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
-  virtual void SetCipherList(const std::string& cipherlist) = 0;
-  virtual void SetCipherSuites(const std::string& ciphersuites) = 0;
-  virtual void SetProtocol(const std::string& version) = 0;
-
   virtual bool KtlsSendStatus() = 0;
   virtual bool KtlsRecvStatus() = 0;
-
-  virtual void Setca_certfile_(const std::string& ca_certfile) = 0;
-  virtual void SetCaCertdir(const std::string& ca_certdir) = 0;
-  virtual void SetCrlfile(const std::string& crlfile_) = 0;
-  virtual void SetCertfile(const std::string& certfile_) = 0;
-  virtual void SetKeyfile(const std::string& keyfile_) = 0;
-  virtual void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) = 0;
-  virtual void SetPemUserdata(void* pem_userdata) = 0;
-  virtual void SetDhFile(const std::string& dhfile_) = 0;
-  virtual void SetVerifyPeer(const bool& verify_peer) = 0;
-  virtual void SetEnableKtls(bool ktls) = 0;
-  virtual void SetTcpFileDescriptor(const int& fd) = 0;
-
- protected:
-  Tls() = default;
 };
 
 #endif  // BAREOS_LIB_TLS_H_
