@@ -361,10 +361,11 @@ class SeleniumTest(unittest.TestCase):
         pathlist = self.restorefile.split("/")
         for i in pathlist[:-1]:
             self.wait_for_element(
-                By.XPATH, '//a[contains(text(),"%s/")]' % i
+                By.XPATH, '//div[@id="filebrowser"]//a[text() = "%s/"]' % i
             ).send_keys(Keys.ARROW_RIGHT)
         self.wait_for_element(
-            By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1]
+            By.XPATH,
+            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
         ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
