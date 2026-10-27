@@ -39,6 +39,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "stored/dev.h"
 #include "lib/edit.h"
@@ -212,6 +213,39 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   BareosSocket* dir = jcr->dir_bsock;
   PoolMem unwanted_volumes(PM_MESSAGE);
 
+  PmStrcpy(unwanted_volumes, "");
+
+  bool no_read_volumes = true;
+
+  if (jcr->sd_impl->VolList && jcr->sd_impl->NumReadVolumes > 0) {
+    auto* current = jcr->sd_impl->VolList;
+    for (int i = 0; i < jcr->sd_impl->NumReadVolumes; i++) {
+      if (!current) {
+        Jmsg(jcr, M_ERROR, 0,
+             "Job is supposed to have %d read volumes, but only %d were "
+             "found.\n",
+             jcr->sd_impl->NumReadVolumes, i);
+        return false;
+      }
+
+      if (i > 0) { PmStrcpy(unwanted_volumes, ","); }
+
+      PmStrcpy(unwanted_volumes, current->VolumeName);
+
+      current = current->next;
+    }
+
+    if (current) {
+      Jmsg(jcr, M_ERROR, 0,
+           "Job is supposed to have %d read volumes, but %s is also in its "
+           "list.\n",
+           jcr->sd_impl->NumReadVolumes, current->VolumeName);
+      return false;
+    }
+
+    no_read_volumes = false;
+  }
+
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
 
@@ -222,7 +256,6 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
 
-    PmStrcpy(unwanted_volumes, "");
 
     std::size_t device_count = 0;
 
@@ -265,7 +298,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
       Dmsg1(debuglevel, ">dird %s", dir->msg);
 
       if (DoGetVolumeInfo(this)) {
-        if (vol_index == 1) {
+        if (vol_index == 1 && no_read_volumes) {
           PmStrcpy(unwanted_volumes, VolumeName);
         } else {
           PmStrcat(unwanted_volumes, ",");
