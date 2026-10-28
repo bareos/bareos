@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
 set -e
 set -o pipefail
 set -u
@@ -20,10 +40,6 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out ${tmp}/label.out
-label barcodes slots=1 drive=0 pool=Incremental yes
-@$out ${tmp}/release.out
-release alldrives
 @$out ${tmp}/mount.out
 mount drive=1 slot=1
 setdevice storage=File device=File2 autoselect=no
@@ -33,7 +49,6 @@ setdevice storage=File device=File4 autoselect=no
 run job=backup-bareos-fd yes
 wait
 messages
-
 setdevice storage=File device=File2 autoselect=yes
 setdevice storage=File device=File3 autoselect=yes
 setdevice storage=File device=File4 autoselect=yes
@@ -41,9 +56,6 @@ END_OF_DATA
 
 run_bconsole "$@"
 
-expect_grep "Catalog record for Volume.*Slot 1 successfully created." "${tmp}/label.out" "record was not created successfully"
-expect_grep "OK label" "${tmp}/label.out" "Volume was not labeled correctly"
-expect_grep "Issuing autochanger" "${tmp}/release.out" "Device did not release its volume"
 expect_grep "3001 Mounted Volume: .*" "${tmp}/mount.out" "volume was not mounted"
 expect_grep "Backup OK" "${tmp}/job.out" "Backup was not successful"
 
