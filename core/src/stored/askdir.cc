@@ -213,6 +213,8 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   BareosSocket* dir = jcr->dir_bsock;
   std::string unwanted_volumes;
 
+  std::size_t unwanted_volumes_count = 0;
+
   if (jcr->sd_impl->VolList && jcr->sd_impl->NumReadVolumes > 0) {
     auto* current = jcr->sd_impl->VolList;
     for (int i = 0; i < jcr->sd_impl->NumReadVolumes; i++) {
@@ -226,6 +228,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 
       if (i > 0) { unwanted_volumes += ','; }
 
+      unwanted_volumes_count += 1;
       unwanted_volumes += current->VolumeName;
 
       current = current->next;
@@ -284,8 +287,9 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
       BashSpaces(media_type);
       BashSpaces(pool_name);
       BashSpaces(unwanted_volumes.data());
-      dir->fsend(Find_media, jcr->Job, static_cast<int>(vol_index), pool_name,
-                 media_type, unwanted_volumes.c_str());
+      dir->fsend(Find_media, jcr->Job,
+                 static_cast<int>(vol_index + unwanted_volumes_count),
+                 pool_name, media_type, unwanted_volumes.c_str());
       UnbashSpaces(media_type);
       UnbashSpaces(pool_name);
       UnbashSpaces(unwanted_volumes.data());
