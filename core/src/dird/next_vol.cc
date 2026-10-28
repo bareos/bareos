@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,12 @@ void SetStorageidInMr(StorageResource* store, MediaDbRecord* mr)
   if (store != NULL) { mr->StorageId = store->StorageId; }
 }
 
+std::vector<std::string> parse_unwanted_volumes(const char* unwanted_volumes)
+{
+  if (!unwanted_volumes) { return {}; }
+  return split_string(unwanted_volumes, ',');
+}
+
 /**
  *  Items needed:
  *
@@ -67,10 +73,11 @@ void SetStorageidInMr(StorageResource* store, MediaDbRecord* mr)
 int FindNextVolumeForAppend(JobControlRecord* jcr,
                             MediaDbRecord* mr,
                             int index,
-                            const char* unwanted_volumes,
+                            const char* unwanted_volumes_str,
                             bool create,
                             bool prune)
 {
+  auto unwanted_volumes = parse_unwanted_volumes(unwanted_volumes_str);
   int retry = 0;
   bool ok;
   bool InChanger;
@@ -400,11 +407,11 @@ bool GetScratchVolume(JobControlRecord* jcr,
     /* If we do not find a valid Scratch volume, try recycling any existing
      * purged volumes, then try to take the oldest volume. */
     SetStorageidInMr(store, &smr); /* put StorageId in new record */
-    if (jcr->db->FindNextVolume(jcr, 1, InChanger, &smr, NULL)) {
+    if (jcr->db->FindNextVolume(jcr, 1, InChanger, &smr, {})) {
       found = true;
-    } else if (FindRecycledVolume(jcr, InChanger, &smr, store, NULL)) {
+    } else if (FindRecycledVolume(jcr, InChanger, &smr, store, {})) {
       found = true;
-    } else if (RecycleOldestPurgedVolume(jcr, InChanger, &smr, store, NULL)) {
+    } else if (RecycleOldestPurgedVolume(jcr, InChanger, &smr, store, {})) {
       found = true;
     }
 
