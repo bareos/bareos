@@ -1050,9 +1050,14 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
               rctx.VolumeName);
         return 0;
       }
-      if (!dcr->Can_i_use_volume()) {
-        return 0; /* fail if volume on another drive */
+
+      bool can_use = false;
+      if (rctx.append) {
+        can_use = dcr->Can_i_write_volume();
+      } else {
+        can_use = dcr->Can_i_use_volume();
       }
+      if (!can_use) { return 0; /* fail if volume on another drive */ }
     }
   }
 
