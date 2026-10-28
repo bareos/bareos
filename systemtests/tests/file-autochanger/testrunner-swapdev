@@ -26,10 +26,17 @@ label barcodes slots=1 drive=0 pool=Incremental yes
 release alldrives
 @$out ${tmp}/mount.out
 mount drive=1 slot=1
+setdevice storage=File device=File2 autoselect=no
+setdevice storage=File device=File3 autoselect=no
+setdevice storage=File device=File4 autoselect=no
 @$out ${tmp}/job.out
 run job=backup-bareos-fd yes
 wait
 messages
+
+setdevice storage=File device=File2 autoselect=yes
+setdevice storage=File device=File3 autoselect=yes
+setdevice storage=File device=File4 autoselect=yes
 END_OF_DATA
 
 run_bconsole "$@"
