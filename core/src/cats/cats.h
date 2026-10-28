@@ -50,6 +50,9 @@
 #include <stdexcept>
 #include <system_error>
 #include <vector>
+#include <span>
+#include <string>
+
 template <typename T> class dlist;
 
 /* import automatically generated SQL_QUERY */
@@ -676,11 +679,11 @@ class BareosDb : public BareosDbQueryEnum {
                         char* job);
   bool FindLastJobid(JobControlRecord* jcr, const char* Name, JobDbRecord* jr);
   bool FindJobById(JobControlRecord* jcr, const std::string id);
-  int FindNextVolume(JobControlRecord* jcr,
-                     int index,
-                     bool InChanger,
-                     MediaDbRecord* mr,
-                     const char* unwanted_volumes);
+  bool FindNextVolume(JobControlRecord* jcr,
+                      int index,
+                      bool InChanger,
+                      MediaDbRecord* mr,
+                      std::span<std::string> unwanted_volumes);
   bool FindFailedJobSince(JobControlRecord* jcr,
                           JobDbRecord* jr,
                           POOLMEM* stime,

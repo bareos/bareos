@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,18 +22,21 @@
 #ifndef BAREOS_DIRD_AUTORECYCLE_H_
 #define BAREOS_DIRD_AUTORECYCLE_H_
 
+#include <span>
+#include <string>
+
 namespace directordaemon {
 
 bool FindRecycledVolume(JobControlRecord* jcr,
                         bool InChanger,
                         MediaDbRecord* mr,
                         StorageResource* store,
-                        const char* unwanted_volumes);
+                        std::span<std::string> unwanted_volumes);
 bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
                                bool InChanger,
                                MediaDbRecord* mr,
                                StorageResource* store,
-                               const char* unwanted_volumes);
+                               std::span<std::string> unwanted_volumes);
 bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr);
 
 } /* namespace directordaemon */

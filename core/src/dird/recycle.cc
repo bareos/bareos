@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,7 @@ bool FindRecycledVolume(JobControlRecord* jcr,
                         bool InChanger,
                         MediaDbRecord* mr,
                         StorageResource* store,
-                        const char* unwanted_volumes)
+                        std::span<std::string> unwanted_volumes)
 {
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
   SetStorageidInMr(store, mr);
@@ -61,7 +61,7 @@ bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
                                bool InChanger,
                                MediaDbRecord* mr,
                                StorageResource* store,
-                               const char* unwanted_volumes)
+                               std::span<std::string> unwanted_volumes)
 {
   bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
   SetStorageidInMr(store, mr);
