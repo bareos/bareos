@@ -33,7 +33,7 @@ export TestName
 
 start_test
 
-AUTOCHANGER_ROBOT_DELAY=10
+AUTOCHANGER_ROBOT_DELAY=1
 export AUTOCHANGER_ROBOT_DELAY
 readonly expected_robot_delay="${AUTOCHANGER_ROBOT_DELAY}"
 
