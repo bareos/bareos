@@ -1,0 +1,33 @@
+Storage {
+  Name = ndmjob
+  Address = 127.0.0.1
+  Port = @ndmjob_port@
+  Protocol = NDMPv4
+  Auth Type = MD5
+  Username = "ndmp"
+  Password = "ndmp"
+  Maximum Concurrent Jobs = 2
+  Autochanger = yes
+  MediaType = NDMP-Tape
+
+  Device = "@NDMJOB_ROBOT1_DIR@/drive0"
+  Device = "@NDMJOB_ROBOT1_DIR@/drive1"
+  NDMP Changer Device = "@NDMJOB_ROBOT1_DIR@"
+}
+
+Storage {
+  Name = ndmjob-robot2
+  Address = 127.0.0.1
+  Port = @ndmjob_port@
+  Protocol = NDMPv4
+  Auth Type = MD5
+  Username = "ndmp"
+  Password = "ndmp"
+  Maximum Concurrent Jobs = 2
+  Autochanger = yes
+  MediaType = NDMP-Tape-Robot2
+
+  Device = "@NDMJOB_ROBOT2_DIR@/drive0"
+  Device = "@NDMJOB_ROBOT2_DIR@/drive1"
+  NDMP Changer Device = "@NDMJOB_ROBOT2_DIR@"
+}

@@ -658,8 +658,8 @@ static inline void ProcessLmdb(NIS* nis, struct fhdb_state* fhdb_state)
             }
           }
           NdmpStoreAttributeRecord(
-              nis->jcr, full_path.c_str(), nis->virtual_filename,
-              attribs.c_str(), FileType, 0,
+              nis->jcr, nis->FileIndex, full_path.c_str(),
+              nis->virtual_filename, attribs.c_str(), FileType, 0,
               (ndmp_fstat.fh_info.valid == NDMP9_VALIDITY_VALID)
                   ? ndmp_fstat.fh_info.value
                   : 0);

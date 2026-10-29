@@ -211,9 +211,26 @@ set_target_properties(
   bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                         SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-if(build_ndmjob)
+if(build_ndmjob OR ENABLE_SYSTEMTESTS)
+  # ndmjob is used as NDMP emulator in the systemtests and is not installed.
   add_executable(ndmjob ${NDMJOB_SRCS})
   target_link_libraries(ndmjob bareosndmp)
+
+  # the ndmjob data agent runs wrap_<BUTYPE> as formatter
+  add_executable(wrap_tar wrap_tar.c)
+  target_link_libraries(wrap_tar bareosndmp)
+  add_custom_command(
+    TARGET wrap_tar
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink wrap_tar wrap_dump
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:wrap_tar>
+  )
+  add_dependencies(ndmjob wrap_tar)
+
+  add_test(NAME ndmp:wrap_tar
+           COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/test_wrap_tar.sh
+                   $<TARGET_FILE:wrap_tar>
+  )
 endif()
 
 include(DebugEdit)
