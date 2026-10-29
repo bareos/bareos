@@ -79,13 +79,14 @@ static int ReadCompare(VolumeReservationItem* item1,
   ASSERT(vol1->vol_name);
   ASSERT(vol2->vol_name);
 
-  if (vol1->GetJobid() == vol2->GetJobid()) {
-    return strcmp(vol1->vol_name, vol2->vol_name);
-  }
+  // we need to compare by name first, so that we can later reliably search by
+  // just name.
 
-  if (vol1->GetJobid() < vol2->GetJobid()) { return -1; }
+  auto res = strcmp(vol1->vol_name, vol2->vol_name);
 
-  return 1;
+  if (res == 0) { res = vol1->GetJobid() - vol2->GetJobid(); }
+
+  return res;
 }
 
 bool IsVolListEmpty() { return vol_list->empty(); }
