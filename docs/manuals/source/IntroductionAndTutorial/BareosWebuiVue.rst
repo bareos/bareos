@@ -125,6 +125,7 @@ template into place and add one section per Director:
 
 .. code-block:: shell-session
 
+   mkdir -p /etc/bareos-webui-proxy
    cp /usr/lib/bareos/defaultconfigs/bareos-webui-proxy.ini \
       /etc/bareos-webui-proxy/bareos-webui-proxy.ini
 
