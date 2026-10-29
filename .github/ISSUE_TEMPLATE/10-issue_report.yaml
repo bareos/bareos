@@ -17,7 +17,7 @@ body:
     attributes:
       value: |
         Before filling the form fields, please consider the following:
-        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues)
+        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues?q=is%3Aissue) including closed ones
         - Read the [troubleshooting guide](https://docs.bareos.org/Appendix/Troubleshooting.html)
         - Read the [guide to filing a bug](https://docs.bareos.org/Appendix/Troubleshooting.html#bug-reports)
 
