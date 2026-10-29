@@ -13,3 +13,29 @@ Storage {
 
   @UNCOMMENT_SD_BACKEND_DIRECTORY@Backend Directory = @BACKEND_OUTPUT_DIRECTORY@
 }
+
+# No Maximum File Size set: the default of 25 GiB applies.
+Device {
+  Name = DefaultFileSize
+  Media Type = File
+  Device Type = File
+  Archive Device = /dev/null
+}
+
+# "GB" is decimal (25 * 10^9 bytes), unlike "G" which is binary.
+Device {
+  Name = DecimalFileSize
+  Media Type = File
+  Device Type = File
+  Archive Device = /dev/null
+  MaximumFileSize = 25 GB
+}
+
+# A plain number is taken as bytes.
+Device {
+  Name = NumericFileSize
+  Media Type = File
+  Device Type = File
+  Archive Device = /dev/null
+  MaximumFileSize = 100000000000
+}
