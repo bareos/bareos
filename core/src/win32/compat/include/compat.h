@@ -355,10 +355,6 @@ char* win32_cgets(char* buffer, int len);
 
 int WSA_Init(void);
 
-/* Don't let OS go to sleep (usually a Laptop) while we are backing up */
-void PreventOsSuspensions();
-void AllowOsSuspensions();
-
 typedef DWORD EXECUTION_STATE;
 #ifndef ES_CONTINUOUS
 #  define ES_CONTINUOUS 0x80000000
