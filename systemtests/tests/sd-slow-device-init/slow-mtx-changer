@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# Autochanger emulator that is very slow the first time the storage daemon
+# asks which volume is loaded. The storage daemon does this while it
+# initializes its devices in the background, so this simulates a tape library
+# that takes a long time to answer after the daemon was started.
+#
+# Only the first "loaded" call is delayed, so that the rest of the test runs
+# at normal speed.
+
+set -e
+set -u
+
+readonly slow_marker="${tmp:-/tmp}/slow-mtx-changer-delay-done"
+readonly slow_delay="${SLOW_CHANGER_DELAY:-60}"
+
+if [ "${2:-}" = "loaded" ] && [ ! -e "${slow_marker}" ]; then
+  touch "${slow_marker}"
+  echo "$0: delaying 'loaded' by ${slow_delay} seconds" \
+    >>"${tmp:-/tmp}/mtx-changer.out"
+  sleep "${slow_delay}"
+fi
+
+exec ./mtx-changer "$@"
