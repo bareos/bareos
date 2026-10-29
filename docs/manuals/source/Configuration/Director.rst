@@ -1095,6 +1095,80 @@ The directives within an Options resource may be one of the following:
    silently ignored by Bareos.
 
 
+.. config:option:: dir/fileset/include/options/NtfsChangeJournal
+
+   :type: yes|no
+   :default: no
+
+   Enables NTFS file discovery on Windows clients. Full backups enumerate
+   the Master File Table (MFT) to discover files and still collect attributes
+   and back up every selected file. Incremental and Differential backups
+   use the USN Change Journal to select files, including content changes
+   whose timestamps have been preserved. Unchanged files with complete
+   journal evidence can be skipped without stat() or timestamp comparison.
+   Directory selection, exclusions, hard links, and Accurate deletion
+   bookkeeping continue through the normal backup pipeline.
+
+   NTFS metadata under ``$Extend`` and ``System Volume Information`` at the
+   volume root is excluded from discovery, regardless of the Include root.
+   These paths are not probed for hard-link names.
+
+   Each Include root logs the discovery mode (MFT or journal) before MFT
+   enumeration starts and confirms its use after discovery completes.
+   If discovery fails, the job log reports the reason for falling back to
+   directory traversal.
+
+   Example::
+
+      Include {
+        Options {
+          NtfsChangeJournal = yes
+          Signature = XXH128
+        }
+        File = "C:/data"
+      }
+
+   Local checkpoints are stored as ``ntfs-usn-*.state`` in the File Daemon's
+   Working Directory. They are associated with the unique previous job
+   selected by the Director, Director identity, volume identity, Include root,
+   and selection options/exclusions. Consequently
+   a Differential uses the Full checkpoint, not the latest Incremental.
+   Keep these files for as long as their corresponding jobs can serve as
+   backup baselines. A missing or invalid checkpoint causes all selected
+   files to be backed up using MFT discovery and establishes a new checkpoint.
+   Checkpoints are published atomically after successful file processing;
+   the Director must still select that job as a successful baseline.
+
+   A missing journal is created automatically with a maximum size of
+   64 MiB and an allocation delta of 8 MiB. Existing journals are not resized.
+   Administrative volume access is required. Journals may wrap or be
+   recreated; this is detected before their checkpoints are used.
+
+   Journal reasons can coalesce multiple writes while a file remains open.
+   Files without a final close record in retained history are conservatively
+   backed up again, even if no newer USN is present. Files outside retained
+   history are also treated as uncertain. This can reduce the speed benefit
+   for long-lived open files or journals with short retention. Discovery
+   still scans MFT metadata and enumerates hard-link names; it is not a
+   constant-time operation and a Full backup still reads all selected data.
+
+   If discovery cannot guarantee completeness (including unsupported
+   journal record versions, volume or VSS snapshot access failures, or
+   missing hard-link information), a warning is logged and that Include
+   root uses the normal directory walk. Other volumes remain eligible.
+   VSS jobs enumerate the snapshot rather than mixing live paths with
+   snapshot content; snapshots that do not support the required NTFS
+   control operations fall back to directory traversal.
+
+   Currently supported Include blocks have one Options block, without
+   per-file wildcard/regex options, option plugins, StripPath, Size,
+   ExcludeDirContaining, Options inside Exclude blocks, or
+   cross-filesystem recursion. Accurate checksum, always-backup, and access
+   time comparisons, as well as rerun jobs, use the normal walk. These
+   limitations are checked and reported, not silently ignored. Non-Windows
+   clients likewise log a warning and use normal discovery.
+
+
 .. config:option:: dir/fileset/include/options/MtimeOnly
 
    :type: yes|no
