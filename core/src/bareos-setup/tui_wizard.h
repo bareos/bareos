@@ -1,0 +1,52 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+/**
+ * @file
+ * Terminal user interface wizard for bareos-setup.
+ * Walks through the same steps as the web wizard using stdin/stdout.
+ */
+#ifndef BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
+#define BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
+
+#include <string_view>
+
+#include "command_runner.h"
+#include "setup_steps.h"
+
+std::string_view BorisArtwork(std::string_view lc_all,
+                              std::string_view lc_ctype,
+                              std::string_view lang);
+
+struct UnattendedSetupOptions {
+  std::vector<std::string> override_repository_urls;
+  std::vector<std::string> extra_packages;
+  bool webui = true;
+  TapeSupportOptions tape;
+};
+
+/** Run the interactive terminal wizard. Returns 0 on success. */
+int RunTuiWizard(SetupContext& context);
+
+/** Install a complete Linux server without prompts or printing credentials. */
+int RunUnattendedSetup(SetupContext& context,
+                       const UnattendedSetupOptions& options);
+
+#endif  // BAREOS_BAREOS_SETUP_TUI_WIZARD_H_
