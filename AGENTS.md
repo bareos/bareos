@@ -69,7 +69,7 @@ What it enforces:
 - Copyright headers, no trailing whitespace, no DOS line endings, no merge conflict markers
 
 ## Copyright Headers
-Every new source file **must** include an AGPLv3 copyright header. Use the year of creation. See any existing `.cc` or `.py` file for the canonical header format. The `bareos-check-sources` tool will flag missing or incorrect headers.
+Every new source file **must** include an AGPLv3 copyright header. Use the year of creation. See any existing `.cc` or `.py` file for the canonical header format. The `bareos-check-sources` tool will flag missing or incorrect headers. Date spans in copyright headers are always given as two years, e.g. 2026-2026, never as just a single year.
 
 ## Key Source Locations
 | Component | Entry Point |
@@ -126,3 +126,5 @@ directory. `dist/.build-env` is a test-runner artefact and is listed in
 - Git commit header (subject line) must not exceed 60 chars
 - Git commit body should not have lines longer than 72 chars
 - Do not add a `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer to commits.
+- We do rebase-based development.  If there are conflicts with the current master,
+  then rebase the branch on top of master; do not merge master into your branch.
