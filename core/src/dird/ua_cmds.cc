@@ -2729,16 +2729,17 @@ static bool wait_cmd(UaContext* ua, const char*)
 
   // We wait the end of a specific job
   Bmicrosleep(0, 200000); /* let job actually start */
-  for (bool running = true; running;) {
-    running = false;
-
+  for (;;) {
     jcr = get_jcr_by_id(JobId);
-    if (jcr) {
-      running = true;
-      FreeJcr(jcr);
+    if (!jcr) { break; }
+    FreeJcr(jcr);
+
+    if (stop_time && time(NULL) >= stop_time) {
+      ua->WarningMsg("Wait on job %" PRIu32 " timed out\n", JobId);
+      return true;
     }
 
-    if (running) { Bmicrosleep(1, 0); }
+    Bmicrosleep(1, 0);
   }
 
   // We have to get JobStatus
