@@ -36,6 +36,7 @@
 #include "lib/edit.h"
 
 #include <string_view>
+#include <sstream>
 
 /* -----------------------------------------------------------------------
  *
