@@ -1,3 +1,5 @@
+# Misplaced config (should be stored outside tree)
+CTestNDMPConfig.cmake
 # generated version files
 cmake/BareosVersion.cmake
 
