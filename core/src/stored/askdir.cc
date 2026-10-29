@@ -211,11 +211,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 {
   bool retval = false;
   BareosSocket* dir = jcr->dir_bsock;
-  PoolMem unwanted_volumes(PM_MESSAGE);
-
-  PmStrcpy(unwanted_volumes, "");
-
-  bool no_read_volumes = true;
+  std::string unwanted_volumes;
 
   std::size_t unwanted_volumes_count = 0;
 
@@ -230,10 +226,10 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
         return false;
       }
 
-      if (i > 0) { PmStrcpy(unwanted_volumes, ","); }
+      if (i > 0) { unwanted_volumes += ','; }
 
       unwanted_volumes_count += 1;
-      PmStrcpy(unwanted_volumes, current->VolumeName);
+      unwanted_volumes += current->VolumeName;
 
       current = current->next;
     }
@@ -245,8 +241,6 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
            jcr->sd_impl->NumReadVolumes, current->VolumeName);
       return false;
     }
-
-    no_read_volumes = false;
   }
 
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
@@ -292,22 +286,18 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
       BashSpaces(media_type);
       BashSpaces(pool_name);
-      BashSpaces(unwanted_volumes.c_str());
+      BashSpaces(unwanted_volumes.data());
       dir->fsend(Find_media, jcr->Job,
                  static_cast<int>(vol_index + unwanted_volumes_count),
                  pool_name, media_type, unwanted_volumes.c_str());
       UnbashSpaces(media_type);
       UnbashSpaces(pool_name);
-      UnbashSpaces(unwanted_volumes.c_str());
+      UnbashSpaces(unwanted_volumes.data());
       Dmsg1(debuglevel, ">dird %s", dir->msg);
 
       if (DoGetVolumeInfo(this)) {
-        if (vol_index == 1 && no_read_volumes) {
-          PmStrcpy(unwanted_volumes, VolumeName);
-        } else {
-          PmStrcat(unwanted_volumes, ",");
-          PmStrcat(unwanted_volumes, VolumeName);
-        }
+        if (!unwanted_volumes.empty()) { unwanted_volumes += ','; }
+        unwanted_volumes += VolumeName;
 
         if (Can_i_write_volume()) {
           Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",
