@@ -144,6 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: update volume add warning about delete rotate key [PR #2738]
 - docs: improve Plugin Names datatype [PR #2764]
 - publiccode.yml: Update for 25.1.1 [PR #2799]
+- github: improve feature, issues, pr templates [PR #2886]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2437,4 +2438,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2868]: https://github.com/bareos/bareos/pull/2868
 [PR #2874]: https://github.com/bareos/bareos/pull/2874
 [PR #2879]: https://github.com/bareos/bareos/pull/2879
+[PR #2886]: https://github.com/bareos/bareos/pull/2886
 [unreleased]: https://github.com/bareos/bareos/tree/master
