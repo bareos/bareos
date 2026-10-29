@@ -18,8 +18,8 @@ body:
     attributes:
       value: |
         Before filling the form fields, please consider the following:
-        - Ensure that you have searched the [existing feature including closed one](https://github.com/bareos/bareos/discussions?discussions_q=)
-        - Ensure that you have searched the [existing issues including closed one](https://github.com/bareos/bareos/issues?q=is%3Aissue)
+        - Ensure that you have searched the [existing feature](https://github.com/bareos/bareos/discussions?discussions_q=) including closed one
+        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues?q=is%3Aissue) including closed ones
         - Read the [troubleshooting guide](https://docs.bareos.org/Appendix/Troubleshooting.html)
         - Read the [debugging chapter](https://docs.bareos.org/Appendix/Debugging.html)
   - type: textarea
