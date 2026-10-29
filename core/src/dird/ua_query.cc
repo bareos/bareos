@@ -113,7 +113,7 @@ bool QueryCmd(UaContext* ua, const char*)
         continue;
       }
     }
-    if (*query != 0) { PmStrcat(query, " "); }
+    if (*query != 0) { PmStrcat(query, "\n"); }
     PmStrcat(query, line);
     if (line[len - 1] != ';') { continue; }
     line[len - 1] = 0; /* zap ; */
@@ -253,7 +253,7 @@ bool SqlqueryCmd(UaContext* ua, const char*)
     len = strlen(ua->cmd);
     Dmsg2(400, "len=%d cmd=%s:\n", len, ua->cmd);
     if (len == 0) { break; }
-    if (*query.c_str() != 0) { PmStrcat(query, " "); }
+    if (*query.c_str() != 0) { PmStrcat(query, "\n"); }
     PmStrcat(query, ua->cmd);
     if (ua->cmd[len - 1] == ';') {
       ua->cmd[len - 1] = 0; /* zap ; */
