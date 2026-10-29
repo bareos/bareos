@@ -45,6 +45,11 @@
 #include "lib/plugins.h"
 #include "lib/parse_conf.h"
 
+#include <limits>
+#include <optional>
+
+#include "lib/stat_utils.h"
+
 // Function pointers to be set here (findlib)
 BAREOS_IMPORT int (*plugin_bopen)(BareosFilePacket* bfd,
                                   const char* fname,
@@ -77,6 +82,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 extern int SaveFile(JobControlRecord* jcr,
                     FindFilesPacket* ff_pkt,
                     bool top_level);
+extern bool EncodeAndSendAttributes(JobControlRecord* jcr,
+                                    FindFilesPacket* ff_pkt,
+                                    int& data_stream,
+                                    bool reuse_file_index);
 
 // Forward referenced functions
 static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value);
@@ -177,6 +186,7 @@ struct FiledPluginContext {
       nullptr};   /* pointer to include/exclude files */
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
   bool check_changes{true}; /* call CheckChanges() on every file */
+  std::optional<PluginFileSizeBlocks> corrected_file_size_blocks{};
 };
 
 static inline bool IsEventEnabled(PluginContext* ctx, bEventType eventType)
@@ -750,6 +760,113 @@ bail_out:
 }
 
 /**
+ * A streaming plugin (e.g. bpipe) typically only knows the file's real size
+ * once all data has been transferred, so it may report st_size without
+ * st_blocks. Such a file has a size but no block count.
+ *
+ * Not static so they can be unit-tested directly (see test_fd_plugins.cc).
+ */
+static bool HasSizeButNoBlocks(const struct stat& statp)
+{
+  return statp.st_size > 0 && statp.st_blocks == 0;
+}
+
+void FillMissingPluginStatBlocks(struct stat& statp)
+{
+  if (HasSizeButNoBlocks(statp)) {
+    statp.st_blocks = BlocksFromSize(statp.st_size);
+  }
+}
+
+bool PluginSizeNeedsFdFallback(const struct stat& statp)
+{
+  return IsUnknownStatField(statp.st_size)
+         || IsUnknownStatField(statp.st_blocks) || HasSizeButNoBlocks(statp);
+}
+
+bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected)
+{
+  struct stat statp{};
+
+  auto fits = [](int64_t value, auto max_value) {
+    return value >= 0
+           && static_cast<uint64_t>(value) <= static_cast<uint64_t>(max_value);
+  };
+
+  return fits(corrected.size,
+              std::numeric_limits<decltype(statp.st_size)>::max())
+         && fits(corrected.blocks,
+                 std::numeric_limits<decltype(statp.st_blocks)>::max());
+}
+
+/* Size and blocks counted from the bytes the FD read from the plugin stream,
+ * used if the plugin's own attributes are unusable. */
+std::optional<PluginFileSizeBlocks> FdCountedFileSizeBlocks(
+    const struct stat& original_statp,
+    bool data_was_read,
+    uint64_t read_bytes_before,
+    uint64_t read_bytes_after)
+{
+  if (!data_was_read || read_bytes_after < read_bytes_before
+      || !PluginSizeNeedsFdFallback(original_statp)) {
+    return std::nullopt;
+  }
+
+  uint64_t consumed_bytes = read_bytes_after - read_bytes_before;
+  if (consumed_bytes
+      > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    return std::nullopt;
+  }
+
+  // blocks never exceeds the byte count, so it fits as well
+  return PluginFileSizeBlocks{
+      static_cast<int64_t>(consumed_bytes),
+      static_cast<int64_t>(BlocksFromSize(consumed_bytes))};
+}
+
+static void SendPendingPluginNameEnd(JobControlRecord* jcr,
+                                     FindFilesPacket* ff_pkt)
+{
+  if (ff_pkt->plugin_name_end_pending) {
+    SendPluginName(jcr, jcr->store_bsock, false);
+    ff_pkt->plugin_name_end_pending = false;
+  }
+}
+
+// Resend the attributes of the just saved file with the corrected size and
+// blocks, reusing the same FileIndex.
+static bool ResendCorrectedAttributes(JobControlRecord* jcr,
+                                      FindFilesPacket* ff_pkt,
+                                      const char* cmd,
+                                      const PluginFileSizeBlocks& corrected,
+                                      bool from_fd_count)
+{
+  if (!PluginFileSizeBlocksAreValid(corrected)) {
+    Jmsg(jcr, M_ERROR, 0,
+         T_("Command plugin \"%s\": invalid corrected size/block "
+            "count for %s: %" PRId64 "/%" PRId64 ".\n"),
+         cmd, ff_pkt->fname, corrected.size, corrected.blocks);
+    return false;
+  }
+
+  uint64_t blocks = corrected.blocks > 0
+                        ? static_cast<uint64_t>(corrected.blocks)
+                        : BlocksFromSize(corrected.size);
+  // Debug-only: a job-log line per corrected file would flood the log.
+  Dmsg4(100,
+        "Corrected size/blocks for %s from %s: %" PRId64 " byte(s), %" PRIu64
+        " 512-byte block(s)\n",
+        ff_pkt->fname, from_fd_count ? "FD stream count" : "plugin",
+        corrected.size, blocks);
+
+  ff_pkt->statp.st_size = corrected.size;
+  ff_pkt->statp.st_blocks = blocks;
+  int data_stream;
+  return EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
+                                 /*reuse_file_index=*/true);
+}
+
+/**
  * Sequence of calls for a backup:
  * 1. PluginSave() here is called with ff_pkt
  * 2. we find the plugin requested on the command string
@@ -905,6 +1022,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       }
 
       memcpy(&ff_pkt->statp, &sp.statp, sizeof(ff_pkt->statp));
+      FillMissingPluginStatBlocks(ff_pkt->statp);
       Dmsg2(debuglevel, "startBackup returned type=%d, fname=%s\n", sp.type,
             sp.fname);
       if (sp.object) {
@@ -962,8 +1080,24 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       sp.cmd = const_cast<char*>(original_cmd);
 
+      const struct stat original_statp = ff_pkt->statp;
+      bool data_was_read = !ff_pkt->no_read;
+      uint64_t read_bytes_before = jcr->ReadBytes;
+      uint32_t job_errors_before = jcr->JobErrors;
+
+      /* Ask SaveFile() to not send the "end of plugin data" marker itself:
+       * a corrected-attributes resend (below) must happen before that
+       * marker, otherwise the restore-side plugin state machine sees the
+       * bracket as already closed and fatals on the second createFile()
+       * call. */
+      ff_pkt->defer_plugin_name_end = true;
+      ff_pkt->plugin_name_end_pending = false;
+
       // Call Bareos core code to backup the plugin's file
-      SaveFile(jcr, ff_pkt, true);
+      int save_status = SaveFile(jcr, ff_pkt, true);
+      uint64_t read_bytes_after = jcr->ReadBytes;
+
+      ff_pkt->defer_plugin_name_end = false;
 
       if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
 
@@ -971,6 +1105,41 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       CopyBits(FO_MAX, flags, ff_pkt->flags);
 
       bRC retval = PlugFunc(ctx->plugin)->endBackupFile(ctx);
+      bool file_finished_successfully
+          = save_status && !jcr->IsJobCanceled()
+            && (retval == bRC_OK || retval == bRC_More);
+
+      auto* b_ctx = static_cast<FiledPluginContext*>(ctx->core_private_context);
+      std::optional<PluginFileSizeBlocks> corrected_file_size_blocks;
+      bool using_fd_counted_fallback = false;
+      // A read error during SaveFile() can bump JobErrors while still
+      // returning success (see file_finished_successfully above). Gate
+      // both the plugin-supplied correction and the FD-counted fallback
+      // on it, so a correction is never applied/resent for a file whose
+      // data transfer actually failed partway through.
+      if (file_finished_successfully && !IS_FT_OBJECT(sp.type)
+          && jcr->JobErrors == job_errors_before) {
+        if (b_ctx->corrected_file_size_blocks) {
+          corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
+        } else {
+          corrected_file_size_blocks
+              = FdCountedFileSizeBlocks(original_statp, data_was_read,
+                                        read_bytes_before, read_bytes_after);
+          using_fd_counted_fallback = corrected_file_size_blocks.has_value();
+        }
+      }
+
+      bool resent_ok = true;
+      if (corrected_file_size_blocks) {
+        resent_ok = ResendCorrectedAttributes(jcr, ff_pkt, cmd.c_str(),
+                                              *corrected_file_size_blocks,
+                                              using_fd_counted_fallback);
+      }
+      b_ctx->corrected_file_size_blocks.reset();
+
+      SendPendingPluginNameEnd(jcr, ff_pkt);
+      if (!resent_ok) { goto bail_out; }
+
       if (retval == bRC_More || retval == bRC_OK) {
         AccurateMarkFileAsSeen(jcr, fname.c_str());
       }
@@ -2344,6 +2513,21 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
     case bVarFileSeen:
       if (!AccurateMarkFileAsSeen(jcr, (char*)value)) { return bRC_Error; }
       break;
+    case bVarFileSizeBlocks: {
+      const auto& corrected = *static_cast<const PluginFileSizeBlocks*>(value);
+      if (!PluginFileSizeBlocksAreValid(corrected)) {
+        Jmsg2(jcr, M_ERROR, 0,
+              "Invalid corrected file size/blocks: %" PRId64 "/%" PRId64 ".\n",
+              corrected.size, corrected.blocks);
+        return bRC_Error;
+      }
+      static_cast<FiledPluginContext*>(ctx->core_private_context)
+          ->corrected_file_size_blocks
+          = corrected;
+      Dmsg2(100, "corrected file size/blocks set to %" PRId64 "/%" PRId64 "\n",
+            corrected.size, corrected.blocks);
+      return bRC_OK;
+    }
     default:
       Jmsg1(jcr, M_ERROR, 0,
             "Warning: bareosSetValue not implemented for var %d.\n", var);

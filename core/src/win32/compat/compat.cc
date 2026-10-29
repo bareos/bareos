@@ -41,6 +41,7 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include "vss.h"
+#include "compat_stat_blocks.h"
 
 #include <shared_mutex>
 
@@ -1534,7 +1535,7 @@ static int GetWindowsFileInfo(const char* filename,
   sb->st_size <<= 32;
   sb->st_size |= *pnFileSizeLow;
   sb->st_blksize = 4096;
-  sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
+  sb->st_blocks = WindowsSizeToBlocks(sb->st_size);
 
   sb->st_atime = CvtFtimeToUtime(*pftLastAccessTime);
   sb->st_mtime = CvtFtimeToUtime(*pftLastWriteTime);
@@ -1597,7 +1598,7 @@ int fstat(intptr_t fd, struct stat* sb)
   sb->st_size <<= 32;
   sb->st_size |= info.nFileSizeLow;
   sb->st_blksize = 4096;
-  sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
+  sb->st_blocks = WindowsSizeToBlocks(sb->st_size);
 
   if (p_GetFileInformationByHandleEx) {
     FILE_BASIC_INFO basic_info;
@@ -1770,7 +1771,7 @@ int stat(const char* filename, struct stat* sb)
     sb->st_size <<= 32;
     sb->st_size |= data.nFileSizeLow;
     sb->st_blksize = 4096;
-    sb->st_blocks = (uint32_t)(sb->st_size + 4095) / 4096;
+    sb->st_blocks = WindowsSizeToBlocks(sb->st_size);
 
     {
       HANDLE h = INVALID_HANDLE_VALUE;

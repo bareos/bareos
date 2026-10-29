@@ -101,6 +101,10 @@ if(HAVE_PYTHON)
   endif()
 
   if(NOT MSVC) # TODO: fix on MSVC
+    add_test(NAME python-file-allocation
+             COMMAND ${Python3_EXECUTABLE}
+                     ${CMAKE_CURRENT_SOURCE_DIR}/test/file_allocation_test.py
+    )
     add_test(
       NAME bareosfd-python3-module
       COMMAND ${Python3_EXECUTABLE}
@@ -108,7 +112,7 @@ if(HAVE_PYTHON)
     )
 
     set_property(
-      TEST bareosfd-python3-module
+      TEST bareosfd-python3-module python-file-allocation
       PROPERTY
         ENVIRONMENT
         "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
@@ -118,7 +122,10 @@ if(HAVE_PYTHON)
     if(CMAKE_SYSTEM_NAME MATCHES FreeBSD)
       # the testscript randomly segfaults on FreeBSD during the CI-build, so we
       # disable it for now.
-      set_property(TEST bareosfd-python3-module PROPERTY DISABLED true)
+      set_property(
+        TEST bareosfd-python3-module python-file-allocation PROPERTY DISABLED
+                                                                     true
+      )
     endif()
     add_test(
       NAME python-simple-test-example

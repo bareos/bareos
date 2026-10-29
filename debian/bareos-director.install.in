@@ -12,6 +12,7 @@
 @configtemplatedir@/bareos-dir.d/fileset/Windows?All?Drives.conf
 @configtemplatedir@/bareos-dir.d/job/backup-bareos-fd.conf
 @configtemplatedir@/bareos-dir.d/job/BackupCatalog.conf
+@configtemplatedir@/bareos-dir.d/job/SubscriptionAccounting.conf
 @configtemplatedir@/bareos-dir.d/job/RestoreFiles.conf
 @configtemplatedir@/bareos-dir.d/jobdefs/DefaultJob.conf
 @configtemplatedir@/bareos-dir.d/messages/Daemon.conf
@@ -25,6 +26,7 @@
 @configtemplatedir@/bareos-dir.d/profile/webui-readonly.conf
 @configtemplatedir@/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 @configtemplatedir@/bareos-dir.d/schedule/WeeklyCycle.conf
+@configtemplatedir@/bareos-dir.d/schedule/SubscriptionAccounting.conf
 @configtemplatedir@/bareos-dir.d/storage/File.conf
 @configtemplatedir@/bareos-dir.d/storage/File.conf.example
 @configtemplatedir@/bareos-dir.d/user
