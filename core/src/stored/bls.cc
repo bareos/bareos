@@ -41,6 +41,7 @@
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
+#include "stored/attribute_dedup.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
 #include "stored/mount.h"
@@ -79,6 +80,9 @@ static JobControlRecord* jcr;
 static Session_Label sessrec;
 static uint32_t num_files = 0;
 static Attributes* attr;
+
+// Skips corrected-attributes resends so a file is not listed twice.
+static AttributeResendFilter resend_filter;
 
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
@@ -408,6 +412,12 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
   switch (t_rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
+      if (resend_filter.IsResend(t_rec)) {
+        Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
+              t_rec->FileIndex);
+        break;
+      }
+
       if (!UnpackAttributesRecord(jcr, t_rec->Stream, t_rec->data,
                                   t_rec->data_len, attr)) {
         if (!forge_on) {

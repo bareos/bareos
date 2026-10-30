@@ -197,6 +197,7 @@ class UaContext {
   void WarningMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
   void InfoMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
   void SendCmdUsage(const char* msg);
+  void SetConsoleConnected(bool connected) { console_is_connected = connected; }
 
   void vSendMsg(int signal,
                 const char* messagetype,

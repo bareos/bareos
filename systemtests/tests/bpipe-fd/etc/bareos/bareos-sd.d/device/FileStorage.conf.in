@@ -9,3 +9,15 @@ Device {
   AlwaysOpen = no;
   Description = "File device. A connecting Director must have the same Name and MediaType."
 }
+
+Device {
+  Name = FileStorage2
+  Media Type = File
+  Archive Device = storage
+  LabelMedia = yes;
+  Random Access = yes;
+  AutomaticMount = yes;
+  RemovableMedia = no;
+  AlwaysOpen = no;
+  Description = "File device for Virtual Full output."
+}
