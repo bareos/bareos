@@ -481,6 +481,40 @@ describe('director store', () => {
     await expect(rawPromise).resolves.toBe('done')
   })
 
+  it('allows an individual command call to override the default timeout', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir', 'secret')
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    const slowCall = director.call('.bvfs_update jobid=1', { timeoutMs: 300_000 })
+
+    // Well past the normal 30s command timeout — should still be pending.
+    vi.advanceTimersByTime(60_000)
+    let settled = false
+    void slowCall.then(() => { settled = true }).catch(() => { settled = true })
+    await Promise.resolve()
+    expect(settled).toBe(false)
+
+    // Past the custom 300s timeout — should now reject.
+    vi.advanceTimersByTime(240_001)
+    await expect(slowCall).rejects.toThrow('Command timed out')
+  })
+
   it('streams raw command output chunks before the command completes', async () => {
     const auth = useAuthStore()
     const director = useDirectorStore()

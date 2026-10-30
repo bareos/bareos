@@ -14,6 +14,8 @@
               dense
               color="white"
               icon="refresh"
+              :title="t('Refresh')"
+              :aria-label="t('Refresh')"
               :loading="loading"
               @click="refresh"
             />

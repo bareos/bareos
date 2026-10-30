@@ -39,6 +39,11 @@ export const DIRECTOR_WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDi
 export const API_BASE_URL = getApiBaseUrl()
 export const DIRECTOR_COMMAND_AUTH_TIMEOUT_MS = 8_000
 export const DIRECTOR_COMMAND_TIMEOUT_MS = 30_000
+// Some commands (e.g. .bvfs_update) build a catalog cache and can take much
+// longer than a regular command on large jobs. Callers may pass this as
+// `{ timeoutMs: BVFS_UPDATE_TIMEOUT_MS }` to call() to avoid a premature
+// client-side timeout while the director is still legitimately working.
+export const BVFS_UPDATE_TIMEOUT_MS = 300_000
 
 function rejectPendingCommands(pendingCommands, reason) {
   for (const { reject, timer } of pendingCommands.values()) {
@@ -108,7 +113,7 @@ export function createDirectorCommandSession(credentials, options = {}) {
       }
     }
 
-    function call(command) {
+    function call(command, callOptions = {}) {
       return new Promise((resolveCommand, rejectCommand) => {
         if (socket.readyState !== WebSocket.OPEN || !authenticated) {
           rejectCommand(new Error('Not connected to director'))
@@ -123,7 +128,7 @@ export function createDirectorCommandSession(credentials, options = {}) {
 
           pendingCommands.delete(id)
           rejectCommand(new Error(`Command timed out: ${command}`))
-        }, commandTimeoutMs)
+        }, callOptions.timeoutMs ?? commandTimeoutMs)
 
         pendingCommands.set(id, {
           resolve: resolveCommand,

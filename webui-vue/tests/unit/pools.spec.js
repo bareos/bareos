@@ -23,7 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPoolDetailsQuery,
   buildPoolVolumeDetailsQuery,
-  resolvePoolDetailsStoragesOrigin,
+  resolvePoolDetailsPoolsOrigin,
   resolvePoolDetailsVolumeQuery,
   resolvePoolDetailsVolumeOrigin,
 } from '../../src/utils/pools.js'
@@ -33,12 +33,12 @@ describe('pool route helpers', () => {
     expect(buildPoolDetailsQuery({
       director: 'prod-a',
       volumeName: 'Full-0001',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
     })).toEqual({
       director: 'prod-a',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
       volumeName: 'Full-0001',
     })
 
@@ -120,16 +120,16 @@ describe('pool route helpers', () => {
   })
 
   it('resolves an optional storages-tab origin for pool details routes', () => {
-    expect(resolvePoolDetailsStoragesOrigin({
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+    expect(resolvePoolDetailsPoolsOrigin({
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
     })).toEqual({
       tab: 'volumes',
       scopeDirector: 'prod-a',
     })
 
-    expect(resolvePoolDetailsStoragesOrigin({
-      storagesScopeDirector: 'prod-a',
+    expect(resolvePoolDetailsPoolsOrigin({
+      poolsScopeDirector: 'prod-a',
     })).toEqual({
       tab: 'pools',
       scopeDirector: 'prod-a',
@@ -155,8 +155,8 @@ describe('pool route helpers', () => {
       jobId: '42',
       poolName: 'Full',
       volumeName: 'Full-0001',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
       ignored: 'value',
@@ -178,8 +178,8 @@ describe('pool route helpers', () => {
       jobId: '42',
       poolName: 'Full',
       volumeName: 'Full-0001',
-      storagesTab: 'volumes',
-      storagesScopeDirector: 'prod-a',
+      poolsTab: 'volumes',
+      poolsScopeDirector: 'prod-a',
       autochangerStorage: 'TapeLibrary',
       autochangerDirector: 'prod-a',
     })

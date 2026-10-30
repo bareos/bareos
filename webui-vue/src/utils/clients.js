@@ -89,10 +89,6 @@ export function buildClientDetailsQuery({
 export function resolveClientsListQuery(query) {
   const nextQuery = {}
 
-  if (typeof query?.clientsTab === 'string' && query.clientsTab && query.clientsTab !== 'list') {
-    nextQuery.tab = query.clientsTab
-  }
-
   if (typeof query?.clientsScopeDirector === 'string' && query.clientsScopeDirector) {
     nextQuery.scopeDirector = query.clientsScopeDirector
   }
@@ -153,4 +149,38 @@ export function withClientsScopeDirectorQuery(query, director) {
   }
 
   return nextQuery
+}
+
+function normalizedStatusLines(text) {
+  return String(text ?? '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+}
+
+export function parseClientStatusSummary(text) {
+  const lines = normalizedStatusLines(text)
+  const normalizedText = lines.join('\n')
+  const lowerText = normalizedText.toLowerCase()
+  const versionMatch = normalizedText.match(/\b(?:bareos-fd\s+)?version:\s*([^\n]+)/i)
+  const runningJobsMatch = normalizedText.match(/\b(\d+)\s+job[s]?\s+running\b/i)
+  const runningJobs = lowerText.includes('no jobs running')
+    ? 0
+    : (runningJobsMatch ? Number(runningJobsMatch[1]) : null)
+  const warningLines = lines.filter(line => (
+    /\b(?:warning|warn|alert|could not|cannot)\b/i.test(line)
+    && !/\b(?:errors|warnings?)\s*:\s*0\b/i.test(line)
+  ))
+  const errorLines = lines.filter(line => (
+    /\b(?:error|fatal|failed|failure|connection refused|unable to connect)\b/i.test(line)
+    && !/\b(?:errors|warnings?)\s*:\s*0\b/i.test(line)
+  ))
+
+  return {
+    reachable: !/\b(?:connection refused|unable to connect|failed to connect|failed authorization)\b/i.test(normalizedText),
+    version: versionMatch?.[1]?.trim() ?? '',
+    runningJobs,
+    warningCount: warningLines.length,
+    errorCount: errorLines.length,
+  }
 }
