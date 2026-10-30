@@ -406,16 +406,7 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.driver.get(self.base_url + "/restore")
         self.wait_for_spinner_absence()
-        if self.profile != "readonly":
-            # Click on client dropdown menu and close the possible modal
-            self.wait_and_click(
-                By.XPATH,
-                '(//button[@data-id="client"])',
-                [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
-            )
-            # Select correct client
-            self.wait_and_click(By.LINK_TEXT, self.client)
-        else:
+        if self.profile == "readonly":
             # For readonly: verify the restore form loads with the auto-selected
             # client. The readonly profile is not expected to submit restore jobs.
             self.wait_for_presence(By.ID, "restorejob")
@@ -423,17 +414,34 @@ class SeleniumTest(unittest.TestCase):
             self.logout()
             return
 
-        # Select the first visible restore tree entry. The BVFS root varies with
-        # the test environment, so absolute path traversal is brittle here.
+        # Click on client dropdown menu and close the possible modal
         self.wait_and_click(
             By.XPATH,
-            '//div[@id="filebrowser"]//a[contains(@class, "jstree-anchor")]',
+            '(//button[@data-id="client"])',
+            [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
         )
+        # Select correct client
+        self.wait_and_click(By.LINK_TEXT, self.client)
+
+        # Clicks on file and navigates through the tree
+        # by using the arrow-keys.
+        pathlist = self.restorefile.split("/")
+        for i in pathlist[:-1]:
+            self.wait_for_element(
+                By.XPATH, '//div[@id="filebrowser"]//a[text() = "%s/"]' % i
+            ).send_keys(Keys.ARROW_RIGHT)
+        self.wait_for_element(
+            By.XPATH,
+            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
+        ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
         # Confirm modals
         self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
-        self.close_result_modal()
+        if self.profile == "readonly":
+            self.wait_and_click(By.LINK_TEXT, "Back")
+        else:
+            self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
         # Logout
         self.logout()
 
@@ -604,9 +612,6 @@ class SeleniumTest(unittest.TestCase):
             self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
         # Submit the job
         self.wait_and_click(By.ID, "submit")
-
-    def close_result_modal(self):
-        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
 
     def wait_for_presence(self, by, value):
         return self.wait.until(EC.presence_of_element_located((by, value)))
