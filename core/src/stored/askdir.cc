@@ -39,6 +39,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "stored/dev.h"
 #include "lib/edit.h"
@@ -210,7 +211,37 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
 {
   bool retval = false;
   BareosSocket* dir = jcr->dir_bsock;
-  PoolMem unwanted_volumes(PM_MESSAGE);
+  std::string unwanted_volumes;
+
+  std::size_t unwanted_volumes_count = 0;
+
+  if (jcr->sd_impl->VolList && jcr->sd_impl->NumReadVolumes > 0) {
+    auto* current = jcr->sd_impl->VolList;
+    for (int i = 0; i < jcr->sd_impl->NumReadVolumes; i++) {
+      if (!current) {
+        Jmsg(jcr, M_ERROR, 0,
+             "Job is supposed to have %d read volumes, but only %d were "
+             "found.\n",
+             jcr->sd_impl->NumReadVolumes, i);
+        return false;
+      }
+
+      if (i > 0) { unwanted_volumes += ','; }
+
+      unwanted_volumes_count += 1;
+      unwanted_volumes += current->VolumeName;
+
+      current = current->next;
+    }
+
+    if (current) {
+      Jmsg(jcr, M_ERROR, 0,
+           "Job is supposed to have %d read volumes, but %s is also in its "
+           "list.\n",
+           jcr->sd_impl->NumReadVolumes, current->VolumeName);
+      return false;
+    }
+  }
 
   Dmsg2(debuglevel, "DirFindNextAppendableVolume: reserved=%d Vol=%s\n",
         IsReserved(), VolumeName);
@@ -222,7 +253,6 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     lock_mutex(vol_info_mutex);
     ClearFoundInUse();
 
-    PmStrcpy(unwanted_volumes, "");
 
     std::size_t device_count = 0;
 
@@ -256,21 +286,18 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
     for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
       BashSpaces(media_type);
       BashSpaces(pool_name);
-      BashSpaces(unwanted_volumes.c_str());
-      dir->fsend(Find_media, jcr->Job, static_cast<int>(vol_index), pool_name,
-                 media_type, unwanted_volumes.c_str());
+      BashSpaces(unwanted_volumes.data());
+      dir->fsend(Find_media, jcr->Job,
+                 static_cast<int>(vol_index + unwanted_volumes_count),
+                 pool_name, media_type, unwanted_volumes.c_str());
       UnbashSpaces(media_type);
       UnbashSpaces(pool_name);
-      UnbashSpaces(unwanted_volumes.c_str());
+      UnbashSpaces(unwanted_volumes.data());
       Dmsg1(debuglevel, ">dird %s", dir->msg);
 
       if (DoGetVolumeInfo(this)) {
-        if (vol_index == 1) {
-          PmStrcpy(unwanted_volumes, VolumeName);
-        } else {
-          PmStrcat(unwanted_volumes, ",");
-          PmStrcat(unwanted_volumes, VolumeName);
-        }
+        if (!unwanted_volumes.empty()) { unwanted_volumes += ','; }
+        unwanted_volumes += VolumeName;
 
         if (Can_i_write_volume()) {
           Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",

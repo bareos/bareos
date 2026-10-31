@@ -7,7 +7,7 @@ echo "$0" "$@" >&2
 
 readonly inv_file="${tmp:-/tmp}/mtx-inventory.txt"
 readonly media_root="${tmp:-/tmp}/autochanger-media"
-readonly robot_delay="${AUTOCHANGER_ROBOT_DELAY:-10}"
+readonly robot_delay="${AUTOCHANGER_ROBOT_DELAY:-0}"
 
 # ctl is unused by the emulator, but Bareos still passes it in.
 readonly cmd="${2:-}"

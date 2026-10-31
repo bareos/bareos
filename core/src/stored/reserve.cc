@@ -43,6 +43,7 @@
 #include "lib/bsock.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
+#include "stored/reserve.h"
 
 #include <cinttypes>
 
@@ -56,7 +57,8 @@ static std::mutex* reservation_mutex = nullptr;
 /* Forward referenced functions */
 static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx);
 static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx);
-static bool ReserveDeviceForRead(DeviceControlRecord* dcr);
+static bool ReserveDeviceForRead(DeviceControlRecord* dcr,
+                                 ReserveContext& rctx);
 static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
                                    ReserveContext& rctx);
 static bool UseDeviceCmd(JobControlRecord* jcr);
@@ -199,9 +201,20 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     std::unique_lock reservation_lock(*reservation_mutex);
     ClearReserveMessages(jcr);
     rctx.suitable_device = false;
-    rctx.have_volume = false;
-    rctx.VolumeName[0] = 0;
     rctx.any_drive = false;
+
+    if (!append && jcr->sd_impl->VolList) {
+      strncpy(rctx.VolumeName, jcr->sd_impl->VolList->VolumeName,
+              sizeof(rctx.VolumeName));
+      rctx.exact_match = true;
+      rctx.have_volume = true;
+
+      if ((found = FindSuitableDeviceForJob(jcr, rctx))) { break; }
+    }
+
+    rctx.VolumeName[0] = 0;
+    rctx.have_volume = false;
+
     if (!jcr->sd_impl->PreferMountedVols) {
       /* Here we try to find a drive that is not used.
        * This will maximize the use of available drives. */
@@ -752,7 +765,7 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
       }
     }
   } else {
-    ok = ReserveDeviceForRead(dcr);
+    ok = ReserveDeviceForRead(dcr, rctx);
     if (ok) {
       jcr->sd_impl->read_dcr = dcr;
       Dmsg5(debuglevel,
@@ -779,7 +792,7 @@ bail_out:
  * No one else should touch the drive until that is cleared.
  * This allows the DIR to "reserve" the device before actually starting the job.
  */
-static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
+static bool ReserveDeviceForRead(DeviceControlRecord* dcr, ReserveContext& rctx)
 {
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
@@ -799,6 +812,20 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
          jcr->JobId, dev->print_name());
     QueueReserveMessage(jcr);
     goto bail_out;
+  }
+
+  if (rctx.exact_match && rctx.have_volume) {
+    if (strcmp(dev->VolHdr.VolumeName, rctx.VolumeName)) {
+      Dmsg4(debuglevel,
+            "Device %s is has volume %s loaded, but %s was required.\n",
+            dev->print_name(), dev->VolHdr.VolumeName, rctx.VolumeName);
+      Mmsg(jcr->errmsg,
+           T_("3602 JobId=%" PRIu32
+              " device %s has wrong volume (already reading/writing).\n"),
+           jcr->JobId, dev->print_name());
+      QueueReserveMessage(jcr);
+      goto bail_out;
+    }
   }
 
   if (dev->IsBusy()) {
@@ -1050,9 +1077,14 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
               rctx.VolumeName);
         return 0;
       }
-      if (!dcr->Can_i_use_volume()) {
-        return 0; /* fail if volume on another drive */
+
+      bool can_use = false;
+      if (rctx.append) {
+        can_use = dcr->Can_i_write_volume();
+      } else {
+        can_use = dcr->Can_i_use_volume();
       }
+      if (!can_use) { return 0; /* fail if volume on another drive */ }
     }
   }
 
