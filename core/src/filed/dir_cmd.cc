@@ -42,6 +42,7 @@
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"
+#include "lib/bauth.h"
 #include "lib/berrno.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
