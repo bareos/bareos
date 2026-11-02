@@ -36,7 +36,16 @@ bool BareosConnect(JobControlRecord* jcr,
                    bool cleartext_authentication = false);
 
 struct Md5OutboundAuthenticator : auth::OutboundAuthenticator {
+  Md5OutboundAuthenticator();
+  Md5OutboundAuthenticator(std::string identity)
+      : cram_identity{std::move(identity)}
+  {
+  }
+
   bool authenticate(auth::OutboundArgs args) override;
+
+ private:
+  std::string cram_identity;
 };
 
 struct Md5InboundAuthenticator : auth::InboundAuthenticator {

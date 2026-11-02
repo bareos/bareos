@@ -1155,16 +1155,19 @@ bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
 
 }  // namespace auth
 
+Md5OutboundAuthenticator::Md5OutboundAuthenticator()
+    : Md5OutboundAuthenticator{get_default_cram_identity()}
+{
+}
 
 bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)
 {
   auth::Algorithms algs;
 
-  auto identity = get_default_cram_identity();
   auto password = args.target->password_.value;
 
-  algs.add<auth::CramMd5::Prover>(identity, password);
-  algs.add<auth::CramMd5::Verifier>(identity, password);
+  algs.add<auth::CramMd5::Prover>(cram_identity, password);
+  algs.add<auth::CramMd5::Verifier>(cram_identity, password);
 
   return authenticate_outbound(algs.prover, algs.verifier, args);
 }
