@@ -336,7 +336,7 @@ bool BareosConnect(JobControlRecord* jcr,
         jcr, res, qualified_name.c_str(), res->password_.value);
 
     if (!tls) {
-      Jmsg(jcr, M_FATAL, 0, "Could initialize initial tls context for %s\n",
+      Jmsg(jcr, M_FATAL, 0, "Could not initialize initial tls context for %s\n",
            socket->who());
       return false;
     }
@@ -994,7 +994,7 @@ bool Version1::authenticate_outbound(std::string_view identity,
 
       if (!tls) {
         Jmsg(args.jcr, M_FATAL, 0,
-             "Could initialize secondary tls context for %s\n",
+             "Could not initialize secondary tls context for %s\n",
              args.socket->who());
         return false;
       }
@@ -1048,7 +1048,7 @@ bool Version1::authenticate_inbound(std::string_view identity, InboundArgs args)
           = ParameterizeAndInitTlsConnectionAsAServer(args.target, nullptr);
 
       if (!tls) {
-        Emsg1(M_ERROR, 0, "Could initialize secondary tls context for %s\n",
+        Emsg1(M_ERROR, 0, "Could not initialize secondary tls context for %s\n",
               args.socket->who());
         return false;
       }
