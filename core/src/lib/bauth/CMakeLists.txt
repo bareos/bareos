@@ -79,3 +79,5 @@ target_sources(bauth_trust PRIVATE tls.cc)
 define_auth_plugin(cram-md5 VERIFIER bauth_cram-md5 PROVER bauth_cram-md5)
 
 define_auth_plugin(trust VERIFIER bauth_trust PROVER bauth_trust)
+
+add_subdirectory(oidc)
