@@ -31,7 +31,7 @@ bool TryOpenBrowser(SetupContext& context, const std::string& url)
   for (const auto& command : commands) {
     if (!context.IsToolAvailable(command.tool)) continue;
     try {
-      if (context.Run(command, false, [](std::string_view, std::string_view) {})
+      if (context.Run(command, [](std::string_view, std::string_view) {})
           == 0) {
         return true;
       }

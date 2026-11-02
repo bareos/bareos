@@ -62,7 +62,6 @@ enum class SetupTool
   A2ensite,
   A2enflag,
   Echo,
-  Sudo,
   OpenSSL,
   Chmod,
   Cat,
@@ -107,13 +106,11 @@ class SetupContext {
       PackageManager pkg_mgr) const;
 
   int Run(const SetupCommand& command,
-          bool run_as_root,
           OutputCallback output,
           CommandLogCallback log_command = {},
           PreviewCallback preview = {}) const;
   int RunWithInput(const SetupCommand& command,
                    const std::string& input,
-                   bool run_as_root,
                    OutputCallback output,
                    CommandLogCallback log_command = {},
                    PreviewCallback preview = {}) const;
@@ -125,7 +122,6 @@ class SetupContext {
   std::optional<std::string> ToolPath(SetupTool tool) const;
   int RunImpl(const SetupCommand& command,
               const std::string* input,
-              bool run_as_root,
               OutputCallback output,
               CommandLogCallback log_command,
               PreviewCallback preview) const;

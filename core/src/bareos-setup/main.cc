@@ -251,10 +251,9 @@ int main(int argc, char* argv[])
                                 + std::to_string(port)
                                 + "/?token=" + UrlEncode(setup_token);
 
-  if (no_browser) {
-    std::cout << "Open this URL in your browser: " << setup_url << "\n"
-              << std::flush;
-  } else {
+  std::cout << "Open this URL in your browser: " << setup_url << "\n"
+            << std::flush;
+  if (!no_browser) {
     // Fork before starting the server so the child opens the browser
     // after the parent has started listening.
     pid_t child = fork();
@@ -262,12 +261,9 @@ int main(int argc, char* argv[])
       // Wait for the parent to bind and listen before opening the browser.
       sleep(1);
       SetupContext browser_context;
-      const std::string browser_url = "http://" + url_host + ":"
-                                      + std::to_string(port)
-                                      + "/?token=" + UrlEncode(setup_token);
-      if (!TryOpenBrowser(browser_context, browser_url)) {
+      if (!TryOpenBrowser(browser_context, setup_url)) {
         std::cerr << "Could not open browser automatically.\n"
-                  << "Open this URL manually: " << browser_url << "\n";
+                  << "Open this URL manually: " << setup_url << "\n";
       }
       _exit(0);
     }

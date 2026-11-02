@@ -44,7 +44,7 @@
       </q-banner>
       <q-banner v-if="!connected" class="bg-warning q-mb-md">
         <template #avatar><q-icon name="sync_problem" /></template>
-        Waiting for the local setup service…
+        {{ connectionError || 'Connecting to the setup service…' }}
       </q-banner>
 
       <q-card v-if="step === 'welcome'" flat bordered><q-card-section>
@@ -71,7 +71,7 @@
           <q-item><q-item-section avatar><q-icon name="health_and_safety" color="positive" /></q-item-section>
             <q-item-section>Safe to run: an existing Bareos admin configuration makes setup abort before that file is changed.</q-item-section></q-item>
           <q-item><q-item-section avatar><q-icon name="admin_panel_settings" color="positive" /></q-item-section>
-            <q-item-section>Transparent privilege use: only standard, approved commands are ever executed as root or via sudo — nothing else.</q-item-section></q-item>
+            <q-item-section>Transparent privilege use: setup runs as root and executes only standard, approved commands — nothing else.</q-item-section></q-item>
         </q-list>
       </q-card-section></q-card>
       <q-card v-else-if="step === 'platform'" flat bordered><q-card-section>
@@ -390,7 +390,7 @@ import { FALLBACK_ICON, getDistroIcon } from '../utils/distro-icons.js'
 
 const $q = useQuasar()
 const store = useSetupStore()
-const { connected, messages, send } = useSetupWs()
+const { connected, connectionError, messages, send } = useSetupWs()
 const step = ref('welcome')
 const busy = ref(false)
 const error = ref('')

@@ -195,7 +195,7 @@ int Run(const SetupCommand& command,
         const std::vector<std::string>& secrets = {})
 {
   return context.setup.Run(
-      command, true,
+      command,
       [&ws, &secrets](std::string_view line, std::string_view) {
         Output(ws, line, secrets);
       },
@@ -212,7 +212,7 @@ int RunWithInput(const SetupCommand& command,
                  const std::vector<std::string>& secrets = {})
 {
   return context.setup.RunWithInput(
-      command, input, true,
+      command, input,
       [&ws, &secrets](std::string_view line, std::string_view) {
         Output(ws, line, secrets);
       },
@@ -232,7 +232,7 @@ std::string DiscoverSubscriptionRelease(WsCodec& ws,
   const auto command = BuildSubscriptionReleaseIndexCmd(true);
   std::string index;
   const int result = context.setup.RunWithInput(
-      command, curl_config, true,
+      command, curl_config,
       [&index](std::string_view line, std::string_view) {
         index += line;
         index += '\n';
@@ -536,7 +536,7 @@ int CreateAdmin(WsCodec& ws, const SessionContext& context)
     const auto write_command = Install(
         {"-D", "-m", "0640", "/dev/stdin", std::string{kAdminConfigPath}});
     context.setup.RunWithInput(
-        write_command, "", true, [](std::string_view, std::string_view) {},
+        write_command, "", [](std::string_view, std::string_view) {},
         [&ws](const SetupCommand& logged_command, bool, bool) {
           Output(ws, "$ " + JoinCommandForDisplay(logged_command));
         },
@@ -569,7 +569,7 @@ int CreateAdmin(WsCodec& ws, const SessionContext& context)
   const std::string path{kAdminConfigPath};
   const auto write_command = Install({"-D", "-m", "0640", "/dev/stdin", path});
   const int write_result = context.setup.RunWithInput(
-      write_command, resource, true,
+      write_command, resource,
       [&ws, &password](std::string_view line, std::string_view) {
         Output(ws, line, {password});
       },
