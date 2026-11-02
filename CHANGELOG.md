@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - lmdb: add optional system library [PR #2800]
 - webui: fix CSRF vulnerabilities [PR #2844]
 - webui test: fix restore selection in release build, update php in windows installer [PR #2891]
+- systemtests: use pidfile in config-dump test [PR #2878]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2438,6 +2439,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
 [PR #2868]: https://github.com/bareos/bareos/pull/2868
 [PR #2874]: https://github.com/bareos/bareos/pull/2874
+[PR #2878]: https://github.com/bareos/bareos/pull/2878
 [PR #2879]: https://github.com/bareos/bareos/pull/2879
 [PR #2886]: https://github.com/bareos/bareos/pull/2886
 [PR #2891]: https://github.com/bareos/bareos/pull/2891
