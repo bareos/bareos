@@ -35,6 +35,8 @@ endif()
 
 add_library(dird_objects STATIC)
 add_library(Bareos::Dir ALIAS dird_objects)
+
+find_package(CURL REQUIRED)
 target_sources(
   dird_objects
   PRIVATE admin.cc
@@ -119,6 +121,10 @@ target_sources(
           verify.cc
           volume_key.cc
           pthread_detach_if_not_detached.cc
+)
+
+target_link_libraries(
+  dird_objects PUBLIC CURL::libcurl fmt::fmt BAuth::Verifier::Oidc
 )
 
 if(HAVE_PAM)

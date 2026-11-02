@@ -45,6 +45,12 @@ struct Verifier {
   virtual const char* err() const = 0;
 
   virtual ~Verifier() = default;
+
+  void set_used() { used = true; }
+  bool was_used() const { return used; }
+
+ private:
+  bool used{false};
 };
 
 struct Prover {
@@ -92,25 +98,54 @@ struct InboundAuthenticator {
   virtual ~InboundAuthenticator() = default;
 };
 
+struct NamedVerifier {
+  std::string name;
+  std::unique_ptr<Verifier> impl;
+};
+
+struct challenge {
+  std::string internal_name;  // this is used when talking to the server
+  std::string display_name;   // this can be shown to the user
+  std::string type;           // this is used to select the handler
+  std::string challenge;
+};
+
+struct AlgorithmChooser {
+  virtual size_t choose(std::span<const std::pair<Prover*, challenge*>>) = 0;
+};
+
+struct DefaultAlgorithmChooser : AlgorithmChooser {
+  size_t choose(std::span<const std::pair<Prover*, challenge*>>) override
+  {
+    return 0;
+  }
+};
+
+extern DefaultAlgorithmChooser default_chooser;
+
 struct Algorithms {
   std::vector<std::unique_ptr<Prover>> prover;
-  std::vector<std::unique_ptr<Verifier>> verifier;
+  std::vector<NamedVerifier> verifier;
+  AlgorithmChooser* chooser = &default_chooser;
 
   template <typename T, typename... Args>
-    requires(std::is_base_of_v<Prover, T> != std::is_base_of_v<Verifier, T>)
+    requires(std::is_base_of_v<Prover, T> && !std::is_base_of_v<Verifier, T>)
   T& add(Args&&... args)
   {
-    if constexpr (std::is_base_of_v<Prover, T>) {
-      auto p = std::make_unique<T>(std::forward<Args>(args)...);
-      auto ptr = p.get();
-      prover.emplace_back(std::move(p));
-      return *ptr;
-    } else {
-      auto v = std::make_unique<T>(std::forward<Args>(args)...);
-      auto ptr = v.get();
-      verifier.emplace_back(std::move(v));
-      return *ptr;
-    }
+    auto p = std::make_unique<T>(std::forward<Args>(args)...);
+    auto ptr = p.get();
+    prover.emplace_back(std::move(p));
+    return *ptr;
+  }
+
+  template <typename T, typename... Args>
+    requires(!std::is_base_of_v<Prover, T> && std::is_base_of_v<Verifier, T>)
+  T& add(std::string name, Args&&... args)
+  {
+    auto v = std::make_unique<T>(std::forward<Args>(args)...);
+    auto ptr = v.get();
+    verifier.emplace_back(std::move(name), std::move(v));
+    return *ptr;
   }
 };
 
@@ -130,27 +165,16 @@ bool authenticate_inbound(std::string_view identity, InboundArgs args);
 
 namespace Version2 {
 // introduced in 26.0.0
-bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
-                           std::span<std::unique_ptr<Verifier>> verifiers,
-                           OutboundArgs args);
-bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
-                          std::span<std::unique_ptr<Verifier>> verifiers,
-                          InboundArgs args);
-
+bool authenticate_outbound(Algorithms& algs, OutboundArgs args);
+bool authenticate_inbound(Algorithms& algs, InboundArgs args);
 };  // namespace Version2
-
 
 /* these will automatically use the correct one (Version1, Version2, ...)
  * depending on the remote.  The identity for Version1 is taken from
  * a cram-md5 prover/verifier pair.  If no such pair exists, then no fallback
  * is used. */
-bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
-                          std::span<std::unique_ptr<Verifier>> verifiers,
-                          InboundArgs args);
-
-bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
-                           std::span<std::unique_ptr<Verifier>> verifiers,
-                           OutboundArgs args);
+bool authenticate_inbound(Algorithms& algs, InboundArgs args);
+bool authenticate_outbound(Algorithms& algs, OutboundArgs args);
 
 };  // namespace auth
 
