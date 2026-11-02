@@ -134,7 +134,7 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-std::unique_ptr<auth::InboundAuthenticator> DirectorAuth::get_authenticator_for(
+auth::InboundAuthenticator* DirectorAuth::get_authenticator_for(
     global_resource::Type auth_type,
     std::string_view name)
 {
@@ -167,11 +167,10 @@ std::unique_ptr<auth::InboundAuthenticator> DirectorAuth::get_authenticator_for(
         return nullptr;
       }
 
-      auto& data = client.emplace();
-      data.res = res;
+      auto& data = client.emplace(res, Md5InboundAuthenticator(*res));
 
       type = inbound_type::Client;
-      return std::make_unique<Md5InboundAuthenticator>(*res);
+      return &data.auth;
     } break;
     case global_resource::Type::Console: {
       Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
@@ -190,13 +189,14 @@ std::unique_ptr<auth::InboundAuthenticator> DirectorAuth::get_authenticator_for(
         return nullptr;
       }
 
-      auto& data = console.emplace();
+      ConsoleConnectionLease lease;
+
       auto num_leases = ConsoleConnectionLease::get_num_leases();
 
-      data.is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
+      bool is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
 
       if (num_leases > myself->MaxConsoleConnections) {
-        if (data.is_default) {
+        if (is_default) {
           Emsg0(M_INFO, 0,
                 T_("Number of console connections exceeded "
                    "Maximum :%u, Current: %" PRIuz "\n"),
@@ -210,22 +210,25 @@ std::unique_ptr<auth::InboundAuthenticator> DirectorAuth::get_authenticator_for(
         }
       }
 
-      data.res = res;
+      const TlsResource* tls;
 
-      if (data.is_default) {
+      if (is_default) {
         /* while the default console has a console resource, for some reason
          * it does not have the correct tls settings; instead of using the
          * directors tls settings, it is set up with some kind of default tls
          * settings.  As such we need to use the tls settings of the director
          * explicitly. */
-        data.tls = *myself;
+        tls = myself;
       } else {
-        data.tls = *res;
+        tls = res;
       }
 
+      auto& data = console.emplace(res, std::move(lease),
+                                   Md5InboundAuthenticator(*tls),
+                                   is_default, *tls);
       type = inbound_type::Console;
 
-      return std::make_unique<Md5InboundAuthenticator>(data.tls);
+      return &data.auth;
     } break;
     default: {
     }

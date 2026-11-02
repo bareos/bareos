@@ -43,7 +43,7 @@
 
 namespace storagedaemon {
 
-std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
+auth::InboundAuthenticator* Auth::get_authenticator_for(
     global_resource::Type auth_type,
     std::string_view name)
 {
@@ -70,13 +70,13 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
         return nullptr;
       }
 
-      auto& data = job.emplace();
-      data.jcr = jcr;
-      data.job = *myself;
-      data.job.password_.value = jcr->sd_auth_key;
+      TlsResource custom = *myself;
+      custom.password_.value = jcr->sd_auth_key;
+      auto& data = job.emplace(jcr, std::move(custom),
+                               Md5InboundAuthenticator(custom));
 
       type = inbound_type::Job;
-      return std::make_unique<Md5InboundAuthenticator>(data.job);
+      return &data.auth;
     } break;
     case global_resource::Type::Director: {
       auto* res = dynamic_cast<DirectorResource*>(
@@ -112,11 +112,11 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
         }
       }
 
-      auto& data = director.emplace();
+      auto& data = director.emplace(res, Md5InboundAuthenticator(*res));
       data.res = res;
 
       type = inbound_type::Director;
-      return std::make_unique<Md5InboundAuthenticator>(*res);
+      return &data.auth;
     } break;
     default: {
     } break;

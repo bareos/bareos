@@ -94,7 +94,7 @@ bool BareosConnect(JobControlRecord* jcr,
 }
 
 struct AuthenticationProvider {
-  virtual std::unique_ptr<auth::InboundAuthenticator>
+  virtual auth::InboundAuthenticator*
   get_authenticator_for(global_resource::Type type, std::string_view idenity) = 0;
 };
 

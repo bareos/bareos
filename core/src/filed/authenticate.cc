@@ -54,7 +54,7 @@ namespace filedaemon {
  *  54 29Oct15 - Added getSecureEraseCmd
  */
 
-std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
+auth::InboundAuthenticator* Auth::get_authenticator_for(
     global_resource::Type auth_type,
     std::string_view name)
 {
@@ -112,11 +112,9 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
         }
       }
 
-      auto& data = director.emplace();
-      data.res = res;
-
+      auto& data = director.emplace(res, Md5InboundAuthenticator(*res));
       type = inbound_type::Director;
-      return std::make_unique<Md5InboundAuthenticator>(*data.res);
+      return &data.auth;
     } break;
     case global_resource::Type::Job: {
       auto* jcr = get_jcr_for_authentication(name);
@@ -130,14 +128,11 @@ std::unique_ptr<auth::InboundAuthenticator> Auth::get_authenticator_for(
 
       Dmsg1(50, "Found Job %.*s\n", name_len, name_ptr);
 
-      auto& data = storage.emplace();
-      data.jcr = jcr;
-
-      data.job = *myself;
-      data.job.password_.value = jcr->sd_auth_key;
-
+      TlsResource tls = *myself;
+      tls.password_.value = jcr->sd_auth_key;
+      auto& data = storage.emplace(jcr, tls, Md5InboundAuthenticator(tls));
       type = inbound_type::Storage;
-      return std::make_unique<Md5InboundAuthenticator>(data.job);
+      return &data.auth;
     } break;
     default: {
     } break;
