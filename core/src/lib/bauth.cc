@@ -35,6 +35,7 @@
 
 #include <thread>
 #include <optional>
+#include <map>
 
 static constexpr int debuglevel = 100;
 
@@ -578,13 +579,6 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
 namespace auth {
 static constexpr int debuglevel = 100;
 
-struct challenge {
-  std::string internal_name;  // this is used when talking to the server
-  std::string display_name;   // this can be shown to the user
-  std::string type;           // this is used to select the handler
-  std::string challenge;
-};
-
 bool ParseChallenges(std::vector<challenge>& challenges,
                      std::string_view challenges_str)
 {
@@ -636,14 +630,21 @@ bool ParseChallenges(std::vector<challenge>& challenges,
 }
 
 
-bool Challenge(BareosSocket* socket,
-               std::span<std::unique_ptr<Verifier>> verifiers)
+bool Challenge(BareosSocket* socket, std::span<NamedVerifier> verifiers)
 {
   auto* possibilities = json_array();
   if (!possibilities) { return false; }
+
+  size_t index = 0;
+
+  // we want to allow lookups with std::string_view
+  std::map<std::string, Verifier*, std::less<>> internal_name_to_verifier;
+
   for (auto& verifier : verifiers) {
-    auto name = verifier->name();
-    auto chal = verifier->generate_challenge();
+    auto* impl = verifier.impl.get();
+    auto type = impl->name();
+    auto chal = impl->generate_challenge();
+    auto& name = verifier.name;
 
     std::string chal64;
     chal64.resize((chal.size() * 4 + 2) / 3);
@@ -660,14 +661,32 @@ bool Challenge(BareosSocket* socket,
 
     json_error_t err{};
 
+    auto internal_name = name;
+    internal_name += "_";
+    internal_name += std::to_string(index++);
+
+    // ':' is not allowed in internal names, as it is used as delimiter
+    // between content & internal_name
+    std::replace(internal_name.begin(), internal_name.end(), ':', '_');
+
     // s% = const char* data + size_t length
-    json_t* challenge = json_pack_ex(
-        &err, 0, "{s:s%, s:s%, s:s%, s:s%}", "internal_name", name.data(),
-        name.size(), "challenge", chal64.data(), chal64.size(), "type",
-        name.data(), name.size(), "display_name", name.data(), name.size());
+    json_t* challenge
+        = json_pack_ex(&err, 0, "{s:s%, s:s%, s:s%, s:s%}", "internal_name",
+                       internal_name.data(), internal_name.size(), "challenge",
+                       chal64.data(), chal64.size(), "type", type.data(),
+                       type.size(), "display_name", name.data(), name.size());
     if (!challenge) {
       Dmsg0(100, "Could not format challenge '%.*s' from: %s\n",
             (int)name.size(), name.data(), err.text);
+      json_decref(possibilities);
+      return false;
+    }
+
+    auto [_, inserted]
+        = internal_name_to_verifier.emplace(std::move(internal_name), impl);
+    if (!inserted) {
+      Dmsg0(50, "Somehow an internal name was used twice!: %s\n",
+            internal_name.c_str());
       json_decref(possibilities);
       return false;
     }
@@ -705,22 +724,17 @@ bool Challenge(BareosSocket* socket,
   Dmsg0(100, "Searching for verifier %.*s\n",
         static_cast<int>(received_name.size()), received_name.data());
 
-  auto* verifier = [&]() -> Verifier* {
-    for (auto& candidate : verifiers) {
-      auto name = candidate->name();
-      if (received_name == name) { return candidate.get(); }
-    }
-
-    return nullptr;
-  }();
-
-  if (!verifier) {
-    Dmsg0(100, "Requested Verifier\n");
+  auto found = internal_name_to_verifier.find(received_name);
+  if (found == internal_name_to_verifier.end()) {
+    Dmsg0(100, "Requested Verifier not found\n");
     return false;
   }
 
+  auto* verifier = found->second;
+  verifier->set_used();
+
   std::string response{received};
-  std::string expected_prefix{verifier->name()};
+  std::string expected_prefix{found->first};
   std::vector<char> data_out;
   std::string data_out_b64;
   std::vector<char> data_in;
@@ -797,8 +811,9 @@ bool Challenge(BareosSocket* socket,
   }
 }
 
-bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
+bool Respond(BareosSocket* socket, Algorithms& algs)
 {
+  auto& provers = algs.prover;
   if (socket->recv() <= 0) { return false; }
 
   std::string providers_json_b64;
@@ -821,22 +836,22 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
   std::vector<challenge> challenges;
   if (!ParseChallenges(challenges, providers_json_str)) { return false; }
 
-  auto [chosen, chall] = [&]() -> std::pair<Prover*, challenge*> {
-    // provers are sorted by the client (our) preference
-    // so we want to take the first one thats offered by the server
-    for (auto& claim : provers) {
-      for (auto& chal : challenges) {
-        if (claim->name() == chal.type) {
-          // we found the best fit!
-          return {claim.get(), &chal};
-        }
+  std::vector<std::pair<Prover*, challenge*>> poss;
+
+  // provers are sorted by the client (our) preference
+  // so we want to take the first one thats offered by the server
+  for (auto& claim : provers) {
+    for (auto& chal : challenges) {
+      if (claim->name() == chal.type) {
+        // we found the best fit!
+        poss.emplace_back(claim.get(), &chal);
       }
     }
+  }
 
-    return {nullptr, nullptr};
-  }();
+  size_t chosen_idx = algs.chooser->choose(poss);
 
-  if (!chosen) {
+  if (chosen_idx >= poss.size()) {
     std::stringstream lists;
     lists << "Client:\n";
     for (auto& claim : provers) { lists << " - " << claim->name() << "\n"; }
@@ -850,7 +865,11 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
     return false;
   }
 
+  auto chosen = poss[chosen_idx].first;
+  auto chall = poss[chosen_idx].second;
+
   ASSERT(chall);
+  ASSERT(chosen);
   Dmsg0(100, "Trying challenge %s\n", chall->internal_name.c_str());
 
   std::string request_b64{chall->challenge};
@@ -1055,31 +1074,23 @@ bool Version1::authenticate_inbound(std::string_view identity, InboundArgs args)
   return true;
 }
 
-bool Version2::authenticate_outbound(
-    std::span<std::unique_ptr<Prover>> provers,
-    std::span<std::unique_ptr<Verifier>> verifiers,
-    OutboundArgs args)
+bool Version2::authenticate_outbound(Algorithms& algs, OutboundArgs args)
 {
-  if (!Respond(args.socket, provers)) { return false; }
-  return Challenge(args.socket, verifiers);
+  if (!Respond(args.socket, algs)) { return false; }
+  return Challenge(args.socket, algs.verifier);
 }
-bool Version2::authenticate_inbound(
-    std::span<std::unique_ptr<Prover>> provers,
-    std::span<std::unique_ptr<Verifier>> verifiers,
-    InboundArgs args)
+bool Version2::authenticate_inbound(Algorithms& algs, InboundArgs args)
 {
-  if (!Challenge(args.socket, verifiers)) { return false; }
-  return Respond(args.socket, provers);
+  if (!Challenge(args.socket, algs.verifier)) { return false; }
+  return Respond(args.socket, algs);
 }
 
-std::optional<std::string_view> GetMd5(
-    std::span<std::unique_ptr<Prover>> provers,
-    std::span<std::unique_ptr<Verifier>> verifiers)
+auth::CramMd5::Verifier* GetMd5(Algorithms& algs)
 {
   auth::CramMd5::Prover* md5_claim{};
   auth::CramMd5::Verifier* md5_verifier{};
 
-  for (auto& claim : provers) {
+  for (auto& claim : algs.prover) {
     auto* as_md5 = dynamic_cast<auth::CramMd5::Prover*>(claim.get());
     if (as_md5) {
       md5_claim = as_md5;
@@ -1087,8 +1098,8 @@ std::optional<std::string_view> GetMd5(
     }
   }
 
-  for (auto& verifier : verifiers) {
-    auto* as_md5 = dynamic_cast<auth::CramMd5::Verifier*>(verifier.get());
+  for (auto& verifier : algs.verifier) {
+    auto* as_md5 = dynamic_cast<auth::CramMd5::Verifier*>(verifier.impl.get());
     if (as_md5) {
       md5_verifier = as_md5;
       break;
@@ -1098,29 +1109,26 @@ std::optional<std::string_view> GetMd5(
 
   if (md5_claim && md5_verifier
       && md5_claim->cram_name() == md5_verifier->cram_name()) {
-    return md5_claim->cram_name();
+    return md5_verifier;
   }
 
   return {};
 }
 
-bool authenticate_inbound(std::span<std::unique_ptr<Prover>> provers,
-                          std::span<std::unique_ptr<Verifier>> verifiers,
-                          InboundArgs args)
+bool authenticate_inbound(Algorithms& algs, InboundArgs args)
 {
   if (args.remote_version >= VERSION_HEX(26U, 0U, 0U)) {
-    return Version2::authenticate_inbound(provers, verifiers, args);
-  } else if (auto md5_name = GetMd5(provers, verifiers)) {
-    return Version1::authenticate_inbound(*md5_name, args);
+    return Version2::authenticate_inbound(algs, args);
+  } else if (auto* md5_verifier = GetMd5(algs)) {
+    md5_verifier->set_used();
+    return Version1::authenticate_inbound(md5_verifier->cram_name(), args);
   } else {
     Dmsg0(100, "Legacy authentication is not configured.\n");
     return false;
   }
 }
 
-bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
-                           std::span<std::unique_ptr<Verifier>> verifiers,
-                           OutboundArgs args)
+bool authenticate_outbound(Algorithms& algs, OutboundArgs args)
 {
   auto* socket = args.socket;
 
@@ -1132,17 +1140,19 @@ bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
   std::string_view prefix{buffer + sizeof(uint32_t), new_auth_prefix.size()};
 
   if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
-    auto result
-        = auth::Version2::authenticate_outbound(provers, verifiers, args);
+    auto result = auth::Version2::authenticate_outbound(algs, args);
     return result;
-  } else if (auto md5_name = GetMd5(provers, verifiers)) {
-    return auth::Version1::authenticate_outbound(*md5_name, args);
+  } else if (auto* md5_verifier = GetMd5(algs)) {
+    md5_verifier->set_used();
+    return auth::Version1::authenticate_outbound(md5_verifier->cram_name(),
+                                                 args);
   } else {
     Dmsg0(100, "Legacy authentication is not configured.\n");
     return false;
   }
 }
 
+DefaultAlgorithmChooser default_chooser;
 }  // namespace auth
 
 Md5OutboundAuthenticator::Md5OutboundAuthenticator()
@@ -1157,9 +1167,9 @@ bool Md5OutboundAuthenticator::authenticate(auth::OutboundArgs args)
   auto password = args.target->password_.value;
 
   algs.add<auth::CramMd5::Prover>(cram_identity, password);
-  algs.add<auth::CramMd5::Verifier>(cram_identity, password);
+  algs.add<auth::CramMd5::Verifier>("Bareos Auth", cram_identity, password);
 
-  return authenticate_outbound(algs.prover, algs.verifier, args);
+  return authenticate_outbound(algs, args);
 }
 
 Md5InboundAuthenticator::Md5InboundAuthenticator(TlsResource res)
@@ -1174,7 +1184,7 @@ bool Md5InboundAuthenticator::authenticate(auth::InboundArgs args)
   auto password = tls.password_.value;
 
   algs.add<auth::CramMd5::Prover>(cram_identity, password);
-  algs.add<auth::CramMd5::Verifier>(cram_identity, password);
+  algs.add<auth::CramMd5::Verifier>("Bareos Auth", cram_identity, password);
 
-  return authenticate_inbound(algs.prover, algs.verifier, args);
+  return authenticate_inbound(algs, args);
 }

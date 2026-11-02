@@ -28,6 +28,7 @@
  * This routine runs as a thread and must be thread reentrant.
  */
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "dird/ua_server.h"
 #include "dird.h"
@@ -54,6 +55,7 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/bauth/cram_md5.h"
+#include "lib/bauth/oidc/verifier.h"
 
 #include <array>
 
@@ -131,6 +133,80 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
     return false;
   }
 
+  return true;
+}
+
+bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
+{
+  auth::Algorithms algs;
+
+  auto password = tls_settings()->password_.value;
+
+  algs.add<auth::CramMd5::Prover>(identity(), password);
+
+  if (res->auth_list) {
+    for (auto* auth : *res->auth_list) {
+      if (auto* oidc = dynamic_cast<OidcResource*>(auth)) {
+        auto oidc_url = oidc->url;
+        auto client_id = oidc->client_id;
+        auto roles_name = oidc->roles_name;
+
+        if (!oidc->IsMemberPresent("ProfilesClaim")) { roles_name = "roles"; }
+
+        auth::Oidc::config conf = {
+            .oidc_url = std::move(oidc_url),
+            .client_id = std::move(client_id),
+            .roles_name = std::move(roles_name),
+        };
+
+        algs.add<auth::Oidc::Verifier>(oidc->resource_name_, std::move(conf));
+      } else {
+        Dmsg0(50, "unknown auth (%p) received passed (Skipping ...)\n", auth);
+      }
+    }
+  } else {
+    // use the default auth
+    algs.add<auth::CramMd5::Verifier>("Bareos Auth", identity(), password);
+  }
+
+  if (!authenticate_inbound(algs, args)) { return false; }
+
+  auth::Verifier* verifier_used{nullptr};
+  for (auto& verifier : algs.verifier) {
+    if (verifier.impl->was_used()) {
+      verifier_used = verifier.impl.get();
+      break;
+    }
+  }
+
+  if (!verifier_used) {
+    Dmsg0(100, "Auth was successful, but no verifier was used !?\n");
+    return false;
+  }
+
+  if (auto* oidc = dynamic_cast<auth::Oidc::Verifier*>(verifier_used)) {
+    std::vector<ProfileResource*> profiles;
+    for (const auto& role : oidc->roles) {
+      auto* profile = dynamic_cast<ProfileResource*>(
+          config->GetResWithName(R_PROFILE, role.c_str()));
+      if (!profile) {
+        Dmsg0(50, "valid access token contains bad profile %s ---> Rejected!\n",
+              role.c_str());
+        return false;
+      }
+
+      profiles.push_back(profile);
+    }
+
+    authenticated_acls = UserAcl::from_profiles(oidc->user_name, profiles);
+  } else if (auto* cram
+             = dynamic_cast<auth::CramMd5::Verifier*>(verifier_used)) {
+    (void)cram;
+    authenticated_acls = UserAcl::from_config(res);
+  } else {
+    Dmsg0(100, "Auth was successful, but unknown verifier was used !?\n");
+    return false;
+  }
   return true;
 }
 
@@ -223,9 +299,9 @@ auth::InboundAuthenticator* DirectorAuth::get_authenticator_for(
         tls = res;
       }
 
-      auto& data = console.emplace(res, std::move(lease),
-                                   Md5InboundAuthenticator(*tls),
-                                   is_default, *tls);
+      auto& data = console.emplace(
+          res, std::move(lease),
+          ConsoleInboundAuthenticator(*tls, p.get(), res), is_default, *tls);
       type = inbound_type::Console;
 
       return &data.auth;

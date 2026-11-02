@@ -40,6 +40,27 @@ class UaContext;
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 
+struct ConsoleInboundAuthenticator : Md5InboundAuthenticator {
+  ConsoleInboundAuthenticator(TlsResource tls_,
+                              LoadedConfiguration* config_,
+                              ConsoleResource* res_)
+      : Md5InboundAuthenticator(std::move(tls_)), config{config_}, res{res_}
+  {
+  }
+
+  bool authenticate(auth::InboundArgs args) override;
+
+  std::unique_ptr<UserAcl> get_authenticated_acls()
+  {
+    return std::move(authenticated_acls);
+  }
+
+ private:
+  LoadedConfiguration* config;
+  ConsoleResource* res;
+  std::unique_ptr<UserAcl> authenticated_acls;
+};
+
 struct DirectorAuth : ::AuthenticationProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
   {
@@ -59,8 +80,7 @@ struct DirectorAuth : ::AuthenticationProvider {
   struct console_data {
     ConsoleResource* res{};
     ConsoleConnectionLease lease;
-
-    Md5InboundAuthenticator auth;
+    ConsoleInboundAuthenticator auth;
 
     // the default console is allowed to do everything
     bool is_default{false};

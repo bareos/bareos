@@ -130,7 +130,7 @@ static void* HandleConnectionRequest(ConfigurationParser* parser, void* arg)
 
       std::unique_ptr<UserAcl> user_acl{};
       if (!auth.console->is_default) {
-        user_acl = UserAcl::from_config(auth.console->res);
+        user_acl = auth.console->auth.get_authenticated_acls();
       }
 
       if (auth.console->res->use_pam_authentication_) {
