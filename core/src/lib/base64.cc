@@ -27,26 +27,32 @@
 
 #include "include/bareos.h"
 
-static uint8_t const base64_digits[64]
+static constexpr uint8_t base64_digits[64]
     = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
 
-static int base64_inited = 0;
-static uint8_t base64_map[256];
+struct base64_map {
+  uint8_t content[256] = {};
 
-/* Initialize the Base 64 conversion routines */
-void Base64Init(void)
-{
-  int i;
-  memset(base64_map, 0, sizeof(base64_map));
-  for (i = 0; i < 64; i++) base64_map[(uint8_t)base64_digits[i]] = i;
-  base64_map['-'] = base64_map['+'];
-  base64_map['_'] = base64_map['/'];
-  base64_inited = 1;
-}
+  constexpr base64_map()
+  {
+    for (size_t i = 0; i < std::size(base64_digits); ++i) {
+      content[base64_digits[i]] = i;
+    }
+
+    // by adding this we can decode base64url as well
+    content['-'] = content['+'];
+    content['_'] = content['/'];
+  }
+
+  constexpr uint8_t& operator[](size_t i) { return content[i]; }
+  constexpr const uint8_t& operator[](size_t i) const { return content[i]; }
+};
+
+static constexpr base64_map map = {};
 
 /* Convert a value to base64 characters.
  * The result is stored in where, which
@@ -97,7 +103,6 @@ int FromBase64(int64_t* value, char* where)
   uint64_t val = 0;
   int i, neg;
 
-  if (!base64_inited) Base64Init();
   /* Check if it is negative */
   i = neg = 0;
   if (where[i] == '-') {
@@ -107,7 +112,7 @@ int FromBase64(int64_t* value, char* where)
   /* Construct value */
   while (where[i] != 0 && where[i] != ' ') {
     val <<= 6;
-    val += base64_map[(uint8_t)where[i++]];
+    val += map[(uint8_t)where[i++]];
   }
 
   *value = neg ? -(int64_t)val : (int64_t)val;
@@ -183,8 +188,6 @@ int Base64ToBin(char* dest, int dest_size, const char* src, int srclen)
   uint8_t* bufplain = (uint8_t*)dest;
   const uint8_t* bufin;
 
-  if (!base64_inited) Base64Init();
-
   if (dest_size < (((srclen + 3) / 4) * 3)) {
     /* dest buffer too small */
     *dest = 0;
@@ -202,23 +205,17 @@ int Base64ToBin(char* dest, int dest_size, const char* src, int srclen)
   bufout = (uint8_t*)bufplain;
 
   while (nprbytes > 4) {
-    *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
-    *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
-    *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
+    *(bufout++) = (map[bufin[0]] << 2 | map[bufin[1]] >> 4);
+    *(bufout++) = (map[bufin[1]] << 4 | map[bufin[2]] >> 2);
+    *(bufout++) = (map[bufin[2]] << 6 | map[bufin[3]]);
     bufin += 4;
     nprbytes -= 4;
   }
 
   /* BAREOS base64 strings are not always padded with = */
-  if (nprbytes > 1) {
-    *(bufout++) = (base64_map[bufin[0]] << 2 | base64_map[bufin[1]] >> 4);
-  }
-  if (nprbytes > 2) {
-    *(bufout++) = (base64_map[bufin[1]] << 4 | base64_map[bufin[2]] >> 2);
-  }
-  if (nprbytes > 3) {
-    *(bufout++) = (base64_map[bufin[2]] << 6 | base64_map[bufin[3]]);
-  }
+  if (nprbytes > 1) { *(bufout++) = (map[bufin[0]] << 2 | map[bufin[1]] >> 4); }
+  if (nprbytes > 2) { *(bufout++) = (map[bufin[1]] << 4 | map[bufin[2]] >> 2); }
+  if (nprbytes > 3) { *(bufout++) = (map[bufin[2]] << 6 | map[bufin[3]]); }
   *bufout = 0;
 
   return (bufout - (uint8_t*)dest);
