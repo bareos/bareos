@@ -34,6 +34,8 @@
 #include <string>
 #include <string_view>
 
+#include <format>
+
 #include <thread>
 #include <future>
 #include <unistd.h>
@@ -661,10 +663,13 @@ static bool connect_to_server(std::string console_name,
         auto qualified_name = global_resource::QualifiedName(
             formatter::auth_type, console_name);
 
+
+        auto hello = std::format(
+            "Hello Client {} FdProtocolVersion=54 calling\n", console_name);
+
         LegacyOutboundAuthenticator auth;
-        return BareosConnect(
-            &jcr, UA_sock.get(), qualified_name, &custom, &auth,
-            "Hello Client {} FdProtocolVersion=54 calling\n", cleartext_auth);
+        return BareosConnect(&jcr, UA_sock.get(), qualified_name, &custom,
+                             &auth, hello, cleartext_auth);
       }
     }();
 
