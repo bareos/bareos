@@ -34,7 +34,7 @@ namespace storagedaemon {
 struct Auth : ::AuthenticationProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  std::unique_ptr<auth::InboundAuthenticator> get_authenticator_for(
+  auth::InboundAuthenticator* get_authenticator_for(
       global_resource::Type type,
       std::string_view name) override;
 
@@ -47,11 +47,13 @@ struct Auth : ::AuthenticationProvider {
 
   struct director_data {
     DirectorResource* res{};
+    Md5InboundAuthenticator auth;
   };
 
   struct job_data {
     JobControlRecord* jcr{};
     TlsResource job{};
+    Md5InboundAuthenticator auth;
 
     ~job_data()
     {

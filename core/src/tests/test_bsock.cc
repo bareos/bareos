@@ -504,7 +504,7 @@ struct dummy_auth : ::AuthenticationProvider {
   {
   }
 
-  std::unique_ptr<auth::InboundAuthenticator> get_authenticator_for(
+  auth::InboundAuthenticator* get_authenticator_for(
       global_resource::Type type,
       std::string_view res_name) override
   {
@@ -524,11 +524,14 @@ struct dummy_auth : ::AuthenticationProvider {
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return std::make_unique<Md5InboundAuthenticator>("server", std::move(res));
+    auth.emplace("server", std::move(res));
+    return &auth.value();
   }
 
   std::string name;
   std::string password;
+
+  std::optional<Md5InboundAuthenticator> auth;
 };
 
 static void start_bareos_server(std::promise<bool>* promise,

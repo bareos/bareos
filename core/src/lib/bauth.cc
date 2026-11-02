@@ -402,19 +402,19 @@ struct TlsWrapper : public TlsConfigProvider {
       auth = wrapped->get_authenticator_for(type, name);
       psk_type = type;
       psk_name.assign(name);
-      res.auth = auth.get();
+      res.auth = auth;
     } else if (psk_type != type) {
       res.bad_type = psk_type;
     } else if (name != psk_name) {
       res.bad_name = psk_name;
     } else {
-      res.auth = auth.get();
+      res.auth = auth;
     }
     return res;
   }
 
  private:
-  std::unique_ptr<auth::InboundAuthenticator> auth;
+  auth::InboundAuthenticator* auth{};
   global_resource::Type psk_type{};
   std::string psk_name{};
 
