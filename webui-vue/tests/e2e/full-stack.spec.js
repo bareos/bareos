@@ -494,6 +494,64 @@ test('loads the restore workflow selections', async ({ page }) => {
   await expect(page.locator('[data-testid="restore-submit"]')).toBeEnabled()
 })
 
+test('restores a real file from a backup', async ({ page }) => {
+  test.skip(profile !== 'admin', 'Restore requires the admin profile')
+  test.setTimeout(180000)
+
+  const sourceFile = process.env.BAREOS_WEBUI_RESTORE_TEST_FILE
+  const destination = process.env.BAREOS_WEBUI_RESTORE_TEST_DESTINATION
+  if (!sourceFile || !destination) {
+    throw new Error('Restore test file and destination must be configured')
+  }
+
+  const restoredFile = join(destination, relative('/', sourceFile))
+  const expectedContents = 'webui-vue real restore test\n'
+  await rm(destination, { recursive: true, force: true })
+  await mkdir(destination, { recursive: true })
+
+  await login(page)
+  await openNav(page, 'nav-restore', /#\/restore/)
+
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'SelfTest', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
+  })
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByTestId('restore-browser')).toBeVisible()
+
+  const browser = page.getByTestId('restore-browser')
+  const rootDirectory = browser.getByText('/', { exact: true })
+  if (await rootDirectory.count()) {
+    await rootDirectory.click()
+  }
+  for (const directory of relative('/', dirname(sourceFile)).split(sep).filter(Boolean)) {
+    const directoryEntry = browser.getByText(`${directory}/`, { exact: true })
+    await expect(directoryEntry).toBeVisible()
+    await directoryEntry.click()
+  }
+
+  const fileName = basename(sourceFile)
+  const fileRow = browser.getByText(fileName, { exact: true })
+    .locator('xpath=ancestor::tr')
+  await expect(fileRow).toBeVisible()
+  await fileRow.locator('.q-checkbox').click()
+  await page.getByTestId('restore-step-2-continue').click()
+  await page.getByRole('textbox', { name: 'Restore to (Where)' }).fill(destination)
+  await page.getByTestId('restore-step-3-continue').click()
+  await page.getByTestId('restore-submit').click()
+  await expect(page).toHaveURL(/#\/jobs/)
+
+  await expect.poll(async () => {
+    try {
+      return await readFile(restoredFile, 'utf8')
+    } catch {
+      return null
+    }
+  }, { timeout: 120000 }).toBe(expectedContents)
+})
+
 test('adapts the plugin hint panel and options editor for a second plugin', async ({ page }) => {
   test.setTimeout(90000)
 
