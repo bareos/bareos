@@ -410,7 +410,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_("purge"), PurgeCmd, T_("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
          "volume=<volume>]] | "
-         "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
+         "[jobs [client=<client> | volume=<volume> | pool=<pool>] "
          "[jobstatus=<status>]] | "
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] "
          "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] | "
@@ -973,7 +973,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
     limit = ((int64_t)ua->pint32_val * 1024); /* kb/s */
   }
 
-  if (FindArgKeyword(ua, lst) > 0) {
+  if (FindArgKeyword(ua, lst) >= 0) {
     JobControlRecord* jcr;
     alist<JobId_t*>* selection;
 

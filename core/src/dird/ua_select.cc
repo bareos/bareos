@@ -2039,7 +2039,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
   if (FindArgWithValue(ua, NT_("state")) > 0) { select_by_state = true; }
 
   // See if there are any jobid, job or ujobid keywords.
-  if (FindArgKeyword(ua, lst) > 0) {
+  if (FindArgKeyword(ua, lst) >= 0) {
     for (i = 1; i < ua->argc; i++) {
       if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
         JobId_t JobId = str_to_int64(ua->argv[i]);

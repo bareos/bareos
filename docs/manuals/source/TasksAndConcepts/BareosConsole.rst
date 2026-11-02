@@ -1160,9 +1160,12 @@ purge
       :caption: purge
 
       purge [files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |
-            [jobs [client=<client> | volume=<volume>]] |
+            [jobs [client=<client> | volume=<volume> | pool=<pool>] [jobstatus=<status>]] |
             [volume [=<volume>] [storage=<storage>] [pool=<pool>] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |
             [quota [client=<client>]]
+
+   Specifying ``jobstatus`` without a client, volume, or pool selects matching jobs from the
+   entire catalog.
 
    For the :bcommand:`purge` command to work on volume catalog database records the volume status
    must be **Append**, **Full**, **Used** or **Error**.
