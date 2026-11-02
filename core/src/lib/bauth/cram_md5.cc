@@ -36,33 +36,56 @@ struct md5mac {
   char data[16];
 };
 
-md5mac do_hmac_md5(const char* text,
-                   size_t text_len,
-                   const char* key,
-                   size_t key_len)
+struct cleanup {
+  void operator()(EVP_MAC* hmac) const { EVP_MAC_free(hmac); }
+  void operator()(EVP_MAC_CTX* ctx) const { EVP_MAC_CTX_free(ctx); }
+};
+
+using evp_mac = std::unique_ptr<EVP_MAC, cleanup>;
+using evp_mac_ctx = std::unique_ptr<EVP_MAC_CTX, cleanup>;
+
+bool do_hmac_md5(md5mac* mac,
+                 const char* text,
+                 size_t text_len,
+                 const char* key,
+                 size_t key_len)
 {
-  EVP_MAC* hmac = EVP_MAC_fetch(NULL, "HMAC", NULL);
-  EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(hmac);
+  evp_mac hmac{EVP_MAC_fetch(NULL, "HMAC", NULL)};
+  if (!hmac) {
+    Dmsg0(500, "Could fetch HMAC\n");
+    return false;
+  }
+  evp_mac_ctx ctx{EVP_MAC_CTX_new(hmac.get())};
+  if (!ctx) {
+    Dmsg0(500, "Could not allocate HMAC context\n");
+    return false;
+  }
 
   OSSL_PARAM params[] = {
       OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, (char*)"MD5", 3),
       OSSL_PARAM_construct_end()};
 
-  EVP_MAC_init(ctx, reinterpret_cast<const unsigned char*>(key), key_len,
-               params);
+  if (!EVP_MAC_init(ctx.get(), reinterpret_cast<const unsigned char*>(key),
+                    key_len, params)) {
+    Dmsg0(500, "Could not init MD5 for HMAC\n");
+    return false;
+  }
 
-  EVP_MAC_update(ctx, reinterpret_cast<const unsigned char*>(text), text_len);
+  if (!EVP_MAC_update(ctx.get(), reinterpret_cast<const unsigned char*>(text),
+                      text_len)) {
+    Dmsg0(500, "Could not compute MD5 HMAC\n");
+    return false;
+  }
 
-  md5mac result{};
   size_t size{};
 
-  EVP_MAC_final(ctx, reinterpret_cast<unsigned char*>(result.data), &size,
-                sizeof(result.data));
+  if (!EVP_MAC_final(ctx.get(), reinterpret_cast<unsigned char*>(mac->data),
+                     &size, sizeof(mac->data))) {
+    Dmsg0(500, "Could not fetch MD5 HMAC result\n");
+    return false;
+  }
 
-  EVP_MAC_CTX_free(ctx);
-  EVP_MAC_free(hmac);
-
-  return result;
+  return true;
 }
 
 std::string_view Verifier::name() const { return AUTH_NAME; }
@@ -75,12 +98,16 @@ std::vector<char> Verifier::generate_challenge()
 
   auto result = challenge_builder.str();
 
-  auto mac = do_hmac_md5(result.data(), result.size(), password.data(),
-                         password.size());
+  md5mac mac = {};
+  if (!do_hmac_md5(&mac, result.data(), result.size(), password.data(),
+                   password.size())) {
+    error = "";
+    current_state = ERROR;
+  } else {
+    expected.insert(expected.end(), mac.data, mac.data + std::size(mac.data));
+    current_state = GENERATED_CHALLENGE;
+  }
 
-  expected.insert(expected.end(), mac.data, mac.data + std::size(mac.data));
-
-  current_state = GENERATED_CHALLENGE;
   return {result.begin(), result.end()};
 }
 
@@ -165,8 +192,13 @@ bool Prover::step(std::vector<char>& response, std::span<const char> request)
       }
 
 
-      auto mac = do_hmac_md5(view.data(), view.size(), password.data(),
-                             password.size());
+      md5mac mac = {};
+      if (!do_hmac_md5(&mac, view.data(), view.size(), password.data(),
+                       password.size())) {
+        error = "Could not compute MD5 HMAC";
+        current_state = ERROR;
+        return false;
+      }
 
       response.insert(response.end(), mac.data, mac.data + std::size(mac.data));
 
