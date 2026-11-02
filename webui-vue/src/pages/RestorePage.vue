@@ -2591,7 +2591,6 @@ async function doRestore() {
       path: quoteDirectorString(bvfsPath),
     })
 
-    // Step 2: run restore job
     if (sourceMode.value === 'latest') {
       applyQuickRestoreDefaults()
     }
