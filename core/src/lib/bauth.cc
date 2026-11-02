@@ -701,17 +701,6 @@ bool Challenge(BareosSocket* socket,
     return false;
   }
 
-  // if (received.size() == name_end + 1
-  //    || received[name_end] != ' ') {
-  //   Dmsg0(100, "received short response (no SPC after COLON)\n");
-  //   return false;
-  // }
-
-  // if (received.back() != '\n') {
-  //   Dmsg0(100, "received short response (no NL at end)\n");
-  //   return false;
-  // }
-
   auto received_name = received.substr(0, name_end);
   Dmsg0(100, "Searching for verifier %.*s\n",
         static_cast<int>(received_name.size()), received_name.data());
