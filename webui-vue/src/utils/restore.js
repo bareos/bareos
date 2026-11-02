@@ -38,6 +38,14 @@ export function getRestoreBrowserPlaceholder({
   return 'empty'
 }
 
+export function areRestoreEntriesSelected(entries, isSelected) {
+  return entries.length > 0 && entries.every(isSelected)
+}
+
+export function toggleRestoreEntriesSelection(entries, value, toggleEntry) {
+  entries.forEach(entry => toggleEntry(entry, value))
+}
+
 export function canNavigateRestoreBrowser({
   browserReady,
   loadingBrowser,
