@@ -38,6 +38,8 @@ start_test
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
 if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   PLAYWRIGHT_ARTIFACTS_DIR="${tmp}/playwright-artifacts" \
+  BAREOS_WEBUI_RESTORE_TEST_FILE="${BackupDirectory}/restore-test-files/000-webui-vue-restore-test.txt" \
+  BAREOS_WEBUI_RESTORE_TEST_DESTINATION="${tmp}/webui-vue-restore-output" \
   BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \
   BAREOS_WEBUI_PASSWORD="${BAREOS_WEBUI_PASSWORD}" \
   GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
