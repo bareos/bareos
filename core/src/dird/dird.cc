@@ -335,11 +335,14 @@ int main(int argc, char* argv[])
   }
 
   if (test_config) {
-    fprintf(stderr, T_("There are catalog warnings:\n"));
-    for (auto& warning : util.warnings) {
-      fprintf(stderr, " * %s\n", warning.c_str());
+    if (!util.warnings.empty()) {
+      fprintf(stderr, T_("There are catalog warnings:\n"));
+      for (auto& warning : util.warnings) {
+        fprintf(stderr, " * %s\n", warning.c_str());
+      }
     }
-    TerminateDird(0);
+    TerminateDird(BEXIT_SUCCESS);
+    return BEXIT_SUCCESS;
   }
 
   for (auto& warning : util.warnings) {
