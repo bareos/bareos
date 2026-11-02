@@ -34,12 +34,6 @@
 #include <openssl/rsa.h>
 #include <openssl/core_names.h>
 
-extern "C" {
-#include <oauth2/oauth2.h>
-#include <oauth2/util.h>
-#include <oauth2/cfg.h>
-}
-
 #include <sstream>
 #include <string_view>
 
