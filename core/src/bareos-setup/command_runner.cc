@@ -40,9 +40,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+extern char** environ;
+
 namespace {
 
 constexpr int kExecFailureExitCode = 127;
+constexpr char kNoninteractiveFrontend[] = "DEBIAN_FRONTEND=noninteractive";
 
 enum class ToolRequirement
 {
@@ -100,7 +103,6 @@ constexpr std::array<ToolDefinition, static_cast<size_t>(SetupTool::Count)>
         {SetupTool::A2enflag, "a2enflag", ToolRequirement::PostInstall,
          PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
         {SetupTool::Echo, "echo", ToolRequirement::Optional},
-        {SetupTool::Sudo, "sudo", ToolRequirement::Optional},
         {SetupTool::OpenSSL, "openssl", ToolRequirement::PostInstall,
          PackageManager::Unknown, PackageManagerBit(PackageManager::Zypper)},
         {SetupTool::Chmod, "chmod", ToolRequirement::PostInstall,
@@ -248,7 +250,6 @@ static bool DrainFd(int fd,
 static int RunCommandImpl(
     const SetupCommand& command,
     const std::string* input,
-    bool run_as_root,
     OutputCallback cb,
     const std::function<std::optional<std::string>(SetupTool)>&
         resolve_tool_path)
@@ -259,29 +260,31 @@ static int RunCommandImpl(
                              + std::string(Definition(command.tool).name));
   }
 
-  // Use the same registered lookup for sudo as for ordinary commands.
-  std::string executable_path = *command_path;
-  std::vector<std::string> exec_argv;
-  if (run_as_root && !IsRoot()) {
-    const auto sudo_path = resolve_tool_path(SetupTool::Sudo);
-    if (!sudo_path) {
-      throw std::runtime_error("Command is not available in PATH: sudo");
-    }
-    executable_path = *sudo_path;
-    exec_argv.emplace_back(Definition(SetupTool::Sudo).name);
-    exec_argv.emplace_back(*command_path);
-  } else {
-    exec_argv.emplace_back(Definition(command.tool).name);
-  }
-  exec_argv.insert(exec_argv.end(), command.arguments.begin(),
-                   command.arguments.end());
+  const auto exec_argv = command.Argv();
 
   // Build C-style argv
   std::vector<const char*> cargv;
   cargv.reserve(exec_argv.size() + 1);
   for (const auto& s : exec_argv) cargv.push_back(s.c_str());
-  // execv() requires argv to end with a null pointer.
+  // execve() requires argv to end with a null pointer.
   cargv.push_back(nullptr);
+
+  // Prepare the APT environment before fork without changing the wizard's
+  // process-wide environment or allocating memory in the child.
+  std::vector<std::string> environment;
+  std::vector<char*> envp;
+  char** child_environment = environ;
+  if (command.tool == SetupTool::AptGet) {
+    for (char** entry = environ; *entry != nullptr; ++entry) {
+      if (!std::string_view(*entry).starts_with("DEBIAN_FRONTEND=")) {
+        environment.emplace_back(*entry);
+      }
+    }
+    environment.emplace_back(kNoninteractiveFrontend);
+    for (auto& entry : environment) { envp.push_back(entry.data()); }
+    envp.push_back(nullptr);
+    child_environment = envp.data();
+  }
 
   // Create stdout, stderr, and (when requested) stdin pipes.
   int pipe_out[2], pipe_err[2], pipe_in[2] = {-1, -1};
@@ -317,7 +320,6 @@ static int RunCommandImpl(
       }
       close(pipe_in[0]);
     }
-    // Redirect stdin from /dev/null so sudo doesn't hang asking for password
     if (input == nullptr) {
       // The child inherits the current environment and can block on stdin
       // when a command asks for interactive input, so /dev/null keeps the
@@ -330,8 +332,9 @@ static int RunCommandImpl(
       }
       close(devnull);
     }
-    execv(executable_path.c_str(), const_cast<char* const*>(cargv.data()));
-    // execv failed — write error to stderr and exit
+    execve(command_path->c_str(), const_cast<char* const*>(cargv.data()),
+           child_environment);
+    // execve failed — write error to stderr and exit
     const char* msg = strerror(errno);
     [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
     _exit(kExecFailureExitCode);
@@ -474,7 +477,6 @@ std::vector<std::string> SetupContext::MissingPostInstallTools(
 
 int SetupContext::RunImpl(const SetupCommand& command,
                           const std::string* input,
-                          bool run_as_root,
                           OutputCallback output,
                           CommandLogCallback log_command,
                           PreviewCallback preview) const
@@ -484,29 +486,27 @@ int SetupContext::RunImpl(const SetupCommand& command,
     if (preview) preview(input != nullptr);
     return 0;
   }
-  return RunCommandImpl(command, input, run_as_root, std::move(output),
+  return RunCommandImpl(command, input, std::move(output),
                         [this](SetupTool tool) { return ToolPath(tool); });
 }
 
 int SetupContext::Run(const SetupCommand& command,
-                      bool run_as_root,
                       OutputCallback output,
                       CommandLogCallback log_command,
                       PreviewCallback preview) const
 {
-  return RunImpl(command, nullptr, run_as_root, std::move(output),
-                 std::move(log_command), std::move(preview));
+  return RunImpl(command, nullptr, std::move(output), std::move(log_command),
+                 std::move(preview));
 }
 
 int SetupContext::RunWithInput(const SetupCommand& command,
                                const std::string& input,
-                               bool run_as_root,
                                OutputCallback output,
                                CommandLogCallback log_command,
                                PreviewCallback preview) const
 {
-  return RunImpl(command, &input, run_as_root, std::move(output),
-                 std::move(log_command), std::move(preview));
+  return RunImpl(command, &input, std::move(output), std::move(log_command),
+                 std::move(preview));
 }
 
 std::filesystem::path SetupContext::CreateTemporaryFile(

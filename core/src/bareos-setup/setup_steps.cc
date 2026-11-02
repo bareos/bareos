@@ -319,7 +319,7 @@ int PrepareTapeSupport(const SetupContext& context,
   }
   const auto run = [&](const SetupCommand& command) {
     const int result = context.Run(
-        command, true, output, [&](const SetupCommand& logged, bool dry, bool) {
+        command, output, [&](const SetupCommand& logged, bool dry, bool) {
           if (dry)
             output("[preview] " + JoinCommandForDisplay(logged), "stdout");
         });
@@ -356,8 +356,7 @@ int PrepareTapeSupport(const SetupContext& context,
   const auto available = [&]() -> std::optional<bool> {
     if (context.dry_run()) return false;
     if (os.pkg_mgr == PackageManager::Zypper) {
-      const int result
-          = context.Run(BuildMtxAvailabilityCheckCmd(), true, output);
+      const int result = context.Run(BuildMtxAvailabilityCheckCmd(), output);
       if (result == 0) return true;
       // zypper's documented "no matching capability" status.
       if (result == 104) return false;
@@ -374,8 +373,8 @@ int PrepareTapeSupport(const SetupContext& context,
         output(line, stream);
       }
     };
-    const int installed = context.Run(
-        {SetupTool::Rpm, {"-qa", "--qf", "%{NAME}\n"}}, true, collect);
+    const int installed
+        = context.Run({SetupTool::Rpm, {"-qa", "--qf", "%{NAME}\n"}}, collect);
     if (installed != 0) {
       output("Cannot query installed tape dependencies.", "stderr");
       return std::nullopt;
@@ -385,7 +384,7 @@ int PrepareTapeSupport(const SetupContext& context,
                                              "%{name}", "mt-st",     "mtx"};
     const int result = context.Run(
         os.pkg_mgr == PackageManager::Dnf ? Dnf(arguments) : Yum(arguments),
-        true, collect);
+        collect);
     if (result != 0) {
       output(
           "Cannot query tape dependencies. Install the vendor's repoquery "

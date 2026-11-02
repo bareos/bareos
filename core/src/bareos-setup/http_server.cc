@@ -195,15 +195,15 @@ void RunHttpServer(const std::string& bind_address,
       } guard{fd, active_workers};
       try {
         auto request = ReadHttpRequest(fd, kHttpTimeout);
-        if (IsWebSocketUpgradeRequest(request)) {
+        const auto path_end = request.target.find('?');
+        const std::string request_path = request.target.substr(0, path_end);
+        const bool websocket_upgrade = IsWebSocketUpgradeRequest(request);
+        if (websocket_upgrade || request_path == "/ws") {
           const auto origin_header = request.HeaderValue("Origin");
           const auto host_header = request.HeaderValue("Host");
           const std::string origin(origin_header.value_or(""));
           const std::string host(host_header.value_or(""));
           const std::string& path = request.target;
-          const auto path_end = path.find('?');
-          const std::string request_path
-              = path_end == std::string::npos ? path : path.substr(0, path_end);
           const auto query = path.find('?');
           const std::string query_string
               = query == std::string::npos ? "" : path.substr(query + 1);
@@ -220,10 +220,16 @@ void RunHttpServer(const std::string& bind_address,
               break;
             }
           }
-          if (request_path != "/ws" || !IsValidSetupOrigin(origin, host)
+          if (request_path != "/ws"
+              || (websocket_upgrade && !IsValidSetupOrigin(origin, host))
               || !token_valid) {
             SendHttpResponse(fd, kHttpTimeout, "HTTP/1.1 403 Forbidden",
                              "Forbidden\n");
+            return;
+          }
+          if (!websocket_upgrade) {
+            SendHttpResponse(fd, kHttpTimeout, "HTTP/1.1 200 OK", "",
+                             {{"Cache-Control", "no-store"}});
             return;
           }
           ws_handler(fd, peer_is_loopback, std::move(request.raw_headers),

@@ -74,7 +74,7 @@ bool Run(const SetupCommand& command,
          const std::vector<std::string>& secrets = {})
 {
   const int result = context.Run(
-      command, true,
+      command,
       [&secrets](std::string_view line, std::string_view) {
         std::cout << RedactSetupSecrets(line, secrets) << "\n";
       },
@@ -100,7 +100,7 @@ bool RunWithInput(const SetupCommand& command,
                   const std::vector<std::string>& secrets = {})
 {
   const int result = context.RunWithInput(
-      command, input, true,
+      command, input,
       [&secrets](std::string_view line, std::string_view) {
         std::cout << RedactSetupSecrets(line, secrets) << "\n";
       },
@@ -127,7 +127,7 @@ std::string DiscoverSubscriptionRelease(SetupContext& context,
   const auto command = BuildSubscriptionReleaseIndexCmd(true);
   std::string index;
   if (context.RunWithInput(
-          command, curl_config, true,
+          command, curl_config,
           [&index](std::string_view line, std::string_view) {
             index += line;
             index += '\n';
@@ -428,7 +428,7 @@ static int RunWizard(SetupContext& context,
                                 "--location", "--proto-redir", "=https",
                                 url + "/add_bareos_repositories.sh"});
     std::string script;
-    if (context.Run(download, true,
+    if (context.Run(download,
                     [&script](std::string_view line, std::string_view stream) {
                       if (stream == "stderr") {
                         std::cerr << line << "\n";

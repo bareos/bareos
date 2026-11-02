@@ -159,8 +159,7 @@ namespace {
 // given tools) to PATH, so RunStep()'s real orchestration logic (which
 // commands to run, and in what order) can be exercised without touching
 // the real system. Each shim just appends its own invocation to a shared
-// log file and exits 0. The "sudo" shim is special: it passes through to
-// its argv so tests behave the same whether they run as root or not.
+// log file and exits 0.
 class FakeToolPath {
  public:
   explicit FakeToolPath(const std::vector<std::string>& tools,
@@ -179,12 +178,8 @@ class FakeToolPath {
     for (const auto& tool : tools) {
       const std::filesystem::path shim = dir_ / tool;
       std::ofstream out(shim);
-      if (tool == "sudo") {
-        out << "#!/bin/sh\nexec \"$@\"\n";
-      } else {
-        out << "#!/bin/sh\necho \"" << tool << " $*\" >> '"
-            << log_path_.string() << "'\nexit 0\n";
-      }
+      out << "#!/bin/sh\necho \"" << tool << " $*\" >> '" << log_path_.string()
+          << "'\nexit 0\n";
       out.close();
       std::filesystem::permissions(shim,
                                    std::filesystem::perms::owner_all
@@ -234,6 +229,48 @@ class FakeToolPath {
 
 }  // namespace
 
+TEST(BareosSetupStepsShared, AptInstallDoesNotPromptForDatabaseConfiguration)
+{
+  FakeToolPath tools({"apt-get"}, false);
+  tools.SetToolScript("apt-get",
+                      "if [ \"$DEBIAN_FRONTEND\" != noninteractive ]; then\n"
+                      "  echo 'Configure database for bareos-database-common "
+                      "with dbconfig-common?'\n"
+                      "  exit 1\n"
+                      "fi\n"
+                      "[ \"$*\" = 'install -y bareos-director' ]\n");
+  const char* frontend = getenv("DEBIAN_FRONTEND");
+  const std::optional<std::string> original_frontend
+      = frontend ? std::make_optional<std::string>(frontend) : std::nullopt;
+  SetupContext context;
+  for (const char* inherited : std::array<const char*, 2>{nullptr, "dialog"}) {
+    if (inherited) {
+      ASSERT_EQ(setenv("DEBIAN_FRONTEND", inherited, 1), 0);
+    } else {
+      ASSERT_EQ(unsetenv("DEBIAN_FRONTEND"), 0);
+    }
+    std::string output;
+    EXPECT_EQ(
+        context.Run(BuildInstallCmd(PackageManager::Apt, {"bareos-director"}),
+                    [&output](std::string_view line, std::string_view) {
+                      output += line;
+                    }),
+        0)
+        << output;
+    const char* current = getenv("DEBIAN_FRONTEND");
+    if (inherited) {
+      EXPECT_STREQ(current, inherited);
+    } else {
+      EXPECT_EQ(current, nullptr);
+    }
+  }
+  if (original_frontend) {
+    EXPECT_EQ(setenv("DEBIAN_FRONTEND", original_frontend->c_str(), 1), 0);
+  } else {
+    EXPECT_EQ(unsetenv("DEBIAN_FRONTEND"), 0);
+  }
+}
+
 TEST(BareosSetupBrowserLauncher, ReportsFailureWhenAvailableLaunchersFail)
 {
   FakeToolPath tools({"xdg-open", "open", "sensible-browser"}, false);
@@ -250,7 +287,7 @@ TEST(BareosSetupBrowserLauncher, ReportsFailureWhenAvailableLaunchersFail)
 
 TEST(BareosSetupUnattended, RejectsInvalidOptionsBeforeExecutingCommands)
 {
-  FakeToolPath tools({"curl", "bash", "apt-get", "systemctl", "sudo"});
+  FakeToolPath tools({"curl", "bash", "apt-get", "systemctl"});
   SetupContext context;
   UnattendedSetupOptions options;
   options.override_repository_urls
@@ -294,7 +331,7 @@ TEST(BareosSetupUnattended, RunsUnmodifiedHelperWithoutUrlAssignment)
     GTEST_SKIP() << "No automatically supported repository on this platform";
   }
   FakeToolPath tools({"curl", "apt-get", "dnf", "yum", "zypper", "systemctl",
-                      "su", "sudo", "postgresql-setup"});
+                      "su", "postgresql-setup"});
   tools.SetToolScript("curl", R"(
 while [ "$#" -gt 0 ]; do
   if [ "$1" = --output ]; then
@@ -417,7 +454,7 @@ TEST(BareosSetupTape, BuildsOnlyVerifiedVendorRepositoryCommands)
 
 TEST(BareosSetupTape, SkipsPreparationWithoutTapeOrRepositoryConsent)
 {
-  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager"});
   SetupContext context;
   OsInfo os;
   os.pkg_mgr = PackageManager::Dnf;
@@ -440,7 +477,7 @@ TEST(BareosSetupTape, SkipsPreparationWithoutTapeOrRepositoryConsent)
 
 TEST(BareosSetupTape, AddsRepositoriesOnlyForMissingDependenciesWithConsent)
 {
-  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager"});
   SetupContext context;
   OsInfo os;
   os.distro = "rhel";
@@ -487,7 +524,7 @@ TEST(BareosSetupTape, AddsRepositoriesOnlyForMissingDependenciesWithConsent)
 
 TEST(BareosSetupTape, RetainsSuseFallbackOnlyWithoutRepositoryConsent)
 {
-  FakeToolPath tools({"zypper", "SUSEConnect", "sudo"});
+  FakeToolPath tools({"zypper", "SUSEConnect"});
   SetupContext context;
   OsInfo os;
   os.distro = "sles";
@@ -521,7 +558,7 @@ TEST(BareosSetupTape, RetainsSuseFallbackOnlyWithoutRepositoryConsent)
 
 TEST(BareosSetupTape, PreviewsRepositoryChangesWithoutExecution)
 {
-  FakeToolPath tools({"dnf", "rpm", "subscription-manager", "sudo"});
+  FakeToolPath tools({"dnf", "rpm", "subscription-manager"});
   SetupContext context(true);
   OsInfo os;
   os.distro = "rhel";
@@ -542,7 +579,7 @@ TEST(BareosSetupTape, PreviewsRepositoryChangesWithoutExecution)
 TEST(BareosSetupUnattended, StopsIfRepositoryDownloadFails)
 {
   FakeToolPath tools(
-      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl", "sudo"});
+      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl"});
   tools.SetToolScript("curl", "exit 23\n");
   SetupContext context;
   UnattendedSetupOptions options;
@@ -554,7 +591,7 @@ TEST(BareosSetupUnattended, StopsIfRepositoryDownloadFails)
 TEST(BareosSetupUnattended, StopsIfRepositoryHelperCannotBeRewritten)
 {
   FakeToolPath tools(
-      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl", "sudo"});
+      {"curl", "bash", "apt-get", "dnf", "yum", "zypper", "systemctl"});
   SetupContext context;
   UnattendedSetupOptions options;
   options.override_repository_urls = {"https://ci.example/build/Debian_12"};
@@ -566,7 +603,7 @@ TEST(BareosSetupUnattended, StopsIfRepositoryHelperCannotBeRewritten)
 TEST(BareosSetupUnattended, RunsRepositoryPackagesCatalogAndDaemonSteps)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
-                      "systemctl", "su", "sudo", "postgresql-setup"});
+                      "systemctl", "su", "postgresql-setup"});
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   SetupContext context;
   UnattendedSetupOptions options;
@@ -593,9 +630,9 @@ TEST(BareosSetupUnattended, RunsRepositoryPackagesCatalogAndDaemonSteps)
 TEST(BareosSetupUnattended, ConfiguresWebUiWithoutPrintingAdminPassword)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
-                      "systemctl", "su", "sudo", "postgresql-setup", "sh",
-                      "install", "chown", "a2enmod", "a2ensite", "a2enflag",
-                      "openssl", "chmod", "cat"});
+                      "systemctl", "su", "postgresql-setup", "sh", "install",
+                      "chown", "a2enmod", "a2ensite", "a2enflag", "openssl",
+                      "chmod", "cat"});
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   SetupContext context;
   UnattendedSetupOptions options;
@@ -621,7 +658,7 @@ TEST(BareosSetupUnattended, ConfiguresWebUiWithoutPrintingAdminPassword)
 TEST(BareosSetupUnattended, PropagatesServiceVerificationFailure)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
-                      "systemctl", "su", "sudo", "postgresql-setup"});
+                      "systemctl", "su", "postgresql-setup"});
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   tools.SetToolScript("systemctl",
                       "if [ \"$1\" = is-active ]; then exit 9; fi\nexit 0\n");
@@ -640,9 +677,9 @@ TEST(BareosSetupUnattended, PropagatesServiceVerificationFailure)
 TEST(BareosSetupUnattended, ReportsAdminConfigurationWriteFailure)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
-                      "systemctl", "su", "sudo", "postgresql-setup", "sh",
-                      "install", "chown", "a2enmod", "a2ensite", "a2enflag",
-                      "openssl", "chmod", "cat"});
+                      "systemctl", "su", "postgresql-setup", "sh", "install",
+                      "chown", "a2enmod", "a2ensite", "a2enflag", "openssl",
+                      "chmod", "cat"});
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   tools.SetToolScript("install", "exit 19\n");
   SetupContext context;
@@ -660,7 +697,7 @@ TEST(BareosSetupUnattended, ReportsAdminConfigurationWriteFailure)
 TEST(BareosSetupUnattended, PropagatesPackageInstallationFailure)
 {
   FakeToolPath tools({"curl", "bash", "apt-get", "dnf", "yum", "zypper",
-                      "systemctl", "su", "sudo", "postgresql-setup"});
+                      "systemctl", "su", "postgresql-setup"});
   tools.SetToolScript("curl", "printf 'URL=\"https://example/repo\"\\n'\n");
   for (const auto* tool : {"apt-get", "dnf", "yum", "zypper"}) {
     tools.SetToolScript(tool, "exit 17\n");
@@ -778,7 +815,7 @@ TEST(BareosSetupCommandRunner, DeliversBoundedStandardInput)
   std::string output;
   SetupContext context;
   EXPECT_EQ(
-      context.RunWithInput(Sh({"-c", "cat"}), "setup input", false,
+      context.RunWithInput(Sh({"-c", "cat"}), "setup input",
                            [&output](std::string_view line, std::string_view) {
                              output += line;
                            }),
@@ -791,7 +828,7 @@ TEST(BareosSetupCommandRunner, RejectsInputExceedingPipeBuf)
   SetupContext context;
   EXPECT_THROW(
       context.RunWithInput(Sh({"-c", "cat"}), std::string(PIPE_BUF + 1, 'x'),
-                           false, [](std::string_view, std::string_view) {}),
+                           [](std::string_view, std::string_view) {}),
       std::invalid_argument);
 }
 
@@ -811,8 +848,7 @@ TEST(BareosSetupCommandRunner, SetupContextOwnsDryRunAndRemovalBehavior)
   bool command_logged = false;
   bool preview_called = false;
   EXPECT_EQ(dry_context.Run(
-                Sh({"-c", "exit 1"}), false,
-                [](std::string_view, std::string_view) {},
+                Sh({"-c", "exit 1"}), [](std::string_view, std::string_view) {},
                 [&command_logged](const SetupCommand&, bool dry_run, bool) {
                   command_logged = dry_run;
                 },
@@ -836,7 +872,7 @@ TEST(BareosSetupCommandRunner, SetupContextRefreshesMissingToolPaths)
   {
     FakeToolPath installed_tool({"sensible-browser"}, false);
     EXPECT_TRUE(context.IsToolAvailable(SetupTool::SensibleBrowser));
-    EXPECT_EQ(context.Run(SensibleBrowser({}), false,
+    EXPECT_EQ(context.Run(SensibleBrowser({}),
                           [](std::string_view, std::string_view) {}),
               0);
   }
@@ -960,7 +996,7 @@ TEST(BareosSetupStepsShared, BuildsPostgresInitCmdConsistentlyWithToolLookup)
 
 TEST(BareosSetupStepsShared, InitializesOnlyFreshPostgresDataDirectories)
 {
-  FakeToolPath tools({"systemctl", "postgresql-setup", "sudo"});
+  FakeToolPath tools({"systemctl", "postgresql-setup"});
   SetupContext context;
   const auto temporary_file = context.CreateTemporaryFile("postgres-init-test");
   const auto data = temporary_file.parent_path() / "data with spaces";
@@ -971,10 +1007,9 @@ TEST(BareosSetupStepsShared, InitializesOnlyFreshPostgresDataDirectories)
   std::string output;
   const auto run = [&]() {
     output.clear();
-    return context.Run(*command, false,
-                       [&](std::string_view line, std::string_view) {
-                         output += std::string(line) + "\n";
-                       });
+    return context.Run(*command, [&](std::string_view line, std::string_view) {
+      output += std::string(line) + "\n";
+    });
   };
 
   EXPECT_EQ(run(), 0) << output;
@@ -1228,10 +1263,9 @@ TEST(BareosSetupStepsShared, RejectsExistingSetupConfigsBeforeOverwrite)
   EXPECT_EQ(existing_argv[0], "sh");
   EXPECT_EQ(existing_argv[4], admin_path.string());
   SetupContext context;
-  EXPECT_NE(context.Run(existing_cmd, false,
-                        [](std::string_view, std::string_view) {}),
-            0);
-  EXPECT_EQ(context.Run(BuildFileAbsentCheckCmd(absent_path.string()), false,
+  EXPECT_NE(
+      context.Run(existing_cmd, [](std::string_view, std::string_view) {}), 0);
+  EXPECT_EQ(context.Run(BuildFileAbsentCheckCmd(absent_path.string()),
                         [](std::string_view, std::string_view) {}),
             0);
 
@@ -1322,16 +1356,12 @@ TEST(BareosSetupSessionOrchestration,
   // "systemctl restart bareos-dir" used to fail with "Unit cannot be
   // restarted because it is inactive." This asserts the catalog step's
   // command sequence still ends with enabling all three daemons.
-  // "sudo" is included as a fake shim too: every command Run() issues is
-  // wrapped with "sudo" unless already root (see command_runner.cc's
-  // IsRoot() check), so a real "sudo" would otherwise intercept these
-  // commands before they ever reach the other fake shims.
   const auto os = DetectOs();
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
   FakeToolPath fake_tools(
-      {"sudo", "bash", "postgresql-setup", "systemctl", "su", "install"});
+      {"bash", "postgresql-setup", "systemctl", "su", "install"});
   ASSERT_EQ(RunStepDiscardingOutput("catalog"), 0);
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
@@ -1367,7 +1397,7 @@ TEST(BareosSetupSessionOrchestration,
 
 TEST(BareosSetupSessionOrchestration, ValidatesTapeChoicesBeforeCommands)
 {
-  FakeToolPath tools({"sudo", "apt-get", "dnf", "yum", "zypper", "systemctl"});
+  FakeToolPath tools({"apt-get", "dnf", "yum", "zypper", "systemctl"});
   EXPECT_THROW(
       RunStepDiscardingOutput("packages", R"({"tape_support":"false"})"),
       std::runtime_error);
@@ -1405,7 +1435,6 @@ TEST(BareosSetupSessionOrchestration, AdminStepWritesWebuiTlsPskConsole)
                         | std::filesystem::perms::others_read
                         | std::filesystem::perms::others_exec);
         };
-  write_shim("sudo", "exec \"$@\"\n");
   write_shim("install",
              "echo \"install $*\" >> '" + log_path.string() + "'\n"
              "cat > '" + resource_path.string() + "'\n"
@@ -1463,7 +1492,6 @@ TEST(BareosSetupSessionOrchestration,
                         | std::filesystem::perms::others_read
                         | std::filesystem::perms::others_exec);
         };
-  write_shim("sudo", "exec \"$@\"\n");
   write_shim("sh", "echo \"sh $*\" >> '" + log_path.string() + "'\nexit 1\n");
   write_shim("install",
              "echo \"install $*\" >> '" + log_path.string() + "'\nexit 0\n");
@@ -1499,7 +1527,7 @@ TEST(BareosSetupSessionOrchestration, ProxyStepWritesNoProxyConfiguration)
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
-  FakeToolPath fake_tools({"sudo", "install", "chown", "systemctl", "a2enmod",
+  FakeToolPath fake_tools({"install", "chown", "systemctl", "a2enmod",
                            "a2ensite", "a2enflag", "openssl", "chmod", "cat",
                            "sh"});
   ASSERT_EQ(RunStepDiscardingOutput("proxy"), 0);
@@ -1539,8 +1567,7 @@ TEST(BareosSetupSessionOrchestration, InstallPackagesRunsThePackageManager)
   const auto install_cmd = BuildInstallCmd(os.pkg_mgr, {"bareos-filedaemon"});
   const auto install_argv = install_cmd.Argv();
   ASSERT_FALSE(install_argv.empty());
-  FakeToolPath fake_tools(
-      {"sudo", install_argv.front(), "systemctl", "zypper"});
+  FakeToolPath fake_tools({install_argv.front(), "systemctl", "zypper"});
   RunStepDiscardingOutput("packages");
   const auto commands = fake_tools.LoggedCommands();
   ASSERT_FALSE(commands.empty());
@@ -1577,9 +1604,8 @@ TEST(BareosSetupSessionOrchestration,
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
-  FakeToolPath fake_tools({"sudo", "curl", "bash",
-                           PackageManagerName(os.pkg_mgr), "apt-get", "zypper",
-                           "dnf", "yum"});
+  FakeToolPath fake_tools({"curl", "bash", PackageManagerName(os.pkg_mgr),
+                           "apt-get", "zypper", "dnf", "yum"});
   const std::string json_message = "{\"distro\":\"" + os.distro
                                    + "\",\"version\":\"" + os.version
                                    + "\",\"repository\":\"subscription\"}";
@@ -1594,11 +1620,6 @@ TEST(BareosSetupSessionOrchestration,
   // Regression test: the pre-flight reachability probe added to
   // InstallRepository() must run before the real repository script
   // download/run, and a failing probe must stop the step immediately.
-  // Unlike FakeToolPath's generic "sudo" shim (a no-op that always exits
-  // 0, used by the other orchestration tests that only care which
-  // commands were *attempted*), this test needs "sudo" to actually pass
-  // its arguments through to the fake tools below so that a failing
-  // "curl" shim's exit code genuinely propagates back to InstallRepository().
   const auto os = DetectOs();
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
@@ -1625,9 +1646,6 @@ TEST(BareosSetupSessionOrchestration,
                         | std::filesystem::perms::others_read
                         | std::filesystem::perms::others_exec);
         };
-  // "sudo" passes its argv straight through so the real (fake) subcommand's
-  // exit code is what InstallRepository() actually sees.
-  write_shim("sudo", "exec \"$@\"\n");
   write_shim("curl",
              "echo \"curl $*\" >> '" + log_path.string() + "'\nexit 1\n");
   write_shim("bash",
@@ -1677,7 +1695,7 @@ TEST(BareosSetupSessionOrchestration,
   if (!IsSupportedSetupPlatform(os.distro, os.pkg_mgr)) {
     GTEST_SKIP() << "bareos-setup orchestration is Linux-only";
   }
-  FakeToolPath fake_tools({"sudo", "systemctl"});
+  FakeToolPath fake_tools({"systemctl"});
   ASSERT_EQ(RunStepDiscardingOutput("smoke_test"), 0);
   const auto commands = fake_tools.LoggedCommands();
   auto services = BuildBareosDaemonServiceNames(os.pkg_mgr);
@@ -2109,7 +2127,7 @@ TEST(BareosSetupStepsShared, CapturesCommandOutputLargerThanTheReadBuffer)
       Sh({"-c", "i=0; while [ $i -lt " + std::to_string(kLines)
                     + " ]; do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
                       "i=$((i+1)); done"}),
-      false, [&](std::string_view line, std::string_view) {
+      [&](std::string_view line, std::string_view) {
         collected += line;
         ++lines;
       });

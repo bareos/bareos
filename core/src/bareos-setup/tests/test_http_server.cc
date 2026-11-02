@@ -35,6 +35,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -67,17 +68,16 @@ uint16_t ReserveLoopbackPort()
 class RunningHttpServer {
  public:
   RunningHttpServer()
-      : port_(ReserveLoopbackPort()),
-        thread_([this] {
-          try {
-            RunHttpServer("127.0.0.1", port_, "expected-token",
-                          [this](int, bool, std::string, std::string) {
-                            handler_called_ = true;
-                          });
-          } catch (...) {
-            error_ = std::current_exception();
-          }
-        })
+      : port_(ReserveLoopbackPort()), thread_([this] {
+        try {
+          RunHttpServer("127.0.0.1", port_, "expected-token",
+                        [this](int, bool, std::string, std::string) {
+                          handler_called_ = true;
+                        });
+        } catch (...) {
+          error_ = std::current_exception();
+        }
+      })
   {
   }
 
@@ -133,8 +133,8 @@ void WriteAll(int fd, std::string_view data)
 {
   size_t written = 0;
   while (written < data.size()) {
-    const auto result = send(fd, data.data() + written, data.size() - written,
-                             MSG_NOSIGNAL);
+    const auto result
+        = send(fd, data.data() + written, data.size() - written, MSG_NOSIGNAL);
     if (result <= 0) { throw std::runtime_error("send() failed"); }
     written += static_cast<size_t>(result);
   }
@@ -148,7 +148,8 @@ TEST(BareosSetupHttpServer, RejectsWebSocketUpgradeWithInvalidToken)
   const int client = server.Connect();
   ASSERT_GE(client, 0);
 
-  const std::string origin = "http://127.0.0.1:" + std::to_string(server.port());
+  const std::string origin
+      = "http://127.0.0.1:" + std::to_string(server.port());
   const std::string request
       = "GET /ws?token=wrong HTTP/1.1\r\n"
         "Host: 127.0.0.1:"
@@ -168,6 +169,30 @@ TEST(BareosSetupHttpServer, RejectsWebSocketUpgradeWithInvalidToken)
             std::string::npos);
   close(client);
 
+  server.Stop();
+  EXPECT_FALSE(server.handler_called());
+}
+
+TEST(BareosSetupHttpServer, ReportsTokenValidityWithoutWebSocketUpgrade)
+{
+  RunningHttpServer server;
+  for (const auto& [query, status] :
+       {std::pair{"", "403 Forbidden"},
+        std::pair{"?token=wrong", "403 Forbidden"},
+        std::pair{"?token=expected-token", "200 OK"}}) {
+    const int client = server.Connect();
+    ASSERT_GE(client, 0);
+    WriteAll(client, "GET /ws" + std::string(query)
+                         + " HTTP/1.1\r\nHost: 127.0.0.1:"
+                         + std::to_string(server.port()) + "\r\n\r\n");
+    char response[512]{};
+    const auto received = recv(client, response, sizeof(response), 0);
+    close(client);
+    ASSERT_GT(received, 0);
+    EXPECT_NE(std::string(response, static_cast<size_t>(received))
+                  .find("HTTP/1.1 " + std::string(status)),
+              std::string::npos);
+  }
   server.Stop();
   EXPECT_FALSE(server.handler_called());
 }

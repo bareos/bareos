@@ -27,7 +27,22 @@ function connect() {
   if (socket && socket.readyState < WebSocket.CLOSING) return socket
   const token = new URLSearchParams(location.search).get('token') || ''
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws'
-  socket = new WebSocket(`${scheme}://${location.host}/ws?token=${encodeURIComponent(token)}`)
+  const path = `/ws?token=${encodeURIComponent(token)}`
+  socket = new WebSocket(`${scheme}://${location.host}${path}`)
+  const current = socket
+  socket.onerror = async () => {
+    let message = 'Cannot connect to the setup service. Check that bareos-setup is still running, then reload this page.'
+    try {
+      const response = await fetch(path, { cache: 'no-store' })
+      if (response.status === 403) {
+        message = 'The setup token is missing or invalid. Open the complete URL printed by the currently running bareos-setup, including its ?token=... parameter.'
+      }
+    } catch {
+      // A failed HTTP check confirms that the setup service is unreachable.
+    }
+    if (socket && socket !== current) return
+    listeners.forEach(listener => listener({ type: 'ws_error', message }))
+  }
   socket.onmessage = event => {
     try { listeners.forEach(listener => listener(JSON.parse(event.data))) } catch {}
   }
@@ -40,15 +55,28 @@ function connect() {
 
 export function useSetupWs() {
   const connected = ref(false)
+  const connectionError = ref('')
   const messages = ref([])
   const receive = message => {
-    connected.value = message.type !== 'ws_closed'
-    if (message.type !== 'ws_closed') messages.value.push(message)
+    if (message.type === 'ws_error') {
+      connected.value = false
+      connectionError.value = message.message
+    } else if (message.type === 'ws_closed') {
+      connected.value = false
+      if (!connectionError.value) {
+        connectionError.value = 'Disconnected from the setup service. Check that bareos-setup is still running, then reload this page.'
+      }
+    } else {
+      connected.value = true
+      connectionError.value = ''
+      messages.value.push(message)
+    }
   }
   listeners.add(receive)
   const ws = connect()
   ws.addEventListener('open', () => {
     connected.value = true
+    connectionError.value = ''
     ws.send(JSON.stringify({ action: 'state' }))
   }, { once: true })
   onUnmounted(() => listeners.delete(receive))
@@ -60,5 +88,5 @@ export function useSetupWs() {
   function clearMessages() {
     messages.value = []
   }
-  return { connected, messages, clearMessages, send }
+  return { connected, connectionError, messages, clearMessages, send }
 }
