@@ -85,6 +85,12 @@ bool do_hmac_md5(md5mac* mac,
     return false;
   }
 
+  if (size != sizeof(mac->data)) {
+    Dmsg0(500, "MD5 HMAC result has bad size: %zu vs expected %zu\n", size,
+          sizeof(mac->data));
+    return false;
+  }
+
   return true;
 }
 
