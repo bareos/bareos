@@ -96,7 +96,7 @@ static PBareosSocket ConnectToDirector(JobControlRecord& jcr)
   BStringList args;
   uint32_t response_id = kMessageIdUnknown;
 
-  Md5OutboundAuthenticator auth{};
+  Md5OutboundAuthenticator auth{"client-name"};
 
   PBareosSocket UA_sock(
       console::ConnectToDirector(jcr, 0, args, response_id, &auth),
