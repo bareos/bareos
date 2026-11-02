@@ -503,9 +503,8 @@ struct dummy_auth : ::ConnectionInfoProvider {
   {
   }
 
-  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
-      global_resource::Type type,
-      std::string_view res_name) override
+  auth::InboundAuthenticator* get_info_for(global_resource::Type type,
+                                           std::string_view res_name) override
   {
     Dmsg1(10, "Cons->Dir: received %s:%s",
           std::string{global_resource::GetNameFromType(type)}.c_str(),
@@ -523,11 +522,14 @@ struct dummy_auth : ::ConnectionInfoProvider {
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return std::make_unique<Md5InboundAuthenticator>("server", std::move(res));
+    auth.emplace("server", std::move(res));
+    return &auth.value();
   }
 
   std::string name;
   std::string password;
+
+  std::optional<Md5InboundAuthenticator> auth;
 };
 
 static void start_bareos_server(std::promise<bool>* promise,

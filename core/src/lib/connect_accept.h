@@ -85,8 +85,9 @@ bool BareosConnect(JobControlRecord* jcr,
 }
 
 struct ConnectionInfoProvider {
-  virtual std::unique_ptr<auth::InboundAuthenticator>
-  get_info_for(global_resource::Type type, std::string_view idenity) = 0;
+  virtual auth::InboundAuthenticator* get_info_for(global_resource::Type type,
+                                                   std::string_view idenity)
+      = 0;
 };
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,

@@ -45,9 +45,8 @@ struct DirectorAuth : ::ConnectionInfoProvider {
   {
   }
 
-  std::unique_ptr<auth::InboundAuthenticator> get_info_for(
-      global_resource::Type type,
-      std::string_view name) override;
+  auth::InboundAuthenticator* get_info_for(global_resource::Type type,
+                                           std::string_view name) override;
 
   enum class inbound_type
   {
@@ -60,6 +59,8 @@ struct DirectorAuth : ::ConnectionInfoProvider {
     ConsoleResource* res{};
     ConsoleConnectionLease lease;
 
+    Md5InboundAuthenticator auth;
+
     // the default console is allowed to do everything
     bool is_default{false};
 
@@ -68,6 +69,7 @@ struct DirectorAuth : ::ConnectionInfoProvider {
 
   struct client_data {
     ClientResource* res;
+    Md5InboundAuthenticator auth;
   };
 
   inbound_type GetType() const { return type; }
