@@ -66,8 +66,16 @@ enum class is_labeloperation : bool
   False = false
 };
 
+enum class VolumeWriteAvailability
+{
+  Available,
+  Unavailable,
+  BusyOnAnotherDevice
+};
+
 class DeviceControlRecord {
  private:
+  VolumeWriteAvailability CheckVolumeUse(bool for_write);
   bool dev_locked_{};              /**< Set if dev already locked */
   int dev_lock_{};                 /**< Non-zero if rLock already called */
   bool reserved_{};                /**< Set if reserved device */
@@ -181,8 +189,7 @@ class DeviceControlRecord {
 
   // Methods in vol_mgr.c
   bool Can_i_use_volume();
-  bool Can_i_write_volume();
-  bool IsAppendVolumeBusyOnAnotherDevice();
+  VolumeWriteAvailability Can_i_write_volume();
 
   // Methods in mount.c
   bool MountNextWriteVolume();

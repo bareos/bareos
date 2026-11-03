@@ -1091,7 +1091,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
 
       bool can_use = false;
       if (rctx.append) {
-        can_use = dcr->Can_i_write_volume();
+        can_use = dcr->Can_i_write_volume() == VolumeWriteAvailability::Available;
       } else {
         can_use = dcr->Can_i_use_volume();
       }
