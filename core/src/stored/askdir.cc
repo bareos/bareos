@@ -290,7 +290,8 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           PmStrcat(unwanted_volumes, VolumeName);
         }
 
-        if (Can_i_write_volume()) {
+        const auto availability = Can_i_write_volume();
+        if (availability == VolumeWriteAvailability::Available) {
           Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",
                 VolumeName);
           if (reserve_volume(this, VolumeName) == NULL) {
@@ -304,7 +305,9 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           goto get_out;
         } else {
           Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
-          if (IsAppendVolumeBusyOnAnotherDevice()) { SetAppendVolumeBusy(); }
+          if (availability == VolumeWriteAvailability::BusyOnAnotherDevice) {
+            SetAppendVolumeBusy();
+          }
           continue;
         }
       }
