@@ -60,9 +60,9 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  hasRestoreFullBackupInChain,
   areRestoreEntriesSelected,
   toggleRestoreEntriesSelection,
-  hasRestoreFullBackupInChain,
   normaliseRestoreToggle,
   parsePluginOptionsBlock,
   parsePluginOptionsDocument,
@@ -1321,33 +1321,6 @@ describe('restore browser placeholder', () => {
   })
 })
 
-describe('restore browser page selection', () => {
-  it('only toggles entries supplied for the current page', () => {
-    const currentPage = [{ key: 'file-1' }, { key: 'file-2' }]
-    const otherPage = [{ key: 'file-3' }]
-    const selected = new Set(['file-1', 'file-3'])
-    const isSelected = entry => selected.has(entry.key)
-    const toggleEntry = (entry, value) => {
-      if (value) selected.add(entry.key)
-      else selected.delete(entry.key)
-    }
-
-    expect(areRestoreEntriesSelected(currentPage, isSelected)).toBe(false)
-
-    toggleRestoreEntriesSelection(currentPage, true, toggleEntry)
-    expect(areRestoreEntriesSelected(currentPage, isSelected)).toBe(true)
-    expect(selected).toEqual(new Set(['file-1', 'file-2', 'file-3']))
-    expect(otherPage.every(isSelected)).toBe(true)
-
-    toggleRestoreEntriesSelection(currentPage, false, toggleEntry)
-    expect(selected).toEqual(new Set(['file-3']))
-  })
-
-  it('does not report an empty page as fully selected', () => {
-    expect(areRestoreEntriesSelected([], () => true)).toBe(false)
-  })
-})
-
 describe('plugin options editor model', () => {
   it('round-trips a single block with several options', () => {
     const block = parsePluginOptionsBlock('bpipe:verbose=1:command=/bin/true')
@@ -1482,5 +1455,32 @@ describe('plugin options editor model', () => {
   it('detects whether a hint provides defaults via a config/defaults-file option', () => {
     expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.vmware)).toBe(true)
     expect(hintProvidesDefaultsElsewhere(pluginHintsFixture.bpipe)).toBe(false)
+  })
+})
+
+describe('restore browser page selection', () => {
+  it('only toggles entries supplied for the current page', () => {
+    const currentPage = [{ key: 'file-1' }, { key: 'file-2' }]
+    const otherPage = [{ key: 'file-3' }]
+    const selected = new Set(['file-1', 'file-3'])
+    const isSelected = entry => selected.has(entry.key)
+    const toggleEntry = (entry, value) => {
+      if (value) selected.add(entry.key)
+      else selected.delete(entry.key)
+    }
+
+    expect(areRestoreEntriesSelected(currentPage, isSelected)).toBe(false)
+
+    toggleRestoreEntriesSelection(currentPage, true, toggleEntry)
+    expect(areRestoreEntriesSelected(currentPage, isSelected)).toBe(true)
+    expect(selected).toEqual(new Set(['file-1', 'file-2', 'file-3']))
+    expect(otherPage.every(isSelected)).toBe(true)
+
+    toggleRestoreEntriesSelection(currentPage, false, toggleEntry)
+    expect(selected).toEqual(new Set(['file-3']))
+  })
+
+  it('does not report an empty page as fully selected', () => {
+    expect(areRestoreEntriesSelected([], () => true)).toBe(false)
   })
 })

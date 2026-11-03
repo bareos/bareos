@@ -501,7 +501,11 @@ test('restores a real file from a backup', async ({ page }) => {
   const sourceFile = process.env.BAREOS_WEBUI_RESTORE_TEST_FILE
   const destination = process.env.BAREOS_WEBUI_RESTORE_TEST_DESTINATION
   if (!sourceFile || !destination) {
-    throw new Error('Restore test file and destination must be configured')
+    throw new Error(
+      'Restore test fixture is required: set '
+      + 'BAREOS_WEBUI_RESTORE_TEST_FILE and '
+      + 'BAREOS_WEBUI_RESTORE_TEST_DESTINATION'
+    )
   }
 
   const restoredFile = join(destination, relative('/', sourceFile))
