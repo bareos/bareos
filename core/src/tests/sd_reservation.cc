@@ -362,22 +362,43 @@ TEST_F(ReservationTest, use_cmd_reserve_read_retries_before_waiting)
       .WillOnce(Return(BNET_EOD))   // end of device commands
       .WillOnce(Return(BNET_EOD));  // end of storage command
 
-  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+  bool monitor_heartbeats = false;
+  std::promise<void> second_retry_heartbeat;
+  std::promise<void> allow_retry;
+  auto second_retry_future = second_retry_heartbeat.get_future();
+  auto allow_retry_future = allow_retry.get_future();
+  int heartbeat_count = 0;
+
+  EXPECT_CALL(*bsock, send()).WillRepeatedly([&] {
+    if (monitor_heartbeats && bsock->message_length == BNET_HEARTBEAT
+        && ++heartbeat_count == 2) {
+      second_retry_heartbeat.set_value();
+      allow_retry_future.wait();
+    }
+    return true;
+  });
 
   bsock->recv();
   ASSERT_EQ(use_cmd(job1->jcr), true);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
 
   bsock->recv();
+  monitor_heartbeats = true;
   auto future
       = std::async(std::launch::async, [&job2] { return use_cmd(job2->jcr); });
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+  const bool reached_second_retry
+      = second_retry_future.wait_for(std::chrono::seconds(5))
+        == std::future_status::ready;
+
   job1->jcr->sd_impl->dcr->UnreserveDevice();
   ReleaseDeviceCond();
+  allow_retry.set_value();
 
   ASSERT_EQ(future.wait_for(std::chrono::seconds(1)),
             std::future_status::ready);
   ASSERT_EQ(future.get(), true);
+  ASSERT_TRUE(reached_second_retry);
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=single3\n");
 }
 
