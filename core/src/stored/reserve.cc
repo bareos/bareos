@@ -756,7 +756,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
          * preferring the mounted drive that already owns that volume. */
         if (dcr->AppendVolumeBusy() && !rctx.PreferMountedVols) {
           rctx.PreferMountedVols = true;
-          if (dcr->IsReserved()) { dcr->UnreserveDevice(); }
+          ASSERT(dcr->VolumeName[0] == 0);
+          dcr->UnreserveDevice();
           goto bail_out;
         }
 
@@ -770,7 +771,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
          * bail out, and continue waiting, rather than plunging on
          * and hoping that the operator can resolve the problem. */
         if (dcr->dev->num_writers != 0) {
-          if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
+          ASSERT(dcr->VolumeName[0] == 0);
+          dcr->UnreserveDevice();
           goto bail_out;
         }
       }
