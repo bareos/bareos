@@ -46,24 +46,6 @@ struct config {
 
 struct Verifier;
 
-struct jwt_payload {
-  /* REQUIRED */
-  std::string issuer;
-  std::string subject;
-  std::string audience;
-  std::int64_t expiry;
-  std::int64_t issued_at;
-
-  std::string user_name;
-
-  std::vector<std::string> roles;
-
-  /* OPTIONAL */
-  std::int64_t not_before;
-
-  std::string preferred_name;
-};
-
 struct site_metadata {
   std::string token_endpoint{};
   std::string jwks_uri{};
