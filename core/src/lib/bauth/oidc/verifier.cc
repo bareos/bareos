@@ -562,9 +562,9 @@ DeviceAuthRequest start_device_auth(http::client* client,
                            message};
 }
 
-http::client* AuthenticationFlow::curl(Verifier* verifier)
+http::client* AuthenticationFlow::http_client(Verifier* verifier)
 {
-  return verifier->curl.get();
+  return verifier->client.get();
 }
 
 site_metadata& AuthenticationFlow::meta(Verifier* verifier)
@@ -748,7 +748,8 @@ struct DeviceAuthenticationFlow : AuthenticationFlow {
            * its better to fetch first. */
           std::this_thread::sleep_for(poll_interval);
 
-          switch (fetch_token(curl(verifier), meta(verifier), &key_str)) {
+          switch (
+              fetch_token(http_client(verifier), meta(verifier), &key_str)) {
             case FetchResult::Ok: {
               Dmsg0(200, "token was fetched sucessfully\n");
               done = true;
@@ -773,7 +774,7 @@ struct DeviceAuthenticationFlow : AuthenticationFlow {
           }
         }
 
-        auto keys = get_keys(curl(verifier), meta(verifier).jwks_uri,
+        auto keys = get_keys(http_client(verifier), meta(verifier).jwks_uri,
                              meta(verifier).issuer);
 
         verified_claims = VerifyToken(conf(verifier), keys, key_str);
@@ -854,17 +855,17 @@ Status Verifier::initiate_flow(std::vector<char>& response,
 
   if (cfg.oidc_url.empty()) { return Error("empty oidc url"); }
 
-  curl = std::make_unique<http::curl_client>();
-  if (!curl) { return Error("could not create curl object"); }
+  client = std::make_unique<http::curl_client>();
+  if (!client) { return Error("could not create curl object"); }
   std::string config_url = cfg.oidc_url;
   if (config_url.back() != '/') { config_url.push_back('/'); }
 
   config_url += ".well-known/openid-configuration";
 
-  meta = fetch_metadata(curl.get(), config_url);
+  meta = fetch_metadata(client.get(), config_url);
 
   auto device_auth
-      = start_device_auth(curl.get(), cfg.client_id, "openid profile", meta);
+      = start_device_auth(client.get(), cfg.client_id, "openid profile", meta);
 
   json_error_t err;
 

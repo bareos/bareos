@@ -38,7 +38,6 @@ struct config {
   std::string client_id{};
   std::string roles_name{};
 
-
   bool require_not_before{false};
   std::chrono::steady_clock::duration allowed_clock_skew
       = std::chrono::seconds{30};
@@ -70,7 +69,7 @@ struct AuthenticationFlow {
   UserClaims verified_claims;
 
  protected:
-  http::client* curl(Verifier* verifier);
+  http::client* http_client(Verifier* verifier);
   site_metadata& meta(Verifier* verifier);
   config& conf(Verifier* verifier);
 };
@@ -109,10 +108,9 @@ struct Verifier : public auth::Verifier {
 
   config cfg;
 
-
   std::string error;
   site_metadata meta;
-  std::unique_ptr<http::client> curl;
+  std::unique_ptr<http::client> client;
   std::unique_ptr<AuthenticationFlow> current_flow;
 
   Status Error(std::string message)
