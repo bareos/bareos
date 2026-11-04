@@ -86,6 +86,19 @@ bool curl_client::get(const std::string& url)
 
 bool curl_client::perform()
 {
+  // Allow HTTPS only
+  curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
+
+  // Allow HTTPS only for redirects
+  curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+
+  // Follow redirects
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+  // Enforce TLS certificate verification
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+
   ret = curl_easy_write_into_str(curl, &content);
   return ret == CURLE_OK;
 }
