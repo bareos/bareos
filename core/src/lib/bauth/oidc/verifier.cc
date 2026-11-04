@@ -445,9 +445,9 @@ bool verify_signature(std::string_view token,
   return true;
 }
 
-jwt_payload VerifyToken(const auth::Oidc::config& cfg,
-                        const keyset& keys,
-                        std::string_view token)
+UserClaims VerifyToken(const auth::Oidc::config& cfg,
+                       const keyset& keys,
+                       std::string_view token)
 {
   auto [value, signature] = ExtractSignature(token);
   auto [header, payload] = ExtractJwt(value, cfg.roles_name.c_str());
@@ -501,58 +501,14 @@ jwt_payload VerifyToken(const auth::Oidc::config& cfg,
     throw std::runtime_error{"this token is not for me"};
   }
 
-  return std::move(payload);
+  UserClaims claims;
+  claims.preferred_name = std::move(payload.preferred_name);
+  claims.user_name = std::move(payload.user_name);
+  claims.roles = std::move(payload.roles);
+
+  return claims;
 }
 };  // namespace
-
-struct UserClaims {
-  std::string user_name;
-  std::string preferred_name;
-  std::vector<std::string> roles;
-
-  static UserClaims from_json(const config& cfg, json_t* claims)
-  {
-    auto* roles_json = json_object_get(claims, cfg.roles_name.c_str());
-    auto* user_name_json = json_object_get(claims, "name");
-    auto* preferred_json = json_object_get(claims, "preferred_username");
-
-    if (!roles_json || !json_is_array(roles_json)) {
-      throw std::runtime_error{"no or bad roles in id token"};
-    }
-
-    std::vector<std::string> roles;
-
-    json_t* role{};
-    json_int_t idx{};
-    json_array_foreach(roles_json, idx, role)
-    {
-      if (!json_is_string(role)) {
-        throw std::runtime_error{"bad role value in jwt payload"};
-      }
-
-      roles.push_back(json_string_value(role));
-    }
-
-    if (!user_name_json || !json_is_string(user_name_json)) {
-      throw std::runtime_error{"no or bad user name in id token"};
-    }
-
-    std::string user_name{json_string_value(user_name_json)};
-    std::string preferred_name;
-
-    if (preferred_json) {
-      if (!json_is_string(preferred_json)) {
-        throw std::runtime_error{"bad preferred user name in id token"};
-      }
-      preferred_name = json_string_value(preferred_json);
-    } else {
-      preferred_name = user_name;
-    }
-
-    return UserClaims{std::move(user_name), std::move(preferred_name),
-                      std::move(roles)};
-  }
-};
 
 struct DeviceAuthRequest {
   std::string client_id;
@@ -865,7 +821,7 @@ struct DeviceAuthenticationFlow : AuthenticationFlow {
         auto keys = get_keys(curl(verifier), meta(verifier).jwks_uri,
                              meta(verifier).issuer);
 
-        verified_payload = VerifyToken(conf(verifier), keys, key_str);
+        verified_claims = VerifyToken(conf(verifier), keys, key_str);
 
         return Status::Done;
       } break;
@@ -1000,12 +956,11 @@ Status Verifier::step(std::vector<char>& response,
         }
         auto res = current_flow->step(this, response, received);
         if (res == Status::Done) {
-          roles = std::move(current_flow->verified_payload.roles);
-          if (current_flow->verified_payload.preferred_name.empty()) {
-            user_name = std::move(current_flow->verified_payload.user_name);
+          roles = std::move(current_flow->verified_claims.roles);
+          if (current_flow->verified_claims.preferred_name.empty()) {
+            user_name = std::move(current_flow->verified_claims.user_name);
           } else {
-            user_name
-                = std::move(current_flow->verified_payload.preferred_name);
+            user_name = std::move(current_flow->verified_claims.preferred_name);
           }
         }
 
