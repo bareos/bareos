@@ -6,9 +6,9 @@
 # director name by default. Set director_name only when the real
 # Bareos Director name differs from the section name.
 # Director address defaults to localhost and port defaults to 9101.
-# All config files require mode 0640 and directory mode 0750 or stricter,
-# owned by root or the service user. Group access requires the service group.
-# No group write or other-user access is allowed. Unsafe permissions prevent
+# All config files require mode 0640 and directory mode 0755 or stricter,
+# owned by root or the service user. File group access requires the service group.
+# No group/other write or other-user file access is allowed. Unsafe permissions prevent
 # startup, even without PAM settings. Config and immediate directory symlinks
 # are not allowed.
 [listen]

@@ -417,7 +417,7 @@ class ProxyTest(unittest.TestCase):
             DEFAULT_CONFIG.write_text(config.read_text())
             os.chown(str(DEFAULT_CONFIG), -1, os.getegid())
             DEFAULT_CONFIG.chmod(0o640)
-            DEFAULT_CONFIG.parent.chmod(0o755)
+            DEFAULT_CONFIG.parent.chmod(0o775)
             try:
                 result = subprocess.run(
                     [STARTUP_PROXY],
@@ -428,9 +428,9 @@ class ProxyTest(unittest.TestCase):
                 )
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("unsafe configuration directory", result.stderr)
-                self.assertIn("chmod 0750", result.stderr)
+                self.assertIn("chmod 0755", result.stderr)
             finally:
-                DEFAULT_CONFIG.parent.chmod(0o750)
+                DEFAULT_CONFIG.parent.chmod(0o755)
             with director("implicit-director", "127.0.0.1", DIRECTOR_PORT):
                 with running_process(
                     [STARTUP_PROXY], "implicit-proxy", "127.0.0.1", PROXY_PORT
@@ -490,10 +490,10 @@ class ProxyTest(unittest.TestCase):
                 "pam_console_name = admin\npam_console_password = secret\n"
             )
         config.chmod(0o600)
-        WORK.chmod(0o750)
+        WORK.chmod(0o755)
         for unsafe_path, unsafe_mode, safe_mode in (
             (config, 0o644, 0o600),
-            (WORK, 0o755, 0o750),
+            (WORK, 0o777, 0o755),
         ):
             unsafe_path.chmod(unsafe_mode)
             try:
@@ -509,7 +509,7 @@ class ProxyTest(unittest.TestCase):
                 self.assertIn("unsafe configuration", diagnostic)
                 self.assertIn(str(unsafe_path), diagnostic)
                 self.assertIn(f"mode {unsafe_mode:04o}", diagnostic)
-                recommended_mode = 0o640 if unsafe_path == config else 0o750
+                recommended_mode = 0o640 if unsafe_path == config else 0o755
                 self.assertIn(f"chmod {recommended_mode:04o}", diagnostic)
                 self.assertIn("uid=", diagnostic)
                 self.assertIn("gid=", diagnostic)
