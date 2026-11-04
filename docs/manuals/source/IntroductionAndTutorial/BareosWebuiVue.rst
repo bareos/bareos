@@ -89,6 +89,31 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+Upgrading existing installations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+
+   Configuration access rights are now enforced for every existing proxy
+   configuration, including configurations without PAM settings. Previously
+   accepted modes such as ``0644`` for the INI file or ``0755`` for its
+   containing directory prevent the upgraded proxy from starting, making the
+   Vue WebUI unavailable.
+
+Before upgrading an installation with an active configuration file, check the
+proxy service account and apply the ownership and ``0640``/``0750`` permissions
+described in :ref:`webui-proxy-config-permissions`. Apply this to
+:file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`, or the file selected by
+``--config``, and its immediate containing directory. Preserve the existing
+configuration contents; replacing the file with the shipped template is not
+required.
+
+If the upgrade has already completed, correct the access rights before
+restarting :command:`bareos-webui-proxy`. Use the journal troubleshooting
+commands in :ref:`webui-proxy-config-permissions` if startup fails.
+Installations without an active implicit configuration file are unaffected
+and continue to use built-in defaults.
+
 Configuring multiple directors
 ------------------------------
 
