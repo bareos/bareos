@@ -36,6 +36,7 @@ import subprocess
 import sys
 import time
 import unittest
+from unittest import mock
 
 
 ROOT = Path.cwd()
@@ -66,8 +67,9 @@ def non_loopback_address():
         result = subprocess.run(
             [ip, "-j", "-4", "address", "show", "scope", "global"],
             check=True,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
             timeout=TIMEOUT,
         )
         candidates = [
@@ -76,6 +78,16 @@ def non_loopback_address():
             for address in interface.get("addr_info", [])
             if address["family"] == "inet"
         ]
+    elif shutil.which("ifconfig"):
+        result = subprocess.run(
+            [shutil.which("ifconfig"), "-a"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=TIMEOUT,
+        )
+        candidates = re.findall(r"^\s+inet\s+(?:addr:)?(\S+)", result.stdout, re.M)
     else:
         candidates = [
             entry[4][0]
@@ -134,7 +146,10 @@ def director_config(name, address, port, pam=False):
     resources = destination / "bareos-dir.d"
     config = resources / "director/bareos-dir.conf"
     contents = re.sub(r"Port = \d+", f"Port = {port}", config.read_text())
-    contents = contents.rstrip().removesuffix("}") + f"\nAddress = {address}\n}}\n"
+    contents = contents.rstrip()
+    if contents.endswith("}"):
+        contents = contents[:-1]
+    contents += f"\nAddress = {address}\n}}\n"
     config.write_text(contents)
     # Prove resource ACL filtering, not merely the Console's broad Profile.
     (resources / "job/ProxyForbiddenJob.conf").write_text(
@@ -172,8 +187,9 @@ def director_environment():
     linked = subprocess.run(
         ["ldd", os.environ["BAREOS_DIRECTOR_BINARY"]],
         check=True,
-        capture_output=True,
-        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
         timeout=TIMEOUT,
     )
     asan = re.search(r"libasan\.so\S* => (\S+)", linked.stdout)
@@ -199,6 +215,7 @@ def director(name, address, port, pam=False):
 
 def proxy_config(path, address, director_port, proxy_port, selector, cleartext=False):
     path.parent.mkdir(parents=True, exist_ok=True)
+    os.chown(str(path.parent), -1, os.getegid())
     path.parent.chmod(0o750)
     path.write_text(
         f"[listen]\naddress = 127.0.0.1\nport = {proxy_port}\n\n"
@@ -206,6 +223,7 @@ def proxy_config(path, address, director_port, proxy_port, selector, cleartext=F
         f"address = {address}\nport = {director_port}\n"
         f"tls_psk_disable = {'yes' if cleartext else 'no'}\n"
     )
+    os.chown(str(path), -1, os.getegid())
     path.chmod(0o640)
 
 
@@ -240,8 +258,9 @@ class WebSocket:
         )
         status = self.reader.readline()
         headers = {}
-        while line := self.reader.readline():
-            if line == b"\r\n":
+        while True:
+            line = self.reader.readline()
+            if not line or line == b"\r\n":
                 break
             field, value = line.decode().split(":", 1)
             headers[field.lower()] = value.strip()
@@ -355,8 +374,9 @@ class ProxyTest(unittest.TestCase):
         try:
             result = subprocess.run(
                 [PROXY, "--config", str(config)],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=TIMEOUT,
             )
             self.assertNotEqual(result.returncode, 0)
@@ -381,6 +401,7 @@ class ProxyTest(unittest.TestCase):
 
     def test_defaults(self):
         DEFAULT_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+        os.chown(str(DEFAULT_CONFIG.parent), -1, os.getegid())
         DEFAULT_CONFIG.parent.chmod(0o750)
         if DEFAULT_CONFIG.exists():
             self.fail(f"Unexpected stale fixture configuration: {DEFAULT_CONFIG}")
@@ -394,11 +415,16 @@ class ProxyTest(unittest.TestCase):
         proxy_config(config, "127.0.0.1", DIRECTOR_PORT, PROXY_PORT, "implicit-fixture")
         try:
             DEFAULT_CONFIG.write_text(config.read_text())
+            os.chown(str(DEFAULT_CONFIG), -1, os.getegid())
             DEFAULT_CONFIG.chmod(0o640)
             DEFAULT_CONFIG.parent.chmod(0o755)
             try:
                 result = subprocess.run(
-                    [STARTUP_PROXY], capture_output=True, text=True, timeout=TIMEOUT
+                    [STARTUP_PROXY],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    timeout=TIMEOUT,
                 )
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("unsafe configuration directory", result.stderr)
@@ -420,9 +446,11 @@ class ProxyTest(unittest.TestCase):
             # A usable implicit config makes accidental explicit-file fallback
             # especially visible: these invocations must exit, not start it.
             DEFAULT_CONFIG.write_text(config.read_text())
+            os.chown(str(DEFAULT_CONFIG), -1, os.getegid())
             DEFAULT_CONFIG.chmod(0o640)
             invalid = WORK / "invalid.ini"
             invalid.write_text("[listen]\nport = not-a-port\n")
+            os.chown(str(invalid), -1, os.getegid())
             invalid.chmod(0o640)
             missing = WORK / "does-not-exist.ini"
             self.assertFalse(missing.exists())
@@ -430,14 +458,18 @@ class ProxyTest(unittest.TestCase):
                 with self.subTest(path=path):
                     result = subprocess.run(
                         [STARTUP_PROXY, "--config", str(path)],
-                        capture_output=True,
-                        text=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
                         timeout=5,
                     )
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(diagnostic, result.stdout + result.stderr)
         finally:
-            DEFAULT_CONFIG.unlink(missing_ok=True)
+            try:
+                DEFAULT_CONFIG.unlink()
+            except FileNotFoundError:
+                pass
 
     def test_pam(self):
         require_free_port("127.0.0.1", PROXY_PORT)
@@ -467,8 +499,9 @@ class ProxyTest(unittest.TestCase):
             try:
                 result = subprocess.run(
                     [PROXY, "--config", str(config)],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
                     timeout=TIMEOUT,
                 )
                 self.assertNotEqual(result.returncode, 0)
@@ -582,8 +615,9 @@ class ProxyTest(unittest.TestCase):
                 )
             result = subprocess.run(
                 [PROXY, "--config", str(config)],
-                capture_output=True,
-                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
                 timeout=TIMEOUT,
             )
             self.assertNotEqual(result.returncode, 0)
@@ -599,8 +633,41 @@ class ProxyTest(unittest.TestCase):
         status, _, _ = http_request(port, "GET", "/api/session")
         self.assertEqual(status, 401)
 
+    def test_interface_discovery(self):
+        output = (
+            "lo0: flags=8049<UP,LOOPBACK,RUNNING,MULTICAST>\n"
+            "\tinet 127.0.0.1 netmask 0xff000000\n"
+            "em0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST>\n"
+            "\tinet 192.0.2.10 netmask 0xffffff00 broadcast 192.0.2.255\n"
+            "\tinet 192.0.2.11 netmask 0xffffff00 broadcast 192.0.2.255\n"
+        )
+        with mock.patch.object(
+            shutil,
+            "which",
+            side_effect=lambda name: "/sbin/ifconfig" if name == "ifconfig" else None,
+        ), mock.patch.object(
+            subprocess, "run", return_value=subprocess.CompletedProcess([], 0, output)
+        ) as run, mock.patch(
+            __name__ + ".require_free_port",
+            side_effect=[RuntimeError("Port occupied"), None],
+        ) as bind:
+            self.assertEqual(non_loopback_address(), "192.0.2.11")
+            self.assertEqual(
+                bind.call_args_list,
+                [
+                    mock.call("192.0.2.10", DIRECTOR_PORT),
+                    mock.call("192.0.2.11", DIRECTOR_PORT),
+                ],
+            )
+            self.assertEqual(run.call_args[0][0], ["/sbin/ifconfig", "-a"])
+            run.return_value.stdout = "\tinet 127.0.0.1 netmask 0xff000000\n"
+            with self.assertRaisesRegex(RuntimeError, "no bindable non-loopback"):
+                non_loopback_address()
+
 
 if __name__ == "__main__":
     mode = sys.argv[1]
     suite = unittest.TestSuite([ProxyTest(f"test_{mode}")])
+    if mode == "configured":
+        suite.addTest(ProxyTest("test_interface_discovery"))
     sys.exit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())

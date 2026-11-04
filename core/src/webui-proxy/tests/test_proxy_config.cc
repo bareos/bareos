@@ -370,12 +370,14 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
     std::filesystem::path path;
     ~Cleanup() { std::filesystem::remove_all(path); }
   } cleanup{directory};
+  ASSERT_EQ(chown(directory.c_str(), -1, getegid()), 0);
   const auto file = directory / "proxy.ini";
   {
     std::ofstream output(file);
     output << "[listen]\n[pam]\npam_console_name = PamConsole\n"
               "pam_console_password = private-secret\n";
   }
+  ASSERT_EQ(chown(file.c_str(), -1, getegid()), 0);
   for (const mode_t mode : {0600, 0640, 0400}) {
     ASSERT_EQ(chmod(file.c_str(), mode), 0);
     EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
