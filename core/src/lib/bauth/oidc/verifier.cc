@@ -40,6 +40,7 @@
 #include <jwt-cpp/jwt.h>
 
 #include "common.h"
+#include "lib/bauth/oidc/curl_http.h"
 
 #define UNIQUE_PTR(Type)                           \
   std::unique_ptr<Type, decltype([](Type* val) {   \
@@ -203,6 +204,38 @@ struct jansson_traits {
   }
 };
 
+site_metadata fetch_metadata(http::client* client, const std::string& url)
+{
+  if (!client->get(url)) {
+    auto error = client->error();
+    throw std::runtime_error{"could not fetch metadata" + error};
+  }
+
+  std::string response = client->result();
+
+  json_error_t err = {};
+  json_ptr json{json_loadb(response.data(), response.size(), 0, &err)};
+  if (!json || !json_is_object(json.get())) {
+    throw std::runtime_error{"bad json"};
+  }
+
+  const char* token_endpoint{};
+  const char* jwks_uri{};
+  const char* issuer{};
+  const char* device_authorization_endpoint{};
+
+  if (json_unpack_ex(json.get(), &err, 0, "{s:s, s:s, s:s, s:s}",
+                     "token_endpoint", &token_endpoint, "jwks_uri", &jwks_uri,
+                     "issuer", &issuer, "device_authorization_endpoint",
+                     &device_authorization_endpoint)
+      < 0) {
+    throw std::runtime_error{std::string{"missing values in json object: "}
+                             + response};
+  }
+
+  return {token_endpoint, jwks_uri, issuer, device_authorization_endpoint};
+}
+
 struct rsa_key {
   std::vector<char> exponent;
   std::vector<char> modulus;
@@ -210,16 +243,18 @@ struct rsa_key {
 
 using keyset = std::unordered_map<std::string, rsa_key>;
 
-keyset get_keys(CURL* curl, const std::string& key_uri, std::string_view issuer)
+keyset get_keys(http::client* client,
+                const std::string& key_uri,
+                std::string_view issuer)
 {
   Dmsg0(300, "fetching keys from %s\n", key_uri.c_str());
 
-  curl_easy_setopt(curl, CURLOPT_URL, key_uri.c_str());
+  if (!client->get(key_uri)) {
+    auto error = client->error();
+    throw std::runtime_error{"could not fetch keys"};
+  }
 
-  std::string response;
-  auto res = curl_easy_write_into_str(curl, &response);
-
-  if (res != CURLE_OK) { throw std::runtime_error{"could not fetch keys"}; }
+  std::string response = client->result();
 
   json_error_t err = {};
   json_ptr keys_json{json_loadb(response.data(), response.size(), 0, &err)};
@@ -459,7 +494,7 @@ struct DeviceAuthRequest {
   std::string message;
 };
 
-DeviceAuthRequest start_device_auth(CURL* curl,
+DeviceAuthRequest start_device_auth(http::client* client,
                                     const std::string& client_id,
                                     const std::string& scope,
                                     const site_metadata& meta)
@@ -467,33 +502,19 @@ DeviceAuthRequest start_device_auth(CURL* curl,
   Dmsg0(200, "Starting device auth via %s\n",
         meta.device_authorization_endpoint.c_str());
 
-  curl_easy_setopt(curl, CURLOPT_URL,
-                   meta.device_authorization_endpoint.c_str());
-  std::string response;
-  auto res = [&] {
-    url_encoder encoder{};
+  std::vector<http::post_field> fields{
+      {"client_id", client_id},
+      {"scope", scope},
+  };
 
-    encoder.add_kv("client_id", client_id.c_str());
-
-    std::string scopes = scope;
-    // if (!refresh_scope.empty()) { scopes += " " + refresh_scope; }
-
-    encoder.add_kv("scope", scopes.c_str());
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, encoder.c_str());
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-
-    return curl_easy_write_into_str(curl, &response);
-  }();
-
-  curl_easy_reset(curl);
-
-  if (res != CURLE_OK) {
+  if (!client->post(meta.device_authorization_endpoint, fields)) {
     throw std::runtime_error{(std::stringstream{}
                               << "could not start device auth: "
-                              << curl_easy_strerror(res) << " (" << res << ")")
+                              << client->error())
                                  .str()};
   }
+
+  std::string response = client->result();
 
   Dmsg0(200, "GET was successful\n");
 
@@ -541,7 +562,7 @@ DeviceAuthRequest start_device_auth(CURL* curl,
                            message};
 }
 
-CURL* AuthenticationFlow::curl(Verifier* verifier)
+http::client* AuthenticationFlow::curl(Verifier* verifier)
 {
   return verifier->curl.get();
 }
@@ -776,35 +797,24 @@ struct DeviceAuthenticationFlow : AuthenticationFlow {
   State state{INITIAL};
 
 
-  FetchResult fetch_token(CURL* curl,
+  FetchResult fetch_token(http::client* client,
                           const site_metadata& meta,
                           std::string* response)
   {
-    curl_easy_setopt(curl, CURLOPT_URL, meta.token_endpoint.c_str());
+    http::post_field fields[]
+        = {{"client_id", client_id},
+           {"device_code", device_code},
+           {"grant_type", "urn:ietf:params:oauth:grant-type:device_code"}};
 
-    url_encoder encoder{};
-    encoder.add_kv("client_id", client_id);
-    encoder.add_kv("device_code", device_code);
-    encoder.add_kv("grant_type",
-                   "urn:ietf:params:oauth:grant-type:device_code");
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, encoder.c_str());
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-
-    std::string buffer;
-    auto res = curl_easy_write_into_str(curl, &buffer);
-
-    if (res != CURLE_OK) {
-      Dmsg0(100, "Could not fetch from %s: %s (%d)\n",
-            meta.token_endpoint.c_str(), curl_easy_strerror(res), res);
-      curl_easy_reset(curl);
+    if (!client->post(meta.token_endpoint, fields)) {
+      Dmsg0(100, "Could not fetch from %s: %s\n", meta.token_endpoint.c_str(),
+            client->error().c_str());
       return FetchResult::Error;
     }
 
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    auto buffer = client->result();
 
-    curl_easy_reset(curl);
+    auto http_code = client->return_code();
 
     if (http_code >= 400) {
       Dmsg0(500, "Got an error response\n");
@@ -844,7 +854,7 @@ Status Verifier::initiate_flow(std::vector<char>& response,
 
   if (cfg.oidc_url.empty()) { return Error("empty oidc url"); }
 
-  curl.reset(curl_easy_init());
+  curl = std::make_unique<http::curl_client>();
   if (!curl) { return Error("could not create curl object"); }
   std::string config_url = cfg.oidc_url;
   if (config_url.back() != '/') { config_url.push_back('/'); }
