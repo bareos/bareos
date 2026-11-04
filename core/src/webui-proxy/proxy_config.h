@@ -24,6 +24,7 @@
 #include "proxy_log.h"
 
 #include <map>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -89,11 +90,17 @@ class ProxyConfigMissingListenSectionError : public ProxyConfigParseError {
   using ProxyConfigParseError::ProxyConfigParseError;
 };
 
+struct PamConsoleConfig {
+  std::string name;
+  std::string password;
+};
+
 struct DirectorTargetConfig {
   std::string address{"localhost"};
   int port{9101};
   std::string name;
   bool tls_psk_disable{false};
+  std::optional<PamConsoleConfig> pam_console{std::nullopt};
 };
 
 struct ProxyConfig {

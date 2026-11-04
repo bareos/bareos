@@ -162,6 +162,8 @@ address = 127.0.0.1
 port = ${BAREOS_DIRECTOR_PORT}
 tls_psk_disable = ${proxy_tls_psk_disable}${proxy_config_extra}
 END_OF_PROXY_CONFIG
+chmod 0640 "${proxy_config}"
+chmod 0750 "$(dirname "${proxy_config}")"
 
 check_node_version
 
