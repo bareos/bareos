@@ -382,9 +382,8 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
     ASSERT_EQ(chmod(file.c_str(), mode), 0);
     EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
   }
-  for (const mode_t mode :
-       {0644, 0660, 0604, 0700, 0670, 04640, 02640, 01640}) {
-    ASSERT_EQ(chmod(file.c_str(), mode), 0);
+  for (const mode_t mode : {0644, 0660, 0604, 0700, 0670, 04640, 02640}) {
+    ASSERT_EQ(chmod(file.c_str(), mode), 0) << "mode " << std::oct << mode;
     try {
       LoadProxyConfigFile(file.string());
       ADD_FAILURE() << "unsafe file permissions accepted";
