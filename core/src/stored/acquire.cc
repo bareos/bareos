@@ -487,7 +487,6 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   bool retval = true;
   char tbuf[100];
-  int was_blocked = BST_NOT_BLOCKED;
 
   Jmsg(jcr, M_INFO, 0, "Releasing device %s.\n", dev->print_name());
 
@@ -495,11 +494,21 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   now = (utime_t)time(NULL);
   UpdateJobStatistics(jcr, now);
 
+  // Honor another job's acquisition/despooling block before using the backend.
+  dev->rLock(false);
+  if (!dev->IsBlocked()) {
+    BlockDevice(dev, BST_RELEASING);
+  } else {
+    // rLock permits an existing block only when this thread owns it.
+    dev->SetBlocked(BST_RELEASING);
+  }
+  dev->Unlock();
+
   /* Some devices do cache write operations (e.g. DropletDevice).
    * Therefore flushing the cache is required to determine
    * if a job have been written successfully.
    * As a flush operation can take quite a long time,
-   * this must be done before acquiring locks.
+   * this must be done without holding the device mutex.
    * A previous implementation did the flush inside dev->close(),
    * which resulted in various locking problems. */
   if (!jcr->IsJobCanceled()) {
@@ -509,12 +518,6 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   }
 
   dev->Lock();
-  if (!dev->IsBlocked()) {
-    BlockDevice(dev, BST_RELEASING);
-  } else {
-    was_blocked = dev->blocked();
-    dev->SetBlocked(BST_RELEASING);
-  }
 
   with_volume_lock([&] {
     Dmsg1(100, "releasing device %s\n", dev->print_name());
@@ -640,14 +643,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
   ReleaseDeviceCond();
 
-  // If we are the thread that blocked the device, then unblock it
-  if (pthread_equal(dev->no_wait_id, pthread_self())) {
-    dev->dunblock(true);
-  } else {
-    // Otherwise, reset the prior block status and unlock
-    dev->SetBlocked(was_blocked);
-    dev->Unlock();
-  }
+  dev->dunblock(true);
 
   if (dcr->keep_dcr) {
     DetachDcrFromDev(dcr);
