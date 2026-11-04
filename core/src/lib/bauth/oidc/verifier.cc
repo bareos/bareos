@@ -50,6 +50,7 @@
 using evp_pkey = UNIQUE_PTR(EVP_PKEY);
 using evp_pkey_ctx = UNIQUE_PTR(EVP_PKEY_CTX);
 using evp_md_ctx = UNIQUE_PTR(EVP_MD_CTX);
+using x509 = UNIQUE_PTR(X509);
 using bio = UNIQUE_PTR(BIO);
 
 #undef UNIQUE_PTR
@@ -241,7 +242,45 @@ struct rsa_key {
   std::vector<char> modulus;
 };
 
-using keyset = std::unordered_map<std::string, rsa_key>;
+using keyset = std::unordered_map<std::string, evp_pkey>;
+
+evp_pkey create_public_key(std::span<const char> modulus,
+                           std::span<const char> exponent)
+{
+  // modulus is big endian encoded, but openssl expects the bytes in
+  // native format
+  std::vector<unsigned char> native(modulus.size());
+  for (size_t i = 0; i < modulus.size(); ++i) {
+    native[i] = modulus[modulus.size() - i - 1];
+  }
+
+  evp_pkey_ctx ctx{EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr)};
+  if (!ctx) { return {}; }
+
+
+  if (EVP_PKEY_fromdata_init(ctx.get()) != 1) { return {}; }
+
+  OSSL_PARAM params[3]{};
+  params[0] = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_N, native.data(),
+                                      static_cast<int>(modulus.size()));
+
+  // todo: this also needs to get converted to native
+  params[1] = OSSL_PARAM_construct_BN(
+      OSSL_PKEY_PARAM_RSA_E,
+      const_cast<unsigned char*>(
+          reinterpret_cast<const unsigned char*>(exponent.data())),
+      static_cast<int>(exponent.size()));
+  params[2] = OSSL_PARAM_construct_end();
+
+  EVP_PKEY* result{};
+
+  if (EVP_PKEY_fromdata(ctx.get(), &result, EVP_PKEY_PUBLIC_KEY, params) != 1) {
+    return {};
+  }
+
+  return evp_pkey{result};
+}
+
 
 keyset get_keys(http::client* client,
                 const std::string& key_uri,
@@ -284,9 +323,15 @@ keyset get_keys(http::client* client,
     const char* key_issuer{};  // this is optional
     const char* key_modulus64{};
     const char* key_exponent64{};
-    if (json_unpack_ex(key, &err, 0, "{s:s, s:s, s:s, s?s, s:s, s:s}", "kty",
-                       &key_type, "use", &key_usage, "kid", &key_id, "issuer",
-                       &key_issuer, "n", &key_modulus64, "e", &key_exponent64)
+    const char* key_der64{};
+
+    /* 'x5c' is a certificate chain
+     * The first certificate is always the certificate that holds the
+     * public key to verify the jwts. */
+    if (json_unpack_ex(key, &err, 0, "{s:s, s:s, s:s, s?s, s?s, s?s, s?[s]}",
+                       "kty", &key_type, "use", &key_usage, "kid", &key_id,
+                       "issuer", &key_issuer, "n", &key_modulus64, "e",
+                       &key_exponent64, "x5c", &key_der64)
         < 0) {
       continue;
     }
@@ -312,77 +357,112 @@ keyset get_keys(http::client* client,
       continue;
     }
 
-    rsa_key rsa;
-    std::string_view m64{key_modulus64};
-    rsa.modulus.resize(m64.size() + 1);
-
-    auto actual_size = Base64ToBin(rsa.modulus.data(), rsa.modulus.size(),
-                                   m64.data(), m64.size());
-
-    if (actual_size <= 0) {
-      Dmsg0(300, "Could not decode modulus for key %s ---> Skipped\n", key_id);
+    if (!key_der64 && (!key_modulus64 || !key_exponent64)) {
+      Dmsg0(300,
+            "key %s has does contain a full key: der:%s mod:%s exp:%s ---> "
+            "Skipped\n",
+            key_id, key_der64 ? "YES" : "NO", key_modulus64 ? "YES" : "NO",
+            key_exponent64 ? "YES" : "NO");
       continue;
     }
 
-    rsa.modulus.resize(actual_size);
 
-    std::string_view e64{key_exponent64};
-    rsa.exponent.resize(e64.size() + 1);
-
-    actual_size = Base64ToBin(rsa.exponent.data(), rsa.exponent.size(),
-                              e64.data(), e64.size());
-
-    if (actual_size <= 0) {
-      Dmsg0(300, "Could not decode exponent for key %s ---> Skipped\n", key_id);
+    if (keys.find(key_id) != keys.end()) {
+      Dmsg0(300, "key %s was already added ?! ---> Skipped\n", key_id);
       continue;
     }
 
-    rsa.exponent.resize(actual_size);
+    if (key_der64) {
+      std::string_view der64{key_der64};
+      std::string key_der(der64.size(), '\0');
+      auto actual_size = Base64ToBin(key_der.data(), key_der.size(),
+                                     der64.data(), der64.size());
+      if (actual_size <= 0) {
+        Dmsg0(300, "Could not decode modulus for key %s ---> Skipped\n",
+              key_id);
+        continue;
+      }
 
-    assert(keys.find(key_id) == keys.end());
+      key_der.resize(actual_size);
+      auto* ptr = reinterpret_cast<const unsigned char*>(key_der.data());
+      auto* begin = ptr;
+      x509 cert{d2i_X509(nullptr, &ptr, key_der.size())};
 
-    Dmsg0(300, "Adding key %s\n", key_id);
-    keys.emplace(key_id, std::move(rsa));
+      if (!cert) {
+        Dmsg0(300,
+              "OpenSSL could not create cert from DER for %s ---> Skipped\n",
+              key_id);
+        continue;
+      }
+
+      // make sure that we actually parsed the whole der
+      ASSERT(ptr <= begin + key_der.size());
+      bool not_completely_parsed = false;
+      for (auto* cur = ptr; cur < begin + key_der.size(); ++cur) {
+        // we allow zeroes at the end, but nothing else
+        if (*cur != 0) {
+          not_completely_parsed = true;
+          break;
+        }
+      }
+      if (not_completely_parsed) {
+        Dmsg0(300, "OpenSSL did not consume complete DER for %s ---> Skipped\n",
+              key_id);
+        continue;
+      }
+
+      evp_pkey key{X509_get_pubkey(cert.get())};
+
+      if (!key) {
+        Dmsg0(300,
+              "OpenSSL could not extract key from certificate for %s ---> "
+              "Skipped\n",
+              key_id);
+        continue;
+      }
+
+      Dmsg0(300, "Adding key %s\n", key_id);
+      keys.emplace(key_id, std::move(key));
+    } else if (key_modulus64 && key_exponent64) {
+      rsa_key rsa;
+      std::string_view m64{key_modulus64};
+      rsa.modulus.resize(m64.size() + 1);
+
+      auto actual_size = Base64ToBin(rsa.modulus.data(), rsa.modulus.size(),
+                                     m64.data(), m64.size());
+
+      if (actual_size <= 0) {
+        Dmsg0(300, "Could not decode modulus for key %s ---> Skipped\n",
+              key_id);
+        continue;
+      }
+
+      rsa.modulus.resize(actual_size);
+
+      std::string_view e64{key_exponent64};
+      rsa.exponent.resize(e64.size() + 1);
+
+      actual_size = Base64ToBin(rsa.exponent.data(), rsa.exponent.size(),
+                                e64.data(), e64.size());
+
+      if (actual_size <= 0) {
+        Dmsg0(300, "Could not decode exponent for key %s ---> Skipped\n",
+              key_id);
+        continue;
+      }
+
+      rsa.exponent.resize(actual_size);
+
+      Dmsg0(300, "Adding key %s\n", key_id);
+      auto key = create_public_key(rsa.modulus, rsa.exponent);
+      keys.emplace(key_id, std::move(key));
+    } else {
+      // we should never get here, as this is checked above
+      ASSERT(!"No key data included");
+    }
   }
 
   return keys;
-}
-
-evp_pkey create_public_key(std::span<const char> modulus,
-                           std::span<const char> exponent)
-{
-  // modulus is big endian encoded, but openssl expects the bytes in
-  // native format
-  std::vector<unsigned char> native(modulus.size());
-  for (size_t i = 0; i < modulus.size(); ++i) {
-    native[i] = modulus[modulus.size() - i - 1];
-  }
-
-  evp_pkey_ctx ctx{EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr)};
-  if (!ctx) { return {}; }
-
-
-  if (EVP_PKEY_fromdata_init(ctx.get()) != 1) { return {}; }
-
-  OSSL_PARAM params[3]{};
-  params[0] = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_N, native.data(),
-                                      static_cast<int>(modulus.size()));
-
-  // todo: this also needs to get converted to native
-  params[1] = OSSL_PARAM_construct_BN(
-      OSSL_PKEY_PARAM_RSA_E,
-      const_cast<unsigned char*>(
-          reinterpret_cast<const unsigned char*>(exponent.data())),
-      static_cast<int>(exponent.size()));
-  params[2] = OSSL_PARAM_construct_end();
-
-  EVP_PKEY* result{};
-
-  if (EVP_PKEY_fromdata(ctx.get(), &result, EVP_PKEY_PUBLIC_KEY, params) != 1) {
-    return {};
-  }
-
-  return evp_pkey{result};
 }
 
 std::string pem_from_public_key(EVP_PKEY* pkey)
@@ -461,9 +541,8 @@ UserClaims VerifyToken(const auth::Oidc::config& cfg,
   if (itr == keys.end()) {
     throw std::runtime_error{"unknown key id! rejecting jwt"};
   }
-  auto pkey = create_public_key(itr->second.modulus, itr->second.exponent);
 
-  auto pem = pem_from_public_key(pkey.get());
+  auto pem = pem_from_public_key(itr->second.get());
 
   // todo: make pem out of used_key
   verifier.allow_algorithm(::jwt::algorithm::rs256{pem});
