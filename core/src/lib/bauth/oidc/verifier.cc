@@ -37,6 +37,8 @@
 #include <sstream>
 #include <string_view>
 
+#include <jwt-cpp/jwt.h>
+
 #include "common.h"
 
 #define UNIQUE_PTR(Type)                           \
@@ -47,6 +49,7 @@
 using evp_pkey = UNIQUE_PTR(EVP_PKEY);
 using evp_pkey_ctx = UNIQUE_PTR(EVP_PKEY_CTX);
 using evp_md_ctx = UNIQUE_PTR(EVP_MD_CTX);
+using bio = UNIQUE_PTR(BIO);
 
 #undef UNIQUE_PTR
 
@@ -65,189 +68,140 @@ template <typename T> void dump_json(T* result, json_t* json)
       result, JSON_COMPACT);
 }
 
-
-// see rfc 7519
-struct jwt_header {
-  std::string algorithm;
-  std::string key_id;
-};
-
-struct jwt {
-  jwt_header header;
-  jwt_payload payload;
-};
-
-std::pair<std::string, std::vector<char>> ExtractSignature(
-    std::string_view to_parse)
-{
-  auto end = to_parse.find_last_of('.');
-  if (end == to_parse.npos || end == to_parse.size() - 1) {
-    throw std::runtime_error{"no dots or bad dot at end"};
-  }
-
-  auto signature64 = to_parse.substr(end + 1);
-  std::vector<char> signature;
-  signature.resize(signature64.size() + 1);
-  auto actual_size = Base64ToBin(signature.data(), signature.size(),
-                                 signature64.data(), signature64.size());
-
-  if (actual_size <= 0) {
-    throw std::runtime_error{"bad base64 encoded signature"};
-  }
-
-  signature.resize(actual_size);
-
-  return {std::string{to_parse.substr(0, end)}, std::move(signature)};
-}
-
-// std does not include the signature
-jwt ExtractJwt(std::string_view token, const char* roles_name)
-{
-  auto to_parse = token;
-  auto end = to_parse.find('.');
-  if (end == to_parse.npos) { throw std::runtime_error{"no dots"}; }
-
-  auto header64 = to_parse.substr(0, end);
-  to_parse.remove_prefix(end);
-
-  std::string header;
-  header.resize(header64.size());
-  int actual_size = Base64ToBin(header.data(), header.size(), header64.data(),
-                                header64.size());
-  header.resize(actual_size);
-
-  // check if "alg" is "RS256"; we do not accept anything else
-  json_error_t err = {};
-  json_ptr jheader{json_loadb(header.data(), header.size(), 0, &err)};
-  if (!jheader || !json_is_object(jheader)) {
-    throw std::runtime_error{"bad jwt header"};
-  }
-
-  const char* header_type{};
-  const char* header_algo{};
-  const char* header_key_id{};
-  const char* header_nonce{};
-  const char* header_x5t{};
-
-  // we reject the key if there are any additional/unknown keys
-  if (json_unpack_ex(jheader.get(), &err, JSON_STRICT,
-                     "{s:s, s:s, s:s, s?s, s?s}", "typ", &header_type, "alg",
-                     &header_algo, "kid", &header_key_id, "nonce",
-                     &header_nonce, "x5t", &header_x5t)
-      < 0) {
-    std::string error = "jwt header error: ";
-    error += err.text;
-    throw std::runtime_error{error};
-  }
-
-  if (std::string_view{"JWT"} != header_type) {
-    throw std::runtime_error{"bad jwt header (bad type)"};
-  }
-  if (std::string_view{"RS256"} != header_algo) {
-    throw std::runtime_error{"bad jwt header (bad algo)"};
-  }
-
-  Dmsg0(300, "JWT is signed by '%s'\n", header_key_id);
-
-  auto payload64 = to_parse.substr(1);
-
-  std::string payload;
-  payload.resize(payload64.size());
-  actual_size = Base64ToBin(payload.data(), payload.size(), payload64.data(),
-                            payload64.size());
-  payload.resize(actual_size);
-
-  Dmsg0(300, "payload size %zu (b64) -> %zu (binary)\n", payload64.size(),
-        payload.size());
-
-  json_ptr jpayload{json_loadb(payload.data(), payload.size(), 0, &err)};
-  if (!jpayload || !json_is_object(jpayload)) {
-    throw std::runtime_error{"bad jwt payload"};
-  }
-
-
-  json_t* roles{};
-  const char* issuer{};
-  const char* subject{};
-  json_t* audience_json{};
-  const char* authorized_party{};
-  json_int_t expiry{};
-  json_int_t not_before{};
-  json_int_t issued_at{};
-  const char* user_name{};
-  const char* preferred_name{};
-  // first parse required fields
-  if (json_unpack_ex(jpayload.get(), &err, 0,
-                     "{s:s, s:s, s:s, s:o, s:i, s?i, s:i, s:o, s?s, s?s}",
-                     "name", &user_name, "iss", &issuer, "sub", &subject, "aud",
-                     &audience_json, "exp", &expiry, "nbf", &not_before, "iat",
-                     &issued_at, roles_name, &roles, "preferred_username",
-                     &preferred_name, "azp", &authorized_party)
-      < 0) {
-    throw std::runtime_error{std::string{"missing values in jwt payload: "}
-                             + err.text};
-  }
-
-  if (!json_is_array(roles)) {
-    throw std::runtime_error{"bad roles value in jwt payload"};
-  }
-
-  const char* audience = [&] {
-    if (authorized_party) {
-      std::string_view azp{authorized_party};
-
-      // make sure azp and aud are compatible!
-      if (json_is_array(audience_json)) {
-        json_t* aud{};
-        json_int_t idx{};
-        json_array_foreach(audience_json, idx, aud)
-        {
-          if (!json_is_string(aud)) {
-            throw std::runtime_error{"non-string value in 'aud' array"};
-          }
-
-          if (azp == json_string_value(aud)) { return authorized_party; }
-        }
-        throw std::runtime_error{"'azp' is not contained in the 'aud' array"};
-
-      } else if (json_is_string(audience_json)) {
-        if (azp != json_string_value(audience_json)) {
-          throw std::runtime_error{
-              "'azp' and 'aud' are both strings, but are different"};
-        }
-
-        return authorized_party;
-      } else {
-        throw std::runtime_error{"'aud' is neither array nor string"};
-      }
-
-
-    } else {
-      if (!json_is_string(audience_json)) {
-        throw std::runtime_error{"'aud' is not a string, but 'azp' is unset"};
-      }
-
-      return json_string_value(audience_json);
+struct jansson_traits {
+  struct json_wrapper {
+    json_t* wrapped{};
+    json_wrapper() = default;
+    json_wrapper(json_t* towrap) : wrapped{towrap} {}
+    json_wrapper(json_wrapper const& other)
+    {
+      json_incref(other.wrapped);
+      wrapped = other.wrapped;
     }
-  }();
+    json_wrapper(json_wrapper&& other)
+    {
+      auto* n = other.wrapped;
+      other.wrapped = nullptr;
+      wrapped = n;
+    }
+    json_wrapper(std::string const& str)
+        : wrapped{json_stringn(str.data(), str.size())}
+    {
+    }
 
-  jwt_payload payload_jwt{issuer,    subject, audience,   expiry, issued_at,
-                          user_name, {},      not_before, ""};
-  if (preferred_name) { payload_jwt.preferred_name = preferred_name; }
+    template <typename T> json_wrapper(T const&)
+    {
+      // necessary to make it compile, but should never be used
+      ASSERT(false);
+    }
+    json_wrapper& operator=(json_wrapper const& other)
+    {
+      json_incref(other.wrapped);
+      if (wrapped) json_decref(wrapped);
+      wrapped = other.wrapped;
+      return *this;
+    }
+    json_wrapper& operator=(json_wrapper&& other)
+    {
+      auto* n = other.wrapped;
+      other.wrapped = nullptr;
 
-  json_t* role{};
-  json_int_t idx{};
-  json_array_foreach(roles, idx, role)
+      if (wrapped) json_decref(wrapped);
+
+      wrapped = n;
+      return *this;
+    }
+
+    ~json_wrapper()
+    {
+      if (wrapped) json_decref(wrapped);
+      wrapped = nullptr;
+    }
+  };
+
+  using value_type = json_wrapper;
+  using string_type = std::string;
+  using number_type = double;
+  using integer_type = json_int_t;
+  using boolean_type = bool;
+  using object_type = std::unordered_map<string_type, value_type>;
+  using array_type = std::vector<value_type>;
+
+  static_assert(std::is_constructible_v<value_type, object_type>);
+
+  static jwt::json::type get_type(const value_type& val)
   {
-    if (!json_is_string(role)) {
-      throw std::runtime_error{"bad role value in jwt payload"};
-    }
+    using jwt::json::type;
 
-    payload_jwt.roles.push_back(json_string_value(role));
+    if (json_is_object(val.wrapped)) return type::object;
+    if (json_is_array(val.wrapped)) return type::array;
+    if (json_is_string(val.wrapped)) return type::string;
+    if (json_is_real(val.wrapped)) return type::number;
+    if (json_is_integer(val.wrapped)) return type::integer;
+    if (json_is_boolean(val.wrapped)) return type::boolean;
+
+    throw std::logic_error("invalid type");
   }
 
-  return {{header_algo, header_key_id}, payload_jwt};
-}
+  static object_type as_object(const value_type& val)
+  {
+    json_t* elem;
+    const char* key;
+    object_type result;
+    json_object_foreach(val.wrapped, key, elem)
+    {
+      json_incref(elem);
+      result[key] = elem;
+    }
+    return result;
+  }
+  static array_type as_array(const value_type& val)
+  {
+    json_t* elem;
+    json_int_t index;
+    array_type result;
+    json_array_foreach(val.wrapped, index, elem)
+    {
+      json_incref(elem);
+      result.emplace_back(elem);
+    }
+    return result;
+  }
+  static string_type as_string(const value_type& val)
+  {
+    auto* str = json_string_value(val.wrapped);
+    auto len = json_string_length(val.wrapped);
+    return {str, len};
+  }
+  static number_type as_number(const value_type& val)
+  {
+    return json_real_value(val.wrapped);
+  }
+  static integer_type as_integer(const value_type& val)
+  {
+    return json_integer_value(val.wrapped);
+  }
+  static boolean_type as_boolean(const value_type& val)
+  {
+    return json_boolean_value(val.wrapped);
+  }
+
+  static bool parse(value_type& val, string_type str)
+  {
+    json_error_t err;
+    val = json_wrapper{json_loadb(str.data(), str.size(), 0, &err)};
+    if (!val.wrapped) return false;
+
+    return true;
+  }
+
+  static string_type serialize(const value_type& val)
+  {
+    string_type result;
+    dump_json(&result, val.wrapped);
+    return result;
+  }
+};
 
 struct rsa_key {
   std::vector<char> exponent;
@@ -396,117 +350,97 @@ evp_pkey create_public_key(std::span<const char> modulus,
   return evp_pkey{result};
 }
 
-bool verify_signature(std::string_view token,
-                      std::span<const char> signature,
-                      const rsa_key& key)
+std::string pem_from_public_key(EVP_PKEY* pkey)
 {
-  evp_pkey public_key = create_public_key(key.modulus, key.exponent);
-  if (!public_key) { return false; }
+  // we print the PEM data to memory,  in the future we should print it to a
+  // local file, so we can load it again next time without having to fetch it!
+  bio mem{BIO_new(BIO_s_mem())};
 
-  evp_md_ctx ctx{EVP_MD_CTX_new()};
-  if (!ctx) { return false; }
+  if (!mem) { throw std::runtime_error{"Could not allocate new memory BIO"}; }
 
-  EVP_PKEY_CTX* kctx{};  // this is owned by ctx, so we use a non-owning ptr
-  if (EVP_DigestVerifyInit(ctx.get(), &kctx, EVP_sha256(), nullptr,
-                           public_key.get())
-      != 1) {
-    Dmsg0(100, "Could not init verify digest\n");
-    return false;
+  if (PEM_write_bio_PUBKEY(mem.get(), pkey) != 1) {
+    throw std::runtime_error{"Could not write out PEM to mem BIO"};
   }
 
-  if (!kctx) {
-    Dmsg0(100, "No kctx was provided\n");
-    return false;
+  BUF_MEM* ptr{};
+  BIO_get_mem_ptr(mem.get(), &ptr);
+
+  return {ptr->data, ptr->length};
+}
+
+UserClaims from_json(json_t* roles_json,
+                     json_t* user_name_json,
+                     json_t* preferred_json)
+{
+  if (!roles_json || !json_is_array(roles_json)) {
+    throw std::runtime_error{"no or bad roles in id token"};
   }
 
-  if (EVP_PKEY_CTX_set_rsa_padding(kctx, RSA_PKCS1_PADDING) <= 0) {
-    Dmsg0(100, "Could not set rsa padding\n");
-    return false;
+  std::vector<std::string> roles;
+
+  json_t* role{};
+  json_int_t idx{};
+  json_array_foreach(roles_json, idx, role)
+  {
+    if (!json_is_string(role)) {
+      throw std::runtime_error{"bad role value in jwt payload"};
+    }
+
+    roles.push_back(json_string_value(role));
   }
 
-  if (EVP_PKEY_CTX_set_signature_md(kctx, EVP_sha256()) <= 0) {
-    Dmsg0(100, "Could not set signature md\n");
-    return false;
+  if (!user_name_json || !json_is_string(user_name_json)) {
+    throw std::runtime_error{"no or bad user name in id token"};
   }
 
-  if (EVP_DigestVerifyUpdate(ctx.get(), token.data(), token.size()) != 1) {
-    Dmsg0(100, "Could not compute digest\n");
-    return false;
+  std::string user_name{json_string_value(user_name_json)};
+  std::string preferred_name;
+
+  if (preferred_json) {
+    if (!json_is_string(preferred_json)) {
+      throw std::runtime_error{"bad preferred user name in id token"};
+    }
+    preferred_name = json_string_value(preferred_json);
+  } else {
+    preferred_name = user_name;
   }
 
-  if (EVP_DigestVerifyFinal(
-          ctx.get(), reinterpret_cast<const unsigned char*>(signature.data()),
-          signature.size())
-      != 1) {
-    Dmsg0(100, "Could not get digest\n");
-    return false;
-  }
-
-  return true;
+  return UserClaims{std::move(user_name), std::move(preferred_name),
+                    std::move(roles)};
 }
 
 UserClaims VerifyToken(const auth::Oidc::config& cfg,
                        const keyset& keys,
                        std::string_view token)
 {
-  auto [value, signature] = ExtractSignature(token);
-  auto [header, payload] = ExtractJwt(value, cfg.roles_name.c_str());
+  auto decoded = ::jwt::decode<jansson_traits>(std::string{token});
 
-  if (payload.issuer != cfg.oidc_url) {
-    throw std::runtime_error{
-        "received token with bad issuer: expected:'" + cfg.oidc_url + "' got:'"
-            + payload.issuer + "'",
-    };
-  }
+  auto verifier = ::jwt::verify<jansson_traits>()
+                      .with_issuer(cfg.oidc_url)
+                      .leeway(std::chrono::duration_cast<std::chrono::seconds>(
+                                  cfg.allowed_clock_skew)
+                                  .count())  // todo: make sure this is correct
+                      .with_audience(cfg.client_id);
 
-  std::stringstream msg;
-  msg << "Checking token for " << payload.user_name << " (" << payload.subject
-      << ")\n"
-      << "with roles:\n";
-  for (auto& role : payload.roles) { msg << " - " << role << "\n"; }
-
-  Dmsg0(100, "%s\n", msg.str().c_str());
-
-  if (auto iter = keys.find(header.key_id); iter != keys.end()) {
-    const auto& used_key = iter->second;
-    // we need to check that value matches signature via used_key
-
-    if (!verify_signature(value, signature, used_key)) {
-      throw std::runtime_error{"bad signature! rejecting jwt"};
-    }
-
-  } else {
+  auto itr = keys.find(decoded.get_key_id());
+  if (itr == keys.end()) {
     throw std::runtime_error{"unknown key id! rejecting jwt"};
   }
+  auto pkey = create_public_key(itr->second.modulus, itr->second.exponent);
 
-  auto allowed_clock_skew = cfg.allowed_clock_skew;
+  auto pem = pem_from_public_key(pkey.get());
 
-  auto now = std::chrono::system_clock::now();
+  // todo: make pem out of used_key
+  verifier.allow_algorithm(::jwt::algorithm::rs256{pem});
 
-  if ((now - allowed_clock_skew).time_since_epoch().count()
-      < payload.issued_at) {
-    throw std::runtime_error{"token does not exist yet"};
-  }
+  verifier.verify(decoded);
+  auto roles_json = decoded.get_payload_claim(cfg.roles_name).to_json();
+  auto user_json = decoded.get_payload_claim("name").to_json();
+  auto preferred_json
+      = decoded.get_payload_claim("preferred_username").to_json();
 
-  if (payload.not_before == 0) {
-    if (cfg.require_not_before) {
-      throw std::runtime_error{"token does not have required not-before (nbf)"};
-    }
-  } else if ((now + allowed_clock_skew).time_since_epoch().count()
-             < payload.not_before) {
-    throw std::runtime_error{"token not usable yet"};
-  }
-
-  if (payload.audience != cfg.client_id) {
-    throw std::runtime_error{"this token is not for me"};
-  }
-
-  UserClaims claims;
-  claims.preferred_name = std::move(payload.preferred_name);
-  claims.user_name = std::move(payload.user_name);
-  claims.roles = std::move(payload.roles);
-
-  return claims;
+  return from_json(roles_json.wrapped, user_json.wrapped,
+                   preferred_json.wrapped);
 }
 };  // namespace
 
