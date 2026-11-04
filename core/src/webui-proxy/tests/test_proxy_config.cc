@@ -403,11 +403,11 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
     }
   }
   ASSERT_EQ(chmod(file.c_str(), 0640), 0);
-  for (const mode_t mode : {0700, 0750}) {
+  for (const mode_t mode : {0700, 0750, 0755, 0701}) {
     ASSERT_EQ(chmod(directory.c_str(), mode), 0);
     EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
   }
-  for (const mode_t mode : {0755, 0770, 0701, 01750}) {
+  for (const mode_t mode : {0775, 0770, 0702, 0777, 01755}) {
     ASSERT_EQ(chmod(directory.c_str(), mode), 0);
     try {
       LoadProxyConfigFile(file.string());
@@ -417,7 +417,7 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
       EXPECT_NE(message.find("unsafe configuration directory"),
                 std::string::npos);
       EXPECT_NE(message.find(directory.string()), std::string::npos);
-      EXPECT_NE(message.find("chmod 0750"), std::string::npos);
+      EXPECT_NE(message.find("chmod 0755"), std::string::npos);
       EXPECT_EQ(message.find("private-secret"), std::string::npos);
     }
   }
@@ -446,6 +446,10 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
     ASSERT_EQ(chown(file.c_str(), 1, getegid()), 0);
     EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
     ASSERT_EQ(chown(file.c_str(), 0, getegid()), 0);
+    ASSERT_EQ(chown(directory.c_str(), 0, getegid() + 1), 0);
+    ASSERT_EQ(chmod(directory.c_str(), 0755), 0);
+    EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
+    ASSERT_EQ(chown(directory.c_str(), 0, getegid()), 0);
     ASSERT_EQ(chown(directory.c_str(), 1, getegid()), 0);
     EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
     ASSERT_EQ(chown(directory.c_str(), 0, getegid()), 0);
@@ -458,7 +462,7 @@ TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
     output << "[listen]\n[ordinary]\naddress = localhost\n";
   }
   ASSERT_EQ(chmod(file.c_str(), 0644), 0);
-  ASSERT_EQ(chmod(directory.c_str(), 0755), 0);
+  ASSERT_EQ(chmod(directory.c_str(), 0775), 0);
   EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
   ASSERT_EQ(chmod(file.c_str(), 0640), 0);
   EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);

@@ -56,16 +56,16 @@ void CheckConfigPermissions(int fd, const std::string& path, bool directory)
         + "': " + std::error_code(errno, std::generic_category()).message());
   }
   const bool safe_owner = metadata.st_uid == 0 || metadata.st_uid == geteuid();
-  const mode_t forbidden = S_IRWXO | S_IWGRP
-                           | (directory ? 0 : S_IXUSR | S_IXGRP) | S_ISUID
-                           | S_ISGID | S_ISVTX;
-  const bool safe_group
-      = !(metadata.st_mode & S_IRWXG) || metadata.st_gid == getegid();
+  const mode_t forbidden = S_IWGRP
+                           | (directory ? S_IWOTH : S_IRWXO | S_IXUSR | S_IXGRP)
+                           | S_ISUID | S_ISGID | S_ISVTX;
+  const bool safe_group = directory || !(metadata.st_mode & S_IRWXG)
+                          || metadata.st_gid == getegid();
   const bool right_type
       = directory ? S_ISDIR(metadata.st_mode) : S_ISREG(metadata.st_mode);
   if (!safe_owner || !safe_group || !right_type
       || (metadata.st_mode & forbidden)) {
-    const std::string recommended_mode = directory ? "0750" : "0640";
+    const std::string recommended_mode = directory ? "0755" : "0640";
     std::ostringstream error;
     error << "Proxy config: unsafe configuration "
           << (directory ? "directory" : "file") << " '" << path << "' (mode "
@@ -80,14 +80,19 @@ void CheckConfigPermissions(int fd, const std::string& path, bool directory)
     } else if (!safe_group) {
       error << "group access requires service gid " << getegid();
     } else {
-      error << "other-user access, group write, "
-            << (directory ? "" : "file execute permissions, ")
-            << "and special mode bits are forbidden";
+      error
+          << (directory
+                  ? "group/other write and special mode bits are forbidden"
+                  : "other-user access, group write, file execute permissions, "
+                    "and special mode bits are forbidden");
     }
     error << "; use mode " << recommended_mode << " or stricter (chmod "
           << recommended_mode << "), root or service uid " << geteuid()
-          << " as owner, and service gid " << getegid()
-          << " when group access is enabled";
+          << " as owner";
+    if (!directory) {
+      error << ", and service gid " << getegid()
+            << " when group access is enabled";
+    }
     throw ProxyConfigFileError(error.str());
   }
 }

@@ -96,12 +96,12 @@ Upgrading existing installations
 
    Configuration access rights are now enforced for every existing proxy
    configuration, including configurations without PAM settings. Previously
-   accepted modes such as ``0644`` for the INI file or ``0755`` for its
+   accepted modes such as ``0644`` for the INI file or ``0775`` for its
    containing directory prevent the upgraded proxy from starting, making the
    Vue WebUI unavailable.
 
 Before upgrading an installation with an active configuration file, check the
-proxy service account and apply the ownership and ``0640``/``0750`` permissions
+proxy service account and apply the ownership and ``0640``/``0755`` permissions
 described in :ref:`webui-proxy-config-permissions`. Apply this to
 :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`, or the file selected by
 ``--config``, and its immediate containing directory. Preserve the existing
@@ -284,11 +284,14 @@ Configuration file access rights
 
 Restrict the INI file to administrators and the proxy service account
 (mode ``0640`` or stricter, with the proxy's effective service group).
-The containing directory must have mode ``0750`` or stricter. Both must be
-owned by root or the proxy's effective user, with no access for other users
-and no group write access. Executable configuration files and special mode
-bits are rejected. If group access is enabled, the group must match the proxy's
-effective group. These checks are enforced before parsing every configuration
+The containing directory may have mode ``0755`` or stricter: group and other
+users may list and traverse it, but must not have write access. Its group does
+not need to match the service group. Both file and directory must be owned by
+root or the proxy's effective user. The file must have no other-user access
+or group write access. Executable configuration files and special mode bits
+on either the file or directory are rejected. If file group access is enabled,
+the group must match the proxy's effective group.
+These checks are enforced before parsing every configuration
 file, even without PAM settings; unsafe permissions prevent startup.
 Starting without an implicit configuration file still uses built-in defaults.
 
@@ -297,7 +300,7 @@ For the usual ``bareos`` service group:
 .. code-block:: shell-session
 
    chown root:bareos /etc/bareos-webui-proxy
-   chmod 0750 /etc/bareos-webui-proxy
+   chmod 0755 /etc/bareos-webui-proxy
    chown root:bareos /etc/bareos-webui-proxy/bareos-webui-proxy.ini
    chmod 0640 /etc/bareos-webui-proxy/bareos-webui-proxy.ini
 
@@ -309,11 +312,11 @@ Check the installed service's account before choosing ownership:
 
 The proxy exits with a fatal error for unsafe configuration access rights. The message
 identifies the file or directory, its current octal mode and numeric owner/group,
-the failed requirement, and the recommended ``chmod 0640`` or ``chmod 0750``
+the failed requirement, and the recommended ``chmod 0640`` or ``chmod 0755``
 fix. Ownership/group errors also report the permitted service UID/GID.
 For example, a world-readable INI produces an ``unsafe configuration file``
-error with ``mode 0644`` and ``chmod 0640``. An overly accessible directory
-produces ``unsafe configuration directory`` and ``chmod 0750``.
+error with ``mode 0644`` and ``chmod 0640``. A group- or world-writable directory
+produces ``unsafe configuration directory`` and ``chmod 0755``.
 Neither message includes the Console password.
 
 If the service cannot open the file or directory at all, the error instead
