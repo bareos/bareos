@@ -33,9 +33,9 @@ struct cleanup {
     if (curl) { curl_easy_cleanup(curl); }
   }
 
-  void operator()(json_t* curl) const
+  void operator()(json_t* json) const
   {
-    if (curl) { curl_easy_cleanup(curl); }
+    if (json) { json_decref(json); }
   }
 };
 }  // namespace auth::Oidc
