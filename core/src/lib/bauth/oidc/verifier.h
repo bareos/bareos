@@ -64,6 +64,12 @@ struct jwt_payload {
   std::string preferred_name;
 };
 
+struct UserClaims {
+  std::string user_name;
+  std::string preferred_name;
+  std::vector<std::string> roles;
+};
+
 // each flow should actually be its own "type"
 struct AuthenticationFlow {
   virtual auth::Status step(Verifier* verifier,
@@ -72,7 +78,7 @@ struct AuthenticationFlow {
       = 0;
   virtual ~AuthenticationFlow() = default;
 
-  jwt_payload verified_payload;
+  UserClaims verified_claims;
 
  protected:
   CURL* curl(Verifier* verifier);
