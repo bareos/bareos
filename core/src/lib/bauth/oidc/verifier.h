@@ -64,6 +64,13 @@ struct jwt_payload {
   std::string preferred_name;
 };
 
+struct site_metadata {
+  std::string token_endpoint{};
+  std::string jwks_uri{};
+  std::string issuer{};
+  std::string device_authorization_endpoint{};
+};
+
 struct UserClaims {
   std::string user_name;
   std::string preferred_name;
@@ -81,7 +88,7 @@ struct AuthenticationFlow {
   UserClaims verified_claims;
 
  protected:
-  CURL* curl(Verifier* verifier);
+  http::client* curl(Verifier* verifier);
   site_metadata& meta(Verifier* verifier);
   config& conf(Verifier* verifier);
 };
@@ -123,7 +130,7 @@ struct Verifier : public auth::Verifier {
 
   std::string error;
   site_metadata meta;
-  curl_ptr curl;
+  std::unique_ptr<http::client> curl;
   std::unique_ptr<AuthenticationFlow> current_flow;
 
   Status Error(std::string message)
