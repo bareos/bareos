@@ -5,11 +5,17 @@ INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
 	       PriorJobId, PurgedFiles, HasCache,
-	       Reviewed, Comment
+	       Reviewed, Comment, AccountingValid, AccountingExcluded,
+	       AccountingFiles, AccountingBytes, AccountingLogicalBytes,
+	       AccountingOpaqueFiles, AccountingNdmpArchives, AccountingRule,
+	       AccountingExclusionReason, AccountingJobsInChain
        )
 SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
        VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
-       HasCache, Reviewed, Comment
+       HasCache, Reviewed, Comment, AccountingValid, AccountingExcluded,
+       AccountingFiles, AccountingBytes, AccountingLogicalBytes,
+       AccountingOpaqueFiles, AccountingNdmpArchives, AccountingRule,
+       AccountingExclusionReason, AccountingJobsInChain
   FROM Job
  WHERE JobStatus IN ('T','W','f','A','E')
    AND NOT EXISTS (

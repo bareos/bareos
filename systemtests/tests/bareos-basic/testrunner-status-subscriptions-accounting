@@ -535,6 +535,31 @@ for phase in full incremental; do
     "$phase" "$tmp/status-subscriptions-plugin-fixtures-${phase}.json"
 done
 
+run_bconsole - <<END_OF_DATA
+@$out $tmp/accounting-history-update.out
+update stats
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/accounting-history-check.json
+.sql query="SELECT COUNT(*) AS jobs, COUNT(*) FILTER (WHERE \
+h.JobId IS NULL OR ROW(h.AccountingValid, h.AccountingExcluded, \
+h.AccountingFiles, h.AccountingBytes, h.AccountingLogicalBytes, \
+h.AccountingOpaqueFiles, h.AccountingNdmpArchives, h.AccountingRule, \
+h.AccountingExclusionReason, h.AccountingJobsInChain) IS DISTINCT FROM \
+ROW(j.AccountingValid, j.AccountingExcluded, j.AccountingFiles, \
+j.AccountingBytes, j.AccountingLogicalBytes, j.AccountingOpaqueFiles, \
+j.AccountingNdmpArchives, j.AccountingRule, j.AccountingExclusionReason, \
+j.AccountingJobsInChain)) AS mismatches \
+FROM Job j LEFT JOIN JobHisto h USING (JobId) \
+WHERE j.Name='$JobName' AND j.JobStatus IN ('T','W')"
+END_OF_DATA
+run_python_check "$tmp/accounting-history-check.json" <<'PY'
+result = load_result(sys.argv[1])
+assert "query" in result, result
+assert int(result["query"][0]["jobs"]) >= 2, result
+assert int(result["query"][0]["mismatches"]) == 0, result
+PY
+
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2
   if [[ -f "$tmp/accounting-source-stats.log" ]]; then
