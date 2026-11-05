@@ -257,6 +257,10 @@ if(NOT client-only)
                                  Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(
+    ua_impexp LINK_LIBRARIES Bareos::Lib Bareos::Dir Bareos::Findlib
+                             Bareos::SQL GTest::gtest_main
+  )
+  bareos_add_test(
     lib_tests
     ADDITIONAL_SOURCES
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
