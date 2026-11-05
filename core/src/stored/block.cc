@@ -880,7 +880,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
   if (!dcr->IsDevLocked()) { /* device already locked? */
     // Note, do not change this to dcr->r_dlock
     dev->Lock(); /* no, lock it */
-    dev->WaitUntilUnblocked();
+    dev->WaitUntilOtherThreadReleasesBlock();
   }
 
   /* If a new volume has been mounted since our last write
@@ -937,7 +937,7 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDevice(
 
   Dmsg0(250, "Enter ReadBlockFromDevice\n");
   dev->Lock();
-  dev->WaitUntilUnblocked();
+  dev->WaitUntilOtherThreadReleasesBlock();
   status = ReadBlockFromDev(check_block_numbers);
   dev->Unlock();
   Dmsg0(250, "Leave ReadBlockFromDevice\n");

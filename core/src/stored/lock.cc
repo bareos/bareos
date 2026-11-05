@@ -44,18 +44,18 @@ namespace storagedaemon {
  * 2. Lock()    simple mutex that locks the device structure. A Lock
  *              can be acquired while a device is blocked if it is not
  *              locked.
- * 3. WaitUntilUnblocked() waits for another thread to unblock the device.
- *                         The device mutex must be held.
+ * 3. WaitUntilOtherThreadReleasesBlock() waits for another thread to unblock
+ * the device. The device mutex must be held.
  *
  * - A lock is normally set when modifying the device structure.
- * - WaitUntilUnblocked() is normally called after locking the device when
- *   you need to wait until another thread unblocks it.
+ * - WaitUntilOtherThreadReleasesBlock() is normally called after locking the
+ * device when you need to wait until another thread unblocks it.
  * - A block is normally set during long operations like writing to the device.
  * - If you are writing the device, you will normally block and lock it.
  * - A lock cannot be violated. No other thread can touch the
  *   device while a lock is set.
  * - When a block is set, every thread except the thread that set
- *   the block will wait in WaitUntilUnblocked().
+ *   the block will wait in WaitUntilOtherThreadReleasesBlock().
  * - A device can be blocked for multiple reasons, labeling, writing,
  *   acquiring (opening) the device, waiting for the operator, unmounted,
  *   ...
@@ -71,13 +71,13 @@ namespace storagedaemon {
  * Device::Lock()   does lock_mutex(mutex_)     (in dev.h)
  * Device::Unlock() does unlock_mutex(mutex_)
  *
- * Device::WaitUntilUnblocked() waits while another thread has blocked the
- *                              device. It requires the device mutex to be
- *                              held and leaves it held.
+ * Device::WaitUntilOtherThreadReleasesBlock() waits while another thread has
+ * blocked the device. It requires the device mutex to be held and leaves it
+ * held.
  *
  * Device::dblock(why) does
  * - Lock()
- * - WaitUntilUnblocked()
+ * - WaitUntilOtherThreadReleasesBlock()
  * - BlockDevice(this, why)
  * - Unlock()
  *
@@ -115,7 +115,7 @@ namespace storagedaemon {
 void Device::dblock(int why)
 {
   Lock();
-  WaitUntilUnblocked();
+  WaitUntilOtherThreadReleasesBlock();
   BlockDevice(this, why);
   Unlock();
 }
@@ -137,7 +137,7 @@ void DeviceControlRecord::mLock(bool locked)
     return;
   }
   if (!locked) { dev->Lock(); }
-  dev->WaitUntilUnblocked();
+  dev->WaitUntilOtherThreadReleasesBlock();
   IncDevLock();
   unlock_mutex(r_mutex);
   return;
@@ -194,10 +194,10 @@ int Device::NextVolTimedwait(const struct timespec* timeout)
  * Wait until another thread unblocks the device.
  *
  * When blocked is set, all threads EXCEPT thread with id no_wait_id
- * wait. The no_wait_id thread is out obtaining a new volume and preparing
- * the label. The device mutex must be held on entry and remains held on exit.
+ * wait. A block owned by the current thread is left intact. The device mutex
+ * must be held on entry and remains held on exit.
  */
-void Device::WaitUntilUnblocked()
+void Device::WaitUntilOtherThreadReleasesBlock()
 {
   if (blocked() && !pthread_equal(no_wait_id, pthread_self())) {
     num_waiting++; /* indicate that I am waiting */
@@ -205,7 +205,8 @@ void Device::WaitUntilUnblocked()
       int status;
       char ed1[50], ed2[50];
 
-      Dmsg3(sd_debuglevel, "WaitUntilUnblocked blocked=%s no_wait=%s me=%s\n",
+      Dmsg3(sd_debuglevel,
+            "WaitUntilOtherThreadReleasesBlock blocked=%s no_wait=%s me=%s\n",
             print_blocked(), edit_pthread(no_wait_id, ed1, sizeof(ed1)),
             edit_pthread(pthread_self(), ed2, sizeof(ed2)));
       if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
@@ -223,9 +224,10 @@ void Device::WaitUntilUnblocked()
  * Block all other threads from using the device
  *
  * Device must already be locked.  After this call,
- * the device is blocked to any thread calling WaitUntilUnblocked(), but the
- * device is not locked (i.e. no P on device). Also, the current thread can
- * pass through WaitUntilUnblocked() without blocking.
+ * the device is blocked to any thread calling
+ * WaitUntilOtherThreadReleasesBlock(), but the device is not locked (i.e. no P
+ * on device). Also, the current thread can pass through
+ * WaitUntilOtherThreadReleasesBlock() without blocking.
  */
 void _blockDevice(const char* file, int line, Device* dev, int state)
 {

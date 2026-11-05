@@ -485,7 +485,7 @@ public:
   virtual bool d_flush(DeviceControlRecord*) { return true; };
 
     // Locking and blocking calls
-  void WaitUntilUnblocked();
+  void WaitUntilOtherThreadReleasesBlock();
   void Lock();
   void Unlock();
   void Lock_acquire();

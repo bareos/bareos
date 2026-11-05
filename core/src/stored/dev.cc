@@ -26,7 +26,7 @@
  * low level operations on device (storage device)
  *
  * NOTE!!!! None of these routines are reentrant. You must
- * use dev->Lock(), dev->WaitUntilUnblocked(), and dev->Unlock()
+ * use dev->Lock(), dev->WaitUntilOtherThreadReleasesBlock(), and dev->Unlock()
  * at a higher level,
  * or use the xxx_device() equivalents. By moving the
  * thread synchronization to a higher level, we permit

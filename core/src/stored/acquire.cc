@@ -432,7 +432,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
 
 
   {
-    dev->WaitUntilUnblocked();
+    dev->WaitUntilOtherThreadReleasesBlock();
     BlockDevice(dev, BST_DOING_ACQUIRE);
     dev->Unlock();
     Dmsg1(190, "jid=%" PRIu32 " Do mount_next_write_vol\n", jcr->JobId);
@@ -496,11 +496,11 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
 
   // Honor another job's acquisition/despooling block before using the backend.
   dev->Lock();
-  dev->WaitUntilUnblocked();
+  dev->WaitUntilOtherThreadReleasesBlock();
   if (!dev->IsBlocked()) {
     BlockDevice(dev, BST_RELEASING);
   } else {
-    // rLock permits an existing block only when this thread owns it.
+    // The wait permits an existing block only when this thread owns it.
     dev->SetBlocked(BST_RELEASING);
   }
   dev->Unlock();

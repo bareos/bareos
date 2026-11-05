@@ -265,7 +265,7 @@ bool FirstOpenDevice(DeviceControlRecord* dcr)
   if (!dev) { return false; }
 
   dev->Lock();
-  dev->WaitUntilUnblocked();
+  dev->WaitUntilOtherThreadReleasesBlock();
 
   /* Defer opening files */
   if (!dev->IsTape()) {

@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 
   // For we must now acquire the device for writing
   out_dev->Lock();
-  out_dev->WaitUntilUnblocked();
+  out_dev->WaitUntilOtherThreadReleasesBlock();
   if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();
