@@ -237,11 +237,6 @@ site_metadata fetch_metadata(http::client* client, const std::string& url)
   return {token_endpoint, jwks_uri, issuer, device_authorization_endpoint};
 }
 
-struct rsa_key {
-  std::vector<char> exponent;
-  std::vector<char> modulus;
-};
-
 using keyset = std::unordered_map<std::string, evp_pkey>;
 
 evp_pkey create_public_key(std::span<const char> modulus,
@@ -411,9 +406,9 @@ keyset get_keys(http::client* client,
         continue;
       }
 
-      evp_pkey key{X509_get_pubkey(cert.get())};
+      evp_pkey public_key{X509_get_pubkey(cert.get())};
 
-      if (!key) {
+      if (!public_key) {
         Dmsg0(300,
               "OpenSSL could not extract key from certificate for %s ---> "
               "Skipped\n",
@@ -422,14 +417,14 @@ keyset get_keys(http::client* client,
       }
 
       Dmsg0(300, "Adding key %s\n", key_id);
-      keys.emplace(key_id, std::move(key));
+      keys.emplace(key_id, std::move(public_key));
     } else if (key_modulus64 && key_exponent64) {
-      rsa_key rsa;
+      std::vector<char> modulus, exponent;
       std::string_view m64{key_modulus64};
-      rsa.modulus.resize(m64.size() + 1);
+      modulus.resize(m64.size() + 1);
 
-      auto actual_size = Base64ToBin(rsa.modulus.data(), rsa.modulus.size(),
-                                     m64.data(), m64.size());
+      auto actual_size
+          = Base64ToBin(modulus.data(), modulus.size(), m64.data(), m64.size());
 
       if (actual_size <= 0) {
         Dmsg0(300, "Could not decode modulus for key %s ---> Skipped\n",
@@ -437,13 +432,13 @@ keyset get_keys(http::client* client,
         continue;
       }
 
-      rsa.modulus.resize(actual_size);
+      modulus.resize(actual_size);
 
       std::string_view e64{key_exponent64};
-      rsa.exponent.resize(e64.size() + 1);
+      exponent.resize(e64.size() + 1);
 
-      actual_size = Base64ToBin(rsa.exponent.data(), rsa.exponent.size(),
-                                e64.data(), e64.size());
+      actual_size = Base64ToBin(exponent.data(), exponent.size(), e64.data(),
+                                e64.size());
 
       if (actual_size <= 0) {
         Dmsg0(300, "Could not decode exponent for key %s ---> Skipped\n",
@@ -451,11 +446,11 @@ keyset get_keys(http::client* client,
         continue;
       }
 
-      rsa.exponent.resize(actual_size);
+      exponent.resize(actual_size);
 
       Dmsg0(300, "Adding key %s\n", key_id);
-      auto key = create_public_key(rsa.modulus, rsa.exponent);
-      keys.emplace(key_id, std::move(key));
+      auto public_key = create_public_key(modulus, exponent);
+      keys.emplace(key_id, std::move(public_key));
     } else {
       // we should never get here, as this is checked above
       ASSERT(!"No key data included");
