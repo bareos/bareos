@@ -2520,37 +2520,6 @@ std::optional<int> receive_fd(int unix_socket, int expected_name)
   }
 }
 
-bool send_fd(int unix_socket, int fd)
-{
-  struct msghdr msg = {};
-  char buf[CMSG_SPACE(sizeof(fd))] = {};
-  char name_buf[sizeof(fd)];
-  memcpy(name_buf, &fd, sizeof(fd));
-  iovec io = {.iov_base = name_buf, .iov_len = sizeof(name_buf)};
-
-
-  msg.msg_iov = &io;
-  msg.msg_iovlen = 1;
-  msg.msg_control = buf;
-  msg.msg_controllen = sizeof(buf);
-
-  struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
-  cmsg->cmsg_level = SOL_SOCKET;
-  cmsg->cmsg_type = SCM_RIGHTS;
-  cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
-
-  memcpy(CMSG_DATA(cmsg), &fd, sizeof(fd));
-
-  msg.msg_controllen = CMSG_SPACE(sizeof(fd));
-
-  if (auto res = sendmsg(unix_socket, &msg, MSG_NOSIGNAL); res < 0) {
-    DebugLog(50, FMT_STRING("could not send fd {}. Err={}"), fd,
-             strerror(errno));
-  }
-
-  return false;
-}
-
 static bool full_read(int fd, char* data, size_t size)
 {
   size_t bytes_read = 0;

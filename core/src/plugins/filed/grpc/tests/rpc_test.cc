@@ -25,7 +25,11 @@
 #include "../bridge_module/bridge_module.cc"
 #pragma GCC diagnostic pop
 #undef main
+#include "../grpc_impl.h"
 #include <gtest/gtest.h>
+
+bool send_fd(int unix_socket, int fd);
+std::optional<int> receive_fd(int unix_socket, int expected_name);
 
 namespace {
 class TestCore : public bc::Core::Service {
@@ -104,5 +108,40 @@ TEST_F(GrpcCoreTest, ClearSeenRoundTrip)
           fail ? bRC_Error : bRC_OK);
     }
   }
+}
+
+TEST_F(GrpcCoreTest, DescriptorSenderTransfersUsableDescriptor)
+{
+  int sockets[2];
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  Socket sender{sockets[0]};
+  Socket receiver{sockets[1]};
+  int descriptors[2];
+  ASSERT_EQ(pipe(descriptors), 0);
+  Socket source{descriptors[0]};
+  Socket sink{descriptors[1]};
+  const int name = source.get();
+  ASSERT_TRUE(send_fd(sender.get(), name));
+  source = Socket{};
+
+  auto received = receive_fd(receiver.get(), name);
+  ASSERT_TRUE(received);
+  Socket transferred{*received};
+  constexpr std::string_view payload{"hello"};
+  ASSERT_EQ(write(sink.get(), payload.data(), payload.size()), payload.size());
+  char data[payload.size()]{};
+  ASSERT_EQ(read(transferred.get(), data, sizeof(data)), sizeof(data));
+  EXPECT_EQ(std::string_view(data, sizeof(data)), payload);
+}
+
+TEST_F(GrpcCoreTest, DescriptorSenderReportsClosedPeer)
+{
+  int sockets[2];
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  Socket sender{sockets[0]};
+  close(sockets[1]);
+  Socket source{open("/dev/null", O_RDONLY)};
+  ASSERT_GE(source.get(), 0);
+  EXPECT_FALSE(send_fd(sender.get(), source.get()));
 }
 }  // namespace
