@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -296,14 +296,14 @@ void SplitPathAndFilename(const char* fname,
   Dmsg2(200, "after strip len=%d f=%s\n", len, f);
   *fnl = fname - f + len;
   if (*fnl > 0) {
-    file = CheckPoolMemorySize(file, *fnl + 1);
+    file = EnsurePoolMemoryCapacity(file, *fnl + 1);
     memcpy(file, f, *fnl); /* copy filename */
   }
   file[*fnl] = '\0';
 
   *pnl = f - fname;
   if (*pnl > 0) {
-    path = CheckPoolMemorySize(path, *pnl + 1);
+    path = EnsurePoolMemoryCapacity(path, *pnl + 1);
     memcpy(path, fname, *pnl);
   }
   path[*pnl] = '\0';

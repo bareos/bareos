@@ -351,7 +351,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     }
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Dmsg0(debuglevel, "Cancel return from GeneratePluginEvent\n");
     rc = bRC_Cancel;
   }
@@ -598,7 +598,7 @@ void NewPlugins(JobControlRecord* jcr)
     Dmsg0(debuglevel, "No sd plugin list!\n");
     return;
   }
-  if (jcr->IsJobCanceled()) { return; }
+  if (jcr->IsJobAbortedOrCanceled()) { return; }
   // If plugins already loaded, just return
   if (jcr->plugin_ctx_list) { return; }
 

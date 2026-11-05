@@ -227,7 +227,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
                 other_device->print_name(), other_device->GetSlot());
           Dmsg2(100, "num_writ=%d reserved=%d\n", other_device->num_writers,
                 other_device->NumReserved());
-          VolumeUnused(dcr);
+          MarkVolumeUnused(dcr);
 
           UnlockChanger(dcr);
           goto bail_out;
@@ -513,9 +513,10 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
    * calling function. */
   if (!lock_set) { UnlockChanger(dcr); }
 
-  // FreeVolume outside from changer lock
+  // Release the volume reservation outside the changer lock.
   if (IsSlotNumberValid(loaded_slot)) {
-    FreeVolume(dev); /* Free any volume associated with this drive */
+    ReleaseVolumeReservationUnlessSwapping(
+        dev); /* Free any volume associated with this drive */
   }
 
   if (retval) { dev->ClearUnload(); }
@@ -641,7 +642,8 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
    * calling function. */
   if (!lock_set) { UnlockChanger(dcr); }
 
-  FreeVolume(dev); /* Free any volume associated with this drive */
+  ReleaseVolumeReservationUnlessSwapping(
+      dev); /* Free any volume associated with this drive */
   FreePoolMemory(ChangerCmd);
 
   return retval;

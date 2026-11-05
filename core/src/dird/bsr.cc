@@ -607,7 +607,7 @@ bool OpenBootstrapFile(JobControlRecord* jcr, bootstrap_info& info)
   }
 
   ua = new UaContext(jcr);
-  ua->cmd = CheckPoolMemorySize(ua->cmd, UA_CMD_SIZE + 1);
+  ua->cmd = EnsurePoolMemoryCapacity(ua->cmd, UA_CMD_SIZE + 1);
   while (!fgets(ua->cmd, UA_CMD_SIZE, bs)) {
     ParseUaArgs(ua);
     if (ua->argc != 1) { continue; }

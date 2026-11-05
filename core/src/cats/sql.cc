@@ -373,7 +373,7 @@ void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
    */
   fnl = p - f;
   if (fnl > 0) {
-    fname = CheckPoolMemorySize(fname, fnl + 1);
+    fname = EnsurePoolMemoryCapacity(fname, fnl + 1);
     memcpy(fname, f, fnl); /* copy filename */
     fname[fnl] = 0;
   } else {
@@ -383,7 +383,7 @@ void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
 
   pnl = f - filename;
   if (pnl > 0) {
-    path = CheckPoolMemorySize(path, pnl + 1);
+    path = EnsurePoolMemoryCapacity(path, pnl + 1);
     memcpy(path, filename, pnl);
     path[pnl] = 0;
   } else {

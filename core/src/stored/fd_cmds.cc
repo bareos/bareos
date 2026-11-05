@@ -137,8 +137,8 @@ void RunJob(JobControlRecord* jcr)
   Dmsg1(120, "Start run Job=%s\n", jcr->Job);
   dir->fsend(Job_start, jcr->Job);
   jcr->start_time = time(NULL);
-  jcr->run_time = jcr->start_time;
-  jcr->sendJobStatus(JS_Running);
+  jcr->transfer_rate_start_time = jcr->start_time;
+  jcr->UpdateAndSendJobStatus(JS_Running);
 
   Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,
        kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
@@ -183,7 +183,7 @@ void DoFdCommands(JobControlRecord* jcr)
         jcr->errmsg[0] = 0;
         if (!fd_cmds[i].func(jcr)) { /* do command */
           // Note fd->msg command may be destroyed by comm activity
-          if (!jcr->IsJobCanceled()) {
+          if (!jcr->IsJobAbortedOrCanceled()) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
                     T_("Command error with FD, hanging up. %s\n"), jcr->errmsg);
@@ -200,7 +200,7 @@ void DoFdCommands(JobControlRecord* jcr)
     }
 
     if (!found) { /* command not found */
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("FD command not found: %s\n"), fd->msg);
         Dmsg1(110, "<filed: Command not found: %s", fd->msg);
       }

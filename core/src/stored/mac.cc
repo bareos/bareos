@@ -93,7 +93,7 @@ static bool response(JobControlRecord* jcr,
     Dmsg1(110, "<stored: %s", sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     return false; /* if canceled avoid useless error messages */
   }
   if (IsBnetError(sd)) {
@@ -344,7 +344,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
   // Send a EOD when needed.
   if (send_eod) {
     if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
@@ -355,7 +355,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
   // Send a header when needed.
   if (send_header) {
     if (!sd->fsend("%d %" PRId32 " 0", rec->FileIndex, rec->Stream)) {
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
@@ -374,7 +374,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr,
   if (!sd->send()) {
     sd->msg = msgsave;
     sd->message_length = 0;
-    if (!jcr->IsJobCanceled()) {
+    if (!jcr->IsJobAbortedOrCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
@@ -522,7 +522,7 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    jcr->sendJobStatus(JS_Running);
+    jcr->UpdateAndSendJobStatus(JS_Running);
 
     // Set network buffering.
     sd = jcr->store_bsock;
@@ -579,7 +579,7 @@ bool DoMacRun(JobControlRecord* jcr)
     /* Send the last EOD to close the last data transfer and a next EOD to
      * signal the remote we are done. */
     if (!sd->signal(BNET_EOD) || !sd->signal(BNET_EOD)) {
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
               sd->bstrerror());
       }
@@ -647,7 +647,7 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    jcr->sendJobStatus(JS_Running);
+    jcr->UpdateAndSendJobStatus(JS_Running);
 
     // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
@@ -664,7 +664,7 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     jcr->sd_impl->dcr->VolFirstIndex = jcr->sd_impl->dcr->VolLastIndex = 0;
-    jcr->run_time = time(NULL);
+    jcr->transfer_rate_start_time = time(NULL);
     SetStartVolPosition(jcr->sd_impl->dcr);
     jcr->JobFiles = 0;
 
@@ -697,7 +697,7 @@ bail_out:
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
         // Print only if ok and not cancelled to avoid spurious messages
 
-        if (ok && !jcr->IsJobCanceled()) {
+        if (ok && !jcr->IsJobAbortedOrCanceled()) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Error writing end session label. ERR=%s\n"),
                 dev->bstrerror());
@@ -727,7 +727,7 @@ bail_out:
       CommitDataSpool(jcr->sd_impl->dcr);
     }
 
-    job_elapsed = time(NULL) - jcr->run_time;
+    job_elapsed = time(NULL) - jcr->transfer_rate_start_time;
     if (job_elapsed <= 0) { job_elapsed = 1; }
 
     Jmsg(jcr, M_INFO, 0,
@@ -736,7 +736,7 @@ bail_out:
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 
     // send final Vol info to DIR
-    if (!ok || jcr->IsJobCanceled()) {
+    if (!ok || jcr->IsJobAbortedOrCanceled()) {
       DiscardAttributeSpool(jcr);
     } else {
       CommitAttributeSpool(jcr);

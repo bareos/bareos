@@ -41,29 +41,29 @@ struct SchedulerJobItem {
   SchedulerJobItem(std::shared_ptr<LoadedConfiguration> config_to_use,
                    JobResource* job_in,
                    RunResource* run_in,
-                   time_t runtime_in,
+                   time_t scheduled_time_in,
                    int priority_in,
                    JobTrigger job_kickoff_in) noexcept
       : config{std::move(config_to_use)}
       , job(job_in)
       , run(run_in)
-      , runtime(runtime_in)
+      , scheduled_time(scheduled_time_in)
       , priority(priority_in)
       , job_trigger(job_kickoff_in)
   {
-    is_valid = job && runtime;
+    is_valid = job && scheduled_time;
   }
 
   bool operator==(const SchedulerJobItem& rhs) const
   {
-    return runtime == rhs.runtime && job == rhs.job && priority == rhs.priority
-           && run == rhs.run;
+    return scheduled_time == rhs.scheduled_time && job == rhs.job
+           && priority == rhs.priority && run == rhs.run;
   }
 
   std::shared_ptr<LoadedConfiguration> config{};
   JobResource* job{nullptr};
   RunResource* run{nullptr};
-  time_t runtime{0};
+  time_t scheduled_time{0};
   int priority{10};
   bool is_valid{false};
   JobTrigger job_trigger{JobTrigger::kUndefined};
@@ -79,7 +79,7 @@ class SchedulerJobItemQueue {
   void EmplaceItem(std::shared_ptr<LoadedConfiguration> conf,
                    JobResource* job,
                    RunResource* run,
-                   time_t runtime,
+                   time_t scheduled_time,
                    JobTrigger job_trigger);
   bool Empty() const;
   void Clear();

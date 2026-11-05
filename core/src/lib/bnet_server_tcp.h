@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,7 +46,7 @@ void close_socket(int fd);
 
 struct s_sockfd {
   int fd{-1};
-  int port{0};
+  int port_network_order{0};
 
   s_sockfd() = default;
 
@@ -56,7 +56,7 @@ struct s_sockfd {
   s_sockfd& operator=(s_sockfd&& other)
   {
     std::swap(other.fd, fd);
-    std::swap(other.port, port);
+    std::swap(other.port_network_order, port_network_order);
     return *this;
   }
 

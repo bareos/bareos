@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,7 @@ static void* copy_thread(void* data)
     size_t cnt;
 
     // Dequeue an item from the circular buffer.
-    auto* save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
+    auto* save_data = (CP_THREAD_SAVE_DATA*)context->cb->wait_and_peek();
 
     while (save_data) {
       auto total_length = save_data->data_len;
@@ -56,7 +56,7 @@ static void* copy_thread(void* data)
       // dequeue invalidates save_data!
       context->cb->dequeue();
       if (cnt < total_length) { return NULL; }
-      save_data = (CP_THREAD_SAVE_DATA*)context->cb->peek();
+      save_data = (CP_THREAD_SAVE_DATA*)context->cb->wait_and_peek();
     }
 
     /* Need to synchronize the main thread and this one so the main thread

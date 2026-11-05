@@ -970,7 +970,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     return false;
   }
 
-  rec->data = CheckPoolMemorySize(rec->data, rec->data_len + data_bytes);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, rec->data_len + data_bytes);
 
   /* At this point, we have read the header, now we
    * must transfer as much of the data record as

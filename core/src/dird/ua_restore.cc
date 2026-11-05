@@ -56,6 +56,13 @@
 
 namespace directordaemon {
 
+// Route the shared SQL count callback to either restore count without reusing
+// the selected JobId as temporary count storage.
+struct RestoreCountContext {
+  uint32_t& result_count;
+  bool& query_returned_row;
+};
+
 /* Imported functions */
 extern void PrintBsr(UaContext* ua, RestoreBootstrapRecord* bsr);
 
@@ -90,7 +97,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
 static bool get_date(UaContext* ua, char* date, int date_len);
-static int RestoreCountHandler(void* ctx, int num_fields, char** row);
+static int RestoreCountHandler(void* context, int num_fields, char** row);
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
@@ -1245,7 +1252,7 @@ static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
     auto escaped_fname = ua->db->EscapeString(
         ua->jcr, std::string_view{f, static_cast<size_t>(fnl)});
     if (!escaped_fname) { return false; }
-    rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
+    rx->fname = EnsurePoolMemoryCapacity(rx->fname, escaped_fname->size() + 1);
     PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
@@ -1257,7 +1264,7 @@ static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
     auto escaped_path = ua->db->EscapeString(
         ua->jcr, std::string_view{name, static_cast<size_t>(pnl)});
     if (!escaped_path) { return false; }
-    rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
+    rx->path = EnsurePoolMemoryCapacity(rx->path, escaped_path->size() + 1);
     PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
@@ -1363,13 +1370,14 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_count_files>(
         rx->query, edit_int64(JobId, ed1));
     rx->found = false;
-    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
+    RestoreCountContext file_count_result{rx->FileCountEstimate, rx->found};
+    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, &file_count_result)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     if (rx->found) {
       // Add about 25% more than this job for over estimate
-      tree.FileEstimate = rx->JobId + (rx->JobId >> 2);
-      tree.DeltaCount = rx->JobId / 50; /* print 50 ticks */
+      tree.FileEstimate = rx->FileCountEstimate + (rx->FileCountEstimate >> 2);
+      tree.DeltaCount = rx->FileCountEstimate / 50; /* print 50 ticks */
     }
   }
 
@@ -1394,11 +1402,12 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
          rx->JobIds);
     rx->found = false;
-    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
+    RestoreCountContext purged_job_count_result{rx->PurgedJobCount, rx->found};
+    if (!ua->db->SqlQuery(rx->query, RestoreCountHandler,
+                          &purged_job_count_result)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
-    // rx->JobId is the PurgedFiles flag
-    if (rx->found && rx->JobId > 0) {
+    if (rx->found && rx->PurgedJobCount > 0) {
       tree.FileCount = 0; /* set count to zero, no tree selection */
     }
   }
@@ -1712,11 +1721,11 @@ bail_out:
   return ok;
 }
 
-static int RestoreCountHandler(void* ctx, int, char** row)
+static int RestoreCountHandler(void* context, int, char** row)
 {
-  RestoreContext* rx = (RestoreContext*)ctx;
-  rx->JobId = str_to_int64(row[0]);
-  rx->found = true;
+  auto* count_result = static_cast<RestoreCountContext*>(context);
+  count_result->result_count = str_to_int64(row[0]);
+  count_result->query_returned_row = true;
   return 0;
 }
 
@@ -1729,8 +1738,8 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row)
   RestoreContext* rx = (RestoreContext*)ctx;
 
   Dmsg2(200, "JobId=%s FileIndex=%s\n", row[0], row[1]);
-  rx->JobId = str_to_int64(row[0]);
-  AddFindex(rx->bsr.get(), rx->JobId, str_to_int64(row[1]));
+  rx->SelectedJobId = str_to_int64(row[0]);
+  AddFindex(rx->bsr.get(), rx->SelectedJobId, str_to_int64(row[1]));
   rx->found = true;
   rx->selected_files++;
 

@@ -79,7 +79,7 @@ class Bvfs {
       pattern[0] = 0;
       return;
     }
-    pattern = CheckPoolMemorySize(pattern, escaped_pattern->size() + 1);
+    pattern = EnsurePoolMemoryCapacity(pattern, escaped_pattern->size() + 1);
     PmStrcpy(pattern, escaped_pattern->c_str());
   }
 

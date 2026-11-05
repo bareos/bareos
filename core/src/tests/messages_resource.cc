@@ -109,7 +109,7 @@ TEST(messages_resource, send_message_to_all_configured_destinations)
     if (regress_debug == "1") { debug_level = 200; }
   }
 
-  SetWorkingDirectory(working_dir.c_str());
+  SetConfiguredWorkingDirectory(working_dir.c_str());
   InitConsoleMsg(log_dir.c_str());
 
   // parse config

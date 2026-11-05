@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -149,10 +149,10 @@ inline bool CryptoDigestFinalize(DIGEST* digest,
 }
 void CryptoDigestFree(DIGEST* digest);
 SIGNATURE* crypto_sign_new(JobControlRecord* jcr);
-crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
-                                   X509_KEYPAIR* keypair,
-                                   crypto_digest_t& algorithm,
-                                   DIGEST** digest);
+crypto_error_t CreateDigestContextForSigner(SIGNATURE* sig,
+                                            X509_KEYPAIR* keypair,
+                                            crypto_digest_t& algorithm,
+                                            DIGEST** digest);
 crypto_error_t CryptoSignVerify(SIGNATURE* sig,
                                 X509_KEYPAIR* keypair,
                                 DIGEST* digest);

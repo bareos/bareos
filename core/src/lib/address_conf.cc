@@ -218,7 +218,7 @@ const char* IPADDR::build_address_str(char* buf,
 
 
 // check if two addresses are the same
-bool IsSameIpAddress(IPADDR* first, IPADDR* second)
+bool SockaddrsAreBytewiseEqual(IPADDR* first, IPADDR* second)
 {
   if (first == nullptr || second == nullptr) { return false; }
   return (first->GetSockaddrLen() == second->GetSockaddrLen()
@@ -463,7 +463,7 @@ int AddAddress(dlist<IPADDR>** out,
       bool sameaddress = false;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (IsSameIpAddress(iaddr, jaddr)) {
+        if (SockaddrsAreBytewiseEqual(iaddr, jaddr)) {
           sameaddress = true;
           break;
         }

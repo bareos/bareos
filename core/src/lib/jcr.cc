@@ -743,7 +743,7 @@ bool JobControlRecord::sendJobStatus()
 }
 
 // Set and send Job status to Director
-bool JobControlRecord::sendJobStatus(int newJobStatus)
+bool JobControlRecord::UpdateAndSendJobStatus(int newJobStatus)
 {
   if (!is_JobStatus(newJobStatus)) {
     setJobStatusWithPriorityCheck(newJobStatus);
@@ -866,11 +866,11 @@ void JobControlRecord::UpdateJobStats()
   time_t now = time(nullptr);
   int sec;
 
-  if (last_time == 0) { last_time = run_time; }
+  if (last_time == 0) { last_time = transfer_rate_start_time; }
   sec = now - last_time;
   if (sec <= 0) { sec = 1; }
   LastRate = (JobBytes - LastJobBytes) / sec;
-  time_t totalruntime = now - run_time;
+  time_t totalruntime = now - transfer_rate_start_time;
   if (totalruntime <= 0) { totalruntime = 1; }
   AverageRate = JobBytes / totalruntime;
   LastJobBytes = JobBytes;
@@ -1091,7 +1091,7 @@ void JobControlRecord::CancelFinished()
                                                  cancel_status::Finished));
 }
 
-void JobControlRecord::EnterFinish()
+void JobControlRecord::PreventNewCancellationAndWaitForCancellationToFinish()
 {
   // We want to wait until cancelled_status is set to Finished.
   // We are only allowed to change this ourselves if its currently

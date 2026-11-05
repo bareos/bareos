@@ -125,8 +125,8 @@ void htableImpl::init(int tsize)
   rshift = 30 - pwr;  /* Start using bits 28, 29, 30 */
   buckets = 1 << pwr; /* Hash table size -- power of two */
 
-  mask = buckets - 1;      /* 3 bits => table size = 8 */
-  max_items = buckets * 4; /* Allow average nr_entries entries per chain */
+  mask = buckets - 1;           /* 3 bits => table size = 8 */
+  grow_threshold = buckets * 4; /* Allow average nr_entries entries per chain */
   table = std::make_unique<hlink*[]>(buckets);
   memset(table.get(), 0, buckets * sizeof(hlink*));
 }
@@ -164,7 +164,7 @@ void htableImpl::stats()
   }
   for (i = 0; i < MAX_COUNT; i++) { printf("%2d:           %d\n", i, hits[i]); }
   printf("buckets=%" PRIu32 " num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
-         buckets, num_items, max_items);
+         buckets, num_items, grow_threshold);
   printf("max hits in a bucket = %d\n", max);
 }
 
@@ -176,8 +176,8 @@ void htableImpl::grow_table()
   Dmsg1(100, "Grow called old size = %" PRIu32 "\n", buckets);
 
   // Setup a bigger table, we grow by approx 2x here,
-  // i.e. big.max_items ~ 2 * max_items.
-  htableImpl big{loffset, max_items};
+  // i.e. big.grow_threshold ~ 2 * grow_threshold.
+  htableImpl big{loffset, grow_threshold};
 
   // Insert all the items in the new hash table
   Dmsg1(100, "Before copy num_items=%" PRIu32 "\n", num_items);
@@ -250,9 +250,9 @@ bool htableImpl::insert(char* key, void* item)
   Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%s\n",
         hp->next, cast(hp->hash), hp->key.char_key);
 
-  if (++num_items >= max_items) {
+  if (++num_items >= grow_threshold) {
     Dmsg2(debuglevel, "num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
-          num_items, max_items);
+          num_items, grow_threshold);
     grow_table();
   }
 
@@ -289,9 +289,9 @@ bool htableImpl::insert(uint32_t key, void* item)
         "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%" PRIu32 "\n",
         hp->next, cast(hp->hash), hp->key.uint32_key);
 
-  if (++num_items >= max_items) {
+  if (++num_items >= grow_threshold) {
     Dmsg2(debuglevel, "num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
-          num_items, max_items);
+          num_items, grow_threshold);
     grow_table();
   }
 
@@ -329,9 +329,9 @@ bool htableImpl::insert(uint64_t key, void* item)
         "Insert hp->next=%p hp->hash=0x%" PRIx64 " hp->key=%" PRIu64 "\n",
         hp->next, cast(hp->hash), hp->key.uint64_key);
 
-  if (++num_items >= max_items) {
+  if (++num_items >= grow_threshold) {
     Dmsg2(debuglevel, "num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
-          num_items, max_items);
+          num_items, grow_threshold);
     grow_table();
   }
 
@@ -368,9 +368,9 @@ bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
   Dmsg2(debuglevel, "Insert hp->next=%p hp->hash=0x%" PRIx64 "\n", hp->next,
         cast(hp->hash));
 
-  if (++num_items >= max_items) {
+  if (++num_items >= grow_threshold) {
     Dmsg2(debuglevel, "num_items=%" PRIu32 " max_items=%" PRIu32 "\n",
-          num_items, max_items);
+          num_items, grow_threshold);
     grow_table();
   }
 

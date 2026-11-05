@@ -53,7 +53,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     PRINTF_LIKE(4, 5);
 
 bool GetTrace(void);
-const char* get_basename(const char* pathname);
+const char* GetFilenameWithParentDirectory(const char* pathname);
 void SetLogTimestampFormat(const char* format);
 
 using DbLogInsertCallback = std::function<

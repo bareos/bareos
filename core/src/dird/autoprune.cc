@@ -46,7 +46,7 @@ void DoAutoprune(JobControlRecord* jcr)
   JobResource* job;
   ClientResource* client;
   PoolResource* pool;
-  bool pruned;
+  bool pruning_attempted;
 
   if (!jcr->dir_impl->res.client) { /* temp -- remove me */
     return;
@@ -59,16 +59,16 @@ void DoAutoprune(JobControlRecord* jcr)
 
   if (job->PruneJobs || client->AutoPrune) {
     PruneJobs(&ua, client, pool);
-    pruned = true;
+    pruning_attempted = true;
   } else {
-    pruned = false;
+    pruning_attempted = false;
   }
 
   if (job->PruneFiles || client->AutoPrune) {
     PruneFiles(&ua, client, pool);
-    pruned = true;
+    pruning_attempted = true;
   }
-  if (pruned) { Jmsg(jcr, M_INFO, 0, T_("End auto prune.\n\n")); }
+  if (pruning_attempted) { Jmsg(jcr, M_INFO, 0, T_("End auto prune.\n\n")); }
 }
 
 /**
@@ -172,7 +172,7 @@ void PruneVolumes(JobControlRecord* jcr,
         PurgeJobListFromCatalog(&ua, prune_list);
         prune_list.clear(); /* reset count */
       }
-      if (!IsVolumePurged(&ua, &lmr)) {
+      if (!MarkVolumePurgedIfEmpty(&ua, &lmr)) {
         Dmsg1(050, "Vol=%s not pruned\n", lmr.VolumeName);
         continue;
       }
@@ -193,7 +193,7 @@ void PruneVolumes(JobControlRecord* jcr,
         continue;
       }
 
-      if (HasVolumeExpired(jcr, &lmr)) {
+      if (UpdateVolumeStatusIfExpired(jcr, &lmr)) {
         Dmsg1(100, "Vol=%s has expired\n", lmr.VolumeName);
         continue; /* Volume not usable */
       }

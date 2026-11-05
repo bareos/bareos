@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,7 +116,7 @@ class OutputFormatter {
 
  private:
   // Members
-  int api = 0;
+  int api_mode_ = 0;
   bool compact = false;
   SEND_HANDLER* send_func = nullptr;
   FILTER_HANDLER* filter_func = nullptr;
@@ -163,8 +163,8 @@ class OutputFormatter {
 
   ~OutputFormatter();
 
-  void SetMode(int mode) { api = mode; }
-  int GetMode() { return api; }
+  void SetMode(int mode) { api_mode_ = mode; }
+  int GetMode() { return api_mode_; }
 
   /* Allow to set compact output mode. Only used for json api mode.
    * There it can reduce the size of message by 1/3. */

@@ -117,7 +117,7 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
   if (attr->type == FT_RESTORE_FIRST) {
     /* We have an object, so do a binary copy */
     object_len = reclen + rec - p;
-    attr->attrEx = CheckPoolMemorySize(attr->attrEx, object_len + 1);
+    attr->attrEx = EnsurePoolMemoryCapacity(attr->attrEx, object_len + 1);
     memcpy(attr->attrEx, p, object_len);
     /* Add a EOS for those who attempt to print the object */
     p = attr->attrEx + object_len;

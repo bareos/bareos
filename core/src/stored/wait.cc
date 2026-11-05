@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,7 +67,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
   /* Since we want to mount a tape, make sure current one is
    *  not marked as using this drive. */
-  VolumeUnused(dcr);
+  MarkVolumeUnused(dcr);
 
   unmounted = dev->IsDeviceUnmounted();
   dev->poll = false;
@@ -89,11 +89,11 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
   if (!unmounted) {
     Dmsg1(debuglevel, "blocked=%s\n", dev->print_blocked());
-    dev->dev_prev_blocked = dev->blocked();
+    dev->previous_blocked_state = dev->blocked();
     dev->SetBlocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
   }
 
-  while (!jcr->IsJobCanceled()) {
+  while (!jcr->IsJobAbortedOrCanceled()) {
     time_t now, start, total_waited;
 
     gettimeofday(&tv, NULL);
@@ -192,7 +192,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
   }
 
   if (!unmounted) {
-    dev->SetBlocked(dev->dev_prev_blocked); /* restore entry state */
+    dev->SetBlocked(dev->previous_blocked_state); /* restore entry state */
     Dmsg1(debuglevel, "set %s\n", dev->print_blocked());
   }
   Dmsg1(debuglevel, "Exit blocked=%s\n", dev->print_blocked());

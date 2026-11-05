@@ -29,7 +29,8 @@ TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
-  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
+  const auto session
+      = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
   ASSERT_EQ(session->directors.size(), 1U);
@@ -38,7 +39,7 @@ TEST(ProxyAuthSessionStore, CreatesLooksUpAndRemovesSessions)
   EXPECT_EQ(session->directors.at("bareos-dir").password, "secret");
 
   ProxyAuthSessionStore::RemoveSession(session_id);
-  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 }
 
 TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
@@ -49,7 +50,8 @@ TEST(ProxyAuthSessionStore, StoresAdditionalDirectorCredentials)
   ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
       session_id, "site-b", "ops", "site-secret"));
 
-  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
+  const auto session
+      = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id);
   ASSERT_TRUE(session);
   ASSERT_EQ(session->directors.size(), 2U);
   ASSERT_TRUE(session->directors.contains("site-b"));
@@ -67,12 +69,12 @@ TEST(ProxyAuthSessionStore, RemovesDirectors)
       session_id, "site-b", "ops", "site-secret"));
 
   ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "site-b"));
-  auto session = ProxyAuthSessionStore::LookupSession(session_id);
+  auto session = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id);
   ASSERT_TRUE(session);
   EXPECT_FALSE(session->directors.contains("site-b"));
 
   ASSERT_TRUE(ProxyAuthSessionStore::RemoveDirector(session_id, "bareos-dir"));
-  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 }
 
 TEST(ProxyAuthSessionStore, BuildsCookieHeaders)
@@ -97,12 +99,13 @@ TEST(ProxyAuthSessionStore, AppliesConfigurableTimeouts)
 
   const auto session_id
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
-  const auto session = ProxyAuthSessionStore::LookupSession(session_id);
+  const auto session
+      = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id);
   ASSERT_TRUE(session);
   EXPECT_EQ(session->session_id, session_id);
 
   // Verify session is still accessible (just created)
-  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 
   // Reset to defaults for next tests
   ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
@@ -119,13 +122,13 @@ TEST(ProxyAuthSessionStore, ExpiresIdleSessionsWithConfiguredTimeout)
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
   // Session should be available immediately after creation
-  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 
   // Wait for idle timeout to trigger (>100ms)
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
   // Session should now be expired due to idle timeout
-  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 
   // Reset to defaults for next tests
   ProxyAuthSessionStore::SetSessionTimeouts(30, 8);
@@ -143,7 +146,7 @@ TEST(ProxyAuthSessionStore,
       = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
 
   // Session should be available immediately after creation
-  EXPECT_TRUE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_TRUE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 
   // Wait for absolute lifetime to trigger (>150ms)
   // We repeatedly lookup to keep the idle timeout from triggering
@@ -151,7 +154,7 @@ TEST(ProxyAuthSessionStore,
   bool found_after_lifetime = true;
   while (std::chrono::steady_clock::now() - start
          < std::chrono::milliseconds(200)) {
-    if (!ProxyAuthSessionStore::LookupSession(session_id)) {
+    if (!ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id)) {
       found_after_lifetime = false;
       break;
     }

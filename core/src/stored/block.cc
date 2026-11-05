@@ -572,7 +572,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     EmptyBlock(block);
     return true;
   }
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Dmsg0(100, "return WriteBlockToDev, job is canceled\n");
     return false;
   }
@@ -888,7 +888,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
    *
    * The same applies for if we are in a new file. */
   if (dcr->NewVol || dcr->NewFile) {
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       status = false;
       Dmsg0(100, "Canceled\n");
       goto bail_out;
@@ -913,7 +913,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
   }
 
   if (!dcr->WriteBlockToDev()) {
-    if (jcr->IsJobCanceled() || jcr->is_JobType(JT_SYSTEM)) {
+    if (jcr->IsJobAbortedOrCanceled() || jcr->is_JobType(JT_SYSTEM)) {
       status = false;
     } else {
       status = FixupDeviceBlockWriteError(dcr);
@@ -954,7 +954,7 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(bool)
   int retry;
   DeviceControlRecord* dcr = this;
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Mmsg(dev->errmsg, T_("Job failed or canceled.\n"));
     block->read_len = 0;
     return ReadStatus::Error;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,7 +77,7 @@ template <typename T> class alist {
   {
     items = nullptr;
     num_items = 0;
-    max_items = 0;
+    capacity_ = 0;
     num_grow = num; /* todo: do not grow linearly */
     own_items = own;
   }
@@ -161,16 +161,16 @@ template <typename T> class alist {
     if (items == NULL) {
       if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
       items = (T*)malloc(num_grow * sizeof(T));
-      max_items = num_grow;
-    } else if (num_items == max_items) {
-      max_items += num_grow;
-      items = (T*)realloc(items, max_items * sizeof(T));
+      capacity_ = num_grow;
+    } else if (num_items == capacity_) {
+      capacity_ += num_grow;
+      items = (T*)realloc(items, capacity_ * sizeof(T));
     }
   }
 
   T* items = nullptr;
   int num_items = 0;
-  int max_items = 0;
+  int capacity_ = 0;
   int num_grow = 0;
   bool own_items = false;
 };

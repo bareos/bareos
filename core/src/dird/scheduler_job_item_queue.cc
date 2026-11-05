@@ -32,9 +32,9 @@ namespace directordaemon {
 struct PrioritiseJobItems {
   bool operator()(const SchedulerJobItem& a, const SchedulerJobItem& b) const
   {
-    bool a_runs_before_b = a.runtime < b.runtime;
+    bool a_runs_before_b = a.scheduled_time < b.scheduled_time;
     bool a_has_higher_priority_than_b
-        = a.runtime == b.runtime && a.priority < b.priority;
+        = a.scheduled_time == b.scheduled_time && a.priority < b.priority;
     // invert for std::priority_queue sort algorithm
     return !(a_runs_before_b || a_has_higher_priority_than_b);
   }
@@ -86,14 +86,14 @@ void SchedulerJobItemQueue::EmplaceItem(
     std::shared_ptr<LoadedConfiguration> conf,
     JobResource* job,
     RunResource* run,
-    time_t runtime,
+    time_t scheduled_time,
     JobTrigger job_trigger)
 {
   if (!conf) { throw std::invalid_argument("Invalid Argument: conf is NULL"); }
   if (job == nullptr) {
     throw std::invalid_argument("Invalid Argument: JobResource is undefined");
   }
-  if (runtime == 0) {
+  if (scheduled_time == 0) {
     throw std::invalid_argument("Invalid Argument: runtime is invalid");
   }
   int priority = run != nullptr
@@ -101,8 +101,8 @@ void SchedulerJobItemQueue::EmplaceItem(
                      : default_priority;
 
   std::lock_guard<std::mutex> lg(impl_->mutex);
-  impl_->priority_queue.emplace(std::move(conf), job, run, runtime, priority,
-                                job_trigger);
+  impl_->priority_queue.emplace(std::move(conf), job, run, scheduled_time,
+                                priority, job_trigger);
 }
 
 bool SchedulerJobItemQueue::Empty() const

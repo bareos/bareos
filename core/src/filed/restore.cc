@@ -209,8 +209,8 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
                                         stream, content, content_length);
       break;
     default:
-      retval = parse_acl_streams(jcr, jcr->fd_impl->acl_data.get(), stream,
-                                 content, content_length);
+      retval = RestoreAclFromStream(jcr, jcr->fd_impl->acl_data.get(), stream,
+                                    content, content_length);
       break;
   }
 
@@ -251,8 +251,8 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
                                        stream, content, content_length);
       break;
     default:
-      retval = ParseXattrStreams(jcr, jcr->fd_impl->xattr_data.get(), stream,
-                                 content, content_length);
+      retval = RestoreXattrsFromStream(jcr, jcr->fd_impl->xattr_data.get(),
+                                       stream, content, content_length);
       break;
   }
 
@@ -447,7 +447,7 @@ void DoRestore(JobControlRecord* jcr)
   if (have_acl) { jcr->fd_impl->acl_data = std::make_unique<AclData>(); }
   if (have_xattr) { jcr->fd_impl->xattr_data = std::make_unique<XattrData>(); }
 
-  while (BgetMsg(sd) >= 0 && !jcr->IsJobCanceled()) {
+  while (BgetMsg(sd) >= 0 && !jcr->IsJobAbortedOrCanceled()) {
     // Remember previous stream type
     rctx.prev_stream = rctx.stream;
 

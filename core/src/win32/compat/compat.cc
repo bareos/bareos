@@ -338,7 +338,7 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   /* One extra byte should suffice, but we double it
    * add MAX_PATH bytes for VSS shadow copy name. */
   dwSize = 2 * strlen(name) + MAX_PATH;
-  win32_name = CheckPoolMemorySize(win32_name, dwSize);
+  win32_name = EnsurePoolMemoryCapacity(win32_name, dwSize);
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
@@ -424,7 +424,7 @@ static bool IsLiteralPath(std::wstring_view path)
          && path[2] == L'?';
 }
 
-static bool IsNormalizedPath(std::wstring_view path)
+static bool IsDeviceNamespacePath(std::wstring_view path)
 {
   // check if the path starts with //./
   return path.size() >= 4 && IsPathSeparator(path[0])
@@ -712,7 +712,7 @@ static inline std::wstring make_wchar_win32_path(std::wstring_view path)
   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
 
   // If it has already the desired form, exit without changes
-  if (IsLiteralPath(path) || IsNormalizedPath(path)) {
+  if (IsLiteralPath(path) || IsDeviceNamespacePath(path)) {
     Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
     return ReplaceSlashes(path);
   }
@@ -747,7 +747,7 @@ int wchar_2_UTF8(POOLMEM*& pszUTF, const WCHAR* pszUCS)
   if (p_WideCharToMultiByte) {
     int nRet
         = p_WideCharToMultiByte(CP_UTF8, 0, pszUCS, -1, NULL, 0, NULL, NULL);
-    pszUTF = CheckPoolMemorySize(pszUTF, nRet);
+    pszUTF = EnsurePoolMemoryCapacity(pszUTF, nRet);
     return p_WideCharToMultiByte(CP_UTF8, 0, pszUCS, -1, pszUTF, nRet, NULL,
                                  NULL);
   } else {
@@ -778,7 +778,7 @@ int UTF8_2_wchar(POOLMEM*& ppszUCS, const char* pszUTF)
   if (p_MultiByteToWideChar) {
     // strlen of UTF8 +1 is enough
     DWORD cchSize = (strlen(pszUTF) + 1);
-    ppszUCS = CheckPoolMemorySize(ppszUCS, cchSize * sizeof(wchar_t));
+    ppszUCS = EnsurePoolMemoryCapacity(ppszUCS, cchSize * sizeof(wchar_t));
 
     int nRet = p_MultiByteToWideChar(CP_UTF8, 0, pszUTF, -1, (LPWSTR)ppszUCS,
                                      cchSize);
@@ -1000,7 +1000,7 @@ bool CreateJunction(const char* szJunction, const char* szPath)
   // Create a buffer big enough to hold all data.
   buf_length = sizeof(REPARSE_DATA_BUFFER) + 2 * MAX_PATH * sizeof(WCHAR);
   buf = GetPoolMemory(PM_NAME);
-  buf = CheckPoolMemorySize(buf, buf_length);
+  buf = EnsurePoolMemoryCapacity(buf, buf_length);
   rdb = (REPARSE_DATA_BUFFER*)buf;
 
   // Create directory
@@ -1145,7 +1145,7 @@ static inline bool GetVolumeMountPointData(const char* filename,
     // Create a buffer big enough to hold all data.
     buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(wchar_t);
     buf = GetPoolMemory(PM_NAME);
-    buf = CheckPoolMemorySize(buf, buf_length);
+    buf = EnsurePoolMemoryCapacity(buf, buf_length);
     rdb = (REPARSE_DATA_BUFFER*)buf;
 
     memset(buf, 0, buf_length);
@@ -1220,7 +1220,7 @@ static inline ssize_t GetSymlinkData(const char* filename,
     const DWORD buf_length = MAXIMUM_REPARSE_DATA_BUFFER_SIZE + sizeof(wchar_t);
 
     buf = GetPoolMemory(PM_NAME);
-    buf = CheckPoolMemorySize(buf, buf_length);
+    buf = EnsurePoolMemoryCapacity(buf, buf_length);
 
     memset(buf, 0, buf_length);
     REPARSE_DATA_BUFFER* rdb = reinterpret_cast<REPARSE_DATA_BUFFER*>(buf);
@@ -1471,7 +1471,7 @@ static int GetWindowsFileInfo(const char* filename,
           sb->st_mode &= ~S_IFDIR;
 
           slt = GetPoolMemory(PM_NAME);
-          slt = CheckPoolMemorySize(slt, MAX_PATH * sizeof(wchar_t));
+          slt = EnsurePoolMemoryCapacity(slt, MAX_PATH * sizeof(wchar_t));
 
           if (GetSymlinkData(filename, slt) >= 0) {
             Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n",
@@ -2461,7 +2461,7 @@ char* win32_getcwd(char* buf, int maxlen)
     POOLMEM* pwszBuf;
 
     pwszBuf = GetPoolMemory(PM_FNAME);
-    pwszBuf = CheckPoolMemorySize(pwszBuf, maxlen * sizeof(wchar_t));
+    pwszBuf = EnsurePoolMemoryCapacity(pwszBuf, maxlen * sizeof(wchar_t));
     n = p_GetCurrentDirectoryW(maxlen, (LPWSTR)pwszBuf);
     if (n != 0) { n = wchar_2_UTF8(buf, (wchar_t*)pwszBuf, maxlen) - 1; }
     FreePoolMemory(pwszBuf);
@@ -2505,7 +2505,7 @@ int win32_fputs(const char* string, FILE* stream)
                                          -1, nullptr, 0, nullptr, nullptr);
     // Convert to local codepage and try WriteConsoleA
     pszBuf = GetPoolMemory(PM_MESSAGE);
-    pszBuf = CheckPoolMemorySize(pszBuf, needed);
+    pszBuf = EnsurePoolMemoryCapacity(pszBuf, needed);
     dwChars = p_WideCharToMultiByte(GetConsoleOutputCP(), 0, utf16.c_str(), -1,
                                     pszBuf, needed, NULL, NULL);
     if (WriteConsoleA(hOut, pszBuf, dwChars - 1, &dwCharsWritten, NULL)) {

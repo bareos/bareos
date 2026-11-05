@@ -355,7 +355,7 @@ const ResourceItem job_items[] = {
   { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelQueuedDuplicates), {config::DefaultValue{"false"}}},
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), {config::DefaultValue{"false"}}},
   { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), {config::IntroducedIn{14, 2, 0}, config::DefaultValue{"true"}}},
-  { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), {config::IntroducedIn{15, 2, 4}, config::DefaultValue{"10000000"}}},
+  { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, ExpectedFileHistoryEntries), {config::IntroducedIn{15, 2, 4}, config::DefaultValue{"10000000"}}},
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), {}},
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), {}},
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), {}},

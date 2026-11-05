@@ -77,7 +77,7 @@ class BareosSocketMock : public BareosSocket {
   MOCK_METHOD0(SetNonblocking, int());
   MOCK_METHOD0(SetBlocking, int());
   MOCK_METHOD1(RestoreBlocking, void(int));
-  MOCK_METHOD0(ConnectionReceivedTerminateSignal, bool());
+  MOCK_METHOD0(CheckForPendingTerminateAndMarkSocketTerminated, bool());
   MOCK_METHOD2(WaitData, int(int, int));
   MOCK_METHOD2(WaitDataIntr, int(int, int));
   MOCK_METHOD6(FinInit,

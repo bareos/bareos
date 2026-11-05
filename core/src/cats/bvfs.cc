@@ -675,7 +675,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   PoolMem query(PM_MESSAGE);
   PoolMem tmp(PM_MESSAGE), tmp2(PM_MESSAGE);
   int64_t id, jobid, prev_jobid;
-  bool init = false;
+  bool has_select_clause = false;
   bool retval = false;
 
   /* check args */
@@ -698,7 +698,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
 
   if (*fileid) { /* Select files with their direct id */
-    init = true;
+    has_select_clause = true;
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, FileIndex, File.Name, "
          "PathId, FileId "
@@ -722,7 +722,7 @@ bool Bvfs::compute_restore_list(char* fileid,
       break;
     }
     /* escape % and _ for LIKE search */
-    tmp.check_size((strlen(tmp2.c_str()) + 1) * 2);
+    tmp.ensure_capacity((strlen(tmp2.c_str()) + 1) * 2);
     char* p = tmp.c_str();
     for (char* s = tmp2.c_str(); *s; s++) {
       if (*s == '%' || *s == '_' || *s == '\\') {
@@ -738,7 +738,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     auto escaped_path_like = db->EscapeString(jcr, tmp.c_str());
     if (!escaped_path_like) { return false; }
 
-    if (init) { query.strcat(" UNION "); }
+    if (has_select_clause) { query.strcat(" UNION "); }
 
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, File.FileIndex, File.Name, "
@@ -747,7 +747,7 @@ bool Bvfs::compute_restore_list(char* fileid,
          "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
          escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
-    init = true;
+    has_select_clause = true;
   }
 
   /* expect jobid,fileindex */
@@ -759,7 +759,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     }
     if (jobid != prev_jobid) { /* new job */
       if (prev_jobid == 0) {   /* first jobid */
-        if (init) { query.strcat(" UNION "); }
+        if (has_select_clause) { query.strcat(" UNION "); }
       } else { /* end last job, start new one */
         tmp.strcat(") UNION ");
         query.strcat(tmp.c_str());
@@ -780,7 +780,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   if (prev_jobid != 0) { /* end last job */
     tmp.strcat(") ");
     query.strcat(tmp.c_str());
-    init = true;
+    has_select_clause = true;
   }
 
   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());

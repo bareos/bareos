@@ -458,10 +458,10 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
 
   UpdateJobEnd(jcr, TermCode);
 
-  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobAbortedOrCanceled()) { CancelStorageDaemonJob(jcr); }
 
   if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     jcr->dir_impl->unlink_bsr = false;
   }
 
@@ -599,14 +599,14 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr,
    *   Filename
    *   Attributes
    *   Link name  ??? */
-  while ((n = BgetDirmsg(fd)) >= 0 && !jcr->IsJobCanceled()) {
+  while ((n = BgetDirmsg(fd)) >= 0 && !jcr->IsJobAbortedOrCanceled()) {
     int stream;
     char *attr, *p, *fn;
     PoolMem Opts_Digest(PM_MESSAGE); /* Verify Opts or MD5/SHA1 digest */
 
-    if (jcr->IsJobCanceled()) { goto bail_out; }
-    fname = CheckPoolMemorySize(fname, fd->message_length);
-    jcr->dir_impl->fname.check_size(fd->message_length);
+    if (jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
+    fname = EnsurePoolMemoryCapacity(fname, fd->message_length);
+    jcr->dir_impl->fname.ensure_capacity(fd->message_length);
     Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
     if ((len = bsscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
         != 3) {
@@ -860,7 +860,7 @@ static int MissingHandler(void* ctx, int, char** row)
 {
   JobControlRecord* jcr = (JobControlRecord*)ctx;
 
-  if (jcr->IsJobCanceled()) { return 1; }
+  if (jcr->IsJobAbortedOrCanceled()) { return 1; }
   if (!jcr->dir_impl->fn_printed) {
     Qmsg(jcr, M_WARNING, 0,
          T_("The following files are in the Catalog but not on %s:\n"),

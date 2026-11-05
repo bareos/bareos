@@ -399,7 +399,7 @@ static bool show_scheduled_preview(UaContext*,
 {
   int date_len;
   char dt[MAX_TIME_LENGTH];
-  time_t runtime;
+  time_t scheduled_time;
   RunResource* run;
   PoolMem temp(PM_NAME);
 
@@ -419,8 +419,8 @@ static bool show_scheduled_preview(UaContext*,
       /* Convert the time into a user parsable string.
        * As we use locale specific strings for weekday and month we
        * need to keep track of the longest data string used. */
-      runtime = mktime(&tm);
-      bstrftime_wd(dt, sizeof(dt), runtime);
+      scheduled_time = mktime(&tm);
+      bstrftime_wd(dt, sizeof(dt), scheduled_time);
       date_len = strlen(dt);
       if (date_len > *max_date_len) {
         if (*max_date_len == 0) {
@@ -667,7 +667,7 @@ struct sched_pkt {
   JobResource* job;
   int level;
   int priority;
-  utime_t runtime;
+  utime_t scheduled_time;
   PoolResource* pool;
   StorageResource* store;
 };
@@ -834,13 +834,13 @@ static void DoSchedulerStatus(UaContext* ua)
           Blocaltime(&t, &tm_s);
           tm_s.tm_min = run->minute;
           tm_s.tm_sec = 0;
-          time_t runtime = mktime(&tm_s);
+          time_t scheduled_time = mktime(&tm_s);
           char dt[MAX_TIME_LENGTH];
-          bstrftime_wd(dt, sizeof(dt), runtime);
+          bstrftime_wd(dt, sizeof(dt), scheduled_time);
           ua->send->ObjectStart();
           ua->send->ObjectKeyValue("datetime", dt, "%s\n");
           ua->send->ObjectKeyValueSignedInt(
-              "runtime", static_cast<int64_t>(runtime), "%" PRId64 "\n");
+              "runtime", static_cast<int64_t>(scheduled_time), "%" PRId64 "\n");
           ua->send->ObjectKeyValue("schedule", s->resource_name_, "%s\n");
           if (run->level) {
             ua->send->ObjectKeyValue("level", JobLevelToString(run->level),
@@ -1082,7 +1082,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   orig_jobtype = jcr->getJobType();
   if (sp->job->JobType == JT_BACKUP) {
     jcr->db = NULL;
-    ok = CompleteJcrForJob(jcr, sp->job, sp->pool);
+    ok = InitializeJcrAndEnsurePoolRecord(jcr, sp->job, sp->pool);
     Dmsg1(250, "Using pool=%s\n", jcr->dir_impl->res.pool->resource_name_);
     if (jcr->db) { CloseDb = true; /* new db opened, remember to close it */ }
     if (ok) {
@@ -1096,7 +1096,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
     }
     if (!ok) { bstrncpy(mr.VolumeName, "*unknown*", sizeof(mr.VolumeName)); }
   }
-  bstrftime_nc(dt, sizeof(dt), sp->runtime);
+  bstrftime_nc(dt, sizeof(dt), sp->scheduled_time);
   switch (sp->job->JobType) {
     case JT_ADMIN:
     case JT_ARCHIVE:
@@ -1136,12 +1136,12 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   jcr->setJobType(orig_jobtype);
 }
 
-// Sort items by runtime, priority
+// Sort items by scheduled time, priority
 static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
 {
-  if (p1.runtime < p2.runtime) {
+  if (p1.scheduled_time < p2.scheduled_time) {
     return -1;
-  } else if (p1.runtime > p2.runtime) {
+  } else if (p1.scheduled_time > p2.scheduled_time) {
     return 1;
   }
 
@@ -1190,7 +1190,7 @@ static void ListScheduledJobs(UaContext* ua)
           {.job = job,
            .level = int(run->level ? run->level : job->JobLevel),
            .priority = (run->Priority ? run->Priority : job->Priority),
-           .runtime = next_scheduled.value(),
+           .scheduled_time = next_scheduled.value(),
            .pool = run->pool,
            .store = storage_res.store});
       if (sched.back().store) {
@@ -1582,7 +1582,8 @@ static void ListConnectedClients(UaContext* ua)
 
   ua->send->Decoration("\n");
   ua->send->Decoration("Client Initiated Connections (waiting for jobs):\n");
-  auto conn_info = get_client_connections().info();
+  auto conn_info
+      = get_client_connections().PruneInactiveConnectionsAndGetInfo();
   ua->send->Decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol",
                        "Authenticated", "Name");
   ua->send->Decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator,

@@ -678,7 +678,7 @@ static inline int process_directory(JobControlRecord* jcr,
   int status;
 
   entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 100);
-  while (!jcr->IsJobCanceled()) {
+  while (!jcr->IsJobAbortedOrCanceled()) {
     int name_length;
 
     status = Readdir_r(directory, entry, &result);
@@ -722,7 +722,7 @@ static inline int process_directory(JobControlRecord* jcr,
 
 #else
 
-  while (!jcr->IsJobCanceled()) {
+  while (!jcr->IsJobAbortedOrCanceled()) {
     int name_length;
     result = readdir(directory);
     if (result == NULL) { break; }

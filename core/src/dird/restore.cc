@@ -153,7 +153,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
   // Read the bootstrap file
   jcr->passive_client = client->passive;
   while (!feof(info.bs)) {
-    if (!SelectNextRstore(jcr, info)) { goto bail_out; }
+    if (!SwitchReadStorageAndWaitForJobSlot(jcr, info)) { goto bail_out; }
     store = jcr->dir_impl->res.read_storage;
 
     /* Open a message channel connection with the Storage
@@ -426,11 +426,11 @@ void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg0(20, "In NativeRestoreCleanup\n");
 
   if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     jcr->dir_impl->unlink_bsr = false;
   }
 
-  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobAbortedOrCanceled()) { CancelStorageDaemonJob(jcr); }
 
   if (jcr->dir_impl->ExpectedFiles != jcr->JobFiles) {
     Jmsg(jcr, M_WARNING, 0,

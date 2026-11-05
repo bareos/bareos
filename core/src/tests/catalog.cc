@@ -71,7 +71,7 @@ void CatalogTest::SetUp()
     ASSERT_FALSE(working_dir.empty())
         << "Environment variable BAREOS_WORKING_DIR not set.";
 
-    SetWorkingDirectory(working_dir.c_str());
+    SetConfiguredWorkingDirectory(working_dir.c_str());
   }
 
   // parse config

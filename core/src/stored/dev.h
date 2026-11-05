@@ -240,8 +240,8 @@ class Device {
   pthread_mutex_t read_acquire_mutex = PTHREAD_MUTEX_INITIALIZER; /**< Mutex for acquire read code */
   pthread_cond_t wait = PTHREAD_COND_INITIALIZER; /**< Thread wait variable */
   pthread_cond_t wait_next_vol = PTHREAD_COND_INITIALIZER;    /**< Wait for tape to be mounted */
-  pthread_t no_wait_id{};     /**< This thread must not wait */
-  int dev_prev_blocked{};     /**< Previous blocked state */
+  pthread_t thread_id_allowed_while_device_blocked{}; /**< This thread must not wait */
+  int previous_blocked_state{};     /**< Previous blocked state */
   int num_waiting{};          /**< Number of threads waiting */
   int num_writers{};          /**< Number of writing threads */
   char capabilities[CAP_BYTES]{}; /**< Capabilities mask */

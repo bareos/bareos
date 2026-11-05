@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -180,11 +180,11 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
   UpdateJobEnd(jcr, TermCode);
 
   if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     jcr->dir_impl->unlink_bsr = false;
   }
 
-  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobAbortedOrCanceled()) { CancelStorageDaemonJob(jcr); }
 
   switch (TermCode) {
     case JS_Terminated:

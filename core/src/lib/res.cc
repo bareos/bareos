@@ -325,7 +325,7 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
         // Pick up comma separated list of destinations.
         for (;;) {
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-          dest = CheckPoolMemorySize(dest, dest_len + lc->str_len + 2);
+          dest = EnsurePoolMemoryCapacity(dest, dest_len + lc->str_len + 2);
           if (dest[0] != 0) {
             PmStrcat(dest, " "); /* Separate multiple destinations with space */
             dest_len++;
@@ -1569,7 +1569,7 @@ bool ConfigurationParser::StoreResource(int type,
 
 std::string PrintNumberSiPrefixFormat(const ResourceItem*, uint64_t value_in)
 {
-  return SizeAsSiPrefixFormat(value_in);
+  return FormatSizeAsBinaryUnitComponents(value_in);
 }
 
 std::string Print32BitConfigNumberSiPrefixFormat(const ResourceItem* item)

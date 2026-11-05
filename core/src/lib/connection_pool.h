@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,7 +80,7 @@ struct connection_pool {
                                          = std::chrono::seconds{0});
 
   void cleanup(std::chrono::seconds timeout = std::chrono::seconds{0});
-  std::vector<connection_info> info();
+  std::vector<connection_info> PruneInactiveConnectionsAndGetInfo();
 };
 
 #endif  // BAREOS_LIB_CONNECTION_POOL_H_

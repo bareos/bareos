@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,9 @@ class MessagesResource : public BareosResource {
   bool GetClosing() const;
   void ClearClosing();
   bool IsClosing() const;
-  void WaitNotInUse() const;
+  // Wait until neither in use nor closing; return with mutex_ locked.
+  // Does not change either flag. The caller must call Unlock().
+  void WaitUntilIdleAndLock() const;
   void Lock() const;
   void Unlock() const;
 

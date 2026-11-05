@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,8 +49,8 @@ class CircularBuffer {
   void destroy();
   int enqueue(void* data);
   void* dequeue();
-  int NextSlot();
-  int flush();
+  int WaitForSpaceAndGetNextEnqueueIndex();
+  int SignalEndOfInput();
   bool full() { return size_ == capacity_; }
   bool empty() { return size_ == 0; }
   bool IsFlushing() { return flush_; }

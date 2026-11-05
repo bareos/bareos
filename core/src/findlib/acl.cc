@@ -79,11 +79,11 @@ bacl_exit_code BuildAclStreams(JobControlRecord*,
   return bacl_exit_fatal;
 }
 
-bacl_exit_code parse_acl_streams(JobControlRecord*,
-                                 AclData*,
-                                 int,
-                                 char*,
-                                 uint32_t)
+bacl_exit_code RestoreAclFromStream(JobControlRecord*,
+                                    AclData*,
+                                    int,
+                                    char*,
+                                    uint32_t)
 {
   return bacl_exit_fatal;
 }
@@ -221,7 +221,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
   }
 
   // Make sure the buffers are big enough.
-  aclbuf = CheckPoolMemorySize(aclbuf, aclsize + 1);
+  aclbuf = EnsurePoolMemoryCapacity(aclbuf, aclsize + 1);
 
   // Retrieve the ACL info.
   if (aclx_get(acl_data->last_fname,
@@ -281,7 +281,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
          * value the aclx_printStr really need. So we increase the buffer and
          * try again. */
         acl_data->content
-            = CheckPoolMemorySize(acl_data->content, acltxtsize + 1);
+            = EnsurePoolMemoryCapacity(acl_data->content, acltxtsize + 1);
         if (aclx_printStr(acl_data->content, &acltxtsize, aclbuf, aclsize, type,
                           acl_data->last_fname, 0)
             < 0) {
@@ -391,7 +391,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
 
   /* Set the acl buffer to an initial size. For now we set it
    * to the same size as the ASCII representation. */
-  aclbuf = CheckPoolMemorySize(aclbuf, content_length);
+  aclbuf = EnsurePoolMemoryCapacity(aclbuf, content_length);
   aclsize = content_length;
   if (aclx_scanStr(content, aclbuf, &aclsize, type) < 0) {
     BErrNo be;
@@ -404,7 +404,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
          * and retry the conversion. */
         for (cnt = 0; cnt < 3; cnt++) {
           aclsize = 2 * aclsize;
-          aclbuf = CheckPoolMemorySize(aclbuf, aclsize);
+          aclbuf = EnsurePoolMemoryCapacity(aclbuf, aclsize);
 
           if (aclx_scanStr(content, aclbuf, &aclsize, type) == 0) { break; }
 
@@ -1661,11 +1661,11 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
   return bacl_exit_error;
 }
 
-bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 AclData* acl_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+bacl_exit_code RestoreAclFromStream(JobControlRecord* jcr,
+                                    AclData* acl_data,
+                                    int stream,
+                                    char* content,
+                                    uint32_t content_length)
 {
   int ret;
   struct stat st;

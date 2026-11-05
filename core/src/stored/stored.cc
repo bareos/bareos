@@ -263,10 +263,10 @@ int main(int argc, char* argv[])
 
   MyNameIs(0, (char**)nullptr, me->resource_name_); /* Set our real name */
 
-  ReadStateFile(me->working_directory, "bareos-sd",
-                GetFirstPortHostOrder(me->SDaddrs));
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+  LoadStateAndRemoveUnreadableOrInvalidFile(me->working_directory, "bareos-sd",
+                                            GetFirstPortHostOrder(me->SDaddrs));
+  LoadCryptoCacheOrDiscardOnFailure(me->working_directory, "bareos-sd",
+                                    GetFirstPortHostOrder(me->SDaddrs));
 
   SetJcrInThreadSpecificData(nullptr);
 
@@ -376,7 +376,7 @@ static int CheckResources()
   if (OK) {
     CloseMsg(nullptr);           /* close temp message handler */
     InitDaemonMsg(me->messages); /* open daemon message handler */
-    SetWorkingDirectory(me->working_directory);
+    SetConfiguredWorkingDirectory(me->working_directory);
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
     }
@@ -457,7 +457,7 @@ static void CleanUpOldFiles()
       PmStrcpy(cleanup, basename);
       PmStrcat(cleanup, result->d_name);
       Dmsg1(500, "Unlink: %s\n", cleanup);
-      SecureErase(nullptr, cleanup);
+      DeleteFileUsingConfiguredErasePolicy(nullptr, cleanup);
     }
   }
 #ifdef USE_READDIR_R
@@ -538,7 +538,7 @@ extern "C" void* device_initialization(void*)
       switch (ReadDevVolumeLabel(dcr)) {
         case VOL_OK:
           memcpy(&dev->VolCatInfo, &dcr->VolCatInfo, sizeof(dev->VolCatInfo));
-          VolumeUnused(dcr); /* mark volume "released" */
+          MarkVolumeUnused(dcr); /* mark volume "released" */
           break;
         default:
           Jmsg1(nullptr, M_WARNING, 0, T_("Could not mount device %s\n"),

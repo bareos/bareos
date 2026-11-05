@@ -310,8 +310,9 @@ int main(int argc, char* argv[])
   }
 
   if (!test_config) {
-    ReadStateFile(me->working_directory, "bareos-dir",
-                  GetFirstPortHostOrder(me->DIRaddrs));
+    LoadStateAndRemoveUnreadableOrInvalidFile(
+        me->working_directory, "bareos-dir",
+        GetFirstPortHostOrder(me->DIRaddrs));
   }
 
   SetJcrInThreadSpecificData(nullptr);
@@ -555,7 +556,7 @@ static void CleanUpOldFiles()
       PmStrcpy(cleanup, basename);
       PmStrcat(cleanup, result->d_name);
       Dmsg1(100, "Unlink: %s\n", cleanup);
-      SecureErase(nullptr, cleanup);
+      DeleteFileUsingConfiguredErasePolicy(nullptr, cleanup);
     }
   }
 

@@ -86,7 +86,7 @@ TEST(statefile, read)
       orig_path, test_path, std::string(fname) + ".42001.state"));
   ASSERT_TRUE(StateFileExists(test_path, fname, 42001))
       << "path = " << test_path;
-  ReadStateFile(test_path, fname, 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(test_path, fname, 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
 
@@ -114,7 +114,7 @@ TEST(statefile, write)
                                             test_path.c_str(), statefile_name));
   ASSERT_TRUE(StateFileExists(test_path.c_str(), fname, 42001))
       << "path = " << test_path;
-  ReadStateFile(test_path.c_str(), fname, 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(test_path.c_str(), fname, 42001);
 
   std::string write_path{TEST_TEMP_DIR "/write-test"};
 
@@ -125,7 +125,7 @@ TEST(statefile, write)
   RecentJobResultsList::Cleanup();
 
   ASSERT_TRUE(StateFileExists(write_path.c_str(), fname, 42001));
-  ReadStateFile(write_path.c_str(), fname, 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(write_path.c_str(), fname, 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
 
@@ -151,7 +151,7 @@ TEST(statefile, handle_truncated_jobs)
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(
       orig_path, test_path, std::string(fname) + ".42001.state"));
-  ReadStateFile(test_path, fname, 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(test_path, fname, 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
 
@@ -171,7 +171,8 @@ TEST(statefile, handle_truncated_headers)
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(
       orig_path, test_path, "bareos-dir-truncated-header.42001.state"));
-  ReadStateFile(test_path, "bareos-dir-truncated-header", 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(
+      test_path, "bareos-dir-truncated-header", 42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
 
@@ -186,7 +187,8 @@ TEST(statefile, handle_nonexisting_file)
   char test_path[]{TEST_TEMP_DIR};
 
   ASSERT_FALSE(StateFileExists(test_path, "file-does-not-exist", 42001));
-  ReadStateFile(test_path, "file-does-not-exist", 42001);
+  LoadStateAndRemoveUnreadableOrInvalidFile(test_path, "file-does-not-exist",
+                                            42001);
 
   auto recent_jobs{RecentJobResultsList::Get()};
 

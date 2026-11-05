@@ -89,7 +89,7 @@ class BareosSocketTCP : public BareosSocket {
   int SetNonblocking() override;
   int SetBlocking() override;
   void RestoreBlocking(int flags) override;
-  bool ConnectionReceivedTerminateSignal() override;
+  bool CheckForPendingTerminateAndMarkSocketTerminated() override;
   int WaitData(int sec, int usec = 0) override;
   int WaitDataIntr(int sec, int usec = 0) override;
 

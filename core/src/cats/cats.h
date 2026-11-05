@@ -1232,12 +1232,12 @@ template <typename F> void run_query(BareosDb* db, const char* query, F&& f)
 
   if (!db->SqlQuery(
           query,
-          +[](void* ctx, int row_count, char* row_data[]) -> int {
+          +[](void* ctx, int column_count, char* row_data[]) -> int {
             auto* data = static_cast<InternalData*>(ctx);
 
             try {
-              if (row_count < 0 || static_cast<size_t>(row_count) != N) {
-                throw cats::details::BadArgumentCount{row_count, N};
+              if (column_count < 0 || static_cast<size_t>(column_count) != N) {
+                throw cats::details::BadArgumentCount{column_count, N};
               }
 
               cats::details::invoke(*data->f, row_data,

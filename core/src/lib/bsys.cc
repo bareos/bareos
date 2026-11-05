@@ -79,7 +79,7 @@ int SaferUnlink(const char* pathname, const char* regx)
   // Unlink files that match regexes
   if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
     Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
-    rtn = SecureErase(NULL, pathname);
+    rtn = DeleteFileUsingConfiguredErasePolicy(NULL, pathname);
   } else {
     Pmsg2(000, "safe_unlink regex failed: regex=%s file=%s\n", regx, pathname);
     rtn = EROFS;
@@ -90,7 +90,8 @@ int SaferUnlink(const char* pathname, const char* regx)
 }
 
 // This routine will use an external secure erase program to delete a file.
-int SecureErase(JobControlRecord* jcr, const char* pathname)
+int DeleteFileUsingConfiguredErasePolicy(JobControlRecord* jcr,
+                                         const char* pathname)
 {
   int retval = -1;
 
@@ -115,7 +116,7 @@ int SecureErase(JobControlRecord* jcr, const char* pathname)
       goto bail_out;
     }
 
-    while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
+    while (fgets(line.c_str(), line.capacity(), bpipe->rfd)) {
       StripTrailingJunk(line.c_str());
       if (jcr) { Jmsg(jcr, M_INFO, 0, T_("SecureErase: %s\n"), line.c_str()); }
     }
@@ -578,7 +579,9 @@ class SecureEraseGuard {
   SecureEraseGuard(const std::string& fname_in) : filename(fname_in) {}
   ~SecureEraseGuard()
   {
-    if (cleanup) { SecureErase(nullptr, filename.c_str()); }
+    if (cleanup) {
+      DeleteFileUsingConfiguredErasePolicy(nullptr, filename.c_str());
+    }
   }
   void Release() { cleanup = false; }
 };
@@ -593,7 +596,9 @@ static std::string CreateFileNameFrom(const char* dir,
   return std::string(filename.data());
 }
 
-void ReadStateFile(const char* dir, const char* progname, int port)
+void LoadStateAndRemoveUnreadableOrInvalidFile(const char* dir,
+                                               const char* progname,
+                                               int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
   SecureEraseGuard secure_erase_guard(filename.data());
@@ -641,7 +646,7 @@ void WriteStateFile(const char* dir, const char* progname, int port)
                 "StateFileHeader must be trivially copyable");
 #endif
 
-  SecureErase(NULL, filename.c_str());
+  DeleteFileUsingConfiguredErasePolicy(NULL, filename.c_str());
 
   SecureEraseGuard erase_on_scope_exit(filename);
   static std::mutex exclusive_write_access_mutex;
@@ -743,7 +748,7 @@ char* bfgets(POOLMEM*& s, FILE* fd)
     if (i > soft_max) {
       /* Insanity check */
       if (soft_max > 1000000) { return s; }
-      s = CheckPoolMemorySize(s, soft_max + 10000);
+      s = EnsurePoolMemoryCapacity(s, soft_max + 10000);
       soft_max = SizeofPoolMemory(s) - 10;
     }
     s[i++] = ch;
@@ -917,7 +922,7 @@ bool PathAppend(PoolMem& path, const char* extra)
   if (!extra) { return true; }
 
   required_length = path.strlen() + 2 + strlen(extra);
-  if (!path.check_size(required_length)) { return false; }
+  if (!path.ensure_capacity(required_length)) { return false; }
 
   return PathAppend(path.c_str(), extra, required_length);
 }

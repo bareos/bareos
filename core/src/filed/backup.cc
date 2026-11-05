@@ -531,7 +531,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   save_pkt sp; /* use by option plugin */
   BareosSocket* sd = jcr->store_bsock;
 
-  if (jcr->IsJobCanceled() || jcr->IsIncomplete()) { return 0; }
+  if (jcr->IsJobAbortedOrCanceled() || jcr->IsIncomplete()) { return 0; }
 
   jcr->fd_impl->num_files_examined++; /* bump total file count */
 
@@ -833,7 +833,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles,
               ff_pkt->digest_stream);
 
-    sd->msg = CheckPoolMemorySize(sd->msg, ff_pkt->digest_len);
+    sd->msg = EnsurePoolMemoryCapacity(sd->msg, ff_pkt->digest_len);
     memcpy(sd->msg, ff_pkt->digest, ff_pkt->digest_len);
     sd->message_length = ff_pkt->digest_len;
     sd->send();
@@ -842,10 +842,11 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   }
 
 good_rtn:
-  rtnstat = jcr->IsJobCanceled() ? 0 : 1; /* good return if not canceled */
+  rtnstat
+      = jcr->IsJobAbortedOrCanceled() ? 0 : 1; /* good return if not canceled */
 
 bail_out:
-  if (jcr->IsIncomplete() || jcr->IsJobCanceled()) { rtnstat = 0; }
+  if (jcr->IsIncomplete() || jcr->IsJobAbortedOrCanceled()) { rtnstat = 0; }
   if (plugin_started) {
     SendPluginName(jcr, sd, false); /* signal end of plugin data */
   }
@@ -958,7 +959,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
   sd->msg = bctx->wbuf; /* set correct write buffer */
 
   if (!sd->send()) {
-    if (!bctx->jcr->IsJobCanceled()) {
+    if (!bctx->jcr->IsJobAbortedOrCanceled()) {
       Jmsg1(bctx->jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
@@ -1433,7 +1434,7 @@ bail_out:
   if (update_digest) { update_digest->get(); }
   result sendres = bytes_send_fut.get();
   if (auto* error = sendres.error()) {
-    if (!bctx.jcr->IsJobCanceled()) {
+    if (!bctx.jcr->IsJobAbortedOrCanceled()) {
       Jmsg1(bctx.jcr, M_FATAL, 0, "%s\n", error->c_str());
     }
     retval = false;
@@ -1497,7 +1498,7 @@ static int send_data(JobControlRecord* jcr,
   /* Send Data header to Storage daemon
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
-    if (!jcr->IsJobCanceled()) {
+    if (!jcr->IsJobAbortedOrCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
@@ -1553,7 +1554,7 @@ static int send_data(JobControlRecord* jcr,
       sd->message_length = bctx.encrypted_len;   /* set encrypted length */
       sd->msg = jcr->fd_impl->crypto.crypto_buf; /* set correct write buffer */
       if (!sd->send()) {
-        if (!jcr->IsJobCanceled()) {
+        if (!jcr->IsJobAbortedOrCanceled()) {
           Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
                 sd->bstrerror());
         }
@@ -1567,7 +1568,7 @@ static int send_data(JobControlRecord* jcr,
   }
 
   if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
-    if (!jcr->IsJobCanceled()) {
+    if (!jcr->IsJobAbortedOrCanceled()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
@@ -1659,7 +1660,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   /* Send Attributes header to Storage daemon
    *    <file-index> <stream> <info> */
   if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, attr_stream)) {
-    if (!jcr->IsJobCanceled() && !jcr->IsIncomplete()) {
+    if (!jcr->IsJobAbortedOrCanceled() && !jcr->IsIncomplete()) {
       Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
             sd->bstrerror());
     }
@@ -1737,7 +1738,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
           sd->msg, "%" PRIu32 " %d %d %d %d %d %s%c%s%c", jcr->JobFiles,
           ff_pkt->type, ff_pkt->object_index, comp_len, ff_pkt->object_len,
           ff_pkt->object_compression, ff_pkt->fname, 0, ff_pkt->object_name, 0);
-      sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
+      sd->msg = EnsurePoolMemoryCapacity(sd->msg,
+                                         sd->message_length + comp_len + 2);
       memcpy(sd->msg + sd->message_length, ff_pkt->object, comp_len);
 
       // Note we send one extra byte so Dir can store zero after object
@@ -1764,7 +1766,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   }
 
   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->message_length, sd->msg);
-  if (!status && !jcr->IsJobCanceled()) {
+  if (!status && !jcr->IsJobAbortedOrCanceled()) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
   }

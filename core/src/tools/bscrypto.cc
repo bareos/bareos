@@ -328,7 +328,7 @@ int main(int argc, char* const* argv)
 
   if (dump_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file.c_str());
+    LoadCryptoCacheOrDiscardOnFailure(cache_file.c_str());
 
     // Dump the content of the cache.
     DumpCryptoCache(STDOUT_FILENO);
@@ -342,7 +342,7 @@ int main(int argc, char* const* argv)
     char new_cache_entry[256];
 
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file.c_str());
+    LoadCryptoCacheOrDiscardOnFailure(cache_file.c_str());
 
     /* Read new entries from stdin and parse them to update
      * the cache. */
@@ -372,10 +372,10 @@ int main(int argc, char* const* argv)
 
   if (reset_cache) {
     // Load any keys currently in the cache.
-    ReadCryptoCache(cache_file.c_str());
+    LoadCryptoCacheOrDiscardOnFailure(cache_file.c_str());
 
     // Reset all entries.
-    ResetCryptoCache();
+    RefreshCryptoCacheEntryTimestamps();
 
     // Write out the new cache entries.
     WriteCryptoCache(cache_file.c_str());

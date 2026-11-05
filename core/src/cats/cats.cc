@@ -142,7 +142,7 @@ void BareosDb::PrintLockInfo(FILE* fp)
 char* BareosDb::EscapeObject(JobControlRecord*, char* old, int len)
 {
   const int MaxLength = Base64LengthUnpadded(len) + 1;
-  esc_obj = CheckPoolMemorySize(esc_obj, MaxLength + 1);
+  esc_obj = EnsurePoolMemoryCapacity(esc_obj, MaxLength + 1);
   const int length = BinToBase64(esc_obj, MaxLength, old, len, true);
   esc_obj[length] = '\0';
 
@@ -165,7 +165,7 @@ void BareosDb::UnescapeObject(JobControlRecord*,
     return;
   }
 
-  dest = CheckPoolMemorySize(dest, expected_len + 1);
+  dest = EnsurePoolMemoryCapacity(dest, expected_len + 1);
   /* Note: Base64ToBin() does not check the expected length correctly,
    * so we must add 2 to make sure it works. */
   Base64ToBin(dest, expected_len + 2, from, strlen(from));

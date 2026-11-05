@@ -144,7 +144,7 @@ void SchedulerPrivate::WaitForJobsToRun()
 
     time_t now = time_adapter->time_source_->SystemTime();
 
-    if (now >= next_job.runtime) {
+    if (now >= next_job.scheduled_time) {
       auto run_job = prioritised_job_item_queue.TakeOutTopItem();
       if (!run_job.is_valid || !run_job.job->enabled) {
         continue;  // check queue again
@@ -159,7 +159,7 @@ void SchedulerPrivate::WaitForJobsToRun()
 
     } else {
       time_t wait_interval{std::min(time_adapter->default_wait_interval_,
-                                    next_job.runtime - now)};
+                                    next_job.scheduled_time - now)};
       Dmsg2(local_debuglevel,
             "Scheduler: WaitForJobsToRun is sleeping for %lld seconds. Next "
             "job: %s.",
@@ -219,14 +219,15 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
             run_this_hour, run_next_hour);
 
       if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(date_time_now.time, run->minute);
+        time_t scheduled_time
+            = CalculateRuntime(date_time_now.time, run->minute);
         if (run_this_hour) {
-          AddJobToQueue(used_conf, job, run, date_time_now.time, runtime,
+          AddJobToQueue(used_conf, job, run, date_time_now.time, scheduled_time,
                         JobTrigger::kScheduler);
         }
         if (run_next_hour) {
           AddJobToQueue(used_conf, job, run, date_time_now.time,
-                        runtime + seconds_per_hour.count(),
+                        scheduled_time + seconds_per_hour.count(),
                         JobTrigger::kScheduler);
         }
       }
@@ -240,24 +241,24 @@ void SchedulerPrivate::AddJobToQueue(
     JobResource* job,
     RunResource* run,
     time_t now,
-    time_t runtime,
+    time_t scheduled_time,
     JobTrigger job_trigger)
 {
   Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.\n",
         job->resource_name_);
 
   if (run != nullptr) {
-    if ((runtime - run->scheduled_last) < 61) { return; }
+    if ((scheduled_time - run->scheduled_last) < 61) { return; }
   }
 
-  if ((runtime + 59) < now) { return; }
+  if ((scheduled_time + 59) < now) { return; }
 
   try {
     Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.\n",
           job->resource_name_);
 
-    prioritised_job_item_queue.EmplaceItem(std::move(config), job, run, runtime,
-                                           job_trigger);
+    prioritised_job_item_queue.EmplaceItem(std::move(config), job, run,
+                                           scheduled_time, job_trigger);
 
   } catch (const std::invalid_argument& e) {
     Dmsg1(local_debuglevel + 100, "Could not emplace job: %s\n", e.what());

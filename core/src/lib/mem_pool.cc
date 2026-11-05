@@ -37,7 +37,7 @@
  *
  * A major advantage of the pool memory aside from the speed is that the buffer
  * carries around its size, so to ensure that there is enough memory, simply
- * call the CheckPoolMemorySize() with the desired size and it will adjust only
+ * call EnsurePoolMemoryCapacity() with the desired size and it will adjust only
  * if necessary.
  *
  * Kern E. Sibbald
@@ -76,7 +76,7 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
   int len;
 
   len = Bsnprintf(buf, sizeof(buf), T_("%s: ABORTING due to ERROR in %s:%d\n"),
-                  my_name, get_basename(file), line);
+                  my_name, GetFilenameWithParentDirectory(file), line);
 
   va_start(arg_ptr, fmt);
   Bvsnprintf(buf + len, sizeof(buf) - len, (char*)fmt, arg_ptr);
@@ -138,7 +138,7 @@ POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
   return new_pm_ptr;
 }
 
-POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size) noexcept
+POOLMEM* EnsurePoolMemoryCapacity(POOLMEM* obuf, int32_t size) noexcept
 {
   if (size <= SizeofPoolMemory(obuf)) { return obuf; }
   return ReallocPoolMemory(obuf, size);
@@ -158,7 +158,7 @@ int PmStrcat(POOLMEM*& dest_pm, const char* str)
   if (!str) str = "";
 
   len = strlen(str) + 1;
-  dest_pm = CheckPoolMemorySize(dest_pm, pmlen + len);
+  dest_pm = EnsurePoolMemoryCapacity(dest_pm, pmlen + len);
   memcpy(dest_pm + pmlen, str, len);
   return pmlen + len - 1;
 }
@@ -176,7 +176,7 @@ int PmStrcat(PoolMem& dest_pm, const char* str)
   if (!str) str = "";
 
   len = strlen(str) + 1;
-  dest_pm.check_size(pmlen + len);
+  dest_pm.ensure_capacity(pmlen + len);
   memcpy(dest_pm.c_str() + pmlen, str, len);
   return pmlen + len - 1;
 }
@@ -197,7 +197,7 @@ int PmStrcpy(POOLMEM*& pm, const char* str)
   if (!str) str = "";
 
   len = strlen(str) + 1;
-  pm = CheckPoolMemorySize(pm, len);
+  pm = EnsurePoolMemoryCapacity(pm, len);
   memcpy(pm, str, len);
   return len - 1;
 }
@@ -214,7 +214,7 @@ int PmStrcpy(PoolMem& dest_pm, const char* src_str)
   if (!src_str) src_str = "";
 
   len = strlen(src_str) + 1;
-  dest_pm.check_size(len);
+  dest_pm.ensure_capacity(len);
   memcpy(dest_pm.c_str(), src_str, len);
   return len - 1;
 }
@@ -230,7 +230,7 @@ int PmStrcpy(PoolMem*& dest_pm, const char* src_str)
  */
 int PmMemcpy(POOLMEM*& dest_pm, const char* data, int32_t n)
 {
-  dest_pm = CheckPoolMemorySize(dest_pm, n);
+  dest_pm = EnsurePoolMemoryCapacity(dest_pm, n);
   memcpy(dest_pm, data, n);
   return n;
 }
@@ -242,7 +242,7 @@ int PmMemcpy(POOLMEM*& dest_pm, PoolMem& data, int32_t n)
 
 int PmMemcpy(PoolMem& dest_pm, const char* data, int32_t n)
 {
-  dest_pm.check_size(n);
+  dest_pm.ensure_capacity(n);
   memcpy(dest_pm.c_str(), data, n);
   return n;
 }

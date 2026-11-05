@@ -360,7 +360,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   Dmsg1(debuglevel, ">dird %s", dir->msg);
 
   // Do not lock device here because it may be locked from label
-  if (!jcr->IsJobCanceled()) {
+  if (!jcr->IsJobAbortedOrCanceled()) {
     if (!DoGetVolumeInfo(this)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
       Dmsg2(debuglevel, T_("Didn't get vol info vol=%s: ERR=%s\n"),
@@ -453,7 +453,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(
   return true;
 #endif
 
-  dir->msg = CheckPoolMemorySize(
+  dir->msg = EnsurePoolMemoryCapacity(
       dir->msg, sizeof(FileAttributes) + MAX_NAME_LENGTH + sizeof(DeviceRecord)
                     + record->data_len + 1);
   dir->message_length
@@ -497,12 +497,12 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
   int status = W_TIMEOUT;
   bool got_vol = false;
 
-  if (jcr->IsJobCanceled()) { return false; }
+  if (jcr->IsJobAbortedOrCanceled()) { return false; }
 
   Dmsg0(debuglevel, "enter DirAskSysopToCreateAppendableVolume\n");
   ASSERT(dev->blocked());
   for (;;) {
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       Mmsg(dev->errmsg,
            T_("Job %s canceled while waiting for mount on Storage Device "
               "\"%s\".\n"),
@@ -527,7 +527,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
       }
     }
 
-    jcr->sendJobStatus(JS_WaitMedia);
+    jcr->UpdateAndSendJobStatus(JS_WaitMedia);
 
     status = WaitForSysop(this);
     Dmsg1(debuglevel, "Back from WaitForSysop status=%d\n", status);
@@ -562,7 +562,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToCreateAppendableVolume()
 get_out:
   dev->poll = poll_mode;  // we do not want to change the poll
                           // mode in this function
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
   Dmsg0(debuglevel, "leave dir_ask_sysop_to_mount_create_appendable_volume\n");
 
   return true;
@@ -591,7 +591,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
   }
   ASSERT(dev->blocked());
   while (1) {
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       Mmsg(
           dev->errmsg,
           T_("Job %s canceled while waiting for mount on Storage Device %s.\n"),
@@ -625,7 +625,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
             VolumeName, dev->print_name(), jcr->Job);
     }
 
-    jcr->sendJobStatus(JS_WaitMount);
+    jcr->UpdateAndSendJobStatus(JS_WaitMount);
 
     status = WaitForSysop(this); /* wait on device */
     Dmsg1(debuglevel, "Back from WaitForSysop status=%d\n", status);
@@ -660,7 +660,7 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
   }
 
 get_out:
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
   Dmsg0(debuglevel, "leave DirAskSysopToMountVolume\n");
   return true;
 }

@@ -274,10 +274,10 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     findIncludeExcludeItem* include;
 
     // Make sure the variable are big enough to contain the data.
-    achClass.check_size(MAX_PATH);
+    achClass.ensure_capacity(MAX_PATH);
 
     // Get the class name and the value count.
-    cchClassName = achClass.size();
+    cchClassName = achClass.capacity();
     retCode = RegQueryInfoKey(hKey,             /* Key handle */
                               achClass.c_str(), /* Buffer for class name */
                               &cchClassName,    /* Size of class string */
@@ -311,14 +311,14 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
       SetBit(FO_IGNORECASE, fo->flags); /* ignore case = yes */
 
       // Make sure the variables are big enough to contain the data.
-      achValue.check_size(MAX_VALUE_NAME);
-      dwKeyEn.check_size(MAX_PATH);
-      expandedKey.check_size(MAX_PATH);
-      destination.check_size(MAX_PATH);
+      achValue.ensure_capacity(MAX_VALUE_NAME);
+      dwKeyEn.ensure_capacity(MAX_PATH);
+      expandedKey.ensure_capacity(MAX_PATH);
+      destination.ensure_capacity(MAX_PATH);
 
       for (unsigned int i = 0; i < cValues; i++) {
         PmStrcpy(achValue, "");
-        cchValue = achValue.size();
+        cchValue = achValue.capacity();
         retCode = RegEnumValue(hKey, i, achValue.c_str(), &cchValue, NULL, NULL,
                                NULL, NULL);
 
@@ -327,7 +327,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
 
           Dmsg2(100, "(%d) \"%s\" : \n", i + 1, achValue.c_str());
 
-          dwLen = dwKeyEn.size();
+          dwLen = dwKeyEn.capacity();
           retCode = RegQueryValueEx(hKey, achValue.c_str(), 0, NULL,
                                     (LPBYTE)dwKeyEn.c_str(), &dwLen);
           if (retCode == ERROR_SUCCESS) {
@@ -583,12 +583,12 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
   /* Find out which next slot will be used on the Circular Buffer.
    * The method will block when the circular buffer is full until a slot is
    * available. */
-  slotnr = cb->NextSlot();
+  slotnr = cb->WaitForSpaceAndGetNextEnqueueIndex();
   save_data = &jcr->cp_thread->save_data[slotnr];
 
   // If this is the first time we use this slot we need to allocate some memory.
   if (!save_data->data) { save_data->data = GetPoolMemory(PM_BSOCK); }
-  save_data->data = CheckPoolMemorySize(save_data->data, length + 1);
+  save_data->data = EnsurePoolMemoryCapacity(save_data->data, length + 1);
   memcpy(save_data->data, data, length);
   save_data->data_len = length;
 
@@ -611,7 +611,7 @@ void win32_flush_copy_thread(JobControlRecord* jcr)
    * conservative. */
   while (!context->flushed) {
     // Tell the copy thread to flush out all data.
-    context->cb->flush();
+    context->cb->SignalEndOfInput();
 
     // Wait for the copy thread to say it flushed the data out.
     pthread_cond_wait(&context->flush, &context->lock);

@@ -260,7 +260,8 @@ class ConfigurationParser {
   void FreeResources();
 
   std::shared_ptr<LoadedConfiguration> GetCurrentConfiguration();
-  std::shared_ptr<LoadedConfiguration> BackupCurrentConfiguration();
+  std::shared_ptr<LoadedConfiguration>
+  ReplaceWithEmptyConfigurationAndReturnPrevious();
   void RestoreConfiguration(std::shared_ptr<LoadedConfiguration>&&);
 
   void InitResource(int rcode,

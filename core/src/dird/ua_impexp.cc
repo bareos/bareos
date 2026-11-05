@@ -265,8 +265,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
               free(vl1->VolName);
               vl1->VolName = NULL;
             }
-            vl1->VolName
-                = get_volume_name_from_SD(ua, vl1->bareos_slot_number, drive);
+            vl1->VolName = ReadSlotVolumeLabelAndReturnName(
+                ua, vl1->bareos_slot_number, drive);
             Dmsg2(100, "Got Vol=%s from SD for Slot=%hd\n", vl1->VolName,
                   vl1->bareos_slot_number);
             break;
@@ -281,8 +281,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
                 free(vl2->VolName);
                 vl2->VolName = NULL;
               }
-              vl2->VolName
-                  = get_volume_name_from_SD(ua, vl1->bareos_slot_number, drive);
+              vl2->VolName = ReadSlotVolumeLabelAndReturnName(
+                  ua, vl1->bareos_slot_number, drive);
               Dmsg2(100, "Got Vol=%s from SD for Slot=%hd\n", vl2->VolName,
                     vl1->bareos_slot_number);
             }

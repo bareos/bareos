@@ -330,8 +330,8 @@ int main(int margc, char* margv[])
 
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+  LoadCryptoCacheOrDiscardOnFailure(me->working_directory, "bareos-sd",
+                                    GetFirstPortHostOrder(me->SDaddrs));
 
   g_dcr = new BTAPE_DCR;
   g_jcr = SetupJcr("btape", archive_name.data(), bsr, director, g_dcr, "",
@@ -423,7 +423,7 @@ static void print_total_speed()
 
 static void init_speed()
 {
-  time(&g_jcr->run_time); /* start counting time for rates */
+  time(&g_jcr->transfer_rate_start_time); /* start counting time for rates */
   g_jcr->JobBytes = 0;
 }
 
@@ -433,7 +433,7 @@ static void PrintSpeed(uint64_t bytes)
   uint64_t rate;
 
   now = time(nullptr);
-  now -= g_jcr->run_time;
+  now -= g_jcr->transfer_rate_start_time;
   if (now <= 0) { now = 1; /* don't divide by zero */ }
 
   total_time += now;
@@ -743,7 +743,7 @@ static void rectestcmd()
   rec = new_record();
 
   for (i = 1; i < 500000; i++) {
-    rec->data = CheckPoolMemorySize(rec->data, i);
+    rec->data = EnsurePoolMemoryCapacity(rec->data, i);
     memset(rec->data, i & 0xFF, i);
     rec->data_len = i;
     if (WriteRecordToBlock(g_dcr, rec)) {
@@ -788,7 +788,7 @@ static bool re_read_block_test()
   rewindcmd();
   EmptyBlock(block);
   rec = new_record();
-  rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, block->buf_len);
   len = rec->data_len = block->buf_len - 100;
   memset(rec->data, 1, rec->data_len);
   if (!WriteRecordToBlock(g_dcr, rec)) {
@@ -941,7 +941,7 @@ static bool SpeedTestBareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 
   EmptyBlock(block);
   rec = new_record();
-  rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, block->buf_len);
   rec->data_len = block->buf_len - 100;
 
   FillBuffer(mode, rec->data, rec->data_len);
@@ -1113,7 +1113,7 @@ static bool write_two_files()
   block = g_dcr->block;
   EmptyBlock(block);
   rec = new_record();
-  rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, block->buf_len);
   rec->data_len = block->buf_len - 100;
   len = rec->data_len / sizeof(uint32_t);
 
@@ -1189,7 +1189,7 @@ static bool write_read_test()
     Pmsg0(0, T_("Rewind OK.\n"));
   }
 
-  rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, block->buf_len);
   rec->data_len = block->buf_len - 100;
   len = rec->data_len / sizeof(uint32_t);
 
@@ -1261,7 +1261,7 @@ static bool position_test()
   block = g_dcr->block;
   EmptyBlock(block);
   rec = new_record();
-  rec->data = CheckPoolMemorySize(rec->data, block->buf_len);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, block->buf_len);
   rec->data_len = block->buf_len - 100;
   len = rec->data_len / sizeof(j);
 
@@ -1848,7 +1848,7 @@ static void wrcmd()
 
   i = block->buf_len - 100;
   ASSERT(i > 0);
-  rec->data = CheckPoolMemorySize(rec->data, i);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, i);
   memset(rec->data, i & 0xFF, i);
   rec->data_len = i;
   if (!WriteRecordToBlock(g_dcr, rec)) {
@@ -2207,16 +2207,16 @@ static void fillcmd()
 
   // Generate data as if from File daemon, write to device
   g_jcr->sd_impl->dcr->VolFirstIndex = 0;
-  time(&g_jcr->run_time); /* start counting time for rates */
+  time(&g_jcr->transfer_rate_start_time); /* start counting time for rates */
 
-  bstrftime(buf1, sizeof(buf1), g_jcr->run_time, "%H:%M:%S");
+  bstrftime(buf1, sizeof(buf1), g_jcr->transfer_rate_start_time, "%H:%M:%S");
 
   if (simple) {
     Pmsg1(-1, T_("%s Begin writing Bareos records to tape ...\n"), buf1);
   } else {
     Pmsg1(-1, T_("%s Begin writing Bareos records to first tape ...\n"), buf1);
   }
-  for (file_index = 0; g_ok && !g_jcr->IsJobCanceled();) {
+  for (file_index = 0; g_ok && !g_jcr->IsJobAbortedOrCanceled();) {
     rec.VolSessionId = g_jcr->VolSessionId;
     rec.VolSessionTime = g_jcr->VolSessionTime;
     rec.FileIndex = ++file_index;
@@ -2246,7 +2246,7 @@ static void fillcmd()
        */
       if ((block->BlockNumber % 5000) == 0) {
         now = time(nullptr);
-        now -= g_jcr->run_time;
+        now -= g_jcr->transfer_rate_start_time;
         if (now <= 0) { now = 1; /* prevent divide error */ }
         rate = g_dev->VolCatInfo.VolCatBytes / now;
         Pmsg5(-1, T_("Wrote block=%u, file,blk=%u,%u VolBytes=%s rate=%sB/s\n"),
@@ -2291,7 +2291,7 @@ static void fillcmd()
   if (vol_num > 1) {
     Dmsg0(100, "Write_end_session_label()\n");
     /* Create Job status for end of session label */
-    if (!g_jcr->IsJobCanceled() && g_ok) {
+    if (!g_jcr->IsJobAbortedOrCanceled() && g_ok) {
       g_jcr->setJobStatusWithPriorityCheck(JS_Terminated);
     } else if (!g_ok) {
       Pmsg0(000, T_("Job canceled.\n"));
@@ -2444,7 +2444,7 @@ static bool do_unfill()
 
   end_of_tape = 0;
 
-  time(&g_jcr->run_time); /* start counting time for rates */
+  time(&g_jcr->transfer_rate_start_time); /* start counting time for rates */
   stop = 0;
   file_index = 0;
   if (last_block) {
@@ -2702,7 +2702,7 @@ static int FlushBlock(DeviceBlock* block)
       stop = 1;
     }
     now = time(nullptr);
-    now -= g_jcr->run_time;
+    now -= g_jcr->transfer_rate_start_time;
     if (now <= 0) { now = 1; /* don't divide by zero */ }
     rate = g_dev->VolCatInfo.VolCatBytes / now;
     vol_size = g_dev->VolCatInfo.VolCatBytes;
@@ -2767,7 +2767,7 @@ static void qfillcmd()
 
   i = block->buf_len - 100;
   ASSERT(i > 0);
-  rec->data = CheckPoolMemorySize(rec->data, i);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, i);
   memset(rec->data, i & 0xFF, i);
   rec->data_len = i;
   rewindcmd();
@@ -3033,11 +3033,11 @@ static bool MyMountNextReadVolume(DeviceControlRecord* t_dcr)
   Pmsg2(000, T_("End of Volume \"%s\" %d records.\n"), t_dcr->VolumeName,
         quickie_count);
 
-  VolumeUnused(t_dcr); /* release current volume */
+  MarkVolumeUnused(t_dcr); /* release current volume */
   if (LastBlock != block->BlockNumber) { VolBytes += block->block_len; }
   LastBlock = block->BlockNumber;
   now = time(nullptr);
-  now -= jcr->run_time;
+  now -= jcr->transfer_rate_start_time;
   if (now <= 0) { now = 1; }
   rate = VolBytes / now;
   Pmsg3(-1, T_("Read block=%u, VolBytes=%s rate=%sB/s\n"), block->BlockNumber,

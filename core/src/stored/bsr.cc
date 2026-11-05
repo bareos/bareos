@@ -363,7 +363,8 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
+bool IncrementBsrFilesFoundAndRequestRepositionIfComplete(BootStrapRecord*,
+                                                          DeviceRecord* rec)
 {
   BootStrapRecord* rbsr = rec->bsr;
   Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);

@@ -212,7 +212,7 @@ static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool)
   dcr->spooling = false;
 
   MakeUniqueDataSpoolFilename(dcr, name);
-  SecureErase(dcr->jcr, name);
+  DeleteFileUsingConfiguredErasePolicy(dcr->jcr, name);
   Dmsg1(100, "Deleted spool file: %s\n", name);
   FreePoolMemory(name);
 
@@ -272,7 +272,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
          edit_uint64_with_commas(jcr->sd_impl->dcr->job_spool_size, ec1));
     jcr->setJobStatusWithPriorityCheck(JS_DataDespooling);
   }
-  jcr->sendJobStatus(JS_DataDespooling);
+  jcr->UpdateAndSendJobStatus(JS_DataDespooling);
   dcr->despool_wait = true;
   dcr->spooling = false;
   /* We work with device blocked, but not locked so that other threads
@@ -307,12 +307,12 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
 #endif
 
   /* Add run time, to get current wait time */
-  int32_t despool_start = time(NULL) - jcr->run_time;
+  int32_t despool_start = time(NULL) - jcr->transfer_rate_start_time;
 
   SetNewFileParameters(dcr);
 
   while (ok) {
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       ok = false;
       break;
     }
@@ -353,10 +353,11 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   /* Set new file/block parameters for current dcr */
   SetNewFileParameters(dcr);
 
-  /* Subtracting run_time give us elapsed time - wait_time since
-   * we started despooling. Note, don't use time_t as it is 32 or 64
-   * bits depending on the OS and doesn't edit with %d */
-  int32_t despool_elapsed = time(NULL) - despool_start - jcr->run_time;
+  /* Subtracting transfer_rate_start_time gives us elapsed time - wait_time
+   * since we started despooling. Note, don't use time_t as it is 32 or 64 bits
+   * depending on the OS and doesn't edit with %d */
+  int32_t despool_elapsed
+      = time(NULL) - despool_start - jcr->transfer_rate_start_time;
 
   if (despool_elapsed <= 0) { despool_elapsed = 1; }
 
@@ -408,7 +409,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   /* Note, if committing we leave the device blocked. It will be removed in
    * ReleaseDevice(); */
   if (!commit) { dcr->dev->dunblock(); }
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
 
   return ok;
 }
@@ -491,7 +492,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
   bool despool = false;
   DeviceBlock* block = dcr->block;
 
-  if (dcr->jcr->IsJobCanceled()) { return false; }
+  if (dcr->jcr->IsJobAbortedOrCanceled()) { return false; }
   ASSERT(block->binbuf == ((uint32_t)(block->bufp - block->buf)));
   if (block->binbuf <= WRITE_BLKHDR_LENGTH) { /* Does block have data in it? */
     return true;
@@ -793,7 +794,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
     spool_stats.attr_size += size;
     unlock_mutex(mutex);
 
-    jcr->sendJobStatus(JS_AttrDespooling);
+    jcr->UpdateAndSendJobStatus(JS_AttrDespooling);
     Jmsg(jcr, M_INFO, 0,
          T_("Sending spooled attrs to the Director. Despooling %s bytes ...\n"),
          edit_uint64_with_commas(size, ec1));
@@ -857,7 +858,7 @@ static bool CloseAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs)
   MakeUniqueSpoolFilename(jcr, name, bs->fd_);
 
   close(bs->spool_fd_);
-  SecureErase(jcr, name);
+  DeleteFileUsingConfiguredErasePolicy(jcr, name);
   FreePoolMemory(name);
   bs->spool_fd_ = -1;
   bs->ClearSpooling();

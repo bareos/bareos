@@ -88,7 +88,7 @@ bool DoReadData(JobControlRecord* jcr)
 
   // Tell File daemon we will send data
   fd->fsend(OK_data);
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
   ok = ReadRecords(dcr, RecordCb, MountNextReadVolume);
 
   // Send end of data to FD

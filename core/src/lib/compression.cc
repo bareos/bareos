@@ -767,7 +767,7 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
                                  bool with_header,
                                  bool want_data_stream)
 {
-  uLong compress_len;
+  uLong decompressed_size;
   const unsigned char* cbuf;
   char* wbuf;
   int status, real_compress_len;
@@ -777,10 +777,10 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
    * be used in Bareos. */
   if (sparse && want_data_stream) {
     wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-    compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+    decompressed_size = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
   } else {
     wbuf = jcr->compress.inflate_buffer;
-    compress_len = jcr->compress.inflate_buffer_size;
+    decompressed_size = jcr->compress.inflate_buffer_size;
   }
 
   // See if this is a compressed stream with the new compression header or an
@@ -794,27 +794,27 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   }
 
   Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
-        static_cast<std::size_t>(compress_len), *length);
+        static_cast<std::size_t>(decompressed_size), *length);
 
-  while ((status = uncompress((Byte*)wbuf, &compress_len, (const Byte*)cbuf,
-                              (uLong)real_compress_len))
+  while ((status = uncompress((Byte*)wbuf, &decompressed_size,
+                              (const Byte*)cbuf, (uLong)real_compress_len))
          == Z_BUF_ERROR) {
     // The buffer size is too small, try with a bigger one
     jcr->compress.inflate_buffer_size
         = jcr->compress.inflate_buffer_size
           + (jcr->compress.inflate_buffer_size >> 1);
-    jcr->compress.inflate_buffer = CheckPoolMemorySize(
+    jcr->compress.inflate_buffer = EnsurePoolMemoryCapacity(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
     if (sparse && want_data_stream) {
       wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+      decompressed_size = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
     } else {
       wbuf = jcr->compress.inflate_buffer;
-      compress_len = jcr->compress.inflate_buffer_size;
+      decompressed_size = jcr->compress.inflate_buffer_size;
     }
     Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
-          static_cast<std::size_t>(compress_len), *length);
+          static_cast<std::size_t>(decompressed_size), *length);
   }
 
   if (status != Z_OK) {
@@ -830,11 +830,11 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   }
 
   *data = jcr->compress.inflate_buffer;
-  *length = compress_len;
+  *length = decompressed_size;
 
   Dmsg2(400,
         "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
-        static_cast<std::size_t>(compress_len), jcr->JobBytes);
+        static_cast<std::size_t>(decompressed_size), jcr->JobBytes);
 
   return true;
 }
@@ -846,44 +846,44 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
                                 bool sparse,
                                 bool want_data_stream)
 {
-  lzo_uint compress_len;
+  lzo_uint decompressed_size;
   const unsigned char* cbuf;
   unsigned char* wbuf;
   int status, real_compress_len;
 
   if (sparse && want_data_stream) {
-    compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+    decompressed_size = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
     cbuf = (const unsigned char*)*data + OFFSET_FADDR_SIZE
            + sizeof(comp_stream_header);
     wbuf = (unsigned char*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
   } else {
-    compress_len = jcr->compress.inflate_buffer_size;
+    decompressed_size = jcr->compress.inflate_buffer_size;
     cbuf = (const unsigned char*)*data + sizeof(comp_stream_header);
     wbuf = (unsigned char*)jcr->compress.inflate_buffer;
   }
 
   real_compress_len = *length - sizeof(comp_stream_header);
   Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
-        static_cast<std::size_t>(compress_len), *length);
+        static_cast<std::size_t>(decompressed_size), *length);
   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf,
-                                         &compress_len, NULL))
+                                         &decompressed_size, NULL))
          == LZO_E_OUTPUT_OVERRUN) {
     // The buffer size is too small, try with a bigger one
     jcr->compress.inflate_buffer_size
         = jcr->compress.inflate_buffer_size
           + (jcr->compress.inflate_buffer_size >> 1);
-    jcr->compress.inflate_buffer = CheckPoolMemorySize(
+    jcr->compress.inflate_buffer = EnsurePoolMemoryCapacity(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
     if (sparse && want_data_stream) {
-      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+      decompressed_size = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
       wbuf = (unsigned char*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
     } else {
-      compress_len = jcr->compress.inflate_buffer_size;
+      decompressed_size = jcr->compress.inflate_buffer_size;
       wbuf = (unsigned char*)jcr->compress.inflate_buffer;
     }
     Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
-          static_cast<std::size_t>(compress_len), *length);
+          static_cast<std::size_t>(decompressed_size), *length);
   }
 
   if (status != LZO_E_OK) {
@@ -899,11 +899,11 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   }
 
   *data = jcr->compress.inflate_buffer;
-  *length = compress_len;
+  *length = decompressed_size;
 
   Dmsg2(400,
         "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
-        static_cast<std::size_t>(compress_len), jcr->JobBytes);
+        static_cast<std::size_t>(decompressed_size), jcr->JobBytes);
 
   return true;
 }
@@ -961,7 +961,7 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
         jcr->compress.inflate_buffer_size
             = jcr->compress.inflate_buffer_size
               + (jcr->compress.inflate_buffer_size >> 1);
-        jcr->compress.inflate_buffer = CheckPoolMemorySize(
+        jcr->compress.inflate_buffer = EnsurePoolMemoryCapacity(
             jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
         if (sparse && want_data_stream) {
           stream.next_out

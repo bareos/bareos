@@ -227,7 +227,9 @@ struct RestoreContext {
 
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
-  JobId_t JobId = 0;
+  JobId_t SelectedJobId = 0;
+  uint32_t FileCountEstimate = 0;
+  uint32_t PurgedJobCount = 0;
   char* backup_format = nullptr;
   char* ClientName = nullptr;        /**< Backup client */
   char* RestoreClientName = nullptr; /**< Restore client */

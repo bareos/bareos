@@ -401,7 +401,7 @@ char* BareosDbPostgresql::EscapeObject(JobControlRecord* jcr,
      * [..] This result string length includes the terminating zero byte of the
      * result. [...] A terminating zero byte is also added. [...]
      * So this is unnecessary: */
-    esc_obj = CheckPoolMemorySize(esc_obj, new_len + 1);
+    esc_obj = EnsurePoolMemoryCapacity(esc_obj, new_len + 1);
     if (esc_obj) {
       memcpy(esc_obj, obj, new_len);
       esc_obj[new_len] = 0;
@@ -444,7 +444,7 @@ void BareosDbPostgresql::UnescapeObject(JobControlRecord* jcr,
   }
 
   *dest_len = new_len;
-  dest = CheckPoolMemorySize(dest, new_len + 1);
+  dest = EnsurePoolMemoryCapacity(dest, new_len + 1);
   if (dest) {
     memcpy(dest, obj, new_len);
     dest[new_len] = '\0';

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -205,9 +205,9 @@ int Device::NextVolTimedwait(const struct timespec* timeout)
 /**
  * This is a recursive lock that checks if the device is blocked.
  *
- * When blocked is set, all threads EXCEPT thread with id no_wait_id
- * must wait. The no_wait_id thread is out obtaining a new volume
- * and preparing the label.
+ * When blocked is set, all threads except the one identified by
+ * thread_id_allowed_while_device_blocked must wait. That thread is out
+ * obtaining a new volume and preparing the label.
  */
 void Device::rLock(bool locked)
 {
@@ -216,14 +216,17 @@ void Device::rLock(bool locked)
     count_++;
   }
 
-  if (blocked() && !pthread_equal(no_wait_id, pthread_self())) {
+  if (blocked()
+      && !pthread_equal(thread_id_allowed_while_device_blocked,
+                        pthread_self())) {
     num_waiting++; /* indicate that I am waiting */
     while (blocked()) {
       int status;
       char ed1[50], ed2[50];
 
       Dmsg3(sd_debuglevel, "rLock blked=%s no_wait=%s me=%s\n", print_blocked(),
-            edit_pthread(no_wait_id, ed1, sizeof(ed1)),
+            edit_pthread(thread_id_allowed_while_device_blocked, ed1,
+                         sizeof(ed1)),
             edit_pthread(pthread_self(), ed2, sizeof(ed2)));
       if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
         BErrNo be;
@@ -248,8 +251,9 @@ void Device::rLock(bool locked)
 void _blockDevice(const char* file, int line, Device* dev, int state)
 {
   ASSERT(dev->blocked() == BST_NOT_BLOCKED);
-  dev->SetBlocked(state);           /* make other threads wait */
-  dev->no_wait_id = pthread_self(); /* allow us to continue */
+  dev->SetBlocked(state); /* make other threads wait */
+  dev->thread_id_allowed_while_device_blocked
+      = pthread_self(); /* allow us to continue */
   Dmsg3(sd_debuglevel, "set blocked=%s from %s:%d\n", dev->print_blocked(),
         file, line);
 }
@@ -265,7 +269,7 @@ void _unBlockDevice(const char* file, int line, Device* dev)
         line);
   ASSERT(dev->blocked());
   dev->SetBlocked(BST_NOT_BLOCKED);
-  ClearThreadId(dev->no_wait_id);
+  ClearThreadId(dev->thread_id_allowed_while_device_blocked);
   if (dev->num_waiting > 0) {
     pthread_cond_broadcast(&dev->wait); /* wake them up */
   }
@@ -283,12 +287,13 @@ void _stealDeviceLock(const char* file,
 {
   Dmsg3(sd_debuglevel, "steal lock. old=%s from %s:%d\n", dev->print_blocked(),
         file, line);
-  hold->dev_blocked = dev->blocked();
-  hold->dev_prev_blocked = dev->dev_prev_blocked;
-  hold->no_wait_id = dev->no_wait_id;
+  hold->blocked_state = dev->blocked();
+  hold->previous_blocked_state = dev->previous_blocked_state;
+  hold->thread_id_allowed_while_device_blocked
+      = dev->thread_id_allowed_while_device_blocked;
   dev->SetBlocked(state);
   Dmsg1(sd_debuglevel, "steal lock. new=%s\n", dev->print_blocked());
-  dev->no_wait_id = pthread_self();
+  dev->thread_id_allowed_while_device_blocked = pthread_self();
   dev->Unlock();
 }
 
@@ -304,9 +309,10 @@ void _giveBackDeviceLock(const char* file,
   Dmsg3(sd_debuglevel, "return lock. old=%s from %s:%d\n", dev->print_blocked(),
         file, line);
   dev->Lock();
-  dev->SetBlocked(hold->dev_blocked);
-  dev->dev_prev_blocked = hold->dev_prev_blocked;
-  dev->no_wait_id = hold->no_wait_id;
+  dev->SetBlocked(hold->blocked_state);
+  dev->previous_blocked_state = hold->previous_blocked_state;
+  dev->thread_id_allowed_while_device_blocked
+      = hold->thread_id_allowed_while_device_blocked;
   Dmsg1(sd_debuglevel, "return lock. new=%s\n", dev->print_blocked());
   if (dev->num_waiting > 0) {
     pthread_cond_broadcast(&dev->wait); /* wake them up */

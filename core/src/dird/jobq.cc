@@ -182,7 +182,7 @@ extern "C" void* sched_wait(void* arg)
           jcr->JobId, static_cast<long long>(wtime), jcr->UseCount());
     if (wtime > 30) { wtime = 30; }
     Bmicrosleep(wtime, 0);
-    if (jcr->IsJobCanceled()) { break; }
+    if (jcr->IsJobAbortedOrCanceled()) { break; }
     wtime = jcr->sched_time - time(NULL);
   }
   Dmsg1(200, "resched use=%d\n", jcr->UseCount());
@@ -216,7 +216,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   jcr->IncUseCount(); /* mark jcr in use by us */
   Dmsg3(2300, "JobqAdd jobid=%" PRIu32 " jcr=%p UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
-  if (!jcr->IsJobCanceled() && wtime > 0) {
+  if (!jcr->IsJobAbortedOrCanceled() && wtime > 0) {
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
     sched_pkt->jcr = jcr;
     sched_pkt->jq = jq;
@@ -239,7 +239,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
 
   // While waiting in a queue this job is not attached to a thread
   SetJcrInThreadSpecificData(nullptr);
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     // Add job to ready queue so that it is canceled quickly
     jq->ready_jobs->prepend(item);
     Dmsg1(2300, "Prepended job=%" PRIu32 " to ready queue\n", jcr->JobId);
@@ -281,7 +281,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
  * If you want to cancel it, you need to provide some external means
  * of doing so (e.g. pthread_kill()).
  */
-int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
+int MoveWaitingJobToReadyQueue(jobq_t* jq, JobControlRecord* jcr)
 {
   int status;
   bool found = false;
@@ -501,7 +501,7 @@ extern "C" void* jobq_server(void* arg)
 
         if (!AcquireResources(jcr)) {
           // If resource conflict, job is canceled
-          if (!jcr->IsJobCanceled()) {
+          if (!jcr->IsJobAbortedOrCanceled()) {
             je = jn; /* point to next waiting job */
             continue;
           }
@@ -836,7 +836,7 @@ static void DecJobConcurrency(JobControlRecord* jcr)
 
 /**
  * Note: IncReadStore() and DecReadStore() are
- * called from SelectNextRstore() in src/dird/job.c
+ * called from SwitchReadStorageAndWaitForJobSlot() in src/dird/storage.cc
  */
 bool IncReadStore(JobControlRecord* jcr)
 {

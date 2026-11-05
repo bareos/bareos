@@ -53,7 +53,7 @@ bool StoreDirectorCredentials(std::string_view session_id,
                               std::string_view director,
                               std::string_view username,
                               std::string_view password);
-std::optional<ProxyAuthSessionRecord> LookupSession(
+std::optional<ProxyAuthSessionRecord> LookupAndRefreshIdleTimeout(
     std::string_view session_id);
 bool RemoveDirector(std::string_view session_id, std::string_view director);
 void RemoveSession(std::string_view session_id);

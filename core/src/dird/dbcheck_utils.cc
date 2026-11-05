@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,8 +119,8 @@ int NameListHandler(void* ctx, int, char** row)
 {
   NameList* name = (NameList*)ctx;
 
-  if (name->num_ids == MAX_ID_LIST_LEN) { return 1; }
-  if (name->num_ids == name->max_ids) {
+  if (name->num_names == MAX_ID_LIST_LEN) { return 1; }
+  if (name->num_names == name->max_ids) {
     if (name->max_ids == 0) {
       name->max_ids = 10000;
       name->name = (char**)malloc(sizeof(char*) * name->max_ids);
@@ -129,14 +129,14 @@ int NameListHandler(void* ctx, int, char** row)
       name->name = (char**)realloc(name->name, sizeof(char*) * name->max_ids);
     }
   }
-  name->name[name->num_ids++] = strdup(row[0]);
+  name->name[name->num_names++] = strdup(row[0]);
   return 0;
 }
 
 // Construct name list
 int MakeNameList(BareosDb* db, const char* query, NameList* name_list)
 {
-  name_list->num_ids = 0;
+  name_list->num_names = 0;
   name_list->num_del = 0;
   name_list->tot_ids = 0;
 
@@ -150,7 +150,7 @@ int MakeNameList(BareosDb* db, const char* query, NameList* name_list)
 // Print names in the list
 void PrintNameList(NameList* name_list)
 {
-  for (int i = 0; i < name_list->num_ids; i++) {
+  for (int i = 0; i < name_list->num_names; i++) {
     printf("%s\n", name_list->name[i]);
   }
 }
@@ -158,8 +158,8 @@ void PrintNameList(NameList* name_list)
 // Free names in the list
 void FreeNameList(NameList* name_list)
 {
-  for (int i = 0; i < name_list->num_ids; i++) { free(name_list->name[i]); }
-  name_list->num_ids = 0;
+  for (int i = 0; i < name_list->num_names; i++) { free(name_list->name[i]); }
+  name_list->num_names = 0;
   name_list->max_ids = 0;
   free(name_list->name);
   name_list->name = nullptr;
@@ -195,8 +195,8 @@ std::vector<int> get_deletable_storageids(
       exit(BEXIT_FAILURE);
     }
 
-    if (volume_names.num_ids > 0) {
-      for (int volumename = 0; volumename < volume_names.num_ids;
+    if (volume_names.num_names > 0) {
+      for (int volumename = 0; volumename < volume_names.num_names;
            ++volumename) {
         Emsg3(M_WARNING, 0,
               T_("Orphaned storage '%s' is being used by volume '%s'. "
@@ -216,8 +216,8 @@ std::vector<int> get_deletable_storageids(
       exit(BEXIT_FAILURE);
     }
 
-    if (device_names.num_ids > 0) {
-      for (int devicename = 0; devicename < device_names.num_ids;
+    if (device_names.num_names > 0) {
+      for (int devicename = 0; devicename < device_names.num_names;
            ++devicename) {
         Emsg3(M_WARNING, 0,
               T_("Orphaned storage '%s' is being used by device '%s'. "
@@ -228,7 +228,7 @@ std::vector<int> get_deletable_storageids(
       }
     }
 
-    if (volume_names.num_ids == 0 && device_names.num_ids == 0) {
+    if (volume_names.num_names == 0 && device_names.num_names == 0) {
       storage_ids_to_delete.push_back(
           orphaned_storage_ids_list.Id[orphaned_storage_id]);
     }
@@ -265,7 +265,7 @@ std::vector<std::string> get_orphaned_storages_names(BareosDb* db)
 
   std::vector<std::string> orphaned_storage_names_list;
 
-  for (int i = 0; i < database_storage_names_list.num_ids; ++i) {
+  for (int i = 0; i < database_storage_names_list.num_names; ++i) {
     if (std::find(config_storage_names_list.begin(),
                   config_storage_names_list.end(),
                   std::string(database_storage_names_list.name[i]))

@@ -66,7 +66,8 @@ bool MatchFiles(JobControlRecord* jcr,
   struct s_included_file* inc = NULL;
 
   /* This is the old deprecated way */
-  while (!jcr->IsJobCanceled() && (inc = get_next_included_file(ff, inc))) {
+  while (!jcr->IsJobAbortedOrCanceled()
+         && (inc = get_next_included_file(ff, inc))) {
     /* Copy options for this file */
     bstrncat(ff->VerifyOpts, inc->VerifyOpts, sizeof(ff->VerifyOpts));
     Dmsg1(100, "FindFiles: file=%s\n", inc->fname);

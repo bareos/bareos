@@ -35,7 +35,8 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir);
 void* handle_director_connection(BareosSocket* dir, DirectorResource* res);
 bool StartConnectToDirectorThreads();
 bool StopConnectToDirectorThreads(bool wait = false);
-bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher);
+bool ConfigureJobCryptoAndGetWantedCipher(JobControlRecord* jcr,
+                                          crypto_cipher_t* cipher);
 void CleanupFileset(JobControlRecord* jcr);
 } /* namespace filedaemon */
 

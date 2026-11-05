@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -270,7 +270,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
 
     // Close file and blow it away
     ::close(fd);
-    SecureErase(dcr->jcr, archive_name.c_str());
+    DeleteFileUsingConfiguredErasePolicy(dcr->jcr, archive_name.c_str());
 
     // Recreate the file -- of course, empty
     oflags = O_CREAT | O_RDWR | O_BINARY;

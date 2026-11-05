@@ -219,13 +219,13 @@ int main(int argc, char* argv[])
     TerminateFiled(1);
   }
 
-  SetWorkingDirectory(me->working_directory);
+  SetConfiguredWorkingDirectory(me->working_directory);
 
   if (test_config) { TerminateFiled(0); }
 
   /* Maximum 1 daemon at a time */
-  ReadStateFile(me->working_directory, "bareos-fd",
-                GetFirstPortHostOrder(me->FDaddrs));
+  LoadStateAndRemoveUnreadableOrInvalidFile(me->working_directory, "bareos-fd",
+                                            GetFirstPortHostOrder(me->FDaddrs));
   LoadFdPlugins(me->plugin_directory, me->plugin_names);
 
   LockJcrChain();

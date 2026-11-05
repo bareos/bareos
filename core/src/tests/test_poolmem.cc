@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,11 +104,11 @@ TEST(poolmem, checkmemorysize)
   EXPECT_NE(pm, nullptr);
   EXPECT_EQ(SizeofPoolMemory(pm), 10);
 
-  POOLMEM* checked = CheckPoolMemorySize(pm, 10);
+  POOLMEM* checked = EnsurePoolMemoryCapacity(pm, 10);
   EXPECT_EQ(pm, checked);
   EXPECT_EQ(SizeofPoolMemory(checked), 10);
 
-  POOLMEM* realloc = CheckPoolMemorySize(pm, 20);
+  POOLMEM* realloc = EnsurePoolMemoryCapacity(pm, 20);
   EXPECT_NE(realloc, nullptr);
   EXPECT_EQ(SizeofPoolMemory(realloc), 20);
 
@@ -187,7 +187,7 @@ TEST(poolmem, pmstrcat3)
   auto pm_addr = pm.addr();
 
   EXPECT_STREQ(pm.c_str(), "");
-  EXPECT_EQ(pm.size(), 130);
+  EXPECT_EQ(pm.capacity(), 130);
 
   EXPECT_EQ(PmStrcat(pm, nullptr), 0);
   EXPECT_EQ(pm.addr(), pm_addr);
@@ -205,7 +205,7 @@ TEST(poolmem, pmstrcat3)
   EXPECT_STREQ(pm.c_str(), "1234567890");
 
   for (auto i = 0; i < 13; i++) { PmStrcat(pm, "1234567890"); }
-  EXPECT_EQ(pm.size(), 141);
+  EXPECT_EQ(pm.capacity(), 141);
 }
 
 TEST(poolmem, pmstrcat4)
@@ -217,7 +217,7 @@ TEST(poolmem, pmstrcat4)
   auto pm_addr = pm.addr();
 
   EXPECT_STREQ(pm.c_str(), "");
-  EXPECT_EQ(pm.size(), 130);
+  EXPECT_EQ(pm.capacity(), 130);
 
   EXPECT_EQ(PmStrcat(pm_ptr, nullptr), 0);
   EXPECT_EQ(pm.addr(), pm_addr);
@@ -235,7 +235,7 @@ TEST(poolmem, pmstrcat4)
   EXPECT_STREQ(pm.c_str(), "1234567890");
 
   for (auto i = 0; i < 13; i++) { PmStrcat(pm_ptr, "1234567890"); }
-  EXPECT_EQ(pm.size(), 141);
+  EXPECT_EQ(pm.capacity(), 141);
 }
 
 TEST(poolmem, pmstrcpy1)

@@ -477,7 +477,7 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
   if (jcr->dir_impl->FDVersion > FD_VERSION_53) {
     fd->fsend(getSecureEraseCmd);
     while ((n = BgetDirmsg(fd)) >= 0) {
-      jcr->dir_impl->FDSecureEraseCmd = CheckPoolMemorySize(
+      jcr->dir_impl->FDSecureEraseCmd = EnsurePoolMemoryCapacity(
           jcr->dir_impl->FDSecureEraseCmd, fd->message_length);
       if (bsscanf(fd->msg, OKgetSecureEraseCmd, jcr->dir_impl->FDSecureEraseCmd)
           == 1) {
@@ -694,7 +694,7 @@ static int RestoreObjectHandler(void* ctx, int, char** row)
   JobControlRecord* jcr = octx->jcr;
 
   fd = jcr->file_bsock;
-  if (jcr->IsJobCanceled()) { return 1; }
+  if (jcr->IsJobAbortedOrCanceled()) { return 1; }
 
   // Old File Daemon doesn't handle restore objects
   if (jcr->dir_impl->FDVersion < FD_VERSION_3) {
@@ -876,7 +876,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     int stream, len;
     char *p, *fn;
     PoolMem Digest(PM_MESSAGE); /* Either Verify opts or MD5/SHA1 digest */
-    Digest.check_size(fd->message_length);
+    Digest.ensure_capacity(fd->message_length);
     if ((len
          = bsscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
         != 3) {
@@ -910,7 +910,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       }
 
       // Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
-      jcr->dir_impl->fname.check_size(fd->message_length);
+      jcr->dir_impl->fname.ensure_capacity(fd->message_length);
       fn = jcr->dir_impl->fname.c_str();
       while (*p != 0) { *fn++ = *p++; /* copy filename */ }
       *fn = *p++;             /* term filename and point p to attribs */

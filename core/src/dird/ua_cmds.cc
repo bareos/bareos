@@ -1894,7 +1894,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
   if (!GetOrCreateFilesetRecord(jcr)) { return true; }
 
-  GetLevelSinceTime(jcr);
+  DetermineBackupLevelAndSinceTime(jcr);
 
   ua->SendMsg(T_("Connecting to Client %s at %s:%" PRIu32 "\n"),
               jcr->dir_impl->res.client->resource_name_,

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,7 +95,8 @@ bool enable_decompression{false};
 
 void OutputBlockSize(std::size_t blocksize)
 {
-  std::cout << "Using block size " << SizeAsSiPrefixFormat(blocksize) << "\n";
+  std::cout << "Using block size "
+            << FormatSizeAsBinaryUnitComponents(blocksize) << "\n";
 }
 
 void OutputStatus()

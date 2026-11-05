@@ -132,7 +132,7 @@ struct runtime_disk_info_encoding {
   uint32_t phys_cylinders;
   uint32_t phys_heads;
   uint32_t phys_sectors;
-  uint64_t phys_capacity;
+  uint64_t phys_capacity_sectors;
   uint32_t adapter_type;
   uint32_t padding[16];
   uint32_t end_magic;
@@ -221,7 +221,7 @@ static inline void fill_runtime_disk_info_encoding(
   rdie->phys_heads = info->physGeo.heads;
   rdie->phys_sectors = info->physGeo.sectors;
 
-  rdie->phys_capacity = info->capacity;
+  rdie->phys_capacity_sectors = info->capacity;
   rdie->adapter_type = info->adapterType;
 }
 
@@ -239,7 +239,7 @@ static inline void dump_runtime_disk_info_encoding(
           rdie->bios_cylinders, rdie->bios_heads, rdie->bios_sectors);
   fprintf(stderr, "PHYS geometry (%u cyl, %u heads, %u sectors)\n",
           rdie->phys_cylinders, rdie->phys_heads, rdie->phys_sectors);
-  fprintf(stderr, "Physical capacity %lu\n", rdie->phys_capacity);
+  fprintf(stderr, "Physical capacity %lu\n", rdie->phys_capacity_sectors);
   fprintf(stderr, "Adapter Type %u\n", rdie->adapter_type);
 }
 
@@ -909,7 +909,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
 
   if (create_disk && !validate_only) {
     do_vixdisklib_create(DISK_PARAMS_KEY, vmdk_disk_name, value,
-                         rdie.phys_capacity * VIXDISKLIB_SECTOR_SIZE);
+                         rdie.phys_capacity_sectors * VIXDISKLIB_SECTOR_SIZE);
     do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true,
                        &write_diskHandle);
 

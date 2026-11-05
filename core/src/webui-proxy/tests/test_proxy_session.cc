@@ -695,7 +695,7 @@ TEST(ProxySession, DeleteSessionEndsTheWholeSession)
 
   EXPECT_EQ(HttpStatusLine(response), "HTTP/1.1 204 No Content");
   EXPECT_NE(response.find("Max-Age=0"), std::string::npos);
-  EXPECT_FALSE(ProxyAuthSessionStore::LookupSession(session_id));
+  EXPECT_FALSE(ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id));
 }
 
 TEST(ProxySession, ReuseEndpointReportsAlreadyAuthenticatedDirectors)

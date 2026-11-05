@@ -132,7 +132,7 @@ static void DoSdCommands(JobControlRecord* jcr)
         jcr->errmsg[0] = 0;
         if (!sd_cmds[i].func(jcr)) { /* do command */
           // Note sd->msg command may be destroyed by comm activity
-          if (!jcr->IsJobCanceled()) {
+          if (!jcr->IsJobAbortedOrCanceled()) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
                     T_("Command error with SD, hanging up. %s\n"), jcr->errmsg);
@@ -149,7 +149,7 @@ static void DoSdCommands(JobControlRecord* jcr)
     }
 
     if (!found) { /* command not found */
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, T_("SD command not found: %s\n"), sd->msg);
         Dmsg1(110, "<stored: Command not found: %s\n", sd->msg);
       }
@@ -176,7 +176,7 @@ bool DoListenRun(JobControlRecord* jcr)
   char ec1[30];
   BareosSocket* dir = jcr->dir_bsock;
 
-  jcr->sendJobStatus(JS_WaitSD); /* wait for SD to connect */
+  jcr->UpdateAndSendJobStatus(JS_WaitSD); /* wait for SD to connect */
 
   Dmsg2(50, "%s waiting for SD to contact SD key=%s\n", jcr->Job,
         jcr->sd_auth_key);
@@ -187,10 +187,11 @@ bool DoListenRun(JobControlRecord* jcr)
   {
     auto locked = jcr->sd_impl->client_available.lock();
     locked.wait(jcr->sd_impl->job_start_wait, [jcr](bool started) {
-      return started || jcr->IsJobCanceled();
+      return started || jcr->IsJobAbortedOrCanceled();
     });
   }
-  Dmsg3(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
+  Dmsg3(50, "Auth=%d canceled=%d\n", jcr->authenticated,
+        jcr->IsJobAbortedOrCanceled());
 
   if (!jcr->authenticated || !jcr->store_bsock) {
     Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
@@ -203,8 +204,8 @@ bool DoListenRun(JobControlRecord* jcr)
 
   dir->fsend(Job_start, jcr->Job);
   jcr->start_time = time(NULL);
-  jcr->run_time = jcr->start_time;
-  jcr->sendJobStatus(JS_Running);
+  jcr->transfer_rate_start_time = jcr->start_time;
+  jcr->UpdateAndSendJobStatus(JS_Running);
 
   // See if we need to limit the inbound bandwidth.
   if (me->max_bandwidth_per_job && jcr->store_bsock) {

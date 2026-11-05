@@ -75,29 +75,29 @@ TEST(scheduler_job_item_queue, priority_and_time)
   /* JobResource::selection_type is used here as a helper variable
    * to store the expected place in the run order*/
 
-  time_t runtime = now;
+  time_t scheduled_time = now;
   run_resources[0].Priority = 10;
   job_resources[0].selection_type = 1;  // runs first (see above)
   scheduler_job_item_queue.EmplaceItem(unused, &job_resources[0],
-                                       &run_resources[0], runtime,
+                                       &run_resources[0], scheduled_time,
                                        JobTrigger::kUndefined);
-  runtime = now + 1;
+  scheduled_time = now + 1;
   run_resources[1].Priority = 10;
   job_resources[1].selection_type = 3;
   scheduler_job_item_queue.EmplaceItem(unused, &job_resources[1],
-                                       &run_resources[1], runtime,
+                                       &run_resources[1], scheduled_time,
                                        JobTrigger::kUndefined);
-  runtime = now + 1;
+  scheduled_time = now + 1;
   run_resources[2].Priority = 11;
   job_resources[2].selection_type = 4;  // runs last
   scheduler_job_item_queue.EmplaceItem(unused, &job_resources[2],
-                                       &run_resources[2], runtime,
+                                       &run_resources[2], scheduled_time,
                                        JobTrigger::kUndefined);
-  runtime = now + 1;
+  scheduled_time = now + 1;
   run_resources[3].Priority = 9;
   job_resources[3].selection_type = 2;
   scheduler_job_item_queue.EmplaceItem(unused, &job_resources[3],
-                                       &run_resources[3], runtime,
+                                       &run_resources[3], scheduled_time,
                                        JobTrigger::kUndefined);
 
   int item_position = 1;

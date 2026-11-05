@@ -168,7 +168,7 @@ struct DirectorJcrImpl {
   bool use_accurate_chksum{};           /**< Use or not checksum option in accurate code */
   bool sd_canceled{};                   /**< Set if SD canceled */
   bool remote_replicate{};              /**< Replicate data to remote SD */
-  bool HasQuota{};                      /**< Client has quota limits */
+  bool QuotaUsageLoaded{};              /**< Client quota usage has been loaded */
   bool HasSelectedJobs{};               /**< Migration/Copy Job did actually select some JobIds */
   directordaemon::ClientConnectionHandshakeMode connection_handshake_try_{
     directordaemon::ClientConnectionHandshakeMode::kUndefined};

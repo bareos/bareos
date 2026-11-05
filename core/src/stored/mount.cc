@@ -107,7 +107,7 @@ mount_next_vol:
           dev->must_load());
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Jmsg(jcr, M_FATAL, 0, T_("Job %" PRIu32 " canceled.\n"), jcr->JobId);
     goto bail_out;
   }
@@ -121,7 +121,7 @@ mount_next_vol:
 
   if (!find_a_volume()) { goto bail_out; }
 
-  if (jcr->IsJobCanceled()) { goto bail_out; }
+  if (jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
 
   Dmsg2(150, "After find_next_append. Vol=%s Slot=%d\n", getVolCatName(),
         VolCatInfo.Slot);
@@ -210,14 +210,14 @@ mount_next_vol:
     lock_mutex(mount_mutex);
   }
 
-  if (jcr->IsJobCanceled()) { goto bail_out; }
+  if (jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
 
   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName,
         dev->VolHdr.VolumeName, dev->print_name());
 
   if (dev->poll && dev->HasCap(CAP_CLOSEONPOLL)) {
     dev->close(dcr);
-    FreeVolume(dev);
+    ReleaseVolumeReservationUnlessSwapping(dev);
   }
 
   // Ensure the device is open
@@ -324,7 +324,7 @@ read_volume:
       MarkVolumeInError();
       goto mount_next_vol;
     }
-    if (!is_eod_valid()) {
+    if (!CheckEndOfDataPositionAndAdvanceCatalogIfNeeded()) {
       Dmsg0(100, "goto mount_next_vol\n");
       goto mount_next_vol;
     }
@@ -377,14 +377,14 @@ bool DeviceControlRecord::find_a_volume()
     Dmsg0(200, "Before DirFindNextAppendableVolume.\n");
     while (!dcr->DirFindNextAppendableVolume()) {
       Dmsg0(200, "not dir_find_next\n");
-      if (jcr->IsJobCanceled()) { return false; }
+      if (jcr->IsJobAbortedOrCanceled()) { return false; }
       unlock_mutex(mount_mutex);
       if (!dcr->DirAskSysopToCreateAppendableVolume()) {
         lock_mutex(mount_mutex);
         return false;
       }
       lock_mutex(mount_mutex);
-      if (jcr->IsJobCanceled()) { return false; }
+      if (jcr->IsJobAbortedOrCanceled()) { return false; }
       Dmsg0(150, "Again dir_find_next_append...\n");
     }
   }
@@ -408,7 +408,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
   } else {
     vol_label_status = ReadDevVolumeLabel(dcr);
   }
-  if (jcr->IsJobCanceled()) { goto check_bail_out; }
+  if (jcr->IsJobAbortedOrCanceled()) { goto check_bail_out; }
 
   Dmsg2(150, "Want dirVol=%s dirStat=%s\n", VolumeName,
         VolCatInfo.VolCatStatus);
@@ -521,7 +521,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       /* Needed, so the medium can be changed */
       if (dev->RequiresMount()) {
         dev->close(dcr);
-        FreeVolume(dev);
+        ReleaseVolumeReservationUnlessSwapping(dev);
       }
       goto check_next_volume;
   }
@@ -614,7 +614,7 @@ void DeviceControlRecord::DoSwapping(bool)
  * Check if the current position on the volume corresponds to what is in the
  * catalog.
  */
-bool DeviceControlRecord::is_eod_valid()
+bool DeviceControlRecord::CheckEndOfDataPositionAndAdvanceCatalogIfNeeded()
 {
   switch (dev->GetSeekMode()) {
     case SeekMode::FILE_BLOCK: {
@@ -765,7 +765,7 @@ void DeviceControlRecord::MarkVolumeInError()
            sizeof(dev->VolCatInfo.VolCatStatus));
   Dmsg0(150, "dir_update_vol_info. Set Error.\n");
   dcr->DirUpdateVolumeInfo(is_labeloperation::False);
-  VolumeUnused(dcr);
+  MarkVolumeUnused(dcr);
   Dmsg0(50, "SetUnload\n");
   dev->SetUnload(); /* must get a new volume */
 }
@@ -806,7 +806,7 @@ void DeviceControlRecord::ReleaseVolume()
     Pmsg0(190, "Hey!!!!! WroteVol non-zero !!!!!\n");
   }
   // First erase all memory of the current volume
-  FreeVolume(dev);
+  ReleaseVolumeReservationUnlessSwapping(dev);
   dev->block_num = dev->file = 0;
   dev->EndBlock = dev->EndFile = 0;
   VolumeCatalogInfo empty_VolumeCatalogInfo;
@@ -874,7 +874,7 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
   Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n",
         jcr->sd_impl->NumReadVolumes, jcr->sd_impl->CurReadVolume);
 
-  VolumeUnused(dcr); /* release current volume */
+  MarkVolumeUnused(dcr); /* release current volume */
   // End Of Tape -- mount next Volume (if another specified)
   if (jcr->sd_impl->NumReadVolumes > 1
       && jcr->sd_impl->CurReadVolume < jcr->sd_impl->NumReadVolumes) {

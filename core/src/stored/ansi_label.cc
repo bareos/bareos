@@ -134,7 +134,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
             char* p = &label[4];
             char* q;
 
-            FreeVolume(dev);
+            ReleaseVolumeReservationUnlessSwapping(dev);
 
             // Store new Volume name
             q = dev->VolHdr.VolumeName;

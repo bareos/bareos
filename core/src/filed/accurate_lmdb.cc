@@ -157,7 +157,7 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
   // Make sure pay_load_ is large enough.
-  pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
+  pay_load_ = EnsurePoolMemoryCapacity(pay_load_, total_length);
 
   /* We store the total pay load as:
    *
@@ -296,7 +296,7 @@ accurate_payload* BareosAccurateFilelistLmdb::lookup_payload(char* fname)
        * allowed to change its content and we need to update the lstat
        * and chksum pointer to point to the actual lstat and chksum that
        * is stored behind the accurate_payload structure in the LMDB. */
-      pay_load_ = CheckPoolMemorySize(pay_load_, data.mv_size);
+      pay_load_ = EnsurePoolMemoryCapacity(pay_load_, data.mv_size);
 
       payload = (accurate_payload*)pay_load_;
       memcpy(payload, data.mv_data, data.mv_size);
@@ -338,7 +338,7 @@ bool BareosAccurateFilelistLmdb::UpdatePayload(char* fname,
   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
   // Make sure pay_load_ is large enough.
-  pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
+  pay_load_ = EnsurePoolMemoryCapacity(pay_load_, total_length);
 
   /* We store the total pay load as:
    *
@@ -523,7 +523,7 @@ void BareosAccurateFilelistLmdb::destroy()
   }
 
   if (lmdb_name_) {
-    SecureErase(jcr_, lmdb_name_);
+    DeleteFileUsingConfiguredErasePolicy(jcr_, lmdb_name_);
     FreePoolMemory(lmdb_name_);
     lmdb_name_ = NULL;
   }

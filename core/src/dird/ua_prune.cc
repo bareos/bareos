@@ -1181,7 +1181,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 
   /* Prune only Volumes with status "Full", or "Used" */
   if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")
-      || HasVolumeExpired(ua->jcr, mr)) {
+      || UpdateVolumeStatusIfExpired(ua->jcr, mr)) {
     if (VolumeIsEmpty) {
       ua->SendMsg(T_("Volume \"%s\" seems to be empty.  Make sure that it is "
                      "not currently in use, then call 'purge volume=\"%s\"'"),
@@ -1199,7 +1199,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
         mr->VolumeName, NumJobsToBePruned);
     Dmsg1(050, "Num pruned = %d\n", NumJobsToBePruned);
     if (NumJobsToBePruned != 0) { PurgeJobListFromCatalog(ua, prune_list); }
-    VolumeIsNowEmtpy = IsVolumePurged(ua, mr);
+    VolumeIsNowEmtpy = MarkVolumePurgedIfEmpty(ua, mr);
 
     if (!VolumeIsNowEmtpy) {
       ua->SendMsg(T_("Volume \"%s\" still contains jobs after pruning.\n"),

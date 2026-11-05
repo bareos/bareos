@@ -953,11 +953,11 @@ static bool UpdateVolume(UaContext* ua)
 static bool UpdateStats(UaContext* ua)
 {
   int i = FindArgWithValue(ua, NT_("days"));
-  utime_t since = 0;
+  utime_t age_seconds = 0;
 
-  if (i >= 0) { since = ((int64_t)atoi(ua->argv[i]) * 24 * 60 * 60); }
+  if (i >= 0) { age_seconds = ((int64_t)atoi(ua->argv[i]) * 24 * 60 * 60); }
 
-  int nb = ua->db->UpdateStats(ua->jcr, since);
+  int nb = ua->db->UpdateStats(ua->jcr, age_seconds);
   ua->InfoMsg(T_("Updating %i job(s).\n"), nb);
 
   return true;
@@ -1120,7 +1120,7 @@ static void UpdateSlots(UaContext* ua)
   slot_number_t max_slots;
   drive_number_t drive = kInvalidDriveNumber;
   int Enabled = VOL_ENABLED;
-  bool have_enabled;
+  bool enabled_was_specified;
   int i;
 
 
@@ -1135,9 +1135,9 @@ static void UpdateSlots(UaContext* ua)
   if ((i = FindArgWithValue(ua, NT_("Enabled"))) >= 0) {
     Enabled = GetEnabled(ua, ua->argv[i]);
     if (Enabled < 0) { return; }
-    have_enabled = true;
+    enabled_was_specified = true;
   } else {
-    have_enabled = false;
+    enabled_was_specified = false;
   }
 
   max_slots = GetNumSlots(ua, ua->jcr->dir_impl->res.write_storage);
@@ -1181,7 +1181,8 @@ static void UpdateSlots(UaContext* ua)
         free(vl->VolName);
         vl->VolName = NULL;
       }
-      vl->VolName = get_volume_name_from_SD(ua, vl->bareos_slot_number, drive);
+      vl->VolName
+          = ReadSlotVolumeLabelAndReturnName(ua, vl->bareos_slot_number, drive);
       Dmsg2(100, "Got Vol=%s from SD for Slot=%d\n", vl->VolName,
             vl->bareos_slot_number);
     }
@@ -1233,7 +1234,7 @@ static void UpdateSlots(UaContext* ua)
             || mr.StorageId != store.store->StorageId) {
           mr.Slot = vl->bareos_slot_number;
           mr.InChanger = 1;
-          if (have_enabled) { mr.Enabled = Enabled; }
+          if (enabled_was_specified) { mr.Enabled = Enabled; }
           SetStorageidInMr(store.store, &mr);
           if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
             ua->ErrorMsg("%s", ua->db->strerror());

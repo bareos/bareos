@@ -244,15 +244,16 @@ static void eliminate_duplicate_paths()
         "GROUP BY Path HAVING count(Path) > 1";
 
   if (!MakeNameList(db, query, &name_list)) { exit(BEXIT_FAILURE); }
-  printf(T_("Found %d duplicate Path records.\n"), name_list.num_ids);
+  printf(T_("Found %d duplicate Path records.\n"), name_list.num_names);
   fflush(stdout);
-  if (name_list.num_ids && g_verbose && yes_no(T_("Print them? (yes/no): "))) {
+  if (name_list.num_names && g_verbose
+      && yes_no(T_("Print them? (yes/no): "))) {
     PrintNameList(&name_list);
   }
   if (quit) { return; }
   if (fix) {
     // Loop through list of duplicate names
-    for (int i = 0; i < name_list.num_ids; i++) {
+    for (int i = 0; i < name_list.num_names; i++) {
       // Get all the Ids of each name
       auto esc_name = db->EscapeString(nullptr, name_list.name[i]);
       if (!esc_name) { return; }
@@ -333,7 +334,7 @@ static void eliminate_orphaned_file_records()
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(T_("Found %d orphaned File records.\n"), id_list.num_ids);
-    if (name_list.num_ids && g_verbose
+    if (name_list.num_names && g_verbose
         && yes_no(T_("Print them? (yes/no): "))) {
       for (int i = 0; i < id_list.num_ids; i++) {
         char ed1[50];
@@ -901,7 +902,7 @@ int main(int argc, char* argv[])
         exit(BEXIT_FAILURE);
       }
 
-      SetWorkingDirectory(me->working_directory);
+      SetConfiguredWorkingDirectory(me->working_directory);
 
       // Print catalog information and exit (-B)
       if (print_catalog) {

@@ -447,7 +447,8 @@ bool HasPairedStorage(JobControlRecord* jcr)
 #define MAX_TRIES 6 * 360 /* 6 hours (10 sec intervals) */
 
 // Change the read storage resource for the current job.
-bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
+bool SwitchReadStorageAndWaitForJobSlot(JobControlRecord* jcr,
+                                        bootstrap_info& info)
 {
   UnifiedStorageResource ustore;
 
@@ -485,7 +486,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
       return true;
     }
     Bmicrosleep(10, 0); /* Sleep 10 secs */
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       FreeRstorage(jcr);
       return false;
     }

@@ -124,7 +124,7 @@ void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
     next = (IPADDR*)addr_list->next(ipaddr);
     while (next) {
       // See if the addresses match.
-      if (IsSameIpAddress(ipaddr, next)) {
+      if (SockaddrsAreBytewiseEqual(ipaddr, next)) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);
@@ -234,8 +234,8 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
 
   foreach_dlist (ipaddr, addr_list) {
     s_sockfd sock;
-    sock.port = ipaddr->GetPortNetOrder();
-    sock.fd = OpenSocketAndBind(ipaddr, addr_list, sock.port);
+    sock.port_network_order = ipaddr->GetPortNetOrder();
+    sock.fd = OpenSocketAndBind(ipaddr, addr_list, sock.port_network_order);
 
     if (sock.fd < 0) {
       BErrNo be;
@@ -249,12 +249,12 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
        * with a failure exit code. */
 #ifdef HAVE_WIN32
       Emsg2(M_ERROR_TERM, 0, T_("Cannot bind address %s port %d: ERR=%u.\n"),
-            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
-            WSAGetLastError());
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1),
+            ntohs(sock.port_network_order), WSAGetLastError());
 #else
       Emsg2(M_ERROR_TERM, 0, T_("Cannot bind address %s port %d: ERR=%s.\n"),
-            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port),
-            be.bstrerror());
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1),
+            ntohs(sock.port_network_order), be.bstrerror());
 #endif
       return {};
     } else {
@@ -266,10 +266,12 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
        * Messages resource and stdout is redirected to /dev/null once
        * the daemon has detached (see daemon_start()). */
       Emsg2(M_INFO, 0, T_("Listening on address %s port %d.\n"),
-            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port));
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1),
+            ntohs(sock.port_network_order));
 #ifndef HAVE_WIN32
       syslog(LOG_DAEMON | LOG_INFO, "Listening on address %s port %d.",
-             ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(sock.port));
+             ipaddr->GetAddress(tmp, sizeof(tmp) - 1),
+             ntohs(sock.port_network_order));
 #endif
       bound_sockets.emplace_back(std::move(sock));
     }
@@ -431,7 +433,7 @@ void BnetThreadServerTcp(
         bs->fd_ = newsockfd;
         bs->SetWho(strdup("client"));
         bs->SetHost(strdup(buf));
-        bs->SetPort(ntohs(sock.port));
+        bs->SetPort(ntohs(sock.port_network_order));
         memset(&bs->peer_addr, 0, sizeof(bs->peer_addr));
         memcpy(&bs->client_addr, &cli_addr, sizeof(bs->client_addr));
 

@@ -66,7 +66,7 @@ class htableImpl {
   uint64_t hash = 0;                         /* Temp storage */
   uint32_t walk_index = 0;                   /* Table walk index */
   uint32_t num_items = 0;                    /* Current number of items */
-  uint32_t max_items = 0;                    /* Maximum items before growing */
+  uint32_t grow_threshold = 0;               /* Maximum items before growing */
   uint32_t buckets = 0;                      /* Size of hash table */
   uint32_t index = 0;                        /* Temp storage */
   uint32_t mask = 0;                         /* "Remainder" mask */
@@ -95,7 +95,7 @@ class htableImpl {
   uint32_t size(); /* Return size of table */
 
   /* The amount of elements the table can hold without growing */
-  uint32_t capacity() { return max_items - 1; }
+  uint32_t capacity() { return grow_threshold - 1; }
 };
 
 struct htable_binary_key {

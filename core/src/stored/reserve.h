@@ -70,7 +70,7 @@ class ReserveContext {
   director_storage* store;
   DeviceResource* device_resource;
   Device* low_use_drive;            /**< Low use drive candidate */
-  int num_writers;                  /**< for selecting low use drive */
+  int low_use_job_load;             /**< for selecting low use drive */
   bool try_low_use_drive;           /**< see if low use drive available */
   bool any_drive;                   /**< Accept any drive if set */
   bool PreferMountedVols;           /**< Prefer volumes already mounted */
