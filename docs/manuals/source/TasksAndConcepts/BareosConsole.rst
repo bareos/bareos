@@ -2046,13 +2046,12 @@ status subscriptions
         completed) are excluded from the report entirely rather than
         estimated -- the grand total will under-report data for such
         combinations if older jobs were purged.
-      - NDMP Client/FileSet combinations without per-file history only
-        have the synthetic archive row, whose size is a placeholder. The
-        report then estimates them from the size of the latest Full job
-        (rule ``J``, flagged ``estimated``). This job size counts
+      - An NDMP Client/FileSet chain with only the synthetic archive row
+        and no per-file history is excluded with reason
+        ``ndmp_no_file_history``; its placeholder size is not used as an
+        estimate. A job-level size is not used as a fallback: it counts
         transferred record-stream bytes, not the logical or allocated
-        size of the source files. If the job size is zero, the
-        combination is excluded and the report is flagged incomplete.
+        size of the source files.
       - Copy, Migrate, Virtual Full, and Always-Incremental consolidation
         jobs are supported and contribute their own File rows like an
         ordinary Full backup would.
