@@ -854,7 +854,14 @@ class BareosCore : public bc::Core::Service {
 
     auto result = AcceptFile(core, request->file(), statp);
 
-    response->set_skip(!result);
+    if (result != bRC_OK && result != bRC_Skip) {
+      return grpc::Status(
+          grpc::StatusCode::INTERNAL,
+          fmt::format(FMT_STRING("AcceptFile failed for {}: return code {}"),
+                      request->file(), static_cast<int>(result)));
+    }
+
+    response->set_skip(result == bRC_Skip);
 
     return grpc::Status::OK;
   }

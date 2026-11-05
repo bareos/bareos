@@ -59,9 +59,9 @@ bool checkChanges(PluginContext* ctx,
                   int type,
                   const struct stat& statp,
                   time_t since);
-bool AcceptFile(PluginContext* ctx,
-                const std::string& file,
-                const struct stat& statp);
+bRC AcceptFile(PluginContext* ctx,
+               const std::string& file,
+               const struct stat& statp);
 
 bRC SetSeenBitmap(PluginContext* ctx, bool all, const char* fname);
 bRC ClearSeenBitmap(PluginContext* ctx, bool all, const char* fname);

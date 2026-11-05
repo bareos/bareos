@@ -145,6 +145,46 @@ endmacro() # bareos_add_test
 
 include(GoogleTest)
 
+if(TARGET grpc-fd)
+  set(grpc_dir "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/filed/grpc")
+  foreach(api grpc windows_dr)
+    add_executable(
+      ${api}_bareos_api_test "${grpc_dir}/tests/bareos_api_test.cc"
+    )
+    target_link_libraries(
+      ${api}_bareos_api_test PRIVATE GTest::gtest_main fmt::fmt format
+    )
+    if(api STREQUAL "windows_dr")
+      target_compile_definitions(
+        ${api}_bareos_api_test PRIVATE TEST_WINDOWS_DR_API
+      )
+    endif()
+    gtest_discover_tests(
+      ${api}_bareos_api_test
+      TEST_PREFIX "gtest:${api}:"
+      PROPERTIES
+      TIMEOUT 120
+    )
+  endforeach()
+  add_executable(
+    grpc_rpc_test "${grpc_dir}/tests/rpc_test.cc"
+                  "${grpc_dir}/bridge_module/plugin_service.cc"
+  )
+  add_executable(
+    grpc_service_test "${grpc_dir}/tests/core_service.cc"
+                      "${grpc_dir}/bareos_api.cc" "${grpc_dir}/grpc.cc"
+  )
+  target_link_libraries(
+    grpc_rpc_test PRIVATE GTest::gtest_main Bareos::Lib fmt::fmt grpc-proto
+                          Python3::Module ${CMAKE_DL_LIBS}
+  )
+  target_link_libraries(
+    grpc_service_test PRIVATE GTest::gtest_main Bareos::Lib fmt::fmt grpc-proto
+  )
+  bareos_gtest_add_tests(grpc_rpc_test)
+  bareos_gtest_add_tests(grpc_service_test)
+endif()
+
 set(LINK_LIBRARIES Bareos::SD Bareos::Dir Bareos::Console Bareos::LibSD
                    Bareos::Lib Bareos::SQL Bareos::Findlib GTest::gtest_main
 )
