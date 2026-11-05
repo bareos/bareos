@@ -20,6 +20,7 @@
 */
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "include/jcr.h"
 
 #include "lib/bsys.h"
 #include "lib/recent_job_results_list.h"
@@ -97,6 +98,28 @@ TEST(statefile, read)
 
   EXPECT_EQ(recent_jobs[1].JobId, 2);
   EXPECT_STREQ(recent_jobs[1].Job, "RestoreFiles.2019-08-08_22.38.17_05");
+  EXPECT_EQ(RecentJobResultsList::GetMostRecentJobResult().JobId, 2);
+}
+
+TEST(statefile, most_recent_empty)
+{
+  RecentJobResultsList::Cleanup();
+  EXPECT_EQ(RecentJobResultsList::GetMostRecentJobResult().JobId, 0);
+}
+
+TEST(statefile, most_recent_appended_and_evicted)
+{
+  RecentJobResultsList::Cleanup();
+  JobControlRecord jcr;
+  for (uint32_t id = 100; id > 88; --id) {
+    jcr.JobId = id;
+    RecentJobResultsList::Append(&jcr);
+    EXPECT_EQ(RecentJobResultsList::GetMostRecentJobResult().JobId, id);
+  }
+  EXPECT_EQ(RecentJobResultsList::Count(), 10);
+  EXPECT_EQ(RecentJobResultsList::Get().front().JobId, 98);
+  jcr.JobId = 0;
+  RecentJobResultsList::Cleanup();
 }
 
 TEST(statefile, write)

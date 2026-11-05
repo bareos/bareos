@@ -162,8 +162,6 @@ bool RecentJobResultsList::IsEmpty()
 RecentJobResultsList::JobResult RecentJobResultsList::GetMostRecentJobResult()
 {
   std::lock_guard<std::mutex> lg(mutex);
-  if (recent_job_results_list.size()) {
-    return recent_job_results_list.front();
-  }
+  if (recent_job_results_list.size()) { return recent_job_results_list.back(); }
   return RecentJobResultsList::JobResult{};
 }
