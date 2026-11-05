@@ -31,6 +31,7 @@ namespace {
 class BareosApiTest : public ::testing::Test {
  protected:
   void TearDown() override { fd.core = nullptr; }
+  filedaemon::CoreFunctions callbacks{};
 };
 
 TEST_F(BareosApiTest, AcceptFilePreservesCallbackResults)
@@ -38,7 +39,6 @@ TEST_F(BareosApiTest, AcceptFilePreservesCallbackResults)
   PluginContext ctx{};
   struct stat stats{};
   stats.st_size = 1234;
-  filedaemon::CoreFunctions callbacks{};
   callbacks.size = sizeof(callbacks);
   callbacks.version = FD_PLUGIN_INTERFACE_VERSION;
   callbacks.AcceptFile = [](PluginContext* context, filedaemon::save_pkt* pkt) {
@@ -73,7 +73,6 @@ TEST_F(BareosApiTest, ClearSeenPreservesCallbackResultsAndArguments)
   } state;
   PluginContext ctx{};
   ctx.plugin_private_context = &state;
-  filedaemon::CoreFunctions callbacks{};
   callbacks.size = sizeof(callbacks);
   callbacks.version = FD_PLUGIN_INTERFACE_VERSION;
   callbacks.ClearSeenBitmap
