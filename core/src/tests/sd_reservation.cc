@@ -144,7 +144,6 @@ struct TestJob {
 };
 
 namespace storagedaemon::detail {
-extern decltype(&pthread_cond_timedwait) device_wait;
 int ReadBlockFromSpoolFile(DeviceControlRecord* dcr);
 }  // namespace storagedaemon::detail
 
@@ -154,7 +153,7 @@ TEST_F(ReservationTest, device_wait_results)
 {
   TestJob job(111u);
   int retries = 0;
-  detail::device_wait
+  detail::DeviceWait()
       = [](pthread_cond_t*, pthread_mutex_t* mutex, const timespec* timeout) {
           EXPECT_EQ(pthread_mutex_trylock(mutex), EBUSY);
           EXPECT_GE(timeout->tv_sec, time(nullptr) + 59);
@@ -166,7 +165,7 @@ TEST_F(ReservationTest, device_wait_results)
     EXPECT_EQ(WaitForDevice(job.jcr, retries),
               status == 0 || status == ETIMEDOUT);
   }
-  detail::device_wait = pthread_cond_timedwait;
+  detail::DeviceWait() = pthread_cond_timedwait;
   EXPECT_EQ(retries, 4);
 }
 
@@ -188,10 +187,10 @@ TEST_F(ReservationTest, reservation_wait_failure)
         .WillOnce(Return(BNET_EOD))
         .WillOnce(Return(BNET_EOD));
     bsock->recv();
-    detail::device_wait = [](pthread_cond_t*, pthread_mutex_t*,
-                             const timespec*) { return EINVAL; };
+    detail::DeviceWait() = [](pthread_cond_t*, pthread_mutex_t*,
+                              const timespec*) { return EINVAL; };
     bool result = use_cmd(job);
-    detail::device_wait = pthread_cond_timedwait;
+    detail::DeviceWait() = pthread_cond_timedwait;
     EXPECT_EQ(result, job == first.jcr);
   }
 }
@@ -225,11 +224,10 @@ TEST_F(ReservationTest, autochanger_wait_failure_leaves_changer_unlocked)
   dcr.device_resource = resource;
   dcr.VolCatInfo.InChanger = true;
   dcr.VolCatInfo.Slot = 2;
-  detail::device_wait = [](pthread_cond_t*, pthread_mutex_t*, const timespec*) {
-    return EINVAL;
-  };
+  detail::DeviceWait() = [](pthread_cond_t*, pthread_mutex_t*,
+                            const timespec*) { return EINVAL; };
   int result = AutoloadDevice(&dcr, 0, nullptr);
-  detail::device_wait = pthread_cond_timedwait;
+  detail::DeviceWait() = pthread_cond_timedwait;
   EXPECT_EQ(result, -1);
   EXPECT_EQ(resource->changer_res->changer_lock.w_active, 0);
   EXPECT_EQ(RwlWritetrylock(&resource->changer_res->changer_lock), 0);

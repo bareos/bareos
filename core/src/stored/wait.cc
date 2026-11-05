@@ -47,7 +47,11 @@ static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 namespace detail {
 // Internal wait operation, replaceable by deterministic reservation tests.
-decltype(&pthread_cond_timedwait) device_wait = pthread_cond_timedwait;
+decltype(&pthread_cond_timedwait)& DeviceWait()
+{
+  static auto device_wait = &pthread_cond_timedwait;
+  return device_wait;
+}
 }  // namespace detail
 
 /**
@@ -240,8 +244,8 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
   /* Wait required time */
-  status = detail::device_wait(&wait_device_release, &device_release_mutex,
-                               &timeout);
+  status = detail::DeviceWait()(&wait_device_release, &device_release_mutex,
+                                &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
 
   unlock_mutex(device_release_mutex);
