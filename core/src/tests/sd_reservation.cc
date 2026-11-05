@@ -60,7 +60,7 @@ using namespace storagedaemon;
 TEST(StorageTools, zero_fill)
 {
   for (uint32_t length : {0, 1, 2, 3, 4, 7, 17, 64512}) {
-    std::vector<char> buffer(length + 2, '\x5a');
+    std::vector<char> buffer(static_cast<size_t>(length) + 2, '\x5a');
     FillZeroBuffer(buffer.data() + 1, length);
     EXPECT_EQ(buffer.front(), '\x5a');
     EXPECT_EQ(buffer.back(), '\x5a');
