@@ -607,7 +607,7 @@ static inline ssize_t WriteHeaderToBlock(DeviceBlock* block,
       rec->remainder); /* each header tracks remaining user bytes to write */
 
   block->bufp += WRITE_RECHDR_LENGTH;
-  block->binbuf += WRITE_RECHDR_LENGTH;
+  block->bytes_used_for_write += WRITE_RECHDR_LENGTH;
 
   if (rec->FileIndex > 0) {
     // If data record, update what we have in this block
@@ -627,7 +627,7 @@ static inline ssize_t WriteDataToBlock(DeviceBlock* block,
   memcpy(block->bufp,
          ((unsigned char*)rec->data) + (rec->data_len - rec->remainder), len);
   block->bufp += len;
-  block->binbuf += len;
+  block->bytes_used_for_write += len;
   return len;
 }
 
@@ -719,8 +719,8 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
    * or is just a pointer to the same as the rec pointer being passed in. */
 
   while (1) {
-    ASSERT(block->binbuf == (uint32_t)(block->bufp - block->buf));
-    ASSERT(block->buf_len >= block->binbuf);
+    ASSERT(block->bytes_used_for_write == (uint32_t)(block->bufp - block->buf));
+    ASSERT(block->buf_len >= block->bytes_used_for_write);
 
     Dmsg9(890,
           "%s() state=%d (%s) FI=%s SessId=%" PRIu32 " Strm=%s len=%" PRIu32
@@ -859,7 +859,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
   uint32_t rhl;
   char buf1[100], buf2[100];
 
-  remlen = dcr->block->binbuf;
+  remlen = dcr->block->bytes_remaining_to_read;
 
   // Clear state flags
   ClearAllBits(REC_STATE_MAX, rec->state_bits);
@@ -895,7 +895,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     unser_uint32(data_bytes);
 
     dcr->block->bufp += rhl;
-    dcr->block->binbuf -= rhl;
+    dcr->block->bytes_remaining_to_read -= rhl;
     remlen -= rhl;
 
     /* If we are looking for more (remainder!=0), we reject anything
@@ -982,13 +982,13 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
     // Got whole record
     memcpy(rec->data + rec->data_len, dcr->block->bufp, data_bytes);
     dcr->block->bufp += data_bytes;
-    dcr->block->binbuf -= data_bytes;
+    dcr->block->bytes_remaining_to_read -= data_bytes;
     rec->data_len += data_bytes;
   } else {
     // Partial record
     memcpy(rec->data + rec->data_len, dcr->block->bufp, remlen);
     dcr->block->bufp += remlen;
-    dcr->block->binbuf -= remlen;
+    dcr->block->bytes_remaining_to_read -= remlen;
     rec->data_len += remlen;
     rec->remainder = 1; /* partial record transferred */
     Dmsg1(450, "read_record_block: partial xfered=%" PRIu32 "\n",

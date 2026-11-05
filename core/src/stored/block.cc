@@ -189,8 +189,9 @@ void FreeBlock(DeviceBlock* block)
 // Empty the block -- for writing
 void EmptyBlock(DeviceBlock* block)
 {
-  block->binbuf = WRITE_BLKHDR_LENGTH;
-  block->bufp = block->buf + block->binbuf;
+  block->bytes_used_for_write = WRITE_BLKHDR_LENGTH;
+  block->bytes_remaining_to_read = 0;
+  block->bufp = block->buf + block->bytes_used_for_write;
   block->read_len = 0;
   block->write_failed = false;
   block->block_read = false;
@@ -206,7 +207,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
 {
   ser_declare;
   uint32_t CheckSum = 0;
-  uint32_t block_len = block->binbuf;
+  uint32_t block_len = block->bytes_used_for_write;
 
   Dmsg1(1390, "SerBlockHeader: block_len=%" PRIu32 "\n", block_len);
   SerBegin(block->buf, BLKHDR2_LENGTH);
@@ -329,11 +330,12 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
   } else {
     block_end = block_len;
   }
-  block->binbuf = block_end - bhl;
+  block->bytes_used_for_write = 0;
+  block->bytes_remaining_to_read = block_end - bhl;
   block->block_len = block_len;
   block->BlockNumber = BlockNumber;
-  Dmsg3(390, "Read binbuf = %" PRIu32 " %d block_len=%" PRIu32 "\n",
-        block->binbuf, bhl, block_len);
+  Dmsg3(390, "Read remaining = %" PRIu32 " %d block_len=%" PRIu32 "\n",
+        block->bytes_remaining_to_read, bhl, block_len);
   if (block_len <= block->read_len && dev->DoChecksum()) {
     BlockCheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
                                block_len - BLKHDR_CS_LENGTH);
@@ -577,9 +579,9 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
-  ASSERT(block->binbuf == ((uint32_t)(block->bufp - block->buf)));
+  ASSERT(block->bytes_used_for_write == ((uint32_t)(block->bufp - block->buf)));
 
-  wlen = block->binbuf;
+  wlen = block->bytes_used_for_write;
   if (wlen <= WRITE_BLKHDR_LENGTH) { /* Does block have data in it? */
     Dmsg0(100, "return WriteBlockToDev no data to write\n");
     return true;
@@ -616,8 +618,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   if (wlen != block->buf_len) {
     uint32_t blen = wlen; /* current buffer length */
 
-    Dmsg2(250, "binbuf=%" PRIu32 " buf_len=%" PRIu32 "\n", block->binbuf,
-          block->buf_len);
+    Dmsg2(250, "write bytes=%" PRIu32 " buf_len=%" PRIu32 "\n",
+          block->bytes_used_for_write, block->buf_len);
 
     if (!dev->HasCap(CAP_ADJWRITESIZE)) {
       Dmsg1(400, "%s: block write size is not adjustable", dev->print_name());
@@ -644,17 +646,17 @@ bool DeviceControlRecord::WriteBlockToDev()
   Dmsg5(400,
         "dev=%s: writing %" PRIu32 " bytes as block of %" PRIu32
         " bytes. Block sizes: min=%" PRIu32 ", max=%" PRIu32 "\n",
-        dev->print_name(), block->binbuf, wlen, dev->min_block_size,
-        dev->max_block_size);
+        dev->print_name(), block->bytes_used_for_write, wlen,
+        dev->min_block_size, dev->max_block_size);
 
   checksum = SerBlockHeader(block, dev->DoChecksum());
 
   // Limit maximum Volume size to value specified by user
   hit_max1 = (dev->max_volume_size > 0)
-             && ((dev->VolCatInfo.VolCatBytes + block->binbuf))
+             && ((dev->VolCatInfo.VolCatBytes + block->bytes_used_for_write))
                     >= dev->max_volume_size;
   hit_max2 = (dev->VolCatInfo.VolCatMaxBytes > 0)
-             && ((dev->VolCatInfo.VolCatBytes + block->binbuf))
+             && ((dev->VolCatInfo.VolCatBytes + block->bytes_used_for_write))
                     >= dev->VolCatInfo.VolCatMaxBytes;
 
   if (hit_max1 || hit_max2) {
@@ -679,7 +681,7 @@ bool DeviceControlRecord::WriteBlockToDev()
 
   // Limit maximum File size on volume to user specified value
   if ((dev->max_file_size > 0)
-      && (dev->file_size + block->binbuf) >= dev->max_file_size) {
+      && (dev->file_size + block->bytes_used_for_write) >= dev->max_file_size) {
     dev->file_size = 0; /* reset file size */
 
     if (!dev->weof(1)) { /* write eof */
@@ -954,6 +956,12 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(bool)
   int retry;
   DeviceControlRecord* dcr = this;
 
+  block->bytes_used_for_write = 0;
+  block->bytes_remaining_to_read = 0;
+  block->read_len = 0;
+  block->block_read = false;
+  block->bufp = block->buf;
+
   if (jcr->IsJobAbortedOrCanceled()) {
     Mmsg(dev->errmsg, T_("Job failed or canceled.\n"));
     block->read_len = 0;
@@ -980,6 +988,10 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(bool)
   }
 
 reread:
+  block->bytes_used_for_write = 0;
+  block->bytes_remaining_to_read = 0;
+  block->read_len = 0;
+  block->bufp = block->buf;
   if (looping > 1) {
     dev->dev_errno = EIO;
     Mmsg1(dev->errmsg, T_("Block buffer size looping problem on device %s\n"),
@@ -1065,8 +1077,9 @@ reread:
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();
-    block->read_len = block->binbuf = 0;
-    Dmsg2(200, "set block=%p binbuf=%" PRIu32 "\n", block, block->binbuf);
+    block->read_len = block->bytes_remaining_to_read = 0;
+    Dmsg2(200, "set block=%p remaining=%" PRIu32 "\n", block,
+          block->bytes_remaining_to_read);
     return ReadStatus::Error;
   }
 
@@ -1077,6 +1090,7 @@ reread:
       dev->file_size += block->read_len;
       goto reread;
     }
+    block->read_len = block->bytes_remaining_to_read = 0;
     return ReadStatus::Error;
   }
 
@@ -1100,6 +1114,7 @@ reread:
         Mmsg(dev->errmsg, "%s", dev->bstrerror());
         Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
         block->read_len = 0;
+        block->bytes_remaining_to_read = 0;
         return ReadStatus::Error;
       }
     } else {
@@ -1132,7 +1147,7 @@ reread:
           dev->file, dev->block_num, block->read_len, dev->print_name());
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     dev->SetShortBlock();
-    block->read_len = block->binbuf = 0;
+    block->read_len = block->bytes_remaining_to_read = 0;
     return ReadStatus::Error;
   }
 

@@ -83,16 +83,13 @@ class Device; /* for forward reference */
  *  This is the memory structure for a device block.
  */
 struct DeviceBlock {
-  DeviceBlock* next; /* pointer to next one */
-  Device* dev;       /* pointer to device */
-  /* binbuf is the number of bytes remaining in the buffer.
-   *   For writes, it is bytes not yet written.
-   *   For reads, it is remaining bytes not yet read.
-   */
-  uint32_t binbuf;         /* bytes in buffer */
-  uint32_t block_len;      /* length of current block read */
-  uint32_t buf_len;        /* max/default block length */
-  uint32_t BlockNumber;    /* sequential Bareos block number */
+  DeviceBlock* next;                /* pointer to next one */
+  Device* dev;                      /* pointer to device */
+  uint32_t bytes_used_for_write;    /* block header and buffered records */
+  uint32_t bytes_remaining_to_read; /* unconsumed bytes after block header */
+  uint32_t block_len;               /* length of current block read */
+  uint32_t buf_len;                 /* max/default block length */
+  uint32_t BlockNumber;             /* sequential Bareos block number */
   uint32_t read_len;       /* bytes read into buffer, if zero, block empty */
   uint32_t VolSessionId;   /* */
   uint32_t VolSessionTime; /* */
@@ -108,7 +105,7 @@ struct DeviceBlock {
 
 inline uint32_t BlockWriteNavail(DeviceBlock* block)
 {
-  return ((block)->buf_len - (block)->binbuf);
+  return block->buf_len - block->bytes_used_for_write;
 }
 
 void DumpBlock(DeviceBlock* b, const char* msg);

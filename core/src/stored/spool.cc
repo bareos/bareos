@@ -49,7 +49,10 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr);
 static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool);
 static bool DespoolData(DeviceControlRecord* dcr, bool commit);
-static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr);
+namespace detail {
+int ReadBlockFromSpoolFile(DeviceControlRecord* dcr);
+}
+using detail::ReadBlockFromSpoolFile;
 static bool OpenAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs);
 static bool CloseAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs);
 static bool WriteSpoolHeader(DeviceControlRecord* dcr);
@@ -421,13 +424,15 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
  *          RB_EOT when file done
  *          RB_ERROR on error
  */
-static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
+int detail::ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
 {
   uint32_t rlen;
   ssize_t status;
   spool_hdr hdr;
   DeviceBlock* block = dcr->block;
   JobControlRecord* jcr = dcr->jcr;
+
+  EmptyBlock(block);
 
   rlen = sizeof(hdr);
   status = read(dcr->spool_fd, (char*)&hdr, (size_t)rlen);
@@ -470,8 +475,9 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
     return RB_ERROR;
   }
   /* Setup write pointers */
-  block->binbuf = rlen;
-  block->bufp = block->buf + block->binbuf;
+  block->bytes_used_for_write = rlen;
+  block->bytes_remaining_to_read = 0;
+  block->bufp = block->buf + block->bytes_used_for_write;
   block->FirstIndex = hdr.FirstIndex;
   block->LastIndex = hdr.LastIndex;
   block->VolSessionId = dcr->jcr->VolSessionId;
@@ -493,13 +499,11 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
   DeviceBlock* block = dcr->block;
 
   if (dcr->jcr->IsJobAbortedOrCanceled()) { return false; }
-  ASSERT(block->binbuf == ((uint32_t)(block->bufp - block->buf)));
-  if (block->binbuf <= WRITE_BLKHDR_LENGTH) { /* Does block have data in it? */
-    return true;
-  }
+  ASSERT(block->bytes_used_for_write == ((uint32_t)(block->bufp - block->buf)));
+  if (block->bytes_used_for_write <= WRITE_BLKHDR_LENGTH) { return true; }
 
   hlen = sizeof(spool_hdr);
-  wlen = block->binbuf;
+  wlen = block->bytes_used_for_write;
   lock_mutex(dcr->dev->spool_mutex);
   dcr->job_spool_size += hlen + wlen;
   dcr->dev->spool_size += hlen + wlen;
@@ -562,7 +566,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
 
   hdr.FirstIndex = block->FirstIndex;
   hdr.LastIndex = block->LastIndex;
-  hdr.len = block->binbuf;
+  hdr.len = block->bytes_used_for_write;
 
   /* Write header */
   for (int retry = 0; retry <= 1; retry++) {
@@ -617,7 +621,8 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
 
   // Write data
   for (int retry = 0; retry <= 1; retry++) {
-    status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
+    status
+        = write(dcr->spool_fd, block->buf, (size_t)block->bytes_used_for_write);
     if (status == -1) {
       BErrNo be;
 
@@ -625,7 +630,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
            be.bstrerror());
       jcr->setJobStatus(JS_FatalError); /* override any Incomplete */
     }
-    if (status != (ssize_t)block->binbuf) {
+    if (status != (ssize_t)block->bytes_used_for_write) {
       // If we wrote something, truncate it and the header, then despool
       if (status != -1) {
 #if defined(HAVE_WIN32)
