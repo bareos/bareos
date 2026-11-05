@@ -46,7 +46,7 @@ start_test
 # The first vf will read from Incremental, and write into Full-0
 # The second vf will read from Full-0, and write to Full-0
 
-run_bconsole - <<END_OF_DATA
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out ${tmp}/job-full.out
@@ -61,17 +61,22 @@ messages
 run job=backup-bareos-fd level=VirtualFull yes
 END_OF_DATA
 
+run_bconsole
+
 # This job may hang if it tries to read & write to the same volume
 LAST_JOB=$(last_jobid_or_zero)
 
 # If the last virtual full job is not done after 30 seconds, then it
 # probably ran into a dead lock.  The job is relatively small, so it
 # should take way less time than that.
-run_bconsole - <<END_OF_DATA
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${tmp}/msgs.out
 wait timeout=30 jobid=${LAST_JOB}
 messages
 END_OF_DATA
+
+run_bconsole
 
 check_log "${tmp}/msgs.out"
 expect_grep "Termination:.*OK" \
