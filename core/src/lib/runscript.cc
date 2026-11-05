@@ -156,7 +156,7 @@ int RunScripts(JobControlRecord* jcr,
              && (jcr->getJobStatus() == JS_Running
                  || jcr->getJobStatus() == JS_Created))
             || (script->on_failure
-                && (jcr->IsJobCanceled()
+                && (jcr->IsJobAbortedOrCanceled()
                     || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -167,7 +167,7 @@ int RunScripts(JobControlRecord* jcr,
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
         if ((script->on_success && (jcr->getJobStatus() == JS_Blocked))
-            || (script->on_failure && jcr->IsJobCanceled())) {
+            || (script->on_failure && jcr->IsJobAbortedOrCanceled())) {
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -179,7 +179,7 @@ int RunScripts(JobControlRecord* jcr,
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
         if ((script->on_success && jcr->IsTerminatedOk())
             || (script->on_failure
-                && (jcr->IsJobCanceled()
+                && (jcr->IsJobAbortedOrCanceled()
                     || jcr->getJobStatus() == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -254,7 +254,7 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
         goto bail_out;
       }
 
-      while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
+      while (fgets(line.c_str(), line.capacity(), bpipe->rfd)) {
         StripTrailingJunk(line.c_str());
         Jmsg(jcr, M_INFO, 0, T_("%s: %s\n"), name, line.c_str());
       }

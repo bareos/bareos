@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,7 +166,8 @@ extern "C" void SignalHandler(int sig)
             strerror(errno));
       strcpy((char*)working_directory, "/tmp/");
     }
-    SecureErase(NULL, "./core"); /* get rid of any old core file */
+    DeleteFileUsingConfiguredErasePolicy(
+        NULL, "./core"); /* get rid of any old core file */
 
     snprintf(pid_buf, 20, "%d", (int)main_pid);
     Dmsg1(300, "Working=%s\n", working_directory);

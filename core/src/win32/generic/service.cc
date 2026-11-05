@@ -65,7 +65,7 @@ bool postToBareos(UINT message, WPARAM wParam, LPARAM lParam)
 bool isAService() { return is_service; }
 
 // Terminate any running Bareos
-int stopRunningBareos()
+int requestBareosShutdown()
 {
   postToBareos(WM_CLOSE, 0, 0);
   sleep(5);
@@ -402,7 +402,7 @@ int removeService()
     }
 
     // Stop any running Bareos
-    if (!stopRunningBareos()) {
+    if (!requestBareosShutdown()) {
       if (opt_debug) {
         MessageBox(NULL,
                    T_("Bareos could not be contacted, probably not running"),

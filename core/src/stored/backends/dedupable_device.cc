@@ -364,7 +364,9 @@ bool dedup_device::d_truncate(DeviceControlRecord* dcr)
     for (auto entry : std::filesystem::directory_iterator{path}) {
       auto filename = entry.path();
       Pmsg2(000, "Deleting %s\n", filename.c_str());
-      if (int res = SecureErase(dcr->jcr, filename.c_str()); res < 0) {
+      if (int res
+          = DeleteFileUsingConfiguredErasePolicy(dcr->jcr, filename.c_str());
+          res < 0) {
         Emsg0(M_ERROR, 0, T_("Secure erase on file %s returned %d.\n"),
               filename.c_str(), res);
         return false;

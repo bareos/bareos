@@ -38,9 +38,9 @@ bool ConnectToStorageDaemon(JobControlRecord* jcr,
                             bool verbose);
 BareosSocket* open_sd_bsock(UaContext* ua);
 void CloseSdBsock(UaContext* ua);
-char* get_volume_name_from_SD(UaContext* ua,
-                              slot_number_t Slot,
-                              drive_number_t drive);
+char* ReadSlotVolumeLabelAndReturnName(UaContext* ua,
+                                       slot_number_t Slot,
+                                       drive_number_t drive);
 dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
                                        StorageResource* store,
                                        bool listall,

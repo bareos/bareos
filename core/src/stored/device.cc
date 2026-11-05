@@ -86,14 +86,14 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   char PrevVolName[MAX_NAME_LENGTH];
   DeviceBlock* block;
   char b1[30], b2[30];
-  time_t wait_time;
+  time_t wait_start_time;
   char dt[MAX_TIME_LENGTH];
   JobControlRecord* jcr = dcr->jcr;
   Device* dev = dcr->dev;
   int blocked = dev->blocked(); /* save any previous blocked status */
   bool ok = false;
 
-  wait_time = time(NULL);
+  wait_start_time = time(NULL);
 
   Dmsg0(100, "=== Enter FixupDeviceBlockWriteError\n");
 
@@ -169,7 +169,8 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   jcr->sd_impl->dcr->NewVol = false;
   SetNewVolumeParameters(dcr);
 
-  jcr->run_time += time(NULL) - wait_time; /* correct run time for mount wait */
+  jcr->transfer_rate_start_time
+      += time(NULL) - wait_start_time; /* correct run time for mount wait */
 
   /* Write overflow block to device */
   Dmsg0(190, "Write overflow block to dev\n");

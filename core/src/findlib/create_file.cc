@@ -171,7 +171,7 @@ int CreateFile(JobControlRecord* jcr,
       if (exists && attr->type != FT_RAW && attr->type != FT_FIFO) {
         /* Get rid of old copy */
         Dmsg1(400, "unlink %s\n", attr->ofname);
-        if (SecureErase(jcr, attr->ofname) == -1) {
+        if (DeleteFileUsingConfiguredErasePolicy(jcr, attr->ofname) == -1) {
           BErrNo be;
 
           Qmsg(

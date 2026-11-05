@@ -91,7 +91,7 @@ class ProxyAuthSessionStoreImpl {
     return record.session_id;
   }
 
-  std::optional<ProxyAuthSessionRecord> LookupSession(
+  std::optional<ProxyAuthSessionRecord> LookupAndRefreshIdleTimeout(
       std::string_view session_id)
   {
     std::lock_guard guard(mutex_);
@@ -239,9 +239,10 @@ bool StoreDirectorCredentials(std::string_view session_id,
                                              password);
 }
 
-std::optional<ProxyAuthSessionRecord> LookupSession(std::string_view session_id)
+std::optional<ProxyAuthSessionRecord> LookupAndRefreshIdleTimeout(
+    std::string_view session_id)
 {
-  return GetStore().LookupSession(session_id);
+  return GetStore().LookupAndRefreshIdleTimeout(session_id);
 }
 
 bool RemoveDirector(std::string_view session_id, std::string_view director)

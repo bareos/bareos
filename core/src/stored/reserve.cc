@@ -154,7 +154,7 @@ void DeviceControlRecord::UnreserveDevice()
     }
 
     if (dev->NumReserved() == 0 && dev->num_writers == 0) {
-      VolumeUnused(this);
+      MarkVolumeUnused(this);
     }
   }
   dev->Unlock();
@@ -195,7 +195,7 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   memset(&rctx, 0, sizeof(ReserveContext));
   rctx.append = append;
 
-  for (; !fail && !jcr->IsJobCanceled();) {
+  for (; !fail && !jcr->IsJobAbortedOrCanceled();) {
     std::unique_lock reservation_lock(*reservation_mutex);
     ClearReserveMessages(jcr);
     rctx.suitable_device = false;
@@ -205,7 +205,7 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
     if (!jcr->sd_impl->PreferMountedVols) {
       /* Here we try to find a drive that is not used.
        * This will maximize the use of available drives. */
-      rctx.num_writers = 20000000; /* start with impossible number */
+      rctx.low_use_job_load = 20000000; /* start with impossible number */
       rctx.low_use_drive = NULL;
       rctx.PreferMountedVols = false;
       rctx.exact_match = false;
@@ -353,20 +353,13 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   return ok;
 }
 
-/**
- * Walk through the autochanger resources and check if the volume is in one of
- * them.
- *
- * Returns:  true  if volume is in device
- *           false otherwise
- */
-static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
+static bool IsVolumeDeviceInRequestedAutochanger(ReserveContext& rctx,
+                                                 VolumeReservationItem* vol)
 {
   AutochangerResource* changer = vol->dev->device_resource->changer_res;
 
   if (!changer) { return false; }
 
-  // Find resource, and make sure we were able to open it
   if (bstrcmp(rctx.device_name, changer->resource_name_)) {
     Dmsg1(debuglevel, "Found changer device %s\n",
           vol->dev->device_resource->resource_name_);
@@ -430,7 +423,8 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 
           if (vol->dev->AttachedToAutochanger()) {
             Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
-            if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
+            if (!IsVolumeDeviceInRequestedAutochanger(rctx, vol)
+                || !vol->dev->autoselect) {
               continue;
             }
           } else if (!bstrcmp(device_name.c_str(),
@@ -786,7 +780,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
   bool ok = false;
 
   ASSERT(dcr);
-  if (jcr->IsJobCanceled()) { return false; }
+  if (jcr->IsJobAbortedOrCanceled()) { return false; }
 
   dev->Lock();
 
@@ -852,7 +846,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
   bool ok = false;
 
   ASSERT(dcr);
-  if (jcr->IsJobCanceled()) { return false; }
+  if (jcr->IsJobAbortedOrCanceled()) { return false; }
 
   dev->Lock();
 
@@ -993,11 +987,11 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     // If he wants a free drive, but this one is busy, no go
     if (!rctx.PreferMountedVols && dev->IsBusy()) {
       // Save least used drive
-      if ((dev->num_writers + dev->NumReserved()) < rctx.num_writers) {
-        rctx.num_writers = dev->num_writers + dev->NumReserved();
+      if ((dev->num_writers + dev->NumReserved()) < rctx.low_use_job_load) {
+        rctx.low_use_job_load = dev->num_writers + dev->NumReserved();
         rctx.low_use_drive = dev;
         Dmsg2(debuglevel, "set low use drive=%s num_writers=%d\n",
-              dev->print_name(), rctx.num_writers);
+              dev->print_name(), rctx.low_use_job_load);
       } else {
         Dmsg1(debuglevel, "not low use num_writers=%d\n",
               dev->num_writers + dev->NumReserved());

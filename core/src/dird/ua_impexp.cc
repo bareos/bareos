@@ -265,8 +265,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
               free(vl1->VolName);
               vl1->VolName = NULL;
             }
-            vl1->VolName
-                = get_volume_name_from_SD(ua, vl1->bareos_slot_number, drive);
+            vl1->VolName = ReadSlotVolumeLabelAndReturnName(
+                ua, vl1->bareos_slot_number, drive);
             Dmsg2(100, "Got Vol=%s from SD for Slot=%hd\n", vl1->VolName,
                   vl1->bareos_slot_number);
             break;
@@ -281,8 +281,8 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
                 free(vl2->VolName);
                 vl2->VolName = NULL;
               }
-              vl2->VolName
-                  = get_volume_name_from_SD(ua, vl1->bareos_slot_number, drive);
+              vl2->VolName = ReadSlotVolumeLabelAndReturnName(
+                  ua, vl1->bareos_slot_number, drive);
               Dmsg2(100, "Got Vol=%s from SD for Slot=%hd\n", vl2->VolName,
                     vl1->bareos_slot_number);
             }
@@ -487,10 +487,10 @@ static inline slot_number_t get_slot_list_using_volnames(
     int arg,
     changer_vol_list_t* vol_list,
     char* wanted_slot_list,
-    char* selected_slot_list)
+    char* selected_slot_list,
+    slot_number_t max_slots)
 {
   slot_number_t i;
-  slot_number_t cnt = 0;
   char *s, *token, *sep;
 
   /* The arg argument contains the index of the first occurrence
@@ -510,26 +510,22 @@ static inline slot_number_t get_slot_list_using_volnames(
       sep = strchr(token, '|');
       while (sep != NULL) {
         *sep = '\0';
-        if (get_slot_list_using_volname(ua, store, token, vol_list,
-                                        wanted_slot_list, selected_slot_list)) {
-          cnt++;
-        }
+        get_slot_list_using_volname(ua, store, token, vol_list,
+                                    wanted_slot_list, selected_slot_list);
         token = ++sep;
         sep = strchr(token, '|');
       }
 
       // Pick up the last token.
       if (*token) {
-        if (get_slot_list_using_volname(ua, store, token, vol_list,
-                                        wanted_slot_list, selected_slot_list)) {
-          cnt++;
-        }
+        get_slot_list_using_volname(ua, store, token, vol_list,
+                                    wanted_slot_list, selected_slot_list);
       }
 
       free(s);
     }
   }
-  return cnt;
+  return count_enabled_slots(selected_slot_list, max_slots);
 }
 
 /**
@@ -1008,8 +1004,8 @@ static bool PerformMoveOperation(UaContext* ua, enum e_move_op operation)
         tmp_slot_list = (char*)malloc(NbytesForBits(max_slots));
         ClearAllBits(max_slots, tmp_slot_list);
         nr_enabled_src_slots = get_slot_list_using_volnames(
-            ua, store.store, list_index, vol_list, src_slot_list,
-            tmp_slot_list);
+            ua, store.store, list_index, vol_list, src_slot_list, tmp_slot_list,
+            max_slots);
         if (src_slot_list) { free(src_slot_list); }
         src_slot_list = tmp_slot_list;
       }

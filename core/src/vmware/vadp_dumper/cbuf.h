@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ class circbuf {
   int init();
   void destroy();
   int enqueue(void* data);
-  void* peek();
+  void* wait_and_peek();
   void dequeue();
   int next_slot();
   int flush();

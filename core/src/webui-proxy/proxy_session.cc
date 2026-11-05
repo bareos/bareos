@@ -395,7 +395,7 @@ std::optional<ProxyAuthSessionRecord> LookupSessionFromRequest(
       = FindCookieValue(*cookie_header, kProxySessionCookieName);
   if (!session_id || session_id->empty()) { return std::nullopt; }
 
-  return ProxyAuthSessionStore::LookupSession(*session_id);
+  return ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(*session_id);
 }
 
 std::optional<ProxyAuthSessionDirectorRecord> LookupDirectorCredentials(
@@ -589,7 +589,7 @@ void HandleSessionLoginRequest(int fd,
   // session under the old cookie value would confuse the client.  The client
   // must perform a fresh login without a cookie instead.
   if (const auto stale_id = LookupSessionIdFromRequest(request)) {
-    if (!ProxyAuthSessionStore::LookupSession(*stale_id)) {
+    if (!ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(*stale_id)) {
       SendJsonResponseWithCookie(
           fd, "HTTP/1.1 401 Unauthorized",
           JsonObject({{"message", "Session expired; please log in again"}}),
@@ -618,7 +618,8 @@ void HandleSessionLoginRequest(int fd,
                                                         requested_director);
     }
 
-    auto session = ProxyAuthSessionStore::LookupSession(session_id);
+    auto session
+        = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(session_id);
     if (!session) {
       throw std::runtime_error("Proxy session expired; please log in again");
     }
@@ -755,7 +756,7 @@ void HandleReuseCredentialsRequest(int fd,
     JsonPtr response = MakeJsonObject();
     SetJsonValue(response.get(), "results", std::move(results));
     const auto updated_session
-        = ProxyAuthSessionStore::LookupSession(*session_id);
+        = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(*session_id);
     if (updated_session) {
       json_object_set_new(response.get(), "session",
                           MakeSessionInfoJson(*updated_session).release());
@@ -780,7 +781,33 @@ std::string NormalizeJsonText(std::string_view text)
 // Session implementation
 // ---------------------------------------------------------------------------
 
-void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
+UnauthenticatedConnectionSlot::UnauthenticatedConnectionSlot(
+    std::shared_ptr<std::atomic<int>> count)
+    : count_(std::move(count))
+{
+  count_->fetch_add(1);
+}
+
+UnauthenticatedConnectionSlot::UnauthenticatedConnectionSlot(
+    UnauthenticatedConnectionSlot&& other) noexcept
+    : count_(std::move(other.count_))
+{
+}
+
+UnauthenticatedConnectionSlot::~UnauthenticatedConnectionSlot() { Release(); }
+
+void UnauthenticatedConnectionSlot::Release()
+{
+  if (count_) {
+    count_->fetch_sub(1);
+    count_.reset();
+  }
+}
+
+void RunProxySession(int fd,
+                     const std::string& peer,
+                     const ProxyConfig& config,
+                     UnauthenticatedConnectionSlot admission)
 {
   // RAII socket close
   struct FdGuard {
@@ -846,7 +873,8 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
     return;
   }
 
-  auto session = ProxyAuthSessionStore::LookupSession(*session_id);
+  auto session
+      = ProxyAuthSessionStore::LookupAndRefreshIdleTimeout(*session_id);
   if (!session) {
     SendHttpResponse(fd, std::chrono::seconds(5), "HTTP/1.1 401 Unauthorized",
                      "Authentication expired",
@@ -928,6 +956,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   // ── Step 2: connect and authenticate to director ─────────────────────────
   try {
     DirectorConnection director = DirectorConnection::Connect(cfg);
+    admission.Release();
 
     const char* director_transport
         = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";

@@ -231,7 +231,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     }
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Dmsg0(debuglevel, "Cancel return from GeneratePluginEvent\n");
     rc = bRC_Cancel;
   }
@@ -488,7 +488,7 @@ void NewPlugins(JobControlRecord* jcr)
     Dmsg0(debuglevel, "No dir plugin list!\n");
     return;
   }
-  if (jcr->IsJobCanceled()) { return; }
+  if (jcr->IsJobAbortedOrCanceled()) { return; }
 
   int num = dird_plugin_list->size();
   Dmsg1(debuglevel, "dir-plugin-list size=%d\n", num);

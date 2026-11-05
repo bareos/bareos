@@ -60,7 +60,7 @@ void EscapeString(PoolMem& snew, const char* old, int len)
   char* n;
   const char* o;
 
-  snew.check_size(len * 2);
+  snew.ensure_capacity(len * 2);
   n = snew.c_str();
   o = old;
   while (len--) {
@@ -819,7 +819,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
   return omsg;
 }
 
-void SetWorkingDirectory(const char* wd)
+void SetConfiguredWorkingDirectory(const char* wd)
 {
   struct stat stat_buf;
 

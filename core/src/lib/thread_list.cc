@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,7 +138,7 @@ class IsRunningCondition {
     is_running_ = true;
     is_running_condition_.notify_one();
   }
-  void IsDetached()
+  void MarkDetachedAndNotify()
   {
     std::lock_guard<std::mutex> lg(is_detached_mutex_);
     is_detached_ = true;
@@ -223,7 +223,7 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
     }
 
     thr.detach();
-    run_condition->IsDetached();
+    run_condition->MarkDetachedAndNotify();
 
   } catch (const std::system_error& e) {
     Emsg1(M_ABORT, 0, "Could not start and detach thread: %s\n", e.what());

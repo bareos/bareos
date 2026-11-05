@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,8 @@ void FreeRstorage(JobControlRecord* jcr);
 void SetPairedStorage(JobControlRecord* jcr);
 void FreePairedStorage(JobControlRecord* jcr);
 bool HasPairedStorage(JobControlRecord* jcr);
-bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info);
+bool SwitchReadStorageAndWaitForJobSlot(JobControlRecord* jcr,
+                                        bootstrap_info& info);
 void StorageStatus(UaContext* ua, StorageResource* store, char* cmd);
 int StorageCompareVolListEntry(vol_list_t* e1, vol_list_t* e2);
 changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,

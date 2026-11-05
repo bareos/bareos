@@ -398,7 +398,8 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
       Dmsg1(100, "Executing %s command.\n", to_execute->cmd);
 
       if (!to_execute->func(jcr)) { /* do command */
-        Dmsg1(100, "Quit command loop. Canceled=%d\n", jcr->IsJobCanceled());
+        Dmsg1(100, "Quit command loop. Canceled=%d\n",
+              jcr->IsJobAbortedOrCanceled());
         break; /* error or fully terminated, get out */
       }
     }
@@ -433,7 +434,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
     dir->signal(BNET_TERMINATE);
   }
 
-  jcr->EnterFinish();
+  jcr->PreventNewCancellationAndWaitForCancellationToFinish();
 
   FreePlugins(jcr); /* release instantiated plugins */
   FreeAndNullPoolMemory(jcr->fd_impl->job_metadata);
@@ -727,7 +728,7 @@ static bool SetauthorizationCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   PoolMem sd_auth_key(PM_MESSAGE);
 
-  sd_auth_key.check_size(dir->message_length);
+  sd_auth_key.ensure_capacity(dir->message_length);
   if (bsscanf(dir->msg, setauthorizationcmd, sd_auth_key.c_str()) != 1) {
     dir->fsend(BADcmd, "setauthorization");
     return false;
@@ -899,7 +900,7 @@ static bool RunbeforenowCmd(JobControlRecord* jcr)
           ? jcr->fd_impl->director->allowed_script_dirs
           : me->allowed_script_dirs);
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     dir->fsend(FailedRunScript);
     Dmsg0(100, "Back from RunScripts ClientBeforeJob now: FAILED\n");
     return false;
@@ -1077,7 +1078,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
     PoolMem object_content(PM_MESSAGE);
 
     // Convert the object into a null terminated string.
-    object_content.check_size(rop.object_len + 1);
+    object_content.ensure_capacity(rop.object_len + 1);
     memset(object_content.c_str(), 0, rop.object_len + 1);
     memcpy(object_content.c_str(), rop.object, rop.object_len);
 
@@ -1154,7 +1155,7 @@ static bool FilesetCmd(JobControlRecord* jcr)
 
   retval = dir->fsend(OKinc);
   GeneratePluginEvent(jcr, bEventEndFileSet);
-  CheckIncludeListShadowing(jcr, jcr->fd_impl->ff->fileset);
+  CheckAndApplyIncludeListShadowing(jcr, jcr->fd_impl->ff->fileset);
 
   return retval;
 }
@@ -1162,7 +1163,7 @@ static bool FilesetCmd(JobControlRecord* jcr)
 static void FreeBootstrap(JobControlRecord* jcr)
 {
   if (jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
     jcr->RestoreBootstrap = nullptr;
   }
@@ -1400,7 +1401,7 @@ static bool StorageCmd(JobControlRecord* jcr)
   BareosSocket* storage_daemon_socket = new BareosSocketTCP;
 
   Dmsg1(100, "StorageCmd: %s", dir->msg);
-  sd_auth_key.check_size(dir->message_length);
+  sd_auth_key.ensure_capacity(dir->message_length);
   if (bsscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy,
               sd_auth_key.c_str())
       != 4) {
@@ -1607,7 +1608,8 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
 }
 
 // Find out what encryption cipher to use.
-bool GetWantedCryptoCipher(JobControlRecord* jcr, crypto_cipher_t* cipher)
+bool ConfigureJobCryptoAndGetWantedCipher(JobControlRecord* jcr,
+                                          crypto_cipher_t* cipher)
 {
   findFILESET* fileset;
   bool force_encrypt = false;
@@ -1736,7 +1738,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   LogFlagStatus(jcr, FO_XATTR, "Extended attribute support ");
   LogFlagStatus(jcr, FO_ACL, "ACL support ");
 #endif
-  if (!GetWantedCryptoCipher(jcr, &cipher)) {
+  if (!ConfigureJobCryptoAndGetWantedCipher(jcr, &cipher)) {
     dir->fsend(BADcmd, "backup");
     goto cleanup;
   }
@@ -2239,7 +2241,7 @@ bail_out:
     retval = false; /* we stop here */
   }
 
-  if (jcr->IsJobCanceled()) { retval = false; /* we stop here */ }
+  if (jcr->IsJobAbortedOrCanceled()) { retval = false; /* we stop here */ }
 
   if (!retval) {
     EndRestoreCmd(jcr); /* stopping so send bEventEndRestoreJob */
@@ -2366,7 +2368,7 @@ bool response(JobControlRecord* jcr,
     Dmsg0(110, "%s", sd->msg);
     if (bstrcmp(sd->msg, resp)) { return true; }
   }
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     return false; /* if canceled avoid useless error messages */
   }
   if (IsBnetError(sd)) {

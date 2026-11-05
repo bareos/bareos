@@ -352,7 +352,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 {
   VolumeReservationItem *vol, *nvol;
 
-  if (dcr->jcr->IsJobCanceled()) { return NULL; }
+  if (dcr->jcr->IsJobAbortedOrCanceled()) { return NULL; }
   ASSERT(dcr->dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
@@ -402,7 +402,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
           Dmsg0(50, "SetUnload\n");
           dcr->dev->SetUnload(); /* have to unload current volume */
         }
-        FreeVolume(dcr->dev); /* Release old volume entry */
+        ReleaseVolumeReservationUnlessSwapping(
+            dcr->dev); /* Release old volume entry */
 
         if (debug_level >= debuglevel) { DebugListVolumes("reserve_vol free"); }
       }
@@ -465,7 +466,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 
           Dmsg3(debuglevel, "==== Swap vol=%s from dev=%s to %s\n", VolumeName,
                 vol->dev->print_name(), dcr->dev->print_name());
-          FreeVolume(dcr->dev); /* free any volume attached to our drive */
+          ReleaseVolumeReservationUnlessSwapping(
+              dcr->dev); /* free any volume attached to our drive */
           Dmsg1(50, "SetUnload dev=%s\n", dcr->dev->print_name());
           dcr->dev->SetUnload(); /* Unload any volume that is on our drive */
           {
@@ -621,7 +623,7 @@ static VolumeReservationItem* find_volume(const char* VolumeName)
  * Returns: true if the Volume found and "removed" from the list
  *          false if the Volume is not in the list or is in use
  */
-bool VolumeUnused(DeviceControlRecord* dcr)
+bool MarkVolumeUnused(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
 
@@ -660,12 +662,12 @@ bool VolumeUnused(DeviceControlRecord* dcr)
   } else {
     /* Note, this frees the volume reservation entry, but the file descriptor
      * remains open with the OS. */
-    return FreeVolume(dev);
+    return ReleaseVolumeReservationUnlessSwapping(dev);
   }
 }
 
-// Unconditionally release the volume entry
-bool FreeVolume(Device* dev)
+// Release the attached volume entry unless it is being swapped.
+bool ReleaseVolumeReservationUnlessSwapping(Device* dev)
 {
   VolumeReservationItem* vol;
 
@@ -802,7 +804,7 @@ bool DeviceControlRecord::Can_i_use_volume()
   bool rtn = true;
   VolumeReservationItem* vol;
 
-  if (jcr->IsJobCanceled()) { return false; }
+  if (jcr->IsJobAbortedOrCanceled()) { return false; }
   with_volume_lock([&] {
     vol = find_volume(VolumeName);
     if (!vol) {

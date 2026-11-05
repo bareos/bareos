@@ -53,7 +53,7 @@ bool CheckResources()
     return false;
   } else {
     my_config->omit_defaults_ = true;
-    SetWorkingDirectory(me->working_directory);
+    SetConfiguredWorkingDirectory(me->working_directory);
 
     // See if message resource is specified.
     if (!me->messages) {
@@ -199,7 +199,8 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  auto backup_container = my_config->BackupCurrentConfiguration();
+  auto previous_configuration
+      = my_config->ReplaceWithEmptyConfigurationAndReturnPrevious();
   Dmsg0(100, "Reloading config file\n");
 
 
@@ -222,7 +223,7 @@ bool DoReloadConfig()
 
     // make sure that jobs that keep the last configuration alive
     // also keep alive this config in case they (accidentally) access it.
-    backup_container->SetNext(my_config->GetCurrentConfiguration());
+    previous_configuration->SetNext(my_config->GetCurrentConfiguration());
 
     Dmsg0(10, "Director's configuration file reread successfully.\n");
 
@@ -234,13 +235,13 @@ bool DoReloadConfig()
          my_config->get_base_config_path().c_str());
 
     Jmsg(nullptr, M_ERROR, 0, T_("Resetting to previous configuration.\n"));
-    my_config->RestoreConfiguration(std::move(backup_container));
+    my_config->RestoreConfiguration(std::move(previous_configuration));
     // me is changed above by CheckResources()
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     assert(me);
     my_config->own_resource_ = me;
   }
-  SetWorkingDirectory(me->working_directory);
+  SetConfiguredWorkingDirectory(me->working_directory);
   StartStatisticsThread();
   UnlockJobs();
 

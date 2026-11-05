@@ -40,9 +40,12 @@
 static const int debuglevel = 500;
 #define MAX_PATHLENGTH 1024
 
-static VOID ErrorExit(LPCSTR);
+static VOID LogProcessSetupError(LPCSTR);
 
-static void ErrorExit(LPCSTR lpszMessage) { Dmsg1(0, "%s", lpszMessage); }
+static void LogProcessSetupError(LPCSTR lpszMessage)
+{
+  Dmsg1(0, "%s", lpszMessage);
+}
 
 /**
  * Extracts the executable or script name from the first string in cmdline.
@@ -291,7 +294,7 @@ static HANDLE CreateChildProcess(const char* cmdline,
                                   out, err, env_block);
 
   if (bFuncRetn == 0) {
-    ErrorExit("CreateProcess failed\n");
+    LogProcessSetupError("CreateProcess failed\n");
     const char* err_str = errorString();
 
     Dmsg3(debuglevel, "CreateProcess(%s, %s, ...)=%s\n", comspec,
@@ -425,7 +428,7 @@ Bpipe* OpenBpipe(const char* prog,
   if (mode_read) {
     // Create a pipe for the child process's STDOUT.
     if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0)) {
-      ErrorExit("Stdout pipe creation failed\n");
+      LogProcessSetupError("Stdout pipe creation failed\n");
       goto cleanup;
     }
 
@@ -434,7 +437,7 @@ Bpipe* OpenBpipe(const char* prog,
                                GetCurrentProcess(), &hChildStdoutRdDup, 0,
                                FALSE, DUPLICATE_SAME_ACCESS);
     if (!fSuccess) {
-      ErrorExit("DuplicateHandle failed");
+      LogProcessSetupError("DuplicateHandle failed");
       goto cleanup;
     }
 
@@ -445,7 +448,7 @@ Bpipe* OpenBpipe(const char* prog,
   if (mode_write) {
     // Create a pipe for the child process's STDIN.
     if (!CreatePipe(&hChildStdinRd, &hChildStdinWr, &saAttr, 0)) {
-      ErrorExit("Stdin pipe creation failed\n");
+      LogProcessSetupError("Stdin pipe creation failed\n");
       goto cleanup;
     }
 
@@ -455,7 +458,7 @@ Bpipe* OpenBpipe(const char* prog,
                                FALSE,  // not inherited
                                DUPLICATE_SAME_ACCESS);
     if (!fSuccess) {
-      ErrorExit("DuplicateHandle failed");
+      LogProcessSetupError("DuplicateHandle failed");
       goto cleanup;
     }
 

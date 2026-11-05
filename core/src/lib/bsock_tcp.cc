@@ -162,7 +162,7 @@ bool BareosSocketTCP::connect(JobControlRecord* jcr,
   for (i = 0; !open(jcr, name, host, service, port, heart_beat, &fatal);
        i -= retry_interval) {
     BErrNo be;
-    if (fatal || (jcr && jcr->IsJobCanceled())) { goto bail_out; }
+    if (fatal || (jcr && jcr->IsJobAbortedOrCanceled())) { goto bail_out; }
     Dmsg4(100, "Unable to connect to %s on %s:%d. ERR=%s\n", name, host, port,
           be.bstrerror());
     if (i < 0) {
@@ -247,7 +247,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
        ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
     next = (IPADDR*)addr_list->next(ipaddr);
     while (next) {
-      if (IsSameIpAddress(ipaddr, next)) {
+      if (SockaddrsAreBytewiseEqual(ipaddr, next)) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);
@@ -914,9 +914,9 @@ void BareosSocketTCP::RestoreBlocking(int flags)
 int BareosSocketTCP::WaitData(int sec, int usec)
 {
   if (tls_conn) {
-    auto pending_bytes = tls_conn->TlsPendingBytes();
-    if (pending_bytes > 0) {
-      Dmsg2(4000, "have %d pending bytes\n", pending_bytes);
+    auto has_pending_tls_data = tls_conn->HasBufferedTlsData();
+    if (has_pending_tls_data > 0) {
+      Dmsg2(4000, "TLS has buffered data: %d\n", has_pending_tls_data);
       b_errno = 0;
       return 1;
     }
@@ -940,9 +940,9 @@ int BareosSocketTCP::WaitData(int sec, int usec)
 int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 {
   if (tls_conn) {
-    auto pending_bytes = tls_conn->TlsPendingBytes();
-    if (pending_bytes > 0) {
-      Dmsg2(4000, "have %d pending bytes\n", pending_bytes);
+    auto has_pending_tls_data = tls_conn->HasBufferedTlsData();
+    if (has_pending_tls_data > 0) {
+      Dmsg2(4000, "TLS has buffered data: %d\n", has_pending_tls_data);
       b_errno = 0;
       return 1;
     }
@@ -1139,7 +1139,7 @@ int32_t BareosSocketTCP::write_nbytes(char* ptr, int32_t nbytes)
   return nbytes - nleft;
 }
 
-bool BareosSocketTCP::ConnectionReceivedTerminateSignal()
+bool BareosSocketTCP::CheckForPendingTerminateAndMarkSocketTerminated()
 {
   int32_t signal;
   SetNonblocking();

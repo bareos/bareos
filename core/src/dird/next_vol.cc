@@ -193,7 +193,8 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
           mr->VolJobs, mr->FirstWritten);
     if (ok) {
       // If we can use the volume, check if it is expired
-      if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
+      if (bstrcmp(mr->VolStatus, "Append")
+          && UpdateVolumeStatusIfExpired(jcr, mr)) {
         if (retry++ < 200) { /* sanity check */
           continue;          /* try again from the top */
         } else {
@@ -217,7 +218,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
  * Check if any time limits or use limits have expired if so,
  * set the VolStatus appropriately.
  */
-bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
+bool UpdateVolumeStatusIfExpired(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bool expired = false;
   char ed1[50];
@@ -284,16 +285,17 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
  * Returns: on failure - reason = NULL
  *          on success - reason - pointer to reason
  */
-void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
-                                    MediaDbRecord* mr,
-                                    const char** reason)
+void ValidateAndRecycleVolumeForWriting(JobControlRecord* jcr,
+                                        MediaDbRecord* mr,
+                                        const char** reason)
 {
   int ok;
 
   *reason = NULL;
 
   // Check if a duration or limit has expired
-  if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
+  if (bstrcmp(mr->VolStatus, "Append")
+      && UpdateVolumeStatusIfExpired(jcr, mr)) {
     *reason = T_("volume has expired");
     // Keep going because we may be able to recycle volume
   }

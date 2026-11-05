@@ -112,7 +112,7 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
   my_config->DumpResources(PrintMessage, NULL);
 
   {
-    auto backup = my_config->BackupCurrentConfiguration();
+    auto backup = my_config->ReplaceWithEmptyConfigurationAndReturnPrevious();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
@@ -121,11 +121,10 @@ TEST_F(ConfigParser_Dir, bareos_configparser_tests)
     my_config->RestoreConfiguration(std::move(backup));
     ASSERT_NE(nullptr, me);
   }
-  // If a config already exists, BackupCurrentConfiguration() needs to be called
-  // before ParseConfig(), otherwise memory of the existing config is not freed
-  // completely
+  // Detach the existing config before ParseConfig(), otherwise its memory is
+  // not freed completely.
   {
-    auto backup = my_config->BackupCurrentConfiguration();
+    auto backup = my_config->ReplaceWithEmptyConfigurationAndReturnPrevious();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
@@ -148,7 +147,7 @@ TEST_F(ConfigParser_Dir, foreach_res_and_reload)
   my_config->ParseConfig();
 
   [[maybe_unused]] auto do_reload = [](bool keep_config) {
-    auto backup = my_config->BackupCurrentConfiguration();
+    auto backup = my_config->ReplaceWithEmptyConfigurationAndReturnPrevious();
     my_config->ParseConfig();
 
     me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);

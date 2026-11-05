@@ -114,7 +114,7 @@ bool AccurateFinish(JobControlRecord* jcr)
 {
   bool retval = true;
 
-  if (jcr->IsJobCanceled() || jcr->IsIncomplete()) {
+  if (jcr->IsJobAbortedOrCanceled() || jcr->IsIncomplete()) {
     AccurateFree(jcr);
     return retval;
   }
@@ -299,7 +299,7 @@ bool AccurateCmd(JobControlRecord* jcr)
   uint16_t delta_seq;
   BareosSocket* dir = jcr->dir_bsock;
 
-  if (jcr->IsJobCanceled()) { return true; }
+  if (jcr->IsJobAbortedOrCanceled()) { return true; }
 
   if (bsscanf(dir->msg, "accurate files=%u", &accurate_max_file_count) != 1) {
     dir->fsend(T_("2991 Bad accurate command\n"));

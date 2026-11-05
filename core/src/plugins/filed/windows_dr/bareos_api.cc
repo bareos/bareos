@@ -110,28 +110,21 @@ bool checkChanges(PluginContext* ctx,
   return false;
 }
 
-bool AcceptFile(PluginContext* ctx,
-                const std::string& file,
-                const struct stat& statp)
+bRC AcceptFile(PluginContext* ctx,
+               const std::string& file,
+               const struct stat& statp)
 {
   if (fd.core) {
     filedaemon::save_pkt pkt{};
 
-    // depending on whether the packet is a file or a directory,
-    // checkChanges uses either the link or fname field to get the file name.
-    // We just set both to the correct name here and hope for the best!
-
-    // im not happy about this
     pkt.fname = const_cast<char*>(file.c_str());
     pkt.statp = statp;
     pkt.link = const_cast<char*>(file.c_str());
 
-    auto result = fd.core->AcceptFile(ctx, &pkt);
-
-    return result != bRC_Seen;
+    return fd.core->AcceptFile(ctx, &pkt);
   }
 
-  return false;
+  return bRC_Error;
 }
 
 bRC SetSeenBitmap(PluginContext* ctx, bool all, const char* fname)
@@ -143,6 +136,8 @@ bRC SetSeenBitmap(PluginContext* ctx, bool all, const char* fname)
 }
 bRC ClearSeenBitmap(PluginContext* ctx, bool all, const char* fname)
 {
-  if (fd.core) { fd.core->ClearSeenBitmap(ctx, all, const_cast<char*>(fname)); }
+  if (fd.core) {
+    return fd.core->ClearSeenBitmap(ctx, all, const_cast<char*>(fname));
+  }
   return bRC_Error;
 }

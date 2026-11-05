@@ -87,11 +87,11 @@ BxattrExitCode BuildXattrStreams(JobControlRecord*,
   return BxattrExitCode::kErrorFatal;
 }
 
-BxattrExitCode ParseXattrStreams(JobControlRecord*,
-                                 XattrData*,
-                                 int,
-                                 char*,
-                                 uint32_t)
+BxattrExitCode RestoreXattrsFromStream(JobControlRecord*,
+                                       XattrData*,
+                                       int,
+                                       char*,
+                                       uint32_t)
 {
   return BxattrExitCode::kErrorFatal;
 }
@@ -191,7 +191,7 @@ static bool SerializeXattrStream(JobControlRecord*,
 
   /* Make sure the serialized stream fits in the poolmem buffer.
    * We allocate some more to be sure the stream is gonna fit. */
-  xattr_data->content.check_size(expected_serialize_len + 10);
+  xattr_data->content.ensure_capacity(expected_serialize_len + 10);
   SerBegin(xattr_data->content.c_str(), expected_serialize_len + 10);
 
   // Walk the list of xattrs and Serialize the data.
@@ -1910,7 +1910,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
         }
 
         while ((cnt = read(attrfd, buffer, sizeof(buffer))) > 0) {
-          xattr_data->content.check_size(xattr_data->content_length + cnt);
+          xattr_data->content.ensure_capacity(xattr_data->content_length + cnt);
           memcpy(xattr_data->content.c_str() + xattr_data->content_length,
                  buffer, cnt);
           xattr_data->content_length += cnt;
@@ -2673,11 +2673,11 @@ BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
   }
 }
 
-BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length)
+BxattrExitCode RestoreXattrsFromStream(JobControlRecord* jcr,
+                                       XattrData* xattr_data,
+                                       int stream,
+                                       char* content,
+                                       uint32_t content_length)
 {
   int ret;
   struct stat st;

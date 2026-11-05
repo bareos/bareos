@@ -797,7 +797,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
 cleanup:
   if (dev->IsOpen() && !dev->HasCap(CAP_ALWAYSOPEN)) { dev->close(dcr); }
   if (!dev->IsOpen()) { dev->ClearVolhdr(); }
-  VolumeUnused(dcr); /* no longer using volume */
+  MarkVolumeUnused(dcr); /* no longer using volume */
 
 bail_out:
   GiveBackDeviceLock(dev, &hold);
@@ -834,7 +834,7 @@ static bool ReadLabel(DeviceControlRecord* dcr)
       ok = false;
       break;
   }
-  VolumeUnused(dcr);
+  MarkVolumeUnused(dcr);
   GiveBackDeviceLock(dev, &hold);
   return ok;
 }
@@ -1137,7 +1137,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
         if (!UnloadAutochanger(dcr, kInvalidSlotNumber)) {
           /* ***FIXME**** what is this ????  */
           dev->close(dcr);
-          FreeVolume(dev);
+          ReleaseVolumeReservationUnlessSwapping(dev);
         }
         if (dev->IsUnmountable() && !dev->unmount(dcr, 0)) {
           dir->fsend(T_("3907 %s"), dev->bstrerror());
@@ -1160,15 +1160,16 @@ static bool UnmountCmd(JobControlRecord* jcr)
         Dmsg0(90, "Device not in use, unmounting\n");
         /* On FreeBSD, I am having ASSERT() failures in BlockDevice()
          * and I can only imagine that the thread id that we are
-         * leaving in no_wait_id is being re-used. So here,
+         * leaving in thread_id_allowed_while_device_blocked is being re-used.
+         * So here,
          * we simply do it by hand.  Gross, but a solution.
          */
         /*  BlockDevice(dev, BST_UNMOUNTED); replace with 2 lines below */
         dev->SetBlocked(BST_UNMOUNTED);
-        ClearThreadId(dev->no_wait_id);
+        ClearThreadId(dev->thread_id_allowed_while_device_blocked);
         if (!UnloadAutochanger(dcr, kInvalidSlotNumber)) {
           dev->close(dcr);
-          FreeVolume(dev);
+          ReleaseVolumeReservationUnlessSwapping(dev);
         }
         if (dev->IsUnmountable() && !dev->unmount(dcr, 0)) {
           dir->fsend(T_("3907 %s"), dev->bstrerror());
@@ -1269,7 +1270,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   bool ok = false;
 
   if (jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
   }
   lock_mutex(bsr_mutex);
@@ -1307,7 +1308,7 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   ok = true;
 
 bail_out:
-  SecureErase(jcr, jcr->RestoreBootstrap);
+  DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
   FreePoolMemory(jcr->RestoreBootstrap);
   jcr->RestoreBootstrap = NULL;
   if (!ok) {
@@ -1612,7 +1613,7 @@ static bool ReplicateCmd(JobControlRecord* jcr)
       = std::make_unique<BareosSocketTCP>();
 
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
-  sd_auth_key.check_size(dir->message_length);
+  sd_auth_key.ensure_capacity(dir->message_length);
 
   if (bsscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr,
               &stored_port, &tls_policy, sd_auth_key.c_str())

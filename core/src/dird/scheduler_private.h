@@ -68,7 +68,7 @@ class SchedulerPrivate {
                      JobResource* job,
                      RunResource* run,
                      time_t now,
-                     time_t runtime,
+                     time_t scheduled_time,
                      JobTrigger job_trigger);
 };
 

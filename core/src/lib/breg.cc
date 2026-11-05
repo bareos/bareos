@@ -208,7 +208,7 @@ char* BareosRegex::replace(const char* fname)
   int len = ComputeDestLen(fname, regs);
 
   if (len) {
-    result = CheckPoolMemorySize(result, len);
+    result = EnsurePoolMemoryCapacity(result, len);
     EditSubst(fname, regs);
     success = true;
     Dmsg2(500, "bregexp: len = %i, result_len = %" PRIuz "\n", len,
@@ -224,7 +224,7 @@ char* BareosRegex::replace(const char* fname)
 
 char* BareosRegex::ReturnFname(const char* fname, int len)
 {
-  result = CheckPoolMemorySize(result, len + 1);
+  result = EnsurePoolMemoryCapacity(result, len + 1);
   strcpy(result, fname);
   return result;
 }

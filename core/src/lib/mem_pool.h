@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@ POOLMEM* GetPoolMemory(int pool) noexcept;
 POOLMEM* GetMemory(int32_t size) noexcept;
 int32_t SizeofPoolMemory(POOLMEM* buf) noexcept;
 POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size) noexcept;
-POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size) noexcept;
+POOLMEM* EnsurePoolMemoryCapacity(POOLMEM* buf, int32_t size) noexcept;
 void FreePoolMemory(POOLMEM* buf) noexcept;
 inline void FreeMemory(POOLMEM* buf) noexcept { FreePoolMemory(buf); }
 
@@ -104,10 +104,10 @@ class PoolMem {
 
   char* c_str() const { return mem; }
   POOLMEM*& addr() { return mem; }
-  int size() const { return SizeofPoolMemory(mem); }
-  char* check_size(int32_t size)
+  int capacity() const { return SizeofPoolMemory(mem); }
+  char* ensure_capacity(int32_t size)
   {
-    mem = CheckPoolMemorySize(mem, size);
+    mem = EnsurePoolMemoryCapacity(mem, size);
     return mem;
   }
   int32_t MaxSize();

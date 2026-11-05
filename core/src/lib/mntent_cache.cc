@@ -363,7 +363,7 @@ static void RepopulateMntentCache(void)
 
       /* See if this is an outstanding entry.
        * e.g. when reference_count > 0 set
-       * the entry to destroyed and remove it
+       * mark the entry detached and remove it
        * from the list. But don't free the data
        * yet. The put_mntent_mapping function will
        * handle these dangling entries. */
@@ -372,7 +372,7 @@ static void RepopulateMntentCache(void)
         DestroyMntentCacheEntry(mce);
         free(mce);
       } else {
-        mce->destroyed = true;
+        mce->detached = true;
         mntent_cache_entries->remove(mce);
       }
     }
@@ -411,7 +411,7 @@ void ReleaseMntentMapping(mntent_cache_entry_t* mce)
   mce->reference_count--;
 
   // See if this entry is a dangling entry.
-  if (mce->reference_count == 0 && mce->destroyed) {
+  if (mce->reference_count == 0 && mce->detached) {
     DestroyMntentCacheEntry(mce);
     free(mce);
   }

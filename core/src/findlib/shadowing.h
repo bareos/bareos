@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
 #ifndef BAREOS_FINDLIB_SHADOWING_H_
 #define BAREOS_FINDLIB_SHADOWING_H_
 
-void CheckIncludeListShadowing(JobControlRecord* jcr, findFILESET* fileset);
+void CheckAndApplyIncludeListShadowing(JobControlRecord* jcr,
+                                       findFILESET* fileset);
 
 #endif  // BAREOS_FINDLIB_SHADOWING_H_

@@ -111,11 +111,11 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
 BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
                                  XattrBuildData* xattr_data,
                                  FindFilesPacket* ff_pkt);
-BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 XattrData* xattr_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length);
+BxattrExitCode RestoreXattrsFromStream(JobControlRecord* jcr,
+                                       XattrData* xattr_data,
+                                       int stream,
+                                       char* content,
+                                       uint32_t content_length);
 
 
 bool HandleXattrExitCode(JobControlRecord* jcr, BxattrExitCode retval);

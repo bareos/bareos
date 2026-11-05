@@ -27,6 +27,9 @@ FileSet {
   Name = "PythonTest"
   Description = "fileset just to backup some files for selftest"
   Enable VSS = No
+  Exclude {
+    File = "@tmpdir@/acceptance-excluded"
+  }
   Include {
     Options {
       Acl Support = No
@@ -34,7 +37,7 @@ FileSet {
     }
     Plugin = "grpc:bareos-grpc-fd-plugin-bridge:@python_module_name@"
              ":module_path=@python_plugin_module_src_test_dir@"
-             ":module_name=bareos-fd-local-fileset-acl-xattr"
+             ":module_name=bareos-fd-acceptance"
              ":filename=@tmpdir@/file-list"
   }
 }

@@ -202,9 +202,9 @@ void CloseSdBsock(UaContext* ua)
   if (ua) { TerminateAndCloseJcrStoreSocket(ua->jcr); }
 }
 
-char* get_volume_name_from_SD(UaContext* ua,
-                              slot_number_t Slot,
-                              drive_number_t drive)
+char* ReadSlotVolumeLabelAndReturnName(UaContext* ua,
+                                       slot_number_t Slot,
+                                       drive_number_t drive)
 {
   BareosSocket* sd;
   StorageResource* store = ua->jcr->dir_impl->res.write_storage;
@@ -852,7 +852,7 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
 
   sd->fsend(getSecureEraseCmd);
   while ((n = BgetDirmsg(sd)) >= 0) {
-    jcr->dir_impl->SDSecureEraseCmd = CheckPoolMemorySize(
+    jcr->dir_impl->SDSecureEraseCmd = EnsurePoolMemoryCapacity(
         jcr->dir_impl->SDSecureEraseCmd, sd->message_length);
     if (bsscanf(sd->msg, OKSecureEraseCmd, jcr->dir_impl->SDSecureEraseCmd)
         == 1) {

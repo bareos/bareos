@@ -64,7 +64,7 @@ int is_job_canceled_cb(struct ndm_session* sess)
   NIS* nis = (NIS*)sess->param->log.ctx;
   JobControlRecord* jcr = nis->jcr;
 
-  return jcr->IsJobCanceled();
+  return jcr->IsJobAbortedOrCanceled();
 }
 
 
@@ -259,7 +259,8 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   nis->FileIndex = 1;
   nis->jcr = jcr;
   nis->save_filehist = jcr->dir_impl->res.job->SaveFileHist;
-  nis->filehist_size = jcr->dir_impl->res.job->FileHistSize;
+  nis->expected_file_history_entries
+      = jcr->dir_impl->res.job->ExpectedFileHistoryEntries;
 
   ndmp_sess.param->log.ctx = nis;
   ndmp_sess.param->log_tag = strdup("DIR-NDMP");

@@ -342,7 +342,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
     goto bail_out;
   }
   if (relabel) {
-    VolumeUnused(dcr); /* mark current volume unused */
+    MarkVolumeUnused(dcr); /* mark current volume unused */
     /* Truncate device */
     if (!dev->d_truncate(dcr)) { goto bail_out; }
     if (!dev->IsTape()) {
@@ -454,7 +454,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   return true;
 
 bail_out:
-  VolumeUnused(dcr);
+  MarkVolumeUnused(dcr);
   dev->ClearVolhdr();
   dev->ClearAppend(); /* remove append since this is PRE_LABEL */
   return false;
@@ -476,7 +476,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
 
   /* Serialize the label into the device record. */
 
-  rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Volume_Label);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, SER_LENGTH_Volume_Label);
   SerBegin(rec->data, SER_LENGTH_Volume_Label);
   SerString(dev->VolHdr.Id);
 
@@ -570,7 +570,7 @@ static void CreateSessionLabel(DeviceControlRecord* dcr,
   rec->Stream = jcr->JobId;
   rec->maskedStream = jcr->JobId;
 
-  rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Session_Label);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, SER_LENGTH_Session_Label);
   SerBegin(rec->data, SER_LENGTH_Session_Label);
   SerString(BareosId);
   ser_uint32(BareosTapeVersion);
@@ -691,7 +691,7 @@ bool UnserVolumeLabel(Device* dev, DeviceRecord* rec)
 
 
   /* UnSerialize the record into the Volume Header */
-  rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Volume_Label);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, SER_LENGTH_Volume_Label);
   SerBegin(rec->data, SER_LENGTH_Volume_Label);
   UnserString(dev->VolHdr.Id);
   unser_uint32(dev->VolHdr.VerNum);
@@ -727,7 +727,7 @@ bool UnserSessionLabel(Session_Label* label, DeviceRecord* rec)
 {
   ser_declare;
 
-  rec->data = CheckPoolMemorySize(rec->data, SER_LENGTH_Session_Label);
+  rec->data = EnsurePoolMemoryCapacity(rec->data, SER_LENGTH_Session_Label);
   UnserBegin(rec->data, SER_LENGTH_Session_Label);
   UnserString(label->Id);
   unser_uint32(label->VerNum);

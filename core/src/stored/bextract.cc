@@ -244,8 +244,8 @@ int main(int argc, char* argv[])
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+  LoadCryptoCacheOrDiscardOnFailure(me->working_directory, "bareos-sd",
+                                    GetFirstPortHostOrder(me->SDaddrs));
 
   if (!got_inc) {                      /* If no include file, */
     AddFnameToIncludeList(ff, 0, "/"); /*   include everything */
@@ -345,8 +345,8 @@ static inline void PopDelayedDataStreams()
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
-        parse_acl_streams(g_jcr, &acl_data, dds->stream, dds->content,
-                          dds->content_length);
+        RestoreAclFromStream(g_jcr, &acl_data, dds->stream, dds->content,
+                             dds->content_length);
         free(dds->content);
         break;
       case STREAM_XATTR_HURD:
@@ -359,8 +359,8 @@ static inline void PopDelayedDataStreams()
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-        ParseXattrStreams(g_jcr, &xattr_data, dds->stream, dds->content,
-                          dds->content_length);
+        RestoreXattrsFromStream(g_jcr, &xattr_data, dds->stream, dds->content,
+                                dds->content_length);
         free(dds->content);
         break;
       default:

@@ -250,7 +250,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
       dev->ClearLabeled();
     }
 
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       char ed1[50];
       Mmsg1(dev->errmsg, T_("Job %s canceled.\n"), edit_int64(jcr->JobId, ed1));
       Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
@@ -310,7 +310,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         if (!UnloadAutochanger(dcr, -1)) {
           // At least free the device so we can re-open with correct volume
           dev->close(dcr);
-          FreeVolume(dev);
+          ReleaseVolumeReservationUnlessSwapping(dev);
         }
         dev->SetLoad();
         [[fallthrough]];
@@ -323,7 +323,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         // If the device requires mount, close it, so the device can be ejected.
         if (dev->RequiresMount()) {
           dev->close(dcr);
-          FreeVolume(dev);
+          ReleaseVolumeReservationUnlessSwapping(dev);
         }
 
         // Call autochanger only once unless ask_sysop called
@@ -369,7 +369,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   dev->ClearAppend();
   dev->SetRead();
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
   Jmsg(jcr, M_INFO, 0, T_("Ready to read from volume \"%s\" on device %s.\n"),
        dcr->VolumeName, dev->print_name());
 
@@ -437,7 +437,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
     dev->Unlock();
     Dmsg1(190, "jid=%" PRIu32 " Do mount_next_write_vol\n", jcr->JobId);
     if (!dcr->MountNextWriteVolume()) {
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         /* Reduce "noise" -- don't print if job canceled */
         Jmsg(jcr, M_FATAL, 0, T_("Could not ready device %s for append.\n"),
              dev->print_name());
@@ -502,7 +502,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * this must be done before acquiring locks.
    * A previous implementation did the flush inside dev->close(),
    * which resulted in various locking problems. */
-  if (!jcr->IsJobCanceled()) {
+  if (!jcr->IsJobAbortedOrCanceled()) {
     if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
     }
@@ -532,7 +532,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         dcr->DirUpdateVolumeInfo(
             is_labeloperation::False); /* send Volume info to Director */
         RemoveReadVolume(jcr, dcr->VolumeName);
-        VolumeUnused(dcr);
+        MarkVolumeUnused(dcr);
       }
     } else if (dev->num_writers > 0) {
       /* Note if WEOT is set, we are at the end of the tape and may not be
@@ -571,7 +571,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
                 dev->getVolCatName(), dev->print_name());
         }
         if (dev->num_writers == 0) { /* if not being used */
-          VolumeUnused(dcr); /*  we obviously are not using the volume */
+          MarkVolumeUnused(dcr); /*  we obviously are not using the volume */
         }
       }
 
@@ -579,7 +579,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       /* If we reach here, it is most likely because the job has failed,
        * since the device is not in read mode and there are no writers.
        * It was probably reserved. */
-      VolumeUnused(dcr);
+      MarkVolumeUnused(dcr);
     }
 
     Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers,
@@ -589,12 +589,12 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     if (dev->num_writers == 0
         && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
       dev->close(dcr);
-      FreeVolume(dev);
+      ReleaseVolumeReservationUnlessSwapping(dev);
     }
   });
 
   // Fire off Alert command and include any output
-  if (!jcr->IsJobCanceled()) {
+  if (!jcr->IsJobAbortedOrCanceled()) {
     if (!dcr->device_resource->drive_tapealert_enabled
         && dcr->device_resource->alert_command) {
       int status = 1;
@@ -641,7 +641,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   ReleaseDeviceCond();
 
   // If we are the thread that blocked the device, then unblock it
-  if (pthread_equal(dev->no_wait_id, pthread_self())) {
+  if (pthread_equal(dev->thread_id_allowed_while_device_blocked,
+                    pthread_self())) {
     dev->dunblock(true);
   } else {
     // Otherwise, reset the prior block status and unlock

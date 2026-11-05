@@ -206,7 +206,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
              T_("End of Volume at file %u on device %s, Volume \"%s\"\n"),
              dcr->dev->file, dcr->dev->print_name(), dcr->VolumeName);
 
-        VolumeUnused(dcr); /* mark volume unused */
+        MarkVolumeUnused(dcr); /* mark volume unused */
         if (!mount_cb(dcr)) {
           Jmsg(jcr, M_INFO, 0, T_("End of all volumes.\n"));
           if (RecordCb) {
@@ -365,7 +365,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     if (rctx->lastFileIndex != READ_NO_FILEINDEX
         && rctx->lastFileIndex != rec->FileIndex) {
-      if (IsThisBsrDone(jcr->sd_impl->read_session.bsr, rec)
+      if (IncrementBsrFilesFoundAndRequestRepositionIfComplete(
+              jcr->sd_impl->read_session.bsr, rec)
           && TryDeviceRepositioning(jcr, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
@@ -406,7 +407,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
   jcr->sd_impl->read_session.mount_next_volume = false;
 
   while (ok && !done) {
-    if (jcr->IsJobCanceled()) {
+    if (jcr->IsJobAbortedOrCanceled()) {
       ok = false;
       break;
     }

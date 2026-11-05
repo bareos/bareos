@@ -40,19 +40,20 @@ constexpr std::uint64_t exa = 1000 * peta;
 
 TEST(edit, convert_number_to_siunits)
 {
-  ASSERT_STREQ(SizeAsSiPrefixFormat(0).c_str(), "0");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(1).c_str(), "1");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(123).c_str(), "123");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(kibi).c_str(), "1 k");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(2 * kibi + 2).c_str(), "2 k 2");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(mebi).c_str(), "1 m");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(gibi).c_str(), "1 g");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(tebi).c_str(), "1 t");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(pebi).c_str(), "1 p");
-  ASSERT_STREQ(SizeAsSiPrefixFormat(exi).c_str(), "1 e");
-  ASSERT_STREQ(
-      SizeAsSiPrefixFormat(exi + pebi + tebi + gibi + mebi + kibi + 1).c_str(),
-      "1 e 1 p 1 t 1 g 1 m 1 k 1");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(0).c_str(), "0");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(1).c_str(), "1");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(123).c_str(), "123");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(kibi).c_str(), "1 k");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(2 * kibi + 2).c_str(), "2 k 2");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(mebi).c_str(), "1 m");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(gibi).c_str(), "1 g");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(tebi).c_str(), "1 t");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(pebi).c_str(), "1 p");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(exi).c_str(), "1 e");
+  ASSERT_STREQ(FormatSizeAsBinaryUnitComponents(exi + pebi + tebi + gibi + mebi
+                                                + kibi + 1)
+                   .c_str(),
+               "1 e 1 p 1 t 1 g 1 m 1 k 1");
 }
 
 // kibibyte

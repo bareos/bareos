@@ -91,7 +91,7 @@ class TlsOpenSsl : public Tls {
 
   bool KtlsSendStatus() override;
   bool KtlsRecvStatus() override;
-  int TlsPendingBytes() override;
+  int HasBufferedTlsData() override;
 
  private:
   bool TlsPostconnectVerifyHost(X509* cert, const char* host);
@@ -778,7 +778,7 @@ bool TlsOpenSsl::KtlsRecvStatus()
 #endif
 }
 
-int TlsOpenSsl::TlsPendingBytes()
+int TlsOpenSsl::HasBufferedTlsData()
 {
   /* SSL_pending() returns the amount of already decrypted bytes
    * since we are using readahead, openssl will read as many bytes as possible

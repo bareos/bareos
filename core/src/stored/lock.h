@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,9 @@ enum
 };
 
 typedef struct s_steal_lock {
-  pthread_t no_wait_id; /**< id of no wait thread */
-  int dev_blocked;      /**< state */
-  int dev_prev_blocked; /**< previous blocked state */
+  pthread_t thread_id_allowed_while_device_blocked; /**< id of no wait thread */
+  int blocked_state;                                /**< state */
+  int previous_blocked_state; /**< previous blocked state */
 } bsteal_lock_t;
 
 // Used in unblock() call

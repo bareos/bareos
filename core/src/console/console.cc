@@ -68,7 +68,7 @@ extern "C" void GotSigtin(int sig);
 
 static char* configfile = NULL;
 static BareosSocket* g_UA_sock = NULL;
-static bool stop = false;
+static bool suppress_output = false;
 static int timeout = 0;
 static int g_argc;
 static POOLMEM* g_args;
@@ -97,8 +97,8 @@ static int EolCmd(FILE* input, BareosSocket* UA_sock);
 
 #include "lib/bregex.h"
 
-extern "C" void GotSigstop(int) { stop = true; }
-extern "C" void GotSigcontinue(int) { stop = false; }
+extern "C" void GotSigstop(int) { suppress_output = true; }
+extern "C" void GotSigcontinue(int) { suppress_output = false; }
 extern "C" void GotSigtout(int) {}
 extern "C" void GotSigtin(int) {}
 
@@ -274,19 +274,19 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       }
 
       if (at_prompt) {
-        if (!stop) { ConsoleOutput("\n"); }
+        if (!suppress_output) { ConsoleOutput("\n"); }
         at_prompt = false;
       }
 
       /* Suppress output if running
        * in background or user hit ctl-c */
-      if (!stop) {
+      if (!suppress_output) {
         if (UA_sock->msg) { ConsoleOutput(UA_sock->msg); }
       }
     }
     StopBsockTimer(tid);
 
-    if (!stop) { fflush(stdout); }
+    if (!suppress_output) { fflush(stdout); }
 
     if (IsBnetStop(UA_sock)) {
       break; /* error or term */
@@ -388,7 +388,7 @@ static void match_kw(regex_t* preg, const char* what, int len, POOLMEM*& buf)
   rc = regexec(preg, what, nmatch, pmatch, 0);
   if (rc == 0) {
     size = pmatch[1].rm_eo - pmatch[1].rm_so;
-    buf = CheckPoolMemorySize(buf, size + 1);
+    buf = EnsurePoolMemoryCapacity(buf, size + 1);
     memcpy(buf, what + pmatch[1].rm_so, size);
     buf[size] = '\0';
 
@@ -1112,7 +1112,7 @@ int main(int argc, char* argv[])
     g_UA_sock->close();
   }
 
-  if (history_file.size()) { ConsoleUpdateHistory(history_file.c_str()); }
+  if (history_file.capacity()) { ConsoleUpdateHistory(history_file.c_str()); }
 
   clear_history();
 

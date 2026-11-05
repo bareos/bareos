@@ -226,7 +226,7 @@ static var_rc_t lookup_counter_var(var_t*,
   PoolMem buf(PM_NAME);
   var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
-  buf.check_size(var_len + 1);
+  buf.ensure_capacity(var_len + 1);
   PmMemcpy(buf, var_ptr, var_len);
   (buf.c_str())[var_len] = 0;
 
@@ -313,7 +313,7 @@ static var_rc_t lookup_var(var_t* ctx,
   }
 
   // Look in environment
-  buf.check_size(var_len + 1);
+  buf.ensure_capacity(var_len + 1);
   PmMemcpy(buf, var_ptr, var_len);
   (buf.c_str())[var_len] = 0;
   Dmsg1(100, "Var=%s\n", buf.c_str());
@@ -367,7 +367,7 @@ static var_rc_t lookup_var(var_t* ctx,
     p++;
   }
 
-  buf.check_size(p - val);
+  buf.ensure_capacity(p - val);
   Dmsg2(100, "val=%s len=%" PRIiz "\n", val, p - val);
 
   // Make a copy of item, and pass it back
@@ -412,7 +412,7 @@ static var_rc_t operate_var(var_t*,
   }
 
   if (op_len == 3 && bstrncmp(op_ptr, "inc", 3)) {
-    buf.check_size(val_len + 1);
+    buf.ensure_capacity(val_len + 1);
     PmMemcpy(buf, arg_ptr, val_len);
     (buf.c_str())[val_len] = 0;
     Dmsg1(100, "Arg=%s\n", buf.c_str());

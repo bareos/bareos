@@ -72,7 +72,7 @@ TEST(sd, MultipliedDeviceTest_ConfigParameter)
   EXPECT_EQ(d->count, 3);
 }
 
-static uint32_t CountAllDeviceResources(ConfigurationParser& config)
+static uint32_t CountMultipliedDeviceResources(ConfigurationParser& config)
 {
   uint32_t count = 0;
   BareosResource* p = nullptr;
@@ -116,7 +116,7 @@ TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
   storagedaemon::my_config = test_config.get();
 
   ASSERT_TRUE(test_config->ParseConfig());
-  auto count = CountAllDeviceResources(*test_config);
+  auto count = CountMultipliedDeviceResources(*test_config);
 
   /* configurable using Device config for "AnotherMultipliedDeviceResource" */
   int amount_to_check = 117;

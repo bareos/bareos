@@ -115,7 +115,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
   sd->signal(BNET_EOD);
   fclose(bs);
   if (jcr->dir_impl->unlink_bsr) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     jcr->dir_impl->unlink_bsr = false;
   }
   return true;
@@ -425,7 +425,7 @@ bool StartStorageDaemonMessageThread(JobControlRecord* jcr)
   /* Wait for thread to start */
   while (!jcr->dir_impl->SD_msg_chan_started) {
     Bmicrosleep(0, 50);
-    if (jcr->IsJobCanceled() || jcr->dir_impl->sd_msg_thread_done) {
+    if (jcr->IsJobAbortedOrCanceled() || jcr->dir_impl->sd_msg_thread_done) {
       return false;
     }
   }
@@ -480,7 +480,7 @@ extern "C" void* msg_thread(void* arg)
   // Read the Storage daemon's output.
   Dmsg0(100, "Start msg_thread loop\n");
   n = 0;
-  while (!jcr->IsJobCanceled() && (n = BgetDirmsg(sd)) >= 0) {
+  while (!jcr->IsJobAbortedOrCanceled() && (n = BgetDirmsg(sd)) >= 0) {
     Dmsg1(400, "<stored: %s", sd->msg);
     /* Check for "3000 OK Job Authorization="
      * Returned by a rerun cmd. */
@@ -557,7 +557,7 @@ void WaitForStorageDaemonTermination(JobControlRecord* jcr)
       jcr->dir_impl->term_wait.wait_for(l, std::chrono::seconds(6));
       if (jcr->dir_impl->sd_msg_thread_done) {
         break;
-      } else if (jcr->IsJobCanceled()) {
+      } else if (jcr->IsJobAbortedOrCanceled()) {
         WaitForCanceledStorageDaemonTermination(jcr, std::move(l));
         break;
       }

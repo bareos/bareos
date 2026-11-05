@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -168,7 +168,7 @@ class VSSClientVista : public VSSClient {
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
   virtual bool WaitAndCheckForAsyncOperation(IVssAsync* pAsync) override;
   virtual void QuerySnapshotSet(GUID snapshotSetID) override;
-  bool CheckWriterStatus();
+  bool RefreshVssWriterStatusAndLogWarnings();
 };
 
 #endif /* WIN32_VSS */

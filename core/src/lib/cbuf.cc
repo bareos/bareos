@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -108,10 +108,10 @@ bail_out:
 }
 
 /*
- * Make sure there is a free next slot available on the circular buffer.
- * So the next enqueue will not block but we block now until one is available.
+ * Wait for space and return the next enqueue index without reserving it.
+ * The caller must ensure there are no competing producers.
  */
-int CircularBuffer::NextSlot()
+int CircularBuffer::WaitForSpaceAndGetNextEnqueueIndex()
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
@@ -127,7 +127,7 @@ int CircularBuffer::NextSlot()
  * Flush the circular buffer. Any waiting consumer will be wakened and will
  * see we are in flush state.
  */
-int CircularBuffer::flush()
+int CircularBuffer::SignalEndOfInput()
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 

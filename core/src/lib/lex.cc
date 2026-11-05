@@ -374,7 +374,7 @@ static void add_str(lexer* lf, int ch)
   /* The default config string is sized to 256 bytes.
    * If we need longer config strings its increased with 256 bytes each time. */
   if ((lf->str_len + 3) >= lf->str_max_len) {
-    lf->str = CheckPoolMemorySize(lf->str, lf->str_max_len + 256);
+    lf->str = EnsurePoolMemoryCapacity(lf->str, lf->str_max_len + 256);
     lf->str_max_len = SizeofPoolMemory(lf->str);
   }
 

@@ -512,19 +512,19 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 }
 
 void ConfigurationParser::RestoreConfiguration(
-    std::shared_ptr<LoadedConfiguration>&& backup_table)
+    std::shared_ptr<LoadedConfiguration>&& previous_configuration)
 {
-  std::swap(loaded_configuration, backup_table);
-  backup_table.reset();
+  std::swap(loaded_configuration, previous_configuration);
+  previous_configuration.reset();
 }
 
 std::shared_ptr<LoadedConfiguration>
-ConfigurationParser::BackupCurrentConfiguration()
+ConfigurationParser::ReplaceWithEmptyConfigurationAndReturnPrevious()
 {
-  auto backup_table = loaded_configuration;
+  auto previous_configuration = loaded_configuration;
   loaded_configuration
       = std::make_shared<LoadedConfiguration>(FreeResourceCb_, r_num_);
-  return backup_table;
+  return previous_configuration;
 }
 
 std::shared_ptr<LoadedConfiguration>

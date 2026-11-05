@@ -914,7 +914,7 @@ bool StatusCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
 
   sp.bs = dir;
-  devicenames.check_size(dir->message_length);
+  devicenames.ensure_capacity(dir->message_length);
   if (bsscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in status command: %s\n"), jcr->errmsg);
@@ -940,7 +940,7 @@ bool DotstatusCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
 
   sp.bs = dir;
-  cmd.check_size(dir->message_length);
+  cmd.ensure_capacity(dir->message_length);
   if (bsscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 No arg in .status command: %s\n"), jcr->errmsg);

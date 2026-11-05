@@ -458,7 +458,7 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
     }
 
     send();
-    if (jcr && jcr->IsJobCanceled()) { return false; }
+    if (jcr && jcr->IsJobAbortedOrCanceled()) { return false; }
   }
   UpdateAttrSpoolSize(tsize - last);
 
@@ -519,7 +519,7 @@ bool BareosSocket::send(const char* msg_in, uint32_t nbytes)
 {
   if (errors || IsTerminated()) { return false; }
 
-  msg = CheckPoolMemorySize(msg, nbytes);
+  msg = EnsurePoolMemoryCapacity(msg, nbytes);
   memcpy(msg, msg_in, nbytes);
 
   message_length = nbytes;
@@ -657,7 +657,7 @@ bool cram_md5_handshake(JobControlRecord* jcr,
                         bool initiated_by_remote,
                         TlsPolicy* remote_policy)
 {
-  if (jcr && jcr->IsJobCanceled()) {
+  if (jcr && jcr->IsJobAbortedOrCanceled()) {
     const char* err_msg
         = T_("TwoWayAuthenticate failed, because job was canceled.");
     Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
@@ -669,7 +669,7 @@ bool cram_md5_handshake(JobControlRecord* jcr,
   CramMd5Handshake cram_md5_handshake(socket, password, my_policy,
                                       my_qualified_name);
 
-  if (socket->ConnectionReceivedTerminateSignal()) {
+  if (socket->CheckForPendingTerminateAndMarkSocketTerminated()) {
     const char* err_msg = T_(
         "TwoWayAuthenticate failed, because connection was reset by "
         "destination peer.");
@@ -711,7 +711,7 @@ bool cram_md5_handshake(JobControlRecord* jcr,
     }
     socket->fsend(T_("1999 Authorization failed.\n"));
     Bmicrosleep(socket->sleep_time_after_authentication_error, 0);
-  } else if (jcr && jcr->IsJobCanceled()) {
+  } else if (jcr && jcr->IsJobAbortedOrCanceled()) {
     const char* err_msg
         = T_("TwoWayAuthenticate failed, because job was canceled.");
     Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);

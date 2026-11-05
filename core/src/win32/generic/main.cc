@@ -175,7 +175,7 @@ int WINAPI WinMain(HINSTANCE Instance,
     }
 
     /* Stop any running copy? */
-    if (strncasecmp(p, "/kill", 5) == 0) { return stopRunningBareos(); }
+    if (strncasecmp(p, "/kill", 5) == 0) { return requestBareosShutdown(); }
 
     /* Run app as user program? */
     if (strncasecmp(p, "/run", 4) == 0) {

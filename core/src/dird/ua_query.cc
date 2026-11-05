@@ -172,7 +172,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
   for (q = query; (p = strchr(q, '%'));) {
     if (p) {
       olen = o - new_query;
-      new_query = CheckPoolMemorySize(new_query, olen + p - q + 10);
+      new_query = EnsurePoolMemoryCapacity(new_query, olen + p - q + 10);
       o = new_query + olen;
       while (q < p) { /* copy up to % */
         *o++ = *q++;
@@ -203,8 +203,8 @@ static POOLMEM* substitute_prompts(UaContext* ua,
             }
             const auto& substitution = *subst[n];
             olen = o - new_query;
-            new_query = CheckPoolMemorySize(new_query,
-                                            olen + substitution.size() + 10);
+            new_query = EnsurePoolMemoryCapacity(
+                new_query, olen + substitution.size() + 10);
             o = new_query + olen;
             memcpy(o, substitution.data(), substitution.size());
             o += substitution.size();
@@ -225,7 +225,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
     }
   }
   olen = o - new_query;
-  new_query = CheckPoolMemorySize(new_query, olen + strlen(q) + 10);
+  new_query = EnsurePoolMemoryCapacity(new_query, olen + strlen(q) + 10);
   o = new_query + olen;
   while (*q) { *o++ = *q++; }
   *o = 0;

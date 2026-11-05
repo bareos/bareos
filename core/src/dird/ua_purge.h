@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,9 @@
 
 namespace directordaemon {
 
-bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force = false);
+bool MarkVolumePurgedIfEmpty(UaContext* ua,
+                             MediaDbRecord* mr,
+                             bool force = false);
 bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr);
 void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr);
 bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force = false);

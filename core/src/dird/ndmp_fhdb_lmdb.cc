@@ -92,7 +92,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
     length = strlen(raw_name);
     total_length = sizeof(struct fhdb_payload) + length + 2;
     fhdb_state->pay_load
-        = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
+        = EnsurePoolMemoryCapacity(fhdb_state->pay_load, total_length);
     payload = (struct fhdb_payload*)fhdb_state->pay_load;
     payload->node = node;
     payload->dir_node = dir_node;
@@ -188,7 +188,7 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
       case 0:
         // Make a copy of the current pay_load.
         fhdb_state->pay_load
-            = CheckPoolMemorySize(fhdb_state->pay_load, data.mv_size);
+            = EnsurePoolMemoryCapacity(fhdb_state->pay_load, data.mv_size);
         memcpy(fhdb_state->pay_load, data.mv_data, data.mv_size);
         payload = (struct fhdb_payload*)fhdb_state->pay_load;
 
@@ -342,7 +342,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
     // Make sure fhdb_state->pay_load is large enough.
     total_length = sizeof(struct fhdb_payload);
     fhdb_state->pay_load
-        = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
+        = EnsurePoolMemoryCapacity(fhdb_state->pay_load, total_length);
     payload = (struct fhdb_payload*)fhdb_state->pay_load;
 
     fhdb_state->root_node = root_node;
@@ -442,7 +442,8 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
       goto bail_out;
     }
 
-    if ((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+    if ((nis->expected_file_history_entries * AVG_NR_BYTES_PER_ENTRY)
+        > mapsize) {
       size_t pagesize;
 
 #  ifdef HAVE_GETPAGESIZE
@@ -451,7 +452,9 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
       pagesize = B_PAGE_SIZE;
 #  endif
 
-      mapsize = (((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
+      mapsize = (((nis->expected_file_history_entries * AVG_NR_BYTES_PER_ENTRY)
+                  / pagesize)
+                 + 1)
                 * pagesize;
     }
 
@@ -564,7 +567,7 @@ void NdmpFhdbLmdbUnregister(struct ndmlog* ixlog)
 
     FreePoolMemory(fhdb_state->pay_load);
     FreePoolMemory(fhdb_state->path);
-    SecureErase(nis->jcr, fhdb_state->lmdb_name);
+    DeleteFileUsingConfiguredErasePolicy(nis->jcr, fhdb_state->lmdb_name);
     FreePoolMemory(fhdb_state->lmdb_name);
 
     free(fhdb_state);

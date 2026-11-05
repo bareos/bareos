@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,7 @@ void UpdateJobEndRecord(JobControlRecord* jcr);
 bool GetOrCreateClientRecord(JobControlRecord* jcr);
 bool GetOrCreateFilesetRecord(JobControlRecord* jcr);
 DBId_t GetOrCreatePoolRecord(JobControlRecord* jcr, char* pool_name);
-bool GetLevelSinceTime(JobControlRecord* jcr);
+bool DetermineBackupLevelAndSinceTime(JobControlRecord* jcr);
 void ApplyPoolOverrides(JobControlRecord* jcr, bool force = false);
 JobId_t RunJob(JobControlRecord* jcr);
 bool CancelJob(UaContext* ua, JobControlRecord* jcr);

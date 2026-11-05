@@ -193,7 +193,7 @@ static int AccurateListHandler(void* ctx, int num_fields, char** row)
   auto* args = reinterpret_cast<accurate_list_handler_args*>(ctx);
   auto* jcr = args->jcr;
 
-  if (jcr->IsJobCanceled()) { return 1; }
+  if (jcr->IsJobAbortedOrCanceled()) { return 1; }
 
   if (row[2][0] == '0') { /* discard when file_index == 0 */
     args->discarded += 1;
@@ -281,7 +281,9 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   db_list_ctx nb;
 
   // In base level, no previous job is used and no restart incomplete jobs
-  if (jcr->IsJobCanceled() || jcr->is_JobLevel(L_BASE)) { return true; }
+  if (jcr->IsJobAbortedOrCanceled() || jcr->is_JobLevel(L_BASE)) {
+    return true;
+  }
 
   if (!jcr->accurate) { return true; }
 
@@ -595,7 +597,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
   }
 
   /* Check softquotas after job did run.
-   * If quota is exceeded now, set the GraceTime. */
+   * If quota is exceeded now, set the GracePeriodStartTime. */
   CheckSoftquotas(jcr);
 
   if (status == JS_Terminated) {
@@ -647,7 +649,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
         Jmsg(jcr, M_WARNING, 0, T_("Unexpected Client Job message: %s\n"),
              fd->msg);
       }
-      if (jcr->IsJobCanceled()) { break; }
+      if (jcr->IsJobAbortedOrCanceled()) { break; }
     }
     if (tid) { StopBsockTimer(tid); }
 
@@ -656,7 +658,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
       Jmsg(jcr, M_FATAL, 0, T_("Network error with FD during %s: ERR=%s\n"),
            job_type_to_str(jcr->getJobType()), fd->bstrerror());
       while (i++ < 10 && jcr->dir_impl->res.job->RescheduleIncompleteJobs
-             && jcr->IsJobCanceled()) {
+             && jcr->IsJobAbortedOrCanceled()) {
         Bmicrosleep(3, 0);
       }
     }
@@ -665,10 +667,10 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
   /* Force cancel in SD if failing, but not for Incomplete jobs so that we let
    * the SD despool. */
-  Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobCanceled(),
-        fd_ok, jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
-        jcr->dir_impl->SDJobStatus.load());
-  if (jcr->IsJobCanceled()
+  Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n",
+        jcr->IsJobAbortedOrCanceled(), fd_ok, jcr->dir_impl->FDJobStatus.load(),
+        jcr->getJobStatus(), jcr->dir_impl->SDJobStatus.load());
+  if (jcr->IsJobAbortedOrCanceled()
       || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
           jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
@@ -892,7 +894,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    bstrftimes(edt, sizeof(edt), jcr->dir_impl->jr.EndTime);
    RunTime = jcr->dir_impl->jr.EndTime - jcr->dir_impl->jr.StartTime;
    bstrftimes(gdt, sizeof(gdt),
-              jcr->dir_impl->res.client->GraceTime +
+              jcr->dir_impl->res.client->GracePeriodStartTime +
               jcr->dir_impl->res.client->SoftQuotaGracePeriod);
 
    if (RunTime <= 0) {
@@ -1004,9 +1006,9 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       break;
    }
 
-   if (jcr->dir_impl->HasQuota) {
-      if (jcr->dir_impl->res.client->GraceTime != 0) {
-         bstrftimes(gdt, sizeof(gdt), jcr->dir_impl->res.client->GraceTime +
+   if (jcr->dir_impl->QuotaUsageLoaded) {
+      if (jcr->dir_impl->res.client->GracePeriodStartTime != 0) {
+         bstrftimes(gdt, sizeof(gdt), jcr->dir_impl->res.client->GracePeriodStartTime +
                                       jcr->dir_impl->res.client->SoftQuotaGracePeriod);
       } else {
          bstrncpy(gdt, "Soft Quota not exceeded", sizeof(gdt));

@@ -63,6 +63,6 @@ bool IsNameValid(const char* name, std::string& msg);
 bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, PoolMem& msg);
 bool IsAclEntryValid(const char* acl);
-std::string SizeAsSiPrefixFormat(uint64_t value_in);
+std::string FormatSizeAsBinaryUnitComponents(uint64_t value_in);
 
 #endif  // BAREOS_LIB_EDIT_H_

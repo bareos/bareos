@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -78,7 +78,7 @@ int circbuf::enqueue(void* data)
 }
 
 // Look at the next item in the circular buffer.
-void* circbuf::peek()
+void* circbuf::wait_and_peek()
 {
   void* data;
 

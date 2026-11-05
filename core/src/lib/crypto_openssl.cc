@@ -579,10 +579,10 @@ SIGNATURE* crypto_sign_new(JobControlRecord* jcr)
  * Returns: CRYPTO_ERROR_NONE on success, with the newly allocated DIGEST in
  * digest. A crypto_error_t value on failure.
  */
-crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
-                                   X509_KEYPAIR* keypair,
-                                   crypto_digest_t& type,
-                                   DIGEST** digest)
+crypto_error_t CreateDigestContextForSigner(SIGNATURE* sig,
+                                            X509_KEYPAIR* keypair,
+                                            crypto_digest_t& type,
+                                            DIGEST** digest)
 {
   STACK_OF(SignerInfo) * signers;
   SignerInfo* si;

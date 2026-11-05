@@ -175,8 +175,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
 
   // Iterate through the trusted signers
   for (auto* keypair : jcr->fd_impl->crypto.pki_signers) {
-    err = CryptoSignGetDigest(sig, jcr->fd_impl->crypto.pki_keypair, algorithm,
-                              &digest);
+    err = CreateDigestContextForSigner(sig, jcr->fd_impl->crypto.pki_keypair,
+                                       algorithm, &digest);
     switch (err) {
       case CRYPTO_ERROR_NONE:
         Dmsg0(50, "== Got digest\n");
@@ -281,7 +281,7 @@ bool FlushCipher(JobControlRecord* jcr,
 
 again:
   // Write out the remaining block and free the cipher context
-  cipher_ctx->buf = CheckPoolMemorySize(
+  cipher_ctx->buf = EnsurePoolMemoryCapacity(
       cipher_ctx->buf, cipher_ctx->buf_len + cipher_ctx->block_size);
 
   if (!CryptoCipherFinalize(cipher_ctx->cipher,
@@ -405,12 +405,12 @@ bool SetupEncryptionContext(b_ctx& bctx)
      * We grow crypto_buf to the maximum number of blocks that
      * could be returned for the given read buffer size.
      * (Using the larger of either rsize or max_compress_len) */
-    bctx.jcr->fd_impl->crypto.crypto_buf
-        = CheckPoolMemorySize(bctx.jcr->fd_impl->crypto.crypto_buf,
-                              (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
-                                   (int32_t)bctx.max_compress_len)
-                               + cipher_block_size - 1)
-                                  / cipher_block_size * cipher_block_size);
+    bctx.jcr->fd_impl->crypto.crypto_buf = EnsurePoolMemoryCapacity(
+        bctx.jcr->fd_impl->crypto.crypto_buf,
+        (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
+             (int32_t)bctx.max_compress_len)
+         + cipher_block_size - 1)
+            / cipher_block_size * cipher_block_size);
 
     bctx.wbuf
         = bctx.jcr->fd_impl->crypto
@@ -526,7 +526,7 @@ bool DecryptData(JobControlRecord* jcr,
    * Grow the crypto buffer, if necessary.
    * CryptoCipherUpdate() will process only whole blocks,
    * buffering the remaining input. */
-  cipher_ctx->buf = CheckPoolMemorySize(
+  cipher_ctx->buf = EnsurePoolMemoryCapacity(
       cipher_ctx->buf, cipher_ctx->buf_len + *length + cipher_ctx->block_size);
 
   // Decrypt the input block

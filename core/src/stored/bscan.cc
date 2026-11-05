@@ -261,8 +261,8 @@ int main(int argc, char* argv[])
 
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+  LoadCryptoCacheOrDiscardOnFailure(me->working_directory, "bareos-sd",
+                                    GetFirstPortHostOrder(me->SDaddrs));
 
   /* Check if -w option given, otherwise use resource for working directory
    */

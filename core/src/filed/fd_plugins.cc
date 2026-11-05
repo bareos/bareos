@@ -519,7 +519,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   }
 
   // If call_if_canceled is set, we call the plugin anyway
-  if (!call_if_canceled && jcr->IsJobCanceled()) { goto bail_out; }
+  if (!call_if_canceled && jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
 
   event.eventType = eventType;
 
@@ -571,7 +571,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     }
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Dmsg0(debuglevel, "Cancel return from GeneratePluginEvent\n");
     rc = bRC_Cancel;
   }
@@ -587,7 +587,7 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   int retval = bRC_OK;
 
   if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list
-      || jcr->IsJobCanceled()) {
+      || jcr->IsJobAbortedOrCanceled()) {
     return false; /* Return if no plugins loaded */
   }
 
@@ -716,7 +716,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
     goto bail_out; /* Return if no plugins loaded */
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginOptionHandleFile: Command plugin \"%s\" requested, but job is "
           "already cancelled.\n",
@@ -784,7 +784,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     goto bail_out; /* Return if no plugins loaded */
   }
 
-  if (jcr->IsJobCanceled()) {
+  if (jcr->IsJobAbortedOrCanceled()) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginSave: Command plugin \"%s\" requested, but job is "
           "already cancelled.\n",
@@ -814,7 +814,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
 
     // Loop getting filenames to backup then saving them
-    while (!jcr->IsJobCanceled()) {
+    while (!jcr->IsJobAbortedOrCanceled()) {
       save_pkt sp;
       sp.portable = true;
       sp.no_read = false;
@@ -1045,7 +1045,7 @@ int PluginEstimate(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     }
 
     // Loop getting filenames to backup then saving them
-    while (!jcr->IsJobCanceled()) {
+    while (!jcr->IsJobAbortedOrCanceled()) {
       save_pkt sp;
       sp.portable = true;
       CopyBits(FO_MAX, ff_pkt->flags, sp.flags);
@@ -1140,7 +1140,7 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
     Jmsg0(jcr, M_FATAL, 0, T_("Plugin save packet not found.\n"));
     return false;
   }
-  if (jcr->IsJobCanceled()) { return false; }
+  if (jcr->IsJobAbortedOrCanceled()) { return false; }
 
   if (start) { index++; /* JobFiles not incremented yet */ }
   Dmsg1(debuglevel, "SendPluginName=%s\n", sp->cmd);
@@ -1365,7 +1365,7 @@ int PluginCreateFile(JobControlRecord* jcr,
   FiledPluginContext* b_ctx
       = (FiledPluginContext*)jcr->plugin_ctx->core_private_context;
 
-  if (!ctx || !SetCmdPlugin(bfd, jcr) || jcr->IsJobCanceled()) {
+  if (!ctx || !SetCmdPlugin(bfd, jcr) || jcr->IsJobAbortedOrCanceled()) {
     return CF_ERROR;
   }
   plugin = ctx->plugin;
@@ -1531,7 +1531,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
     switch (PlugFunc(plugin)->getAcl(jcr->plugin_ctx, &ap)) {
       case bRC_OK:
         if (ap.content_length && ap.content) {
-          acl_data->content.check_size(ap.content_length + 1);
+          acl_data->content.ensure_capacity(ap.content_length + 1);
           PmMemcpy(acl_data->content, ap.content, ap.content_length);
           acl_data->content_length = ap.content_length;
           free(ap.content);
@@ -1898,7 +1898,7 @@ void NewPlugins(JobControlRecord* jcr)
     return;
   }
 
-  if (jcr->IsJobCanceled()) { return; }
+  if (jcr->IsJobAbortedOrCanceled()) { return; }
 
   int num;
   num = fd_plugin_list->size();

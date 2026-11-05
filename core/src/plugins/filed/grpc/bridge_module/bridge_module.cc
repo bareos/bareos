@@ -971,11 +971,7 @@ bRC Wrapper_AcceptFile(PluginContext*, save_pkt* sp) /* Need fname and statp */
   std::optional res = AcceptFile(sp->fname, sp->statp);
   if (!res) { return bRC_Error; }
 
-  if (*res) {
-    return bRC_OK;
-  } else {
-    return bRC_Seen;
-  }
+  return *res ? bRC_Skip : bRC_OK;
 }
 bRC Wrapper_SetSeenBitmap(PluginContext*, bool all, char* fname)
 {

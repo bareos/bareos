@@ -315,33 +315,32 @@ bail_out:
 
 int BareosDb::BvfsLsDirs(PoolMem& query, void* ctx)
 {
-  int nb_record = 0;
-
-  Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
-
-  DbLocker _{this};
-
-  SqlQuery(query.c_str(), PathHandler, ctx);
-  // FIXME: SqlNumRows() is always 0 after SqlQuery.
-  // nb_record = SqlNumRows();
-
-  return nb_record;
+  return BvfsBuildLsFileQuery(query, PathHandler, ctx);
 }
 
 int BareosDb::BvfsBuildLsFileQuery(PoolMem& query,
                                    DB_RESULT_HANDLER* ResultHandler,
                                    void* ctx)
 {
-  int nb_record = 0;
+  struct CountingContext {
+    DB_RESULT_HANDLER* handler;
+    void* user_context;
+    int rows = 0;
+  } context{ResultHandler, ctx};
 
   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
   DbLocker _{this};
-  SqlQuery(query.c_str(), ResultHandler, ctx);
-  // FIXME: SqlNumRows() is always 0 after SqlQuery.
-  // nb_record = SqlNumRows();
-
-  return nb_record;
+  const bool success = SqlQuery(
+      query.c_str(),
+      [](void* opaque, int fields, char** row) {
+        auto& state = *static_cast<CountingContext*>(opaque);
+        ++state.rows;
+        return state.handler ? state.handler(state.user_context, fields, row)
+                             : 0;
+      },
+      &context);
+  return success ? context.rows : -1;
 }
 
 static int ResultHandler(void*, int fields, char** row)
@@ -538,7 +537,7 @@ int Bvfs::_handlePath(void*, int fields, char** row)
   return 0;
 }
 
-/* Returns true if we have dirs to read */
+// A full raw query page means another page may exist, even after deduplication.
 bool Bvfs::ls_dirs()
 {
   char pathid[50];
@@ -549,7 +548,8 @@ bool Bvfs::ls_dirs()
 
   Dmsg1(dbglevel, "ls_dirs(%" PRIu64 ")\n", pwd_id);
 
-  if (*jobids == 0) { return false; }
+  nb_record = 0;
+  if (*jobids == 0 || limit == 0) { return false; }
 
   /* convert pathid to string */
   edit_uint64(pwd_id, pathid);
@@ -570,10 +570,15 @@ bool Bvfs::ls_dirs()
       union_query, special_dirs_query.c_str(), sub_dirs_query.c_str(), limit,
       offset);
 
-  /* FIXME: BvfsLsDirs does not return number of results */
-  nb_record = db->BvfsLsDirs(union_query, this);
-
-  return true;
+  const int rows = db->BvfsLsDirs(union_query, this);
+  if (rows < 0) {
+    DbLocker _{db};
+    Jmsg(jcr, M_ERROR, 0, T_("BVFS directory listing failed: %s\n"),
+         db->strerror());
+    return false;
+  }
+  nb_record = rows;
+  return nb_record == limit;
 }
 
 static void build_ls_files_query(JobControlRecord*,
@@ -588,20 +593,27 @@ static void build_ls_files_query(JobControlRecord*,
                                                       limit, offset);
 }
 
-// Returns true if we have files to read
+// A full query page means another page may exist; no lookahead is performed.
 bool Bvfs::ls_files()
 {
   char pathid[50];
   PoolMem query(PM_MESSAGE);
 
   Dmsg1(dbglevel, "ls_files(%" PRIu64 ")\n", pwd_id);
-  if (*jobids == 0) { return false; }
+  nb_record = 0;
+  if (*jobids == 0 || limit == 0) { return false; }
 
   if (!pwd_id) { ChDir(get_root()); }
 
   edit_uint64(pwd_id, pathid);
   build_ls_files_query(jcr, db, query, jobids, pathid, limit, offset);
-  nb_record = db->BvfsBuildLsFileQuery(query, list_entries, user_data);
+  const int rows = db->BvfsBuildLsFileQuery(query, list_entries, user_data);
+  if (rows < 0) {
+    DbLocker _{db};
+    Jmsg(jcr, M_ERROR, 0, T_("BVFS file listing failed: %s\n"), db->strerror());
+    return false;
+  }
+  nb_record = rows;
 
   return nb_record == limit;
 }
@@ -675,7 +687,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   PoolMem query(PM_MESSAGE);
   PoolMem tmp(PM_MESSAGE), tmp2(PM_MESSAGE);
   int64_t id, jobid, prev_jobid;
-  bool init = false;
+  bool has_select_clause = false;
   bool retval = false;
 
   /* check args */
@@ -698,7 +710,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
 
   if (*fileid) { /* Select files with their direct id */
-    init = true;
+    has_select_clause = true;
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, FileIndex, File.Name, "
          "PathId, FileId "
@@ -722,7 +734,7 @@ bool Bvfs::compute_restore_list(char* fileid,
       break;
     }
     /* escape % and _ for LIKE search */
-    tmp.check_size((strlen(tmp2.c_str()) + 1) * 2);
+    tmp.ensure_capacity((strlen(tmp2.c_str()) + 1) * 2);
     char* p = tmp.c_str();
     for (char* s = tmp2.c_str(); *s; s++) {
       if (*s == '%' || *s == '_' || *s == '\\') {
@@ -738,7 +750,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     auto escaped_path_like = db->EscapeString(jcr, tmp.c_str());
     if (!escaped_path_like) { return false; }
 
-    if (init) { query.strcat(" UNION "); }
+    if (has_select_clause) { query.strcat(" UNION "); }
 
     Mmsg(tmp,
          "SELECT Job.JobId, JobTDate, File.FileIndex, File.Name, "
@@ -747,7 +759,7 @@ bool Bvfs::compute_restore_list(char* fileid,
          "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
          escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
-    init = true;
+    has_select_clause = true;
   }
 
   /* expect jobid,fileindex */
@@ -759,7 +771,7 @@ bool Bvfs::compute_restore_list(char* fileid,
     }
     if (jobid != prev_jobid) { /* new job */
       if (prev_jobid == 0) {   /* first jobid */
-        if (init) { query.strcat(" UNION "); }
+        if (has_select_clause) { query.strcat(" UNION "); }
       } else { /* end last job, start new one */
         tmp.strcat(") UNION ");
         query.strcat(tmp.c_str());
@@ -780,7 +792,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   if (prev_jobid != 0) { /* end last job */
     tmp.strcat(") ");
     query.strcat(tmp.c_str());
-    init = true;
+    has_select_clause = true;
   }
 
   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());

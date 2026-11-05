@@ -415,7 +415,7 @@ static bool strunit_to_uint64(const char* str,
 }
 
 // convert uint64 number to size string
-std::string SizeAsSiPrefixFormat(uint64_t value_in)
+std::string FormatSizeAsBinaryUnitComponents(uint64_t value_in)
 {
   uint64_t value = value_in;
   int factor;

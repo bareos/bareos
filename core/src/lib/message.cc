@@ -344,7 +344,7 @@ void CloseMsg(JobControlRecord* jcr)
 
   // Wait for item to be not in use, then mark closing
   if (msgs->IsClosing()) { return; }
-  msgs->WaitNotInUse(); /* leaves fides_mutex set */
+  msgs->WaitUntilIdleAndLock(); /* leaves fides_mutex set */
 
   // Note GetClosing() does not lock because we are already locked
   if (msgs->GetClosing()) {
@@ -867,7 +867,7 @@ void DispatchMessage(JobControlRecord* jcr,
  * It is used because some compilers set __FILE__
  * to the full path.  Try to return base + next higher path.
  */
-const char* get_basename(const char* pathname)
+const char* GetFilenameWithParentDirectory(const char* pathname)
 {
   const char* basename;
 
@@ -941,7 +941,8 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
     }
 
     if (details) {
-      Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line,
+      Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level,
+           GetFilenameWithParentDirectory(file), line,
            GetJobIdFromThreadSpecificData());
     }
 
@@ -1012,8 +1013,8 @@ void p_msg(const char* file, int line, int level, const char* fmt, ...)
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
   if (level >= 0) {
-    Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
-         GetJobIdFromThreadSpecificData());
+    Mmsg(buf, "%s: %s:%d-%u ", my_name, GetFilenameWithParentDirectory(file),
+         line, GetJobIdFromThreadSpecificData());
   }
 
   va_start(ap, fmt);
@@ -1039,7 +1040,8 @@ void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
 
   if (level >= 0) {
     len = Bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ", my_name,
-                    get_basename(file), line, GetJobIdFromThreadSpecificData());
+                    GetFilenameWithParentDirectory(file), line,
+                    GetJobIdFromThreadSpecificData());
   }
 
   va_start(arg_ptr, fmt);
@@ -1077,8 +1079,8 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
     }
 
     if (details) {
-      Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line,
-           GetJobIdFromThreadSpecificData());
+      Mmsg(buf, "%s: %s:%d-%u ", my_name, GetFilenameWithParentDirectory(file),
+           line, GetJobIdFromThreadSpecificData());
     }
 
     va_start(ap, fmt);
@@ -1108,17 +1110,17 @@ void e_msg(const char* file,
     case M_ABORT:
       Mmsg(typestr, "ABORT");
       Mmsg(buf, T_("%s: ABORTING due to ERROR in %s:%d\n"), my_name,
-           get_basename(file), line);
+           GetFilenameWithParentDirectory(file), line);
       break;
     case M_ERROR_TERM:
       Mmsg(typestr, "ERROR TERMINATION");
       Mmsg(buf, T_("%s: ERROR TERMINATION at %s:%d\n"), my_name,
-           get_basename(file), line);
+           GetFilenameWithParentDirectory(file), line);
       break;
     case M_CONFIG_ERROR:
       Mmsg(typestr, "CONFIG ERROR");
-      Mmsg(buf, T_("%s: CONFIG ERROR at %s:%d\n"), my_name, get_basename(file),
-           line);
+      Mmsg(buf, T_("%s: CONFIG ERROR at %s:%d\n"), my_name,
+           GetFilenameWithParentDirectory(file), line);
       break;
     case M_FATAL:
       Mmsg(typestr, "FATAL ERROR");
@@ -1126,14 +1128,15 @@ void e_msg(const char* file,
         Mmsg(buf, T_("%s: Fatal Error because: "), my_name);
       else
         Mmsg(buf, T_("%s: Fatal Error at %s:%d because:\n"), my_name,
-             get_basename(file), line);
+             GetFilenameWithParentDirectory(file), line);
       break;
     case M_ERROR:
       Mmsg(typestr, "ERROR");
       if (level == -1) /* skip details */
         Mmsg(buf, T_("%s: ERROR: "), my_name);
       else
-        Mmsg(buf, T_("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
+        Mmsg(buf, T_("%s: ERROR in %s:%d "), my_name,
+             GetFilenameWithParentDirectory(file), line);
       break;
     case M_WARNING:
       Mmsg(typestr, "WARNING");
@@ -1289,7 +1292,7 @@ void j_msg(const char* file,
   va_list ap;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
-  Mmsg(buf, "%s:%d ", get_basename(file), line);
+  Mmsg(buf, "%s:%d ", GetFilenameWithParentDirectory(file), line);
 
   va_start(ap, fmt);
   more.Bvsprintf(fmt, ap);
@@ -1307,7 +1310,7 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
   int len;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
-  Mmsg(buf, "%s:%d ", get_basename(file), line);
+  Mmsg(buf, "%s:%d ", GetFilenameWithParentDirectory(file), line);
   va_start(ap, fmt);
   more.Bvsprintf(fmt, ap);
   va_end(ap);
@@ -1460,7 +1463,7 @@ void q_msg(const char* file,
   va_list ap;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
-  Mmsg(buf, "%s:%d ", get_basename(file), line);
+  Mmsg(buf, "%s:%d ", GetFilenameWithParentDirectory(file), line);
   va_start(ap, fmt);
   more.Bvsprintf(fmt, ap);
   va_end(ap);

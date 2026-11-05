@@ -147,7 +147,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   uint64_t update_jobbytes = 0;
 
   // Find next appendable medium for SD
-  unwanted_volumes.check_size(bs->message_length);
+  unwanted_volumes.ensure_capacity(bs->message_length);
   if (bsscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
               unwanted_volumes.c_str())
       == 5) {
@@ -195,7 +195,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
         } else {
           /* Now try recycling if necessary
            *   reason set non-NULL if we cannot use it */
-          CheckIfVolumeValidOrRecyclable(jcr, &mr, &reason);
+          ValidateAndRecycleVolumeForWriting(jcr, &mr, &reason);
         }
       }
 
@@ -335,7 +335,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(T_("1993 Update Media error\n"));
       Dmsg0(400, "send error\n");
     } else {
-      (void)HasVolumeExpired(jcr, &mr);
+      (void)UpdateVolumeStatusIfExpired(jcr, &mr);
       SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
     }
 
@@ -510,7 +510,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
       }
 
       // Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
-      jcr->attr = CheckPoolMemorySize(jcr->attr, message_length);
+      jcr->attr = EnsurePoolMemoryCapacity(jcr->attr, message_length);
       memcpy(jcr->attr, msg, message_length);
       p = jcr->attr - msg + p; /* point p into jcr->attr */
       SkipNonspaces(&p);       /* skip FileIndex */
@@ -697,7 +697,7 @@ void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
     return; /* user disabled cataloging */
   }
 
-  if (jcr->IsJobCanceled()) { goto bail_out; }
+  if (jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
 
   if (!jcr->db) {
     POOLMEM* omsg = GetMemory(bs->message_length + 1);
@@ -711,7 +711,7 @@ void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
   UpdateAttribute(jcr, bs->msg, bs->message_length);
 
 bail_out:
-  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobAbortedOrCanceled()) { CancelStorageDaemonJob(jcr); }
 }
 
 /**
@@ -730,7 +730,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
 
   Dmsg0(100, "Begin DespoolAttributesFromFile\n");
 
-  if (jcr->IsJobCanceled() || !jcr->dir_impl->res.pool->catalog_files
+  if (jcr->IsJobAbortedOrCanceled() || !jcr->dir_impl->res.pool->catalog_files
       || !jcr->db) {
     goto bail_out; /* user disabled cataloging */
   }
@@ -767,9 +767,9 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
       msg[nbytes] = '\0';
     }
 
-    if (!jcr->IsJobCanceled()) {
+    if (!jcr->IsJobAbortedOrCanceled()) {
       UpdateAttribute(jcr, msg, message_length);
-      if (jcr->IsJobCanceled()) { goto bail_out; }
+      if (jcr->IsJobAbortedOrCanceled()) { goto bail_out; }
     }
   }
 
@@ -778,7 +778,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
 bail_out:
   if (spool_fd != -1) { close(spool_fd); }
 
-  if (jcr->IsJobCanceled()) { CancelStorageDaemonJob(jcr); }
+  if (jcr->IsJobAbortedOrCanceled()) { CancelStorageDaemonJob(jcr); }
 
   FreePoolMemory(msg);
   Dmsg1(100, "End DespoolAttributesFromFile retval=%i\n", retval);

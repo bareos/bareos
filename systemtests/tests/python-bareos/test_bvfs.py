@@ -284,12 +284,34 @@ class PythonBareosBvfsTest(bareos_unittest.Json):
         )
 
         # test limit.
-        cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ offset 0 limit 1".format(
+        cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ offset=0 limit=1".format(
             **format_params
         )
         bvfs_lsfiles_BackupDirectory_limit1 = director.call(cmd)["files"]
-        # TODO: bug, this returns multiple entries
-        # self.assertEqual(len(bvfs_lsfiles_BackupDirectory_limit1), 1, 'Expecting 1 file from "{}", instead received: {}'.format(cmd, bvfs_lsfiles_BackupDirectory_limit1))
+        self.assertEqual(len(bvfs_lsfiles_BackupDirectory_limit1), 1)
+
+        for listing, key, expected in (
+            ("lsfiles", "files", bvfs_lsfiles_BackupDirectory),
+            ("lsdirs", "directories", bvfs_lsdir_BackupDirectory),
+        ):
+            base_command = (
+                ".bvfs_{} jobid={{BackupJobIds}} path={{BackupDirectory}}/".format(
+                    listing
+                )
+            ).format(**format_params)
+            for page_size in (1, 2, len(expected), len(expected) + 1):
+                with self.subTest(listing=listing, page_size=page_size):
+                    paged = []
+                    for offset in range(0, len(expected) + page_size, page_size):
+                        page = director.call(
+                            "{} offset={} limit={}".format(
+                                base_command, offset, page_size
+                            )
+                        )[key]
+                        self.assertLessEqual(len(page), page_size)
+                        paged.extend(page)
+                    self.assertEqual(paged, expected)
+            self.assertEqual(director.call(base_command + " limit=0")[key], [])
 
         cmd = ".bvfs_versions jobid=0 client={Client} path={BackupDirectory}/ fname={BackupFileNameExtra}".format(
             **format_params

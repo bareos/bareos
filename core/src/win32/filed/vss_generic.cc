@@ -817,7 +817,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
 {
   PoolMem mp(PM_FNAME);
   constexpr auto size = MAX_PATH;
-  mp.check_size(sizeof(wchar_t[size]));
+  mp.ensure_capacity(sizeof(wchar_t[size]));
   wchar_t* mountpoint = reinterpret_cast<wchar_t*>(mp.addr());
 
   HANDLE hMount = FindFirstVolumeMountPointW(volume.c_str(), mountpoint, size);
@@ -912,7 +912,7 @@ bool VSSClientGeneric::CreateSnapshots(const std::vector<std::wstring>& volumes,
   }
 
   // Get latest info about writer status.
-  if (!CheckWriterStatus()) {
+  if (!RefreshVssWriterStatusAndLogWarnings()) {
     errno = b_errno_win32; /* Error already printed */
     return false;
   }
@@ -932,7 +932,7 @@ bool VSSClientGeneric::CreateSnapshots(const std::vector<std::wstring>& volumes,
   }
 
   // Get latest info about writer status.
-  if (!CheckWriterStatus()) {
+  if (!RefreshVssWriterStatusAndLogWarnings()) {
     errno = b_errno_win32; /* Error already printed */
     return false;
   }
@@ -973,7 +973,7 @@ bool VSSClientGeneric::CloseBackup()
   }
 
   // Get latest info about writer status.
-  CheckWriterStatus();
+  RefreshVssWriterStatusAndLogWarnings();
 
   hr = pVssObj->SaveAsXML(&xml);
   if (SUCCEEDED(hr)) {
@@ -1089,7 +1089,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 }
 
 // Check the status for all selected writers
-bool VSSClientGeneric::CheckWriterStatus()
+bool VSSClientGeneric::RefreshVssWriterStatusAndLogWarnings()
 {
   /* See
    * http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx

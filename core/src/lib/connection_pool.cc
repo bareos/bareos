@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,11 +47,11 @@ bool check_connection(BareosSocket* socket, int timeout)
   // idea: send a status command and check for a return value
 
   // Returns: 1 if data available, 0 if timeout, -1 if error
-  int data_available = socket->WaitDataIntr(timeout);
+  int wait_result = socket->WaitDataIntr(timeout);
 
-  if (data_available < 0) {
+  if (wait_result < 0) {
     return false;
-  } else if (data_available > 0) {
+  } else if (wait_result > 0) {
     if (socket->recv() <= 0) { return false; }
     if (socket->IsError()) { return false; }
   }
@@ -106,7 +106,8 @@ std::optional<connection> connection_pool::take_by_name(
   return std::nullopt;
 }
 
-std::vector<connection_info> connection_pool::info()
+std::vector<connection_info>
+connection_pool::PruneInactiveConnectionsAndGetInfo()
 {
   auto locked = conns.lock();
   auto& vec = locked.get();

@@ -256,8 +256,8 @@ class ClientResource
   uint32_t FDport = 0;         /* Where File daemon listens */
   uint64_t SoftQuota = 0;      /* Soft Quota permitted in bytes */
   uint64_t HardQuota = 0;      /* Maximum permitted quota in bytes */
-  uint64_t GraceTime = 0;      /* Time remaining on gracetime */
-  uint64_t QuotaLimit = 0;     /* The total softquota supplied if over grace */
+  uint64_t GracePeriodStartTime = 0; /* Start time of the quota grace period */
+  uint64_t QuotaLimit = 0; /* The total softquota supplied if over grace */
   utime_t SoftQuotaGracePeriod = {0}; /* Grace time for softquota */
   utime_t FileRetention = {0};        /* File retention period in seconds */
   utime_t JobRetention = {0};         /* Job retention period in seconds */
@@ -406,7 +406,7 @@ class JobResource : public BareosResource {
   utime_t RunOnIncomingConnectInterval = {0};
   int64_t spool_size = 0;    /**< Size of spool file for this job */
   int64_t max_bandwidth = 0; /**< Speed limit on this job */
-  int64_t FileHistSize = 0; /**< Hint about the size of the expected File history */
+  int64_t ExpectedFileHistoryEntries = 0; /**< Expected file history entry count */
   int32_t MaxConcurrentJobs = 0;   /**< Maximum concurrent jobs */
   int32_t MaxConcurrentCopies = 0; /**< Limit number of concurrent jobs one Copy Job spawns */
   int32_t AlwaysIncrementalKeepNumber = 0; /**< Number of incrementals that are always left and not consolidated */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,17 +42,19 @@ struct crypto_cache_entry_t {
   dlink<crypto_cache_entry_t> link;
   char VolumeName[MAX_NAME_LENGTH];
   char EncryptionKey[MAX_NAME_LENGTH];
-  utime_t added;
+  utime_t last_refreshed;
 };
 
-void ReadCryptoCache(const char* dir, const char* progname, int port);
-void ReadCryptoCache(const char* cache_file);
+void LoadCryptoCacheOrDiscardOnFailure(const char* dir,
+                                       const char* progname,
+                                       int port);
+void LoadCryptoCacheOrDiscardOnFailure(const char* cache_file);
 void WriteCryptoCache(const char* dir, const char* progname, int port);
 void WriteCryptoCache(const char* cache_file);
 bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey);
 char* lookup_crypto_cache_entry(const char* VolumeName);
 void DumpCryptoCache(int fd);
-void ResetCryptoCache(void);
+void RefreshCryptoCacheEntryTimestamps(void);
 void FlushCryptoCache(void);
 
 #endif  // BAREOS_LIB_CRYPTO_CACHE_H_

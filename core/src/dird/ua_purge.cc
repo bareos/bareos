@@ -328,7 +328,7 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
     if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
       ua->ErrorMsg("%s", ua->db->strerror());
     }
-    IsVolumePurged(ua, &mr, false);
+    MarkVolumePurgedIfEmpty(ua, &mr, false);
   }
 
   return true;
@@ -547,7 +547,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     }
   }
 
-  return IsVolumePurged(ua, mr, force);
+  return MarkVolumePurgedIfEmpty(ua, mr, force);
 }
 
 /**
@@ -563,7 +563,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
  *   the console, he has been warned, and we go ahead and purge
  *   the volume anyway, if possible).
  */
-bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
+bool MarkVolumePurgedIfEmpty(UaContext* ua, MediaDbRecord* mr, bool force)
 {
   if (!force && (mr->FirstWritten == 0 || mr->LastWritten == 0)) {
     return false; /* not written cannot purge */

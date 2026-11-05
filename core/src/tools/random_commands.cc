@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -174,10 +174,10 @@ std::string random_duration(prand& rand,
                             std::size_t max_count = 10,
                             std::size_t min_count = 1)
 {
-  auto size_count = select_in_range(rand, min_count, max_count);
+  auto duration_component_count = select_in_range(rand, min_count, max_count);
 
   std::stringstream ss;
-  for (std::size_t i = 0; i < size_count; ++i) {
+  for (std::size_t i = 0; i < duration_component_count; ++i) {
     ss << random_number(rand);
     if (select_in_range(rand, 1, 100) < 20) ss << " ";
     ss << select_random(

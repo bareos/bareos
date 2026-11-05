@@ -183,13 +183,13 @@ static void WaitClient(JobControlRecord* jcr, utime_t wait_time)
   auto locked = jcr->sd_impl->client_available.lock();
 
   locked.wait_until(jcr->sd_impl->job_start_wait, timeout, [jcr](bool started) {
-    return started || jcr->IsJobCanceled();
+    return started || jcr->IsJobAbortedOrCanceled();
   });
 }
 
 static void WaitFD(JobControlRecord* jcr)
 {
-  jcr->sendJobStatus(JS_WaitFD); /* wait for FD to connect */
+  jcr->UpdateAndSendJobStatus(JS_WaitFD); /* wait for FD to connect */
 
   utime_t wait_time = [] {
     ResLocker _{my_config};
@@ -215,12 +215,13 @@ bool DoJobRun(JobControlRecord* jcr)
 {
   WaitFD(jcr);
 
-  Dmsg2(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
+  Dmsg2(50, "Auth=%d canceled=%d\n", jcr->authenticated,
+        jcr->IsJobAbortedOrCanceled());
 
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
-      if (jcr->authenticated && !jcr->IsJobCanceled()) {
+      if (jcr->authenticated && !jcr->IsJobAbortedOrCanceled()) {
         Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
         /* Wait for the Job to finish. As we want exclusive access to
@@ -243,7 +244,7 @@ bool DoJobRun(JobControlRecord* jcr)
       return true;
     default:
       // Handle the file daemon session.
-      if (jcr->authenticated && !jcr->IsJobCanceled()) {
+      if (jcr->authenticated && !jcr->IsJobAbortedOrCanceled()) {
         Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
         RunJob(jcr); /* Run the job */
       } else {
@@ -283,7 +284,7 @@ bool nextRunCmd(JobControlRecord* jcr)
 
       WaitFD(jcr);
 
-      if (jcr->authenticated && !jcr->IsJobCanceled()) {
+      if (jcr->authenticated && !jcr->IsJobAbortedOrCanceled()) {
         Dmsg2(800, "Running jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
         /* Wait for the Job to finish. As we want exclusive access to
@@ -419,7 +420,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
   // Free any restore volume list created
   FreeRestoreVolumeList(jcr);
   if (jcr->RestoreBootstrap) {
-    SecureErase(jcr, jcr->RestoreBootstrap);
+    DeleteFileUsingConfiguredErasePolicy(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
     jcr->RestoreBootstrap = NULL;
   }

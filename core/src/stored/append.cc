@@ -248,7 +248,7 @@ static bool SetupDCR(JobControlRecord* jcr,
                      uint32_t& blocknum)
 {
   if (!jcr->sd_impl->dcr) {
-    jcr->sendJobStatus(JS_WaitSD);
+    jcr->UpdateAndSendJobStatus(JS_WaitSD);
     if (TryReserveAfterUse(jcr, true)) {
       Jmsg(jcr, M_INFO, 0, T_("Using Device %s to write.\n"),
            jcr->sd_impl->dcr->dev->print_name());
@@ -284,7 +284,7 @@ static bool SetupDCR(JobControlRecord* jcr,
     return false;
   }
 
-  jcr->sendJobStatus(JS_Running);
+  jcr->UpdateAndSendJobStatus(JS_Running);
 
   if (dev->VolCatInfo.VolCatName[0] == 0) {
     Pmsg0(000, T_("NULL Volume name. This shouldn't happen!!!\n"));
@@ -389,7 +389,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * So we get the (stream header, data, EOD) three time for each
    * file. 1. for the Attributes, 2. for the file data if any,
    * and 3. for the MD5 if any. */
-  jcr->run_time = time(NULL); /* start counting time for rates */
+  jcr->transfer_rate_start_time
+      = time(NULL); /* start counting time for rates */
 
   const bool checkpoints_enabled = me->checkpoint_interval > 0;
   CheckpointHandler checkpoint_handler(me->checkpoint_interval);
@@ -412,7 +413,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
   MessageHandler handler(cloned);
 
-  for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
+  for (last_file_index = 0; ok && !jcr->IsJobAbortedOrCanceled();) {
     /* Read Stream header from the daemon.
      *
      * The stream header consists of the following:
@@ -490,7 +491,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * We save the original data pointer from the record so we can restore
      * that after the loop ends. */
     POOLMEM* rec_data = nullptr;
-    while (!jcr->IsJobCanceled()) {
+    while (!jcr->IsJobAbortedOrCanceled()) {
       auto msg2 = handler.get_msg();
 
       if (!msg2) {
@@ -604,7 +605,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (rec_data) { jcr->sd_impl->dcr->rec->data = rec_data; }
 
     if (auto* error = handler.error()) {
-      if (!jcr->IsJobCanceled()) {
+      if (!jcr->IsJobAbortedOrCanceled()) {
         Dmsg2(350, "Network read error from %s. ERR=%s\n", what, error);
         Jmsg2(jcr, M_FATAL, 0, T_("Network error reading from %s. ERR=%s\n"),
               what, error);
@@ -647,7 +648,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       jcr->JobFiles = std::max(file_currently_processed.GetFileIndex(), 0);
       if (!WriteSessionLabel(jcr->sd_impl->dcr, EOS_LABEL)) {
         // Print only if ok and not cancelled to avoid spurious messages
-        if (ok && !jcr->IsJobCanceled()) {
+        if (ok && !jcr->IsJobAbortedOrCanceled()) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Error writing end session label. ERR=%s\n"),
                 jcr->sd_impl->dcr->dev->bstrerror());
@@ -660,7 +661,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       // Flush out final partial block of this session
       if (!jcr->sd_impl->dcr->WriteBlockToDevice()) {
         // Print only if ok and not cancelled to avoid spurious messages
-        if (ok && !jcr->IsJobCanceled()) {
+        if (ok && !jcr->IsJobAbortedOrCanceled()) {
           Jmsg2(jcr, M_FATAL, 0,
                 T_("Fatal append error on device %s: ERR=%s\n"),
                 jcr->sd_impl->dcr->dev->print_name(),
@@ -669,7 +670,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         }
         jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
         ok = false;
-      } else if (ok && !jcr->IsJobCanceled()) {
+      } else if (ok && !jcr->IsJobAbortedOrCanceled()) {
         // Send attributes of the final partial block of the session
         if (file_currently_processed.GetFileIndex() > 0) {
           processed_files.push_back(std::move(file_currently_processed));
@@ -701,7 +702,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
    * and the subsequent Jmsg() editing will break */
-  job_elapsed = time(NULL) - jcr->run_time;
+  job_elapsed = time(NULL) - jcr->transfer_rate_start_time;
   if (job_elapsed <= 0) { job_elapsed = 1; }
 
   Jmsg(jcr, M_INFO, 0,
@@ -709,7 +710,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
        job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
        edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec));
 
-  if ((!ok || jcr->IsJobCanceled()) && !jcr->is_JobStatus(JS_Incomplete)) {
+  if ((!ok || jcr->IsJobAbortedOrCanceled())
+      && !jcr->is_JobStatus(JS_Incomplete)) {
     DiscardAttributeSpool(jcr);
   } else {
     CommitAttributeSpool(jcr);

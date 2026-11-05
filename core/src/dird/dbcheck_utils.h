@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,11 +45,11 @@ typedef struct s_id_ctx {
 } ID_LIST;
 
 typedef struct s_name_ctx {
-  char** name; /* list of names */
-  int num_ids; /* ids stored */
-  int max_ids; /* size of array */
-  int num_del; /* number deleted */
-  int tot_ids; /* total to process */
+  char** name;   /* list of names */
+  int num_names; /* names stored */
+  int max_ids;   /* size of array */
+  int num_del;   /* number deleted */
+  int tot_ids;   /* total to process */
 } NameList;
 
 #define MAX_ID_LIST_LEN 10000000

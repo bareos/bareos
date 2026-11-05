@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,10 +31,10 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
                             const char* unwanted_volumes,
                             bool create,
                             bool purge);
-bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr);
-void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
-                                    MediaDbRecord* mr,
-                                    const char** reason);
+bool UpdateVolumeStatusIfExpired(JobControlRecord* jcr, MediaDbRecord* mr);
+void ValidateAndRecycleVolumeForWriting(JobControlRecord* jcr,
+                                        MediaDbRecord* mr,
+                                        const char** reason);
 bool GetScratchVolume(JobControlRecord* jcr,
                       bool InChanger,
                       MediaDbRecord* mr,

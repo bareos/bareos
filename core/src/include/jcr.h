@@ -102,7 +102,7 @@ class JobControlRecord {
   /* Once called, this function stops other threads from canceling this job;
    * If this job is currently getting canceled, then it wait until
    * that is done, i.e. until CancelFinished() is called. */
-  void EnterFinish();
+  void PreventNewCancellationAndWaitForCancellationToFinish();
 
   JobControlRecord();
   ~JobControlRecord();
@@ -122,7 +122,7 @@ class JobControlRecord {
     --use_count_;
   }
   int32_t UseCount() const { return use_count_; }
-  bool IsJobCanceled() { return  JobStatus_ == JS_Canceled
+  bool IsJobAbortedOrCanceled() { return  JobStatus_ == JS_Canceled
                               || JobStatus_ == JS_ErrorTerminated
                               || JobStatus_ == JS_FatalError; }
 
@@ -150,7 +150,7 @@ class JobControlRecord {
   const char* get_ActionName(bool past = false); /**< in lib/jcr.c */
   void setJobStatusWithPriorityCheck(int newJobStatus); /**< in lib/jcr.c */
   bool sendJobStatus();                          /**< in lib/jcr.c */
-  bool sendJobStatus(int newJobStatus);          /**< in lib/jcr.c */
+  bool UpdateAndSendJobStatus(int newJobStatus);          /**< in lib/jcr.c */
   bool JobReads();                               /**< in lib/jcr.c */
   void MyThreadSendSignal(int sig);              /**< in lib/jcr.c */
   void SetKillable(bool killable);               /**< in lib/jcr.c */
@@ -188,7 +188,9 @@ class JobControlRecord {
   time_t sched_time{};          /**< Job schedule time, i.e. when it should start */
   time_t initial_sched_time{};  /**< Original sched time before any reschedules are done */
   time_t start_time{};          /**< When job actually started */
-  time_t run_time{};            /**< Used for computing speed */
+  // Reference for elapsed time and transfer rates; advanced by volume-mount
+  // wait durations to exclude those delays, not necessarily all waiting.
+  time_t transfer_rate_start_time{};
   time_t last_time{};           /**< Last sample time */
   time_t end_time{};            /**< Job end time */
   time_t wait_time_sum{};       /**< Cumulative wait time since job start */

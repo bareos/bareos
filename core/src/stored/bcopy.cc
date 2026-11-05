@@ -194,8 +194,8 @@ int main(int argc, char* argv[])
 
   LoadSdPlugins(me->plugin_directory, me->plugin_names);
 
-  ReadCryptoCache(me->working_directory, "bareos-sd",
-                  GetFirstPortHostOrder(me->SDaddrs));
+  LoadCryptoCacheOrDiscardOnFailure(me->working_directory, "bareos-sd",
+                                    GetFirstPortHostOrder(me->SDaddrs));
 
   // Setup and acquire input device for reading
   Dmsg0(100, "About to setup input jcr\n");

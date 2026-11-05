@@ -126,11 +126,13 @@ void InitVolListLock();
 void TermVolListLock();
 VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
                                       const char* VolumeName);
-bool FreeVolume(Device* dev);
+// Returns false if no reservation is attached; true also when swapping
+// prevents release. Does not close the device or unload the medium.
+bool ReleaseVolumeReservationUnlessSwapping(Device* dev);
 bool IsVolListEmpty();
 dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr);
 void FreeTempVolList(dlist<VolumeReservationItem>* temp_vol_list);
-bool VolumeUnused(DeviceControlRecord* dcr);
+bool MarkVolumeUnused(DeviceControlRecord* dcr);
 void CreateVolumeLists();
 void FreeVolumeLists();
 bool IsVolumeInUse(DeviceControlRecord* dcr);

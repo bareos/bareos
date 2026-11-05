@@ -320,10 +320,10 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
 
   /* Force cancel in SD if failing, but not for Incomplete jobs
    * so that we let the SD despool. */
-  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobCanceled(),
+  Dmsg4(100, "cancel=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsJobAbortedOrCanceled(),
         jcr->dir_impl->FDJobStatus.load(), jcr->getJobStatus(),
         jcr->dir_impl->SDJobStatus.load());
-  if (jcr->IsJobCanceled()
+  if (jcr->IsJobAbortedOrCanceled()
       || (!jcr->dir_impl->res.job->RescheduleIncompleteJobs)) {
     Dmsg3(100, "FDJS=%d JS=%d SDJS=%d\n", jcr->dir_impl->FDJobStatus.load(),
           jcr->getJobStatus(), jcr->dir_impl->SDJobStatus.load());
@@ -398,7 +398,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   // Read the bootstrap file
   bsr = jcr->dir_impl->bsr;
   while (!feof(info.bs)) {
-    if (!SelectNextRstore(jcr, info)) { goto cleanup; }
+    if (!SwitchReadStorageAndWaitForJobSlot(jcr, info)) { goto cleanup; }
 
     /* Initialize the NDMP restore job. We build the generic job once per
      * storage daemon and reuse the job definition for each separate sub-restore

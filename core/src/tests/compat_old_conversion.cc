@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@ static int UTF8_2_wchar(POOLMEM*& ppszUCS, const char* pszUTF)
   if (p_MultiByteToWideChar) {
     // strlen of UTF8 +1 is enough
     DWORD cchSize = (strlen(pszUTF) + 1);
-    ppszUCS = CheckPoolMemorySize(ppszUCS, cchSize * sizeof(wchar_t));
+    ppszUCS = EnsurePoolMemoryCapacity(ppszUCS, cchSize * sizeof(wchar_t));
 
     int nRet = p_MultiByteToWideChar(CP_UTF8, 0, pszUTF, -1, (LPWSTR)ppszUCS,
                                      cchSize);
@@ -125,7 +125,7 @@ static inline void conv_unix_to_vss_win32_path(const char* name,
   if (tvpc) {
     POOLMEM* pszBuf = GetPoolMemory(PM_FNAME);
 
-    pszBuf = CheckPoolMemorySize(pszBuf, dwSize);
+    pszBuf = EnsurePoolMemoryCapacity(pszBuf, dwSize);
     bstrncpy(pszBuf, tname, strlen(tname) + 1);
     tvpc->pPathConvert(pszBuf, tname, dwSize);
     FreePoolMemory(pszBuf);
@@ -141,7 +141,7 @@ void unix_name_to_win32(POOLMEM*& win32_name, const char* name)
   /* One extra byte should suffice, but we double it
    * add MAX_PATH bytes for VSS shadow copy name. */
   dwSize = 2 * strlen(name) + MAX_PATH;
-  win32_name = CheckPoolMemorySize(win32_name, dwSize);
+  win32_name = EnsurePoolMemoryCapacity(win32_name, dwSize);
   conv_unix_to_vss_win32_path(name, win32_name, dwSize);
 }
 
@@ -170,8 +170,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
 
   // Get buffer with enough size (name+max 6. wchars+1 null terminator
   DWORD dwBufCharsNeeded = (wcslen(name) + 7);
-  pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                          dwBufCharsNeeded * sizeof(wchar_t));
+  pwszBuf = (wchar_t*)EnsurePoolMemoryCapacity(
+      (POOLMEM*)pwszBuf, dwBufCharsNeeded * sizeof(wchar_t));
 
   /* Add \\?\ to support 32K long filepaths
    * it is important to make absolute paths, so we add drive and
@@ -215,7 +215,7 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
     if (dwCurDirPathSize > 0) {
       /* Get directory into own buffer as it may either return c:\... or
        * \\?\C:\.... */
-      pwszCurDirBuf = (wchar_t*)CheckPoolMemorySize(
+      pwszCurDirBuf = (wchar_t*)EnsurePoolMemoryCapacity(
           (POOLMEM*)pwszCurDirBuf, (dwCurDirPathSize + 1) * sizeof(wchar_t));
       p_GetCurrentDirectoryW(dwCurDirPathSize, pwszCurDirBuf);
     } else {
@@ -249,8 +249,8 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   if (bAddCurrentPath) {
     // The 1 additional character is for the eventually added backslash
     dwBufCharsNeeded += dwCurDirPathSize + 1;
-    pwszBuf = (wchar_t*)CheckPoolMemorySize((POOLMEM*)pwszBuf,
-                                            dwBufCharsNeeded * sizeof(wchar_t));
+    pwszBuf = (wchar_t*)EnsurePoolMemoryCapacity(
+        (POOLMEM*)pwszBuf, dwBufCharsNeeded * sizeof(wchar_t));
 
     /* Get directory into own buffer as it may either return c:\... or
      * \\?\C:\.... */
@@ -310,11 +310,11 @@ static inline POOLMEM* make_wchar_win32_path(POOLMEM* pszUCSPath,
   thread_vss_path_convert* tvpc = Win32GetPathConvert();
   if (tvpc) {
     // Is output buffer large enough?
-    pwszBuf = (wchar_t*)CheckPoolMemorySize(
+    pwszBuf = (wchar_t*)EnsurePoolMemoryCapacity(
         (POOLMEM*)pwszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
     // Create temp. buffer
     wchar_t* pszBuf = (wchar_t*)GetPoolMemory(PM_FNAME);
-    pszBuf = (wchar_t*)CheckPoolMemorySize(
+    pszBuf = (wchar_t*)EnsurePoolMemoryCapacity(
         (POOLMEM*)pszBuf, (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
     if (bAddPrefix) {
       nParseOffset = 4;

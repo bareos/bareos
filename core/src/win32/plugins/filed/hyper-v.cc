@@ -2104,7 +2104,7 @@ analyzed_ref_point analyze_ref_point(PluginContext* ctx,
 struct range {
   std::size_t start;
   std::size_t end;
-  bool started;
+  bool range_header_written;
 
   std::size_t size() const { return end - start; }
   bool empty() const { return start == end; }
@@ -4465,14 +4465,15 @@ static bRC pluginBackupIO(PluginContext* ctx,
       auto& current_range = prepared.ranges_to_read.front();
 
       DBGC(ctx, L"current_range = {{ Start = {}, End = {}, Started = {} }}",
-           current_range.start, current_range.end, current_range.started);
+           current_range.start, current_range.end,
+           current_range.range_header_written);
 
       char* buffer = io->buf;
       int32_t cnt = io->count;
 
       DBGC(ctx, L"buffer = {}, cnt = {}", fmt_as_ptr(buffer), cnt);
 
-      if (!current_range.started) {
+      if (!current_range.range_header_written) {
         // we need to add the range information into the backup stream
         if (cnt < 2 * sizeof(std::size_t)) {
           JERR(ctx, "cannot handle buffer that is this small");
@@ -4485,7 +4486,7 @@ static bRC pluginBackupIO(PluginContext* ctx,
         buffer += sizeof(current_range.end);
 
         cnt -= sizeof(current_range.end) + sizeof(current_range.start);
-        current_range.started = true;
+        current_range.range_header_written = true;
 
         io->status = io->count - cnt;
 

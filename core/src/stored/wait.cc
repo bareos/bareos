@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,6 +45,15 @@ const int debuglevel = 400;
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
+namespace detail {
+// Internal wait operation, replaceable by deterministic reservation tests.
+decltype(&pthread_cond_timedwait)& DeviceWait()
+{
+  static auto device_wait = &pthread_cond_timedwait;
+  return device_wait;
+}
+}  // namespace detail
+
 /**
  * Wait for SysOp to mount a tape on a specific device
  *
@@ -67,7 +76,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
   /* Since we want to mount a tape, make sure current one is
    *  not marked as using this drive. */
-  VolumeUnused(dcr);
+  MarkVolumeUnused(dcr);
 
   unmounted = dev->IsDeviceUnmounted();
   dev->poll = false;
@@ -89,11 +98,11 @@ int WaitForSysop(DeviceControlRecord* dcr)
 
   if (!unmounted) {
     Dmsg1(debuglevel, "blocked=%s\n", dev->print_blocked());
-    dev->dev_prev_blocked = dev->blocked();
+    dev->previous_blocked_state = dev->blocked();
     dev->SetBlocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
   }
 
-  while (!jcr->IsJobCanceled()) {
+  while (!jcr->IsJobAbortedOrCanceled()) {
     time_t now, start, total_waited;
 
     gettimeofday(&tv, NULL);
@@ -192,7 +201,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
   }
 
   if (!unmounted) {
-    dev->SetBlocked(dev->dev_prev_blocked); /* restore entry state */
+    dev->SetBlocked(dev->previous_blocked_state); /* restore entry state */
     Dmsg1(debuglevel, "set %s\n", dev->print_blocked());
   }
   Dmsg1(debuglevel, "Exit blocked=%s\n", dev->print_blocked());
@@ -208,15 +217,14 @@ int WaitForSysop(DeviceControlRecord* dcr)
  * of 1 minute then retry just in case a broadcast was lost, and
  * we return to rescan the devices.
  *
- * Returns: true  if a device has changed state
- *          false if the total wait time has expired.
+ * Returns: true to rescan after a notification or the periodic timeout;
+ *          false on a wait failure.
  */
 bool WaitForDevice(JobControlRecord* jcr, int& retries)
 {
   struct timeval tv;
   struct timespec timeout;
   int status = 0;
-  bool ok = true;
   const int max_wait_time = 1 * 60; /* wait 1 minute */
   char ed1[50];
 
@@ -236,13 +244,18 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
   /* Wait required time */
-  status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex,
-                                  &timeout);
+  status = detail::DeviceWait()(&wait_device_release, &device_release_mutex,
+                                &timeout);
   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
 
   unlock_mutex(device_release_mutex);
-  Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
-  return ok;
+  if (status != 0 && status != ETIMEDOUT) {
+    BErrNo be;
+    Jmsg(jcr, M_ERROR, 0, T_("pthread timedwait error. ERR=%s\n"),
+         be.bstrerror(status));
+    return false;
+  }
+  return true;
 }
 
 // Signal the above WaitForDevice function.

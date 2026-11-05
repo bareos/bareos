@@ -1443,7 +1443,7 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
   }
 
   // we should not leave this function without having set a filter!
-  ASSERT(selection.size() != 0);
+  ASSERT(selection.capacity() != 0);
   return true;
 }
 
@@ -1529,7 +1529,7 @@ static bool ListNextvol(UaContext* ua, int ndays)
       std::optional<time_t> next_scheduled = run->NextScheduleTime(now, ndays);
       if (!next_scheduled.has_value()) { continue; }
 
-      if (!CompleteJcrForJob(jcr, job, run->pool)) {
+      if (!InitializeJcrAndEnsurePoolRecord(jcr, job, run->pool)) {
         found = false;
         break;
       }
@@ -1577,9 +1577,9 @@ static bool ListNextvol(UaContext* ua, int ndays)
 }
 
 // Fill in the remaining fields of the jcr as if it is going to run the job.
-bool CompleteJcrForJob(JobControlRecord* jcr,
-                       JobResource* job,
-                       PoolResource* pool)
+bool InitializeJcrAndEnsurePoolRecord(JobControlRecord* jcr,
+                                      JobResource* job,
+                                      PoolResource* pool)
 {
   SetJcrDefaults(jcr, job);
   if (pool) { jcr->dir_impl->res.pool = pool; /* override */ }
@@ -1633,7 +1633,7 @@ void DoMessages(UaContext* ua, const char*)
   rewind(con_fd);
   while (fgets(msg, sizeof(msg), con_fd)) {
     mlen = strlen(msg);
-    ua->UA_sock->msg = CheckPoolMemorySize(ua->UA_sock->msg, mlen + 1);
+    ua->UA_sock->msg = EnsurePoolMemoryCapacity(ua->UA_sock->msg, mlen + 1);
     strcpy(ua->UA_sock->msg, msg);
     ua->UA_sock->message_length = mlen;
     ua->UA_sock->send();

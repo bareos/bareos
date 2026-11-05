@@ -609,7 +609,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       Dmsg1(50, "Begin append device=%s\n", dcr->dev->print_name());
 
       // Change the Job to running state.
-      jcr->sendJobStatus(JS_Running);
+      jcr->UpdateAndSendJobStatus(JS_Running);
 
       /* As we only generate very limited attributes info e.g. one
        * set per NDMP backup stream we only setup data spooling and not
@@ -625,7 +625,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       }
 
       dcr->VolFirstIndex = dcr->VolLastIndex = 0;
-      jcr->run_time = time(NULL); /* start counting time for rates */
+      jcr->transfer_rate_start_time
+          = time(NULL); /* start counting time for rates */
 
       // The session is saved as one file stream.
       dcr->FileIndex = 1;
@@ -673,7 +674,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       jcr->sd_impl->acquired_storage = true;
 
       // Change the Job to running state.
-      jcr->sendJobStatus(JS_Running);
+      jcr->UpdateAndSendJobStatus(JS_Running);
 
       Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
 
@@ -928,7 +929,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
 
   /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
    * and the subsequent Jmsg() editing will break */
-  int32_t job_elapsed = time(NULL) - jcr->run_time;
+  int32_t job_elapsed = time(NULL) - jcr->transfer_rate_start_time;
 
   if (job_elapsed <= 0) { job_elapsed = 1; }
 
@@ -946,7 +947,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
-        if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
+        if (jcr->is_JobStatus(JS_Terminated)
+            && !jcr->IsJobAbortedOrCanceled()) {
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Error writing end session label. ERR=%s\n"),
                 dcr->dev->bstrerror());
@@ -960,7 +962,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
       if (!dcr->WriteBlockToDevice()) {
         /* Print only if JobStatus JS_Terminated and not cancelled to avoid
          * spurious messages */
-        if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
+        if (jcr->is_JobStatus(JS_Terminated)
+            && !jcr->IsJobAbortedOrCanceled()) {
           Jmsg2(jcr, M_FATAL, 0,
                 T_("Fatal append error on device %s: ERR=%s\n"),
                 dcr->dev->print_name(), dcr->dev->bstrerror());

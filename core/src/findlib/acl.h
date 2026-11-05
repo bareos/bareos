@@ -109,10 +109,10 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
                                AclBuildData* acl_data,
                                FindFilesPacket* ff_pkt);
-bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 AclData* acl_data,
-                                 int stream,
-                                 char* content,
-                                 uint32_t content_length);
+bacl_exit_code RestoreAclFromStream(JobControlRecord* jcr,
+                                    AclData* acl_data,
+                                    int stream,
+                                    char* content,
+                                    uint32_t content_length);
 
 #endif  // BAREOS_FINDLIB_ACL_H_

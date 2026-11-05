@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
   filter_func = filter_func_arg;
   send_ctx = send_ctx_arg;
   filter_ctx = filter_ctx_arg;
-  api = api_mode;
+  api_mode_ = api_mode;
   compact = false;
   num_rows_filtered = 0;
 
@@ -91,7 +91,7 @@ void OutputFormatter::Decoration(const char* fmt, ...)
   PoolMem string;
   va_list arg_ptr;
 
-  switch (api) {
+  switch (api_mode_) {
     case API_MODE_ON:
     case API_MODE_JSON:
       break;
@@ -120,7 +120,7 @@ void OutputFormatter::ObjectStart(const char* name,
   if (!case_sensitiv_name) { lname.toLower(); }
 
   Dmsg1(800, "obj start: %s\n", name);
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       json_object_current = (json_t*)result_stack_json->last();
@@ -176,7 +176,7 @@ void OutputFormatter::ObjectEnd(const char* name, const char* fmt)
 {
   PoolMem string;
   Dmsg1(800, "obj end:   %s\n", name);
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       result_stack_json->pop();
@@ -206,7 +206,7 @@ void OutputFormatter::ArrayStart(const char* name, const char* fmt)
   lname.toLower();
 
   Dmsg1(800, "array start:  %s\n", name);
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       json_object_current = (json_t*)result_stack_json->last();
@@ -254,7 +254,7 @@ void OutputFormatter::ArrayEnd(const char* name, const char* fmt)
 {
   PoolMem string;
   Dmsg1(800, "array end:    %s\n", name);
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       result_stack_json->pop();
@@ -278,7 +278,7 @@ void OutputFormatter::ArrayItem(bool value, const char* value_fmt)
   json_t* jsonvalue;
 #endif
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       jsonvalue = json_boolean(value);
@@ -301,7 +301,7 @@ void OutputFormatter::ArrayItem(uint64_t value, const char* value_fmt)
   json_t* jsonvalue;
 #endif
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       jsonvalue = json_integer(value);
@@ -326,7 +326,7 @@ void OutputFormatter::ArrayItem(const char* value,
   json_t* jsonvalue;
 #endif
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       jsonvalue = json_string(value);
@@ -365,7 +365,7 @@ void OutputFormatter::ObjectKeyValueBool(const char* key,
 {
   PoolMem string;
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       JsonKeyValueAddBool(key, value);
@@ -407,7 +407,7 @@ void OutputFormatter::ObjectKeyValue(const char* key,
 {
   PoolMem string;
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       JsonKeyValueAdd(key, value);
@@ -445,7 +445,7 @@ void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
 {
   PoolMem string;
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       /* json only supports one type of integer */
@@ -490,7 +490,7 @@ void OutputFormatter::ObjectKeyValue(const char* key,
   PoolMem wvalue(value);
   rewrap(wvalue, wrap);
 
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       JsonKeyValueAdd(key, wvalue.c_str());
@@ -525,7 +525,7 @@ void OutputFormatter::rewrap(PoolMem& string, int wrap)
   /* Allocate a wrap buffer that is big enough to hold the original string and
    * the wrap chars. Using strlen * 2 means, we could add a wrap character after
    * each character, which should be enough. */
-  rewrap_string.check_size(string.strlen() * 2);
+  rewrap_string.ensure_capacity(string.strlen() * 2);
 
   /* Walk the input buffer and copy the data to the wrap buffer
    * inserting line breaks as needed. */
@@ -535,7 +535,7 @@ void OutputFormatter::rewrap(PoolMem& string, int wrap)
     charsinline++;
     switch (*p) {
       case ' ':
-        if (api == 0 && wrap > 0 && charsinline >= wrap && open <= 0
+        if (api_mode_ == 0 && wrap > 0 && charsinline >= wrap && open <= 0
             && *(p + 1) != '|') {
           *q++ = '\n';
           *q++ = '\t';
@@ -546,7 +546,7 @@ void OutputFormatter::rewrap(PoolMem& string, int wrap)
         break;
       case '|':
         *q++ = '|';
-        if (api == 0 && wrap > 0 && open <= 0) {
+        if (api_mode_ == 0 && wrap > 0 && open <= 0) {
           *q++ = '\n';
           *q++ = '\t';
           charsinline = 0;
@@ -771,7 +771,7 @@ bool OutputFormatter::ProcessTextBuffer()
 void OutputFormatter::message([[maybe_unused]] const char* type,
                               PoolMem& message)
 {
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       /* currently, only error message influence the JSON result.
@@ -789,7 +789,7 @@ void OutputFormatter::message([[maybe_unused]] const char* type,
 
 void OutputFormatter::SendBuffer()
 {
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       break;
@@ -802,7 +802,7 @@ void OutputFormatter::SendBuffer()
 
 void OutputFormatter::FinalizeResult([[maybe_unused]] bool result)
 {
-  switch (api) {
+  switch (api_mode_) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
       JsonFinalizeResult(result);
