@@ -782,56 +782,68 @@ void FreeVolumeLists()
   }
 }
 
-// Determine if caller can write on volume
-bool DeviceControlRecord::Can_i_write_volume()
+VolumeWriteAvailability DeviceControlRecord::CheckVolumeUse(bool for_write)
 {
-  VolumeReservationItem* vol;
+  if (jcr->IsJobCanceled()) { return VolumeWriteAvailability::Unavailable; }
 
-  vol = find_read_volume(VolumeName);
-  if (vol) {
+  /* A read reservation prevents writing, but it does not imply an append
+   * owner that would make retrying on another device useful. */
+  if (for_write && find_read_volume(VolumeName)) {
     Dmsg1(100, "Found in read list; cannot write vol=%s\n", VolumeName);
-    return false;
+    return VolumeWriteAvailability::Unavailable;
   }
 
-  return Can_i_use_volume();
-}
-
-// Determine if caller can read or write volume
-bool DeviceControlRecord::Can_i_use_volume()
-{
-  bool rtn = true;
-  VolumeReservationItem* vol;
-
-  if (jcr->IsJobCanceled()) { return false; }
+  VolumeWriteAvailability availability = VolumeWriteAvailability::Available;
   with_volume_lock([&] {
-    vol = find_volume(VolumeName);
+    VolumeReservationItem* vol = find_volume(VolumeName);
     if (!vol) {
       Dmsg1(debuglevel, "Vol=%s not in use.\n", VolumeName);
-      return; /* vol not in list */
+      return;
     }
     ASSERT(vol->dev != NULL);
 
-    if (dev == vol->dev) { /* same device OK */
+    if (dev == vol->dev) {
       Dmsg1(debuglevel, "Vol=%s on same dev.\n", VolumeName);
       return;
-    } else {
-      Dmsg3(debuglevel, "Vol=%s on %s we have %s\n", VolumeName,
-            vol->dev->print_name(), dev->print_name());
     }
-    /* ***FIXME*** check this ... */
+
+    Dmsg3(debuglevel, "Vol=%s on %s we have %s\n", VolumeName,
+          vol->dev->print_name(), dev->print_name());
     if (!vol->dev->IsBusy()) {
       Dmsg2(debuglevel, "Vol=%s dev=%s not busy.\n", VolumeName,
             vol->dev->print_name());
       return;
-    } else {
-      Dmsg2(debuglevel, "Vol=%s dev=%s busy.\n", VolumeName,
-            vol->dev->print_name());
     }
+
     Dmsg2(debuglevel, "Vol=%s in use by %s.\n", VolumeName,
           vol->dev->print_name());
-    rtn = false;
+    availability = VolumeWriteAvailability::Unavailable;
+
+    if (!for_write) { return; }
+
+    /* Only report a busy append volume when it is mounted on another device
+     * that can release it. This lets append reservation retry on its owner. */
+    const bool volume_mounted_elsewhere
+        = bstrcmp(vol->dev->VolHdr.VolumeName, VolumeName)
+          || (vol->dev->vol && bstrcmp(vol->dev->vol->vol_name, VolumeName));
+    if (volume_mounted_elsewhere
+        && (vol->dev->CanAppend() || vol->dev->num_writers > 0
+            || vol->dev->NumReserved() > 0)) {
+      availability = VolumeWriteAvailability::BusyOnAnotherDevice;
+    }
   });
-  return rtn;
+
+  return availability;
+}
+
+bool DeviceControlRecord::Can_i_use_volume()
+{
+  return CheckVolumeUse(false) == VolumeWriteAvailability::Available;
+}
+
+VolumeWriteAvailability DeviceControlRecord::Can_i_write_volume()
+{
+  return CheckVolumeUse(true);
 }
 
 /**
