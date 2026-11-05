@@ -324,6 +324,13 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
           if (reserve_volume(this, VolumeName) == NULL) {
             Dmsg2(debuglevel, "Could not reserve volume %s on %s\n", VolumeName,
                   dev->print_name());
+            if (dev->vol && dev->vol->IsInUse() && !reserved_volume) {
+              Dmsg1(debuglevel,
+                    "Stopping volume scan because device %s holds a volume "
+                    "in use by another job.\n",
+                    dev->print_name());
+              break;
+            }
             continue;
           }
           Dmsg1(debuglevel, "DirFindNextAppendableVolume return true. vol=%s\n",

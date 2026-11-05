@@ -522,6 +522,43 @@ TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
   ASSERT_FALSE(dcr->AppendVolumeBusy());
 }
 
+TEST_F(ReservationTest, append_scan_stops_when_device_holds_another_jobs_volume)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  auto blocker = std::make_unique<TestJob>(111u);
+  auto job = std::make_unique<TestJob>(222u);
+  blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
+
+  auto& stores = blocker->jcr->sd_impl->dirstores;
+  stores.clear();
+  stores.emplace_back(true, "sssss", "File", "ppppp", "ptptp");
+  stores.front().device_names.push_back("auto1dev2");
+
+  const auto candidate = AppendVolumeInfo("OtherVolume", 2);
+  EXPECT_CALL(*bsock, recv())
+      .WillOnce(BSOCK_RECV(bsock.get(), kMountedAppendVolumeInfo))
+      .WillOnce(BSOCK_RECV(bsock.get(), candidate.c_str()));
+  EXPECT_CALL(*bsock, send()).Times(2).WillRepeatedly(Return(true));
+
+  ASSERT_TRUE(TryReserveAfterUse(blocker->jcr, true));
+  auto* dev = blocker->jcr->sd_impl->dcr->dev;
+  ASSERT_NE(dev->vol, nullptr);
+  ASSERT_TRUE(dev->vol->IsInUse());
+
+  auto* dcr = new StorageDaemonDeviceControlRecord;
+  SetupNewDcrDevice(job->jcr, dcr, dev, nullptr);
+  dcr->SetWillWrite();
+  job->jcr->sd_impl->dcr = dcr;
+  ASSERT_FALSE(dcr->reserved_volume);
+
+  EXPECT_FALSE(dcr->DirFindNextAppendableVolume());
+  EXPECT_STREQ(dcr->VolumeName, "");
+  EXPECT_FALSE(dcr->reserved_volume);
+  ASSERT_NE(dev->vol, nullptr);
+  EXPECT_STREQ(dev->vol->vol_name, "MountedVolume");
+  EXPECT_TRUE(dev->vol->IsInUse());
+}
+
 TEST_F(ReservationTest, append_scan_reaches_volumes_beyond_device_count)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
