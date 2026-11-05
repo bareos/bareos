@@ -102,12 +102,24 @@ CREATE TABLE Job
     PurgedFiles       SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
+    AccountingValid   BOOLEAN     NOT NULL DEFAULT FALSE,
+    AccountingExcluded BOOLEAN,
+    AccountingFiles   NUMERIC(20, 0),
+    AccountingBytes   NUMERIC(20, 0),
+    AccountingLogicalBytes NUMERIC(20, 0),
+    AccountingOpaqueFiles NUMERIC(20, 0),
+    AccountingNdmpArchives NUMERIC(20, 0),
+    AccountingRule    TEXT,
+    AccountingExclusionReason TEXT,
+    AccountingJobsInChain INTEGER,
     Comment           TEXT,
     PRIMARY KEY (JobId)
 );
 
 CREATE INDEX job_name_idx ON job (Name);
 CREATE INDEX job_starttime_idx ON job (StartTime);
+CREATE INDEX job_accounting_client_fileset_idx
+    ON Job (ClientId, FileSetId, JobTDate DESC, JobId DESC);
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
@@ -411,19 +423,6 @@ CREATE TABLE SubscriptionAccountingSnapshot (
 
 INSERT INTO SubscriptionAccountingSnapshot (SnapshotId)
 VALUES (1);
-
-CREATE TABLE SubscriptionAccounting (
-    ClientName        TEXT        NOT NULL,
-    FileSetName       TEXT        NOT NULL,
-    Excluded          BOOLEAN     NOT NULL,
-    ExclusionReason   TEXT,
-    Files             NUMERIC(20, 0) NOT NULL DEFAULT 0,
-    Bytes             NUMERIC(20, 0) NOT NULL DEFAULT 0,
-    LogicalBytes      NUMERIC(20, 0) NOT NULL DEFAULT 0,
-    Rule              TEXT,
-    JobsInChain       INTEGER     NOT NULL DEFAULT 0,
-    PRIMARY KEY (ClientName, FileSetName)
-);
 
 CREATE TABLE TapeAlerts (
     DeviceId          INTEGER     DEFAULT 0,

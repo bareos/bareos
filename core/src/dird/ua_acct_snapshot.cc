@@ -49,15 +49,18 @@ int SnapshotRowHandler(void* ctx, int, char** row)
 {
   auto* rows = static_cast<std::vector<AccountingRow>*>(ctx);
   AccountingRow result;
-  result.ClientName = row[0] ? row[0] : "";
-  result.FileSetName = row[1] ? row[1] : "";
-  result.excluded = row[2] && bstrcmp(row[2], "t");
-  result.exclusion_reason = row[3] ? row[3] : "";
-  result.files = row[4] ? str_to_uint64(row[4]) : 0;
-  result.bytes = row[5] ? str_to_uint64(row[5]) : 0;
-  result.logical_bytes = row[6] ? str_to_uint64(row[6]) : 0;
-  result.rule = row[7] ? row[7] : "";
-  result.jobs_in_chain = row[8] ? str_to_uint64(row[8]) : 0;
+  result.JobId = row[0] ? str_to_int64(row[0]) : 0;
+  result.ClientName = row[1] ? row[1] : "";
+  result.FileSetName = row[2] ? row[2] : "";
+  result.excluded = row[3] && bstrcmp(row[3], "t");
+  result.exclusion_reason = row[4] ? row[4] : "";
+  result.files = row[5] ? str_to_uint64(row[5]) : 0;
+  result.bytes = row[6] ? str_to_uint64(row[6]) : 0;
+  result.logical_bytes = row[7] ? str_to_uint64(row[7]) : 0;
+  result.opaque_files = row[8] ? str_to_uint64(row[8]) : 0;
+  result.ndmp_archives = row[9] ? str_to_uint64(row[9]) : 0;
+  result.rule = row[10] ? row[10] : "";
+  result.jobs_in_chain = row[11] ? str_to_uint64(row[11]) : 0;
   rows->push_back(std::move(result));
   return 0;
 }
@@ -94,28 +97,35 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
 
   PoolMem query(PM_MESSAGE);
   PmStrcpy(query,
-           "SELECT ClientName, FileSetName, Excluded, "
-           "COALESCE(ExclusionReason, ''), Files::text, Bytes::text, "
-           "LogicalBytes::text, COALESCE(Rule, ''), JobsInChain::text "
-           "FROM SubscriptionAccounting");
-  if (client_filter || fileset_filter) { PmStrcat(query, " WHERE "); }
-  bool needs_and = false;
+           "SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
+           "Client.Name, FileSet.FileSet, Job.AccountingExcluded, "
+           "COALESCE(Job.AccountingExclusionReason, ''), "
+           "Job.AccountingFiles::text, Job.AccountingBytes::text, "
+           "Job.AccountingLogicalBytes::text, "
+           "Job.AccountingOpaqueFiles::text, "
+           "Job.AccountingNdmpArchives::text, "
+           "COALESCE(Job.AccountingRule, ''), "
+           "Job.AccountingJobsInChain::text "
+           "FROM Job JOIN Client USING (ClientId) "
+           "JOIN FileSet USING (FileSetId) "
+           "WHERE Job.AccountingValid AND Job.JobStatus IN ('T','W') "
+           "AND Job.Type IN ('B','C','g','O')");
   std::string escaped;
   if (client_filter) {
     if (!EscapeForSql(ua, client_filter, &escaped)) { return false; }
-    PmStrcat(query, "ClientName='");
+    PmStrcat(query, " AND Client.Name='");
     PmStrcat(query, escaped.c_str());
     PmStrcat(query, "'");
-    needs_and = true;
   }
   if (fileset_filter) {
-    if (needs_and) { PmStrcat(query, " AND "); }
     if (!EscapeForSql(ua, fileset_filter, &escaped)) { return false; }
-    PmStrcat(query, "FileSetName='");
+    PmStrcat(query, " AND FileSet.FileSet='");
     PmStrcat(query, escaped.c_str());
     PmStrcat(query, "'");
   }
-  PmStrcat(query, " ORDER BY ClientName, FileSetName");
+  PmStrcat(query,
+           " ORDER BY Job.ClientId, Job.FileSetId, Job.JobTDate DESC, "
+           "Job.JobId DESC");
 
   if (!ua->db->SqlQuery(query.c_str(), SnapshotRowHandler, rows)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
@@ -146,11 +156,10 @@ bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
   }
-  bool success = ua->db->SqlExec("DELETE FROM SubscriptionAccounting");
+  bool success = true;
   for (const auto& row : rows) {
-    std::string client_name, fileset_name, reason, rule;
-    if (!success || !EscapeForSql(ua, row.ClientName, &client_name)
-        || !EscapeForSql(ua, row.FileSetName, &fileset_name)
+    std::string reason, rule;
+    if (!success || row.JobId == 0
         || !EscapeForSql(ua, row.exclusion_reason, &reason)
         || !EscapeForSql(ua, row.rule, &rule)) {
       success = false;
@@ -158,18 +167,23 @@ bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
     }
     PoolMem query(PM_MESSAGE);
     Mmsg(query,
-         "INSERT INTO SubscriptionAccounting "
-         "(ClientName, FileSetName, Excluded, ExclusionReason, Files, Bytes, "
-         "LogicalBytes, Rule, JobsInChain) VALUES "
-         "('%s', '%s', %s, %s, %llu, %llu, %llu, %s, %llu)",
-         client_name.c_str(), fileset_name.c_str(),
-         row.excluded ? "true" : "false",
+         "UPDATE Job SET AccountingValid=TRUE, AccountingExcluded=%s, "
+         "AccountingExclusionReason=%s, AccountingFiles=%llu, "
+         "AccountingBytes=%llu, AccountingLogicalBytes=%llu, "
+         "AccountingOpaqueFiles=%llu, AccountingNdmpArchives=%llu, "
+         "AccountingRule=%s, AccountingJobsInChain=%llu WHERE JobId=%llu "
+         "AND (PurgedFiles=0 OR %s)",
+         row.excluded ? "TRUE" : "FALSE",
          row.exclusion_reason.empty() ? "NULL" : ("'" + reason + "'").c_str(),
          static_cast<unsigned long long>(row.files),
          static_cast<unsigned long long>(row.bytes),
          static_cast<unsigned long long>(row.logical_bytes),
+         static_cast<unsigned long long>(row.opaque_files),
+         static_cast<unsigned long long>(row.ndmp_archives),
          row.rule.empty() ? "NULL" : ("'" + rule + "'").c_str(),
-         static_cast<unsigned long long>(row.jobs_in_chain));
+         static_cast<unsigned long long>(row.jobs_in_chain),
+         static_cast<unsigned long long>(row.JobId),
+         row.excluded ? "TRUE" : "FALSE");
     success = ua->db->SqlExec(query.c_str());
   }
 

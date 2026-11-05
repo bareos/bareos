@@ -155,12 +155,62 @@ bool UnameLooksLikeWindows(const std::string& uname)
 }
 
 struct TupleInfo {
+  JobId_t LatestFullJobId{0};
   DBId_t ClientId{0};
   std::string ClientName;
   std::string Uname;
   DBId_t FileSetId{0};
   std::string FileSetName;
 };
+
+struct AccountingJobInfo {
+  JobId_t JobId{0};
+  DBId_t ClientId{0};
+  DBId_t FileSetId{0};
+  char Level{0};
+  std::string ClientName;
+  std::string Uname;
+  std::string FileSetName;
+  bool found{false};
+};
+
+int AccountingJobInfoHandler(void* ctx, int, char** row)
+{
+  auto* info = static_cast<AccountingJobInfo*>(ctx);
+  info->JobId = static_cast<JobId_t>(str_to_int64(row[0]));
+  info->ClientId = static_cast<DBId_t>(str_to_int64(row[1]));
+  info->ClientName = row[2] ? row[2] : "";
+  info->Uname = row[3] ? row[3] : "";
+  info->FileSetId = static_cast<DBId_t>(str_to_int64(row[4]));
+  info->FileSetName = row[5] ? row[5] : "";
+  info->Level = row[6] ? row[6][0] : 0;
+  info->found = true;
+  return 0;
+}
+
+struct StoredAccountingCtx {
+  AccountingRow row;
+  bool found{false};
+};
+
+int StoredAccountingHandler(void* ctx, int, char** row)
+{
+  auto* stored = static_cast<StoredAccountingCtx*>(ctx);
+  stored->found = row[0] && (bstrcmp(row[0], "true") || bstrcmp(row[0], "t"));
+  if (!stored->found) { return 0; }
+  stored->row.JobId = static_cast<JobId_t>(str_to_int64(row[1]));
+  stored->row.excluded
+      = row[2] && (bstrcmp(row[2], "true") || bstrcmp(row[2], "t"));
+  stored->row.exclusion_reason = row[3] ? row[3] : "";
+  stored->row.files = row[4] ? str_to_uint64(row[4]) : 0;
+  stored->row.bytes = row[5] ? str_to_uint64(row[5]) : 0;
+  stored->row.logical_bytes = row[6] ? str_to_uint64(row[6]) : 0;
+  stored->row.opaque_files = row[7] ? str_to_uint64(row[7]) : 0;
+  stored->row.ndmp_archives = row[8] ? str_to_uint64(row[8]) : 0;
+  stored->row.rule = row[9] ? row[9] : "";
+  stored->row.jobs_in_chain = row[10] ? str_to_uint64(row[10]) : 0;
+  return 0;
+}
 
 
 struct ChainResolveCtx {
@@ -214,6 +264,8 @@ struct FileScanCtx {
   bool aborted{false};
   bool saw_virtual_ndmp_archive{false};
   bool saw_opaque_plugin_image{false};
+  uint64_t opaque_files{0};
+  uint64_t ndmp_archives{0};
 };
 
 int FileRowHandler(void* ctx, int, char** row)
@@ -258,8 +310,10 @@ int FileRowHandler(void* ctx, int, char** row)
       const std::string_view filename = row[5] ? row[5] : "";
       if (filename.starts_with("/@NDMP/")) {
         c->saw_virtual_ndmp_archive = true;
+        c->ndmp_archives++;
       } else {
         c->saw_opaque_plugin_image = true;
+        c->opaque_files++;
       }
     }
     return 0;
@@ -292,7 +346,7 @@ struct TupleListCtx {
 int TupleRowHandler(void* ctx, int, char** row)
 {
   // row[0]=ClientId row[1]=Client.Name row[2]=Client.Uname
-  // row[3]=FileSetId row[4]=FileSet.FileSet
+  // row[3]=FileSetId row[4]=FileSet.FileSet row[5]=JobId
   auto* c = static_cast<TupleListCtx*>(ctx);
   TupleInfo t;
   t.ClientId = static_cast<DBId_t>(str_to_int64(row[0]));
@@ -300,6 +354,7 @@ int TupleRowHandler(void* ctx, int, char** row)
   t.Uname = row[2] ? row[2] : "";
   t.FileSetId = static_cast<DBId_t>(str_to_int64(row[3]));
   t.FileSetName = row[4] ? row[4] : "";
+  t.LatestFullJobId = static_cast<JobId_t>(str_to_int64(row[5]));
   c->tuples.push_back(std::move(t));
   return 0;
 }
@@ -495,6 +550,201 @@ bool FetchBaselineFullJobSize(UaContext* ua,
   return true;
 }
 
+bool LoadAccountingJobInfo(UaContext* ua,
+                           JobId_t jobid,
+                           AccountingJobInfo* info,
+                           std::string* error)
+{
+  PoolMem query(PM_MESSAGE);
+  char ed1[50];
+  Mmsg(query,
+       "SELECT Job.JobId, Client.ClientId, Client.Name, Client.Uname, "
+       "FileSet.FileSetId, FileSet.FileSet, Job.Level FROM Job "
+       "JOIN Client USING (ClientId) JOIN FileSet USING (FileSetId) "
+       "WHERE Job.JobId=%s AND Job.JobStatus IN ('T','W') "
+       "AND Job.Type IN (%s)",
+       edit_int64(jobid, ed1), kAccountableJobTypes);
+  if (!ua->db->SqlQuery(query.c_str(), AccountingJobInfoHandler, info)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  if (!info->found) {
+    *error = "completed accounting job was not found";
+    return false;
+  }
+  return true;
+}
+
+bool LoadStoredAccounting(UaContext* ua,
+                          JobId_t jobid,
+                          StoredAccountingCtx* stored)
+{
+  PoolMem query(PM_MESSAGE);
+  char ed1[50];
+  Mmsg(query,
+       "SELECT AccountingValid::text, JobId, "
+       "COALESCE(AccountingExcluded, FALSE)::text, "
+       "COALESCE(AccountingExclusionReason, ''), "
+       "AccountingFiles::text, AccountingBytes::text, "
+       "AccountingLogicalBytes::text, AccountingOpaqueFiles::text, "
+       "AccountingNdmpArchives::text, COALESCE(AccountingRule, ''), "
+       "AccountingJobsInChain::text FROM Job WHERE JobId=%s",
+       edit_int64(jobid, ed1));
+  if (!ua->db->SqlQuery(query.c_str(), StoredAccountingHandler, stored)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  return true;
+}
+
+bool AddOrSubtract(uint64_t* value, uint64_t amount, bool add)
+{
+  if (add) {
+    if (amount > std::numeric_limits<uint64_t>::max() - *value) {
+      return false;
+    }
+    *value += amount;
+    return true;
+  }
+  if (amount > *value) { return false; }
+  *value -= amount;
+  return true;
+}
+
+struct DeltaScanCtx {
+  AccountingRow* row{nullptr};
+  bool is_windows{false};
+  bool requires_full_scan{false};
+  bool aborted{false};
+  std::string error;
+};
+
+bool ApplyFileDelta(DeltaScanCtx* c,
+                    const char* lstat,
+                    const char* filename,
+                    bool add)
+{
+  FileAccountingResult result = AccountedBytesForFile(
+      lstat ? lstat : "", c->is_windows, filename ? filename : "");
+  if (result.kind == FileAccountingKind::kInvalidStat) {
+    c->error = result.invalid_reason;
+    c->aborted = true;
+    return false;
+  }
+  if (result.kind == FileAccountingKind::kNonRegular) { return true; }
+  if (result.kind == FileAccountingKind::kUnmeasurableStream) {
+    if (filename && std::string_view(filename).starts_with("/@NDMP/")) {
+      if (!AddOrSubtract(&c->row->ndmp_archives, 1, add)) {
+        c->error = "NDMP archive count underflow or overflow";
+        c->aborted = true;
+        return false;
+      }
+    } else {
+      c->requires_full_scan = true;
+      if (!AddOrSubtract(&c->row->opaque_files, 1, add)) {
+        c->error = "opaque stream count underflow or overflow";
+        c->aborted = true;
+        return false;
+      }
+    }
+    return true;
+  }
+  if (!AddOrSubtract(&c->row->files, 1, add)
+      || !AddOrSubtract(&c->row->bytes, result.bytes, add)
+      || !AddOrSubtract(&c->row->logical_bytes, result.logical_bytes, add)) {
+    c->error = "accounting total underflow or overflow";
+    c->aborted = true;
+    return false;
+  }
+  return true;
+}
+
+int ChangedFileRowHandler(void* ctx, int, char** row)
+{
+  // row[0..2] are the current FileIndex, LStat and full path.
+  // row[3..4] are the previous effective FileIndex and LStat.
+  auto* c = static_cast<DeltaScanCtx*>(ctx);
+  const bool had_previous
+      = row[3] && static_cast<uint32_t>(str_to_int64(row[3])) != 0;
+  const bool has_current
+      = row[0] && static_cast<uint32_t>(str_to_int64(row[0])) != 0;
+  if (had_previous && !ApplyFileDelta(c, row[4], row[2], false)) { return 1; }
+  if (has_current && !ApplyFileDelta(c, row[1], row[2], true)) { return 1; }
+  return 0;
+}
+
+bool ScanChangedFiles(UaContext* ua,
+                      JobId_t current_jobid,
+                      const std::vector<JobId_t>& previous_jobids,
+                      DeltaScanCtx* delta)
+{
+  if (previous_jobids.empty()) { return true; }
+  PoolMem previous_ids(PM_MESSAGE);
+  char ed1[50], ed2[50];
+  for (size_t i = 0; i < previous_jobids.size(); i++) {
+    if (i > 0) { PmStrcat(previous_ids, ","); }
+    PmStrcat(previous_ids, edit_uint64(previous_jobids[i], ed1));
+  }
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "WITH current_paths AS ("
+       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
+       "File.Name, File.FileIndex, File.LStat, Path.Path || File.Name AS "
+       "Filename FROM File JOIN Path USING (PathId) WHERE File.JobId=%s "
+       "ORDER BY File.PathId, File.Name, File.FileId DESC), "
+       "previous_paths AS ("
+       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
+       "File.Name, File.FileIndex, File.LStat FROM File JOIN Job USING (JobId) "
+       "WHERE File.JobId IN (%s) "
+       "ORDER BY File.PathId, File.Name, Job.JobTDate DESC, "
+       "File.JobId DESC, File.FileId DESC) "
+       "SELECT current_paths.FileIndex, current_paths.LStat, "
+       "current_paths.Filename, previous_paths.FileIndex, previous_paths.LStat "
+       "FROM current_paths LEFT JOIN previous_paths USING (PathId, Name)",
+       edit_int64(current_jobid, ed2), previous_ids.c_str());
+  if (!ua->db->BigSqlQuery(query.c_str(), ChangedFileRowHandler, delta)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+  return !delta->aborted;
+}
+
+bool MakeAccountingRowFromScan(UaContext* ua,
+                               const std::vector<JobId_t>& jobids,
+                               const FileScanCtx& scan,
+                               AccountingRow* row,
+                               std::string* error)
+{
+  if (scan.saw_opaque_plugin_image) {
+    FullJobSizeCtx full_size{};
+    if (!FetchBaselineFullJobSize(ua, jobids.front(), &full_size)) {
+      *error = "failed to query baseline job size";
+      return false;
+    }
+    if (full_size.bytes == 0) {
+      row->excluded = true;
+      row->exclusion_reason = "opaque_backup_image";
+    } else {
+      row->files = full_size.files;
+      row->bytes = full_size.bytes;
+      row->logical_bytes = full_size.bytes;
+      row->rule = "job_bytes";
+    }
+  } else if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
+    row->excluded = true;
+    row->exclusion_reason = "ndmp_no_file_history";
+  } else {
+    row->files = scan.files;
+    row->bytes = scan.bytes;
+    row->logical_bytes = scan.logical_bytes;
+    row->rule = scan.is_windows ? "st_size" : "st_blocks*512";
+  }
+  row->opaque_files = scan.opaque_files;
+  row->ndmp_archives = scan.ndmp_archives;
+  row->jobs_in_chain = jobids.size();
+  return true;
+}
+
 }  // namespace
 
 bool CalculateSubscriptionAccounting(UaContext* ua,
@@ -506,7 +756,7 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
   Mmsg(query,
        "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet)"
        " Job.ClientId, Client.Name, Client.Uname,"
-       " Job.FileSetId, FileSet.FileSet"
+       " Job.FileSetId, FileSet.FileSet, Job.JobId"
        " FROM Job"
        " JOIN Client ON Client.ClientId = Job.ClientId"
        " JOIN FileSet ON FileSet.FileSetId = Job.FileSetId"
@@ -538,6 +788,7 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
     }
 
     AccountingRow row;
+    row.JobId = tuple.LatestFullJobId;
     row.ClientName = tuple.ClientName;
     row.FileSetName = tuple.FileSetName;
 
@@ -557,6 +808,7 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       case ChainResult::kFound:
         break;
     }
+    row.JobId = jobids.back();
 
     FileScanCtx scan{};
     scan.ua = ua;
@@ -570,34 +822,112 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
       return false;
     }
 
-    if (scan.saw_opaque_plugin_image) {
-      FullJobSizeCtx full_size{};
-      if (!FetchBaselineFullJobSize(ua, jobids.front(), &full_size)) {
-        *error = "failed to query baseline job size";
-        return false;
-      }
-      if (full_size.bytes == 0) {
-        row.excluded = true;
-        row.exclusion_reason = "opaque_backup_image";
-      } else {
-        row.files = full_size.files;
-        row.bytes = full_size.bytes;
-        row.logical_bytes = full_size.bytes;
-        row.rule = "job_bytes";
-        row.jobs_in_chain = jobids.size();
-      }
-    } else if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
-      row.excluded = true;
-      row.exclusion_reason = "ndmp_no_file_history";
-    } else {
-      row.files = scan.files;
-      row.bytes = scan.bytes;
-      row.logical_bytes = scan.logical_bytes;
-      row.rule = scan.is_windows ? "st_size" : "st_blocks*512";
-      row.jobs_in_chain = jobids.size();
+    if (!MakeAccountingRowFromScan(ua, jobids, scan, &row, error)) {
+      return false;
     }
     rows->push_back(std::move(row));
   }
+  return true;
+}
+
+bool CalculateSubscriptionAccountingForJob(UaContext* ua,
+                                           JobId_t jobid,
+                                           AccountingRow* row,
+                                           std::string* error,
+                                           const std::atomic_bool* cancel)
+{
+  AccountingJobInfo job{};
+  if (!LoadAccountingJobInfo(ua, jobid, &job, error)) { return false; }
+
+  TupleInfo tuple;
+  tuple.LatestFullJobId = jobid;
+  tuple.ClientId = job.ClientId;
+  tuple.ClientName = job.ClientName;
+  tuple.Uname = job.Uname;
+  tuple.FileSetId = job.FileSetId;
+  tuple.FileSetName = job.FileSetName;
+
+  *row = AccountingRow{};
+  row->JobId = jobid;
+  row->ClientName = job.ClientName;
+  row->FileSetName = job.FileSetName;
+
+  std::vector<JobId_t> jobids;
+  switch (ResolveAccountingChain(ua, job.ClientId, job.FileSetId, &jobids)) {
+    case ChainResult::kError:
+      *error = "failed to resolve backup chain";
+      return false;
+    case ChainResult::kNotFound:
+      row->excluded = true;
+      row->exclusion_reason = "no_usable_chain";
+      return true;
+    case ChainResult::kFound:
+      break;
+  }
+  if (jobids.back() != jobid) {
+    row->JobId = 0;
+    return true;
+  }
+
+  auto full_scan = [&]() {
+    AccountingRow full_row;
+    full_row.JobId = jobid;
+    full_row.ClientName = job.ClientName;
+    full_row.FileSetName = job.FileSetName;
+    FileScanCtx scan{};
+    scan.ua = ua;
+    scan.tuple = &tuple;
+    scan.cancel = cancel;
+    scan.is_windows = UnameLooksLikeWindows(job.Uname);
+    if (!ScanFilesForChain(ua, jobids, &scan)) {
+      *error = scan.aborted && cancel && cancel->load()
+                   ? "accounting calculation cancelled"
+                   : "failed to scan file attributes";
+      return false;
+    }
+    if (!MakeAccountingRowFromScan(ua, jobids, scan, &full_row, error)) {
+      return false;
+    }
+    *row = std::move(full_row);
+    return true;
+  };
+
+  if (jobids.size() == 1) { return full_scan(); }
+  if (cancel && cancel->load()) {
+    *error = "accounting calculation cancelled";
+    return false;
+  }
+
+  const JobId_t previous_jobid = jobids[jobids.size() - 2];
+  StoredAccountingCtx previous{};
+  if (!LoadStoredAccounting(ua, previous_jobid, &previous)) {
+    *error = "failed to load previous job accounting";
+    return false;
+  }
+  const std::string expected_rule
+      = UnameLooksLikeWindows(job.Uname) ? "st_size" : "st_blocks*512";
+  if (!previous.found || previous.row.excluded
+      || previous.row.rule != expected_rule || previous.row.opaque_files > 0) {
+    return full_scan();
+  }
+
+  *row = previous.row;
+  row->JobId = jobid;
+  row->ClientName = job.ClientName;
+  row->FileSetName = job.FileSetName;
+  row->jobs_in_chain = jobids.size();
+
+  std::vector<JobId_t> previous_jobids(jobids.begin(), jobids.end() - 1);
+  DeltaScanCtx delta{};
+  delta.row = row;
+  delta.is_windows = UnameLooksLikeWindows(job.Uname);
+  if (!ScanChangedFiles(ua, jobid, previous_jobids, &delta)) {
+    *error = delta.error.empty() ? "failed to scan changed file attributes"
+                                 : delta.error;
+    return false;
+  }
+  if (delta.requires_full_scan || row->opaque_files > 0) { return full_scan(); }
+  row->rule = expected_rule;
   return true;
 }
 

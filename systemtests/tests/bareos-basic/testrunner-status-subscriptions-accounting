@@ -152,11 +152,26 @@ check_logical_size()
 refresh_accounting_snapshot()
 {
   cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $tmp/accounting-adminjob.out
-run job=SubscriptionAccounting yes
-wait
+@$out $tmp/accounting-refresh.out
+refresh subscriptions accounting
 END_OF_DATA
   run_bconsole
+
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/accounting-refresh-status.out
+status subscriptions accounting client=bareos-fd fileset=AcctTest
+END_OF_DATA
+    run_bconsole
+    if grep -q "Background refresh worker: idle." \
+      "$tmp/accounting-refresh-status.out"; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "timed out waiting for explicit subscription accounting refresh" >&2
+  cat "$tmp/accounting-refresh.out" >&2
+  return 1
 }
 
 wait_for_accounting_result()
@@ -179,13 +194,13 @@ END_OF_DATA
     sleep 1
   done
   echo "timed out waiting for subscription accounting snapshot containing ${expected}" >&2
-  if [[ -f "$tmp/accounting-adminjob.out" ]]; then
-    cat "$tmp/accounting-adminjob.out" >&2
+  if [[ -f "$tmp/accounting-refresh.out" ]]; then
+    cat "$tmp/accounting-refresh.out" >&2
   fi
   return 1
 }
 
-# Run the snapshot job, then write "status subscriptions accounting" as
+# Request a full refresh, then write "status subscriptions accounting" as
 # JSON to $tmp/status-subscriptions-<name>.json. With "all", the "all" and
 # "all legacy" reports are written as <name>-all and <name>-legacy.
 query_accounting()
@@ -349,7 +364,6 @@ record_file_stats "immediately before Full"
 run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Full"
-refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
   "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 verify_catalog full Full
@@ -393,7 +407,6 @@ record_file_stats "immediately before Incremental"
 run_bconsole
 check_for_zombie_jobs storage=File
 record_file_stats "immediately after Incremental"
-refresh_accounting_snapshot
 wait_for_accounting_result "$tmp/status-subscriptions-accounting-incremental.log" \
   "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*.*[[:space:]]2$"
 verify_catalog incremental Incremental

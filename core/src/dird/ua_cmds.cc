@@ -2509,7 +2509,9 @@ static bool DeleteVolume(UaContext* ua)
     }
   }
 
-  ua->db->DeleteMediaRecord(ua->jcr, &mr);
+  if (ua->db->DeleteMediaRecord(ua->jcr, &mr)) {
+    QueueMissingSubscriptionAccounting(ua);
+  }
   ua->send->ArrayStart("volumes");
   ua->send->ArrayItem(mr.VolumeName, T_("Volume %s deleted.\n"));
   ua->send->ArrayEnd("volumes");

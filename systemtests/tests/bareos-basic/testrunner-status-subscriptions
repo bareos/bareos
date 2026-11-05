@@ -119,6 +119,8 @@ INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, JobStatus, JobBytes, R
 (10033, 'grpc1',    'grpc1',    'B', 'F', 10005, 'T', 1000, 10^9, 10024),
 (10034, 'grpc2',    'grpc2',    'B', 'F', 10005, 'T', 1000, 10^9, 10025),
 (10035, 'noprefix', 'noprefix', 'B', 'F', 10005, 'T', 1000, 10^9, 10026);
+UPDATE Job SET AccountingValid=true, AccountingExcluded=false
+WHERE JobId >= 10000;
 CREATE TEMPORARY VIEW Job AS SELECT * FROM Job WHERE JobId >= 10000;
 
 @$out $tmp/status-subscriptions-default.txt
@@ -174,11 +176,17 @@ status subscriptions client=file-only
 
 sqlquery sharedsession
 SET TIME ZONE 'Etc/GMT+12';
-INSERT INTO SubscriptionAccounting
-  (ClientName, FileSetName, Excluded, Bytes)
-SELECT DISTINCT c.Name, f.FileSet, false, 5000000000000
-FROM Job j JOIN Client c USING (ClientId)
-JOIN FileSet f USING (FileSetId);
+UPDATE Job j SET AccountingValid=true, AccountingExcluded=false,
+    AccountingFiles=1, AccountingBytes=5000000000000,
+    AccountingLogicalBytes=5000000000000,
+    AccountingRule='st_blocks*512', AccountingJobsInChain=1
+FROM (
+  SELECT DISTINCT ON (j.ClientId, j.FileSetId) j.JobId
+  FROM Job j
+  WHERE j.JobId >= 10000
+  ORDER BY j.ClientId, j.FileSetId, j.JobTDate DESC, j.JobId DESC
+) latest
+WHERE j.JobId=latest.JobId;
 UPDATE SubscriptionAccountingSnapshot
 SET LastSuccess=CURRENT_TIMESTAMP, LastAttempt=CURRENT_TIMESTAMP,
     LastError=NULL WHERE SnapshotId=1;
@@ -205,10 +213,20 @@ status subscriptions all
 status subscriptions accounting legacy
 
 sqlquery sharedsession
-UPDATE SubscriptionAccounting SET Excluded=true
-WHERE ClientName='file-only' AND FileSetName='file2';
-DELETE FROM SubscriptionAccounting
-WHERE ClientName='file-only' AND FileSetName='file3';
+UPDATE Job SET AccountingExcluded=true
+WHERE JobId=(
+  SELECT j.JobId FROM Job j JOIN Client c USING (ClientId)
+  JOIN FileSet f USING (FileSetId)
+  WHERE c.Name='file-only' AND f.FileSet='file2'
+  ORDER BY j.JobTDate DESC, j.JobId DESC LIMIT 1
+);
+UPDATE Job SET AccountingExcluded=true
+WHERE JobId=(
+  SELECT j.JobId FROM Job j JOIN Client c USING (ClientId)
+  JOIN FileSet f USING (FileSetId)
+  WHERE c.Name='file-only' AND f.FileSet='file3'
+  ORDER BY j.JobTDate DESC, j.JobId DESC LIMIT 1
+);
 UPDATE SubscriptionAccountingSnapshot
 SET LastSuccess=CURRENT_TIMESTAMP - INTERVAL '25 hours',
     LastError='simulated refresh failure' WHERE SnapshotId=1;
@@ -225,8 +243,6 @@ status subscriptions accounting
 .api 0
 
 sqlquery sharedsession
-DELETE FROM SubscriptionAccounting WHERE ClientName IN
-  (SELECT Name FROM Client WHERE ClientId >= 10000);
 UPDATE SubscriptionAccountingSnapshot
 SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL
 WHERE SnapshotId=1;
