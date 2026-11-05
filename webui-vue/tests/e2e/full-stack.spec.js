@@ -20,6 +20,8 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { readFile, rm, mkdir } from 'node:fs/promises'
+import { basename, dirname, relative, sep, join } from 'node:path'
 
 const profile = process.env.BAREOS_WEBUI_PROFILE ?? 'admin'
 const username = process.env.BAREOS_WEBUI_USERNAME ?? 'admin'
@@ -135,6 +137,7 @@ async function selectFirstQOption(
   {
     optionTimeoutMs = 5000,
     selected,
+    hasText,
   } = {}
 ) {
   const field = page.locator(`[data-testid="${testId}"]`)
@@ -150,7 +153,11 @@ async function selectFirstQOption(
       if (!listboxId) {
         throw new Error(`Could not find the option list for ${testId}`)
       }
-      const option = page.locator(`[id="${listboxId}"]`).getByRole('option').first()
+      let options = page.locator(`[id="${listboxId}"]`).getByRole('option')
+      if (hasText) {
+        options = options.filter({ hasText })
+      }
+      const option = options.first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await option.click()
       if (selected) {
@@ -292,6 +299,71 @@ test('loads the restore workflow selections', async ({ page }) => {
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
   await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
   await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
+})
+
+test('restores a real file from a backup', async ({ page }) => {
+  test.skip(profile !== 'admin', 'Restore requires the admin profile')
+  test.setTimeout(180000)
+
+  const sourceFile = process.env.BAREOS_WEBUI_RESTORE_TEST_FILE
+  const destination = process.env.BAREOS_WEBUI_RESTORE_TEST_DESTINATION
+  if (!sourceFile || !destination) {
+    throw new Error(
+      'Restore test fixture is required: set '
+      + 'BAREOS_WEBUI_RESTORE_TEST_FILE and '
+      + 'BAREOS_WEBUI_RESTORE_TEST_DESTINATION'
+    )
+  }
+
+  const restoredFile = join(destination, relative('/', sourceFile))
+  const expectedContents = 'webui-vue real restore test\n'
+  await rm(destination, { recursive: true, force: true })
+  await mkdir(destination, { recursive: true })
+
+  await login(page)
+  await openNav(page, 'nav-restore', /#\/restore/)
+
+  await waitForQSelectReady(page, 'restore-source-client')
+  await selectFirstQOption(page, 'restore-source-client', {
+    hasText: /^bareos-fd$/,
+    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  })
+  await waitForQSelectReady(page, 'restore-backup-job')
+  await selectFirstQOption(page, 'restore-backup-job', {
+    hasText: /backup-bareos-fd(?!-)/,
+    optionTimeoutMs: 8000,
+  })
+
+  const browser = page.getByTestId('restore-browser')
+  await expect(browser).toBeVisible({ timeout: 30000 })
+  const rootDirectory = browser.getByText('/', { exact: true })
+  if (await rootDirectory.count()) {
+    await rootDirectory.click()
+  }
+  for (const directory of relative('/', dirname(sourceFile)).split(sep).filter(Boolean)) {
+    const directoryEntry = browser.getByText(`${directory}/`, { exact: true })
+    await expect(directoryEntry).toBeVisible()
+    await directoryEntry.click()
+  }
+
+  const fileName = basename(sourceFile)
+  const fileRow = browser.getByText(fileName, { exact: true })
+    .locator('xpath=ancestor::tr')
+  await expect(fileRow).toBeVisible()
+  await fileRow.locator('.q-checkbox').click()
+
+  await page.getByRole('textbox', { name: 'Restore to (Where)' }).fill(destination)
+  await page.getByTestId('restore-submit').click()
+  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click()
+  await expect(page).toHaveURL(/#\/jobs/)
+
+  await expect.poll(async () => {
+    try {
+      return await readFile(restoredFile, 'utf8')
+    } catch {
+      return null
+    }
+  }, { timeout: 120000 }).toBe(expectedContents)
 })
 
 test('navigates through client, pool, and volume detail pages', async ({

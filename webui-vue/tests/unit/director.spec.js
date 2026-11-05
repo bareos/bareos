@@ -521,6 +521,100 @@ describe('director store', () => {
     expect(chunks).toEqual(['part one\n', 'part two\n'])
   })
 
+  it('runs raw command sequences on one websocket session', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+    const chunks = []
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    const rawPromise = director.rawCallSequence(
+      ['.bvfs_restore jobid=1 fileid=42 path="b2000123"', 'restore file=?b2000123 yes'],
+      { onChunk: chunk => chunks.push(chunk) }
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        director: 'bareos-dir',
+      }),
+    })
+
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: '.bvfs_restore jobid=1 fileid=42 path="b2000123"',
+      stream: true,
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'OK\n',
+        prompt: 'main',
+      }),
+    })
+
+    expect(socket.readyState).toBe(FakeWebSocket.OPEN)
+    expect(JSON.parse(socket.sent[2])).toEqual({
+      type: 'command',
+      id: '2',
+      command: 'restore file=?b2000123 yes',
+      stream: true,
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '2',
+        text: 'Job queued. JobId=7\n',
+        prompt: 'main',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('OK\nJob queued. JobId=7\n')
+    expect(chunks).toEqual(['OK\n', 'Job queued. JobId=7\n'])
+    expect(socket.readyState).toBe(FakeWebSocket.CLOSED)
+  })
+
+  it('gives each raw command sequence step its own timeout', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+
+    auth.login('admin', 'bareos-dir', 'secret')
+
+    const rawPromise = director.rawCallSequence(['first', 'second'])
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    await vi.advanceTimersByTimeAsync(240_000)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'first complete\n',
+        prompt: 'main',
+      }),
+    })
+
+    await vi.advanceTimersByTimeAsync(60_000)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '2',
+        text: 'second complete\n',
+        prompt: 'main',
+      }),
+    })
+
+    await expect(rawPromise).resolves.toBe('first complete\nsecond complete\n')
+  })
+
   it('reports tracked raw command lifecycle states including waiting prompts', async () => {
     const auth = useAuthStore()
     const director = useDirectorStore()

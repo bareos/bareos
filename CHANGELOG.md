@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - webui test: fix restore selection in release build, update php in windows installer [PR #2890]
 
+### Fixed
+- fix bvfs restore with real tmp tables [PR #2895]
+
 ## [25.1.2] - 2026-10-26
 
 ### Breaking changes
@@ -2408,4 +2411,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2882]: https://github.com/bareos/bareos/pull/2882
 [PR #2883]: https://github.com/bareos/bareos/pull/2883
 [PR #2890]: https://github.com/bareos/bareos/pull/2890
+[PR #2895]: https://github.com/bareos/bareos/pull/2895
 [unreleased]: https://github.com/bareos/bareos/tree/master

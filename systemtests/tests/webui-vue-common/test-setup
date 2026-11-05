@@ -129,6 +129,11 @@ ${BAREOS_SCRIPTS_DIR}/setup
 
 setup_data
 
+restore_test_directory="${BackupDirectory}/restore-test-files"
+mkdir -p "${restore_test_directory}"
+printf '%s\n' 'webui-vue real restore test' \
+  >"${restore_test_directory}/000-webui-vue-restore-test.txt"
+
 bin/bareos start
 bin/bareos status
 print_debug "$(bin/bconsole <<<"status dir")"
