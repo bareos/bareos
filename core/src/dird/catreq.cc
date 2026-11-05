@@ -48,9 +48,7 @@
 
 namespace directordaemon {
 
-inline constexpr const char Find_media[]
-    = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
-      "unwanted_volumes=%s\n";
+static constexpr std::size_t MAX_UNWANTED_VOLUMES_SIZE = 16384;
 inline constexpr const char Get_Vol_Info[]
     = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
 inline constexpr const char Update_media[]
@@ -120,7 +118,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   JobMediaDbRecord jm;
   char Job[MAX_NAME_LENGTH];
   char pool_name[MAX_NAME_LENGTH];
-  PoolMem unwanted_volumes(PM_MESSAGE);
+  std::string unwanted_volumes;
   int index, ok, label, writing;
   POOLMEM* omsg;
   uint32_t Stripe, Copy;
@@ -146,10 +144,31 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   uint64_t update_jobbytes = 0;
 
   // Find next appendable medium for SD
-  unwanted_volumes.check_size(bs->message_length);
-  if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
-             unwanted_volumes.c_str())
+
+  {
+    std::size_t size = bs->message_length;
+    if (size > MAX_UNWANTED_VOLUMES_SIZE) { size = MAX_UNWANTED_VOLUMES_SIZE; }
+    unwanted_volumes.resize(size);
+  }
+
+  std::ostringstream find_media_query;
+  find_media_query
+      << "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
+         "unwanted_volumes=%"
+      << unwanted_volumes.size() << "s\n";
+
+  if (sscanf(bs->msg, find_media_query.str().c_str(), &Job, &index, &pool_name,
+             &mr.MediaType, unwanted_volumes.data())
       == 5) {
+    unwanted_volumes.resize(strlen(unwanted_volumes.c_str()));
+    if (unwanted_volumes.size() >= MAX_UNWANTED_VOLUMES_SIZE - 1) {
+      // something weird is going on, just reject the request
+      bs->fsend(T_("1901 No Media.\n"));
+      Dmsg0(500,
+            "Rejected Find-Media request as too many unwanted volumes were "
+            "specified\n");
+      return;
+    }
     PoolDbRecord pr;
     bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
     UnbashSpaces(pr.Name);
