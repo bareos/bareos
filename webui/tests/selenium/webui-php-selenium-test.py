@@ -433,7 +433,8 @@ class SeleniumTest(unittest.TestCase):
             ).send_keys(Keys.ARROW_RIGHT)
         self.wait_for_element(
             By.XPATH,
-            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
+            '//div[@id="filebrowser"]//a[text() = "%s" or text() = "%s/"]'
+            % (pathlist[-1], pathlist[-1]),
         ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
@@ -822,7 +823,7 @@ class SeleniumTest(unittest.TestCase):
         confirmation = form.get_attribute("data-confirmation")
         button.click()
         if confirmation:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             self.assertEqual(confirmation, alert.text)
             alert.accept()
 
@@ -859,7 +860,7 @@ class SeleniumTest(unittest.TestCase):
     def close_alert_and_get_its_text(self, accept=True):
         logger = logging.getLogger()
         try:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             alert_text = alert.text
         except NoAlertPresentException:
             return None

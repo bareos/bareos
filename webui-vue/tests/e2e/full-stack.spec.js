@@ -526,13 +526,14 @@ test('restores a real file from a backup', async ({ page }) => {
   await expect(page.getByTestId('restore-browser')).toBeVisible()
 
   const browser = page.getByTestId('restore-browser')
-  const rootDirectory = browser.getByText('/', { exact: true })
-  if (await rootDirectory.count()) {
-    await rootDirectory.click()
-  }
+  const rootDirectory = browser.locator('tbody').getByText('/', { exact: true })
+  await expect(rootDirectory).toBeVisible()
+  await expect(browser.locator('.q-inner-loading')).toBeHidden()
+  await rootDirectory.click()
   for (const directory of relative('/', dirname(sourceFile)).split(sep).filter(Boolean)) {
-    const directoryEntry = browser.getByText(`${directory}/`, { exact: true })
+    const directoryEntry = browser.locator('tbody').getByText(`${directory}/`, { exact: true })
     await expect(directoryEntry).toBeVisible()
+    await expect(browser.locator('.q-inner-loading')).toBeHidden()
     await directoryEntry.click()
   }
 

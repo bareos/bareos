@@ -47,6 +47,9 @@ sqlquery sharedsession
 DELETE FROM Job WHERE JobId >= 10000;
 DELETE FROM Client WHERE ClientId >= 10000;
 DELETE FROM Fileset WHERE FileSetId >= 10000;
+UPDATE SubscriptionAccountingSnapshot
+SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL
+WHERE SnapshotId=1;
 INSERT INTO Client (ClientId, Name, UName) VALUES
 (10000, 'file-only', 'synthetic test client'),
 (10001, 'two-barri-jobs', 'synthetic test client'),
