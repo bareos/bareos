@@ -47,6 +47,7 @@
 #include "stored/autochanger.h"
 #include "stored/bsr.h"
 #include "stored/btape_device_control_record.h"
+#include "stored/btape_fill.h"
 #include "stored/butil.h"
 #include "stored/device.h"
 #include "stored/stored_jcr_impl.h"
@@ -471,7 +472,7 @@ static void FillBuffer(fill_mode_t mode, char* t_buf, uint32_t len)
       break;
 
     case FILL_ZERO:
-      memset(t_buf, 0xFF, len);
+      FillZeroBuffer(t_buf, len);
       break;
 
     default:

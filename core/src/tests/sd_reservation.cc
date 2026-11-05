@@ -43,6 +43,7 @@
 #include "stored/wait.h"
 #include "stored/sd_backends.h"
 #include "stored/autochanger.h"
+#include "stored/btape_fill.h"
 
 #include "bsock_mock.h"
 
@@ -50,6 +51,18 @@ using ::testing::Assign;
 using ::testing::DoAll;
 using ::testing::Return;
 using namespace storagedaemon;
+
+TEST(StorageTools, zero_fill)
+{
+  for (uint32_t length : {0, 1, 2, 3, 4, 7, 17, 64512}) {
+    std::vector<char> buffer(length + 2, '\x5a');
+    FillZeroBuffer(buffer.data() + 1, length);
+    EXPECT_EQ(buffer.front(), '\x5a');
+    EXPECT_EQ(buffer.back(), '\x5a');
+    EXPECT_TRUE(std::all_of(buffer.begin() + 1, buffer.end() - 1,
+                            [](char byte) { return byte == 0; }));
+  }
+}
 
 namespace storagedaemon {
 /* import this to parse the config */
