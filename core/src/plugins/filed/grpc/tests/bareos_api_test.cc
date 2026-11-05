@@ -63,4 +63,50 @@ TEST_F(BareosApiTest, AcceptFileWithoutCoreFails)
   EXPECT_EQ(static_cast<int>(AcceptFile(nullptr, "/missing", {})),
             static_cast<int>(bRC_Error));
 }
+
+TEST_F(BareosApiTest, ClearSeenPreservesCallbackResultsAndArguments)
+{
+  struct State {
+    bRC result{};
+    bool all{};
+    int calls{};
+  } state;
+  PluginContext ctx{};
+  ctx.plugin_private_context = &state;
+  filedaemon::CoreFunctions callbacks{};
+  callbacks.size = sizeof(callbacks);
+  callbacks.version = FD_PLUGIN_INTERFACE_VERSION;
+  callbacks.ClearSeenBitmap
+      = [](PluginContext* context, bool all, char* filename) {
+          auto& actual = *static_cast<State*>(context->plugin_private_context);
+          EXPECT_EQ(all, actual.all);
+          if (all) {
+            EXPECT_EQ(filename, nullptr);
+          } else {
+            EXPECT_STREQ(filename, "/candidate");
+          }
+          ++actual.calls;
+          return actual.result;
+        };
+  SetupBareosApi(&callbacks);
+  for (bool all : {false, true}) {
+    state.all = all;
+    for (bRC result :
+         {bRC_OK, bRC_Skip, bRC_Error, bRC_Seen, bRC_Stop, bRC_More, bRC_Term,
+          bRC_Cancel, bRC_Core, PYTHON_UNDEFINED_RETURN_VALUE, bRC_Max}) {
+      state.result = result;
+      state.calls = 0;
+      EXPECT_EQ(ClearSeenBitmap(&ctx, all, all ? nullptr : "/candidate"),
+                result);
+      EXPECT_EQ(state.calls, 1);
+    }
+  }
+}
+
+TEST_F(BareosApiTest, ClearSeenWithoutCoreFails)
+{
+  fd.core = nullptr;
+  EXPECT_EQ(ClearSeenBitmap(nullptr, true, nullptr), bRC_Error);
+  EXPECT_EQ(ClearSeenBitmap(nullptr, false, "/candidate"), bRC_Error);
+}
 }  // namespace

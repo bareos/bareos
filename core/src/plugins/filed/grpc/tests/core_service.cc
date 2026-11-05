@@ -34,14 +34,28 @@ class GrpcServiceTest : public ::testing::Test {
  protected:
   void SetUp() override
   {
-    callbacks.AcceptFile
-        = [](PluginContext* context, filedaemon::save_pkt* pkt) {
-            EXPECT_STREQ(pkt->fname, "/candidate");
-            EXPECT_EQ(pkt->statp.st_size, 4321);
-            return *static_cast<bRC*>(context->plugin_private_context);
-          };
+    callbacks.AcceptFile = [](PluginContext* context,
+                              filedaemon::save_pkt* pkt) {
+      EXPECT_STREQ(pkt->fname, "/candidate");
+      EXPECT_EQ(pkt->statp.st_size, 4321);
+      return static_cast<GrpcServiceTest*>(context->plugin_private_context)
+          ->result;
+    };
+    callbacks.ClearSeenBitmap = [](PluginContext* context, bool all,
+                                   char* filename) {
+      auto& fixture
+          = *static_cast<GrpcServiceTest*>(context->plugin_private_context);
+      EXPECT_EQ(all, fixture.clear_all);
+      if (all) {
+        EXPECT_EQ(filename, nullptr);
+      } else {
+        EXPECT_STREQ(filename, "/candidate");
+      }
+      ++fixture.clear_calls;
+      return fixture.result;
+    };
     SetupBareosApi(&callbacks);
-    ctx.plugin_private_context = &result;
+    ctx.plugin_private_context = this;
     grpc::ServerBuilder builder;
     builder.RegisterService(&service);
     server = builder.BuildAndStart();
@@ -56,6 +70,8 @@ class GrpcServiceTest : public ::testing::Test {
   }
 
   bRC result{bRC_OK};
+  bool clear_all{};
+  int clear_calls{};
   PluginContext ctx{};
   filedaemon::CoreFunctions callbacks{};
   BareosCore service{&ctx};
@@ -101,5 +117,31 @@ TEST_F(GrpcServiceTest, AcceptFileRejectsMalformedStats)
   EXPECT_EQ(
       client->Bareos_AcceptFile(&context, request, &response).error_code(),
       grpc::StatusCode::INVALID_ARGUMENT);
+}
+
+TEST_F(GrpcServiceTest, ClearSeenSuccessAndFailure)
+{
+  for (bool all : {false, true}) {
+    clear_all = all;
+    bc::ClearSeenRequest request;
+    if (!all) { request.set_file("/candidate"); }
+    for (bRC value : {bRC_OK, bRC_Error}) {
+      result = value;
+      clear_calls = 0;
+      grpc::ClientContext context;
+      bc::ClearSeenResponse response;
+      auto status = client->Bareos_ClearSeen(&context, request, &response);
+      EXPECT_EQ(status.error_code(), value == bRC_OK
+                                         ? grpc::StatusCode::OK
+                                         : grpc::StatusCode::INTERNAL);
+      EXPECT_EQ(clear_calls, 1);
+    }
+  }
+  SetupBareosApi(nullptr);
+  bc::ClearSeenRequest request;
+  bc::ClearSeenResponse response;
+  grpc::ClientContext context;
+  EXPECT_EQ(client->Bareos_ClearSeen(&context, request, &response).error_code(),
+            grpc::StatusCode::INTERNAL);
 }
 }  // namespace

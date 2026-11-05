@@ -42,6 +42,17 @@ class TestCore : public bc::Core::Service {
   }
   bool skip{};
   bool fail{};
+  bool clear_all{};
+
+  grpc::Status Bareos_ClearSeen(grpc::ServerContext*,
+                                const bc::ClearSeenRequest* request,
+                                bc::ClearSeenResponse*) override
+  {
+    EXPECT_EQ(request->has_file(), !clear_all);
+    if (!clear_all) { EXPECT_EQ(request->file(), "/candidate"); }
+    return fail ? grpc::Status(grpc::StatusCode::INTERNAL, "callback failed")
+                : grpc::Status::OK;
+  }
 };
 
 class GrpcCoreTest : public ::testing::Test {
@@ -79,5 +90,19 @@ TEST_F(GrpcCoreTest, AcceptFileRoundTrip)
   }
   service.fail = true;
   EXPECT_EQ(filedaemon::Wrapper_AcceptFile(nullptr, &pkt), bRC_Error);
+}
+
+TEST_F(GrpcCoreTest, ClearSeenRoundTrip)
+{
+  for (bool all : {false, true}) {
+    service.clear_all = all;
+    for (bool fail : {false, true}) {
+      service.fail = fail;
+      EXPECT_EQ(
+          filedaemon::Wrapper_ClearSeenBitmap(
+              nullptr, all, all ? nullptr : const_cast<char*>("/candidate")),
+          fail ? bRC_Error : bRC_OK);
+    }
+  }
 }
 }  // namespace

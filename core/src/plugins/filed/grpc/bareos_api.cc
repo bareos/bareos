@@ -131,6 +131,8 @@ bRC SetSeenBitmap(PluginContext* ctx, bool all, const char* fname)
 }
 bRC ClearSeenBitmap(PluginContext* ctx, bool all, const char* fname)
 {
-  if (fd.core) { fd.core->ClearSeenBitmap(ctx, all, const_cast<char*>(fname)); }
+  if (fd.core) {
+    return fd.core->ClearSeenBitmap(ctx, all, const_cast<char*>(fname));
+  }
   return bRC_Error;
 }
