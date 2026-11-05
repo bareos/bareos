@@ -25,6 +25,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -178,7 +179,7 @@ void RunProxyServer(const ProxyConfig& cfg)
   for (const auto& fd : listen_fds) { pfds.push_back({fd.get(), POLLIN, 0}); }
 
   // Track unauthenticated connections to enforce DoS limit
-  std::atomic<int> unauthenticated_connection_count(0);
+  auto unauthenticated_connection_count = std::make_shared<std::atomic<int>>(0);
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
@@ -231,7 +232,7 @@ void RunProxyServer(const ProxyConfig& cfg)
       std::string peer = std::string(host_buf) + ":" + port_buf;
 
       // Check unauthenticated connection limit for DoS protection
-      if (unauthenticated_connection_count.load()
+      if (unauthenticated_connection_count->load()
           >= cfg.max_unauthenticated_connections) {
         PROXY_LOG_DEBUG(peer, "rejecting connection (unauthenticated limit %d)",
                         cfg.max_unauthenticated_connections);
@@ -241,23 +242,20 @@ void RunProxyServer(const ProxyConfig& cfg)
       }
 
       try {
-        // Increment counter; it will be decremented when thread exits
-        unauthenticated_connection_count.fetch_add(1);
+        UnauthenticatedConnectionSlot admission(
+            unauthenticated_connection_count);
         std::thread([client_fd, peer, cfg,
-                     &unauthenticated_connection_count]() {
+                     admission = std::move(admission)]() mutable {
           try {
-            RunProxySession(client_fd, peer, cfg);
+            RunProxySession(client_fd, peer, cfg, std::move(admission));
           } catch (const std::exception& ex) {
             PROXY_LOG_ERROR(peer, "session aborted: %s", ex.what());
           } catch (...) {
             PROXY_LOG_ERROR(peer, "session aborted (unknown exception)");
           }
-          // Decrement when session ends (whether auth succeeded or not)
-          unauthenticated_connection_count.fetch_sub(1);
         }).detach();
       } catch (const std::system_error& ex) {
         PROXY_LOG_ERROR(peer, "failed to start session thread: %s", ex.what());
-        unauthenticated_connection_count.fetch_sub(1);
         ::close(client_fd);
         continue;
       }

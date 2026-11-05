@@ -781,7 +781,33 @@ std::string NormalizeJsonText(std::string_view text)
 // Session implementation
 // ---------------------------------------------------------------------------
 
-void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
+UnauthenticatedConnectionSlot::UnauthenticatedConnectionSlot(
+    std::shared_ptr<std::atomic<int>> count)
+    : count_(std::move(count))
+{
+  count_->fetch_add(1);
+}
+
+UnauthenticatedConnectionSlot::UnauthenticatedConnectionSlot(
+    UnauthenticatedConnectionSlot&& other) noexcept
+    : count_(std::move(other.count_))
+{
+}
+
+UnauthenticatedConnectionSlot::~UnauthenticatedConnectionSlot() { Release(); }
+
+void UnauthenticatedConnectionSlot::Release()
+{
+  if (count_) {
+    count_->fetch_sub(1);
+    count_.reset();
+  }
+}
+
+void RunProxySession(int fd,
+                     const std::string& peer,
+                     const ProxyConfig& config,
+                     UnauthenticatedConnectionSlot admission)
 {
   // RAII socket close
   struct FdGuard {
@@ -930,6 +956,7 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
   // ── Step 2: connect and authenticate to director ─────────────────────────
   try {
     DirectorConnection director = DirectorConnection::Connect(cfg);
+    admission.Release();
 
     const char* director_transport
         = director.UsesTlsPsk() ? "TLS-PSK" : "cleartext";

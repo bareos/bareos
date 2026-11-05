@@ -384,13 +384,15 @@ std::string BuildWsHandshakeRequest(std::string_view cookie_header = {})
 
 std::string ExchangeWsSession(const ProxyConfig& config,
                               std::string_view cookie_header,
-                              std::string_view session_message)
+                              std::string_view session_message,
+                              UnauthenticatedConnectionSlot admission = {})
 {
   SocketPair sockets;
   const int server_fd = sockets.ReleaseLocal();
-  std::thread session([server_fd, &config]() {
-    RunProxySession(server_fd, "test-peer", config);
-  });
+  std::thread session(
+      [server_fd, &config, admission = std::move(admission)]() mutable {
+        RunProxySession(server_fd, "test-peer", config, std::move(admission));
+      });
 
   const auto request = BuildWsHandshakeRequest(cookie_header);
   WriteAll(sockets.peer(), request.data(), request.size());
@@ -601,6 +603,133 @@ TEST(ProxySession, ConnectsWsWithSessionCookie)
   EXPECT_EQ(GetJsonStringField(response, "type"), "auth_ok");
   EXPECT_EQ(GetJsonStringField(response, "director"), "bareos-dir");
   ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
+TEST(ProxySession, ReleasesAdmissionWhileAuthenticatedConnectionRemainsOpen)
+{
+  const auto listener = CreateMockDirectorListener();
+  ProxyConfig config;
+  config.configured_directors.emplace(
+      "bareos-dir",
+      DirectorTargetConfig{.address = "127.0.0.1",
+                           .port = static_cast<int>(listener.port),
+                           .name = "bareos-dir",
+                           .tls_psk_disable = true});
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "bareos-dir", "admin", "secret"));
+  auto count = std::make_shared<std::atomic<int>>(0);
+  UnauthenticatedConnectionSlot admission(count);
+  EXPECT_EQ(count->load(), 1);
+  auto director = StartMockDirectorSession(listener, "secret");
+  SocketPair sockets;
+  const int server_fd = sockets.ReleaseLocal();
+  std::thread session(
+      [server_fd, &config, admission = std::move(admission)]() mutable {
+        RunProxySession(server_fd, "test-peer", config, std::move(admission));
+      });
+  const auto request = BuildWsHandshakeRequest(
+      std::string("bareos_proxy_session=") + session_id);
+  WriteAll(sockets.peer(), request.data(), request.size());
+  const auto handshake = ReadUntilMarker(sockets.peer(), "\r\n\r\n");
+  EXPECT_NE(handshake.find("101 Switching Protocols"), std::string::npos);
+  EXPECT_EQ(count->load(), 1);
+  const auto frame = BuildMaskedFrame(
+      0x1u, R"({"type":"session","director":"bareos-dir","mode":"json"})");
+  WriteAll(sockets.peer(), frame.data(), frame.size());
+  EXPECT_EQ(GetJsonStringField(ReadServerTextFrame(sockets.peer()), "type"),
+            "auth_ok");
+  EXPECT_EQ(count->load(), 0);
+  ::close(sockets.ReleasePeer());
+  session.join();
+  director.join();
+  EXPECT_EQ(count->load(), 0);
+  ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
+TEST(ProxySession, ReleasesAdmissionOnInvalidSessionAndDisconnect)
+{
+  ProxyConfig config;
+  auto count = std::make_shared<std::atomic<int>>(0);
+  SocketPair sockets;
+  const int server_fd = sockets.ReleaseLocal();
+  std::thread session([server_fd, &config, count]() {
+    RunProxySession(server_fd, "test-peer", config,
+                    UnauthenticatedConnectionSlot(count));
+  });
+  const auto request = BuildWsHandshakeRequest();
+  WriteAll(sockets.peer(), request.data(), request.size());
+  EXPECT_NE(ReadUntilClosed(sockets.peer()).find("401 Unauthorized"),
+            std::string::npos);
+  session.join();
+  EXPECT_EQ(count->load(), 0);
+}
+
+TEST(ProxySession, AdmissionMovesAndReleasesExactlyOnce)
+{
+  auto count = std::make_shared<std::atomic<int>>(0);
+  {
+    UnauthenticatedConnectionSlot first(count);
+    UnauthenticatedConnectionSlot second(std::move(first));
+    EXPECT_EQ(count->load(), 1);
+    first.Release();
+    EXPECT_EQ(count->load(), 1);
+    second.Release();
+    second.Release();
+    EXPECT_EQ(count->load(), 0);
+  }
+  EXPECT_EQ(count->load(), 0);
+}
+
+TEST(ProxySession, ReleasesAdmissionAfterDirectorConnectionFails)
+{
+  auto listener = CreateMockDirectorListener();
+  const auto port = listener.port;
+  ::close(listener.fd);
+  listener.fd = -1;
+  ProxyConfig config;
+  config.configured_directors.emplace(
+      "bareos-dir", DirectorTargetConfig{.address = "127.0.0.1",
+                                         .port = static_cast<int>(port),
+                                         .name = "bareos-dir",
+                                         .tls_psk_disable = true});
+  const auto session_id
+      = ProxyAuthSessionStore::CreateSession("admin", "secret", "bareos-dir");
+  ASSERT_TRUE(ProxyAuthSessionStore::StoreDirectorCredentials(
+      session_id, "bareos-dir", "admin", "secret"));
+  auto count = std::make_shared<std::atomic<int>>(0);
+  const auto response = ExchangeWsSession(
+      config, std::string("bareos_proxy_session=") + session_id,
+      R"({"type":"session","director":"bareos-dir","mode":"json"})",
+      UnauthenticatedConnectionSlot(count));
+  EXPECT_EQ(GetJsonStringField(response, "type"), "auth_error");
+  EXPECT_EQ(count->load(), 0);
+  ProxyAuthSessionStore::RemoveSession(session_id);
+}
+
+TEST(ProxySession, AdmissionOutlivesAcceptLoopAndUnwindsOnLaunchFailure)
+{
+  auto count = std::make_shared<std::atomic<int>>(0);
+  std::weak_ptr<std::atomic<int>> weak_count = count;
+  {
+    UnauthenticatedConnectionSlot admission(count);
+    count.reset();
+    EXPECT_FALSE(weak_count.expired());
+  }
+  EXPECT_TRUE(weak_count.expired());
+
+  count = std::make_shared<std::atomic<int>>(0);
+  EXPECT_THROW(
+      {
+        UnauthenticatedConnectionSlot admission(count);
+        auto worker = [admission = std::move(admission)]() {};
+        (void)worker;
+        throw std::system_error(
+            std::make_error_code(std::errc::resource_unavailable_try_again));
+      },
+      std::system_error);
+  EXPECT_EQ(count->load(), 0);
 }
 
 TEST(ProxySession, RejectsUnsupportedWsMode)

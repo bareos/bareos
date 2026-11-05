@@ -30,8 +30,27 @@
 
 #include "proxy_config.h"
 
+#include <atomic>
+#include <memory>
 #include <string>
 #include <string_view>
+
+class UnauthenticatedConnectionSlot {
+ public:
+  UnauthenticatedConnectionSlot() = default;
+  explicit UnauthenticatedConnectionSlot(
+      std::shared_ptr<std::atomic<int>> count);
+  UnauthenticatedConnectionSlot(UnauthenticatedConnectionSlot&& other) noexcept;
+  UnauthenticatedConnectionSlot(const UnauthenticatedConnectionSlot&) = delete;
+  UnauthenticatedConnectionSlot& operator=(const UnauthenticatedConnectionSlot&)
+      = delete;
+  ~UnauthenticatedConnectionSlot();
+
+  void Release();
+
+ private:
+  std::shared_ptr<std::atomic<int>> count_;
+};
 
 /**
  * Handle one browser WebSocket connection until it closes.
@@ -40,7 +59,8 @@
  */
 void RunProxySession(int fd,
                      const std::string& peer,
-                     const ProxyConfig& config);
+                     const ProxyConfig& config,
+                     UnauthenticatedConnectionSlot admission = {});
 
 /**
  * Normalize a raw console command while preserving a trailing tab completion
