@@ -1914,41 +1914,22 @@ status subscriptions
    :bcommand:`status subscriptions accounting`). The existing report above
    reuses these snapshot sizes where available, but retains its plugin
    grouping and count-based unit rules. The accounting mode displays the
-   latest successfully calculated snapshot for every Client/FileSet
-   combination. The snapshot is refreshed by a background worker when
-   requested. Running either status command does not start a calculation.
+   latest successfully calculated result for every Client/FileSet
+   combination. A completed backup updates its cumulative chain result in
+   the background. On startup, or when a status command finds a missing
+   result, the worker queues a backfill or repair; the command returns
+   immediately and reports pending work while retaining any previous valid
+   result. These calculations do not affect the backup job's final status.
 
-   The standard Director configuration shipped with Bareos already includes
-   the ``SubscriptionAccounting`` Admin Job and its daily Schedule. The
-   default Schedule runs every day at 14:00 local time:
-
-   .. code-block:: bareosconfig
-
-      Schedule {
-        Name = "SubscriptionAccounting"
-        Run = sun-sat at 14:00
-      }
-
-      Job {
-        Name = "SubscriptionAccounting"
-        JobDefs = "DefaultJob"
-        Type = Admin
-        Schedule = "SubscriptionAccounting"
-        RunScript {
-          RunsWhen = Before
-          Console = "refresh subscriptions accounting"
-        }
-      }
-
-   The packaged Job inherits Client, FileSet, and other required settings
-   from ``DefaultJob``. Change the shipped Schedule resource if another
-   daily time or calendar is preferred. Bareos's ordinary scheduler runs the
-   Admin Job and records it in job history; starting or reloading the
-   Director does not trigger a calculation. The
-   :bcommand:`refresh subscriptions accounting` command can also request an
-   additional refresh directly. It queues the calculation in the background
-   and returns immediately; repeated requests while a refresh is running or
-   already queued are coalesced.
+   Bareos does not run a daily full-chain accounting scan by default. Use
+   :bcommand:`refresh subscriptions accounting` to request an explicit
+   full recalculation of all Client/FileSet combinations, for example after
+   a catalog repair or when reconciling the incremental results. The command
+   queues the calculation in the background and returns immediately;
+   repeated requests while a full refresh is running or queued are coalesced.
+   If an installation was upgraded from a version that provided a scheduled
+   ``SubscriptionAccounting`` Admin Job, remove that Job and Schedule from
+   the Director configuration to disable the former daily full refresh.
 
    The accounting status report shows whether the worker is idle, queued,
    running, or unavailable. Structured output includes the worker state in

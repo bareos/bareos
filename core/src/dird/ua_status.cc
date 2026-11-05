@@ -695,6 +695,8 @@ static bool DoSubscriptionStatus(UaContext* ua)
   PoolMem with_clause(PM_MESSAGE);
   ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_with_clause_1>(
       with_clause, kw_legacy ? "false" : "true");
+  const size_t pending_accounting_jobs
+      = kw_legacy ? 0 : QueueMissingSubscriptionAccounting(ua, client);
   if (!GetSubscriptionReportCoverage(ua, client, with_clause.c_str(),
                                      &coverage)) {
     return false;
@@ -721,8 +723,15 @@ static bool DoSubscriptionStatus(UaContext* ua)
   ua->send->ObjectKeyValueBool("multiple_catalogs", multiple_catalogs);
   ua->send->ObjectKeyValue("estimated_combinations", coverage.estimated);
   ua->send->ObjectKeyValue("combinations", coverage.combinations);
+  ua->send->ObjectKeyValue("pending_accounting_jobs",
+                           static_cast<uint64_t>(pending_accounting_jobs));
   ua->send->ObjectEnd();
 
+  if (pending_accounting_jobs > 0) {
+    ua->WarningMsg(T_("Accounting for %zu latest job(s) is pending; "
+                      "previous valid results are shown until it completes.\n"),
+                   pending_accounting_jobs);
+  }
   if (multiple_catalogs) {
     ua->WarningMsg(
         T_("Subscription accounting does not support multiple catalogs; "

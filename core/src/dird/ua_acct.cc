@@ -21,7 +21,7 @@
 /**
  * @file
  * 'status subscriptions accounting [client=<name>] [fileset=<name>]' and the
- * background thread refreshing the snapshot it displays (see
+ * background worker maintaining the per-job results it displays (see
  * ua_acct_calc.cc and ua_acct_snapshot.cc).
  */
 
@@ -46,6 +46,7 @@
 #include <atomic>
 #include <limits>
 #include <pthread.h>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -63,6 +64,20 @@ static bool accounting_thread_initialized{false};
 static bool accounting_worker_available{false};
 static bool accounting_refresh_requested{false};
 static bool accounting_refresh_running{false};
+static bool accounting_job_running{false};
+static JobId_t accounting_current_jobid{0};
+static std::set<JobId_t> accounting_jobs;
+
+struct MissingAccountingJobsCtx {
+  std::vector<JobId_t> jobids;
+};
+
+int MissingAccountingJobHandler(void* ctx, int, char** row)
+{
+  auto* jobs = static_cast<MissingAccountingJobsCtx*>(ctx);
+  jobs->jobids.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
+  return 0;
+}
 
 void RefreshSubscriptionAccounting(UaContext* ua)
 {
@@ -92,6 +107,33 @@ void RefreshSubscriptionAccounting(UaContext* ua)
        T_("Subscription accounting snapshot refreshed with %zu "
           "Client/FileSet combination(s).\n"),
        rows.size());
+}
+
+void RefreshSubscriptionAccountingJob(UaContext* ua, JobId_t jobid)
+{
+  AccountingRow row;
+  std::string error;
+  if (!CalculateSubscriptionAccountingForJob(ua, jobid, &row, &error,
+                                             &accounting_quit)) {
+    if (accounting_quit.load()) { return; }
+    if (!RecordSubscriptionAccountingFailure(ua, error)) {
+      Jmsg(ua->jcr, M_ERROR, 0,
+           T_("Could not record subscription accounting job failure: %s\n"),
+           ua->db->strerror());
+    }
+    Jmsg(ua->jcr, M_ERROR, 0,
+         T_("Subscription accounting for JobId %u failed: %s\n"), jobid,
+         error.c_str());
+    return;
+  }
+  if (accounting_quit.load() || row.JobId == 0) { return; }
+  if (!SaveSubscriptionAccountingSnapshot(ua, {row})) {
+    std::string save_error = ua->db->strerror();
+    RecordSubscriptionAccountingFailure(ua, save_error);
+    Jmsg(ua->jcr, M_ERROR, 0,
+         T_("Could not save subscription accounting for JobId %u: %s\n"), jobid,
+         save_error.c_str());
+  }
 }
 
 void* SubscriptionAccountingThread(void*)
@@ -133,16 +175,25 @@ void* SubscriptionAccountingThread(void*)
     pthread_mutex_lock(&accounting_mutex);
     accounting_worker_available = true;
     pthread_mutex_unlock(&accounting_mutex);
+    QueueMissingSubscriptionAccounting(&ua);
     while (!accounting_quit.load()) {
       pthread_mutex_lock(&accounting_mutex);
-      while (!accounting_quit.load() && !accounting_refresh_requested) {
+      while (!accounting_quit.load() && !accounting_refresh_requested
+             && accounting_jobs.empty()) {
         pthread_cond_wait(&accounting_cond, &accounting_mutex);
       }
       const bool refresh_due
           = !accounting_quit.load() && accounting_refresh_requested;
+      JobId_t jobid = 0;
       if (refresh_due) {
         accounting_refresh_requested = false;
         accounting_refresh_running = true;
+      } else if (!accounting_quit.load() && !accounting_jobs.empty()) {
+        auto it = accounting_jobs.begin();
+        jobid = *it;
+        accounting_jobs.erase(it);
+        accounting_job_running = true;
+        accounting_current_jobid = jobid;
       }
       pthread_mutex_unlock(&accounting_mutex);
       if (accounting_quit.load()) { break; }
@@ -150,6 +201,12 @@ void* SubscriptionAccountingThread(void*)
         RefreshSubscriptionAccounting(&ua);
         pthread_mutex_lock(&accounting_mutex);
         accounting_refresh_running = false;
+        pthread_mutex_unlock(&accounting_mutex);
+      } else if (jobid != 0) {
+        RefreshSubscriptionAccountingJob(&ua, jobid);
+        pthread_mutex_lock(&accounting_mutex);
+        accounting_job_running = false;
+        accounting_current_jobid = 0;
         pthread_mutex_unlock(&accounting_mutex);
       }
     }
@@ -208,6 +265,8 @@ bool DoSubscriptionAccounting(UaContext* ua)
                                           &metadata, &rows)) {
     return false;
   }
+  const size_t pending_jobs
+      = QueueMissingSubscriptionAccounting(ua, client_filter, fileset_filter);
   const auto thread_status = GetSubscriptionAccountingThreadStatus();
   const char* thread_state = !thread_status.available ? T_("unavailable")
                              : thread_status.running  ? T_("running")
@@ -220,10 +279,17 @@ bool DoSubscriptionAccounting(UaContext* ua)
   ua->send->ObjectKeyValue("calculated_at", metadata.timestamp.c_str());
   ua->send->ObjectKeyValueBool("stale", metadata.stale);
   ua->send->ObjectKeyValue("refresh_thread_state", thread_state);
+  ua->send->ObjectKeyValue("pending_jobs", static_cast<uint64_t>(pending_jobs));
   if (!metadata.last_error.empty()) {
     ua->send->ObjectKeyValue("last_refresh_error", metadata.last_error.c_str());
   }
   ua->send->ObjectEnd();
+
+  if (pending_jobs > 0) {
+    ua->WarningMsg(T_("Accounting for %zu latest job(s) is pending; "
+                      "previous valid results are shown until it completes.\n"),
+                   pending_jobs);
+  }
 
   if (!metadata.has_snapshot) {
     ua->SendMsg(T_("Subscription accounting has not been calculated yet.\n"));
@@ -423,9 +489,84 @@ void StopSubscriptionAccountingThread()
   }
   pthread_mutex_lock(&accounting_mutex);
   accounting_refresh_running = false;
+  accounting_job_running = false;
+  accounting_current_jobid = 0;
   accounting_worker_available = false;
   accounting_thread_initialized = false;
   pthread_mutex_unlock(&accounting_mutex);
+}
+
+bool QueueSubscriptionAccountingJob(JobId_t jobid)
+{
+  if (jobid == 0) { return false; }
+  pthread_mutex_lock(&accounting_mutex);
+  if (accounting_quit.load()) {
+    pthread_mutex_unlock(&accounting_mutex);
+    return false;
+  }
+  const bool inserted = jobid != accounting_current_jobid
+                        && accounting_jobs.insert(jobid).second;
+  if (inserted) { pthread_cond_signal(&accounting_cond); }
+  pthread_mutex_unlock(&accounting_mutex);
+  return inserted;
+}
+
+size_t QueueMissingSubscriptionAccounting(UaContext* ua,
+                                          const char* client_filter,
+                                          const char* fileset_filter)
+{
+  PoolMem query(PM_MESSAGE);
+  PmStrcpy(query,
+           "SELECT JobId FROM ("
+           " SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
+           "Job.AccountingValid FROM Job "
+           "JOIN Client USING (ClientId) JOIN FileSet USING (FileSetId) "
+           "WHERE Job.JobStatus IN ('T','W') AND Job.Type IN ('B','C','g','O') "
+           "AND Job.Level IN ('F','D','I')");
+  std::string escaped;
+  if (client_filter) {
+    auto value = ua->db->EscapeString(ua->jcr, client_filter);
+    if (!value) {
+      ua->ErrorMsg(T_("Could not escape subscription client name.\n"));
+      return 0;
+    }
+    escaped = *value;
+    PmStrcat(query, " AND Client.Name='");
+    PmStrcat(query, escaped.c_str());
+    PmStrcat(query, "'");
+  }
+  if (fileset_filter) {
+    auto value = ua->db->EscapeString(ua->jcr, fileset_filter);
+    if (!value) {
+      ua->ErrorMsg(T_("Could not escape subscription fileset name.\n"));
+      return 0;
+    }
+    escaped = *value;
+    PmStrcat(query, " AND FileSet.FileSet='");
+    PmStrcat(query, escaped.c_str());
+    PmStrcat(query, "'");
+  }
+  PmStrcat(query,
+           " ORDER BY Job.ClientId, Job.FileSetId, Job.JobTDate DESC, "
+           "Job.JobId DESC) latest WHERE NOT latest.AccountingValid");
+
+  MissingAccountingJobsCtx missing;
+  if (!ua->db->SqlQuery(query.c_str(), MissingAccountingJobHandler, &missing)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return 0;
+  }
+
+  pthread_mutex_lock(&accounting_mutex);
+  size_t inserted = 0;
+  if (!accounting_quit.load()) {
+    for (JobId_t jobid : missing.jobids) {
+      if (jobid == accounting_current_jobid) { continue; }
+      inserted += accounting_jobs.insert(jobid).second ? 1 : 0;
+    }
+    if (inserted > 0) { pthread_cond_signal(&accounting_cond); }
+  }
+  pthread_mutex_unlock(&accounting_mutex);
+  return missing.jobids.size();
 }
 
 bool RequestSubscriptionAccountingRefresh(UaContext* ua)
@@ -459,8 +600,8 @@ SubscriptionAccountingThreadStatus GetSubscriptionAccountingThreadStatus()
   pthread_mutex_lock(&accounting_mutex);
   SubscriptionAccountingThreadStatus status;
   status.available = accounting_worker_available;
-  status.queued = accounting_refresh_requested;
-  status.running = accounting_refresh_running;
+  status.queued = accounting_refresh_requested || !accounting_jobs.empty();
+  status.running = accounting_refresh_running || accounting_job_running;
   pthread_mutex_unlock(&accounting_mutex);
   return status;
 }

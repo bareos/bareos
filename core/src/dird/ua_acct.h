@@ -23,6 +23,8 @@
 
 #include "dird/ua.h"
 
+#include <cstddef>
+
 namespace directordaemon {
 
 struct SubscriptionAccountingThreadStatus {
@@ -47,6 +49,10 @@ bool DoSubscriptionAccounting(UaContext* ua);
 bool StartSubscriptionAccountingThread();
 void StopSubscriptionAccountingThread();
 bool RequestSubscriptionAccountingRefresh(UaContext* ua);
+bool QueueSubscriptionAccountingJob(JobId_t jobid);
+size_t QueueMissingSubscriptionAccounting(UaContext* ua,
+                                          const char* client_filter = nullptr,
+                                          const char* fileset_filter = nullptr);
 SubscriptionAccountingThreadStatus GetSubscriptionAccountingThreadStatus();
 
 } /* namespace directordaemon */

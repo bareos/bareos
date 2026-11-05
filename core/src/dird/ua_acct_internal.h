@@ -30,6 +30,7 @@
 namespace directordaemon {
 
 struct AccountingRow {
+  JobId_t JobId{0};
   std::string ClientName;
   std::string FileSetName;
   bool excluded{false};
@@ -37,6 +38,8 @@ struct AccountingRow {
   uint64_t files{0};
   uint64_t bytes{0};
   uint64_t logical_bytes{0};
+  uint64_t opaque_files{0};
+  uint64_t ndmp_archives{0};
   std::string rule;
   uint64_t jobs_in_chain{0};
 };
@@ -53,8 +56,14 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
                                      std::vector<AccountingRow>* rows,
                                      std::string* error,
                                      const std::atomic_bool* cancel = nullptr);
+bool CalculateSubscriptionAccountingForJob(UaContext* ua,
+                                           JobId_t jobid,
+                                           AccountingRow* row,
+                                           std::string* error,
+                                           const std::atomic_bool* cancel
+                                           = nullptr);
 
-// Persistent snapshot of the accounting rows in the catalog.
+// Persisted per-job accounting results and snapshot metadata.
 bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
                                         const char* client_filter,
                                         const char* fileset_filter,
