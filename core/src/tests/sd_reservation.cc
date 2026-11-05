@@ -42,6 +42,7 @@
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "stored/sd_backends.h"
+#include "stored/autochanger.h"
 
 #include "bsock_mock.h"
 
@@ -122,6 +123,98 @@ struct TestJob {
     FreeJcr(jcr);
   }
 };
+
+namespace storagedaemon::detail {
+extern decltype(&pthread_cond_timedwait) device_wait;
+}
+
+static thread_local int injected_wait_status = -1;
+
+TEST_F(ReservationTest, device_wait_results)
+{
+  TestJob job(111u);
+  int retries = 0;
+  detail::device_wait
+      = [](pthread_cond_t*, pthread_mutex_t* mutex, const timespec* timeout) {
+          EXPECT_EQ(pthread_mutex_trylock(mutex), EBUSY);
+          EXPECT_GE(timeout->tv_sec, time(nullptr) + 59);
+          return injected_wait_status;
+        };
+  for (int status : {0, ETIMEDOUT, EINVAL, EPERM}) {
+    injected_wait_status = status;
+    errno = ENOENT;
+    EXPECT_EQ(WaitForDevice(job.jcr, retries),
+              status == 0 || status == ETIMEDOUT);
+  }
+  detail::device_wait = pthread_cond_timedwait;
+  EXPECT_EQ(retries, 4);
+}
+
+TEST_F(ReservationTest, reservation_wait_failure)
+{
+  auto bsock = std::make_unique<BareosSocketMock>();
+  TestJob first(111u);
+  TestJob second(222u);
+  first.jcr->dir_bsock = second.jcr->dir_bsock = bsock.get();
+  EXPECT_CALL(*bsock, recv()).WillRepeatedly(Return(BNET_EOD));
+  EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
+  for (auto* job : {first.jcr, second.jcr}) {
+    EXPECT_CALL(*bsock, recv())
+        .WillOnce(
+            BSOCK_RECV(bsock.get(),
+                       "use storage=sssss media_type=File pool_name=ppppp "
+                       "pool_type=ptptp append=0 copy=0 stripe=0"))
+        .WillOnce(BSOCK_RECV(bsock.get(), "use device=single3"))
+        .WillOnce(Return(BNET_EOD))
+        .WillOnce(Return(BNET_EOD));
+    bsock->recv();
+    detail::device_wait = [](pthread_cond_t*, pthread_mutex_t*,
+                             const timespec*) { return EINVAL; };
+    bool result = use_cmd(job);
+    detail::device_wait = pthread_cond_timedwait;
+    EXPECT_EQ(result, job == first.jcr);
+  }
+}
+
+TEST_F(ReservationTest, autochanger_wait_failure_leaves_changer_unlocked)
+{
+  TestJob job(111u);
+  ASSERT_TRUE(InitAutochangers());
+  auto* resource = static_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, "auto1dev2"));
+  auto* other = static_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, "auto1dev3"));
+  ASSERT_NE(resource, nullptr);
+  ASSERT_NE(other, nullptr);
+  auto* dev = FactoryCreateDevice(job.jcr, resource);
+  auto* busy = FactoryCreateDevice(job.jcr, other);
+  ASSERT_NE(dev, nullptr);
+  ASSERT_NE(busy, nullptr);
+  resource->dev = dev;
+  other->dev = busy;
+  for (auto* res : {resource, other}) {
+    free(res->changer_command);
+    res->changer_command = strdup("/bin/true");
+  }
+  dev->SetSlotNumber(1);
+  busy->SetSlotNumber(2);
+  busy->SetBlocked(BST_WAITING_FOR_SYSOP);
+  DeviceControlRecord dcr;
+  dcr.jcr = job.jcr;
+  dcr.dev = dev;
+  dcr.device_resource = resource;
+  dcr.VolCatInfo.InChanger = true;
+  dcr.VolCatInfo.Slot = 2;
+  detail::device_wait = [](pthread_cond_t*, pthread_mutex_t*, const timespec*) {
+    return EINVAL;
+  };
+  int result = AutoloadDevice(&dcr, 0, nullptr);
+  detail::device_wait = pthread_cond_timedwait;
+  EXPECT_EQ(result, -1);
+  EXPECT_EQ(resource->changer_res->changer_lock.w_active, 0);
+  EXPECT_EQ(RwlWritetrylock(&resource->changer_res->changer_lock), 0);
+  EXPECT_EQ(RwlWriteunlock(&resource->changer_res->changer_lock), 0);
+}
 
 void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)

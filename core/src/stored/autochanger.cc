@@ -210,7 +210,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
           // we unlock the changer to make it possible for the other device
           // to actually unload the device on its own
           UnlockChanger(dcr);
-          WaitForDevice(dcr->jcr, retries);
+          if (!WaitForDevice(dcr->jcr, retries)) { goto bail_out; }
           if (!LockChanger(dcr)) {
             rtn_stat = -2;
             goto bail_out;
