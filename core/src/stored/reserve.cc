@@ -785,8 +785,6 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
   }
 
 bail_out:
-  rctx.have_volume = false;
-  rctx.VolumeName[0] = 0;
   Dmsg0(debuglevel, "Not OK.\n");
   return 0;
 }
