@@ -464,7 +464,7 @@ bool BareosDb::FindNextVolume(JobControlRecord* jcr,
     } else {
       /* Take most recently written */
       PoolMem from_query;
-      FillQuery(from_order, SQL_QUERY::sql_media_order_most_recently_written);
+      FillQuery(from_query, SQL_QUERY::sql_media_order_most_recently_written);
       order = from_query.c_str();
     }
   }
