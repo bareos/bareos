@@ -1,0 +1,127 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Verify that "status subscriptions accounting" produces a sane report
+# for a client backed up via NDMP: NdmpConvertFstat() (see
+# dird/ndmp_fhdb_helpers.cc) is the only source of st_size/st_blocks for
+# NDMP-sourced File rows, so this is the end-to-end check that its
+# output is actually usable by the accounting report, complementing the
+# unit-level ndmp_fhdb_helpers_test.cc coverage of the conversion itself.
+#
+# By the time this runs, testrunner-01/02/08 have already produced a
+# Full backup, ten Incrementals and a Copy job for client "isilon", so
+# a non-empty, non-zero report is expected.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+refresh subscriptions accounting
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+for _ in {1..60}; do
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/status-subscriptions-accounting.out
+status subscriptions accounting client=isilon fileset=isilon-fileset
+END_OF_DATA
+  run_bconsole "${tmp}/bconcmds"
+  if grep -qE "^isilon-fileset@isilon[[:space:]]+[1-9][0-9,]*[[:space:]]+[1-9]" \
+    "${log_home}/status-subscriptions-accounting.out"; then
+    break
+  fi
+  sleep 1
+done
+
+check_log "${log_home}/status-subscriptions-accounting.out"
+
+if ! grep -qE "^isilon-fileset@isilon[[:space:]]+[1-9][0-9,]*[[:space:]]+[1-9]" \
+  "${log_home}/status-subscriptions-accounting.out"; then
+  set_error "expected isilon / isilon-fileset accounted with a non-zero \
+file count and byte total -- NdmpConvertFstat() st_size/st_blocks likely \
+did not reach the catalog:
+$(cat "${log_home}/status-subscriptions-accounting.out")"
+  exit 1
+fi
+
+if ! grep -q "^Grand total: " \
+  "${log_home}/status-subscriptions-accounting.out"; then
+  set_error "expected a Grand total line, got:
+$(cat "${log_home}/status-subscriptions-accounting.out")"
+  exit 1
+fi
+
+# With per-file history disabled, only the synthetic NDMP stream container
+# remains in the File catalog. Its LStat is a placeholder, not a file size;
+# accounting must exclude the tuple rather than count or guess its size.
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/no-file-history-backup.out
+run job=isilondump-no-file-history level=Full yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/no-file-history-backup.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+refresh subscriptions accounting
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+for _ in {1..60}; do
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/no-file-history-accounting.out
+status subscriptions accounting client=isilon fileset=isilon-fileset
+END_OF_DATA
+  run_bconsole "${tmp}/bconcmds"
+  if grep -qE "^isilon-fileset@isilon[[:space:]].*Excluded: no per-file data available" \
+    "${log_home}/no-file-history-accounting.out"; then
+    break
+  fi
+  sleep 1
+done
+
+check_log "${log_home}/no-file-history-accounting.out"
+
+if ! grep -qE "^isilon-fileset@isilon[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+Excluded: no per-file data available \\(NDMP file history may be disabled\\)" \
+  "${log_home}/no-file-history-accounting.out"; then
+  set_error "expected NDMP tuple with no per-file history to be excluded:
+$(cat "${log_home}/no-file-history-accounting.out")"
+  exit 1
+fi
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test

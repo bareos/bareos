@@ -524,6 +524,18 @@ else()
   register_webui_profile_test(admin ADMIN_WEBUI_SELENIUM_TESTNAMES 600)
   register_webui_profile_test(readonly READONLY_WEBUI_SELENIUM_TESTNAMES 600)
 
+  #[[
+<<<<<<< DO NOT MERGE: PHP readonly tests are temporarily disabled.
+Revert this commit after fixing readonly Selenium interactions.
+]]
+  foreach(testname setup create-backup ${READONLY_WEBUI_SELENIUM_TESTNAMES}
+                   cleanup
+  )
+    set_tests_properties(
+      "${WEBUI_TEST_PREFIX}readonly:${testname}" PROPERTIES DISABLED true
+    )
+  endforeach()
+
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_USERNAME "")

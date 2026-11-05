@@ -1,0 +1,24 @@
+#!/bin/bash
+
+read_program_env_file="tmp/readprogram.$BareosJobLevel.env"
+
+{
+  # output environment variables from readprogram
+  echo "# Environment variables from read-program:"
+  echo "BareosClientName='$BareosClientName'"
+  echo "BareosJobId='$BareosJobId'"
+  echo "BareosJobLevel='$BareosJobLevel'"
+  echo "BareosSinceTime='$BareosSinceTime'"
+  echo "BareosJobType='$BareosJobType'"
+  echo "BareosWhere='$BareosWhere'"
+  echo "BareosReplace='$BareosReplace'"
+  echo "my_env_variable='$my_env_variable'"
+} >"$read_program_env_file"
+
+# A non-empty, fixed payload -- unlike the shared readprogram (used by
+# the bpipe-unique fileset for tests unrelated to accounting), which
+# intentionally reads empty content -- so the FD's plugin size-fallback
+# and "status subscriptions accounting" byte-count paths have real,
+# known-size data to exercise (see testrunner-environment-variables-
+# and-accounting).
+printf '%s' 'bareos bpipe accounting payload'

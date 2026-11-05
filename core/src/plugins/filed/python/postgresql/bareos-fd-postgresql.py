@@ -1498,6 +1498,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                     my_statp.st_uid = statp.st_uid
                     my_statp.st_gid = statp.st_gid
                     my_statp.st_size = statp.st_size
+                    my_statp.st_blocks = statp.st_blocks
+                    my_statp.st_blksize = statp.st_blksize
                     my_statp.st_atime = int(statp.st_atime)
                     my_statp.st_mtime = int(statp.st_mtime)
                     my_statp.st_ctime = int(statp.st_ctime)

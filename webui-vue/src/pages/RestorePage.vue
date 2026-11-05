@@ -1982,7 +1982,32 @@ const browserCols = computed(() => [
   { name: 'mtime', label: t('Modified'), field: 'mtime', align: 'left',   style: 'width:160px', sortable: true },
 ])
 
+let browserInitialization = null
+let browserInitializationKey = ''
+
 async function initBrowser() {
+  const key = JSON.stringify([
+    sourceDirector.value,
+    form.value.jobid,
+    form.value.mergeJobs,
+    form.value.mergeFilesets,
+  ])
+  if (browserInitialization) {
+    if (key === browserInitializationKey) {
+      return browserInitialization
+    }
+    await browserInitialization
+    return initBrowser()
+  }
+
+  browserInitializationKey = key
+  browserInitialization = initializeBrowser().finally(() => {
+    browserInitialization = null
+  })
+  return browserInitialization
+}
+
+async function initializeBrowser() {
   if (!form.value.jobid) return
   loadingBrowser.value = true
   browserReady.value   = false

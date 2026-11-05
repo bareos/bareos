@@ -37,6 +37,7 @@
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_update.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
@@ -444,6 +445,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 {
   ua->db->PurgeFiles(jobs);
+  QueueMissingSubscriptionAccounting(ua);
 }
 
 std::string PrepareJobidsTobedeleted(UaContext* ua,
@@ -515,6 +517,7 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {
   ua->db->PurgeJobs(jobs);
+  QueueMissingSubscriptionAccounting(ua);
 }
 
 /**

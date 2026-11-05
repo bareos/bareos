@@ -45,13 +45,26 @@ client_detail AS (
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
     f.fileset AS fileset,
-    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    COALESCE(CASE WHEN sa.excluded THEN NULL ELSE sa.bytes END,
+      GREATEST(j.readbytes::bigint, j.jobbytes::bigint)) / 10^9 AS size_gb,
+    (sa.bytes IS NULL OR sa.excluded OR sa.rule = 'job_bytes') AS estimated,
     f.plugin AS plugin
   FROM job j
   INNER JOIN client c
     ON c.clientid = j.clientid
   INNER JOIN fileset_plugin f
     ON j.filesetid = f.filesetid
+  LEFT JOIN LATERAL (
+    SELECT accountingbytes AS bytes, accountingrule AS rule,
+      COALESCE(accountingexcluded, FALSE) AS excluded
+    FROM Job accounting_job
+    WHERE accounting_job.clientid = c.clientid
+      AND accounting_job.filesetid = f.filesetid
+      AND accounting_job.accountingvalid
+      AND %s
+    ORDER BY accounting_job.jobtdate DESC, accounting_job.jobid DESC
+    LIMIT 1
+  ) sa ON TRUE
   WHERE jobid IN (
     SELECT
       MAX(j.jobid) AS jobid
