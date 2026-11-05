@@ -239,7 +239,8 @@ int main(int argc, char* argv[])
   Dmsg0(100, "About to acquire device for writing\n");
 
   // For we must now acquire the device for writing
-  out_dev->rLock(false);
+  out_dev->Lock();
+  out_dev->WaitUntilUnblocked();
   if (!out_dev->open(out_jcr->sd_impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), out_dev->errmsg);
     out_dev->Unlock();

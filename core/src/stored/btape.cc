@@ -498,7 +498,8 @@ static bool open_the_device()
   bool ok = true;
 
   block = new_block(g_dev);
-  g_dev->rLock();
+  g_dev->Lock();
+  g_dev->WaitUntilUnblocked();
   Dmsg1(200, "Opening device %s\n", g_dcr->VolumeName);
   if (!g_dev->open(g_dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, T_("dev open failed: %s\n"), g_dev->errmsg);
@@ -2670,7 +2671,8 @@ static int FlushBlock(DeviceBlock* block)
   DeviceBlock* tblock;
   uint32_t thIsFile, this_block_num;
 
-  g_dev->rLock();
+  g_dev->Lock();
+  g_dev->WaitUntilUnblocked();
   if (!this_block) { this_block = new_block(g_dev); }
   if (!last_block) { last_block = new_block(g_dev); }
   /* Copy block */
