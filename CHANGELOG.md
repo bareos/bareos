@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: fix CSRF vulnerabilities [PR #2844]
 - webui test: fix restore selection in release build, update php in windows installer [PR #2891]
 - systemtests: use pidfile in config-dump test [PR #2878]
+- dird: allow comments in sqlquery/query [PR #2892]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2444,5 +2445,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2879]: https://github.com/bareos/bareos/pull/2879
 [PR #2886]: https://github.com/bareos/bareos/pull/2886
 [PR #2891]: https://github.com/bareos/bareos/pull/2891
+[PR #2892]: https://github.com/bareos/bareos/pull/2892
 [PR #2894]: https://github.com/bareos/bareos/pull/2894
 [unreleased]: https://github.com/bareos/bareos/tree/master
