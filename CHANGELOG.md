@@ -125,6 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
 - dird: add some checks to user provided input [PR #2879]
 - catalog: upgrade PathId field to bigint [PR #2858]
+- fix bvfs restore with real tmp tables [PR #2894]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2443,4 +2444,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2879]: https://github.com/bareos/bareos/pull/2879
 [PR #2886]: https://github.com/bareos/bareos/pull/2886
 [PR #2891]: https://github.com/bareos/bareos/pull/2891
+[PR #2894]: https://github.com/bareos/bareos/pull/2894
 [unreleased]: https://github.com/bareos/bareos/tree/master
