@@ -570,6 +570,7 @@ class BareosDb : public BareosDbQueryEnum {
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);
   void BvfsUpdateCache(JobControlRecord* jcr);
+  // Return raw callback row counts (including a stopping row), or -1 on error.
   int BvfsLsDirs(PoolMem& query, void* ctx);
   int BvfsBuildLsFileQuery(PoolMem& query,
                            DB_RESULT_HANDLER* ResultHandler,

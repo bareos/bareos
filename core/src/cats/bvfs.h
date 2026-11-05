@@ -97,8 +97,11 @@ class Bvfs {
   // Returns true if the directory exists
   bool ChDir(const char* path);
 
-  bool ls_files(); /* Returns true if we have more files to read */
-  bool ls_dirs();  /* Returns true if we have more dir to read */
+  // True means a full query page was consumed: another page MAY exist.
+  // Directory pages count raw rows, not deduplicated displayed entries.
+  // Advance offsets by the query limit, not the number of displayed entries.
+  bool ls_files();
+  bool ls_dirs();
   void GetAllFileVersions(const char* path,
                           const char* fname,
                           const char* client);
@@ -142,7 +145,7 @@ class Bvfs {
   POOLMEM* jobids;
   uint32_t limit;
   uint32_t offset;
-  uint32_t nb_record; /* number of records of the last query */
+  uint32_t nb_record = 0; /* raw rows consumed by the last query */
   POOLMEM* pattern;
   PathId_t pwd_id;   /* Current pathid */
   POOLMEM* prev_dir; /* ls_dirs query returns all versions, take the 1st one */
