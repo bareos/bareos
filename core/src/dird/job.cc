@@ -1457,8 +1457,7 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   const auto status = jcr->getJobStatus();
   const auto type = jcr->getJobType();
   if ((status == JS_Terminated || status == JS_Warnings)
-      && (type == JT_BACKUP || type == JT_JOB_COPY || type == JT_MIGRATE
-          || type == JT_CONSOLIDATE)) {
+      && (type == JT_BACKUP || type == JT_JOB_COPY)) {
     QueueSubscriptionAccountingJob(jcr->JobId);
   }
 }

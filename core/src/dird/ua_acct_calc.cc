@@ -43,16 +43,9 @@ namespace directordaemon {
 
 namespace {
 
-/* Job Types that can carry real File attribute rows usable for accounting:
- *   JT_BACKUP       ('B') - ordinary/Virtual Full backups
- *   JT_JOB_COPY     ('C') - the resulting job of a Copy
- *   JT_MIGRATE      ('g') - the resulting job of a Migrate
- *   JT_CONSOLIDATE  ('O') - the resulting job of an Always-Incremental
- *                           consolidation
- * Explicitly excluded: JT_MIGRATED_JOB ('M') -- the superseded original
- * job after a migrate, whose File rows are normally purged and which is
- * no longer the current on-disk representation of this Client/FileSet. */
-constexpr const char* kAccountableJobTypes = "'B','C','g','O'";
+/* Migration and consolidation control jobs do not carry the resulting file
+ * rows. Their output jobs are backups or copies and use 'B' or 'C'. */
+constexpr const char* kAccountableJobTypes = "'B','C'";
 
 /**
  * Per-platform accounting rule (see DeveloperGuide/SubscriptionAccounting.rst):

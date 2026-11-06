@@ -71,4 +71,8 @@ expect_grep "jobstatus: T" \
   "$tmp"/migrate_incremental_status.out \
   "incremental job did not terminate successfully during migration"
 
+expect_not_grep "completed accounting job was not found" \
+  "$tmp"/migrate.out \
+  "migration control job was queued for subscription accounting"
+
 end_test
