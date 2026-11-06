@@ -79,7 +79,7 @@ void StringToLowerCase(std::string& out, const std::string& in);
 constexpr void printf_check(const char*, ...) PRINTF_LIKE(1, 2);
 constexpr void printf_check(const char*, ...) {}
 bool pm_append(void* pm_string, const char* fmt, ...) PRINTF_LIKE(2, 3);
-std::vector<std::string> split_string(const std::string& str, char delim);
+std::vector<std::string> split_string(std::string_view str, char delim);
 
 std::string CreateDelimitedStringForSqlQueries(
     const std::vector<char>& elements,
@@ -301,11 +301,6 @@ template <fixed_string S> struct ci_string {
     }
 
     return true;
-  }
-
-  friend constexpr bool operator==(std::string_view lhs, ci_string rhs)
-  {
-    return rhs == lhs;
   }
 };
 

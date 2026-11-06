@@ -67,7 +67,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
                                   char* org_pathid,
                                   char* new_path)
 {
-  uint64_t pathid = str_to_int64(org_pathid);
+  uint64_t pathid = str_to_uint64(org_pathid);
   char* bkp = path;
 
   Dmsg1(dbglevel, "BuildPathHierarchy(%s)\n", new_path);
@@ -106,7 +106,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
         Mmsg(cmd,
              "INSERT INTO PathHierarchy (PathId, PPathId) VALUES (%" PRIu64
              ",%" PRIu64 ")",
-             pathid, (uint64_t)parent.PathId);
+             pathid, parent.PathId);
         if (!InsertDb(jcr, cmd)) {
           goto bail_out; /* Can't insert the record, just leave */
         }
@@ -478,7 +478,7 @@ void Bvfs::GetAllFileVersions(const char* path,
                               const char* fname,
                               const char* client)
 {
-  DBId_t pathid = 0;
+  PathId_t pathid = 0;
 
   pathid = db->GetPathRecord(jcr, path);
   GetAllFileVersions(pathid, fname, client);
@@ -488,7 +488,7 @@ void Bvfs::GetAllFileVersions(const char* path,
  * Get all file versions for a specified client
  * TODO: Handle basejobs using different client
  */
-void Bvfs::GetAllFileVersions(DBId_t pathid,
+void Bvfs::GetAllFileVersions(PathId_t pathid,
                               const char* fname,
                               const char* client)
 {
@@ -496,7 +496,7 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
   PoolMem query(PM_MESSAGE);
   PoolMem filter(PM_MESSAGE);
 
-  Dmsg3(dbglevel, "GetAllFileVersions(%" PRIdbid ", %s, %s)\n", pathid, fname,
+  Dmsg3(dbglevel, "GetAllFileVersions(%" PRIu64 ", %s, %s)\n", pathid, fname,
         client);
 
   if (see_copies) {
@@ -516,9 +516,9 @@ void Bvfs::GetAllFileVersions(DBId_t pathid,
   db->SqlQuery(query.c_str(), list_entries, user_data);
 }
 
-DBId_t Bvfs::get_root()
+PathId_t Bvfs::get_root()
 {
-  int p;
+  PathId_t p;
 
   DbLocker _{db};
   p = db->GetPathRecord(jcr, "");
@@ -547,7 +547,7 @@ bool Bvfs::ls_dirs()
   PoolMem sub_dirs_query(PM_MESSAGE);
   PoolMem union_query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_dirs(%" PRIdbid ")\n", pwd_id);
+  Dmsg1(dbglevel, "ls_dirs(%" PRIu64 ")\n", pwd_id);
 
   if (*jobids == 0) { return false; }
 
@@ -594,7 +594,7 @@ bool Bvfs::ls_files()
   char pathid[50];
   PoolMem query(PM_MESSAGE);
 
-  Dmsg1(dbglevel, "ls_files(%" PRIdbid ")\n", pwd_id);
+  Dmsg1(dbglevel, "ls_files(%" PRIu64 ")\n", pwd_id);
   if (*jobids == 0) { return false; }
 
   if (!pwd_id) { ChDir(get_root()); }
@@ -642,7 +642,7 @@ static int GetNextIdFromList(char** p, int64_t* Id)
   return 1;
 }
 
-static bool CheckTemp(char* output_table)
+bool CheckTempBvfsTableName(char* output_table)
 {
   if (output_table[0] == 'b' && output_table[1] == '2'
       && IsAnInteger(output_table + 2)) {
@@ -659,7 +659,7 @@ void Bvfs::clear_cache()
 bool Bvfs::DropRestoreList(char* output_table)
 {
   PoolMem query(PM_MESSAGE);
-  if (CheckTemp(output_table)) {
+  if (CheckTempBvfsTableName(output_table)) {
     Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
     db->SqlQuery(query.c_str());
     return true;
@@ -685,18 +685,17 @@ bool Bvfs::compute_restore_list(char* fileid,
       || (!*hardlink && !*fileid && !*dirid && !*hardlink)) {
     return false;
   }
-  if (!CheckTemp(output_table)) { return false; }
+  if (!CheckTempBvfsTableName(output_table)) { return false; }
 
   DbLocker _{db};
 
   /* Cleanup old tables first */
-  Mmsg(query, "DROP TABLE IF EXISTS btemp%s", output_table);
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.btemp%s", output_table);
+  db->SqlQuery(query.c_str());
+  Mmsg(query, "DROP TABLE IF EXISTS pg_temp.%s", output_table);
   db->SqlQuery(query.c_str());
 
-  Mmsg(query, "DROP TABLE IF EXISTS %s", output_table);
-  db->SqlQuery(query.c_str());
-
-  Mmsg(query, "CREATE TABLE btemp%s AS ", output_table);
+  Mmsg(query, "CREATE TEMPORARY TABLE btemp%s AS ", output_table);
 
   if (*fileid) { /* Select files with their direct id */
     init = true;

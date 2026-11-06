@@ -186,6 +186,13 @@ class AuthController extends AbstractActionController
      */
     public function logoutAction()
     {
+        if (!$this->getRequest()->isPost()) {
+            $this->getResponse()->setStatusCode(405);
+            $this->getResponse()->getHeaders()->addHeaderLine('Allow', 'POST');
+            $this->getResponse()->setContent('Method Not Allowed.');
+            return $this->getResponse();
+        }
+
         $session = new Container('bareos');
         $session->getManager()->destroy();
         return $this->redirect()->toRoute('auth', array('action' => 'login'));

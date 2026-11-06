@@ -391,6 +391,14 @@ export const useDirectorStore = defineStore('director', () => {
    * @returns {Promise<string>}
    */
   function rawCall(command, options = {}) {
+    return rawCallSequence([command], options)
+  }
+
+  function rawCallSequence(commands, options = {}) {
+    if (!Array.isArray(commands) || commands.length === 0) {
+      return Promise.reject(new Error('At least one raw command is required'))
+    }
+
     return new Promise((resolve, reject) => {
       const auth = useAuthStore()
       const creds = auth.getCredentials()
@@ -402,11 +410,18 @@ export const useDirectorStore = defineStore('director', () => {
 
       const sock = new WebSocket(WS_URL)
       let cmdId = 1
-      const timer = setTimeout(() => {
-        sock.close()
-        reject(new Error(`Raw command timed out: ${command}`))
-      }, RAW_CMD_TIMEOUT_MS)
+      let commandIndex = 0
+      let timer
+      const startCommandTimeout = () => {
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+          sock.close()
+          reject(new Error(`Raw command timed out: ${commands[commandIndex]}`))
+        }, RAW_CMD_TIMEOUT_MS)
+      }
+      startCommandTimeout()
       let lastStateSignature = ''
+      let accumulated = ''
       const emitStateChange = (nextState) => {
         if (!onStateChange || !nextState?.status) {
           return
@@ -426,6 +441,14 @@ export const useDirectorStore = defineStore('director', () => {
           message,
         })
       }
+      const sendCurrentCommand = () => {
+        sock.send(JSON.stringify({
+          type: 'command',
+          id: String(cmdId),
+          command: commands[commandIndex],
+          stream: true,
+        }))
+      }
 
       sock.onopen = () => {
         sock.send(JSON.stringify({
@@ -435,30 +458,44 @@ export const useDirectorStore = defineStore('director', () => {
         }))
       }
 
-      let accumulated = ''
-
       sock.onmessage = (event) => {
         let msg
         try { msg = JSON.parse(event.data) } catch { return }
         if (msg.type === 'auth_ok') {
           emitStateChange({ status: 'running' })
-          sock.send(JSON.stringify({
-            type: 'command', id: String(cmdId), command, stream: true,
-          }))
+          sendCurrentCommand()
         } else if (msg.type === 'auth_error') {
           clearTimeout(timer)
           sock.close()
           reject(new Error(msg.message ?? 'Auth failed'))
-        } else if (msg.type === 'command_state' && msg.id === String(cmdId)) {
+        } else if (
+          msg.type === 'command_state'
+          && msg.id === String(cmdId)
+        ) {
           emitStateChange({
             status: typeof msg.status === 'string' ? msg.status : '',
             prompt: typeof msg.prompt === 'string' ? msg.prompt : '',
             message: typeof msg.message === 'string' ? msg.message : '',
           })
-        } else if (msg.type === 'raw_response' && msg.id === String(cmdId)) {
+        } else if (
+          msg.type === 'raw_response'
+          && msg.id === String(cmdId)
+        ) {
           accumulated += msg.text ?? ''
           onChunk?.(msg.text ?? '', msg)
           if (!msg.prompt || msg.prompt !== 'more') {
+            const terminalPrompt = !msg.prompt
+              || msg.prompt === 'main'
+              || msg.prompt === 'other'
+            if (commandIndex < commands.length - 1 && terminalPrompt) {
+              commandIndex += 1
+              cmdId += 1
+              startCommandTimeout()
+              emitStateChange({ status: 'running', prompt: '' })
+              sendCurrentCommand()
+              return
+            }
+
             emitStateChange({
               status: msg.prompt === 'main' || msg.prompt === 'other' || !msg.prompt
                 ? 'completed'
@@ -499,5 +536,6 @@ export const useDirectorStore = defineStore('director', () => {
     refreshDirectorConnections,
     call,
     rawCall,
+    rawCallSequence,
   }
 })

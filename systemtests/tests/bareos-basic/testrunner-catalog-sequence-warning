@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+pre_output="${tmp}/no-warning.log"
+post_output="${tmp}/catalog-sequence-warning.log"
+
+start_test
+
+# we should definitely be warning at 90% usage
+cat <<EOF >"${tmp}/bconcmds"
+@$out ${pre_output}
+status configuration
+
+.sql query=" SELECT setval('job_jobid_seq', (ceil(0.9 * 2::bigint^31 - 1))::bigint);"
+
+reload
+@$out ${post_output}
+status configuration
+EOF
+run_bconsole "${tmp}/bconcmds"
+
+expect_not_grep "Configuration warnings detected" \
+  "${pre_output}" \
+  "Unexpected warnings were detected"
+expect_grep "Configuration warnings detected" \
+  "${post_output}" \
+  "no warnings were detected, but jobid sequence warning should have been issued"
+
+# we do not care about the exact format, the important points is that
+# job.jobid and MyCatalog are mentioned in the warning
+expect_grep "MyCatalog.*job\.jobid" \
+  "${post_output}" \
+  "MyCatalog or job.jobid were not mentioned in the warning"
+
+end_test

@@ -224,9 +224,9 @@
               :columns="browserCols"
               row-key="key"
               flat dense
+              ref="restoreBrowserTable"
               :loading="loadingBrowser"
               :pagination="{ rowsPerPage: 200, sortBy: 'name' }"
-              hide-bottom
               style="min-height: 260px"
               data-testid="restore-browser"
             >
@@ -583,6 +583,8 @@ import {
   getRestorePluginInfo,
   getRestorePluginHints,
   getRestoreBrowserPlaceholder,
+  areRestoreEntriesSelected,
+  toggleRestoreEntriesSelection,
   normaliseRestoreToggle,
   pushRestoreBreadcrumb,
   resolveRestoreBackupOption,
@@ -1121,6 +1123,10 @@ const navStack = ref([{ label: '/', pathId: null }])
 
 // Current directory contents: mixed dirs + files
 const currentEntries = ref([])
+const restoreBrowserTable = ref(null)
+const currentPageEntries = computed(
+  () => restoreBrowserTable.value?.computedRows ?? []
+)
 const browserPlaceholder = computed(() => getRestoreBrowserPlaceholder({
   browserError: browserError.value,
   loadingBrowser: loadingBrowser.value,
@@ -1342,12 +1348,11 @@ function toggleItem(row, value) {
 }
 
 const allCurrentSelected = computed(() => {
-  if (!currentEntries.value.length) return false
-  return currentEntries.value.every(r => isSelected(r))
+  return areRestoreEntriesSelected(currentPageEntries.value, isSelected)
 })
 
 function toggleSelectAll(value) {
-  currentEntries.value.forEach(r => toggleItem(r, value))
+  toggleRestoreEntriesSelection(currentPageEntries.value, value, toggleItem)
 }
 
 function clearSelection() {
@@ -1506,15 +1511,15 @@ function clearCommandLog() {
   commandStatusMessage.value = ''
 }
 
-async function runRestoreCommand(title, cmd) {
+async function runRestoreCommands(title, commands) {
   if (commandRunning.value) {
     throw new Error(t('Another command is still running.'))
   }
 
   commandLogVisible.value = true
   commandLogTitle.value = title
-  commandLogCommand.value = cmd
-  commandLogText.value += `${commandLogText.value ? '\n' : ''}$ ${cmd}\n\n`
+  commandLogCommand.value = commands.join('\n')
+  commandLogText.value += `${commandLogText.value ? '\n' : ''}$ ${commands.join('\n$ ')}\n\n`
   commandStatus.value = 'starting'
   commandStatusPrompt.value = ''
   commandStatusMessage.value = ''
@@ -1540,7 +1545,7 @@ async function runRestoreCommand(title, cmd) {
   }
 
   try {
-    return await director.rawCall(cmd, {
+    return await director.rawCallSequence(commands, {
       onChunk: (chunk) => {
         if (!chunk) {
           return
@@ -1585,15 +1590,13 @@ async function doRestore() {
 
   try {
     if (!await ensureSelectedSourceDirector()) return
-    // Step 1: build restore list in BVFS
-    await runRestoreCommand(t('Prepare restore list'), buildRestoreBvfsRestoreCommand({
+    const prepareCommand = buildRestoreBvfsRestoreCommand({
       jobids: jids,
       fileids,
       dirids,
       path: quoteDirectorString(bvfsPath),
-    }))
+    })
 
-    // Step 2: run restore job
     const src = form.value.client
     const dst = form.value.restoreclient || src
     const pluginOptions = form.value.pluginoptions.trim()
@@ -1605,24 +1608,20 @@ async function doRestore() {
       ` replace=${quoteDirectorString(form.value.replace)}` +
       (pluginOptions ? ` pluginoptions=${quoteDirectorString(pluginOptions)}` : '') +
       ` yes`
-    const result = await runRestoreCommand(t('Queue restore job'), cmd)
+    const result = await runRestoreCommands(
+      t('Queue restore job'),
+      [prepareCommand, cmd]
+    )
 
     const jobid = extractQueuedJobId(result)
+    if (!jobid) {
+      throw new Error(t('The Director did not queue the restore job.'))
+    }
 
     restoreResult.value = {
       ok:      true,
       message: jobid ? `Restore job queued with JobId ${jobid}.` : 'Restore job queued.',
       jobid,
-    }
-
-    // Step 3: clean up BVFS restore path
-    try {
-      await runRestoreCommand(
-        t('Cleanup restore list'),
-        `.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`
-      )
-    } catch (_) {
-      // Cleanup should not block the queued restore from being shown.
     }
 
     await router.push({

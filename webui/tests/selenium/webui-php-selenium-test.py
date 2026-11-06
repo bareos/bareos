@@ -301,23 +301,15 @@ class SeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Enabled":
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Disable"]' % self.client
+            )
             if self.profile == "readonly":
-                # For readonly: clicking bootstrap-table action links may not navigate.
-                # Navigate directly to the disable URL to verify the ACL error page.
-                self.driver.get(
-                    self.base_url + "/client/index?action=disable&client=" + self.client
-                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
                 self.driver.get(self.base_url + "/client")
                 self.wait_for_spinner_absence()
                 self.assertEqual(self.client_status(self.client), "Enabled")
             else:
-                # Disables client
-                self.wait_and_click(
-                    By.XPATH,
-                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]'
-                    % self.client,
-                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -328,22 +320,15 @@ class SeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Disabled":
+            self.submit_action_form(
+                '//tr[contains(td[1], "%s")]//button[@title="Enable"]' % self.client
+            )
             if self.profile == "readonly":
-                # For readonly: navigate directly to the enable URL.
-                self.driver.get(
-                    self.base_url + "/client/index?action=enable&client=" + self.client
-                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
                 self.driver.get(self.base_url + "/client")
                 self.wait_for_spinner_absence()
                 self.assertEqual(self.client_status(self.client), "Disabled")
             else:
-                # Enables client
-                self.wait_and_click(
-                    By.XPATH,
-                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]'
-                    % self.client,
-                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -404,23 +389,12 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.driver.get(self.base_url + "/client/details?client=" + self.client)
         self.wait_for_spinner_absence()
+        # Select first backup in list
+        self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+        self.submit_action_form('//button[@title="Rerun"]')
         if self.profile == "readonly":
-            # For readonly: clicking bootstrap-table links may not navigate.
-            # Extract the rerun URL from the first row and navigate directly to
-            # verify the ACL error page.
-            rerun_anchor = self.wait_for_element(
-                By.XPATH, '//tr[@data-index="0"]//a[contains(@href, "action=rerun")]'
-            )
-            rerun_href = rerun_anchor.get_attribute("href")
-            self.driver.get(rerun_href)
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
-            # Select first backup in list
-            self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-            # Press on rerun button
-            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-            # Accept confirmation dialog
-            self.driver.switch_to.alert.accept()
             self.select_navbar_element(
                 "dashboard",
                 [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")],
@@ -432,16 +406,8 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.driver.get(self.base_url + "/restore")
         self.wait_for_spinner_absence()
-        if self.profile != "readonly":
-            # Click on client dropdown menu and close the possible modal
-            self.wait_and_click(
-                By.XPATH,
-                '(//button[@data-id="client"])',
-                [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
-            )
-            # Select correct client
-            self.wait_and_click(By.LINK_TEXT, self.client)
-        else:
+
+        if self.profile == "readonly":
             # For readonly: verify the restore form loads with the auto-selected
             # client. The readonly profile is not expected to submit restore jobs.
             self.wait_for_presence(By.ID, "restorejob")
@@ -449,17 +415,31 @@ class SeleniumTest(unittest.TestCase):
             self.logout()
             return
 
-        # Select the first visible restore tree entry. The BVFS root varies with
-        # the test environment, so absolute path traversal is brittle here.
+        # Click on client dropdown menu and close the possible modal
         self.wait_and_click(
             By.XPATH,
-            '//div[@id="filebrowser"]//a[contains(@class, "jstree-anchor")]',
+            '(//button[@data-id="client"])',
+            [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
         )
+        # Select correct client
+        self.wait_and_click(By.LINK_TEXT, self.client)
+
+        # Clicks on file and navigates through the tree
+        # by using the arrow-keys.
+        pathlist = self.restorefile.split("/")
+        for i in pathlist[:-1]:
+            self.wait_for_element(
+                By.XPATH, '//div[@id="filebrowser"]//a[text() = "%s/"]' % i
+            ).send_keys(Keys.ARROW_RIGHT)
+        self.wait_for_element(
+            By.XPATH,
+            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
+        ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
         # Confirm modals
         self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
-        self.close_result_modal()
+        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
         # Logout
         self.logout()
 
@@ -631,9 +611,6 @@ class SeleniumTest(unittest.TestCase):
         # Submit the job
         self.wait_and_click(By.ID, "submit")
 
-    def close_result_modal(self):
-        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
-
     def wait_for_presence(self, by, value):
         return self.wait.until(EC.presence_of_element_located((by, value)))
 
@@ -692,7 +669,15 @@ class SeleniumTest(unittest.TestCase):
     def logout(self):
         if self.is_shared_session_test():
             return
-        self.driver.get(self.base_url + "/auth/logout")
+        self.driver.get(self.base_url)
+        self.wait_and_click(
+            By.XPATH,
+            '//span[contains(@class, "glyphicon-user")]/ancestor::a',
+        )
+        self.wait_and_click(
+            By.XPATH,
+            '//form[@method="post"]//button[normalize-space()="Logout"]',
+        )
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
@@ -830,6 +815,16 @@ class SeleniumTest(unittest.TestCase):
             retry += 1
         logger.error("failed to click %s %s", by, value)
         raise FailedClickException(value)
+
+    def submit_action_form(self, button_xpath):
+        button = self.wait_for_element(By.XPATH, button_xpath)
+        form = button.find_element(By.XPATH, "./ancestor::form")
+        confirmation = form.get_attribute("data-confirmation")
+        button.click()
+        if confirmation:
+            alert = self.driver.switch_to_alert()
+            self.assertEqual(confirmation, alert.text)
+            alert.accept()
 
     def wait_for_element(self, by, value):
         logger = logging.getLogger()

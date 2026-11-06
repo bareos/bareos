@@ -12,11 +12,14 @@ body:
 
           - https://doc.bareos.org/
           - https://groups.google.com/u/1/g/bareos-users
+ 
+        We really appreciate if you can start by opening a [new discussion](https://github.com/bareos/bareos/discussions) and then send a message on the [mailing list](https://groups.google.com/u/1/g/bareos-users) to describe the feature with the linked discussion.
   - type: markdown
     attributes:
       value: |
         Before filling the form fields, please consider the following:
-        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues)
+        - Ensure that you have searched the [existing feature](https://github.com/bareos/bareos/discussions?discussions_q=) including closed one
+        - Ensure that you have searched the [existing issues](https://github.com/bareos/bareos/issues?q=is%3Aissue) including closed ones
         - Read the [troubleshooting guide](https://docs.bareos.org/Appendix/Troubleshooting.html)
         - Read the [debugging chapter](https://docs.bareos.org/Appendix/Debugging.html)
   - type: textarea

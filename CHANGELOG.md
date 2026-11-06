@@ -75,6 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update vulnerable Vue dependencies [PR #2868]
 - lib: make socket bind failures fatal and syslog-visible [PR #2808]
 - .matrix.yml: remove EOL FreeBSD 13, add FreeBSD 15 [PR #2874]
+- lmdb: add optional system library [PR #2800]
+- webui: fix CSRF vulnerabilities [PR #2844]
+- webui test: fix restore selection in release build, update php in windows installer [PR #2891]
+- systemtests: use pidfile in config-dump test [PR #2878]
+- dird: allow comments in sqlquery/query [PR #2892]
+- stored: prevent deadlocks for intra-sd jobs [PR #2888]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -119,6 +125,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: (debian) add missing data from /etc/postgresql [PR #2827]
 - traymon: fix crash when trying to connecting to fd/sd [PR #2857]
 - cats: set file,path tables autovacuum to 2%; add starttime index for job table [PR #2866]
+- dird: add some checks to user provided input [PR #2879]
+- catalog: upgrade PathId field to bigint [PR #2858]
+- fix bvfs restore with real tmp tables [PR #2894]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -140,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: update volume add warning about delete rotate key [PR #2738]
 - docs: improve Plugin Names datatype [PR #2764]
 - publiccode.yml: Update for 25.1.1 [PR #2799]
+- github: improve feature, issues, pr templates [PR #2886]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2413,6 +2423,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2785]: https://github.com/bareos/bareos/pull/2785
 [PR #2797]: https://github.com/bareos/bareos/pull/2797
 [PR #2799]: https://github.com/bareos/bareos/pull/2799
+[PR #2800]: https://github.com/bareos/bareos/pull/2800
 [PR #2808]: https://github.com/bareos/bareos/pull/2808
 [PR #2810]: https://github.com/bareos/bareos/pull/2810
 [PR #2813]: https://github.com/bareos/bareos/pull/2813
@@ -2424,9 +2435,18 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2831]: https://github.com/bareos/bareos/pull/2831
 [PR #2833]: https://github.com/bareos/bareos/pull/2833
 [PR #2834]: https://github.com/bareos/bareos/pull/2834
+[PR #2844]: https://github.com/bareos/bareos/pull/2844
 [PR #2854]: https://github.com/bareos/bareos/pull/2854
 [PR #2857]: https://github.com/bareos/bareos/pull/2857
+[PR #2858]: https://github.com/bareos/bareos/pull/2858
 [PR #2866]: https://github.com/bareos/bareos/pull/2866
 [PR #2868]: https://github.com/bareos/bareos/pull/2868
 [PR #2874]: https://github.com/bareos/bareos/pull/2874
+[PR #2878]: https://github.com/bareos/bareos/pull/2878
+[PR #2879]: https://github.com/bareos/bareos/pull/2879
+[PR #2886]: https://github.com/bareos/bareos/pull/2886
+[PR #2888]: https://github.com/bareos/bareos/pull/2888
+[PR #2891]: https://github.com/bareos/bareos/pull/2891
+[PR #2892]: https://github.com/bareos/bareos/pull/2892
+[PR #2894]: https://github.com/bareos/bareos/pull/2894
 [unreleased]: https://github.com/bareos/bareos/tree/master

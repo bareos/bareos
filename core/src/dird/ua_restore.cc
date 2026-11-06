@@ -82,11 +82,11 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
                                     const char* date);
-static void InsertOneFileOrDir(UaContext* ua,
-                               RestoreContext* rx,
-                               char* p,
-                               const char* date,
-                               bool dir);
+[[nodiscard]] static bool InsertOneFileOrDir(UaContext* ua,
+                                             RestoreContext* rx,
+                                             char* p,
+                                             const char* date,
+                                             bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
 static bool get_date(UaContext* ua, char* date, int date_len);
@@ -611,6 +611,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     switch (j) {
       case 0: /* jobid */
         if (!HasValue(ua, i)) { return 0; }
+        if (!Is_a_number_list(ua->argv[i])) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+          return 0;
+        }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
 
         if (date_index >= 0) {
@@ -709,9 +713,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!GetClientName(ua, rx)) { return 0; }
 
-    for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
+    for (auto& file : files) {
+      if (!InsertOneFileOrDir(ua, rx, file, date, false)) { return 0; }
+    }
 
-    for (auto& dir : dirs) { InsertOneFileOrDir(ua, rx, dir, date, true); }
+    for (auto& dir : dirs) {
+      if (!InsertOneFileOrDir(ua, rx, dir, date, true)) { return 0; }
+    }
 
     if (files.size() + dirs.size() == 0) {
       /* If only fileregex but no specific files or dirs were specified
@@ -795,6 +803,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
           return 0;
         }
+        if (*ua->cmd && !Is_a_number_list(ua->cmd)) {
+          ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+          return 0;
+        }
         PmStrcpy(rx->JobIds, ua->cmd);
         break;
       case 3: /* Enter an SQL list command */
@@ -829,7 +841,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
       case 7: /* enter files backed up before specified time */ {
@@ -844,7 +856,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, that_date, false);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, that_date, false);
         }
         return 2;
       }
@@ -871,6 +883,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         } else if (GetCmd(
                        ua,
                        T_("Enter JobId(s), comma separated, to restore: "))) {
+          if (*ua->cmd && !Is_a_number_list(ua->cmd)) {
+            ua->ErrorMsg(T_("Invalid JobId in list.\n"));
+            return 0;
+          }
           if (*rx->JobIds != 0 && *ua->cmd) { PmStrcat(rx->JobIds, ","); }
           bstrncpy(rx->last_jobid, ua->cmd, sizeof(rx->last_jobid));
           PmStrcat(rx->JobIds, ua->cmd);
@@ -892,7 +908,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (ua->cmd[0] != '<' && !IsPathSeparator(ua->cmd[len - 1])) {
             strcat(ua->cmd, "/");
           }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
+          (void)InsertOneFileOrDir(ua, rx, ua->cmd, date, true);
         }
         return 2;
 
@@ -1029,11 +1045,11 @@ std::string CompensateShortDate(const char* cmd)
 }
 
 // Insert a single file, or read a list of files from a file
-static void InsertOneFileOrDir(UaContext* ua,
-                               RestoreContext* rx,
-                               char* p,
-                               const char* date,
-                               bool dir)
+[[nodiscard]] static bool InsertOneFileOrDir(UaContext* ua,
+                                             RestoreContext* rx,
+                                             char* p,
+                                             const char* date,
+                                             bool dir)
 {
   FILE* ffd;
   char file[5000];
@@ -1041,11 +1057,16 @@ static void InsertOneFileOrDir(UaContext* ua,
 
   switch (*p) {
     case '<':
+      if (ua->user_acl) {
+        ua->ErrorMsg(
+            "Only the default console may pass file lists to this command.\n");
+        return false;
+      }
       p++;
       if ((ffd = fopen(p, "rb")) == NULL) {
         BErrNo be;
         ua->ErrorMsg(T_("Cannot open file %s: ERR=%s\n"), p, be.bstrerror());
-        break;
+        return false;
       }
       while (fgets(file, sizeof(file), ffd)) {
         line++;
@@ -1053,11 +1074,15 @@ static void InsertOneFileOrDir(UaContext* ua,
           if (!InsertDirIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         } else {
           if (!InsertFileIntoFindexList(ua, rx, file, date)) {
             ua->ErrorMsg(T_("Error occurred on line %d of file \"%s\"\n"), line,
                          p);
+            fclose(ffd);
+            return false;
           }
         }
       }
@@ -1065,16 +1090,18 @@ static void InsertOneFileOrDir(UaContext* ua,
       break;
     case '?':
       p++;
-      InsertTableIntoFindexList(ua, rx, p);
+      return InsertTableIntoFindexList(ua, rx, p);
       break;
     default:
       if (dir) {
-        InsertDirIntoFindexList(ua, rx, p, date);
+        return InsertDirIntoFindexList(ua, rx, p, date);
       } else {
-        InsertFileIntoFindexList(ua, rx, p, date);
+        return InsertFileIntoFindexList(ua, rx, p, date);
       }
       break;
   }
+
+  return true;
 }
 
 /**
@@ -1103,12 +1130,13 @@ static bool InsertFileIntoFindexList(UaContext* ua,
   // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
-    ua->ErrorMsg(T_("Query failed: %s. ERR=%s\n"), rx->query,
-                 ua->db->strerror());
+    Dmsg0(100, "Query failed: %s. ERR=%s\n", rx->query, ua->db->strerror());
+    ua->ErrorMsg("Querying for database record failed.\n");
   }
   if (!rx->found) {
-    ua->ErrorMsg(T_("No database record found for: %s\n"), file);
-    return true;
+    Dmsg0(100, "No database record found for: %s\n", file);
+    ua->ErrorMsg("Database record not found for file.\n");
+    return false;
   }
   return true;
 }
@@ -1126,8 +1154,15 @@ static bool InsertDirIntoFindexList(UaContext* ua,
     ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
   } else {
+    auto escaped = ua->db->EscapeString(ua->jcr, dir);
+
+    if (!escaped) {
+      ua->ErrorMsg("Could not escape '%s'.\n", dir);
+      return false;
+    }
+
     ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_dir>(
-        rx->query, rx->JobIds, dir, rx->ClientName);
+        rx->query, rx->JobIds, escaped->c_str(), rx->ClientName);
   }
 
   // Find and insert jobid and File Index
@@ -1149,9 +1184,24 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       char* table)
 {
   StripTrailingJunk(table);
+  if (!CheckTempBvfsTableName(table)) {
+    ua->ErrorMsg(
+        "Could not insert table '%s': it is not a valid bvfs "
+        "table name.\n",
+        table);
+    return false;
+  }
+
+  /* the table is always temporary, so to make sure we do not mess up,
+   * we add `pg_temp.` schema to enforce that we use the temporary table
+   * setup by .bvfs_restore. */
+
+  std::string temp_table;
+  temp_table += "pg_temp.";
+  temp_table += table;
 
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table>(
-      rx->query, table);
+      rx->query, temp_table.c_str());
 
   // Find and insert jobid and File Index
   rx->found = false;
@@ -1190,28 +1240,28 @@ static bool SplitPathAndFilename(UaContext* ua, RestoreContext* rx, char* name)
    * space. This makes handling zero length filenames
    * easier.
    */
-  rx->fnl = p - f;
-  if (rx->fnl > 0) {
+  auto fnl = p - f;
+  if (fnl > 0) {
     auto escaped_fname = ua->db->EscapeString(
-        ua->jcr, std::string_view{f, static_cast<size_t>(rx->fnl)});
+        ua->jcr, std::string_view{f, static_cast<size_t>(fnl)});
     if (!escaped_fname) { return false; }
     rx->fname = CheckPoolMemorySize(rx->fname, escaped_fname->size() + 1);
     PmStrcpy(rx->fname, escaped_fname->c_str());
   } else {
     rx->fname[0] = 0;
-    rx->fnl = 0;
+    fnl = 0;
   }
 
-  rx->pnl = f - name;
-  if (rx->pnl > 0) {
+  auto pnl = f - name;
+  if (pnl > 0) {
     auto escaped_path = ua->db->EscapeString(
-        ua->jcr, std::string_view{name, static_cast<size_t>(rx->pnl)});
+        ua->jcr, std::string_view{name, static_cast<size_t>(pnl)});
     if (!escaped_path) { return false; }
     rx->path = CheckPoolMemorySize(rx->path, escaped_path->size() + 1);
     PmStrcpy(rx->path, escaped_path->c_str());
   } else {
     rx->path[0] = 0;
-    rx->pnl = 0;
+    pnl = 0;
   }
 
   Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);

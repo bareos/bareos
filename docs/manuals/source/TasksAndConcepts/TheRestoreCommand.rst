@@ -150,6 +150,13 @@ There are a lot of options, and as a point of reference, most people will want t
    intended for external programs that want to build their own list of files to be restored.
    The filename entry mode is terminated by entering a blank line.
 
+   .. note::
+      Only default consoles may use the **file=<** option to read in a filelist from a file.
+
+   .. note::
+      The table used in the **file=?** option needs to be a temporary table that fits the naming convention
+      used by **.bvfs_restore**; see :ref:`bvfs_restore`.
+
 -  Item 8 allows you to specify a date and time before entering the filenames.
    See Item 7 above for more details.
 

@@ -54,9 +54,9 @@ grep -q "status: is an invalid command" ${logdir}/acl-none.log \
 grep -q "status conf: is an invalid command" ${logdir}/acl-status.log \
   || set_error "acl-status.log"
 
-# this will match "No deprecated.." and "Deprecated ..."
+# this will match "No configuration.." and "Configuration ..."
 # which matches for all database types
-grep -q "eprecated configuration settings detected" ${logdir}/acl-status-conf.log \
+grep -q "onfiguration warnings detected" ${logdir}/acl-status-conf.log \
   || set_error "acl-status-conf.log"
 
 end_test

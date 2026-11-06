@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
 
 set(BareosComSubscriptionLink "https://www.bareos.com/subscription/")
 set(BareosGetOfficialBinariesAndSupportOnBareosComMainPage
-    "Get official binaries and support on bareos.com"
+    "Get official binaries and support on https://www.bareos.com/"
 )
 set(BareosGetOfficialBinariesAndSupportOnBareosComLoginPage
-    "Self-complied Bareos (UNSUPPORTED).<br>Professional support recommended.<br>Contact www.bareos.com"
+    "Self-complied Bareos (UNSUPPORTED).<br>Professional support recommended.<br>Contact https://www.bareos.com/"
 )
