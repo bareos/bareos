@@ -2768,6 +2768,13 @@ class BareosVADPWrapper(object):
         )
         # for the restoreobject we don't need changedArea data
         del cbt_data["DiskChangeInfo"]["changedArea"]
+
+        # connection information should not be stored in the restore object
+        del cbt_data["ConnParams"]["VsphereHostName"]
+        del cbt_data["ConnParams"]["VsphereUsername"]
+        del cbt_data["ConnParams"]["VspherePassword"]
+        del cbt_data["ConnParams"]["VsphereThumbPrint"]
+
         self.changed_disk_areas_json = json.dumps(cbt_data)
 
     def json2cbt(self, cbt_json_string):
