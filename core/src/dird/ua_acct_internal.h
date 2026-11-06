@@ -24,6 +24,7 @@
 #include "dird/ua.h"
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,6 +32,7 @@ namespace directordaemon {
 
 struct AccountingRow {
   JobId_t JobId{0};
+  JobId_t baseline_full_jobid{0};
   std::string ClientName;
   std::string FileSetName;
   bool excluded{false};
@@ -49,6 +51,8 @@ struct SnapshotMetadata {
   std::string last_error;
   bool has_snapshot{false};
   bool stale{true};
+  std::string full_completed_at;
+  std::optional<uint64_t> full_duration_ms;
 };
 
 // Computes the accounting rows per (Client, FileSet) from File.LStat.
@@ -68,7 +72,8 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
                                         const char* client_filter,
                                         const char* fileset_filter,
                                         SnapshotMetadata* metadata,
-                                        std::vector<AccountingRow>* rows);
+                                        std::vector<AccountingRow>* rows,
+                                        bool anonymize = false);
 bool RecordSubscriptionAccountingFailure(UaContext* ua,
                                          const std::string& error);
 bool SaveSubscriptionAccountingSnapshot(UaContext* ua,

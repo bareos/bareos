@@ -118,6 +118,8 @@ def check(report, phase):
         for fileset in section["filesets"]:
             row = find_row(response, section["client"]["name"], fileset["name"])
             check_job_estimate(row, section, fileset)
+            if case in ("mssql", "hyperv"):
+                assert row["jobs_in_chain"] == (1 if phase == "full" else 2), row
 
 
 if __name__ == "__main__":
@@ -127,9 +129,9 @@ if __name__ == "__main__":
         import_case("barri", "full") if phase == "full" else None
         import_case("windows", phase)
         import_case("mssql", phase)
+        import_case("hyperv", phase)
         if phase == "full":
             import_case("vmware", phase)
-            import_case("hyperv", phase)
     elif action == "check":
         check(sys.argv[3], sys.argv[2])
     else:

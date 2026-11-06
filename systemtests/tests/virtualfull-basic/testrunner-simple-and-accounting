@@ -28,7 +28,7 @@ set -u
 #  via a virtualfull.  Afterwards check that the virtualfull
 #  worked via a restore.
 #
-# Also confirms "status subscriptions accounting" reports the same
+# Also confirms "status subscriptions" reports the same
 # file count/byte total before and after the Virtual Full consolidation
 # (the consolidated File rows must still de-duplicate to the same
 # accounted totals).
@@ -51,18 +51,18 @@ refresh_and_wait_for_subscription_accounting()
 
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out "${test_home}/accounting-refresh-request.out"
-refresh subscriptions accounting
+status subscriptions recalculate
 END_OF_DATA
   run_bconsole "${tmp}/bconcmds"
 
   for _ in {1..60}; do
     cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${report}
-status subscriptions accounting client=bareos-fd fileset=SelfTest
+status subscriptions client=bareos-fd
 @$out ${NULL_DEV}
 .api 2
 @$out $report.json
-status subscriptions accounting client=bareos-fd fileset=SelfTest
+status subscriptions client=bareos-fd
 END_OF_DATA
     run_bconsole "${tmp}/bconcmds"
     if grep -qF "Background refresh worker: idle." "${report}" \

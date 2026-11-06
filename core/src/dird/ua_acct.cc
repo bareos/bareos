@@ -20,7 +20,7 @@
 */
 /**
  * @file
- * 'status subscriptions accounting [client=<name>] [fileset=<name>]' and the
+ * 'status subscriptions [client=<name>]' and the
  * background worker maintaining the per-job results it displays (see
  * ua_acct_calc.cc and ua_acct_snapshot.cc).
  */
@@ -44,6 +44,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <limits>
 #include <pthread.h>
 #include <set>
@@ -81,6 +82,7 @@ int MissingAccountingJobHandler(void* ctx, int, char** row)
 
 void RefreshSubscriptionAccounting(UaContext* ua)
 {
+  const auto started = std::chrono::steady_clock::now();
   std::vector<AccountingRow> rows;
   std::string error;
   if (!CalculateSubscriptionAccounting(ua, &rows, &error, &accounting_quit)) {
@@ -102,6 +104,21 @@ void RefreshSubscriptionAccounting(UaContext* ua)
          T_("Could not save subscription accounting snapshot: %s\n"),
          save_error.c_str());
     return;
+  }
+  const auto duration_ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - started)
+            .count();
+  PoolMem timing_query(PM_MESSAGE);
+  Mmsg(timing_query,
+       "UPDATE SubscriptionAccountingSnapshot SET "
+       "LastFullSuccess=clock_timestamp(), LastFullDurationMs=%llu "
+       "WHERE SnapshotId=1",
+       static_cast<unsigned long long>(duration_ms));
+  if (!ua->db->SqlExec(timing_query.c_str())) {
+    Jmsg(ua->jcr, M_ERROR, 0,
+         T_("Could not save subscription recalculation duration: %s\n"),
+         ua->db->strerror());
   }
   Jmsg(ua->jcr, M_INFO, 0,
        T_("Subscription accounting snapshot refreshed with %zu "
@@ -223,50 +240,22 @@ void* SubscriptionAccountingThread(void*)
 
 }  // namespace
 
-bool DoSubscriptionAccounting(UaContext* ua)
+bool ReportSubscriptionAccounting(UaContext* ua,
+                                  bool anonymize,
+                                  size_t pending_jobs)
 {
-  if (ua->AclHasRestrictions(Client_ACL) || ua->AclHasRestrictions(Job_ACL)
-      || ua->AclHasRestrictions(FileSet_ACL)) {
-    ua->ErrorMsg(T_("%s %s: needs access to all client, job"
-                    " and fileset resources.\n"),
-                 ua->argk[0], ua->argk[1]);
-    return false;
-  }
-  if (!OpenDb(ua)) {
-    ua->ErrorMsg("Failed to open db.\n");
-    return false;
-  }
-  auto config = my_config->GetCurrentConfiguration();
-  auto* first_catalog
-      = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
-  if (first_catalog && config->GetNextRes(R_CATALOG, first_catalog)) {
-    ua->WarningMsg(
-        T_("Subscription accounting does not support multiple catalogs; "
-           "only the first configured catalog is refreshed. This report "
-           "reads the selected catalog and may be empty or stale.\n"));
-  }
-
   const char* client_filter = GetArgValue(ua, NT_("client"));
-  const char* fileset_filter = GetArgValue(ua, NT_("fileset"));
-
-  if (client_filter && !IsNameValid(client_filter)) {
-    ua->ErrorMsg(T_("Invalid client name: %s\n"), client_filter);
-    return false;
-  }
-  if (fileset_filter && !IsNameValid(fileset_filter)) {
-    ua->ErrorMsg(T_("Invalid fileset name: %s\n"), fileset_filter);
-    return false;
-  }
-
   std::vector<AccountingRow> rows;
   SnapshotMetadata metadata{};
-  std::string error;
-  if (!LoadSubscriptionAccountingSnapshot(ua, client_filter, fileset_filter,
-                                          &metadata, &rows)) {
+  if (!LoadSubscriptionAccountingSnapshot(ua, client_filter, nullptr, &metadata,
+                                          &rows, anonymize)) {
     return false;
   }
-  const size_t pending_jobs
-      = QueueMissingSubscriptionAccounting(ua, client_filter, fileset_filter);
+  if (anonymize) {
+    if (!metadata.last_error.empty()) {
+      metadata.last_error = T_("Last recalculation failed.");
+    }
+  }
   const auto thread_status = GetSubscriptionAccountingThreadStatus();
   const char* thread_state = !thread_status.available ? T_("unavailable")
                              : thread_status.running  ? T_("running")
@@ -280,16 +269,19 @@ bool DoSubscriptionAccounting(UaContext* ua)
   ua->send->ObjectKeyValueBool("stale", metadata.stale);
   ua->send->ObjectKeyValue("refresh_thread_state", thread_state);
   ua->send->ObjectKeyValue("pending_jobs", static_cast<uint64_t>(pending_jobs));
+  if (metadata.full_duration_ms) {
+    ua->send->ObjectKeyValue("last_full_duration_ms",
+                             *metadata.full_duration_ms);
+    ua->send->ObjectKeyValue("last_full_completed_at",
+                             metadata.full_completed_at.c_str());
+    ua->SendMsg(T_("Last successful full recalculation: %llu ms (%s).\n"),
+                static_cast<unsigned long long>(*metadata.full_duration_ms),
+                metadata.full_completed_at.c_str());
+  }
   if (!metadata.last_error.empty()) {
     ua->send->ObjectKeyValue("last_refresh_error", metadata.last_error.c_str());
   }
   ua->send->ObjectEnd();
-
-  if (pending_jobs > 0) {
-    ua->WarningMsg(T_("Accounting for %zu latest job(s) is pending; "
-                      "previous valid results are shown until it completes.\n"),
-                   pending_jobs);
-  }
 
   if (!metadata.has_snapshot) {
     ua->SendMsg(T_("Subscription accounting has not been calculated yet.\n"));
@@ -321,6 +313,9 @@ bool DoSubscriptionAccounting(UaContext* ua)
   uint32_t accounted_tuples = 0;
   uint32_t excluded_tuples = 0;
   std::vector<SubscriptionAccountingTableRow> table_rows;
+  const char* job_size_explanation = T_(
+      "Estimated from the baseline Full job: used the larger of bytes "
+      "read and bytes stored because per-file sizes are unavailable.");
 
   // Structured (.api 2 / WebUI) output, in addition to the plain-text
   // report above. ObjectKeyValue()/ArrayStart()/... calls are no-ops for
@@ -330,21 +325,58 @@ bool DoSubscriptionAccounting(UaContext* ua)
 
   for (const AccountingRow& row : rows) {
     if (row.excluded) {
-      const char* reason = row.exclusion_reason == "ndmp_no_file_history"
-                               ? T_("no per-file data available (NDMP file "
-                                    "history may be disabled)")
-                           : row.exclusion_reason == "no_per_file_data"
-                               ? T_("no measurable per-file data available")
-                           : row.exclusion_reason == "opaque_backup_image"
-                               ? T_("opaque plugin image without a job size")
-                               : T_("no usable backup chain found");
+      const char* reason
+          = row.exclusion_reason == "ndmp_no_file_history"
+                ? T_("Size unavailable: NDMP has neither file "
+                     "history nor a usable Full-job byte count.")
+            : row.exclusion_reason == "opaque_backup_image"
+                ? T_("Size unavailable: per-file sizes and a usable "
+                     "baseline Full-job byte count are both missing.")
+            : row.exclusion_reason == "no_usable_chain"
+                ? T_("Excluded: no usable backup chain starting "
+                     "with a Full backup could be found; required "
+                     "catalog records may have been purged.")
+                : T_("Excluded: unrecognized accounting issue.");
+      std::string issue = reason;
+      std::string issue_before_jobid;
+      std::string issue_after_jobid;
+      if (row.baseline_full_jobid != 0) {
+        const char* linked_reason
+            = row.exclusion_reason == "opaque_backup_image"
+                  ? T_("Size unavailable: per-file sizes and a usable baseline "
+                       "Full-job (id {jobid}) byte count are both missing.")
+              : row.exclusion_reason == "ndmp_no_file_history"
+                  ? T_("Size unavailable: NDMP has neither file history nor a "
+                       "usable baseline Full-job (id {jobid}) byte count.")
+                  : nullptr;
+        if (linked_reason) {
+          std::string message = linked_reason;
+          auto offset = message.find("{jobid}");
+          if (offset != std::string::npos) {
+            issue_before_jobid = message.substr(0, offset);
+            issue_after_jobid = message.substr(offset + 7);
+            issue = issue_before_jobid + std::to_string(row.baseline_full_jobid)
+                    + issue_after_jobid;
+          }
+        }
+      }
       table_rows.push_back({row.FileSetName + "@" + row.ClientName, "-", "-",
-                            "-", "-", "-",
-                            std::string(T_("Excluded: ")) + reason});
+                            "-", "-", "-", issue});
       ua->send->ObjectStart();
       ua->send->ObjectKeyValue("client", row.ClientName.c_str());
       ua->send->ObjectKeyValue("fileset", row.FileSetName.c_str());
       ua->send->ObjectKeyValueBool("excluded", true);
+      ua->send->ObjectKeyValue("accounting_issue", issue.c_str());
+      if (!issue_before_jobid.empty()) {
+        ua->send->ObjectKeyValue("accounting_issue_before_jobid",
+                                 issue_before_jobid.c_str());
+        ua->send->ObjectKeyValue("accounting_issue_after_jobid",
+                                 issue_after_jobid.c_str());
+      }
+      if (row.baseline_full_jobid != 0) {
+        ua->send->ObjectKeyValue("baseline_full_jobid",
+                                 row.baseline_full_jobid);
+      }
       if (!row.exclusion_reason.empty()) {
         ua->send->ObjectKeyValue("exclusion_reason",
                                  row.exclusion_reason.c_str());
@@ -372,6 +404,11 @@ bool DoSubscriptionAccounting(UaContext* ua)
     ua->send->ObjectKeyValue("bytes", row.bytes);
     ua->send->ObjectKeyValue("logical_bytes", row.logical_bytes);
     ua->send->ObjectKeyValue("rule", row.rule.c_str());
+    ua->send->ObjectKeyValue("rule_code",
+                             SubscriptionAccountingRuleCode(row.rule).c_str());
+    ua->send->ObjectKeyValue("rule_explanation", row.rule == "job_bytes"
+                                                     ? job_size_explanation
+                                                     : "");
     ua->send->ObjectKeyValue("jobs_in_chain", row.jobs_in_chain);
     ua->send->ObjectEnd();
 
@@ -401,9 +438,11 @@ bool DoSubscriptionAccounting(UaContext* ua)
   ua->send->ArrayEnd("accounting");
 
   char total_files[50], total_bytes[50], total_logical[50];
+  const bool show_logical = FindArg(ua, NT_("logical")) > 0;
   const auto table = FormatSubscriptionAccountingTable(
       {T_("FileSet@Client"), T_("Files"), T_("Accounted size"),
-       T_("Logical size"), T_("Rule"), T_("Chain jobs"), T_("Status / Reason")},
+       T_("Logical size"), T_("Rule"), T_("Chain jobs"),
+       T_("Accounting issues")},
       table_rows,
       {T_("TOTAL"), edit_uint64_with_commas(grand_total_files, total_files),
        std::string(edit_uint64_with_suffix(grand_total_bytes, total_bytes))
@@ -412,20 +451,25 @@ bool DoSubscriptionAccounting(UaContext* ua)
            edit_uint64_with_suffix(grand_total_logical_bytes, total_logical))
            + "B",
        "", "", ""},
-      excluded_tuples > 0);
+      excluded_tuples > 0, show_logical);
   ua->SendMsg("%s", table.c_str());
-  ua->SendMsg(
-      T_("\nRule:\n"
-         "  B = allocated size (st_blocks * 512 bytes)\n"
-         "  S = logical size (st_size)\n"
-         "  J = job size of the latest Full (estimated; opaque plugin "
-         "image)\n"
-         "Size units are decimal (1 KB = 1,000 bytes).\n"));
+  const std::string rule_legend
+      = std::string(
+            T_("\nRule:\n"
+               "  A = allocated size (st_blocks * 512 bytes)\n"
+               "  L = logical size (st_size)\n"
+               "  J = job size of the latest Full (estimated; opaque plugin "
+               "image or NDMP without file history)\n"
+               "Size units are decimal (1 KB = 1,000 bytes).\n"))
+        + job_size_explanation;
+  ua->SendMsg("%s\n", rule_legend.c_str());
+  ua->send->ObjectKeyValue("accounting_rule_legend", rule_legend.c_str());
 
-  char ec1[50], ec2[50];
-  ua->SendMsg(T_("\nGrand total: %s files, %s bytes across %u accounted "
+  char ec1[50], ec2[50], human_bytes[50], human_logical[50];
+  ua->SendMsg(T_("\nGrand total: %s files, %sB (%s bytes) across %u accounted "
                  "Client/FileSet combination(s)"),
               edit_uint64_with_commas(grand_total_files, ec1),
+              edit_uint64_with_suffix(grand_total_bytes, human_bytes),
               edit_uint64_with_commas(grand_total_bytes, ec2),
               accounted_tuples);
   if (excluded_tuples > 0) {
@@ -433,8 +477,13 @@ bool DoSubscriptionAccounting(UaContext* ua)
                    "INCOMPLETE)"),
                 excluded_tuples);
   }
-  ua->SendMsg(T_("\nLogical size total (st_size): %s bytes\n"),
-              edit_uint64_with_commas(grand_total_logical_bytes, ec1));
+  ua->SendMsg("\n");
+  if (show_logical) {
+    ua->SendMsg(
+        T_("Logical size total (st_size): %sB (%s bytes)\n"),
+        edit_uint64_with_suffix(grand_total_logical_bytes, human_logical),
+        edit_uint64_with_commas(grand_total_logical_bytes, ec1));
+  }
 
   ua->send->ObjectStart("summary");
   ua->send->ObjectKeyValue("total_files", grand_total_files);
@@ -445,6 +494,16 @@ bool DoSubscriptionAccounting(UaContext* ua)
   ua->send->ObjectKeyValue("excluded_tuples",
                            static_cast<uint64_t>(excluded_tuples));
   ua->send->ObjectKeyValueBool("incomplete", excluded_tuples > 0);
+  PoolMem warning;
+  if (excluded_tuples > 0) {
+    Mmsg(warning,
+         T_("Accounting incomplete: size unavailable for %u Client/FileSet "
+            "combination(s). Totals exclude these entries."),
+         excluded_tuples);
+    ua->SendMsg("%s\n", warning.c_str());
+  }
+  ua->send->ObjectKeyValue("warning",
+                           excluded_tuples > 0 ? warning.c_str() : "");
   ua->send->ObjectEnd("summary");
 
   return true;

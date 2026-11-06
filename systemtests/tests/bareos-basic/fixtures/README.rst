@@ -121,6 +121,6 @@ stream attributes, while the ``.vhdx`` row preserves the virtual capacity,
 block size and sector size returned by the Hyper-V plugin. Its Incremental
 row also retains the source ``DeltaSeq=1`` marker for changed-range restore
 data; DeltaSeq is not an allocation-size value. The regression imports both
-jobs and verifies the opaque configuration rows cause this combination to
-use the job-level estimate rather than treating the synthetic
-configuration sizes as measured data.
+Full and Incremental phases and verifies the two-job chain uses the job-level
+estimate rather than treating synthetic configuration sizes as measured
+data.

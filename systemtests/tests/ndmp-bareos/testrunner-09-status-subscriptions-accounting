@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# Verify that "status subscriptions accounting" produces a sane report
+# Verify that "status subscriptions" produces a sane report
 # for a client backed up via NDMP: NdmpConvertFstat() (see
 # dird/ndmp_fhdb_helpers.cc) is the only source of st_size/st_blocks for
 # NDMP-sourced File rows, so this is the end-to-end check that its
@@ -48,14 +48,14 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-refresh subscriptions accounting
+status subscriptions recalculate
 END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 for _ in {1..60}; do
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/status-subscriptions-accounting.out
-status subscriptions accounting client=isilon fileset=isilon-fileset
+status subscriptions client=isilon
 END_OF_DATA
   run_bconsole "${tmp}/bconcmds"
   if grep -qE "^isilon-fileset@isilon[[:space:]]+[1-9][0-9,]*[[:space:]]+[1-9]" \
@@ -85,7 +85,7 @@ fi
 
 # With per-file history disabled, only the synthetic NDMP stream container
 # remains in the File catalog. Its LStat is a placeholder, not a file size;
-# accounting must exclude the tuple rather than count or guess its size.
+# accounting must use the baseline Full job size, not the placeholder.
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/no-file-history-backup.out
 run job=isilondump-no-file-history level=Full yes
@@ -96,17 +96,17 @@ run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/no-file-history-backup.out"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-refresh subscriptions accounting
+status subscriptions recalculate
 END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 for _ in {1..60}; do
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/no-file-history-accounting.out
-status subscriptions accounting client=isilon fileset=isilon-fileset
+status subscriptions client=isilon
 END_OF_DATA
   run_bconsole "${tmp}/bconcmds"
-  if grep -qE "^isilon-fileset@isilon[[:space:]].*Excluded: no per-file data available" \
+  if grep -qE "^isilon-fileset@isilon[[:space:]]+[0-9,]+[[:space:]]+.*[[:space:]]J[[:space:]]+1$" \
     "${log_home}/no-file-history-accounting.out"; then
     break
   fi
@@ -115,10 +115,31 @@ done
 
 check_log "${log_home}/no-file-history-accounting.out"
 
-if ! grep -qE "^isilon-fileset@isilon[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+-[[:space:]]+Excluded: no per-file data available \\(NDMP file history may be disabled\\)" \
+if ! grep -qE "^isilon-fileset@isilon[[:space:]]+[0-9,]+[[:space:]]+.*[[:space:]]J[[:space:]]+1$" \
   "${log_home}/no-file-history-accounting.out"; then
-  set_error "expected NDMP tuple with no per-file history to be excluded:
+  set_error "expected NDMP tuple with no per-file history to use rule J:
 $(cat "${log_home}/no-file-history-accounting.out")"
+  exit 1
+fi
+
+run_bconsole - <<END_OF_DATA
+.api 2
+@$out ${log_home}/no-file-history-accounting.json
+status subscriptions client=isilon
+END_OF_DATA
+if ! "${PYTHON_EXECUTABLE}" - "${log_home}/no-file-history-accounting.json" <<'PY'; then
+import json
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text()
+result = json.JSONDecoder().raw_decode(text[text.index("{"):])[0]["result"]
+row = next(row for row in result["accounting"] if row["fileset"] == "isilon-fileset")
+assert not row["excluded"] and row["estimated"], row
+assert row["rule"] == "job_bytes" and row["bytes"] > 0, row
+assert row["rule_code"] == "J" and row["jobs_in_chain"] == 1, row
+PY
+  set_error "NDMP job-size estimate was not present in the structured report"
   exit 1
 fi
 

@@ -33,18 +33,10 @@ struct SubscriptionAccountingThreadStatus {
   bool running{false};
 };
 
-/**
- * Implements 'status subscriptions accounting [client=<name>]
- * [fileset=<name>]' -- displays the latest background-calculated
- * subscription/accounting totals from File.LStat (st_size/st_blocks),
- * instead of the guessed/estimated numbers used by the rest of
- * 'status subscriptions'.
- *
- * Returns true on success (even if some tuples had to be excluded for
- * lack of file information), false on a hard error (e.g. database not
- * available, invalid argument).
- */
-bool DoSubscriptionAccounting(UaContext* ua);
+// Append persisted accounting details to the unified subscription report.
+bool ReportSubscriptionAccounting(UaContext* ua,
+                                  bool anonymize,
+                                  size_t pending_jobs);
 
 bool StartSubscriptionAccountingThread();
 void StopSubscriptionAccountingThread();

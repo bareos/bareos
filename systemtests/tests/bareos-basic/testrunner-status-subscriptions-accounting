@@ -22,7 +22,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Test the output of "status subscriptions accounting", the real,
+# Test the output of "status subscriptions", the real,
 # File.LStat-based accounting report, against a backup of a handful of
 # files with known, exact sizes -- including one whose size is not a
 # multiple of 512 bytes, to exercise the block-rounding path -- plus a
@@ -139,12 +139,12 @@ check_logical_size()
   if [[ "$line" =~ \"logical_bytes\":\ ([0-9]+) ]]; then
     actual="${BASH_REMATCH[1]//,/}"
     if [[ "$actual" -ne "$expected" ]]; then
-      echo "status subscriptions accounting reported logical size ${actual}," \
+      echo "status subscriptions reported logical size ${actual}," \
         "expected ${expected}!" >&2
       estat=1
     fi
   else
-    echo "status subscriptions accounting did not report a logical size!" >&2
+    echo "status subscriptions did not report a logical size!" >&2
     estat=1
   fi
 }
@@ -153,14 +153,14 @@ refresh_accounting_snapshot()
 {
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh.out
-refresh subscriptions accounting
+status subscriptions recalculate
 END_OF_DATA
   run_bconsole
 
   for _ in {1..60}; do
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh-status.out
-status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions client=bareos-fd
 END_OF_DATA
     run_bconsole
     if grep -q "Background refresh worker: idle." \
@@ -180,12 +180,12 @@ wait_for_accounting_result()
   for _ in {1..60}; do
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $report
-status subscriptions accounting client=bareos-fd fileset=AcctTest
-status subscriptions accounting client=does-not-exist
+status subscriptions client=bareos-fd
+status subscriptions client=does-not-exist
 @$out ${NULL_DEV}
 .api 2
 @$out $report.json
-status subscriptions accounting client=bareos-fd fileset=AcctTest
+status subscriptions client=bareos-fd
 END_OF_DATA
     run_bconsole
     if grep -qE "$expected" "$report"; then
@@ -200,7 +200,7 @@ END_OF_DATA
   return 1
 }
 
-# Request a full refresh, then write "status subscriptions accounting" as
+# Request a full refresh, then write "status subscriptions" as
 # JSON to $tmp/status-subscriptions-<name>.json. With "all", the "all" and
 # "all legacy" reports are written as <name>-all and <name>-legacy.
 query_accounting()
@@ -210,7 +210,7 @@ query_accounting()
   {
     echo ".api 2"
     echo "@$out $tmp/status-subscriptions-${name}.json"
-    echo "status subscriptions accounting"
+    echo "status subscriptions"
     if [[ -n "$all" ]]; then
       echo "@$out $tmp/status-subscriptions-${name}-all.json"
       echo "status subscriptions all"
@@ -283,12 +283,12 @@ print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
 PY
   )"
   if [[ -z "$line" ]]; then
-    echo "status subscriptions accounting produced no report line for bareos-fd / AcctTest ${label}!" >&2
+    echo "status subscriptions produced no report line for bareos-fd / AcctTest ${label}!" >&2
     estat=1
     return
   fi
   if [[ ! "$line" =~ ^([0-9]+)\ ([0-9]+)\ ([^[:space:]]+)\ ${jobs}$ ]]; then
-    echo "status subscriptions accounting report line ${label} did not match" \
+    echo "status subscriptions report line ${label} did not match" \
       "the expected format (expected exactly ${jobs} job(s) in chain): ${line}" >&2
     estat=1
     return
@@ -297,7 +297,7 @@ PY
   bytes="${BASH_REMATCH[2]//,/}"
   actual_rule="${BASH_REMATCH[3]}"
   if [[ "$files" -ne 3 ]]; then
-    echo "status subscriptions accounting reported ${files} files ${label}, expected 3!" >&2
+    echo "status subscriptions reported ${files} files ${label}, expected 3!" >&2
     estat=1
   fi
   check_logical_size "$log" "$raw_bytes"
@@ -309,7 +309,7 @@ PY
     expected_rule='st_blocks*512'
   fi
   if [[ "$actual_rule" != "$expected_rule" || "$bytes" -ne "$expected_bytes" ]]; then
-    echo "status subscriptions accounting reported '${bytes} bytes (rule: ${actual_rule})' ${label}," \
+    echo "status subscriptions reported '${bytes} bytes (rule: ${actual_rule})' ${label}," \
       "expected '${expected_bytes} bytes (rule: ${expected_rule})'!" >&2
     estat=1
   fi
@@ -328,7 +328,7 @@ JobName=backup-acct-test
 start_test
 
 rm -rf "$tmp/acct-data"
-mkdir -p "$tmp/acct-data"
+mkdir -p "$tmp/acct-data/edge"
 
 # Known, exact sizes (bytes): one below one block, one exactly one block,
 # one spanning into a second (non-512-aligned -- exercises rounding up).
@@ -368,10 +368,45 @@ wait_for_accounting_result "$tmp/status-subscriptions-accounting.log" \
   "AcctTest@bareos-fd[[:space:]]+[1-9][0-9,]*"
 verify_catalog full Full
 verify_report "$tmp/status-subscriptions-accounting.log" 1 "after the Full"
+if ! grep -Eq 'Grand total: .*B \([0-9,]+ bytes\) across' "$tmp/status-subscriptions-accounting.log"; then
+  echo "Accounting totals must include readable sizes followed by exact bytes." >&2
+  estat=1
+fi
+if grep -q 'Logical size' "$tmp/status-subscriptions-accounting.log"; then
+  echo "Logical size must be hidden unless explicitly requested." >&2
+  estat=1
+fi
+run_bconsole - <<END_OF_DATA
+@$out $tmp/status-subscriptions-logical.log
+status subscriptions logical client=bareos-fd
+@$out $tmp/status-subscriptions-logical-all.log
+status subscriptions all anonymize logical
+.api 2
+@$out $tmp/status-subscriptions-logical.json
+status subscriptions logical client=bareos-fd
+END_OF_DATA
+for report in "$tmp/status-subscriptions-logical.log" "$tmp/status-subscriptions-logical-all.log"; do
+  if ! grep -Eq 'Accounted size[[:space:]]+Logical size[[:space:]]+Rule' "$report" \
+    || ! grep -Eq 'Logical size total \(st_size\): .*B \([0-9,]+ bytes\)' "$report"; then
+    echo "The logical option must show the logical column and total." >&2
+    estat=1
+  fi
+done
+run_python_check "$tmp/status-subscriptions-accounting.log.json" "$tmp/status-subscriptions-logical.json" <<'PY'
+default = load_result(sys.argv[1])
+logical = load_result(sys.argv[2])
+assert default["accounting"] == logical["accounting"]
+assert default["summary"] == logical["summary"]
+assert "total_logical_bytes" in default["summary"]
+assert "logical_bytes" in find_acct_test_row(default)
+PY
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastFullSuccess='2026-01-01 00:00:00', LastFullDurationMs=123 WHERE SnapshotId=1"
+END_OF_DATA
 
 if ! grep -q "No matching Client/FileSet combinations found." \
   "$tmp/status-subscriptions-accounting.log"; then
-  echo "status subscriptions accounting did not exclude a non-existing client as expected!" >&2
+  echo "status subscriptions did not exclude a non-existing client as expected!" >&2
   estat=1
 fi
 
@@ -417,12 +452,26 @@ if ! grep -Eq 'SELECTED_ROW .*file=file-1000bytes\.bin .*size=65536 ' \
 fi
 verify_report "$tmp/status-subscriptions-accounting-incremental.log" 2 \
   "after the Incremental (chain dedup broken)"
+run_bconsole - <<END_OF_DATA
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/status-subscriptions-incremental-duration.json
+status subscriptions client=bareos-fd
+END_OF_DATA
+run_python_check "$tmp/status-subscriptions-incremental-duration.json" <<'PY'
+metadata = load_result(sys.argv[1])["accounting_snapshot"]
+assert metadata["last_full_duration_ms"] == 123
+assert metadata["last_full_completed_at"] == "2026-01-01 00:00:00"
+PY
 
 # Zero length plus one block is valid outside MSSQL's virtual namespace.
 update_resized_file "LStat='A A IHA B A A A A QAA B A A A A A A'"
 query_accounting empty-regular
 run_python_check "$tmp/status-subscriptions-empty-regular.json" <<'PY'
 row = find_acct_test_row(load_result(sys.argv[1]))
+metadata = load_result(sys.argv[1])["accounting_snapshot"]
+assert metadata["last_full_duration_ms"] >= 0
+assert metadata["last_full_completed_at"]
 assert not row["excluded"]
 assert row["logical_bytes"] == 513
 PY
@@ -483,6 +532,17 @@ run_python_check "$tmp/status-subscriptions-opaque-nosize.json" <<'PY'
 result = load_result(sys.argv[1])
 row = find_acct_test_row(result)
 assert row["excluded"] and row["exclusion_reason"] == "opaque_backup_image", row
+assert row["baseline_full_jobid"] > 0, row
+assert row["accounting_issue"] == (
+    "Size unavailable: per-file sizes and a usable baseline Full-job "
+    f"(id {row['baseline_full_jobid']}) byte count are both missing."
+), row
+assert row["accounting_issue"] == (
+    row["accounting_issue_before_jobid"] + str(row["baseline_full_jobid"])
+    + row["accounting_issue_after_jobid"]
+), row
+assert "J = job size" in result["accounting_rule_legend"], result
+assert "Totals exclude these entries" in result["summary"]["warning"], result["summary"]
 assert result["summary"]["incomplete"], result["summary"]
 PY
 
@@ -508,7 +568,56 @@ END_OF_DATA
 query_accounting ndmp-no-history
 run_python_check "$tmp/status-subscriptions-ndmp-no-history.json" <<'PY'
 row = find_acct_test_row(load_result(sys.argv[1]))
-assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history"
+assert not row["excluded"] and row["estimated"] and row["rule"] == "job_bytes", row
+assert row["bytes"] > 0 and row["bytes"] == row["logical_bytes"], row
+assert row["rule_code"] == "J", row
+assert "larger of bytes read and bytes stored" in row["rule_explanation"], row
+PY
+
+# Native NDMP has no synthetic archive File row; saved restore environment
+# still identifies the backup when file history was not requested.
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_ndmp_files_backup AS SELECT f.* FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+.sql query="DELETE FROM File WHERE FileId IN (SELECT FileId FROM acct_ndmp_files_backup)"
+.sql query="INSERT INTO NDMPJobEnvironment (JobId,FileIndex,EnvName,EnvValue) SELECT j.JobId,1,'FILESYSTEM','/accounting-test' FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+END_OF_DATA
+query_accounting ndmp-native-no-history
+run_python_check "$tmp/status-subscriptions-ndmp-native-no-history.json" <<'PY'
+row = find_acct_test_row(load_result(sys.argv[1]))
+assert not row["excluded"] and row["estimated"] and row["rule"] == "job_bytes", row
+assert row["bytes"] > 0 and row["bytes"] == row["logical_bytes"], row
+PY
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_native_jobsize_backup AS SELECT j.JobId, j.JobBytes, j.ReadBytes FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+.sql query="UPDATE Job SET JobBytes=0, ReadBytes=0 WHERE JobId IN (SELECT JobId FROM acct_native_jobsize_backup)"
+END_OF_DATA
+query_accounting ndmp-native-no-size
+run_python_check "$tmp/status-subscriptions-ndmp-native-no-size.json" <<'PY'
+row = find_acct_test_row(load_result(sys.argv[1]))
+assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history", row
+assert row["baseline_full_jobid"] > 0, row
+PY
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE Job SET JobBytes=b.JobBytes, ReadBytes=b.ReadBytes FROM acct_native_jobsize_backup b WHERE Job.JobId=b.JobId"
+.sql query="DROP TABLE acct_native_jobsize_backup"
+.sql query="DELETE FROM NDMPJobEnvironment WHERE JobId IN (SELECT j.JobId FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest') AND EnvName='FILESYSTEM' AND EnvValue='/accounting-test'"
+.sql query="INSERT INTO File SELECT * FROM acct_ndmp_files_backup"
+.sql query="DROP TABLE acct_ndmp_files_backup"
+END_OF_DATA
+
+# Without either file history or a baseline Full size, NDMP remains excluded.
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_ndmp_jobsize_backup AS SELECT j.JobId, j.JobBytes, j.ReadBytes FROM Job j JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+.sql query="UPDATE Job SET JobBytes=0, ReadBytes=0 WHERE JobId IN (SELECT JobId FROM acct_ndmp_jobsize_backup)"
+END_OF_DATA
+query_accounting ndmp-no-size
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE Job SET JobBytes=b.JobBytes, ReadBytes=b.ReadBytes FROM acct_ndmp_jobsize_backup b WHERE Job.JobId=b.JobId"
+.sql query="DROP TABLE acct_ndmp_jobsize_backup"
+END_OF_DATA
+run_python_check "$tmp/status-subscriptions-ndmp-no-size.json" <<'PY'
+row = find_acct_test_row(load_result(sys.argv[1]))
+assert row["excluded"] and row["exclusion_reason"] == "ndmp_no_file_history", row
 PY
 
 # Real NDMP_BAREOS and NDMP_NATIVE catalog exports from PR #2855.
@@ -534,6 +643,119 @@ for phase in full incremental; do
   "${PYTHON_EXECUTABLE}" ./plugin_accounting_fixture.py check \
     "$phase" "$tmp/status-subscriptions-plugin-fixtures-${phase}.json"
 done
+
+"${PYTHON_EXECUTABLE}" ./accounting_edge_fixture.py import \
+  >"$tmp/accounting-edges-import.bcon"
+run_bconsole "$tmp/accounting-edges-import.bcon"
+query_accounting chain-edges
+"${PYTHON_EXECUTABLE}" ./accounting_edge_fixture.py check \
+  "$tmp/status-subscriptions-chain-edges.json"
+
+# Exercise real sparse and hard-linked files plus Accurate deletion, including
+# the per-job delta update before comparing it with a full recalculation.
+if ! on_windows_host; then
+  ln "$tmp/acct-data/file-512bytes.bin" "$tmp/acct-data/edge/hardlink"
+  "${PYTHON_EXECUTABLE}" - "$tmp/acct-data/edge/sparse" <<'PY'
+import sys
+
+with open(sys.argv[1], "wb") as stream:
+    stream.truncate(8 * 1024 * 1024)
+PY
+  run_bconsole - <<END_OF_DATA
+@$out $tmp/accounting-edges-full.log
+run job=$JobName level=Full accurate=yes yes
+wait
+END_OF_DATA
+  wait_for_accounting_result "$tmp/accounting-edges-full.log" \
+    "AcctTest@bareos-fd[[:space:]]+5[[:space:]]+.*[[:space:]]1$"
+  run_python_check "$tmp/accounting-edges-full.log.json" "$tmp/acct-data" <<'PY'
+import os
+
+row = find_acct_test_row(load_result(sys.argv[1]))
+paths = ["file-1byte.bin", "file-512bytes.bin", "file-1000bytes.bin",
+         "edge/hardlink", "edge/sparse"]
+stats = [os.stat(os.path.join(sys.argv[2], path)) for path in paths]
+assert row["files"] == len(stats), row
+assert row["bytes"] == sum(stat.st_blocks * 512 for stat in stats), row
+assert row["logical_bytes"] == sum(stat.st_size for stat in stats), row
+assert row["bytes"] < row["logical_bytes"], row
+assert stats[1].st_ino == stats[3].st_ino
+PY
+  rm "$tmp/acct-data/file-1byte.bin"
+  sleep 2
+  run_bconsole - <<END_OF_DATA
+@$out $tmp/accounting-edges-delete.log
+run job=$JobName level=Incremental accurate=yes yes
+wait
+.sql query="SELECT 'DELETED_ACCOUNTING_FILE=' || COUNT(*) FROM File f JOIN Job j USING (JobId) WHERE j.Name='$JobName' AND j.JobId=(SELECT MAX(JobId) FROM Job WHERE Name='$JobName') AND f.Name='file-1byte.bin' AND f.FileIndex=0"
+END_OF_DATA
+  grep -q 'DELETED_ACCOUNTING_FILE=1' "$tmp/accounting-edges-delete.log"
+  wait_for_accounting_result "$tmp/accounting-edges-delete.log" \
+    "AcctTest@bareos-fd[[:space:]]+4[[:space:]]+.*[[:space:]]2$"
+  run_python_check "$tmp/accounting-edges-full.log.json" \
+    "$tmp/accounting-edges-delete.log.json" "$tmp/acct-data" <<'PY'
+import os
+
+before = find_acct_test_row(load_result(sys.argv[1]))
+after = find_acct_test_row(load_result(sys.argv[2]))
+assert after["files"] == before["files"] - 1, (before, after)
+assert after["logical_bytes"] == before["logical_bytes"] - 1, (before, after)
+paths = ["file-512bytes.bin", "file-1000bytes.bin", "edge/hardlink", "edge/sparse"]
+assert after["bytes"] == sum(os.stat(os.path.join(sys.argv[3], path)).st_blocks * 512
+                             for path in paths), after
+PY
+  query_accounting accurate-recalculated
+  run_python_check "$tmp/accounting-edges-delete.log.json" \
+    "$tmp/status-subscriptions-accurate-recalculated.json" <<'PY'
+assert find_acct_test_row(load_result(sys.argv[1])) == find_acct_test_row(
+    load_result(sys.argv[2]))
+PY
+fi
+
+# Failed scans must leave the entire last good snapshot and timing intact.
+query_accounting before-invalid
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_invalid_backup AS SELECT f.FileId, f.LStat FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+END_OF_DATA
+invalid_cases="size logical-total-overflow"
+if ! on_windows_host; then
+  invalid_cases="$invalid_cases blocks block-overflow byte-total-overflow"
+fi
+for invalid in $invalid_cases; do
+  case "$invalid" in
+    size) stat="A A IGk B A A A -C BAA B A A A A A A" ;;
+    blocks) stat="A A IGk B A A A B BAA -C A A A A A A" ;;
+    block-overflow) stat="A A IGk B A A A B BAA CAAAAAAAAA A A A A A A" ;;
+    byte-total-overflow) stat="A A IGk B A A A B BAA BAAAAAAAAA A A A A A A" ;;
+    logical-total-overflow) stat="A A IGk B A A A H////////// BAA A A A A A A A" ;;
+  esac
+  run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat='$stat' WHERE FileId IN (SELECT FileId FROM acct_invalid_backup)"
+END_OF_DATA
+  query_accounting "invalid-$invalid"
+  run_python_check "$tmp/status-subscriptions-before-invalid.json" \
+    "$tmp/status-subscriptions-invalid-$invalid.json" <<'PY'
+before = load_result(sys.argv[1])
+after = load_result(sys.argv[2])
+assert after["accounting"] == before["accounting"], (before, after)
+assert after["summary"] == before["summary"], (before, after)
+old = before["accounting_snapshot"]
+new = after["accounting_snapshot"]
+assert new["last_refresh_error"] == "failed to scan file attributes", new
+for key in ("calculated_at", "last_full_completed_at", "last_full_duration_ms"):
+    assert new[key] == old[key], (key, old, new)
+PY
+  run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat=b.LStat FROM acct_invalid_backup b WHERE File.FileId=b.FileId"
+END_OF_DATA
+done
+run_bconsole - <<END_OF_DATA
+.sql query="DROP TABLE acct_invalid_backup"
+END_OF_DATA
+query_accounting after-invalid
+run_python_check "$tmp/status-subscriptions-after-invalid.json" <<'PY'
+assert not load_result(sys.argv[1])["accounting_snapshot"].get("last_refresh_error")
+PY
 
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2

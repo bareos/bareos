@@ -197,6 +197,8 @@ SET LastSuccess=CURRENT_TIMESTAMP, LastAttempt=CURRENT_TIMESTAMP,
 status subscriptions all
 @$out $tmp/status-subscriptions-measured-client.json
 status subscriptions client=file-only
+@$out $tmp/status-subscriptions-measured-client-anon.json
+status subscriptions client=file-only anonymize
 @$out $tmp/status-subscriptions-legacy.json
 status subscriptions all legacy
 @$out $tmp/status-subscriptions-legacy-client.json
@@ -211,6 +213,8 @@ status subscriptions all
 .api 0
 @$out $tmp/status-subscriptions-invalid-legacy.txt
 status subscriptions accounting legacy
+status subscriptions recalculate all
+status subscriptions fileset=file1
 
 sqlquery sharedsession
 UPDATE Job SET AccountingExcluded=true
@@ -238,7 +242,7 @@ status subscriptions
 @$out $tmp/status-subscriptions-mixed.json
 status subscriptions all anonymize
 @$out $tmp/status-subscriptions-accounting-stale.json
-status subscriptions accounting
+status subscriptions
 @$out ${NULL_DEV}
 .api 0
 
@@ -276,6 +280,15 @@ assert "age_seconds" not in empty
 assert not empty["multiple_catalogs"]
 
 measured = result("measured")
+assert measured["accounting"] and measured["accounting_snapshot"]["available"]
+assert "last_full_duration_ms" not in measured["accounting_snapshot"]
+assert all(row["client"] == "file-only" for row in result("measured-client")["accounting"])
+client_anon = result("measured-client-anon")
+assert "file-only" not in str(client_anon)
+assert {row["fileset"] for row in client_anon["unit-detail"]} == {
+    row["fileset"] for row in client_anon["accounting"]
+}
+assert all(row["client"] == "Client 10000" for row in client_anon["accounting"])
 assert measured["subscription_accounting"]["source"] == "measured"
 assert measured["subscription_accounting"]["estimated_combinations"] == 0
 assert 0 <= measured["subscription_accounting"]["age_seconds"] < 60
@@ -303,7 +316,9 @@ after_legacy = result("after-legacy")
 assert after_legacy["unit-summary"] == measured["unit-summary"]
 assert after_legacy["subscription_accounting"]["calculated_at"] == measured["subscription_accounting"]["calculated_at"]
 assert after_legacy["subscription_accounting"]["source"] == "measured"
-assert "cannot be combined" in (tmp / "status-subscriptions-invalid-legacy.txt").read_text()
+assert "Use status subscriptions" in (tmp / "status-subscriptions-invalid-legacy.txt").read_text()
+assert "Usage: status subscriptions recalculate" in (tmp / "status-subscriptions-invalid-legacy.txt").read_text()
+assert "fileset filtering is not supported" in (tmp / "status-subscriptions-invalid-legacy.txt").read_text()
 
 mixed = result("mixed")
 assert mixed["subscription_accounting"]["source"] == "mixed"
@@ -314,6 +329,9 @@ assert mixed["subscription_accounting"]["refresh_failed"]
 assert mixed["unit-summary"]["used"] == "156"
 assert next(row for row in mixed["unit-clients"] if row["client"] == "Client 10000")["size_gb"] == "5002.00"
 assert "file-only" not in (tmp / "status-subscriptions-mixed.json").read_text()
+assert all(row["client"].startswith("Client ") and row["fileset"].startswith("FileSet ")
+           for row in mixed["accounting"])
+assert mixed["accounting_snapshot"]["last_refresh_error"] == "Last recalculation failed."
 assert measured["checksum"] != mixed["checksum"]
 
 snapshot = result("accounting-stale")["accounting_snapshot"]
@@ -326,7 +344,7 @@ assert "latest subscription accounting refresh failed" in text.lower()
 PY
 
 # remove lines starting with @ so output is comparable
-sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes are job-based for /d' -e '/^No subscription accounting snapshot is available;/d' "$tmp"/status-subscriptions-*.txt
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" -e '/^Subscription sizes are job-based for /d' -e '/^No subscription accounting snapshot is available;/d' -e '/^Background refresh worker:/d' -e '/^Subscription accounting has not been calculated yet./d' "$tmp"/status-subscriptions-*.txt
 sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-*.json
 "${PYTHON_EXECUTABLE}" - "$tmp" <<'PY'
 import pathlib
@@ -338,7 +356,13 @@ for path in tmp.glob("status-subscriptions-*.json"):
         output = path.read_text()
         start = output.index('    "subscription_accounting": {')
         end = output.index("    },\n", start) + len("    },\n")
-        path.write_text(output[:start] + output[end:])
+        if '    "accounting_snapshot": {' in output:
+            snapshot_start = output.index('    "accounting_snapshot": {')
+            snapshot_end = output.index("    }\n", snapshot_start) + len("    }\n")
+            output = output[:snapshot_start] + output[snapshot_end:]
+        output = output[:start] + output[end:]
+        output = output.replace("    ],\n  }", "    ]\n  }")
+        path.write_text(output)
 PY
 
 for f in expected/status-subscriptions-*.txt expected/status-subscriptions-*.json; do

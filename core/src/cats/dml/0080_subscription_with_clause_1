@@ -44,6 +44,7 @@ client_detail AS (
     c.name AS client_name,
     'Client ' || c.clientid AS client_anon,
     c.clientid AS client_id,
+    f.filesetid AS fileset_id,
     f.fileset AS fileset,
     COALESCE(CASE WHEN sa.excluded THEN NULL ELSE sa.bytes END,
       GREATEST(j.readbytes::bigint, j.jobbytes::bigint)) / 10^9 AS size_gb,

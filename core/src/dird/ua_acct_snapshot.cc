@@ -42,6 +42,10 @@ int SnapshotMetadataHandler(void* ctx, int, char** row)
   metadata->last_error = row[1] ? row[1] : "";
   metadata->has_snapshot = !metadata->timestamp.empty();
   metadata->stale = row[2] == nullptr || bstrcmp(row[2], "true");
+  metadata->full_completed_at = row[3] ? row[3] : "";
+  if (row[4] && row[4][0]) {
+    metadata->full_duration_ms = str_to_uint64(row[4]);
+  }
   return 0;
 }
 
@@ -61,6 +65,7 @@ int SnapshotRowHandler(void* ctx, int, char** row)
   result.ndmp_archives = row[9] ? str_to_uint64(row[9]) : 0;
   result.rule = row[10] ? row[10] : "";
   result.jobs_in_chain = row[11] ? str_to_uint64(row[11]) : 0;
+  result.baseline_full_jobid = row[12] ? str_to_uint64(row[12]) : 0;
   rows->push_back(std::move(result));
   return 0;
 }
@@ -82,13 +87,16 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
                                         const char* client_filter,
                                         const char* fileset_filter,
                                         SnapshotMetadata* metadata,
-                                        std::vector<AccountingRow>* rows)
+                                        std::vector<AccountingRow>* rows,
+                                        bool anonymize)
 {
   if (!ua->db->SqlQuery(
           "SELECT COALESCE(to_char(LastSuccess, 'YYYY-MM-DD HH24:MI:SS'), "
           "''), COALESCE(LastError, ''), "
           "(LastSuccess IS NULL OR LastSuccess < CURRENT_TIMESTAMP - "
-          "INTERVAL '24 hours')::text "
+          "INTERVAL '24 hours')::text, "
+          "to_char(LastFullSuccess, 'YYYY-MM-DD HH24:MI:SS'), "
+          "LastFullDurationMs::text "
           "FROM SubscriptionAccountingSnapshot WHERE SnapshotId=1",
           SnapshotMetadataHandler, metadata)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
@@ -96,20 +104,29 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
   }
 
   PoolMem query(PM_MESSAGE);
-  PmStrcpy(query,
-           "SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
-           "Client.Name, FileSet.FileSet, Job.AccountingExcluded, "
-           "COALESCE(Job.AccountingExclusionReason, ''), "
-           "Job.AccountingFiles::text, Job.AccountingBytes::text, "
-           "Job.AccountingLogicalBytes::text, "
-           "Job.AccountingOpaqueFiles::text, "
-           "Job.AccountingNdmpArchives::text, "
-           "COALESCE(Job.AccountingRule, ''), "
-           "Job.AccountingJobsInChain::text "
-           "FROM Job JOIN Client USING (ClientId) "
-           "JOIN FileSet USING (FileSetId) "
-           "WHERE Job.AccountingValid AND Job.JobStatus IN ('T','W') "
-           "AND Job.Type IN ('B','C','g','O')");
+  Mmsg(query,
+       "SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
+       "%s, %s, Job.AccountingExcluded, "
+       "COALESCE(Job.AccountingExclusionReason, ''), "
+       "Job.AccountingFiles::text, Job.AccountingBytes::text, "
+       "Job.AccountingLogicalBytes::text, "
+       "Job.AccountingOpaqueFiles::text, "
+       "Job.AccountingNdmpArchives::text, "
+       "COALESCE(Job.AccountingRule, ''), "
+       "Job.AccountingJobsInChain::text, "
+       "(SELECT baseline.JobId FROM Job baseline "
+       "WHERE baseline.ClientId=Job.ClientId "
+       "AND baseline.FileSetId=Job.FileSetId AND baseline.Level='F' "
+       "AND baseline.JobStatus IN ('T','W') "
+       "AND baseline.Type IN ('B','C','g','O') "
+       "AND (baseline.JobTDate,baseline.JobId)<=(Job.JobTDate,Job.JobId) "
+       "ORDER BY baseline.JobTDate DESC,baseline.JobId DESC LIMIT 1)::text "
+       "FROM Job JOIN Client USING (ClientId) "
+       "JOIN FileSet USING (FileSetId) "
+       "WHERE Job.AccountingValid AND Job.JobStatus IN ('T','W') "
+       "AND Job.Type IN ('B','C','g','O')",
+       anonymize ? "'Client ' || Job.ClientId" : "Client.Name",
+       anonymize ? "'FileSet ' || Job.FileSetId" : "FileSet.FileSet");
   std::string escaped;
   if (client_filter) {
     if (!EscapeForSql(ua, client_filter, &escaped)) { return false; }

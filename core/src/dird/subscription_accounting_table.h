@@ -32,8 +32,8 @@ using SubscriptionAccountingTableRow = std::array<std::string, 7>;
 
 inline std::string SubscriptionAccountingRuleCode(const std::string& rule)
 {
-  if (rule == "st_blocks*512") { return "B"; }
-  if (rule == "st_size") { return "S"; }
+  if (rule == "st_blocks*512") { return "A"; }
+  if (rule == "st_size") { return "L"; }
   if (rule == "job_bytes") { return "J"; }
   return rule;
 }
@@ -42,7 +42,8 @@ inline std::string FormatSubscriptionAccountingTable(
     const SubscriptionAccountingTableRow& header,
     const std::vector<SubscriptionAccountingTableRow>& rows,
     const SubscriptionAccountingTableRow& total,
-    bool show_status)
+    bool show_status,
+    bool show_logical)
 {
   const size_t columns = show_status ? header.size() : header.size() - 1;
   std::array<size_t, 7> widths{};
@@ -54,8 +55,11 @@ inline std::string FormatSubscriptionAccountingTable(
   }
   std::string output;
   const auto append_row = [&](const SubscriptionAccountingTableRow& row) {
+    bool first = true;
     for (size_t i = 0; i < columns; ++i) {
-      if (i != 0) { output += "  "; }
+      if (i == 3 && !show_logical) { continue; }
+      if (!first) { output += "  "; }
+      first = false;
       const size_t padding = widths[i] - row[i].size();
       const bool right_aligned = i == 1 || i == 2 || i == 3 || i == 5;
       if (right_aligned) { output.append(padding, ' '); }
@@ -66,8 +70,11 @@ inline std::string FormatSubscriptionAccountingTable(
     output += '\n';
   };
   std::string separator;
+  bool first = true;
   for (size_t i = 0; i < columns; ++i) {
-    if (i != 0) { separator += "  "; }
+    if (i == 3 && !show_logical) { continue; }
+    if (!first) { separator += "  "; }
+    first = false;
     separator.append(widths[i], '-');
   }
   separator += '\n';

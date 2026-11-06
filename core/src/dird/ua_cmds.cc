@@ -139,7 +139,6 @@ static bool MemoryCmd(UaContext* ua, const char* cmd);
 static bool MountCmd(UaContext* ua, const char* cmd);
 static bool noop_cmd(UaContext* ua, const char* cmd);
 static bool ReleaseCmd(UaContext* ua, const char* cmd);
-static bool RefreshCmd(UaContext* ua, const char* cmd);
 static bool ReloadCmd(UaContext* ua, const char* cmd);
 static bool ResolveCmd(UaContext* ua, const char* cmd);
 static bool SetdebugCmd(UaContext* ua, const char* cmd);
@@ -421,8 +420,6 @@ static struct ua_cmdstruct commands[] = {
     {NT_("release"), ReleaseCmd, T_("Release storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), true,
      true},
-    {NT_("refresh"), RefreshCmd, T_("Request a background refresh"),
-     NT_("subscriptions accounting"), true, true},
     {NT_("reload"), ReloadCmd, T_("Reload conf file"), NT_(""), true, true},
     {NT_("rerun"), reRunCmd, T_("Rerun a job"),
      NT_("jobid=<jobid> | since_jobid=<jobid> [ until_jobid=<jobid> ] | "
@@ -450,9 +447,9 @@ static struct ua_cmdstruct commands[] = {
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
          "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
+         "[logical] "
          "[client=<client-name>] | "
-         "subscriptions accounting [client=<client-name>] "
-         "[fileset=<fileset-name>] | "
+         "subscriptions recalculate | "
          "configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
@@ -2239,23 +2236,6 @@ static bool ReloadCmd(UaContext* ua, const char*)
   ua->send->ObjectEnd("reload");
 
   return result;
-}
-
-static bool RefreshCmd(UaContext* ua, const char*)
-{
-  if (FindArg(ua, NT_("subscriptions")) <= 0
-      || FindArg(ua, NT_("accounting")) <= 0) {
-    ua->ErrorMsg(T_("Usage: refresh subscriptions accounting\n"));
-    return false;
-  }
-  if (ua->AclHasRestrictions(Client_ACL) || ua->AclHasRestrictions(Job_ACL)
-      || ua->AclHasRestrictions(FileSet_ACL)) {
-    ua->ErrorMsg(
-        T_("This command needs access to all clients, jobs, and "
-           "filesets.\n"));
-    return false;
-  }
-  return RequestSubscriptionAccountingRefresh(ua);
 }
 
 /**

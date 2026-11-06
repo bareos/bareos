@@ -6,7 +6,9 @@ CREATE TABLE SubscriptionAccountingSnapshot (
     SnapshotId        SMALLINT    PRIMARY KEY,
     LastAttempt       TIMESTAMP   WITHOUT TIME ZONE,
     LastSuccess       TIMESTAMP   WITHOUT TIME ZONE,
-    LastError         TEXT
+    LastError         TEXT,
+    LastFullSuccess   TIMESTAMP WITHOUT TIME ZONE,
+    LastFullDurationMs BIGINT CHECK (LastFullDurationMs >= 0)
 );
 
 INSERT INTO SubscriptionAccountingSnapshot (SnapshotId)

@@ -55,7 +55,7 @@ namespace {
 constexpr const char* kAccountableJobTypes = "'B','C','g','O'";
 
 /**
- * Per-platform accounting rule (see plan.md for the full rationale):
+ * Per-platform accounting rule (see DeveloperGuide/SubscriptionAccounting.rst):
  *  - Windows clients (Client.Uname contains "Windows"): use st_size
  *    for both totals -- Windows st_blocks is synthetic.
  *  - Everyone else: use st_blocks * 512 for allocated bytes and st_size
@@ -472,7 +472,7 @@ ChainResult ResolveAccountingChain(UaContext* ua,
  * previous approach of fetching every row and de-duplicating in an
  * application-side std::unordered_map (which held the full distinct
  * file set of the chain resident in Director memory -- many GB on
- * large catalogs, see plan.md benchmark).
+ * large catalogs).
  *
  * The query result itself is streamed via BigSqlQuery() (server-side
  * cursor, fetched in batches), and FileRowHandler() folds each row
@@ -519,6 +519,7 @@ struct FullJobSizeCtx {
   bool found{false};
   uint64_t bytes{0};
   uint64_t files{0};
+  bool has_ndmp_environment{false};
 };
 
 int FullJobSizeHandler(void* ctx, int, char** row)
@@ -527,12 +528,13 @@ int FullJobSizeHandler(void* ctx, int, char** row)
   size->found = true;
   size->bytes = row[0] ? str_to_uint64(row[0]) : 0;
   size->files = row[1] ? str_to_uint64(row[1]) : 0;
+  size->has_ndmp_environment = row[2] && row[2][0] == '1';
   return 0;
 }
 
 /* Job-level size (max(ReadBytes, JobBytes), as in the legacy report) of the
- * chain's baseline Full. Used only when the chain holds an opaque plugin
- * image whose File row carries no real size. */
+ * chain's baseline Full. Used for opaque plugin images and NDMP archives
+ * without file history whose File rows carry no real size. */
 bool FetchBaselineFullJobSize(UaContext* ua,
                               JobId_t full_jobid,
                               FullJobSizeCtx* size)
@@ -540,7 +542,9 @@ bool FetchBaselineFullJobSize(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   char ed1[50];
   Mmsg(query,
-       "SELECT GREATEST(ReadBytes, JobBytes)::text, JobFiles::text FROM Job"
+       "SELECT GREATEST(ReadBytes, JobBytes)::text, JobFiles::text,"
+       " CASE WHEN EXISTS (SELECT 1 FROM NDMPJobEnvironment e"
+       " WHERE e.JobId=Job.JobId) THEN '1' ELSE '0' END FROM Job"
        " WHERE JobId=%s",
        edit_int64(full_jobid, ed1));
   if (!ua->db->SqlQuery(query.c_str(), FullJobSizeHandler, size)) {
@@ -715,24 +719,28 @@ bool MakeAccountingRowFromScan(UaContext* ua,
                                AccountingRow* row,
                                std::string* error)
 {
-  if (scan.saw_opaque_plugin_image) {
-    FullJobSizeCtx full_size{};
+  FullJobSizeCtx full_size{};
+  if (scan.saw_opaque_plugin_image || scan.files == 0) {
     if (!FetchBaselineFullJobSize(ua, jobids.front(), &full_size)) {
       *error = "failed to query baseline job size";
       return false;
     }
+  }
+  if (scan.saw_opaque_plugin_image
+      || (scan.files == 0
+          && (scan.saw_virtual_ndmp_archive
+              || full_size.has_ndmp_environment))) {
     if (full_size.bytes == 0) {
       row->excluded = true;
-      row->exclusion_reason = "opaque_backup_image";
+      row->exclusion_reason = scan.saw_opaque_plugin_image
+                                  ? "opaque_backup_image"
+                                  : "ndmp_no_file_history";
     } else {
       row->files = full_size.files;
       row->bytes = full_size.bytes;
       row->logical_bytes = full_size.bytes;
       row->rule = "job_bytes";
     }
-  } else if (scan.saw_virtual_ndmp_archive && scan.files == 0) {
-    row->excluded = true;
-    row->exclusion_reason = "ndmp_no_file_history";
   } else {
     row->files = scan.files;
     row->bytes = scan.bytes;

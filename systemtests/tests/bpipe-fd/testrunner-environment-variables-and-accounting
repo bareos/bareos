@@ -10,7 +10,7 @@ set -u
 # It also covers the bpipe plugin's corrected-attributes resend (the
 # fallback byte/block count reported when the plugin doesn't set an
 # exact size), including that the corrected attributes reach the
-# Director before the digest, that "status subscriptions accounting"
+# Director before the digest, that "status subscriptions"
 # reports the corrected allocated and logical sizes, and that a Virtual
 # Full consolidation retains both values unchanged.
 #
@@ -32,14 +32,14 @@ refresh_and_wait_for_subscription_accounting()
 
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out "${runner_tmp}/accounting-refresh-request.out"
-refresh subscriptions accounting
+status subscriptions recalculate
 END_OF_DATA
   run_bconsole
 
   for _ in {1..60}; do
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out "$report"
-status subscriptions accounting client=bareos-fd fileset=SelfTest
+status subscriptions logical client=bareos-fd
 END_OF_DATA
     run_bconsole
     if grep -qF "Background refresh worker: idle." "$report" \
@@ -194,10 +194,10 @@ done
 
 if on_windows_host; then
   accounted_bytes=$payload_bytes
-  accounting_rule=S
+  accounting_rule=L
 else
   accounted_bytes=$((payload_blocks * 512))
-  accounting_rule=B
+  accounting_rule=A
 fi
 
 expect_grep \

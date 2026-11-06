@@ -1520,7 +1520,7 @@ status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
               client=<client-name> | storage=<storage-name> slots |
-              subscriptions [clients] [plugins] [all] [anonymize] [client=<client-name>] |
+              subscriptions [clients] [plugins] [all] [anonymize] [logical] [client=<client-name>] |
               configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
@@ -1700,6 +1700,7 @@ status scheduler
 
 
 .. _status-subscription:
+.. _bareos-console-subscription-accounting:
 
 status subscriptions
    In case you have a service contract for Bareos, the command
@@ -1759,7 +1760,8 @@ status subscriptions
    is neither refreshed nor modified; structured output identifies this
    mode with ``subscription_accounting.source = "legacy"``. This option
    also works with ``clients``, ``plugins``, ``client=`` and ``anonymize``,
-   but cannot be combined with ``accounting``.
+   but ``accounting`` is not a valid report modifier; accounting details
+   are included by default.
    A Client/FileSet chain containing an opaque backup image (for example,
    barri or an NDMP stream with unknown file size) cannot be measured per
    file, even when accompanying log files have measurable attributes. The
@@ -1767,12 +1769,13 @@ status subscriptions
    the job-level size of the chain's latest Full backup
    (``max(ReadBytes, JobBytes)``) is used.
    NDMP stream containers are ignored when actual per-file history is
-   available; those combinations continue to use file-based sizes.
+   available; those combinations continue to use file-based sizes. Native
+   NDMP backups without a synthetic container are detected from their saved
+   ``NDMPJobEnvironment`` record when file history is absent.
    If the Full job has no recorded size, the combination is excluded with
-   the distinct ``opaque_backup_image`` reason. The NDMP file-history
-   explanation applies only to NDMP containers without measurable file
-   history (``ndmp_no_file_history``). Older snapshots with the ambiguous
-   ``no_per_file_data`` reason show a generic explanation until refreshed.
+   the distinct ``opaque_backup_image`` reason, or ``ndmp_no_file_history``
+   for NDMP backups without measurable file history and without a
+   usable Full job size.
    MSSQL VDI streams under ``/@MSSQL/`` with the plugin's zero-size
    placeholder attributes also use this fallback. The plugin need not be
    changed, and ordinary empty files are not treated as opaque streams.
@@ -1883,11 +1886,11 @@ status subscriptions
      In the current version there is no unknown data and detail is now the
      default.
 
-   To see the underlying per-Client/FileSet file counts and byte totals,
-   use the keyword ``accounting`` (e.g.
-   :bcommand:`status subscriptions accounting`). The existing report above
-   reuses these snapshot sizes where available, but retains its plugin
-   grouping and count-based unit rules. The accounting mode displays the
+   The default :bcommand:`status subscriptions` report and its ``all`` variant
+   include the underlying per-Client/FileSet file counts and byte totals.
+   The subscription-unit sections reuse these snapshot sizes where available,
+   retaining their plugin grouping and count-based unit rules. The accounting
+   details display the
    latest successfully calculated result for every Client/FileSet
    combination. A completed backup updates its cumulative chain result in
    the background. On startup, or when a status command finds a missing
@@ -1896,11 +1899,20 @@ status subscriptions
    result. These calculations do not affect the backup job's final status.
 
    Bareos does not run a daily full-chain accounting scan by default. Use
-   :bcommand:`refresh subscriptions accounting` to request an explicit
+   :bcommand:`status subscriptions recalculate` to request an explicit
    full recalculation of all Client/FileSet combinations, for example after
    a catalog repair or when reconciling the incremental results. The command
    queues the calculation in the background and returns immediately;
    repeated requests while a full refresh is running or queued are coalesced.
+   Do not combine ``recalculate`` with report modifiers or filters.
+   Recalculation requires the ``status`` command permission and unrestricted
+   access to all Client, Job, and FileSet resources.
+   The duration and completion timestamp of the last successful full
+   recalculation are persisted separately from routine per-job updates.
+   Execution time excludes queue wait and includes saving the results.
+   Structured output exposes ``accounting_snapshot.last_full_duration_ms``
+   and ``last_full_completed_at`` only after a successful full recalculation.
+   Failed recalculations preserve these values.
    If an installation was upgraded from a version that provided a scheduled
    ``SubscriptionAccounting`` Admin Job, remove that Job and Schedule from
    the Director configuration to disable the former daily full refresh.
@@ -1909,55 +1921,66 @@ status subscriptions
    running, or unavailable. Structured output includes the worker state in
    ``accounting_snapshot.refresh_thread_state``.
 
-   The report provides two sizes for a Client/FileSet combination:
-   allocated bytes, based on ``st_blocks * 512`` for Unix-like clients,
-   and logical bytes, based on ``st_size``. Allocated bytes are sparse-file
+   Measured Client/FileSet combinations provide two sizes: allocated bytes,
+   based on ``st_blocks * 512`` for Unix-like clients, and logical bytes,
+   based on ``st_size``. Rule ``J`` combinations instead use an estimate from
+   the baseline Full job, repeating that estimate in the logical field.
+   Allocated bytes are sparse-file
    aware and approximate what :command:`du` would report on the client;
    logical bytes represent the sum of the backed-up file lengths and are
    independent of filesystem allocation and compression. The primary
    accounting figure intentionally counts allocated source data, not the
    virtual length of sparse files: a sparse file can therefore contribute
    much less than its ``st_size``, even when restored as a file of that
-   length. Neither figure measures bytes transferred during backup or
-   guarantees the allocation of the restored copy. Both describe files in
-   the most recent backup chain, not the sum of everything that has ever
-   been transferred by every backup job. A file saved unchanged by
-   successive Incrementals is counted only once, using its newest version;
+   length. For measured rows, neither figure measures bytes transferred
+   during backup or guarantees the allocation of the restored copy. Rule
+   ``J`` is the exception: it is a baseline Full job-size estimate rather
+   than a per-file measurement. Measured values describe files in the most
+   recent backup chain, not the sum of everything that has ever been
+   transferred by every backup job. A file saved unchanged by successive
+   Incrementals is counted only once, using its newest version;
    a file recorded as deleted by accurate mode is not counted. Without
    Accurate, Bareos has no delete records, so files deleted from the client
    remain counted until the next Full backup.
 
    .. code-block:: bconsole
-      :caption: status subscriptions accounting
+      :caption: status subscriptions
 
-      *<input>status subscriptions accounting</input>
+      *<input>status subscriptions</input>
 
       Real (File.LStat-based) subscription accounting report from snapshot at 2026-09-30 12:00:00:
-      FileSet@Client       Files  Accounted size  Logical size  Rule  Chain jobs
-      -----------------  -------  --------------  ------------  ----  ----------
-      system@linux-fd    128,532        24.31 GB      25.00 GB  B              4
-      system@windows-fd   84,221        12.00 GB      12.00 GB  S              3
-      -----------------  -------  --------------  ------------  ----  ----------
-      TOTAL              212,753        36.32 GB      37.00 GB
+      FileSet@Client       Files  Accounted size  Rule  Chain jobs
+      -----------------  -------  --------------  ----  ----------
+      system@linux-fd    128,532        24.31 GB  A              4
+      system@windows-fd   84,221        12.00 GB  L              3
+      -----------------  -------  --------------  ----  ----------
+      TOTAL              212,753        36.32 GB
 
       Rule:
-        B = allocated size (st_blocks * 512 bytes)
-        S = logical size (st_size)
-        J = job size of the latest Full (estimated; opaque plugin image)
+        A = allocated size (st_blocks * 512 bytes)
+        L = logical size (st_size)
+        J = job size of the latest Full (estimated; opaque plugin image or NDMP without file history)
       Size units are decimal (1 KB = 1,000 bytes).
 
-      Grand total: 212,753 files, 36,323,289,088 bytes across 2 accounted Client/FileSet combination(s)
-      Logical size total (st_size): 37,008,680,256 bytes
+      Grand total: 212,753 files, 36.32 GB (36,323,289,088 bytes) across 2 accounted Client/FileSet combination(s)
 
-   Optional ``client=<client-name>`` and ``fileset=<fileset-name>`` filters
-   can be used to restrict the report to a single client and/or fileset,
+   The optional ``client=<client-name>`` filter
+   can be used to restrict both report sections to a single client,
    for example
-   :bcommand:`status subscriptions accounting client=linux-fd`.
+   :bcommand:`status subscriptions client=linux-fd`.
 
    The console table identifies each combination as ``FileSet@Client``.
-   ``Accounted size`` follows the rule shown in the legend; ``Logical size``
-   always represents file lengths. Sizes in the table use shortened decimal
-   units, while JSON and the grand totals retain exact byte counts.
+   ``Accounted size`` follows the rule shown in the legend. The optional
+   ``logical`` keyword adds a ``Logical size`` column and logical total,
+   for example :bcommand:`status subscriptions logical client=linux-fd`.
+   In the WebUI, select ``Show logical size`` to display the same comparison;
+   this is off on each visit to the Subscription tab. PDF reports follow the
+   current selection; JSON downloads always include the logical-size fields.
+   Logical size represents file lengths for measured rows; for rule ``J``,
+   it repeats the job-size estimate rather than an independently measured
+   logical size. Sizes in the table use shortened decimal
+   units. Grand totals show shortened sizes followed by exact byte counts in
+   parentheses; JSON retains numeric byte counts.
    ``Chain jobs`` is the number of jobs used in the calculation, not a list
    of JobIds. Combinations sized from the job (rule ``J``) are estimates and
    have ``estimated`` set to true in the structured output. If any
@@ -1978,17 +2001,20 @@ status subscriptions
    ``available``, ``calculated_at``, and ``stale`` fields, plus
    ``last_refresh_error`` when the latest refresh failed.
 
-   For every accounted Client/FileSet combination, ``bytes`` in the
-   structured output and the main text line report allocated bytes using
+   For measured Client/FileSet combinations, ``bytes`` in the structured
+   output and the main text line report allocated bytes using
    ``st_blocks*512`` for Unix/Linux/macOS/BSD clients, or logical size using
    ``st_size`` for Windows clients (detected via their reported operating
    system information), since the ``st_blocks`` value reported by Bareos's
-   Windows compatibility layer is synthetic. The secondary
-   ``logical_bytes`` field and ``Logical size (st_size)`` text line always
-   report logical file size. The structured summary includes
-   ``total_logical_bytes``.
+   Windows compatibility layer is synthetic. For rule ``J``, ``bytes`` is the
+   baseline Full job-size estimate instead. The secondary
+   ``logical_bytes`` field reports logical file size for measured rows, or the
+   job-size estimate for rule ``J``. The structured summary always includes
+   ``total_logical_bytes``, regardless of the ``logical`` display option.
+   For implementation details and current test coverage, see the
+   :ref:`developer-subscription-accounting` chapter.
 
-   .. limitation:: status subscriptions accounting has its own limitations
+   .. limitation:: status subscriptions has its own limitations
 
       - Multiple Catalog resources are not supported: the background worker
         refreshes only the first configured Catalog, while the status report
@@ -2002,11 +2028,12 @@ status subscriptions
         estimated -- the grand total will under-report data for such
         combinations if older jobs were purged.
       - An NDMP Client/FileSet chain with only the synthetic archive row
-        and no per-file history is excluded with reason
-        ``ndmp_no_file_history``; its placeholder size is not used as an
-        estimate. A job-level size is not used as a fallback: it counts
-        transferred record-stream bytes, not the logical or allocated
-        size of the source files.
+        and no per-file history uses the baseline Full job size as a
+        rule J estimate. This counts transferred record-stream bytes,
+        not the logical or allocated size of the source files. If that
+        job size is unavailable or zero, the combination is excluded
+        with reason ``ndmp_no_file_history``. The synthetic archive
+        row's placeholder size is never used.
       - Copy, Migrate, Virtual Full, and Always-Incremental consolidation
         jobs are supported and contribute their own File rows like an
         ordinary Full backup would.
@@ -2031,7 +2058,7 @@ status subscriptions
       If you back up a VM using a plugin and with a |fd| installed inside of
       the VM, that will also be accounted twice.
 
-      :bcommand:`status subscriptions accounting` (see above) computes real
+      :bcommand:`status subscriptions` (see above) computes real
       numbers from actual catalog file data instead of estimating, and
       deduplicates file versions within each Client/FileSet chain, but does
       not deduplicate overlapping files across FileSets. It has its own

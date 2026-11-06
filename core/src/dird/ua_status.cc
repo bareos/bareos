@@ -638,13 +638,18 @@ static bool DoSubscriptionStatus(UaContext* ua)
     return false;
   }
 
-  if (FindArg(ua, NT_("accounting")) > 0) {
-    if (FindArg(ua, NT_("legacy")) > 0) {
-      ua->ErrorMsg(
-          T_("Parameters 'accounting' and 'legacy' cannot be combined.\n"));
+  if (FindArg(ua, NT_("accounting")) > 0 || FindArg(ua, NT_("fileset")) > 0) {
+    ua->ErrorMsg(
+        T_("Use status subscriptions [client=<name>] for accounting "
+           "details; fileset filtering is not supported.\n"));
+    return false;
+  }
+  if (FindArg(ua, NT_("recalculate")) > 0) {
+    if (ua->argc != 3) {
+      ua->ErrorMsg(T_("Usage: status subscriptions recalculate\n"));
       return false;
     }
-    return DoSubscriptionAccounting(ua);
+    return RequestSubscriptionAccountingRefresh(ua);
   }
 
   if (!OpenDb(ua)) {
@@ -669,7 +674,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->ErrorMsg("Parameter 'detail' ignored. This is now the default.\n");
   }
   if (kw_client) {
-    if (kw_clients | kw_plugins | kw_anon | kw_all) {
+    if (kw_clients | kw_plugins | kw_all) {
       ua->ErrorMsg(
           "Parameter 'client=' provided. Ignoring other parameters.\n");
     }
@@ -763,17 +768,39 @@ static bool DoSubscriptionStatus(UaContext* ua)
     }
   }
   if (kw_client) {
-    ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"), client);
+    if (kw_anon) {
+      ua->SendMsg(T_("\nDetailed anonymized backup unit report:\n"));
+    } else {
+      ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"),
+                  client);
+    }
     PoolMem query(PM_MESSAGE);
+    const auto escaped_client = ua->db->EscapeString(ua->jcr, client);
+    if (!escaped_client) {
+      ua->ErrorMsg(T_("Could not escape subscription client name.\n"));
+      return false;
+    }
     ua->db->FillQuery<BareosDb::SQL_QUERY::subscription_client_detail_2>(
-        query, with_clause.c_str(), client);
-
+        query, with_clause.c_str(), escaped_client->c_str());
+    if (kw_anon) {
+      Mmsg(query,
+           "%s SELECT 'FileSet ' || d.fileset_id AS fileset, "
+           "COALESCE(d.plugin, 'none (file data)') AS plugin, "
+           "d.size_gb::NUMERIC(20,2) FROM client_detail d "
+           "WHERE d.client_name='%s' ORDER BY d.fileset_id",
+           with_clause.c_str(), escaped_client->c_str());
+    }
     if (!ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
                               "unit-detail", true)) {
       return false;
     }
     ua->SendMsg(
         T_("All plugin jobs and the first non-plugin job are counted.\n"));
+    if (!kw_legacy
+        && !ReportSubscriptionAccounting(ua, kw_anon,
+                                         pending_accounting_jobs)) {
+      return false;
+    }
     return transaction.Commit();
   }
 
@@ -845,6 +872,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
   if (checksum) {
     ua->send->ObjectKeyValue("checksum", "Checksum: ", checksum->c_str(),
                              "%s\n");
+  }
+  if (!kw_legacy && (kw_all || (!kw_clients && !kw_plugins))
+      && !ReportSubscriptionAccounting(ua, kw_anon, pending_accounting_jobs)) {
+    return false;
   }
   return transaction.Commit();
 }

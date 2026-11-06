@@ -480,7 +480,9 @@
             <span>{{ t('Subscription') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white"
-                   @click="refreshSubscription" :loading="subscriptionLoading" />
+                   :aria-label="t('Reload report')" :title="t('Reload report')"
+                   @click="refreshSubscription" :loading="subscriptionLoading"
+                   :disable="subscriptionCalculationLoading" />
           </q-card-section>
           <q-card-section>
             <div v-if="isCommonDirectorPage" class="q-mb-md">
@@ -494,6 +496,7 @@
                 outlined
                 dense
                 :label="t('Director')"
+                :disable="subscriptionCalculationLoading"
               >
                 <template #selected-item="scope">
                   <DirectorLabel :director="scope.opt?.value || scope.opt?.label || ''" />
@@ -512,8 +515,13 @@
             </div>
             <q-inner-loading :showing="subscriptionLoading" />
             <div v-if="subscriptionError" class="text-negative">{{ subscriptionError }}</div>
-            <template v-else-if="subscriptionData">
-              <SubscriptionReport :data="subscriptionData" />
+            <template v-if="subscriptionData">
+              <SubscriptionReport :data="subscriptionData" refreshable
+                                  v-model:show-logical-size="showSubscriptionLogicalSize"
+                                  :refresh-loading="subscriptionCalculationLoading"
+                                  :refresh-disabled="subscriptionLoading || !currentSingletonDirector"
+                                  @refresh="refreshSubscriptionCalculation"
+                                  @open-job="openJobDetails({ jobid: $event, director: currentSingletonDirector })" />
 
               <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
               <div class="row q-gutter-sm q-mb-md q-mt-md">
@@ -561,7 +569,8 @@
   <!-- Hidden print root — rendered into DOM, visible only during window.print() -->
   <teleport to="body">
     <div id="subscription-print-root" style="display:none">
-      <SubscriptionReport v-if="printData" :data="printData" :anonymized="printAnonymized" />
+      <SubscriptionReport v-if="printData" :data="printData" :anonymized="printAnonymized"
+                          :show-logical-size="showSubscriptionLogicalSize" />
     </div>
   </teleport>
 </template>
@@ -761,6 +770,12 @@ function startStatusAutoRefresh() {
   clearInterval(_statusTimer)
   statusCountdown.value = settings.refreshInterval
   _statusTimer = setInterval(() => {
+    if (tab.value === 'subscription'
+        && statusCountdown.value % 5 === 0
+        && !subscriptionLoading.value
+        && !subscriptionCalculationLoading.value) {
+      refreshSubscription()
+    }
     statusCountdown.value -= 1
     if (statusCountdown.value <= 0) {
       refreshStatus()
@@ -908,6 +923,7 @@ watch(() => route.query.directorTarget, () => {
 })
 
 watch(tab, (t) => {
+  if (t !== 'subscription') showSubscriptionLogicalSize.value = false
   const current = normaliseTab(route.query.tab)
   const query = buildDirectorPageQuery(route.query, {
     tab: t,
@@ -1065,6 +1081,36 @@ onUnmounted(() => { clearInterval(_statusTimer) })
 const subscriptionLoading = ref(false)
 const subscriptionError   = ref(null)
 const subscriptionData    = ref(null)
+const showSubscriptionLogicalSize = ref(false)
+const subscriptionCalculationLoading = ref(false)
+
+async function refreshSubscriptionCalculation() {
+  if (subscriptionCalculationLoading.value
+      || subscriptionData.value?.accounting_snapshot?.refresh_thread_state !== 'idle') return
+  subscriptionCalculationLoading.value = true
+  subscriptionError.value = null
+  try {
+    const targetDirector = await ensureSingletonTabDirector()
+    if (!targetDirector) throw new Error(t('No director selected'))
+    await director.call('status subscriptions recalculate')
+    subscriptionData.value = {
+      ...subscriptionData.value,
+      accounting_snapshot: {
+        ...subscriptionData.value.accounting_snapshot,
+        refresh_thread_state: 'queued',
+      },
+    }
+    $q.notify({
+      type: 'positive',
+      message: t('Subscription calculation refresh requested in the background.'),
+    })
+    await refreshSubscription()
+  } catch (e) {
+    subscriptionError.value = e.message
+  } finally {
+    subscriptionCalculationLoading.value = false
+  }
+}
 
 async function refreshSubscription() {
   subscriptionLoading.value = true
