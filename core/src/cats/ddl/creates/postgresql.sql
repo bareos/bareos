@@ -123,6 +123,7 @@ CREATE INDEX job_accounting_client_fileset_idx
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
+ALTER TABLE JobHisto ALTER COLUMN AccountingValid SET DEFAULT FALSE;
 CREATE INDEX jobhisto_idx ON JobHisto (StartTime);
 
 CREATE TABLE Location (

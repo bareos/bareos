@@ -134,19 +134,11 @@ catalog_accounted_totals()
 
 check_logical_size()
 {
-  local report="$1" expected="$2" line actual
-  line="$(grep -m1 '"logical_bytes"' "$report.json" || true)"
-  if [[ "$line" =~ \"logical_bytes\":\ ([0-9]+) ]]; then
-    actual="${BASH_REMATCH[1]//,/}"
-    if [[ "$actual" -ne "$expected" ]]; then
-      echo "status subscriptions reported logical size ${actual}," \
-        "expected ${expected}!" >&2
-      estat=1
-    fi
-  else
-    echo "status subscriptions did not report a logical size!" >&2
-    estat=1
-  fi
+  local report="$1" expected="$2"
+  run_python_check "$report.json" "$expected" <<'PY' || estat=1
+row = find_acct_test_row(load_result(sys.argv[1]))
+assert row["logical_bytes"] == int(sys.argv[2]), row
+PY
 }
 
 refresh_accounting_snapshot()
@@ -278,7 +270,7 @@ verify_report()
   local expected_bytes expected_rule
   line="$(
     run_python_check "$log.json" <<'PY'
-row = load_result(sys.argv[1])["accounting"][0]
+row = find_acct_test_row(load_result(sys.argv[1]))
 print(row["files"], row["bytes"], row["rule"], row["jobs_in_chain"], end="")
 PY
   )"
@@ -465,6 +457,9 @@ assert metadata["last_full_completed_at"] == "2026-01-01 00:00:00"
 PY
 
 # Zero length plus one block is valid outside MSSQL's virtual namespace.
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_original_files_backup AS SELECT f.* FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
+END_OF_DATA
 update_resized_file "LStat='A A IHA B A A A A QAA B A A A A A A'"
 query_accounting empty-regular
 run_python_check "$tmp/status-subscriptions-empty-regular.json" <<'PY'
@@ -650,6 +645,12 @@ run_bconsole "$tmp/accounting-edges-import.bcon"
 query_accounting chain-edges
 "${PYTHON_EXECUTABLE}" ./accounting_edge_fixture.py check \
   "$tmp/status-subscriptions-chain-edges.json"
+
+run_bconsole - <<END_OF_DATA
+.sql query="DELETE FROM File WHERE JobId IN (SELECT JobId FROM acct_original_files_backup)"
+.sql query="INSERT INTO File SELECT * FROM acct_original_files_backup"
+.sql query="DROP TABLE acct_original_files_backup"
+END_OF_DATA
 
 # Exercise real sparse and hard-linked files plus Accurate deletion, including
 # the per-job delta update before comparing it with a full recalculation.

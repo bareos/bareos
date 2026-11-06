@@ -25,6 +25,11 @@
 static_assert(IsUnknownStatField(int64_t{-1}));
 static_assert(!IsUnknownStatField(int64_t{0}));
 static_assert(IsUnknownStatField(std::numeric_limits<uint64_t>::max()));
+static_assert(IsUnknownStatField(static_cast<uint64_t>(int64_t{-2})));
+static_assert(IsUnknownStatField(
+    static_cast<uint64_t>(std::numeric_limits<int64_t>::min())));
+static_assert(!IsUnknownStatField(
+    static_cast<uint64_t>(std::numeric_limits<int64_t>::max())));
 static_assert(!IsUnknownStatField(uint64_t{0}));
 
 static_assert(BlocksFromSize(0) == 0);

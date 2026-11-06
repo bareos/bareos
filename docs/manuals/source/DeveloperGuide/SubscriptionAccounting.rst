@@ -3,6 +3,17 @@
 Subscription Accounting
 =======================
 
+The goal of subscription accounting is to determine the amount of primary
+data backed up from the original systems, not the accumulated backup
+history, transferred bytes, or space occupied on backup storage. Catalog
+measurements are used where available; job-size estimates are a fallback
+when source-data measurements are unavailable. These estimates are proxies
+for primary-data size, not direct measurements of it.
+
+Accounting deduplicates file versions within each Client/FileSet chain,
+but does not globally deduplicate overlapping data backed up through
+different Client/FileSet combinations.
+
 This chapter describes the Director's catalog-based subscription accounting
 implementation behind :bcommand:`status subscriptions`. It is intended for
 contributors changing the calculation, catalog persistence, or report. The
@@ -162,90 +173,107 @@ For the user-facing options, examples, and report limitations, see
 Test coverage
 -------------
 
-Coverage is split between a small formatting unit test and the
-Director/system-test fixtures. In the parent task, nine focused unit tests
-passed. The expanded basic accounting integration, status-subscriptions,
-bpipe, and Virtual Full integrations also passed (21 CTest entries,
-including setup and cleanup); the final three basic accounting cases were
-rerun after the last additions and passed. These integrations ran on Linux.
-Catalog fixtures exercise Windows-specific metadata and NDMP catalog shapes,
-but no live Windows client or NDMP server was tested.
+The tests cover three distinct layers: isolated helpers, calculations against
+catalog fixtures, and accounting after actual backup operations. Catalog
+fixtures exercise platform-specific metadata without requiring the original
+plugin or system. They do not replace end-to-end testing of those components.
+
+The table identifies CTest names, including GoogleTest suites registered with
+the ``gtest:`` prefix (``*`` denotes all cases in a suite). Vue entries use
+their Vitest suite names.
 
 .. list-table::
    :header-rows: 1
-   :widths: 28 48 24
+   :widths: 30 45 25
 
-   * - Behavior
-     - Test source
-     - Status
-   * - Rule codes, table layout, hidden logical column, excluded-row rendering;
-       NDMP size/block conversion and invalid-size handling
-     - :file:`core/src/tests/test_subscription_accounting_table.cc`
-       and :file:`core/src/tests/ndmp_fhdb_helpers_test.cc`
-     - Nine focused unit tests passed
-   * - POSIX byte accounting, sub-512-byte block rounding, non-regular entries,
-       Full/Incremental newest-version selection, report JSON and logical
-       display
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed in the expanded Linux integration; final cases also passed on
-       rerun
-   * - Windows logical-size selection; MSSQL VDI versus a real empty file;
-       opaque-image fallback and missing-size exclusion; NDMP_BAREOS and
-       NDMP_NATIVE with and without file history; imported catalog samples
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-       and :file:`systemtests/tests/bareos-basic/fixtures/README.rst`
-     - Linux catalog-fixture assertions passed, including the final
-       native-NDMP zero-size case. Fixture imports do not run a live Windows
-       or NDMP server
-   * - Refresh worker status, snapshot metadata, legacy unit-report parity,
-       and JSON output
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions`
-     - Passed
-   * - Corrected bpipe file attributes, A/L rule reporting, logical-size
-       display, and Virtual Full preservation
-     - :file:`systemtests/tests/bpipe-fd/testrunner-environment-variables-and-accounting`
-     - Passed
-   * - Virtual Full accounting and catalog attribute preservation
-     - :file:`systemtests/tests/virtualfull-basic/testrunner-simple-and-accounting`
-     - Passed
-   * - Live NDMP no-file-history estimate
-     - :file:`systemtests/tests/ndmp-bareos/testrunner-09-status-subscriptions-accounting`
-     - Hardware-dependent and not run here; no live NDMP-server run is
-       claimed
-   * - POSIX sparse file and hard-link names, plus Accurate deletion markers
-       in a real backup chain and delta-versus-full-recalculation comparison
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed on Linux, including the final rerun
-   * - Differential chain selection, eligible job types, no usable chain,
-       ignored failed Full and migrated-job rows, same-timestamp JobId
-       tie-break, and Full/Differential/Incremental purge handling
-     - :file:`systemtests/tests/bareos-basic/accounting_edge_fixture.py`
-       imported by :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed on Linux, including the final rerun
-   * - Native NDMP without history and zero baseline size; synthetic NDMP
-       archive without history and zero baseline size
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed on Linux, including the final rerun
-   * - An ordinary empty Full backup with nonzero JobBytes remains measured
-       as zero allocated bytes (rule A), rather than using rule J
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed on Linux, including the final rerun
-   * - Invalid ``st_size``/``st_blocks``, multiplication overflow, and
-       per-tuple byte/logical-total overflow; prior snapshot and timing
-       metadata remain intact after failure
-     - :file:`systemtests/tests/bareos-basic/testrunner-status-subscriptions-accounting`
-     - Passed on Linux, including the final rerun. ``st_blocks`` and
-       allocated-byte overflow cases are POSIX-only; invalid ``st_size`` and
-       logical-total overflow checks are cross-platform
-   * - Hyper-V estimated Full/Incremental chain
-     - :file:`systemtests/tests/bareos-basic/plugin_accounting_fixture.py`
-       and :file:`systemtests/tests/bareos-basic/fixtures/README.rst`
-     - Both phases imported and two-job chain assertion passed on Linux
-   * - A tuple with Incremental rows but no completed Full
-     - :file:`systemtests/tests/bareos-basic/accounting_edge_fixture.py`
-     - Explicitly asserted absent from the report; passed on Linux
+   * - Contract verified
+     - Test name
+     - Test method and prerequisites
+   * - A/L/J codes, table alignment, optional logical column and issue column
+     - ``gtest:SubscriptionAccountingTable.*``
+     - Unit tests; no running daemons or catalog
+   * - NDMP file-history size conversion, block rounding and rejection of
+       invalid or out-of-range sizes
+     - ``gtest:ndmp_fhdb_helpers.*``
+     - Unit tests; no NDMP server
+   * - Negative stat fields remain invalid when decoded into unsigned
+       Windows stat members
+     - ``gtest:stat_utils.compile_time_checks``
+     - Compile-time checks for signed and unsigned representations
+   * - File counts and sizes, exclusion of non-regular entries, newest-file
+       selection across Full/Incremental jobs, optional logical display and
+       unchanged structured fields
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Actual backups with running daemons and PostgreSQL; expected
+       allocation is derived from backed-up catalog attributes. Windows
+       runs check rule L and exact source-byte totals after Full and Incremental
+   * - Sparse allocation, counting hard-linked names, Accurate deletion and
+       agreement between per-job updates and full recalculation
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Actual POSIX filesystem backups; these cases are omitted on Windows
+   * - Windows logical-size selection; Barri, MSSQL VDI, VMware and Hyper-V
+       job-size estimates; Full/Incremental plugin chains
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Imported catalog samples, checked by the basic accounting runner;
+       no live Windows client or plugin required
+   * - NDMP_BAREOS and NDMP_NATIVE file-history totals and newest-file
+       selection across Full/Incremental jobs
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Imported catalog exports, checked by the basic accounting runner;
+       no NDMP server required
+   * - NDMP_BAREOS and NDMP_NATIVE without history: baseline-Full estimate,
+       or exclusion when the baseline has no usable size
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Synthetic archive rows and NDMP environment metadata in PostgreSQL
+   * - Opaque-image and MSSQL placeholder recognition, measured empty files,
+       missing-size exclusions and incomplete totals
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Controlled catalog attribute changes
+   * - Differential chain selection, eligible job types, rejection of failed
+       and superseded migrated jobs, JobId tie-breaking, purged chains,
+       empty Fulls and combinations without a completed Full
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Synthetic catalog chains, checked by the basic accounting runner
+   * - Invalid sizes and arithmetic overflow abort recalculation without
+       replacing the last valid snapshot or successful timing metadata
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Controlled catalog attribute changes; block-count and allocated-byte
+       overflow cases are POSIX-only
+   * - Snapshot provenance, stale and failed-refresh reporting, legacy
+       unit-report parity, filtering and anonymization
+     - ``system:bareos-basic:status-subscriptions``
+     - PostgreSQL report fixtures with running daemons
+   * - Accounting schema additions do not prevent historical job records
+       from being written; repeated statistics updates do not duplicate jobs
+     - ``system:random-commands:start``
+     - Actual Full, Differential and Incremental backups followed by
+       statistics updates and a catalog history check
+   * - Corrected bpipe attributes reach the catalog; accounting survives
+       Virtual Full consolidation
+     - ``system:bpipe-fd:environment-variables-and-accounting``
+     - Actual plugin backups, restore and consolidation
+   * - Virtual Full preserves accounted totals and catalog attributes
+     - ``system:virtualfull-basic:simple-and-accounting``
+     - Actual backup and consolidation jobs
+   * - Always Incremental accounting matches source file counts and logical
+       sizes; consolidation preserves totals, including Accurate deletions;
+       automatic updates agree with full recalculation
+     - ``system:always-incremental-consolidate:01-full+incr``;
+       ``system:always-incremental-consolidate:05-consolidate-deleted-file``
+     - Actual backups and consolidation; requires the Always Incremental
+       suite to be enabled
+   * - Live NDMP file-history accounting and no-history job-size estimate
+     - ``system:ndmp-bareos:09-status-subscriptions-accounting``
+     - Requires a configured NDMP data agent and the preceding NDMP suite jobs
+   * - Logical-column selection, refresh behavior, warnings, baseline-job
+       navigation events and normal/anonymized PDF content
+     - ``Director subscription calculation refresh``;
+       ``Subscription snapshot age and refresh eligibility``
+     - Vue component tests with mocked Director responses
 
 When changing chain selection or stat interpretation, keep fixture expectations
 derived from the catalog rows and decoded attributes rather than hard-coding
-filesystem allocation assumptions. The catalog fixtures are regression data,
-not evidence that a live platform-specific client or NDMP server was exercised.
+filesystem allocation assumptions. See
+:file:`systemtests/tests/bareos-basic/fixtures/README.rst` for the provenance
+and expected totals of imported samples. Test results belong in CI reports,
+not in this coverage inventory.

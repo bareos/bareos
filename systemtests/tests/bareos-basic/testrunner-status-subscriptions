@@ -36,6 +36,23 @@ JobName=bconsole-status-client
 
 start_test
 
+for attempt in {1..60}; do
+  run_bconsole - <<END_OF_DATA
+@$out $tmp/status-subscriptions-worker.txt
+status subscriptions
+END_OF_DATA
+  if grep -q "Background refresh worker: idle." \
+    "$tmp/status-subscriptions-worker.txt"; then
+    break
+  fi
+  if [[ "$attempt" -eq 60 ]]; then
+    echo "Accounting worker did not become idle before report fixtures" >&2
+    cat "$tmp/status-subscriptions-worker.txt" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
 rm -f "$tmp"/status-subscription*.txt "$tmp"/status-subscription*.json
 
 # Generate a set of test clients and filesets together with a bunch of jobs
@@ -44,6 +61,10 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/status-subscriptions-setup.txt
 use
 sqlquery sharedsession
+UPDATE SubscriptionAccountingSnapshot
+SET LastSuccess=NULL, LastAttempt=NULL, LastError=NULL,
+    LastFullSuccess=NULL, LastFullDurationMs=NULL
+WHERE SnapshotId=1;
 DELETE FROM Job WHERE JobId >= 10000;
 DELETE FROM Client WHERE ClientId >= 10000;
 DELETE FROM Fileset WHERE FileSetId >= 10000;

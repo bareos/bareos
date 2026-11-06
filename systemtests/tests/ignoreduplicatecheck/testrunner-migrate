@@ -1,5 +1,5 @@
 #!/bin/bash
-#CTEST requires=create-backups
+#CTEST requires=copy
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -37,6 +37,13 @@ wait jobid=${new_backup_id}
 llist jobid=${migrate_work_id}
 @$out $tmp/migrate.out
 cancel jobid=${migrate_work_id}
+END_OF_DATA
+run_bconsole
+
+# If the worker has already stopped, cancel can prompt for another job.
+# Keep that prompt from consuming the status checks in the next session.
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/migrate.out
 wait
 messages
 @$out $tmp/migrate_worker_status.out

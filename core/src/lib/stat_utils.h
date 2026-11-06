@@ -24,14 +24,16 @@
 #include <cstdint>
 #include <limits>
 
-// A stat size/blocks value is unknown if it is negative (signed types) or
-// the maximum value (unsigned types).
+// Encoded stat fields are signed 64-bit values, even when the platform's
+// stat structure uses unsigned members.
 template <typename T> constexpr bool IsUnknownStatField(T value)
 {
   if constexpr (std::numeric_limits<T>::is_signed) {
     return value < 0;
   } else {
-    return value == std::numeric_limits<T>::max();
+    return value == std::numeric_limits<T>::max()
+           || value
+                  > static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
   }
 }
 

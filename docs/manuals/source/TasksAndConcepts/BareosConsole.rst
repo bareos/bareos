@@ -1886,6 +1886,16 @@ status subscriptions
      In the current version there is no unknown data and detail is now the
      default.
 
+   The goal of subscription accounting is to determine the amount of primary
+   data backed up from the original systems, not the accumulated backup
+   history, transferred bytes, or space occupied on backup storage. Catalog
+   measurements are used where available; job-size estimates are a fallback
+   when source-data measurements are unavailable. These estimates are proxies
+   for primary-data size, not direct measurements of it. File versions are
+   deduplicated within each Client/FileSet chain, but overlapping data backed
+   up through different Client/FileSet combinations is not globally
+   deduplicated.
+
    The default :bcommand:`status subscriptions` report and its ``all`` variant
    include the underlying per-Client/FileSet file counts and byte totals.
    The subscription-unit sections reuse these snapshot sizes where available,
