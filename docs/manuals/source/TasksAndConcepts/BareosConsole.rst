@@ -1935,10 +1935,13 @@ status subscriptions
    same in-memory generation as ``accounting_status.generation``, without
    loading the report. It is intended for clients that poll for changes: fetch
    the full report when the generation or worker state changes, or when the
-   user explicitly requests a reload. The generation advances when work is
-   queued and when worker processing completes, including failures. It resets
-   on Director restart, so clients must fetch a full report after connecting
-   or entering the Subscription view to establish a fresh baseline.
+   user explicitly requests a reload. When creating a full report, capture its
+   generation and worker-state baseline before reading the catalog snapshot.
+   A refresh that completes during the read then advances the generation and
+   is detected by the next poll. The generation advances when work is queued
+   and when worker processing completes, including failures. It resets on
+   Director restart, so clients must fetch a full report after connecting or
+   entering the Subscription view to establish a fresh baseline.
 
    Measured Client/FileSet combinations provide two sizes: allocated bytes,
    based on ``st_blocks * 512`` for Unix-like clients, and logical bytes,
