@@ -66,6 +66,7 @@ enum
   R_PROFILE,
   R_CONSOLE,
   R_USER,
+  R_OIDC,
   R_NUM /* Number of entries */
 };
 
@@ -187,6 +188,8 @@ class ConsoleResource
   virtual ~ConsoleResource() = default;
   AclConfig user_acl;
   bool use_pam_authentication_ = false; /**< PAM Console */
+
+  alist<BareosResource*>* auth_list;
 };
 
 class UserResource : public BareosResource {
@@ -234,6 +237,12 @@ class CatalogResource : public BareosResource {
 
   /**< Methods */
   char* display(POOLMEM* dst); /**< Get catalog information */
+};
+
+struct OidcResource : BareosResource {
+  std::string url;
+  std::string client_id;
+  std::string roles_name;
 };
 
 // Forward referenced structures

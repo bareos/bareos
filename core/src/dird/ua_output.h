@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ static std::vector<std::pair<const char*, int>> show_cmd_available_resources = {
     {"jobdefs", R_JOBDEFS},    {"storages", R_STORAGE}, {"catalogs", R_CATALOG},
     {"schedules", R_SCHEDULE}, {"filesets", R_FILESET}, {"pools", R_POOL},
     {"messages", R_MSGS},      {"counters", R_COUNTER}, {"profiles", R_PROFILE},
-    {"consoles", R_CONSOLE},   {"users", R_USER}};
+    {"consoles", R_CONSOLE},   {"users", R_USER},       {"oidc", R_OIDC}};
 
 
 class RunResource;

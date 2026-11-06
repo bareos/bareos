@@ -28,11 +28,14 @@
  * This routine runs as a thread and must be thread reentrant.
  */
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "dird/ua_server.h"
 #include "dird.h"
 #include "include/version_hex.h"
 #include "include/version_numbers.h"
+#include "lib/bauth.h"
+#include "lib/connect_accept.h"
 #include "lib/default_console.h"
 #include "lib/hello.h"
 #include "lib/s_password.h"
@@ -51,6 +54,8 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
+#include "lib/bauth/cram_md5.h"
+#include "lib/bauth/oidc/verifier.h"
 
 #include <array>
 
@@ -131,8 +136,83 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client)
   return true;
 }
 
-const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
-                                     std::string_view name)
+bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
+{
+  auth::Algorithms algs;
+
+  auto password = tls_settings()->password_.value;
+
+  algs.add<auth::CramMd5::Prover>(identity(), password);
+
+  if (res->auth_list) {
+    for (auto* auth : *res->auth_list) {
+      if (auto* oidc = dynamic_cast<OidcResource*>(auth)) {
+        auto oidc_url = oidc->url;
+        auto client_id = oidc->client_id;
+        auto roles_name = oidc->roles_name;
+
+        if (!oidc->IsMemberPresent("ProfilesClaim")) { roles_name = "roles"; }
+
+        auth::Oidc::config conf = {
+            .oidc_url = std::move(oidc_url),
+            .client_id = std::move(client_id),
+            .roles_name = std::move(roles_name),
+        };
+
+        algs.add<auth::Oidc::Verifier>(oidc->resource_name_, std::move(conf));
+      } else {
+        Dmsg0(50, "unknown auth (%p) received passed (Skipping ...)\n", auth);
+      }
+    }
+  } else {
+    // use the default auth
+    algs.add<auth::CramMd5::Verifier>("Bareos Auth", identity(), password);
+  }
+
+  if (!authenticate_inbound(algs, args)) { return false; }
+
+  auth::Verifier* verifier_used{nullptr};
+  for (auto& verifier : algs.verifier) {
+    if (verifier.impl->was_used()) {
+      verifier_used = verifier.impl.get();
+      break;
+    }
+  }
+
+  if (!verifier_used) {
+    Dmsg0(100, "Auth was successful, but no verifier was used !?\n");
+    return false;
+  }
+
+  if (auto* oidc = dynamic_cast<auth::Oidc::Verifier*>(verifier_used)) {
+    std::vector<ProfileResource*> profiles;
+    for (const auto& role : oidc->roles) {
+      auto* profile = dynamic_cast<ProfileResource*>(
+          config->GetResWithName(R_PROFILE, role.c_str()));
+      if (!profile) {
+        Dmsg0(50, "valid access token contains bad profile %s ---> Rejected!\n",
+              role.c_str());
+        return false;
+      }
+
+      profiles.push_back(profile);
+    }
+
+    authenticated_acls = UserAcl::from_profiles(oidc->user_name, profiles);
+  } else if (auto* cram
+             = dynamic_cast<auth::CramMd5::Verifier*>(verifier_used)) {
+    (void)cram;
+    authenticated_acls = UserAcl::from_config(res);
+  } else {
+    Dmsg0(100, "Auth was successful, but unknown verifier was used !?\n");
+    return false;
+  }
+  return true;
+}
+
+auth::InboundAuthenticator* DirectorAuth::get_authenticator_for(
+    global_resource::Type auth_type,
+    std::string_view name)
 {
   char tbuf[MAX_TIME_LENGTH];
   bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL));
@@ -163,11 +243,10 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         return nullptr;
       }
 
-      auto& data = client.emplace();
-      data.res = res;
+      auto& data = client.emplace(res, Md5InboundAuthenticator(*res));
 
       type = inbound_type::Client;
-      return res;
+      return &data.auth;
     } break;
     case global_resource::Type::Console: {
       Dmsg1(110, "Got a Console connection from %.*s at %s\n", name_len,
@@ -186,13 +265,14 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         return nullptr;
       }
 
-      auto& data = console.emplace();
+      ConsoleConnectionLease lease;
+
       auto num_leases = ConsoleConnectionLease::get_num_leases();
 
-      data.is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
+      bool is_default = bstrcmp(res->resource_name_, DEFAULT_CONSOLE_NAME);
 
       if (num_leases > myself->MaxConsoleConnections) {
-        if (data.is_default) {
+        if (is_default) {
           Emsg0(M_INFO, 0,
                 T_("Number of console connections exceeded "
                    "Maximum :%u, Current: %" PRIuz "\n"),
@@ -206,21 +286,25 @@ const TlsResource* DirectorAuth::get(global_resource::Type auth_type,
         }
       }
 
-      data.res = res;
+      const TlsResource* tls;
 
-      if (data.is_default) {
+      if (is_default) {
         /* while the default console has a console resource, for some reason
          * it does not have the correct tls settings; instead of using the
          * directors tls settings, it is set up with some kind of default tls
          * settings.  As such we need to use the tls settings of the director
          * explicitly. */
-        data.tls = *myself;
+        tls = myself;
       } else {
-        data.tls = *res;
+        tls = res;
       }
 
+      auto& data = console.emplace(
+          res, std::move(lease),
+          ConsoleInboundAuthenticator(*tls, p.get(), res), is_default, *tls);
       type = inbound_type::Console;
-      return &data.tls;
+
+      return &data.auth;
     } break;
     default: {
     }
