@@ -580,7 +580,7 @@ size_t QueueMissingSubscriptionAccounting(UaContext* ua,
            " SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
            "Job.AccountingValid FROM Job "
            "JOIN Client USING (ClientId) JOIN FileSet USING (FileSetId) "
-           "WHERE Job.JobStatus IN ('T','W') AND Job.Type IN ('B','C','g','O') "
+           "WHERE Job.JobStatus IN ('T','W') AND Job.Type IN ('B','C') "
            "AND Job.Level IN ('F','D','I')");
   std::string escaped;
   if (client_filter) {

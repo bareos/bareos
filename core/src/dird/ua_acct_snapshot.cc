@@ -118,13 +118,13 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
        "WHERE baseline.ClientId=Job.ClientId "
        "AND baseline.FileSetId=Job.FileSetId AND baseline.Level='F' "
        "AND baseline.JobStatus IN ('T','W') "
-       "AND baseline.Type IN ('B','C','g','O') "
+       "AND baseline.Type IN ('B','C') "
        "AND (baseline.JobTDate,baseline.JobId)<=(Job.JobTDate,Job.JobId) "
        "ORDER BY baseline.JobTDate DESC,baseline.JobId DESC LIMIT 1)::text "
        "FROM Job JOIN Client USING (ClientId) "
        "JOIN FileSet USING (FileSetId) "
        "WHERE Job.AccountingValid AND Job.JobStatus IN ('T','W') "
-       "AND Job.Type IN ('B','C','g','O')",
+       "AND Job.Type IN ('B','C')",
        anonymize ? "'Client ' || Job.ClientId" : "Client.Name",
        anonymize ? "'FileSet ' || Job.FileSetId" : "FileSet.FileSet");
   std::string escaped;

@@ -149,10 +149,13 @@ def check_fixture(report):
         9,
         3,
     ), row
-    for kind in ("B", "C", "g", "O"):
+    for kind in ("B", "C"):
         row = find_row(result, CLIENT, f"AcctType{kind}")
         assert not row["excluded"], row
         assert (row["files"], row["bytes"], row["jobs_in_chain"]) == (1, 512, 1), row
+    assert not any(
+        row["fileset"] in ("AcctTypeg", "AcctTypeO") for row in result["accounting"]
+    ), result
     for level in ("F", "D", "I"):
         row = find_row(result, CLIENT, f"AcctPurged{level}")
         assert row["excluded"] and row["exclusion_reason"] == "no_usable_chain", row
