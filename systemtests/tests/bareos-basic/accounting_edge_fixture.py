@@ -66,6 +66,51 @@ def import_job(fileset, name, level, timestamp, files, kind="B", status="T", pur
     )
 
 
+def import_fileset_version_job(version, name, level, timestamp, valid, size, blocks):
+    fileset = "AcctVersioned"
+    md5 = f"acct-version-{version}"
+    lstat_digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    if name.endswith("full"):
+        sql_command(
+            "INSERT INTO FileSet (FileSet, Md5, CreateTime) VALUES "
+            f"({sql_literal(fileset)}, {sql_literal(md5)}, CURRENT_TIMESTAMP)"
+        )
+    job_name = f"acct-version-{name}"
+    sql_command(
+        "INSERT INTO Job (Job, Name, ClientId, FileSetId, Type, Level, "
+        "JobStatus, JobTDate, JobFiles, AccountingValid, AccountingFiles, "
+        "AccountingBytes, AccountingLogicalBytes, AccountingRule, "
+        "AccountingJobsInChain) "
+        f"SELECT {sql_literal(job_name)}, {sql_literal(job_name)}, ClientId, "
+        f"FileSetId, 'B', {sql_literal(level)}, 'T', {timestamp}, "
+        f"{1 if level == 'F' else 0}, "
+        f"{'TRUE' if valid else 'FALSE'}, {1 if level == 'F' else 0}, "
+        f"{blocks * 512}, {size}, "
+        "'st_blocks*512', 1 FROM Client CROSS JOIN FileSet "
+        f"WHERE Client.Name={sql_literal(CLIENT)} "
+        f"AND FileSet.Md5={sql_literal(md5)}"
+    )
+    if level == "F":
+        import_files(
+            job_name,
+            [
+                {
+                    "path": "/accounting-versions/",
+                    "name": "same-file",
+                    "fileindex": 1,
+                    "lstat": (
+                        f"A A IGk B A A A {lstat_digits[size]} BAA "
+                        f"{lstat_digits[blocks]} A A A A A A"
+                    ),
+                    "md5": "",
+                    "deltaseq": 0,
+                    "fhinfo": 0,
+                    "fhnode": 0,
+                }
+            ],
+        )
+
+
 def import_fixture():
     sql_command(f"INSERT INTO Client (Name, Uname) VALUES ('{CLIENT}', 'Linux')")
     import_job("AcctEmpty", "empty-full", "F", 2000000000, [])
@@ -134,6 +179,9 @@ def import_fixture():
     )
     import_job("AcctFullTie", "tie-first", "F", 2000000000, [("regular", "B", "B")])
     import_job("AcctFullTie", "tie-second", "F", 2000000000, [("regular", "C", "C")])
+    import_fileset_version_job("old", "old-full", "F", 2000000100, True, 1, 1)
+    import_fileset_version_job("old", "old-inc", "I", 2000000101, False, 0, 0)
+    import_fileset_version_job("new", "new-full", "F", 2000000102, True, 2, 3)
 
 
 def check_fixture(report):
@@ -165,7 +213,22 @@ def check_fixture(report):
     ), result
     row = find_row(result, CLIENT, "AcctFullTie")
     assert (row["files"], row["bytes"], row["logical_bytes"]) == (1, 1024, 2), row
+    versioned_rows = [
+        row
+        for row in result["accounting"]
+        if row["client"] == CLIENT and row["fileset"] == "AcctVersioned"
+    ]
+    assert len(versioned_rows) == 1, versioned_rows
+    assert (
+        versioned_rows[0]["bytes"],
+        versioned_rows[0]["logical_bytes"],
+    ) == (1536, 2), versioned_rows
     assert result["summary"]["incomplete"], result["summary"]
+
+
+def check_versioned_queue(report):
+    result = load_result(report)
+    assert result["accounting_snapshot"]["pending_jobs"] == 0, result
 
 
 if __name__ == "__main__":
@@ -173,5 +236,7 @@ if __name__ == "__main__":
         import_fixture()
     elif sys.argv[1] == "check":
         check_fixture(sys.argv[2])
+    elif sys.argv[1] == "check-versioned-queue":
+        check_versioned_queue(sys.argv[2])
     else:
         raise ValueError(f"unknown action: {sys.argv[1]}")

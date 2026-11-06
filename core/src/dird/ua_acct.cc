@@ -576,10 +576,21 @@ size_t QueueMissingSubscriptionAccounting(UaContext* ua,
 {
   PoolMem query(PM_MESSAGE);
   PmStrcpy(query,
+           "WITH latest_full AS ("
+           " SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet) "
+           "Job.ClientId, FileSet.FileSet, Job.FileSetId FROM Job "
+           "JOIN FileSet USING (FileSetId) "
+           "WHERE Job.JobStatus IN ('T','W') AND Job.Type IN ('B','C') "
+           "AND Job.Level='F' "
+           "ORDER BY Job.ClientId, FileSet.FileSet, Job.JobTDate DESC, "
+           "Job.JobId DESC) "
            "SELECT JobId FROM ("
-           " SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
-           "Job.AccountingValid FROM Job "
+           " SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet) "
+           "Job.JobId, Job.AccountingValid FROM Job "
            "JOIN Client USING (ClientId) JOIN FileSet USING (FileSetId) "
+           "JOIN latest_full ON latest_full.ClientId=Job.ClientId "
+           "AND latest_full.FileSet=FileSet.FileSet "
+           "AND latest_full.FileSetId=Job.FileSetId "
            "WHERE Job.JobStatus IN ('T','W') AND Job.Type IN ('B','C') "
            "AND Job.Level IN ('F','D','I')");
   std::string escaped;
@@ -606,7 +617,7 @@ size_t QueueMissingSubscriptionAccounting(UaContext* ua,
     PmStrcat(query, "'");
   }
   PmStrcat(query,
-           " ORDER BY Job.ClientId, Job.FileSetId, Job.JobTDate DESC, "
+           " ORDER BY Job.ClientId, FileSet.FileSet, Job.JobTDate DESC, "
            "Job.JobId DESC) latest WHERE NOT latest.AccountingValid");
 
   MissingAccountingJobsCtx missing;

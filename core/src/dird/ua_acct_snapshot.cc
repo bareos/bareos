@@ -105,7 +105,16 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
 
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
-       "SELECT DISTINCT ON (Job.ClientId, Job.FileSetId) Job.JobId, "
+       "WITH latest_full AS ("
+       " SELECT DISTINCT ON (full_job.ClientId, full_fileset.FileSet) "
+       "full_job.ClientId, full_fileset.FileSet, full_job.FileSetId "
+       "FROM Job full_job JOIN FileSet full_fileset "
+       "USING (FileSetId) "
+       "WHERE full_job.JobStatus IN ('T','W') "
+       "AND full_job.Type IN ('B','C') AND full_job.Level='F' "
+       "ORDER BY full_job.ClientId, full_fileset.FileSet, "
+       "full_job.JobTDate DESC, full_job.JobId DESC) "
+       "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet) Job.JobId, "
        "%s, %s, Job.AccountingExcluded, "
        "COALESCE(Job.AccountingExclusionReason, ''), "
        "Job.AccountingFiles::text, Job.AccountingBytes::text, "
@@ -123,10 +132,12 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
        "ORDER BY baseline.JobTDate DESC,baseline.JobId DESC LIMIT 1)::text "
        "FROM Job JOIN Client USING (ClientId) "
        "JOIN FileSet USING (FileSetId) "
+       "JOIN latest_full ON latest_full.ClientId=Job.ClientId "
+       "AND latest_full.FileSet=FileSet.FileSet "
        "WHERE Job.AccountingValid AND Job.JobStatus IN ('T','W') "
        "AND Job.Type IN ('B','C')",
        anonymize ? "'Client ' || Job.ClientId" : "Client.Name",
-       anonymize ? "'FileSet ' || Job.FileSetId" : "FileSet.FileSet");
+       anonymize ? "'FileSet ' || latest_full.FileSetId" : "FileSet.FileSet");
   std::string escaped;
   if (client_filter) {
     if (!EscapeForSql(ua, client_filter, &escaped)) { return false; }
@@ -141,7 +152,8 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
     PmStrcat(query, "'");
   }
   PmStrcat(query,
-           " ORDER BY Job.ClientId, Job.FileSetId, Job.JobTDate DESC, "
+           " ORDER BY Job.ClientId, FileSet.FileSet, "
+           "(Job.FileSetId=latest_full.FileSetId) DESC, Job.JobTDate DESC, "
            "Job.JobId DESC");
 
   if (!ua->db->SqlQuery(query.c_str(), SnapshotRowHandler, rows)) {

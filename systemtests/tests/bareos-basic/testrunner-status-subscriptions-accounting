@@ -645,6 +645,14 @@ run_bconsole "$tmp/accounting-edges-import.bcon"
 query_accounting chain-edges
 "${PYTHON_EXECUTABLE}" ./accounting_edge_fixture.py check \
   "$tmp/status-subscriptions-chain-edges.json"
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-chain-edges-client.json"
+  echo "status subscriptions client=acct-chain-edges"
+} >"$tmp/bconcmds"
+run_bconsole
+"${PYTHON_EXECUTABLE}" ./accounting_edge_fixture.py check-versioned-queue \
+  "$tmp/status-subscriptions-chain-edges-client.json"
 
 run_bconsole - <<END_OF_DATA
 .sql query="DELETE FROM File WHERE JobId IN (SELECT JobId FROM acct_original_files_backup)"
