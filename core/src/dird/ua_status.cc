@@ -638,6 +638,14 @@ static bool DoSubscriptionStatus(UaContext* ua)
     return false;
   }
 
+  if (FindArg(ua, NT_("revision")) > 0) {
+    if (ua->argc != 3) {
+      ua->ErrorMsg(T_("Usage: status subscriptions revision\n"));
+      return false;
+    }
+    return ReportSubscriptionAccountingStatus(ua);
+  }
+
   if (FindArg(ua, NT_("accounting")) > 0 || FindArg(ua, NT_("fileset")) > 0) {
     ua->ErrorMsg(
         T_("Use status subscriptions [client=<name>] for accounting "

@@ -143,6 +143,22 @@ PY
 
 refresh_accounting_snapshot()
 {
+  local before_generation after_generation
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/accounting-refresh-before.out
+status subscriptions revision
+END_OF_DATA
+  run_bconsole
+  before_generation="$(
+    sed -nE 's/^Subscription accounting generation: ([0-9]+);.*/\1/p' \
+      "$tmp/accounting-refresh-before.out"
+  )"
+  if [[ -z "$before_generation" ]]; then
+    echo "could not read subscription accounting generation before refresh" >&2
+    cat "$tmp/accounting-refresh-before.out" >&2
+    return 1
+  fi
+
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh.out
 status subscriptions recalculate
@@ -152,11 +168,21 @@ END_OF_DATA
   for _ in {1..60}; do
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh-status.out
-status subscriptions client=bareos-fd
+status subscriptions revision
 END_OF_DATA
     run_bconsole
-    if grep -q "Background refresh worker: idle." \
+    if grep -q "worker: idle." \
       "$tmp/accounting-refresh-status.out"; then
+      after_generation="$(
+        sed -nE 's/^Subscription accounting generation: ([0-9]+);.*/\1/p' \
+          "$tmp/accounting-refresh-status.out"
+      )"
+      if [[ -z "$after_generation" ]] \
+        || ((after_generation <= before_generation)); then
+        echo "subscription accounting generation did not advance after refresh" >&2
+        cat "$tmp/accounting-refresh-status.out" >&2
+        return 1
+      fi
       return 0
     fi
     sleep 1
@@ -203,6 +229,8 @@ query_accounting()
     echo ".api 2"
     echo "@$out $tmp/status-subscriptions-${name}.json"
     echo "status subscriptions"
+    echo "@$out $tmp/status-subscriptions-${name}-revision.json"
+    echo "status subscriptions revision"
     if [[ -n "$all" ]]; then
       echo "@$out $tmp/status-subscriptions-${name}-all.json"
       echo "status subscriptions all"
@@ -211,6 +239,13 @@ query_accounting()
     fi
   } >"$tmp/bconcmds"
   run_bconsole
+  run_python_check "$tmp/status-subscriptions-${name}-revision.json" <<'PY'
+status = load_result(sys.argv[1])["accounting_status"]
+assert isinstance(status["generation"], int), status
+assert isinstance(status["queued"], bool), status
+assert isinstance(status["running"], bool), status
+assert status["refresh_thread_state"] in ("unavailable", "queued", "running", "idle"), status
+PY
 }
 
 # Apply an UPDATE assignment list to the newest catalog row of the resized

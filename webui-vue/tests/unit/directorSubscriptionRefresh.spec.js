@@ -93,13 +93,28 @@ describe('Director subscription calculation refresh', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     director = useDirectorStore()
-    vi.spyOn(director, 'call').mockResolvedValue({
-      subscription_accounting: {
-        calculated_at: '2026-11-06 10:00:00',
-        age_seconds: 300,
-      },
-      accounting_snapshot: { refresh_thread_state: 'idle' },
-      accounting: [{ client: 'demo', files: 1, bytes: 2e9, rule_code: 'A' }],
+    vi.spyOn(director, 'call').mockImplementation(async command => {
+      const accountingStatus = {
+        generation: 1,
+        worker_available: true,
+        queued: false,
+        running: false,
+        refresh_thread_state: 'idle',
+      }
+      if (command === 'status subscriptions revision') {
+        return { accounting_status: accountingStatus }
+      }
+      return {
+        subscription_accounting: {
+          calculated_at: '2026-11-06 10:00:00',
+          age_seconds: 300,
+        },
+        accounting_snapshot: {
+          ...accountingStatus,
+          available: true,
+        },
+        accounting: [{ client: 'demo', files: 1, bytes: 2e9, rule_code: 'A' }],
+      }
     })
 
     vi.spyOn(director, 'fetchAvailableDirectors').mockResolvedValue([])
@@ -160,13 +175,51 @@ describe('Director subscription calculation refresh', () => {
     expect(refreshButton().disabled).toBe(false)
   })
 
+  it('polls the lightweight status without reloading an unchanged report', async () => {
+    const reportCallsBefore = director.call.mock.calls.filter(([command]) => (
+      command === 'status subscriptions all'
+    )).length
+    await new Promise(resolve => setTimeout(resolve, 5200))
+    expect(director.call).toHaveBeenCalledWith('status subscriptions revision')
+    expect(director.call.mock.calls.filter(([command]) => (
+      command === 'status subscriptions all'
+    ))).toHaveLength(reportCallsBefore)
+  }, 8000)
+
+  it('reloads the full report when explicitly requested', async () => {
+    const reportCallsBefore = director.call.mock.calls.filter(([command]) => (
+      command === 'status subscriptions all'
+    )).length
+    root.querySelector('button[aria-label="Reload report"]').click()
+    await vi.waitFor(() => {
+      expect(director.call.mock.calls.filter(([command]) => (
+        command === 'status subscriptions all'
+      ))).toHaveLength(reportCallsBefore + 1)
+    })
+  })
+
   it('keeps refresh disabled while queued and polls until the worker is idle', async () => {
-    let state = 'queued'
+    let generation = 1
+    let state = 'idle'
     director.call.mockImplementation(async command => {
-      if (command === 'status subscriptions recalculate') return {}
+      const accountingStatus = {
+        generation,
+        worker_available: true,
+        queued: state === 'queued',
+        running: state === 'running',
+        refresh_thread_state: state,
+      }
+      if (command === 'status subscriptions recalculate') {
+        state = 'queued'
+        generation += 1
+        return {}
+      }
+      if (command === 'status subscriptions revision') {
+        return { accounting_status: accountingStatus }
+      }
       return {
         subscription_accounting: { calculated_at: '2026-11-06 10:00:00', age_seconds: 1 },
-        accounting_snapshot: { refresh_thread_state: state },
+        accounting_snapshot: { ...accountingStatus, available: true },
       }
     })
     refreshButton().click()
@@ -176,6 +229,7 @@ describe('Director subscription calculation refresh', () => {
       expect(root.textContent).toContain('queued')
     })
     state = 'idle'
+    generation += 1
     await vi.waitFor(() => expect(refreshButton().disabled).toBe(false), {
       timeout: 7000,
     })

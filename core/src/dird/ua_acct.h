@@ -24,6 +24,7 @@
 #include "dird/ua.h"
 
 #include <cstddef>
+#include <cstdint>
 
 namespace directordaemon {
 
@@ -31,12 +32,14 @@ struct SubscriptionAccountingThreadStatus {
   bool available{false};
   bool queued{false};
   bool running{false};
+  uint64_t generation{0};
 };
 
 // Append persisted accounting details to the unified subscription report.
 bool ReportSubscriptionAccounting(UaContext* ua,
                                   bool anonymize,
                                   size_t pending_jobs);
+bool ReportSubscriptionAccountingStatus(UaContext* ua);
 
 bool StartSubscriptionAccountingThread();
 void StopSubscriptionAccountingThread();

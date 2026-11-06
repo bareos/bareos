@@ -765,23 +765,22 @@ async function refreshStatus() {
 
 const statusCountdown = ref(settings.refreshInterval)
 let _statusTimer = null
+let _subscriptionStatusTimer = null
 
 function startStatusAutoRefresh() {
   clearInterval(_statusTimer)
+  clearInterval(_subscriptionStatusTimer)
   statusCountdown.value = settings.refreshInterval
   _statusTimer = setInterval(() => {
-    if (tab.value === 'subscription'
-        && statusCountdown.value % 5 === 0
-        && !subscriptionLoading.value
-        && !subscriptionCalculationLoading.value) {
-      refreshSubscription()
-    }
     statusCountdown.value -= 1
     if (statusCountdown.value <= 0) {
       refreshStatus()
       statusCountdown.value = settings.refreshInterval
     }
   }, 1000)
+  _subscriptionStatusTimer = setInterval(() => {
+    if (tab.value === 'subscription') pollSubscriptionStatus()
+  }, 5000)
 }
 
 function manualRefreshStatus() {
@@ -1068,6 +1067,7 @@ onMounted(() => {
   refreshMessages()
   acl.ensureLoaded()
   startStatusAutoRefresh()
+  if (tab.value === 'subscription') refreshSubscription()
 })
 
 watch(() => directorOptions.value, () => {
@@ -1075,7 +1075,10 @@ watch(() => directorOptions.value, () => {
   syncSingletonTabDirector()
 })
 
-onUnmounted(() => { clearInterval(_statusTimer) })
+onUnmounted(() => {
+  clearInterval(_statusTimer)
+  clearInterval(_subscriptionStatusTimer)
+})
 
 // ── Subscription ──────────────────────────────────────────────────────────────
 const subscriptionLoading = ref(false)
@@ -1083,6 +1086,7 @@ const subscriptionError   = ref(null)
 const subscriptionData    = ref(null)
 const showSubscriptionLogicalSize = ref(false)
 const subscriptionCalculationLoading = ref(false)
+const subscriptionStatusPolling = ref(false)
 
 async function refreshSubscriptionCalculation() {
   if (subscriptionCalculationLoading.value
@@ -1113,6 +1117,7 @@ async function refreshSubscriptionCalculation() {
 }
 
 async function refreshSubscription() {
+  if (subscriptionLoading.value) return
   subscriptionLoading.value = true
   subscriptionError.value   = null
   try {
@@ -1122,6 +1127,38 @@ async function refreshSubscription() {
     subscriptionError.value = e.message
   } finally {
     subscriptionLoading.value = false
+  }
+}
+
+async function pollSubscriptionStatus() {
+  if (subscriptionStatusPolling.value
+      || subscriptionLoading.value
+      || subscriptionCalculationLoading.value
+      || !subscriptionData.value
+      || !currentSingletonDirector.value) {
+    return
+  }
+
+  subscriptionStatusPolling.value = true
+  try {
+    const response = await director.call('status subscriptions revision')
+    const status = response?.accounting_status
+    const baseline = subscriptionData.value?.accounting_snapshot
+    if (!status || status.generation === undefined || !baseline) {
+      throw new Error(t('Subscription accounting status is unavailable.'))
+    }
+
+    subscriptionError.value = null
+    const changed = String(status.generation) !== String(baseline.generation)
+      || status.refresh_thread_state !== baseline.refresh_thread_state
+      || status.worker_available !== baseline.worker_available
+      || status.queued !== baseline.queued
+      || status.running !== baseline.running
+    if (changed) await refreshSubscription()
+  } catch (e) {
+    subscriptionError.value = e.message
+  } finally {
+    subscriptionStatusPolling.value = false
   }
 }
 

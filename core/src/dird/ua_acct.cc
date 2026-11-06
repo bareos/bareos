@@ -67,6 +67,7 @@ static bool accounting_refresh_requested{false};
 static bool accounting_refresh_running{false};
 static bool accounting_job_running{false};
 static JobId_t accounting_current_jobid{0};
+static uint64_t accounting_generation{0};
 static std::set<JobId_t> accounting_jobs;
 
 struct MissingAccountingJobsCtx {
@@ -78,6 +79,15 @@ int MissingAccountingJobHandler(void* ctx, int, char** row)
   auto* jobs = static_cast<MissingAccountingJobsCtx*>(ctx);
   jobs->jobids.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
   return 0;
+}
+
+const char* SubscriptionAccountingThreadState(
+    const SubscriptionAccountingThreadStatus& status)
+{
+  return !status.available ? T_("unavailable")
+         : status.running  ? T_("running")
+         : status.queued   ? T_("queued")
+                           : T_("idle");
 }
 
 void RefreshSubscriptionAccounting(UaContext* ua)
@@ -218,12 +228,14 @@ void* SubscriptionAccountingThread(void*)
         RefreshSubscriptionAccounting(&ua);
         pthread_mutex_lock(&accounting_mutex);
         accounting_refresh_running = false;
+        ++accounting_generation;
         pthread_mutex_unlock(&accounting_mutex);
       } else if (jobid != 0) {
         RefreshSubscriptionAccountingJob(&ua, jobid);
         pthread_mutex_lock(&accounting_mutex);
         accounting_job_running = false;
         accounting_current_jobid = 0;
+        ++accounting_generation;
         pthread_mutex_unlock(&accounting_mutex);
       }
     }
@@ -244,6 +256,7 @@ bool ReportSubscriptionAccounting(UaContext* ua,
                                   bool anonymize,
                                   size_t pending_jobs)
 {
+  const auto thread_status = GetSubscriptionAccountingThreadStatus();
   const char* client_filter = GetArgValue(ua, NT_("client"));
   std::vector<AccountingRow> rows;
   SnapshotMetadata metadata{};
@@ -256,14 +269,14 @@ bool ReportSubscriptionAccounting(UaContext* ua,
       metadata.last_error = T_("Last recalculation failed.");
     }
   }
-  const auto thread_status = GetSubscriptionAccountingThreadStatus();
-  const char* thread_state = !thread_status.available ? T_("unavailable")
-                             : thread_status.running  ? T_("running")
-                             : thread_status.queued   ? T_("queued")
-                                                      : T_("idle");
+  const char* thread_state = SubscriptionAccountingThreadState(thread_status);
   ua->SendMsg(T_("Background refresh worker: %s.\n"), thread_state);
 
   ua->send->ObjectStart("accounting_snapshot");
+  ua->send->ObjectKeyValue("generation", thread_status.generation);
+  ua->send->ObjectKeyValueBool("worker_available", thread_status.available);
+  ua->send->ObjectKeyValueBool("queued", thread_status.queued);
+  ua->send->ObjectKeyValueBool("running", thread_status.running);
   ua->send->ObjectKeyValueBool("available", metadata.has_snapshot);
   ua->send->ObjectKeyValue("calculated_at", metadata.timestamp.c_str());
   ua->send->ObjectKeyValueBool("stale", metadata.stale);
@@ -509,6 +522,24 @@ bool ReportSubscriptionAccounting(UaContext* ua,
   return true;
 }
 
+bool ReportSubscriptionAccountingStatus(UaContext* ua)
+{
+  const auto status = GetSubscriptionAccountingThreadStatus();
+  const char* thread_state = SubscriptionAccountingThreadState(status);
+
+  ua->send->ObjectStart("accounting_status");
+  ua->send->ObjectKeyValue("generation", status.generation);
+  ua->send->ObjectKeyValueBool("worker_available", status.available);
+  ua->send->ObjectKeyValueBool("queued", status.queued);
+  ua->send->ObjectKeyValueBool("running", status.running);
+  ua->send->ObjectKeyValue("refresh_thread_state", thread_state);
+  ua->send->ObjectEnd();
+
+  ua->SendMsg(T_("Subscription accounting generation: %llu; worker: %s.\n"),
+              static_cast<unsigned long long>(status.generation), thread_state);
+  return true;
+}
+
 bool StartSubscriptionAccountingThread()
 {
   pthread_mutex_lock(&accounting_mutex);
@@ -565,7 +596,10 @@ bool QueueSubscriptionAccountingJob(JobId_t jobid)
   }
   const bool inserted = jobid != accounting_current_jobid
                         && accounting_jobs.insert(jobid).second;
-  if (inserted) { pthread_cond_signal(&accounting_cond); }
+  if (inserted) {
+    ++accounting_generation;
+    pthread_cond_signal(&accounting_cond);
+  }
   pthread_mutex_unlock(&accounting_mutex);
   return inserted;
 }
@@ -633,7 +667,10 @@ size_t QueueMissingSubscriptionAccounting(UaContext* ua,
       if (jobid == accounting_current_jobid) { continue; }
       inserted += accounting_jobs.insert(jobid).second ? 1 : 0;
     }
-    if (inserted > 0) { pthread_cond_signal(&accounting_cond); }
+    if (inserted > 0) {
+      ++accounting_generation;
+      pthread_cond_signal(&accounting_cond);
+    }
   }
   pthread_mutex_unlock(&accounting_mutex);
   return missing.jobids.size();
@@ -657,6 +694,7 @@ bool RequestSubscriptionAccountingRefresh(UaContext* ua)
     return true;
   }
   accounting_refresh_requested = true;
+  ++accounting_generation;
   pthread_cond_signal(&accounting_cond);
   pthread_mutex_unlock(&accounting_mutex);
   ua->SendMsg(
@@ -672,6 +710,7 @@ SubscriptionAccountingThreadStatus GetSubscriptionAccountingThreadStatus()
   status.available = accounting_worker_available;
   status.queued = accounting_refresh_requested || !accounting_jobs.empty();
   status.running = accounting_refresh_running || accounting_job_running;
+  status.generation = accounting_generation;
   pthread_mutex_unlock(&accounting_mutex);
   return status;
 }
