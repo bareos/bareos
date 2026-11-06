@@ -1,0 +1,3 @@
+@plugindir@/bareos-fd-qmp.py
+@plugindir@/bqmp.py
+@plugindir@/bqmp_nbd.py
