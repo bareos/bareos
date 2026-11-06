@@ -879,6 +879,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     return true;
   }
 
+  if (rec->maskedStream == STREAM_RESTORE_OBJECT) {
+    pending_attributes.Flush(rec->VolSessionId, rec->VolSessionTime);
+  }
+
   // File Attributes stream
   switch (rec->maskedStream) {
     case STREAM_RESTORE_OBJECT:

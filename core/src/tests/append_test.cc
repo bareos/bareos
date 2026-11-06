@@ -24,6 +24,9 @@
 #include "stored/append.h"
 #include "include/streams.h"
 
+#include <string>
+#include <vector>
+
 namespace {
 storagedaemon::DeviceRecord MakeRecord(int32_t fileindex, int32_t stream)
 {
@@ -224,6 +227,42 @@ TEST(AppendProcessedFileTest, AttributeGroupBufferSelectsLatestAttributes)
   EXPECT_EQ(applied[0], std::make_pair(int32_t{STREAM_UNIX_ATTRIBUTES}, 'c'));
   EXPECT_EQ(applied[1], std::make_pair(int32_t{STREAM_MD5_DIGEST}, 'd'));
   EXPECT_EQ(applied[2], std::make_pair(int32_t{STREAM_UNIX_ATTRIBUTES}, 'o'));
+}
+
+TEST(AppendProcessedFileTest,
+     AttributeGroupBufferFlushesBeforeRestoreObjectForSession)
+{
+  std::vector<std::string> processed;
+  storagedaemon::AttributeGroupBuffer buffer(
+      [&processed](storagedaemon::DeviceRecord& rec) {
+        processed.emplace_back("attributes:" + std::to_string(rec.FileIndex));
+      });
+
+  auto same_session_attrs = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  same_session_attrs.VolSessionId = 7;
+  same_session_attrs.VolSessionTime = 11;
+  same_session_attrs.maskedStream = same_session_attrs.Stream;
+  buffer.Add(&same_session_attrs);
+
+  auto other_session_attrs = MakeRecord(2, STREAM_UNIX_ATTRIBUTES);
+  other_session_attrs.VolSessionId = 8;
+  other_session_attrs.VolSessionTime = 12;
+  other_session_attrs.maskedStream = other_session_attrs.Stream;
+  buffer.Add(&other_session_attrs);
+
+  auto restore_object = MakeRecord(3, STREAM_RESTORE_OBJECT);
+  restore_object.VolSessionId = same_session_attrs.VolSessionId;
+  restore_object.VolSessionTime = same_session_attrs.VolSessionTime;
+  buffer.Flush(restore_object.VolSessionId, restore_object.VolSessionTime);
+  processed.emplace_back("restore-object");
+
+  ASSERT_EQ(processed.size(), 2U);
+  EXPECT_EQ(processed[0], "attributes:1");
+  EXPECT_EQ(processed[1], "restore-object");
+
+  buffer.FlushAll();
+  ASSERT_EQ(processed.size(), 3U);
+  EXPECT_EQ(processed[2], "attributes:2");
 }
 
 TEST(AppendProcessedFileTest, AttributeGroupBufferIsBufferedStreams)
