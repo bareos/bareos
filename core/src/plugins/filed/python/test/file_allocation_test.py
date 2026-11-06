@@ -157,6 +157,41 @@ class FileAllocationTest(unittest.TestCase):
         self.assertEqual(packet.statp.st_size, 123)
         self.assertEqual(packet.statp.st_blocks, bareosfd.StatPacket().st_blocks)
 
+    def test_postgresql_without_posix_allocation_fields(self):
+        source = types.SimpleNamespace(
+            st_mode=0o100600,
+            st_size=123,
+            st_ino=1,
+            st_dev=1,
+            st_nlink=1,
+            st_uid=0,
+            st_gid=0,
+            st_atime=0,
+            st_mtime=0,
+            st_ctime=0,
+        )
+        plugin = POSTGRES.__new__(POSTGRES)
+        plugin.paths_to_backup = collections.deque(["/regular"])
+        plugin.virtual_files = []
+        packet = bareosfd.SavePacket()
+        with patch("os.path.islink", return_value=False), patch(
+            "os.stat", return_value=source
+        ), patch.object(bareosfd, "DebugMessage"):
+            self.assertEqual(plugin.start_backup_file(packet), bareosfd.bRC_OK)
+        self.assertEqual(packet.statp.st_size, 123)
+        self.assertEqual(packet.statp.st_blocks, bareosfd.StatPacket().st_blocks)
+        self.assertEqual(packet.statp.st_blksize, bareosfd.StatPacket().st_blksize)
+
+    def test_postgresql_skips_file_when_stat_fails(self):
+        plugin = POSTGRES.__new__(POSTGRES)
+        plugin.paths_to_backup = collections.deque(["/unavailable"])
+        plugin.virtual_files = []
+        packet = bareosfd.SavePacket()
+        with patch("os.path.islink", return_value=False), patch(
+            "os.stat", side_effect=OSError("permission denied")
+        ), patch.object(bareosfd, "DebugMessage"):
+            self.assertEqual(plugin.start_backup_file(packet), bareosfd.bRC_Skip)
+
 
 if __name__ == "__main__":
     unittest.main()
