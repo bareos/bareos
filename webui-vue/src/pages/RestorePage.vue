@@ -812,10 +812,7 @@ async function applyRouteSourceSelection() {
   }
 
   if (sourceDirector.value) {
-    await Promise.all([
-      loadRestoreClients(),
-      loadRestoreJobs(),
-    ])
+    await loadRestoreSelections()
   } else {
     restoreClients.value = []
     restoreJobs.value = []
@@ -971,6 +968,14 @@ async function loadRestoreClients() {
   }
 }
 
+async function loadRestoreSelections() {
+  await ensureSelectedSourceDirector()
+  await Promise.all([
+    loadRestoreClients(),
+    loadRestoreJobs(),
+  ])
+}
+
 // ── Backups for selected client ──────────────────────────────────────────────
 const backups        = ref([])
 const loadingBackups = ref(false)
@@ -1039,11 +1044,9 @@ async function onClientChange(clientName) {
   }
 
   if (!selectedClient) {
+    loadingBackups.value = false
     if (sourceDirector.value) {
-      await Promise.all([
-        loadRestoreClients(),
-        loadRestoreJobs(),
-      ])
+      await loadRestoreSelections()
     } else {
       restoreClients.value = []
       restoreJobs.value = []
@@ -1052,15 +1055,16 @@ async function onClientChange(clientName) {
     return
   }
 
-  await Promise.all([
-    loadRestoreClients(),
-    loadRestoreJobs(),
-  ])
-  await loadBackups(selectedClient)
+  loadingBackups.value = true
+  try {
+    await loadRestoreSelections()
+    await loadBackups(selectedClient)
+  } finally {
+    loadingBackups.value = false
+  }
 }
 
 async function loadBackups(client) {
-  loadingBackups.value = true
   try {
     await ensureScopeDirector(client.director)
     const [r, filesets] = await Promise.all([
@@ -1077,8 +1081,6 @@ async function loadBackups(client) {
   } catch (_) {
     backups.value = []
     pluginFilesets.value = new Map()
-  } finally {
-    loadingBackups.value = false
   }
 }
 
@@ -1871,6 +1873,10 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
     return
   }
 
+  if (selectedSourceClient.value?.director === next) {
+    return
+  }
+
   if (selectedSourceClient.value && selectedSourceClient.value.director !== next) {
     sourceClientKey.value = ''
     clearSelectedSourceData()
@@ -1884,10 +1890,7 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
     return
   }
 
-  await Promise.all([
-    loadRestoreClients(),
-    loadRestoreJobs(),
-  ])
+  await loadRestoreSelections()
 })
 
 watch(() => [

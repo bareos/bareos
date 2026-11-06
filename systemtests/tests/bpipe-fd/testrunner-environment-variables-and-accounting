@@ -134,13 +134,21 @@ expect_grep \
   "1:${payload_bytes}:${payload_blocks}" \
   "${runner_tmp}/accounting.out" \
   "Catalog does not contain exactly one corrected bpipe File row"
-# The corrected-attributes resend is written to the volume as a second
-# STREAM_UNIX_ATTRIBUTES record for the same FileIndex (one per job here).
-# bls lists only one of them and reports the other at debug level 100.
+# bls lists the corrected attributes once for each job.
 run_bls -d100 -vv -V Full-0001 FileStorage
-duplicate_attributes=$(grep -c "Ignoring corrected attributes for FileIndex=1" "$tmp/bls.out" || true)
-if [ "$duplicate_attributes" -ne 2 ]; then
-  echo "Expected 2 duplicate attribute records on Full-0001, found $duplicate_attributes" >&2
+attribute_records=$(
+  grep -cE '^FileIndex=1[[:space:]]+Stream=1[[:space:]]+UATTR' "$tmp/bls.out" || true
+)
+if [ "$attribute_records" -ne 2 ]; then
+  echo "Expected one FileIndex=1 attribute record per job, found $attribute_records" >&2
+  cat "$tmp/bls.out" >&2
+  exit 2
+fi
+corrected_attribute_records=$(
+  grep -cE "^FileIndex=1[[:space:]]+Stream=1[[:space:]]+UATTR.*[[:space:]]${payload_bytes}[[:space:]]" "$tmp/bls.out" || true
+)
+if [ "$corrected_attribute_records" -ne 2 ]; then
+  echo "Expected corrected ${payload_bytes}-byte attributes for both jobs, found $corrected_attribute_records" >&2
   cat "$tmp/bls.out" >&2
   exit 2
 fi
