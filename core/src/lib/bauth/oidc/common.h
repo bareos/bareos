@@ -26,16 +26,40 @@
 #include <jansson.h>
 #include "http.h"
 
+#include <openssl/evp.h>
+#include <openssl/bn.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
 namespace auth::Oidc {
 struct cleanup {
   void operator()(json_t* json) const
   {
     if (json) { json_decref(json); }
   }
+
+#define DEFINE_OPENSSL_DESTRUCTOR(Type) \
+  void operator()(Type* ptr) const      \
+  {                                     \
+    if (ptr) { Type##_free(ptr); }      \
+  }
+
+  DEFINE_OPENSSL_DESTRUCTOR(EVP_PKEY);
+  DEFINE_OPENSSL_DESTRUCTOR(EVP_PKEY_CTX);
+  DEFINE_OPENSSL_DESTRUCTOR(EVP_MD_CTX);
+  DEFINE_OPENSSL_DESTRUCTOR(X509);
+  DEFINE_OPENSSL_DESTRUCTOR(BIO);
+
+#undef DEFINE_OPENSSL_DESTRUCTOR
 };
 }  // namespace auth::Oidc
 
 using json_ptr = std::unique_ptr<json_t, auth::Oidc::cleanup>;
 
+using evp_pkey = std::unique_ptr<EVP_PKEY, auth::Oidc::cleanup>;
+using evp_pkey_ctx = std::unique_ptr<EVP_PKEY_CTX, auth::Oidc::cleanup>;
+using evp_md_ctx = std::unique_ptr<EVP_MD_CTX, auth::Oidc::cleanup>;
+using x509 = std::unique_ptr<X509, auth::Oidc::cleanup>;
+using bio = std::unique_ptr<BIO, auth::Oidc::cleanup>;
 
 #endif  // BAREOS_LIB_BAUTH_OIDC_COMMON_H_

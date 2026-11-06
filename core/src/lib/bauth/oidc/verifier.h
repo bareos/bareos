@@ -23,11 +23,13 @@
 #define BAREOS_LIB_BAUTH_OIDC_VERIFIER_H_
 
 #include "lib/bauth.h"
-#include "lib/bauth/oidc/common.h"
+#include "common.h"
+#include "oidc.h"
 
 #include <chrono>
 
 namespace auth::Oidc {
+
 
 // TODO: document that with entra id you need to set
 // api.requestedAccessTokenVersion = 2 in the manifest
@@ -39,40 +41,10 @@ struct config {
   std::string roles_name{};
 
   bool require_not_before{false};
-  std::chrono::steady_clock::duration allowed_clock_skew
-      = std::chrono::seconds{30};
+  std::chrono::seconds allowed_clock_skew{30};
 };
 
 struct Verifier;
-
-struct site_metadata {
-  std::string token_endpoint{};
-  std::string jwks_uri{};
-  std::string issuer{};
-  std::string device_authorization_endpoint{};
-};
-
-struct UserClaims {
-  std::string user_name;
-  std::string preferred_name;
-  std::vector<std::string> roles;
-};
-
-// each flow should actually be its own "type"
-struct AuthenticationFlow {
-  virtual auth::Status step(Verifier* verifier,
-                            std::vector<char>& response,
-                            std::span<const char> received)
-      = 0;
-  virtual ~AuthenticationFlow() = default;
-
-  UserClaims verified_claims;
-
- protected:
-  http::client* http_client(Verifier* verifier);
-  site_metadata& meta(Verifier* verifier);
-  config& conf(Verifier* verifier);
-};
 
 struct Verifier : public auth::Verifier {
   using Base = auth::Verifier;
@@ -89,8 +61,6 @@ struct Verifier : public auth::Verifier {
 
   std::string user_name;
   std::vector<std::string> roles;
-
-  friend struct AuthenticationFlow;
 
  private:
   auth::Status initiate_flow(std::vector<char>& response,
@@ -109,9 +79,10 @@ struct Verifier : public auth::Verifier {
   config cfg;
 
   std::string error;
-  site_metadata meta;
   std::unique_ptr<http::client> client;
-  std::unique_ptr<AuthenticationFlow> current_flow;
+  std::optional<oidc::client> oidc;
+  std::optional<oidc::DeviceAuthenticationFlow> current_flow;
+  oidc::keyset keys;
 
   Status Error(std::string message)
   {

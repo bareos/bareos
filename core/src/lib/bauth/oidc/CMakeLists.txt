@@ -20,13 +20,16 @@
 find_package(CURL REQUIRED)
 find_package(Jansson 2.3 REQUIRED) # we need at least 2.3
 
+add_library(oidc STATIC)
+target_sources(oidc PRIVATE oidc.cc)
+target_link_libraries(oidc PRIVATE jwt-cpp::jwt-cpp)
+
 # these libraries are STATIC because OBJECT dependencies do not propagate, i.e.
 # if a target links verifier, then it will not get common as dependency
 add_library(bauth_oidc_verifier STATIC)
 target_sources(bauth_oidc_verifier PRIVATE verifier.cc curl_http.cc)
 target_link_libraries(
-  bauth_oidc_verifier PRIVATE CURL::libcurl Bareos::Lib Jansson::Jansson
-                              jwt-cpp::jwt-cpp
+  bauth_oidc_verifier PRIVATE CURL::libcurl Bareos::Lib Jansson::Jansson oidc
 )
 
 add_library(bauth_oidc_prover STATIC)
