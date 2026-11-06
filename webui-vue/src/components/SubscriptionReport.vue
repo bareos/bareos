@@ -65,7 +65,7 @@
             <q-icon name="warning" aria-hidden="true" />
             {{ t('No accounting snapshot is available; all sizes are estimates.') }}
           </div>
-          <div v-if="data.subscription_accounting.calculated_at && data.subscription_accounting.stale"
+          <div v-if="data.subscription_accounting.calculated_at && snapshotIsStale"
                class="sub-warning">
             <q-icon name="warning" aria-hidden="true" />
             {{ t('Accounting snapshot is more than 24 hours old.') }}
@@ -276,6 +276,10 @@ const snapshotAgeSeconds = computed(() => {
   if (age === undefined || age === null || !Number.isFinite(Number(age))) return null
   return Number(age) + (now.value - receivedAt.value) / 1000
 })
+const snapshotIsStale = computed(() => (
+  props.data.subscription_accounting?.stale
+  || (snapshotAgeSeconds.value !== null && snapshotAgeSeconds.value > 24 * 60 * 60)
+))
 const snapshotAgeLabel = computed(() => (
   snapshotAgeSeconds.value === null
     ? t('Unknown age')

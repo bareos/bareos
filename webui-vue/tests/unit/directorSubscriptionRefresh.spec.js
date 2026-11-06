@@ -360,6 +360,23 @@ describe('Subscription snapshot age and refresh eligibility', () => {
     expect(refresh).toHaveBeenCalledOnce()
   })
 
+  it('shows the stale warning when the snapshot ages past 24 hours', async () => {
+    mountReport(24 * 60 * 60 - 1, {
+      data: {
+        subscription_accounting: {
+          calculated_at: '2026-11-05 10:00:01',
+          age_seconds: 24 * 60 * 60 - 1,
+          stale: false,
+        },
+        accounting_snapshot: { refresh_thread_state: 'idle' },
+      },
+    })
+    expect(root.textContent).not.toContain('Accounting snapshot is more than 24 hours old.')
+    await vi.advanceTimersByTimeAsync(2000)
+    await nextTick()
+    expect(root.textContent).toContain('Accounting snapshot is more than 24 hours old.')
+  })
+
   it.each(['running', 'queued', 'unavailable', undefined])(
     'does not allow refresh when worker state is %s', state => {
       const refresh = mountReport(600, {

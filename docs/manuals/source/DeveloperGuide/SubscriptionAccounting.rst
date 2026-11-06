@@ -165,7 +165,10 @@ calculation completes, including a failed calculation. Clients can poll this
 command and fetch the full report only when the generation or worker state
 changes. The generation is not persisted and resets when the Director
 restarts, so a polling client must fetch a full report to establish its
-baseline after connecting or entering the subscription view.
+baseline after connecting or entering the subscription view. Since snapshot
+staleness also depends on elapsed time, the Vue report updates its 24-hour
+staleness warning locally while polling; it does not need a new generation
+to cross that threshold.
 
 Corrected plugin attributes are significant to this calculation because they
 contain the final file size and allocation. When a plugin resends corrected
