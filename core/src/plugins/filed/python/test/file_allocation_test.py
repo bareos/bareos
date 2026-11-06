@@ -179,7 +179,7 @@ class FileAllocationTest(unittest.TestCase):
         ), patch.object(bareosfd, "DebugMessage"):
             self.assertEqual(plugin.start_backup_file(packet), bareosfd.bRC_OK)
         self.assertEqual(packet.statp.st_size, 123)
-        self.assertEqual(packet.statp.st_blocks, bareosfd.StatPacket().st_blocks)
+        self.assertEqual(packet.statp.st_blocks, 0)
         self.assertEqual(packet.statp.st_blksize, bareosfd.StatPacket().st_blksize)
 
     def test_postgresql_skips_file_when_stat_fails(self):
