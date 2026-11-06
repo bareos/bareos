@@ -45,12 +45,14 @@ vi.mock('quasar', () => ({
 }))
 vi.mock('../../src/composables/useDirectorScope.js', () => ({
   useDirectorScope: () => ({
-    directorOptions: ref([{ label: 'prod-b', value: 'prod-b' }]),
-    selectedDirectorsModel: ref(['prod-b']),
-    activeDirectors: ref(['prod-b']),
-    isCommonScope: ref(false),
-    isSingleDirectorScope: ref(true),
-    scopeLabel: ref('prod-b'),
+    directorOptions: ref([
+      { label: 'prod-b', value: 'prod-b' },
+      { label: 'prod-a', value: 'prod-a' },
+    ]),
+    selectedDirectorsModel: ref(['prod-b', 'prod-a']),
+    activeDirectors: ref(['prod-b', 'prod-a']),
+    isCommonScope: ref(true),
+    isSingleDirectorScope: ref(false),
     syncSelectedDirectors: vi.fn(),
     ensureScopeDirector,
     ensureSingleScopeDirector: vi.fn(),
@@ -68,6 +70,17 @@ const buttonStub = {
     'aria-label': props.ariaLabel,
     onClick: () => emit('click'),
   }, props.label),
+}
+const selectStub = {
+  props: ['modelValue', 'options', 'label'],
+  emits: ['update:modelValue'],
+  setup: (props, { emit }) => () => h('select', {
+    value: props.modelValue,
+    'aria-label': props.label,
+    onChange: event => emit('update:modelValue', event.target.value),
+  }, props.options?.map(option => h('option', {
+    value: option.value,
+  }, option.label))),
 }
 const checkboxStub = {
   props: ['modelValue', 'label'],
@@ -88,7 +101,7 @@ describe('Director subscription calculation refresh', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    testRoute.query = { tab: 'subscription' }
+    testRoute.query = { tab: 'subscription', directorTarget: 'prod-b' }
     localStorage.clear()
     const pinia = createPinia()
     setActivePinia(pinia)
@@ -124,10 +137,11 @@ describe('Director subscription calculation refresh', () => {
     for (const name of [
       'QPage', 'QTabs', 'QTab', 'QTabPanels', 'QTabPanel', 'QCard',
       'QCardSection', 'QSpace', 'QBanner', 'QTable', 'QDialog',
-      'QInnerLoading', 'QSelect', 'QIcon', 'QTooltip', 'QSpinner',
+      'QInnerLoading', 'QIcon', 'QTooltip', 'QSpinner',
     ]) {
       app.component(name, containerStub)
     }
+    app.component('QSelect', selectStub)
     app.component('QBtn', buttonStub)
     app.component('QCheckbox', checkboxStub)
     root = document.createElement('div')
@@ -196,6 +210,59 @@ describe('Director subscription calculation refresh', () => {
         command === 'status subscriptions all'
       ))).toHaveLength(reportCallsBefore + 1)
     })
+  })
+
+  it('reloads for the new director when selection changes during a report request', async () => {
+    let resolveOldReport
+    let reportCalls = 0
+    director.call.mockImplementation(command => {
+      if (command === 'status subscriptions state') {
+        return Promise.resolve({
+          accounting_status: {
+            generation: 1,
+            worker_available: true,
+            queued: false,
+            running: false,
+            refresh_thread_state: 'idle',
+          },
+        })
+      }
+      if (command !== 'status subscriptions all') return Promise.resolve({})
+
+      reportCalls += 1
+      if (reportCalls === 1) {
+        return new Promise(resolve => { resolveOldReport = resolve })
+      }
+      return Promise.resolve({
+        subscription_accounting: { calculated_at: '2026-11-06 10:00:00', age_seconds: 1 },
+        accounting_snapshot: {
+          generation: 2,
+          worker_available: true,
+          queued: false,
+          running: false,
+          refresh_thread_state: 'idle',
+          available: true,
+        },
+        accounting: [{ client: 'new-report-row', files: 1, bytes: 2e9, rule_code: 'A' }],
+      })
+    })
+
+    root.querySelector('button[aria-label="Reload report"]').click()
+    await vi.waitFor(() => expect(resolveOldReport).toBeTypeOf('function'))
+
+    const directorSelect = root.querySelector('select[aria-label="Director"]')
+    directorSelect.value = 'prod-a'
+    directorSelect.dispatchEvent(new Event('change', { bubbles: true }))
+    resolveOldReport({
+      subscription_accounting: { calculated_at: '2026-11-06 10:00:00', age_seconds: 1 },
+      accounting_snapshot: { generation: 1, available: true },
+      accounting: [{ client: 'old-report-row', files: 1, bytes: 1, rule_code: 'A' }],
+    })
+
+    await vi.waitFor(() => expect(reportCalls).toBe(2))
+    expect(ensureScopeDirector).toHaveBeenCalledWith('prod-a')
+    await vi.waitFor(() => expect(root.textContent).toContain('new-report-row'))
+    expect(root.textContent).not.toContain('old-report-row')
   })
 
   it('keeps refresh disabled while queued and polls until the worker is idle', async () => {

@@ -922,7 +922,10 @@ watch(() => route.query.directorTarget, () => {
 })
 
 watch(tab, (t) => {
-  if (t !== 'subscription') showSubscriptionLogicalSize.value = false
+  if (t !== 'subscription') {
+    showSubscriptionLogicalSize.value = false
+    subscriptionRefreshRequested = false
+  }
   const current = normaliseTab(route.query.tab)
   const query = buildDirectorPageQuery(route.query, {
     tab: t,
@@ -962,6 +965,8 @@ watch(() => singletonTabDirector.value, () => {
       .catch(() => {})
   }
   if (tab.value === 'subscription') {
+    subscriptionData.value = null
+    subscriptionError.value = null
     refreshSubscription()
   }
 })
@@ -977,6 +982,8 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
       .catch(() => {})
   }
   if (tab.value === 'subscription') {
+    subscriptionData.value = null
+    subscriptionError.value = null
     refreshSubscription()
   }
 })
@@ -1087,6 +1094,7 @@ const subscriptionData    = ref(null)
 const showSubscriptionLogicalSize = ref(false)
 const subscriptionCalculationLoading = ref(false)
 const subscriptionStatusPolling = ref(false)
+let subscriptionRefreshRequested = false
 
 async function refreshSubscriptionCalculation() {
   if (subscriptionCalculationLoading.value
@@ -1117,16 +1125,35 @@ async function refreshSubscriptionCalculation() {
 }
 
 async function refreshSubscription() {
-  if (subscriptionLoading.value) return
+  if (subscriptionLoading.value) {
+    subscriptionRefreshRequested = true
+    return
+  }
+
+  const requestedDirector = currentSingletonDirector.value
   subscriptionLoading.value = true
   subscriptionError.value   = null
   try {
-    await ensureSingletonTabDirector()
-    subscriptionData.value = await director.call('status subscriptions all')
+    const targetDirector = await ensureSingletonTabDirector()
+    if (!targetDirector) throw new Error(t('No director selected'))
+    const report = await director.call('status subscriptions all')
+    if (targetDirector === currentSingletonDirector.value) {
+      subscriptionData.value = report
+    } else {
+      subscriptionRefreshRequested = true
+    }
   } catch (e) {
-    subscriptionError.value = e.message
+    if (requestedDirector === currentSingletonDirector.value) {
+      subscriptionError.value = e.message
+    } else {
+      subscriptionRefreshRequested = true
+    }
   } finally {
     subscriptionLoading.value = false
+    if (subscriptionRefreshRequested && tab.value === 'subscription') {
+      subscriptionRefreshRequested = false
+      void refreshSubscription()
+    }
   }
 }
 
@@ -1139,11 +1166,13 @@ async function pollSubscriptionStatus() {
     return
   }
 
+  const targetDirector = currentSingletonDirector.value
+  const baseline = subscriptionData.value?.accounting_snapshot
   subscriptionStatusPolling.value = true
   try {
     const response = await director.call('status subscriptions state')
+    if (targetDirector !== currentSingletonDirector.value) return
     const status = response?.accounting_status
-    const baseline = subscriptionData.value?.accounting_snapshot
     if (!status || status.generation === undefined || !baseline) {
       throw new Error(t('Subscription accounting status is unavailable.'))
     }
