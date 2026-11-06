@@ -38,16 +38,18 @@ catalog version in the selected chain. The stored result on a Job row is the
 cumulative result for that Job's Client/FileSet chain.
 
 Eligible chain jobs have a successful or warning status (``T`` or ``W``) and
-are Backup, Copy, Migrate, or Always-Incremental consolidation jobs (types
-``B``, ``C``, ``g``, and ``O``). For each Client/FileSet, chain resolution
-selects the latest completed Full, then the latest Differential after that
-Full if one exists, then all Incrementals after the current Full or
-Differential baseline. ``JobTDate`` orders jobs, with ``JobId`` as a
-tie-breaker. A purged Full, Differential, or Incremental makes the chain
-unusable; accounting does not silently sum only the remaining files. A tuple
-with no usable chain is reported as excluded. A combination with no completed
-Full is not discovered by the full-chain scan and therefore has no accounting
-row.
+are file-bearing Backup or Copy result jobs (types ``B`` and ``C``).
+Migration and Always-Incremental consolidation control jobs (types ``g`` and
+``O``) are excluded: their resulting Backup or Copy jobs carry the file rows
+used for accounting. For each Client/FileSet name, chain resolution uses the
+FileSet version belonging to its latest completed Full, then selects the
+latest Differential after that Full if one exists, followed by all
+Incrementals after the current Full or Differential baseline.
+``JobTDate`` orders jobs, with ``JobId`` as a tie-breaker. A purged Full,
+Differential, or Incremental makes the chain unusable; accounting does not
+silently sum only the remaining files. A tuple with no usable chain is
+reported as excluded. A combination with no completed Full is not discovered
+by the full-chain scan and therefore has no accounting row.
 
 The catalog query selects the newest File row for each ``(PathId, Name)``
 across the selected chain (latest ``JobTDate``, then ``JobId``). This
@@ -108,10 +110,18 @@ Incremental maintenance and persistence
 ---------------------------------------
 
 At Director startup, the worker queues latest per-tuple results that are not
-yet valid. After an eligible completed backup, copy, migrate, or consolidation
-job (status ``T`` or ``W``), the Director queues that JobId. The worker
-re-resolves the current chain, so a queued job that is no longer the latest
-chain member does not overwrite a newer result.
+yet valid. After a successful or warning Backup or Copy result job (status
+``T`` or ``W``), the Director queues that JobId. These include file-bearing
+results produced by migration and consolidation workflows; the migration and
+consolidation control jobs themselves are not queued. The worker re-resolves
+the current chain, so a queued job that is no longer the latest chain member
+does not overwrite a newer result.
+
+When a FileSet is recreated with the same name, its new catalog ID represents
+the current version for accounting. The newest accountable Full selects that
+version. Until a result for the new version is available, snapshot loading may
+continue to show the previous valid result for the same Client/FileSet name;
+once the new result is saved, the older version is no longer selected.
 
 When possible, an incremental calculation starts from the previous cumulative
 result and applies the current job's changed File rows: remove the prior
@@ -147,6 +157,25 @@ requests while a full refresh is queued or running are coalesced. The command
 requires the ``status`` command permission and unrestricted access to Client,
 Job, and FileSet resources. It cannot be combined with report filters or
 modifiers. A running scan cannot be cancelled from the console.
+
+The lightweight :bcommand:`status subscriptions revision` command returns
+the worker state and an in-memory generation number without loading the report
+rows. The generation advances when accounting work is queued and when a worker
+calculation completes, including a failed calculation. Clients can poll this
+command and fetch the full report only when the generation or worker state
+changes. The generation is not persisted and resets when the Director
+restarts, so a polling client must fetch a full report to establish its
+baseline after connecting or entering the subscription view.
+
+Corrected plugin attributes are significant to this calculation because they
+contain the final file size and allocation. When a plugin resends corrected
+attributes after saving a file, the resend must use the same effective file
+options as the original save, including sparse and offset options. The
+Storage Daemon and its tools retain only the latest Unix attribute record for
+each FileIndex when applying or displaying file metadata. In particular,
+``bls`` lists the corrected attributes once, and ``bscan`` flushes pending
+attributes before applying a restore object for the same job session so that
+the restore object is associated with the correct FileId.
 
 Reporting and compatibility
 ---------------------------

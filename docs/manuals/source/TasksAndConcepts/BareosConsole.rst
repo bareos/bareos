@@ -1929,7 +1929,16 @@ status subscriptions
 
    The accounting status report shows whether the worker is idle, queued,
    running, or unavailable. Structured output includes the worker state in
-   ``accounting_snapshot.refresh_thread_state``.
+   ``accounting_snapshot.refresh_thread_state`` and
+   ``accounting_snapshot.generation``. The lightweight command
+   :bcommand:`status subscriptions revision` returns the worker state and the
+   same in-memory generation as ``accounting_status.generation``, without
+   loading the report. It is intended for clients that poll for changes: fetch
+   the full report when the generation or worker state changes, or when the
+   user explicitly requests a reload. The generation advances when work is
+   queued and when worker processing completes, including failures. It resets
+   on Director restart, so clients must fetch a full report after connecting
+   or entering the Subscription view to establish a fresh baseline.
 
    Measured Client/FileSet combinations provide two sizes: allocated bytes,
    based on ``st_blocks * 512`` for Unix-like clients, and logical bytes,
