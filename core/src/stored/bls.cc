@@ -81,11 +81,13 @@ static Session_Label sessrec;
 static uint32_t num_files = 0;
 static Attributes* attr;
 
-// Skips corrected-attributes resends so a file is not listed twice.
-static AttributeResendFilter resend_filter;
-
 static FindFilesPacket* ff;
 static BootStrapRecord* bsr = nullptr;
+
+static bool ProcessRecord(DeviceRecord* t_rec);
+static AttributeGroupBuffer attribute_group_buffer([](DeviceRecord& record) {
+  ProcessRecord(&record);
+});
 
 int main(int argc, char* argv[])
 {
@@ -395,11 +397,21 @@ static void do_ls(char*)
     return;
   }
   ReadRecords(dcr, RecordCb, MountNextReadVolume);
+  attribute_group_buffer.FlushAll();
   printf("%u files and directories found.\n", num_files);
 }
 
 // Called here for each record from ReadRecords()
 static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
+{
+  if (t_rec->FileIndex >= 0 && AttributeGroupBuffer::IsBuffered(t_rec)) {
+    attribute_group_buffer.Add(t_rec);
+    return true;
+  }
+  return ProcessRecord(t_rec);
+}
+
+static bool ProcessRecord(DeviceRecord* t_rec)
 {
   PoolMem record_str(PM_MESSAGE);
 
@@ -412,12 +424,6 @@ static bool RecordCb(DeviceControlRecord*, DeviceRecord* t_rec)
   switch (t_rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
-      if (resend_filter.IsResend(t_rec)) {
-        Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
-              t_rec->FileIndex);
-        break;
-      }
-
       if (!UnpackAttributesRecord(jcr, t_rec->Stream, t_rec->data,
                                   t_rec->data_len, attr)) {
         if (!forge_on) {

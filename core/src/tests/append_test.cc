@@ -191,6 +191,41 @@ TEST(AppendProcessedFileTest, AttributeGroupBufferFlushesPerFileIndex)
   EXPECT_EQ(applied[2].first, 2);
 }
 
+TEST(AppendProcessedFileTest, AttributeGroupBufferSelectsLatestAttributes)
+{
+  std::vector<std::pair<int32_t, char>> applied;
+  storagedaemon::AttributeGroupBuffer buffer(
+      [&applied](storagedaemon::DeviceRecord& rec) {
+        applied.emplace_back(rec.maskedStream, rec.data[0]);
+      });
+
+  char original_data[] = "original";
+  char digest_data[] = "digest";
+  char corrected_data[] = "corrected";
+  auto add = [&buffer](storagedaemon::DeviceRecord& record, char* data,
+                       uint32_t data_len) {
+    record.data = data;
+    record.data_len = data_len;
+    record.maskedStream = record.Stream;
+    buffer.Add(&record);
+  };
+
+  auto original = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  auto digest = MakeRecord(1, STREAM_MD5_DIGEST);
+  auto corrected = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  auto next_file = MakeRecord(2, STREAM_UNIX_ATTRIBUTES);
+  add(original, original_data, sizeof(original_data));
+  add(digest, digest_data, sizeof(digest_data));
+  add(corrected, corrected_data, sizeof(corrected_data));
+  add(next_file, original_data, sizeof(original_data));
+  buffer.FlushAll();
+
+  ASSERT_EQ(applied.size(), 3U);
+  EXPECT_EQ(applied[0], std::make_pair(int32_t{STREAM_UNIX_ATTRIBUTES}, 'c'));
+  EXPECT_EQ(applied[1], std::make_pair(int32_t{STREAM_MD5_DIGEST}, 'd'));
+  EXPECT_EQ(applied[2], std::make_pair(int32_t{STREAM_UNIX_ATTRIBUTES}, 'o'));
+}
+
 TEST(AppendProcessedFileTest, AttributeGroupBufferIsBufferedStreams)
 {
   storagedaemon::DeviceRecord rec{};
