@@ -835,11 +835,12 @@ static void SendPendingPluginNameEnd(JobControlRecord* jcr,
 
 // Resend the attributes of the just saved file with the corrected size and
 // blocks, reusing the same FileIndex.
-static bool ResendCorrectedAttributes(JobControlRecord* jcr,
-                                      FindFilesPacket* ff_pkt,
-                                      const char* cmd,
-                                      const PluginFileSizeBlocks& corrected,
-                                      bool from_fd_count)
+bool ResendCorrectedAttributes(JobControlRecord* jcr,
+                               FindFilesPacket* ff_pkt,
+                               const char* cmd,
+                               const PluginFileSizeBlocks& corrected,
+                               bool from_fd_count,
+                               const char* effective_flags)
 {
   if (!PluginFileSizeBlocksAreValid(corrected)) {
     Jmsg(jcr, M_ERROR, 0,
@@ -861,9 +862,14 @@ static bool ResendCorrectedAttributes(JobControlRecord* jcr,
 
   ff_pkt->statp.st_size = corrected.size;
   ff_pkt->statp.st_blocks = blocks;
+  char original_flags[FOPTS_BYTES];
+  CopyBits(FO_MAX, ff_pkt->flags, original_flags);
+  CopyBits(FO_MAX, effective_flags, ff_pkt->flags);
   int data_stream;
-  return EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
-                                 /*reuse_file_index=*/true);
+  bool result = EncodeAndSendAttributes(jcr, ff_pkt, data_stream,
+                                        /*reuse_file_index=*/true);
+  CopyBits(FO_MAX, original_flags, ff_pkt->flags);
+  return result;
 }
 
 /**
@@ -889,6 +895,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   PoolMem link(PM_FNAME);
   alist<PluginContext*>* plugin_ctx_list;
   char flags[FOPTS_BYTES];
+  char effective_flags[FOPTS_BYTES];
 
   const char* original_cmd = ff_pkt->top_fname;
   plugin_ctx_list = jcr->plugin_ctx_list;
@@ -1096,6 +1103,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       // Call Bareos core code to backup the plugin's file
       int save_status = SaveFile(jcr, ff_pkt, true);
       uint64_t read_bytes_after = jcr->ReadBytes;
+      CopyBits(FO_MAX, ff_pkt->flags, effective_flags);
 
       ff_pkt->defer_plugin_name_end = false;
 
@@ -1131,9 +1139,9 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       bool resent_ok = true;
       if (corrected_file_size_blocks) {
-        resent_ok = ResendCorrectedAttributes(jcr, ff_pkt, cmd.c_str(),
-                                              *corrected_file_size_blocks,
-                                              using_fd_counted_fallback);
+        resent_ok = ResendCorrectedAttributes(
+            jcr, ff_pkt, cmd.c_str(), *corrected_file_size_blocks,
+            using_fd_counted_fallback, effective_flags);
       }
       b_ctx->corrected_file_size_blocks.reset();
 

@@ -41,6 +41,8 @@
 #include "filed/fileset.h"
 #include "filed/heartbeat.h"
 #include "findlib/attribs.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "findlib/find.h"
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
@@ -74,6 +76,12 @@ bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*);
 void FillMissingPluginStatBlocks(struct stat& statp);
 bool PluginSizeNeedsFdFallback(const struct stat& statp);
 bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected);
+bool ResendCorrectedAttributes(JobControlRecord*,
+                               FindFilesPacket*,
+                               const char*,
+                               const PluginFileSizeBlocks&,
+                               bool,
+                               const char*);
 std::optional<PluginFileSizeBlocks> FdCountedFileSizeBlocks(
     const struct stat& original_statp,
     bool data_was_read,
@@ -86,8 +94,15 @@ bool EncodeAndSendAttributes(JobControlRecord*,
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
 
-bool EncodeAndSendAttributes(JobControlRecord*, FindFilesPacket*, int&, bool)
+int encoded_data_stream = STREAM_NONE;
+
+bool EncodeAndSendAttributes(JobControlRecord*,
+                             FindFilesPacket* ff_pkt,
+                             int& data_stream,
+                             bool)
 {
+  data_stream = SelectDataStream(ff_pkt);
+  encoded_data_stream = data_stream;
   return true;
 }
 
@@ -152,6 +167,37 @@ TEST(fd, plugin_file_size_blocks_validation)
 
   EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{-1, 0}));
   EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, -1}));
+}
+
+TEST(fd, corrected_plugin_attributes_use_effective_file_flags)
+{
+  JobControlRecord jcr{};
+  FindFilesPacket ff_pkt{};
+  ff_pkt.type = FT_REG;
+  char fname[] = "plugin-file";
+  ff_pkt.fname = fname;
+  SetBit(FO_MD5, ff_pkt.flags);
+  ASSERT_TRUE(SetPortableBackup(&ff_pkt.bfd));
+
+  char effective_flags[FOPTS_BYTES]{};
+  SetBit(FO_SPARSE, effective_flags);
+  encoded_data_stream = STREAM_NONE;
+  ASSERT_TRUE(ResendCorrectedAttributes(
+      &jcr, &ff_pkt, "test-plugin", PluginFileSizeBlocks{1024, 2},
+      /*from_fd_count=*/false, effective_flags));
+  EXPECT_EQ(encoded_data_stream, STREAM_SPARSE_DATA);
+  EXPECT_TRUE(BitIsSet(FO_MD5, ff_pkt.flags));
+  EXPECT_FALSE(BitIsSet(FO_SPARSE, ff_pkt.flags));
+
+  ClearAllBits(FO_MAX, effective_flags);
+  SetBit(FO_OFFSETS, effective_flags);
+  encoded_data_stream = STREAM_NONE;
+  ASSERT_TRUE(ResendCorrectedAttributes(
+      &jcr, &ff_pkt, "test-plugin", PluginFileSizeBlocks{2048, 4},
+      /*from_fd_count=*/false, effective_flags));
+  EXPECT_EQ(encoded_data_stream, STREAM_SPARSE_DATA);
+  EXPECT_TRUE(BitIsSet(FO_MD5, ff_pkt.flags));
+  EXPECT_FALSE(BitIsSet(FO_OFFSETS, ff_pkt.flags));
 }
 
 TEST(fd, fd_counted_plugin_size_blocks_fallback)
