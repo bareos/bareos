@@ -79,13 +79,14 @@ static int ReadCompare(VolumeReservationItem* item1,
   ASSERT(vol1->vol_name);
   ASSERT(vol2->vol_name);
 
-  if (vol1->GetJobid() == vol2->GetJobid()) {
-    return strcmp(vol1->vol_name, vol2->vol_name);
-  }
+  // we need to compare by name first, so that we can later reliably search by
+  // just name.
 
-  if (vol1->GetJobid() < vol2->GetJobid()) { return -1; }
+  auto res = strcmp(vol1->vol_name, vol2->vol_name);
 
-  return 1;
+  if (res == 0) { res = vol1->GetJobid() - vol2->GetJobid(); }
+
+  return res;
 }
 
 bool IsVolListEmpty() { return vol_list->empty(); }
@@ -201,13 +202,8 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   // pthread_cond_broadcast(&wait_next_vol);
 }
 
-/**
- * Search for a Volume name in the read Volume list.
- *
- * Returns: VolumeReservationItem entry on success
- *          NULL if the Volume is not in the list
- */
-static VolumeReservationItem* find_read_volume(const char* VolumeName)
+// Check whether a Volume name is in the read Volume list.
+static bool is_reserved_for_reading(const char* VolumeName)
 {
   VolumeReservationItem vol, *fvol = nullptr;
 
@@ -227,7 +223,7 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
     Dmsg2(debuglevel, "find_read_vol=%s found=%d\n", VolumeName, fvol != NULL);
   });
 
-  return fvol;
+  return fvol != nullptr;
 }
 
 // List Volumes -- this should be moved to status.c
@@ -360,7 +356,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
 
   // If acquiring a volume for writing it may not be on the read volume list.
   if (me->filedevice_concurrent_read && dcr->IsWriting()
-      && find_read_volume(VolumeName)) {
+      && is_reserved_for_reading(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
          T_("Could not reserve volume \"%s\" for append, because it is read by "
             "another Job.\n"),
@@ -785,10 +781,7 @@ void FreeVolumeLists()
 // Determine if caller can write on volume
 bool DeviceControlRecord::Can_i_write_volume()
 {
-  VolumeReservationItem* vol;
-
-  vol = find_read_volume(VolumeName);
-  if (vol) {
+  if (is_reserved_for_reading(VolumeName)) {
     Dmsg1(100, "Found in read list; cannot write vol=%s\n", VolumeName);
     return false;
   }

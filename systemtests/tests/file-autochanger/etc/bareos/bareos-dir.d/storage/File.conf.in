@@ -6,4 +6,5 @@ Storage {
   Media Type = File
   Port = @sd_port@
   Autochanger = yes
+  Maximum Concurrent Jobs = 2 # necessary for MAC jobs
 }
