@@ -523,26 +523,29 @@
                                   @refresh="refreshSubscriptionCalculation"
                                   @open-job="openJobDetails({ jobid: $event, director: currentSingletonDirector })" />
 
-              <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
-              <div class="row q-gutter-sm q-mb-md q-mt-md">
-                <q-btn color="primary" :label="t('Download PDF')" icon="picture_as_pdf"
-                       no-caps :loading="pdfLoading"
-                       @click="printSubscription(false)" />
-                <q-btn color="secondary" :label="t('Download JSON')" icon="download"
-                       no-caps :loading="downloadLoading"
-                       @click="downloadSubscription(false)" />
-                <q-btn color="primary" :label="t('Download Anonymized PDF')"
-                       icon="picture_as_pdf"
-                       no-caps :loading="pdfAnonLoading"
-                       @click="printSubscription(true)" />
-                <q-btn color="secondary" :label="t('Download Anonymized JSON')"
-                       icon="download"
-                       no-caps :loading="downloadAnonLoading"
-                       @click="downloadSubscription(true)" />
-              </div>
-
-               <q-btn color="primary" :label="t('Get Official Support')" icon="open_in_new"
-                     href="https://www.bareos.com/subscription/" target="_blank" rel="noopener noreferrer" no-caps />
+              <q-card flat bordered class="q-mt-md q-mb-md">
+                <q-card-section>
+                <h3 class="text-h6 q-mt-none q-mb-xs">{{ t('Export report') }}</h3>
+                <p class="q-mb-sm">{{ t('Export the complete subscription report for the selected Director.') }}</p>
+                <q-checkbox v-model="subscriptionExportAnonymized"
+                            :label="t('Anonymize report')" />
+                <div class="row items-center q-gutter-sm q-mt-sm">
+                  <q-btn color="primary" :label="t('Print / Save PDF')" icon="picture_as_pdf"
+                         no-caps :loading="pdfLoading || pdfAnonLoading"
+                         @click="printSubscription(subscriptionExportAnonymized)" />
+                  <q-btn color="secondary" :label="t('Download JSON')" icon="download"
+                         no-caps :loading="downloadLoading || downloadAnonLoading"
+                         @click="downloadSubscription(subscriptionExportAnonymized)" />
+                  <q-btn color="secondary" :label="t('Download CSV')" icon="download"
+                         no-caps :loading="downloadLoading || downloadAnonLoading"
+                         @click="downloadSubscription(subscriptionExportAnonymized, 'csv')" />
+                  <q-btn color="secondary" :label="t('Download TSV')" icon="download"
+                         no-caps :loading="downloadLoading || downloadAnonLoading"
+                         @click="downloadSubscription(subscriptionExportAnonymized, 'tsv')" />
+                </div>
+                <p class="text-caption q-mt-sm q-mb-none">{{ t('CSV and TSV contain all tables as separate sections.') }}</p>
+                </q-card-section>
+              </q-card>
             </template>
           </q-card-section>
         </q-card>
@@ -611,6 +614,7 @@ import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
 import { buildVolumeDetailsQuery } from '../utils/volumes.js'
+import { serializeSubscriptionTable } from '../utils/subscription.js'
 import {
   formatDirectorRelativeTime,
   formatNumber,
@@ -1195,6 +1199,7 @@ const downloadLoading     = ref(false)
 const downloadAnonLoading = ref(false)
 const pdfLoading          = ref(false)
 const pdfAnonLoading      = ref(false)
+const subscriptionExportAnonymized = ref(false)
 
 // Print state: when set, the hidden #subscription-print-root becomes populated
 // and window.print() renders it to PDF via @media print CSS.
@@ -1221,18 +1226,24 @@ async function printSubscription(anonymize) {
   }
 }
 
-async function downloadSubscription(anonymize) {
+async function downloadSubscription(anonymize, format = 'json') {
+  const table = 'all'
   const loadingRef = anonymize ? downloadAnonLoading : downloadLoading
   loadingRef.value = true
   try {
     await ensureSingletonTabDirector()
     const cmd  = anonymize ? 'status subscriptions all anonymize' : 'status subscriptions all'
     const data = await director.call(cmd)
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const content = format === 'json'
+      ? JSON.stringify(data, null, 2)
+      : serializeSubscriptionTable(data, table, format)
+    const mime = format === 'json' ? 'application/json'
+      : format === 'csv' ? 'text/csv;charset=utf-8' : 'text/tab-separated-values;charset=utf-8'
+    const blob = new Blob([content], { type: mime })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
-    a.download = anonymize ? 'bareos-subscription-anonymized.json' : 'bareos-subscription.json'
+    a.download = `bareos-subscription${anonymize ? '-anonymized' : ''}${format === 'json' ? '' : `-${table}`}.${format}`
     a.click()
     URL.revokeObjectURL(url)
   } catch (e) {

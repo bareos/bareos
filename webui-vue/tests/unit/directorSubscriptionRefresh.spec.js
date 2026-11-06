@@ -157,6 +157,43 @@ describe('Director subscription calculation refresh', () => {
   afterEach(() => {
     app?.unmount()
     root?.remove()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it.each(['json', 'csv', 'tsv'])('downloads an anonymized %s from the selected director', async format => {
+    director.call.mockResolvedValue({
+      'unit-detail': [{ client: 'anonymous', plugin: 'none', count: 1, size_gb: 2 }],
+      accounting: [{ client: 'anonymous', files: 1, bytes: 2e9 }],
+    })
+    const createObjectURL = vi.fn(() => 'blob:subscription')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const checkbox = [...root.querySelectorAll('label')]
+      .find(label => label.textContent === 'Anonymize report').querySelector('input')
+    checkbox.checked = true
+    checkbox.dispatchEvent(new Event('change'))
+    await nextTick()
+    ;[...root.querySelectorAll('button')].find(button => button.textContent === `Download ${format.toUpperCase()}`).click()
+    await vi.waitFor(() => expect(click).toHaveBeenCalled())
+    expect(ensureScopeDirector).toHaveBeenCalledWith('prod-b')
+    expect(director.call).toHaveBeenCalledWith('status subscriptions all anonymize')
+    expect(createObjectURL.mock.calls[0][0].type).toBe({
+      json: 'application/json',
+      csv: 'text/csv;charset=utf-8',
+      tsv: 'text/tab-separated-values;charset=utf-8',
+    }[format])
+    expect(click.mock.instances[0].download).toBe(
+      `bareos-subscription-anonymized${format === 'json' ? '' : '-all'}.${format}`,
+    )
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:subscription')
+  })
+
+  it('surfaces export errors instead of downloading an empty report', async () => {
+    director.call.mockRejectedValueOnce(new Error('Export request failed'))
+    ;[...root.querySelectorAll('button')].find(button => button.textContent === 'Download CSV').click()
+    await vi.waitFor(() => expect(root.textContent).toContain('Export request failed'))
   })
 
   function refreshButton() {
@@ -349,8 +386,13 @@ describe('Director subscription calculation refresh', () => {
     try {
       if (logical) root.querySelector('input[type="checkbox"]').click()
       await nextTick()
-      const label = anonymized ? 'Download Anonymized PDF' : 'Download PDF'
-      const button = [...root.querySelectorAll('button')].find(button => button.textContent === label)
+      if (anonymized) {
+        const checkbox = [...root.querySelectorAll('label')]
+          .find(label => label.textContent === 'Anonymize report').querySelector('input')
+        checkbox.click()
+        await nextTick()
+      }
+      const button = [...root.querySelectorAll('button')].find(button => button.textContent === 'Print / Save PDF')
       button.click()
       await vi.waitFor(() => expect(print).toHaveBeenCalledOnce())
       expect(printedText.includes('Logical size (GB)')).toBe(logical)
