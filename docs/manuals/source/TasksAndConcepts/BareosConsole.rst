@@ -1931,7 +1931,7 @@ status subscriptions
    running, or unavailable. Structured output includes the worker state in
    ``accounting_snapshot.refresh_thread_state`` and
    ``accounting_snapshot.generation``. The lightweight command
-   :bcommand:`status subscriptions revision` returns the worker state and the
+   :bcommand:`status subscriptions state` returns the worker state and the
    same in-memory generation as ``accounting_status.generation``, without
    loading the report. It is intended for clients that poll for changes: fetch
    the full report when the generation or worker state changes, or when the

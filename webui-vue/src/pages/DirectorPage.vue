@@ -1141,7 +1141,7 @@ async function pollSubscriptionStatus() {
 
   subscriptionStatusPolling.value = true
   try {
-    const response = await director.call('status subscriptions revision')
+    const response = await director.call('status subscriptions state')
     const status = response?.accounting_status
     const baseline = subscriptionData.value?.accounting_snapshot
     if (!status || status.generation === undefined || !baseline) {

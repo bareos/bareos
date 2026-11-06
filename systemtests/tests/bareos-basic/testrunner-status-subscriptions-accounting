@@ -146,7 +146,7 @@ refresh_accounting_snapshot()
   local before_generation after_generation
   cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh-before.out
-status subscriptions revision
+status subscriptions state
 END_OF_DATA
   run_bconsole
   before_generation="$(
@@ -168,7 +168,7 @@ END_OF_DATA
   for _ in {1..60}; do
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/accounting-refresh-status.out
-status subscriptions revision
+status subscriptions state
 END_OF_DATA
     run_bconsole
     if grep -q "worker: idle." \
@@ -230,7 +230,7 @@ query_accounting()
     echo "@$out $tmp/status-subscriptions-${name}.json"
     echo "status subscriptions"
     echo "@$out $tmp/status-subscriptions-${name}-revision.json"
-    echo "status subscriptions revision"
+    echo "status subscriptions state"
     if [[ -n "$all" ]]; then
       echo "@$out $tmp/status-subscriptions-${name}-all.json"
       echo "status subscriptions all"

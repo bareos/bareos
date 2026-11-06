@@ -449,7 +449,7 @@ static struct ua_cmdstruct commands[] = {
          "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
          "[logical] "
          "[client=<client-name>] | "
-         "subscriptions revision | "
+         "subscriptions state | "
          "subscriptions recalculate | "
          "configuration"),
      true, true},

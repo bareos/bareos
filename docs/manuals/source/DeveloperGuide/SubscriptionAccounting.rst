@@ -158,7 +158,7 @@ requires the ``status`` command permission and unrestricted access to Client,
 Job, and FileSet resources. It cannot be combined with report filters or
 modifiers. A running scan cannot be cancelled from the console.
 
-The lightweight :bcommand:`status subscriptions revision` command returns
+The lightweight :bcommand:`status subscriptions state` command returns
 the worker state and an in-memory generation number without loading the report
 rows. The generation advances when accounting work is queued and when a worker
 calculation completes, including a failed calculation. Clients can poll this

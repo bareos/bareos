@@ -638,9 +638,9 @@ static bool DoSubscriptionStatus(UaContext* ua)
     return false;
   }
 
-  if (FindArg(ua, NT_("revision")) > 0) {
+  if (FindArg(ua, NT_("state")) > 0) {
     if (ua->argc != 3) {
-      ua->ErrorMsg(T_("Usage: status subscriptions revision\n"));
+      ua->ErrorMsg(T_("Usage: status subscriptions state\n"));
       return false;
     }
     return ReportSubscriptionAccountingStatus(ua);

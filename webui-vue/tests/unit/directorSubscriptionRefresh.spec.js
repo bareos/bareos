@@ -101,7 +101,7 @@ describe('Director subscription calculation refresh', () => {
         running: false,
         refresh_thread_state: 'idle',
       }
-      if (command === 'status subscriptions revision') {
+      if (command === 'status subscriptions state') {
         return { accounting_status: accountingStatus }
       }
       return {
@@ -180,7 +180,7 @@ describe('Director subscription calculation refresh', () => {
       command === 'status subscriptions all'
     )).length
     await new Promise(resolve => setTimeout(resolve, 5200))
-    expect(director.call).toHaveBeenCalledWith('status subscriptions revision')
+    expect(director.call).toHaveBeenCalledWith('status subscriptions state')
     expect(director.call.mock.calls.filter(([command]) => (
       command === 'status subscriptions all'
     ))).toHaveLength(reportCallsBefore)
@@ -214,7 +214,7 @@ describe('Director subscription calculation refresh', () => {
         generation += 1
         return {}
       }
-      if (command === 'status subscriptions revision') {
+      if (command === 'status subscriptions state') {
         return { accounting_status: accountingStatus }
       }
       return {
