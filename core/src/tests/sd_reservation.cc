@@ -42,6 +42,8 @@
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
 #include "stored/sd_backends.h"
+#include "stored/acquire.h"
+#include "stored/lock.h"
 
 #include "bsock_mock.h"
 
@@ -122,6 +124,165 @@ struct TestJob {
     FreeJcr(jcr);
   }
 };
+
+class ReleaseTestDevice : public SpoolDevice {
+ public:
+  MOCK_METHOD(int, d_close, (int), (override));
+  MOCK_METHOD(bool, d_flush, (DeviceControlRecord*), (override));
+};
+
+TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
+{
+  for (bool acquired : {false, true}) {
+    SCOPED_TRACE(acquired);
+    auto job = std::make_unique<TestJob>(111u);
+    ReleaseTestDevice device;
+    device.prt_name = GetPoolMemory(PM_FNAME);
+    PmStrcpy(device.prt_name, "shared acquisition device");
+    device.fd = 42;
+    device.norewindonclose = true;
+    device.num_writers = 1;
+    DeviceResource resource{};
+    auto* dcr = new DeviceControlRecord;
+    dcr->jcr = job->jcr;
+    dcr->SetDev(&device);
+    dcr->device_resource = &resource;
+    dcr->keep_dcr = true;
+    EXPECT_CALL(device, d_close(42)).WillOnce(Return(0));
+    EXPECT_CALL(device, d_flush(dcr)).WillOnce([&](DeviceControlRecord*) {
+      const int status = pthread_mutex_trylock(&device.mutex_);
+      EXPECT_EQ(status, 0) << "Flush must not hold the device mutex";
+      if (status == 0) {
+        EXPECT_EQ(device.blocked(), BST_RELEASING);
+        EXPECT_TRUE(pthread_equal(device.no_wait_id, pthread_self()));
+        device.Unlock();
+      }
+      return true;
+    });
+
+    device.dblock(BST_DOING_ACQUIRE);
+    auto release
+        = std::async(std::launch::async, [dcr] { return ReleaseDevice(dcr); });
+
+    bool waiting = false;
+    const auto deadline
+        = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    do {
+      device.Lock();
+      waiting = device.num_waiting > 0;
+      device.Unlock();
+      if (waiting
+          || release.wait_for(std::chrono::milliseconds(0))
+                 == std::future_status::ready) {
+        break;
+      }
+      std::this_thread::yield();
+    } while (std::chrono::steady_clock::now() < deadline);
+
+    device.Lock();
+    const int writers_during_acquisition = device.num_writers;
+    const bool open_during_acquisition = device.IsOpen();
+    if (acquired) { ++device.num_writers; }
+    device.dunblock(true);
+
+    EXPECT_TRUE(release.get());
+    EXPECT_TRUE(waiting) << "Release bypassed another job's acquisition block";
+    EXPECT_EQ(writers_during_acquisition, 1);
+    EXPECT_TRUE(open_during_acquisition)
+        << "Release closed the volume while another job was acquiring it";
+    EXPECT_EQ(device.num_writers, acquired ? 1 : 0);
+    EXPECT_EQ(device.IsOpen(), acquired);
+    device.close(nullptr);
+    FreeDeviceControlRecord(dcr);
+  }
+}
+
+TEST_F(ReservationTest, ReleaseCanFinishItsOwnDespoolingBlock)
+{
+  auto job = std::make_unique<TestJob>(111u);
+  job->jcr->setJobStatus(JS_Canceled);
+  SpoolDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "despooling device");
+  device.num_writers = 1;
+  auto* dcr = new DeviceControlRecord;
+  dcr->jcr = job->jcr;
+  dcr->SetDev(&device);
+  dcr->keep_dcr = true;
+
+  device.dblock(BST_DESPOOLING);
+  EXPECT_TRUE(ReleaseDevice(dcr));
+  EXPECT_FALSE(device.IsBlocked());
+  EXPECT_EQ(device.num_writers, 0);
+  FreeDeviceControlRecord(dcr);
+}
+
+TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsFlush)
+{
+  auto job = std::make_unique<TestJob>(111u);
+  auto canceled_job = std::make_unique<TestJob>(112u);
+  canceled_job->jcr->setJobStatus(JS_Canceled);
+  ReleaseTestDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "flushing device");
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 2;
+  DeviceResource resource{};
+  auto* dcr = new DeviceControlRecord;
+  dcr->jcr = job->jcr;
+  dcr->SetDev(&device);
+  dcr->device_resource = &resource;
+  dcr->keep_dcr = true;
+  auto* canceled_dcr = new DeviceControlRecord;
+  canceled_dcr->jcr = canceled_job->jcr;
+  canceled_dcr->SetDev(&device);
+  canceled_dcr->keep_dcr = true;
+
+  std::promise<void> flushing;
+  std::promise<void> finish_flush;
+  auto finish = finish_flush.get_future();
+  EXPECT_CALL(device, d_close(42)).WillOnce(Return(0));
+  EXPECT_CALL(device, d_flush(dcr)).WillOnce([&](DeviceControlRecord*) {
+    flushing.set_value();
+    finish.wait();
+    return true;
+  });
+  auto release
+      = std::async(std::launch::async, [dcr] { return ReleaseDevice(dcr); });
+  flushing.get_future().wait();
+  auto canceled_release = std::async(std::launch::async, [canceled_dcr] {
+    return ReleaseDevice(canceled_dcr);
+  });
+
+  bool waiting = false;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  do {
+    device.Lock();
+    waiting = device.num_waiting > 0;
+    device.Unlock();
+    if (waiting
+        || canceled_release.wait_for(std::chrono::milliseconds(0))
+               == std::future_status::ready) {
+      break;
+    }
+    std::this_thread::yield();
+  } while (std::chrono::steady_clock::now() < deadline);
+  device.Lock();
+  const int writers_during_flush = device.num_writers;
+  device.Unlock();
+  finish_flush.set_value();
+
+  EXPECT_TRUE(release.get());
+  EXPECT_TRUE(canceled_release.get());
+  EXPECT_TRUE(waiting) << "Release bypassed another job's flush";
+  EXPECT_EQ(writers_during_flush, 2);
+  EXPECT_EQ(device.num_writers, 0);
+  EXPECT_FALSE(device.IsOpen());
+  FreeDeviceControlRecord(canceled_dcr);
+  FreeDeviceControlRecord(dcr);
+}
 
 void WaitThenUnreserve(std::unique_ptr<TestJob>&);
 void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
