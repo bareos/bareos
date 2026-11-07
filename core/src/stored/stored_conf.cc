@@ -104,6 +104,7 @@ static const ResourceItem store_items[] = {
   { "NdmpEnable", CFG_TYPE_BOOL, ITEM(res_store, ndmp_enable), {config::DefaultValue{"false"}}},
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_store, ndmp_snooping), {config::DefaultValue{"false"}}},
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_store, ndmploglevel), {config::DefaultValue{"4"}}},
+  { "NdmpConnectWait", CFG_TYPE_TIME, ITEM(res_store, ndmp_connect_wait), {config::IntroducedIn{26, 0, 0}, config::DefaultValue{"180"}, config::Description{"Time to wait for the NDMP data mover to connect to the storage daemon. A device reserved for an NDMP job is released when this time expires, so an unreachable data mover does not block the device for the much longer Client Connect Wait."}}},
   { "NdmpAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, NDMPaddrs), {config::DefaultValue{"10000"}}},
   { "NdmpAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store, NDMPaddrs), {config::DefaultValue{"10000"}}},
   { "NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store, NDMPaddrs), {config::DefaultValue{"10000"}}},
