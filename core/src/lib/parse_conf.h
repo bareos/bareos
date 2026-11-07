@@ -268,6 +268,7 @@ class ConfigurationParser {
                     int pass,
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
+  // Modifies the resource tables: only call with the resource lock held.
   bool RemoveResource(int rcode, const char* name);
   bool DumpResources(sender* sendit,
                      void* sock,

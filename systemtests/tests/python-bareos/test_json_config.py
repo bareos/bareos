@@ -151,6 +151,199 @@ class PythonBareosJsonConfigTest(bareos_unittest.Json):
             priority,
         )
 
+    def test_configure_delete(self):
+        """
+        Verify "configure delete":
+        - deleting an unreferenced resource removes it.
+        - deleting an unknown resource fails.
+        - deleting a resource that is still referenced by another resource
+          (a Job's "Client" directive) is refused. There is no override:
+          the referencing resource must be removed or updated first.
+        - once the referencing resource is gone, the delete succeeds.
+        """
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=self.get_operator_username(),
+            password=self.get_operator_password(self.get_operator_username()),
+            **self.director_extra_options
+        )
+
+        unreferenced_client = "test-delete-unreferenced-fd"
+        referenced_client = "test-delete-referenced-fd"
+        referencing_job = "test-delete-job"
+
+        # deleting an unreferenced resource removes it right away.
+        self.configure_add(
+            director,
+            "clients",
+            unreferenced_client,
+            "client name={} address=127.0.0.1 password=secret".format(
+                unreferenced_client
+            ),
+        )
+        self.configure_delete(
+            director,
+            "clients",
+            unreferenced_client,
+            "client name={}".format(unreferenced_client),
+        )
+
+        # deleting an unknown resource fails.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call("configure delete client name=does-not-exist-fd")
+
+        # set up a client referenced by a job, to exercise the reference check.
+        self.configure_add(
+            director,
+            "clients",
+            referenced_client,
+            "client name={} address=127.0.0.1 password=secret".format(
+                referenced_client
+            ),
+        )
+        self.configure_add(
+            director,
+            "jobs",
+            referencing_job,
+            "job name={} jobdefs=DefaultJob client={}".format(
+                referencing_job, referenced_client
+            ),
+        )
+
+        # deleting the still-referenced client is refused, with no override:
+        # the reload fails on the dangling reference and is rolled back.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call("configure delete client name={}".format(referenced_client))
+
+        self.assertTrue(self.check_resource(director, "clients", referenced_client))
+        self.assertTrue(
+            os.path.exists(
+                "etc/bareos/bareos-dir.d/client/{}.conf".format(referenced_client)
+            )
+        )
+
+        # once the referencing job is gone, the client can be removed.
+        self.configure_delete(
+            director,
+            "jobs",
+            referencing_job,
+            "job name={}".format(referencing_job),
+        )
+        self.configure_delete(
+            director,
+            "clients",
+            referenced_client,
+            "client name={}".format(referenced_client),
+        )
+
+    def test_configure_delete_corner_cases(self):
+        """
+        Verify "configure delete" refuses requests it cannot carry out
+        exactly, and leaves the configuration untouched when it does:
+        - a name containing dots is deleted, including its filedaemon export.
+        - a name containing "/" that resolves to another resource's file.
+        - a file that defines more resources than the one to delete.
+        - giving the name twice, in both accepted forms.
+        - ".." as a name.
+        """
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=self.get_operator_username(),
+            password=self.get_operator_password(self.get_operator_username()),
+            **self.director_extra_options
+        )
+
+        client_dir = "etc/bareos/bareos-dir.d/client"
+        export_dir = "etc/bareos/bareos-dir-export/client"
+        dotted_client = "test.delete.dotted-fd"
+        victim_client = "test-delete-victim-fd"
+        slash_client = "test-delete/../{}".format(victim_client)
+        slash_file = "{}/test-delete-slash.conf".format(client_dir)
+        shared_client = "test-delete-shared-fd"
+        tagalong_client = "test-delete-tagalong-fd"
+        shared_file = "{}/{}.conf".format(client_dir, shared_client)
+
+        def write_clients(path, names):
+            with open(path, "w") as f:
+                for name in names:
+                    f.write(
+                        'Client {{\n  Name = "{}"\n  Address = 127.0.0.1\n'
+                        '  Password = secret\n}}\n'.format(name)
+                    )
+
+        # a name containing dots works like any other, export included.
+        self.configure_add(
+            director,
+            "clients",
+            dotted_client,
+            "client name={} address=127.0.0.1 password=secret".format(dotted_client),
+        )
+        self.assertTrue(os.path.isdir("{}/{}".format(export_dir, dotted_client)))
+        self.configure_delete(
+            director,
+            "clients",
+            dotted_client,
+            "client={}".format(dotted_client),
+        )
+        self.assertFalse(os.path.exists("{}/{}.conf".format(client_dir, dotted_client)))
+        self.assertFalse(os.path.exists("{}/{}".format(export_dir, dotted_client)))
+
+        self.configure_add(
+            director,
+            "clients",
+            victim_client,
+            "client name={} address=127.0.0.1 password=secret".format(victim_client),
+        )
+        try:
+            # "test-delete/../<victim>" would resolve to the victim's file.
+            write_clients(slash_file, [slash_client])
+            # two clients in a file named after only one of them.
+            write_clients(shared_file, [shared_client, tagalong_client])
+            director.call("reload")
+            self.assertTrue(self.check_resource(director, "clients", slash_client))
+            self.assertTrue(self.check_resource(director, "clients", shared_client))
+
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call("configure delete client={}".format(slash_client))
+            self.assertTrue(self.check_resource(director, "clients", slash_client))
+            self.assertTrue(self.check_resource(director, "clients", victim_client))
+            self.assertTrue(
+                os.path.exists("{}/{}.conf".format(client_dir, victim_client))
+            )
+
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call("configure delete client={}".format(shared_client))
+            self.assertTrue(self.check_resource(director, "clients", shared_client))
+            self.assertTrue(self.check_resource(director, "clients", tagalong_client))
+            self.assertTrue(os.path.exists(shared_file))
+            self.assertFalse(os.path.exists(shared_file + ".deleted"))
+
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call(
+                    "configure delete client={} name={}".format(
+                        victim_client, shared_client
+                    )
+                )
+            self.assertTrue(self.check_resource(director, "clients", victim_client))
+            self.assertTrue(self.check_resource(director, "clients", shared_client))
+
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call("configure delete client=..")
+        finally:
+            for path in (slash_file, shared_file):
+                if os.path.exists(path):
+                    os.remove(path)
+            director.call("reload")
+
+        self.configure_delete(
+            director,
+            "clients",
+            victim_client,
+            "client name={}".format(victim_client),
+        )
+
     def _test_configure_add_conole_with_where_acl(self, name, where_acl):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
