@@ -18,15 +18,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
  */
-#ifndef BAREOS_WEBUI_PROXY_HTTP_PROTOCOL_H_
-#define BAREOS_WEBUI_PROXY_HTTP_PROTOCOL_H_
+#ifndef BAREOS_HTTP_HTTP_PROTOCOL_H_
+#define BAREOS_HTTP_HTTP_PROTOCOL_H_
 
 #include <chrono>
+#include <cstddef>
 #include <initializer_list>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
+#include <utility>
 
 struct HttpRequest {
   std::string method;
@@ -63,4 +64,4 @@ void WaitForSocket(int fd,
                    std::chrono::steady_clock::time_point deadline,
                    std::string_view action);
 
-#endif  // BAREOS_WEBUI_PROXY_HTTP_PROTOCOL_H_
+#endif  // BAREOS_HTTP_HTTP_PROTOCOL_H_
