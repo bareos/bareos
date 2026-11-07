@@ -41,7 +41,7 @@ The Always Incremental Backup Scheme does only incremental backups of clients, w
 
 .. limitation:: Always Incremental Backup: Only suitable for file-based backups.
 
-   Always Incremental backups are only suitable for file-based backups. Other data can not be combined on the server-side (e.g. VMWare plugings, NDMP, ...)
+   Always Incremental backups are only suitable for file-based backups. Other data can not be combined on the server-side (e.g. VMware Plugin, NDMP, ...). For the VMware Plugin, the consolidated job even terminates successfully but can not be restored, see :ref:`VMwarePlugin`.
 
 
 
