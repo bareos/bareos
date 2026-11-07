@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,9 +25,11 @@
 #define BAREOS_STORED_DEVICE_RESOURCE_H_
 
 #include "stored/dev.h"
+#include "stored/device_init.h"
 #include "stored/io_direction.h"
 #include "lib/bareos_resource.h"
 
+#include <atomic>
 #include <string>
 #include <memory>
 
@@ -93,6 +95,10 @@ class DeviceResource : public BareosResource {
 
   Device* dev; /* Pointer to physical dev -- set at runtime */
   AutochangerResource* changer_res; /* Pointer to changer res if any */
+
+  /* Progress of the background device initialization. Only when this is
+   * neither Pending nor Initializing may other threads look at dev. */
+  std::atomic<DeviceInitState> init_state{DeviceInitState::Pending};
 
   DeviceResource() = default;
   virtual ~DeviceResource() = default;
