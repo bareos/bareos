@@ -105,6 +105,7 @@ BuildRequires: openssl
 BuildRequires: openssl-devel
 BuildRequires: pam-devel
 BuildRequires: pkgconfig
+BuildRequires: pkgconfig(systemd)
 BuildRequires: pkgconfig(jansson)
 BuildRequires: pkgconfig(json-c)
 BuildRequires: pkgconfig(libxml-2.0)
