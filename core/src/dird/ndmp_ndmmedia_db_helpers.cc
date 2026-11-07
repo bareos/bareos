@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,23 +155,16 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
 
 // get ndmmedia from database for certain job
 bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
-                                 JobControlRecord* jcr)
+                                 JobControlRecord* jcr,
+                                 JobId_t restoreJobId)
 {
   int VolCount;
   VolumeParameters* VolParams = NULL;
   bool retval = false;
 
-
-  // Find restore JobId
-  JobId_t restoreJobId;
-  const char* p = jcr->JobIds;
-
-  //  TODO: what happens with multiple IDs?
-  if (!GetNextJobidFromList(&p, &restoreJobId)) {
-    Jmsg(jcr, M_FATAL, 0, T_("Error getting next jobid from list\n"));
-  }
   if (restoreJobId == 0) {
     Jmsg(jcr, M_FATAL, 0, T_("RestoreJobId is zero, cannot go on\n"));
+    return false;
   }
 
   DbLocker _{jcr->db};
