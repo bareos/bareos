@@ -564,7 +564,8 @@ Section -CheckVCRedist
   ${If} $R1 == ""
     MessageBox MB_OK|MB_ICONSTOP \
       "Bareos requires Microsoft Visual C++ Redistributable to be installed.$\r$\n\
-       The installer will exit now."
+       The installer will exit now." \
+      /SD IDOK
     Abort
   ${EndIf}
   CheckVCRedistEnd:
