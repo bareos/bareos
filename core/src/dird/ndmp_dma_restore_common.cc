@@ -256,9 +256,7 @@ void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
 #else /* HAVE_NDMP */
 
 void NdmpRestoreCleanup(JobControlRecord* jcr, int)
-{
-  Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n"));
-}
+{ Jmsg(jcr, M_FATAL, 0, T_("NDMP protocol not supported\n")); }
 
 #endif /* HAVE_NDMP */
 } /* namespace directordaemon */
