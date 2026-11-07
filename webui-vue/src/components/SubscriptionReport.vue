@@ -53,6 +53,16 @@
           </div>
           <div v-if="data.accounting_snapshot?.last_refresh_error" class="text-negative">
             {{ data.accounting_snapshot.last_refresh_error }}
+            <div v-if="!anonymized && data.accounting_snapshot.last_refresh_diagnostic?.type === 'invalid_lstat'"
+                 class="sub-refresh-diagnostic">
+              <span>{{ t('File') }}: {{ data.accounting_snapshot.last_refresh_diagnostic.path }}</span>
+              <span>{{ t('Reason') }}: {{ data.accounting_snapshot.last_refresh_diagnostic.reason }}</span>
+              <a v-if="refreshable && data.accounting_snapshot.last_refresh_diagnostic.jobid"
+                 href="#" class="text-primary"
+                 @click.prevent="emit('open-job', data.accounting_snapshot.last_refresh_diagnostic.jobid)">
+                {{ t('Job') }} #{{ data.accounting_snapshot.last_refresh_diagnostic.jobid }}
+              </a>
+            </div>
           </div>
           <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0" class="sub-warning">
             <q-icon name="warning" aria-hidden="true" />
@@ -408,6 +418,11 @@ function fmtGB(gbStr) {
 }
 .sub-status-notices > div + div {
   margin-top: 4px;
+}
+.sub-refresh-diagnostic {
+  display: grid;
+  margin-left: 20px;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 800px) {
   .sub-report-context {

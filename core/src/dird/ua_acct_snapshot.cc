@@ -29,17 +29,147 @@
 #include "dird/ua_acct_internal.h"
 #include "lib/edit.h"
 
+#include <jansson.h>
+
+#include <cstdlib>
+#include <limits>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace directordaemon {
 
 namespace {
+constexpr char kStructuredErrorPrefix[]
+    = "bareos-subscription-accounting-error:v1:";
+
+bool JsonSetString(json_t* object, const char* key, const std::string& value)
+{
+  json_t* item = json_string(value.c_str());
+  return item && json_object_set_new(object, key, item) == 0;
+}
+
+std::string SerializeAccountingFailure(
+    const std::string& error,
+    const SubscriptionAccountingDiagnostic& diagnostic)
+{
+  json_t* payload = json_object();
+  json_t* details = json_object();
+  if (!payload || !details) {
+    json_decref(payload);
+    json_decref(details);
+    return error;
+  }
+  bool success = json_object_set_new(payload, "version", json_integer(1)) == 0
+                 && JsonSetString(payload, "message", error);
+  if (!success) {
+    json_decref(payload);
+    json_decref(details);
+    return error;
+  }
+  success = JsonSetString(details, "type", diagnostic.type)
+            && json_object_set_new(
+                   details, "jobid",
+                   json_integer(static_cast<json_int_t>(diagnostic.jobid)))
+                   == 0
+            && json_object_set_new(details, "fileindex",
+                                   json_integer(diagnostic.fileindex))
+                   == 0
+            && JsonSetString(details, "path", diagnostic.path)
+            && JsonSetString(details, "client", diagnostic.client)
+            && JsonSetString(details, "fileset", diagnostic.fileset)
+            && JsonSetString(details, "reason", diagnostic.reason);
+  if (!success || json_object_set(payload, "diagnostic", details) != 0) {
+    json_decref(payload);
+    json_decref(details);
+    return error;
+  }
+  json_decref(details);
+
+  char* serialized = json_dumps(payload, JSON_COMPACT | JSON_ENSURE_ASCII);
+  json_decref(payload);
+  if (!serialized) { return error; }
+  std::string result = kStructuredErrorPrefix;
+  result += serialized;
+  std::free(serialized);
+  return result;
+}
+
+const char* JsonStringValue(json_t* object, const char* key)
+{
+  json_t* value = json_object_get(object, key);
+  return json_is_string(value) ? json_string_value(value) : nullptr;
+}
+
+void DecodeAccountingFailure(const char* stored, SnapshotMetadata* metadata)
+{
+  if (!stored
+      || !std::string_view(stored).starts_with(kStructuredErrorPrefix)) {
+    metadata->last_error = stored ? stored : "";
+    return;
+  }
+
+  json_error_t json_error{};
+  json_t* payload
+      = json_loads(stored + sizeof(kStructuredErrorPrefix) - 1, 0, &json_error);
+  if (!json_is_object(payload)) {
+    json_decref(payload);
+    metadata->last_error
+        = "Malformed structured subscription accounting error.";
+    return;
+  }
+  json_t* version = json_object_get(payload, "version");
+  json_t* details = json_object_get(payload, "diagnostic");
+  json_t* jobid
+      = json_is_object(details) ? json_object_get(details, "jobid") : nullptr;
+  json_t* fileindex = json_is_object(details)
+                          ? json_object_get(details, "fileindex")
+                          : nullptr;
+  const char* message = JsonStringValue(payload, "message");
+  const char* type
+      = json_is_object(details) ? JsonStringValue(details, "type") : nullptr;
+  const char* path
+      = json_is_object(details) ? JsonStringValue(details, "path") : nullptr;
+  const char* client
+      = json_is_object(details) ? JsonStringValue(details, "client") : nullptr;
+  const char* fileset
+      = json_is_object(details) ? JsonStringValue(details, "fileset") : nullptr;
+  const char* reason
+      = json_is_object(details) ? JsonStringValue(details, "reason") : nullptr;
+  const bool valid
+      = json_is_integer(version) && json_integer_value(version) == 1 && message
+        && json_is_object(details) && type
+        && std::string_view(type) == "invalid_lstat" && path && client
+        && fileset && reason && json_is_integer(jobid)
+        && json_integer_value(jobid) > 0 && json_is_integer(fileindex)
+        && json_integer_value(fileindex) > 0
+        && static_cast<uint64_t>(json_integer_value(fileindex))
+               <= std::numeric_limits<uint32_t>::max();
+  if (!valid) {
+    metadata->last_error
+        = "Malformed or unsupported structured subscription accounting error.";
+    json_decref(payload);
+    return;
+  }
+
+  metadata->last_error_diagnostic = SubscriptionAccountingDiagnostic{
+      type,
+      static_cast<uint64_t>(json_integer_value(jobid)),
+      static_cast<uint32_t>(json_integer_value(fileindex)),
+      path,
+      client,
+      fileset,
+      reason};
+  metadata->last_error = FormatSubscriptionAccountingDiagnostic(
+      *metadata->last_error_diagnostic);
+  json_decref(payload);
+}
+
 int SnapshotMetadataHandler(void* ctx, int, char** row)
 {
   auto* metadata = static_cast<SnapshotMetadata*>(ctx);
   metadata->timestamp = row[0] ? row[0] : "";
-  metadata->last_error = row[1] ? row[1] : "";
+  DecodeAccountingFailure(row[1], metadata);
   metadata->has_snapshot = !metadata->timestamp.empty();
   metadata->stale = row[2] == nullptr || bstrcmp(row[2], "true");
   metadata->full_completed_at = row[3] ? row[3] : "";
@@ -163,11 +293,15 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
   return true;
 }
 
-bool RecordSubscriptionAccountingFailure(UaContext* ua,
-                                         const std::string& error)
+bool RecordSubscriptionAccountingFailure(
+    UaContext* ua,
+    const std::string& error,
+    const SubscriptionAccountingDiagnostic* diagnostic)
 {
+  const std::string stored_error
+      = diagnostic ? SerializeAccountingFailure(error, *diagnostic) : error;
   std::string escaped;
-  if (!EscapeForSql(ua, error, &escaped)) { return false; }
+  if (!EscapeForSql(ua, stored_error, &escaped)) { return false; }
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "UPDATE SubscriptionAccountingSnapshot SET "

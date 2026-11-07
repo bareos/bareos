@@ -30,6 +30,19 @@
 
 namespace directordaemon {
 
+struct SubscriptionAccountingDiagnostic {
+  std::string type;
+  uint64_t jobid{0};
+  uint32_t fileindex{0};
+  std::string path;
+  std::string client;
+  std::string fileset;
+  std::string reason;
+};
+
+std::string FormatSubscriptionAccountingDiagnostic(
+    const SubscriptionAccountingDiagnostic& diagnostic);
+
 struct AccountingRow {
   JobId_t JobId{0};
   JobId_t baseline_full_jobid{0};
@@ -49,6 +62,7 @@ struct AccountingRow {
 struct SnapshotMetadata {
   std::string timestamp;
   std::string last_error;
+  std::optional<SubscriptionAccountingDiagnostic> last_error_diagnostic;
   bool has_snapshot{false};
   bool stale{true};
   std::string full_completed_at;
@@ -56,16 +70,19 @@ struct SnapshotMetadata {
 };
 
 // Computes the accounting rows per (Client, FileSet) from File.LStat.
-bool CalculateSubscriptionAccounting(UaContext* ua,
-                                     std::vector<AccountingRow>* rows,
-                                     std::string* error,
-                                     const std::atomic_bool* cancel = nullptr);
-bool CalculateSubscriptionAccountingForJob(UaContext* ua,
-                                           JobId_t jobid,
-                                           AccountingRow* row,
-                                           std::string* error,
-                                           const std::atomic_bool* cancel
-                                           = nullptr);
+bool CalculateSubscriptionAccounting(
+    UaContext* ua,
+    std::vector<AccountingRow>* rows,
+    std::string* error,
+    const std::atomic_bool* cancel = nullptr,
+    std::optional<SubscriptionAccountingDiagnostic>* diagnostic = nullptr);
+bool CalculateSubscriptionAccountingForJob(
+    UaContext* ua,
+    JobId_t jobid,
+    AccountingRow* row,
+    std::string* error,
+    const std::atomic_bool* cancel = nullptr,
+    std::optional<SubscriptionAccountingDiagnostic>* diagnostic = nullptr);
 
 // Persisted per-job accounting results and snapshot metadata.
 bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
@@ -74,8 +91,10 @@ bool LoadSubscriptionAccountingSnapshot(UaContext* ua,
                                         SnapshotMetadata* metadata,
                                         std::vector<AccountingRow>* rows,
                                         bool anonymize = false);
-bool RecordSubscriptionAccountingFailure(UaContext* ua,
-                                         const std::string& error);
+bool RecordSubscriptionAccountingFailure(
+    UaContext* ua,
+    const std::string& error,
+    const SubscriptionAccountingDiagnostic* diagnostic = nullptr);
 bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
                                         const std::vector<AccountingRow>& rows);
 

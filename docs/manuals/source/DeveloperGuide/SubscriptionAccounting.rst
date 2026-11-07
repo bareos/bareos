@@ -143,6 +143,21 @@ backup Job's result. Full-recalculation timing metadata is written after the
 snapshot save succeeds. Its measured duration excludes queue wait and covers
 calculation and saving the accounting rows.
 
+An invalid ``File.LStat`` aborts at the first offending file. The saved
+``LastError`` remains a text column and stores a versioned JSON diagnostic
+inside that text for this case; older plain-text errors remain readable.
+Reports expose the readable error and, when available, structured
+``last_refresh_diagnostic`` metadata containing the offending JobId,
+FileIndex, full path, Client, FileSet, and reason. The WebUI links the JobId
+to that job in the selected Director. Anonymized reports replace the failure
+with a generic message and omit all diagnostic fields. The scan intentionally
+stops at the first invalid row, so it does not enumerate every bad attribute
+in a chain. Human-readable diagnostic fields escape backslashes and control
+bytes (including terminal escape and delete characters); the structured
+diagnostic retains the original field values. When reading older structured
+errors, the human-readable text is rebuilt from those fields rather than
+trusting a previously stored message.
+
 The worker owns a catalog connection and processes queued work in the
 background. Only the first configured Catalog is refreshed; multiple catalogs
 are not supported by this feature. The worker stops and is joined during
@@ -270,7 +285,12 @@ their Vitest suite names.
        replacing the last valid snapshot or successful timing metadata
      - ``system:bareos-basic:status-subscriptions-accounting``
      - Controlled catalog attribute changes; block-count and allocated-byte
-       overflow cases are POSIX-only
+       overflow cases are POSIX-only; invalid-LStat failures also verify the
+       persisted diagnostic, anonymization, and preservation of the snapshot
+   * - Delta failures identify the previous effective row's JobId, while full
+       scans identify the selected offending row
+     - ``system:bareos-basic:status-subscriptions-accounting``
+     - Invalid catalog attributes on the prior row and a changed Incremental
    * - Snapshot provenance, stale and failed-refresh reporting, legacy
        unit-report parity, filtering and anonymization
      - ``system:bareos-basic:status-subscriptions``

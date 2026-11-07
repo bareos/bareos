@@ -761,12 +761,13 @@ query_accounting before-invalid
 run_bconsole - <<END_OF_DATA
 .sql query="CREATE TABLE acct_invalid_backup AS SELECT f.FileId, f.LStat FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest'"
 END_OF_DATA
-invalid_cases="size logical-total-overflow"
+invalid_cases="empty size logical-total-overflow"
 if ! on_windows_host; then
   invalid_cases="$invalid_cases blocks block-overflow byte-total-overflow"
 fi
 for invalid in $invalid_cases; do
   case "$invalid" in
+    empty) stat="" ;;
     size) stat="A A IGk B A A A -C BAA B A A A A A A" ;;
     blocks) stat="A A IGk B A A A B BAA -C A A A A A A" ;;
     block-overflow) stat="A A IGk B A A A B BAA CAAAAAAAAA A A A A A A" ;;
@@ -778,28 +779,259 @@ for invalid in $invalid_cases; do
 END_OF_DATA
   query_accounting "invalid-$invalid"
   run_python_check "$tmp/status-subscriptions-before-invalid.json" \
-    "$tmp/status-subscriptions-invalid-$invalid.json" <<'PY'
+    "$tmp/status-subscriptions-invalid-$invalid.json" "$invalid" <<'PY'
+import json
+
 before = load_result(sys.argv[1])
 after = load_result(sys.argv[2])
 assert after["accounting"] == before["accounting"], (before, after)
 assert after["summary"] == before["summary"], (before, after)
 old = before["accounting_snapshot"]
 new = after["accounting_snapshot"]
-assert new["last_refresh_error"] == "failed to scan file attributes", new
+if sys.argv[3] in ("empty", "size", "blocks", "block-overflow"):
+    assert new["last_refresh_error"].startswith("Invalid file attributes: "), new
+    diagnostic = new["last_refresh_diagnostic"]
+    assert diagnostic["version"] == 1, diagnostic
+    assert diagnostic["type"] == "invalid_lstat", diagnostic
+    assert diagnostic["jobid"] > 0 and diagnostic["fileindex"] > 0, diagnostic
+    assert diagnostic["path"] and diagnostic["client"] == "bareos-fd", diagnostic
+    assert diagnostic["fileset"] == "AcctTest", diagnostic
+    assert diagnostic["reason"] in new["last_refresh_error"], diagnostic
+    assert diagnostic["path"] in new["last_refresh_error"], diagnostic
+else:
+    assert new["last_refresh_error"] == "failed to scan file attributes", new
+    assert "last_refresh_diagnostic" not in new, new
 for key in ("calculated_at", "last_full_completed_at", "last_full_duration_ms"):
     assert new[key] == old[key], (key, old, new)
 PY
   run_bconsole - <<END_OF_DATA
+@$out $tmp/status-subscriptions-invalid-$invalid-storage.out
+.sql query="SELECT 'STRUCTURED_ERROR=' || CASE WHEN LastError LIKE 'bareos-subscription-accounting-error:v1:%' THEN 'true' ELSE 'false' END FROM SubscriptionAccountingSnapshot WHERE SnapshotId=1"
+END_OF_DATA
+  grep -q 'STRUCTURED_ERROR=true' \
+    "$tmp/status-subscriptions-invalid-$invalid-storage.out" || {
+    if [[ "$invalid" == "empty" || "$invalid" == "size" ||
+      "$invalid" == "blocks" || "$invalid" == "block-overflow" ]]; then
+      cat "$tmp/status-subscriptions-invalid-$invalid-storage.out" >&2
+      exit 1
+    fi
+  }
+  run_bconsole - <<END_OF_DATA
 .sql query="UPDATE File SET LStat=b.LStat FROM acct_invalid_backup b WHERE File.FileId=b.FileId"
 END_OF_DATA
 done
+
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-invalid-anonymized.json"
+  echo "status subscriptions all anonymize"
+} >"$tmp/bconcmds"
+run_bconsole
+run_python_check "$tmp/status-subscriptions-invalid-empty.json" \
+  "$tmp/status-subscriptions-invalid-anonymized.json" <<'PY'
+import json
+
+normal = load_result(sys.argv[1])["accounting_snapshot"]
+anonymized = load_result(sys.argv[2])["accounting_snapshot"]
+assert anonymized["last_refresh_error"] == "Last recalculation failed."
+assert "last_refresh_diagnostic" not in anonymized
+serialized = json.dumps(anonymized)
+for key in ("path", "client", "fileset", "jobid", "fileindex", "reason"):
+    assert key not in serialized, serialized
+for value in (normal["last_refresh_diagnostic"]["path"],
+              normal["last_refresh_diagnostic"]["client"],
+              normal["last_refresh_diagnostic"]["fileset"]):
+    assert value not in serialized, value
+PY
+
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastError='legacy refresh failed' WHERE SnapshotId=1"
+END_OF_DATA
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-legacy-error.json"
+  echo "status subscriptions"
+} >"$tmp/bconcmds"
+run_bconsole
+run_python_check "$tmp/status-subscriptions-legacy-error.json" <<'PY'
+snapshot = load_result(sys.argv[1])["accounting_snapshot"]
+assert snapshot["last_refresh_error"] == "legacy refresh failed", snapshot
+assert "last_refresh_diagnostic" not in snapshot
+PY
+
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastError='bareos-subscription-accounting-error:v1:{bad' WHERE SnapshotId=1"
+END_OF_DATA
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-malformed-error.json"
+  echo "status subscriptions"
+} >"$tmp/bconcmds"
+run_bconsole
+run_python_check "$tmp/status-subscriptions-malformed-error.json" <<'PY'
+snapshot = load_result(sys.argv[1])["accounting_snapshot"]
+assert "Malformed structured" in snapshot["last_refresh_error"], snapshot
+assert "last_refresh_diagnostic" not in snapshot
+PY
+
 run_bconsole - <<END_OF_DATA
 .sql query="DROP TABLE acct_invalid_backup"
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastError=NULL WHERE SnapshotId=1"
 END_OF_DATA
 query_accounting after-invalid
 run_python_check "$tmp/status-subscriptions-after-invalid.json" <<'PY'
 assert not load_result(sys.argv[1])["accounting_snapshot"].get("last_refresh_error")
 PY
+
+# Human-readable error text must neutralize terminal controls and backslashes,
+# while structured diagnostics retain the original catalog path.
+query_accounting before-control-invalid
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_control_invalid_backup AS SELECT f.FileId, f.Name, f.LStat FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin'"
+.sql query="UPDATE File SET Name='control' || chr(92) || chr(9) || chr(10) || chr(13) || chr(27) || chr(127) || 'end.bin', LStat='' WHERE FileId IN (SELECT FileId FROM acct_control_invalid_backup)"
+END_OF_DATA
+query_accounting invalid-control
+run_python_check "$tmp/status-subscriptions-before-control-invalid.json" \
+  "$tmp/status-subscriptions-invalid-control.json" <<'PY'
+before = load_result(sys.argv[1])
+after = load_result(sys.argv[2])
+old = before["accounting_snapshot"]
+new = after["accounting_snapshot"]
+assert after["accounting"] == before["accounting"], (before, after)
+assert after["summary"] == before["summary"], (before, after)
+for key in ("calculated_at", "last_full_completed_at", "last_full_duration_ms"):
+    assert new[key] == old[key], (key, old, new)
+diagnostic = new["last_refresh_diagnostic"]
+raw_name = "control" + chr(92) + chr(9) + chr(10) + chr(13) + chr(27) + chr(127) + "end.bin"
+assert diagnostic["path"].endswith(raw_name), diagnostic
+message = new["last_refresh_error"]
+assert all(token in message for token in ("\\\\", "\\x09", "\\x0A",
+                                           "\\x0D", "\\x1B", "\\x7F")), message
+assert not any(ord(character) < 0x20 or ord(character) == 0x7f
+               for character in message), repr(message)
+PY
+
+# A versioned payload's message may predate safe formatting or be tampered
+# with; status output must be reconstructed from and escape the raw fields.
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastError=substring(LastError from 1 for length('bareos-subscription-accounting-error:v1:')) || jsonb_set(substring(LastError from length('bareos-subscription-accounting-error:v1:') + 1)::jsonb, '{message}', to_jsonb('UNSAFE' || chr(10) || chr(27) || 'MESSAGE'))::text WHERE SnapshotId=1"
+END_OF_DATA
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-malicious-message.json"
+  echo "status subscriptions"
+} >"$tmp/bconcmds"
+run_bconsole
+run_python_check "$tmp/status-subscriptions-malicious-message.json" <<'PY'
+snapshot = load_result(sys.argv[1])["accounting_snapshot"]
+message = snapshot["last_refresh_error"]
+assert "UNSAFE" not in message and "MESSAGE" not in message, message
+assert not any(ord(character) < 0x20 or ord(character) == 0x7f
+               for character in message), repr(message)
+assert "\\x0A" in message and "\\x1B" in message, message
+assert snapshot["last_refresh_diagnostic"]["path"].endswith(
+    "control" + chr(92) + chr(9) + chr(10) + chr(13) + chr(27) + chr(127) + "end.bin"
+)
+PY
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET Name=b.Name, LStat=b.LStat FROM acct_control_invalid_backup b WHERE File.FileId=b.FileId"
+.sql query="DROP TABLE acct_control_invalid_backup"
+.sql query="UPDATE SubscriptionAccountingSnapshot SET LastError=NULL WHERE SnapshotId=1"
+END_OF_DATA
+query_accounting after-control-invalid
+
+# A delta must identify the prior effective row, rather than blaming the
+# Incremental that exposed its invalid attributes.
+query_accounting delta-before
+run_bconsole - <<END_OF_DATA
+.sql query="CREATE TABLE acct_delta_invalid_backup AS SELECT recent.FileId, recent.JobId, recent.LStat FROM (SELECT DISTINCT ON (f.PathId,f.Name) f.FileId, f.JobId, f.LStat, f.Name FROM File f JOIN Job j USING (JobId) JOIN FileSet fs USING (FileSetId) WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' AND f.Name='file-1000bytes.bin' ORDER BY f.PathId,f.Name,j.JobTDate DESC,j.JobId DESC,f.FileId DESC) recent"
+@$out $tmp/accounting-delta-previous-jobid.out
+.sql query="SELECT 'DELTA_PREVIOUS_JOBID=' || JobId FROM acct_delta_invalid_backup"
+.sql query="UPDATE File SET LStat='' WHERE FileId IN (SELECT FileId FROM acct_delta_invalid_backup)"
+END_OF_DATA
+delta_previous_jobid="$(
+  sed -nE 's/.*DELTA_PREVIOUS_JOBID=([0-9]+).*/\1/p' \
+    "$tmp/accounting-delta-previous-jobid.out"
+)"
+if [[ -z "$delta_previous_jobid" ]]; then
+  echo "could not find the previous effective accounting JobId" >&2
+  cat "$tmp/accounting-delta-previous-jobid.out" >&2
+  exit 1
+fi
+printf 'delta\n' >>"$tmp/acct-data/file-1000bytes.bin"
+run_bconsole - <<END_OF_DATA
+@$out $tmp/accounting-invalid-delta-job.log
+run job=$JobName level=Incremental accurate=yes yes
+wait
+END_OF_DATA
+delta_before_generation="$(
+  "${PYTHON_EXECUTABLE}" - \
+    "$tmp/status-subscriptions-delta-before-revision.json" <<'PY'
+import json
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+result, _ = json.JSONDecoder().raw_decode(text[text.index("{"):])
+print(result["result"]["accounting_status"]["generation"])
+PY
+)"
+for _ in {1..60}; do
+  {
+    echo ".api 2"
+    echo "@$out $tmp/accounting-invalid-delta-state.json"
+    echo "status subscriptions state"
+  } >"$tmp/bconcmds"
+  run_bconsole
+  if "${PYTHON_EXECUTABLE}" - "$tmp/accounting-invalid-delta-state.json" \
+    "$delta_before_generation" <<'PY'; then
+import json
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+result, _ = json.JSONDecoder().raw_decode(text[text.index("{"):])
+status = result["result"]["accounting_status"]
+sys.exit(not (
+    status["refresh_thread_state"] == "idle"
+    and     status["generation"] > int(sys.argv[2])
+))
+PY
+    break
+  fi
+  sleep 1
+done
+{
+  echo ".api 2"
+  echo "@$out $tmp/status-subscriptions-invalid-delta.json"
+  echo "status subscriptions"
+} >"$tmp/bconcmds"
+run_bconsole
+run_python_check "$tmp/status-subscriptions-delta-before.json" \
+  "$tmp/status-subscriptions-invalid-delta.json" \
+  "$delta_previous_jobid" <<'PY'
+before = load_result(sys.argv[1])
+after = load_result(sys.argv[2])
+diagnostic = after["accounting_snapshot"]["last_refresh_diagnostic"]
+assert diagnostic["jobid"] == int(sys.argv[3]), diagnostic
+assert diagnostic["path"].endswith("file-1000bytes.bin"), diagnostic
+assert diagnostic["fileindex"] > 0, diagnostic
+assert diagnostic["client"] == "bareos-fd", diagnostic
+assert diagnostic["fileset"] == "AcctTest", diagnostic
+assert diagnostic["reason"] == "LStat is empty", diagnostic
+message = after["accounting_snapshot"]["last_refresh_error"]
+assert all(value in message for value in ("JobId=", "FileIndex=", "Client=",
+                                           "FileSet=", "Path=", "LStat is empty")), message
+assert not any(ord(character) < 0x20 or ord(character) == 0x7f
+               for character in message), repr(message)
+assert after["accounting"] == before["accounting"], (before, after)
+assert after["summary"] == before["summary"], (before, after)
+for key in ("calculated_at", "last_full_completed_at", "last_full_duration_ms"):
+    assert after["accounting_snapshot"][key] == before["accounting_snapshot"][key]
+PY
+run_bconsole - <<END_OF_DATA
+.sql query="UPDATE File SET LStat=b.LStat FROM acct_delta_invalid_backup b WHERE File.FileId=b.FileId"
+.sql query="DROP TABLE acct_delta_invalid_backup"
+END_OF_DATA
+query_accounting after-invalid-delta
 
 if [[ "${estat:-0}" -ne 0 ]]; then
   echo "=== accounting source/filesystem diagnostics ===" >&2

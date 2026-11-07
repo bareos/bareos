@@ -666,4 +666,69 @@ describe('Subscription snapshot age and refresh eligibility', () => {
     expect(table.querySelector('.sub-row--total').children[4].textContent).toBe('3.00')
     expect(table.querySelector('.sub-accounting-issue td').colSpan).toBe(7)
   })
+
+  it('shows invalid-LStat details as text and opens the offending job', () => {
+    const openJob = vi.fn()
+    mountReport(600, {
+      data: {
+        subscription_accounting: { calculated_at: '2026-11-06 10:00:01' },
+        accounting_snapshot: {
+          last_refresh_error: 'Invalid file attributes: JobId=42',
+          last_refresh_diagnostic: {
+            type: 'invalid_lstat',
+            jobid: 42,
+            path: '/backup/<file>&.dat',
+            reason: 'LStat is empty',
+          },
+        },
+      },
+      onOpenJob: openJob,
+    })
+
+    expect(root.textContent).toContain('/backup/<file>&.dat')
+    expect(root.textContent).toContain('Reason: LStat is empty')
+    expect(root.querySelector('script')).toBeNull()
+    const link = [...root.querySelectorAll('a')]
+      .find(element => element.textContent === 'Job #42')
+    expect(link).not.toBeNull()
+    link.click()
+    expect(openJob).toHaveBeenCalledWith(42)
+  })
+
+  it('hides structured identifiers in anonymized and legacy errors', () => {
+    mountReport(600, {
+      anonymized: true,
+      data: {
+        subscription_accounting: { calculated_at: '2026-11-06 10:00:01' },
+        accounting_snapshot: {
+          last_refresh_error: 'Last recalculation failed.',
+          last_refresh_diagnostic: {
+            type: 'invalid_lstat',
+            jobid: 42,
+            path: '/private/client/file',
+            client: 'private-client',
+            fileset: 'private-fileset',
+            reason: 'LStat is empty',
+          },
+        },
+      },
+    })
+    expect(root.textContent).toContain('Last recalculation failed.')
+    expect(root.textContent).not.toContain('/private/client/file')
+    expect(root.textContent).not.toContain('private-client')
+    expect(root.textContent).not.toContain('private-fileset')
+    expect(root.textContent).not.toContain('LStat is empty')
+    expect(root.querySelector('a')).toBeNull()
+
+    app.unmount()
+    root.replaceChildren()
+    mountReport(600, {
+      data: {
+        subscription_accounting: { calculated_at: '2026-11-06 10:00:01' },
+        accounting_snapshot: { last_refresh_error: 'legacy failure' },
+      },
+    })
+    expect(root.textContent).toContain('legacy failure')
+    expect(root.querySelector('a')).toBeNull()
+  })
 })

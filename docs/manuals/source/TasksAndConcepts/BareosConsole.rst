@@ -2023,6 +2023,15 @@ status subscriptions
    ``available``, ``calculated_at``, and ``stale`` fields, plus
    ``last_refresh_error`` when the latest refresh failed.
 
+   If invalid file attributes stop a calculation, the error identifies the
+   first offending JobId, FileIndex, full path, Client, FileSet, and reason.
+   The structured response also includes these values in
+   ``accounting_snapshot.last_refresh_diagnostic``; the WebUI makes the
+   offending JobId a link to that job in the selected Director. Anonymized
+   reports omit the identifying diagnostic and show only a generic failure.
+   A scan stops at its first invalid row, so the diagnostic does not list any
+   later invalid attributes.
+
    For measured Client/FileSet combinations, ``bytes`` in the structured
    output and the main text line report allocated bytes using
    ``st_blocks*512`` for Unix/Linux/macOS/BSD clients, or logical size using

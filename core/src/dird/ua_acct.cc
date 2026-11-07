@@ -95,9 +95,12 @@ void RefreshSubscriptionAccounting(UaContext* ua)
   const auto started = std::chrono::steady_clock::now();
   std::vector<AccountingRow> rows;
   std::string error;
-  if (!CalculateSubscriptionAccounting(ua, &rows, &error, &accounting_quit)) {
+  std::optional<SubscriptionAccountingDiagnostic> diagnostic;
+  if (!CalculateSubscriptionAccounting(ua, &rows, &error, &accounting_quit,
+                                       &diagnostic)) {
     if (accounting_quit.load()) { return; }
-    if (!RecordSubscriptionAccountingFailure(ua, error)) {
+    if (!RecordSubscriptionAccountingFailure(
+            ua, error, diagnostic ? &*diagnostic : nullptr)) {
       Jmsg(ua->jcr, M_ERROR, 0,
            T_("Could not record subscription accounting refresh failure: %s\n"),
            ua->db->strerror());
@@ -140,10 +143,12 @@ void RefreshSubscriptionAccountingJob(UaContext* ua, JobId_t jobid)
 {
   AccountingRow row;
   std::string error;
+  std::optional<SubscriptionAccountingDiagnostic> diagnostic;
   if (!CalculateSubscriptionAccountingForJob(ua, jobid, &row, &error,
-                                             &accounting_quit)) {
+                                             &accounting_quit, &diagnostic)) {
     if (accounting_quit.load()) { return; }
-    if (!RecordSubscriptionAccountingFailure(ua, error)) {
+    if (!RecordSubscriptionAccountingFailure(
+            ua, error, diagnostic ? &*diagnostic : nullptr)) {
       Jmsg(ua->jcr, M_ERROR, 0,
            T_("Could not record subscription accounting job failure: %s\n"),
            ua->db->strerror());
@@ -293,6 +298,19 @@ bool ReportSubscriptionAccounting(UaContext* ua,
   }
   if (!metadata.last_error.empty()) {
     ua->send->ObjectKeyValue("last_refresh_error", metadata.last_error.c_str());
+  }
+  if (!anonymize && metadata.last_error_diagnostic) {
+    const auto& diagnostic = *metadata.last_error_diagnostic;
+    ua->send->ObjectStart("last_refresh_diagnostic");
+    ua->send->ObjectKeyValue("version", 1);
+    ua->send->ObjectKeyValue("type", diagnostic.type.c_str());
+    ua->send->ObjectKeyValue("jobid", diagnostic.jobid);
+    ua->send->ObjectKeyValue("fileindex", diagnostic.fileindex);
+    ua->send->ObjectKeyValue("path", diagnostic.path.c_str());
+    ua->send->ObjectKeyValue("client", diagnostic.client.c_str());
+    ua->send->ObjectKeyValue("fileset", diagnostic.fileset.c_str());
+    ua->send->ObjectKeyValue("reason", diagnostic.reason.c_str());
+    ua->send->ObjectEnd();
   }
   ua->send->ObjectEnd();
 

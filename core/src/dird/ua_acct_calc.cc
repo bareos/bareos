@@ -88,7 +88,9 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
                                            bool is_windows,
                                            std::string_view filename)
 {
-  if (lstat.empty()) { return {FileAccountingKind::kRegular, 0}; }
+  if (lstat.empty()) {
+    return {FileAccountingKind::kInvalidStat, 0, 0, {}, "LStat is empty"};
+  }
 
   struct stat statp{};
   int32_t LinkFI;
@@ -250,6 +252,7 @@ struct FileScanCtx {
   UaContext* ua{nullptr};
   const TupleInfo* tuple{nullptr};
   const std::atomic_bool* cancel{nullptr};
+  std::optional<SubscriptionAccountingDiagnostic>* diagnostic{nullptr};
   bool is_windows{false};
   uint64_t bytes{0};
   uint64_t logical_bytes{0};
@@ -259,20 +262,49 @@ struct FileScanCtx {
   bool saw_opaque_plugin_image{false};
   uint64_t opaque_files{0};
   uint64_t ndmp_archives{0};
+  std::string error;
 };
+
+SubscriptionAccountingDiagnostic MakeInvalidLstatDiagnostic(
+    JobId_t jobid,
+    uint32_t fileindex,
+    const char* path,
+    const TupleInfo& tuple,
+    const char* reason)
+{
+  return {"invalid_lstat",     jobid,
+          fileindex,           path ? path : "",
+          tuple.ClientName,    tuple.FileSetName,
+          reason ? reason : ""};
+}
+
+std::string EscapeDiagnosticText(std::string_view value)
+{
+  constexpr char kHex[] = "0123456789ABCDEF";
+  std::string escaped;
+  for (unsigned char ch : value) {
+    if (ch == '\\') {
+      escaped += "\\\\";
+    } else if (ch < 0x20 || ch == 0x7f) {
+      escaped += "\\x";
+      escaped += kHex[ch >> 4];
+      escaped += kHex[ch & 0x0f];
+    } else {
+      escaped += static_cast<char>(ch);
+    }
+  }
+  return escaped;
+}
 
 int FileRowHandler(void* ctx, int, char** row)
 {
-  // row[0]=JobId row[1]=PathId row[2]=Name row[3]=FileIndex row[4]=LStat
-  // row[5]=full catalog filename
+  // row[0]=JobId row[3]=FileIndex row[4]=LStat row[5]=full catalog filename
   auto* c = static_cast<FileScanCtx*>(ctx);
   if (c->cancel && c->cancel->load()) {
     c->aborted = true;
     return 1;
   }
   auto JobId = row[0] ? row[0] : "";
-  auto PathId = row[1] ? row[1] : "";
-  auto Name = row[2] ? row[2] : "";
   auto FileIndex = static_cast<uint32_t>(str_to_int64(row[3]));
 
   /* FileIndex==0 marks an accurate-mode "this file was deleted since the
@@ -282,16 +314,11 @@ int FileRowHandler(void* ctx, int, char** row)
   FileAccountingResult file_result = AccountedBytesForFile(
       row[4] ? row[4] : "", c->is_windows, row[5] ? row[5] : "");
   if (file_result.kind == FileAccountingKind::kInvalidStat) {
-    c->ua->ErrorMsg(
-        T_("%s / %s: invalid file attributes for FileIndex=%u "
-           "(JobId=%s PathId=%s Name='%s'): %s; decoded st_mode=%s "
-           "st_size=%s st_blocks=%s; raw LStat='%s' -- aborting report.\n"),
-        c->tuple->ClientName.c_str(), c->tuple->FileSetName.c_str(), FileIndex,
-        JobId, PathId, Name, file_result.invalid_reason,
-        std::to_string(file_result.statp.st_mode).c_str(),
-        std::to_string(file_result.statp.st_size).c_str(),
-        std::to_string(file_result.statp.st_blocks).c_str(),
-        row[4] ? row[4] : "");
+    auto invalid = MakeInvalidLstatDiagnostic(
+        static_cast<JobId_t>(str_to_int64(JobId)), FileIndex, row[5], *c->tuple,
+        file_result.invalid_reason);
+    c->error = FormatSubscriptionAccountingDiagnostic(invalid);
+    if (c->diagnostic) { *c->diagnostic = std::move(invalid); }
     c->aborted = true;
     return 1;
   }
@@ -610,6 +637,9 @@ bool AddOrSubtract(uint64_t* value, uint64_t amount, bool add)
 
 struct DeltaScanCtx {
   AccountingRow* row{nullptr};
+  const TupleInfo* tuple{nullptr};
+  JobId_t current_jobid{0};
+  std::optional<SubscriptionAccountingDiagnostic>* diagnostic{nullptr};
   bool is_windows{false};
   bool requires_full_scan{false};
   bool aborted{false};
@@ -617,6 +647,8 @@ struct DeltaScanCtx {
 };
 
 bool ApplyFileDelta(DeltaScanCtx* c,
+                    JobId_t jobid,
+                    uint32_t fileindex,
                     const char* lstat,
                     const char* filename,
                     bool add)
@@ -624,7 +656,10 @@ bool ApplyFileDelta(DeltaScanCtx* c,
   FileAccountingResult result = AccountedBytesForFile(
       lstat ? lstat : "", c->is_windows, filename ? filename : "");
   if (result.kind == FileAccountingKind::kInvalidStat) {
-    c->error = result.invalid_reason;
+    auto invalid = MakeInvalidLstatDiagnostic(jobid, fileindex, filename,
+                                              *c->tuple, result.invalid_reason);
+    c->error = FormatSubscriptionAccountingDiagnostic(invalid);
+    if (c->diagnostic) { *c->diagnostic = std::move(invalid); }
     c->aborted = true;
     return false;
   }
@@ -659,14 +694,24 @@ bool ApplyFileDelta(DeltaScanCtx* c,
 int ChangedFileRowHandler(void* ctx, int, char** row)
 {
   // row[0..2] are the current FileIndex, LStat and full path.
-  // row[3..4] are the previous effective FileIndex and LStat.
+  // row[3..5] are the previous effective FileIndex, LStat and JobId.
   auto* c = static_cast<DeltaScanCtx*>(ctx);
   const bool had_previous
       = row[3] && static_cast<uint32_t>(str_to_int64(row[3])) != 0;
   const bool has_current
       = row[0] && static_cast<uint32_t>(str_to_int64(row[0])) != 0;
-  if (had_previous && !ApplyFileDelta(c, row[4], row[2], false)) { return 1; }
-  if (has_current && !ApplyFileDelta(c, row[1], row[2], true)) { return 1; }
+  if (had_previous
+      && !ApplyFileDelta(c, static_cast<JobId_t>(str_to_int64(row[5])),
+                         static_cast<uint32_t>(str_to_int64(row[3])), row[4],
+                         row[2], false)) {
+    return 1;
+  }
+  if (has_current
+      && !ApplyFileDelta(c, c->current_jobid,
+                         static_cast<uint32_t>(str_to_int64(row[0])), row[1],
+                         row[2], true)) {
+    return 1;
+  }
   return 0;
 }
 
@@ -683,22 +728,25 @@ bool ScanChangedFiles(UaContext* ua,
     PmStrcat(previous_ids, edit_uint64(previous_jobids[i], ed1));
   }
   PoolMem query(PM_MESSAGE);
-  Mmsg(query,
-       "WITH current_paths AS ("
-       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
-       "File.Name, File.FileIndex, File.LStat, Path.Path || File.Name AS "
-       "Filename FROM File JOIN Path USING (PathId) WHERE File.JobId=%s "
-       "ORDER BY File.PathId, File.Name, File.FileId DESC), "
-       "previous_paths AS ("
-       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
-       "File.Name, File.FileIndex, File.LStat FROM File JOIN Job USING (JobId) "
-       "WHERE File.JobId IN (%s) "
-       "ORDER BY File.PathId, File.Name, Job.JobTDate DESC, "
-       "File.JobId DESC, File.FileId DESC) "
-       "SELECT current_paths.FileIndex, current_paths.LStat, "
-       "current_paths.Filename, previous_paths.FileIndex, previous_paths.LStat "
-       "FROM current_paths LEFT JOIN previous_paths USING (PathId, Name)",
-       edit_int64(current_jobid, ed2), previous_ids.c_str());
+  Mmsg(
+      query,
+      "WITH current_paths AS ("
+      " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
+      "File.Name, File.FileIndex, File.LStat, Path.Path || File.Name AS "
+      "Filename FROM File JOIN Path USING (PathId) WHERE File.JobId=%s "
+      "ORDER BY File.PathId, File.Name, File.FileId DESC), "
+      "previous_paths AS ("
+      " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
+      "File.Name, File.FileIndex, File.LStat, File.JobId FROM File "
+      "JOIN Job USING (JobId) "
+      "WHERE File.JobId IN (%s) "
+      "ORDER BY File.PathId, File.Name, Job.JobTDate DESC, "
+      "File.JobId DESC, File.FileId DESC) "
+      "SELECT current_paths.FileIndex, current_paths.LStat, "
+      "current_paths.Filename, previous_paths.FileIndex, previous_paths.LStat, "
+      "previous_paths.JobId "
+      "FROM current_paths LEFT JOIN previous_paths USING (PathId, Name)",
+      edit_int64(current_jobid, ed2), previous_ids.c_str());
   if (!ua->db->BigSqlQuery(query.c_str(), ChangedFileRowHandler, delta)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     return false;
@@ -748,11 +796,25 @@ bool MakeAccountingRowFromScan(UaContext* ua,
 
 }  // namespace
 
-bool CalculateSubscriptionAccounting(UaContext* ua,
-                                     std::vector<AccountingRow>* rows,
-                                     std::string* error,
-                                     const std::atomic_bool* cancel)
+std::string FormatSubscriptionAccountingDiagnostic(
+    const SubscriptionAccountingDiagnostic& diagnostic)
 {
+  return "Invalid file attributes: JobId=" + std::to_string(diagnostic.jobid)
+         + " FileIndex=" + std::to_string(diagnostic.fileindex)
+         + " Client=" + EscapeDiagnosticText(diagnostic.client)
+         + " FileSet=" + EscapeDiagnosticText(diagnostic.fileset) + " Path='"
+         + EscapeDiagnosticText(diagnostic.path)
+         + "': " + EscapeDiagnosticText(diagnostic.reason);
+}
+
+bool CalculateSubscriptionAccounting(
+    UaContext* ua,
+    std::vector<AccountingRow>* rows,
+    std::string* error,
+    const std::atomic_bool* cancel,
+    std::optional<SubscriptionAccountingDiagnostic>* diagnostic)
+{
+  if (diagnostic) { diagnostic->reset(); }
   PoolMem query(PM_MESSAGE);
   Mmsg(query,
        "SELECT DISTINCT ON (Job.ClientId, FileSet.FileSet)"
@@ -815,11 +877,13 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
     scan.ua = ua;
     scan.tuple = &tuple;
     scan.cancel = cancel;
+    scan.diagnostic = diagnostic;
     scan.is_windows = UnameLooksLikeWindows(tuple.Uname);
     if (!ScanFilesForChain(ua, jobids, &scan)) {
       *error = scan.aborted && cancel && cancel->load()
                    ? "accounting refresh cancelled"
-                   : "failed to scan file attributes";
+               : scan.error.empty() ? "failed to scan file attributes"
+                                    : scan.error;
       return false;
     }
 
@@ -831,12 +895,15 @@ bool CalculateSubscriptionAccounting(UaContext* ua,
   return true;
 }
 
-bool CalculateSubscriptionAccountingForJob(UaContext* ua,
-                                           JobId_t jobid,
-                                           AccountingRow* row,
-                                           std::string* error,
-                                           const std::atomic_bool* cancel)
+bool CalculateSubscriptionAccountingForJob(
+    UaContext* ua,
+    JobId_t jobid,
+    AccountingRow* row,
+    std::string* error,
+    const std::atomic_bool* cancel,
+    std::optional<SubscriptionAccountingDiagnostic>* diagnostic)
 {
+  if (diagnostic) { diagnostic->reset(); }
   AccountingJobInfo job{};
   if (!LoadAccountingJobInfo(ua, jobid, &job, error)) { return false; }
 
@@ -879,11 +946,13 @@ bool CalculateSubscriptionAccountingForJob(UaContext* ua,
     scan.ua = ua;
     scan.tuple = &tuple;
     scan.cancel = cancel;
+    scan.diagnostic = diagnostic;
     scan.is_windows = UnameLooksLikeWindows(job.Uname);
     if (!ScanFilesForChain(ua, jobids, &scan)) {
       *error = scan.aborted && cancel && cancel->load()
                    ? "accounting calculation cancelled"
-                   : "failed to scan file attributes";
+               : scan.error.empty() ? "failed to scan file attributes"
+                                    : scan.error;
       return false;
     }
     if (!MakeAccountingRowFromScan(ua, jobids, scan, &full_row, error)) {
@@ -921,6 +990,9 @@ bool CalculateSubscriptionAccountingForJob(UaContext* ua,
   std::vector<JobId_t> previous_jobids(jobids.begin(), jobids.end() - 1);
   DeltaScanCtx delta{};
   delta.row = row;
+  delta.tuple = &tuple;
+  delta.current_jobid = jobid;
+  delta.diagnostic = diagnostic;
   delta.is_windows = UnameLooksLikeWindows(job.Uname);
   if (!ScanChangedFiles(ua, jobid, previous_jobids, &delta)) {
     *error = delta.error.empty() ? "failed to scan changed file attributes"
