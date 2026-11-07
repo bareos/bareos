@@ -22,18 +22,21 @@
 #ifndef BAREOS_STORED_AUTHENTICATE_H_
 #define BAREOS_STORED_AUTHENTICATE_H_
 
+#include "lib/bauth.h"
 #include "lib/bsock.h"
 #include "include/jcr.h"
+#include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
 #include "stored/stored_conf.h"
 
 namespace storagedaemon {
 
-struct Auth : ::TlsConfigProvider {
+struct Auth : ::AuthenticationProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view name) override;
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
@@ -44,11 +47,13 @@ struct Auth : ::TlsConfigProvider {
 
   struct director_data {
     DirectorResource* res{};
+    Md5InboundAuthenticator auth;
   };
 
   struct job_data {
     JobControlRecord* jcr{};
     TlsResource job{};
+    Md5InboundAuthenticator auth;
 
     ~job_data()
     {

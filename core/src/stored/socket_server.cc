@@ -32,6 +32,7 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/ascii_control_characters.h"
+#include "lib/bauth.h"
 #include "stored/authenticate.h"
 #include "stored/stored.h"
 #include "stored/stored_globals.h"
