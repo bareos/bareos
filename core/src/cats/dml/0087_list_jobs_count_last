@@ -1,0 +1,23 @@
+# "WHERE JobId > 0" is a dummy where clause,
+#                   to make it easier to extend the filter
+#                   (all filters starts with "AND ...")
+# Mirrors 0009_list_jobs_last's "last job per name" dedup subquery, so that
+# `list jobs count last` reports the same row count `llist jobs last` would
+# return instead of counting every historical Job row.
+
+SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
+FROM Job
+INNER JOIN (
+   SELECT MAX(Job.JobId) as MaxJobId
+   FROM Job
+   LEFT JOIN Client ON Client.ClientId=Job.ClientId
+   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+   WHERE Job.JobId > 0
+   %s
+   GROUP BY Job.Name
+) LastJob
+ON Job.JobId = LastJob.MaxJobId
+;

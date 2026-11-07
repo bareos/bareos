@@ -85,8 +85,8 @@ describe('clients aggregate helpers', () => {
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     await vi.waitFor(() => {
-      expect(socketA.sent).toHaveLength(3)
-      expect(socketB.sent).toHaveLength(3)
+      expect(socketA.sent).toHaveLength(5)
+      expect(socketB.sent).toHaveLength(5)
     })
 
     const socketCommands = (socket) => new Map(
@@ -119,6 +119,29 @@ describe('clients aggregate helpers', () => {
         },
       }),
     })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        data: {
+          jobs: [{ jobid: 7, client: 'alpha-fd', jobstatus: 'T', jobtype: 'B' }],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('status scheduler days=-31,1'),
+        data: {
+          schedules: [{
+            name: 'Nightly',
+            enabled: true,
+            jobs: [{ name: 'Nightly', client: 'alpha-fd', enabled: true }],
+          }],
+          preview: [{ schedule: 'Nightly', runtime: Math.floor(Date.now() / 1000) - 3600 }],
+        },
+      }),
+    })
 
     socketB.onmessage?.({
       data: JSON.stringify({
@@ -140,6 +163,25 @@ describe('clients aggregate helpers', () => {
         },
       }),
     })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        data: {
+          jobs: [{ jobid: 8, clientname: 'beta-fd', jobstatus: 'E', jobtype: 'B' }],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('status scheduler days=-31,1'),
+        data: {
+          schedules: [],
+          preview: [],
+        },
+      }),
+    })
 
     await expect(loading).resolves.toEqual({
       clients: [
@@ -154,6 +196,30 @@ describe('clients aggregate helpers', () => {
           director: 'prod-b',
           name: 'beta-fd',
           enabled: true,
+        }),
+      ],
+      recentBackups: [
+        expect.objectContaining({
+          id: 7,
+          client: 'alpha-fd',
+          status: 'T',
+          type: 'B',
+          director: 'prod-a',
+        }),
+        expect.objectContaining({
+          id: 8,
+          client: 'beta-fd',
+          status: 'E',
+          type: 'B',
+          director: 'prod-b',
+        }),
+      ],
+      scheduledBackups: [
+        expect.objectContaining({
+          client: 'alpha-fd',
+          job: 'Nightly',
+          schedule: 'Nightly',
+          director: 'prod-a',
         }),
       ],
       directorErrors: [],

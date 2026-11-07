@@ -28,8 +28,8 @@ import { buildVolumeDetailsQuery } from './volumes.js'
 
 export function buildPoolDetailsQuery({
   director,
-  storagesTab,
-  storagesScopeDirector,
+  poolsTab,
+  poolsScopeDirector,
   volumeName,
   volumeQuery,
 } = {}) {
@@ -43,12 +43,12 @@ export function buildPoolDetailsQuery({
     query.volumeName = volumeName
   }
 
-  if (storagesTab && storagesTab !== 'pools' && !query.storagesTab) {
-    query.storagesTab = storagesTab
+  if (poolsTab && poolsTab !== 'pools' && !query.poolsTab) {
+    query.poolsTab = poolsTab
   }
 
-  if (storagesScopeDirector && !query.storagesScopeDirector) {
-    query.storagesScopeDirector = storagesScopeDirector
+  if (poolsScopeDirector && !query.poolsScopeDirector) {
+    query.poolsScopeDirector = poolsScopeDirector
   }
 
   return query
@@ -89,18 +89,18 @@ export function resolvePoolDetailsVolumeOrigin(query) {
   }
 }
 
-export function resolvePoolDetailsStoragesOrigin(query) {
-  const scopeDirector = typeof query?.storagesScopeDirector === 'string'
-    ? query.storagesScopeDirector
+export function resolvePoolDetailsPoolsOrigin(query) {
+  const scopeDirector = typeof query?.poolsScopeDirector === 'string'
+    ? query.poolsScopeDirector
     : ''
-  const storagesTab = typeof query?.storagesTab === 'string' ? query.storagesTab : ''
+  const poolsTab = typeof query?.poolsTab === 'string' ? query.poolsTab : ''
 
-  if (!storagesTab && !scopeDirector) {
+  if (!poolsTab && !scopeDirector) {
     return null
   }
 
   return {
-    tab: storagesTab || 'pools',
+    tab: poolsTab || 'pools',
     scopeDirector,
   }
 }
@@ -121,14 +121,14 @@ export function resolvePoolDetailsVolumeQuery(query) {
     nextQuery.volumeName = query.volumeName
   }
 
-  if (typeof query?.storagesTab === 'string'
-    && query.storagesTab
-    && query.storagesTab !== 'pools') {
-    nextQuery.storagesTab = query.storagesTab
+  if (typeof query?.poolsTab === 'string'
+    && query.poolsTab
+    && query.poolsTab !== 'pools') {
+    nextQuery.poolsTab = query.poolsTab
   }
 
-  if (typeof query?.storagesScopeDirector === 'string' && query.storagesScopeDirector) {
-    nextQuery.storagesScopeDirector = query.storagesScopeDirector
+  if (typeof query?.poolsScopeDirector === 'string' && query.poolsScopeDirector) {
+    nextQuery.poolsScopeDirector = query.poolsScopeDirector
   }
 
   if (typeof query?.[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'

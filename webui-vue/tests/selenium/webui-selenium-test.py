@@ -147,7 +147,7 @@ class SeleniumVueTest(unittest.TestCase):
         self.login()
         self.wait_for(By.XPATH, '//*[normalize-space(.)="Running Jobs"]')
         self.assertIn(
-            "Most recent job status per job name",
+            "Recent Jobs",
             self.driver.page_source,
         )
 
@@ -186,12 +186,12 @@ class SeleniumVueTest(unittest.TestCase):
         )
 
     def test_restore_page_loads(self):
-        """Restore page is reachable and shows source client selector."""
+        """Restore page is reachable and shows source tuple selector."""
         self.login()
         self.by_testid("nav-restore").click()
         self.wait_for_url("#/restore")
         self.wait_for(
-            By.CSS_SELECTOR, '[data-testid="restore-source-client"]', timeout=20
+            By.CSS_SELECTOR, '[data-testid="restore-source-tuple"]', timeout=20
         )
 
 

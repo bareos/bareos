@@ -36,6 +36,24 @@ pidfromfile()
   echo "${pid}"
 }
 
+# Only keep the pids started with "-c ${BAREOS_CONFIG_DIR}", so that
+# concurrently running tests do not stop each other's daemons.
+# Without BAREOS_CONFIG_DIR all given pids are kept.
+filter_pids_by_config_dir()
+{
+  local p args
+  for p in "$@"; do
+    if [ -z "${BAREOS_CONFIG_DIR:-}" ]; then
+      echo "$p"
+      continue
+    fi
+    args=$(${PS:-ps} -o args= -p "$p" 2>/dev/null)
+    case "${args}" in
+      *" -c ${BAREOS_CONFIG_DIR}"*) echo "$p" ;;
+    esac
+  done | tr '\n' ' ' | sed 's/ *$//'
+}
+
 # A function to find the pid of a program.
 pidofproc()
 {
@@ -51,7 +69,7 @@ pidofproc()
 
   # First try "pidof"
   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
-    pid=$(${PIDOF} $1)
+    pid=$(filter_pids_by_config_dir $(${PIDOF} $1))
     if [ "$pid" != "" ]; then
       echo $pid
       return 0
@@ -60,7 +78,7 @@ pidofproc()
 
   # Next try "pgrep"
   if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
-    pid=$(${PGREP} -o -f $base)
+    pid=$(filter_pids_by_config_dir $(${PGREP} -f $base))
     if [ "$pid" != "" ]; then
       echo $pid | cut -d' ' -f 1
       return 0
@@ -68,7 +86,8 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
-  pid=$(ps | grep ${base} | awk '{print $1}' | head -n1)
+  pid=$(filter_pids_by_config_dir $(ps | grep ${base} | awk '{print $1}'))
+  pid=${pid%% *}
   echo $pid
   return 0
 }

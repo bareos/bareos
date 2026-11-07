@@ -71,6 +71,12 @@ The Vue WebUI is installed separately from the classic PHP WebUI via the
 :file:`bareos-webui-new` package and keeps its own Apache configuration file
 :file:`bareos-webui-new.conf`.
 
+On RPM-based systems, enable and start the proxy service:
+
+.. code-block:: shell-session
+
+   systemctl enable --now bareos-webui-proxy
+
 After installation, open the preview at:
 
 .. code-block:: text
@@ -86,6 +92,30 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+Subscription accounting
+-----------------------
+
+On **Director -> Subscriptions**, the accounting snapshot age appears beside
+the compact **Start accounting now** action. The age is shown in hours and
+minutes and turns red when the snapshot is older than
+24 hours; the timestamp is available as a tooltip. Missing or invalid snapshot
+times are displayed as unavailable. The age is supplied by the catalog, so
+different Director and database time zones do not affect it. Directors that
+do not supply the age display it as unavailable rather than estimating it
+from timezone-less timestamps.
+
+The button requests ``refresh subscriptions accounting`` on the selected
+Director. It queues a background calculation rather than waiting for it
+synchronously. The page shows queued/running status and automatically reloads
+subscription totals when the worker finishes. Refresh failures are displayed
+explicitly; the previous successful snapshot remains available.
+
+The console needs permission for the ``refresh`` and ``status`` commands and
+access to the client, job and FileSet resources required by accounting.
+The button is disabled for Directors without accounting snapshot support.
+Polling stops when leaving the tab or changing Director; this does not cancel
+the server-side calculation. PDF exports contain the age but not the action.
+
 Configuring multiple directors
 ------------------------------
 
@@ -95,6 +125,7 @@ template into place and add one section per Director:
 
 .. code-block:: shell-session
 
+   mkdir -p /etc/bareos-webui-proxy
    cp /usr/lib/bareos/defaultconfigs/bareos-webui-proxy.ini \
       /etc/bareos-webui-proxy/bareos-webui-proxy.ini
 
