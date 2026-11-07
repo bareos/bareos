@@ -89,6 +89,16 @@ Current limitations amongst others are:
    It is not possible to backup templates, because taking snapshots is not
    supported on templates, this makes CBT based backups of template impossible.
 
+.. limitation:: VMware Plugin: Virtual Full jobs can not be restored.
+
+   A Virtual Full job built from VMware Plugin jobs terminates with **Backup OK**, but it can not be restored.
+   This also applies to the Always Incremental Backup Scheme, whose Consolidate jobs create Virtual Full jobs.
+   The plugin stores the parameters needed to restore each virtual disk as restore objects of the original jobs,
+   and these are not copied to the Virtual Full job, so its restore fails at the first disk with a ``KeyError``
+   in ``create_file()``. There is currently no way for a plugin to mark its jobs as unsuitable for virtual jobs,
+   so Bareos does not prevent this. Use real Full, Differential and Incremental jobs for the VMware Plugin.
+   See https://github.com/bareos/bareos/issues/2903.
+
 
 Requirements
 ^^^^^^^^^^^^
