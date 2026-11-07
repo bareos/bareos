@@ -21,8 +21,13 @@
 
 #include "gtest/gtest.h"
 #include "stored/backends/dedupable/volume.h"
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <limits>
 #include <stdexcept>
+#include <unistd.h>
+#include <vector>
 
 using namespace dedup;
 
@@ -342,4 +347,101 @@ TEST(SaveStateTest, MoveAssignment)
   EXPECT_EQ(s2.block_size, 100u);
   EXPECT_EQ(s2.part_size, 200u);
   ASSERT_EQ(s2.data_sizes.size(), 3u);
+}
+
+namespace {
+constexpr std::size_t kDeviceBlockSize = 1024 * 1024;
+constexpr std::size_t kAlignedBlockSize = 128 * 1024;
+
+block_header MakeBlockHeader(std::uint32_t block_number, std::size_t block_size)
+{
+  block_header header;
+  header.CheckSum = 0;
+  header.BlockSize = SafeCast(block_size);
+  header.BlockNumber = block_number;
+  header.ID[0] = 'B';
+  header.ID[1] = 'B';
+  header.ID[2] = '0';
+  header.ID[3] = '2';
+  header.VolSessionId = 1;
+  header.VolSessionTime = 2;
+  return header;
+}
+
+record_header MakeRecordHeader(std::size_t offset, std::size_t remaining)
+{
+  record_header record;
+  record.FileIndex = 1;
+  record.Stream = offset == 0 ? 2 : -2;
+  record.DataSize = SafeCast(remaining);
+  return record;
+}
+
+std::vector<char> MakeData(std::size_t size)
+{
+  std::vector<char> data(size);
+  for (std::size_t i = 0; i < data.size(); ++i) {
+    data[i] = static_cast<char>(i * 17 + (i >> 7));
+  }
+  return data;
+}
+
+void WriteLargeRecord(volume& vol, const std::vector<char>& data)
+{
+  std::size_t offset = 0;
+  std::uint32_t block_number = 0;
+  while (offset < data.size()) {
+    const auto remaining = data.size() - offset;
+    const auto chunk_size
+        = std::min(remaining, kDeviceBlockSize - sizeof(block_header)
+                                  - sizeof(record_header));
+    const auto block_size
+        = sizeof(block_header) + sizeof(record_header) + chunk_size;
+    auto save = vol.BeginBlock(MakeBlockHeader(block_number, block_size));
+    auto record = MakeRecordHeader(offset, remaining);
+    vol.PushRecord(record, data.data() + offset, chunk_size);
+    vol.CommitBlock(std::move(save));
+    offset += chunk_size;
+    ++block_number;
+  }
+}
+
+config ReadConfig(const std::filesystem::path& volume_path)
+{
+  const auto config_path = volume_path / "config";
+  std::ifstream file(config_path, std::ios::binary | std::ios::ate);
+  if (!file) { throw std::runtime_error("Could not open config file."); }
+
+  const auto size = file.tellg();
+  std::vector<char> data(size);
+  file.seekg(0);
+  if (!file.read(data.data(), size)) {
+    throw std::runtime_error("Could not read config file.");
+  }
+
+  return config::deserialize(data.data(), data.size());
+}
+}  // namespace
+
+TEST(VolumeTest, ReusesUnfinishedReservationForRepeatedContinuation)
+{
+  const auto volume_path
+      = std::filesystem::temp_directory_path()
+        / ("dedupable-volume-test-" + std::to_string(getpid()));
+  std::filesystem::remove_all(volume_path);
+
+  volume::create_new(0700, volume_path.c_str(), kAlignedBlockSize);
+
+  const auto data = MakeData(3 * kDeviceBlockSize);
+  {
+    volume vol(volume::ReadWrite, volume_path.c_str());
+    WriteLargeRecord(vol, data);
+  }
+
+  const auto conf = ReadConfig(volume_path);
+  ASSERT_EQ(conf.dfiles.size(), 2u);
+  EXPECT_EQ(conf.dfiles[0].relpath, "aligned.data");
+  EXPECT_EQ(conf.dfiles[0].Size, data.size());
+
+  std::filesystem::remove_all(volume_path);
 }
