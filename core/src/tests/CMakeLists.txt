@@ -275,11 +275,19 @@ if(NOT client-only)
                                        Bareos::SQL GTest::gtest_main
   )
   bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
-  bareos_add_test(
-    ndmp_address_translate_test
-    ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
-    LINK_LIBRARIES ${LINK_LIBRARIES}
-  )
+  if(NOT HAVE_WIN32 AND ndmp)
+    bareos_add_test(
+      ndmp_address_translate_test
+      ADDITIONAL_SOURCES ../dird/ndmp_slot2elemaddr.cc
+      LINK_LIBRARIES ${LINK_LIBRARIES}
+    )
+    bareos_add_test(
+      ndmp_xmt_test
+      LINK_LIBRARIES
+        ${LINK_LIBRARIES} bareosndmp INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ndmp ${CMAKE_BINARY_DIR}/core/src/ndmp
+    )
+  endif()
 
   bareos_add_test(pruning LINK_LIBRARIES testing_common GTest::gtest_main)
   bareos_add_test(
