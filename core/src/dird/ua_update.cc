@@ -86,9 +86,11 @@ bool UpdateCmd(UaContext* ua, const char*)
 
   switch (FindArgKeyword(ua, kw)) {
     case 0:
-    case 1:
-      UpdateVolume(ua);
-      return true;
+    case 1: {
+      bool comment = FindArg(ua, NT_("comment")) >= 0;
+      bool updated = UpdateVolume(ua);
+      return comment ? updated : true;
+    }
     case 2:
       UpdatePool(ua);
       return true;
@@ -96,9 +98,11 @@ bool UpdateCmd(UaContext* ua, const char*)
     case 4:
       UpdateSlots(ua);
       return true;
-    case 5:
-      UpdateJob(ua);
-      return true;
+    case 5: {
+      bool comment = FindArg(ua, NT_("comment")) >= 0;
+      bool updated = UpdateJob(ua);
+      return comment ? updated : true;
+    }
     case 6:
       UpdateStats(ua);
       return true;
@@ -668,25 +672,37 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
-static void UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
+static bool UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
   char ed1[50];
+  PoolDbRecord pr;
 
   DbLocker _{ua->db};
+  pr.PoolId = mr->PoolId;
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+    ua->ErrorMsg(T_("Not authorized to update Volume comment.\n"));
+    return false;
+  }
   auto esc = ua->db->EscapeString(ua->jcr, val);
   if (!esc) {
     ua->ErrorMsg(T_("Could not escape comment.\n"));
-    return;
+    return false;
   }
   Mmsg(query, "UPDATE Media SET Comment='%s' WHERE MediaId=%s", esc->c_str(),
        edit_int64(mr->MediaId, ed1));
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg(T_("Error updating media record Comment: ERR=%s"),
                  ua->db->strerror());
+    return false;
   } else {
     ua->InfoMsg(T_("New Comment is: %s\n"), val);
   }
+  return true;
 }
 
 /**
@@ -794,7 +810,7 @@ static bool UpdateVolume(UaContext* ua)
           UpdateVolEncryption(ua, ua->argv[j], &mr);
           break;
         case 17:
-          UpdateVolComment(ua, ua->argv[j], &mr);
+          if (!UpdateVolComment(ua, ua->argv[j], &mr)) { return false; }
           break;
       }
       done = true;
@@ -1028,7 +1044,7 @@ static bool UpdateVolume(UaContext* ua)
 
       case 18:
         if (!GetCmd(ua, T_("Enter new Comment: "))) { return false; }
-        UpdateVolComment(ua, ua->cmd, &mr);
+        if (!UpdateVolComment(ua, ua->cmd, &mr)) { return false; }
         break;
 
       default: /* Done or error */
@@ -1156,6 +1172,22 @@ static bool UpdateJob(UaContext* ua)
     return false;
   }
   if (comment) {
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      ua->ErrorMsg(T_("Not authorized to update Job comment.\n"));
+      return false;
+    }
+    if (jr.ClientId) {
+      ClientDbRecord job_client;
+      job_client.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &job_client)) {
+        ua->ErrorMsg("%s", ua->db->strerror());
+        return false;
+      }
+      if (!ua->AclAccessOk(Client_ACL, job_client.Name, true)) {
+        ua->ErrorMsg(T_("Not authorized to update Job comment.\n"));
+        return false;
+      }
+    }
     auto esc = ua->db->EscapeString(ua->jcr, comment);
     if (!esc) {
       ua->ErrorMsg(T_("Could not escape comment.\n"));

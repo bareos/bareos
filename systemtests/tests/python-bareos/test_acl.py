@@ -62,7 +62,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobIdBareosFdFull = self.get_backup_jobid(
@@ -81,14 +81,50 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=console_bareos_fd_username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
         console_bareos_fd_json = bareos.bsock.DirectorConsoleJson(
             address=self.director_address,
             port=self.director_port,
             name=console_bareos_fd_username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
+        )
+
+        for list_command in ("list", "llist"):
+            for jobid, visible in ((jobIdBareosFdFull, True), (jobIdTestFdFull, False)):
+                root_rows = director_root.call(
+                    f"{list_command} jobmedia jobid={jobid}"
+                )["jobmedia"]
+                self.assertTrue(root_rows)
+                for volume in {row["volumename"] for row in root_rows}:
+                    rows = console_bareos_fd_json.call(
+                        f'{list_command} jobmedia volume="{volume}"'
+                    )["jobmedia"]
+                    self.assertEqual(
+                        int(jobid) in {int(r["jobid"]) for r in rows}, visible
+                    )
+                    for row in rows:
+                        self.assertNotIn("jobname", row)
+                        self.assertNotIn("clientname", row)
+
+        director_root.call(f'update jobid={jobIdTestFdFull} comment="original"')
+        console_bareos_fd_json.call(
+            f'update jobid={jobIdBareosFdFull} comment="allowed"'
+        )
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_bareos_fd_json.call(
+                f'update jobid={jobIdTestFdFull} comment="denied"'
+            )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobIdBareosFdFull}")["jobs"][0][
+                "comment"
+            ],
+            "allowed",
+        )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobIdTestFdFull}")["jobs"][0]["comment"],
+            "original",
         )
 
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
@@ -209,7 +245,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobIdFull = self.get_backup_jobid(director_root, "backup-bareos-fd", "Full")
@@ -257,7 +293,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name="poolfull",
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # 'list media all' returns an error,
@@ -274,6 +310,22 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         for volume in result["volumes"]:
             self.assertEqual(volume["pool"], "Full")
+
+        volumes = director_root.call("llist media all")["volumes"]
+        allowed_volume = next(v["volumename"] for v in volumes if v["pool"] == "Full")
+        denied_volume = next(
+            v["volumename"] for v in volumes if v["pool"] == "Incremental"
+        )
+        director_root.call(f'update volume="{denied_volume}" comment="original"')
+        console_poolfull.call(f'update volume="{allowed_volume}" comment="allowed"')
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_poolfull.call(f'update volume="{denied_volume}" comment="denied"')
+        volumes = {
+            v["volumename"]: v["comment"]
+            for v in director_root.call("llist media all")["volumes"]
+        }
+        self.assertEqual(volumes[allowed_volume], "allowed")
+        self.assertEqual(volumes[denied_volume], "original")
 
         #
         # login as console 'poolnotfull'
@@ -324,7 +376,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobid1 = self.get_backup_jobid(
@@ -357,7 +409,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=console_username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         #
@@ -365,6 +417,35 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
+
+        for list_command in ("list", "llist"):
+            for jobid, visible in ((jobid1, True), (jobid2, False)):
+                root_rows = director_root.call(
+                    f"{list_command} jobmedia jobid={jobid}"
+                )["jobmedia"]
+                self.assertTrue(root_rows)
+                for volume in {row["volumename"] for row in root_rows}:
+                    rows = director.call(f'{list_command} jobmedia volume="{volume}"')[
+                        "jobmedia"
+                    ]
+                    ids = {int(row["jobid"]) for row in rows}
+                    self.assertEqual(int(jobid) in ids, visible)
+                    for row in rows:
+                        self.assertNotIn("jobname", row)
+                        self.assertNotIn("clientname", row)
+
+        director_root.call(f'update jobid={jobid2} comment="original"')
+        director.call(f'update jobid={jobid1} comment="allowed"')
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call(f'update jobid={jobid2} comment="denied"')
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobid1}")["jobs"][0]["comment"],
+            "allowed",
+        )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobid2}")["jobs"][0]["comment"],
+            "original",
+        )
 
     def _test_status_subscription(self, username, password):
         logger = logging.getLogger()
@@ -376,7 +457,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         result = director_root.call("status subscription all")
@@ -406,7 +487,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # verify that the command ".consoles" is not allowed.
@@ -459,7 +540,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # retrieve or create a jobid of a valid backup job

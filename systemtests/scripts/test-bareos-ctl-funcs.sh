@@ -29,7 +29,10 @@ name="${prefix}.x"
 other_pid=""
 regex_pid=""
 exact_pid=""
-trap 'kill ${other_pid} ${regex_pid} ${exact_pid} 2>/dev/null || true' EXIT
+config_other_pid=""
+config_exact_pid=""
+config_trailing_pid=""
+trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
 
 bash -c 'exec -a "$1" sleep 30' _ "${name}-other" &
 other_pid=$!
@@ -66,3 +69,35 @@ if [ -n "$(pidofproc "$name" 0)" ]; then
   echo "ps found a different process whose name starts with $name" >&2
   exit 1
 fi
+
+BAREOS_CONFIG_DIR="/tmp/${prefix}_config"
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2"' \
+  _ "/tmp/$name" "${BAREOS_CONFIG_DIR}-other" &
+config_other_pid=$!
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2"' \
+  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" &
+config_exact_pid=$!
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2" --extra' \
+  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" &
+config_trailing_pid=$!
+sleep 0.1
+
+if [ "$(filter_pids_by_config_dir "$config_trailing_pid")" != "$config_trailing_pid" ]; then
+  echo "Did not match a config directory followed by another argument" >&2
+  exit 1
+fi
+
+PGREP=$(command -v pgrep)
+if [ "$(pidofproc "$name" 0)" != "$config_exact_pid" ]; then
+  echo "pgrep selected a process with a different config directory" >&2
+  exit 1
+fi
+
+PGREP=""
+if [ "$(pidofproc "$name" 0)" != "$config_exact_pid" ]; then
+  echo "ps selected a process with a different config directory" >&2
+  exit 1
+fi
+
+killproc "$name" 0 -TERM >/dev/null
+kill -0 "$config_other_pid"

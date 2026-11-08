@@ -744,15 +744,11 @@ bool show_cmd(UaContext* ua, const char*)
 
 /* Do long or full listing */
 bool LlistCmd(UaContext* ua, const char* cmd)
-{
-  return DoListCmd(ua, cmd, VERT_LIST);
-}
+{ return DoListCmd(ua, cmd, VERT_LIST); }
 
 /* Do short or summary listing */
 bool list_cmd(UaContext* ua, const char* cmd)
-{
-  return DoListCmd(ua, cmd, HORZ_LIST);
-}
+{ return DoListCmd(ua, cmd, HORZ_LIST); }
 
 // @return >0: jobid
 // @return 0: neither "jobid" nor "ujobid" parameter is provided.
@@ -888,19 +884,13 @@ static inline void SetAclFilter(UaContext* ua, int column, int acltype)
 }
 
 static inline void SetResFilter(UaContext* ua, int column, int restype)
-{
-  ua->send->AddResFilterTuple(column, restype);
-}
+{ ua->send->AddResFilterTuple(column, restype); }
 
 static inline void SetEnabledFilter(UaContext* ua, int column, int restype)
-{
-  ua->send->AddEnabledFilterTuple(column, restype);
-}
+{ ua->send->AddEnabledFilterTuple(column, restype); }
 
 static inline void SetDisabledFilter(UaContext* ua, int column, int restype)
-{
-  ua->send->AddDisabledFilterTuple(column, restype);
-}
+{ ua->send->AddDisabledFilterTuple(column, restype); }
 
 static inline void SetHiddenColumnAclFilter(UaContext* ua,
                                             int column,
@@ -913,9 +903,7 @@ static inline void SetHiddenColumnAclFilter(UaContext* ua,
 }
 
 static inline void SetHiddenColumn(UaContext* ua, int column)
-{
-  ua->send->AddHiddenColumn(column);
-}
+{ ua->send->AddHiddenColumn(column); }
 
 static void SetQueryRange(std::string& query_range,
                           UaContext* ua,
@@ -1352,6 +1340,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
       const char* volume_name = GetArgValue(ua, NT_("volume"));
+      /* The trailing jobname/clientname columns only carry the ACL checks
+       * and are hidden from the output. */
+      const int acl_col = (llist == VERT_LIST) ? 11 : 10;
+      SetHiddenColumnAclFilter(ua, acl_col, Job_ACL);
+      SetHiddenColumnAclFilter(ua, acl_col + 1, Client_ACL);
       ua->db->ListJobmediaRecords(ua->jcr, jobid, volume_name, ua->send.get(),
                                   llist);
       return true;
