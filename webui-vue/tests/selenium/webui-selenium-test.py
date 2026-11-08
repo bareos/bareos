@@ -42,7 +42,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -186,12 +185,14 @@ class SeleniumVueTest(unittest.TestCase):
         )
 
     def test_restore_page_loads(self):
-        """Restore page is reachable and shows source tuple selector."""
+        """Restore page is reachable and shows source client selector."""
         self.login()
         self.by_testid("nav-restore").click()
         self.wait_for_url("#/restore")
         self.wait_for(
-            By.CSS_SELECTOR, '[data-testid="restore-source-tuple"]', timeout=20
+            By.XPATH,
+            '//*[@data-testid="restore-source-client"]/ancestor::label[contains(@class, "q-field")]',
+            timeout=20,
         )
 
 

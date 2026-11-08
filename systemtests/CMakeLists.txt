@@ -93,6 +93,14 @@ include(BareosSystemtestFunctions)
 # ps is required for systemtests
 find_program(PS ps REQUIRED)
 
+if(UNIX AND PGREP)
+  add_test(
+    NAME system:ctl-pid-lookup
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+  )
+endif()
+
 set(USER $ENV{USER})
 
 # set the data encryption and signature keys
@@ -821,6 +829,7 @@ else()
                TIMEOUT 60 COST 1.0
   )
 
+  math(EXPR BASEPORT "${BASEPORT} + 10")
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_USERNAME "")
   set(BAREOS_WEBUI_PASSWORD "")

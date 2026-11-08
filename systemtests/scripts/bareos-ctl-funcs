@@ -47,11 +47,11 @@ pidofproc()
   fi
 
   # Get base program name
-  base=$(basename $1)
+  base=$(basename "$1")
 
   # First try "pidof"
   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
-    pid=$(${PIDOF} $1)
+    pid=$("${PIDOF}" "$1")
     if [ "$pid" != "" ]; then
       echo $pid
       return 0
@@ -60,7 +60,8 @@ pidofproc()
 
   # Next try "pgrep"
   if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
-    pid=$(${PGREP} -o -f $base)
+    pattern=$(printf '%s\n' "$base" | sed 's/[][\\.^$*+?{}|()]/\\&/g')
+    pid=$("${PGREP}" -o -f "^([^[:space:]]*/)?${pattern}([[:space:]]|$)")
     if [ "$pid" != "" ]; then
       echo $pid | cut -d' ' -f 1
       return 0
@@ -68,7 +69,15 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
-  pid=$(ps | grep ${base} | awk '{print $1}' | head -n1)
+  pid=$(ps -eo pid=,args= | awk -v name="$base" '
+    {
+      command = $2
+      sub(/^.*\//, "", command)
+      if (command == name) {
+        print $1
+        exit
+      }
+    }')
   echo $pid
   return 0
 }

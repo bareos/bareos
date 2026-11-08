@@ -653,15 +653,15 @@ class SeleniumTest(unittest.TestCase):
         dropdown.select_by_visible_text("English")
 
         self.wait_and_click(By.ID, "submit")
-        try:
-            # if the login is wrong, then we will get an alert div
-            driver.find_element(By.XPATH, '//div[@role="alert"]')
-        except:
-            # if no alert was found, then we just wait for the spinner ...
-            self.wait_for_spinner_absence()
-        else:
-            # ... otherwise (i.e. if an alert was found) the login is wronng
+        login_result = self.wait.until(
+            EC.any_of(
+                EC.url_contains("/dashboard"),
+                EC.visibility_of_element_located((By.XPATH, '//div[@role="alert"]')),
+            )
+        )
+        if login_result is not True:
             raise WrongCredentialsException(self.username, self.password)
+        self.wait_for_spinner_absence()
 
         if self.is_shared_session_test():
             SeleniumTest.shared_session_logged_in = True
@@ -822,7 +822,7 @@ class SeleniumTest(unittest.TestCase):
         confirmation = form.get_attribute("data-confirmation")
         button.click()
         if confirmation:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             self.assertEqual(confirmation, alert.text)
             alert.accept()
 
@@ -859,7 +859,7 @@ class SeleniumTest(unittest.TestCase):
     def close_alert_and_get_its_text(self, accept=True):
         logger = logging.getLogger()
         try:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             alert_text = alert.text
         except NoAlertPresentException:
             return None
