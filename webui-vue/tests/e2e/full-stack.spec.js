@@ -140,9 +140,10 @@ async function waitForQSelectReady(page, testId) {
   await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
 }
 
-async function selectFirstQOption(
+async function selectQOptionByFilterText(
   page,
   testId,
+  filterText,
   {
     optionTimeoutMs = 5000,
     selected,
@@ -155,11 +156,10 @@ async function selectFirstQOption(
   const combobox = field.getByRole('combobox')
   await expect(field).toBeVisible({ timeout: 20000 })
 
-  const deadline = Date.now() + optionTimeoutMs
-  let lastError
-  while (Date.now() < deadline) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await combobox.click()
+      await combobox.fill(filterText)
       const listboxId = await combobox.getAttribute('aria-controls')
       if (!listboxId) {
         throw new Error(`Could not find the option list for ${testId}`)
@@ -169,22 +169,23 @@ async function selectFirstQOption(
         options = options.filter({ hasText })
       }
       const option = options.first()
-      await expect(option).toBeVisible({
-        timeout: Math.min(1000, Math.max(1, deadline - Date.now())),
-      })
-      await option.click()
-      if (selected) {
-        await selected()
-      }
-      return
+      await expect(option).toBeVisible({ timeout: optionTimeoutMs })
+      await expect(option).toContainText(filterText, { ignoreCase: true })
+      // a short timeout lets a detached option fail fast so the retry can run
+      await option.click({ timeout: Math.max(optionTimeoutMs, 5000) })
+      break
     } catch (error) {
-      lastError = error
+      if (page.isClosed() || attempt === 2) {
+        throw error
+      }
       await page.keyboard.press('Escape')
       await page.waitForTimeout(300)
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
+  if (selected) {
+    await selected()
+  }
 }
 
 // The test schedules only fire on Sundays at 03:00/03:10 and Mon-Sat at
@@ -458,18 +459,44 @@ test('loads the restore workflow selections', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client', {
-    hasText: /(^| \/ )bareos-fd$/,
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-vmware', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
   })
-  await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
-  await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job', { optionTimeoutMs: 8000 })
+  await expect(page.locator('[data-testid="restore-backup-job"]')).toHaveCount(0)
+  await expect(page.getByTestId('restore-timeline-point').first()).toBeVisible()
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('restore-step-2-continue')).toBeDisabled()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
   await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
   await expect(page.locator('[data-testid="restore-job"]')).toBeVisible()
-  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
-  await expect(page.locator('[data-testid="restore-submit"]')).toBeDisabled()
+
+  // The vmware-flavored job is a genuinely resolved plugin hint (not the
+  // cosmetic bpipe-only fixture), so the plugin info banner and options
+  // editor should both appear on the restore target step.
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('VMware')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('vmware')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('vcserver')
+  await page.getByRole('option', { name: /vcserver/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('vcenter.example.com')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('vmware:vcserver=vcenter.example.com')
+
+  await page.getByTestId('restore-step-3-continue').click()
+  await expect(page.getByText('Review restore job', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-testid="restore-submit"]')).toBeEnabled()
 })
 
 test('restores a real file from a backup', async ({ page }) => {
@@ -494,19 +521,16 @@ test('restores a real file from a backup', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-restore', /#\/restore/)
 
-  await waitForQSelectReady(page, 'restore-source-client')
-  await selectFirstQOption(page, 'restore-source-client', {
-    hasText: /(^| \/ )bareos-fd$/,
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'SelfTest', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
   })
-  await waitForQSelectReady(page, 'restore-backup-job')
-  await selectFirstQOption(page, 'restore-backup-job', {
-    hasText: /backup-bareos-fd(?!-)/,
-    optionTimeoutMs: 8000,
-  })
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByTestId('restore-browser')).toBeVisible()
 
   const browser = page.getByTestId('restore-browser')
-  await expect(browser).toBeVisible({ timeout: 30000 })
   const rootDirectory = browser.getByText('/', { exact: true })
   if (await rootDirectory.count()) {
     await rootDirectory.click()
@@ -522,10 +546,10 @@ test('restores a real file from a backup', async ({ page }) => {
     .locator('xpath=ancestor::tr')
   await expect(fileRow).toBeVisible()
   await fileRow.locator('.q-checkbox').click()
-
+  await page.getByTestId('restore-step-2-continue').click()
   await page.getByRole('textbox', { name: 'Restore to (Where)' }).fill(destination)
+  await page.getByTestId('restore-step-3-continue').click()
   await page.getByTestId('restore-submit').click()
-  await page.getByRole('dialog').getByRole('button', { name: 'OK' }).click()
   await expect(page).toHaveURL(/#\/jobs/)
 
   await expect.poll(async () => {
@@ -535,6 +559,44 @@ test('restores a real file from a backup', async ({ page }) => {
       return null
     }
   }, { timeout: 120000 }).toBe(expectedContents)
+})
+
+test('adapts the plugin hint panel and options editor for a second plugin', async ({ page }) => {
+  test.setTimeout(90000)
+
+  await login(page)
+  await openNav(page, 'nav-restore', /#\/restore/)
+
+  await page.getByTestId('restore-source-mode-browse').click()
+  await waitForQSelectReady(page, 'restore-source-tuple')
+  await selectQOptionByFilterText(page, 'restore-source-tuple', 'PluginOptionsTest-postgresql', {
+    selected: () => page.getByTestId('restore-timeline-point').first().waitFor(),
+  })
+  await page.getByTestId('restore-timeline-point').last().click()
+  await page.getByTestId('restore-step-1-continue').click()
+  await expect(page.getByText('Browse Files', { exact: true })).toBeVisible()
+  await page.locator('[data-testid="restore-browser"] tbody tr .q-checkbox').first().click()
+  await page.getByTestId('restore-step-2-continue').click()
+  await expect(page.locator('[data-testid="restore-target-client"]')).toBeVisible()
+
+  const pluginInfo = page.locator('[data-testid="restore-plugin-info"]')
+  await expect(pluginInfo).toBeVisible()
+  await expect(pluginInfo).toContainText('PostgreSQL')
+
+  const pluginOptionsEditor = page.locator('[data-testid="plugin-options-editor"]')
+  await expect(pluginOptionsEditor).toBeVisible()
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-plugin-name').fill('postgresql')
+  await pluginOptionsEditor.getByTestId('plugin-options-editor-add-row').click()
+  const row = pluginOptionsEditor.getByTestId('plugin-options-editor-row').last()
+  await row.getByTestId('plugin-options-editor-row-key').fill('wal_archive_dir')
+  await page.getByRole('option', { name: /wal_archive_dir/i }).first().click()
+  await row.getByTestId('plugin-options-editor-row-value').fill('/var/lib/pgsql/wal')
+  await expect(
+    pluginOptionsEditor.locator('.plugin-options-editor__preview code')
+  ).toContainText('postgresql:wal_archive_dir=/var/lib/pgsql/wal')
+
+  // Stop here -- this test intentionally never continues to file browsing
+  // or clicks "Start Restore".
 })
 
 test('navigates through client, pool, and volume detail pages', async ({

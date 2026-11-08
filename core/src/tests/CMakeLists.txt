@@ -417,6 +417,8 @@ if(ENABLE_BCONSOLE)
                                               Bareos::Findlib GTest::gtest_main
   )
   bareos_add_test(test_pool_list_columns LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_plugin_hints LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_ua_run_helpers LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_volume_usage LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_volstatus_change LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()

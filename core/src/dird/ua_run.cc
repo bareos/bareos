@@ -25,16 +25,23 @@
  * BAREOS Director -- Run Command
  */
 #include "dird/dird_globals.h"
+#include "include/auth_protocol_types.h"
 #include "include/bareos.h"
+#include "include/job_types.h"
 #include "dird.h"
+#include "dird/backup.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/fd_cmds.h"
 #include "dird/job.h"
 #include "dird/migration.h"
+#include "dird/msgchan.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_run.h"
+#include "dird/ua_run_helpers.h"
+#include "lib/bnet.h"
 #include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
@@ -43,7 +50,211 @@
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <algorithm>
+#include <string_view>
+#include <vector>
+
 namespace directordaemon {
+
+enum class DestinationBrowseAction
+{
+  kUseCurrentDirectory,
+  kParentDirectory,
+  kOpenDirectory,
+  kFile,
+};
+
+struct DestinationBrowseEntry {
+  DestinationBrowseAction action;
+  std::string label;
+  std::string path;
+  bool directory = false;
+};
+
+static void SortBrowseEntries(std::vector<DestinationBrowseEntry>* entries)
+{
+  std::stable_sort(
+      entries->begin(), entries->end(),
+      [](const DestinationBrowseEntry& lhs, const DestinationBrowseEntry& rhs) {
+        if (lhs.directory != rhs.directory) {
+          return lhs.directory && !rhs.directory;
+        }
+        return lhs.label < rhs.label;
+      });
+}
+
+static bool SendBrowseJobInfoToFileDaemon(JobControlRecord* jcr)
+{
+  BareosSocket* fd = jcr->file_bsock;
+  if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = strdup("dummy"); }
+
+  char ed1[30];
+  fd->fsend("JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%u\n",
+            edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+            jcr->VolSessionTime, jcr->sd_auth_key,
+            static_cast<unsigned int>(TlsPolicy::kBnetTlsNone));
+
+  if (!jcr->dir_impl->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
+    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+  }
+
+  Dmsg1(100, ">filed: %s", fd->msg);
+  if (BgetDirmsg(fd) > 0) {
+    Dmsg1(110, "<filed: %s", fd->msg);
+    if (!bstrncmp(fd->msg, "2000 OK Job", strlen("2000 OK Job"))) {
+      Jmsg(jcr, M_FATAL, 0, T_("File daemon \"%s\" rejected Job command: %s\n"),
+           jcr->dir_impl->res.client->resource_name_, fd->msg);
+      jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
+    }
+  } else {
+    Jmsg(jcr, M_FATAL, 0, T_("FD gave bad response to Job command: %s\n"),
+         BnetStrerror(fd));
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
+  }
+
+  return true;
+}
+
+static bool ListDestinationClientDirectory(
+    UaContext* ua,
+    JobControlRecord* jcr,
+    ClientResource* client,
+    const std::string& path,
+    std::vector<DestinationBrowseEntry>* entries)
+{
+  if (!client) {
+    ua->ErrorMsg(T_("No restore client selected.\n"));
+    return false;
+  }
+  if (!ua->AclAccessOk(Where_ACL, path.c_str(), true)) {
+    ua->ErrorMsg(T_("No authorization for \"where\" specification.\n"));
+    return false;
+  }
+  if (client->Protocol != APT_NATIVE) {
+    ua->ErrorMsg(T_("Browsing is only supported on native clients.\n"));
+    return false;
+  }
+  if (jcr->file_bsock) {
+    ua->ErrorMsg(T_("Client connection already active.\n"));
+    return false;
+  }
+
+  FilesetResource browse_fileset;
+  browse_fileset.new_include = true;
+  IncludeExcludeItem include_item;
+  FileOptions file_options;
+  bstrncpy(file_options.opts, "h", sizeof(file_options.opts));
+  include_item.file_options_list.push_back(&file_options);
+  include_item.name_list.append(strdup(path.c_str()));
+  browse_fileset.include_items.push_back(&include_item);
+
+  FilesetResource* saved_fileset = jcr->dir_impl->res.fileset;
+  ClientResource* saved_client = jcr->dir_impl->res.client;
+  int32_t saved_job_type = jcr->getJobType();
+  int32_t saved_job_level = jcr->getJobLevel();
+  bool saved_accurate = jcr->accurate;
+
+  auto cleanup = [&]() {
+    if (jcr->file_bsock) {
+      jcr->file_bsock->signal(BNET_TERMINATE);
+      jcr->file_bsock->close();
+      delete jcr->file_bsock;
+      jcr->file_bsock = NULL;
+    }
+    jcr->dir_impl->res.fileset = saved_fileset;
+    jcr->dir_impl->res.client = saved_client;
+    jcr->setJobType(saved_job_type);
+    jcr->setJobLevel(saved_job_level);
+    jcr->accurate = saved_accurate;
+  };
+
+  jcr->dir_impl->res.client = client;
+  jcr->dir_impl->res.fileset = &browse_fileset;
+  jcr->setJobType(JT_BACKUP);
+  jcr->setJobLevel(L_FULL);
+  jcr->accurate = false;
+
+  if (!ConnectToFileDaemon(jcr, client, 1, 15, false, nullptr)
+      || !SendBrowseJobInfoToFileDaemon(jcr) || !SendLevelCommand(jcr)
+      || !SendIncludeExcludeLists(jcr) || !SendAccurateCurrentFiles(jcr)) {
+    cleanup();
+    ua->ErrorMsg(T_("Unable to browse Client \"%s\".\n"),
+                 client->resource_name_);
+    return false;
+  }
+
+  jcr->file_bsock->fsend("estimate listing=1\n");
+  while (jcr->file_bsock->recv() >= 0) {
+    std::string_view output(jcr->file_bsock->msg,
+                            jcr->file_bsock->message_length);
+    size_t start = 0;
+    while (start < output.size()) {
+      size_t end = output.find('\n', start);
+      if (end == std::string_view::npos) { end = output.size(); }
+      std::string entry_path;
+      bool directory = false;
+      if (ParseEstimateListingLine(output.substr(start, end - start),
+                                   &entry_path, &directory)
+          && IsImmediateBrowseChild(path, entry_path)) {
+        std::string label = BrowsePathBasename(entry_path);
+        entries->push_back({directory ? DestinationBrowseAction::kOpenDirectory
+                                      : DestinationBrowseAction::kFile,
+                            std::move(label), std::move(entry_path),
+                            directory});
+      }
+      start = end + 1;
+    }
+  }
+
+  cleanup();
+  SortBrowseEntries(entries);
+  return true;
+}
+
+bool DotClientbrowseCmd(UaContext* ua, const char*)
+{
+  int client_arg = FindArgWithValue(ua, NT_("client"));
+  int path_arg = FindArgWithValue(ua, NT_("path"));
+  if (client_arg < 0 || path_arg < 0) {
+    ua->ErrorMsg(T_("Required arguments: client=<client-name> path=<path>\n"));
+    return false;
+  }
+
+  ClientResource* client = ua->GetClientResWithName(ua->argv[client_arg]);
+  if (!client) {
+    ua->ErrorMsg(T_("Client \"%s\" not found.\n"), ua->argv[client_arg]);
+    return false;
+  }
+  if (!ua->AclAccessOk(Client_ACL, client->resource_name_, true)) {
+    ua->ErrorMsg(T_("No authorization. Client \"%s\".\n"),
+                 client->resource_name_);
+    return false;
+  }
+
+  std::string path = NormalizeBrowsePath(ua->argv[path_arg]);
+  std::vector<DestinationBrowseEntry> entries;
+  if (!ListDestinationClientDirectory(ua, ua->jcr, client, path, &entries)) {
+    return false;
+  }
+
+  ua->send->ObjectStart(".clientbrowse");
+  ua->send->ObjectKeyValue("client", client->resource_name_, "%s\n");
+  ua->send->ObjectKeyValue("path", path.c_str(), "%s\n");
+  ua->send->ArrayStart("entries");
+  for (const auto& entry : entries) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", entry.label.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("path", entry.path.c_str(), "%s\n");
+    ua->send->ObjectKeyValue("type", entry.directory ? "directory" : "file",
+                             "%s\n");
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("entries");
+  ua->send->ObjectEnd(".clientbrowse");
+  return true;
+}
 
 /* Forward referenced subroutines */
 static void SelectJobLevel(UaContext* ua, JobControlRecord* jcr);

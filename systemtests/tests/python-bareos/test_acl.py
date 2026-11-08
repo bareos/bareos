@@ -83,6 +83,23 @@ class PythonBareosAclTest(bareos_unittest.Json):
             password=bareos_password,
             **self.director_extra_options
         )
+        console_bareos_fd_json = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=console_bareos_fd_username,
+            password=bareos_password,
+            **self.director_extra_options
+        )
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_bareos_fd_json.call(".clientbrowse client=test2-fd path=/")
+
+        browse = console_bareos_fd_json.call(".clientbrowse client=bareos-fd path=/")[
+            ".clientbrowse"
+        ]
+        self.assertEqual(browse["client"], "bareos-fd")
+        self.assertEqual(browse["path"], "/")
+        self.assertIsInstance(browse["entries"], list)
 
         result = console_bareos_fd.call("restore")
         logger.debug(str(result))
