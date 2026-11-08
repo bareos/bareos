@@ -91,6 +91,7 @@ extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
+extern bool DotFilesetClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotPluginhintsCmd(UaContext* ua, const char* cmd);
 extern bool DotClientbrowseCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
@@ -121,6 +122,7 @@ extern bool DotBvfsClearCacheCmd(UaContext* ua, const char* cmd);
 extern bool DotApiCmd(UaContext* ua, const char* cmd);
 extern bool DotSqlCmd(UaContext* ua, const char* cmd);
 extern bool DotAuthorizedCmd(UaContext* ua, const char* cmd);
+extern bool DotTerminalsizeCmd(UaContext* ua, const char* cmd);
 
 /* ua_status.c */
 extern bool DotStatusCmd(UaContext* ua, const char* cmd);
@@ -228,6 +230,9 @@ static struct ua_cmdstruct commands[] = {
      NULL, true, false},
     {NT_(".api"), DotApiCmd, T_("Switch between different api modes"),
      NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false},
+    {NT_(".terminalsize"), DotTerminalsizeCmd,
+     T_("Report the client's terminal size (internal use)"),
+     NT_("<lines> <columns> [color]"), false, false},
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
          "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "
@@ -250,6 +255,8 @@ static struct ua_cmdstruct commands[] = {
      false, false},
     {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
+    {NT_(".filesetclients"), DotFilesetClientsCmd,
+     T_("List fileset@client combinations"), NULL, false, false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
      NT_("[ all ] [ item=cmd ] [ full ]"), false, false},
     {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
@@ -403,7 +410,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_("purge"), PurgeCmd, T_("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
          "volume=<volume>]] | "
-         "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
+         "[jobs [client=<client> | volume=<volume> | pool=<pool>] "
          "[jobstatus=<status>]] | "
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] "
          "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] | "
@@ -416,7 +423,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("where=</path> client=<client-name> storage=<storage-name> "
          "bootstrap=<file> "
          "restorejob=<job-name> comment=<text> jobid=<jobid> "
-         "fileset=<fileset-name> "
+         "fileset=<fileset-name> filesetclient=<fileset-name>@<client-name> "
          "replace=<always|never|ifolder|ifnewer> "
          "pluginoptions=<plugin-options-string> "
          "regexwhere=<regex> fileregex=<regex> "
@@ -424,6 +431,7 @@ static struct ua_cmdstruct commands[] = {
          "pool=<pool-name> file=<filename> directory=<directory> "
          "before=<date> "
          "strip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix> "
+         "restorepointmode=<chain|job> "
          "select=<date> select before current copies done all"),
      false, true},
     {NT_("relabel"), RelabelCmd, T_("Relabel a tape"),
@@ -443,6 +451,7 @@ static struct ua_cmdstruct commands[] = {
      true},
     {NT_("run"), RunCmd, T_("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> "
+         "filesetclient=<fileset-name>@<client-name> "
          "level=<level> "
          "storage=<storage-name> where=<directory-prefix> "
          "when=<universal-time-specification> "
@@ -964,7 +973,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
     limit = ((int64_t)ua->pint32_val * 1024); /* kb/s */
   }
 
-  if (FindArgKeyword(ua, lst) > 0) {
+  if (FindArgKeyword(ua, lst) >= 0) {
     JobControlRecord* jcr;
     alist<JobId_t*>* selection;
 

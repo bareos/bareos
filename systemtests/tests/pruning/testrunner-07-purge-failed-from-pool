@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -63,5 +63,44 @@ expect_grep "Purging the following 3 JobIds: 18,19,20" \
   "${log_home}/purge.out" \
   "Expected purged jobids with warnings in specific pool not found" \
   "Purging the"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/global-backup.out
+run job=${failingjob_name} level=Full pool=Full yes
+run job=${failingjob_name} level=Full pool=SmallFull yes
+wait
+messages
+@$out ${log_home}/global-cancel.out
+purge jobs jobstatus=E
+no
+@$out ${log_home}/global-purge.out
+purge jobs jobstatus=E yes
+purge jobs jobstatus=E yes
+@$out ${log_home}/select-cancel.out
+cancel job=not-running
+@$out ${log_home}/select-bandwidth.out
+setbandwidth limit=1 job=not-running
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Purge canceled" \
+  "${log_home}/global-cancel.out" \
+  "Canceling a catalog-wide purge was not reported."
+
+expect_grep "2 Jobs with the selected status purged" \
+  "${log_home}/global-purge.out" \
+  "Failed jobs from both pools were not purged."
+
+expect_grep "No Jobs found with the selected status to purge" \
+  "${log_home}/global-purge.out" \
+  "Purged jobs were still present."
+
+for output in select-cancel select-bandwidth; do
+  expect_grep "Warning Job not-running is not running" \
+    "${log_home}/${output}.out" \
+    "Job-name selection was not applied to ${output}."
+done
 
 end_test

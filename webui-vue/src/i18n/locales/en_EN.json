@@ -181,6 +181,8 @@
   "Connection failed": "Connection failed",
   "Consecutive failures": "Consecutive failures",
   "Console": "Console",
+  "Console connection failed": "Console connection failed",
+  "Console disconnected": "Console disconnected",
   "Consolidate": "Consolidate",
   "Consulting": "Consulting",
   "Continue to Files": "Continue to Files",

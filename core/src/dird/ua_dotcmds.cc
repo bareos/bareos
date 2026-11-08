@@ -785,6 +785,27 @@ bool DotFilesetsCmd(UaContext* ua, const char*)
   return true;
 }
 
+bool DotFilesetClientsCmd(UaContext* ua, const char*)
+{
+  FilesetResource* fs;
+  ClientResource* client;
+
+  ua->send->ArrayStart("filesetclients");
+  foreach_res (fs, R_FILESET) {
+    if (!ua->AclAccessOk(FileSet_ACL, fs->resource_name_)) { continue; }
+    foreach_res (client, R_CLIENT) {
+      if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("name", "%s@%s", fs->resource_name_,
+                               client->resource_name_);
+      ua->send->ObjectEnd();
+    }
+  }
+  ua->send->ArrayEnd("filesetclients");
+
+  return true;
+}
+
 namespace {
 
 void EmitPluginRestoreHintFields(
@@ -1188,6 +1209,29 @@ bool DotApiCmd(UaContext* ua, const char*)
 
   ua->send->SetMode(ua->api);
   ua->send->ObjectKeyValue("api", "%s: ", ua->api, "%d\n");
+
+  return true;
+}
+
+/**
+ * Hidden command, silently sent by bconsole (never by interactive users)
+ * right after connecting -- and again whenever the terminal is resized --
+ * to let the Director know the real terminal size. This is used to size
+ * interactive selection menus (see InteractiveSelection::Format()) so that
+ * their header and first options don't get scrolled off-screen on short
+ * terminals, and to lay them out in multiple columns when the terminal is
+ * wide enough to show more options at once despite limited height.
+ * Produces no output, since it is not meant to be user-visible.
+ */
+bool DotTerminalsizeCmd(UaContext* ua, const char*)
+{
+  if (ua->argc != 3 && ua->argc != 4) { return false; }
+
+  int height = atoi(ua->argk[1]);
+  int width = atoi(ua->argk[2]);
+  if (height > 0) { ua->terminal_height = height; }
+  if (width > 0) { ua->terminal_width = width; }
+  ua->supports_color = ua->argc == 4 && Bstrcasecmp(ua->argk[3], "color");
 
   return true;
 }

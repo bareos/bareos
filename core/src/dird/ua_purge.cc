@@ -55,6 +55,7 @@ namespace directordaemon {
 static bool PurgeFilesFromClient(UaContext* ua, ClientResource* client);
 static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client);
 static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record);
+static bool PurgeJobsByStatus(UaContext* ua);
 static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client);
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
 
@@ -87,7 +88,7 @@ bool PurgeCmd(UaContext* ua, const char*)
       T_("\nThis command can be DANGEROUS!!!\n\n"
          "It purges (deletes) all Files from a Job,\n"
          "JobId, Client or Volume; or it purges (deletes)\n"
-         "all Jobs from a Client or Volume without regard\n"
+         "Jobs from a Client, Volume, Pool or by status without regard\n"
          "to retention periods. Normally you should use the\n"
          "PRUNE command, which respects retention periods.\n"
          "This command requires full access to all resources.\n"));
@@ -141,6 +142,11 @@ bool PurgeCmd(UaContext* ua, const char*)
       break;
     /* Jobs */
     case 1:
+      if (FindArgWithValue(ua, NT_("jobstatus")) >= 0
+          && FindArg(ua, NT_("client")) < 0 && FindArg(ua, NT_("volume")) < 0
+          && FindArg(ua, NT_("pool")) < 0) {
+        return PurgeJobsByStatus(ua);
+      }
       switch (FindArgKeyword(ua, jobs_keywords)) {
         case 0: /* client */
         {
@@ -334,6 +340,45 @@ static bool PurgeJobsFromPool(UaContext* ua, PoolDbRecord* pool_record)
   return true;
 }
 
+static bool PurgeJobsByStatus(UaContext* ua)
+{
+  std::vector<char> jobstatuslist;
+  if (!GetUserJobStatusSelection(ua, jobstatuslist) || jobstatuslist.empty()) {
+    ua->ErrorMsg(T_("invalid jobstatus parameter\n"));
+    return false;
+  }
+
+  std::string jobStatuses
+      = CreateDelimitedStringForSqlQueries(jobstatuslist, ',');
+  std::string select_jobs_by_status
+      = "SELECT JobId FROM Job WHERE JobStatus IN (" + jobStatuses
+        + ") ORDER BY JobId";
+
+  std::vector<JobId_t> delete_list;
+  if (!ua->db->SqlQuery(select_jobs_by_status.c_str(), JobDeleteHandler,
+                        &delete_list)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+
+  if (delete_list.empty()) {
+    ua->WarningMsg(T_("No Jobs found with the selected status to purge.\n"));
+  } else {
+    ua->InfoMsg(
+        T_("Found %" PRIuz " Jobs with the selected status in the catalog.\n"),
+        delete_list.size());
+    if (!GetConfirmation(ua, "Purge (yes/no)? ")) {
+      ua->InfoMsg(T_("Purge canceled.\n"));
+    } else {
+      PurgeJobListFromCatalog(ua, delete_list);
+      ua->InfoMsg(T_("%" PRIuz " Job%s with the selected status purged.\n"),
+                  delete_list.size(), delete_list.size() <= 1 ? "" : "s");
+    }
+  }
+
+  return true;
+}
+
 /**
  * Purge Job records from the database.
  * We unconditionally delete the job and all File records for that Job.
@@ -400,9 +445,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 
 // Remove File records from a list of JobIds
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
-{
-  ua->db->PurgeFiles(jobs);
-}
+{ ua->db->PurgeFiles(jobs); }
 
 std::string PrepareJobidsTobedeleted(UaContext* ua,
                                      std::vector<JobId_t>& deletion_list)
@@ -471,9 +514,7 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 
 // Remove all records from catalog for a list of JobIds
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
-{
-  ua->db->PurgeJobs(jobs);
-}
+{ ua->db->PurgeJobs(jobs); }
 
 /**
  * Returns: 1 if Volume purged

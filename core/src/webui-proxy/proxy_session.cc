@@ -90,9 +90,7 @@ void SetJsonValue(json_t* object, const char* key, JsonPtr value)
 }
 
 void SetJsonString(json_t* object, const char* key, std::string_view value)
-{
-  SetJsonValue(object, key, MakeJsonString(value));
-}
+{ SetJsonValue(object, key, MakeJsonString(value)); }
 
 void AppendJsonString(json_t* array, std::string_view value)
 {
@@ -252,9 +250,7 @@ JsonPtr MakeSessionInfoJson(const ProxyAuthSessionRecord& session)
 }
 
 std::string JsonSessionInfo(const ProxyAuthSessionRecord& session)
-{
-  return DumpJson(MakeSessionInfoJson(session).get());
-}
+{ return DumpJson(MakeSessionInfoJson(session).get()); }
 
 std::string JsonAuthOk(std::string_view director,
                        std::string_view mode,
@@ -484,9 +480,7 @@ bool IsMessagesConsoleCommand(std::string_view command)
 
 bool ShouldSuppressRawConsoleChunk(std::string_view command,
                                    std::string_view chunk)
-{
-  return FilterRawConsoleChunk(command, chunk).empty();
-}
+{ return FilterRawConsoleChunk(command, chunk).empty(); }
 
 std::string FilterRawConsoleChunk(std::string_view command,
                                   std::string_view chunk)
@@ -677,9 +671,7 @@ void HandleDeleteSessionRequest(int fd, const HttpRequest& request)
 }
 
 void HandleDirectorsRequest(int fd, const ProxyConfig& config)
-{
-  SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonDirectorList(config));
-}
+{ SendJsonResponseWithCookie(fd, "HTTP/1.1 200 OK", JsonDirectorList(config)); }
 
 void HandleReuseCredentialsRequest(int fd,
                                    const HttpRequest& request,
@@ -772,9 +764,7 @@ void HandleReuseCredentialsRequest(int fd,
 }  // namespace
 
 std::string NormalizeJsonText(std::string_view text)
-{
-  return NormalizeJsonTextImpl(text);
-}
+{ return NormalizeJsonTextImpl(text); }
 
 // ---------------------------------------------------------------------------
 // Session implementation
@@ -1045,12 +1035,42 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
           send_command_state("running");
 
           if (stream_raw) {
-            result.prompt
-                = director.CallStreamed(command, [&](std::string_view chunk) {
-                    auto filtered = FilterRawConsoleChunk(command, chunk);
-                    if (filtered.empty()) { return; }
-                    SendRawResponse(*ws, req_id, command, filtered, "more");
-                  });
+            bool collecting_selection = false;
+            std::string pending_selection_frame;
+            auto send_pending_selection_busy = [&]() {
+              if (pending_selection_frame.empty()) { return; }
+              SendRawResponse(*ws, req_id, command, pending_selection_frame,
+                              "select_busy");
+              pending_selection_frame.clear();
+            };
+            result.prompt = director.CallStreamed(
+                command,
+                [&](std::string_view chunk) {
+                  auto filtered = FilterRawConsoleChunk(command, chunk);
+                  if (collecting_selection) {
+                    result.text.append(filtered.data(), filtered.size());
+                  } else {
+                    send_pending_selection_busy();
+                    if (!filtered.empty()) {
+                      SendRawResponse(*ws, req_id, command, filtered, "more");
+                    }
+                  }
+                },
+                [&]() {
+                  send_pending_selection_busy();
+                  collecting_selection = true;
+                  result.text.clear();
+                },
+                [&]() {
+                  collecting_selection = false;
+                  pending_selection_frame = std::move(result.text);
+                  result.text.clear();
+                });
+            if (result.prompt == DirectorPrompt::Select) {
+              result.text = std::move(pending_selection_frame);
+            } else {
+              send_pending_selection_busy();
+            }
           } else {
             result = director.Call(command);
           }
@@ -1064,12 +1084,10 @@ void RunProxySession(int fd, const std::string& peer, const ProxyConfig& config)
                                  ? "completed"
                                  : "waiting_for_input",
                              prompt_str);
-          if (stream_raw) {
-            SendRawResponse(*ws, req_id, command, "", prompt_str);
-          } else {
+          if (!stream_raw) {
             result.text = FilterRawConsoleChunk(command, result.text);
-            SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           }
+          SendRawResponse(*ws, req_id, command, result.text, prompt_str);
           if (should_close_console_session) { break; }
         }
       } catch (const std::exception& ex) {
