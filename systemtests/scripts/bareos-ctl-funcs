@@ -87,7 +87,7 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
-  pid=$(filter_pids_by_config_dir $(ps -eo pid=,args= | awk -v name="$base" '
+  pid=$(filter_pids_by_config_dir $(ps -A -o pid= -o args= | awk -v name="$base" '
     {
       command = $2
       sub(/^.*\//, "", command)

@@ -21,6 +21,7 @@
 set -e
 . "$1"
 
+unset BAREOS_CONFIG_DIR
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
 PS=$(command -v ps)
@@ -34,9 +35,9 @@ config_exact_pid=""
 config_trailing_pid=""
 trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
 
-bash -c 'exec -a "$1" sleep 30' _ "${name}-other" &
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${name}-other" &
 other_pid=$!
-bash -c 'exec -a "$1" sleep 30' _ "${prefix}Ax" &
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${prefix}Ax" &
 regex_pid=$!
 sleep 0.1
 
@@ -47,7 +48,7 @@ fi
 killproc "$name" 0 -TERM >/dev/null
 kill -0 "$other_pid" "$regex_pid"
 
-bash -c 'exec -a "$1" sleep 30' _ "/tmp/$name" &
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "/tmp/$name" &
 exact_pid=$!
 sleep 0.1
 
