@@ -654,9 +654,9 @@ class SeleniumTest(unittest.TestCase):
 
         self.wait_and_click(By.ID, "submit")
         login_result = self.wait.until(
-            EC.any_of(
-                EC.url_contains("/dashboard"),
-                EC.visibility_of_element_located((By.XPATH, '//div[@role="alert"]')),
+            lambda current_driver: EC.url_contains("/dashboard")(current_driver)
+            or EC.visibility_of_element_located((By.XPATH, '//div[@role="alert"]'))(
+                current_driver
             )
         )
         if login_result is not True:

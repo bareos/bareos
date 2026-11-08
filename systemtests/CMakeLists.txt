@@ -406,6 +406,24 @@ find_program(
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
+if(PYTHON_EXECUTABLE AND PYMODULE_3_SELENIUM_FOUND)
+  add_test(
+    NAME webui:login-compatibility
+    COMMAND
+      "${PYTHON_EXECUTABLE}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/selenium/test_login_compatibility.py"
+  )
+endif()
+
+if(PHP AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/autoload.php")
+  add_test(
+    NAME webui:restore-location
+    COMMAND
+      "${PHP}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/regress/webui-restore-location-test.php"
+  )
+endif()
+
 message("   PHP:                       " ${PHP})
 message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_3_SELENIUM_FOUND: " ${PYMODULE_3_SELENIUM_FOUND})
