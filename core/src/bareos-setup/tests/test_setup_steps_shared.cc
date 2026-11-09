@@ -76,9 +76,9 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForDnf)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils", "mod_ssl",
-                "postgresql-server"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils",
+                "mod_ssl", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
@@ -87,8 +87,9 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForApt)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils", "postgresql"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils",
+                "postgresql"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
@@ -97,8 +98,9 @@ TEST(BareosSetupStepsShared, BuildsDefaultPackageListForZypper)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils", "postgresql-server"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils",
+                "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
@@ -107,20 +109,21 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutPostgresServer)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils"}));
   EXPECT_EQ(BuildPackageListWithoutPostgresServer(PackageManager::Dnf),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils", "mod_ssl"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils",
+                "mod_ssl"}));
   EXPECT_EQ(BuildPackageListWithoutPostgresServer(PackageManager::Zypper),
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-tape", "bareos-storage-dedupable",
-                "bareos-database-tools", "bareos-tools", "bareos-webui-new",
-                "bareos-webui-proxy", "policycoreutils"}));
+                "bareos-database-tools", "bareos-tools", "bareos-bconsole",
+                "bareos-webui-new", "bareos-webui-proxy", "policycoreutils"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
@@ -129,14 +132,15 @@ TEST(BareosSetupStepsShared, BuildsPackageListWithoutTapeStorage)
             (std::vector<std::string>{
                 "bareos-filedaemon", "bareos-director", "bareos-storage",
                 "bareos-storage-dedupable", "bareos-database-tools",
-                "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
-                "policycoreutils", "postgresql-server"}));
-  EXPECT_EQ(BuildPackageListWithoutTapeStorage(PackageManager::Dnf),
-            (std::vector<std::string>{
-                "bareos-filedaemon", "bareos-director", "bareos-storage",
-                "bareos-storage-dedupable", "bareos-database-tools",
-                "bareos-tools", "bareos-webui-new", "bareos-webui-proxy",
-                "policycoreutils", "mod_ssl", "postgresql-server"}));
+                "bareos-tools", "bareos-bconsole", "bareos-webui-new",
+                "bareos-webui-proxy", "policycoreutils", "postgresql-server"}));
+  EXPECT_EQ(
+      BuildPackageListWithoutTapeStorage(PackageManager::Dnf),
+      (std::vector<std::string>{
+          "bareos-filedaemon", "bareos-director", "bareos-storage",
+          "bareos-storage-dedupable", "bareos-database-tools", "bareos-tools",
+          "bareos-bconsole", "bareos-webui-new", "bareos-webui-proxy",
+          "policycoreutils", "mod_ssl", "postgresql-server"}));
 }
 
 TEST(BareosSetupStepsShared, BuildsCatalogInitScriptsOnlyWhenNeeded)

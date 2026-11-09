@@ -168,6 +168,7 @@ std::vector<std::string> BuildDefaultPackageList(PackageManager pkg_mgr)
                                        "bareos-storage-dedupable",
                                        "bareos-database-tools",
                                        "bareos-tools",
+                                       "bareos-bconsole",
                                        "bareos-webui-new",
                                        "bareos-webui-proxy",
                                        "policycoreutils"};
