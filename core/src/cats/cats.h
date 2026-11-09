@@ -44,6 +44,7 @@
 #include "lib/source_location.h"
 #include "lib/util.h"
 
+#include <atomic>
 #include <bitset>
 #include <exception>
 #include <string>
@@ -495,14 +496,15 @@ class BareosDb : public BareosDbQueryEnum {
   bool connected_ = false;          /**< Connection made to db */
   bool have_batch_insert_ = false;  /**< Have batch insert support ? */
   bool try_reconnect_ = true;       /**< Try reconnecting DB connection ? */
-  bool exit_on_fatal_ = false;      /**< Exit on FATAL DB errors ? */
-  char* db_driver_ = nullptr;       /**< Database driver */
-  char* db_driverdir_ = nullptr;    /**< Database driver dir */
-  char* db_name_ = nullptr;         /**< Database name */
-  char* db_user_ = nullptr;         /**< Database user */
-  char* db_address_ = nullptr;      /**< Host name address */
-  char* db_socket_ = nullptr;       /**< Socket for local access */
-  char* db_password_ = nullptr;     /**< Database password */
+  const std::atomic_bool* query_cancel_ = nullptr;
+  bool exit_on_fatal_ = false;   /**< Exit on FATAL DB errors ? */
+  char* db_driver_ = nullptr;    /**< Database driver */
+  char* db_driverdir_ = nullptr; /**< Database driver dir */
+  char* db_name_ = nullptr;      /**< Database name */
+  char* db_user_ = nullptr;      /**< Database user */
+  char* db_address_ = nullptr;   /**< Host name address */
+  char* db_socket_ = nullptr;    /**< Socket for local access */
+  char* db_password_ = nullptr;  /**< Database password */
   char* last_query_text_
       = nullptr;           /**< Last query text obtained from query table */
   int db_port_ = 0;        /**< Port for host name address */
@@ -569,6 +571,12 @@ class BareosDb : public BareosDbQueryEnum {
   bool BatchInsertAvailable(void) { return have_batch_insert_; }
   bool IsPrivate(void) { return is_private_; }
   void IncrementRefcount(void) { ref_count_++; }
+  // Configure before querying; the flag must outlive this private connection.
+  void SetQueryCancellation(const std::atomic_bool* cancel)
+  {
+    ASSERT(is_private_);
+    query_cancel_ = cancel;
+  }
 
   /* bvfs.c */
   bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);

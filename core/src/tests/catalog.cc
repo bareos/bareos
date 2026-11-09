@@ -40,6 +40,7 @@
 #include "dird/ua_purge.h"
 
 #include <chrono>
+#include <future>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -58,6 +59,7 @@ class CatalogTest : public ::testing::Test {
   BareosDb* db{};
   BareosDb* secondary_db{};
   bool file_set_probe_installed{false};
+  bool file_probe_installed{false};
   directordaemon::DirectorResource test_director;
   directordaemon::DirectorResource* previous_director{};
 
@@ -121,6 +123,11 @@ void CatalogTest::TearDown()
         "DROP VIEW FileSet; ALTER TABLE acct_fileset RENAME TO FileSet; "
         "DROP FUNCTION acct_probe_fileset(TEXT); DROP TABLE "
         "acct_discovery_probe"));
+  }
+  if (file_probe_installed) {
+    EXPECT_TRUE(db->SqlExec(
+        "DROP VIEW File; ALTER TABLE acct_cancel_files RENAME TO File; "
+        "DROP FUNCTION acct_cancel_lstat(TEXT)"));
   }
   if (db) { db->CloseDatabase(jcr); }
   DbSqlPoolDestroy();
@@ -702,4 +709,102 @@ TEST_F(CatalogTest, PerJobAccountingPreservesUnrelatedRefreshFailures)
   EXPECT_EQ(QueryValue("SELECT (LastSuccess > '2000-01-01')::text FROM "
                        "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
             "true");
+}
+
+TEST_F(CatalogTest, BigQueryStopsAfterHandlerCancellation)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    CREATE TEMP TABLE acct_cancel_fetches (value INTEGER);
+    CREATE FUNCTION pg_temp.acct_probe_cancel(value INTEGER) RETURNS INTEGER
+      LANGUAGE plpgsql VOLATILE AS $$
+    BEGIN
+      INSERT INTO acct_cancel_fetches VALUES (value);
+      RETURN value;
+    END;
+    $$;
+  )SQL"));
+  int handled = 0;
+  ASSERT_TRUE(db->BigSqlQuery(
+      "SELECT pg_temp.acct_probe_cancel(n) FROM generate_series(1, 101) n",
+      [](void* ctx, int, char**) {
+        ++*static_cast<int*>(ctx);
+        return 1;
+      },
+      &handled));
+  EXPECT_EQ(handled, 1);
+  EXPECT_EQ(QueryValue("SELECT COUNT(*) FROM acct_cancel_fetches"), "100");
+}
+
+TEST_F(CatalogTest, AccountingStopCancelsBlockedScans)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    TRUNCATE File, Job, FileSet, Path, Client;
+    INSERT INTO Client (ClientId, Name, Uname) VALUES (1, 'acct-cancel', 'Linux');
+    INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
+      VALUES (1, 'AcctCancel', 'cancel', CURRENT_TIMESTAMP);
+    INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-cancel/');
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, JobTDate)
+      VALUES (1, 'cancel-full', 'cancel', 'B', 'F', 1, 1, 'T', 2000000000),
+             (2, 'cancel-inc', 'cancel', 'B', 'I', 1, 1, 'E', 2000000001);
+    UPDATE Job SET AccountingExcluded=FALSE, AccountingFiles=1,
+      AccountingBytes=512, AccountingLogicalBytes=1, AccountingOpaqueFiles=0,
+      AccountingNdmpArchives=0, AccountingRule='st_blocks*512',
+      AccountingJobsInChain=1;
+    INSERT INTO File (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
+      VALUES (1, 1, 1, 1, 'file', 'A A IGk B A A A B BAA B A A A A A A', ''),
+             (2, 1, 2, 1, 'file', 'A A IGk B A A A C BAA C A A A A A A', '');
+    ALTER TABLE File RENAME TO acct_cancel_files;
+    CREATE FUNCTION acct_cancel_lstat(value TEXT) RETURNS TEXT
+      LANGUAGE plpgsql VOLATILE AS $$
+    BEGIN
+      PERFORM pg_advisory_xact_lock(2911001);
+      RETURN value;
+    END;
+    $$;
+    CREATE VIEW File AS
+      SELECT FileId, FileIndex, JobId, PathId, DeltaSeq, MarkId, Fhinfo, Fhnode,
+             acct_cancel_lstat(LStat) AS LStat, Md5, Name FROM acct_cancel_files;
+  )SQL"))
+      << db->strerror();
+  file_probe_installed = true;
+
+  for (bool delta : {false, true}) {
+    ASSERT_TRUE(db->SqlExec(
+        delta ? "UPDATE Job SET AccountingValid=(JobId=1), JobStatus='T'"
+              : "UPDATE Job SET AccountingValid=FALSE, "
+                "JobStatus=CASE WHEN JobId=1 THEN 'T' ELSE 'E' END"));
+    ASSERT_TRUE(db->SqlExec("SELECT pg_advisory_lock(2911001)"));
+    ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
+    bool blocked = false;
+    for (int attempt = 0; attempt < 500; ++attempt) {
+      if (QueryValue(
+              "SELECT COUNT(*) FROM pg_stat_activity "
+              "WHERE datname=current_database() AND wait_event='advisory' "
+              "AND query='FETCH 100 FROM _bar_cursor'")
+          == "1") {
+        blocked = true;
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    EXPECT_TRUE(blocked) << "Expected a blocked " << (delta ? "delta" : "full")
+                         << " scan before its first result row";
+
+    auto stopped = std::async(std::launch::async,
+                              directordaemon::StopSubscriptionAccountingThread);
+    const bool stopped_while_blocked = stopped.wait_for(std::chrono::seconds(1))
+                                       == std::future_status::ready;
+    EXPECT_TRUE(db->SqlExec("SELECT pg_advisory_unlock(2911001)"));
+    stopped.get();
+    EXPECT_TRUE(stopped_while_blocked)
+        << (delta ? "Delta" : "Full") << " scan prevented worker shutdown";
+    EXPECT_FALSE(
+        directordaemon::GetSubscriptionAccountingThreadStatus().available);
+    EXPECT_EQ(
+        QueryValue(delta
+                       ? "SELECT AccountingValid::text FROM Job WHERE JobId=2"
+                       : "SELECT AccountingValid::text FROM Job WHERE JobId=1"),
+        "false");
+  }
 }

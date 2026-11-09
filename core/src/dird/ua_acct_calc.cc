@@ -638,6 +638,7 @@ bool AddOrSubtract(uint64_t* value, uint64_t amount, bool add)
 struct DeltaScanCtx {
   AccountingRow* row{nullptr};
   const TupleInfo* tuple{nullptr};
+  const std::atomic_bool* cancel{nullptr};
   JobId_t current_jobid{0};
   std::optional<SubscriptionAccountingDiagnostic>* diagnostic{nullptr};
   bool is_windows{false};
@@ -696,6 +697,11 @@ int ChangedFileRowHandler(void* ctx, int, char** row)
   // row[0..2] are the current FileIndex, LStat and full path.
   // row[3..5] are the previous effective FileIndex, LStat and JobId.
   auto* c = static_cast<DeltaScanCtx*>(ctx);
+  if (c->cancel && c->cancel->load()) {
+    c->aborted = true;
+    c->error = "accounting calculation cancelled";
+    return 1;
+  }
   const bool had_previous
       = row[3] && static_cast<uint32_t>(str_to_int64(row[3])) != 0;
   const bool has_current
@@ -990,6 +996,7 @@ bool CalculateSubscriptionAccountingForJob(
   DeltaScanCtx delta{};
   delta.row = row;
   delta.tuple = &tuple;
+  delta.cancel = cancel;
   delta.current_jobid = jobid;
   delta.diagnostic = diagnostic;
   delta.is_windows = UnameLooksLikeWindows(job.Uname);

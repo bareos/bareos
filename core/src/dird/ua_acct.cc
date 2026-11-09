@@ -110,6 +110,7 @@ void RefreshSubscriptionAccounting(UaContext* ua)
   }
   if (accounting_quit.load()) { return; }
   if (!SaveSubscriptionAccountingSnapshot(ua, rows, true)) {
+    if (accounting_quit.load()) { return; }
     std::string save_error = ua->db->strerror();
     RecordSubscriptionAccountingFailure(ua, save_error);
     Jmsg(ua->jcr, M_ERROR, 0,
@@ -159,6 +160,7 @@ void RefreshSubscriptionAccountingJob(UaContext* ua, JobId_t jobid)
   }
   if (accounting_quit.load() || row.JobId == 0) { return; }
   if (!SaveSubscriptionAccountingSnapshot(ua, {row})) {
+    if (accounting_quit.load()) { return; }
     std::string save_error = ua->db->strerror();
     RecordSubscriptionAccountingFailure(ua, save_error);
     Jmsg(ua->jcr, M_ERROR, 0,
@@ -200,6 +202,7 @@ void* SubscriptionAccountingThread(void*)
     return nullptr;
   }
 
+  jcr->db->SetQueryCancellation(&accounting_quit);
   {
     UaContext ua(jcr);
     ua.SetConsoleConnected(false);
