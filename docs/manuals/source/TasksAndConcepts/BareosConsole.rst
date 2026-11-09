@@ -1520,7 +1520,9 @@ status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
               client=<client-name> | storage=<storage-name> slots |
-              subscriptions [clients] [plugins] [all] [anonymize] [logical] [client=<client-name>] |
+              subscriptions [legacy] [clients] [plugins] [all] [anonymize] [logical]
+                            [client=<client-name>] |
+              subscriptions state | subscriptions recalculate |
               configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
