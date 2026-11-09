@@ -227,15 +227,16 @@ int Base64ToBin(char* dest, int dest_size, const char* src, int srclen)
  *
  *  Returns: Length of unpadded base64
  */
-int Base64LengthUnpadded(int source_length)
+int Base64LengthUnpadded(int input_bytes)
 {
-  if (source_length == 0) { return 0; }
+  int input_bits_per_byte = 8;
+  int output_bits_per_byte = 6;  // 2^6 = 64
 
-  int quotient = source_length / 3;
-  const int remainder = source_length % 3;
-  if (remainder > 0) { ++quotient; }
-  int unpadded_length = 4 * quotient;
-  if (remainder > 0) { unpadded_length -= (3 - remainder); }
+  int total_bits = input_bytes * input_bits_per_byte;
 
-  return unpadded_length;
+  // this is just div rounding up
+  int output_bytes
+      = (total_bits + output_bits_per_byte - 1) / output_bits_per_byte;
+
+  return output_bytes;
 }
