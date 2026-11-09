@@ -109,7 +109,7 @@ void RefreshSubscriptionAccounting(UaContext* ua)
     return;
   }
   if (accounting_quit.load()) { return; }
-  if (!SaveSubscriptionAccountingSnapshot(ua, rows)) {
+  if (!SaveSubscriptionAccountingSnapshot(ua, rows, true)) {
     std::string save_error = ua->db->strerror();
     RecordSubscriptionAccountingFailure(ua, save_error);
     Jmsg(ua->jcr, M_ERROR, 0,

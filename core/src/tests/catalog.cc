@@ -628,3 +628,78 @@ TEST_F(CatalogTest, PurgesOnlyInvalidatePreviouslyValidAccounting)
   EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=3"),
             "true");
 }
+
+TEST_F(CatalogTest, PerJobAccountingPreservesUnrelatedRefreshFailures)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    CREATE TEMP TABLE Job (LIKE public.Job INCLUDING DEFAULTS);
+    CREATE TEMP TABLE SubscriptionAccountingSnapshot
+      (LIKE public.SubscriptionAccountingSnapshot INCLUDING DEFAULTS);
+    INSERT INTO SubscriptionAccountingSnapshot (SnapshotId) VALUES (1);
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus)
+      VALUES (1, 'client-a-full', 'a', 'B', 'F', 1, 1, 'T'),
+             (2, 'client-b-full', 'b', 'B', 'F', 2, 2, 'T');
+  )SQL"))
+      << db->strerror();
+
+  directordaemon::UaContext ua(jcr);
+  ua.db = db;
+  ua.SetConsoleConnected(false);
+  directordaemon::AccountingRow first;
+  first.JobId = 1;
+  first.files = 1;
+  first.bytes = 512;
+  first.logical_bytes = 1;
+  ASSERT_TRUE(directordaemon::SaveSubscriptionAccountingSnapshot(&ua, {first}));
+  EXPECT_EQ(QueryValue("SELECT (LastSuccess IS NOT NULL)::text FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "true");
+  EXPECT_EQ(QueryValue("SELECT COALESCE(LastError, '') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "");
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE SubscriptionAccountingSnapshot SET "
+                  "LastSuccess='2000-01-01', LastFullSuccess='1999-01-01', "
+                  "LastFullDurationMs=123 WHERE SnapshotId=1"));
+  ASSERT_TRUE(directordaemon::RecordSubscriptionAccountingFailure(
+      &ua, "full refresh for client A failed"));
+  auto other = first;
+  other.JobId = 2;
+  other.bytes = 1024;
+  ASSERT_TRUE(directordaemon::SaveSubscriptionAccountingSnapshot(&ua, {other}));
+  EXPECT_EQ(QueryValue("SELECT COALESCE(LastError, '') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "full refresh for client A failed");
+  EXPECT_EQ(QueryValue("SELECT to_char(LastSuccess, 'YYYY-MM-DD') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "2000-01-01");
+  EXPECT_EQ(QueryValue("SELECT to_char(LastFullSuccess, 'YYYY-MM-DD') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "1999-01-01");
+  EXPECT_EQ(QueryValue("SELECT LastFullDurationMs FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "123");
+  EXPECT_EQ(QueryValue("SELECT AccountingBytes FROM Job WHERE JobId=2"),
+            "1024");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=2"),
+            "true");
+
+  ASSERT_TRUE(directordaemon::SaveSubscriptionAccountingSnapshot(
+      &ua, {first, other}, true));
+  EXPECT_EQ(QueryValue("SELECT COALESCE(LastError, '') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "");
+  EXPECT_EQ(QueryValue("SELECT (LastSuccess > '2000-01-01')::text FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "true");
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE SubscriptionAccountingSnapshot SET "
+                  "LastSuccess='2000-01-01', LastError='' WHERE SnapshotId=1"));
+  ASSERT_TRUE(directordaemon::SaveSubscriptionAccountingSnapshot(&ua, {other}));
+  EXPECT_EQ(QueryValue("SELECT (LastSuccess > '2000-01-01')::text FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "true");
+}

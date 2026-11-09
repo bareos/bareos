@@ -311,7 +311,8 @@ bool RecordSubscriptionAccountingFailure(
 }
 
 bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
-                                        const std::vector<AccountingRow>& rows)
+                                        const std::vector<AccountingRow>& rows,
+                                        bool complete_refresh)
 {
   // Keep other users of a shared catalog connection out of the transaction
   DbLocker lock_{ua->db};
@@ -352,9 +353,14 @@ bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
 
   if (success) {
     success = ua->db->SqlExec(
-        "UPDATE SubscriptionAccountingSnapshot SET "
-        "LastAttempt=CURRENT_TIMESTAMP, LastSuccess=CURRENT_TIMESTAMP, "
-        "LastError=NULL WHERE SnapshotId=1");
+        complete_refresh
+            ? "UPDATE SubscriptionAccountingSnapshot SET "
+              "LastAttempt=CURRENT_TIMESTAMP, LastSuccess=CURRENT_TIMESTAMP, "
+              "LastError=NULL WHERE SnapshotId=1"
+            : "UPDATE SubscriptionAccountingSnapshot SET "
+              "LastAttempt=CURRENT_TIMESTAMP, LastSuccess=CASE "
+              "WHEN NULLIF(LastError, '') IS NULL THEN CURRENT_TIMESTAMP "
+              "ELSE LastSuccess END WHERE SnapshotId=1");
   }
   if (success) { success = ua->db->SqlExec("COMMIT"); }
   if (!success) {

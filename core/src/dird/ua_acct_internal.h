@@ -96,7 +96,8 @@ bool RecordSubscriptionAccountingFailure(
     const std::string& error,
     const SubscriptionAccountingDiagnostic* diagnostic = nullptr);
 bool SaveSubscriptionAccountingSnapshot(UaContext* ua,
-                                        const std::vector<AccountingRow>& rows);
+                                        const std::vector<AccountingRow>& rows,
+                                        bool complete_refresh = false);
 
 }  // namespace directordaemon
 #endif  // BAREOS_DIRD_UA_ACCT_INTERNAL_H_
