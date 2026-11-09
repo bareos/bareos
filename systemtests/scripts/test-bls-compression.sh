@@ -48,13 +48,23 @@ FileIndex=1 Stream=1 UATTR DataLen=100 VolSessionId=1 VolSessionTime=100 | attri
  | /backup/requested.bin
 FileIndex=1 Stream=29 COMPRESSED DataLen=20 VolSessionId=1 VolSessionTime=100 | GZIP, level=6, version=1'
 
+OUT=caller-output
+BLS_OUT=caller-bls-output
 if ! is_file_compressed storage volume requested.bin; then
   fail "ordinary compressed file rejected"
 fi
+if [ "$OUT" != caller-output ] || [ "$BLS_OUT" != caller-bls-output ]; then
+  fail "file compression check changed caller variables"
+fi
+OUT=caller-output
+BLS_OUT=caller-bls-output
 compression_error=""
 check_compression storage volume 10 requested.bin GZIP 6 >/dev/null
 if [ -n "$compression_error" ]; then
   fail "ordinary compression algorithm check rejected"
+fi
+if [ "$OUT" != caller-output ] || [ "$BLS_OUT" != caller-bls-output ]; then
+  fail "compression algorithm check changed caller variables"
 fi
 
 for compressed_stream in "30 SPARSE-COMPRESSED" "31 WIN32-COMPRESSED"; do

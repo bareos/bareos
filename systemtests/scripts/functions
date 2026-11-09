@@ -572,6 +572,7 @@ is_file_compressed()
   local LOCAL_CONF=${4:-${BAREOS_CONFIG_DIR}}
   local BLS_OUT
   local FILE_RECORDS
+  local OUT
 
   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}")
@@ -598,7 +599,9 @@ check_compression()
   local COMPRESSION_LEVEL=${6:-}
 
   local COMPRESSION_DESCRIPTION="${COMPRESSION}"
+  local BLS_OUT
   local FILE_RECORDS
+  local OUT
   if [ "${COMPRESSION_LEVEL}" ]; then
     COMPRESSION_DESCRIPTION="${COMPRESSION}, level=${COMPRESSION_LEVEL}"
   fi
