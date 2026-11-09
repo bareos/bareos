@@ -730,22 +730,21 @@ bool ScanChangedFiles(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   Mmsg(
       query,
-      "WITH current_paths AS ("
+      "SELECT current_paths.FileIndex, current_paths.LStat, "
+      "current_paths.Filename, previous_paths.FileIndex, previous_paths.LStat, "
+      "previous_paths.JobId "
+      "FROM ("
       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
       "File.Name, File.FileIndex, File.LStat, Path.Path || File.Name AS "
       "Filename FROM File JOIN Path USING (PathId) WHERE File.JobId=%s "
-      "ORDER BY File.PathId, File.Name, File.FileId DESC), "
-      "previous_paths AS ("
+      "ORDER BY File.PathId, File.Name, File.FileId DESC) current_paths "
+      "LEFT JOIN ("
       " SELECT DISTINCT ON (File.PathId, File.Name) File.PathId, "
       "File.Name, File.FileIndex, File.LStat, File.JobId FROM File "
       "JOIN Job USING (JobId) "
       "WHERE File.JobId IN (%s) "
       "ORDER BY File.PathId, File.Name, Job.JobTDate DESC, "
-      "File.JobId DESC, File.FileId DESC) "
-      "SELECT current_paths.FileIndex, current_paths.LStat, "
-      "current_paths.Filename, previous_paths.FileIndex, previous_paths.LStat, "
-      "previous_paths.JobId "
-      "FROM current_paths LEFT JOIN previous_paths USING (PathId, Name)",
+      "File.JobId DESC, File.FileId DESC) previous_paths USING (PathId, Name)",
       edit_int64(current_jobid, ed2), previous_ids.c_str());
   if (!ua->db->BigSqlQuery(query.c_str(), ChangedFileRowHandler, delta)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());

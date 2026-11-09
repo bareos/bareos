@@ -35,6 +35,7 @@
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 #include "dird/ua_acct.h"
+#include "dird/ua_acct_internal.h"
 
 #include <chrono>
 #include <string>
@@ -202,4 +203,104 @@ TEST_F(CatalogTest, AccountingWorkerUsesPrivateConnection)
 
   directordaemon::StopSubscriptionAccountingThread();
   EXPECT_EQ(count_connections(), connections_before);
+}
+
+TEST_F(CatalogTest, AccountingDeltaUsesBoundedCursorFetches)
+{
+  // Keep intentional SQL failures from resetting the session-local fixtures.
+  jcr->dir_impl->res.catalog->try_reconnect = false;
+  db->CloseDatabase(jcr);
+  db = directordaemon::GetDatabaseConnection(jcr);
+  ASSERT_NE(db, nullptr);
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    CREATE TEMP TABLE Client (LIKE public.Client INCLUDING DEFAULTS);
+    CREATE TEMP TABLE FileSet (LIKE public.FileSet INCLUDING DEFAULTS);
+    CREATE TEMP TABLE Job (LIKE public.Job INCLUDING DEFAULTS);
+    CREATE TEMP TABLE Path (LIKE public.Path INCLUDING DEFAULTS);
+    CREATE TEMP TABLE acct_files (LIKE public.File INCLUDING DEFAULTS);
+    INSERT INTO Client (ClientId, Name, Uname) VALUES (1, 'acct-cursor', 'Linux');
+    INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
+      VALUES (1, 'AcctCursor', 'cursor', CURRENT_TIMESTAMP);
+    INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-cursor/');
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, JobTDate)
+      VALUES (1, 'cursor-full', 'cursor', 'B', 'F', 1, 1, 'T', 2000000000),
+             (2, 'cursor-inc', 'cursor', 'B', 'I', 1, 1, 'T', 2000000001);
+    UPDATE Job SET AccountingValid=TRUE, AccountingExcluded=FALSE,
+      AccountingFiles=0, AccountingBytes=0, AccountingLogicalBytes=0,
+      AccountingOpaqueFiles=0, AccountingNdmpArchives=0,
+      AccountingRule='st_blocks*512', AccountingJobsInChain=1 WHERE JobId=1;
+    INSERT INTO acct_files (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
+      SELECT n, n, 2, 1, 'file-' || n,
+             'A A IGk B A A A B BAA B A A A A A A', ''
+      FROM generate_series(1, 101) n;
+    CREATE TEMP TABLE acct_fetch_probe (query TEXT NOT NULL);
+    CREATE FUNCTION pg_temp.acct_probe_lstat(value TEXT) RETURNS TEXT
+      LANGUAGE plpgsql VOLATILE AS $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_cursors WHERE name='_bar_cursor')
+         OR current_query() <> 'FETCH 100 FROM _bar_cursor' THEN
+        RAISE EXCEPTION 'changed-file scan did not use a bounded cursor fetch';
+      END IF;
+      INSERT INTO acct_fetch_probe VALUES (current_query());
+      RETURN value;
+    END;
+    $$;
+    CREATE TEMP VIEW File AS
+      SELECT FileId, FileIndex, JobId, PathId, DeltaSeq, MarkId, Fhinfo, Fhnode,
+             pg_temp.acct_probe_lstat(LStat) AS LStat, Md5, Name FROM acct_files;
+  )SQL"))
+      << db->strerror();
+
+  directordaemon::UaContext ua(jcr);
+  ua.db = db;
+  ua.SetConsoleConnected(false);
+  directordaemon::AccountingRow delta;
+  std::string error;
+  ASSERT_TRUE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 2, &delta, &error))
+      << error << ": " << db->strerror();
+  EXPECT_EQ(delta.files, 101);
+  EXPECT_EQ(delta.bytes, 101 * 512);
+  EXPECT_EQ(delta.logical_bytes, 101);
+  EXPECT_EQ(delta.jobs_in_chain, 2);
+
+  int observed_rows = 0;
+  ASSERT_TRUE(db->SqlQuery(
+      "SELECT COUNT(*) FROM acct_fetch_probe",
+      [](void* ctx, int, char** row) {
+        *static_cast<int*>(ctx) = str_to_int64(row[0]);
+        return 0;
+      },
+      &observed_rows));
+  EXPECT_EQ(observed_rows, 101);
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Job SET AccountingValid=FALSE WHERE JobId=1"));
+  directordaemon::AccountingRow full;
+  ASSERT_TRUE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 2, &full, &error))
+      << error;
+  EXPECT_EQ(full.files, delta.files);
+  EXPECT_EQ(full.bytes, delta.bytes);
+  EXPECT_EQ(full.logical_bytes, delta.logical_bytes);
+
+  std::atomic_bool cancelled{true};
+  EXPECT_FALSE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 2, &full, &error, &cancelled));
+  EXPECT_EQ(error, "accounting calculation cancelled");
+
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    UPDATE Job SET AccountingValid=TRUE WHERE JobId=1;
+    CREATE OR REPLACE FUNCTION pg_temp.acct_probe_lstat(value TEXT) RETURNS TEXT
+      LANGUAGE plpgsql VOLATILE AS $$
+    BEGIN
+      RAISE EXCEPTION 'injected accounting scan failure';
+    END;
+    $$;
+  )SQL"));
+  EXPECT_FALSE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 2, &delta, &error));
+  EXPECT_EQ(error, "failed to scan changed file attributes");
+  EXPECT_TRUE(db->SqlExec("SELECT 1"));
 }
