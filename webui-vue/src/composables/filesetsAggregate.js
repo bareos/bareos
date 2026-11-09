@@ -25,6 +25,7 @@ directorAggregateErrors,
 fulfilledDirectorValues,
 runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
 
 function decorateFilesets(entries, director) {
   return directorCollection(entries).map(entry => ({
@@ -51,7 +52,31 @@ function sortFilesets(filesets) {
   })
 }
 
-export async function fetchAggregatedFilesets(credentials, directors) {
+const filesetsCache = createTtlCache()
+const CACHE_TTL_MS = 60_000 // 60 seconds TTL
+
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    session: hashCacheFingerprint(credentials?.password),
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearFilesetsCache() {
+  filesetsCache.clear()
+}
+
+export async function fetchAggregatedFilesets(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  if (!forceRefresh) {
+    const cached = filesetsCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
+  }
+  const fetchGeneration = filesetsCache.beginFetch()
+
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const result = await client.call('list filesets')
     return {
@@ -60,8 +85,10 @@ export async function fetchAggregatedFilesets(credentials, directors) {
     }
   })
 
-  return {
+  const data = {
     filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
   }
+  filesetsCache.set(cacheKey, data, fetchGeneration)
+  return data
 }
