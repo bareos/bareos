@@ -603,10 +603,14 @@ static int do_label(UaContext* ua, const char*, bool relabel)
  *   label storage=xxx volume=vvv
  */
 bool LabelCmd(UaContext* ua, const char* cmd)
-{ return do_label(ua, cmd, false); /* standard label */ }
+{
+  return do_label(ua, cmd, false); /* standard label */
+}
 
 bool RelabelCmd(UaContext* ua, const char* cmd)
-{ return do_label(ua, cmd, true); /* relabel tape */ }
+{
+  return do_label(ua, cmd, true); /* relabel tape */
+}
 
 /*
  * Check if the Volume name has legal characters

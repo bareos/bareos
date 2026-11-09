@@ -867,10 +867,14 @@ class BareosDb : public BareosDbQueryEnum {
   /* sql_query.cc */
   static constexpr const char* get_predefined_query_name(
       BareosDb::SQL_QUERY query)
-  { return query_names[static_cast<int>(query)]; }
+  {
+    return query_names[static_cast<int>(query)];
+  }
 
   static constexpr const char* get_predefined_query(BareosDb::SQL_QUERY query)
-  { return queries[static_cast<int>(query)]; }
+  {
+    return queries[static_cast<int>(query)];
+  }
 
   template <SQL_QUERY query, typename... Args>
   void FillQuery(POOLMEM*& storage, Args&&... args)
@@ -947,7 +951,8 @@ class BareosDb : public BareosDbQueryEnum {
   /* Virtual low level methods */
   virtual void ThreadCleanup(void) {}
   virtual std::optional<std::string> EscapeString(JobControlRecord* jcr,
-                                                  std::string_view input) = 0;
+                                                  std::string_view input)
+      = 0;
   virtual void UnescapeObject(JobControlRecord* jcr,
                               char* from,
                               int32_t expected_len,
@@ -965,7 +970,9 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool BigSqlQuery(const char* query,
                            DB_RESULT_HANDLER* ResultHandler,
                            void* ctx)
-  { return SqlQuery(query, ResultHandler, ctx); }
+  {
+    return SqlQuery(query, ResultHandler, ctx);
+  }
 
  private:
   virtual char* EscapeObject(JobControlRecord* jcr, char* old, int len);
@@ -1001,7 +1008,9 @@ class BareosDb : public BareosDbQueryEnum {
     }
 
     bool test(query_flag Flag)
-    { return set_flags.test(static_cast<size_t>(Flag)); }
+    {
+      return set_flags.test(static_cast<size_t>(Flag));
+    }
   };
 
 
@@ -1010,12 +1019,14 @@ class BareosDb : public BareosDbQueryEnum {
       = 0;
   virtual bool SqlQueryWithHandler(const char* query,
                                    DB_RESULT_HANDLER* ResultHandler,
-                                   void* ctx) = 0;
+                                   void* ctx)
+      = 0;
   virtual const char* sql_strerror(void) = 0;
   virtual void SqlDataSeek(int row) = 0;
   virtual int SqlAffectedRows(void) = 0;
   virtual uint64_t SqlInsertAutokeyRecord(const char* query,
-                                          const char* table_name) = 0;
+                                          const char* table_name)
+      = 0;
   virtual SQL_FIELD* SqlFetchField(void) = 0;
   virtual bool SqlFieldIsNotNull(int field_type) = 0;
   virtual bool SqlFieldIsNumeric(int field_type) = 0;
@@ -1023,7 +1034,8 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
       = 0;
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
-                                       AttributesDbRecord* ar) = 0;
+                                       AttributesDbRecord* ar)
+      = 0;
 
  protected:
   void CheckOwnership(libbareos::source_location l
@@ -1063,7 +1075,9 @@ class DbLocker {
       : db_handle_(db_handle)
       , file{l.file_name()}
       , line{static_cast<int>(l.line())}
-  { db_handle_->LockDb(file, line); }
+  {
+    db_handle_->LockDb(file, line);
+  }
   ~DbLocker() { db_handle_->UnlockDb(file, line); }
 
   DbLocker(const DbLocker& other) = delete;
@@ -1201,7 +1215,9 @@ struct DbFailure : std::runtime_error {
 
 template <typename F, std::size_t... Is>
 void invoke(F&& f, char const* const rows[], std::index_sequence<Is...>)
-{ f(rows[Is]...); };
+{
+  f(rows[Is]...);
+};
 };  // namespace cats::details
 
 template <typename F> void run_query(BareosDb* db, const char* query, F&& f)

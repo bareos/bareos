@@ -53,7 +53,7 @@ struct UserAcl {
   std::vector<std::string> acl_lists[Num_ACL];
 
   template <typename Resource,
-            AclConfig Resource::* Accessor = &Resource::user_acl>
+            AclConfig Resource::*Accessor = &Resource::user_acl>
   static std::unique_ptr<UserAcl> from_config(Resource* res)
   {
     auto result = std::make_unique<UserAcl>(res->resource_name_);
