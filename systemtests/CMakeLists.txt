@@ -415,7 +415,10 @@ if(PYTHON_EXECUTABLE AND PYMODULE_3_SELENIUM_FOUND)
   )
 endif()
 
-if(PHP AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/autoload.php")
+if(PHP
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/ClassLoader.php"
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/autoload_psr4.php"
+)
   add_test(
     NAME webui:restore-location
     COMMAND

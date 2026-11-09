@@ -16,7 +16,14 @@
 //   You should have received a copy of the GNU Affero General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+// Load test dependencies without the application-wide PHP platform check.
+require_once __DIR__ . '/../../vendor/composer/ClassLoader.php';
+$loader = new Composer\Autoload\ClassLoader();
+foreach (require __DIR__ . '/../../vendor/composer/autoload_psr4.php' as $prefix => $paths) {
+    $loader->addPsr4($prefix, $paths);
+}
+$loader->register();
+
 require_once __DIR__ . '/../../module/Restore/src/Restore/Model/Restore.php';
 
 $input = (new Restore\Model\Restore())->getInputFilter()->get('where');
