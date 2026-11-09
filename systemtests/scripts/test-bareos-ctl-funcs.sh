@@ -21,6 +21,33 @@
 set -e
 . "$1"
 
+if [ "${2:-}" = --delayed-exec ]; then
+  bash()
+  {
+    exec bash -c 'sleep 0.3; exec bash "$@"' _ "$@"
+  }
+  export -f bash
+fi
+
+wait_for_process_argv0()
+{
+  local process_pid="$1"
+  local expected="$2"
+  local attempt args
+  for ((attempt = 0; attempt < 100; attempt++)); do
+    if ! args=$("$PS" -o args= -p "$process_pid" 2>/dev/null); then
+      echo "Process $process_pid exited before starting $expected" >&2
+      return 1
+    fi
+    case "$args" in
+      "$expected" | "$expected "*) return 0 ;;
+    esac
+    sleep 0.05
+  done
+  echo "Timed out waiting for process $process_pid to start $expected; got: $args" >&2
+  return 1
+}
+
 unset BAREOS_CONFIG_DIR
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
@@ -39,7 +66,8 @@ bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${name}-other
 other_pid=$!
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${prefix}Ax" &
 regex_pid=$!
-sleep 0.1
+wait_for_process_argv0 "$other_pid" "${name}-other"
+wait_for_process_argv0 "$regex_pid" "${prefix}Ax"
 
 if [ -n "$(pidofproc "$name" 0)" ]; then
   echo "Found a different process instead of $name" >&2
@@ -50,7 +78,7 @@ kill -0 "$other_pid" "$regex_pid"
 
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "/tmp/$name" &
 exact_pid=$!
-sleep 0.1
+wait_for_process_argv0 "$exact_pid" "/tmp/$name"
 
 if [ "$(pidofproc "$name" 0)" != "$exact_pid" ]; then
   echo "Did not find the exact process using pgrep" >&2
@@ -81,7 +109,9 @@ config_exact_pid=$!
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2" --extra' \
   _ "/tmp/$name" "$BAREOS_CONFIG_DIR" &
 config_trailing_pid=$!
-sleep 0.1
+wait_for_process_argv0 "$config_other_pid" "/tmp/$name"
+wait_for_process_argv0 "$config_exact_pid" "/tmp/$name"
+wait_for_process_argv0 "$config_trailing_pid" "/tmp/$name"
 
 if [ "$(filter_pids_by_config_dir "$config_trailing_pid")" != "$config_trailing_pid" ]; then
   echo "Did not match a config directory followed by another argument" >&2

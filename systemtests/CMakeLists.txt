@@ -99,6 +99,12 @@ if(UNIX AND PGREP)
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
             "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
   )
+  add_test(
+    NAME system:ctl-pid-lookup-delayed-exec
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs" --delayed-exec
+  )
 endif()
 
 if(UNIX)
