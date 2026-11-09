@@ -53,7 +53,7 @@ struct UserAcl {
   std::vector<std::string> acl_lists[Num_ACL];
 
   template <typename Resource,
-            AclConfig Resource::* Accessor = &Resource::user_acl>
+            AclConfig Resource::*Accessor = &Resource::user_acl>
   static std::unique_ptr<UserAcl> from_config(Resource* res)
   {
     auto result = std::make_unique<UserAcl>(res->resource_name_);
@@ -111,7 +111,12 @@ class UaContext {
   std::string prompt_header{};        /**< Name of current prompt */
   std::vector<std::string> prompts{}; /**< List of prompts */
   int api{0};                         /**< For programs want an API */
-  bool auto_display_messages{false};  /**< If set, display messages */
+  int terminal_height{
+      0}; /**< Client-reported terminal height (rows), 0 = unknown */
+  int terminal_width{
+      0}; /**< Client-reported terminal width (columns), 0 = unknown */
+  bool supports_color{false};            /**< Client accepts ANSI colors */
+  bool auto_display_messages{false};     /**< If set, display messages */
   bool user_notified_msg_pending{false}; /**< Set when user notified */
   bool automount{true};                  /**< If set, mount after label */
   bool quit{false};                      /**< If set, quit */
