@@ -102,16 +102,6 @@ CREATE TABLE Job
     PurgedFiles       SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
-    AccountingValid   BOOLEAN     NOT NULL DEFAULT FALSE,
-    AccountingExcluded BOOLEAN,
-    AccountingFiles   NUMERIC(20, 0),
-    AccountingBytes   NUMERIC(20, 0),
-    AccountingLogicalBytes NUMERIC(20, 0),
-    AccountingOpaqueFiles NUMERIC(20, 0),
-    AccountingNdmpArchives NUMERIC(20, 0),
-    AccountingRule    TEXT,
-    AccountingExclusionReason TEXT,
-    AccountingJobsInChain INTEGER,
     Comment           TEXT,
     PRIMARY KEY (JobId)
 );
@@ -123,8 +113,19 @@ CREATE INDEX job_accounting_client_fileset_idx
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
-ALTER TABLE JobHisto ALTER COLUMN AccountingValid SET DEFAULT FALSE;
 CREATE INDEX jobhisto_idx ON JobHisto (StartTime);
+
+ALTER TABLE Job
+    ADD COLUMN AccountingValid BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN AccountingExcluded BOOLEAN,
+    ADD COLUMN AccountingFiles NUMERIC(20, 0),
+    ADD COLUMN AccountingBytes NUMERIC(20, 0),
+    ADD COLUMN AccountingLogicalBytes NUMERIC(20, 0),
+    ADD COLUMN AccountingOpaqueFiles NUMERIC(20, 0),
+    ADD COLUMN AccountingNdmpArchives NUMERIC(20, 0),
+    ADD COLUMN AccountingRule TEXT,
+    ADD COLUMN AccountingExclusionReason TEXT,
+    ADD COLUMN AccountingJobsInChain INTEGER;
 
 CREATE TABLE Location (
     LocationId        SERIAL      NOT NULL,
