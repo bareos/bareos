@@ -359,13 +359,19 @@ bail_out:
 }
 
 bool IsConnectingToClientAllowed(ClientResource* res)
-{ return res->conn_from_dir_to_fd; }
+{
+  return res->conn_from_dir_to_fd;
+}
 
 bool IsConnectFromClientAllowed(ClientResource* res)
-{ return res->conn_from_fd_to_dir; }
+{
+  return res->conn_from_fd_to_dir;
+}
 
 bool IsClientTlsRequired(ClientResource* res)
-{ return res->GetPolicy() == TlsPolicy::kBnetTlsRequired; }
+{
+  return res->GetPolicy() == TlsPolicy::kBnetTlsRequired;
+}
 
 bool UseWaitingClient(JobControlRecord* jcr,
                       ClientResource* client,

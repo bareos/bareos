@@ -80,7 +80,7 @@ struct FileAccountingResult {
   FileAccountingKind kind{FileAccountingKind::kInvalidStat};
   uint64_t bytes{0};
   uint64_t logical_bytes{0};
-  struct stat statp{};
+  struct stat statp {};
   const char* invalid_reason{nullptr};
 };
 
@@ -92,7 +92,7 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
     return {FileAccountingKind::kInvalidStat, 0, 0, {}, "LStat is empty"};
   }
 
-  struct stat statp{};
+  struct stat statp {};
   int32_t LinkFI;
   /* DecodeStat() takes a non-const char* but does not modify the
    * underlying data. */
@@ -145,7 +145,9 @@ FileAccountingResult AccountedBytesForFile(const std::string& lstat,
 }
 
 bool UnameLooksLikeWindows(const std::string& uname)
-{ return uname.find("Windows") != std::string::npos; }
+{
+  return uname.find("Windows") != std::string::npos;
+}
 
 struct TupleInfo {
   JobId_t LatestFullJobId{0};

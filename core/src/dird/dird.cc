@@ -72,7 +72,8 @@ namespace directordaemon {
 #if !defined(HAVE_WIN32)
 static
 #endif
-    void TerminateDird(int sig);
+    void
+    TerminateDird(int sig);
 }  // namespace directordaemon
 
 static void CleanUpOldFiles();
@@ -405,7 +406,8 @@ namespace directordaemon {
 #if !defined(HAVE_WIN32)
 static
 #endif
-    void TerminateDird(int sig)
+    void
+    TerminateDird(int sig)
 {
   static bool is_reloading = false;
 
