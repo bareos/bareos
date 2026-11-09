@@ -325,7 +325,7 @@
               </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
-                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <div>{{ formatBytes(props.row.bytes) }}</div>
                   <q-linear-progress
                     v-if="isRunning(props.row.status)"
                     indeterminate

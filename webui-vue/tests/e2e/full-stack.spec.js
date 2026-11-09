@@ -1390,11 +1390,11 @@ async function login(
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
     await page.goto('/')
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-form"]')
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       if (!shouldSucceed) {
         throw new Error('Invalid credentials unexpectedly restored a session')
       }
@@ -1408,7 +1408,7 @@ async function login(
     await page.getByRole('button', { name: 'Login' }).click()
 
     await page.waitForFunction(() => (
-      window.location.hash === '#/dashboard'
+      window.location.hash.startsWith('#/dashboard')
       || document.querySelector('[data-testid="login-error"]')?.textContent?.trim()
     ), { timeout: LOGIN_RESULT_TIMEOUT_MS })
 
@@ -1418,7 +1418,7 @@ async function login(
       return
     }
 
-    if (page.url().endsWith('/#/dashboard')) {
+    if (page.url().includes('/#/dashboard')) {
       await expectConnected(page)
       return
     }
@@ -1519,24 +1519,52 @@ async function waitForQSelectReady(page, testId, deadline = Date.now() + 20000) 
   await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: remaining() })
 }
 
+// The test schedules only fire on Sundays at 03:00/03:10 and Mon-Sat at
+// 21:00, so the default ±12 h window contains no trigger from Sunday
+// 15:10 until Monday 09:00. Zoom out (up to ±3.5 d) until one is shown.
+async function expectScheduleTick(page) {
+  const timeline = page.getByTestId('combined-job-schedule-timeline').first()
+  const tick = timeline.getByTestId('combined-timeline-schedule-tick').first()
+  for (let zoomOuts = 0; zoomOuts < 2; zoomOuts += 1) {
+    try {
+      await tick.waitFor({ state: 'visible', timeout: 5000 })
+      return
+    } catch {
+      await timeline.getByTitle('Zoom out').click()
+    }
+  }
+  await expect(tick).toBeVisible()
+}
+
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
   const recentJobsCard = page.locator('.q-card').filter({
-    hasText: 'Most recent job status per job name',
-  })
-  const totalsCard = page.locator('.q-card').filter({
-    hasText: 'Job Totals',
+    hasText: 'Recent Jobs',
   })
 
   await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
+  await expect(page.getByTitle('Combined view of actual job')).toBeVisible()
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expectScheduleTick(page)
   await expect(recentJobsCard).toBeVisible()
   await expect(recentJobsCard).not.toContainText('No data available')
   await expect(recentJobsCard).toContainText('backup-bareos-fd')
-  await expect(totalsCard).not.toContainText('Total Jobs0')
-  await expect(totalsCard).not.toContainText('Total Bytes0 B')
+
+  await page.getByRole('tab', { name: 'Job & Schedule Timeline' }).click()
+  await expect(page).toHaveURL(/#\/dashboard\/job-schedule-timeline$/)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).toBeVisible()
+  await expect(page.getByTestId('combined-timeline-job-bar').first()).toBeVisible()
+  await expectScheduleTick(page)
+  await page.getByTitle('Pan to the past').click()
+  await page.waitForTimeout(500)
+  await expect(page.getByTestId('combined-job-schedule-timeline')).not.toContainText(
+    /Authentication failed/i
+  )
 })
 
 test('advertises Bareos services unless the director is a subscription build', async ({ page }) => {
+  // nothing is known about the build before the first login
   await page.goto('/')
   await expect(page.getByTestId('login-commercial-offering')).toBeVisible()
   await expect(page.getByTestId('login-commercial-offering').getByTestId('commercial-offering-evaluation'))
@@ -1550,6 +1578,7 @@ test('advertises Bareos services unless the director is a subscription build', a
   const binaryInfo = page.getByTestId('director-binary-info').first()
   await expect(binaryInfo).toBeVisible()
   const isSubscription = /subscription/i.test(await binaryInfo.innerText())
+
   const statusbarOffering = page.getByTestId('statusbar-commercial-offering')
   if (isSubscription) {
     await expect(statusbarOffering).toHaveCount(0)
@@ -1559,6 +1588,9 @@ test('advertises Bareos services unless the director is a subscription build', a
   await expect(statusbarOffering).toBeVisible()
   await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/try/')
   await expect(statusbarOffering).toHaveCSS('color', 'rgb(255, 202, 40)')
+
+  // markers that this is not an official subscription build; the sash is
+  // only shown on the login page
   await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
   await expect(page.locator('body')).toHaveClass(/bareos-unsupported-build/)
   await expect(page.locator('header.bareos-toolbar')).toHaveCSS(
@@ -1586,11 +1618,13 @@ test('advertises Bareos services unless the director is a subscription build', a
   await expect(page.getByTestId('director-binary-info').first()).toBeVisible()
   await expect(ribbon).toHaveCount(0)
   await expect(toast).toHaveCount(0)
+
   await page.getByTestId('account-menu').click()
   await expect(page.getByTestId('menu-offering-evaluation'))
     .toHaveAttribute('href', 'https://www.bareos.com/try/')
   await expect(page.getByTestId('menu-offering-subscription')).toBeVisible()
   await page.keyboard.press('Escape')
+
   await page.getByRole('tab', { name: 'Subscription' }).click()
   await expect(page.getByTestId('commercial-offering-card')).toBeVisible()
   await expect(page.getByTestId('commercial-offering-evaluation'))
@@ -1644,11 +1678,15 @@ test('loads translations from the Vue JSON catalogs', async ({ page }) => {
   await page.goto('/')
   await page.locator('.login-language-select').click()
   await page.getByRole('option', { name: /German/ }).click()
+
   await expect(page.getByTestId('login-submit')).toContainText('Anmelden')
   await expect(page.getByTestId('login-username')).toHaveAttribute('aria-label', 'Benutzername')
   await expect(page.getByTestId('login-password')).toHaveAttribute('aria-label', 'Passwort')
 })
 
+// Official releases run these tests with the build definitions of the
+// release, but PR builds are never subscription builds. Pretend to be one
+// by rewriting binary_info in the director replies.
 async function reportSubscriptionBuild(page) {
   await page.routeWebSocket(/.*/, (ws) => {
     const server = ws.connectToServer()
@@ -1661,7 +1699,7 @@ async function reportSubscriptionBuild(page) {
           return
         }
       } catch {
-        // Non-JSON frames must be forwarded unchanged.
+        // not JSON: forward unchanged
       }
       ws.send(message)
     })
@@ -1674,6 +1712,7 @@ test('hides the service advertisement for subscription builds', async ({ page })
   await page.goto('/#/director')
   await expect(page.getByTestId('director-binary-info').first())
     .toHaveText(/Bareos subscription/)
+
   await expect(page.getByTestId('statusbar-commercial-offering')).toHaveCount(0)
   await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
   await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
@@ -1683,9 +1722,12 @@ test('hides the service advertisement for subscription builds', async ({ page })
   await expect(page.getByTestId('menu-offering-evaluation')).toHaveCount(0)
   await expect(page.getByTestId('menu-offering-support')).toHaveCount(0)
   await page.keyboard.press('Escape')
+
   await page.getByRole('tab', { name: 'Subscription' }).click()
   await expect(page.getByRole('link', { name: 'Get Official Support' })).toBeVisible()
   await expect(page.getByTestId('commercial-offering-card')).toHaveCount(0)
+
+  // the login page decides from the remembered build kind
   expect(await page.evaluate(() => localStorage.getItem('bareos-webui.buildKind')))
     .toBe('subscription')
   await page.getByTestId('account-menu').click()
@@ -1726,7 +1768,7 @@ test('shows all configured directors in multi-director login mode', async ({
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Login' }).click()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
@@ -1766,6 +1808,8 @@ test('opens jobs and job details through the real director connection', async ({
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
   await page.getByLabel('Search in results').fill('backup-bareos-fd')
+  // The jobs table is virtual-scrolled, so tbody also contains Quasar's
+  // empty padding rows — pick the first row that actually holds a match.
   const firstRow = page
     .locator('tbody tr')
     .filter({ hasText: 'backup-bareos-fd' })
@@ -2148,18 +2192,24 @@ test('navigates through client, pool, and volume detail pages', async ({
   await openNav(page, 'nav-storages', /#\/storages/)
   await expect(page.locator('.q-page').getByText('Storages', { exact: true }).first()).toBeVisible()
   await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
+
   const firstStorageRow = page.locator('tbody tr').first()
   const storageName = (
     await firstStorageRow.getByTestId('storages-row-name').textContent()
   )?.trim()
   await firstStorageRow.click()
+
   await expect(page).toHaveURL(/#\/storages\?.*storage=/)
   await expect(page.getByTestId('storages-detail')).toBeVisible()
   await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+
+  // The selection lives in the URL, so a reload restores the detail panel.
   await page.reload()
   await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+
   await page.getByTestId('storages-detail-close').click()
   await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
+
   await openNav(page, 'nav-pools', /#\/pools/)
   const firstPool = page.locator('tbody tr a.text-primary').first()
   const poolName = (await firstPool.textContent())?.trim()
@@ -2200,7 +2250,7 @@ test('covers schedules and director tabs through the director connection', async
   await page.getByRole('tab', { name: 'Messages' }).click()
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Catalog', exact: true }).click()
+  await page.getByRole('tab', { name: 'Catalog' }).click()
   await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
   await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
@@ -2231,7 +2281,10 @@ test('keeps the console session when navigating away and back', async ({
 
   await page.goto('/#/dashboard')
   await page.goto('/#/console-popup')
-  await expect(consoleOutput).toContainText('status director')
+  // xterm.js only keeps the visible viewport rows in the DOM, so the
+  // echoed command line has scrolled out by the time the (much longer)
+  // replayed response is redrawn — assert on the replayed output itself,
+  // which is what proves the session survived the navigation.
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
@@ -2241,7 +2294,7 @@ test('restores the proxy-backed login after a page reload', async ({ page }) => 
   // Reload clears the SPA state; /api/session must restore the proxy-backed
   // login from the session cookie so users stay signed in.
   await page.reload()
-  await page.waitForURL(/#\/dashboard$/)
+  await page.waitForURL(/#\/dashboard(\/|$)/)
   await expectConnected(page)
 })
 
@@ -2251,6 +2304,42 @@ test('opens the console and runs a raw command through the proxied director conn
   await login(page)
 
   const consoleOutput = await openConsole(page)
-  await page.getByText('status director', { exact: true }).click()
+  await consoleOutput.click()
+  await page.keyboard.type('status director')
+  await page.keyboard.press('Enter')
   await expect(consoleOutput).toContainText('Terminated Jobs:')
+})
+
+test('dashboard first resize attempt must persist', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/dashboard')
+
+  await page.getByTitle('Edit layout').click()
+  await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
+
+  const firstItem = page.locator('.vgl-item').first()
+  const resizer = firstItem.locator('.vgl-item__resizer').first()
+  await expect(firstItem).toBeVisible()
+  await expect(resizer).toBeVisible()
+
+  const before = await firstItem.boundingBox()
+  if (!before) throw new Error('Could not get initial widget bounds')
+
+  const handle = await resizer.boundingBox()
+  if (!handle) throw new Error('Could not get resize handle bounds')
+
+  const startX = handle.x + handle.width / 2
+  const startY = handle.y + handle.height / 2
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  await page.mouse.move(startX - 260, startY - 120, { steps: 16 })
+  await page.mouse.up()
+
+  await page.waitForTimeout(350)
+  const after = await firstItem.boundingBox()
+  if (!after) throw new Error('Could not get resized widget bounds')
+
+  const widthChanged = Math.abs(after.width - before.width) > 20
+  const heightChanged = Math.abs(after.height - before.height) > 10
+  expect(widthChanged || heightChanged).toBe(true)
 })
