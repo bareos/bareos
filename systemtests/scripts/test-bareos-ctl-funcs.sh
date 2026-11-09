@@ -60,7 +60,8 @@ exact_pid=""
 config_other_pid=""
 config_exact_pid=""
 config_trailing_pid=""
-trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
+pidof_mock=$(mktemp)
+trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true; rm -f -- "$pidof_mock"' EXIT
 
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${name}-other" &
 other_pid=$!
@@ -127,6 +128,29 @@ fi
 PGREP=""
 if [ "$(pidofproc "$name" 0)" != "$config_exact_pid" ]; then
   echo "ps selected a process with a different config directory" >&2
+  exit 1
+fi
+
+cat >"$pidof_mock" <<'SH'
+#!/bin/bash
+if [ "$#" -ne 1 ] || [ "$1" != "$LOOKUP_NAME" ]; then
+  exit 1
+fi
+printf '%s\n' "$LOOKUP_OTHER_PID" "$LOOKUP_EXACT_PID"
+SH
+chmod +x "$pidof_mock"
+if ! (
+  export LOOKUP_NAME="$name" LOOKUP_OTHER_PID="$config_other_pid" \
+    LOOKUP_EXACT_PID="$config_exact_pid"
+  PIDOF="$pidof_mock"
+  PGREP=""
+  ps()
+  {
+    return 1
+  }
+  [ "$(pidofproc "/tmp/$name" 0)" = "$config_exact_pid" ]
+); then
+  echo "pidof did not match the basename with the exact config directory" >&2
   exit 1
 fi
 

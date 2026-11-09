@@ -69,7 +69,7 @@ pidofproc()
 
   # First try "pidof"
   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
-    pid=$(filter_pids_by_config_dir $("${PIDOF}" "$1"))
+    pid=$(filter_pids_by_config_dir $("${PIDOF}" "$base"))
     if [ "$pid" != "" ]; then
       echo $pid
       return 0
