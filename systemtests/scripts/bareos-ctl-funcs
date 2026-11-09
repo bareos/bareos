@@ -87,6 +87,8 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
+  # This token-based fallback supports direct executables, not interpreter
+  # wrappers or executable paths containing spaces.
   pid=$(filter_pids_by_config_dir $(ps -A -o pid= -o args= | awk -v name="$base" '
     {
       command = $2
