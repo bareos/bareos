@@ -54,6 +54,8 @@ class CatalogTest : public ::testing::Test {
 
   JobControlRecord* jcr{};
   BareosDb* db{};
+  BareosDb* secondary_db{};
+  bool secondary_catalog_created{false};
 
   void SetUp() override;
   void TearDown() override;
@@ -104,7 +106,12 @@ void CatalogTest::SetUp()
 
 void CatalogTest::TearDown()
 {
-  db->CloseDatabase(jcr);
+  directordaemon::StopSubscriptionAccountingThread();
+  if (secondary_db) { secondary_db->CloseDatabase(jcr); }
+  if (secondary_catalog_created) {
+    EXPECT_TRUE(db->SqlExec("DROP DATABASE regress_catalog_secondary"));
+  }
+  if (db) { db->CloseDatabase(jcr); }
   DbSqlPoolDestroy();
 
   if (jcr) {
@@ -361,4 +368,97 @@ TEST_F(CatalogTest, AccountingScansPreferLatestFileId)
   EXPECT_EQ(recalculated[0].files, delta.files);
   EXPECT_EQ(recalculated[0].bytes, delta.bytes);
   EXPECT_EQ(recalculated[0].logical_bytes, delta.logical_bytes);
+}
+
+TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
+      VALUES (1, 'AcctCatalogGate', 'gate', CURRENT_TIMESTAMP);
+    INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-catalog/');
+    INSERT INTO File (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
+      VALUES (1, 1, 1, 1, 'regular', 'A A IGk B A A A C BAA C A A A A A A', '');
+    UPDATE Job SET FileSetId=1, AccountingValid=TRUE, AccountingExcluded=FALSE,
+      AccountingFiles=1, AccountingBytes=512, AccountingLogicalBytes=1,
+      AccountingRule='st_blocks*512', AccountingJobsInChain=1 WHERE JobId=1;
+    UPDATE SubscriptionAccountingSnapshot
+      SET LastSuccess=CURRENT_TIMESTAMP, LastError=NULL WHERE SnapshotId=1;
+  )SQL"))
+      << db->strerror();
+  ASSERT_TRUE(db->SqlExec(
+      "CREATE DATABASE regress_catalog_secondary TEMPLATE regress_catalog"));
+  secondary_catalog_created = true;
+
+  auto* primary = jcr->dir_impl->res.catalog;
+  directordaemon::CatalogResource secondary;
+  char secondary_name[] = "secondary";
+  char secondary_database[] = "regress_catalog_secondary";
+  secondary.resource_name_ = secondary_name;
+  secondary.db_name = secondary_database;
+  secondary.db_user = primary->db_user;
+  secondary.db_password = primary->db_password;
+  secondary.db_address = primary->db_address;
+  secondary.db_port = primary->db_port;
+  secondary.db_socket = primary->db_socket;
+  jcr->dir_impl->res.catalog = &secondary;
+  secondary_db = directordaemon::GetDatabaseConnection(jcr, true);
+  jcr->dir_impl->res.catalog = primary;
+  ASSERT_NE(secondary_db, nullptr);
+
+  const auto wait_for_idle = [] {
+    for (int attempt = 0; attempt < 500; ++attempt) {
+      const auto status
+          = directordaemon::GetSubscriptionAccountingThreadStatus();
+      if (status.available && !status.running && !status.queued) { return; }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    ADD_FAILURE() << "Accounting worker did not become idle";
+  };
+  const auto complete
+      = [&](BareosDb* connection, directordaemon::CatalogResource* catalog) {
+          jcr->db = connection;
+          jcr->dir_impl->res.catalog = catalog;
+          jcr->JobId = 1;
+          jcr->setJobType(JT_BACKUP);
+          jcr->setJobStatus(JS_Terminated);
+          jcr->dir_impl->jr.JobLevel = L_FULL;
+          jcr->dir_impl->jr.ClientId = 1;
+          jcr->dir_impl->jr.FileSetId = 1;
+          directordaemon::UpdateJobEndRecord(jcr);
+          jcr->JobId = 0;
+          jcr->db = nullptr;
+          jcr->dir_impl->res.catalog = primary;
+        };
+  const auto read_value = [&](const char* query) {
+    std::string value;
+    EXPECT_TRUE(db->SqlQuery(
+        query,
+        [](void* ctx, int, char** row) {
+          *static_cast<std::string*>(ctx) = row[0];
+          return 0;
+        },
+        &value));
+    return value;
+  };
+
+  ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
+  wait_for_idle();
+  complete(secondary_db, &secondary);
+  wait_for_idle();
+  EXPECT_EQ(read_value("SELECT AccountingBytes FROM Job WHERE JobId=1"), "512");
+
+  ASSERT_TRUE(db->SqlExec("UPDATE File SET LStat='' WHERE JobId=1"));
+  complete(secondary_db, &secondary);
+  wait_for_idle();
+  EXPECT_EQ(read_value("SELECT COALESCE(LastError, '') FROM "
+                       "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
+            "");
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE File SET LStat='A A IGk B A A A C BAA C A A A A A A' "
+                  "WHERE JobId=1"));
+  complete(db, primary);
+  wait_for_idle();
+  EXPECT_EQ(read_value("SELECT AccountingBytes FROM Job WHERE JobId=1"),
+            "1024");
 }
