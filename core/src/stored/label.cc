@@ -245,7 +245,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   }
 
   Dmsg1(100, "Call reserve_volume=%s\n", dcr->dev->VolHdr.VolumeName);
-  if (reserve_volume(dcr, dcr->dev->VolHdr.VolumeName) == NULL) {
+  if (reserve_volume(dcr, dcr->dev->VolHdr.VolumeName)
+      != VolumeReservationResult::kReserved) {
     Mmsg2(jcr->errmsg, T_("Could not reserve volume %s on %s\n"),
           dcr->dev->VolHdr.VolumeName, dcr->dev->print_name());
     Dmsg2(150, "Could not reserve volume %s on %s\n",
@@ -437,7 +438,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
 
   if (debug_level >= 20) { DumpVolumeLabel(dev); }
   Dmsg0(100, "Call reserve_volume\n");
-  if (reserve_volume(dcr, VolName) == NULL) {
+  if (reserve_volume(dcr, VolName) != VolumeReservationResult::kReserved) {
     Mmsg2(jcr->errmsg, T_("Could not reserve volume %s on %s\n"),
           dev->VolHdr.VolumeName, dev->print_name());
     Dmsg1(100, "%s", jcr->errmsg);

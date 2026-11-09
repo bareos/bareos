@@ -161,6 +161,18 @@ static std::string AppendVolumeInfo(std::string_view volume_name, int media_id)
          + " EncryptionKey=dummy MinBlocksize=0 MaxBlocksize=0\n";
 }
 
+static void ConfigureAppendStorage(TestJob& job,
+                                   std::initializer_list<const char*> devices,
+                                   const char* media_type = "File")
+{
+  auto& stores = job.jcr->sd_impl->dirstores;
+  stores.clear();
+  stores.emplace_back(true, "sssss", media_type, "ppppp", "ptptp");
+  for (const auto* device : devices) {
+    stores.front().device_names.push_back(device);
+  }
+}
+
 // Test that an illegal command passed to use_cmd will fail gracefully
 TEST_F(ReservationTest, use_cmd_illegal)
 {
@@ -341,6 +353,10 @@ TEST_F(ReservationTest, wait_for_device_uses_total_wait_budget)
   ASSERT_EQ(retries, 2);
 }
 
+// A contending job must acquire a device released during its short retry phase.
+// Pause the second job at its second retry heartbeat, release the first job's
+// reservation, then resume the retry and require successful acquisition. This
+// ensures the test exercises contention rather than two uncontended requests.
 TEST_F(ReservationTest, use_cmd_reserve_read_retries_before_waiting)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -431,6 +447,8 @@ TEST_F(ReservationTest, use_cmd_append_reserves_write_only)
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=writeonly1\n");
 }
 
+// An append candidate on another busy drive must trigger the mounted-volume
+// retry without leaving the abandoned free-drive reservation behind.
 TEST_F(ReservationTest, append_found_in_use_releases_retry_reservation)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -438,18 +456,8 @@ TEST_F(ReservationTest, append_found_in_use_releases_retry_reservation)
   auto job2 = std::make_unique<TestJob>(222u);
   job1->jcr->dir_bsock = job2->jcr->dir_bsock = bsock.get();
 
-  auto configure_append_storage
-      = [](TestJob& job, std::initializer_list<const char*> devices) {
-          auto& stores = job.jcr->sd_impl->dirstores;
-          stores.clear();
-          stores.emplace_back(true, "sssss", "File", "ppppp", "ptptp");
-          for (const auto* device : devices) {
-            stores.front().device_names.push_back(device);
-          }
-        };
-
-  configure_append_storage(*job1, {"auto1dev2"});
-  configure_append_storage(*job2, {"auto1dev3", "auto1dev2"});
+  ConfigureAppendStorage(*job1, {"auto1dev2"});
+  ConfigureAppendStorage(*job2, {"auto1dev3", "auto1dev2"});
 
   EXPECT_CALL(*bsock, recv())
       .WillOnce(BSOCK_RECV(
@@ -485,6 +493,8 @@ TEST_F(ReservationTest, append_found_in_use_releases_retry_reservation)
   ASSERT_EQ(job2_dcr->dev->NumReserved(), 0);
 }
 
+// A read-held volume cannot become an append candidate, so it must not trigger
+// a retry that prefers volumes mounted on other devices.
 TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -492,10 +502,8 @@ TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
   auto job = std::make_unique<TestJob>(222u);
   blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
 
-  auto& stores = job->jcr->sd_impl->dirstores;
-  stores.clear();
-  stores.emplace_back(true, "sssss", "FileRWOnly", "ppppp", "ptptp");
-  stores.front().device_names.push_back("writeonly1");
+  ConfigureAppendStorage(*job, {"writeonly1"}, "FileRWOnly");
+  auto& store = job->jcr->sd_impl->dirstores.front();
 
   AddReadVolume(blocker->jcr, "ReadHeldVolume");
 
@@ -514,14 +522,16 @@ TEST_F(ReservationTest, read_held_volume_does_not_trigger_append_retry)
 
   ReserveContext rctx{};
   rctx.append = true;
-  rctx.store = &stores.front();
-  rctx.device_name = stores.front().device_names.front().c_str();
+  rctx.store = &store;
+  rctx.device_name = store.device_names.front().c_str();
 
   ASSERT_EQ(SearchResForDevice(job->jcr, rctx), 1);
   ASSERT_FALSE(rctx.PreferMountedVols);
   ASSERT_FALSE(dcr->AppendVolumeBusy());
 }
 
+// Once the selected device holds another job's volume, stop asking the
+// Director for more candidates; otherwise the scan could create needless media.
 TEST_F(ReservationTest, append_scan_stops_when_device_holds_another_jobs_volume)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -529,10 +539,7 @@ TEST_F(ReservationTest, append_scan_stops_when_device_holds_another_jobs_volume)
   auto job = std::make_unique<TestJob>(222u);
   blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
 
-  auto& stores = blocker->jcr->sd_impl->dirstores;
-  stores.clear();
-  stores.emplace_back(true, "sssss", "File", "ppppp", "ptptp");
-  stores.front().device_names.push_back("auto1dev2");
+  ConfigureAppendStorage(*blocker, {"auto1dev2"});
 
   const auto candidate = AppendVolumeInfo("OtherVolume", 2);
   EXPECT_CALL(*bsock, recv())
@@ -566,28 +573,30 @@ TEST_F(ReservationTest, append_scan_reaches_volumes_beyond_device_count)
   auto job = std::make_unique<TestJob>(222u);
   blocker->jcr->dir_bsock = job->jcr->dir_bsock = bsock.get();
 
-  auto& stores = job->jcr->sd_impl->dirstores;
-  stores.clear();
-  stores.emplace_back(true, "sssss", "FileRWOnly", "ppppp", "ptptp");
-  stores.front().device_names.push_back("writeonly1");
+  ConfigureAppendStorage(*job, {"writeonly1"}, "FileRWOnly");
 
+  int device_count = 0;
+  {
+    ResLocker lock{my_config};
+    BareosResource* device = nullptr;
+    foreach_res (device, R_DEVICE) { ++device_count; }
+  }
+  ASSERT_GT(device_count, 0);
+
+  // Reject one candidate per configured device, then offer a usable volume.
+  // Reaching that last candidate proves the scan is not capped by device count.
   std::vector<std::string> responses;
-  for (int media_id = 1; media_id <= 7; media_id++) {
+  for (int media_id = 1; media_id <= device_count; media_id++) {
     auto volume_name = "BlockedVolume" + std::to_string(media_id);
     AddReadVolume(blocker->jcr, volume_name.c_str());
     responses.push_back(AppendVolumeInfo(volume_name, media_id));
   }
-  responses.push_back(AppendVolumeInfo("FreeVolume", 8));
+  responses.push_back(AppendVolumeInfo("FreeVolume", device_count + 1));
 
-  EXPECT_CALL(*bsock, recv())
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[0].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[1].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[2].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[3].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[4].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[5].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[6].c_str()))
-      .WillOnce(BSOCK_RECV(bsock.get(), responses[7].c_str()));
+  auto& receive_candidates = EXPECT_CALL(*bsock, recv());
+  for (const auto& response : responses) {
+    receive_candidates.WillOnce(BSOCK_RECV(bsock.get(), response.c_str()));
+  }
 
   EXPECT_CALL(*bsock, send()).WillRepeatedly(Return(true));
 

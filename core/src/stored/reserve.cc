@@ -733,7 +733,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
           dcr->dev->num_writers, rctx.have_volume);
     if (rctx.have_volume) {
       Dmsg0(debuglevel, "Call reserve_volume for append.\n");
-      if (reserve_volume(dcr, rctx.VolumeName)) {
+      if (reserve_volume(dcr, rctx.VolumeName)
+          == VolumeReservationResult::kReserved) {
         Dmsg1(debuglevel, "Reserved vol=%s\n", rctx.VolumeName);
       } else {
         Dmsg1(debuglevel, "Could not reserve vol=%s\n", rctx.VolumeName);

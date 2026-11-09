@@ -340,15 +340,16 @@ static void FreeVolItem(VolumeReservationItem* vol)
  * a drive and can move from drive to drive or be unused given certain specific
  *  conditions of the drive.  The key is that the drive must "own" the Volume.
  *
- *  Return: VolumeReservationItem entry on success
- *          NULL volume busy on another drive
+ *  Return: kReserved on success, kCurrentDeviceVolumeInUse if another job
+ *          holds the current device's volume, kUnavailable otherwise
  */
-VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
-                                      const char* VolumeName)
+VolumeReservationResult reserve_volume(DeviceControlRecord* dcr,
+                                       const char* VolumeName)
 {
   VolumeReservationItem *vol, *nvol;
+  auto result = VolumeReservationResult::kUnavailable;
 
-  if (dcr->jcr->IsJobCanceled()) { return NULL; }
+  if (dcr->jcr->IsJobCanceled()) { return result; }
   ASSERT(dcr->dev != NULL);
 
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
@@ -361,7 +362,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
          T_("Could not reserve volume \"%s\" for append, because it is read by "
             "another Job.\n"),
          dcr->dev->VolHdr.VolumeName);
-    return NULL;
+    return result;
   }
 
   /* We lock the reservations system here to ensure when adding a new volume
@@ -387,6 +388,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
         if (vol->IsInUse() && !dcr->reserved_volume) {
           Dmsg1(debuglevel, "Cannot free vol=%s. It is reserved.\n",
                 vol->vol_name);
+          result = VolumeReservationResult::kCurrentDeviceVolumeInUse;
           vol = NULL; /* vol in use */
           goto get_out;
         }
@@ -514,11 +516,12 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
       vol->SetInUse();
       dcr->reserved_volume = true;
       bstrncpy(dcr->VolumeName, vol->vol_name, sizeof(dcr->VolumeName));
+      result = VolumeReservationResult::kReserved;
     }
 
     if (debug_level >= debuglevel) { DebugListVolumes("end new volume"); }
   });
-  return vol;
+  return result;
 }
 
 namespace private_functions {

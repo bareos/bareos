@@ -321,10 +321,12 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
         if (availability == VolumeWriteAvailability::Available) {
           Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",
                 VolumeName);
-          if (reserve_volume(this, VolumeName) == NULL) {
+          const auto reservation_result = reserve_volume(this, VolumeName);
+          if (reservation_result != VolumeReservationResult::kReserved) {
             Dmsg2(debuglevel, "Could not reserve volume %s on %s\n", VolumeName,
                   dev->print_name());
-            if (dev->vol && dev->vol->IsInUse() && !reserved_volume) {
+            if (reservation_result
+                == VolumeReservationResult::kCurrentDeviceVolumeInUse) {
               Dmsg1(debuglevel,
                     "Stopping volume scan because device %s holds a volume "
                     "in use by another job.\n",

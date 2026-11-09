@@ -49,8 +49,11 @@ namespace storagedaemon {
 
 const int debuglevel = 400;
 
+// WaitForDevice() shares this mutex/condition-variable pair across jobs;
+// releasing a device wakes the waiters.
 static std::mutex device_release_mutex;
 static std::condition_variable wait_device_release;
+constexpr std::chrono::milliseconds kMinTimedOutWaitCharge{1000};
 
 /**
  * Wait for SysOp to mount a tape on a specific device
@@ -241,7 +244,9 @@ bool WaitForDevice(JobControlRecord* jcr,
          edit_uint64(jcr->JobId, ed1), jcr->Job);
   }
 
-  const auto wait_for = NextDeviceWait(budget, max_wait);
+  const auto wait_for = std::min(
+      budget.remaining,
+      std::chrono::duration_cast<std::chrono::milliseconds>(max_wait));
 
   Dmsg1(debuglevel, "Going to wait %lld ms for a device.\n",
         static_cast<long long>(wait_for.count()));
@@ -259,10 +264,10 @@ bool WaitForDevice(JobControlRecord* jcr,
   if (signalled) {
     /* A device was released, so the caller rescans. The time spent here is
      * charged, but a signal on its own never ends the job. */
-    ConsumeDeviceWait(budget, waited);
+    budget.Consume(waited);
   } else {
     // The granted time elapsed, so this wait counts as a full round.
-    ok = ConsumeDeviceWait(budget, waited, kMinTimedOutWaitCharge);
+    ok = budget.Consume(std::max(waited, kMinTimedOutWaitCharge));
   }
 
   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);

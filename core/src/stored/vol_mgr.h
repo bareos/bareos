@@ -124,8 +124,14 @@ void foreach_read_vol(PerVolumeAction visitor)
 
 void InitVolListLock();
 void TermVolListLock();
-VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
-                                      const char* VolumeName);
+enum class VolumeReservationResult
+{
+  kReserved,
+  kCurrentDeviceVolumeInUse,
+  kUnavailable
+};
+VolumeReservationResult reserve_volume(DeviceControlRecord* dcr,
+                                       const char* VolumeName);
 bool FreeVolume(Device* dev);
 bool IsVolListEmpty();
 dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr);

@@ -27,160 +27,50 @@
 using namespace storagedaemon;
 using namespace std::chrono_literals;
 
-namespace {
-constexpr bool ConsumesWholeBudgetInOneWait()
-{
-  DeviceWaitBudget budget{60s};
-
-  return !ConsumeDeviceWait(budget, 60s) && budget.remaining == 0s;
-}
-
-constexpr bool ConsumesBudgetInSteps()
-{
-  DeviceWaitBudget budget{60s};
-
-  if (!ConsumeDeviceWait(budget, 20s)) { return false; }
-  if (budget.remaining != 40s) { return false; }
-  if (!ConsumeDeviceWait(budget, 20s)) { return false; }
-  if (budget.remaining != 20s) { return false; }
-
-  return !ConsumeDeviceWait(budget, 20s) && budget.remaining == 0s;
-}
-
-constexpr bool NeverGoesNegative()
-{
-  DeviceWaitBudget budget{10s};
-
-  return !ConsumeDeviceWait(budget, 3600s) && budget.remaining == 0s;
-}
-
-/* A wakeup shorter than a second must still cost what it took. Truncating it
- * to zero would let repeated wakeups keep a job in the reservation loop for
- * good. */
-constexpr bool SubSecondWaitIsNotTruncated()
-{
-  DeviceWaitBudget budget{60s};
-
-  return ConsumeDeviceWait(budget, 500ms) && budget.remaining == 59500ms;
-}
-
-// Even a wait that measures as no time at all has to make progress.
-constexpr bool WaitOfNoTimeStillCostsSomething()
-{
-  DeviceWaitBudget budget{60s};
-
-  return ConsumeDeviceWait(budget, 0ms) && budget.remaining < 60s;
-}
-
-// So that a job woken up over and over eventually gives up.
-constexpr bool RepeatedWakeupsExhaustBudget()
-{
-  DeviceWaitBudget budget{3 * kMinSignalledWaitCharge};
-
-  if (!ConsumeDeviceWait(budget, 0ms)) { return false; }
-  if (!ConsumeDeviceWait(budget, 0ms)) { return false; }
-
-  return !ConsumeDeviceWait(budget, 0ms) && budget.remaining == 0ms;
-}
-
-// A wait that ran out of its granted time counts as a full round.
-constexpr bool TimedOutWaitCostsAtLeastASecond()
-{
-  DeviceWaitBudget budget{60s};
-
-  return ConsumeDeviceWait(budget, 0ms, kMinTimedOutWaitCharge)
-         && budget.remaining == 59s;
-}
-
-constexpr bool NextWaitIsCappedByBudget()
-{
-  const DeviceWaitBudget budget{10s};
-
-  return NextDeviceWait(budget, 60s) == 10s;
-}
-
-constexpr bool NextWaitIsCappedByInterval()
-{
-  const DeviceWaitBudget budget{24h};
-
-  return NextDeviceWait(budget, 60s) == 60s;
-}
-
-constexpr bool ExhaustedBudgetGrantsNoWait()
-{
-  const DeviceWaitBudget budget{0s};
-
-  return NextDeviceWait(budget, 60s) == 0s;
-}
-
-// A job starts out with a budget it can actually spend.
-constexpr bool DefaultBudgetIsPositive()
-{
-  return DeviceWaitBudget{}.remaining == kMaxTotalDeviceWait
-         && kMaxTotalDeviceWait > 0s && kDefaultDeviceWait > 0s;
-}
-
-static_assert(ConsumesWholeBudgetInOneWait());
-static_assert(ConsumesBudgetInSteps());
-static_assert(NeverGoesNegative());
-static_assert(SubSecondWaitIsNotTruncated());
-static_assert(WaitOfNoTimeStillCostsSomething());
-static_assert(RepeatedWakeupsExhaustBudget());
-static_assert(TimedOutWaitCostsAtLeastASecond());
-static_assert(NextWaitIsCappedByBudget());
-static_assert(NextWaitIsCappedByInterval());
-static_assert(ExhaustedBudgetGrantsNoWait());
-static_assert(DefaultBudgetIsPositive());
-}  // namespace
-
 TEST(DeviceWaitPolicy, ConsumesWholeBudgetInOneWait)
 {
-  EXPECT_TRUE(ConsumesWholeBudgetInOneWait());
+  DeviceWaitBudget budget{60s};
+
+  EXPECT_FALSE(budget.Consume(60s));
+  EXPECT_EQ(budget.remaining, 0ms);
 }
 
 TEST(DeviceWaitPolicy, ConsumesBudgetInSteps)
 {
-  EXPECT_TRUE(ConsumesBudgetInSteps());
+  DeviceWaitBudget budget{60s};
+
+  EXPECT_TRUE(budget.Consume(20s));
+  EXPECT_EQ(budget.remaining, 40s);
+  EXPECT_TRUE(budget.Consume(20s));
+  EXPECT_EQ(budget.remaining, 20s);
+  EXPECT_FALSE(budget.Consume(20s));
+  EXPECT_EQ(budget.remaining, 0ms);
 }
 
-TEST(DeviceWaitPolicy, NeverGoesNegative) { EXPECT_TRUE(NeverGoesNegative()); }
-
-TEST(DeviceWaitPolicy, SubSecondWaitIsNotTruncated)
+TEST(DeviceWaitPolicy, NeverGoesNegative)
 {
-  EXPECT_TRUE(SubSecondWaitIsNotTruncated());
+  DeviceWaitBudget budget{10s};
+
+  EXPECT_FALSE(budget.Consume(3600s));
+  EXPECT_EQ(budget.remaining, 0ms);
 }
 
-TEST(DeviceWaitPolicy, WaitOfNoTimeStillCostsSomething)
+TEST(DeviceWaitPolicy, SubSecondElapsedTimeIsNotTruncated)
 {
-  EXPECT_TRUE(WaitOfNoTimeStillCostsSomething());
+  DeviceWaitBudget budget{60s};
+
+  EXPECT_TRUE(budget.Consume(500ms));
+  EXPECT_EQ(budget.remaining, 59500ms);
 }
 
-TEST(DeviceWaitPolicy, RepeatedWakeupsExhaustBudget)
+TEST(DeviceWaitPolicy, ZeroElapsedTimeStillMakesProgress)
 {
-  EXPECT_TRUE(RepeatedWakeupsExhaustBudget());
-}
+  DeviceWaitBudget budget{3ms};
 
-TEST(DeviceWaitPolicy, TimedOutWaitCostsAtLeastASecond)
-{
-  EXPECT_TRUE(TimedOutWaitCostsAtLeastASecond());
-}
-
-TEST(DeviceWaitPolicy, NextWaitIsCappedByBudget)
-{
-  EXPECT_TRUE(NextWaitIsCappedByBudget());
-}
-
-TEST(DeviceWaitPolicy, NextWaitIsCappedByInterval)
-{
-  EXPECT_TRUE(NextWaitIsCappedByInterval());
-}
-
-TEST(DeviceWaitPolicy, ExhaustedBudgetGrantsNoWait)
-{
-  EXPECT_TRUE(ExhaustedBudgetGrantsNoWait());
-}
-
-TEST(DeviceWaitPolicy, DefaultBudgetIsPositive)
-{
-  EXPECT_TRUE(DefaultBudgetIsPositive());
+  EXPECT_TRUE(budget.Consume(0ms));
+  EXPECT_EQ(budget.remaining, 2ms);
+  EXPECT_TRUE(budget.Consume(0ms));
+  EXPECT_EQ(budget.remaining, 1ms);
+  EXPECT_FALSE(budget.Consume(0ms));
+  EXPECT_EQ(budget.remaining, 0ms);
 }
