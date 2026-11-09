@@ -19,24 +19,22 @@
    02110-1301, USA.
  */
 
-// Generated from the legacy PHP WebUI locale list.
+export const QUEUED_GROUP_THRESHOLD = 50
 
-export const DEFAULT_WEBUI_LOCALE = 'en_EN'
+export function resolveQueuedViewMode(
+  queuedCount,
+  override = null,
+  threshold = QUEUED_GROUP_THRESHOLD
+) {
+  if (override === 'flat' || override === 'grouped') {
+    return override
+  }
 
-export const WEBUI_LOCALES = [
-  { value: 'cn_CN', label: 'Chinese' },
-  { value: 'cs_CZ', label: 'Czech' },
-  { value: 'nl_BE', label: 'Dutch/Belgium' },
-  { value: 'en_EN', label: 'English' },
-  { value: 'fr_FR', label: 'French' },
-  { value: 'de_DE', label: 'German' },
-  { value: 'hu_HU', label: 'Hungarian' },
-  { value: 'it_IT', label: 'Italian' },
-  { value: 'pl_PL', label: 'Polish' },
-  { value: 'pt_BR', label: 'Portuguese (BR)' },
-  { value: 'ru_RU', label: 'Russian' },
-  { value: 'sk_SK', label: 'Slovak' },
-  { value: 'es_ES', label: 'Spanish' },
-  { value: 'tr_TR', label: 'Turkish' },
-  { value: 'uk_UA', label: 'Ukrainian' },
-]
+  return queuedCount > threshold ? 'grouped' : 'flat'
+}
+
+export function extractCancelableGroupJobs(group) {
+  return (group?.jobs ?? [])
+    .map(job => ({ job, id: job?.id ?? job?.jobid ?? null }))
+    .filter(({ id }) => id !== null && id !== '')
+}
