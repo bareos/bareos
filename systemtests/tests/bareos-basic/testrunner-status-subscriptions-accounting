@@ -92,7 +92,7 @@ CROSS JOIN LATERAL decode_lstat( \
 f.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
 WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
 AND f.Name IN ( \
-'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin','hardlink','sparse') \
 ORDER BY j.JobTDate, j.JobId, f.PathId, f.Name"
 .sql query="SELECT 'SELECTED_ROW jobid=' || recent.JobId || \
 ' jobtdate=' || recent.JobTDate || ' pathid=' || recent.PathId || \
@@ -105,10 +105,11 @@ FROM File f JOIN Job j USING (JobId) \
 JOIN FileSet fs USING (FileSetId) \
 WHERE j.Name='$JobName' AND fs.FileSet='AcctTest' \
 AND f.Name IN ( \
-'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin') \
-ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC) recent \
+'file-1byte.bin','file-512bytes.bin','file-1000bytes.bin','hardlink','sparse') \
+ORDER BY f.PathId, f.Name, j.JobTDate DESC, f.JobId DESC, f.FileId DESC) recent \
 CROSS JOIN LATERAL decode_lstat( \
 recent.LStat, ARRAY['st_size','st_blocks','st_mtime']) s \
+WHERE recent.FileIndex<>0 \
 ORDER BY recent.PathId, recent.Name"
 END_OF_DATA
 }
@@ -712,15 +713,32 @@ wait
 END_OF_DATA
   wait_for_accounting_result "$tmp/accounting-edges-full.log" \
     "AcctTest@bareos-fd[[:space:]]+5[[:space:]]+.*[[:space:]]1$"
-  run_python_check "$tmp/accounting-edges-full.log.json" "$tmp/acct-data" <<'PY'
+  record_catalog_stats sparse-full
+  read -r catalog_files catalog_bytes catalog_logical_bytes \
+    < <(catalog_accounted_totals sparse-full)
+  run_python_check "$tmp/accounting-edges-full.log.json" "$tmp/acct-data" \
+    "$catalog_files" "$catalog_bytes" "$catalog_logical_bytes" <<'PY'
+import errno
 import os
 
 row = find_acct_test_row(load_result(sys.argv[1]))
 paths = ["file-1byte.bin", "file-512bytes.bin", "file-1000bytes.bin",
          "edge/hardlink", "edge/sparse"]
+# Change allocation after the backup without changing the saved file contents.
+if hasattr(os, "posix_fallocate"):
+    with open(os.path.join(sys.argv[2], "edge/sparse"), "r+b") as stream:
+        try:
+            os.posix_fallocate(stream.fileno(), 0, os.fstat(stream.fileno()).st_size)
+            os.fsync(stream.fileno())
+        except OSError as error:
+            if error.errno not in (errno.ENOSYS, errno.EOPNOTSUPP):
+                raise
+            print(f"Post-backup allocation probe unsupported: {error}")
 stats = [os.stat(os.path.join(sys.argv[2], path)) for path in paths]
 assert row["files"] == len(stats), row
-assert row["bytes"] == sum(stat.st_blocks * 512 for stat in stats), row
+assert row["files"] == int(sys.argv[3]), row
+assert row["bytes"] == int(sys.argv[4]), row
+assert row["logical_bytes"] == int(sys.argv[5]), row
 assert row["logical_bytes"] == sum(stat.st_size for stat in stats), row
 assert row["bytes"] < row["logical_bytes"], row
 assert stats[1].st_ino == stats[3].st_ino
@@ -736,8 +754,12 @@ END_OF_DATA
   grep -q 'DELETED_ACCOUNTING_FILE=1' "$tmp/accounting-edges-delete.log"
   wait_for_accounting_result "$tmp/accounting-edges-delete.log" \
     "AcctTest@bareos-fd[[:space:]]+4[[:space:]]+.*[[:space:]]2$"
+  record_catalog_stats sparse-incremental
+  read -r catalog_files catalog_bytes catalog_logical_bytes \
+    < <(catalog_accounted_totals sparse-incremental)
   run_python_check "$tmp/accounting-edges-full.log.json" \
-    "$tmp/accounting-edges-delete.log.json" "$tmp/acct-data" <<'PY'
+    "$tmp/accounting-edges-delete.log.json" "$tmp/acct-data" \
+    "$catalog_files" "$catalog_bytes" "$catalog_logical_bytes" <<'PY'
 import os
 
 before = find_acct_test_row(load_result(sys.argv[1]))
@@ -745,8 +767,11 @@ after = find_acct_test_row(load_result(sys.argv[2]))
 assert after["files"] == before["files"] - 1, (before, after)
 assert after["logical_bytes"] == before["logical_bytes"] - 1, (before, after)
 paths = ["file-512bytes.bin", "file-1000bytes.bin", "edge/hardlink", "edge/sparse"]
-assert after["bytes"] == sum(os.stat(os.path.join(sys.argv[3], path)).st_blocks * 512
-                             for path in paths), after
+stats = [os.stat(os.path.join(sys.argv[3], path)) for path in paths]
+assert after["files"] == len(stats) == int(sys.argv[4]), after
+assert after["bytes"] == int(sys.argv[5]), after
+assert after["logical_bytes"] == int(sys.argv[6]), after
+assert after["logical_bytes"] == sum(stat.st_size for stat in stats), after
 PY
   query_accounting accurate-recalculated
   run_python_check "$tmp/accounting-edges-delete.log.json" \
