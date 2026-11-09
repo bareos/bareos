@@ -36,6 +36,8 @@
 #include "dird/jcr_util.h"
 #include "dird/ua_acct.h"
 #include "dird/ua_acct_internal.h"
+#include "dird/ua_cmds.h"
+#include "dird/ua_purge.h"
 
 #include <chrono>
 #include <string>
@@ -56,13 +58,19 @@ class CatalogTest : public ::testing::Test {
   BareosDb* db{};
   BareosDb* secondary_db{};
   bool secondary_catalog_created{false};
+  bool file_set_probe_installed{false};
+  directordaemon::DirectorResource test_director;
+  directordaemon::DirectorResource* previous_director{};
 
   void SetUp() override;
   void TearDown() override;
+  void WaitForAccountingWorkerIdle();
+  std::string QueryValue(const char* query);
 };
 
 void CatalogTest::SetUp()
 {
+  previous_director = directordaemon::me;
   // get environment
   {
     catalog_backend_name = getenv_std_string("DBTYPE");
@@ -107,9 +115,16 @@ void CatalogTest::SetUp()
 void CatalogTest::TearDown()
 {
   directordaemon::StopSubscriptionAccountingThread();
+  directordaemon::me = previous_director;
   if (secondary_db) { secondary_db->CloseDatabase(jcr); }
   if (secondary_catalog_created) {
     EXPECT_TRUE(db->SqlExec("DROP DATABASE regress_catalog_secondary"));
+  }
+  if (file_set_probe_installed) {
+    EXPECT_TRUE(db->SqlExec(
+        "DROP VIEW FileSet; ALTER TABLE acct_fileset RENAME TO FileSet; "
+        "DROP FUNCTION acct_probe_fileset(TEXT); DROP TABLE "
+        "acct_discovery_probe"));
   }
   if (db) { db->CloseDatabase(jcr); }
   DbSqlPoolDestroy();
@@ -123,6 +138,29 @@ void CatalogTest::TearDown()
     delete my_config;
     my_config = nullptr;
   }
+}
+
+void CatalogTest::WaitForAccountingWorkerIdle()
+{
+  for (int attempt = 0; attempt < 500; ++attempt) {
+    const auto status = directordaemon::GetSubscriptionAccountingThreadStatus();
+    if (status.available && !status.running && !status.queued) { return; }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ADD_FAILURE() << "Accounting worker did not become idle";
+}
+
+std::string CatalogTest::QueryValue(const char* query)
+{
+  std::string value;
+  EXPECT_TRUE(db->SqlQuery(
+      query,
+      [](void* ctx, int, char** row) {
+        *static_cast<std::string*>(ctx) = row[0];
+        return 0;
+      },
+      &value));
+  return value;
 }
 
 TEST_F(CatalogTest, database)
@@ -405,15 +443,6 @@ TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
   jcr->dir_impl->res.catalog = primary;
   ASSERT_NE(secondary_db, nullptr);
 
-  const auto wait_for_idle = [] {
-    for (int attempt = 0; attempt < 500; ++attempt) {
-      const auto status
-          = directordaemon::GetSubscriptionAccountingThreadStatus();
-      if (status.available && !status.running && !status.queued) { return; }
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    ADD_FAILURE() << "Accounting worker did not become idle";
-  };
   const auto complete
       = [&](BareosDb* connection, directordaemon::CatalogResource* catalog) {
           jcr->db = connection;
@@ -429,28 +458,16 @@ TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
           jcr->db = nullptr;
           jcr->dir_impl->res.catalog = primary;
         };
-  const auto read_value = [&](const char* query) {
-    std::string value;
-    EXPECT_TRUE(db->SqlQuery(
-        query,
-        [](void* ctx, int, char** row) {
-          *static_cast<std::string*>(ctx) = row[0];
-          return 0;
-        },
-        &value));
-    return value;
-  };
-
   ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
-  wait_for_idle();
+  WaitForAccountingWorkerIdle();
   complete(secondary_db, &secondary);
-  wait_for_idle();
-  EXPECT_EQ(read_value("SELECT AccountingBytes FROM Job WHERE JobId=1"), "512");
+  WaitForAccountingWorkerIdle();
+  EXPECT_EQ(QueryValue("SELECT AccountingBytes FROM Job WHERE JobId=1"), "512");
 
   ASSERT_TRUE(db->SqlExec("UPDATE File SET LStat='' WHERE JobId=1"));
   complete(secondary_db, &secondary);
-  wait_for_idle();
-  EXPECT_EQ(read_value("SELECT COALESCE(LastError, '') FROM "
+  WaitForAccountingWorkerIdle();
+  EXPECT_EQ(QueryValue("SELECT COALESCE(LastError, '') FROM "
                        "SubscriptionAccountingSnapshot WHERE SnapshotId=1"),
             "");
 
@@ -458,7 +475,93 @@ TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
       db->SqlExec("UPDATE File SET LStat='A A IGk B A A A C BAA C A A A A A A' "
                   "WHERE JobId=1"));
   complete(db, primary);
-  wait_for_idle();
-  EXPECT_EQ(read_value("SELECT AccountingBytes FROM Job WHERE JobId=1"),
+  WaitForAccountingWorkerIdle();
+  EXPECT_EQ(QueryValue("SELECT AccountingBytes FROM Job WHERE JobId=1"),
             "1024");
+}
+
+TEST_F(CatalogTest, PurgeDiscoverySkipsEmptyListsAndCoalescesRanges)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    TRUNCATE File, Job, FileSet, Path, Client;
+    INSERT INTO Client (ClientId, Name, Uname) VALUES (1, 'acct-purge', 'Linux');
+    INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
+      VALUES (1, 'AcctPurge', 'purge', CURRENT_TIMESTAMP);
+    INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-purge/');
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, JobTDate)
+      VALUES (1, 'purge-1', 'purge', 'B', 'F', 1, 1, 'T', 1999999000),
+             (2, 'purge-2', 'purge', 'B', 'I', 1, 1, 'T', 1999999001),
+             (100, 'kept-full', 'purge', 'B', 'F', 1, 1, 'T', 2000000000);
+    UPDATE Job SET AccountingValid=TRUE, AccountingExcluded=FALSE,
+      AccountingFiles=1, AccountingBytes=512, AccountingLogicalBytes=1,
+      AccountingRule='st_blocks*512', AccountingJobsInChain=1 WHERE JobId=100;
+    INSERT INTO File (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
+      VALUES (1, 1, 100, 1, 'kept', 'A A IGk B A A A B BAA B A A A A A A', '');
+    ALTER TABLE FileSet RENAME TO acct_fileset;
+    CREATE TABLE acct_discovery_probe (observed TIMESTAMPTZ NOT NULL);
+    CREATE FUNCTION acct_probe_fileset(value TEXT) RETURNS TEXT
+      LANGUAGE plpgsql VOLATILE AS $$
+    BEGIN
+      IF position('WHERE NOT latest.AccountingValid' in current_query()) > 0 THEN
+        INSERT INTO acct_discovery_probe VALUES (statement_timestamp());
+      END IF;
+      RETURN value;
+    END;
+    $$;
+    CREATE VIEW FileSet AS
+      SELECT FileSetId, acct_probe_fileset(FileSet) AS FileSet, FileSetText,
+             Md5, CreateTime FROM acct_fileset;
+  )SQL"))
+      << db->strerror();
+  file_set_probe_installed = true;
+  ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
+  WaitForAccountingWorkerIdle();
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
+
+  directordaemon::UaContext ua(jcr);
+  ua.db = db;
+  ua.private_db = db;
+  ua.batch = true;
+  ua.SetConsoleConnected(false);
+  const char* discovery_count
+      = "SELECT COUNT(DISTINCT observed) FROM acct_discovery_probe";
+
+  directordaemon::PurgeFilesFromJobs(&ua, "");
+  EXPECT_EQ(QueryValue(discovery_count), "0");
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
+  directordaemon::PurgeJobsFromCatalog(&ua, "");
+  EXPECT_EQ(QueryValue(discovery_count), "0");
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
+  jcr->JobId = 100;
+  std::vector<JobId_t> filtered{0, 100};
+  directordaemon::PurgeFilesFromJobList(&ua, filtered);
+  jcr->JobId = 0;
+  EXPECT_EQ(QueryValue(discovery_count), "0");
+
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
+  directordaemon::PurgeFilesFromJobs(&ua, "1");
+  WaitForAccountingWorkerIdle();
+  EXPECT_EQ(QueryValue(discovery_count), "1");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=100"),
+            "true");
+
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
+  directordaemon::me = &test_director;
+  char command[] = "delete";
+  char keyword[] = "jobid";
+  char range[] = "1-2";
+  ua.argc = 2;
+  ua.argk[0] = command;
+  ua.argk[1] = keyword;
+  ua.argv[1] = range;
+  ASSERT_TRUE(directordaemon::Do_a_command(&ua));
+  WaitForAccountingWorkerIdle();
+  EXPECT_EQ(QueryValue(discovery_count), "1");
+  EXPECT_EQ(QueryValue("SELECT COUNT(*) FROM Job WHERE JobId BETWEEN 1 AND 2"),
+            "0");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=100"),
+            "true");
+  EXPECT_EQ(QueryValue("SELECT AccountingBytes FROM Job WHERE JobId=100"),
+            "512");
 }

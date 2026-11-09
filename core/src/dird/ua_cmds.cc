@@ -154,7 +154,9 @@ static bool VersionCmd(UaContext* ua, const char* cmd);
 static bool wait_cmd(UaContext* ua, const char* cmd);
 static bool WhoAmICmd(UaContext* ua, const char* cmd);
 
-static void DoJobDelete(UaContext* ua, JobId_t JobId);
+static void DoJobDelete(UaContext* ua,
+                        JobId_t JobId,
+                        bool refresh_accounting = true);
 static bool DeleteJobIdRange(UaContext* ua, char* tok);
 static bool DeleteVolume(UaContext* ua);
 static bool DeletePool(UaContext* ua);
@@ -2428,7 +2430,8 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
                   j2 - j1);
         if (!GetYesno(ua, buf) || !ua->pint32_val) { return true; }
       }
-      for (j = j1; j <= j2; j++) { DoJobDelete(ua, j); }
+      for (j = j1; j <= j2; j++) { DoJobDelete(ua, j, false); }
+      QueueMissingSubscriptionAccounting(ua);
     } else {
       ua->ErrorMsg(T_("Illegal JobId range %s - %s should define increasing "
                       "JobIds, ignored\n"),
@@ -2442,12 +2445,12 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
 }
 
 // DoJobDelete now performs the actual delete operation atomically
-static void DoJobDelete(UaContext* ua, JobId_t JobId)
+static void DoJobDelete(UaContext* ua, JobId_t JobId, bool refresh_accounting)
 {
   char ed1[50];
 
   edit_int64(JobId, ed1);
-  PurgeJobsFromCatalog(ua, ed1);
+  PurgeJobsFromCatalog(ua, ed1, refresh_accounting);
   ua->send->ArrayItem(
       ed1, T_("Jobid %s and associated records deleted from the catalog.\n"));
 }
