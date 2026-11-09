@@ -860,6 +860,10 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "scratchpoolid",
             "recyclepoolid",
             "labeltype",
+            "maxvolfiles",
+            "actiononpurge",
+            "minblocksize",
+            "maxblocksize",
         ]
         optional_long_list_pool_keys = {
             "prunablevolumes",

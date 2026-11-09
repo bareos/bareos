@@ -258,6 +258,22 @@ class PythonBareosAclTest(bareos_unittest.Json):
         for volume in result["volumes"]:
             self.assertEqual(volume["pool"], "Full")
 
+        volumes = director_root.call("llist media all")["volumes"]
+        allowed_volume = next(v["volumename"] for v in volumes if v["pool"] == "Full")
+        denied_volume = next(
+            v["volumename"] for v in volumes if v["pool"] == "Incremental"
+        )
+        director_root.call(f'update volume="{denied_volume}" comment="original"')
+        console_poolfull.call(f'update volume="{allowed_volume}" comment="allowed"')
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_poolfull.call(f'update volume="{denied_volume}" comment="denied"')
+        volumes = {
+            v["volumename"]: v["comment"]
+            for v in director_root.call("llist media all")["volumes"]
+        }
+        self.assertEqual(volumes[allowed_volume], "allowed")
+        self.assertEqual(volumes[denied_volume], "original")
+
         #
         # login as console 'poolnotfull'
         #
@@ -368,6 +384,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         full_rows = admin.call(f"llist jobmedia jobid={full}")["jobmedia"]
         volume = full_rows[0]["volumename"]
+        usage_command = f'list volumeusage volume="{volume}"'
+        for name, visible in (("poolfull", True), ("poolnotfull", False)):
+            segments = consoles[name].call(usage_command)["volumeusage"]["segments"]
+            self.assertEqual(full in {str(row["jobid"]) for row in segments}, visible)
         moved_ids = {
             row["jobmediaid"] for row in full_rows if row["volumename"] == volume
         }
@@ -384,6 +404,11 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     moved_ids.isdisjoint(row["jobmediaid"] for row in denied)
                 )
                 self.assertTrue(moved_ids <= {row["jobmediaid"] for row in allowed})
+            for name, visible in (("poolfull", False), ("poolnotfull", True)):
+                segments = consoles[name].call(usage_command)["volumeusage"]["segments"]
+                self.assertEqual(
+                    full in {str(row["jobid"]) for row in segments}, visible
+                )
         finally:
             admin.call(f'update volume="{volume}" pool=Full')
 
@@ -397,6 +422,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     "jobmedia"
                 ]
                 self.assertIn(full, {row["jobid"] for row in rows})
+            segments = consoles["client-bareos-fd"].call(usage_command)["volumeusage"][
+                "segments"
+            ]
+            self.assertIn(full, {str(row["jobid"]) for row in segments})
             admin.call(
                 f'.sql query="UPDATE Job SET ClientId=2147483647 WHERE JobId={full}"'
             )
@@ -405,6 +434,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     "jobmedia"
                 ]
                 self.assertNotIn(full, {row["jobid"] for row in rows})
+            segments = consoles["job-backup-bareos-fd"].call(usage_command)[
+                "volumeusage"
+            ]["segments"]
+            self.assertNotIn(full, {str(row["jobid"]) for row in segments})
         finally:
             admin.call(
                 f'.sql query="UPDATE Job SET ClientId={int(original_client)} WHERE JobId={full}"'
@@ -478,6 +511,22 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
+
+        for list_command in ("list", "llist"):
+            for jobid, visible in ((jobid1, True), (jobid2, False)):
+                root_rows = director_root.call(
+                    f"{list_command} jobmedia jobid={jobid}"
+                )["jobmedia"]
+                self.assertTrue(root_rows)
+                for volume in {row["volumename"] for row in root_rows}:
+                    rows = director.call(f'{list_command} jobmedia volume="{volume}"')[
+                        "jobmedia"
+                    ]
+                    ids = {int(row["jobid"]) for row in rows}
+                    self.assertEqual(int(jobid) in ids, visible)
+                    for row in rows:
+                        self.assertNotIn("jobname", row)
+                        self.assertNotIn("clientname", row)
 
         director_root.call(f'update jobid={jobid2} comment="original"')
         director.call(f'update jobid={jobid1} comment="allowed"')

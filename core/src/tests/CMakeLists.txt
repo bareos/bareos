@@ -416,6 +416,9 @@ if(ENABLE_BCONSOLE)
     test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
                                               Bareos::Findlib GTest::gtest_main
   )
+  bareos_add_test(test_pool_list_columns LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_volume_usage LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_volstatus_change LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
 
 # Keep alphabetically ordered

@@ -45,6 +45,8 @@ describe('webui i18n generation', () => {
     expect(messageIds).toContain('Configuration Status')
     expect(messageIds).toContain('Try the subscription release')
     expect(messageIds).toContain('Virtual Full')
+    expect(messageIds).toContain('Action On Purge')
+    expect(messageIds).toContain('in drive {drive}')
   })
 
   it('uses Vue-owned catalogs with no PHP WebUI dependency', () => {
