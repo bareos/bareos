@@ -402,6 +402,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 // Remove File records from a list of JobIds
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 {
+  if (!*jobs) { return; }
   ua->db->PurgeFiles(jobs);
   QueueMissingSubscriptionAccounting(ua);
 }
@@ -472,10 +473,13 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 }
 
 // Remove all records from catalog for a list of JobIds
-void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
+void PurgeJobsFromCatalog(UaContext* ua,
+                          const char* jobs,
+                          bool refresh_accounting)
 {
+  if (!*jobs) { return; }
   ua->db->PurgeJobs(jobs);
-  QueueMissingSubscriptionAccounting(ua);
+  if (refresh_accounting) { QueueMissingSubscriptionAccounting(ua); }
 }
 
 /**
