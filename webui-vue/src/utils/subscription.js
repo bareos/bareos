@@ -59,6 +59,12 @@ const subscriptionExportTables = {
   summary: ['total_files', 'total_bytes', 'total_logical_bytes'],
 }
 
+const subscriptionNumericColumns = new Set([
+  'count', 'size_gb', 'files', 'bytes', 'logical_bytes', 'jobs_in_chain',
+  'used', 'configured', 'remaining', 'total_files', 'total_bytes',
+  'total_logical_bytes',
+])
+
 export function serializeSubscriptionTable(data, table, format) {
   if (table === 'all') {
     const sections = Object.keys(subscriptionExportTables)
@@ -80,10 +86,12 @@ export function serializeSubscriptionTable(data, table, format) {
   }
   const rows = isSummary ? [dataset] : dataset
   const delimiter = format === 'csv' ? ',' : '\t'
-  const escape = value => {
+  const escape = (value, column) => {
     let text = String(value ?? '')
+    const isNumeric = subscriptionNumericColumns.has(column)
+      && /^[+-]?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(text)
     // Spreadsheet applications interpret these text prefixes as formulas.
-    if (typeof value === 'string' && /^\s*[=+\-@]|^[\t\r\n]/.test(text)) {
+    if (typeof value === 'string' && !isNumeric && /^\s*[=+\-@]|^[\t\r\n]/.test(text)) {
       text = `'${text}`
     }
     return /["\r\n\t,]/.test(text)
@@ -92,6 +100,6 @@ export function serializeSubscriptionTable(data, table, format) {
   }
   return [
     columns.join(delimiter),
-    ...rows.map(row => columns.map(column => escape(row[column])).join(delimiter)),
+    ...rows.map(row => columns.map(column => escape(row[column], column)).join(delimiter)),
   ].join('\r\n') + '\r\n'
 }

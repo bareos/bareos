@@ -64,6 +64,29 @@ describe('subscription helpers', () => {
     }, 'unit-summary', 'csv')).toContain('volume-based,2,1,-1\r\n')
   })
 
+  it.each(['csv', 'tsv'])('preserves negative SQL numeric strings in %s without precision loss', format => {
+    const delimiter = format === 'csv' ? ',' : '\t'
+    expect(serializeSubscriptionTable({
+      'unit-summary': {
+        accounting_mode: 'volume-based', used: '10', configured: '5',
+        remaining: '-9007199254740993',
+      },
+    }, 'unit-summary', format)).toContain(
+      ['volume-based', '10', '5', '-9007199254740993'].join(delimiter) + '\r\n',
+    )
+  })
+
+  it.each(['csv', 'tsv'])('protects names and numeric-column formulas in %s', format => {
+    const delimiter = format === 'csv' ? ',' : '\t'
+    expect(serializeSubscriptionTable({
+      'unit-detail': [{
+        client: '-5', plugin: '@SUM(A1)', count: '-1+2', size_gb: '-0.5',
+      }],
+    }, 'unit-detail', format)).toContain(
+      ["'-5", "'@SUM(A1)", "'-1+2", '-0.5'].join(delimiter) + '\r\n',
+    )
+  })
+
   it('exports accounting values without unit conversion and keeps missing values blank', () => {
     expect(serializeSubscriptionTable({
       accounting: [{ client: 'client', fileset: 'files', files: 2, bytes: 1024,
