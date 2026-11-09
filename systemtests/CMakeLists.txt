@@ -101,6 +101,14 @@ if(UNIX AND PGREP)
   )
 endif()
 
+if(UNIX)
+  add_test(
+    NAME system:bls-compression-job-identity
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bls-compression.sh"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/functions"
+  )
+endif()
+
 set(USER $ENV{USER})
 
 # set the data encryption and signature keys

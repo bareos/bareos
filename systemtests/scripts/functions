@@ -501,21 +501,42 @@ bls_files_verbose()
   local STORAGE=${1}
   local VOLUME=${2}
   local LOCAL_CONF=${3:-${BAREOS_CONFIG_DIR}}
-  # JobId is not yet evaluated
-
   "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${LOCAL_CONF}" -v "${STORAGE}"
   return $?
 }
 
-bls_file_index_for_path()
+bls_records_for_path()
 {
   local BLS_OUT="$1"
   local FILENAME="$2"
+  local JOBID="${3:-}"
 
-  awk -v filename="$FILENAME" '
+  awk -v filename="$FILENAME" -v jobid="$JOBID" '
+    function field(name, i, prefix) {
+      prefix = name "="
+      for (i = 1; i <= NF && $i != "|"; i++) {
+        if (index($i, prefix) == 1) {
+          return substr($i, length(prefix) + 1)
+        }
+      }
+      return ""
+    }
+    /^(FileIndex=[0-9]+|Begin Job Session Record:)/ {
+      session_id = field("VolSessionId")
+      session_time = field("VolSessionTime")
+      session = session_id SUBSEP session_time
+    }
+    /^Begin Job Session Record:/ {
+      jobs[session] = field("JobId")
+    }
     /^FileIndex=[0-9]+/ {
-      file_index = $1
-      sub(/^FileIndex=/, "", file_index)
+      if (session_id == "" || session_time == "") {
+        missing_identity = 1
+      }
+      file_key = session SUBSEP field("FileIndex")
+      records[++count] = $0
+      keys[count] = file_key
+      sessions[count] = session
     }
     /^[[:space:]]*\| / {
       file_path = $0
@@ -524,7 +545,19 @@ bls_file_index_for_path()
           (length(file_path) > length(filename) &&
            substr(file_path, length(file_path) - length(filename), 1) == "/" &&
            substr(file_path, length(file_path) - length(filename) + 1) == filename)) {
-        print file_index
+        matching[file_key] = 1
+      }
+    }
+    END {
+      if (missing_identity) {
+        print "Missing session identity in verbose bls records." > "/dev/stderr"
+        exit 1
+      }
+      for (i = 1; i <= count; i++) {
+        if (matching[keys[i]] &&
+            (jobid == "" || jobs[sessions[i]] == jobid)) {
+          print records[i]
+        }
       }
     }
   ' <<<"$BLS_OUT"
@@ -537,14 +570,16 @@ is_file_compressed()
   local FILENAME=${3}
   local LOCAL_CONF=${4:-${BAREOS_CONFIG_DIR}}
   local BLS_OUT
-  local FILE_INDEXES
+  local FILE_RECORDS
 
   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}")
-  FILE_INDEXES=$(bls_file_index_for_path "$BLS_OUT" "$FILENAME" | paste -sd'|' -)
+  if ! FILE_RECORDS=$(bls_records_for_path "$BLS_OUT" "$FILENAME"); then
+    set_error "Could not match verbose bls records for ${FILENAME}."
+    return 1
+  fi
   OUT=""
-  if [[ -n "$FILE_INDEXES" ]] \
-    && OUT=$(grep -E "^FileIndex=(${FILE_INDEXES})[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$BLS_OUT"); then
+  if OUT=$(grep -E "^FileIndex=[0-9]+[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$FILE_RECORDS"); then
     return 0
   else
     print_debug "${OUT:-No compressed record found for ${FILENAME}}"
@@ -556,14 +591,13 @@ check_compression()
 {
   local STORAGE=${1}
   local VOLUME=${2}
-  # JobId is not yet evaluated
   local JOBID=${3}
   local FILENAME=${4}
   local COMPRESSION=${5:-'GZIP'}
   local COMPRESSION_LEVEL=${6:-}
 
   local COMPRESSION_DESCRIPTION="${COMPRESSION}"
-  local FILE_INDEXES
+  local FILE_RECORDS
   if [ "${COMPRESSION_LEVEL}" ]; then
     COMPRESSION_DESCRIPTION="${COMPRESSION}, level=${COMPRESSION_LEVEL}"
   fi
@@ -572,9 +606,11 @@ check_compression()
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}")
   print_debug "$BLS_OUT"
   echo "$BLS_OUT"
-  FILE_INDEXES=$(bls_file_index_for_path "$BLS_OUT" "$FILENAME" | paste -sd'|' -)
-  if [[ -n "$FILE_INDEXES" ]] \
-    && OUT=$(grep -E "^FileIndex=(${FILE_INDEXES})[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$BLS_OUT" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
+  if ! FILE_RECORDS=$(bls_records_for_path "$BLS_OUT" "$FILENAME" "$JOBID"); then
+    set_error "Could not match verbose bls records for job=${JOBID}, file=${FILENAME}."
+    return 1
+  fi
+  if OUT=$(grep -E "^FileIndex=[0-9]+[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$FILE_RECORDS" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
     print_debug "$OUT"
   else
     set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."
