@@ -127,37 +127,6 @@ void Device::dunblock(bool locked)
   Unlock();
 }
 
-// DeviceControlRecord locks N.B.
-// Multiple device lock implementation
-void DeviceControlRecord::mLock(bool locked)
-{
-  lock_mutex(r_mutex);
-  if (IsDevLocked()) {
-    unlock_mutex(r_mutex);
-    return;
-  }
-  if (!locked) { dev->Lock(); }
-  dev->WaitUntilOtherThreadReleasesBlock();
-  IncDevLock();
-  unlock_mutex(r_mutex);
-  return;
-}
-
-// Multiple rUnlock implementation
-void DeviceControlRecord::mUnlock()
-{
-  lock_mutex(r_mutex);
-  if (!IsDevLocked()) {
-    unlock_mutex(r_mutex);
-    Emsg1(M_ABORT, 0, "Call on dcr mUnlock when not locked\n");
-  }
-  DecDevLock();
-  // When the count goes to zero, unlock it
-  if (!IsDevLocked()) { dev->Unlock(); }
-  unlock_mutex(r_mutex);
-  return;
-}
-
 void Device::Lock() { lock_mutex(mutex_); }
 
 void Device::Unlock() { unlock_mutex(mutex_); }
@@ -191,7 +160,7 @@ int Device::NextVolTimedwait(const struct timespec* timeout)
 }
 
 /**
- * Wait until another thread unblocks the device.
+ * Wait until no other thread blocks the device.
  *
  * When blocked is set, all threads EXCEPT thread with id no_wait_id
  * wait. A block owned by the current thread is left intact. The device mutex

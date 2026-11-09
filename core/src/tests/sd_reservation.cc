@@ -133,6 +133,7 @@ class ReleaseTestDevice : public SpoolDevice {
 
 TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
 {
+  // Release must not close a volume while another job is acquiring it.
   for (bool acquired : {false, true}) {
     SCOPED_TRACE(acquired);
     auto job = std::make_unique<TestJob>(111u);
@@ -164,14 +165,15 @@ TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
     auto release
         = std::async(std::launch::async, [dcr] { return ReleaseDevice(dcr); });
 
-    bool waiting = false;
+    int waiting_threads = 0;
+    // Wait up to five seconds for release to block; exit early if it completes.
     const auto deadline
         = std::chrono::steady_clock::now() + std::chrono::seconds(5);
     do {
       device.Lock();
-      waiting = device.num_waiting > 0;
+      waiting_threads = device.num_waiting;
       device.Unlock();
-      if (waiting
+      if (waiting_threads > 0
           || release.wait_for(std::chrono::milliseconds(0))
                  == std::future_status::ready) {
         break;
@@ -186,7 +188,8 @@ TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
     device.dunblock(true);
 
     EXPECT_TRUE(release.get());
-    EXPECT_TRUE(waiting) << "Release bypassed another job's acquisition block";
+    EXPECT_EQ(waiting_threads, 1)
+        << "Release bypassed another job's acquisition block";
     EXPECT_EQ(writers_during_acquisition, 1);
     EXPECT_TRUE(open_during_acquisition)
         << "Release closed the volume while another job was acquiring it";
@@ -199,6 +202,7 @@ TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
 
 TEST_F(ReservationTest, ReleaseCanFinishItsOwnDespoolingBlock)
 {
+  // A canceled job still owns its despooling block and must release it cleanly.
   auto job = std::make_unique<TestJob>(111u);
   job->jcr->setJobStatus(JS_Canceled);
   SpoolDevice device;
@@ -219,7 +223,9 @@ TEST_F(ReservationTest, ReleaseCanFinishItsOwnDespoolingBlock)
 
 TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsFlush)
 {
+  // The first release holds its release block throughout the flush.
   auto job = std::make_unique<TestJob>(111u);
+  // Cancellation skips the second job's own flush to isolate the wait.
   auto canceled_job = std::make_unique<TestJob>(112u);
   canceled_job->jcr->setJobStatus(JS_Canceled);
   ReleaseTestDevice device;
@@ -255,14 +261,15 @@ TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsFlush)
     return ReleaseDevice(canceled_dcr);
   });
 
-  bool waiting = false;
+  int waiting_threads = 0;
+  // Wait for the second release to block, bounded to prevent a hung test.
   const auto deadline
       = std::chrono::steady_clock::now() + std::chrono::seconds(5);
   do {
     device.Lock();
-    waiting = device.num_waiting > 0;
+    waiting_threads = device.num_waiting;
     device.Unlock();
-    if (waiting
+    if (waiting_threads > 0
         || canceled_release.wait_for(std::chrono::milliseconds(0))
                == std::future_status::ready) {
       break;
@@ -276,7 +283,7 @@ TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsFlush)
 
   EXPECT_TRUE(release.get());
   EXPECT_TRUE(canceled_release.get());
-  EXPECT_TRUE(waiting) << "Release bypassed another job's flush";
+  EXPECT_EQ(waiting_threads, 1) << "Release bypassed another job's flush";
   EXPECT_EQ(writers_during_flush, 2);
   EXPECT_EQ(device.num_writers, 0);
   EXPECT_FALSE(device.IsOpen());

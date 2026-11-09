@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,6 @@ enum class is_labeloperation : bool
 class DeviceControlRecord {
  private:
   bool dev_locked_{};              /**< Set if dev already locked */
-  int dev_lock_{};                 /**< Non-zero if rLock already called */
   bool reserved_{};                /**< Set if reserved device */
   bool found_in_use_{};            /**< Set if a volume found in use */
   bool will_write_{};              /**< Set if DeviceControlRecord will be used for writing */
@@ -77,7 +76,6 @@ class DeviceControlRecord {
  public:
   JobControlRecord* jcr{};         /**< Pointer to JobControlRecord */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;  /**< Access control */
-  pthread_mutex_t r_mutex = PTHREAD_MUTEX_INITIALIZER; /**< rLock pre-mutex */
   Device* dev{};          /**< Pointer to device */
   DeviceResource* device_resource{};    /**< Pointer to device resource */
   DeviceBlock* block{};            /**< Pointer to current block */
@@ -135,8 +133,6 @@ class DeviceControlRecord {
   bool IsDevLocked() { return dev_locked_; }
   bool IsWriting() const { return will_write_; }
 
-  void IncDevLock() { dev_lock_++; }
-  void DecDevLock() { dev_lock_--; }
   bool FoundInUse() const { return found_in_use_; }
 
   bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
@@ -164,8 +160,6 @@ class DeviceControlRecord {
 
   // Methods in lock.c
   void dblock(int why);
-  void mLock(bool locked);
-  void mUnlock();
 
   // Methods in record.c
   bool WriteRecord();

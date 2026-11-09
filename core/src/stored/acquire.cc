@@ -63,13 +63,6 @@ DeviceControlRecord::DeviceControlRecord()
     Mmsg(errmsg, T_("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
     Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
   }
-
-  if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
-    BErrNo be;
-
-    Mmsg(errmsg, T_("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-    Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
-  }
 }
 
 static int const rdebuglevel = 100;
@@ -797,7 +790,6 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
   unlock_mutex(dcr->mutex_);
 
   pthread_mutex_destroy(&dcr->mutex_);
-  pthread_mutex_destroy(&dcr->r_mutex);
 
   delete dcr;
 }
