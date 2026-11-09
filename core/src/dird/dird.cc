@@ -38,6 +38,7 @@
 #include "dird/scheduler.h"
 #include "dird/socket_server.h"
 #include "dird/stats.h"
+#include "dird/ua_acct.h"
 #include "lib/daemon.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -71,8 +72,7 @@ namespace directordaemon {
 #if !defined(HAVE_WIN32)
 static
 #endif
-    void
-    TerminateDird(int sig);
+    void TerminateDird(int sig);
 }  // namespace directordaemon
 
 static void CleanUpOldFiles();
@@ -384,6 +384,7 @@ int main(int argc, char* argv[])
       DbDebugPrint); /* used to debug BareosDb connection after fatal signal */
 
   StartStatisticsThread();
+  StartSubscriptionAccountingThread();
 
   Dmsg0(200, "Start UA server\n");
   if (!StartSocketServer(me->DIRaddrs)) { TerminateDird(0); }
@@ -404,8 +405,7 @@ namespace directordaemon {
 #if !defined(HAVE_WIN32)
 static
 #endif
-    void
-    TerminateDird(int sig)
+    void TerminateDird(int sig)
 {
   static bool is_reloading = false;
 
@@ -420,6 +420,7 @@ static
   DestroyConfigureUsageString();
   StopSocketServer();
   StopStatisticsThread();
+  StopSubscriptionAccountingThread();
   StopWatchdog();
   DbSqlPoolDestroy();
   UnloadDirPlugins();

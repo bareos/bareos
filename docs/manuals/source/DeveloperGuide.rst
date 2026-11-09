@@ -35,5 +35,6 @@ Developer Guide
    DeveloperGuide/PHP.rst
    DeveloperGuide/Webui.rst
    DeveloperGuide/WebuiVue.rst
+   DeveloperGuide/SubscriptionAccounting.rst
    DeveloperGuide/BarriFormat.rst
    DeveloperGuide/developerFAQ.rst

@@ -46,6 +46,7 @@
 #include "dird/storage.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
 #include "dird/ua_run.h"
@@ -358,19 +359,13 @@ bail_out:
 }
 
 bool IsConnectingToClientAllowed(ClientResource* res)
-{
-  return res->conn_from_dir_to_fd;
-}
+{ return res->conn_from_dir_to_fd; }
 
 bool IsConnectFromClientAllowed(ClientResource* res)
-{
-  return res->conn_from_fd_to_dir;
-}
+{ return res->conn_from_fd_to_dir; }
 
 bool IsClientTlsRequired(ClientResource* res)
-{
-  return res->GetPolicy() == TlsPolicy::kBnetTlsRequired;
-}
+{ return res->GetPolicy() == TlsPolicy::kBnetTlsRequired; }
 
 bool UseWaitingClient(JobControlRecord* jcr,
                       ClientResource* client,
@@ -1443,10 +1438,21 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
-  if (DbLocker _{jcr->db};
-      !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
+  bool updated;
+  {
+    DbLocker _{jcr->db};
+    updated = jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr);
+  }
+  if (!updated) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),
          jcr->db->strerror());
+    return;
+  }
+  const auto status = jcr->getJobStatus();
+  const auto type = jcr->getJobType();
+  if ((status == JS_Terminated || status == JS_Warnings)
+      && (type == JT_BACKUP || type == JT_JOB_COPY)) {
+    QueueSubscriptionAccountingJob(jcr->JobId);
   }
 }
 
