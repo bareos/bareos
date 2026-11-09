@@ -200,8 +200,7 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 
     // Derive size/blocks from the reported file size, when known.
     // Do not guess when the NDMP data server didn't report a size.
-    // An explicitly reported but unrepresentable size must not look like
-    // a valid empty file to accounting. Preserve it as an invalid stat.
+    // Unknown or unrepresentable regular-file sizes must not look empty.
     if (fstat->size.valid == NDMP9_VALIDITY_VALID) {
       if (fstat->size.value > static_cast<uint64_t>(
               std::numeric_limits<decltype(statp.st_size)>::max())) {
@@ -219,6 +218,8 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
           statp.st_blocks = static_cast<decltype(statp.st_blocks)>(blocks);
         }
       }
+    } else if (S_ISREG(statp.st_mode)) {
+      statp.st_size = -1;
     }
   }
 

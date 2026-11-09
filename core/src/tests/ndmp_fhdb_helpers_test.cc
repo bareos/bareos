@@ -80,12 +80,36 @@ TEST(ndmp_fhdb_helpers, exact_block_multiple_size_does_not_round_up)
   EXPECT_EQ(statp.st_blocks, 2);
 }
 
-TEST(ndmp_fhdb_helpers, invalid_size_is_not_guessed)
+TEST(ndmp_fhdb_helpers, invalid_regular_size_stays_unknown)
+{
+  for (uint64_t value :
+       {uint64_t{999999}, std::numeric_limits<uint64_t>::max()}) {
+    ndmp9_file_stat fstat = MakeRegularFileStat();
+    fstat.size.valid = NDMP9_VALIDITY_INVALID;
+    fstat.size.value = value;
+
+    struct stat statp = DecodeConvertedFstat(fstat);
+
+    EXPECT_EQ(statp.st_size, -1);
+    EXPECT_EQ(statp.st_blocks, 0);
+  }
+}
+
+TEST(ndmp_fhdb_helpers, valid_zero_size_remains_empty)
 {
   ndmp9_file_stat fstat = MakeRegularFileStat();
-  fstat.size.valid = NDMP9_VALIDITY_INVALID;
-  fstat.size.value = 999999; /* must be ignored, .valid is false */
+  fstat.size.valid = NDMP9_VALIDITY_VALID;
+  struct stat statp = DecodeConvertedFstat(fstat);
 
+  EXPECT_EQ(statp.st_size, 0);
+  EXPECT_EQ(statp.st_blocks, 0);
+}
+
+TEST(ndmp_fhdb_helpers, invalid_directory_size_remains_zero)
+{
+  ndmp9_file_stat fstat = MakeRegularFileStat();
+  fstat.ftype = NDMP9_FILE_DIR;
+  fstat.size.valid = NDMP9_VALIDITY_INVALID;
   struct stat statp = DecodeConvertedFstat(fstat);
 
   EXPECT_EQ(statp.st_size, 0);
