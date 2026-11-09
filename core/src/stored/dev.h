@@ -245,6 +245,7 @@ class Device {
   char capabilities[CAP_BYTES]{}; /**< Capabilities mask */
   char state[ST_BYTES]{};     /**< State mask */
   int dev_errno{};            /**< Our own errno */
+  uint64_t close_failure_count{};
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
   std::string device_type{};

@@ -121,7 +121,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
 
   Dmsg1(050, "SetUnload dev=%s\n", dev->print_name());
   dev->SetUnload();
-  if (!dcr->MountNextWriteVolume()) {
+  if (!dcr->MountNextWriteVolume(true /* current job already writes */)) {
     FreeBlock(dcr->block);
     dcr->block = block;
     dev->Lock();

@@ -131,6 +131,368 @@ class ReleaseTestDevice : public SpoolDevice {
   MOCK_METHOD(bool, d_flush, (DeviceControlRecord*), (override));
 };
 
+class FailedCloseMountDevice : public SpoolDevice {
+ public:
+  int d_close(int) override
+  {
+    ++close_calls;
+    return -1;
+  }
+  int d_open(const char*, int, int) override
+  {
+    ++open_calls;
+    return -1;
+  }
+
+  int close_calls{};
+  int open_calls{};
+};
+
+class MountHandoffDevice : public SpoolDevice {
+ public:
+  int d_close(int) override
+  {
+    ++close_calls;
+    return 0;
+  }
+  int d_open(const char*, int, int) override
+  {
+    ++open_calls;
+    return -1;
+  }
+  MOCK_METHOD(bool, d_flush, (DeviceControlRecord*), (override));
+
+  int close_calls{};
+  int open_calls{};
+};
+
+class MountWriteTestDcr : public DeviceControlRecord {
+ public:
+  explicit MountWriteTestDcr(const char* volume_name = "next volume")
+  {
+    bstrncpy(volume_name_, volume_name, sizeof(volume_name_));
+  }
+  bool DirFindNextAppendableVolume() override
+  {
+    setVolCatName(volume_name_);
+    return true;
+  }
+  bool DirGetVolumeInfo(get_vol_info_rw) override
+  {
+    bstrncpy(VolumeName, volume_name_, sizeof(VolumeName));
+    setVolCatName(volume_name_);
+    setVolCatInfo(true);
+    return true;
+  }
+  bool DirAskSysopToMountVolume(int) override { return false; }
+
+ private:
+  char volume_name_[MAX_NAME_LENGTH]{};
+};
+
+TEST_F(ReservationTest, MountNextWriteVolumeStopsWhenClosingCurrentDeviceFails)
+{
+  auto job = std::make_unique<TestJob>(113u);
+  DeviceResource resource{};
+  FailedCloseMountDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "failed close device");
+  device.archive_device_string = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.archive_device_string, "/tmp/failed-close-device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  MountWriteTestDcr dcr;
+  dcr.jcr = job->jcr;
+  dcr.SetDev(&device);
+  dcr.device_resource = &resource;
+  device.device_resource = &resource;
+
+  device.dblock(BST_DOING_ACQUIRE);
+  EXPECT_FALSE(dcr.MountNextWriteVolume());
+  EXPECT_EQ(device.close_calls, 1);
+  EXPECT_EQ(device.open_calls, 0)
+      << "Must not mount a replacement volume after close failure";
+  device.dunblock();
+}
+
+TEST_F(ReservationTest, MountStopsWhenUnloadingDeviceCloseFails)
+{
+  auto job = std::make_unique<TestJob>(122u);
+  DeviceResource resource{};
+  FailedCloseMountDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "unload close failure device");
+  device.archive_device_string = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.archive_device_string, "/tmp/unload-close-failure-device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.SetUnload();
+  MountWriteTestDcr dcr;
+  dcr.jcr = job->jcr;
+  dcr.SetDev(&device);
+  dcr.device_resource = &resource;
+  device.device_resource = &resource;
+
+  device.dblock(BST_DOING_ACQUIRE);
+  EXPECT_FALSE(dcr.MountNextWriteVolume());
+  EXPECT_EQ(device.close_calls, 1);
+  EXPECT_EQ(device.open_calls, 0)
+      << "Must not mount a replacement volume after unload close failure";
+  device.dunblock();
+}
+
+TEST_F(ReservationTest, WaitForDeviceWritersToFinishWaitsForReleaseFlush)
+{
+  auto releasing_job = std::make_unique<TestJob>(114u);
+  auto acquiring_job = std::make_unique<TestJob>(115u);
+  ReleaseTestDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "shared handoff device");
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 1;
+  DeviceResource resource{};
+  auto* releasing_dcr = new DeviceControlRecord;
+  releasing_dcr->jcr = releasing_job->jcr;
+  releasing_dcr->SetDev(&device);
+  releasing_dcr->device_resource = &resource;
+  releasing_dcr->keep_dcr = true;
+
+  std::promise<void> flush_started;
+  std::promise<void> finish_flush;
+  auto finish_flush_future = finish_flush.get_future().share();
+  EXPECT_CALL(device, d_close(42)).WillOnce(Return(0));
+  EXPECT_CALL(device, d_flush(releasing_dcr))
+      .WillOnce([&](DeviceControlRecord*) {
+        flush_started.set_value();
+        finish_flush_future.wait();
+        return false;
+      });
+
+  device.dblock(BST_DOING_ACQUIRE);
+  auto acquisition = std::async(std::launch::async, [&] {
+    return WaitForDeviceWritersToFinish(&device, acquiring_job->jcr);
+  });
+
+  bool acquisition_unblocked = false;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline) {
+    device.Lock();
+    acquisition_unblocked = device.blocked() == BST_NOT_BLOCKED;
+    device.Unlock();
+    if (acquisition_unblocked) { break; }
+    std::this_thread::yield();
+  }
+  EXPECT_TRUE(acquisition_unblocked);
+
+  auto release = std::async(std::launch::async, [releasing_dcr] {
+    return ReleaseDevice(releasing_dcr);
+  });
+  EXPECT_EQ(flush_started.get_future().wait_for(std::chrono::seconds(5)),
+            std::future_status::ready);
+  EXPECT_EQ(acquisition.wait_for(std::chrono::milliseconds(0)),
+            std::future_status::timeout)
+      << "Acquisition must wait until the existing writer flushes";
+
+  finish_flush.set_value();
+  EXPECT_FALSE(release.get());
+  EXPECT_TRUE(releasing_job->jcr->IsJobCanceled());
+  EXPECT_TRUE(acquisition.get());
+  EXPECT_EQ(device.num_writers, 0);
+  EXPECT_EQ(device.blocked(), BST_DOING_ACQUIRE);
+  device.dunblock();
+  FreeDeviceControlRecord(releasing_dcr);
+}
+
+TEST_F(ReservationTest, RecoveryMountKeepsOtherWritersBlocked)
+{
+  auto job = std::make_unique<TestJob>(121u);
+  DeviceResource resource{};
+  FailedCloseMountDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "recovery device");
+  device.archive_device_string = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.archive_device_string, "/tmp/recovery-device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 2;
+  device.SetUnload();
+  device.SetAteot();
+  MountWriteTestDcr dcr;
+  dcr.jcr = job->jcr;
+  dcr.SetDev(&device);
+  dcr.device_resource = &resource;
+  device.device_resource = &resource;
+
+  device.dblock(BST_DOING_ACQUIRE);
+  EXPECT_FALSE(dcr.MountNextWriteVolume(true));
+  EXPECT_EQ(device.close_calls, 1);
+  EXPECT_EQ(device.open_calls, 0);
+  EXPECT_EQ(device.num_writers, 2);
+  EXPECT_EQ(device.blocked(), BST_DOING_ACQUIRE);
+  device.dunblock();
+}
+
+TEST_F(ReservationTest, WaitForDeviceWritersToFinishReportsCloseFailure)
+{
+  auto releasing_job = std::make_unique<TestJob>(117u);
+  auto acquiring_job = std::make_unique<TestJob>(118u);
+  ReleaseTestDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "failing handoff device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 1;
+  DeviceResource resource{};
+  auto* releasing_dcr = new DeviceControlRecord;
+  releasing_dcr->jcr = releasing_job->jcr;
+  releasing_dcr->SetDev(&device);
+  releasing_dcr->device_resource = &resource;
+  releasing_dcr->keep_dcr = true;
+
+  EXPECT_CALL(device, d_close(42)).WillOnce(Return(-1));
+  EXPECT_CALL(device, d_flush(releasing_dcr)).WillOnce(Return(true));
+
+  device.dblock(BST_DOING_ACQUIRE);
+  auto acquisition = std::async(std::launch::async, [&] {
+    return WaitForDeviceWritersToFinish(&device, acquiring_job->jcr);
+  });
+
+  bool acquisition_unblocked = false;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline) {
+    device.Lock();
+    acquisition_unblocked = device.blocked() == BST_NOT_BLOCKED;
+    device.Unlock();
+    if (acquisition_unblocked) { break; }
+    std::this_thread::yield();
+  }
+  ASSERT_TRUE(acquisition_unblocked);
+
+  auto release = std::async(std::launch::async, [releasing_dcr] {
+    return ReleaseDevice(releasing_dcr);
+  });
+  EXPECT_FALSE(release.get());
+  EXPECT_FALSE(acquisition.get());
+  EXPECT_EQ(device.close_failure_count, 1);
+  device.dunblock();
+  FreeDeviceControlRecord(releasing_dcr);
+}
+
+TEST_F(ReservationTest, MountReusesOpenVolumeWithActiveWriters)
+{
+  auto job = std::make_unique<TestJob>(116u);
+  DeviceResource resource{};
+  FailedCloseMountDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "shared append device");
+  device.archive_device_string = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.archive_device_string, "/tmp/shared-append-device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 1;
+  bstrncpy(device.VolHdr.VolumeName, "current volume",
+           sizeof(device.VolHdr.VolumeName));
+  device.SetLabeled();
+  device.SetAppend();
+  MountWriteTestDcr dcr("current volume");
+  dcr.jcr = job->jcr;
+  dcr.SetDev(&device);
+  dcr.device_resource = &resource;
+  device.device_resource = &resource;
+
+  device.dblock(BST_DOING_ACQUIRE);
+  EXPECT_TRUE(dcr.MountNextWriteVolume());
+  EXPECT_EQ(device.close_calls, 0);
+  EXPECT_EQ(device.open_calls, 0);
+  device.dunblock();
+}
+
+TEST_F(ReservationTest, MountWaitsForWriterFlushBeforeReplacingVolume)
+{
+  auto acquiring_job = std::make_unique<TestJob>(119u);
+  auto releasing_job = std::make_unique<TestJob>(120u);
+  DeviceResource resource{};
+  MountHandoffDevice device;
+  device.prt_name = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.prt_name, "volume handoff device");
+  device.archive_device_string = GetPoolMemory(PM_FNAME);
+  PmStrcpy(device.archive_device_string, "/tmp/volume-handoff-device");
+  device.errmsg = GetPoolMemory(PM_MESSAGE);
+  device.fd = 42;
+  device.norewindonclose = true;
+  device.num_writers = 1;
+  bstrncpy(device.VolHdr.VolumeName, "current volume",
+           sizeof(device.VolHdr.VolumeName));
+  device.SetLabeled();
+  device.SetAppend();
+  device.device_resource = &resource;
+
+  MountWriteTestDcr acquiring_dcr("next volume");
+  acquiring_dcr.jcr = acquiring_job->jcr;
+  acquiring_dcr.SetDev(&device);
+  acquiring_dcr.device_resource = &resource;
+
+  auto* releasing_dcr = new DeviceControlRecord;
+  releasing_dcr->jcr = releasing_job->jcr;
+  releasing_dcr->SetDev(&device);
+  releasing_dcr->device_resource = &resource;
+  releasing_dcr->keep_dcr = true;
+
+  std::promise<void> flush_started;
+  std::promise<void> finish_flush;
+  auto flush_started_future = flush_started.get_future();
+  auto finish_flush_future = finish_flush.get_future().share();
+  EXPECT_CALL(device, d_flush(releasing_dcr))
+      .WillOnce([&](DeviceControlRecord*) {
+        flush_started.set_value();
+        finish_flush_future.wait();
+        return true;
+      });
+
+  device.dblock(BST_DOING_ACQUIRE);
+  auto mount = std::async(std::launch::async,
+                          [&] { return acquiring_dcr.MountNextWriteVolume(); });
+
+  bool acquisition_unblocked = false;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline) {
+    device.Lock();
+    acquisition_unblocked = device.blocked() == BST_NOT_BLOCKED;
+    device.Unlock();
+    if (acquisition_unblocked) { break; }
+    std::this_thread::yield();
+  }
+  ASSERT_TRUE(acquisition_unblocked);
+
+  auto release = std::async(std::launch::async, [releasing_dcr] {
+    return ReleaseDevice(releasing_dcr);
+  });
+  EXPECT_EQ(flush_started_future.wait_for(std::chrono::seconds(5)),
+            std::future_status::ready);
+  EXPECT_EQ(mount.wait_for(std::chrono::milliseconds(0)),
+            std::future_status::timeout)
+      << "The replacement mount must wait for the finishing writer's flush";
+  EXPECT_EQ(device.close_calls, 0);
+  EXPECT_EQ(device.open_calls, 0);
+
+  finish_flush.set_value();
+  EXPECT_TRUE(release.get());
+  EXPECT_FALSE(mount.get());
+  EXPECT_EQ(device.close_calls, 1);
+  EXPECT_GT(device.open_calls, 0);
+  device.dunblock();
+  FreeDeviceControlRecord(releasing_dcr);
+}
+
 TEST_F(ReservationTest, ReleaseWaitsForAnotherJobsAcquisition)
 {
   // Release must not close a volume while another job is acquiring it.

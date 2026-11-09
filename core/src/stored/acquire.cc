@@ -72,6 +72,48 @@ static void AttachDcrToDev(DeviceControlRecord* dcr);
 static void DetachDcrFromDev(DeviceControlRecord* dcr);
 static void SetDcrFromVol(DeviceControlRecord* dcr, VolumeList* vol);
 
+bool WaitForDeviceWritersToFinish(Device* dev, JobControlRecord* jcr)
+{
+  bool wait_failed = false;
+  bool writers_finished;
+  bool close_failed;
+
+  dev->Lock();
+  ASSERT(dev->blocked() == BST_DOING_ACQUIRE);
+  const uint64_t close_failure_count = dev->close_failure_count;
+  UnblockDevice(dev);
+
+  while (dev->num_writers > 0 && !jcr->IsJobCanceled()) {
+    timeval now{};
+    gettimeofday(&now, nullptr);
+    timespec timeout{now.tv_sec + 1, now.tv_usec * 1000};
+
+    int status = dev->NextVolTimedwait(&timeout);
+    if (status != 0 && status != ETIMEDOUT) {
+      BErrNo be;
+      Jmsg1(jcr, M_FATAL, 0, T_("pthread timedwait error. ERR=%s\n"),
+            be.bstrerror(status));
+      wait_failed = true;
+      break;
+    }
+  }
+
+  // A releasing writer may still own the device block after the last flush.
+  dev->WaitUntilOtherThreadReleasesBlock();
+  BlockDevice(dev, BST_DOING_ACQUIRE);
+  writers_finished = dev->num_writers == 0;
+  close_failed = dev->close_failure_count != close_failure_count;
+  dev->Unlock();
+
+  if (close_failed) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("A writer failed to close device %s during volume handoff.\n"),
+         dev->print_name());
+  }
+  return writers_finished && !wait_failed && !close_failed
+         && !jcr->IsJobCanceled();
+}
+
 /**
  * Acquire device for reading.
  *  The drive should have previously been reserved by calling
@@ -508,6 +550,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   if (!jcr->IsJobCanceled()) {
     if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
+      retval = false;
     }
   }
 
@@ -585,7 +628,10 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     // If no writers, close if file or !CAP_ALWAYS_OPEN
     if (dev->num_writers == 0
         && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
-      dev->close(dcr);
+      if (!dev->close(dcr)) {
+        Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
+        retval = false;
+      }
       FreeVolume(dev);
     }
   });

@@ -174,7 +174,7 @@ class DeviceControlRecord {
   bool Can_i_write_volume();
 
   // Methods in mount.c
-  bool MountNextWriteVolume();
+  bool MountNextWriteVolume(bool current_job_is_writer = false);
   bool MountNextReadVolume();
   void MarkVolumeInError();
   void mark_volume_not_inchanger();
@@ -182,7 +182,7 @@ class DeviceControlRecord {
   bool find_a_volume();
   bool is_eod_valid();
   int CheckVolumeLabel(bool& ask, bool& autochanger);
-  void ReleaseVolume();
+  bool ReleaseVolume();
   void DoSwapping(bool IsWriting);
   bool DoUnload();
   bool DoLoad(bool IsWriting);

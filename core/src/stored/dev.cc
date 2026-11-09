@@ -937,6 +937,7 @@ bool Device::close(DeviceControlRecord* dcr)
     Mmsg2(errmsg, T_("Unable to close device %s. ERR=%s\n"), print_name(),
           be.bstrerror());
     dev_errno = errno;
+    ++close_failure_count;
     retval = false;
   }
 
