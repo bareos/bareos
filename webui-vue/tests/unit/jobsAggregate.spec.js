@@ -23,6 +23,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   fetchAggregatedJobsPage,
+  fetchAggregatedRecentJobsPage,
+  fetchAggregatedTroubleJobs,
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../../src/composables/jobsAggregate.js'
@@ -186,7 +188,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: jobsCommandsA.get('llist jobs reverse limit=2 offset=0 sortby=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: {
           jobs: [
             { jobid: '10', name: 'CommonJob', clientname: 'common-fd', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
@@ -198,7 +200,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: jobsCommandsB.get('llist jobs reverse limit=2 offset=0 sortby=jobid jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: {
           jobs: [
             { jobid: '11', name: 'CommonJob', clientname: 'common-fd', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },
@@ -219,6 +221,7 @@ describe('jobs aggregate helpers', () => {
         }),
       ],
       totalJobs: 4,
+      truncated: false,
       directorErrors: [],
     })
   })
@@ -308,7 +311,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=f'),
         data: {
           jobs: [
             { jobid: '31', name: 'failed-a', clientname: 'fd-a', jobstatus: 'f', starttime: '2026-04-29 10:00:00' },
@@ -319,7 +322,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        id: jobsCommandsA.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=E'),
         data: {
           jobs: [
             { jobid: '30', name: 'error-a', clientname: 'fd-a', jobstatus: 'E', starttime: '2026-04-29 09:00:00' },
@@ -330,7 +333,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=f'),
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=f'),
         data: {
           jobs: [
             { jobid: '41', name: 'failed-b', clientname: 'fd-b', jobstatus: 'f', starttime: '2026-04-29 12:00:00' },
@@ -341,7 +344,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 jobstatus=E'),
+        id: jobsCommandsB.get('llist jobs reverse limit=3 offset=0 sortby=jobid jobstatus=E'),
         data: {
           jobs: [
             { jobid: '40', name: 'error-b', clientname: 'fd-b', jobstatus: 'E', starttime: '2026-04-29 11:00:00' },
@@ -357,11 +360,12 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:31', director: 'prod-a', id: 31, status: 'f' }),
       ],
       totalJobs: 4,
+      truncated: false,
       directorErrors: [],
     })
   })
 
-  it('searches across the full dataset and keeps all rows for the All option', async () => {
+  it('sends search server-side and keeps all rows for the All option', async () => {
     const loading = fetchAggregatedJobsPage(
       {
         username: 'admin',
@@ -394,8 +398,8 @@ describe('jobs aggregate helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commands.get('list jobs count'),
-        data: { jobs: [{ count: '3' }] },
+        id: commands.get('list jobs count search="fd-2"'),
+        data: { jobs: [{ count: '2' }] },
       }),
     })
     socket.onmessage?.({
@@ -412,7 +416,7 @@ describe('jobs aggregate helpers', () => {
     })
 
     const jobsCommand = JSON.parse(socket.sent[3])
-    expect(jobsCommand.command).toBe('llist jobs reverse limit=3 offset=0')
+    expect(jobsCommand.command).toBe('llist jobs reverse limit=2 offset=0 search="fd-2"')
 
     socket.onmessage?.({
       data: JSON.stringify({
@@ -420,7 +424,6 @@ describe('jobs aggregate helpers', () => {
         id: jobsCommand.id,
         data: {
           jobs: [
-            { jobid: '11', name: 'backup-a', clientname: 'fd-1', jobstatus: 'T', starttime: '2026-04-29 11:00:00' },
             { jobid: '10', name: 'backup-b', clientname: 'fd-2', jobstatus: 'T', starttime: '2026-04-29 10:00:00' },
             { jobid: '9', name: 'archive', clientname: 'fd-2', jobstatus: 'T', starttime: '2026-04-29 09:00:00' },
           ],
@@ -434,6 +437,129 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:9', director: 'prod-a', id: 9, client: 'fd-2' }),
       ],
       totalJobs: 2,
+      truncated: false,
+      directorErrors: [],
+    })
+  })
+
+  it('loads recent jobs with the same bounded server pagination', async () => {
+    const loading = fetchAggregatedRecentJobsPage(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a'],
+      { page: 2, rowsPerPage: 10, sortBy: 'starttime', descending: true }
+    )
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(4)
+    })
+
+    const commands = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+    expect(commands.has('llist jobs last current enabled reverse limit=20 offset=0 sortby=starttime')).toBe(true)
+    expect(commands.has('list jobs count last current enabled')).toBe(true)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('llist jobs last current enabled reverse limit=20 offset=0 sortby=starttime'),
+        data: {
+          jobs: Array.from({ length: 20 }, (_, index) => ({
+            jobid: String(20 - index),
+            name: `Job-${20 - index}`,
+            starttime: `2026-04-29 10:${String(59 - index).padStart(2, '0')}:00`,
+          })),
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('list jobs count last current enabled'),
+        data: { jobs: [{ count: '25' }] },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('status director'),
+        data: { running: [] },
+      }),
+    })
+
+    const result = await loading
+    expect(result).toMatchObject({
+      totalJobs: 25,
+      truncated: false,
+      directorErrors: [],
+    })
+    expect(result.jobs).toHaveLength(10)
+    expect(result.jobs[0]).toMatchObject({ id: 10 })
+    expect(result.jobs.at(-1)).toMatchObject({ id: 1 })
+  })
+
+  it('loads trouble jobs with a bounded server-side prefilter', async () => {
+    const loading = fetchAggregatedTroubleJobs(
+      {
+        username: 'admin',
+        password: 'secret',
+      },
+      ['prod-a'],
+      { limit: 2 }
+    )
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => {
+      expect(socket.sent).toHaveLength(3)
+    })
+
+    const commands = new Map(
+      socket.sent.slice(1).map((payload) => {
+        const command = JSON.parse(payload)
+        return [command.command, command.id]
+      })
+    )
+    expect(commands.has('llist jobs reverse limit=2 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A')).toBe(true)
+    expect(commands.has('list jobs count days=1 jobstatus=W,E,f,A')).toBe(true)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('llist jobs reverse limit=2 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A'),
+        data: {
+          jobs: [
+            { jobid: '20', name: 'warning-job', jobstatus: 'W' },
+            { jobid: '19', name: 'error-job', jobstatus: 'E' },
+          ],
+        },
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commands.get('list jobs count days=1 jobstatus=W,E,f,A'),
+        data: { jobs: [{ count: '5' }] },
+      }),
+    })
+
+    await expect(loading).resolves.toEqual({
+      jobs: [
+        expect.objectContaining({ scopeKey: 'prod-a:20', status: 'W' }),
+        expect.objectContaining({ scopeKey: 'prod-a:19', status: 'E' }),
+      ],
+      totalJobs: 5,
+      truncated: true,
       directorErrors: [],
     })
   })

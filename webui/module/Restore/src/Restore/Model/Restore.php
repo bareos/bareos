@@ -169,8 +169,7 @@ class Restore implements InputFilterAwareInterface
                         'name' => 'StringLength',
                         'options' => array(
                             'encoding' => 'UTF-8',
-                            'min' => 1,
-                            'max' => 128
+                            'min' => 1
                         )
                     )
                 )

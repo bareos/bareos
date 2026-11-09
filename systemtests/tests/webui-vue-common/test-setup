@@ -129,6 +129,17 @@ ${BAREOS_SCRIPTS_DIR}/setup
 
 setup_data
 
+if [[ "${BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR}" = "1" ]]; then
+  # Both configured directors share one daemon in this fixture.
+  director_config="${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
+  sed -i.bak -e '/^[[:space:]]*Maximum Console Connections[[:space:]]*=/d' \
+    -e '/Maximum Concurrent Jobs/a\
+  Maximum Console Connections = 40
+' \
+    "${director_config}"
+  rm -f "${director_config}.bak"
+fi
+
 restore_test_directory="${BackupDirectory}/restore-test-files"
 mkdir -p "${restore_test_directory}"
 printf '%s\n' 'webui-vue real restore test' \
