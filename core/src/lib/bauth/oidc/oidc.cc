@@ -452,8 +452,10 @@ UserClaims VerifyToken(std::string_view token,
 
   auto roles_json = decoded.get_payload_claim(roles_name).to_json();
   auto user_json = decoded.get_payload_claim("name").to_json();
-  auto preferred_json
-      = decoded.get_payload_claim("preferred_username").to_json();
+  jansson_traits::json_wrapper preferred_json{};
+  if (decoded.has_payload_claim("preferred_username")) {
+    preferred_json = decoded.get_payload_claim("preferred_username").to_json();
+  }
 
   return from_json(roles_json.wrapped, user_json.wrapped,
                    preferred_json.wrapped);

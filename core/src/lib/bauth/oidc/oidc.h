@@ -66,7 +66,7 @@ struct client {
 
   const std::string& jwks_endpoint() const { return ep_jwks; }
   const std::string& device_auth_endpoint() const { return ep_device_auth; }
-  const std::string& token_endpoint() const { return ep_jwks; }
+  const std::string& token_endpoint() const { return ep_token; }
 
   const std::string base_url() const { return oidc_url; }
   const std::string client_id() const { return my_id; }
@@ -92,7 +92,7 @@ class DeviceAuthenticationFlow {
   std::string fetch_token();
 
   const std::string& user_code() const { return ucode; }
-  const std::string& verification_uri() const { return dcode; }
+  const std::string& verification_uri() const { return vuri; }
 
   const std::optional<std::string>& verification_uri_complete() const
   {
