@@ -575,3 +575,56 @@ TEST_F(CatalogTest, PurgeDiscoverySkipsEmptyListsAndCoalescesRanges)
   EXPECT_EQ(QueryValue("SELECT AccountingBytes FROM Job WHERE JobId=100"),
             "512");
 }
+
+TEST_F(CatalogTest, PurgesOnlyInvalidatePreviouslyValidAccounting)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    CREATE TEMP TABLE Job (LIKE public.Job INCLUDING DEFAULTS);
+    CREATE TEMP TABLE File (LIKE public.File INCLUDING DEFAULTS);
+    CREATE TEMP TABLE JobMedia (LIKE public.JobMedia INCLUDING DEFAULTS);
+    CREATE TEMP TABLE Media (LIKE public.Media INCLUDING DEFAULTS);
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, AccountingValid)
+      VALUES (1, 'purged', 'purge', 'B', 'F', 1, 1, 'T', TRUE),
+             (2, 'invalid', 'purge', 'B', 'I', 1, 1, 'T', FALSE),
+             (3, 'unrelated', 'other', 'B', 'F', 2, 1, 'T', TRUE),
+             (4, 'valid', 'purge', 'B', 'I', 1, 1, 'T', TRUE);
+    CREATE TEMP TABLE acct_invalidations (JobId BIGINT);
+    CREATE FUNCTION pg_temp.acct_record_invalidation() RETURNS TRIGGER
+      LANGUAGE plpgsql AS $$
+    BEGIN
+      INSERT INTO acct_invalidations VALUES (NEW.JobId);
+      RETURN NEW;
+    END;
+    $$;
+    CREATE TRIGGER acct_invalidation_probe BEFORE UPDATE OF AccountingValid
+      ON Job FOR EACH ROW EXECUTE FUNCTION pg_temp.acct_record_invalidation();
+  )SQL"))
+      << db->strerror();
+
+  db->PurgeFiles("1");
+  EXPECT_EQ(QueryValue("SELECT COUNT(*) FROM acct_invalidations"), "2");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=4"),
+            "false");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=3"),
+            "true");
+
+  ASSERT_TRUE(db->SqlExec("TRUNCATE acct_invalidations"));
+  db->PurgeFiles("1");
+  EXPECT_EQ(QueryValue("SELECT COUNT(*) FROM acct_invalidations"), "0");
+
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    UPDATE Job SET AccountingValid=(JobId<>2);
+    TRUNCATE acct_invalidations;
+    INSERT INTO JobMedia (JobId, MediaId) VALUES (1, 99), (2, 99);
+  )SQL"));
+  MediaDbRecord media{};
+  media.MediaId = 99;
+  media.VolJobs = 2;
+  ASSERT_TRUE(db->DeleteMediaRecord(jcr, &media)) << db->strerror();
+  EXPECT_EQ(QueryValue("SELECT COUNT(*) FROM acct_invalidations"), "2");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=4"),
+            "false");
+  EXPECT_EQ(QueryValue("SELECT AccountingValid::text FROM Job WHERE JobId=3"),
+            "true");
+}

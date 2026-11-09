@@ -169,7 +169,8 @@ static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
   for (auto jobid : del.ids) {
     Dmsg1(400, "Delete JobId=%" PRIu32 "\n", jobid);
     Mmsg(query,
-         "UPDATE Job accounting SET AccountingValid=FALSE WHERE EXISTS ("
+         "UPDATE Job accounting SET AccountingValid=FALSE "
+         "WHERE accounting.AccountingValid AND EXISTS ("
          "SELECT 1 FROM Job purged WHERE purged.JobId=%s "
          "AND purged.ClientId=accounting.ClientId "
          "AND purged.FileSetId=accounting.FileSetId)",
@@ -217,7 +218,8 @@ void BareosDb::PurgeFiles(const char* jobids)
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query,
-       "UPDATE Job accounting SET AccountingValid=FALSE WHERE EXISTS ("
+       "UPDATE Job accounting SET AccountingValid=FALSE "
+       "WHERE accounting.AccountingValid AND EXISTS ("
        "SELECT 1 FROM Job purged WHERE purged.JobId IN (%s) "
        "AND purged.ClientId=accounting.ClientId "
        "AND purged.FileSetId=accounting.FileSetId)",
