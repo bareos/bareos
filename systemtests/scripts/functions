@@ -505,7 +505,7 @@ bls_files_verbose()
   return $?
 }
 
-bls_records_for_path()
+bls_compressed_records_for_path()
 {
   local BLS_OUT="$1"
   local FILENAME="$2"
@@ -537,6 +537,7 @@ bls_records_for_path()
       records[++count] = $0
       keys[count] = file_key
       sessions[count] = session
+      compressed[count] = $3 ~ /^((SPARSE|WIN32|ENCRYPTED(-WIN32)?)-)?COMPRESSED$/
     }
     /^[[:space:]]*\| / {
       file_path = $0
@@ -554,7 +555,7 @@ bls_records_for_path()
         exit 1
       }
       for (i = 1; i <= count; i++) {
-        if (matching[keys[i]] &&
+        if (compressed[i] && matching[keys[i]] &&
             (jobid == "" || jobs[sessions[i]] == jobid)) {
           print records[i]
         }
@@ -574,12 +575,12 @@ is_file_compressed()
 
   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}")
-  if ! FILE_RECORDS=$(bls_records_for_path "$BLS_OUT" "$FILENAME"); then
+  if ! FILE_RECORDS=$(bls_compressed_records_for_path "$BLS_OUT" "$FILENAME"); then
     set_error "Could not match verbose bls records for ${FILENAME}."
     return 1
   fi
-  OUT=""
-  if OUT=$(grep -E "^FileIndex=[0-9]+[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$FILE_RECORDS"); then
+  OUT="$FILE_RECORDS"
+  if [[ -n "$OUT" ]]; then
     return 0
   else
     print_debug "${OUT:-No compressed record found for ${FILENAME}}"
@@ -606,11 +607,11 @@ check_compression()
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}")
   print_debug "$BLS_OUT"
   echo "$BLS_OUT"
-  if ! FILE_RECORDS=$(bls_records_for_path "$BLS_OUT" "$FILENAME" "$JOBID"); then
+  if ! FILE_RECORDS=$(bls_compressed_records_for_path "$BLS_OUT" "$FILENAME" "$JOBID"); then
     set_error "Could not match verbose bls records for job=${JOBID}, file=${FILENAME}."
     return 1
   fi
-  if OUT=$(grep -E "^FileIndex=[0-9]+[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$FILE_RECORDS" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
+  if OUT=$(sed -E 's/\| Sparse: StartAddress=[0-9]+\. /| /' <<<"$FILE_RECORDS" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
     print_debug "$OUT"
   else
     set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."

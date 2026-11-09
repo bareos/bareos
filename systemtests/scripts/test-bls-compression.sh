@@ -57,6 +57,55 @@ if [ -n "$compression_error" ]; then
   fail "ordinary compression algorithm check rejected"
 fi
 
+for compressed_stream in "30 SPARSE-COMPRESSED" "31 WIN32-COMPRESSED"; do
+  read -r stream label <<<"$compressed_stream"
+  description="GZIP, level=6, version=1, length=20"
+  if [ "$stream" = 30 ]; then
+    description="Sparse: StartAddress=4294967296. $description"
+  fi
+  fixture="Begin Job Session Record: VolSessionId=1 VolSessionTime=100 JobId=10 DataLen=200
+FileIndex=1 Stream=1 UATTR DataLen=100 VolSessionId=1 VolSessionTime=100 | attributes
+ | /backup/requested.bin
+FileIndex=1 Stream=$stream $label DataLen=40 VolSessionId=1 VolSessionTime=100 | $description"
+  if ! is_file_compressed storage volume requested.bin; then
+    fail "$label file rejected"
+  fi
+  compression_error=""
+  check_compression storage volume 10 requested.bin gzip 6 >/dev/null
+  if [ -n "$compression_error" ]; then
+    fail "$label algorithm and level rejected"
+  fi
+  for wrong_compression in "LZO1X 6" "GZIP 9"; do
+    read -r algorithm level <<<"$wrong_compression"
+    compression_error=""
+    check_compression storage volume 10 requested.bin "$algorithm" "$level" >/dev/null
+    if [ -z "$compression_error" ]; then
+      fail "$label accepted the wrong algorithm or level: $wrong_compression"
+    fi
+  done
+done
+
+for encrypted_stream in "32 ENCRYPTED-COMPRESSED" "33 ENCRYPTED-WIN32-COMPRESSED"; do
+  read -r stream label <<<"$encrypted_stream"
+  fixture="FileIndex=1 Stream=1 UATTR DataLen=100 VolSessionId=1 VolSessionTime=100 | attributes
+ | /backup/requested.bin
+FileIndex=1 Stream=$stream $label DataLen=40 VolSessionId=1 VolSessionTime=100 | Compression algorithm 0x1234 found, but not supported!"
+  if ! is_file_compressed storage volume requested.bin; then
+    fail "$label file rejected"
+  fi
+done
+
+for uncompressed_stream in "6 SPARSE-DATA" "11 WIN32-DATA"; do
+  read -r stream label <<<"$uncompressed_stream"
+  fixture="Begin Job Session Record: VolSessionId=1 VolSessionTime=100 JobId=10 DataLen=200
+FileIndex=1 Stream=1 UATTR DataLen=100 VolSessionId=1 VolSessionTime=100 | attributes
+ | /backup/requested.bin
+FileIndex=1 Stream=$stream $label DataLen=40 VolSessionId=1 VolSessionTime=100 | "
+  if is_file_compressed storage volume requested.bin; then
+    fail "uncompressed $label file accepted as compressed"
+  fi
+done
+
 for other_session in "2 100" "1 101"; do
   read -r other_id other_time <<<"$other_session"
   # Data and delayed attributes need not follow their own session label.
@@ -111,5 +160,5 @@ if [ -z "$compression_error" ]; then
   fail "algorithm check did not report missing session identity"
 fi
 
-echo "$failures compression job-identity failures"
+echo "$failures compression helper failures"
 test "$failures" -eq 0
