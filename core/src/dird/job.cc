@@ -1458,7 +1458,15 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   const auto type = jcr->getJobType();
   if ((status == JS_Terminated || status == JS_Warnings)
       && (type == JT_BACKUP || type == JT_JOB_COPY)) {
-    QueueSubscriptionAccountingJob(jcr->JobId);
+    auto config = my_config->GetCurrentConfiguration();
+    auto* catalog
+        = static_cast<CatalogResource*>(config->GetNextRes(R_CATALOG, nullptr));
+    if (catalog
+        && jcr->db->MatchDatabase(catalog->db_driver, catalog->db_name,
+                                  catalog->db_address, catalog->db_port)
+        && bstrcmp(jcr->dir_impl->res.catalog->db_socket, catalog->db_socket)) {
+      QueueSubscriptionAccountingJob(jcr->JobId);
+    }
   }
 }
 
