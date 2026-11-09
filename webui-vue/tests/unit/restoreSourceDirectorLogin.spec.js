@@ -49,15 +49,16 @@ const buttonStub = {
   setup: (props, { slots }) => () => h('button', [props.label, slots.default?.()]),
 }
 const selectStub = {
-  props: ['options', 'modelValue'],
+  props: ['options', 'modelValue', 'loading'],
   setup: props => () => h('select', {
     'data-selected': props.modelValue ?? '',
+    'data-loading': String(props.loading ?? false),
   }, (props.options ?? []).map(option => h('option', {
     value: option.value,
   }, option.label))),
 }
 
-describe('Restore source director login', () => {
+describe('Restore source director errors', () => {
   let app
   let root
 
@@ -69,7 +70,7 @@ describe('Restore source director login', () => {
     localStorage.clear()
   })
 
-  it('keeps an actionable login banner when the source session disappears', async () => {
+  async function mountRestore(commandHandler) {
     sessionStorage.clear()
     localStorage.clear()
     const pinia = createPinia()
@@ -87,13 +88,8 @@ describe('Restore source director login', () => {
     vi.spyOn(director, 'refreshDirectorConnections').mockResolvedValue()
     vi.spyOn(useReleaseInfoStore(), 'refresh').mockResolvedValue()
     const hasDirectorSession = vi.spyOn(auth, 'hasDirectorSession')
-    const directorCall = vi.spyOn(director, 'call').mockImplementation(async command => {
-      if (command === 'list clients') {
-        auth.removeDirector('prod-a')
-        return { clients: [{ name: 'client-a' }] }
-      }
-      return {}
-    })
+    const directorCall = vi.spyOn(director, 'call')
+      .mockImplementation(command => commandHandler(command, auth))
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -128,6 +124,18 @@ describe('Restore source director login', () => {
     document.body.append(root)
     app.mount(root)
 
+    return { hasDirectorSession, directorCall, router }
+  }
+
+  it('keeps an actionable login banner when the source session disappears', async () => {
+    const { hasDirectorSession, directorCall, router } = await mountRestore(async (command, auth) => {
+      if (command === 'list clients') {
+        auth.removeDirector('prod-a')
+        return { clients: [{ name: 'client-a' }] }
+      }
+      return {}
+    })
+
     await vi.waitFor(() => {
       expect(hasDirectorSession).toHaveBeenCalledWith('prod-a')
       expect(root.querySelectorAll('.bg-warning')).toHaveLength(1)
@@ -154,5 +162,57 @@ describe('Restore source director login', () => {
       director: 'prod-a',
       returnTo,
     })
+  })
+
+  it.each([
+    {
+      name: 'reports a failed required backup request',
+      backupError: 'Backup list unavailable',
+      filesetError: false,
+      backups: [],
+    },
+    {
+      name: 'does not report a successful empty backup list as a failure',
+      backupError: '',
+      filesetError: false,
+      backups: [],
+    },
+    {
+      name: 'keeps optional fileset lookup failures nonfatal',
+      backupError: '',
+      filesetError: true,
+      backups: [{ jobid: 1, name: 'backup-client-a', level: 'F', jobstatus: 'T' }],
+    },
+  ])('$name', async ({ backupError, filesetError, backups }) => {
+    const { directorCall } = await mountRestore(async command => {
+      if (command === 'list clients') {
+        return { clients: [{ name: 'client-a' }] }
+      }
+      if (command.startsWith('llist backups client=')) {
+        if (backupError) throw new Error(backupError)
+        return { backups }
+      }
+      if (command === 'list filesets') {
+        if (filesetError) throw new Error('Optional fileset list unavailable')
+        return { filesets: [] }
+      }
+      return {}
+    })
+
+    await vi.waitFor(() => {
+      expect(directorCall).toHaveBeenCalledWith('llist backups client="client-a"')
+      const backupSelect = root.querySelector('[data-testid="restore-backup-job"]')
+      expect(backupSelect.dataset.loading).toBe('false')
+      expect(backupSelect.options).toHaveLength(backups.length)
+      const warnings = root.querySelectorAll('.bg-warning')
+      expect(warnings).toHaveLength(backupError ? 1 : 0)
+      if (backupError) {
+        expect(warnings[0].textContent).toContain(backupError)
+        expect(warnings[0].textContent).toContain('prod-a')
+        expect(backupSelect.dataset.selected).toBe('')
+      }
+    })
+    expect(root.textContent).not.toContain('Optional fileset list unavailable')
+    expect(root.textContent).not.toContain('Log in to prod-a.')
   })
 })
