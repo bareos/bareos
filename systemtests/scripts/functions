@@ -507,18 +507,47 @@ bls_files_verbose()
   return $?
 }
 
+bls_file_index_for_path()
+{
+  local BLS_OUT="$1"
+  local FILENAME="$2"
+
+  awk -v filename="$FILENAME" '
+    /^FileIndex=[0-9]+/ {
+      file_index = $1
+      sub(/^FileIndex=/, "", file_index)
+    }
+    /^[[:space:]]*\| / {
+      file_path = $0
+      sub(/^[[:space:]]*\| /, "", file_path)
+      if (file_path == filename ||
+          (length(file_path) > length(filename) &&
+           substr(file_path, length(file_path) - length(filename), 1) == "/" &&
+           substr(file_path, length(file_path) - length(filename) + 1) == filename)) {
+        print file_index
+      }
+    }
+  ' <<<"$BLS_OUT"
+}
+
 is_file_compressed()
 {
   local STORAGE=${1}
   local VOLUME=${2}
   local FILENAME=${3}
   local LOCAL_CONF=${4:-${BAREOS_CONFIG_DIR}}
+  local BLS_OUT
+  local FILE_INDEXES
 
   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
-  if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}" | grep -A1 "${FILENAME}" | grep -i "COMPRESSED"); then
+  BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}")
+  FILE_INDEXES=$(bls_file_index_for_path "$BLS_OUT" "$FILENAME" | paste -sd'|' -)
+  OUT=""
+  if [[ -n "$FILE_INDEXES" ]] \
+    && OUT=$(grep -E "^FileIndex=(${FILE_INDEXES})[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$BLS_OUT"); then
     return 0
   else
-    print_debug ${OUT}
+    print_debug "${OUT:-No compressed record found for ${FILENAME}}"
     return 1
   fi
 }
@@ -534,6 +563,7 @@ check_compression()
   local COMPRESSION_LEVEL=${6:-}
 
   local COMPRESSION_DESCRIPTION="${COMPRESSION}"
+  local FILE_INDEXES
   if [ "${COMPRESSION_LEVEL}" ]; then
     COMPRESSION_DESCRIPTION="${COMPRESSION}, level=${COMPRESSION_LEVEL}"
   fi
@@ -542,7 +572,9 @@ check_compression()
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}")
   print_debug "$BLS_OUT"
   echo "$BLS_OUT"
-  if OUT=$(echo "$BLS_OUT" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
+  FILE_INDEXES=$(bls_file_index_for_path "$BLS_OUT" "$FILENAME" | paste -sd'|' -)
+  if [[ -n "$FILE_INDEXES" ]] \
+    && OUT=$(grep -E "^FileIndex=(${FILE_INDEXES})[[:space:]]+Stream=[0-9]+ COMPRESSED" <<<"$BLS_OUT" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
     print_debug "$OUT"
   else
     set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."

@@ -1054,6 +1054,7 @@ async function onClientChange(clientName) {
     return
   }
 
+  loadingBackups.value = true
   await Promise.all([
     loadRestoreClients(),
     loadRestoreJobs(),
@@ -1062,7 +1063,6 @@ async function onClientChange(clientName) {
 }
 
 async function loadBackups(client) {
-  loadingBackups.value = true
   try {
     await ensureScopeDirector(client.director)
     const [r, filesets] = await Promise.all([

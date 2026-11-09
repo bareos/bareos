@@ -156,9 +156,7 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
 }
 #else
 static inline bool RestoreFinderinfo(JobControlRecord*, POOLMEM*, int32_t)
-{
-  return true;
-}
+{ return true; }
 #endif
 
 // Cleanup of delayed restore stack with streams for later processing.
@@ -512,6 +510,22 @@ void DoRestore(JobControlRecord* jcr)
       case STREAM_UNIX_ATTRIBUTES_EX:
         // if any previous stream open, close it
         if (!ClosePreviousStream(jcr, rctx)) { goto bail_out; }
+
+        /* A corrected attribute record can follow the file data when its
+         * final size was unknown before the data stream was read. The SD
+         * keeps both records on the medium, but only the first one starts a
+         * restore operation for this source file. */
+        if (rctx.attribute_seen && rctx.attribute_vol_session_id == VolSessionId
+            && rctx.attribute_vol_session_time == VolSessionTime
+            && rctx.attribute_file_index == file_index) {
+          Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
+                file_index);
+          continue;
+        }
+        rctx.attribute_seen = true;
+        rctx.attribute_vol_session_id = VolSessionId;
+        rctx.attribute_vol_session_time = VolSessionTime;
+        rctx.attribute_file_index = file_index;
 
         // TODO: manage deleted files
         if (rctx.type == FT_DELETED) { /* deleted file */
