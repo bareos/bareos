@@ -145,9 +145,14 @@ platform exposes them, ``st_blocks`` and ``st_blksize`` from ``os.stat()``
 (or ``os.lstat()`` for symbolic links) into ``bareosfd.StatPacket``.
 On Unix-like clients, subscription accounting uses ``st_blocks * 512``
 for allocated bytes. ``st_blksize`` is the preferred I/O block size, not
-the unit of ``st_blocks``. Preserve zero block counts and sparse-file
-allocation; do not calculate blocks from logical size or leave the
+the unit of ``st_blocks``. Copy the filesystem allocation values rather
+than calculating blocks from logical size or leaving the
 ``StatPacket`` default of one block for real files.
+
+When a plugin reports a positive ``st_size`` with ``st_blocks == 0``, the
+File Daemon derives ``st_blocks`` from the logical size. A fully sparse
+file therefore cannot retain zero allocation in the catalog through this
+API.
 
 .. code-block:: python
 
