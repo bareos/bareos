@@ -304,3 +304,61 @@ TEST_F(CatalogTest, AccountingDeltaUsesBoundedCursorFetches)
   EXPECT_EQ(error, "failed to scan changed file attributes");
   EXPECT_TRUE(db->SqlExec("SELECT 1"));
 }
+
+TEST_F(CatalogTest, AccountingScansPreferLatestFileId)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    CREATE TEMP TABLE Client (LIKE public.Client INCLUDING DEFAULTS);
+    CREATE TEMP TABLE FileSet (LIKE public.FileSet INCLUDING DEFAULTS);
+    CREATE TEMP TABLE Job (LIKE public.Job INCLUDING DEFAULTS);
+    CREATE TEMP TABLE Path (LIKE public.Path INCLUDING DEFAULTS);
+    CREATE TEMP TABLE File (LIKE public.File INCLUDING DEFAULTS);
+    INSERT INTO Client (ClientId, Name, Uname) VALUES (1, 'acct-tie', 'Linux');
+    INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
+      VALUES (1, 'AcctTie', 'tie', CURRENT_TIMESTAMP);
+    INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-tie/');
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, JobTDate)
+      VALUES (1, 'tie-full', 'tie', 'B', 'F', 1, 1, 'T', 2000000000),
+             (2, 'tie-inc', 'tie', 'B', 'I', 1, 1, 'E', 2000000001);
+    UPDATE Job SET AccountingValid=TRUE, AccountingExcluded=FALSE,
+      AccountingFiles=1, AccountingBytes=1024, AccountingLogicalBytes=2,
+      AccountingOpaqueFiles=0, AccountingNdmpArchives=0,
+      AccountingRule='st_blocks*512', AccountingJobsInChain=1 WHERE JobId=1;
+    INSERT INTO File (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
+      VALUES (2, 2, 1, 1, 'same', 'A A IGk B A A A C BAA C A A A A A A', ''),
+             (3, 1, 2, 1, 'same', 'A A IGk B A A A D BAA D A A A A A A', ''),
+             (4, 2, 2, 1, 'same', 'A A IGk B A A A E BAA E A A A A A A', '');
+  )SQL"))
+      << db->strerror();
+
+  directordaemon::UaContext ua(jcr);
+  ua.db = db;
+  ua.SetConsoleConnected(false);
+  directordaemon::AccountingRow full;
+  std::string error;
+  ASSERT_TRUE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 1, &full, &error))
+      << error;
+  EXPECT_EQ(full.files, 1);
+  EXPECT_EQ(full.bytes, 1024);
+  EXPECT_EQ(full.logical_bytes, 2);
+
+  ASSERT_TRUE(db->SqlExec("UPDATE Job SET JobStatus='T' WHERE JobId=2"));
+  directordaemon::AccountingRow delta;
+  ASSERT_TRUE(directordaemon::CalculateSubscriptionAccountingForJob(
+      &ua, 2, &delta, &error))
+      << error;
+  EXPECT_EQ(delta.files, 1);
+  EXPECT_EQ(delta.bytes, 2048);
+  EXPECT_EQ(delta.logical_bytes, 4);
+
+  std::vector<directordaemon::AccountingRow> recalculated;
+  ASSERT_TRUE(directordaemon::CalculateSubscriptionAccounting(
+      &ua, &recalculated, &error))
+      << error;
+  ASSERT_EQ(recalculated.size(), 1);
+  EXPECT_EQ(recalculated[0].files, delta.files);
+  EXPECT_EQ(recalculated[0].bytes, delta.bytes);
+  EXPECT_EQ(recalculated[0].logical_bytes, delta.logical_bytes);
+}
