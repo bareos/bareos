@@ -521,7 +521,14 @@ TEST_F(CatalogTest, PurgeDiscoverySkipsEmptyListsAndCoalescesRanges)
   )SQL"))
       << db->strerror();
   file_set_probe_installed = true;
+  const char* discovery_count
+      = "SELECT COUNT(DISTINCT observed) FROM acct_discovery_probe";
   ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
+  for (int attempt = 0; attempt < 500 && QueryValue(discovery_count) == "0";
+       ++attempt) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  ASSERT_EQ(QueryValue(discovery_count), "1");
   WaitForAccountingWorkerIdle();
   ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
 
@@ -530,9 +537,6 @@ TEST_F(CatalogTest, PurgeDiscoverySkipsEmptyListsAndCoalescesRanges)
   ua.private_db = db;
   ua.batch = true;
   ua.SetConsoleConnected(false);
-  const char* discovery_count
-      = "SELECT COUNT(DISTINCT observed) FROM acct_discovery_probe";
-
   directordaemon::PurgeFilesFromJobs(&ua, "");
   EXPECT_EQ(QueryValue(discovery_count), "0");
   ASSERT_TRUE(db->SqlExec("TRUNCATE acct_discovery_probe"));
