@@ -146,7 +146,9 @@ async function selectFirstQOption(
   const combobox = field.getByRole('combobox')
   await expect(field).toBeVisible({ timeout: 20000 })
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const deadline = Date.now() + optionTimeoutMs
+  let lastError
+  while (Date.now() < deadline) {
     try {
       await combobox.click()
       const listboxId = await combobox.getAttribute('aria-controls')
@@ -158,19 +160,22 @@ async function selectFirstQOption(
         options = options.filter({ hasText })
       }
       const option = options.first()
-      await expect(option).toBeVisible({ timeout: optionTimeoutMs })
+      await expect(option).toBeVisible({
+        timeout: Math.min(1000, Math.max(1, deadline - Date.now())),
+      })
       await option.click()
       if (selected) {
         await selected()
       }
       return
-    } catch {
+    } catch (error) {
+      lastError = error
       await page.keyboard.press('Escape')
       await page.waitForTimeout(300)
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`)
+  throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
 }
 
 async function waitForQSelectReady(page, testId) {
@@ -270,8 +275,11 @@ test('opens jobs and job details through the real director connection', async ({
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
   await page.getByLabel('Search in results').fill('backup-bareos-fd')
-  const firstRow = page.locator('tbody tr').first()
-  await expect(firstRow).toContainText('backup-bareos-fd')
+  const firstRow = page
+    .locator('tbody tr')
+    .filter({ hasText: 'backup-bareos-fd' })
+    .first()
+  await expect(firstRow).toBeVisible()
 
   const jobId = (await firstRow.locator('a.text-primary').first().textContent())?.trim()
   await firstRow.locator('a.text-primary').first().click()
@@ -290,6 +298,7 @@ test('loads the restore workflow selections', async ({ page }) => {
 
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
+    hasText: /(^| \/ )bareos-fd$/,
     selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
@@ -325,7 +334,7 @@ test('restores a real file from a backup', async ({ page }) => {
 
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
-    hasText: /^bareos-fd$/,
+    hasText: /(^| \/ )bareos-fd$/,
     selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await waitForQSelectReady(page, 'restore-backup-job')
@@ -377,7 +386,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await firstClient.click()
 
   await expect(page).toHaveURL(/#\/clients\/.+/)
-  await expect(page.locator('.q-page .text-h6').first()).toContainText(
+  await expect(page.locator('.q-page .text-h5').first()).toContainText(
     clientName ?? ''
   )
   await expect(page.getByText('Client Details', { exact: true })).toBeVisible()

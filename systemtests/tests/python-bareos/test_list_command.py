@@ -120,6 +120,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "priorjobid",
             "filesetid",
             "fileset",
+            "comment",
         ]
         resultkeys = list(result["jobs"][0].keys())
 
@@ -168,6 +169,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "priorjobid",
             "filesetid",
             "fileset",
+            "comment",
         ]
         resultkeys = list(result["jobs"][0].keys())
 

@@ -62,7 +62,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobIdBareosFdFull = self.get_backup_jobid(
@@ -81,7 +81,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=console_bareos_fd_username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         result = console_bareos_fd.call("restore")
@@ -192,7 +192,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobIdFull = self.get_backup_jobid(director_root, "backup-bareos-fd", "Full")
@@ -240,7 +240,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name="poolfull",
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # 'list media all' returns an error,
@@ -307,7 +307,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         jobid1 = self.get_backup_jobid(
@@ -340,7 +340,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=console_username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         #
@@ -348,6 +348,19 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
+
+        director_root.call(f'update jobid={jobid2} comment="original"')
+        director.call(f'update jobid={jobid1} comment="allowed"')
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call(f'update jobid={jobid2} comment="denied"')
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobid1}")["jobs"][0]["comment"],
+            "allowed",
+        )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobid2}")["jobs"][0]["comment"],
+            "original",
+        )
 
     def _test_status_subscription(self, username, password):
         logger = logging.getLogger()
@@ -359,7 +372,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         result = director_root.call("status subscription all")
@@ -389,7 +402,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # verify that the command ".consoles" is not allowed.
@@ -442,7 +455,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # retrieve or create a jobid of a valid backup job

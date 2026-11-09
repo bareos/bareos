@@ -94,9 +94,11 @@ bool UpdateCmd(UaContext* ua, const char*)
     case 4:
       UpdateSlots(ua);
       return true;
-    case 5:
-      UpdateJob(ua);
-      return true;
+    case 5: {
+      bool comment = FindArg(ua, NT_("comment")) >= 0;
+      bool updated = UpdateJob(ua);
+      return comment ? updated : true;
+    }
     case 6:
       UpdateStats(ua);
       return true;
@@ -1010,12 +1012,14 @@ static bool UpdateJob(UaContext* ua)
   char* job_name = NULL;
   char* start_time = NULL;
   char job_type = '\0';
+  const char* comment = nullptr;
   DBId_t fileset_id = 0;
   const char* kw[] = {NT_("starttime"), /* 0 */
                       NT_("client"),    /* 1 */
                       NT_("filesetid"), /* 2 */
                       NT_("jobname"),   /* 3 */
                       NT_("jobtype"),   /* 4 */
+                      NT_("comment"),   /* 5 */
                       NULL};
 
   Dmsg1(200, "cmd=%s\n", ua->cmd);
@@ -1050,13 +1054,51 @@ static bool UpdateJob(UaContext* ua)
         case 4: /* Job Type */
           job_type = ua->argv[j][0];
           break;
+        case 5: /* Comment */
+          comment = ua->argv[j];
+          break;
       }
     }
   }
-  if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-    ua->ErrorMsg(T_(
-        "Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
+  if (!client_name && !start_time && !fileset_id && !job_name && !job_type
+      && !comment) {
+    ua->ErrorMsg(
+        T_("Neither Client, StartTime, Filesetid, JobType, Name nor Comment "
+           "specified.\n"));
     return false;
+  }
+  if (comment) {
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      ua->ErrorMsg(T_("Not authorized to update Job comment.\n"));
+      return false;
+    }
+    if (jr.ClientId) {
+      ClientDbRecord job_client;
+      job_client.ClientId = jr.ClientId;
+      if (!ua->db->GetClientRecord(ua->jcr, &job_client)) {
+        ua->ErrorMsg("%s", ua->db->strerror());
+        return false;
+      }
+      if (!ua->AclAccessOk(Client_ACL, job_client.Name, true)) {
+        ua->ErrorMsg(T_("Not authorized to update Job comment.\n"));
+        return false;
+      }
+    }
+    auto esc = ua->db->EscapeString(ua->jcr, comment);
+    if (!esc) {
+      ua->ErrorMsg(T_("Could not escape comment.\n"));
+      return false;
+    }
+    Mmsg(cmd, "UPDATE Job SET Comment='%s' WHERE JobId=%s", esc->c_str(),
+         edit_int64(jr.JobId, ed1));
+    if (!ua->db->SqlQuery(cmd.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      return false;
+    }
+    ua->InfoMsg(T_("New Comment is: %s\n"), comment);
+    if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
+      return true;
+    }
   }
   if (client_name) {
     if (!GetClientDbr(ua, &cr)) { return false; }

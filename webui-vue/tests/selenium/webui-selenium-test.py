@@ -42,7 +42,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -191,7 +190,9 @@ class SeleniumVueTest(unittest.TestCase):
         self.by_testid("nav-restore").click()
         self.wait_for_url("#/restore")
         self.wait_for(
-            By.CSS_SELECTOR, '[data-testid="restore-source-client"]', timeout=20
+            By.XPATH,
+            '//*[@data-testid="restore-source-client"]/ancestor::label[contains(@class, "q-field")]',
+            timeout=20,
         )
 
 

@@ -1,19 +1,12 @@
 <template>
   <q-page class="q-pa-md">
     <q-inner-loading :showing="loading" :label="t('Loading client…')" />
-    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <Breadcrumbs :items="breadcrumbItems" />
+    <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
     <template v-else-if="!loading">
     <div class="row items-center q-mb-md">
-      <q-btn
-        flat
-        icon="arrow_back"
-        :label="backLabel"
-        :to="backLocation"
-        no-caps
-        class="q-mr-md"
-      />
-      <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="28px" class="q-mr-sm" />
-      <div class="text-h6">{{ client?.name }}</div>
+      <q-icon v-if="client" :name="osIcon(client)" :color="osColor(client)" size="2rem" class="q-mr-sm" />
+      <div class="text-h5">{{ client?.name }}</div>
       <q-badge v-if="client?.version" color="grey-6" :label="'v' + client.version" class="q-ml-sm text-mono" />
     </div>
     <div v-if="client" class="row q-col-gutter-md">
@@ -65,12 +58,25 @@
                 <q-td :props="props">
                   <span
                     v-if="isWaitingJobStatus(displayJobStatus(props.row))"
-                    class="row items-center no-wrap q-gutter-x-xs"
+                    class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+                    tabindex="0"
+                    role="button"
+                    :title="t('Jump to log')"
+                    :aria-label="t('Jump to log')"
+                    data-testid="client-details-waiting-job"
+                    @click="openJobLog(props.row)"
+                    @keydown.enter="openJobLog(props.row)"
+                    @keydown.space.prevent="openJobLog(props.row)"
                   >
                     <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                     <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
                   </span>
-                  <JobStatusBadge v-else :status="displayJobStatus(props.row)" />
+                  <JobStatusBadge
+                    v-else
+                    clickable
+                    :status="displayJobStatus(props.row)"
+                    @click="openJobLog(props.row)"
+                  />
                 </q-td>
               </template>
               <template #body-cell-starttime="props">
@@ -102,7 +108,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatBytes, timeAgo } from '../mock/index.js'
 import {
@@ -118,7 +124,7 @@ import { switchActiveDirector } from '../composables/useDirectorSession.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { buildJobDetailsQuery } from '../utils/jobs.js'
+import { buildJobDetailsQuery, resolveJobLogFocus } from '../utils/jobs.js'
 import {
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
@@ -128,8 +134,10 @@ import { quoteDirectorString } from '../utils/directorStrings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
 
 const route         = useRoute()
+const router        = useRouter()
 const auth          = useAuthStore()
 const director      = useDirectorStore()
 const settings      = useSettingsStore()
@@ -148,10 +156,10 @@ const hasJobsOrigin = computed(() => (
     || Object.keys(jobsOrigin.value).length > 0
 ))
 const dashboardOrigin = computed(() => resolveClientDetailsDashboardOrigin(route.query))
-const backLabel = computed(() => (
+const breadcrumbParentLabel = computed(() => (
   hasJobsOrigin.value
-    ? t('Back to Jobs')
-    : (dashboardOrigin.value ? t('Back to Dashboard') : t('Back to Clients'))
+    ? t('Jobs')
+    : (dashboardOrigin.value ? t('Dashboard') : t('Clients'))
 ))
 const backLocation = computed(() => (
   hasJobsOrigin.value
@@ -162,8 +170,12 @@ const backLocation = computed(() => (
         : { name: 'clients', query: backToClientsQuery.value }
     )
 ))
+const breadcrumbItems = computed(() => [
+  { label: breadcrumbParentLabel.value, icon: 'arrow_back', to: backLocation.value },
+  { label: client.value?.name ?? (typeof route.params.name === 'string' ? route.params.name : '') },
+])
 
-function buildClientJobDetailsQuery(job) {
+function buildClientJobDetailsQuery(job, logFocus) {
   return buildJobDetailsQuery({
     director: job?.director,
     clientName: typeof route.params.name === 'string' ? route.params.name : '',
@@ -180,6 +192,15 @@ function buildClientJobDetailsQuery(job) {
     clientJobsJob: typeof route.query.jobsJob === 'string' ? route.query.jobsJob : '',
     clientJobsClient: typeof route.query.jobsClient === 'string' ? route.query.jobsClient : '',
     clientJobsSearch: typeof route.query.jobsSearch === 'string' ? route.query.jobsSearch : '',
+    logFocus,
+  })
+}
+
+async function openJobLog(job) {
+  await router.push({
+    name: 'job-details',
+    params: { id: job.id },
+    query: buildClientJobDetailsQuery(job, resolveJobLogFocus(job.status)),
   })
 }
 
