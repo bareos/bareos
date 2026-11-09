@@ -41,10 +41,6 @@ vi.mock('quasar', () => ({
   }),
 }))
 
-vi.mock('../../src/components/DirectorBadge.vue', () => ({
-  default: { props: ['director'], render: () => h('span') },
-}))
-
 const containerStub = {
   setup: (_, { slots }) => () => h('div', slots.default?.()),
 }
@@ -53,15 +49,16 @@ const buttonStub = {
   setup: (props, { slots }) => () => h('button', [props.label, slots.default?.()]),
 }
 const selectStub = {
-  props: ['options', 'modelValue'],
+  props: ['options', 'modelValue', 'loading'],
   setup: props => () => h('select', {
     'data-selected': props.modelValue ?? '',
+    'data-loading': String(props.loading ?? false),
   }, (props.options ?? []).map(option => h('option', {
     value: option.value,
   }, option.label))),
 }
 
-describe('Restore source director login', () => {
+describe('Restore source director errors', () => {
   let app
   let root
 
@@ -173,7 +170,6 @@ describe('Restore source director login', () => {
       returnTo,
     })
   })
-
   it('reloads client-dependent restore state after reconnecting', async () => {
     let removeSourceSessionOnFirstClientList = true
     const { auth, director } = await mountRestorePage(async (command, authStore) => {
@@ -213,5 +209,56 @@ describe('Restore source director login', () => {
       expect(root.querySelector('[data-testid="restore-job"]').textContent)
         .toContain('RestoreFiles')
     })
+  })
+  it.each([
+    {
+      name: 'reports a failed required backup request',
+      backupError: 'Backup list unavailable',
+      filesetError: false,
+      backups: [],
+    },
+    {
+      name: 'does not report a successful empty backup list as a failure',
+      backupError: '',
+      filesetError: false,
+      backups: [],
+    },
+    {
+      name: 'keeps optional fileset lookup failures nonfatal',
+      backupError: '',
+      filesetError: true,
+      backups: [{ jobid: 1, name: 'backup-client-a', level: 'F', jobstatus: 'T' }],
+    },
+  ])('$name', async ({ backupError, filesetError, backups }) => {
+    const { directorCall } = await mountRestorePage(async command => {
+      if (command === 'list clients') {
+        return { clients: [{ name: 'client-a' }] }
+      }
+      if (command.startsWith('llist backups client=')) {
+        if (backupError) throw new Error(backupError)
+        return { backups }
+      }
+      if (command === 'list filesets') {
+        if (filesetError) throw new Error('Optional fileset list unavailable')
+        return { filesets: [] }
+      }
+      return {}
+    })
+
+    await vi.waitFor(() => {
+      expect(directorCall).toHaveBeenCalledWith('llist backups client="client-a"')
+      const backupSelect = root.querySelector('[data-testid="restore-backup-job"]')
+      expect(backupSelect.dataset.loading).toBe('false')
+      expect(backupSelect.options).toHaveLength(backups.length)
+      const warnings = root.querySelectorAll('.bg-warning')
+      expect(warnings).toHaveLength(backupError ? 1 : 0)
+      if (backupError) {
+        expect(warnings[0].textContent).toContain(backupError)
+        expect(warnings[0].textContent).toContain('prod-a')
+        expect(backupSelect.dataset.selected).toBe('')
+      }
+    })
+    expect(root.textContent).not.toContain('Optional fileset list unavailable')
+    expect(root.textContent).not.toContain('Log in to prod-a.')
   })
 })

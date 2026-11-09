@@ -198,10 +198,12 @@ describe('Restore source director failures', () => {
     },
   )
 
-  it('does not publish backups from an obsolete client selection', async () => {
+  it.each(['resolve', 'reject'])('ignores an obsolete backup request: %s', async outcome => {
     let resolveClientABackups
-    const clientABackups = new Promise(resolve => {
+    let rejectClientABackups
+    const clientABackups = new Promise((resolve, reject) => {
       resolveClientABackups = resolve
+      rejectClientABackups = reject
     })
     ensureScopeDirector.mockReset().mockResolvedValue()
     directorCall.mockImplementation(async command => {
@@ -238,13 +240,18 @@ describe('Restore source director failures', () => {
         .toContain('backup-b')
     })
 
-    resolveClientABackups({
-      backups: [{ jobid: 1, name: 'backup-a', level: 'F', jobstatus: 'T' }],
-    })
+    if (outcome === 'reject') {
+      rejectClientABackups(new Error('Obsolete backup request failed'))
+    } else {
+      resolveClientABackups({
+        backups: [{ jobid: 1, name: 'backup-a', level: 'F', jobstatus: 'T' }],
+      })
+    }
     await new Promise(resolve => setTimeout(resolve, 0))
 
     const backupOptions = root.querySelector('[data-testid="restore-backup-job"]').textContent
     expect(backupOptions).toContain('backup-b')
     expect(backupOptions).not.toContain('backup-a')
+    expect(root.textContent).not.toContain('Obsolete backup request failed')
   })
 })

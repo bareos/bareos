@@ -1127,8 +1127,12 @@ async function loadBackups(client, generation) {
     )
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
     return true
-  } catch (_) {
+  } catch (error) {
     if (isCurrentClientSelection(client, generation)) {
+      directorErrors.value = [{
+        director: client.director ?? sourceDirector.value ?? '',
+        message: error instanceof Error ? error.message : String(error),
+      }]
       backups.value = []
       pluginFilesets.value = new Map()
     }
