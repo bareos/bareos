@@ -1165,7 +1165,7 @@ async function pollSubscriptionStatus() {
   if (subscriptionStatusPolling.value
       || subscriptionLoading.value
       || subscriptionCalculationLoading.value
-      || !subscriptionData.value
+      || !subscriptionData.value?.accounting_snapshot
       || !currentSingletonDirector.value) {
     return
   }

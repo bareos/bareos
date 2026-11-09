@@ -237,6 +237,26 @@ describe('Director subscription calculation refresh', () => {
     ))).toHaveLength(reportCallsBefore)
   }, 8000)
 
+  it('keeps legacy reports usable without polling unsupported accounting state', async () => {
+    director.call.mockImplementation(async command => {
+      if (command === 'status subscriptions state') {
+        throw new Error('Unsupported accounting state command')
+      }
+      return {
+        'unit-detail': [{ client: 'legacy-client', plugin: 'none', count: 1, size_gb: 2 }],
+      }
+    })
+    root.querySelector('button[aria-label="Reload report"]').click()
+    await vi.waitFor(() => expect(root.textContent).toContain('legacy-client'))
+    director.call.mockClear()
+
+    await new Promise(resolve => setTimeout(resolve, 5200))
+
+    expect(director.call).not.toHaveBeenCalledWith('status subscriptions state')
+    expect(root.textContent).toContain('legacy-client')
+    expect(root.textContent).not.toContain('Unsupported accounting state command')
+  }, 8000)
+
   it('reloads the full report when explicitly requested', async () => {
     const reportCallsBefore = director.call.mock.calls.filter(([command]) => (
       command === 'status subscriptions all'
