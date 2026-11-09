@@ -168,7 +168,8 @@ struct HfsPlusInfo {
 };
 
 /* Accurate comparison option bit values returned by bVarAccurateOptions. */
-typedef enum : std::uint64_t
+typedef enum
+    : std::uint64_t
 {
   accurate_inode = 1 << 0,
   accurate_permissions = 1 << 1,

@@ -32,7 +32,7 @@ struct stat RoundTrip(struct stat statp)
   PoolMem attribs(PM_FNAME);
   EncodeStat(attribs.c_str(), &statp, sizeof(statp), 0, STREAM_UNIX_ATTRIBUTES);
 
-  struct stat decoded{};
+  struct stat decoded {};
   int32_t LinkFI;
   DecodeStat(attribs.c_str(), &decoded, sizeof(decoded), &LinkFI);
   return decoded;
@@ -41,7 +41,7 @@ struct stat RoundTrip(struct stat statp)
 
 TEST(attribs, round_trips_zero_size)
 {
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = 0;
   statp.st_blocks = 0;
 
@@ -53,7 +53,7 @@ TEST(attribs, round_trips_zero_size)
 
 TEST(attribs, round_trips_small_size)
 {
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = 513;
   statp.st_blocks = 2; /* ceil(513 / 512) */
 
@@ -65,7 +65,7 @@ TEST(attribs, round_trips_small_size)
 
 TEST(attribs, round_trips_large_size_above_4gb)
 {
-  struct stat statp{};
+  struct stat statp {};
   const int64_t size = 5LL * 1024 * 1024 * 1024 + 42; /* > 4 GiB */
   statp.st_size = size;
   statp.st_blocks = (size + 511) / 512;
@@ -78,7 +78,7 @@ TEST(attribs, round_trips_large_size_above_4gb)
 
 TEST(attribs, round_trips_non_block_aligned_size)
 {
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = 1000;
   statp.st_blocks = (1000 + 511) / 512; /* 2 */
 

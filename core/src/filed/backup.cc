@@ -1111,7 +1111,9 @@ class data_message {
 
  public:
   data_message(std::size_t data_size)
-  { buffer.resize(data_size + data_offset); }
+  {
+    buffer.resize(data_size + data_offset);
+  }
   data_message() : data_message(0) {}
   data_message(const data_message&) = delete;
   data_message& operator=(const data_message&) = delete;

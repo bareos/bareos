@@ -35,7 +35,9 @@
  * any platform without needing a live Windows filesystem.
  */
 constexpr uint64_t WindowsSizeToBlocks(uint64_t st_size)
-{ return st_size / 512 + (st_size % 512 != 0); }
+{
+  return st_size / 512 + (st_size % 512 != 0);
+}
 
 // Compile-time tests: POSIX st_blocks is always counted in 512-byte
 // units, rounded up to the next whole block, regardless of st_blksize.

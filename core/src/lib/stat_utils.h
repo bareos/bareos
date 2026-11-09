@@ -39,6 +39,8 @@ template <typename T> constexpr bool IsUnknownStatField(T value)
 
 // Number of 512-byte blocks needed to hold size bytes.
 constexpr uint64_t BlocksFromSize(uint64_t size)
-{ return size / 512 + (size % 512 != 0); }
+{
+  return size / 512 + (size % 512 != 0);
+}
 
 #endif  // BAREOS_LIB_STAT_UTILS_H_

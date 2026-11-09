@@ -767,7 +767,9 @@ bail_out:
  * Not static so they can be unit-tested directly (see test_fd_plugins.cc).
  */
 static bool HasSizeButNoBlocks(const struct stat& statp)
-{ return statp.st_size > 0 && statp.st_blocks == 0; }
+{
+  return statp.st_size > 0 && statp.st_blocks == 0;
+}
 
 void FillMissingPluginStatBlocks(struct stat& statp)
 {
@@ -784,7 +786,7 @@ bool PluginSizeNeedsFdFallback(const struct stat& statp)
 
 bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected)
 {
-  struct stat statp{};
+  struct stat statp {};
 
   auto fits = [](int64_t value, auto max_value) {
     return value >= 0
@@ -2528,7 +2530,8 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, const void* value)
         return bRC_Error;
       }
       static_cast<FiledPluginContext*>(ctx->core_private_context)
-          ->corrected_file_size_blocks = corrected;
+          ->corrected_file_size_blocks
+          = corrected;
       Dmsg2(100, "corrected file size/blocks set to %" PRId64 "/%" PRId64 "\n",
             corrected.size, corrected.blocks);
       return bRC_OK;
@@ -2659,10 +2662,14 @@ static bRC bareosDebugMsg(PluginContext* ctx,
 }
 
 static void* bareosMalloc(PluginContext*, const char*, int, size_t size)
-{ return malloc(size); }
+{
+  return malloc(size);
+}
 
 static void bareosFree(PluginContext*, const char*, int, void* mem)
-{ free(mem); }
+{
+  free(mem);
+}
 
 /**
  * Let the plugin define files/directories to be excluded from the main

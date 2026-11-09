@@ -63,7 +63,9 @@ class ProcessedFile {
   void AddAttribute(DeviceRecord* record);
   int32_t GetFileIndex() { return fileindex_; }
   const std::vector<ProcessedFileData>& GetAttributes() const
-  { return attributes_; }
+  {
+    return attributes_;
+  }
 
  private:
   int32_t fileindex_{-1};

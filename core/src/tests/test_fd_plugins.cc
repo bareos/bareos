@@ -119,7 +119,7 @@ bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
 TEST(fd, fill_missing_plugin_stat_blocks)
 {
   // Plugin reported a real size but left st_blocks at 0: derive it.
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = 513;
   statp.st_blocks = 0;
   FillMissingPluginStatBlocks(statp);
@@ -202,7 +202,7 @@ TEST(fd, corrected_plugin_attributes_use_effective_file_flags)
 
 TEST(fd, fd_counted_plugin_size_blocks_fallback)
 {
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = -1;
   statp.st_blocks = 1;
 
@@ -224,7 +224,7 @@ TEST(fd, fd_counted_plugin_size_blocks_fallback)
 
 TEST(fd, fd_counted_plugin_size_blocks_fallback_is_bounded)
 {
-  struct stat statp{};
+  struct stat statp {};
   statp.st_size = 1234;
   statp.st_blocks = 3;
 

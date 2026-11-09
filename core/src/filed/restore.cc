@@ -156,7 +156,9 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
 }
 #else
 static inline bool RestoreFinderinfo(JobControlRecord*, POOLMEM*, int32_t)
-{ return true; }
+{
+  return true;
+}
 #endif
 
 // Cleanup of delayed restore stack with streams for later processing.

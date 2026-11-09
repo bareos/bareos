@@ -39,7 +39,7 @@ struct stat DecodeConvertedFstat(ndmp9_file_stat& fstat)
 
   directordaemon::NdmpConvertFstat(&fstat, 1, &FileType, attribs);
 
-  struct stat statp{};
+  struct stat statp {};
   int32_t LinkFI;
   DecodeStat(attribs.c_str(), &statp, sizeof(statp), &LinkFI);
   return statp;

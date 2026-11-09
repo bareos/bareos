@@ -197,7 +197,9 @@ static void Win32ConvCleanupCache(void* arg)
 static class PathConversionCache {
  public:
   PathConversionCache()
-  { status = pthread_key_create(&key, Win32ConvCleanupCache); }
+  {
+    status = pthread_key_create(&key, Win32ConvCleanupCache);
+  }
   ~PathConversionCache()
   {
     if (status == 0) { pthread_key_delete(key); }
@@ -1832,7 +1834,9 @@ bail_out:
  * the VMP data used in the VSS snapshotting.
  */
 bool win32_get_vmp_devicename(const char* filename, POOLMEM*& devicename)
-{ return GetVolumeMountPointData(filename, devicename); }
+{
+  return GetVolumeMountPointData(filename, devicename);
+}
 
 /**
  * We write our own ftruncate because the one in the
@@ -2009,7 +2013,9 @@ static int mingw_gettimeofday(struct timeval* tp, struct timezone*)
 #endif  // HAVE_MSVC
 
 int gettimeofday(struct timeval* tv, struct timezone* tz)
-{ return mingw_gettimeofday(tv, tz); }
+{
+  return mingw_gettimeofday(tv, tz);
+}
 
 // Syslog function, added by Nicolas Boichat
 
@@ -2722,7 +2728,9 @@ int kill(int pid, int signal)
  * Note, the OS automatically tracks these for each thread
  */
 void PreventOsSuspensions()
-{ SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED); }
+{
+  SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+}
 
 void AllowOsSuspensions() { SetThreadExecutionState(ES_CONTINUOUS); }
 

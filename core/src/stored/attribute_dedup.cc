@@ -57,7 +57,9 @@ DeviceRecord ProcessedFileData::GetData() const
 ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 
 void ProcessedFile::AddAttribute(DeviceRecord* record)
-{ attributes_.emplace_back(ProcessedFileData(record)); }
+{
+  attributes_.emplace_back(ProcessedFileData(record));
+}
 
 bool IsAttribute(DeviceRecord* record)
 {
@@ -139,7 +141,9 @@ void AttributeGroupBuffer::Add(DeviceRecord* record)
 }
 
 void AttributeGroupBuffer::Flush(uint32_t volsessionid, uint32_t volsessiontime)
-{ Flush(Key{volsessionid, volsessiontime}); }
+{
+  Flush(Key{volsessionid, volsessiontime});
+}
 
 void AttributeGroupBuffer::Flush(Key key)
 {
