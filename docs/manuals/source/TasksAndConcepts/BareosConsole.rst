@@ -2055,11 +2055,12 @@ status subscriptions
         subscription status commands warn when multiple catalogs are
         configured. Other catalogs may have no current accounting snapshot,
         and totals do not span catalogs.
-      - Client/FileSet combinations without a usable backup chain (e.g. all
-        of their File information has been purged, or no Full backup ever
-        completed) are excluded from the report entirely rather than
-        estimated -- the grand total will under-report data for such
-        combinations if older jobs were purged.
+      - A Client/FileSet combination with an unusable backup chain, for
+        example because required catalog records were purged, appears as an
+        excluded row with reason ``no_usable_chain``. It contributes no size
+        to the grand total, which is marked incomplete. Combinations that
+        never had a completed Full backup have no accounting row and are
+        absent from the report.
       - An NDMP Client/FileSet chain with only the synthetic archive row
         and no per-file history uses the baseline Full job size as a
         rule J estimate. This counts transferred record-stream bytes,
