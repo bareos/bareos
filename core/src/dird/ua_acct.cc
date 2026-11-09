@@ -188,7 +188,7 @@ void* SubscriptionAccountingThread(void*)
 
   JobControlRecord* jcr = NewDirectorJcr(config);
   jcr->dir_impl->res.catalog = catalog;
-  jcr->db = GetDatabaseConnection(jcr);
+  jcr->db = GetDatabaseConnection(jcr, true);
   if (!jcr->db) {
     Jmsg(jcr, M_ERROR, 0,
          T_("Could not open catalog for subscription "

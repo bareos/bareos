@@ -31,11 +31,15 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #include "lib/parse_conf.h"
+#include "lib/edit.h"
 #include "lib/util.h"
 #include "dird/jcr_util.h"
+#include "dird/ua_acct.h"
 
+#include <chrono>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using directordaemon::InitDirConfig;
@@ -163,4 +167,39 @@ TEST_F(CatalogTest, EscapeStringPreservesExplicitViewLength)
   constexpr char input[] = "a'bcd";
 
   EXPECT_EQ(db->EscapeString(jcr, std::string_view{input, 3}), "a''b");
+}
+
+TEST_F(CatalogTest, AccountingWorkerUsesPrivateConnection)
+{
+  jcr->dir_impl->res.catalog->mult_db_connections = false;
+  const auto count_connections = [&] {
+    int connections = 0;
+    EXPECT_TRUE(db->SqlQuery(
+        "SELECT COUNT(*) FROM pg_stat_activity "
+        "WHERE datname=current_database() AND backend_type='client backend'",
+        [](void* ctx, int, char** row) {
+          *static_cast<int*>(ctx) = str_to_int64(row[0]);
+          return 0;
+        },
+        &connections));
+    return connections;
+  };
+  const int connections_before = count_connections();
+  ASSERT_TRUE(directordaemon::StartSubscriptionAccountingThread());
+  for (int attempt = 0;
+       attempt < 500
+       && !directordaemon::GetSubscriptionAccountingThreadStatus().available;
+       ++attempt) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(
+      directordaemon::GetSubscriptionAccountingThreadStatus().available);
+  EXPECT_EQ(count_connections(), connections_before + 1);
+
+  auto* shared = directordaemon::GetDatabaseConnection(jcr);
+  EXPECT_EQ(shared, db);
+  if (shared) { DbSqlClosePooledConnection(jcr, shared); }
+
+  directordaemon::StopSubscriptionAccountingThread();
+  EXPECT_EQ(count_connections(), connections_before);
 }
