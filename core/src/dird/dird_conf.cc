@@ -71,6 +71,7 @@
 #include "lib/version.h"
 
 #include <cassert>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -677,9 +678,7 @@ json_t* json_datatype_header(const int type, const char* typeclass)
 }
 
 json_t* json_datatype(const int type)
-{
-  return json_datatype_header(type, NULL);
-}
+{ return json_datatype_header(type, NULL); }
 
 json_t* json_datatype(const int type, s_kw items[])
 {

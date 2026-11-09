@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -76,5 +76,24 @@ run_bconsole
 expect_grep "Backup OK" "$log_home/full.out" "full was not successful"
 expect_grep "Backup OK" "$log_home/diff.out" "diff was not successful"
 expect_grep "Backup OK" "$log_home/incr.out" "incr was not successful"
+
+# Statistics select jobs strictly older than the current whole second.
+sleep 1
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $log_home/update-stats.out
+update stats
+update stats
+.api 2
+@$out $log_home/history.json
+.sql query="SELECT count(*) AS jobs FROM JobHisto WHERE Name='backup-bareos-fd'"
+END_OF_DATA
+run_bconsole
+
+expect_grep "Updating 3 job(s)." "$log_home/update-stats.out" \
+  "Completed backups were not copied to JobHisto"
+expect_grep "Updating 0 job(s)." "$log_home/update-stats.out" \
+  "Updating statistics duplicated history rows"
+expect_grep '"jobs": "3"' "$log_home/history.json" \
+  "JobHisto does not contain all three completed backups"
 
 end_test

@@ -41,6 +41,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_input.h"
 #include "dird/ua_label.h"
 #include "dird/ua_select.h"
@@ -545,6 +546,7 @@ static int do_label(UaContext* ua, const char*, bool relabel)
         ua->ErrorMsg(T_("Delete of Volume \"%s\" failed. ERR=%s"),
                      omr.VolumeName, ua->db->strerror());
       } else {
+        QueueMissingSubscriptionAccounting(ua);
         ua->InfoMsg(T_("Old volume \"%s\" deleted from catalog.\n"),
                     omr.VolumeName);
         // Update the number of Volumes in the pool
@@ -601,14 +603,10 @@ static int do_label(UaContext* ua, const char*, bool relabel)
  *   label storage=xxx volume=vvv
  */
 bool LabelCmd(UaContext* ua, const char* cmd)
-{
-  return do_label(ua, cmd, false); /* standard label */
-}
+{ return do_label(ua, cmd, false); /* standard label */ }
 
 bool RelabelCmd(UaContext* ua, const char* cmd)
-{
-  return do_label(ua, cmd, true); /* relabel tape */
-}
+{ return do_label(ua, cmd, true); /* relabel tape */ }
 
 /*
  * Check if the Volume name has legal characters

@@ -10,8 +10,9 @@ set -u
 # It also covers the bpipe plugin's corrected-attributes resend (the
 # fallback byte/block count reported when the plugin doesn't set an
 # exact size), including that the corrected attributes reach the
-# Director before the digest, and that a Virtual Full consolidation
-# retains both values unchanged.
+# Director before the digest, that "status subscriptions"
+# reports the corrected allocated and logical sizes, and that a Virtual
+# Full consolidation retains both values unchanged.
 #
 
 TestName="$(basename "$(pwd)")"
@@ -24,6 +25,37 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
+
+refresh_and_wait_for_subscription_accounting()
+{
+  local report="$1" expected_chain_size="$2"
+
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out "${runner_tmp}/accounting-refresh-request.out"
+status subscriptions recalculate
+END_OF_DATA
+  run_bconsole
+
+  for _ in {1..60}; do
+    cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out "$report"
+status subscriptions logical client=bareos-fd
+END_OF_DATA
+    run_bconsole
+    if grep -qF "Background refresh worker: idle." "$report" \
+      && grep -qF "Real (File.LStat-based) subscription accounting report" \
+        "$report" \
+      && grep -qE "^SelfTest@bareos-fd[[:space:]]+.*[[:space:]]${expected_chain_size}$" "$report"; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  echo "timed out waiting for subscription accounting refresh" >&2
+  cat "${runner_tmp}/accounting-refresh-request.out" >&2
+  cat "$report" >&2
+  return 1
+}
 
 # Windows debug: show environment vars
 if on_windows_host; then
@@ -124,6 +156,8 @@ expect_grep \
   "2 files and directories found" \
   "$tmp/bls.out" \
   "bls listed the file with a duplicate attribute record more than once"
+refresh_and_wait_for_subscription_accounting \
+  "${runner_tmp}/accounting-before-virtual-full.out" 2
 
 # validate environment variables in readprogram / writeprogram
 expected_output=(
@@ -166,6 +200,19 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
   fi
 done
 
+if on_windows_host; then
+  accounted_bytes=$payload_bytes
+  accounting_rule=L
+else
+  accounted_bytes=$((payload_blocks * 512))
+  accounting_rule=A
+fi
+
+expect_grep \
+  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*2$" \
+  "${runner_tmp}/accounting-before-virtual-full.out" \
+  "Subscription accounting did not count the original bpipe backup correctly"
+
 virtual_full_log="${runner_tmp}/virtual-full.out"
 virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
 
@@ -186,6 +233,8 @@ END_OF_DATA
 
 check_log "$virtual_full_log"
 check_log "$virtual_full_restore_log"
+refresh_and_wait_for_subscription_accounting \
+  "${runner_tmp}/virtual-full-accounting.out" 1
 
 expect_grep \
   "SD Files Written:[[:space:]]*1" \
@@ -201,6 +250,11 @@ expect_not_grep \
   "not same File" \
   "$virtual_full_log" \
   "Virtual Full dropped the bpipe digest: corrected attributes reached the Director after the digest"
+
+expect_grep \
+  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*1$" \
+  "${runner_tmp}/virtual-full-accounting.out" \
+  "Subscription accounting changed after bpipe consolidation"
 
 cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
 
