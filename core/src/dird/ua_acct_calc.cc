@@ -487,8 +487,8 @@ ChainResult ResolveAccountingChain(UaContext* ua,
 /**
  * Fetch the File rows for the resolved JobId chain, one per distinct
  * catalog path, already de-duplicated server-side: PostgreSQL's
- * DISTINCT ON picks the row with the highest JobTDate (JobId as
- * tie-breaker) per (PathId, Name) directly in the query, replacing the
+ * DISTINCT ON picks the row with the highest JobTDate (JobId, then FileId as
+ * tie-breakers) per (PathId, Name) directly in the query, replacing the
  * previous approach of fetching every row and de-duplicating in an
  * application-side std::unordered_map (which held the full distinct
  * file set of the chain resident in Director memory -- many GB on
@@ -525,7 +525,7 @@ bool ScanFilesForChain(UaContext* ua,
        " JOIN Job USING (JobId) JOIN Path USING (PathId)"
        " WHERE File.JobId IN (%s)"
        " ORDER BY File.PathId, File.Name, Job.JobTDate DESC,"
-       " File.JobId DESC",
+       " File.JobId DESC, File.FileId DESC",
        jobid_list.c_str());
 
   if (!ua->db->BigSqlQuery(query.c_str(), FileRowHandler, scan)) {
