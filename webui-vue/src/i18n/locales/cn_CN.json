@@ -165,6 +165,8 @@
   "Connection failed": "",
   "Consecutive failures": "",
   "Console": "控制台",
+  "Console connection failed": "",
+  "Console disconnected": "",
   "Consolidate": "合并",
   "Consulting": "",
   "Contrib plugin": "",

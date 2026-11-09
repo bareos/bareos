@@ -165,6 +165,8 @@
   "Connection failed": "",
   "Consecutive failures": "",
   "Console": "Консоль",
+  "Console connection failed": "",
+  "Console disconnected": "",
   "Consolidate": "Консолидированый",
   "Consulting": "",
   "Contrib plugin": "",
