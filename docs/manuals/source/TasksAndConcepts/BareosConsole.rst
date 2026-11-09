@@ -2102,6 +2102,8 @@ status subscriptions
       The Vue WebUI subscription page uses :bcommand:`status subscriptions
       all` and displays the same measured/estimated and snapshot warnings.
       Its PDF and JSON downloads include the accounting provenance.
+      CSV and TSV downloads contain the report tables as separate sections,
+      but omit snapshot metadata.
 
 status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated
