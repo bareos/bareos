@@ -537,6 +537,124 @@ test('logs in and shows the dashboard', async ({ page }) => {
   await expect(totalsCard).not.toContainText('Total Bytes0 B')
 })
 
+test('advertises Bareos services unless the director is a subscription build', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('login-commercial-offering')).toBeVisible()
+  await expect(page.getByTestId('login-commercial-offering').getByTestId('commercial-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  const sash = page.getByTestId('unsupported-build-sash')
+  await expect(sash).toBeVisible()
+  await expect(sash).toHaveCSS('background-color', 'rgb(255, 179, 0)')
+
+  await login(page)
+  await page.goto('/#/director')
+  const binaryInfo = page.getByTestId('director-binary-info').first()
+  await expect(binaryInfo).toBeVisible()
+  const isSubscription = /subscription/i.test(await binaryInfo.innerText())
+  const statusbarOffering = page.getByTestId('statusbar-commercial-offering')
+  if (isSubscription) {
+    await expect(statusbarOffering).toHaveCount(0)
+    await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
+    return
+  }
+  await expect(statusbarOffering).toBeVisible()
+  await expect(statusbarOffering).toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(statusbarOffering).toHaveCSS('color', 'rgb(255, 202, 40)')
+  await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
+  await expect(page.locator('body')).toHaveClass(/bareos-unsupported-build/)
+  await expect(page.locator('header.bareos-toolbar')).toHaveCSS(
+    'background-color',
+    'rgb(0, 117, 190)',
+  )
+  await expect(page.locator('footer.bareos-statusbar')).toHaveCSS(
+    'background-color',
+    'rgb(0, 86, 139)',
+  )
+  await expect(page).toHaveTitle('Bareos (unsupported build)')
+  const ribbon = page.getByTestId('unsupported-build-ribbon')
+  await expect(ribbon).toBeVisible()
+  await expect(ribbon).toHaveCSS('background-color', 'rgb(255, 179, 0)')
+  await expect(ribbon.getByRole('link'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(ribbon).toContainText(/not for production use/i)
+  await page.getByTestId('unsupported-build-ribbon-close').click()
+  await expect(ribbon).toHaveCount(0)
+  const toast = page.locator('.unsupported-build-toast')
+  await expect(toast).toBeVisible()
+  await expect(toast.getByRole('button', { name: 'Try for free' })).toBeVisible()
+  await expect(toast.getByRole('button', { name: 'Buy a subscription' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByTestId('director-binary-info').first()).toBeVisible()
+  await expect(ribbon).toHaveCount(0)
+  await expect(toast).toHaveCount(0)
+  await page.getByTestId('account-menu').click()
+  await expect(page.getByTestId('menu-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(page.getByTestId('menu-offering-subscription')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('tab', { name: 'Subscription' }).click()
+  await expect(page.getByTestId('commercial-offering-card')).toBeVisible()
+  await expect(page.getByTestId('commercial-offering-evaluation'))
+    .toHaveAttribute('href', 'https://www.bareos.com/try/')
+  await expect(page.getByTestId('commercial-offering-expert-circle'))
+    .toHaveAttribute('href', 'https://www.bareos.com/meet/')
+})
+
+test('loads translations from the Vue JSON catalogs', async ({ page }) => {
+  await page.goto('/')
+  await page.locator('.login-language-select').click()
+  await page.getByRole('option', { name: /German/ }).click()
+  await expect(page.getByTestId('login-submit')).toContainText('Anmelden')
+  await expect(page.getByTestId('login-username')).toHaveAttribute('aria-label', 'Benutzername')
+  await expect(page.getByTestId('login-password')).toHaveAttribute('aria-label', 'Passwort')
+})
+
+async function reportSubscriptionBuild(page) {
+  await page.routeWebSocket(/.*/, (ws) => {
+    const server = ws.connectToServer()
+    server.onMessage((message) => {
+      try {
+        const parsed = JSON.parse(message)
+        if (parsed?.type === 'response' && parsed.data?.header?.binary_info !== undefined) {
+          parsed.data.header.binary_info = 'Bareos subscription'
+          ws.send(JSON.stringify(parsed))
+          return
+        }
+      } catch {
+        // Non-JSON frames must be forwarded unchanged.
+      }
+      ws.send(message)
+    })
+  })
+}
+
+test('hides the service advertisement for subscription builds', async ({ page }) => {
+  await reportSubscriptionBuild(page)
+  await login(page)
+  await page.goto('/#/director')
+  await expect(page.getByTestId('director-binary-info').first())
+    .toHaveText(/Bareos subscription/)
+  await expect(page.getByTestId('statusbar-commercial-offering')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
+  await expect(page.locator('body')).not.toHaveClass(/bareos-unsupported-build/)
+  await expect(page).toHaveTitle('Bareos')
+  await page.getByTestId('account-menu').click()
+  await expect(page.getByTestId('menu-offering-evaluation')).toHaveCount(0)
+  await expect(page.getByTestId('menu-offering-support')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.getByRole('tab', { name: 'Subscription' }).click()
+  await expect(page.getByRole('link', { name: 'Get Official Support' })).toBeVisible()
+  await expect(page.getByTestId('commercial-offering-card')).toHaveCount(0)
+  expect(await page.evaluate(() => localStorage.getItem('bareos-webui.buildKind')))
+    .toBe('subscription')
+  await page.getByTestId('account-menu').click()
+  await page.locator('.q-menu').getByText('Logout', { exact: true }).click()
+  await expect(page.getByTestId('login-form')).toBeVisible()
+  await expect(page.getByTestId('login-commercial-offering')).toHaveCount(0)
+  await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
+})
+
 test('shows a login error for invalid credentials', async ({ page }) => {
   await login(page, {
     loginPassword: `${password}-invalid`,
@@ -1007,7 +1125,7 @@ test('covers schedules and director tabs through the director connection', async
   await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
   await expect(page.getByText('Scheduler Preview', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Show' }).click()
+  await page.getByRole('tab', { name: 'Definitions' }).click()
   await expect(
     page.locator('.q-tab-panel:visible').getByText('Schedules', { exact: true })
   ).toBeVisible()
@@ -1019,7 +1137,7 @@ test('covers schedules and director tabs through the director connection', async
   await page.getByRole('tab', { name: 'Messages' }).click()
   await expect(page.getByText('Director Messages', { exact: true })).toBeVisible()
 
-  await page.getByRole('tab', { name: 'Catalog Maintenance' }).click()
+  await page.getByRole('tab', { name: 'Catalog', exact: true }).click()
   await expect(page.getByText('Jobs With No Data', { exact: true })).toBeVisible()
   await expect(page.getByText('Prune Expired Records', { exact: true })).toBeVisible()
 })
