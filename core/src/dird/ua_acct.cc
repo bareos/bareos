@@ -66,7 +66,6 @@ static bool accounting_worker_available{false};
 static bool accounting_refresh_requested{false};
 static bool accounting_refresh_running{false};
 static bool accounting_job_running{false};
-static JobId_t accounting_current_jobid{0};
 static uint64_t accounting_generation{0};
 static std::set<JobId_t> accounting_jobs;
 
@@ -225,7 +224,6 @@ void* SubscriptionAccountingThread(void*)
         jobid = *it;
         accounting_jobs.erase(it);
         accounting_job_running = true;
-        accounting_current_jobid = jobid;
       }
       pthread_mutex_unlock(&accounting_mutex);
       if (accounting_quit.load()) { break; }
@@ -239,7 +237,6 @@ void* SubscriptionAccountingThread(void*)
         RefreshSubscriptionAccountingJob(&ua, jobid);
         pthread_mutex_lock(&accounting_mutex);
         accounting_job_running = false;
-        accounting_current_jobid = 0;
         ++accounting_generation;
         pthread_mutex_unlock(&accounting_mutex);
       }
@@ -598,7 +595,6 @@ void StopSubscriptionAccountingThread()
   pthread_mutex_lock(&accounting_mutex);
   accounting_refresh_running = false;
   accounting_job_running = false;
-  accounting_current_jobid = 0;
   accounting_worker_available = false;
   accounting_thread_initialized = false;
   pthread_mutex_unlock(&accounting_mutex);
@@ -612,8 +608,7 @@ bool QueueSubscriptionAccountingJob(JobId_t jobid)
     pthread_mutex_unlock(&accounting_mutex);
     return false;
   }
-  const bool inserted = jobid != accounting_current_jobid
-                        && accounting_jobs.insert(jobid).second;
+  const bool inserted = accounting_jobs.insert(jobid).second;
   if (inserted) {
     ++accounting_generation;
     pthread_cond_signal(&accounting_cond);
@@ -682,7 +677,6 @@ size_t QueueMissingSubscriptionAccounting(UaContext* ua,
   size_t inserted = 0;
   if (!accounting_quit.load()) {
     for (JobId_t jobid : missing.jobids) {
-      if (jobid == accounting_current_jobid) { continue; }
       inserted += accounting_jobs.insert(jobid).second ? 1 : 0;
     }
     if (inserted > 0) {
