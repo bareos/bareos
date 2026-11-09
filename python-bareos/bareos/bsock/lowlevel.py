@@ -359,7 +359,7 @@ class LowLevel(object):
         self.send(hello_msg)
 
         try:
-            (ssl, result_compatible, result) = self._cram_md5_respond(
+            ssl, result_compatible, result = self._cram_md5_respond(
                 password=self.password.md5(), tls_remote_need=0
             )
         except bareos.exceptions.SignalReceivedException as e:
@@ -713,6 +713,9 @@ class LowLevel(object):
             or data == Constants.BNET_TERMINATE
             or data == Constants.BNET_MAIN_PROMPT
             or data == Constants.BNET_SUB_PROMPT
+            or data == Constants.BNET_SELECT_INPUT
+            or data == Constants.BNET_YESNO
+            or data == Constants.BNET_TEXT_INPUT
         )
 
     def is_connected(self):
