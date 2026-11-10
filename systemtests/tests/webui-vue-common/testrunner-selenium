@@ -29,6 +29,8 @@ export TestName
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
+export BAREOS_WEBUI_BASE_URL="${BAREOS_WEBUI_BASE_URL%/}/bareos/"
+
 selenium_log="${tmp}/webui-selenium.out"
 
 start_test

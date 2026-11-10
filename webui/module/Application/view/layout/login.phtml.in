@@ -79,6 +79,11 @@ echo $this->doctype();
    ?>
 
    <div class="container text-center">
+      <?php if (!$this->isSecureConnection): ?>
+      <div class="alert alert-warning" role="alert">
+         <?php echo $this->translate("This WebUI is using an insecure HTTP connection. Credentials and data may be exposed."); ?>
+      </div>
+      <?php endif; ?>
       <img src="<?php echo $this->escapeHtmlAttr($themeBase . '/img/bareos.png'); ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>

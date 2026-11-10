@@ -1953,18 +1953,37 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_fcgi &> /dev/null || true
 a2enmod fcgid &> /dev/null || true
-a2enmod ssl &> /dev/null
-a2enflag SSL &> /dev/null
-if ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+ssl_ready=true
+restart_apache=false
+if ! ( . /etc/sysconfig/apache2
+       case " ${APACHE_SERVER_FLAGS:-} " in
+         *" SSL "*) exit 0 ;;
+         *) exit 1 ;;
+       esac ); then
+  restart_apache=true
+fi
+if ! a2enmod ssl; then
+  echo "Could not enable Apache SSL module; HTTPS setup skipped." >&2
+  ssl_ready=false
+fi
+if ! a2enflag SSL; then
+  echo "Could not enable Apache SSL startup flag; HTTPS setup skipped." >&2
+  ssl_ready=false
+  restart_apache=false
+fi
+if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
   if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
      [ ! -e /etc/apache2/ssl.key/server.key ]; then
-    /usr/bin/gensslcert || exit $?
+    if ! /usr/bin/gensslcert; then
+      echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
+      ssl_ready=false
+    fi
   elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
        [ ! -s /etc/apache2/ssl.key/server.key ]; then
     echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
-    exit 1
+    ssl_ready=false
   fi
-  if [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
+  if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
     cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
 <VirtualHost *:443>
   SSLEngine on
@@ -1976,7 +1995,11 @@ EOF
 fi
 apachectl configtest || exit $?
 if systemctl is-active --quiet apache2; then
-  systemctl reload apache2
+  if $restart_apache; then
+    systemctl restart apache2
+  else
+    systemctl reload apache2
+  fi
 fi
 %else
 if systemctl is-active --quiet httpd; then
@@ -1993,18 +2016,37 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
-a2enmod ssl &> /dev/null
-a2enflag SSL &> /dev/null
-if ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+ssl_ready=true
+restart_apache=false
+if ! ( . /etc/sysconfig/apache2
+       case " ${APACHE_SERVER_FLAGS:-} " in
+         *" SSL "*) exit 0 ;;
+         *) exit 1 ;;
+       esac ); then
+  restart_apache=true
+fi
+if ! a2enmod ssl; then
+  echo "Could not enable Apache SSL module; HTTPS setup skipped." >&2
+  ssl_ready=false
+fi
+if ! a2enflag SSL; then
+  echo "Could not enable Apache SSL startup flag; HTTPS setup skipped." >&2
+  ssl_ready=false
+  restart_apache=false
+fi
+if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
   if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
      [ ! -e /etc/apache2/ssl.key/server.key ]; then
-    /usr/bin/gensslcert || exit $?
+    if ! /usr/bin/gensslcert; then
+      echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
+      ssl_ready=false
+    fi
   elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
        [ ! -s /etc/apache2/ssl.key/server.key ]; then
     echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
-    exit 1
+    ssl_ready=false
   fi
-  if [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
+  if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
     cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
 <VirtualHost *:443>
   SSLEngine on
@@ -2016,7 +2058,11 @@ EOF
 fi
 apachectl configtest || exit $?
 if systemctl is-active --quiet apache2; then
-  systemctl reload apache2
+  if $restart_apache; then
+    systemctl restart apache2
+  else
+    systemctl reload apache2
+  fi
 fi
 %else
 if systemctl is-active --quiet httpd; then

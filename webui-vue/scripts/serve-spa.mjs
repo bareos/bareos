@@ -76,7 +76,8 @@ const {
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
-  const requestPath = decodeURIComponent(url.pathname)
+  const proxyPath = url.pathname.replace(/^\/bareos(?=\/|$)/, '') || '/'
+  const requestPath = decodeURIComponent(proxyPath)
 
   if (requestPath.startsWith('/api/')) {
     if (!wsProxyHost || !wsProxyPort) {
@@ -89,7 +90,7 @@ const server = createServer(async (req, res) => {
       host: wsProxyHost,
       port: wsProxyPort,
       method: req.method,
-      path: req.url,
+      path: proxyPath + url.search,
       headers: {
         ...req.headers,
         'x-forwarded-proto': 'http',
@@ -146,14 +147,15 @@ const server = createServer(async (req, res) => {
 
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
-  if (url.pathname !== '/ws' || !wsProxyHost || !wsProxyPort) {
+  const requestPath = url.pathname.replace(/^\/bareos(?=\/|$)/, '')
+  if (requestPath !== '/ws' || !wsProxyHost || !wsProxyPort) {
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
     socket.destroy()
     return
   }
 
   const upstream = net.connect(wsProxyPort, wsProxyHost, () => {
-    upstream.write(`${req.method} ${req.url} HTTP/${req.httpVersion}\r\n`)
+    upstream.write(`${req.method} ${requestPath}${url.search} HTTP/${req.httpVersion}\r\n`)
     for (let i = 0; i < req.rawHeaders.length; i += 2) {
       upstream.write(`${req.rawHeaders[i]}: ${req.rawHeaders[i + 1]}\r\n`)
     }
@@ -174,5 +176,5 @@ server.on('upgrade', (req, socket, head) => {
 })
 
 server.listen(port, host, () => {
-  console.log(`Serving ${root} on http://${host}:${port}`)
+  console.log(`Serving ${root} on http://${host}:${server.address().port}`)
 })

@@ -994,6 +994,32 @@ if (
 }
 $globalChecks += 2;
 
+$loginRenderer = new Laminas\View\Renderer\PhpRenderer();
+$loginRenderer->setResolver(new Laminas\View\Resolver\TemplateMapResolver(array(
+    'login' => __DIR__ . '/../../module/Application/view/layout/login.phtml.in',
+)));
+$loginRenderer->plugin('basePath')->setBasePath('/bareos-webui');
+$translateHelper = new Laminas\I18n\View\Helper\Translate();
+$translateHelper->setTranslator(new Laminas\I18n\Translator\Translator());
+$loginRenderer->getHelperPluginManager()->setService('translate', $translateHelper);
+$previousIncludePath = get_include_path();
+set_include_path(__DIR__ . '/../..' . PATH_SEPARATOR . $previousIncludePath);
+
+foreach ($instanceCases as $index => $case) {
+    list($proxies, $server, $expectedSecure) = $case;
+    $html = $loginRenderer->render('login', array(
+        'isSecureConnection' => (new RequestOrigin(array('trusted_proxies' => $proxies), $server))->isHttps(),
+        'content' => '<form id="login-form"></form>',
+    ));
+    $hasWarning = strpos($html, 'This WebUI is using an insecure HTTP connection.') !== false;
+    if ($hasWarning === $expectedSecure || strpos($html, 'id="login-form"') === false) {
+        $failures++;
+        printf("FAIL login warning case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+    }
+}
+set_include_path($previousIncludePath);
+$globalChecks += count($instanceCases);
+
 $total = count($cases) + count($proxyCases) + count($listenerCases) + count($wiringChecks)
     + count($addressCases) + count($forwardedCases) + $globalChecks
     + $serviceManagerChecks + $serviceManagerCases + $dependencyChecks
