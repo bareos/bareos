@@ -243,7 +243,14 @@ TEST_F(CatalogTest, AccountingWorkerUsesPrivateConnection)
   if (shared) { DbSqlClosePooledConnection(jcr, shared); }
 
   directordaemon::StopSubscriptionAccountingThread();
-  EXPECT_EQ(count_connections(), connections_before);
+  // Closing the client socket precedes PostgreSQL removing its backend.
+  int connections_after = count_connections();
+  for (int attempt = 0;
+       attempt < 500 && connections_after != connections_before; ++attempt) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    connections_after = count_connections();
+  }
+  EXPECT_EQ(connections_after, connections_before);
 }
 
 TEST_F(CatalogTest, AccountingDeltaUsesBoundedCursorFetches)
