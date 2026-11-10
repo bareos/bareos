@@ -14,6 +14,12 @@ JobName=backup-bareos-fd
 "${BAREOS_SCRIPTS_DIR}"/cleanup
 "${BAREOS_SCRIPTS_DIR}"/setup
 
+# The purge-discovery probe replaces this fixture table with a view.
+psql --no-psqlrc --set=ON_ERROR_STOP=1 --set=db_user="$db_user" \
+  --dbname="$db_name" <<'SQL'
+ALTER TABLE FileSet OWNER TO :"db_user";
+SQL
+
 secondary_catalog="${db_name}_secondary"
 db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/drop_bareos_database"
 db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/create_bareos_database"
