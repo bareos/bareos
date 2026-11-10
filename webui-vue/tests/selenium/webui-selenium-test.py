@@ -21,7 +21,7 @@
 """Minimal smoke test for the Bareos Vue WebUI using Selenium.
 
 Environment variables (all optional):
-  BAREOS_WEBUI_BASE_URL         Base URL, default: http://127.0.0.1/bareos-webui
+  BAREOS_WEBUI_BASE_URL         Base URL, default: http://127.0.0.1/bareos/
   BAREOS_WEBUI_USERNAME         Login username, default: admin
   BAREOS_WEBUI_PASSWORD         Login password, default: admin
   BAREOS_WEBUI_CHROME_HEADLESS  Set to 'no' to show browser window, default: yes
@@ -53,7 +53,7 @@ TIMEOUT = 15
 
 
 class SeleniumVueTest(unittest.TestCase):
-    base_url = "http://127.0.0.1/bareos-webui"
+    base_url = "http://127.0.0.1/bareos/"
     username = "admin"
     password = "admin"
     headless = True

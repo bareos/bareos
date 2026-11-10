@@ -55,7 +55,7 @@ fi
 if [ "${DIST:-}" = "windows" ]; then
   export BAREOS_WEBUI_BASE_URL="http://${VM_IP}/"
 else
-  export BAREOS_WEBUI_BASE_URL="http://${VM_IP}${webuiListenPort}/bareos-webui/"
+  export BAREOS_WEBUI_BASE_URL="http://${VM_IP}${webuiListenPort}/bareos/"
 fi
 
 export BAREOS_WEBUI_BROWSER="chrome"

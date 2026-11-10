@@ -60,7 +60,7 @@ async function login(
   const loginError = page.locator('[data-testid="login-error"]')
 
   for (let attempt = 1; attempt <= LOGIN_ATTEMPTS; attempt += 1) {
-    await page.goto('/')
+    await page.goto('/bareos/')
     await page.waitForFunction(() => (
       window.location.hash === '#/dashboard'
       || document.querySelector('[data-testid="login-form"]')
@@ -113,7 +113,7 @@ async function openNav(page, testId, urlPattern) {
 
 async function openConsole(page) {
   const consoleOutput = page.locator('[data-testid="console-output"]')
-  await page.goto('/#/console-popup')
+  await page.goto('/bareos/#/console-popup')
   await expect(consoleOutput).toBeVisible()
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -217,7 +217,7 @@ test('shows all configured directors in multi-director login mode', async ({
     'multi-director login checks only apply to multi-director smoke'
   )
 
-  await page.goto('/')
+  await page.goto('/bareos/')
   await expect(page.locator('[data-testid="login-form"]')).toBeVisible()
 
   const targetDirectors = page.locator('[data-testid="login-target-directors"]')
@@ -435,7 +435,7 @@ test('shows readonly ACL restrictions for the restricted profile', async ({
   test.skip(!isReadonlyProfile, 'restricted ACL checks only apply to readonly smoke')
 
   await login(page)
-  await page.goto('/#/acls')
+  await page.goto('/bareos/#/acls')
   await expect(page.getByText('User Command ACL', { exact: true })).toBeVisible()
 
   const deniedChip = page.locator('.q-chip').filter({ hasText: /denied/i }).first()
@@ -453,8 +453,8 @@ test('keeps the console session when navigating away and back', async ({
   await page.getByText('status director', { exact: true }).click()
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 
-  await page.goto('/#/dashboard')
-  await page.goto('/#/console-popup')
+  await page.goto('/bareos/#/dashboard')
+  await page.goto('/bareos/#/console-popup')
   await expect(consoleOutput).toContainText('status director')
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
