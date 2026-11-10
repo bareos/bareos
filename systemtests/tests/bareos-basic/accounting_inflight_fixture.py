@@ -107,7 +107,7 @@ def check_inflight_requeue():
         END;
         $$;
         CREATE TRIGGER acct_pause_save BEFORE UPDATE OF AccountingValid ON Job
-        FOR EACH STATEMENT EXECUTE FUNCTION acct_pause_save();
+        FOR EACH STATEMENT EXECUTE PROCEDURE acct_pause_save();
         """)
     gate = subprocess.Popen(
         [
