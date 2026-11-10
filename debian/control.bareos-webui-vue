@@ -3,7 +3,8 @@ Architecture: all
 Provides: bareos-webui (= ${binary:Version})
 Conflicts: bareos-webui (<< ${binary:Version})
 Replaces: bareos-webui (<< ${binary:Version})
-Depends: apache2 | httpd,
+Depends: apache2,
+   ssl-cert,
    bareos-webui-proxy,
    ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - Vue webui

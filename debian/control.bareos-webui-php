@@ -2,7 +2,8 @@ Package: bareos-webui-php
 Architecture: all
 Conflicts: bareos-webui (<< ${binary:Version})
 Replaces: bareos-webui (<< ${binary:Version})
-Depends: apache2 | httpd,
+Depends: apache2,
+   ssl-cert,
    php-fpm (>= 7.3),
    php-date <bookworm> <bullseye> <noble> <jammy>,
    php-intl,

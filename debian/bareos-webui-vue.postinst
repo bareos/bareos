@@ -1,4 +1,17 @@
 #!/bin/sh
+set -e
 
-which a2enmod >/dev/null && a2enmod rewrite proxy proxy_http proxy_wstunnel 2>/dev/null || true
-which a2enconf >/dev/null && a2enconf bareos-webui-vue || true
+command -v a2enmod >/dev/null
+a2enmod rewrite proxy proxy_http proxy_wstunnel ssl
+
+command -v a2enconf >/dev/null
+a2enconf bareos-webui-vue
+
+if ! apache2ctl -S 2>&1 | grep -Eq 'port 443|:443'; then
+  a2ensite default-ssl
+fi
+
+apache2ctl configtest
+if command -v systemctl >/dev/null && systemctl is-active --quiet apache2; then
+  systemctl reload apache2
+fi

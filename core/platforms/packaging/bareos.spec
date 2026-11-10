@@ -628,6 +628,11 @@ Requires: php-libxml
 %endif
 
 Requires: httpd
+%if 0%{?suse_version}
+Requires: apache2-mod_ssl
+%else
+Requires: mod_ssl
+%endif
 %if 0%{?rhel} || 0%{?fedora}
 %define _apache_conf_dir /etc/httpd/conf.d/
 %define www_daemon_user apache
@@ -653,6 +658,11 @@ Provides:      bareos-webui = %{version}-%{release}
 Obsoletes:     bareos-webui < %{version}-%{release}
 Requires:      %{name}-webui-proxy = %{version}
 Requires:      httpd
+%if 0%{?suse_version}
+Requires:      apache2-mod_ssl
+%else
+Requires:      mod_ssl
+%endif
 
 %description -n bareos-webui-vue
 %{dscr}
@@ -1943,6 +1953,36 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_fcgi &> /dev/null || true
 a2enmod fcgid &> /dev/null || true
+a2enmod ssl &> /dev/null
+a2enflag SSL &> /dev/null
+if ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+  if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
+     [ ! -e /etc/apache2/ssl.key/server.key ]; then
+    /usr/bin/gensslcert || exit $?
+  elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
+       [ ! -s /etc/apache2/ssl.key/server.key ]; then
+    echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
+    exit 1
+  fi
+  if [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
+    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
+<VirtualHost *:443>
+  SSLEngine on
+  SSLCertificateFile /etc/apache2/ssl.crt/server.crt
+  SSLCertificateKeyFile /etc/apache2/ssl.key/server.key
+</VirtualHost>
+EOF
+  fi
+fi
+apachectl configtest || exit $?
+if systemctl is-active --quiet apache2; then
+  systemctl reload apache2
+fi
+%else
+if systemctl is-active --quiet httpd; then
+  apachectl configtest
+  systemctl reload httpd
+fi
 %endif
 %logging_end
 
@@ -1953,7 +1993,36 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
-apachectl graceful &> /dev/null || true
+a2enmod ssl &> /dev/null
+a2enflag SSL &> /dev/null
+if ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+  if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
+     [ ! -e /etc/apache2/ssl.key/server.key ]; then
+    /usr/bin/gensslcert || exit $?
+  elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
+       [ ! -s /etc/apache2/ssl.key/server.key ]; then
+    echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
+    exit 1
+  fi
+  if [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
+    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
+<VirtualHost *:443>
+  SSLEngine on
+  SSLCertificateFile /etc/apache2/ssl.crt/server.crt
+  SSLCertificateKeyFile /etc/apache2/ssl.key/server.key
+</VirtualHost>
+EOF
+  fi
+fi
+apachectl configtest || exit $?
+if systemctl is-active --quiet apache2; then
+  systemctl reload apache2
+fi
+%else
+if systemctl is-active --quiet httpd; then
+  apachectl configtest
+  systemctl reload httpd
+fi
 %endif
 %logging_end
 
