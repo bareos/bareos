@@ -14,9 +14,23 @@ JobName=backup-bareos-fd
 "${BAREOS_SCRIPTS_DIR}"/cleanup
 "${BAREOS_SCRIPTS_DIR}"/setup
 
+secondary_catalog="${db_name}_secondary"
+db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/drop_bareos_database"
+db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/create_bareos_database"
+
+cleanup_secondary_catalog()
+{
+  db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/drop_bareos_database"
+}
+trap cleanup_secondary_catalog EXIT
+
+db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/make_bareos_tables"
+db_name="$secondary_catalog" "${BAREOS_SCRIPTS_DIR}/grant_bareos_privileges"
+
 exit_failure()
 {
   estat=1
+  cleanup_secondary_catalog
   end_test
 }
 
@@ -24,6 +38,7 @@ start_test
 
 pushd "${BAREOS_UNITTESTS_BINARY_DIR}" >/dev/null
 "${CATALOG_TEST_PROGRAM}" || exit_failure
-popd 
+popd
 
+cleanup_secondary_catalog
 end_test

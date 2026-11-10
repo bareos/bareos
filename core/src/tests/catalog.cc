@@ -57,7 +57,6 @@ class CatalogTest : public ::testing::Test {
   JobControlRecord* jcr{};
   BareosDb* db{};
   BareosDb* secondary_db{};
-  bool secondary_catalog_created{false};
   bool file_set_probe_installed{false};
   directordaemon::DirectorResource test_director;
   directordaemon::DirectorResource* previous_director{};
@@ -117,9 +116,6 @@ void CatalogTest::TearDown()
   directordaemon::StopSubscriptionAccountingThread();
   directordaemon::me = previous_director;
   if (secondary_db) { secondary_db->CloseDatabase(jcr); }
-  if (secondary_catalog_created) {
-    EXPECT_TRUE(db->SqlExec("DROP DATABASE regress_catalog_secondary"));
-  }
   if (file_set_probe_installed) {
     EXPECT_TRUE(db->SqlExec(
         "DROP VIEW FileSet; ALTER TABLE acct_fileset RENAME TO FileSet; "
@@ -410,10 +406,15 @@ TEST_F(CatalogTest, AccountingScansPreferLatestFileId)
 
 TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
 {
-  ASSERT_TRUE(db->SqlExec(R"SQL(
+  const char* seed_catalog = R"SQL(
+    TRUNCATE File, Job, FileSet, Path, Client;
+    INSERT INTO Client (ClientId, Name, Uname) VALUES (1, 'bareos-fd', 'Linux');
     INSERT INTO FileSet (FileSetId, FileSet, Md5, CreateTime)
       VALUES (1, 'AcctCatalogGate', 'gate', CURRENT_TIMESTAMP);
     INSERT INTO Path (PathId, Path) VALUES (1, '/accounting-catalog/');
+    INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, FileSetId,
+                     JobStatus, JobTDate)
+      VALUES (1, 'catalog-gate', 'catalog-gate', 'B', 'F', 1, 1, 'T', 2000000000);
     INSERT INTO File (FileId, FileIndex, JobId, PathId, Name, LStat, Md5)
       VALUES (1, 1, 1, 1, 'regular', 'A A IGk B A A A C BAA C A A A A A A', '');
     UPDATE Job SET FileSetId=1, AccountingValid=TRUE, AccountingExcluded=FALSE,
@@ -421,18 +422,15 @@ TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
       AccountingRule='st_blocks*512', AccountingJobsInChain=1 WHERE JobId=1;
     UPDATE SubscriptionAccountingSnapshot
       SET LastSuccess=CURRENT_TIMESTAMP, LastError=NULL WHERE SnapshotId=1;
-  )SQL"))
-      << db->strerror();
-  ASSERT_TRUE(db->SqlExec(
-      "CREATE DATABASE regress_catalog_secondary TEMPLATE regress_catalog"));
-  secondary_catalog_created = true;
+  )SQL";
+  ASSERT_TRUE(db->SqlExec(seed_catalog)) << db->strerror();
 
   auto* primary = jcr->dir_impl->res.catalog;
   directordaemon::CatalogResource secondary;
   char secondary_name[] = "secondary";
-  char secondary_database[] = "regress_catalog_secondary";
+  std::string secondary_database = std::string(primary->db_name) + "_secondary";
   secondary.resource_name_ = secondary_name;
-  secondary.db_name = secondary_database;
+  secondary.db_name = secondary_database.data();
   secondary.db_user = primary->db_user;
   secondary.db_password = primary->db_password;
   secondary.db_address = primary->db_address;
@@ -442,6 +440,7 @@ TEST_F(CatalogTest, SecondaryCatalogCompletionDoesNotRefreshPrimary)
   secondary_db = directordaemon::GetDatabaseConnection(jcr, true);
   jcr->dir_impl->res.catalog = primary;
   ASSERT_NE(secondary_db, nullptr);
+  ASSERT_TRUE(secondary_db->SqlExec(seed_catalog)) << secondary_db->strerror();
 
   const auto complete
       = [&](BareosDb* connection, directordaemon::CatalogResource* catalog) {
