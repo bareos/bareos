@@ -34,5 +34,7 @@ describe('webui translations', () => {
     expect(translate('de_DE', 'Cancel failed: {message}', { message: 'boom' })).toBe('Cancel failed: boom')
     expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
     expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')
+    expect(translate('de_DE', 'This WebUI is using an insecure HTTP connection. Credentials and data may be exposed.'))
+      .toBe('This WebUI is using an insecure HTTP connection. Credentials and data may be exposed.')
   })
 })

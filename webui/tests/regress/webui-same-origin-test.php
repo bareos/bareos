@@ -814,6 +814,11 @@ $instanceCases = array(
     ),
     array(
         array('127.0.0.1, 10.4.5.6'),
+        array('HTTP_X_FORWARDED_PROTO' => 'http', 'REMOTE_ADDR' => '10.4.5.6'),
+        false,
+    ),
+    array(
+        array('127.0.0.1, 10.4.5.6'),
         array('HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '203.0.113.9'),
         false,
     ),
@@ -970,6 +975,24 @@ if (trim((string)$standalone) !== '1') {
     $failures++;
     printf("FAIL RequestOrigin did not load standalone: %s\n", trim((string)$standalone));
 }
+
+$moduleSource = file_get_contents(__DIR__ . '/../../module/Application/Module.php');
+$layoutSource = file_get_contents(__DIR__ . '/../../module/Application/view/layout/layout.phtml.in');
+if (
+    strpos($moduleSource, "'isSecureConnection'") === false
+    || strpos($moduleSource, 'new RequestOrigin($config)') === false
+) {
+    $failures++;
+    print "FAIL Module does not pass RequestOrigin HTTPS state to the layout\n";
+}
+if (
+    strpos($layoutSource, 'if (!$this->isSecureConnection)') === false
+    || strpos($layoutSource, '$this->translate("This WebUI is using an insecure HTTP connection.') === false
+) {
+    $failures++;
+    print "FAIL PHP layout does not render a localized warning for insecure HTTP\n";
+}
+$globalChecks += 2;
 
 $total = count($cases) + count($proxyCases) + count($listenerCases) + count($wiringChecks)
     + count($addressCases) + count($forwardedCases) + $globalChecks
