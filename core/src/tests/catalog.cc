@@ -605,7 +605,7 @@ TEST_F(CatalogTest, PurgesOnlyInvalidatePreviouslyValidAccounting)
     END;
     $$;
     CREATE TRIGGER acct_invalidation_probe BEFORE UPDATE OF AccountingValid
-      ON Job FOR EACH ROW EXECUTE FUNCTION pg_temp.acct_record_invalidation();
+      ON Job FOR EACH ROW EXECUTE PROCEDURE pg_temp.acct_record_invalidation();
   )SQL"))
       << db->strerror();
 
