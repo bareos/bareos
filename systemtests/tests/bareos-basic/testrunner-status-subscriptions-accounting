@@ -720,6 +720,7 @@ END_OF_DATA
     "$catalog_files" "$catalog_bytes" "$catalog_logical_bytes" <<'PY'
 import errno
 import os
+import stat
 
 row = find_acct_test_row(load_result(sys.argv[1]))
 paths = ["file-1byte.bin", "file-512bytes.bin", "file-1000bytes.bin",
@@ -727,13 +728,20 @@ paths = ["file-1byte.bin", "file-512bytes.bin", "file-1000bytes.bin",
 # Change allocation after the backup without changing the saved file contents.
 if hasattr(os, "posix_fallocate"):
     with open(os.path.join(sys.argv[2], "edge/sparse"), "r+b") as stream:
+        file_stat = os.fstat(stream.fileno())
+        assert stat.S_ISREG(file_stat.st_mode) and file_stat.st_size > 0, file_stat
+        unsupported_errors = (errno.ENOSYS, errno.EOPNOTSUPP)
+        if sys.platform.startswith("freebsd"):
+            # FreeBSD also uses EINVAL for unsupported filesystems.
+            unsupported_errors += (errno.EINVAL,)
         try:
-            os.posix_fallocate(stream.fileno(), 0, os.fstat(stream.fileno()).st_size)
-            os.fsync(stream.fileno())
+            os.posix_fallocate(stream.fileno(), 0, file_stat.st_size)
         except OSError as error:
-            if error.errno not in (errno.ENOSYS, errno.EOPNOTSUPP):
+            if error.errno not in unsupported_errors:
                 raise
             print(f"Post-backup allocation probe unsupported: {error}")
+        else:
+            os.fsync(stream.fileno())
 stats = [os.stat(os.path.join(sys.argv[2], path)) for path in paths]
 assert row["files"] == len(stats), row
 assert row["files"] == int(sys.argv[3]), row
