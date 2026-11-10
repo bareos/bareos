@@ -14,9 +14,10 @@ JobName=backup-bareos-fd
 "${BAREOS_SCRIPTS_DIR}"/cleanup
 "${BAREOS_SCRIPTS_DIR}"/setup
 
-# The purge-discovery probe replaces this fixture table with a view.
+# The accounting probes replace these fixture tables with views.
 psql --no-psqlrc --set=ON_ERROR_STOP=1 --set=db_user="$db_user" \
   --dbname="$db_name" <<'SQL'
+ALTER TABLE File OWNER TO :"db_user";
 ALTER TABLE FileSet OWNER TO :"db_user";
 SQL
 
