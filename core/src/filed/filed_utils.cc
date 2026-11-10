@@ -160,9 +160,6 @@ bool CheckResources()
       }
     }
 
-    /* pki_encrypt implies pki_sign */
-    if (me->pki_encrypt) { me->pki_sign = true; }
-
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
       Emsg2(M_FATAL, 0,
             T_("\"PKI Key Pair\" must be defined for File"
