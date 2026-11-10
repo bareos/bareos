@@ -40,7 +40,7 @@ def sql(query):
             os.environ["db_name"],
         ],
         input="SET statement_timeout='10s';\n" + query,
-        text=True,
+        universal_newlines=True,
         stdout=subprocess.PIPE,
         check=True,
         timeout=15,
@@ -55,7 +55,7 @@ def console(commands):
             os.environ["BAREOS_CONFIG_DIR"],
         ],
         input=commands,
-        text=True,
+        universal_newlines=True,
         stdout=subprocess.PIPE,
         check=True,
         timeout=30,
@@ -120,7 +120,7 @@ def check_inflight_requeue():
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.DEVNULL,
-        text=True,
+        universal_newlines=True,
     )
     try:
         gate.stdin.write("SELECT pg_advisory_lock(2910, 1);\n")
