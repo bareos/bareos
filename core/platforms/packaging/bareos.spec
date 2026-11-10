@@ -588,9 +588,10 @@ This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?webui}
-%package webui
+%package -n bareos-webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
+Obsoletes:     bareos-webui < %{version}-%{release}
 
 BuildRequires: httpd
 BuildRequires: httpd-devel
@@ -640,18 +641,20 @@ Conflicts: mod_php_any
 %define www_daemon_group www
 %endif
 
-%description webui
+%description -n bareos-webui-php
 %{dscr}
 
 This package contains the PHP-based Bareos Web User Interface.
 
-%package webui-new
+%package -n bareos-webui-vue
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
+Provides:      bareos-webui = %{version}-%{release}
+Obsoletes:     bareos-webui < %{version}-%{release}
 Requires:      %{name}-webui-proxy = %{version}
 Requires:      httpd
 
-%description webui-new
+%description -n bareos-webui-vue
 %{dscr}
 
 This package contains the Vue-based Bareos Web User Interface.
@@ -1017,7 +1020,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_docdir}/%{name}/README.bareos
 
 %if 0%{?webui}
-%files webui
+%files -n bareos-webui-php
 %defattr(-,root,root,-)
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
@@ -1030,11 +1033,11 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
-%files webui-new
+%files -n bareos-webui-vue
 %defattr(-,root,root,-)
 %doc webui-vue/tests/selenium
 %{_datadir}/%{name}-webui-vue/
-%config(noreplace) %{_apache_conf_dir}/bareos-webui-new.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui-vue.conf
 
 %files webui-proxy
 %defattr(-,root,root,-)
@@ -1921,8 +1924,8 @@ exit 0
 
 %if 0%{?webui}
 
-%pre webui
-%logging_start webui pre
+%pre -n bareos-webui-php
+%logging_start webui-php pre
 if [ $1 -gt 1 ]; then
   # upgrade
   %if_package_version_lt %{name}-webui 25.0.0
@@ -1933,8 +1936,8 @@ fi
 %logging_end
 exit 0
 
-%post webui
-%logging_start webui post
+%post -n bareos-webui-php
+%logging_start webui-php post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -1943,8 +1946,8 @@ a2enmod fcgid &> /dev/null || true
 %endif
 %logging_end
 
-%post webui-new
-%logging_start webui-new post
+%post -n bareos-webui-vue
+%logging_start webui-vue post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -1954,8 +1957,8 @@ apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 
-%posttrans webui
-%logging_start webui posttrans
+%posttrans -n bareos-webui-php
+%logging_start webui-php posttrans
 # update from bareos < 25
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"

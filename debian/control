@@ -5,12 +5,14 @@
 #
 # debian/rules will do it automatically during the
 # configuration phase
+
 # we use conditional build-depends based on build profiles
 # to get the right build-depends just fill DEB_BUILD_PROFILES
 # with your distribution and codename (i.e. "debian buster"
 # or "ubuntu xenial") and you'll get the full build-depends.
 # Otherwise you will just get the common build-depends and
 # might miss a feature or two.
+
 Source: bareos
 Section: admin
 Priority: optional
@@ -456,6 +458,8 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
 
 Package: bareos-webui-php
 Architecture: all
+Conflicts: bareos-webui (<< ${binary:Version})
+Replaces: bareos-webui (<< ${binary:Version})
 Depends: apache2 | httpd,
    php-fpm (>= 7.3),
    php-date <bookworm> <bullseye> <noble> <jammy>,
@@ -479,8 +483,11 @@ Description: Backup Archiving Recovery Open Sourced - WebUI WebSocket proxy
  using the CRAM-MD5 authentication protocol.
 
 
-Package: bareos-webui
+Package: bareos-webui-vue
 Architecture: all
+Provides: bareos-webui (= ${binary:Version})
+Conflicts: bareos-webui (<< ${binary:Version})
+Replaces: bareos-webui (<< ${binary:Version})
 Depends: apache2 | httpd,
    bareos-webui-proxy,
    ${misc:Depends}

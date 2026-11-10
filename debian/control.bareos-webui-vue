@@ -1,5 +1,8 @@
-Package: bareos-webui-new
+Package: bareos-webui-vue
 Architecture: all
+Provides: bareos-webui (= ${binary:Version})
+Conflicts: bareos-webui (<< ${binary:Version})
+Replaces: bareos-webui (<< ${binary:Version})
 Depends: apache2 | httpd,
    bareos-webui-proxy,
    ${misc:Depends}
