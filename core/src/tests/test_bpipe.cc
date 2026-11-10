@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,12 +45,12 @@ static int events[NSIG];
 class SignalCatcher {
   static void SignalHandler(int signal) { events[signal]++; }
   int sig_num;
-  struct sigaction oldact{};
+  struct sigaction oldact {};
 
  public:
   SignalCatcher(int t_sig_num) noexcept : sig_num(t_sig_num)
   {
-    struct sigaction sa{};
+    struct sigaction sa {};
     sa.sa_handler = &SignalHandler;
     sigaction(sig_num, &sa, &oldact);
     events[sig_num] = 0;
@@ -121,6 +121,20 @@ TEST(bpipe, simple_write)
   ASSERT_FALSE(bp->timer_id->killed);
   EXPECT_EQ(CloseBpipe(bp), 0);
 }
+
+#if !defined(HAVE_WIN32)
+TEST(bpipe, short_lived_children_close_promptly)
+{
+  using namespace std::chrono_literals;
+  const auto started = std::chrono::steady_clock::now();
+  for (int attempt = 0; attempt < 10; ++attempt) {
+    Bpipe* bp = OpenBpipe(TEST_PROGRAM " cat", 30, "w");
+    ASSERT_THAT(bp, NotNull());
+    EXPECT_EQ(CloseBpipe(bp), 0);
+  }
+  EXPECT_LT(std::chrono::steady_clock::now() - started, 5s);
+}
+#endif
 
 /* Run command and kill with timeout */
 TEST(bpipe, timeout)
