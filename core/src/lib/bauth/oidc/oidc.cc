@@ -486,21 +486,28 @@ UserClaims VerifyToken(std::string_view token,
   }
 
   auto roles_json = decoded.get_payload_claim(roles_name).to_json();
-  jansson_traits::json_wrapper user_json{}, preferred_json{};
+  jansson_traits::json_wrapper name_json{}, preferred_json{};
 
-  auto fallback_json = decoded.get_payload_claim("sub").to_json();
+  // this name uniquely identifies the user
+  // this is what we should e.g. use for logging purposes in audit logs etc.
+  auto user_json = decoded.get_payload_claim("sub").to_json();
 
+  /* these are basically real/display names
+   * i.e.         sub = user-123
+   *             name = John Doe
+   *   preferred name = Jonny,
+   * The core itself should not really care for them. But they are important
+   * for the UI. */
   if (decoded.has_payload_claim("name")) {
-    user_json = decoded.get_payload_claim("name").to_json();
+    name_json = decoded.get_payload_claim("name").to_json();
   }
   if (decoded.has_payload_claim("preferred_username")) {
     preferred_json = decoded.get_payload_claim("preferred_username").to_json();
   }
 
   return from_json(
-      roles_json.wrapped,
-      user_json.wrapped ? user_json.wrapped : fallback_json.wrapped,
-      preferred_json.wrapped);
+      roles_json.wrapped, user_json.wrapped,
+      preferred_json.wrapped ? preferred_json.wrapped : name_json.wrapped);
 }
 
 client client::fetch_meta_data(client_config cfg)
