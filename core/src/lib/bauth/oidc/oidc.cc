@@ -29,6 +29,7 @@
 #include <jansson.h>
 #include <jwt-cpp/jwt.h>
 #include <openssl/core_names.h>
+#include <openssl/x509.h>
 #include <thread>
 #include <typeinfo>
 
@@ -666,6 +667,24 @@ keyset client::fetch_keys_from_jwks()
         continue;
       }
 
+      // check that the certificate is valid
+      auto* not_after = X509_get0_notAfter(cert.get());
+      auto* not_before = X509_get0_notBefore(cert.get());
+      if (!not_after || !not_before) {
+        // we reject such certificates!
+        Dmsg0(
+            300,
+            "Certificate for %s did not set notAfter/notBefore ---> Skipped\n",
+            key_id);
+        continue;
+      }
+
+      if (X509_cmp_timeframe(nullptr, not_before, not_after) != 0) {
+        Dmsg0(300, "Certificate for %s is not valid anymore ---> Skipped\n",
+              key_id);
+        continue;
+      }
+
       evp_pkey public_key{X509_get_pubkey(cert.get())};
 
       if (!public_key) {
@@ -710,6 +729,14 @@ keyset client::fetch_keys_from_jwks()
 
       Dmsg0(300, "Adding key %s\n", key_id);
       auto public_key = create_public_key(modulus, exponent);
+      if (!public_key) {
+        Dmsg0(
+            300,
+            "OpenSSL could not create key from modulus / exponent for %s ---> "
+            "Skipped\n",
+            key_id);
+        continue;
+      }
       keys.emplace(key_id, std::move(public_key));
     } else {
       // we should never get here, as this is checked above
