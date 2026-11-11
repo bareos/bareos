@@ -72,19 +72,19 @@ expect_grep '^D:1:E$' "${tmp}/mtx-inventory.txt" "drive 1 should start empty"
 expect_grep '^D:2:E$' "${tmp}/mtx-inventory.txt" "drive 2 should start empty"
 expect_grep '^D:3:E$' "${tmp}/mtx-inventory.txt" "drive 3 should start empty"
 expect_not_grep '^D:4:' "${tmp}/mtx-inventory.txt" "fixture should emulate exactly four drives"
-expect_grep '^I:31:E$' "${tmp}/mtx-inventory.txt" "import/export slot 31 should start empty"
-expect_grep '^I:32:E$' "${tmp}/mtx-inventory.txt" "import/export slot 32 should start empty"
-expect_grep '^I:33:E$' "${tmp}/mtx-inventory.txt" "import/export slot 33 should start empty"
-expect_grep '^I:34:E$' "${tmp}/mtx-inventory.txt" "import/export slot 34 should start empty"
-expect_not_grep '^I:35:' "${tmp}/mtx-inventory.txt" "fixture should emulate exactly four import/export slots"
+expect_grep '^I:6:E$' "${tmp}/mtx-inventory.txt" "import/export slot 6 should start empty"
+expect_grep '^I:7:E$' "${tmp}/mtx-inventory.txt" "import/export slot 7 should start empty"
+expect_grep '^I:8:E$' "${tmp}/mtx-inventory.txt" "import/export slot 8 should start empty"
+expect_grep '^I:9:E$' "${tmp}/mtx-inventory.txt" "import/export slot 9 should start empty"
+expect_not_grep '^I:10:' "${tmp}/mtx-inventory.txt" "fixture should emulate exactly four import/export slots"
 expect_grep '^S:1:F:000001HD$' "${tmp}/mtx-inventory.txt" \
   "slot 1 should start with its volume"
 expect_grep '^S:2:F:000002HD$' "${tmp}/mtx-inventory.txt" \
   "slot 2 should start with its volume"
 
 slots="$(run_changer slots 0 "${archivedir}/drv_0" 0)"
-[[ "${slots}" == "30" ]] || {
-  echo "expected 30 slots, got ${slots}" >&2
+[[ "${slots}" == "5" ]] || {
+  echo "expected 5 slots, got ${slots}" >&2
   estat=3
 }
 
