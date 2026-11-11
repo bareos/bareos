@@ -20,6 +20,7 @@
 */
 
 #include "oidc.h"
+#include "lib/util.h"
 #include "verifier.h"
 #include "common.h"
 #include "http.h"
@@ -470,15 +471,26 @@ UserClaims VerifyToken(std::string_view token,
     throw std::runtime_error{"nbf or iat missing in token"};
   }
 
+  if (!decoded.has_payload_claim("sub")) {
+    throw std::runtime_error{"sub missing in token"};
+  }
+
   auto roles_json = decoded.get_payload_claim(roles_name).to_json();
-  auto user_json = decoded.get_payload_claim("name").to_json();
-  jansson_traits::json_wrapper preferred_json{};
+  jansson_traits::json_wrapper user_json{}, preferred_json{};
+
+  auto fallback_json = decoded.get_payload_claim("sub").to_json();
+
+  if (decoded.has_payload_claim("name")) {
+    user_json = decoded.get_payload_claim("name").to_json();
+  }
   if (decoded.has_payload_claim("preferred_username")) {
     preferred_json = decoded.get_payload_claim("preferred_username").to_json();
   }
 
-  return from_json(roles_json.wrapped, user_json.wrapped,
-                   preferred_json.wrapped);
+  return from_json(
+      roles_json.wrapped,
+      user_json.wrapped ? user_json.wrapped : fallback_json.wrapped,
+      preferred_json.wrapped);
 }
 
 client client::fetch_meta_data(client_config cfg)
