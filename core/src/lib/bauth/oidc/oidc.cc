@@ -250,6 +250,16 @@ FetchResult handle_token_response(std::string_view buffer, std::string* token)
     return FetchResult::Error;
   }
 
+  // we need to check this here, as the standard does not require an id token
+  // to contain a scope claim
+  auto scopes = split_string(scope, ' ');
+  if (auto found = std::find(scopes.begin(), scopes.end(), "openid");
+      found == scopes.end()) {
+    *token = "Missing openid scope: ";
+    *token += scope;
+    return FetchResult::Error;
+  }
+
   if (!Bstrcasecmp(token_type, "Bearer")) {
     *token = "Bad token type: ";
     *token += token_type;
