@@ -102,15 +102,28 @@ CREATE TABLE Job
     PurgedFiles       SMALLINT    DEFAULT 0,
     HasCache          SMALLINT    DEFAULT 0,
     Reviewed          SMALLINT    DEFAULT 0,
+    AccountingValid   BOOLEAN     NOT NULL DEFAULT FALSE,
+    AccountingExcluded BOOLEAN,
+    AccountingFiles   NUMERIC(20, 0),
+    AccountingBytes   NUMERIC(20, 0),
+    AccountingLogicalBytes NUMERIC(20, 0),
+    AccountingOpaqueFiles NUMERIC(20, 0),
+    AccountingNdmpArchives NUMERIC(20, 0),
+    AccountingRule    TEXT,
+    AccountingExclusionReason TEXT,
+    AccountingJobsInChain INTEGER,
     Comment           TEXT,
     PRIMARY KEY (JobId)
 );
 
 CREATE INDEX job_name_idx ON job (Name);
 CREATE INDEX job_starttime_idx ON job (StartTime);
+CREATE INDEX job_accounting_client_fileset_idx
+    ON Job (ClientId, FileSetId, JobTDate DESC, JobId DESC);
 
 -- Create a table like Job for long term statistics
 CREATE TABLE JobHisto (LIKE Job);
+ALTER TABLE JobHisto ALTER COLUMN AccountingValid SET DEFAULT FALSE;
 CREATE INDEX jobhisto_idx ON JobHisto (StartTime);
 
 CREATE TABLE Location (
@@ -402,6 +415,18 @@ CREATE TABLE JobStats (
     JobBytes          BIGINT      DEFAULT 0
 );
 
+CREATE TABLE SubscriptionAccountingSnapshot (
+    SnapshotId        SMALLINT    PRIMARY KEY,
+    LastAttempt       TIMESTAMP   WITHOUT TIME ZONE,
+    LastSuccess       TIMESTAMP   WITHOUT TIME ZONE,
+    LastError         TEXT,
+    LastFullSuccess   TIMESTAMP WITHOUT TIME ZONE,
+    LastFullDurationMs BIGINT CHECK (LastFullDurationMs >= 0)
+);
+
+INSERT INTO SubscriptionAccountingSnapshot (SnapshotId)
+VALUES (1);
+
 CREATE TABLE TapeAlerts (
     DeviceId          INTEGER     DEFAULT 0,
     SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
@@ -616,7 +641,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2260;
-INSERT INTO Version (VersionId) VALUES (2260);
+DELETE FROM Version WHERE VersionId<=2261;
+INSERT INTO Version (VersionId) VALUES (2261);
 
 -- Make sure we have appropriate permissions

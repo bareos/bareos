@@ -40,6 +40,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_impexp.h"
 #include "dird/ua_input.h"
 #include "dird/ua_label.h"
@@ -445,8 +446,11 @@ static struct ua_cmdstruct commands[] = {
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
-         "subscriptions [clients] [plugins] [all] [anonymize] "
+         "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
+         "[logical] "
          "[client=<client-name>] | "
+         "subscriptions state | "
+         "subscriptions recalculate | "
          "configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
@@ -2229,6 +2233,7 @@ static bool ReloadCmd(UaContext* ua, const char*)
   } else {
     ua->send->ObjectKeyValueBool("success", result, "failed to reload\n");
   }
+
   ua->send->ObjectEnd("reload");
 
   return result;
@@ -2485,7 +2490,9 @@ static bool DeleteVolume(UaContext* ua)
     }
   }
 
-  ua->db->DeleteMediaRecord(ua->jcr, &mr);
+  if (ua->db->DeleteMediaRecord(ua->jcr, &mr)) {
+    QueueMissingSubscriptionAccounting(ua);
+  }
   ua->send->ArrayStart("volumes");
   ua->send->ArrayItem(mr.VolumeName, T_("Volume %s deleted.\n"));
   ua->send->ArrayEnd("volumes");

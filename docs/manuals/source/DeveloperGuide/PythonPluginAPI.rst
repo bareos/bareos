@@ -140,6 +140,28 @@ by simply doing a **dir()** call on that module.
    'bVarPrevJobName', 'bVarRegexWhere', 'bVarSinceTime', 'bVarType',
    'bVarVersion', 'bVarVssClient', 'bVarWhere', 'bVarWorkingDir', 'bVariable']
 
+When backing up real filesystem files, copy ``st_size`` and, where the
+platform exposes them, ``st_blocks`` and ``st_blksize`` from ``os.stat()``
+(or ``os.lstat()`` for symbolic links) into ``bareosfd.StatPacket``.
+On Unix-like clients, subscription accounting uses ``st_blocks * 512``
+for allocated bytes. ``st_blksize`` is the preferred I/O block size, not
+the unit of ``st_blocks``. Preserve zero block counts and sparse-file
+allocation; do not calculate blocks from logical size or leave the
+``StatPacket`` default of one block for real files.
+
+.. code-block:: python
+
+   packet.st_size = filesystem_stat.st_size
+   if hasattr(filesystem_stat, "st_blocks"):
+       packet.st_blocks = filesystem_stat.st_blocks
+   if hasattr(filesystem_stat, "st_blksize"):
+       packet.st_blksize = filesystem_stat.st_blksize
+
+Virtual files and generated streams without filesystem allocation data
+must not use invented allocation fields. These changes affect newly
+backed-up catalog attributes; refreshing accounting does not repair
+attributes from older backups.
+
 Accurate option constants and ``GetValue(bVarAccurateOptions)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -29,6 +29,7 @@ export function subscriptionRemainingSummary(unitSummary) {
       labelKey: 'Remaining',
       isOverLimit: false,
     }
+
   }
 
   if (parsedRemaining < 0) {
@@ -44,4 +45,53 @@ export function subscriptionRemainingSummary(unitSummary) {
     labelKey: 'Remaining',
     isOverLimit: false,
   }
+}
+
+const subscriptionExportTables = {
+  'unit-detail': ['client', 'plugin', 'count', 'size_gb'],
+  'unit-clients': ['client', 'count', 'size_gb'],
+  'unit-plugins': ['plugin', 'count', 'size_gb'],
+  accounting: [
+    'client', 'fileset', 'files', 'bytes', 'logical_bytes', 'rule_code',
+    'rule_explanation', 'jobs_in_chain', 'excluded', 'accounting_issue',
+  ],
+  'unit-summary': ['accounting_mode', 'used', 'configured', 'remaining'],
+  summary: ['total_files', 'total_bytes', 'total_logical_bytes'],
+}
+
+export function serializeSubscriptionTable(data, table, format) {
+  if (table === 'all') {
+    const sections = Object.keys(subscriptionExportTables)
+      .filter(key => data[key] != null)
+      .map(key => `${key}\r\n${serializeSubscriptionTable(data, key, format)}`)
+    if (!sections.length) {
+      throw new Error('The selected subscription table is unavailable')
+    }
+    return sections.join('\r\n')
+  }
+  const columns = subscriptionExportTables[table]
+  if (!columns || !['csv', 'tsv'].includes(format)) {
+    throw new Error('Unsupported subscription export table or format')
+  }
+  const dataset = data[table]
+  const isSummary = table === 'unit-summary' || table === 'summary'
+  if (dataset == null || (!isSummary && !Array.isArray(dataset))) {
+    throw new Error('The selected subscription table is unavailable')
+  }
+  const rows = isSummary ? [dataset] : dataset
+  const delimiter = format === 'csv' ? ',' : '\t'
+  const escape = value => {
+    let text = String(value ?? '')
+    // Spreadsheet applications interpret these text prefixes as formulas.
+    if (typeof value === 'string' && /^\s*[=+\-@]|^[\t\r\n]/.test(text)) {
+      text = `'${text}`
+    }
+    return /["\r\n\t,]/.test(text)
+      ? `"${text.replaceAll('"', '""')}"`
+      : text
+  }
+  return [
+    columns.join(delimiter),
+    ...rows.map(row => columns.map(column => escape(row[column])).join(delimiter)),
+  ].join('\r\n') + '\r\n'
 }
