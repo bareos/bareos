@@ -619,6 +619,8 @@ This package contains the GlusterFS plugin for the file daemon
 Summary:       Compatibility package for the PHP Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-webui-php >= 25.1.3~pre25
+# Keep PHP installed and add Vue when upgrading to Bareos 26.
+Requires:      (%{name}-webui-php < 26~ or %{name}-webui-vue >= 26~)
 
 %description webui
 This compatibility package installs the PHP-based Bareos Web User Interface.
@@ -626,7 +628,7 @@ This compatibility package installs the PHP-based Bareos Web User Interface.
 %package webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
-Obsoletes:     %{name}-webui < 25.1.3~pre25
+Conflicts:     %{name}-webui < 25.1.3~pre25
 
 BuildRequires: httpd
 BuildRequires: httpd-devel
