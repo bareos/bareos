@@ -170,6 +170,8 @@ static struct s_fs_opt FS_options[]
        {"camellia256", INC_KW_ENCRYPTION, "Ec3"},
        {"aes128hmacsha1", INC_KW_ENCRYPTION, "Eh1"},
        {"aes256hmacsha1", INC_KW_ENCRYPTION, "Eh2"},
+       {"aes128gcm", INC_KW_ENCRYPTION, "Eg1"},
+       {"aes256gcm", INC_KW_ENCRYPTION, "Eg2"},
        {"yes", INC_KW_ONEFS, "0"},
        {"no", INC_KW_ONEFS, "f"},
        {"yes", INC_KW_RECURSE, "0"},

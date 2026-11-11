@@ -29,6 +29,10 @@ The available options (and ciphers) are:
 
 -  blowfish
 
+- aes128gcm
+
+- aes256gcm
+
 They depend on the version of the openssl library installed.
 
 For decryption of encrypted data, the right decompression algorithm should be automatically chosen.

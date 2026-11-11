@@ -222,6 +222,19 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
                   rp += 2;
                   break;
               }
+              break;
+            case 'g':
+              switch (*(rp + 2)) {
+                case '1':
+                  inc->cipher = CRYPTO_CIPHER_AES_128_GCM;
+                  rp += 2;
+                  break;
+                case '2':
+                  inc->cipher = CRYPTO_CIPHER_AES_256_GCM;
+                  rp += 2;
+                  break;
+              }
+              break;
           }
           break;
         case 'f':

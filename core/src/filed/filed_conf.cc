@@ -163,6 +163,8 @@ static struct s_kw CryptoCiphers[]
        {"camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC},
        {"aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1},
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
+       {"aes128gcm", CRYPTO_CIPHER_AES_128_GCM},
+       {"aes256gcm", CRYPTO_CIPHER_AES_256_GCM},
        {NULL, 0}};
 
 static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)

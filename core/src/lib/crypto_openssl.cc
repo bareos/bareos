@@ -944,6 +944,20 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
       ec = EVP_aes_256_cbc_hmac_sha1();
       break;
 #  endif
+#  ifdef NID_aes_128_gcm
+    case CRYPTO_CIPHER_AES_128_GCM:
+      /* AES 128 bit GCM */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_128_gcm);
+      ec = EVP_aes_128_gcm();
+      break;
+#  endif
+#  ifdef NID_aes_256_gcm
+    case CRYPTO_CIPHER_AES_256_GCM:
+      /* AES 256 bit GCM */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_256_gcm);
+      ec = EVP_aes_256_gcm();
+      break;
+#  endif
 #endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
     default:
       Jmsg0(NULL, M_ERROR, 0, T_("Unsupported cipher type specified\n"));
