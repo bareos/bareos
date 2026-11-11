@@ -497,6 +497,12 @@ client client::fetch_meta_data(client_config cfg)
                              + response};
   }
 
+  if (issuer != cfg.oidc_url) {
+    throw std::runtime_error{
+        std::string{"fetched issuer does not match configured url: fetched="}
+        + issuer};
+  }
+
   client result{};
 
   result.http = http;
