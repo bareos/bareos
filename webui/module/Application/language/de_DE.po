@@ -1840,3 +1840,6 @@ msgstr "Die Wiederherstellung von NDMP-Backups wird aktuell von der Bareos-WebUI
 #: ../module/Client/view/client/client/timeline.phtml:50
 msgid "Please select at least one client."
 msgstr "Bitte mindestens einen Client auswählen."
+
+msgid "This WebUI is using an insecure HTTP connection. Credentials and data may be exposed."
+msgstr "Diese WebUI verwendet eine unsichere HTTP-Verbindung. Zugangsdaten und Daten könnten offengelegt werden."

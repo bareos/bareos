@@ -591,7 +591,8 @@ This package contains the common files for the python storage plugins.
 %package -n bareos-webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
-Obsoletes:     bareos-webui < %{version}-%{release}
+# Bareos 25.1.3 introduces the PHP rename and old-name compatibility package.
+Obsoletes:     bareos-webui < 25.1.3~
 
 BuildRequires: httpd
 BuildRequires: httpd-devel
@@ -629,6 +630,9 @@ Requires: php-libxml
 
 %if 0%{?suse_version}
 Requires: apache2
+Requires: apache2-utils
+Requires: hostname
+Requires: openssl
 %else
 Requires: httpd
 Requires: mod_ssl
@@ -655,10 +659,15 @@ This package contains the PHP-based Bareos Web User Interface.
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
 Provides:      bareos-webui = %{version}-%{release}
-Obsoletes:     bareos-webui < %{version}-%{release}
+Obsoletes:     bareos-webui < 25.1.3~
+Provides:      bareos-webui-new = %{version}-%{release}
+Obsoletes:     bareos-webui-new < 26~
 Requires:      %{name}-webui-proxy = %{version}
 %if 0%{?suse_version}
 Requires:      apache2
+Requires:      apache2-utils
+Requires:      hostname
+Requires:      openssl
 %else
 Requires:      httpd
 Requires:      mod_ssl
@@ -1936,8 +1945,8 @@ exit 0
 
 %pre -n bareos-webui-php
 %logging_start webui-php pre
-if [ $1 -gt 1 ]; then
-  # upgrade
+if rpm -q %{name}-webui >/dev/null 2>&1; then
+  # A differently named replacement also receives an install count of one.
   %if_package_version_lt %{name}-webui 25.0.0
     %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
     %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
@@ -1972,23 +1981,38 @@ if ! a2enflag SSL; then
   restart_apache=false
 fi
 if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
-  if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
-     [ ! -e /etc/apache2/ssl.key/server.key ]; then
-    if ! /usr/bin/gensslcert; then
-      echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
-      ssl_ready=false
+  ssl_certificate=/etc/apache2/ssl.crt/server.crt
+  ssl_key=/etc/apache2/ssl.key/server.key
+  if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
+    ssl_certificate=/etc/apache2/ssl.crt/bareos-webui.crt
+    ssl_key=/etc/apache2/ssl.key/bareos-webui.key
+    if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
+      if ! (
+        umask 077
+        tls_tmpdir=$(mktemp -d /etc/apache2/.bareos-webui-tls.XXXXXX) || exit 1
+        trap 'rm -f "$tls_tmpdir/server.key" "$tls_tmpdir/server.crt"; rmdir "$tls_tmpdir"' EXIT
+        tls_hostname=$(hostname -f) || exit 1
+        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+          -subj "/CN=$tls_hostname" -addext "subjectAltName=DNS:$tls_hostname" \
+          -keyout "$tls_tmpdir/server.key" -out "$tls_tmpdir/server.crt" &&
+          install -m 600 "$tls_tmpdir/server.key" "$ssl_key" &&
+          install -m 644 "$tls_tmpdir/server.crt" "$ssl_certificate"
+      ); then
+        echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
+        ssl_ready=false
+      fi
     fi
-  elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
-       [ ! -s /etc/apache2/ssl.key/server.key ]; then
+  fi
+  if $ssl_ready && { [ ! -s "$ssl_certificate" ] || [ ! -s "$ssl_key" ]; }; then
     echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
     ssl_ready=false
   fi
   if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
-    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
+    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<EOF
 <VirtualHost *:443>
   SSLEngine on
-  SSLCertificateFile /etc/apache2/ssl.crt/server.crt
-  SSLCertificateKeyFile /etc/apache2/ssl.key/server.key
+  SSLCertificateFile $ssl_certificate
+  SSLCertificateKeyFile $ssl_key
 </VirtualHost>
 EOF
   fi
@@ -2035,23 +2059,38 @@ if ! a2enflag SSL; then
   restart_apache=false
 fi
 if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
-  if [ ! -e /etc/apache2/ssl.crt/server.crt ] &&
-     [ ! -e /etc/apache2/ssl.key/server.key ]; then
-    if ! /usr/bin/gensslcert; then
-      echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
-      ssl_ready=false
+  ssl_certificate=/etc/apache2/ssl.crt/server.crt
+  ssl_key=/etc/apache2/ssl.key/server.key
+  if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
+    ssl_certificate=/etc/apache2/ssl.crt/bareos-webui.crt
+    ssl_key=/etc/apache2/ssl.key/bareos-webui.key
+    if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
+      if ! (
+        umask 077
+        tls_tmpdir=$(mktemp -d /etc/apache2/.bareos-webui-tls.XXXXXX) || exit 1
+        trap 'rm -f "$tls_tmpdir/server.key" "$tls_tmpdir/server.crt"; rmdir "$tls_tmpdir"' EXIT
+        tls_hostname=$(hostname -f) || exit 1
+        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
+          -subj "/CN=$tls_hostname" -addext "subjectAltName=DNS:$tls_hostname" \
+          -keyout "$tls_tmpdir/server.key" -out "$tls_tmpdir/server.crt" &&
+          install -m 600 "$tls_tmpdir/server.key" "$ssl_key" &&
+          install -m 644 "$tls_tmpdir/server.crt" "$ssl_certificate"
+      ); then
+        echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
+        ssl_ready=false
+      fi
     fi
-  elif [ ! -s /etc/apache2/ssl.crt/server.crt ] ||
-       [ ! -s /etc/apache2/ssl.key/server.key ]; then
+  fi
+  if $ssl_ready && { [ ! -s "$ssl_certificate" ] || [ ! -s "$ssl_key" ]; }; then
     echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
     ssl_ready=false
   fi
   if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
-    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<'EOF'
+    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<EOF
 <VirtualHost *:443>
   SSLEngine on
-  SSLCertificateFile /etc/apache2/ssl.crt/server.crt
-  SSLCertificateKeyFile /etc/apache2/ssl.key/server.key
+  SSLCertificateFile $ssl_certificate
+  SSLCertificateKeyFile $ssl_key
 </VirtualHost>
 EOF
   fi

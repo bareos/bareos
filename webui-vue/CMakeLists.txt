@@ -15,6 +15,8 @@ set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-vue)
 if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   # FreeBSD apache24 stores extra configs in ${PREFIX}/etc/apache24/Includes
   set(HTTPD_CONF ${sysconfdir}/apache24/Includes)
+elseif(BAREOS_PLATFORM MATCHES "^(debian|ubuntu|univention)$")
+  set(HTTPD_CONF ${sysconfdir}/apache2/conf-available)
 elseif(EXISTS ${sysconfdir}/httpd/conf.d)
   set(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
 elseif(EXISTS ${sysconfdir}/apache2/conf.d)

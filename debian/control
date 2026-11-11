@@ -456,10 +456,20 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
  This package provides common files for Python storagedaemon plugins.
 
 
+Package: bareos-webui-new
+Architecture: all
+Section: oldlibs
+Depends: bareos-webui-vue (>= 26~),
+   ${misc:Depends}
+Description: Transitional package for the Vue-based Bareos WebUI
+ This package upgrades the Bareos 25.1 technical preview to bareos-webui-vue.
+ It can be removed after the upgrade.
+
+
 Package: bareos-webui-php
 Architecture: all
-Conflicts: bareos-webui (<< ${binary:Version})
-Replaces: bareos-webui (<< ${binary:Version})
+Conflicts: bareos-webui (<< 25.1.3~)
+Replaces: bareos-webui (<< 25.1.3~)
 Depends: apache2,
    ssl-cert,
    php-fpm (>= 7.3),
@@ -487,8 +497,10 @@ Description: Backup Archiving Recovery Open Sourced - WebUI WebSocket proxy
 Package: bareos-webui-vue
 Architecture: all
 Provides: bareos-webui (= ${binary:Version})
-Conflicts: bareos-webui (<< ${binary:Version})
-Replaces: bareos-webui (<< ${binary:Version})
+Conflicts: bareos-webui (<< 25.1.3~),
+   bareos-webui-new (<< 26~)
+Replaces: bareos-webui (<< 25.1.3~),
+   bareos-webui-new (<< 26~)
 Depends: apache2,
    ssl-cert,
    bareos-webui-proxy,

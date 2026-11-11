@@ -28,12 +28,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 describe('SPA server under /bareos/', () => {
   let root
+  let sibling
   let upstream
   let frontend
   let baseUrl
 
   beforeAll(async () => {
     root = await mkdtemp(path.join(os.tmpdir(), 'bareos-spa-test-'))
+    sibling = `${root}-sibling`
+    await mkdir(sibling)
+    await writeFile(path.join(sibling, 'outside.txt'), 'outside the document root')
     await mkdir(path.join(root, 'assets'))
     await writeFile(path.join(root, 'index.html'), '<html>SPA</html>')
     await writeFile(path.join(root, 'assets', 'app.js'), 'window.loaded = true')
@@ -80,6 +84,7 @@ describe('SPA server under /bareos/', () => {
     }
     if (upstream) await new Promise(resolve => upstream.close(resolve))
     if (root) await rm(root, { recursive: true, force: true })
+    if (sibling) await rm(sibling, { recursive: true, force: true })
   })
 
   it('serves JavaScript assets rather than the SPA fallback', async () => {
@@ -120,5 +125,18 @@ describe('SPA server under /bareos/', () => {
       request.on('error', reject)
     })
     expect(headers['x-upstream-path']).toBe('/ws?session=a%2Fb')
+  })
+
+  it('rejects encoded traversal to a sibling sharing the root prefix', async () => {
+    const response = await fetch(`${baseUrl}/bareos/..%2f${path.basename(sibling)}/outside.txt`)
+    expect(response.status).toBe(403)
+    expect(await response.text()).not.toContain('outside the document root')
+  })
+
+  it('rejects malformed encoding without terminating the server', async () => {
+    const response = await fetch(`${baseUrl}/bareos/%E0%A4%A`)
+    expect(response.status).toBe(400)
+    expect(await (await fetch(`${baseUrl}/bareos/assets/app.js`)).text())
+      .toBe('window.loaded = true')
   })
 })

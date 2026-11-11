@@ -116,7 +116,7 @@ class RequestOrigin
             }
         }
 
-        if (isset($this->server['HTTPS']) && strtolower($this->server['HTTPS']) !== 'off') {
+        if (isset($this->server['HTTPS']) && $this->server['HTTPS'] !== '' && strtolower($this->server['HTTPS']) !== 'off') {
             return true;
         }
 

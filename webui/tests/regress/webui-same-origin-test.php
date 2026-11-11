@@ -803,6 +803,18 @@ if (preg_match('/^\s*(abstract\s+|final\s+)?class\s+\w+\s+(extends|implements)\s
 $instanceCases = array(
     // Server passed explicitly; $_SERVER must not leak in.
     array(array(), array('HTTPS' => 'on'), true),
+    array(array(), array('HTTPS' => '', 'SERVER_PORT' => '80'), false),
+    array(array(), array('HTTPS' => '', 'SERVER_PORT' => '443'), true),
+    array(
+        array('127.0.0.1'),
+        array('HTTPS' => '', 'SERVER_PORT' => '80', 'HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '127.0.0.1'),
+        true,
+    ),
+    array(
+        array('127.0.0.1'),
+        array('HTTPS' => '', 'SERVER_PORT' => '80', 'HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '203.0.113.9'),
+        false,
+    ),
     array(array(), array('SERVER_PORT' => '443'), true),
     array(array(), array('SERVER_PORT' => '80'), false),
     array(array(), array(), false),

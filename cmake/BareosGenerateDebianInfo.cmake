@@ -82,6 +82,7 @@ else()
   endif()
 
   if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-new")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-php")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-proxy")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-vue")

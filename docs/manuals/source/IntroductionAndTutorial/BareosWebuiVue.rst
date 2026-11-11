@@ -6,20 +6,13 @@ Bareos WebUI Vue
 .. index::
    single: WebUI Vue
    single: WebUI; Vue
-   single: WebUI; technical preview
 
 The Vue-based Bareos WebUI is a new single-page application located in
 :file:`webui-vue/`.
-It provides a modern WebUI implementation that coexists with the classic
-PHP-based :ref:`section-webui`.
-
-.. warning::
-
-   The Vue-based WebUI is currently a technical preview.
-   It is intended for evaluation, early adoption, and iterative development.
-   The classic PHP-based WebUI remains available in parallel and should still
-   be considered the default WebUI for production environments unless the Vue
-   WebUI preview has been explicitly evaluated for the intended use case.
+It was introduced as a technical preview in Bareos 25.1.
+Starting with Bareos 26, it is the default interface selected by the
+:file:`bareos-webui` package name. The classic PHP-based
+:ref:`section-webui` remains available separately.
 
 Coexistence with the classic WebUI
 ----------------------------------
@@ -27,13 +20,13 @@ Coexistence with the classic WebUI
 The current Bareos documentation distinguishes between two WebUI variants:
 
 * :ref:`section-webui` documents the classic PHP-based WebUI.
-* This page documents the new Vue-based WebUI technical preview.
+* This page documents the Vue-based WebUI.
 
 The two interfaces are designed to exist in parallel.
 In a typical Apache deployment they use separate URLs:
 
 * classic WebUI: :file:`/bareos-webui`
-* Vue WebUI preview: :file:`/bareos/`
+* Vue WebUI: :file:`/bareos/`
 
 The Apache configuration redirects :file:`/` and the former
 :file:`/bareos-webui-new/` URL to :file:`/bareos/`.
@@ -76,11 +69,11 @@ its own Apache configuration file :file:`bareos-webui-vue.conf`.
 The classic PHP WebUI package is named :file:`bareos-webui-php`; its URL and
 installation directory remain unchanged.
 
-After installation, open the preview at:
+After installation, open the WebUI at:
 
 .. code-block:: text
 
-   http://HOSTNAME/bareos/
+   https://HOSTNAME/bareos/
 
 To use it successfully, ensure that:
 
@@ -90,6 +83,53 @@ To use it successfully, ensure that:
 * the HTTP and WebSocket proxy targets on port **9104** are reachable from
   Apache
 * suitable Bareos Director console credentials exist
+
+HTTPS configuration
+-------------------
+
+Use HTTPS before transmitting console credentials or backup data.
+On Debian-based systems the packages enable Apache's default SSL site when
+no HTTPS virtual host exists. On SUSE systems they reuse an existing HTTPS
+virtual host or complete default certificate pair. Otherwise they create a
+dedicated self-signed pair at :file:`/etc/apache2/ssl.crt/bareos-webui.crt`
+and :file:`/etc/apache2/ssl.key/bareos-webui.key`, referenced by
+:file:`/etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf`.
+Existing hostname-prefixed certificates and CA keys are not replaced.
+
+The automatically generated certificate is self-signed and will not normally
+be trusted by browsers. Replace it with a certificate trusted by your users,
+or configure an administrator-managed HTTPS virtual host or reverse proxy.
+Ensure the certificate matches the hostname used to access the WebUI and
+verify HTTPS access before enabling HTTP-to-HTTPS redirects.
+
+HTTP access is not automatically disabled or redirected to HTTPS.
+Both WebUIs show a warning on insecure HTTP connections. Configure HTTPS
+enforcement at the web server or reverse proxy according to your site's
+policy; the warning is not a substitute for transport encryption.
+
+Upgrading from Bareos 25
+------------------------
+
+The package rename uses Bareos **25.1.3** as a bridge release.
+The PHP rename must be available in that release before this upgrade path
+can be used: first upgrade Bareos 25 to 25.1.3 or later and verify that
+:file:`bareos-webui-php` is installed, then upgrade to Bareos 26.
+The bridge's :file:`bareos-webui` compatibility package depends on the renamed
+PHP package. Keep it installed during the upgrade, particularly on Debian
+systems where its dependency prevents PHP from becoming automatically
+removable. It contains no PHP application code.
+
+On Debian-based systems the old :file:`bareos-webui-new` preview package
+becomes a transitional package depending on :file:`bareos-webui-vue`.
+On RPM-based systems the Vue package replaces the old preview package.
+Installed PHP and Vue interfaces can therefore be retained independently.
+A fresh Bareos 26 installation of :file:`bareos-webui` selects only Vue.
+
+Do not assume that a direct upgrade from an earlier Bareos 25 release will
+preserve the PHP WebUI automatically. If you skip the bridge release, back up
+your WebUI configuration, explicitly install :file:`bareos-webui-php` as part
+of the upgrade, and verify both the retained configuration and PHP access
+before removing legacy packages.
 
 Configuring multiple directors
 ------------------------------
@@ -189,7 +229,7 @@ allows switching between them or viewing data from all Directors at once.
 What is already available
 -------------------------
 
-The technical preview already covers important day-to-day workflows, including:
+The Vue WebUI covers important day-to-day workflows, including:
 
 * login with Bareos console credentials
 * dashboard views
@@ -203,7 +243,7 @@ The technical preview already covers important day-to-day workflows, including:
 Known differences and current limitations
 -----------------------------------------
 
-Compared to the classic PHP WebUI, the Vue WebUI preview should currently be
+Compared to the classic PHP WebUI, the Vue WebUI should currently be
 viewed as a parallel implementation under active development.
 
 Important differences are:
@@ -211,25 +251,23 @@ Important differences are:
 * documentation and operational guidance are still catching up
 * some workflows are intentionally presented differently than in the classic
   WebUI instead of being a 1:1 port
-* the preview depends on :command:`bareos-webui-proxy`, which is a separate
+* the Vue WebUI depends on :command:`bareos-webui-proxy`, which is a separate
   runtime component
-* the classic WebUI should remain available while the preview is being
-  evaluated
+* the classic WebUI can remain available while Vue workflows are evaluated
 
 When to use which WebUI
 -----------------------
 
 Use the classic PHP WebUI when:
 
-* you want the long-established, primary WebUI
+* you want the long-established PHP WebUI
 * your operations depend on currently documented production procedures
 * you prefer the most conservative choice
 
-Use the Vue WebUI preview when:
+Use the Vue WebUI when:
 
 * you want to evaluate the new interface
-* you want to test current preview workflows in parallel with the classic UI
-* you are helping validate the future WebUI direction
+* you want to use Vue workflows alongside or instead of the classic UI
 
 For now, the recommended approach is to keep both interfaces available and let
 users compare them against their operational needs.

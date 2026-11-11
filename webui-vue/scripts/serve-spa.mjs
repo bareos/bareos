@@ -77,7 +77,15 @@ const {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
   const proxyPath = url.pathname.replace(/^\/bareos(?=\/|$)/, '') || '/'
-  const requestPath = decodeURIComponent(proxyPath)
+  let requestPath
+  try {
+    requestPath = decodeURIComponent(proxyPath)
+  } catch (error) {
+    if (!(error instanceof URIError)) throw error
+    res.writeHead(400)
+    res.end('Bad Request')
+    return
+  }
 
   if (requestPath.startsWith('/api/')) {
     if (!wsProxyHost || !wsProxyPort) {
@@ -114,7 +122,8 @@ const server = createServer(async (req, res) => {
   const candidate = path.join(root, requestPath)
   const safeCandidate = path.resolve(candidate)
 
-  if (!safeCandidate.startsWith(root)) {
+  const relativePath = path.relative(root, safeCandidate)
+  if (relativePath === '..' || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
     res.writeHead(403)
     res.end('Forbidden')
     return
