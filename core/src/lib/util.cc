@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -982,12 +982,20 @@ bool pm_append(void* pm_string, const char* fmt, ...)
   return true;
 }
 
-std::vector<std::string> split_string(const std::string& str, char delim)
+std::vector<std::string> split_string(std::string_view str, char delim)
 {
-  std::istringstream ss(str);
   std::vector<std::string> parts;
-  std::string part;
-  while (std::getline(ss, part, delim)) { parts.push_back(part); }
+  auto to_do = str;
+  while (!to_do.empty()) {
+    std::optional pair = split_first(to_do, delim);
+    if (!pair) {
+      parts.emplace_back(std::string{to_do});
+      break;
+    }
+    std::string_view part;
+    std::tie(part, to_do) = *pair;
+    parts.emplace_back(std::string{part});
+  }
   return parts;
 }
 
