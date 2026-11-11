@@ -563,7 +563,7 @@ keyset client::fetch_keys_from_jwks()
     /* 'x5c' is a certificate chain
      * The first certificate is always the certificate that holds the
      * public key to verify the jwts. */
-    if (json_unpack_ex(key, &err, 0, "{s:s, s:s, s:s, s?s, s?s, s?s, s?[s]}",
+    if (json_unpack_ex(key, &err, 0, "{s:s, s?s, s:s, s?s, s?s, s?s, s?[s]}",
                        "kty", &key_type, "use", &key_usage, "kid", &key_id,
                        "issuer", &key_issuer, "n", &key_modulus64, "e",
                        &key_exponent64, "x5c", &key_der64)
@@ -572,7 +572,8 @@ keyset client::fetch_keys_from_jwks()
     }
 
     // we only care about signing keys
-    if (std::string_view{"sig"} != key_usage) {
+    // "use" is optional.  We should assume an rsa signing key if its missing
+    if (key_usage && std::string_view{"sig"} != key_usage) {
       Dmsg0(300, "key %s has does not have the right usage: %s ---> Skipped\n",
             key_id, key_usage);
       continue;
