@@ -415,7 +415,7 @@ struct jansson_traits {
   static string_type serialize(const value_type& val)
   {
     string_type result;
-    // dump_json(&result, val.wrapped);
+    dump_json(&result, val.wrapped);
     return result;
   }
 };

@@ -52,6 +52,18 @@ struct cleanup {
 
 #undef DEFINE_OPENSSL_DESTRUCTOR
 };
+
+template <typename T> void dump_json(T* result, json_t* json)
+{
+  json_dump_callback(
+      json,
+      +[](const char* buffer, size_t size, void* arg) -> int {
+        auto* output = static_cast<T*>(arg);
+        output->insert(output->end(), buffer, buffer + size);
+        return 0;
+      },
+      result, JSON_COMPACT);
+}
 }  // namespace auth::Oidc
 
 using json_ptr = std::unique_ptr<json_t, auth::Oidc::cleanup>;
