@@ -102,6 +102,12 @@ Bareos 26. Merely making the bridge packages available is not enough: they
 must be installed before switching repositories. If skipping the bridge,
 explicitly install :strong:`bareos-webui-php` during the Bareos 26 upgrade.
 
+For prerelease packages, ``25.1.3~pre24`` (including its commit hash and
+packaging release suffix) still uses the legacy layout. ``25.1.3~pre25`` and
+later prereleases contain the bridge. Verify that :strong:`bareos-webui`
+depends on :strong:`bareos-webui-php` and no longer owns the PHP application
+files before switching repositories.
+
 Adding the Bareos Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

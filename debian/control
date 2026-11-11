@@ -463,7 +463,7 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon Python plug
 
 Package: bareos-webui
 Architecture: all
-Depends: bareos-webui-php (>= 25.1.3~),
+Depends: bareos-webui-php (>= 25.1.3~pre25),
    ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - PHP webui compatibility package
  This compatibility package installs bareos-webui-php.
@@ -471,8 +471,8 @@ Description: Backup Archiving Recovery Open Sourced - PHP webui compatibility pa
 
 Package: bareos-webui-php
 Architecture: all
-Conflicts: bareos-webui (<< 25.1.3~)
-Replaces: bareos-webui (<< 25.1.3~)
+Conflicts: bareos-webui (<< 25.1.3~pre25)
+Replaces: bareos-webui (<< 25.1.3~pre25)
 Depends: apache2 | httpd,
    php-fpm (>= 7.3),
    php-date <bookworm> <bullseye> <noble> <jammy>,
