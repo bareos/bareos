@@ -1,4 +1,3 @@
-
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
@@ -1167,6 +1166,132 @@ TEST_F(JwtTest, audience_array_with_non_string_element_rejected)
       std::exception);
 }
 
+TEST_F(JwtTest, missing_or_empty_audience_rejected)
+{
+  // OIDC Core 1.0 Section 2: "aud" is REQUIRED. A token must also never be
+  // accepted just because the claim exists but does not name us.
+  config cfg = default_test_config;
+  auto keys = make_keyset();
+
+  auto verify = [&](json_t* aud) {
+    auto tok = default_token(cfg);
+    if (aud) {
+      json_object_set_new(tok.get(), "aud", aud);
+    } else {
+      json_object_del(tok.get(), "aud");
+    }
+    return oidc::VerifyToken(as_jwt(tok.get(), primary_signer()), cfg.oidc_url,
+                             cfg.client_id, std::chrono::seconds{30},
+                             cfg.roles_name, keys);
+  };
+
+  // No "aud" claim at all -> rejected
+  EXPECT_THROW(verify(nullptr), std::exception);
+
+  // "aud": null -> rejected
+  EXPECT_THROW(verify(json_null()), std::exception);
+
+  // "aud": "" -> rejected
+  EXPECT_THROW(verify(json_string("")), std::exception);
+
+  // "aud": [""] -> rejected
+  EXPECT_THROW(verify(json_pack("[s]", "")), std::exception);
+
+  // Sanity check: the very same token with a correct "aud" is accepted, so the
+  // failures above are caused by the audience and nothing else.
+  EXPECT_NO_THROW(verify(json_string(cfg.client_id.c_str())));
+}
+
+TEST_F(JwtTest, azp_must_match_client_id_when_present)
+{
+  // OIDC Core 1.0 Section 3.1.3.7 step 7: if an "azp" claim is present, the
+  // client MUST verify that its client_id is the claim value.
+  config cfg = default_test_config;
+  auto keys = make_keyset();
+
+  auto verify = [&](json_t* azp) {
+    auto tok = default_token(cfg);
+    if (azp) { json_object_set_new(tok.get(), "azp", azp); }
+    return oidc::VerifyToken(as_jwt(tok.get(), primary_signer()), cfg.oidc_url,
+                             cfg.client_id, std::chrono::seconds{30},
+                             cfg.roles_name, keys);
+  };
+
+  // "azp" == client_id -> accepted
+  {
+    auto claims = verify(json_string(cfg.client_id.c_str()));
+    EXPECT_EQ(claims.user_name, "user@oidc");
+  }
+
+  // No "azp" on a single-audience token -> accepted (azp is only required when
+  // there is more than one audience)
+  EXPECT_NO_THROW(verify(nullptr));
+
+  // "azp" names another party -> the token was issued to somebody else, reject
+  EXPECT_THROW(verify(json_string("some-other-client")), std::exception);
+
+  // "azp" must be a string
+  EXPECT_THROW(verify(json_integer(42)), std::exception);
+  EXPECT_THROW(verify(json_pack("[s]", cfg.client_id.c_str())), std::exception);
+}
+
+TEST_F(JwtTest, azp_required_for_multiple_audiences)
+{
+  // OIDC Core 1.0 Section 3.1.3.7 steps 5-7:
+  //  - "aud" MUST contain our client_id,
+  //  - with multiple audiences an "azp" claim SHOULD be present,
+  //  - and if it is present it MUST equal our client_id.
+  config cfg = default_test_config;
+  auto keys = make_keyset();
+
+  auto verify = [&](json_t* aud, json_t* azp) {
+    auto tok = default_token(cfg);
+    json_object_set_new(tok.get(), "aud", aud);
+    if (azp) { json_object_set_new(tok.get(), "azp", azp); }
+    return oidc::VerifyToken(as_jwt(tok.get(), primary_signer()), cfg.oidc_url,
+                             cfg.client_id, std::chrono::seconds{30},
+                             cfg.roles_name, keys);
+  };
+
+  // Single-element "aud" array naming us, no "azp" -> accepted
+  EXPECT_NO_THROW(verify(json_pack("[s]", cfg.client_id.c_str()), nullptr));
+
+  // Single-element "aud" array naming us, "azp" naming us -> accepted
+  EXPECT_NO_THROW(verify(json_pack("[s]", cfg.client_id.c_str()),
+                         json_string(cfg.client_id.c_str())));
+
+  // Multi-audience token that names us as authorized party -> accepted
+  EXPECT_NO_THROW(
+      verify(json_pack("[ss]", "other-service", cfg.client_id.c_str()),
+             json_string(cfg.client_id.c_str())));
+
+  // Order of the audiences must not matter
+  EXPECT_NO_THROW(
+      verify(json_pack("[ss]", cfg.client_id.c_str(), "other-service"),
+             json_string(cfg.client_id.c_str())));
+
+  // Multi-audience token intended for another authorized party -> rejected
+  EXPECT_THROW(verify(json_pack("[ss]", cfg.client_id.c_str(), "other-service"),
+                      json_string("other-service")),
+               std::exception);
+
+  // Multi-audience token without "azp" -> rejected, we cannot tell who the
+  // token was actually issued to
+  EXPECT_THROW(verify(json_pack("[ss]", cfg.client_id.c_str(), "other-service"),
+                      nullptr),
+               std::exception);
+
+  // Duplicated audience (including us twice) is still a single audience
+  EXPECT_NO_THROW(
+      verify(json_pack("[ss]", cfg.client_id.c_str(), cfg.client_id.c_str()),
+             json_string(cfg.client_id.c_str())));
+
+  // Multi-audience token not naming us at all -> rejected regardless of azp
+  EXPECT_THROW(verify(json_pack("[ss]", "service-a", "service-b"),
+                      json_string(cfg.client_id.c_str())),
+               std::exception);
+}
+
 TEST_F(JwtTest, unrelated_null_optional_claims_accepted)
 {
   // Real-world OIDC providers frequently include null for unset profile claims.
@@ -1852,6 +1977,88 @@ TEST(oidc, login_complete)
   EXPECT_EQ(*flow.verification_uri_complete(), verify_uri_complete);
 
   EXPECT_EQ(flow.fetch_token(), token);
+}
+
+// Runs a minimal device flow whose token endpoint response carries the given
+// "scope" field (nullopt means the field is omitted entirely) and checks
+// whether the flow accepts the response.
+void check_token_response_scope(std::optional<std::string> scope, bool accepted)
+{
+  config cfg = default_test_config;
+  MockHttp http{cfg};
+
+  EXPECT_CALL(http, get(testing::_)).WillOnce([&](const std::string&) {
+    http.set_result(
+        200, format_json("issuer", cfg.oidc_url, "token_endpoint", "/token",
+                         "jwks_uri", "/jwks", "device_authorization_endpoint",
+                         "/device"));
+    return true;
+  });
+
+  EXPECT_CALL(http, post("/device", testing::_))
+      .WillOnce([&](const std::string&, std::span<const http::post_field>) {
+        http.set_result(
+            200, format_json("user_code", "SCOPE", "device_code", "dc-scope",
+                             "verification_uri", "/verify", "interval", 0,
+                             "expires_in", 30));
+        return true;
+      });
+
+  EXPECT_CALL(http, post("/token", testing::_))
+      .WillOnce([&](const std::string&, std::span<const http::post_field>) {
+        json_ptr body = json("id_token", "scoped-jwt", "token_type", "Bearer");
+        if (scope) {
+          json_object_set_new(body.get(), "scope", json_string(scope->c_str()));
+        }
+        http.set_result(200, json_to_str(body.get()));
+        return true;
+      });
+
+  auto client = oidc::client::fetch_meta_data({
+      .client = &http,
+      .client_id = cfg.client_id,
+      .oidc_url = cfg.oidc_url,
+  });
+
+  auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid profile");
+
+  if (accepted) {
+    EXPECT_EQ(flow.fetch_token(), "scoped-jwt")
+        << "scope: " << (scope ? *scope : "<absent>");
+  } else {
+    EXPECT_THROW(flow.fetch_token(), std::exception)
+        << "scope: " << (scope ? *scope : "<absent>");
+  }
+}
+
+// The token endpoint's "scope" field tells us which scopes were actually
+// granted. Since we asked for "openid profile" (and an ID token is only
+// meaningful with the openid scope), a response that explicitly reports a
+// different scope must be rejected instead of being used as a login.
+TEST(oidc, token_response_scope_must_contain_openid)
+{
+  // Granted scopes containing openid -> accepted, no matter the order or the
+  // additional scopes.
+  check_token_response_scope("openid", true);
+  check_token_response_scope("openid profile", true);
+  check_token_response_scope("profile openid", true);
+  check_token_response_scope("openid profile email", true);
+
+  // RFC 6749 Section 5.1: an absent "scope" means the granted scope is
+  // identical to the requested one, so this must stay valid.
+  check_token_response_scope(std::nullopt, true);
+
+  // openid was not granted -> no valid ID token, reject.
+  check_token_response_scope("profile email", false);
+  check_token_response_scope("", false);
+
+  // Scope values are case sensitive (RFC 6749 Section 3.3), so these must not
+  // be treated as openid.
+  check_token_response_scope("OpenID profile", false);
+
+  // A prefix/suffix match is not good enough.
+  check_token_response_scope("openidx profile", false);
+  check_token_response_scope("profile openid_extra", false);
 }
 
 // ============================================================================
