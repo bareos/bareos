@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 find_package(CURL REQUIRED)
-find_package(Jansson 2.3 REQUIRED) # we need at least 2.3
+find_package(Jansson 2.11 REQUIRED) # we need at least 2.11
 
 add_library(bauth_oidc_backend STATIC)
 target_sources(bauth_oidc_backend PRIVATE oidc.cc)
