@@ -452,6 +452,14 @@ UserClaims VerifyToken(std::string_view token,
 
   verifier.verify(decoded);
 
+  // the verifier only checks for generic jwt problems
+  // oidc is a bit more strict about the tokens, so we check these
+  // here
+
+  if (!decoded.has_expires_at() || !decoded.has_issued_at()) {
+    throw std::runtime_error{"nbf or iat missing in token"};
+  }
+
   auto roles_json = decoded.get_payload_claim(roles_name).to_json();
   auto user_json = decoded.get_payload_claim("name").to_json();
   jansson_traits::json_wrapper preferred_json{};
