@@ -211,18 +211,6 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
               SetBit(FO_FORCE_ENCRYPT, inc->options);
               rp++;
               break;
-            case 'h':
-              switch (*(rp + 2)) {
-                case '1':
-                  inc->cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
-                  rp += 2;
-                  break;
-                case '2':
-                  inc->cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
-                  rp += 2;
-                  break;
-              }
-              break;
             case 'g':
               switch (*(rp + 2)) {
                 case '1':

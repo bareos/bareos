@@ -23,10 +23,6 @@ The available options (and ciphers) are:
 
 -  camellia256
 
--  aes128hmacsha1
-
--  aes256hmacsha1
-
 -  blowfish
 
 - aes128gcm

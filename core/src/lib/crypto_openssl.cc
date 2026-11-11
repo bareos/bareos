@@ -928,22 +928,6 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
 #  endif /* OPENSSL_NO_CAMELLIA */
 #endif   /* HAVE_OPENSSL_EXPORT_LIBRARY */
 #if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
-#  ifdef NID_aes_128_cbc_hmac_sha1
-    case CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1:
-      /* AES 128 bit CBC HMAC SHA1 */
-      cs->cryptoData->contentEncryptionAlgorithm
-          = OBJ_nid2obj(NID_aes_128_cbc_hmac_sha1);
-      ec = EVP_aes_128_cbc_hmac_sha1();
-      break;
-#  endif
-#  ifdef NID_aes_256_cbc_hmac_sha1
-    case CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1:
-      /* AES 256 bit CBC HMAC SHA1 */
-      cs->cryptoData->contentEncryptionAlgorithm
-          = OBJ_nid2obj(NID_aes_256_cbc_hmac_sha1);
-      ec = EVP_aes_256_cbc_hmac_sha1();
-      break;
-#  endif
 #  ifdef NID_aes_128_gcm
     case CRYPTO_CIPHER_AES_128_GCM:
       /* AES 128 bit GCM */
@@ -1261,6 +1245,7 @@ bool CryptoCipherUpdate(CIPHER_CONTEXT* cipher_ctx,
   if (!EVP_CipherUpdate(cipher_ctx->ctx, (unsigned char*)dest, (int*)written,
                         (const unsigned char*)data, length)) {
     /* This really shouldn't fail */
+    OpensslPostErrors(M_ERROR, T_("OpenSSL cipher update failed"));
     return false;
   } else {
     return true;
@@ -1282,6 +1267,7 @@ bool CryptoCipherFinalize(CIPHER_CONTEXT* cipher_ctx,
   if (!EVP_CipherFinal_ex(cipher_ctx->ctx, (unsigned char*)dest,
                           (int*)written)) {
     /* This really shouldn't fail */
+    OpensslPostErrors(M_ERROR, T_("OpenSSL cipher final failed"));
     return false;
   } else {
     return true;

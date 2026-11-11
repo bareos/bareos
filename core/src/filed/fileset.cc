@@ -418,18 +418,6 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
             SetBit(FO_FORCE_ENCRYPT, fo->flags);
             p++;
             break;
-          case 'h':
-            switch (*(p + 2)) {
-              case '1':
-                fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
-                p += 2;
-                break;
-              case '2':
-                fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
-                p += 2;
-                break;
-            }
-            break;
           case 'g': {
             switch (*(p + 2)) {
               case '1':
