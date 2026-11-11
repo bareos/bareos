@@ -616,8 +616,19 @@ This package contains the GlusterFS plugin for the file daemon
 
 %if 0%{?webui}
 %package webui
+Summary:       Compatibility package for the PHP Bareos Web User Interface
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-webui-php >= 25.1.3~pre25
+# Keep PHP installed and add Vue when upgrading to Bareos 26.
+Requires:      (%{name}-webui-php < 26~ or %{name}-webui-vue >= 26~)
+
+%description webui
+This compatibility package installs the PHP-based Bareos Web User Interface.
+
+%package webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
+Conflicts:     %{name}-webui < 25.1.3~pre25
 
 BuildRequires: httpd
 BuildRequires: httpd-devel
@@ -667,7 +678,7 @@ Conflicts: mod_php_any
 %define www_daemon_group www
 %endif
 
-%description webui
+%description webui-php
 %{dscr}
 
 This package contains the PHP-based Bareos Web User Interface.
@@ -1061,6 +1072,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %if 0%{?webui}
 %files webui
+
+%files webui-php
 %defattr(-,root,root,-)
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
@@ -1984,10 +1997,9 @@ exit 0
 
 %if 0%{?webui}
 
-%pre webui
-%logging_start webui pre
-if [ $1 -gt 1 ]; then
-  # upgrade
+%pre webui-php
+%logging_start webui-php pre
+if rpm -q %{name}-webui >/dev/null 2>&1; then
   %if_package_version_lt %{name}-webui 25.0.0
     %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
     %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
@@ -1996,8 +2008,8 @@ fi
 %logging_end
 exit 0
 
-%post webui
-%logging_start webui post
+%post webui-php
+%logging_start webui-php post
 %if 0%{?suse_version}
 a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
@@ -2017,8 +2029,8 @@ apachectl graceful &> /dev/null || true
 %endif
 %logging_end
 
-%posttrans webui
-%logging_start webui posttrans
+%posttrans webui-php
+%logging_start webui-php posttrans
 # update from bareos < 25
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
