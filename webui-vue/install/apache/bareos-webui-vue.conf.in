@@ -3,6 +3,8 @@
 #
 
 RedirectMatch 301 ^/$ /bareos/
+# Redirect the Bareos 25.1 Vue WebUI technical-preview URL to /bareos/.
+# Remove this redirect from master as soon as bareos-26 is forked.
 RedirectMatch 301 ^/bareos-webui-new/?$ /bareos/
 RedirectMatch 301 ^/bareos$ /bareos/
 
