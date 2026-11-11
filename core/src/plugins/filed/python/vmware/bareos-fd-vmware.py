@@ -1937,7 +1937,6 @@ class BareosVADPWrapper(object):
 
         destination_host = None
         resource_pool = None
-        datacenter = None
         create_vm_task = None
         cluster_path = None
         datastore_name = None
@@ -2017,7 +2016,7 @@ class BareosVADPWrapper(object):
 
         if self.options.get("restore_cluster"):
             clusters_by_folder = {}
-            self.get_objects_by_folder(datacenter.hostFolder, "/", clusters_by_folder)
+            self.get_objects_by_folder(found_dc.hostFolder, "/", clusters_by_folder)
             cluster_path = self.proper_path(self.options["restore_cluster"])
             if cluster_path in clusters_by_folder:
                 if self.options.get("restore_resourcepool"):
