@@ -37,47 +37,6 @@
 #include "lib/bauth/oidc/curl_http.h"
 
 namespace auth::Oidc {
-namespace {
-evp_pkey create_public_key(std::span<const char> modulus,
-                           std::span<const char> exponent)
-{
-  // modulus is big endian encoded, but openssl expects the bytes in
-  // native format
-  std::vector<unsigned char> native(modulus.size());
-  for (size_t i = 0; i < modulus.size(); ++i) {
-    native[i] = modulus[modulus.size() - i - 1];
-  }
-
-  evp_pkey_ctx ctx{EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr)};
-  if (!ctx) { return {}; }
-
-
-  if (EVP_PKEY_fromdata_init(ctx.get()) != 1) { return {}; }
-
-  OSSL_PARAM params[3]{};
-  params[0] = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_N, native.data(),
-                                      static_cast<int>(modulus.size()));
-
-  // todo: this also needs to get converted to native
-  params[1] = OSSL_PARAM_construct_BN(
-      OSSL_PKEY_PARAM_RSA_E,
-      const_cast<unsigned char*>(
-          reinterpret_cast<const unsigned char*>(exponent.data())),
-      static_cast<int>(exponent.size()));
-  params[2] = OSSL_PARAM_construct_end();
-
-  EVP_PKEY* result{};
-
-  if (EVP_PKEY_fromdata(ctx.get(), &result, EVP_PKEY_PUBLIC_KEY, params) != 1) {
-    return {};
-  }
-
-  return evp_pkey{result};
-}
-
-
-};  // namespace
-
 std::vector<char> Verifier::generate_challenge()
 {
   json_error_t err;
