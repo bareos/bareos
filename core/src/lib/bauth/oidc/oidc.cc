@@ -26,9 +26,11 @@
 
 #include "lib/base64.h"
 
+#include <jansson.h>
 #include <jwt-cpp/jwt.h>
 #include <openssl/core_names.h>
 #include <thread>
+#include <typeinfo>
 
 namespace auth::Oidc::oidc {
 
@@ -364,6 +366,7 @@ struct jansson_traits {
 
   static object_type as_object(const value_type& val)
   {
+    if (!json_is_object(val.wrapped)) { throw std::bad_cast{}; }
     json_t* elem;
     const char* key;
     object_type result;
@@ -376,6 +379,8 @@ struct jansson_traits {
   }
   static array_type as_array(const value_type& val)
   {
+    if (!json_is_array(val.wrapped)) { throw std::bad_cast{}; }
+
     json_t* elem;
     json_int_t index;
     array_type result;
@@ -388,20 +393,24 @@ struct jansson_traits {
   }
   static string_type as_string(const value_type& val)
   {
+    if (!json_is_string(val.wrapped)) { throw std::bad_cast{}; }
     auto* str = json_string_value(val.wrapped);
     auto len = json_string_length(val.wrapped);
     return {str, len};
   }
   static number_type as_number(const value_type& val)
   {
+    if (!json_is_real(val.wrapped)) { throw std::bad_cast{}; }
     return json_real_value(val.wrapped);
   }
   static integer_type as_integer(const value_type& val)
   {
+    if (!json_is_integer(val.wrapped)) { throw std::bad_cast{}; }
     return json_integer_value(val.wrapped);
   }
   static boolean_type as_boolean(const value_type& val)
   {
+    if (!json_is_boolean(val.wrapped)) { throw std::bad_cast{}; }
     return json_boolean_value(val.wrapped);
   }
 
