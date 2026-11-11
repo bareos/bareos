@@ -234,7 +234,7 @@ FetchResult handle_token_response(std::string_view buffer, std::string* token)
   const char* refresh_token{nullptr};
   const char* scope{nullptr};
 
-  if (json_unpack_ex(buffer_json.get(), &err, 0, "{s:s, s:s, s?i, s?s, s?s}",
+  if (json_unpack_ex(buffer_json.get(), &err, 0, "{s:s, s:s, s?I, s?s, s?s}",
                      "id_token", &access_token, "token_type", &token_type,
                      "expires_in", &expires_in, "refresh_token", &refresh_token,
                      "scope", &scope)
