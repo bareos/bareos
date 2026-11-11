@@ -85,6 +85,23 @@ System Requirements
 Installation
 ------------
 
+PHP package rename in Bareos 25.1.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with Bareos 25.1.3, the PHP WebUI files and package hooks are shipped in
+:strong:`bareos-webui-php`. The :strong:`bareos-webui` compatibility package
+depends on this package, so the installation commands below still install the
+PHP WebUI. Existing URLs, installation paths and configuration files remain
+unchanged. The Vue technical preview remains :strong:`bareos-webui-new`.
+
+Before switching an existing installation to Bareos 26 repositories, upgrade
+to Bareos 25.1.3 or a later Bareos 25 release and verify that
+:strong:`bareos-webui-php` is installed. This bridge step preserves the PHP
+WebUI when :strong:`bareos-webui` becomes the Vue WebUI's fresh-install name in
+Bareos 26. Merely making the bridge packages available is not enough: they
+must be installed before switching repositories. If skipping the bridge,
+explicitly install :strong:`bareos-webui-php` during the Bareos 26 upgrade.
+
 Adding the Bareos Repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
