@@ -99,6 +99,10 @@ bool curl_client::perform()
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+
   ret = curl_easy_write_into_str(curl, &content);
   return ret == CURLE_OK;
 }
