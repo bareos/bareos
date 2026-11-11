@@ -591,8 +591,8 @@ This package contains the common files for the python storage plugins.
 %package -n bareos-webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
-# Bareos 25.1.3 introduces the PHP rename and old-name compatibility package.
-Obsoletes:     bareos-webui < 25.1.3~
+# Bareos 25.1.3~pre25 introduces the PHP rename and compatibility package.
+Obsoletes:     bareos-webui < 25.1.3~pre25
 
 BuildRequires: httpd
 BuildRequires: httpd-devel
@@ -659,7 +659,7 @@ This package contains the PHP-based Bareos Web User Interface.
 Summary:       Bareos Web User Interface (Vue)
 Group:         Productivity/Archiving/Backup
 Provides:      bareos-webui = %{version}-%{release}
-Obsoletes:     bareos-webui < 25.1.3~
+Obsoletes:     bareos-webui < 25.1.3~pre25
 Provides:      bareos-webui-new = %{version}-%{release}
 Obsoletes:     bareos-webui-new < 26~
 Requires:      %{name}-webui-proxy = %{version}
@@ -1980,7 +1980,14 @@ if ! a2enflag SSL; then
   ssl_ready=false
   restart_apache=false
 fi
-if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+if $ssl_ready; then
+  ssl_vhosts=$(apachectl -S 2>&1) || {
+    ssl_status=$?
+    printf 'Could not inspect Apache virtual hosts:\n%s\n' "$ssl_vhosts" >&2
+    exit "$ssl_status"
+  }
+fi
+if $ssl_ready && ! printf '%s\n' "$ssl_vhosts" | grep -Eq 'port 443|:443'; then
   ssl_certificate=/etc/apache2/ssl.crt/server.crt
   ssl_key=/etc/apache2/ssl.key/server.key
   if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
@@ -2058,7 +2065,14 @@ if ! a2enflag SSL; then
   ssl_ready=false
   restart_apache=false
 fi
-if $ssl_ready && ! apachectl -S 2>&1 | grep -Eq 'port 443|:443'; then
+if $ssl_ready; then
+  ssl_vhosts=$(apachectl -S 2>&1) || {
+    ssl_status=$?
+    printf 'Could not inspect Apache virtual hosts:\n%s\n' "$ssl_vhosts" >&2
+    exit "$ssl_status"
+  }
+fi
+if $ssl_ready && ! printf '%s\n' "$ssl_vhosts" | grep -Eq 'port 443|:443'; then
   ssl_certificate=/etc/apache2/ssl.crt/server.crt
   ssl_key=/etc/apache2/ssl.key/server.key
   if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then

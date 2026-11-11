@@ -468,8 +468,8 @@ Description: Transitional package for the Vue-based Bareos WebUI
 
 Package: bareos-webui-php
 Architecture: all
-Conflicts: bareos-webui (<< 25.1.3~)
-Replaces: bareos-webui (<< 25.1.3~)
+Conflicts: bareos-webui (<< 25.1.3~pre25)
+Replaces: bareos-webui (<< 25.1.3~pre25)
 Depends: apache2,
    ssl-cert,
    php-fpm (>= 7.3),
@@ -497,9 +497,9 @@ Description: Backup Archiving Recovery Open Sourced - WebUI WebSocket proxy
 Package: bareos-webui-vue
 Architecture: all
 Provides: bareos-webui (= ${binary:Version})
-Conflicts: bareos-webui (<< 25.1.3~),
+Conflicts: bareos-webui (<< 25.1.3~pre25),
    bareos-webui-new (<< 26~)
-Replaces: bareos-webui (<< 25.1.3~),
+Replaces: bareos-webui (<< 25.1.3~pre25),
    bareos-webui-new (<< 26~)
 Depends: apache2,
    ssl-cert,

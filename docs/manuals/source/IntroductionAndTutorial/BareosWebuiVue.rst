@@ -119,6 +119,11 @@ PHP package. Keep it installed during the upgrade, particularly on Debian
 systems where its dependency prevents PHP from becoming automatically
 removable. It contains no PHP application code.
 
+For prerelease packages, ``25.1.3~pre24`` (including its commit hash and
+packaging release suffix) is still legacy. ``25.1.3~pre25`` and later
+prereleases contain the bridge. Verify the compatibility dependency and that
+:file:`bareos-webui-php` owns the PHP application files before upgrading.
+
 On Debian-based systems the old :file:`bareos-webui-new` preview package
 becomes a transitional package depending on :file:`bareos-webui-vue`.
 On RPM-based systems the Vue package replaces the old preview package.

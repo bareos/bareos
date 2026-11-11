@@ -1,7 +1,7 @@
 Package: bareos-webui-php
 Architecture: all
-Conflicts: bareos-webui (<< 25.1.3~)
-Replaces: bareos-webui (<< 25.1.3~)
+Conflicts: bareos-webui (<< 25.1.3~pre25)
+Replaces: bareos-webui (<< 25.1.3~pre25)
 Depends: apache2,
    ssl-cert,
    php-fpm (>= 7.3),
