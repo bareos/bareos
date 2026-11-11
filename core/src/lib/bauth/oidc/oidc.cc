@@ -61,7 +61,7 @@ evp_pkey create_public_key(std::span<const char> modulus,
       = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_N, native_modulus.data(),
                                 static_cast<int>(native_modulus.size()));
   params[1]
-      = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_N, native_exponent.data(),
+      = OSSL_PARAM_construct_BN(OSSL_PKEY_PARAM_RSA_E, native_exponent.data(),
                                 static_cast<int>(native_exponent.size()));
   params[2] = OSSL_PARAM_construct_end();
 
