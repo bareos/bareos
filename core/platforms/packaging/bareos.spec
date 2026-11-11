@@ -627,10 +627,10 @@ Requires: php-zip
 Requires: php-libxml
 %endif
 
-Requires: httpd
 %if 0%{?suse_version}
-Requires: apache2-mod_ssl
+Requires: apache2
 %else
+Requires: httpd
 Requires: mod_ssl
 %endif
 %if 0%{?rhel} || 0%{?fedora}
@@ -657,10 +657,10 @@ Group:         Productivity/Archiving/Backup
 Provides:      bareos-webui = %{version}-%{release}
 Obsoletes:     bareos-webui < %{version}-%{release}
 Requires:      %{name}-webui-proxy = %{version}
-Requires:      httpd
 %if 0%{?suse_version}
-Requires:      apache2-mod_ssl
+Requires:      apache2
 %else
+Requires:      httpd
 Requires:      mod_ssl
 %endif
 
