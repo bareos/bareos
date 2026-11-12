@@ -225,7 +225,7 @@ JobDefs {
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
-  # AllowMixedPriority = No
+  AllowMixedPriority = Yes
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
@@ -731,7 +731,7 @@ Job {
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   Priority = 11
-  # AllowMixedPriority = No
+  AllowMixedPriority = No
   # SelectionPattern =
   RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"

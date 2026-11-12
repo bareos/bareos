@@ -9,6 +9,7 @@ JobDefs {
   Messages = Standard
   Pool = Incremental
   Priority = 10
+  Allow Mixed Priority = yes
   Write Bootstrap = "@working_dir@/%c.bsr"
   Full Backup Pool = Full                  # write Full Backups into "Full" Pool         (#05)
   Differential Backup Pool = Differential  # write Diff Backups into "Differential" Pool (#08)
