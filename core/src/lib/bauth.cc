@@ -35,6 +35,7 @@
 
 #include <thread>
 #include <optional>
+#include <sstream>
 
 static constexpr int debuglevel = 100;
 
@@ -808,7 +809,7 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
   }();
 
   if (!chosen) {
-    std::stringstream lists;
+    std::ostringstream lists;
     lists << "Client:\n";
     for (auto& claim : provers) { lists << " - " << claim->name() << "\n"; }
     lists << "Server:\n";
