@@ -53,7 +53,7 @@ struct Verifier : public auth::Verifier {
     INITIAL = 0,
     GENERATED_CHALLENGE,
     ACCEPTED_RESULT,
-    ERROR,
+    FATAL_ERROR,
   };
 
   verifier_state current_state{INITIAL};
@@ -91,7 +91,7 @@ struct Prover : public auth::Prover {
   {
     WAITING_FOR_CHALLENGE = 0,
     RESPONSE_SENT,
-    ERROR,
+    ERROR_STATE,
   } current_state{WAITING_FOR_CHALLENGE};
 
   std::string my_name;

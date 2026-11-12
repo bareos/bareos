@@ -62,7 +62,7 @@ std::vector<char> Verifier::generate_challenge()
   if (!do_hmac_md5(&mac, result.data(), result.size(), password.data(),
                    password.size())) {
     error = "";
-    current_state = ERROR;
+    current_state = FATAL_ERROR;
   } else {
     expected.insert(expected.end(), mac.data, mac.data + std::size(mac.data));
     current_state = GENERATED_CHALLENGE;
@@ -78,7 +78,7 @@ auth::Status Verifier::step(std::vector<char>&, std::span<const char> received)
       if (received.size() != expected.size()
           || memcmp(received.data(), expected.data(), expected.size()) != 0) {
         error = "received bad answer\n";
-        current_state = ERROR;
+        current_state = FATAL_ERROR;
 
         return auth::Status::Error;
       }
@@ -92,7 +92,7 @@ auth::Status Verifier::step(std::vector<char>&, std::span<const char> received)
         error = "unexpected state " + std::to_string(current_state);
       }
 
-      current_state = ERROR;
+      current_state = FATAL_ERROR;
       return auth::Status::Error;
     } break;
   }
@@ -114,20 +114,20 @@ bool Prover::step(std::vector<char>& response, std::span<const char> request)
       auto start = view.find('@');
       if (start == view.npos) {
         error = "no @ found in request";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
       auto end = view.find('>', start);
       if (end == view.npos) {
         error = "no > found after @ in request";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
       if (end != view.size() - 1) {
         error = "bad position for closing > in request";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
@@ -140,14 +140,14 @@ bool Prover::step(std::vector<char>& response, std::span<const char> request)
       // as no bareos sender would ever do this
       if (received_name.size() == 0) {
         error = "received empty name in request";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
       if (received_name == my_name) {
         // TODO: check if we really need the exception for R_STORAGE
         error = "cannot accept my own name";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
@@ -156,7 +156,7 @@ bool Prover::step(std::vector<char>& response, std::span<const char> request)
       if (!do_hmac_md5(&mac, view.data(), view.size(), password.data(),
                        password.size())) {
         error = "Could not compute MD5 HMAC";
-        current_state = ERROR;
+        current_state = ERROR_STATE;
         return false;
       }
 
@@ -167,7 +167,7 @@ bool Prover::step(std::vector<char>& response, std::span<const char> request)
     } break;
     case RESPONSE_SENT: {
       error = "unexpected request sent (already sent response once)";
-      current_state = ERROR;
+      current_state = ERROR_STATE;
       return false;
     } break;
     default: {
