@@ -1028,6 +1028,17 @@ foreach ($instanceCases as $index => $case) {
         $failures++;
         printf("FAIL login warning case %d: secure=%s\n", $index, var_export($expectedSecure, true));
     }
+    $noticePosition = strpos($html, 'id="php-webui-eol-notice"');
+    if (
+        $noticePosition === false
+        || $noticePosition > strpos($html, 'id="login-form"')
+        || strpos($html, 'The PHP WebUI will reach end of life with Bareos 27.') === false
+        || strpos($html, 'The Vue-based WebUI is the future Bareos interface. Please migrate to the new WebUI.') === false
+        || strpos($html, 'href="/bareos/" class="alert-link"') === false
+    ) {
+        $failures++;
+        printf("FAIL login successor notice case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+    }
 }
 set_include_path($previousIncludePath);
 $globalChecks += count($instanceCases);

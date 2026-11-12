@@ -84,6 +84,12 @@ echo $this->doctype();
          <?php echo $this->translate("This WebUI is using an insecure HTTP connection. Credentials and data may be exposed."); ?>
       </div>
       <?php endif; ?>
+      <div id="php-webui-eol-notice" class="alert alert-info" role="note">
+         <strong><?php echo $this->translate("The PHP WebUI will reach end of life with Bareos 27."); ?></strong>
+         <br />
+         <?php echo $this->translate("The Vue-based WebUI is the future Bareos interface. Please migrate to the new WebUI."); ?>
+         <a href="/bareos/" class="alert-link"><?php echo $this->translate("Open the new WebUI"); ?></a>
+      </div>
       <img src="<?php echo $this->escapeHtmlAttr($themeBase . '/img/bareos.png'); ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
