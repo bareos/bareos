@@ -577,7 +577,7 @@ bool ParseChallenges(std::vector<challenge>& challenges,
     return false;
   }
 
-  json_int_t index;
+  size_t index;
   json_t* entry;
   json_array_foreach(challenges_json, index, entry)
   {
@@ -589,7 +589,7 @@ bool ParseChallenges(std::vector<challenge>& challenges,
                        &internal_name, "challenge", &challenge, "type", &type,
                        "display_name", &display_name)
         < 0) {
-      Dmsg0(100, "Could not parse %lldth challenge entry from: %.*s\n", index,
+      Dmsg0(100, "Could not parse %zuth challenge entry from: %.*s\n", index,
             static_cast<int>(challenges_str.size()), challenges_str.data());
       json_decref(challenges_json);
       return false;
