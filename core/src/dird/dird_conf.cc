@@ -3569,72 +3569,70 @@ static void ConfigReadyCallback(ConfigurationParser& t_config)
   ResetAllClientConnectionHandshakeModes(t_config);
 }
 
-static bool AddResourceCopyToEndOfChain(int type,
-                                        BareosResource* new_resource = nullptr)
+static bool AddResourceCopyToEndOfChain(int type, BareosResource* new_resource)
 {
-  if (!new_resource) {
-    switch (type) {
-      case R_DIRECTOR:
-        ASSERT(new_resource == res_dir);
-        res_dir = nullptr;
-        break;
-      case R_CLIENT:
-        ASSERT(new_resource == res_client);
-        res_client = nullptr;
-        break;
-      case R_JOBDEFS:
-      case R_JOB:
-        ASSERT(new_resource == res_job);
-        res_job = nullptr;
-        break;
-      case R_STORAGE:
-        ASSERT(new_resource == res_store);
-        res_store = nullptr;
-        break;
-      case R_CATALOG:
-        ASSERT(new_resource == res_cat);
-        res_cat = nullptr;
-        break;
-      case R_SCHEDULE:
-        ASSERT(new_resource == res_sch);
-        res_sch = nullptr;
-        break;
-      case R_FILESET:
-        ASSERT(new_resource == res_fs);
-        res_fs = nullptr;
-        break;
-      case R_POOL:
-        ASSERT(new_resource == res_pool);
-        res_pool = nullptr;
-        break;
-      case R_MSGS:
-        ASSERT(new_resource == res_msgs);
-        res_msgs = nullptr;
-        break;
-      case R_COUNTER:
-        ASSERT(new_resource == res_counter);
-        res_counter = nullptr;
-        break;
-      case R_PROFILE:
-        ASSERT(new_resource == res_profile);
-        res_profile = nullptr;
-        break;
-      case R_CONSOLE:
-        ASSERT(new_resource == res_con);
-        res_con = nullptr;
-        break;
-      case R_USER:
-        ASSERT(new_resource == res_user);
-        res_user = nullptr;
-        break;
-      case R_OIDC:
-        ASSERT(new_resource == res_oidc);
-        res_oidc = nullptr;
-        break;
-      default:
-        Dmsg3(100, "Unhandled resource type: %d\n", type);
-        return false;
-    }
+  ASSERT(new_resource);
+  switch (type) {
+    case R_DIRECTOR:
+      ASSERT(new_resource == res_dir);
+      res_dir = nullptr;
+      break;
+    case R_CLIENT:
+      ASSERT(new_resource == res_client);
+      res_client = nullptr;
+      break;
+    case R_JOBDEFS:
+    case R_JOB:
+      ASSERT(new_resource == res_job);
+      res_job = nullptr;
+      break;
+    case R_STORAGE:
+      ASSERT(new_resource == res_store);
+      res_store = nullptr;
+      break;
+    case R_CATALOG:
+      ASSERT(new_resource == res_cat);
+      res_cat = nullptr;
+      break;
+    case R_SCHEDULE:
+      ASSERT(new_resource == res_sch);
+      res_sch = nullptr;
+      break;
+    case R_FILESET:
+      ASSERT(new_resource == res_fs);
+      res_fs = nullptr;
+      break;
+    case R_POOL:
+      ASSERT(new_resource == res_pool);
+      res_pool = nullptr;
+      break;
+    case R_MSGS:
+      ASSERT(new_resource == res_msgs);
+      res_msgs = nullptr;
+      break;
+    case R_COUNTER:
+      ASSERT(new_resource == res_counter);
+      res_counter = nullptr;
+      break;
+    case R_PROFILE:
+      ASSERT(new_resource == res_profile);
+      res_profile = nullptr;
+      break;
+    case R_CONSOLE:
+      ASSERT(new_resource == res_con);
+      res_con = nullptr;
+      break;
+    case R_USER:
+      ASSERT(new_resource == res_user);
+      res_user = nullptr;
+      break;
+    case R_OIDC:
+      ASSERT(new_resource == res_oidc);
+      res_oidc = nullptr;
+      break;
+    default:
+      Dmsg3(100, "Unhandled resource type: %d\n", type);
+      return false;
   }
   return my_config->AppendToResourcesChain(new_resource, type);
 }
@@ -3954,6 +3952,16 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;
+
+  if (!allocated_resource) {
+    auto type_name = global_resource::GetNameFromType(
+        my_config->GlobalTypeFromLocalType(type));
+    Dmsg0(10,
+          "Trying to save a %.*s resource (type id %d), but none were "
+          "allocated!\n",
+          (int)type_name.size(), type_name.data(), type);
+    return false;
+  }
 
   // Job resources are validated after applying JobDefs
   if (type != R_JOB && type != R_JOBDEFS) {
