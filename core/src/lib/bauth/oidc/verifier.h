@@ -44,8 +44,6 @@ struct config {
   std::chrono::seconds allowed_clock_skew{30};
 };
 
-struct Verifier;
-
 struct Verifier : public auth::Verifier {
   using Base = auth::Verifier;
 

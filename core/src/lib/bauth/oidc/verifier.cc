@@ -74,8 +74,6 @@ Status Verifier::initiate_flow(std::vector<char>& response,
   };
 
   oidc = oidc::client::fetch_meta_data(std::move(oidc_cfg));
-  // if (!oidc->fetch_meta_data()) { return Error("could not fetch meta data");
-  // }
 
   keys = oidc->fetch_keys_from_jwks();
 
