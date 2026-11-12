@@ -33,8 +33,7 @@
 #include <fstream>
 #include <string>
 #include <string_view>
-
-#include <format>
+#include <sstream>
 
 #include <thread>
 #include <future>
@@ -664,8 +663,9 @@ static bool connect_to_server(std::string console_name,
             formatter::auth_type, console_name);
 
 
-        auto hello = std::format(
-            "Hello Client {} FdProtocolVersion=54 calling\n", console_name);
+        auto hello = (std::ostringstream{} << "Hello Client " << console_name
+                                           << "FdProtocolVersion=54 calling\n")
+                         .str();
 
         LegacyOutboundAuthenticator auth;
         return BareosConnect(&jcr, UA_sock.get(), qualified_name, &custom,
