@@ -483,8 +483,10 @@ static ResourceTable dird_resource_tables[] = {
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
   { "User", "Users", user_items, R_USER, global_resource::Type::User, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
+#ifdef ENABLE_OIDC
   { "Oidc", "Oidc", oidc_items, R_OIDC, global_resource::Type::Oidc, sizeof(OidcResource),
     [](){ res_oidc = new OidcResource(); }, reinterpret_cast<BareosResource**>(&res_oidc) },
+#endif
   { }
 };
 

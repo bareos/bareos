@@ -35,12 +35,16 @@ target_link_libraries(console_objects PRIVATE Bareos::Lib)
 
 add_executable(bconsole)
 target_sources(bconsole PRIVATE console.cc)
-target_link_libraries(bconsole PRIVATE BAuth::Prover::Oidc)
+if(ENABLE_OIDC)
+  target_link_libraries(bconsole PRIVATE BAuth::Prover::Oidc)
+endif()
 
 add_executable(bconsole-unsafe)
 target_compile_definitions(bconsole-unsafe PRIVATE "DISABLE_SAFETY_CHECK")
 target_sources(bconsole-unsafe PRIVATE console.cc)
-target_link_libraries(bconsole-unsafe PRIVATE BAuth::Prover::Oidc)
+if(ENABLE_OIDC)
+  target_link_libraries(bconsole-unsafe PRIVATE BAuth::Prover::Oidc)
+endif()
 
 bareos_windows_resource(bconsole consoleres.rc.in)
 bareos_windows_resource(bconsole-unsafe consoleres.rc.in)

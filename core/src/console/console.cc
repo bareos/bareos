@@ -36,7 +36,9 @@
 #include "include/jcr.h"
 #include "lib/bauth.h"
 #include "lib/bauth/cram_md5.h"
-#include "lib/bauth/oidc/prover.h"
+#ifdef ENABLE_OIDC
+#  include "lib/bauth/oidc/prover.h"
+#endif
 #include "lib/berrno.h"
 #include "lib/bnet.h"
 #include "lib/bnet_network_dump.h"
@@ -880,7 +882,9 @@ struct ConsoleAuthenticator : auth::OutboundAuthenticator {
     auto identity = my_name;
     auto password = args.target->password_.value;
 
+#ifdef ENABLE_OIDC
     algs.add<auth::Oidc::Prover>();
+#endif
     algs.add<auth::CramMd5::Prover>(identity, password);
     algs.add<auth::CramMd5::Verifier>("Bareos Auth", identity, password);
 

@@ -60,5 +60,4 @@ struct Prover : public auth::Prover {
 };
 };  // namespace auth::Oidc
 
-
 #endif  // BAREOS_LIB_BAUTH_OIDC_PROVER_H_

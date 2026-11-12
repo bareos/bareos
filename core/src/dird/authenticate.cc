@@ -55,7 +55,10 @@
 #include "lib/util.h"
 #include "lib/version.h"
 #include "lib/bauth/cram_md5.h"
-#include "lib/bauth/oidc/verifier.h"
+
+#ifdef ENABLE_OIDC
+#  include "lib/bauth/oidc/verifier.h"
+#endif
 
 #include <array>
 
@@ -146,7 +149,11 @@ bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
 
   if (res->auth_list) {
     for (auto* auth : *res->auth_list) {
+      Dmsg0(50, "adding auth schema (%p) ...\n", auth);
+
+#ifdef ENABLE_OIDC
       if (auto* oidc = dynamic_cast<OidcResource*>(auth)) {
+        Dmsg0(50, " -> oidc (%p)\n", auth);
         auto oidc_url = oidc->url;
         auto client_id = oidc->client_id;
         auto roles_name = oidc->roles_name;
@@ -160,9 +167,8 @@ bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
         };
 
         algs.add<auth::Oidc::Verifier>(oidc->resource_name_, std::move(conf));
-      } else {
-        Dmsg0(50, "unknown auth (%p) received passed (Skipping ...)\n", auth);
       }
+#endif
     }
   } else {
     // use the default auth
