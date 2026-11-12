@@ -71,7 +71,11 @@ endfunction()
 
 add_library(bauth_cram-md5 OBJECT)
 target_sources(bauth_cram-md5 PRIVATE cram_md5.cc)
-target_link_libraries(bauth_cram-md5 PRIVATE OpenSSL::SSL)
+target_link_libraries(
+  bauth_cram-md5
+  PRIVATE OpenSSL::SSL
+  INTERFACE Bareos::Lib
+)
 
 add_library(bauth_trust OBJECT)
 target_sources(bauth_trust PRIVATE tls.cc)

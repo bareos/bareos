@@ -24,8 +24,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <string_view>
-#include <openssl/evp.h>
-#include <openssl/core_names.h>
+#include "lib/cram_md5.h"
 
 #ifndef AUTH_NAME
 #  error AUTH_NAME missing
@@ -36,60 +35,15 @@ struct md5mac {
   char data[16];
 };
 
-struct cleanup {
-  void operator()(EVP_MAC* hmac) const { EVP_MAC_free(hmac); }
-  void operator()(EVP_MAC_CTX* ctx) const { EVP_MAC_CTX_free(ctx); }
-};
-
-using evp_mac = std::unique_ptr<EVP_MAC, cleanup>;
-using evp_mac_ctx = std::unique_ptr<EVP_MAC_CTX, cleanup>;
-
 bool do_hmac_md5(md5mac* mac,
                  const char* text,
                  size_t text_len,
                  const char* key,
                  size_t key_len)
 {
-  evp_mac hmac{EVP_MAC_fetch(NULL, "HMAC", NULL)};
-  if (!hmac) {
-    Dmsg0(500, "Could fetch HMAC\n");
-    return false;
-  }
-  evp_mac_ctx ctx{EVP_MAC_CTX_new(hmac.get())};
-  if (!ctx) {
-    Dmsg0(500, "Could not allocate HMAC context\n");
-    return false;
-  }
-
-  OSSL_PARAM params[] = {
-      OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, (char*)"MD5", 3),
-      OSSL_PARAM_construct_end()};
-
-  if (!EVP_MAC_init(ctx.get(), reinterpret_cast<const unsigned char*>(key),
-                    key_len, params)) {
-    Dmsg0(500, "Could not init MD5 for HMAC\n");
-    return false;
-  }
-
-  if (!EVP_MAC_update(ctx.get(), reinterpret_cast<const unsigned char*>(text),
-                      text_len)) {
-    Dmsg0(500, "Could not compute MD5 HMAC\n");
-    return false;
-  }
-
-  size_t size{};
-
-  if (!EVP_MAC_final(ctx.get(), reinterpret_cast<unsigned char*>(mac->data),
-                     &size, sizeof(mac->data))) {
-    Dmsg0(500, "Could not fetch MD5 HMAC result\n");
-    return false;
-  }
-
-  if (size != sizeof(mac->data)) {
-    Dmsg0(500, "MD5 HMAC result has bad size: %zu vs expected %zu\n", size,
-          sizeof(mac->data));
-    return false;
-  }
+  hmac_md5(reinterpret_cast<const uint8_t*>(text), static_cast<int>(text_len),
+           reinterpret_cast<const uint8_t*>(key), static_cast<int>(key_len),
+           reinterpret_cast<uint8_t*>(mac->data));
 
   return true;
 }
