@@ -664,7 +664,7 @@ static bool connect_to_server(std::string console_name,
 
 
         auto hello = (std::ostringstream{} << "Hello Client " << console_name
-                                           << "FdProtocolVersion=54 calling\n")
+                                           << " FdProtocolVersion=54 calling\n")
                          .str();
 
         LegacyOutboundAuthenticator auth;
