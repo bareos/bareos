@@ -223,15 +223,19 @@ have_drt:
   }
 
   if (rrxl) {
+    unsigned char translated_reply_flags;
+
     rc =
         (*rrxl->reply_9tox)((void*)&xa->reply.body, (void*)&arg_xa->reply.body);
 
     /* free up any memory allocated as part of the 9tox reply */
     if (rrxl) (*rrxl->free_reply_9tox)((void*)&arg_xa->reply.body);
 
+    translated_reply_flags = xa->reply.flags;
     ndmnmb_free(&xa->reply); /* clean up */
 
     xa = arg_xa;
+    xa->reply.flags = translated_reply_flags;
 
     if (rc < 0) {
       /* unrecoverable translation error */
@@ -376,6 +380,7 @@ int ndma_call_no_tattle(struct ndmconn* conn, struct ndmp_xa_buf* arg_xa)
     xa->request.header = arg_xa->request.header;
     xa->request.header.message = rrxl->vx_message;
     xa->request.protocol_version = protocol_version;
+    xa->request.flags = arg_xa->request.flags;
 
     rc = (*rrxl->request_9tox)((void*)&arg_xa->request.body,
                                (void*)&xa->request.body);
