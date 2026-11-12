@@ -86,11 +86,16 @@ bool curl_client::get(const std::string& url)
 
 bool curl_client::perform()
 {
+#if LIBCURL_VERSION_NUM >= 0x075500
   // Allow HTTPS only
   curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
 
   // Allow HTTPS only for redirects
   curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+#else
+  curl_easy_setopt(curl, CURLOPT_PROTOCOLS, (long)CURLPROTO_HTTPS);
+  curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, (long)CURLPROTO_HTTPS);
+#endif
 
   // Follow redirects
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -101,7 +106,7 @@ bool curl_client::perform()
 
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
   curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
-  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
   ret = curl_easy_write_into_str(curl, &content);
   return ret == CURLE_OK;

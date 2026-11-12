@@ -36,7 +36,6 @@ endif()
 add_library(dird_objects STATIC)
 add_library(Bareos::Dir ALIAS dird_objects)
 
-find_package(CURL REQUIRED)
 target_sources(
   dird_objects
   PRIVATE admin.cc
