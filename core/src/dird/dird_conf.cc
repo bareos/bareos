@@ -3658,6 +3658,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
   c->rcode_str_ = "R_CONSOLE";
   c->refcnt_ = 1;
   c->internal_ = true;
+  res_con = c;
 
   AddResourceCopyToEndOfChain(R_CONSOLE, c);
 }
