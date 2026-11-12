@@ -642,7 +642,7 @@ commit;
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2261;
-INSERT INTO Version (VersionId) VALUES (2261);
+DELETE FROM Version WHERE VersionId<=2600;
+INSERT INTO Version (VersionId) VALUES (2600);
 
 -- Make sure we have appropriate permissions
