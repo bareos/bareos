@@ -106,14 +106,22 @@ Status Verifier::step(std::vector<char>& response,
         return initiate_flow(response, received);
       } break;
       case FLOW_STARTED: {
-        if (!received.empty()) {
+        if (!received.empty()
+            && std::string_view{received.data(), received.size()} != "pong") {
           return Error("received unexpected input from client");
         }
         if (!current_flow) {
           return Error("authentication flow was not setup");
         }
 
-        auto token = current_flow->fetch_token();
+        std::string token = {};
+
+        if (!current_flow->fetch_token(&token)) {
+          static constexpr std::string_view ping = "ping";
+          response.clear();
+          response.insert(response.end(), ping.begin(), ping.end());
+          return Status::InProgress;
+        }
 
         auto claims
             = oidc::VerifyToken(token, cfg.oidc_url, cfg.client_id,

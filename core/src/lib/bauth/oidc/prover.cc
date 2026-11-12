@@ -120,6 +120,21 @@ bool Prover::step(std::vector<char>& to_send, std::span<const char> received)
       current_state = RESPONSE_SENT;
       return true;
     } break;
+    case RESPONSE_SENT: {
+      std::string_view received_str{received.data(), received.size()};
+
+      if (received_str == "ping") {
+        static constexpr std::string_view pong = "pong";
+        to_send.clear();
+        to_send.insert(to_send.end(), pong.begin(), pong.end());
+        return true;
+      } else if (received_str == "done") {
+        current_state = TOKEN_RECEIVED;
+        return true;
+      } else {
+        return Error("Unknown response");
+      }
+    } break;
     default: {
       return Error("Entered step() on bad state");
     } break;

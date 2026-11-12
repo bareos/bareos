@@ -1727,6 +1727,16 @@ void check_required_fields(std::string context,
   }
 }
 
+std::string fetch_token(oidc::DeviceAuthenticationFlow& flow)
+{
+  std::string fetched{};
+  if (!flow.fetch_token(&fetched)) {
+    throw std::runtime_error{"fetch was not successful"};
+  }
+
+  return fetched;
+}
+
 
 // Check that a login attempt returns the correct user code, verification uri,
 // and token Make sure that verification_uri_complete is unset!
@@ -1794,9 +1804,7 @@ TEST(oidc, login_without_complete)
   EXPECT_NE(flow.verification_uri(), "");
   EXPECT_EQ(flow.verification_uri_complete(), std::nullopt);
 
-  auto fetched_token = flow.fetch_token();
-
-  EXPECT_EQ(fetched_token, token);
+  EXPECT_EQ(fetch_token(flow), token);
 }
 
 TEST(oidc, login_complete)
@@ -1866,7 +1874,7 @@ TEST(oidc, login_complete)
   ASSERT_TRUE(flow.verification_uri_complete().has_value());
   EXPECT_EQ(*flow.verification_uri_complete(), verify_uri_complete);
 
-  EXPECT_EQ(flow.fetch_token(), token);
+  EXPECT_EQ(fetch_token(flow), token);
 }
 
 // Runs a minimal device flow whose token endpoint response carries the given
@@ -1912,11 +1920,13 @@ void check_token_response_scope(std::optional<std::string> scope, bool accepted)
 
   auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid profile");
 
+  std::string fetched;
   if (accepted) {
-    EXPECT_EQ(flow.fetch_token(), "scoped-jwt")
+    ASSERT_TRUE(flow.fetch_token(&fetched));
+    EXPECT_EQ(fetched, "scoped-jwt")
         << "scope: " << (scope ? *scope : "<absent>");
   } else {
-    EXPECT_THROW(flow.fetch_token(), std::exception)
+    EXPECT_THROW(flow.fetch_token(&fetched), std::exception)
         << "scope: " << (scope ? *scope : "<absent>");
   }
 }
@@ -2174,7 +2184,11 @@ TEST(oidc, token_polling_authorization_pending_then_bearer_case_insensitive)
       .oidc_url = cfg.oidc_url,
   });
   auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-  EXPECT_EQ(flow.fetch_token(), "final-jwt");
+  std::string fetched{};
+  EXPECT_FALSE(flow.fetch_token(&fetched));
+  EXPECT_FALSE(flow.fetch_token(&fetched));
+  EXPECT_TRUE(flow.fetch_token(&fetched));
+  EXPECT_EQ(fetched, "final-jwt");
   EXPECT_EQ(attempts, 3);
 }
 
@@ -2220,7 +2234,10 @@ TEST(oidc, token_polling_slow_down_recovers)
       .oidc_url = cfg.oidc_url,
   });
   auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-  EXPECT_EQ(flow.fetch_token(), "slow-ok-jwt");
+  std::string fetched;
+  EXPECT_FALSE(flow.fetch_token(&fetched));
+  EXPECT_TRUE(flow.fetch_token(&fetched));
+  EXPECT_EQ(fetched, "slow-ok-jwt");
   EXPECT_EQ(attempts, 2);
 }
 
@@ -2255,7 +2272,8 @@ TEST(oidc, device_flow_expiration)
         .oidc_url = cfg.oidc_url,
     });
     auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-    EXPECT_THROW(flow.fetch_token(), std::runtime_error);
+    std::string fetched{};
+    EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error);
   }
 
   // Expires while polling (slow_down pushes next poll past 1s expiry)
@@ -2288,7 +2306,8 @@ TEST(oidc, device_flow_expiration)
         .oidc_url = cfg.oidc_url,
     });
     auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-    EXPECT_THROW(flow.fetch_token(), std::runtime_error);
+    std::string fetched;
+    EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error);
   }
 }
 
@@ -2348,7 +2367,8 @@ TEST(oidc, token_endpoint_terminal_errors_abort_polling)
         .oidc_url = cfg.oidc_url,
     });
     auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-    EXPECT_THROW(flow.fetch_token(), std::runtime_error)
+    std::string fetched;
+    EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error)
         << "Expected /token response (" << status_code << ": " << body
         << ") to throw";
   }
@@ -2383,7 +2403,8 @@ TEST(oidc, token_endpoint_terminal_errors_abort_polling)
         .oidc_url = cfg.oidc_url,
     });
     auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-    EXPECT_THROW(flow.fetch_token(), std::runtime_error);
+    std::string fetched;
+    EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error);
   }
 }
 
@@ -2471,7 +2492,8 @@ TEST_F(JwtTest, end_to_end_discovery_jwks_device_flow_and_token_verification)
   ASSERT_EQ(keys.size(), 2U);
 
   auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid profile");
-  auto raw_token = flow.fetch_token();
+  std::string raw_token;
+  ASSERT_TRUE(flow.fetch_token(&raw_token));
   auto claims
       = oidc::VerifyToken(raw_token, cfg.oidc_url, cfg.client_id,
                           std::chrono::seconds{30}, cfg.roles_name, keys);

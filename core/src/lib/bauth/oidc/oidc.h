@@ -89,7 +89,9 @@ class DeviceAuthenticationFlow {
   static DeviceAuthenticationFlow start(oidc::client* client,
                                         const std::string& scopes);
 
-  std::string fetch_token();
+  // return true if the token was received, false otherwise
+  // will throw on error
+  bool fetch_token(std::string* buffer);
 
   const std::string& user_code() const { return ucode; }
   const std::string& verification_uri() const { return vuri; }

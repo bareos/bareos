@@ -43,6 +43,7 @@ struct Prover : public auth::Prover {
     INITIAL = 0,
     WAITING_FOR_CHALLENGE,
     RESPONSE_SENT,
+    TOKEN_RECEIVED,
     ERROR,
   } current_state{INITIAL};
 

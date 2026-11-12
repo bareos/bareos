@@ -850,57 +850,48 @@ DeviceAuthenticationFlow DeviceAuthenticationFlow::start(
   };
 }
 
-std::string DeviceAuthenticationFlow::fetch_token()
+bool DeviceAuthenticationFlow::fetch_token(std::string* buffer)
 {
-  std::string key_str;
+  if (!buffer) { throw std::runtime_error{"buffer is nullptr"}; }
 
-  bool done = false;
+  std::this_thread::sleep_for(pinterval);
 
-  while (!done) {
-    if (auto now = Clock::now(); now >= expiry) {
-      Dmsg0(100, "request expired: %zu ns vs max %zu ns\n",
+  if (auto now = Clock::now(); now >= expiry) {
+    Dmsg0(100, "request expired: %zu ns vs max %zu ns\n",
 
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                now.time_since_epoch())
-                .count(),
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                expiry.time_since_epoch())
-                .count());
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              now.time_since_epoch())
+              .count(),
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              expiry.time_since_epoch())
+              .count());
 
-      throw std::runtime_error{"Device auth expired"};
-    }
-
-    /* sleeping before fetching the token makes it more likely to
-     * get the token on the first try - if - people generally manage
-     * to login in <5 seconds. If they take 5-10 seconds instead, then
-     * its better to fetch first. */
-    std::this_thread::sleep_for(pinterval);
-
-    switch (try_fetch_token(oidc, dcode, &key_str)) {
-      case FetchResult::Ok: {
-        Dmsg0(200, "token was fetched sucessfully\n");
-        done = true;
-      } break;
-      case FetchResult::Pending: {
-        Dmsg0(300, "token is not ready yet\n");
-      } break;
-      case FetchResult::SlowDown: {
-        Dmsg0(300, "token is not ready yet; we need to slow down\n");
-
-        // we are required by the standard to (permanently) add 5 seconds
-        pinterval += std::chrono::seconds(5);
-      } break;
-      default: {
-        if (key_str.empty()) { key_str = "unknown error"; }
-
-        Dmsg0(100, "We received an error during token fetch: %s\n",
-              key_str.c_str());
-
-        throw std::runtime_error{std::move(key_str)};
-      } break;
-    }
+    throw std::runtime_error{"Device auth expired"};
   }
 
-  return key_str;
+  switch (try_fetch_token(oidc, dcode, buffer)) {
+    case FetchResult::Ok: {
+      Dmsg0(200, "token was fetched sucessfully\n");
+      return true;
+    } break;
+    case FetchResult::Pending: {
+      Dmsg0(300, "token is not ready yet\n");
+    } break;
+    case FetchResult::SlowDown: {
+      Dmsg0(300, "token is not ready yet; we need to slow down\n");
+
+      // we are required by the standard to (permanently) add 5 seconds
+      pinterval += std::chrono::seconds(5);
+    } break;
+    default: {
+      if (buffer->empty()) { buffer->assign("unknown error"); }
+
+      Dmsg0(100, "We received an error during token fetch: %s\n",
+            buffer->c_str());
+
+      throw std::runtime_error{std::move(*buffer)};
+    } break;
+  }
+  return false;
 }
 };  // namespace auth::Oidc::oidc
