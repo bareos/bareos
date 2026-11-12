@@ -175,7 +175,7 @@ if(client-only OR "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 endif()
 
 option(ENABLE_BARRI "enable building of barri" "${ENABLE_BARRI_INIT}")
-option(ENABLE_OIDC "enable oidc support" OFF)
+option(ENABLE_OIDC "enable oidc support" ON)
 
 if(docs-build-json)
   # check for wrong combinations of build flags
