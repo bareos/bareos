@@ -527,7 +527,7 @@ oidc::client make_client_with_jwks(MockHttp& http,
   });
 }
 
-TEST(JwtTest, roles_test)
+TEST_F(JwtTest, roles_test)
 {
   config cfg = default_test_config;
   auto keys = default_keys();
@@ -1727,13 +1727,10 @@ void check_required_fields(std::string context,
   }
 }
 
-std::string fetch_token(oidc::DeviceAuthenticationFlow& flow)
+std::string fetch_token_with_retry(oidc::DeviceAuthenticationFlow& flow)
 {
   std::string fetched{};
-  if (!flow.fetch_token(&fetched)) {
-    throw std::runtime_error{"fetch was not successful"};
-  }
-
+  while (!flow.fetch_token(&fetched)) {}
   return fetched;
 }
 
@@ -1804,7 +1801,7 @@ TEST(oidc, login_without_complete)
   EXPECT_NE(flow.verification_uri(), "");
   EXPECT_EQ(flow.verification_uri_complete(), std::nullopt);
 
-  EXPECT_EQ(fetch_token(flow), token);
+  EXPECT_EQ(fetch_token_with_retry(flow), token);
 }
 
 TEST(oidc, login_complete)
@@ -1874,7 +1871,7 @@ TEST(oidc, login_complete)
   ASSERT_TRUE(flow.verification_uri_complete().has_value());
   EXPECT_EQ(*flow.verification_uri_complete(), verify_uri_complete);
 
-  EXPECT_EQ(fetch_token(flow), token);
+  EXPECT_EQ(fetch_token_with_retry(flow), token);
 }
 
 // Runs a minimal device flow whose token endpoint response carries the given
@@ -2276,7 +2273,7 @@ TEST(oidc, device_flow_expiration)
     EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error);
   }
 
-  // Expires while polling (slow_down pushes next poll past 1s expiry)
+  // Expires while polling (slow_down pushes next poll past 6s expiry)
   {
     MockHttp http{cfg};
     EXPECT_CALL(http, get(testing::_)).WillOnce([&](const std::string&) {
@@ -2291,7 +2288,7 @@ TEST(oidc, device_flow_expiration)
           http.set_result(
               200, format_json("user_code", "EXP1", "device_code", "dc-exp1",
                                "verification_uri", "/verify", "interval", 1,
-                               "expires_in", 1));
+                               "expires_in", 6));
           return true;
         });
     EXPECT_CALL(http, post("/token", testing::_))
@@ -2306,8 +2303,7 @@ TEST(oidc, device_flow_expiration)
         .oidc_url = cfg.oidc_url,
     });
     auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid");
-    std::string fetched;
-    EXPECT_THROW(flow.fetch_token(&fetched), std::runtime_error);
+    EXPECT_THROW(fetch_token_with_retry(flow), std::runtime_error);
   }
 }
 
@@ -2493,6 +2489,7 @@ TEST_F(JwtTest, end_to_end_discovery_jwks_device_flow_and_token_verification)
 
   auto flow = oidc::DeviceAuthenticationFlow::start(&client, "openid profile");
   std::string raw_token;
+  ASSERT_FALSE(flow.fetch_token(&raw_token));
   ASSERT_TRUE(flow.fetch_token(&raw_token));
   auto claims
       = oidc::VerifyToken(raw_token, cfg.oidc_url, cfg.client_id,
