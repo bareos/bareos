@@ -13,6 +13,10 @@ It was introduced as a technical preview in Bareos 25.1.
 Starting with Bareos 26, it is the default interface selected by the
 :file:`bareos-webui` package name. The classic PHP-based
 :ref:`section-webui` remains available separately.
+Installing the PHP WebUI on Bareos 26 is not recommended: it is planned
+to reach end of life (EOL) in Bareos 27. Use Vue for new installations
+and plan to migrate existing PHP WebUI installations before upgrading
+to Bareos 27.
 
 Coexistence with the classic WebUI
 ----------------------------------
@@ -131,19 +135,24 @@ For AppArmor, inspect and adapt the enforcing web-server profile; see
 Upgrading from Bareos 25
 ------------------------
 
-The package rename uses Bareos **25.1.3** as a bridge release.
-The PHP rename must be available in that release before this upgrade path
-can be used: first upgrade Bareos 25 to 25.1.3 or later and verify that
-:file:`bareos-webui-php` is installed, then upgrade to Bareos 26.
-The bridge's :file:`bareos-webui` compatibility package depends on the renamed
-PHP package. Keep it installed during the upgrade, particularly on Debian
-systems where its dependency prevents PHP from becoming automatically
+Before switching repositories, read :ref:`section-WebuiMigration26` for
+the package transition, the intermediate Bareos 25 upgrade and how fresh
+Bareos 26 installations differ.
+
+To retain an existing PHP WebUI automatically, first upgrade to
+**Bareos 25.1.3 or a later Bareos 25 release**, then to Bareos 26.
+These Bareos 25 releases package PHP as :file:`bareos-webui-php`.
+Verify that both it and the :file:`bareos-webui` compatibility package
+are installed before switching repositories. Keep the compatibility
+package installed during the upgrade, particularly on Debian systems
+where its dependencies prevent the interfaces from becoming automatically
 removable. It contains no PHP application code.
 
 For prerelease packages, ``25.1.3~pre24`` (including its commit hash and
 packaging release suffix) is still legacy. ``25.1.3~pre25`` and later
-prereleases contain the bridge. Verify the compatibility dependency and that
-:file:`bareos-webui-php` owns the PHP application files before upgrading.
+prereleases contain the package rename. Verify the compatibility dependency
+and that :file:`bareos-webui-php` owns the PHP application files before
+upgrading.
 
 On Debian-based systems the old :file:`bareos-webui-new` preview package
 becomes a transitional package depending on :file:`bareos-webui-vue`.
@@ -152,10 +161,10 @@ Installed PHP and Vue interfaces can therefore be retained independently.
 A fresh Bareos 26 installation of :file:`bareos-webui` selects only Vue.
 
 Do not assume that a direct upgrade from an earlier Bareos 25 release will
-preserve the PHP WebUI automatically. If you skip the bridge release, back up
-your WebUI configuration, explicitly install :file:`bareos-webui-php` as part
-of the upgrade, and verify both the retained configuration and PHP access
-before removing legacy packages.
+preserve the PHP WebUI automatically. If the intermediate upgrade was
+skipped, back up your WebUI configuration, explicitly install
+:file:`bareos-webui-php` as part of the upgrade, and verify both the retained
+configuration and PHP access before removing legacy packages.
 
 Configuring multiple directors
 ------------------------------

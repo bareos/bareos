@@ -15,13 +15,14 @@ Bareos currently provides two WebUI variants:
 * the classic PHP-based |webui| documented on this page
 * the new Vue-based WebUI documented in :ref:`section-webui-vue`
 
-.. note::
+.. warning::
 
-   The Vue-based WebUI is currently a technical preview.
-   For now, both WebUI variants exist in parallel.
-   The classic PHP WebUI remains the primary documented and supported WebUI,
-   while the Vue WebUI is documented separately so users can evaluate it
-   without treating it as a full replacement yet.
+   Installing the PHP WebUI on Bareos 26 is not recommended. It is planned
+   to reach end of life (EOL) in Bareos 27. Use the
+   :ref:`Vue WebUI <section-webui-vue>` for new installations and plan to
+   migrate existing PHP WebUI installations before upgrading to Bareos 27.
+   Vue is the default WebUI in Bareos 26; PHP remains available during
+   the transition.
 
 .. image:: /include/images/bareos-webui-jobs.*
    :width: 80.0%
@@ -161,6 +162,12 @@ This assumes, |dir| and |webui| are installed on the same host.
 
 Upgrading |webui|
 -----------------
+
+When upgrading an existing PHP WebUI to Bareos 26 from any earlier
+version, first upgrade to **Bareos 25.1.3 or a later Bareos 25 release**,
+then to Bareos 26. Read :ref:`section-WebuiMigration26` **before switching
+repositories** for the package changes and how to retain PHP if this
+intermediate upgrade was skipped.
 
 Upgrade from Bareos 21 or lower to Bareos 22
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
