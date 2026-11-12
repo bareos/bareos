@@ -405,7 +405,7 @@ Job {
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
-  # AllowMixedPriority = No
+  # AllowMixedPriority = Yes
   # SelectionPattern =
   # Accurate = No
   # AllowDuplicateJobs = Yes
@@ -811,7 +811,7 @@ Job {
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
-  # AllowMixedPriority = No
+  # AllowMixedPriority = Yes
   # SelectionPattern =
   ClientRunBeforeJob = "/tmp/ClientRunBeforeJob1.sh"
   ClientRunBeforeJob = "/tmp/ClientRunBeforeJob2.sh"
@@ -952,7 +952,7 @@ Job {
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
   # Priority = 10
-  # AllowMixedPriority = No
+  # AllowMixedPriority = Yes
   # SelectionPattern =
   RunBeforeJob = "/tmp/RunBeforeJob1.sh"
   RunAfterJob = "/tmp/RunAfterJob2"

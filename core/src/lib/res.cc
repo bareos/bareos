@@ -1923,7 +1923,11 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     print_item = true;
   }
 
-  if (HasDefaultValue(item)) {
+  const bool explicitly_set_default_mixed_priority
+      = bstrcmp(item.name, "AllowMixedPriority") && item.IsPresent()
+        && !inherited;
+
+  if (HasDefaultValue(item) && !explicitly_set_default_mixed_priority) {
     Dmsg1(200, "%s: default value\n", item.name);
 
     if (verbose && !item.is_deprecated) {
