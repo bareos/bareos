@@ -39,6 +39,9 @@
 static constexpr int debuglevel = 100;
 
 namespace {
+constexpr std::chrono::seconds peek_timeout{5};
+
+
 struct auth_timer {
   auth_timer(BareosSocket* socket)
       : timer{StartBsockTimer(socket, AUTH_TIMEOUT)}
@@ -151,10 +154,8 @@ bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
 
   auto now = std::chrono::steady_clock::now;
 
-  static constexpr auto max_wait_time = std::chrono::seconds(5);
-
   auto start = now();
-  while (now() - start < max_wait_time) {
+  while (now() - start < peek_timeout) {
     if (socket->IsTimedOut()) { return false; }
 
     auto bytes_received = socket->peek(peek_buffer, sizeof(peek_buffer));
@@ -1131,7 +1132,24 @@ bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
 
   std::string_view prefix{buffer + sizeof(uint32_t), new_auth_prefix.size()};
 
-  if (socket->peek(buffer, sizeof(buffer)) && prefix == new_auth_prefix) {
+  auto start = std::chrono::steady_clock::now();
+  for (;;) {
+    auto bytes_received = socket->peek(buffer, sizeof(buffer));
+
+    if (bytes_received <= 0) {
+      // either an error occured (bytes_received < 0)
+      // or the connection was cut (bytes_received == 0)
+      break;
+    }
+
+    if (static_cast<size_t>(bytes_received) == sizeof(buffer)) { break; }
+
+
+    auto now = std::chrono::steady_clock::now();
+    if (now - start >= peek_timeout) { break; }
+  }
+
+  if (prefix == new_auth_prefix) {
     auto result
         = auth::Version2::authenticate_outbound(provers, verifiers, args);
     return result;
