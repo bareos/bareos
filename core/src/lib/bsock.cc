@@ -49,8 +49,6 @@
 #include <algorithm>
 #include <thread>
 
-static constexpr int debuglevel = 50;
-
 BareosSocket::BareosSocket()
     /* public */
     : fd_(kInvalidFiledescriptor)
