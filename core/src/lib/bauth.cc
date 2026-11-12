@@ -548,8 +548,6 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
 }
 
 namespace auth {
-static constexpr int debuglevel = 100;
-
 struct challenge {
   std::string internal_name;  // this is used when talking to the server
   std::string display_name;   // this can be shown to the user
