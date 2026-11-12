@@ -88,24 +88,45 @@ HTTPS configuration
 -------------------
 
 Use HTTPS before transmitting console credentials or backup data.
-On Debian-based systems the packages enable Apache's default SSL site when
-no HTTPS virtual host exists. On SUSE systems they reuse an existing HTTPS
-virtual host or complete default certificate pair. Otherwise they create a
-dedicated self-signed pair at :file:`/etc/apache2/ssl.crt/bareos-webui.crt`
-and :file:`/etc/apache2/ssl.key/bareos-webui.key`, referenced by
-:file:`/etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf`.
-Existing hostname-prefixed certificates and CA keys are not replaced.
+Certificate provisioning, renewal and TLS termination are administrator
+responsibilities. Bareos package hooks do not generate certificates or
+activate default SSL sites. Operating-system Apache/SSL dependencies may
+provide their own default TLS configuration; this is not proof of trusted
+HTTPS for the WebUI.
 
-The automatically generated certificate is self-signed and will not normally
-be trusted by browsers. Replace it with a certificate trusted by your users,
-or configure an administrator-managed HTTPS virtual host or reverse proxy.
-Ensure the certificate matches the hostname used to access the WebUI and
-verify HTTPS access before enabling HTTP-to-HTTPS redirects.
+Configure an administrator-managed HTTPS virtual host or reverse proxy
+using a certificate trusted by your users and covering the hostname used
+to access the WebUI. Follow :ref:`section-webui-https` for Apache setup
+and verification. Ensure the proxy forwards both the API and WebSocket
+requests and communicates the original connection scheme correctly.
+For Apache, enable ``mod_headers`` so the packaged
+``X-Forwarded-Proto`` directive takes effect (``a2enmod headers`` on
+Debian/Ubuntu and SUSE). This is necessary for the proxy to mark HTTPS
+session cookies ``Secure`` correctly.
 
 HTTP access is not automatically disabled or redirected to HTTPS.
 Both WebUIs show a warning on insecure HTTP connections. Configure HTTPS
 enforcement at the web server or reverse proxy according to your site's
 policy; the warning is not a substitute for transport encryption.
+
+SELinux and AppArmor
+--------------------
+
+On a fresh enforcing-SELinux installation, Apache may be denied access to
+the Vue proxy on localhost port 9104. A loopback address does not bypass
+network policy. The WebUI packages do not enable
+``httpd_can_network_connect`` automatically. Check its state and the
+web-server domain, then make an explicit administrator policy decision as
+described in :ref:`section-webui-selinux`. The boolean grants broad HTTPD
+network access, not localhost-only access.
+
+Before attributing a failure to confinement, verify that
+:command:`bareos-webui-proxy` is running and listening on its configured
+address. Inspect the Apache error log and SELinux AVC/AppArmor ``DENIED``
+records. The connection-error hint is conditional, not a diagnosis.
+Wrong credentials and Director ACL errors require separate investigation.
+For AppArmor, inspect and adapt the enforcing web-server profile; see
+:ref:`section-webui-apparmor`. Do not disable either security system.
 
 Upgrading from Bareos 25
 ------------------------

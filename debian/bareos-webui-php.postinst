@@ -4,14 +4,10 @@ set -e
 [ "$1" = configure ] || exit 0
 
 command -v a2enmod >/dev/null
-a2enmod rewrite proxy_fcgi ssl
+a2enmod rewrite proxy_fcgi
 
 command -v a2enconf >/dev/null
 a2enconf bareos-webui
-
-if ! apache2ctl -S 2>&1 | grep -Eq 'port 443|:443'; then
-  a2ensite default-ssl
-fi
 
 apache2ctl configtest
 if command -v systemctl >/dev/null && systemctl is-active --quiet apache2; then

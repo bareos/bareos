@@ -314,12 +314,47 @@ SELinux
 .. index::
    single: SELinux; bareos-webui
 
-To use the |webui| on a system with SELinux enabled, permission must be given to HTTPD to make network connections:
+On a fresh installation with SELinux enforcing, HTTPD/PHP-FPM may be denied
+network access to the Director, including connections to localhost.
+The WebUI packages do not change SELinux booleans or install a custom policy.
+Check the current state and the actual process domains:
 
 .. code-block:: shell-session
-   :caption: example of AppArmor php-fpm profile /etc/apparmor.d/local/php-fpm
+
+   getenforce
+   getsebool httpd_can_network_connect
+   ps -eZ | grep -E 'httpd|apache2|php-fpm'
+
+An administrator can permit HTTPD network connections with:
+
+.. code-block:: shell-session
+   :caption: Administrator-managed SELinux network permission
 
    setsebool -P httpd_can_network_connect on
+
+This changes the active policy and persists across reboots. It is a broad
+permission for the HTTPD domain, not a Bareos-only or localhost-only
+exception. Decide whether this is appropriate for your server's policy;
+site-specific narrower policies require separate administration. Binding a
+backend to localhost does not bypass SELinux network checks.
+
+Connection errors include a conditional SELinux/AppArmor troubleshooting
+hint. The hint is not proof of a policy denial: first verify that the
+Director and PHP-FPM are running and that the configured address/port is
+reachable. Then inspect the web-server/PHP logs and native audit records:
+
+.. code-block:: shell-session
+
+   ausearch --input-logs -m AVC,USER_AVC -ts recent
+
+Verify login again after changing the policy and after reboot. Do not
+disable SELinux enforcement to resolve a WebUI connection problem.
+
+Distinguish network ``name_connect`` denials from other AVCs. For example,
+PHP's PCRE JIT can cause ``execmem`` denials independently of Director
+connectivity. If JIT is not appropriate for your confinement policy,
+an administrator can set ``pcre.jit=0`` in the PHP-FPM configuration and
+restart PHP-FPM rather than granting executable-memory permission.
 
 
 .. _section-webui-apparmor:
@@ -350,6 +385,12 @@ You have to adapt the path of your php-fpm configured session.save_path.
 You can use tools like :command:`aa-logprof` to check if any other AppArmor restriction are raised during webui usage.
 You can then add the needed resource to the profile.
 
+Check whether the applicable profile is actually loaded and enforcing with
+:command:`aa-status`. Inspect the kernel journal for AppArmor ``DENIED``
+records, for example with :command:`journalctl -k`. A connection-error hint
+does not identify the active security system or replace checking these logs.
+Adapt the relevant profile rather than disabling AppArmor.
+
 
 .. _section-webui-transportencryption:
 
@@ -371,9 +412,77 @@ Configure your Apache Webserver
 .. index::
    single: Apache; bareos-webui
 
-The package **bareos-webui** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf`, :file:`/etc/apache2/available-conf/bareos-webui.conf` or similar.
+The package **bareos-webui-php** provides a default configuration for Apache. Depending on your distribution, it is installed at :file:`/etc/apache2/conf.d/bareos-webui.conf`, :file:`/etc/httpd/conf.d/bareos-webui.conf`, :file:`/etc/apache2/conf-available/bareos-webui.conf` or similar.
 
-The required Apache modules, :strong:`fcgid` and :strong:`rewrite` are enabled via package postinstall script. However, after installing the **bareos-webui** package, you need to restart your Apache webserver manually.
+Configure and start PHP-FPM and ensure Apache sends PHP requests to it.
+Installing PHP-FPM alone does not necessarily enable its Apache handler.
+On Debian/Ubuntu, enable the installed distribution configuration, replacing
+``X.Y`` with your PHP version:
+
+.. code-block:: shell-session
+
+   a2enmod proxy_fcgi setenvif
+   a2enconf phpX.Y-fpm
+   apache2ctl configtest
+
+For a manually configured PHP-FPM pool, use a protected Unix socket and
+configure Apache's ``SetHandler`` for PHP files in the WebUI's
+:file:`/usr/share/bareos-webui/public` directory to use that socket.
+The pool's socket path, ownership, permissions and security labels must
+allow Apache to connect. Start PHP-FPM and explicitly start or reload
+Apache after validating the configuration.
+
+.. warning::
+
+   Before exposing the PHP WebUI, verify that PHP is executed, not returned
+   as source or downloaded by the browser. A missing PHP handler is an
+   Apache/PHP-FPM integration problem, not a Director authentication error.
+
+.. _section-webui-https:
+
+HTTPS configuration
+~~~~~~~~~~~~~~~~~~~
+
+Configure HTTPS before entering console credentials or transmitting backup
+data. Certificate provisioning, hostname selection, renewal and HTTPS
+enforcement are administrator responsibilities. Bareos package hooks do not
+generate a certificate, activate a default SSL site or change existing
+administrator TLS files. Apache/SSL dependencies supplied by the operating
+system may still provide their own default certificates or sites; their
+presence does not establish trusted HTTPS for the WebUI.
+
+Obtain a certificate trusted by your users that covers the hostname used
+to access the WebUI. Configure the distribution's Apache SSL module,
+port 443 listener and HTTPS virtual host, or terminate TLS at an
+administrator-managed reverse proxy. An Apache virtual host can reference
+the administrator's certificate and key as follows:
+
+.. code-block:: apache
+
+   <VirtualHost *:443>
+       ServerName backup.example.org
+       SSLEngine on
+       SSLCertificateFile /path/to/fullchain.pem
+       SSLCertificateKeyFile /path/to/private-key.pem
+   </VirtualHost>
+
+Use your distribution's TLS file locations and restrictive private-key
+permissions, including appropriate security labels. Enable the vhost
+according to the distribution's Apache layout. Inspect the vhost listing
+(``httpd -S`` on EL, ``apache2ctl -S`` on Debian/Ubuntu) for conflicting
+default vhost names, then run ``apachectl configtest``
+(``apache2ctl configtest`` on Debian/Ubuntu), then explicitly start or
+reload Apache as appropriate. SSL module/startup-flag changes may require
+a restart rather than a reload. Verify the served certificate, hostname,
+trust chain and application login before enabling HTTP-to-HTTPS redirects.
+A reverse proxy also requires the PHP
+:file:`configuration.ini` ``trusted_proxies`` setting.
+
+Self-signed certificates require explicit client trust and administrator
+renewal; do not treat clicking through browser warnings as verification.
+HTTP remains accessible unless you configure enforcement. Both WebUIs show
+an insecure-HTTP warning, but that warning does not prevent credentials
+being sent over HTTP or verify HTTPS certificate trust.
 
 
 .. _section-webui-configuration-files:

@@ -126,6 +126,16 @@ describe('director store', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('does not classify a forbidden director-list request as an upstream connection failure', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => { throw new Error('Not JSON') },
+    })
+    await expect(useDirectorStore().fetchAvailableDirectors())
+      .rejects.toThrow('Authorization failed')
+  })
+
   it('reuses the cached director list after it has been loaded', async () => {
     const director = useDirectorStore()
     mockDirectorList()

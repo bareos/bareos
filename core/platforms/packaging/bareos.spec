@@ -1962,79 +1962,13 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_fcgi &> /dev/null || true
 a2enmod fcgid &> /dev/null || true
-ssl_ready=true
-restart_apache=false
-if ! ( . /etc/sysconfig/apache2
-       case " ${APACHE_SERVER_FLAGS:-} " in
-         *" SSL "*) exit 0 ;;
-         *) exit 1 ;;
-       esac ); then
-  restart_apache=true
-fi
-if ! a2enmod ssl; then
-  echo "Could not enable Apache SSL module; HTTPS setup skipped." >&2
-  ssl_ready=false
-fi
-if ! a2enflag SSL; then
-  echo "Could not enable Apache SSL startup flag; HTTPS setup skipped." >&2
-  ssl_ready=false
-  restart_apache=false
-fi
-if $ssl_ready; then
-  ssl_vhosts=$(apachectl -S 2>&1) || {
-    ssl_status=$?
-    printf 'Could not inspect Apache virtual hosts:\n%s\n' "$ssl_vhosts" >&2
-    exit "$ssl_status"
-  }
-fi
-if $ssl_ready && ! printf '%s\n' "$ssl_vhosts" | grep -Eq 'port 443|:443'; then
-  ssl_certificate=/etc/apache2/ssl.crt/server.crt
-  ssl_key=/etc/apache2/ssl.key/server.key
-  if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
-    ssl_certificate=/etc/apache2/ssl.crt/bareos-webui.crt
-    ssl_key=/etc/apache2/ssl.key/bareos-webui.key
-    if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
-      if ! (
-        umask 077
-        tls_tmpdir=$(mktemp -d /etc/apache2/.bareos-webui-tls.XXXXXX) || exit 1
-        trap 'rm -f "$tls_tmpdir/server.key" "$tls_tmpdir/server.crt"; rmdir "$tls_tmpdir"' EXIT
-        tls_hostname=$(hostname -f) || exit 1
-        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-          -subj "/CN=$tls_hostname" -addext "subjectAltName=DNS:$tls_hostname" \
-          -keyout "$tls_tmpdir/server.key" -out "$tls_tmpdir/server.crt" &&
-          install -m 600 "$tls_tmpdir/server.key" "$ssl_key" &&
-          install -m 644 "$tls_tmpdir/server.crt" "$ssl_certificate"
-      ); then
-        echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
-        ssl_ready=false
-      fi
-    fi
-  fi
-  if $ssl_ready && { [ ! -s "$ssl_certificate" ] || [ ! -s "$ssl_key" ]; }; then
-    echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
-    ssl_ready=false
-  fi
-  if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
-    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<EOF
-<VirtualHost *:443>
-  SSLEngine on
-  SSLCertificateFile $ssl_certificate
-  SSLCertificateKeyFile $ssl_key
-</VirtualHost>
-EOF
-  fi
-fi
 apachectl configtest || exit $?
 if systemctl is-active --quiet apache2; then
-  if $restart_apache; then
-    systemctl restart apache2
-  else
-    systemctl reload apache2
-  fi
+  systemctl reload apache2
 fi
 %else
 if systemctl is-active --quiet httpd; then
-  apachectl configtest
+  apachectl configtest || exit $?
   systemctl reload httpd
 fi
 %endif
@@ -2047,79 +1981,13 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
-ssl_ready=true
-restart_apache=false
-if ! ( . /etc/sysconfig/apache2
-       case " ${APACHE_SERVER_FLAGS:-} " in
-         *" SSL "*) exit 0 ;;
-         *) exit 1 ;;
-       esac ); then
-  restart_apache=true
-fi
-if ! a2enmod ssl; then
-  echo "Could not enable Apache SSL module; HTTPS setup skipped." >&2
-  ssl_ready=false
-fi
-if ! a2enflag SSL; then
-  echo "Could not enable Apache SSL startup flag; HTTPS setup skipped." >&2
-  ssl_ready=false
-  restart_apache=false
-fi
-if $ssl_ready; then
-  ssl_vhosts=$(apachectl -S 2>&1) || {
-    ssl_status=$?
-    printf 'Could not inspect Apache virtual hosts:\n%s\n' "$ssl_vhosts" >&2
-    exit "$ssl_status"
-  }
-fi
-if $ssl_ready && ! printf '%s\n' "$ssl_vhosts" | grep -Eq 'port 443|:443'; then
-  ssl_certificate=/etc/apache2/ssl.crt/server.crt
-  ssl_key=/etc/apache2/ssl.key/server.key
-  if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
-    ssl_certificate=/etc/apache2/ssl.crt/bareos-webui.crt
-    ssl_key=/etc/apache2/ssl.key/bareos-webui.key
-    if [ ! -e "$ssl_certificate" ] && [ ! -e "$ssl_key" ]; then
-      if ! (
-        umask 077
-        tls_tmpdir=$(mktemp -d /etc/apache2/.bareos-webui-tls.XXXXXX) || exit 1
-        trap 'rm -f "$tls_tmpdir/server.key" "$tls_tmpdir/server.crt"; rmdir "$tls_tmpdir"' EXIT
-        tls_hostname=$(hostname -f) || exit 1
-        openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
-          -subj "/CN=$tls_hostname" -addext "subjectAltName=DNS:$tls_hostname" \
-          -keyout "$tls_tmpdir/server.key" -out "$tls_tmpdir/server.crt" &&
-          install -m 600 "$tls_tmpdir/server.key" "$ssl_key" &&
-          install -m 644 "$tls_tmpdir/server.crt" "$ssl_certificate"
-      ); then
-        echo "Could not generate Apache TLS certificate; HTTPS setup skipped." >&2
-        ssl_ready=false
-      fi
-    fi
-  fi
-  if $ssl_ready && { [ ! -s "$ssl_certificate" ] || [ ! -s "$ssl_key" ]; }; then
-    echo "Incomplete Apache TLS certificate or key; leaving existing files untouched." >&2
-    ssl_ready=false
-  fi
-  if $ssl_ready && [ ! -e /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf ]; then
-    cat > /etc/apache2/vhosts.d/_bareos-webui-default-ssl.conf <<EOF
-<VirtualHost *:443>
-  SSLEngine on
-  SSLCertificateFile $ssl_certificate
-  SSLCertificateKeyFile $ssl_key
-</VirtualHost>
-EOF
-  fi
-fi
 apachectl configtest || exit $?
 if systemctl is-active --quiet apache2; then
-  if $restart_apache; then
-    systemctl restart apache2
-  else
-    systemctl reload apache2
-  fi
+  systemctl reload apache2
 fi
 %else
 if systemctl is-active --quiet httpd; then
-  apachectl configtest
+  apachectl configtest || exit $?
   systemctl reload httpd
 fi
 %endif
