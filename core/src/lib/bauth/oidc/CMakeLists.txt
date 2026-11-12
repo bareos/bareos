@@ -26,13 +26,15 @@ target_link_libraries(
   bauth_oidc_backend PRIVATE jwt-cpp::jwt-cpp Jansson::Jansson Bareos::Lib
 )
 
+add_library(Bauth::Oidc::Backend ALIAS bauth_oidc_backend)
+
 # these libraries are STATIC because OBJECT dependencies do not propagate, i.e.
 # if a target links verifier, then it will not get common as dependency
 add_library(bauth_oidc_verifier STATIC)
 target_sources(bauth_oidc_verifier PRIVATE verifier.cc curl_http.cc)
 target_link_libraries(
   bauth_oidc_verifier PRIVATE CURL::libcurl Bareos::Lib Jansson::Jansson
-                              bauth_oidc_backend
+                              Bauth::Oidc::Backend
 )
 
 add_library(bauth_oidc_prover STATIC)
