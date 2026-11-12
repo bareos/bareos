@@ -819,7 +819,7 @@ DeviceAuthenticationFlow DeviceAuthenticationFlow::start(
   json_int_t poll_interval{5};  // optional - default MUST be 5 per RFC
   const char* verification_uri_complete_{nullptr};  // optional
 
-  if (json_unpack_ex(json.get(), &err, 0, "{s:s, s:s, s:s, s:I, s?s, s?i, s?s}",
+  if (json_unpack_ex(json.get(), &err, 0, "{s:s, s:s, s:s, s:I, s?s, s?I, s?s}",
                      "user_code", &user_code, "device_code", &device_code,
                      "verification_uri", &verification_uri, "expires_in",
                      &expires_in, "message", &message, "interval",
