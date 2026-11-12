@@ -67,6 +67,24 @@ install(
   COMPONENT webui
 )
 
+# Exercise main's implicit config selection without touching the host's /etc.
+if(BUILD_TESTING)
+  add_executable(
+    bareos-webui-proxy-startup main.cc proxy_server.cc
+                               $<TARGET_OBJECTS:webui-proxy-objects>
+  )
+  target_compile_definitions(
+    bareos-webui-proxy-startup
+    PRIVATE
+      WEBUI_PROXY_DEFAULT_CONFIG_PATH="${CMAKE_BINARY_DIR}/systemtests/tests/webui-proxy/config/default.ini"
+  )
+  target_link_libraries(
+    bareos-webui-proxy-startup
+    PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+            Threads::Threads CLI11::CLI11
+  )
+endif()
+
 # ---------------------------------------------------------------------------
 # Unit tests
 # ---------------------------------------------------------------------------
