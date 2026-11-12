@@ -190,6 +190,7 @@ bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
     return false;
   }
 
+#ifdef ENABLE_OIDC
   if (auto* oidc = dynamic_cast<auth::Oidc::Verifier*>(verifier_used)) {
     std::vector<ProfileResource*> profiles;
     for (const auto& role : oidc->roles) {
@@ -205,8 +206,9 @@ bool ConsoleInboundAuthenticator::authenticate(auth::InboundArgs args)
     }
 
     authenticated_acls = UserAcl::from_profiles(oidc->user_name, profiles);
-  } else if (auto* cram
-             = dynamic_cast<auth::CramMd5::Verifier*>(verifier_used)) {
+  } else
+#endif
+      if (auto* cram = dynamic_cast<auth::CramMd5::Verifier*>(verifier_used)) {
     (void)cram;
     authenticated_acls = UserAcl::from_config(res);
   } else {
