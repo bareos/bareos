@@ -1,4 +1,4 @@
--- update db schema from 2260 to 2261
+-- update db schema from 2260 to 2600
 -- start transaction
 BEGIN;
 
@@ -29,7 +29,7 @@ ALTER TABLE Job
 CREATE INDEX job_accounting_client_fileset_idx
     ON Job (ClientId, FileSetId, JobTDate DESC, JobId DESC);
 
-UPDATE Version SET VersionId = 2261;
+UPDATE Version SET VersionId = 2600;
 
 COMMIT;
 SET client_min_messages = warning;

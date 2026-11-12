@@ -469,8 +469,8 @@ class pathid_cache;
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-// Current database version number schema = 2000 + 10 * Major + Minor
-#define BDB_VERSION 2261
+// Catalog schema version uses the target Bareos major as its prefix.
+#define BDB_VERSION 2600
 
 typedef char** SQL_ROW;
 
