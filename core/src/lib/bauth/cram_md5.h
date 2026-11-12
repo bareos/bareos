@@ -48,13 +48,15 @@ struct Verifier : public auth::Verifier {
   const std::string& cram_pw() const { return password; }
 
  private:
-  enum
+  enum verifier_state
   {
     INITIAL = 0,
     GENERATED_CHALLENGE,
     ACCEPTED_RESULT,
     ERROR,
-  } current_state{INITIAL};
+  };
+
+  verifier_state current_state{INITIAL};
 
 
   std::vector<char> expected{};
