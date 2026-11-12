@@ -122,9 +122,7 @@ target_sources(
           pthread_detach_if_not_detached.cc
 )
 
-target_link_libraries(
-  dird_objects PUBLIC CURL::libcurl fmt::fmt BAuth::Verifier::Oidc
-)
+target_link_libraries(dird_objects PUBLIC BAuth::Verifier::Oidc)
 
 if(HAVE_PAM)
   target_sources(dird_objects PRIVATE auth_pam.cc)
