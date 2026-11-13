@@ -602,6 +602,49 @@ describe('jobs aggregate helpers', () => {
     expect(result.jobs.at(-1)).toMatchObject({ id: 1 })
   })
 
+  it.each([
+    ['status director', [2, 1], 2, []],
+    ['llist jobs last current enabled reverse limit=2 offset=0 sortby=jobid', [], 0, [
+      { director: 'prod-a', message: 'command denied' },
+    ]],
+    ['llist jobs count last current enabled', [], 0, [
+      { director: 'prod-a', message: 'command denied' },
+    ]],
+  ])('handles denied recent-jobs command %s', async (deniedCommand, ids, totalJobs, directorErrors) => {
+    const loading = fetchAggregatedRecentJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 2 }
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+
+    const responses = {
+      'llist jobs last current enabled reverse limit=2 offset=0 sortby=jobid': {
+        jobs: [
+          { jobid: '2', name: 'Job-2', jobstatus: 'T' },
+          { jobid: '1', name: 'Job-1', jobstatus: 'E' },
+        ],
+      },
+      'llist jobs count last current enabled': { jobs: [{ count: '2' }] },
+      'status director': { running: [] },
+    }
+    for (const payload of socket.sent.slice(1)) {
+      const command = JSON.parse(payload)
+      socket.onmessage?.({
+        data: JSON.stringify(command.command === deniedCommand
+          ? { type: 'error', id: command.id, message: 'command denied' }
+          : { type: 'response', id: command.id, data: responses[command.command] }),
+      })
+    }
+
+    const result = await loading
+    expect(result.jobs.map(job => job.id)).toEqual(ids)
+    expect(result).toMatchObject({ totalJobs, directorErrors, truncated: false })
+  })
+
   it('loads trouble jobs with a bounded server-side prefilter', async () => {
     const loading = fetchAggregatedTroubleJobs(
       {
