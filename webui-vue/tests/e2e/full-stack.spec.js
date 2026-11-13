@@ -290,6 +290,44 @@ test('opens jobs and job details through the real director connection', async ({
   await expect(page.getByText('Job Log', { exact: true })).toBeVisible()
 })
 
+test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByRole('button', { name: 'Choose columns' }).click()
+  await page.locator('.q-menu').getByText('Comment', { exact: true }).click()
+  await page.keyboard.press('Escape')
+
+  const edit = page.locator('[data-testid^="job-comment-edit-"]').first()
+  await expect(edit).toHaveCSS('opacity', '0')
+  await edit.locator('..').hover()
+  await expect(edit).toHaveCSS('opacity', '1')
+  await page.mouse.move(0, 0)
+  await expect(edit).toHaveCSS('opacity', '0')
+  await page.keyboard.press('Tab')
+  await edit.focus()
+  await expect(edit).toHaveCSS('opacity', '1')
+  await edit.click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
+test.describe('touch comment editing', () => {
+  test.use({ hasTouch: true })
+
+  test('shows the edit button without hover', async ({ page }) => {
+    await login(page)
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
+    await page.getByRole('button', { name: 'Choose columns' }).tap()
+    await page.locator('.q-menu').getByText('Comment', { exact: true }).tap()
+    await page.keyboard.press('Escape')
+
+    const edit = page.locator('[data-testid^="job-comment-edit-"]').first()
+    await expect(edit).toHaveCSS('opacity', '1')
+    await edit.tap()
+    await expect(page.getByRole('dialog')).toBeVisible()
+  })
+})
+
 test('loads the restore workflow selections', async ({ page }) => {
   test.setTimeout(90000)
 
