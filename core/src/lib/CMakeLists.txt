@@ -108,7 +108,7 @@ if(HAVE_WIN32)
     bareos PRIVATE ../win32/compat/compat.cc ../win32/compat/glob.cc
                    ../win32/compat/winapi.cc
   )
-  target_sources(bareos PRIVATE osinfo_win32.cc)
+  target_sources(bareos PRIVATE osinfo_win32.cc windows_version.cc)
   target_link_libraries(bareos PUBLIC ws2_32)
 
   find_package(pcre2 CONFIG REQUIRED)
