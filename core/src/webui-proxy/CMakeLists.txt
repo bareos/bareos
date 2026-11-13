@@ -20,7 +20,6 @@
 cmake_minimum_required(VERSION 3.17)
 
 find_package(Threads REQUIRED)
-find_package(Jansson REQUIRED)
 
 add_library(webui-proxy-objects OBJECT)
 target_sources(
@@ -31,7 +30,7 @@ target_sources(
 )
 target_link_libraries(
   webui-proxy-objects PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-                              Jansson::Jansson Threads::Threads
+                              jansson::jansson Threads::Threads
 )
 
 add_executable(
@@ -47,7 +46,7 @@ target_compile_definitions(
 
 target_link_libraries(
   bareos-webui-proxy PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto
-                             Jansson::Jansson Threads::Threads CLI11::CLI11
+                             jansson::jansson Threads::Threads CLI11::CLI11
 )
 
 configure_file(
@@ -87,7 +86,7 @@ if(BUILD_TESTING AND GTest_FOUND)
   )
   target_link_libraries(
     test_webui_proxy
-    PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto Jansson::Jansson
+    PRIVATE Bareos::Lib OpenSSL::SSL OpenSSL::Crypto jansson::jansson
             GTest::gtest GTest::gtest_main Threads::Threads
   )
   gtest_discover_tests(test_webui_proxy)
