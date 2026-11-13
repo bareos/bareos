@@ -26,6 +26,7 @@ unset BAREOS_CONFIG_DIR
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
 PS=$(command -v ps)
+export COLUMNS=80
 prefix="bareos_test_lookup_$$"
 name="${prefix}.x"
 other_pid=""
@@ -34,7 +35,8 @@ exact_pid=""
 config_other_pid=""
 config_exact_pid=""
 config_trailing_pid=""
-trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
+long_path_pid=""
+trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} ${long_path_pid} 2>/dev/null || true' EXIT
 
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${name}-other" "$python_executable" &
 other_pid=$!
@@ -72,7 +74,8 @@ if [ -n "$(pidofproc "$name" 0)" ]; then
   exit 1
 fi
 
-BAREOS_CONFIG_DIR="/tmp/${prefix}_config"
+long_directory="/tmp/$(printf '%0128d' 0)/$(printf '%0128d' 0)"
+BAREOS_CONFIG_DIR="${long_directory}/${prefix}_config"
 bash -c 'exec -a "$1" "$3" -c "import time; time.sleep(30)" -c "$2"' \
   _ "/tmp/$name" "${BAREOS_CONFIG_DIR}-other" "$python_executable" &
 config_other_pid=$!
@@ -103,3 +106,22 @@ fi
 
 killproc "$name" 0 -TERM >/dev/null
 kill -0 "$config_other_pid"
+
+unset BAREOS_CONFIG_DIR
+long_name="${name}-long"
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
+  _ "${long_directory}/${long_name}" "$python_executable" &
+long_path_pid=$!
+sleep 0.1
+
+PGREP=$(command -v pgrep)
+if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
+  echo "pgrep did not find a process with a long executable path" >&2
+  exit 1
+fi
+
+PGREP=""
+if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
+  echo "ps did not find a process with a long executable path" >&2
+  exit 1
+fi
