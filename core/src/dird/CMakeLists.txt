@@ -21,11 +21,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 include(BareosWindowsResource)
 
-if(NOT ENABLE_JANSSON)
-  message(FATAL_ERROR "Bareos Director requires Jansson support")
-endif()
-find_package(Jansson REQUIRED)
-
 if(HAVE_WIN32)
   include_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/generic

@@ -82,7 +82,7 @@ if(HAVE_WIN32)
   target_link_libraries(
     hyper-v-fd PRIVATE wbemuuid.lib virtdisk.lib Shell32.lib Pathcch.lib
   )
-  target_link_libraries(hyper-v-fd PRIVATE Jansson::Jansson)
+  target_link_libraries(hyper-v-fd PRIVATE jansson::jansson)
 
   install(
     TARGETS hyper-v-fd
