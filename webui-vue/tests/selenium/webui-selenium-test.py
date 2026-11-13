@@ -42,6 +42,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+from systemtests.scripts.selenium_screenshots import ScreenshotRunner
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -219,4 +222,4 @@ def configure_from_env():
 
 if __name__ == "__main__":
     configure_from_env()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=2, testRunner=ScreenshotRunner)
