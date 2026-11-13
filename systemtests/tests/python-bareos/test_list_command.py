@@ -21,6 +21,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import os
@@ -41,6 +42,37 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_list_jobs_during_reload(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+        director = bareos.bsock.DirectorConsoleJson(**options)
+        reloader = bareos.bsock.DirectorConsoleJson(**options)
+        self.get_backup_jobid(director, "backup-bareos-fd", level="Full")
+        commands = (
+            "list jobs count current",
+            "list jobs count enabled",
+            "list jobs count disabled",
+        )
+        expected = [director.call(command)["jobs"][0]["count"] for command in commands]
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                lambda: [reloader.call("reload") for _ in range(20)]
+            )
+            for _ in range(20):
+                counts = [
+                    director.call(command)["jobs"][0]["count"] for command in commands
+                ]
+                self.assertEqual(counts, expected)
+            future.result()
+
     def test_list_jobs(self):
         """
         verifying `list jobs` and `llist jobs ...` outputs correct data
