@@ -390,7 +390,7 @@ class SeleniumTest(unittest.TestCase):
         self.driver.get(self.base_url + "/client/details?client=" + self.client)
         self.wait_for_spinner_absence()
         # Select first backup in list
-        self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+        self.wait_and_click(By.XPATH, '//tr[.//button[@title="Rerun"]]/td[1]/a')
         self.submit_action_form('//button[@title="Rerun"]')
         if self.profile == "readonly":
             self.wait_and_click(By.LINK_TEXT, "Back")
@@ -433,7 +433,8 @@ class SeleniumTest(unittest.TestCase):
             ).send_keys(Keys.ARROW_RIGHT)
         self.wait_for_element(
             By.XPATH,
-            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
+            '//div[@id="filebrowser"]//a[text() = "%s" or text() = "%s/"]'
+            % (pathlist[-1], pathlist[-1]),
         ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
@@ -658,6 +659,7 @@ class SeleniumTest(unittest.TestCase):
             driver.find_element(By.XPATH, '//div[@role="alert"]')
         except:
             # if no alert was found, then we just wait for the spinner ...
+            self.wait.until(EC.url_contains("/dashboard"))
             self.wait_for_spinner_absence()
         else:
             # ... otherwise (i.e. if an alert was found) the login is wronng
@@ -822,7 +824,7 @@ class SeleniumTest(unittest.TestCase):
         confirmation = form.get_attribute("data-confirmation")
         button.click()
         if confirmation:
-            alert = self.driver.switch_to_alert()
+            alert = self.wait.until(EC.alert_is_present())
             self.assertEqual(confirmation, alert.text)
             alert.accept()
 
