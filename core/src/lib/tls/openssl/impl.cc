@@ -768,7 +768,22 @@ int TlsOpenSsl::TlsBsockPeekn(const BareosSocket*, char* ptr, int32_t nbytes)
     return 0;
   }
 
-  return SSL_peek(openssl_.get(), ptr, nbytes);
+  auto ret = SSL_peek(openssl_.get(), ptr, nbytes);
+  if (ret > 0) { return ret; }
+
+  auto err = SSL_get_error(openssl_.get(), ret);
+  switch (err) {
+    case SSL_ERROR_WANT_READ:
+      [[fallthrough]];
+    case SSL_ERROR_WANT_WRITE: {
+      return 0;  // the caller should retry
+    } break;
+    default: {
+      LogSSLError(err);
+      // ret may be 0, so just return -1
+      return -1;
+    }
+  }
 }
 
 bool TlsOpenSsl::KtlsSendStatus()
