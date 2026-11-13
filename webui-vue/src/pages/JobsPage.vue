@@ -1038,7 +1038,7 @@ async function fetchPage() {
         jobFilter: jobFilter.value,
         clientFilter: clientFilter.value,
         sortColumn: serverSortColumn ?? '',
-        descending,
+        descending: serverSortColumn ? descending : true,
         searchTerm: normalizedSearchTerm,
       })
     )
