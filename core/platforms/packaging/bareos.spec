@@ -919,7 +919,7 @@ popd
 
 
 %if 0%{?webui}
-# %doc copies these directories after %install.
+# Include the shared helper when RPM copies each documentation directory.
 install -m 644 systemtests/scripts/selenium_screenshots.py \
   webui/tests/selenium/selenium_screenshots.py
 install -m 644 systemtests/scripts/selenium_screenshots.py \
