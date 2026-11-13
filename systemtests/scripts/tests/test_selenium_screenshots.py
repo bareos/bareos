@@ -12,6 +12,9 @@
 import io
 import os
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -20,6 +23,30 @@ from selenium_screenshots import ScreenshotResult
 
 
 class ScreenshotResultTest(unittest.TestCase):
+    def test_packaged_scripts_start_without_source_tree(self):
+        root = Path(__file__).resolve().parents[3]
+        helper = root / "systemtests/scripts/selenium_screenshots.py"
+        for script in (
+            root / "webui/tests/selenium/webui-php-selenium-test.py",
+            root / "webui-vue/tests/selenium/webui-selenium-test.py",
+        ):
+            with self.subTest(script=script.name):
+                with tempfile.TemporaryDirectory() as directory:
+                    shutil.copy2(script, directory)
+                    shutil.copy2(helper, directory)
+                    environment = dict(os.environ)
+                    environment.pop("PYTHONPATH", None)
+                    result = subprocess.run(
+                        [sys.executable, str(Path(directory) / script.name), "--help"],
+                        cwd=directory,
+                        env=environment,
+                        capture_output=True,
+                        text=True,
+                        timeout=15,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("usage:", result.stdout.lower())
+
     def test_failures_and_errors_capture_before_browser_teardown(self):
         class BrowserCase(unittest.TestCase):
             def setUp(self):
