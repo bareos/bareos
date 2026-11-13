@@ -115,6 +115,7 @@ static PoolResource* res_pool;
 static MessagesResource* res_msgs;
 static CounterResource* res_counter;
 static UserResource* res_user;
+static OidcResource* res_oidc;
 
 /* clang-format off */
 static const ResourceItem dir_items[] = {
@@ -181,6 +182,7 @@ static const ResourceItem con_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_con, resource_name_), {config::Required{}}},
   { "Description", CFG_TYPE_STR, ITEM(res_con, description_), {}},
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con, password_), {config::Required{}}},
+  { "Oidc", CFG_TYPE_ALIST_RES, ITEM(res_con, auth_list), {config::Code{R_OIDC}}},
   USER_ACL(res_con, user_acl.ACL_lists),
   ACL_PROFILE(res_con),
   { "UsePamAuthentication", CFG_TYPE_BOOL, ITEM(res_con, use_pam_authentication_), {config::IntroducedIn{18, 2, 4}, config::DefaultValue{"false"}, config::Description{"If set to yes, PAM will be used to authenticate the user on this console. Otherwise, only the credentials of this console resource are used for authentication."}}},
@@ -197,6 +199,13 @@ static const ResourceItem user_items[] = {
   {}
 };
 
+static const ResourceItem oidc_items[] = {
+  { "Name", CFG_TYPE_NAME, ITEM(res_oidc, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
+  { "Url", CFG_TYPE_STDSTR, ITEM(res_oidc, url), {config::Required{}, config::Description{"The url of the identity provider."}}},
+  { "ClientId", CFG_TYPE_STDSTR, ITEM(res_oidc, client_id), {config::Required{}, config::Description{"The client id to use"}}},
+  { "ProfilesClaim", CFG_TYPE_STDSTR, ITEM(res_oidc, roles_name), {config::DefaultValue("roles"), config::Description{"The key in the identity token that contains the bareos profiles"}}},
+  {}
+};
 static const ResourceItem client_items[] = {
   { "Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), {config::Required{}, config::Description{"The name of the resource."}}},
   { "Description", CFG_TYPE_STR, ITEM(res_client, description_), {}},
@@ -474,6 +483,10 @@ static ResourceTable dird_resource_tables[] = {
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
   { "User", "Users", user_items, R_USER, global_resource::Type::User, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
+#ifdef ENABLE_OIDC
+  { "Oidc", "Oidc", oidc_items, R_OIDC, global_resource::Type::Oidc, sizeof(OidcResource),
+    [](){ res_oidc = new OidcResource(); }, reinterpret_cast<BareosResource**>(&res_oidc) },
+#endif
   { }
 };
 
@@ -2149,6 +2162,7 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
     case R_CATALOG:
     case R_MSGS:
     case R_FILESET:
+    case R_OIDC:
       // Resources not containing a resource
       break;
     case R_POOL: {
@@ -2188,6 +2202,8 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
             = std::move(res_con->tls_cert_.allowed_certificate_common_names_);
         p->user_acl.profiles = res_con->user_acl.profiles;
       }
+
+      p->auth_list = res_con->auth_list;
       break;
     }
     case R_USER: {
@@ -3555,68 +3571,70 @@ static void ConfigReadyCallback(ConfigurationParser& t_config)
   ResetAllClientConnectionHandshakeModes(t_config);
 }
 
-static bool AddResourceCopyToEndOfChain(int type,
-                                        BareosResource* new_resource = nullptr)
+static bool AddResourceCopyToEndOfChain(int type, BareosResource* new_resource)
 {
-  if (!new_resource) {
-    switch (type) {
-      case R_DIRECTOR:
-        new_resource = res_dir;
-        res_dir = nullptr;
-        break;
-      case R_CLIENT:
-        new_resource = res_client;
-        res_client = nullptr;
-        break;
-      case R_JOBDEFS:
-      case R_JOB:
-        new_resource = res_job;
-        res_job = nullptr;
-        break;
-      case R_STORAGE:
-        new_resource = res_store;
-        res_store = nullptr;
-        break;
-      case R_CATALOG:
-        new_resource = res_cat;
-        res_cat = nullptr;
-        break;
-      case R_SCHEDULE:
-        new_resource = res_sch;
-        res_sch = nullptr;
-        break;
-      case R_FILESET:
-        new_resource = res_fs;
-        res_fs = nullptr;
-        break;
-      case R_POOL:
-        new_resource = res_pool;
-        res_pool = nullptr;
-        break;
-      case R_MSGS:
-        new_resource = res_msgs;
-        res_msgs = nullptr;
-        break;
-      case R_COUNTER:
-        new_resource = res_counter;
-        res_counter = nullptr;
-        break;
-      case R_PROFILE:
-        new_resource = res_profile;
-        res_profile = nullptr;
-        break;
-      case R_CONSOLE:
-        new_resource = res_con;
-        res_con = nullptr;
-        break;
-      case R_USER:
-        new_resource = res_user;
-        res_user = nullptr;
-        break;
-      default:
-        Dmsg3(100, "Unhandled resource type: %d\n", type);
-        return false;
-    }
+  ASSERT(new_resource);
+  switch (type) {
+    case R_DIRECTOR:
+      ASSERT(new_resource == res_dir);
+      res_dir = nullptr;
+      break;
+    case R_CLIENT:
+      ASSERT(new_resource == res_client);
+      res_client = nullptr;
+      break;
+    case R_JOBDEFS:
+    case R_JOB:
+      ASSERT(new_resource == res_job);
+      res_job = nullptr;
+      break;
+    case R_STORAGE:
+      ASSERT(new_resource == res_store);
+      res_store = nullptr;
+      break;
+    case R_CATALOG:
+      ASSERT(new_resource == res_cat);
+      res_cat = nullptr;
+      break;
+    case R_SCHEDULE:
+      ASSERT(new_resource == res_sch);
+      res_sch = nullptr;
+      break;
+    case R_FILESET:
+      ASSERT(new_resource == res_fs);
+      res_fs = nullptr;
+      break;
+    case R_POOL:
+      ASSERT(new_resource == res_pool);
+      res_pool = nullptr;
+      break;
+    case R_MSGS:
+      ASSERT(new_resource == res_msgs);
+      res_msgs = nullptr;
+      break;
+    case R_COUNTER:
+      ASSERT(new_resource == res_counter);
+      res_counter = nullptr;
+      break;
+    case R_PROFILE:
+      ASSERT(new_resource == res_profile);
+      res_profile = nullptr;
+      break;
+    case R_CONSOLE:
+      ASSERT(new_resource == res_con);
+      res_con = nullptr;
+      break;
+    case R_USER:
+      ASSERT(new_resource == res_user);
+      res_user = nullptr;
+      break;
+    case R_OIDC:
+      ASSERT(new_resource == res_oidc);
+      res_oidc = nullptr;
+      break;
+    default:
+      Dmsg3(100, "Unhandled resource type: %d\n", type);
+      return false;
   }
   return my_config->AppendToResourcesChain(new_resource, type);
 }
@@ -3640,6 +3658,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
   c->rcode_str_ = "R_CONSOLE";
   c->refcnt_ = 1;
   c->internal_ = true;
+  res_con = c;
 
   AddResourceCopyToEndOfChain(R_CONSOLE, c);
 }
@@ -3707,6 +3726,7 @@ static void DumpResource(int type,
     case R_JOB:
     case R_SCHEDULE:
     case R_POOL:
+    case R_OIDC:
       res->PrintConfig(output_formatter_resource, *my_config,
                        hide_sensitive_data, verbose);
       break;
@@ -3915,6 +3935,9 @@ static void FreeResource(BareosResource* res, int type)
       delete p;
       break;
     }
+    case R_OIDC: {
+      delete res;
+    } break;
     default:
       printf(T_("Unknown resource type %d in FreeResource.\n"), type);
       break;
@@ -3932,6 +3955,16 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
 {
   BareosResource* allocated_resource
       = *dird_resource_tables[type].allocated_resource_;
+
+  if (!allocated_resource) {
+    auto type_name = global_resource::GetNameFromType(
+        my_config->GlobalTypeFromLocalType(type));
+    Dmsg0(10,
+          "Trying to save a %.*s resource (type id %d), but none were "
+          "allocated!\n",
+          (int)type_name.size(), type_name.data(), type);
+    return false;
+  }
 
   // Job resources are validated after applying JobDefs
   if (type != R_JOB && type != R_JOBDEFS) {
@@ -3992,7 +4025,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
     return validation && ret;
   }
 
-  if (!AddResourceCopyToEndOfChain(type)) { return false; }
+  if (!AddResourceCopyToEndOfChain(type, allocated_resource)) { return false; }
   return true;
 }
 

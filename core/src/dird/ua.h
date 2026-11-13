@@ -52,6 +52,22 @@ struct UserAcl {
 
   std::vector<std::string> acl_lists[Num_ACL];
 
+  static std::unique_ptr<UserAcl> from_profiles(
+      std::string name,
+      std::span<ProfileResource*> profiles)
+  {
+    auto result = std::make_unique<UserAcl>(std::move(name));
+
+    for (int acl = 0; acl < Num_ACL; ++acl) {
+      auto& list = result->acl_lists[acl];
+      for (auto* profile : profiles) {
+        for (auto* entry : profile->ACL_lists[acl]) { list.push_back(entry); }
+      }
+    }
+
+    return result;
+  }
+
   template <typename Resource,
             AclConfig Resource::* Accessor = &Resource::user_acl>
   static std::unique_ptr<UserAcl> from_config(Resource* res)
