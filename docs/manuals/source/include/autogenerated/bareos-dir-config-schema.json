@@ -3303,6 +3303,11 @@
           "code": 0,
           "equals": true
         },
+        "NtfsChangeJournal": {
+          "datatype": "OPTION",
+          "code": 0,
+          "equals": true
+        },
         "KeepAtime": {
           "datatype": "OPTION",
           "code": 0,

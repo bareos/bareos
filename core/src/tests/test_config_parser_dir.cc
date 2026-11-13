@@ -58,6 +58,24 @@ class ConfigParser_Dir : public ::testing::Test {
   void SetUp() override { InitDirGlobals(); }
 };
 
+TEST_F(ConfigParser_Dir, NtfsChangeJournalOptionRoundTrip)
+{
+  std::unique_ptr<ConfigurationParser> config{
+      InitDirConfig("configs/bareos-configparser-tests", M_ERROR_TERM)};
+  my_config = config.get();
+  ASSERT_TRUE(config->ParseConfig());
+  auto* fileset = static_cast<FilesetResource*>(
+      config->GetResWithName(R_FILESET, "NtfsJournal"));
+  ASSERT_NE(fileset, nullptr);
+  sprintoutput.clear();
+  OutputFormatter formatter(sprintit, nullptr, nullptr, nullptr);
+  OutputFormatterResource send(&formatter);
+  fileset->PrintConfig(send, *config);
+  EXPECT_NE(sprintoutput.find("NtfsChangeJournal = Yes"), std::string::npos)
+      << sprintoutput;
+  my_config = nullptr;
+}
+
 TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
 {
   std::string path_to_config_file
