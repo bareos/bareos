@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,13 +23,38 @@
 #define BAREOS_DIRD_CONSOLE_CONNECTION_LEASE_H_
 
 #include <atomic>
+#include "include/baconfig.h"
 
 class ConsoleConnectionLease {
   static std::atomic<std::size_t> num_leases;
+  bool has_lease{false};
 
  public:
-  ConsoleConnectionLease() { num_leases++; }
-  ~ConsoleConnectionLease() { num_leases--; }
+  ConsoleConnectionLease()
+  {
+    has_lease = true;
+    num_leases++;
+  }
+  ConsoleConnectionLease(ConsoleConnectionLease&& lease)
+  {
+    std::swap(has_lease, lease.has_lease);
+  }
+
+  ConsoleConnectionLease& operator=(ConsoleConnectionLease&& lease)
+  {
+    std::swap(has_lease, lease.has_lease);
+    return *this;
+  }
+
+  ConsoleConnectionLease(const ConsoleConnectionLease&) = delete;
+  ConsoleConnectionLease& operator=(const ConsoleConnectionLease&) = delete;
+
+  ~ConsoleConnectionLease()
+  {
+    if (!has_lease) { return; }
+    auto before = num_leases.fetch_sub(1);
+    ASSERT(before > 0);
+  }
   static std::size_t get_num_leases() { return num_leases; }
 };
 #endif  // BAREOS_DIRD_CONSOLE_CONNECTION_LEASE_H_

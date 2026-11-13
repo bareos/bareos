@@ -26,6 +26,7 @@
 #include "dird/ua.h"
 #include "lib/bsock.h"
 #include "dird/dird_conf.h"
+#include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
 
 #include <string>
@@ -39,13 +40,14 @@ class UaContext;
 
 bool AuthenticateWithFileDaemon(JobControlRecord* jcr, ClientResource* client);
 
-struct DirectorAuth : ::TlsConfigProvider {
+struct DirectorAuth : ::AuthenticationProvider {
   DirectorAuth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)}
   {
   }
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view name) override;
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
@@ -58,6 +60,8 @@ struct DirectorAuth : ::TlsConfigProvider {
     ConsoleResource* res{};
     ConsoleConnectionLease lease;
 
+    Md5InboundAuthenticator auth;
+
     // the default console is allowed to do everything
     bool is_default{false};
 
@@ -66,6 +70,7 @@ struct DirectorAuth : ::TlsConfigProvider {
 
   struct client_data {
     ClientResource* res;
+    Md5InboundAuthenticator auth;
   };
 
   inbound_type GetType() const { return type; }

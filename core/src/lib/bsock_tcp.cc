@@ -351,7 +351,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     BErrNo be;
     Dmsg1(250,
           "Cannot set TCP_ULP on socket: ERR=%s.\n"
-          "Is the tls module not loaded?  kTLS will not work without it.",
+          "Is the tls module not loaded?  kTLS will not work without it.\n",
           be.bstrerror());
   }
 #  endif
