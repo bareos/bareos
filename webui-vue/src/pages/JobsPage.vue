@@ -1220,7 +1220,7 @@ const columns = computed(() => [
   { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right', sortable: true,
     sort: (_a, _b, rowA, rowB) => jobSpeedBps(rowA) - jobSpeedBps(rowB) },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center', sortable: true },
-  { name: 'comment',   label: 'Comment',  field: 'comment',   align: 'left',   sortable: true,
+  { name: 'comment',   label: 'Comment',  field: 'comment',   align: 'left',   sortable: false,
     classes: 'ellipsis', style: 'max-width:240px' },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
 ].map((col) => ({ ...col, label: col.label ? t(col.label) : col.label })))
