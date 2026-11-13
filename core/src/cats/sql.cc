@@ -141,7 +141,7 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
   // jobs share a connection otherwise
   if (!BatchInsertAvailable()) return true;
 
-  struct max_connections_context context{};
+  struct max_connections_context context {};
   PoolMem query(PM_MESSAGE);
 
   // Check max_connections setting
@@ -421,6 +421,7 @@ void BareosDb::ListDashes(OutputFormatter* send)
   for (int i = 0; i < num_fields; i++) {
     field = SqlFetchField();
     if (!field) { break; }
+    if (send->IsHiddenColumn(i)) { continue; }
     len = MaxLength(field->max_length + 2);
     for (int j = 0; j < len; j++) { send->Decoration("-"); }
     send->Decoration("+");
@@ -801,11 +802,10 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
           }
-          if (i == num_fields - 1) { value.strcat("\n"); }
-
           // Use value format string to send preformated value
           send->ObjectKeyValue(field->name, row[i], value.c_str());
         }
+        send->Decoration("\n");
         send->ObjectEnd();
       }
       ListDashes(send);

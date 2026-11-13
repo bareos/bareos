@@ -728,6 +728,10 @@ void BareosDb::ListJobRecords(
   const std::string order_range
       = (descending ? std::string(" DESC") : std::string()) + range;
 
+  if (!count && type != VERT_LIST) {
+    sendit->AddHiddenColumn(10); /* JobErrors: required for DISTINCT sorting */
+  }
+
   if (count) {
     if (last) {
       /* Mirrors the "last job per name" dedup subquery used by
