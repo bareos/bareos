@@ -1164,7 +1164,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
   if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
     // List JOBLOG
-    if (GetArgValue(ua, NT_("jobids"))) {
+    if (const char* batch = GetArgValue(ua, NT_("jobids"))) {
+      size_t entries = 1;
+      for (const char* p = batch; *p; ++p) {
+        if (*p == ',' && ++entries > kMaxJoblogBatchJobIds) {
+          ua->ErrorMsg(T_("jobids accepts at most %zu entries\n"),
+                       kMaxJoblogBatchJobIds);
+          return false;
+        }
+      }
       // Batch variant: one query for several JobIds instead of one
       // "list joblog jobid=" round-trip per job. ACL filtering happens
       // per-JobId inside GetAclFilteredJobidsFromCmdline(); an unauthorized

@@ -78,6 +78,8 @@ enum e_list_type
   E_LIST_INIT
 };
 
+inline constexpr size_t kMaxJoblogBatchJobIds = 1000;
+
 /**
  * Structure used when calling db_get_query_ids()
  *  allows the subroutine to return a list of ids.
