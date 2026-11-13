@@ -47,7 +47,7 @@ filter_pids_by_config_dir()
       echo "$p"
       continue
     fi
-    args=$(${PS:-ps} -o args= -p "$p" 2>/dev/null)
+    args=$(${PS:-ps} -ww -o args= -p "$p" 2>/dev/null)
     case "${args}" in
       *" -c ${BAREOS_CONFIG_DIR}" | *" -c ${BAREOS_CONFIG_DIR} "*) echo "$p" ;;
     esac
@@ -87,7 +87,7 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
-  pid=$(filter_pids_by_config_dir $(ps -A -o pid= -o args= | awk -v name="$base" '
+  pid=$(filter_pids_by_config_dir $(${PS:-ps} -ww -A -o pid= -o args= | awk -v name="$base" '
     {
       command = $2
       sub(/^.*\//, "", command)
