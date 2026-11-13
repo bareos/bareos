@@ -20,6 +20,7 @@
 
 set -e
 . "$1"
+python_executable="${2:?Python interpreter path required}"
 
 unset BAREOS_CONFIG_DIR
 PIDOF=/bin/false
@@ -35,9 +36,9 @@ config_exact_pid=""
 config_trailing_pid=""
 trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
 
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${name}-other" &
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${name}-other" "$python_executable" &
 other_pid=$!
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${prefix}Ax" &
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${prefix}Ax" "$python_executable" &
 regex_pid=$!
 sleep 0.1
 
@@ -48,7 +49,7 @@ fi
 killproc "$name" 0 -TERM >/dev/null
 kill -0 "$other_pid" "$regex_pid"
 
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "/tmp/$name" &
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "/tmp/$name" "$python_executable" &
 exact_pid=$!
 sleep 0.1
 
@@ -72,14 +73,14 @@ if [ -n "$(pidofproc "$name" 0)" ]; then
 fi
 
 BAREOS_CONFIG_DIR="/tmp/${prefix}_config"
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2"' \
-  _ "/tmp/$name" "${BAREOS_CONFIG_DIR}-other" &
+bash -c 'exec -a "$1" "$3" -c "import time; time.sleep(30)" -c "$2"' \
+  _ "/tmp/$name" "${BAREOS_CONFIG_DIR}-other" "$python_executable" &
 config_other_pid=$!
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2"' \
-  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" &
+bash -c 'exec -a "$1" "$3" -c "import time; time.sleep(30)" -c "$2"' \
+  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" "$python_executable" &
 config_exact_pid=$!
-bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2" --extra' \
-  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" &
+bash -c 'exec -a "$1" "$3" -c "import time; time.sleep(30)" -c "$2" --extra' \
+  _ "/tmp/$name" "$BAREOS_CONFIG_DIR" "$python_executable" &
 config_trailing_pid=$!
 sleep 0.1
 
