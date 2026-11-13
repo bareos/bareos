@@ -1067,6 +1067,7 @@ static bool UpdateJob(UaContext* ua)
            "specified.\n"));
     return false;
   }
+  std::string comment_assignment;
   if (comment) {
     if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
       ua->ErrorMsg(T_("Not authorized to update Job comment.\n"));
@@ -1089,16 +1090,7 @@ static bool UpdateJob(UaContext* ua)
       ua->ErrorMsg(T_("Could not escape comment.\n"));
       return false;
     }
-    Mmsg(cmd, "UPDATE Job SET Comment='%s' WHERE JobId=%s", esc->c_str(),
-         edit_int64(jr.JobId, ed1));
-    if (!ua->db->SqlQuery(cmd.c_str())) {
-      ua->ErrorMsg("%s", ua->db->strerror());
-      return false;
-    }
-    ua->InfoMsg(T_("New Comment is: %s\n"), comment);
-    if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
-      return true;
-    }
+    comment_assignment = "Comment='" + *esc + "'";
   }
   if (client_name) {
     if (!GetClientDbr(ua, &cr)) { return false; }
@@ -1122,7 +1114,7 @@ static bool UpdateJob(UaContext* ua)
 
     StartTime = StrToUtime(start_time);
     if (StartTime == 0) {
-      ua->ErrorMsg(T_("Improper date format: %s\n"), ua->argv[i]);
+      ua->ErrorMsg(T_("Improper date format: %s\n"), start_time);
       return false;
     }
     delta_start = StartTime - jr.StartTime;
@@ -1138,16 +1130,27 @@ static bool UpdateJob(UaContext* ua)
     bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
   }
 
-  Mmsg(cmd,
-       "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
-       "EndTime='%s',JobTDate=%s, FileSetId='%s', Type='%c' WHERE JobId=%s",
-       escaped_job_name->c_str(), edit_int64(jr.ClientId, ed1), jr.cStartTime,
-       jr.cSchedTime, jr.cEndTime, edit_uint64(jr.JobTDate, ed2),
-       edit_uint64(jr.FileSetId, ed3), jr.JobType, edit_int64(jr.JobId, ed4));
+  if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
+    Mmsg(cmd, "UPDATE Job SET %s", comment_assignment.c_str());
+  } else {
+    Mmsg(cmd,
+         "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
+         "EndTime='%s',JobTDate=%s, FileSetId='%s', Type='%c'",
+         escaped_job_name->c_str(), edit_int64(jr.ClientId, ed1), jr.cStartTime,
+         jr.cSchedTime, jr.cEndTime, edit_uint64(jr.JobTDate, ed2),
+         edit_uint64(jr.FileSetId, ed3), jr.JobType);
+    if (comment) {
+      PmStrcat(cmd, ", ");
+      PmStrcat(cmd, comment_assignment.c_str());
+    }
+  }
+  PmStrcat(cmd, " WHERE JobId=");
+  PmStrcat(cmd, edit_int64(jr.JobId, ed4));
   if (!ua->db->SqlQuery(cmd.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
     return false;
   }
+  if (comment) { ua->InfoMsg(T_("New Comment is: %s\n"), comment); }
   return true;
 }
 
