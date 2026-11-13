@@ -396,6 +396,24 @@ for (const logFocus of ['', 'ok']) {
   }
 }
 
+test('keeps Comment non-sortable without changing the active job order', async ({ page }) => {
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  const firstId = page.locator('tbody tr a.text-primary').first()
+  await expect(firstId).toBeVisible()
+  const originalFirstId = (await firstId.textContent()).trim()
+  await page.getByRole('button', { name: 'Choose columns' }).click()
+  await page.locator('.q-menu').getByText('Comment', { exact: true }).click()
+  await page.keyboard.press('Escape')
+
+  const commentHeader = page.getByRole('columnheader', { name: /^Comment\b/ })
+  await expect(commentHeader.locator('.q-table__sort-icon')).toHaveCount(0)
+  await commentHeader.click()
+  await commentHeader.click()
+  await expect(firstId).toHaveText(originalFirstId)
+  await expect(page.getByRole('columnheader', { name: /^ID\b/ })).toHaveClass(/sort-desc/)
+})
+
 test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-jobs', /#\/jobs/)
