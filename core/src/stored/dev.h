@@ -217,10 +217,8 @@ struct DeviceType {
 class Device {
  private:
   int blocked_{};        /**< Set if we must wait (i.e. change tape) */
-  int count_{};          /**< Mutex use count -- DEBUG only */
   int num_reserved_{};   /**< Counter of device reservations */
   slot_number_t slot_{}; /**< Slot loaded in drive or -1 if none */
-  pthread_t pid_{};      /**< Thread that locked -- DEBUG only */
   bool unload_{false};   /**< Set when Volume must be unloaded */
   bool load_{false};     /**< Set when Volume must be loaded */
 
@@ -247,6 +245,7 @@ class Device {
   char capabilities[CAP_BYTES]{}; /**< Capabilities mask */
   char state[ST_BYTES]{};     /**< State mask */
   int dev_errno{};            /**< Our own errno */
+  uint64_t close_failure_count{};
   int oflags{};               /**< Read/write flags */
   DeviceMode open_mode{DeviceMode::kUndefined};
   std::string device_type{};
@@ -487,8 +486,7 @@ public:
   virtual bool d_flush(DeviceControlRecord*) { return true; };
 
     // Locking and blocking calls
-  void rLock(bool locked = false);
-  void rUnlock();
+  void WaitUntilOtherThreadReleasesBlock();
   void Lock();
   void Unlock();
   void Lock_acquire();

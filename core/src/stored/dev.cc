@@ -26,7 +26,8 @@
  * low level operations on device (storage device)
  *
  * NOTE!!!! None of these routines are reentrant. You must
- * use dev->rLock() and dev->Unlock() at a higher level,
+ * use dev->Lock(), dev->WaitUntilOtherThreadReleasesBlock(), and dev->Unlock()
+ * at a higher level,
  * or use the xxx_device() equivalents. By moving the
  * thread synchronization to a higher level, we permit
  * the higher level routines to "seize" the device and
@@ -936,6 +937,7 @@ bool Device::close(DeviceControlRecord* dcr)
     Mmsg2(errmsg, T_("Unable to close device %s. ERR=%s\n"), print_name(),
           be.bstrerror());
     dev_errno = errno;
+    ++close_failure_count;
     retval = false;
   }
 
