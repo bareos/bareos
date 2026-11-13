@@ -33,7 +33,7 @@ auth::Status Verifier::step(std::vector<char>&, std::span<const char> received)
 {
   if (received.size() != 0) {
     error = "expected empty payload";
-    current_state = ERROR;
+    current_state = ERROR_STATE;
     return auth::Status::Error;
   }
 
@@ -47,7 +47,7 @@ bool Prover::step(std::vector<char>&, std::span<const char> request)
 {
   if (request.size() != 0) {
     error = "expected empty payload";
-    current_state = ERROR;
+    current_state = ERROR_STATE;
     return false;
   }
 
