@@ -46,7 +46,7 @@ struct Verifier : public auth::Verifier {
   {
     INITIAL = 0,
     ACCEPTED_RESULT,
-    ERROR,
+    ERROR_STATE,
   } current_state{INITIAL};
 
   std::string error;
@@ -69,10 +69,9 @@ struct Prover : public auth::Prover {
   {
     WAITING_FOR_CHALLENGE = 0,
     RESPONSE_SENT,
-    ERROR,
+    ERROR_STATE,
   } current_state{WAITING_FOR_CHALLENGE};
 };
 };  // namespace auth::Tls
-
 
 #endif  // BAREOS_LIB_BAUTH_TLS_H_

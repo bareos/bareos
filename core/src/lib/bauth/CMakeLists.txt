@@ -73,12 +73,13 @@ add_library(bauth_cram-md5 OBJECT)
 target_sources(bauth_cram-md5 PRIVATE cram_md5.cc)
 target_link_libraries(
   bauth_cram-md5
-  PRIVATE OpenSSL::SSL
+  PRIVATE OpenSSL::SSL ${THREADS_THREADS}
   INTERFACE Bareos::Lib
 )
 
 add_library(bauth_trust OBJECT)
 target_sources(bauth_trust PRIVATE tls.cc)
+target_link_libraries(bauth_trust PRIVATE ${THREADS_THREADS})
 
 define_auth_plugin(cram-md5 VERIFIER bauth_cram-md5 PROVER bauth_cram-md5)
 
