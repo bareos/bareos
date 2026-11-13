@@ -188,6 +188,7 @@ TEST(DirectorConnection, RejectsUnsafeOrFailedPamWithoutLeakingCredentials)
     std::optional<PamCredentials> credentials;
     std::string final_message;
     bool sends_credentials;
+    int32_t final_signal = 0;
   };
   const Scenario scenarios[]{
       {false, PamCredentials{"pam-user", "pam-secret"}, {}, false},
@@ -207,6 +208,11 @@ TEST(DirectorConnection, RejectsUnsafeOrFailedPamWithoutLeakingCredentials)
       {true, PamCredentials{"pam-user", "pam-secret"},
        "1999 Authorization failed", true},
       {true, PamCredentials{"pam-user", "pam-secret"}, {}, true},
+      {true,
+       PamCredentials{"pam-user", "pam-secret"},
+       {},
+       true,
+       BNET_TERMINATE},
   };
   for (const auto& scenario : scenarios) {
     int sockets[2] = {-1, -1};
@@ -222,6 +228,9 @@ TEST(DirectorConnection, RejectsUnsafeOrFailedPamWithoutLeakingCredentials)
                "PAM required");
     if (!scenario.final_message.empty()) {
       WriteFrame(sockets[1], scenario.final_message);
+    }
+    if (scenario.final_signal) {
+      WriteSignal(sockets[1], scenario.final_signal);
     }
     shutdown(sockets[1], SHUT_WR);
 

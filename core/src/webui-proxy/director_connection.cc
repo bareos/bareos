@@ -229,7 +229,9 @@ bool DirectorConnection::HasPendingInput(int timeout_ms) const
   if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
   assert(fd_ >= 0);
 
-  struct pollfd pfd{fd_, POLLIN, 0};
+  struct pollfd pfd {
+    fd_, POLLIN, 0
+  };
   int rc = poll(&pfd, 1, timeout_ms);
   return rc > 0 && (pfd.revents & POLLIN);
 }
@@ -424,12 +426,14 @@ void DirectorConnection::FinishAuthentication(const DirectorConfig& cfg)
     const auto& credentials = *cfg.pam_credentials;
     SendFrame(std::to_string(kMessageIdPamUserCredentials) + separator
               + credentials.username + separator + credentials.password);
+    int32_t signal = 0;
     try {
-      welcome = RecvFrame();
+      welcome = RecvFrame(&signal);
     } catch (const std::runtime_error&) {
       throw std::runtime_error("Director: PAM authentication failed");
     }
-    if (AuthenticationMessageId(welcome) != kMessageIdOk) {
+    if (signal == BNET_TERMINATE
+        || AuthenticationMessageId(welcome) != kMessageIdOk) {
       throw std::runtime_error("Director: PAM authentication failed");
     }
   }
@@ -476,7 +480,7 @@ DirectorConnection DirectorConnection::Connect(const DirectorConfig& cfg)
 
 void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
 {
-  struct addrinfo hints{};
+  struct addrinfo hints {};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 

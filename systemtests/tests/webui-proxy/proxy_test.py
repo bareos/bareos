@@ -38,7 +38,6 @@ import time
 import unittest
 from unittest import mock
 
-
 ROOT = Path.cwd()
 WORK = ROOT / "working"
 DEFAULT_CONFIG = ROOT / "config/default.ini"

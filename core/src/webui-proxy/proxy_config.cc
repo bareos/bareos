@@ -49,7 +49,7 @@ struct ConfigFd {
 
 void CheckConfigPermissions(int fd, const std::string& path, bool directory)
 {
-  struct stat metadata{};
+  struct stat metadata {};
   if (fstat(fd, &metadata) != 0) {
     throw ProxyConfigFileError(
         "Proxy config: cannot inspect permissions of '" + path
