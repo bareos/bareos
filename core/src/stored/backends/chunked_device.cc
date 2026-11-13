@@ -219,7 +219,7 @@ bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
   PoolMem inflight_file(PM_FNAME);
 
-  Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname,
+  Mmsg(inflight_file, "%s/%s@%05d", me->working_directory, request->volname,
        request->chunk);
   PmStrcat(inflight_file, "%inflight");
 
@@ -247,7 +247,7 @@ void ChunkedDevice::ClearInflightChunk(chunk_io_request* request)
   PoolMem inflight_file(PM_FNAME);
 
   if (request) {
-    Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname,
+    Mmsg(inflight_file, "%s/%s@%05d", me->working_directory, request->volname,
          request->chunk);
     PmStrcat(inflight_file, "%inflight");
 
@@ -270,7 +270,7 @@ bool ChunkedDevice::IsInflightChunk(chunk_io_request* request)
   struct stat st;
   PoolMem inflight_file(PM_FNAME);
 
-  Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname,
+  Mmsg(inflight_file, "%s/%s@%05d", me->working_directory, request->volname,
        request->chunk);
   PmStrcat(inflight_file, "%inflight");
 
@@ -1259,7 +1259,7 @@ static int ListIoRequest(void* request, void* data)
   DeviceStatusInformation* dst = (DeviceStatusInformation*)data;
   PoolMem status(PM_MESSAGE);
 
-  status.bsprintf("   /%s/%04d - %" PRIu32 " (try=%d)\n", io_request->volname,
+  status.bsprintf("   /%s/%05d - %" PRIu32 " (try=%d)\n", io_request->volname,
                   io_request->chunk, io_request->wbuflen, io_request->tries);
   dst->status_length = PmStrcat(dst->status, status.c_str());
 
