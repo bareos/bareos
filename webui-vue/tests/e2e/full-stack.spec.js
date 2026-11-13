@@ -290,6 +290,62 @@ test('opens jobs and job details through the real director connection', async ({
   await expect(page.getByText('Job Log', { exact: true })).toBeVisible()
 })
 
+for (const logFocus of ['', 'ok']) {
+  for (const [direction, opposite, first, wrapped] of [
+    ['Next issue', 'Previous issue', 'Warning: first issue', 'Fatal error: last issue'],
+    ['Previous issue', 'Next issue', 'Fatal error: last issue', 'Warning: first issue'],
+  ]) {
+    test(`navigates ${direction} from ${logFocus || 'initial'} log focus`, async ({ page }) => {
+      await page.routeWebSocket(/\/ws/, (socket) => {
+        const server = socket.connectToServer()
+        socket.onMessage((message) => {
+          const request = JSON.parse(message)
+          if (request.command?.startsWith('list joblog jobid=')) {
+            socket.send(JSON.stringify({
+              type: 'response',
+              id: request.id,
+              data: {
+                joblog: [
+                  { logtext: 'Warning: first issue' },
+                  { logtext: 'Error: middle issue' },
+                  { logtext: 'Fatal error: last issue' },
+                  { logtext: 'Termination: Backup OK' },
+                ],
+              },
+            }))
+          } else {
+            server.send(message)
+          }
+        })
+      })
+
+      await login(page)
+      await openNav(page, 'nav-jobs', /#\/jobs/)
+      const jobLink = page.locator('tbody tr a.text-primary').first()
+      await expect(jobLink).toBeVisible()
+      const jobId = (await jobLink.textContent())?.trim()
+      expect(jobId).toMatch(/^\d+$/)
+      await page.goto(`/#/jobs/${jobId}${logFocus ? `?logFocus=${logFocus}` : ''}`)
+      await expect(page.locator('.log-line')).toHaveCount(4)
+      const focused = page.locator('.log-line--focused')
+      if (logFocus) {
+        await expect(focused).toHaveText('Termination: Backup OK')
+      } else {
+        await expect(focused).toHaveCount(0)
+      }
+
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText(first)
+      await page.getByRole('button', { name: opposite, exact: true }).click()
+      await expect(focused).toHaveText(wrapped)
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText(first)
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText('Error: middle issue')
+    })
+  }
+}
+
 test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
   await login(page)
   await openNav(page, 'nav-jobs', /#\/jobs/)
