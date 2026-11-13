@@ -54,7 +54,7 @@ CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
     END as Duration,
-Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus,Job.JobErrors
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
@@ -105,7 +105,7 @@ CASE
     WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
     ELSE CURRENT_TIMESTAMP(0) - Job.starttime
     END as Duration,
-Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus,Job.JobErrors
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId

@@ -87,6 +87,25 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_list_keys,
         )
+        plain_director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+        for last in ("", " last"):
+            with self.subTest(format="text", last=last):
+                output = plain_director.call(
+                    f"list jobs{last} sortby=joberrors"
+                ).decode("utf-8")
+                lines = output.splitlines()
+                rows = [line for line in lines if line.startswith("|")]
+                borders = [line for line in lines if line.startswith("+")]
+                self.assertGreaterEqual(len(rows), 2)
+                self.assertEqual(len(borders), 3)
+                self.assertTrue(all(row.count("|") == 11 for row in rows))
+                self.assertTrue(all(len(line) == len(rows[0]) for line in borders))
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
 
@@ -130,6 +149,34 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_long_list_keys,
         )
+
+        original_errors = director.call(
+            f'.sql query="SELECT JobErrors FROM Job WHERE JobId={backup_jobid_incremental}"'
+        )["query"][0]["joberrors"]
+        director.call(
+            f'.sql query="UPDATE Job SET JobErrors=123 WHERE JobId={backup_jobid_incremental}"'
+        )
+        try:
+            for last in ("", " last"):
+                for reverse in ("", " reverse"):
+                    with self.subTest(last=last, reverse=reverse):
+                        long_jobs = director.call(f"llist jobs{last}")["jobs"]
+                        errors = {
+                            job["jobid"]: int(job["joberrors"]) for job in long_jobs
+                        }
+                        jobs = director.call(
+                            f"list jobs{last} sortby=joberrors{reverse}"
+                        )["jobs"]
+                        self.assertEqual(set(jobs[0]), set(expected_list_keys))
+                        self.assertEqual({job["jobid"] for job in jobs}, set(errors))
+                        sorted_errors = [errors[job["jobid"]] for job in jobs]
+                        self.assertEqual(
+                            sorted_errors, sorted(sorted_errors, reverse=bool(reverse))
+                        )
+        finally:
+            director.call(
+                f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
+            )
 
         # Long list with options
 
