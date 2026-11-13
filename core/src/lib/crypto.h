@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,8 +86,8 @@ typedef enum
   CRYPTO_CIPHER_CAMELLIA_128_CBC = 6,
   CRYPTO_CIPHER_CAMELLIA_192_CBC = 7,
   CRYPTO_CIPHER_CAMELLIA_256_CBC = 8,
-  CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 = 9,
-  CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 = 10
+  CRYPTO_CIPHER_AES_128_GCM = 9,
+  CRYPTO_CIPHER_AES_256_GCM = 10,
 } crypto_cipher_t;
 
 /* Crypto API Errors */
