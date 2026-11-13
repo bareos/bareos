@@ -150,7 +150,7 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('list jobs count jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: commandsA.get('llist jobs count jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: { jobs: [{ count: '2' }] },
       }),
     })
@@ -158,7 +158,7 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
+        id: commandsB.get('llist jobs count jobstatus=T joblevel=F jobtype=B job="CommonJob" client="common-fd"'),
         data: { jobs: [{ count: '2' }] },
       }),
     })
@@ -261,14 +261,14 @@ describe('jobs aggregate helpers', () => {
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('list jobs count jobstatus=f'),
+        id: commandsA.get('llist jobs count jobstatus=f'),
         data: { jobs: [{ count: '1' }] },
       }),
     })
     socketA.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsA.get('list jobs count jobstatus=E'),
+        id: commandsA.get('llist jobs count jobstatus=E'),
         data: { jobs: [{ count: '1' }] },
       }),
     })
@@ -276,14 +276,14 @@ describe('jobs aggregate helpers', () => {
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=f'),
+        id: commandsB.get('llist jobs count jobstatus=f'),
         data: { jobs: [{ count: '1' }] },
       }),
     })
     socketB.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commandsB.get('list jobs count jobstatus=E'),
+        id: commandsB.get('llist jobs count jobstatus=E'),
         data: { jobs: [{ count: '1' }] },
       }),
     })
@@ -398,7 +398,7 @@ describe('jobs aggregate helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commands.get('list jobs count search="fd-2"'),
+        id: commands.get('llist jobs count search="fd-2"'),
         data: { jobs: [{ count: '2' }] },
       }),
     })
@@ -466,7 +466,7 @@ describe('jobs aggregate helpers', () => {
       })
     )
     expect(commands.has('llist jobs last current enabled reverse limit=20 offset=0 sortby=starttime')).toBe(true)
-    expect(commands.has('list jobs count last current enabled')).toBe(true)
+    expect(commands.has('llist jobs count last current enabled')).toBe(true)
 
     socket.onmessage?.({
       data: JSON.stringify({
@@ -484,7 +484,7 @@ describe('jobs aggregate helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commands.get('list jobs count last current enabled'),
+        id: commands.get('llist jobs count last current enabled'),
         data: { jobs: [{ count: '25' }] },
       }),
     })
@@ -531,7 +531,7 @@ describe('jobs aggregate helpers', () => {
       })
     )
     expect(commands.has('llist jobs reverse limit=2 offset=0 sortby=jobid days=1 jobstatus=W,E,f,A')).toBe(true)
-    expect(commands.has('list jobs count days=1 jobstatus=W,E,f,A')).toBe(true)
+    expect(commands.has('llist jobs count days=1 jobstatus=W,E,f,A')).toBe(true)
 
     socket.onmessage?.({
       data: JSON.stringify({
@@ -548,7 +548,7 @@ describe('jobs aggregate helpers', () => {
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response',
-        id: commands.get('list jobs count days=1 jobstatus=W,E,f,A'),
+        id: commands.get('llist jobs count days=1 jobstatus=W,E,f,A'),
         data: { jobs: [{ count: '5' }] },
       }),
     })

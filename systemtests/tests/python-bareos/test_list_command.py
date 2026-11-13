@@ -42,6 +42,153 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_job_counts_respect_list_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        other_jobid = self.run_job(admin, "backup-test2-fd", "Full", wait=True)
+        self.configure_add(
+            admin,
+            "consoles",
+            "count-regex-deny",
+            "console=count-regex-deny password=secret profile=operator "
+            'jobacl="!backup-test2-fd,backup-.*,historical-.*" '
+            "tlsenable=no tlsrequire=no",
+        )
+        self.configure_add(
+            admin,
+            "consoles",
+            "count-no-fileset",
+            "console=count-no-fileset password=secret profile=operator "
+            "filesetacl=!SelfTest tlsenable=no tlsrequire=no",
+        )
+
+        for username in (
+            "client-bareos-fd",
+            "job-backup-bareos-fd",
+            "poolnotfull",
+            "count-regex-deny",
+            "count-no-fileset",
+        ):
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            if username == "count-regex-deny":
+                names = {row["name"] for row in console.call("list jobs")["jobs"]}
+                self.assertIn("backup-bareos-fd", names)
+                self.assertNotIn("backup-test2-fd", names)
+            if username == "count-no-fileset":
+                short_ids = {row["jobid"] for row in console.call("list jobs")["jobs"]}
+                long_ids = {row["jobid"] for row in console.call("llist jobs")["jobs"]}
+                self.assertIn(str(jobid), short_ids)
+                self.assertNotIn(str(jobid), long_ids)
+            for command in ("list", "llist"):
+                for suffix in (
+                    "",
+                    " last",
+                    " current",
+                    " last current",
+                    " search=backup",
+                ):
+                    with self.subTest(console=username, command=command, suffix=suffix):
+                        rows = console.call(f"{command} jobs{suffix}")["jobs"]
+                        count = console.call(f"{command} jobs count{suffix}")["jobs"][0]
+                        self.assertEqual(int(count["count"]), len(rows))
+                        paged_count = console.call(
+                            f"{command} jobs count{suffix} limit=0 offset=1"
+                        )["jobs"][0]
+                        self.assertEqual(int(paged_count["count"]), len(rows))
+
+        admin.call(
+            f".sql query=\"UPDATE Job SET Name='historical-count' WHERE JobId={jobid}\""
+        )
+        try:
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="count-regex-deny",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                for suffix in ("", " last", " search=historical"):
+                    rows = console.call(f"{command} jobs{suffix}")["jobs"]
+                    self.assertIn("historical-count", {row["name"] for row in rows})
+                    count = console.call(f"{command} jobs count{suffix}")["jobs"][0]
+                    self.assertEqual(int(count["count"]), len(rows))
+        finally:
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
+            )
+
+        try:
+            for id_ in (jobid, other_jobid):
+                admin.call(
+                    f".sql query=\"UPDATE Job SET Name='count-latest-selection' WHERE JobId={id_}\""
+                )
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="client-bareos-fd",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                self.assertEqual(
+                    int(
+                        console.call(
+                            f"{command} jobs count search=count-latest-selection"
+                        )["jobs"][0]["count"]
+                    ),
+                    1,
+                )
+                self.assertEqual(
+                    int(
+                        console.call(
+                            f"{command} jobs count last search=count-latest-selection"
+                        )["jobs"][0]["count"]
+                    ),
+                    0,
+                )
+        finally:
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
+            )
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-test2-fd' WHERE JobId={other_jobid}\""
+            )
+
+        try:
+            admin.call(
+                '.sql query="INSERT INTO Job (Job, Name, Type, Level, JobStatus, ClientId) '
+                "SELECT 'acl-count-cursor-' || n, 'acl-count-cursor', 'B', 'F', 'T', "
+                f"CASE WHEN n <= 120 THEN (SELECT ClientId FROM Job WHERE JobId={jobid}) "
+                f"ELSE (SELECT ClientId FROM Job WHERE JobId={other_jobid}) END "
+                'FROM generate_series(1, 210) n"'
+            )
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="client-bareos-fd",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                count = console.call(f"{command} jobs count search=acl-count-cursor")
+                self.assertEqual(int(count["jobs"][0]["count"]), 120)
+        finally:
+            admin.call(".sql query=\"DELETE FROM Job WHERE Name='acl-count-cursor'\"")
+
     def test_list_jobs_during_reload(self):
         username = self.get_operator_username()
         password = self.get_operator_password(username)
