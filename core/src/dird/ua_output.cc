@@ -1034,10 +1034,13 @@ static bool ListJobs(UaContext* ua,
       break;
   }
 
-  const std::optional<std::vector<std::string>> job_name_filter
-      = JobNameFilterFor(optionslist);
-  const std::optional<std::vector<std::string>> client_name_filter
-      = ClientNameFilterFor(optionslist);
+  std::optional<std::vector<std::string>> job_name_filter;
+  std::optional<std::vector<std::string>> client_name_filter;
+  {
+    ResLocker _{my_config};
+    job_name_filter = JobNameFilterFor(optionslist);
+    client_name_filter = ClientNameFilterFor(optionslist);
+  }
 
   std::string query_range;
   if (!optionslist.count) { SetQueryRange(query_range, ua, &jr); }
