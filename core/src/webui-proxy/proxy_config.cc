@@ -24,14 +24,78 @@
 #include "lib/bsys.h"
 
 #include <algorithm>
-#include <fstream>
+#include <cerrno>
+#include <filesystem>
+#include <iomanip>
 #include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace {
+
+struct ConfigFd {
+  int fd;
+  ~ConfigFd()
+  {
+    if (fd >= 0) { close(fd); }
+  }
+};
+
+void CheckConfigPermissions(int fd, const std::string& path, bool directory)
+{
+  struct stat metadata {};
+  if (fstat(fd, &metadata) != 0) {
+    throw ProxyConfigFileError(
+        "Proxy config: cannot inspect permissions of '" + path
+        + "': " + std::error_code(errno, std::generic_category()).message());
+  }
+  const bool safe_owner = metadata.st_uid == 0 || metadata.st_uid == geteuid();
+  const mode_t forbidden = S_IWGRP
+                           | (directory ? S_IWOTH : S_IRWXO | S_IXUSR | S_IXGRP)
+                           | S_ISUID | S_ISGID | S_ISVTX;
+  const bool safe_group = directory || !(metadata.st_mode & S_IRWXG)
+                          || metadata.st_gid == getegid();
+  const bool right_type
+      = directory ? S_ISDIR(metadata.st_mode) : S_ISREG(metadata.st_mode);
+  if (!safe_owner || !safe_group || !right_type
+      || (metadata.st_mode & forbidden)) {
+    const std::string recommended_mode = directory ? "0755" : "0640";
+    std::ostringstream error;
+    error << "Proxy config: unsafe configuration "
+          << (directory ? "directory" : "file") << " '" << path << "' (mode "
+          << std::oct << std::setw(4) << std::setfill('0')
+          << (metadata.st_mode & 07777) << std::dec
+          << ", uid=" << metadata.st_uid << ", gid=" << metadata.st_gid
+          << "): ";
+    if (!right_type) {
+      error << "expected " << (directory ? "a directory" : "a regular file");
+    } else if (!safe_owner) {
+      error << "owner must be root (uid 0) or service uid " << geteuid();
+    } else if (!safe_group) {
+      error << "group access requires service gid " << getegid();
+    } else {
+      error
+          << (directory
+                  ? "group/other write and special mode bits are forbidden"
+                  : "other-user access, group write, file execute permissions, "
+                    "and special mode bits are forbidden");
+    }
+    error << "; use mode " << recommended_mode << " or stricter (chmod "
+          << recommended_mode << "), root or service uid " << geteuid()
+          << " as owner";
+    if (!directory) {
+      error << ", and service gid " << getegid()
+            << " when group access is enabled";
+    }
+    throw ProxyConfigFileError(error.str());
+  }
+}
 
 std::string Trim(std::string value)
 {
@@ -55,6 +119,24 @@ std::string FormatUnknownKeyError(std::string_view section,
   return FormatConfigError(
       line_number,
       "unknown key in [" + std::string(section) + "]: '" + key + "'");
+}
+
+std::string StripComment(std::string_view line)
+{
+  bool quoted = false;
+  bool escaped = false;
+  for (size_t i = 0; i < line.size(); ++i) {
+    if (escaped) {
+      escaped = false;
+    } else if (quoted && line[i] == '\\') {
+      escaped = true;
+    } else if (line[i] == '"') {
+      quoted = !quoted;
+    } else if (!quoted && (line[i] == '#' || line[i] == ';')) {
+      return std::string(line.substr(0, i));
+    }
+  }
+  return std::string(line);
 }
 
 std::string ParseValue(std::string value, size_t line_number)
@@ -170,6 +252,13 @@ void ApplyDirectorSetting(DirectorTargetConfig& cfg,
     cfg.name = value;
   } else if (key == "tls_psk_disable") {
     cfg.tls_psk_disable = ParseBool(value, key, line_number);
+  } else if (key == "pam_console_name" || key == "pam_console_password") {
+    if (!cfg.pam_console) { cfg.pam_console.emplace(); }
+    if (key == "pam_console_name") {
+      cfg.pam_console->name = value;
+    } else {
+      cfg.pam_console->password = value;
+    }
   } else {
     throw ProxyConfigUnknownKeyError(
         FormatUnknownKeyError(section_name, key, line_number));
@@ -198,11 +287,7 @@ ProxyConfig ParseProxyConfig(const std::string& ini)
 
   while (std::getline(input, line)) {
     ++line_number;
-    const auto comment_pos = line.find_first_of("#;");
-    if (comment_pos != std::string::npos) {
-      line = line.substr(0, comment_pos);
-    }
-    line = Trim(std::move(line));
+    line = Trim(StripComment(line));
     if (line.empty()) { continue; }
 
     if (line.front() == '[' && line.back() == ']') {
@@ -269,6 +354,19 @@ ProxyConfig ParseProxyConfig(const std::string& ini)
         "Proxy config: at least one director section is required");
   }
 
+  for (const auto& [selector, director] : parsed_directors) {
+    if (!director.pam_console) { continue; }
+    if (director.pam_console->name.empty()
+        || director.pam_console->password.empty()) {
+      throw ProxyConfigParseError(
+          "Proxy config [" + selector
+          + "]: PAM requires nonempty pam_console_name and pam_console_password");
+    }
+    if (director.tls_psk_disable) {
+      throw ProxyConfigParseError("Proxy config [" + selector
+                                  + "]: PAM requires TLS-PSK");
+    }
+  }
   cfg.configured_directors = std::move(parsed_directors);
   return cfg;
 }
@@ -277,13 +375,43 @@ ProxyConfig ParseProxyConfig(const std::string& ini)
 
 ProxyConfig LoadProxyConfigFile(const std::string& path)
 {
-  std::ifstream input(path);
-  if (!input) {
-    throw ProxyConfigFileError("Proxy config: cannot load '" + path + "'");
+  const std::filesystem::path config_path(path);
+  const auto parent = config_path.has_parent_path()
+                          ? config_path.parent_path()
+                          : std::filesystem::path(".");
+  ConfigFd directory{
+      open(parent.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW)};
+  if (directory.fd < 0) {
+    throw ProxyConfigFileError(
+        "Proxy config: cannot open configuration directory '" + parent.string()
+        + "': " + std::error_code(errno, std::generic_category()).message()
+        + "; check service directory read/search permissions; the immediate "
+          "directory must not be a symbolic link");
   }
-  std::ostringstream contents;
-  contents << input.rdbuf();
-  return ParseProxyConfig(contents.str());
+  ConfigFd input{openat(directory.fd, config_path.filename().c_str(),
+                        O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK)};
+  if (input.fd < 0) {
+    throw ProxyConfigFileError(
+        "Proxy config: cannot load '" + path + "': "
+        + std::error_code(errno, std::generic_category()).message()
+        + "; check service file read permissions; symbolic links are not allowed");
+  }
+  CheckConfigPermissions(input.fd, path, false);
+  CheckConfigPermissions(directory.fd, parent.string(), true);
+  std::string contents;
+  char buffer[4096];
+  while (true) {
+    const auto count = read(input.fd, buffer, sizeof(buffer));
+    if (count < 0 && errno == EINTR) { continue; }
+    if (count < 0) {
+      throw ProxyConfigFileError(
+          "Proxy config: cannot read '" + path
+          + "': " + std::error_code(errno, std::generic_category()).message());
+    }
+    if (count == 0) { break; }
+    contents.append(buffer, static_cast<size_t>(count));
+  }
+  return ParseProxyConfig(contents);
 }
 
 ProxyConfig LoadProxyConfigFromString(const std::string& ini)

@@ -1,0 +1,5 @@
+#
+# Fixture-only PAM service, matching python-pam's direct-credential setup.
+#
+auth required pam_exec.so expose_authtok quiet log=@logdir@/proxy-pam.log @current_test_directory@/pam_exec_check.sh
+account required pam_permit.so
