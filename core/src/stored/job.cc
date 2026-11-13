@@ -30,7 +30,9 @@
 #include "stored/stored.h"
 #include "stored/bsr.h"
 #include "stored/acquire.h"
+#include "stored/connect_wait.h"
 #include "stored/fd_cmds.h"
+#include "stored/ndmp_session_registry.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/ndmp_tape.h"
 #include "stored/read_record.h"
@@ -45,8 +47,6 @@
 #include "include/protocol_types.h"
 
 namespace storagedaemon {
-
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests from the Director daemon */
 inline constexpr const char jobcmd[]
@@ -166,6 +166,13 @@ bool job_cmd(JobControlRecord* jcr)
     return false;
   }
   jcr->sd_auth_key = strdup(auth_key);
+
+  /* Let the NDMP data mover find this job by its authentication key. Native
+   * jobs authenticate over their own connection and are not registered. */
+  if (jcr->getJobProtocol() == PT_NDMP_BAREOS) {
+    RegisterNdmpSessionToken(jcr->sd_auth_key, jcr);
+  }
+
   dir->fsend(OK_job, jcr->VolSessionId, jcr->VolSessionTime, auth_key);
   memset(auth_key, 0, sizeof(auth_key));
   Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
@@ -176,39 +183,57 @@ bool job_cmd(JobControlRecord* jcr)
   return true;
 }
 
-static void WaitClient(JobControlRecord* jcr, utime_t wait_time)
+static bool WaitClient(JobControlRecord* jcr, utime_t wait_time)
 {
   auto timeout
       = std::chrono::system_clock::now() + std::chrono::seconds(wait_time);
   auto locked = jcr->sd_impl->client_available.lock();
 
-  locked.wait_until(jcr->sd_impl->job_start_wait, timeout, [jcr](bool started) {
-    return started || jcr->IsJobCanceled();
-  });
+  return locked.wait_until(
+      jcr->sd_impl->job_start_wait, timeout,
+      [jcr](bool started) { return started || jcr->IsJobCanceled(); });
+}
+
+/* Wait until the NDMP session signalled that it is done.
+ *
+ * The flag is checked and reset under the same lock that the notifying side
+ * uses, so a notification that arrives before we start waiting is not lost. */
+static void WaitForJobEnd(JobControlRecord* jcr)
+{
+  auto locked = jcr->sd_impl->job_ended.lock();
+
+  locked.wait(jcr->sd_impl->job_end_wait, [](bool ended) { return ended; });
+
+  // Reset so a following NDMP session waits for its own notification.
+  *locked = false;
 }
 
 static void WaitFD(JobControlRecord* jcr)
 {
   jcr->sendJobStatus(JS_WaitFD); /* wait for FD to connect */
 
-  utime_t wait_time = [] {
-    ResLocker _{my_config};
-    return me->client_wait;
-  }();
+  bool is_ndmp = jcr->getJobProtocol() == PT_NDMP_BAREOS;
 
-  if (wait_time == 0) {
-    Dmsg3(100, "Client Connect Wait was set to 0; Setting to 1800s instead.\n");
-    wait_time = 1800;
-  }
+  utime_t wait_time = [is_ndmp] {
+    ResLocker _{my_config};
+    return SelectConnectWait(is_ndmp, me->client_wait, me->ndmp_connect_wait);
+  }();
 
   Dmsg3(50, "%s waiting %" PRId64 " sec for FD to contact SD key=%s\n",
         jcr->Job, wait_time, jcr->sd_auth_key);
   Dmsg2(800, "Wait FD for jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
-  /* Wait for the File daemon to contact us to start the Job,
-   * when he does, we will be released, unless the me->client_wait seconds
-   * (default: 1800 seconds = 30 minutes) expires. */
-  WaitClient(jcr, wait_time);
+  /* Wait for the File daemon or the NDMP data mover to contact us to start
+   * the Job, when it does, we will be released, unless the configured
+   * deadline expires. */
+  if (WaitClient(jcr, wait_time)) { return; }
+
+  /* The deadline expired. Report it so the reserved device is not released
+   * without an explanation in the job log. */
+  Jmsg2(jcr, M_FATAL, 0,
+        T_("%s did not connect within %" PRId64
+           " seconds, releasing reserved device.\n"),
+        is_ndmp ? T_("NDMP data mover") : T_("Client"), wait_time);
 }
 
 bool DoJobRun(JobControlRecord* jcr)
@@ -217,6 +242,9 @@ bool DoJobRun(JobControlRecord* jcr)
 
   Dmsg2(50, "Auth=%d canceled=%d\n", jcr->authenticated, jcr->IsJobCanceled());
 
+  /* The key was either used by now or will never be used, so withdraw it
+   * before wiping it. */
+  UnregisterNdmpSessionToken(jcr->sd_auth_key);
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   switch (jcr->getJobProtocol()) {
     case PT_NDMP_BAREOS:
@@ -229,9 +257,7 @@ bool DoJobRun(JobControlRecord* jcr)
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
-        unlock_mutex(mutex);
+        WaitForJobEnd(jcr);
       } else {
         Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
               jcr);
@@ -275,8 +301,13 @@ bool nextRunCmd(JobControlRecord* jcr)
               auth_key);
         return false;
       }
-      if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
+      if (jcr->sd_auth_key) {
+        // The previous key must not stay usable once it got replaced.
+        UnregisterNdmpSessionToken(jcr->sd_auth_key);
+        free(jcr->sd_auth_key);
+      }
       jcr->sd_auth_key = strdup(auth_key);
+      RegisterNdmpSessionToken(jcr->sd_auth_key, jcr);
       dir->fsend(OK_nextrun, auth_key);
       memset(auth_key, 0, sizeof(auth_key));
       Dmsg2(50, ">dird jid=%" PRIu32 ": %s", jcr->JobId, dir->msg);
@@ -292,9 +323,7 @@ bool nextRunCmd(JobControlRecord* jcr)
          * has performed the backup. E.g. instead of doing a busy wait
          * we just hang on a conditional variable. */
         Dmsg2(800, "Wait for end job jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
-        lock_mutex(mutex);
-        pthread_cond_wait(&jcr->sd_impl->job_end_wait, &mutex);
-        unlock_mutex(mutex);
+        WaitForJobEnd(jcr);
       } else {
         Dmsg2(800, "Auth fail or cancel for jid=%" PRIu32 " %p\n", jcr->JobId,
               jcr);
@@ -371,6 +400,10 @@ void StoredFreeJcr(JobControlRecord* jcr)
   Dmsg0(200, "Start stored FreeJcr\n");
   Dmsg2(800, "End Job JobId=%" PRIu32 " %p\n", jcr->JobId, jcr);
 
+  /* Make sure no NDMP session can bind to this job any more, even if it ended
+   * before the key was withdrawn regularly. */
+  if (jcr->sd_auth_key) { UnregisterNdmpSessionToken(jcr->sd_auth_key); }
+
   if (jcr->dir_bsock) {
     Dmsg2(800, "Send Terminate jid=%" PRIu32 " %p\n", jcr->JobId, jcr);
     jcr->dir_bsock->signal(BNET_EOD);
@@ -427,8 +460,6 @@ void StoredFreeJcr(JobControlRecord* jcr)
   if (jcr->sd_impl->next_dev || jcr->sd_impl->prev_dev) {
     Emsg0(M_FATAL, 0, T_("In FreeJcr(), but still attached to device!!!!\n"));
   }
-
-  pthread_cond_destroy(&jcr->sd_impl->job_end_wait);
 
   // Avoid a double free
   if (jcr->sd_impl->dcr == jcr->sd_impl->read_dcr) {
