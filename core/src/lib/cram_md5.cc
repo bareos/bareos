@@ -230,7 +230,7 @@ bool CramMd5Handshake::CramMd5Response()
                        &remote_tls_policy_)
                != 2) {
       if (bsscanf(bs_->msg, "auth cram-md5 %s\n", chal.c_str()) != 1) {
-        Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
+        Dmsg1(debuglevel_, "Cannot scan challenge: %s\n", bs_->msg);
         bs_->fsend(T_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
         result = HandshakeResult::FORMAT_MISMATCH;
