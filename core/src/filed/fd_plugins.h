@@ -98,7 +98,7 @@ struct save_pkt {
   int32_t pkt_size{sizeof(save_pkt)}; /* Size of this packet */
   char* fname{};                      /* Full path and filename */
   char* link{};                       /* Link name if any */
-  struct stat statp{};                /* System stat() packet for file */
+  struct stat statp {};               /* System stat() packet for file */
   int32_t type{};                     /* FT_xx for this file */
   char flags[FOPTS_BYTES]{};          /* Bareos internal flags */
   bool no_read{}; /* During the save, the file should not be saved */
@@ -136,7 +136,7 @@ struct restore_pkt {
   int32_t file_index{};                  /* File index */
   int32_t LinkFI{};                      /* File index to data if hard link */
   uid_t uid{};                           /* Userid */
-  struct stat statp{};                   /* Decoded stat packet */
+  struct stat statp {};                  /* Decoded stat packet */
   const char* attrEx{};                  /* Extended attributes if any */
   const char* ofname{};                  /* Output filename */
   const char* olname{};                  /* Output link name */
@@ -241,7 +241,32 @@ typedef enum
   bVarUsedConfig = 21,
   bVarPluginPath = 22,
   bVarAccurateOptions = 23,
+  bVarFileSizeBlocks = 24,
 } bVariable;
+
+/**
+ * Value type for setBareosValue(ctx, bVarFileSizeBlocks, &value).
+ *
+ * A streaming plugin (e.g. one that pipes data through an external
+ * command) may only know the true size of the file it just backed up
+ * once endBackupFile() is called -- by then, Bareos has already sent
+ * the (possibly placeholder) attributes for this file to the Storage
+ * Daemon. Setting this value from within endBackupFile() causes Bareos
+ * to resend corrected attributes (same FileIndex) for the file it just
+ * finished backing up.
+ *
+ * If a plugin does not set this value and the original attributes contain an
+ * unknown or unusable size/block count, Bareos falls back to the number of
+ * bytes the File Daemon actually read from the plugin stream. Plugins should
+ * still set this value when their logical source size or block allocation is
+ * different from the bytes emitted on the plugin stream.
+ */
+struct PluginFileSizeBlocks {
+  int64_t size;   /* corrected st_size */
+  int64_t blocks; /* corrected st_blocks (512-byte units); if 0, it is
+                      derived from size the same way as for a plugin
+                      that never provides st_blocks at all */
+};
 
 // Events that are passed to plugin
 typedef enum

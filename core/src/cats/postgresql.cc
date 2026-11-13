@@ -40,6 +40,7 @@
 #include "postgresql.h"
 #include "lib/edit.h"
 #include "lib/berrno.h"
+#include "lib/bpoll.h"
 #include "lib/dlist.h"
 
 /* -----------------------------------------------------------------------
@@ -64,11 +65,54 @@ struct retries {
   int amount;
 };
 
-result do_query(PGconn* db_handle, const char* query, retries r = {10})
+result cancellable_query(PGconn* db_handle,
+                         const char* query,
+                         const std::atomic_bool* cancel)
+{
+  if (cancel->load() || !PQsendQuery(db_handle, query)) { return {}; }
+  result last_result;
+  bool cancel_sent = false;
+  for (;;) {
+    while (PQisBusy(db_handle)) {
+      if (cancel->load() && !cancel_sent) {
+        auto* request = PQgetCancel(db_handle);
+        if (!request) {
+          Emsg0(M_ERROR, 0,
+                T_("Could not allocate catalog query cancellation.\n"));
+          return {};
+        }
+        char error[256]{};
+        const bool sent = PQcancel(request, error, sizeof(error)) != 0;
+        PQfreeCancel(request);
+        if (!sent) {
+          Emsg1(M_ERROR, 0, T_("Could not cancel catalog query: %s\n"), error);
+          return {};
+        }
+        cancel_sent = true;
+      }
+      if (WaitForReadableFd(PQsocket(db_handle), 50, true) < 0) {
+        Emsg0(M_ERROR, 0, T_("Error waiting for a catalog query result.\n"));
+        return {};
+      }
+      if (!PQconsumeInput(db_handle)) { return {}; }
+    }
+    result next{PQgetResult(db_handle)};
+    if (!next) { break; }
+    last_result = std::move(next);
+  }
+  return last_result;
+}
+
+result do_query(PGconn* db_handle,
+                const char* query,
+                retries r = {10},
+                const std::atomic_bool* cancel = nullptr)
 {
   for (int i = 0; i < r.amount; i++) {
+    if (cancel && cancel->load()) { return {}; }
     if (i > 1) { Bmicrosleep(5, 0); }
-    result res{PQexec(db_handle, query)};
+    result res = cancel ? cancellable_query(db_handle, query, cancel)
+                        : result{PQexec(db_handle, query)};
     if (res) {
       auto status = PQresultStatus(res.get());
       if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) { res = {}; }
@@ -80,12 +124,15 @@ result do_query(PGconn* db_handle, const char* query, retries r = {10})
 
 const char* strerror(PGconn* db_handle) { return PQerrorMessage(db_handle); }
 
-result try_query(PGconn* db_handle, bool try_reconnection, const char* query)
+result try_query(PGconn* db_handle,
+                 bool try_reconnection,
+                 const char* query,
+                 const std::atomic_bool* cancel = nullptr)
 {
   Dmsg1(500, "try_query starts with '%s'\n", query);
 
-  auto res = do_query(db_handle, query);
-  if (!res && try_reconnection) {
+  auto res = do_query(db_handle, query, retries{10}, cancel);
+  if (!res && try_reconnection && !(cancel && cancel->load())) {
     PQreset(db_handle);
     if (PQstatus(db_handle) == CONNECTION_OK) {
       if (do_query(db_handle,
@@ -93,8 +140,8 @@ result try_query(PGconn* db_handle, bool try_reconnection, const char* query)
                    "SET cursor_tuple_fraction=1;"
                    "SET standard_conforming_strings=on;"
                    "SET client_min_messages TO WARNING;",
-                   retries{1})) {
-        res = do_query(db_handle, query);
+                   retries{1}, cancel)) {
+        res = do_query(db_handle, query, retries{10}, cancel);
       }
     }
   }
@@ -514,6 +561,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 {
   SQL_ROW row;
   bool retval = false;
+  bool stopped = false;
 
   Dmsg1(500, "BigSqlQuery starts with '%s'\n", query);
 
@@ -547,12 +595,15 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
     }
     while ((row = SqlFetchRow()) != NULL) {
       Dmsg1(500, "Fetching %d rows\n", num_rows_);
-      if (ResultHandler(ctx, num_fields_, row)) break;
+      if (ResultHandler(ctx, num_fields_, row)) {
+        stopped = true;
+        break;
+      }
     }
     PQclear(result_);
     result_ = NULL;
 
-  } while (num_rows_ > 0);
+  } while (num_rows_ > 0 && !stopped);
 
   SqlQueryWithoutHandler("CLOSE _bar_cursor");
 
@@ -615,8 +666,8 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
                                                 query_flags flags)
 {
   CheckOwnership();
-  auto result
-      = postgres::try_query(db_handle_, try_reconnect_ && !transaction_, query);
+  auto result = postgres::try_query(db_handle_, try_reconnect_ && !transaction_,
+                                    query, query_cancel_);
   if (result) {
     if (!flags.test(query_flag::DiscardResult)) {
       PQclear(result_);

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@ JobName=ai-backup-bareos-fd
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
+. ./accounting.sh
 
 start_test
 
@@ -48,6 +49,14 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
 run job=$JobName level=Incremental yes
 wait
+END_OF_DATA
+run_bconsole
+
+check_subscription_accounting full-incrementals 4 || exit 1
+
+cat <<END_OF_DATA >$tmp/bconcmds
+.api 2
+@$out $tmp/full+incr_consolidate.out
 run job=Consolidate yes
 .api 1
 wait
@@ -60,9 +69,9 @@ list jobs
 END_OF_DATA
 run_bconsole
 
-jobids=$(grep "jobid" "$tmp/full+incr_start.out" | sed 's/["jobid:]//g' | tail -n5)
+jobids=$(grep "jobid" "$tmp/full+incr_start.out" | sed 's/["jobid:]//g' | tail -n4)
 fincrs=$(head -n3 <<<"$jobids" | xargs | tr ' ' ',')
-cons=$(tail -n1 <<<"$jobids" | xargs)
+cons=$(grep "jobid" "$tmp/full+incr_consolidate.out" | tail -n1 | sed 's/["jobid:]//g' | xargs)
 
 expect_not_grep "^  Termination: *Backup Canceled" \
   "${tmp}/full+incr_messages.out" \
@@ -71,5 +80,7 @@ expect_not_grep "^  Termination: *Backup Canceled" \
 expect_grep "purged JobIds ${fincrs} as they were consolidated into Job $((cons + 1))" \
   "$tmp/full+incr_messages.out" \
   "consolidation of expected jobs did not happen."
+
+check_subscription_accounting consolidated 2 full-incrementals || exit 1
 
 end_test

@@ -75,11 +75,11 @@ const props = defineProps({
 defineEmits(['remove'])
 
 const auth = useAuthStore()
-const director = useDirectorStore()
+const directorStore = useDirectorStore()
 const settings = useSettingsStore()
 
 const directorNames = computed(() => buildDirectorOptions({
-  availableDirectors: director.availableDirectors,
+  availableDirectors: directorStore.availableDirectors,
   selectedDirectors: settings.selectedDirectors,
   currentDirector: auth.user?.director,
   fallbackDirector: settings.directorName,
