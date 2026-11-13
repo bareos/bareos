@@ -42,6 +42,40 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_job_comment_update_is_atomic(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(director, "backup-bareos-fd", "Full", wait=True)
+        director.call(f'update jobid={jobid} comment="original"')
+
+        for invalid in ("jobtype=5", "starttime=invalid", "client=missing-client"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                    director.call(f'update jobid={jobid} comment="changed" {invalid}')
+                job = director.call(f"llist jobid={jobid}")["jobs"][0]
+                self.assertEqual(job["comment"], "original")
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call(
+                f'update jobid={jobid} comment="changed" filesetid=2147483648'
+            )
+        job = director.call(f"llist jobid={jobid}")["jobs"][0]
+        self.assertEqual(job["comment"], "original")
+        self.assertEqual(job["name"], "backup-bareos-fd")
+
+        director.call(
+            f'update jobid={jobid} comment="updated" jobname=atomic-good-name'
+        )
+        job = director.call(f"llist jobid={jobid}")["jobs"][0]
+        self.assertEqual(job["comment"], "updated")
+        self.assertEqual(job["name"], "atomic-good-name")
+
     def test_job_counts_respect_list_acls(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
