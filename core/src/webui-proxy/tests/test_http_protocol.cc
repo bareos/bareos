@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-#include "../http_protocol.h"
+#include "http_protocol.h"
 
 #include <sys/socket.h>
 #include <unistd.h>
