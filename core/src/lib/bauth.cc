@@ -161,9 +161,8 @@ bool guess_whether_cleartext(BareosSocket* socket, bool* is_cleartext)
 
     auto bytes_received = socket->peek(peek_buffer, sizeof(peek_buffer));
 
-    if (bytes_received <= 0) {
-      // either an error occured (bytes_received < 0)
-      // or the connection was cut (bytes_received == 0)
+    if (bytes_received < 0) {
+      Dmsg0(100, "Could not peek: ret=%zd\n", bytes_received);
       return false;
     }
 
@@ -1105,17 +1104,21 @@ bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
   for (;;) {
     auto bytes_received = socket->peek(buffer, sizeof(buffer));
 
-    if (bytes_received <= 0) {
-      // either an error occured (bytes_received < 0)
-      // or the connection was cut (bytes_received == 0)
+    if (bytes_received < 0) {
+      Dmsg0(50, "Could not peek at auth: ret=%zd\n", bytes_received);
       break;
     }
 
     if (static_cast<size_t>(bytes_received) == sizeof(buffer)) { break; }
 
-
     auto now = std::chrono::steady_clock::now();
-    if (now - start >= peek_timeout) { break; }
+    if (now - start >= peek_timeout) {
+      Dmsg0(50, "Could not peek at auth: timed out\n");
+      break;
+    }
+
+    // give data some more time to arrive
+    std::this_thread::sleep_for(std::chrono::milliseconds{1});
   }
 
   if (prefix == new_auth_prefix) {
