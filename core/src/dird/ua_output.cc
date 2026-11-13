@@ -1040,7 +1040,7 @@ static bool ListJobs(UaContext* ua,
       = ClientNameFilterFor(optionslist);
 
   std::string query_range;
-  SetQueryRange(query_range, ua, &jr);
+  if (!optionslist.count) { SetQueryRange(query_range, ua, &jr); }
 
   const bool descending = FindArg(ua, NT_("reverse")) >= 0;
 
