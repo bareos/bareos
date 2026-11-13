@@ -363,18 +363,20 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
-set(WEBUI_VUE_MINIMUM_NODE_MAJOR 20)
+set(WEBUI_VUE_MINIMUM_NODE_VERSION 22.12.0)
 set(WEBUI_VUE_NODE_VERSION_OK FALSE)
 set(NODE_VERSION "")
 if(NODE)
   execute_process(
     COMMAND "${NODE}" --version
+    RESULT_VARIABLE NODE_VERSION_RESULT
     OUTPUT_VARIABLE NODE_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
   )
-  if("${NODE_VERSION}" MATCHES "^v([0-9]+)\\.")
-    set(NODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
-    if(NODE_VERSION_MAJOR GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_MAJOR)
+  if(NODE_VERSION_RESULT EQUAL 0 AND "${NODE_VERSION}" MATCHES
+                                     "^v([0-9]+\\.[0-9]+\\.[0-9]+)$"
+  )
+    if("${CMAKE_MATCH_1}" VERSION_GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_VERSION)
       set(WEBUI_VUE_NODE_VERSION_OK TRUE)
     endif()
   endif()
@@ -593,12 +595,12 @@ else()
   if(NOT NODE)
     message(
       STATUS
-        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
+        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION} before configuring webui-vue browser tests."
     )
   elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
     message(
       STATUS
-        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
+        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION}, but found ${NODE_VERSION}."
     )
   elseif(NOT WEBUI_VUE_PLAYWRIGHT)
     message(

@@ -4,7 +4,7 @@
   "description": "Bareos WebUI - Vue/Quasar frontend",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "generate:version": "node scripts/generate-bareos-version.mjs",
