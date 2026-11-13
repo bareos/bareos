@@ -78,4 +78,10 @@ const open = ref(false)
 .editable-comment-edit:focus-visible {
   opacity: 1;
 }
+
+@media (hover: none) {
+  .editable-comment-edit {
+    opacity: 1;
+  }
+}
 </style>
