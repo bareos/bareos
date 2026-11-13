@@ -290,6 +290,56 @@ test('opens jobs and job details through the real director connection', async ({
   await expect(page.getByText('Job Log', { exact: true })).toBeVisible()
 })
 
+test('sorts the newest capped jobs independently of display direction', async ({ page }) => {
+  test.skip(isMultiDirectorProfile, 'Exercises the single-Director listing path')
+  const rows = Array.from({ length: 1001 }, (_, index) => ({
+    jobid: String(index + 1),
+    name: `SortJob-${index + 1}`,
+    jobstatus: 'T',
+    jobtype: 'B',
+    duration: `00:${String(Math.floor((index + 1) / 60)).padStart(2, '0')}:${String((index + 1) % 60).padStart(2, '0')}`,
+  }))
+  await page.routeWebSocket(/\/ws/, (socket) => {
+    const server = socket.connectToServer()
+    socket.onMessage((message) => {
+      const request = JSON.parse(message)
+      const command = request.command ?? ''
+      if (command.startsWith('llist jobs ') && !command.includes(' last ')) {
+        const limit = Number(command.match(/\blimit=(\d+)/)?.[1] ?? rows.length)
+        const offset = Number(command.match(/\boffset=(\d+)/)?.[1] ?? 0)
+        const ordered = command.includes(' reverse ') ? [...rows].reverse() : rows
+        socket.send(JSON.stringify({
+          type: 'response',
+          id: request.id,
+          data: {
+            jobs: command.startsWith('llist jobs count')
+              ? [{ count: '1001' }]
+              : ordered.slice(offset, offset + limit),
+          },
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  const firstId = page.locator('tbody tr a.text-primary').first()
+  await expect(firstId).toHaveText('1001')
+  const idHeader = page.getByRole('columnheader', { name: /^ID\b/ })
+  await idHeader.click()
+  await expect(firstId).toHaveText('1')
+  await idHeader.click()
+  await expect(firstId).toHaveText('1001')
+
+  const durationHeader = page.getByRole('columnheader', { name: /^Duration\b/ })
+  await durationHeader.click()
+  await expect(firstId).toHaveText('2')
+  await expect(page.locator('.q-banner.bg-warning')).toContainText('1,001')
+  await durationHeader.click()
+  await expect(firstId).toHaveText('1001')
+})
+
 for (const logFocus of ['', 'ok']) {
   for (const [direction, opposite, first, wrapped] of [
     ['Next issue', 'Previous issue', 'Warning: first issue', 'Fatal error: last issue'],
