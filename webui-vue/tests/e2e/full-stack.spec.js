@@ -325,7 +325,7 @@ test('restores a real file from a backup', async ({ page }) => {
 
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
-    hasText: /^bareos-fd$/,
+    hasText: /(?:^| \/ )bareos-fd$/,
     selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await waitForQSelectReady(page, 'restore-backup-job')
