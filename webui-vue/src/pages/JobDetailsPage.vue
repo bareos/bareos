@@ -374,7 +374,12 @@ function focusIssueAt(position) {
 }
 
 function jumpToIssue(direction) {
-  focusIssueAt(focusedIssuePosition.value + direction)
+  const currentPosition = issueLineIndexes.value.indexOf(focusedLineIndex.value)
+  if (currentPosition < 0) {
+    focusIssueAt(direction > 0 ? 0 : issueLineIndexes.value.length - 1)
+    return
+  }
+  focusIssueAt(currentPosition + direction)
 }
 
 // Find the log line to jump to for a given logFocus value:
