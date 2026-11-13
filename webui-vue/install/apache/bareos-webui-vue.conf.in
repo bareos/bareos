@@ -1,0 +1,32 @@
+#
+# Bareos WebUI Vue - Apache configuration file
+#
+
+RedirectMatch 301 ^/$ /bareos/
+# Redirect the Bareos 25.1 Vue WebUI technical-preview URL to /bareos/.
+# Remove this redirect from master as soon as bareos-26 is forked.
+RedirectMatch 301 ^/bareos-webui-new/?$ /bareos/
+RedirectMatch 301 ^/bareos$ /bareos/
+
+Alias /bareos/ @WEBUI_VUE_DIR@/
+Alias /favicon.ico @WEBUI_VUE_DIR@/favicon.ico
+
+<Directory @WEBUI_VUE_DIR@>
+    Options FollowSymLinks
+    AllowOverride None
+    Require all granted
+</Directory>
+
+<Location /bareos/>
+  ErrorDocument 404 /bareos/404.html
+</Location>
+
+# Proxy WebSocket connections to bareos-webui-proxy
+ProxyPass /bareos/ws ws://localhost:9104/ws
+ProxyPassReverse /bareos/ws ws://localhost:9104/ws
+ProxyPass /bareos/api/ http://localhost:9104/api/
+ProxyPassReverse /bareos/api/ http://localhost:9104/api/
+
+<IfModule mod_headers.c>
+    RequestHeader set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+</IfModule>

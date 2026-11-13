@@ -803,6 +803,18 @@ if (preg_match('/^\s*(abstract\s+|final\s+)?class\s+\w+\s+(extends|implements)\s
 $instanceCases = array(
     // Server passed explicitly; $_SERVER must not leak in.
     array(array(), array('HTTPS' => 'on'), true),
+    array(array(), array('HTTPS' => '', 'SERVER_PORT' => '80'), false),
+    array(array(), array('HTTPS' => '', 'SERVER_PORT' => '443'), true),
+    array(
+        array('127.0.0.1'),
+        array('HTTPS' => '', 'SERVER_PORT' => '80', 'HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '127.0.0.1'),
+        true,
+    ),
+    array(
+        array('127.0.0.1'),
+        array('HTTPS' => '', 'SERVER_PORT' => '80', 'HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '203.0.113.9'),
+        false,
+    ),
     array(array(), array('SERVER_PORT' => '443'), true),
     array(array(), array('SERVER_PORT' => '80'), false),
     array(array(), array(), false),
@@ -811,6 +823,11 @@ $instanceCases = array(
         array('127.0.0.1, 10.4.5.6'),
         array('HTTP_X_FORWARDED_PROTO' => 'https', 'REMOTE_ADDR' => '10.4.5.6'),
         true,
+    ),
+    array(
+        array('127.0.0.1, 10.4.5.6'),
+        array('HTTP_X_FORWARDED_PROTO' => 'http', 'REMOTE_ADDR' => '10.4.5.6'),
+        false,
     ),
     array(
         array('127.0.0.1, 10.4.5.6'),
@@ -970,6 +987,61 @@ if (trim((string)$standalone) !== '1') {
     $failures++;
     printf("FAIL RequestOrigin did not load standalone: %s\n", trim((string)$standalone));
 }
+
+$moduleSource = file_get_contents(__DIR__ . '/../../module/Application/Module.php');
+$layoutSource = file_get_contents(__DIR__ . '/../../module/Application/view/layout/layout.phtml.in');
+if (
+    strpos($moduleSource, "'isSecureConnection'") === false
+    || strpos($moduleSource, 'new RequestOrigin($config)') === false
+) {
+    $failures++;
+    print "FAIL Module does not pass RequestOrigin HTTPS state to the layout\n";
+}
+if (
+    strpos($layoutSource, 'if (!$this->isSecureConnection)') === false
+    || strpos($layoutSource, '$this->translate("This WebUI is using an insecure HTTP connection.') === false
+) {
+    $failures++;
+    print "FAIL PHP layout does not render a localized warning for insecure HTTP\n";
+}
+$globalChecks += 2;
+
+$loginRenderer = new Laminas\View\Renderer\PhpRenderer();
+$loginRenderer->setResolver(new Laminas\View\Resolver\TemplateMapResolver(array(
+    'login' => __DIR__ . '/../../module/Application/view/layout/login.phtml.in',
+)));
+$loginRenderer->plugin('basePath')->setBasePath('/bareos-webui');
+$translateHelper = new Laminas\I18n\View\Helper\Translate();
+$translateHelper->setTranslator(new Laminas\I18n\Translator\Translator());
+$loginRenderer->getHelperPluginManager()->setService('translate', $translateHelper);
+$previousIncludePath = get_include_path();
+set_include_path(__DIR__ . '/../..' . PATH_SEPARATOR . $previousIncludePath);
+
+foreach ($instanceCases as $index => $case) {
+    list($proxies, $server, $expectedSecure) = $case;
+    $html = $loginRenderer->render('login', array(
+        'isSecureConnection' => (new RequestOrigin(array('trusted_proxies' => $proxies), $server))->isHttps(),
+        'content' => '<form id="login-form"></form>',
+    ));
+    $hasWarning = strpos($html, 'This WebUI is using an insecure HTTP connection.') !== false;
+    if ($hasWarning === $expectedSecure || strpos($html, 'id="login-form"') === false) {
+        $failures++;
+        printf("FAIL login warning case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+    }
+    $noticePosition = strpos($html, 'id="php-webui-eol-notice"');
+    if (
+        $noticePosition === false
+        || $noticePosition > strpos($html, 'id="login-form"')
+        || strpos($html, 'The PHP WebUI will reach end of life with Bareos 27.') === false
+        || strpos($html, 'The Vue-based WebUI is the future Bareos interface. Please migrate to the new WebUI.') === false
+        || strpos($html, 'href="/bareos/" class="alert-link"') === false
+    ) {
+        $failures++;
+        printf("FAIL login successor notice case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+    }
+}
+set_include_path($previousIncludePath);
+$globalChecks += count($instanceCases);
 
 $total = count($cases) + count($proxyCases) + count($listenerCases) + count($wiringChecks)
     + count($addressCases) + count($forwardedCases) + $globalChecks

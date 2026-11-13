@@ -1,7 +1,8 @@
 Package: bareos-webui-new
 Architecture: all
-Depends: apache2 | httpd,
-   bareos-webui-proxy,
+Section: oldlibs
+Depends: bareos-webui-vue (>= 26~),
    ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - Vue webui
- This package contains the Vue-based Bareos WebUI.
+Description: Transitional package for the Vue-based Bareos WebUI
+ This package upgrades the Bareos 25.1 technical preview to bareos-webui-vue.
+ It can be removed after the upgrade.

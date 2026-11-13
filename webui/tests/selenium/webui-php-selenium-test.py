@@ -654,15 +654,13 @@ class SeleniumTest(unittest.TestCase):
 
         self.wait_and_click(By.ID, "submit")
         try:
-            # if the login is wrong, then we will get an alert div
-            driver.find_element(By.XPATH, '//div[@role="alert"]')
-        except:
-            # if no alert was found, then we just wait for the spinner ...
+            driver.find_element(By.CSS_SELECTOR, 'div.alert-danger[role="alert"]')
+        except NoSuchElementException:
             self.wait_for_spinner_absence()
         else:
-            # ... otherwise (i.e. if an alert was found) the login is wronng
             raise WrongCredentialsException(self.username, self.password)
 
+        self.wait_for_presence(By.ID, "menu-topnavbar-dashboard")
         if self.is_shared_session_test():
             SeleniumTest.shared_session_logged_in = True
 

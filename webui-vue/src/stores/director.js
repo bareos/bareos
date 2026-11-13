@@ -127,6 +127,10 @@ export const useDirectorStore = defineStore('director', () => {
         credentials: 'same-origin',
         cache: 'no-store',
       }).then(async (response) => {
+        if (response.status === 401 || response.status === 403) {
+          finish(reject, new Error('Authorization failed'))
+          return
+        }
         const payload = await response.json().catch(() => null)
         if (!response.ok || !payload || payload.type !== 'director_list' || !Array.isArray(payload.directors)) {
           finish(reject, new Error(payload?.message ?? 'Failed to load directors'))

@@ -41,10 +41,16 @@ class Module
         $moduleRouteListener->attach($eventManager);
         $this->initSession($e);
 
-        $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
+        $serviceManager = $e->getApplication()->getServiceManager();
+        $translator = $serviceManager->get('MVCTranslator');
         $translator->setLocale($_SESSION['bareos']['locale'] ?? 'en_EN')->setFallbackLocale('en_EN');
 
         $viewModel = $e->getApplication()->getMVCEvent()->getViewModel();
+        $config = $serviceManager->get('Config');
+        $viewModel->setVariable(
+            'isSecureConnection',
+            (new RequestOrigin($config))->isHttps()
+        );
     }
 
     public function getConfig()
