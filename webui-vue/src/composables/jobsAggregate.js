@@ -297,7 +297,18 @@ export async function fetchAggregatedJobsPage(
         director,
         jobs,
         count,
-        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT,
+        truncated: !serverSortColumn && countResults.some(result => (
+          result.status === 'fulfilled'
+          && numberValue(directorCollection(result.value?.jobs)[0]?.count) > MAX_JOBS_FETCH_LIMIT
+        )),
+        countErrors: countResults.flatMap(result => (
+          result.status === 'rejected'
+            ? [{
+              director,
+              message: `Failed to count jobs: ${result.reason?.message ?? 'Unknown error.'}`,
+            }]
+            : []
+        )),
       }
     } finally {
       client.disconnect()
@@ -318,7 +329,7 @@ export async function fetchAggregatedJobsPage(
           director: directors[index],
           message: result.reason?.message ?? 'Failed to load jobs.',
         }]
-        : []
+        : result.value.countErrors
     )),
   }
 }
