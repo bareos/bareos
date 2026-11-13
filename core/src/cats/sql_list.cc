@@ -741,7 +741,7 @@ void BareosDb::ListJobRecords(
       FillQuery<SQL_QUERY::list_jobs_count_last>(cmd, selection.c_str());
     } else {
       FillQuery<SQL_QUERY::list_jobs_count>(cmd, joins.c_str(),
-                                            selection.c_str(), range);
+                                            selection.c_str());
     }
   } else if (last) {
     if (type == VERT_LIST) {

@@ -284,6 +284,15 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "",
         )
 
+        for command in ("list", "llist"):
+            for last in ("", " last"):
+                base = f"{command} jobs count{last} job=backup-bareos-fd"
+                expected_count = director.call(base)["jobs"][0]["count"]
+                for pagination in ("limit=0", "limit=1 offset=1"):
+                    with self.subTest(command=command, last=last, range=pagination):
+                        result = director.call(f"{base} {pagination}")
+                        self.assertEqual(result["jobs"][0]["count"], expected_count)
+
         result = director.call(
             "llist jobs limit=99999999999999999999999999999999999999 offset=99999999999999999999999999999999999999999999999"
         )

@@ -94,7 +94,6 @@ FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 %s
 WHERE Job.JobId > 0
-%s
 %s;
 )SQL",
 
