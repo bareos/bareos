@@ -21,13 +21,14 @@
 #ifndef BAREOS_LIB_BAUTH_H_
 #define BAREOS_LIB_BAUTH_H_
 
-#include "lib/hello.h"
-#include "lib/bsock.h"
-
 #include <span>
 #include <type_traits>
 #include <vector>
 #include <string_view>
+
+
+#include "lib/bsock.h"
+#include "lib/hello.h"
 
 namespace auth {
 enum Status
