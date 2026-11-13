@@ -442,6 +442,101 @@ describe('jobs aggregate helpers', () => {
     })
   })
 
+  it.each([
+    { counts: [600, 600], limits: [600, 600], rows: 1200, truncated: false },
+    { counts: [1001, 2], limits: [1000, 2], rows: 1002, truncated: true },
+    { counts: [1000, 1000], limits: [1000, 1000], rows: 2000, truncated: false },
+  ])('reports fallback truncation per filter for $counts', async ({
+    counts, limits, rows, truncated,
+  }) => {
+    const loading = fetchAggregatedJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 0, sortBy: 'duration', descending: true },
+      ['f', 'E'],
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+    const commands = socket.sent.slice(1).map(payload => JSON.parse(payload))
+    for (const [index, status] of ['f', 'E'].entries()) {
+      const command = commands.find(entry => entry.command === `llist jobs count jobstatus=${status}`)
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response', id: command.id, data: { jobs: [{ count: counts[index] }] },
+        }),
+      })
+    }
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: commands.find(entry => entry.command === 'status director').id,
+        data: { running: [] },
+      }),
+    })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(6))
+    for (const [index, status] of ['f', 'E'].entries()) {
+      const command = socket.sent.slice(4).map(payload => JSON.parse(payload))
+        .find(entry => entry.command === `llist jobs reverse limit=${limits[index]} offset=0 jobstatus=${status}`)
+      expect(command).toBeDefined()
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response', id: command.id,
+          data: {
+            jobs: Array.from({ length: limits[index] }, (_, row) => ({
+              jobid: index * 10000 + row + 1, jobstatus: status, duration: '00:01:00',
+            })),
+          },
+        }),
+      })
+    }
+    const result = await loading
+    expect(result.totalJobs).toBe(counts[0] + counts[1])
+    expect(result.jobs).toHaveLength(rows)
+    expect(result.truncated).toBe(truncated)
+    expect(result.directorErrors).toEqual([])
+  })
+
+  it('keeps fallback rows and reports unavailable counts', async () => {
+    const loading = fetchAggregatedJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 25, sortBy: 'duration', descending: true },
+      'f',
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(3))
+    const commands = socket.sent.slice(1).map(payload => JSON.parse(payload))
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error', id: commands.find(entry => entry.command === 'llist jobs count jobstatus=f').id,
+        message: 'count denied',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: commands.find(entry => entry.command === 'status director').id,
+        data: { running: [] },
+      }),
+    })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+    const command = JSON.parse(socket.sent[3])
+    expect(command.command).toBe('llist jobs reverse limit=25 offset=0 jobstatus=f')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: command.id,
+        data: { jobs: [{ jobid: 2, jobstatus: 'f' }, { jobid: 1, jobstatus: 'f' }] },
+      }),
+    })
+    const result = await loading
+    expect(result.jobs.map(job => job.id)).toEqual([2, 1])
+    expect(result.directorErrors).toEqual([{
+      director: 'prod-a', message: 'Failed to count jobs: count denied',
+    }])
+  })
+
   it('loads recent jobs with the same bounded server pagination', async () => {
     const loading = fetchAggregatedRecentJobsPage(
       {
