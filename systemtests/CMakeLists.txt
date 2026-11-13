@@ -93,11 +93,16 @@ include(BareosSystemtestFunctions)
 # ps is required for systemtests
 find_program(PS ps REQUIRED)
 
-if(UNIX AND PGREP)
+if(UNIX
+   AND PGREP
+   AND PYTHON_EXECUTABLE
+)
   add_test(
     NAME system:ctl-pid-lookup
-    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
-            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+      "${PYTHON_EXECUTABLE}"
   )
 endif()
 
