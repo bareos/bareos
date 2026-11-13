@@ -40,6 +40,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.chrome.service import Service as ChromeService
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+from systemtests.scripts.selenium_screenshots import ScreenshotRunner
+
 
 class BadJobException(Exception):
     """Raise when a started job doesn't result in ID"""
@@ -838,10 +841,8 @@ class SeleniumTest(unittest.TestCase):
             try:
                 self.driver.find_element(by, value)
             except NoSuchElementException:
-                self.driver.save_screenshot("screenshot.png")
                 raise ElementNotFoundException(value)
             else:
-                self.driver.save_screenshot("screenshot.png")
                 raise ElementCoveredException(value)
         return element
 
@@ -974,4 +975,4 @@ def get_env():
 
 if __name__ == "__main__":
     get_env()
-    unittest.main()
+    unittest.main(testRunner=ScreenshotRunner)
