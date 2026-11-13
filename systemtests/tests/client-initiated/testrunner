@@ -24,6 +24,19 @@ exit_with_error()
   exit 1
 }
 
+assert_fd_not_listening()
+{
+  local port
+  port="${BAREOS_FD_PORT}"
+
+  if "${PYTHON_EXECUTABLE}" "$(dirname "$0")/check_fd_listener.py" "${port}"; then
+    return 0
+  fi
+
+  exit_with_error \
+    "Filedaemon is listening on port ${port} but client-initiated-only mode requires no listener"
+}
+
 stop_bareos_daemons()
 {
   stop_bareos
@@ -86,6 +99,7 @@ until echo "status dir" \
 done
 
 echo "Filedaemon is connected, running backup and restore"
+assert_fd_not_listening
 
 run_bconsole "${tmp}/bconcmds"
 
