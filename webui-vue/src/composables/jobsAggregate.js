@@ -354,11 +354,15 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
           descending,
         })),
         client.call(buildListRecentJobsCountCommand()),
-        client.call('status director'),
+        Promise.allSettled([client.call('status director')]),
       ])
       const jobs = sortJobsByPagination(overlayRuntimeStatuses(
         decorateJobs(jobsResult?.jobs, director),
-        decorateRuntimeJobs(directorStatusResult?.running)
+        decorateRuntimeJobs(
+          directorStatusResult[0]?.status === 'fulfilled'
+            ? directorStatusResult[0].value?.running
+            : []
+        )
       ), pagination)
       const count = numberValue(directorCollection(countResult?.jobs)[0]?.count)
 
