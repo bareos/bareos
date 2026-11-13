@@ -52,6 +52,7 @@
  */
 
 #include <algorithm>
+#include <filesystem>
 #include <string_view>
 
 #include "include/bareos.h"
@@ -544,13 +545,10 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   int rindex = rcode;
   BareosResource* last;
 
-  /* Remove resource from list.
-   *
-   * Note: this is intended for removing a resource that has just been added,
-   * but proven to be incorrect (added by console command "configure add").
-   * For a general approach, a check if this resource is referenced by other
-   * resource_definitions must be added. If it is referenced, don't remove it.
-   */
+  /* Only safe for rolling back a resource just added and not yet visible
+   * elsewhere: a running job keeps raw pointers to resources, so freeing a
+   * live one here would dangle them. See
+   * directordaemon::ConfigureDeleteResource(). */
   last = nullptr;
   for (BareosResource* res
        = loaded_configuration->configuration_resources_[rindex];
@@ -659,6 +657,18 @@ bool ConfigurationParser::GetPathOfResource(PoolMem& path,
   rel_path.bsprintf(config_include_naming_format_.c_str(), component,
                     resourcetype_lowercase.c_str(), name);
   PathAppend(path, rel_path);
+
+  /* IsNameValid() permits '.' and '/' in component/resourcetype/name, and
+   * PathAppend() does no ".." handling; refuse a result that escapes
+   * config_dir_ (lexically -- the path need not exist yet). */
+  std::filesystem::path resolved
+      = std::filesystem::path(path.c_str()).lexically_normal();
+  std::filesystem::path base
+      = std::filesystem::path(config_dir_).lexically_normal();
+  std::filesystem::path relative_to_base = resolved.lexically_relative(base);
+  if (relative_to_base.empty() || *relative_to_base.begin() == "..") {
+    return false;
+  }
 
   return true;
 }
