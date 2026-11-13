@@ -736,6 +736,19 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         result = director.call(f"list joblog jobid={jobid}")
         self.verify_joblog(result)
 
+        expected = director.call(f"list joblog jobids={jobid}")
+        at_limit = ",".join([str(jobid)] * 1000)
+        self.assertEqual(director.call(f"list joblog jobids={at_limit}"), expected)
+
+        for token in (str(jobid), "0"):
+            with self.subTest(token=token):
+                over_limit = ",".join([token] * 1001)
+                with self.assertRaises(
+                    bareos.exceptions.JsonRpcErrorReceivedException
+                ) as error:
+                    director.call(f"list joblog jobids={over_limit}")
+                self.assertIn("1000", str(error.exception))
+
     def test_list_joblog_non_utf8(self):
         """
         verifying `list joblog` outputs correct data

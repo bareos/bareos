@@ -454,17 +454,6 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
   SqlFreeResult();
 }
 
-namespace {
-// Defense-in-depth cap on the number of JobIds accepted by
-// ListJoblogRecordsForJobs(), independent of any limit the caller may
-// already enforce (e.g. the webui Trouble View's own MAX_JOBS=200): a
-// pathologically large jobids= list would otherwise build an equally large
-// SQL IN (...) clause. Log(JobId) is indexed, so cost scales with the
-// number of matching rows regardless, but this keeps the query text itself
-// bounded.
-constexpr size_t kMaxJoblogBatchJobIds = 1000;
-}  // namespace
-
 void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
                                         const std::vector<JobId_t>& jobids,
                                         OutputFormatter* sendit,
