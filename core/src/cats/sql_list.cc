@@ -721,7 +721,8 @@ void BareosDb::ListJobRecords(
     sendit->AddHiddenColumn(10); /* JobErrors: required for DISTINCT sorting */
   }
 
-  if (count) {
+  const bool filtered_count = count && sendit->HasFilters();
+  if (count && !filtered_count) {
     if (last) {
       /* Mirrors the "last job per name" dedup subquery used by
        * list_jobs_last/list_jobs_long_last, so `list jobs count last`
@@ -750,8 +751,24 @@ void BareosDb::ListJobRecords(
     }
   }
 
+  if (filtered_count) {
+    struct CountContext {
+      OutputFormatter* send;
+      uint64_t count;
+    } ctx{sendit, 0};
+    auto count_row = [](void* context, int, char** row) {
+      auto* count_context = static_cast<CountContext*>(context);
+      if (count_context->send->FilterData(row)) { ++count_context->count; }
+      return 0;
+    };
+    if (!BigSqlQuery(cmd, count_row, &ctx)) {
+      Jmsg(jcr, M_FATAL, 0, T_("Error counting jobs: %s\n"), sql_strerror());
+      return;
+    }
+    sendit->ClearFilters();
+    Mmsg(cmd, "SELECT %" PRIu64 " AS count", ctx.count);
+  }
   if (!QueryDb(jcr, cmd)) { return; }
-
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, type);

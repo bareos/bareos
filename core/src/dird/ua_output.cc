@@ -1009,28 +1009,22 @@ static bool ListJobs(UaContext* ua,
   const char* poolname = GetArgValue(ua, NT_("pool"));
 
   /* Job/Client `current`/`enabled`/`disabled` filtering is resolved to a SQL
-   * "Name IN (...)" clause below (job_name_filter/client_name_filter) so it
-   * applies identically to range and count queries. Pool/FileSet `current`
-   * filtering (VERT_LIST only) stays a post-fetch filter -- it is not used
-   * by any count query and is out of scope for this fix. */
+   * "Name IN (...)" clause below. Pool/FileSet `current` filtering
+   * (VERT_LIST only) stays a post-fetch filter. */
   switch (llist) {
     case VERT_LIST:
-      if (!optionslist.count) {  // count result is one column, no filtering
-        SetAclFilter(ua, 2, Job_ACL);
-        SetAclFilter(ua, 7, Client_ACL);
-        SetAclFilter(ua, 22, Pool_ACL);
-        SetAclFilter(ua, 25, FileSet_ACL);
-        if (optionslist.current) {
-          SetResFilter(ua, 22, R_POOL);
-          SetResFilter(ua, 25, R_FILESET);
-        }
+      SetAclFilter(ua, 2, Job_ACL);
+      SetAclFilter(ua, 7, Client_ACL);
+      SetAclFilter(ua, 22, Pool_ACL);
+      SetAclFilter(ua, 25, FileSet_ACL);
+      if (optionslist.current) {
+        SetResFilter(ua, 22, R_POOL);
+        SetResFilter(ua, 25, R_FILESET);
       }
       break;
     default:
-      if (!optionslist.count) {  // count result is one column, no filtering
-        SetAclFilter(ua, 1, Job_ACL);
-        SetAclFilter(ua, 2, Client_ACL);
-      }
+      SetAclFilter(ua, 1, Job_ACL);
+      SetAclFilter(ua, 2, Client_ACL);
       break;
   }
 

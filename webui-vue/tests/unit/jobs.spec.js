@@ -274,14 +274,14 @@ describe('jobs filter helpers', () => {
       typeFilter: 'B',
       jobFilter: 'Daily "Backup"',
       clientFilter: 'fd one',
-    })).toBe('list jobs count jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
+    })).toBe('llist jobs count jobstatus=T joblevel=F jobtype=B job="Daily \\"Backup\\"" client="fd one"')
     expect(buildListJobsCountCommand({
       searchTerm: 'fd-2',
-    })).toBe('list jobs count search="fd-2"')
+    })).toBe('llist jobs count search="fd-2"')
     expect(buildListJobsCountCommand({
       days: 1,
       statusFilter: ['W', 'E', 'f', 'A'],
-    })).toBe('list jobs count days=1 jobstatus=W,E,f,A')
+    })).toBe('llist jobs count days=1 jobstatus=W,E,f,A')
     expect(buildListJobsCommand({
       limit: 25,
       offset: 50,
