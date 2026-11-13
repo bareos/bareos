@@ -357,7 +357,7 @@ export function buildListJobsCountCommand({
   clientFilter = '',
   searchTerm = '',
 } = {}) {
-  return `list jobs count${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
+  return `llist jobs count${Number.isInteger(days) && days > 0 ? ` days=${days}` : ''}` +
     `${searchTerm ? ` search=${quoteDirectorString(searchTerm)}` : ''}` +
     buildJobsFilterClause({
       statusFilter,
@@ -379,7 +379,7 @@ export function buildListRecentJobsCommand({
 }
 
 export function buildListRecentJobsCountCommand() {
-    return 'list jobs count last current enabled'
+    return 'llist jobs count last current enabled'
 }
 
 export function buildListJobCommand(jobId) {
