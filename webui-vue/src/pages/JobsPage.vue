@@ -1495,11 +1495,17 @@ async function doRerun(job) {
       throw new Error(t('Job ID must be a positive integer.'))
     }
 
-    if (!(typeof job === 'object' && job?.name)) {
+    let rerunJob = typeof job === 'object' ? job : null
+    if (!rerunJob?.type) {
       const lookup = await director.call(buildListJobCommand(jobId))
-      if (directorCollection(lookup?.jobs).length === 0) {
+      const entry = directorCollection(lookup?.jobs)[0]
+      if (!entry) {
         throw new Error(`${t('Job')} ${jobId} ${t('was not found.')}`)
       }
+      rerunJob = normaliseJob(entry)
+    }
+    if (!canRerunJob(rerunJob)) {
+      throw new Error(t('This job type cannot be rerun.'))
     }
 
     const res = await director.call(buildRerunJobCommand(jobId))
@@ -1848,9 +1854,9 @@ async function submitRerun() {
   rerunLoading.value = true
   try {
     const listedMatches = jobs.value.filter(job => (
-      Number(job.id) === rerunJobIdValue.value && canRerunJob(job)
+      Number(job.id) === rerunJobIdValue.value
     ))
-    if (listedMatches.length === 1) {
+    if (listedMatches.length === 1 && isSingleDirectorScope.value) {
       if (await doRerun(listedMatches[0])) {
         rerunJobId.value = ''
         rerunJobIdDialogOpen.value = false
@@ -1874,23 +1880,24 @@ async function submitRerun() {
       })
       try {
         const lookup = await client.call(buildListJobCommand(rerunJobIdValue.value))
-        if (directorCollection(lookup?.jobs).length > 0) {
-          matches.push({ id: rerunJobIdValue.value, director: directorName })
+        const entry = directorCollection(lookup?.jobs)[0]
+        if (entry) {
+          matches.push({ ...normaliseJob(entry), director: directorName })
         }
       } finally {
         client.disconnect()
       }
     }))
 
-    if (matches.length === 0) {
-      const rejected = results.find(result => result.status === 'rejected')
-      if (rejected?.status === 'rejected') {
-        throw rejected.reason
-      }
-      throw new Error(`Job ID ${rerunJobIdValue.value} ${t('was not found on the selected directors.')}`)
-    }
     if (matches.length > 1) {
       throw new Error(`Job ID ${rerunJobIdValue.value} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
+    }
+    const rejected = results.find(result => result.status === 'rejected')
+    if (rejected?.status === 'rejected') {
+      throw rejected.reason
+    }
+    if (matches.length === 0) {
+      throw new Error(`Job ID ${rerunJobIdValue.value} ${t('was not found on the selected directors.')}`)
     }
 
     if (await doRerun(matches[0])) {

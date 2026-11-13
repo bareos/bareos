@@ -340,6 +340,97 @@ test('sorts the newest capped jobs independently of display direction', async ({
   await expect(firstId).toHaveText('1001')
 })
 
+for (const fixture of [
+  { name: 'listed restore', listed: 'both', type: 'R', error: 'cannot be rerun' },
+  { name: 'unlisted restore', listed: 'none', type: 'R', error: 'cannot be rerun' },
+  { name: 'listed backup', listed: 'both', type: 'B' },
+  { name: 'unlisted backup', listed: 'none', type: 'B' },
+  { name: 'listed duplicate', listed: 'both', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'unlisted duplicate', listed: 'none', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'partly listed duplicate', listed: 'first', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'partly listed with failed lookup', listed: 'first', multi: true, denied: true, error: 'lookup denied' },
+]) {
+  test(`validates rerun by ID for ${fixture.name}`, async ({ page }) => {
+    test.skip(isReadonlyProfile, 'Rerun requires write access')
+    test.skip(fixture.multi && !isMultiDirectorProfile, 'Requires multiple Directors')
+    const reruns = []
+    await page.routeWebSocket(/\/ws/, (socket) => {
+      const server = socket.connectToServer()
+      let currentDirector
+      socket.onMessage((message) => {
+        const request = JSON.parse(message)
+        if (request.type === 'session') {
+          currentDirector = request.director
+        }
+        const command = request.command ?? ''
+        const target = {
+          jobid: '424242',
+          name: 'Rerun-fixture',
+          jobtype: fixture.multi
+            ? (currentDirector === 'bareos-dir-2' ? 'R' : 'B')
+            : fixture.type,
+          jobstatus: 'T',
+        }
+        let data
+        if (command.startsWith('rerun ')) {
+          reruns.push({ director: currentDirector, command })
+          data = { run: { jobid: '900000' } }
+        } else if (command === 'llist jobid=424242') {
+          if (fixture.denied && currentDirector === 'bareos-dir-2') {
+            socket.send(JSON.stringify({ type: 'error', id: request.id, message: 'lookup denied' }))
+            return
+          }
+          data = { jobs: [target] }
+        } else if (command.startsWith('llist jobs ') && !command.includes(' last ')) {
+          const targetListed = fixture.listed === 'both'
+            || (fixture.listed === 'first' && currentDirector === 'bareos-dir')
+          data = {
+            jobs: command.startsWith('llist jobs count')
+              ? [{ count: '1' }]
+              : [targetListed ? target : {
+                jobid: '424241', name: 'Fixture-other', jobtype: 'B', jobstatus: 'T',
+              }],
+          }
+        }
+        if (data) {
+          socket.send(JSON.stringify({ type: 'response', id: request.id, data }))
+        } else {
+          server.send(message)
+        }
+      })
+    })
+    await login(page)
+    if (isMultiDirectorProfile) {
+      await page.getByTestId('director-scope-control').click()
+      const scopeMenu = page.getByTestId('director-scope-menu')
+      await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+      if (!fixture.multi) {
+        await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+      }
+      await page.keyboard.press('Escape')
+    }
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    await expect(page.locator('tbody tr a.text-primary').first()).toBeVisible()
+    if (fixture.multi) {
+      await expect(page.getByRole('columnheader', { name: /^Director\b/ })).toBeVisible()
+      await expect(page.locator('tbody tr').filter({ has: page.locator('a.text-primary') })).toHaveCount(2)
+    }
+    await page.getByRole('button', { name: /Rerun by Job ID/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Job ID *', { exact: true }).fill('424242')
+    await dialog.getByRole('button', { name: 'Rerun', exact: true }).click()
+    if (fixture.error) {
+      await expect(page.locator('.q-notification__message')).toContainText(fixture.error)
+      expect(reruns).toEqual([])
+      await expect(dialog).toBeVisible()
+    } else {
+      await expect(page.locator('.q-notification__message')).toContainText('Job restarted as ID 900000.')
+      expect(reruns).toEqual([{ director: 'bareos-dir', command: 'rerun jobid=424242 yes' }])
+      await expect(dialog).not.toBeVisible()
+    }
+  })
+}
+
 for (const logFocus of ['', 'ok']) {
   for (const [direction, opposite, first, wrapped] of [
     ['Next issue', 'Previous issue', 'Warning: first issue', 'Fatal error: last issue'],
