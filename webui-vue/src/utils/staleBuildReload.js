@@ -86,12 +86,23 @@ export function clearReloadGuard(storage) {
 // `installStaleBuildReloadHandling(router)` and rely on the defaults.
 export function installStaleBuildReloadHandling(
   router,
-  {
-    windowObj = typeof window !== 'undefined' ? window : undefined,
-    storage = windowObj?.sessionStorage,
-    reload = () => windowObj?.location?.reload(),
-  } = {},
+  options = {},
 ) {
+  const windowObj = options.windowObj === undefined
+    ? (typeof window !== 'undefined' ? window : undefined)
+    : options.windowObj
+  let storage = options.storage
+  if (storage === undefined) {
+    try {
+      storage = windowObj?.sessionStorage
+    } catch {
+      storage = undefined
+    }
+  }
+  const reload = options.reload === undefined
+    ? () => windowObj?.location?.reload()
+    : options.reload
+
   windowObj?.addEventListener?.('vite:preloadError', (event) => {
     if (isDynamicImportFailure(event?.payload)) {
       reloadOnce(storage, reload)
