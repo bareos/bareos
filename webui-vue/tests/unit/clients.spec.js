@@ -35,6 +35,7 @@ import {
 describe('clients route helpers', () => {
   it('does not classify a client without backup history as healthy', () => {
     expect(clientBackupStatusCode({ enabled: true }, 2)).toBe('unknown')
+    expect(clientBackupStatusCode({ enabled: true }, 2, false)).toBe('unavailable')
     expect(clientBackupStatusCode({
       enabled: true,
       lastBackup: { status: 'T' },

@@ -375,6 +375,7 @@ const clientsQuickFilter = ref('all')
 const loading    = ref(false)
 const error      = ref(null)
 const directorErrors = ref([])
+const backupHistoryUnavailableDirectors = ref(new Set())
 
 const {
   directorOptions,
@@ -406,10 +407,12 @@ async function refresh(forceRefresh = false) {
   loading.value = true
   error.value   = null
   directorErrors.value = []
+  backupHistoryUnavailableDirectors.value = new Set()
   try {
     if (clientsPageDirectors.value.length === 0) {
       rawClients.value = []
       rawRecentBackups.value = []
+      backupHistoryUnavailableDirectors.value = new Set()
       return
     }
 
@@ -422,16 +425,27 @@ async function refresh(forceRefresh = false) {
       const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value, { forceRefresh })
       rawClients.value = result.clients
       rawRecentBackups.value = result.recentBackups
-      directorErrors.value = result.directorErrors
+      backupHistoryUnavailableDirectors.value = new Set(
+        result.recentBackupErrors.map(item => item.director)
+      )
+      directorErrors.value = [
+        ...result.directorErrors,
+        ...result.recentBackupErrors.map(item => ({
+          director: item.director,
+          message: `${t('Failed to load recent backup history')}: ${item.message}`,
+        })),
+      ]
       return
     }
 
     const currentDirector = clientsPageDirectors.value[0]
     await ensureSingleScopeDirector()
-    const [listResult, dotResult, recentBackupsResult] = await Promise.all([
+    const [listResult, dotResult, recentBackupsResponse] = await Promise.all([
       director.call('llist clients'),
       director.call('.clients'),
-      director.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+      director.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B')
+        .then(result => ({ result }))
+        .catch(error => ({ error })),
     ])
     const list = directorCollection(listResult?.clients)
     const dot = directorCollection(dotResult?.clients)
@@ -442,10 +456,20 @@ async function refresh(forceRefresh = false) {
       director: currentDirector,
       scopeKey: `${currentDirector}:${c.name}`,
     }))
-    rawRecentBackups.value = directorCollection(recentBackupsResult?.jobs).map(job => ({
-      ...normaliseJob(job),
-      director: currentDirector,
-    }))
+    rawRecentBackups.value = directorCollection(recentBackupsResponse.result?.jobs)
+      .map(job => ({
+        ...normaliseJob(job),
+        director: currentDirector,
+      }))
+    if (recentBackupsResponse.error) {
+      backupHistoryUnavailableDirectors.value = new Set([currentDirector])
+      directorErrors.value = [{
+        director: currentDirector,
+        message: `${t('Failed to load recent backup history')}: ${
+          recentBackupsResponse.error.message ?? String(recentBackupsResponse.error)
+        }`,
+      }]
+    }
   } catch (e) {
     error.value = e.message ?? String(e)
   } finally {
@@ -655,7 +679,11 @@ function clientVersionStatusSortValue(client) {
 }
 
 function clientBackupStatusItems(client) {
-  const status = clientBackupStatusCode(client, backupWarningFailedJobs())
+  const status = clientBackupStatusCode(
+    client,
+    backupWarningFailedJobs(),
+    !backupHistoryUnavailableDirectors.value.has(client.director)
+  )
   if (status === 'disabled') {
     return [{ label: t('Disabled'), color: 'negative' }]
   }
@@ -669,6 +697,10 @@ function clientBackupStatusItems(client) {
       label: t('{n} consecutive failures', { n: client.failureStreak }),
       color: 'warning',
     }]
+  }
+
+  if (status === 'unavailable') {
+    return [{ label: t('Backup history unavailable'), color: 'grey-6' }]
   }
 
   if (status === 'unknown') {
