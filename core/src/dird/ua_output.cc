@@ -1147,6 +1147,12 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
     // List JOBMEDIA
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
+      const int acl_column = llist == VERT_LIST ? 11 : 10;
+      SetHiddenColumn(ua, acl_column);
+      // An explicit Job ACL result preserves the clientless-job exemption.
+      ua->send->AddAclFilterTuple(acl_column, Job_ACL);
+      SetHiddenColumnAclFilter(ua, acl_column + 1, Client_ACL);
+      SetHiddenColumnAclFilter(ua, acl_column + 2, Pool_ACL);
       const char* volume_name = GetArgValue(ua, NT_("volume"));
       ua->db->ListJobmediaRecords(ua->jcr, jobid, volume_name, ua->send.get(),
                                   llist);

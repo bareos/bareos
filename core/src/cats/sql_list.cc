@@ -260,20 +260,25 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
   DbLocker _{this};
   if (type == VERT_LIST) {
     Mmsg(cmd,
-         "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
+         "SELECT JobMediaId,JobMedia.JobId,Media.MediaId,Media.VolumeName,"
          "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-         "JobMedia.EndBlock,JobMedia.JobBytes "
-         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
-         where.c_str());
+         "JobMedia.EndBlock,JobMedia.JobBytes,Job.Name,Client.Name,Pool.Name ");
 
   } else {
     Mmsg(cmd,
-         "SELECT JobMediaId,JobId,Media.VolumeName,FirstIndex,LastIndex,"
+         "SELECT "
+         "JobMediaId,JobMedia.JobId,Media.VolumeName,FirstIndex,LastIndex,"
          "StartFile,JobMedia.EndFile,StartBlock,JobMedia.EndBlock,"
-         "JobMedia.JobBytes "
-         "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId %s",
-         where.c_str());
+         "JobMedia.JobBytes,Job.Name,Client.Name,Pool.Name ");
   }
+  PmStrcat(cmd,
+           "FROM JobMedia JOIN Media ON Media.MediaId=JobMedia.MediaId "
+           "JOIN Job ON Job.JobId=JobMedia.JobId "
+           "JOIN Pool ON Pool.PoolId=Media.PoolId "
+           "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+           "WHERE Job.Name<>'' AND Pool.Name<>'' "
+           "AND (Job.ClientId=0 OR Client.Name<>'') ");
+  PmStrcat(cmd, where.c_str());
   if (!QueryDb(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobmedia");

@@ -280,6 +280,136 @@ class PythonBareosAclTest(bareos_unittest.Json):
         # This console should not see volumes in the Full pool.
         self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
 
+    def test_jobmedia_respects_job_client_and_current_pool_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        full = str(self.run_job(admin, "backup-bareos-fd", "Full", wait=True))
+        self.addCleanup(admin.call, f"delete jobid={full} yes")
+        self.append_to_file(f"{self.backup_directory}/extrafile.txt", "JobMedia ACL\n")
+        incremental = str(
+            self.run_job(admin, "backup-bareos-fd", "Incremental", wait=True)
+        )
+        self.addCleanup(admin.call, f"delete jobid={incremental} yes")
+        other = str(self.run_job(admin, "backup-test2-fd", "Full", wait=True))
+        self.addCleanup(admin.call, f"delete jobid={other} yes")
+        jobids = {full, incremental, other}
+        consoles = {}
+        cases = (
+            ("job-backup-bareos-fd", {full, incremental}),
+            ("client-bareos-fd", {full, incremental}),
+            ("poolfull", {full, other}),
+            ("poolnotfull", {incremental}),
+        )
+        for name, _allowed in cases:
+            consoles[name] = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name=name,
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+
+        for command in ("list", "llist"):
+            baseline = admin.call(f"{command} jobmedia")["jobmedia"]
+            self.assertTrue(jobids <= {row["jobid"] for row in baseline})
+            columns = {
+                "jobmediaid",
+                "jobid",
+                "volumename",
+                "firstindex",
+                "lastindex",
+                "startfile",
+                "endfile",
+                "startblock",
+                "endblock",
+                "jobbytes",
+            }
+            if command == "llist":
+                columns.add("mediaid")
+            self.assertEqual(set(baseline[0]), columns)
+            volumes = {row["volumename"] for row in baseline if row["jobid"] in jobids}
+            for name, allowed in cases:
+                console = consoles[name]
+                for selector in ("", *(f' volume="{volume}"' for volume in volumes)):
+                    with self.subTest(command=command, console=name, selector=selector):
+                        selected = admin.call(f"{command} jobmedia{selector}")[
+                            "jobmedia"
+                        ]
+                        expected = {
+                            row["jobmediaid"]
+                            for row in selected
+                            if row["jobid"] in allowed
+                        }
+                        rows = console.call(f"{command} jobmedia{selector}")["jobmedia"]
+                        actual = {
+                            row["jobmediaid"] for row in rows if row["jobid"] in jobids
+                        }
+                        self.assertEqual(actual, expected)
+                        for row in rows:
+                            self.assertEqual(set(row), columns)
+                for jobid in allowed:
+                    rows = console.call(f"{command} jobmedia jobid={jobid}")["jobmedia"]
+                    self.assertTrue(rows)
+                    self.assertEqual({row["jobid"] for row in rows}, {jobid})
+                if name.startswith("pool"):
+                    for jobid in jobids - allowed:
+                        self.assertEqual(
+                            console.call(f"{command} jobmedia jobid={jobid}")[
+                                "jobmedia"
+                            ],
+                            [],
+                        )
+
+        full_rows = admin.call(f"llist jobmedia jobid={full}")["jobmedia"]
+        volume = full_rows[0]["volumename"]
+        moved_ids = {
+            row["jobmediaid"] for row in full_rows if row["volumename"] == volume
+        }
+        try:
+            admin.call(f'update volume="{volume}" pool=Incremental')
+            for command in ("list", "llist"):
+                denied = consoles["poolfull"].call(f"{command} jobmedia jobid={full}")[
+                    "jobmedia"
+                ]
+                allowed = consoles["poolnotfull"].call(
+                    f"{command} jobmedia jobid={full}"
+                )["jobmedia"]
+                self.assertTrue(
+                    moved_ids.isdisjoint(row["jobmediaid"] for row in denied)
+                )
+                self.assertTrue(moved_ids <= {row["jobmediaid"] for row in allowed})
+        finally:
+            admin.call(f'update volume="{volume}" pool=Full')
+
+        original_client = admin.call(
+            f'.sql query="SELECT ClientId FROM Job WHERE JobId={full}"'
+        )["query"][0]["clientid"]
+        try:
+            admin.call(f'.sql query="UPDATE Job SET ClientId=0 WHERE JobId={full}"')
+            for command in ("list", "llist"):
+                rows = consoles["client-bareos-fd"].call(f"{command} jobmedia")[
+                    "jobmedia"
+                ]
+                self.assertIn(full, {row["jobid"] for row in rows})
+            admin.call(
+                f'.sql query="UPDATE Job SET ClientId=2147483647 WHERE JobId={full}"'
+            )
+            for command in ("list", "llist"):
+                rows = consoles["job-backup-bareos-fd"].call(f"{command} jobmedia")[
+                    "jobmedia"
+                ]
+                self.assertNotIn(full, {row["jobid"] for row in rows})
+        finally:
+            admin.call(
+                f'.sql query="UPDATE Job SET ClientId={int(original_client)} WHERE JobId={full}"'
+            )
+
     def test_json_list_jobid_with_job_acl(self):
         """
         This tests checks if the Job ACL works with the "list jobs" and "list jobid=<>" commands.
