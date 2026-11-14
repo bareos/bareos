@@ -1179,7 +1179,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       std::vector<JobId_t> jobids;
       GetAclFilteredJobidsFromCmdline(ua, &jobids);
       ua->db->ListJoblogRecordsForJobs(ua->jcr, jobids, query_range.c_str(),
-                                       ua->send.get(), llist);
+                                       optionslist.count, ua->send.get(),
+                                       llist);
       return true;
     }
     if (int jobid = GetJobidFromCmdline(ua); jobid >= 0) {
