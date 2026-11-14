@@ -218,12 +218,12 @@ expect_not_grep \
 
 run_bconsole - <<END_OF_DATA
 @$out ${runner_tmp}/bscan-accounting.out
-.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid>5 AND p.path='/' AND f.name='bpipe'"
+.sql query="SELECT count(*) || ':' || count(*) FILTER (WHERE s.st_size IS DISTINCT FROM ${payload_bytes} OR s.st_blocks IS DISTINCT FROM ${payload_blocks}) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid>5 AND p.path='/' AND f.name='bpipe'"
 END_OF_DATA
 
 # bscan assigns new JobIds (> 5) to the two re-imported jobs.
 expect_grep \
-  "2:${payload_bytes}:${payload_blocks}" \
+  "^[[:space:]|]*2:0[[:space:]|]*$" \
   "${runner_tmp}/bscan-accounting.out" \
   "bscan did not restore one bpipe File row per job with corrected attributes"
 
