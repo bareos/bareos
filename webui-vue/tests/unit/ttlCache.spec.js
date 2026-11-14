@@ -42,7 +42,7 @@ describe('createTtlCache', () => {
 
   it('returns a stored value while it is within the ttl', () => {
     const cache = createTtlCache()
-    cache.set('k', { a: 1 }, cache.beginFetch())
+    cache.set('k', { a: 1 }, cache.beginFetch('k'))
 
     vi.advanceTimersByTime(999)
     expect(cache.get('k', 1000)).toEqual({ a: 1 })
@@ -50,7 +50,7 @@ describe('createTtlCache', () => {
 
   it('expires a value at the ttl and evicts it', () => {
     const cache = createTtlCache()
-    cache.set('k', 'v', cache.beginFetch())
+    cache.set('k', 'v', cache.beginFetch('k'))
 
     vi.advanceTimersByTime(1000)
     expect(cache.get('k', 1000)).toBeUndefined()
@@ -61,7 +61,7 @@ describe('createTtlCache', () => {
 
   it('applies the ttl given on read, not on write', () => {
     const cache = createTtlCache()
-    cache.set('k', 'v', cache.beginFetch())
+    cache.set('k', 'v', cache.beginFetch('k'))
 
     vi.advanceTimersByTime(500)
     expect(cache.get('k', 100)).toBeUndefined()
@@ -69,9 +69,8 @@ describe('createTtlCache', () => {
 
   it('clear() drops all entries', () => {
     const cache = createTtlCache()
-    const generation = cache.beginFetch()
-    cache.set('a', 1, generation)
-    cache.set('b', 2, generation)
+    cache.set('a', 1, cache.beginFetch('a'))
+    cache.set('b', 2, cache.beginFetch('b'))
 
     cache.clear()
 
@@ -81,14 +80,37 @@ describe('createTtlCache', () => {
 
   it('ignores writes from a fetch that started before clear()', () => {
     const cache = createTtlCache()
-    const staleGeneration = cache.beginFetch()
+    const staleGeneration = cache.beginFetch('k')
 
     cache.clear()
     cache.set('k', 'stale', staleGeneration)
     expect(cache.get('k', 1000)).toBeUndefined()
 
-    cache.set('k', 'fresh', cache.beginFetch())
+    cache.set('k', 'fresh', cache.beginFetch('k'))
     expect(cache.get('k', 1000)).toBe('fresh')
+  })
+
+  it('ignores an older fetch after a newer same-key fetch completes', () => {
+    const cache = createTtlCache()
+    const first = cache.beginFetch('k')
+    const second = cache.beginFetch('k')
+
+    cache.set('k', 'fresh', second)
+    cache.set('k', 'stale', first)
+
+    expect(cache.get('k', 1000)).toBe('fresh')
+  })
+
+  it('tracks in-flight fetches independently for different keys', () => {
+    const cache = createTtlCache()
+    const first = cache.beginFetch('a')
+    const second = cache.beginFetch('b')
+
+    cache.set('a', 'first', first)
+    cache.set('b', 'second', second)
+
+    expect(cache.get('a', 1000)).toBe('first')
+    expect(cache.get('b', 1000)).toBe('second')
   })
 })
 

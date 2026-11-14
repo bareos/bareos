@@ -210,7 +210,7 @@ export async function fetchAggregatedSchedulesShow(credentials, directors, { for
       return cached
     }
   }
-  const fetchGeneration = schedulesShowCache.beginFetch()
+  const fetchGeneration = schedulesShowCache.beginFetch(cacheKey)
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [showResponse, scheduleStateResponse] = await Promise.all([

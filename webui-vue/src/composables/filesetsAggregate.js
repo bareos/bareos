@@ -75,7 +75,7 @@ export async function fetchAggregatedFilesets(credentials, directors, { forceRef
       return cached
     }
   }
-  const fetchGeneration = filesetsCache.beginFetch()
+  const fetchGeneration = filesetsCache.beginFetch(cacheKey)
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const result = await client.call('list filesets')

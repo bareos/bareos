@@ -125,7 +125,7 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
       return cached
     }
   }
-  const fetchGeneration = clientsCache.beginFetch()
+  const fetchGeneration = clientsCache.beginFetch(cacheKey)
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [listResult, dotResult, recentBackupsResult, schedulerResult] = await Promise.all([
