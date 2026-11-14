@@ -106,7 +106,10 @@ describe('director page aggregate helpers', () => {
         id: commandsA.get('status director'),
         data: {
           header: { director: 'prod-a-dir', jobs_run: 10 },
-          scheduled: [{ name: 'Nightly', scheduled: '2026-04-30 01:00:00' }],
+          scheduled: [
+            { name: 'October', scheduled: '02-Oct-2026 01:00:00' },
+            { name: 'February', scheduled: '15-Feb-2026 01:00:00' },
+          ],
           running: [{ jobid: 11, name: 'ActiveJob', start_time: '2026-04-30 02:00:00' }],
           terminated: [{ jobid: 12, name: 'DoneJob', finished: '2026-04-30 00:30:00' }],
         },
@@ -130,7 +133,10 @@ describe('director page aggregate helpers', () => {
         expect.objectContaining({
           director: 'prod-a',
           header: expect.objectContaining({ director: 'prod-a-dir', jobs_run: 10 }),
-          scheduledJobs: [expect.objectContaining({ scopeKey: 'prod-a:scheduled:Nightly' })],
+          scheduledJobs: [
+            expect.objectContaining({ scopeKey: 'prod-a:scheduled:February' }),
+            expect.objectContaining({ scopeKey: 'prod-a:scheduled:October' }),
+          ],
           runningJobs: [expect.objectContaining({ scopeKey: 'prod-a:running:11' })],
           terminatedJobs: [expect.objectContaining({ scopeKey: 'prod-a:terminated:12' })],
         }),
