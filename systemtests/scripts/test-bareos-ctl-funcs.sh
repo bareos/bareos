@@ -50,7 +50,7 @@ wait_for_process_argv0()
   local expected="$2"
   local attempt args
   for ((attempt = 0; attempt < 100; attempt++)); do
-    if ! args=$("$PS" -o args= -p "$process_pid" 2>/dev/null); then
+    if ! args=$("$PS" -ww -o args= -p "$process_pid" 2>/dev/null); then
       echo "Process $process_pid exited before starting $expected" >&2
       return 1
     fi
@@ -67,6 +67,7 @@ unset BAREOS_CONFIG_DIR BAREOS_PIDFILE
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
 PS=$(command -v ps)
+export COLUMNS=80
 prefix="bareos_test_lookup_$$"
 name="${prefix}.x"
 other_pid=""
@@ -75,7 +76,8 @@ exact_pid=""
 config_other_pid=""
 config_exact_pid=""
 config_trailing_pid=""
-trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} 2>/dev/null || true' EXIT
+long_path_pid=""
+trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} ${long_path_pid} 2>/dev/null || true' EXIT
 
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' _ "${name}-other" &
 other_pid=$!
@@ -114,7 +116,8 @@ if [ -n "$(pidofproc "$name" 0)" ]; then
   exit 1
 fi
 
-BAREOS_CONFIG_DIR="/tmp/${prefix}_config"
+long_directory="/tmp/$(printf '%0128d' 0)/$(printf '%0128d' 0)"
+BAREOS_CONFIG_DIR="${long_directory}/${prefix}_config"
 bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)" -c "$2"' \
   _ "/tmp/$name" "${BAREOS_CONFIG_DIR}-other" &
 config_other_pid=$!
@@ -147,3 +150,22 @@ fi
 
 killproc "$name" 0 -TERM >/dev/null
 kill -0 "$config_other_pid"
+
+unset BAREOS_CONFIG_DIR
+long_name="${name}-long"
+bash -c 'exec -a "$1" python3 -c "import time; time.sleep(30)"' \
+  _ "${long_directory}/${long_name}" &
+long_path_pid=$!
+wait_for_process_argv0 "$long_path_pid" "${long_directory}/${long_name}"
+
+PGREP=$(command -v pgrep)
+if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
+  echo "pgrep did not find a process with a long executable path" >&2
+  exit 1
+fi
+
+PGREP=""
+if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
+  echo "ps did not find a process with a long executable path" >&2
+  exit 1
+fi
