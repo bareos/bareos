@@ -239,6 +239,42 @@ test('browser regression: next run advances with the live clock', async ({ page 
   await expect(stats).not.toContainText('SoonSchedule')
 })
 
+test('browser regression: schedule selection follows scope and preserves None', async ({ page }) => {
+  await browserFixture(page, (command, director) => {
+    const schedule = director === 'bareos-dir' ? 'DailyCycle' : 'WeeklyCycle'
+    if (command.startsWith('status scheduler days=')) {
+      return { schedules: [{ name: schedule, enabled: true, jobs: [] }], preview: [] }
+    }
+  })
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const scheduleCheckboxes = page.getByRole('checkbox')
+  await expect(scheduleCheckboxes).toHaveCount(1)
+  await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'true')
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await expect(scheduleCheckboxes).toHaveCount(2)
+  for (const checkbox of await scheduleCheckboxes.all()) {
+    await expect(checkbox).toHaveAttribute('aria-checked', 'true')
+  }
+
+  await page.getByRole('button', { name: 'None', exact: true }).click()
+  for (const checkbox of await scheduleCheckboxes.all()) {
+    await expect(checkbox).toHaveAttribute('aria-checked', 'false')
+  }
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(scheduleCheckboxes).toHaveCount(1)
+  await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'false')
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
