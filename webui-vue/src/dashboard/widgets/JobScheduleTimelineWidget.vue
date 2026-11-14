@@ -48,8 +48,10 @@ const scheduledRuns = ref([])
 const loading = ref(false)
 const error = ref('')
 const currentRange = ref(null)
+const directorScopeKey = computed(() => activeDirectors.value.join('\0'))
 let refreshRunning = false
 let refreshQueued = false
+let directorScopeGeneration = 0
 
 async function refresh() {
   if (refreshRunning) {
@@ -71,6 +73,8 @@ async function refresh() {
 }
 
 async function refreshCurrentRange() {
+  const generation = directorScopeGeneration
+  const scopeKey = directorScopeKey.value
   const range = currentRange.value
   if (!range || activeDirectors.value.length === 0) {
     actualJobs.value = []
@@ -80,7 +84,9 @@ async function refreshCurrentRange() {
 
   const credentials = auth.getCredentials()
   if (!credentials?.password) {
-    error.value = t('Not logged in.')
+    if (generation === directorScopeGeneration && scopeKey === directorScopeKey.value) {
+      error.value = t('Not logged in.')
+    }
     return
   }
 
@@ -95,13 +101,16 @@ async function refreshCurrentRange() {
         schedulerRange: range.schedulerRange,
       }
     )
+    if (generation !== directorScopeGeneration || scopeKey !== directorScopeKey.value) return
     actualJobs.value = result.actualJobs
     scheduledRuns.value = result.scheduledRuns
     error.value = result.errors.length
       ? result.errors.join('\n')
       : ''
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (generation === directorScopeGeneration && scopeKey === directorScopeKey.value) {
+      error.value = reason?.message ?? String(reason)
+    }
   }
 }
 
@@ -110,8 +119,12 @@ function onRangeChange(range) {
   refresh()
 }
 
-watch(
-  () => [activeDirectors.value.join('\0'), ctx?.refreshToken?.value],
-  refresh
-)
+watch(directorScopeKey, () => {
+  directorScopeGeneration += 1
+  actualJobs.value = []
+  scheduledRuns.value = []
+  error.value = ''
+})
+
+watch(() => [directorScopeKey.value, ctx?.refreshToken?.value], refresh)
 </script>
