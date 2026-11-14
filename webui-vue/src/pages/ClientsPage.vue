@@ -804,7 +804,7 @@ async function toggleEnabled(client) {
       ? `disable client=${quoteDirectorString(client.name)}`
       : `enable client=${quoteDirectorString(client.name)}`
     await director.call(cmd)
-    await refresh()
+    await refresh(true)
   } finally {
     toggling.value = null
   }
