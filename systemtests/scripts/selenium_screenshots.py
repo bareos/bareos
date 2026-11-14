@@ -15,6 +15,7 @@ import re
 import unittest
 
 from selenium.common.exceptions import WebDriverException
+from urllib3.exceptions import MaxRetryError
 
 
 class ScreenshotResult(unittest.TextTestResult):
@@ -33,7 +34,7 @@ class ScreenshotResult(unittest.TextTestResult):
             if not driver.save_screenshot(str(path)):
                 self.stream.writeln(f"Screenshot could not be saved: {path}")
                 return
-        except (OSError, WebDriverException) as error:
+        except (OSError, WebDriverException, MaxRetryError) as error:
             self.stream.writeln(f"Screenshot unavailable for {test.id()}: {error}")
             return
         self.stream.writeln(f"Screenshot saved: {path}")

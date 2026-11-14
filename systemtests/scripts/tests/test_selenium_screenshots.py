@@ -19,6 +19,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from urllib3.exceptions import MaxRetryError
+
 from selenium_screenshots import ScreenshotResult
 
 
@@ -130,6 +132,37 @@ class ScreenshotResultTest(unittest.TestCase):
             self.assertEqual(len(result.errors), 0)
             self.assertIn("original failure", output.getvalue())
             self.assertIn("disk unavailable", output.getvalue())
+
+    def test_disconnected_browser_preserves_failure_and_continues(self):
+        completed = []
+
+        class BrowserCase(unittest.TestCase):
+            def setUp(self):
+                self.driver = self
+
+            def save_screenshot(self, path):
+                raise MaxRetryError(None, "/screenshot", "browser disconnected")
+
+            def test_failure(self):
+                self.fail("original failure")
+
+            def test_remaining(self):
+                completed.append("remaining test")
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = io.StringIO()
+            with patch.dict(os.environ, {"BAREOS_BROWSER_ARTIFACTS_DIR": directory}):
+                result = unittest.TextTestRunner(
+                    stream=output, resultclass=ScreenshotResult
+                ).run(unittest.defaultTestLoader.loadTestsFromTestCase(BrowserCase))
+
+            self.assertEqual(len(result.failures), 1)
+            self.assertEqual(len(result.errors), 0)
+            self.assertEqual(result.testsRun, 2)
+            self.assertEqual(completed, ["remaining test"])
+            self.assertIn("original failure", output.getvalue())
+            self.assertIn("Screenshot unavailable", output.getvalue())
+            self.assertIn("browser disconnected", output.getvalue())
 
 
 if __name__ == "__main__":
