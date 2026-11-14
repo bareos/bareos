@@ -36,14 +36,20 @@
 
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/heartbeat.h"
 #include "findlib/attribs.h"
+#include "include/filetypes.h"
+#include "include/streams.h"
 #include "findlib/find.h"
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
+
+#include <limits>
+#include <optional>
 
 #ifdef HAVE_MSVC
 #  define PATH_MAX MAX_PATH
@@ -68,8 +74,51 @@ namespace filedaemon {
 
 int SaveFile(JobControlRecord*, FindFilesPacket*, bool);
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*);
+void FillMissingPluginStatBlocks(struct stat& statp);
+bool PluginSizeNeedsFdFallback(const struct stat& statp);
+bool PluginFileSizeBlocksAreValid(const PluginFileSizeBlocks& corrected);
+bool ResendCorrectedAttributes(JobControlRecord*,
+                               FindFilesPacket*,
+                               const char*,
+                               const PluginFileSizeBlocks&,
+                               bool,
+                               const char*);
+std::optional<PluginFileSizeBlocks> FdCountedFileSizeBlocks(
+    const struct stat& original_statp,
+    bool data_was_read,
+    uint64_t read_bytes_before,
+    uint64_t read_bytes_after);
+bool EncodeAndSendAttributes(JobControlRecord*,
+                             FindFilesPacket*,
+                             int&,
+                             bool reuse_file_index);
 
-int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
+int saved_file_type = 0;
+int encoded_attributes = 0;
+
+int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+{
+  if (!saved_file_type) { return 0; }
+  ff_pkt->type = saved_file_type;
+  if (saved_file_type == FT_REG) {
+    ff_pkt->FileIndex = ++jcr->JobFiles;
+    jcr->ReadBytes += 1024;
+  }
+  return 1;
+}
+
+int encoded_data_stream = STREAM_NONE;
+
+bool EncodeAndSendAttributes(JobControlRecord*,
+                             FindFilesPacket* ff_pkt,
+                             int& data_stream,
+                             bool)
+{
+  ++encoded_attributes;
+  data_stream = SelectDataStream(ff_pkt);
+  encoded_data_stream = data_stream;
+  return true;
+}
 
 bool AccurateMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 
@@ -80,6 +129,175 @@ bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
+
+class PluginSaveTest : public testing::TestWithParam<int> {
+ protected:
+  void SetUp() override
+  {
+    OSDependentInit();
+    alist<const char*> names(1, not_owned_by_alist);
+    names.append("bpipe");
+    LoadFdPlugins(FD_PLUGIN_DIR, &names);
+    jcr.fd_impl = &fd_impl;
+    fd_impl.ff = &ff_pkt;
+    jcr.JobFiles = 7;
+    NewPlugins(&jcr);
+    ASSERT_NE(jcr.plugin_ctx_list, nullptr);
+    saved_file_type = GetParam();
+    encoded_attributes = 0;
+  }
+
+  void TearDown() override
+  {
+    saved_file_type = 0;
+    FreePlugins(&jcr);
+    UnloadFdPlugins();
+  }
+
+  FiledJcrImpl fd_impl{};
+  JobControlRecord jcr{};
+  FindFilesPacket ff_pkt{};
+};
+
+TEST_P(PluginSaveTest, corrections_require_saved_attributes)
+{
+  char command[] = "bpipe:file=/plugin-file:reader=unused:writer=unused";
+  ff_pkt.top_fname = command;
+  ASSERT_EQ(PluginSave(&jcr, &ff_pkt, true), 1);
+  EXPECT_EQ(encoded_attributes, GetParam() == FT_REG ? 1 : 0);
+  EXPECT_EQ(jcr.JobFiles, GetParam() == FT_REG ? 8 : 7);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    FileTypes,
+    PluginSaveTest,
+    testing::Values(FT_REG, FT_NOCHG, FT_DIRNOCHG, FT_DIRBEGIN));
+
+TEST(fd, fill_missing_plugin_stat_blocks)
+{
+  // Plugin reported a real size but left st_blocks at 0: derive it.
+  struct stat statp {};
+  statp.st_size = 513;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Exact multiple of 512 should not round up an extra block.
+  statp = {};
+  statp.st_size = 1024;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 2);
+
+  // Plugin already provided real block-allocation data: don't overwrite it.
+  statp = {};
+  statp.st_size = 100000;
+  statp.st_blocks = 7;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 7);
+
+  // Unknown size (e.g. streaming plugin still filling it in): don't guess.
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+
+  // Legitimate empty file: nothing to derive.
+  statp = {};
+  statp.st_size = 0;
+  statp.st_blocks = 0;
+  FillMissingPluginStatBlocks(statp);
+  EXPECT_EQ(statp.st_blocks, 0);
+
+  statp = {};
+  statp.st_size = 0;
+  statp.st_blocks = -1;
+  EXPECT_TRUE(PluginSizeNeedsFdFallback(statp));
+}
+
+TEST(fd, plugin_file_size_blocks_validation)
+{
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, 3}));
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, 0}));
+  EXPECT_TRUE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{0, 0}));
+
+  EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{-1, 0}));
+  EXPECT_FALSE(PluginFileSizeBlocksAreValid(PluginFileSizeBlocks{1234, -1}));
+}
+
+TEST(fd, corrected_plugin_attributes_use_effective_file_flags)
+{
+  JobControlRecord jcr{};
+  FindFilesPacket ff_pkt{};
+  ff_pkt.type = FT_REG;
+  char fname[] = "plugin-file";
+  ff_pkt.fname = fname;
+  SetBit(FO_MD5, ff_pkt.flags);
+  ASSERT_TRUE(SetPortableBackup(&ff_pkt.bfd));
+
+  char effective_flags[FOPTS_BYTES]{};
+  SetBit(FO_SPARSE, effective_flags);
+  encoded_data_stream = STREAM_NONE;
+  ASSERT_TRUE(ResendCorrectedAttributes(
+      &jcr, &ff_pkt, "test-plugin", PluginFileSizeBlocks{1024, 2},
+      /*from_fd_count=*/false, effective_flags));
+  EXPECT_EQ(encoded_data_stream, STREAM_SPARSE_DATA);
+  EXPECT_TRUE(BitIsSet(FO_MD5, ff_pkt.flags));
+  EXPECT_FALSE(BitIsSet(FO_SPARSE, ff_pkt.flags));
+
+  ClearAllBits(FO_MAX, effective_flags);
+  SetBit(FO_OFFSETS, effective_flags);
+  encoded_data_stream = STREAM_NONE;
+  ASSERT_TRUE(ResendCorrectedAttributes(
+      &jcr, &ff_pkt, "test-plugin", PluginFileSizeBlocks{2048, 4},
+      /*from_fd_count=*/false, effective_flags));
+  EXPECT_EQ(encoded_data_stream, STREAM_SPARSE_DATA);
+  EXPECT_TRUE(BitIsSet(FO_MD5, ff_pkt.flags));
+  EXPECT_FALSE(BitIsSet(FO_OFFSETS, ff_pkt.flags));
+}
+
+TEST(fd, fd_counted_plugin_size_blocks_fallback)
+{
+  struct stat statp {};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+
+  std::optional<PluginFileSizeBlocks> corrected
+      = FdCountedFileSizeBlocks(statp, true, 100, 1334);
+
+  ASSERT_TRUE(corrected.has_value());
+  EXPECT_EQ(corrected->size, 1234);
+  EXPECT_EQ(corrected->blocks, 3);
+
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+  corrected = FdCountedFileSizeBlocks(statp, true, 100, 100);
+  ASSERT_TRUE(corrected.has_value());
+  EXPECT_EQ(corrected->size, 0);
+  EXPECT_EQ(corrected->blocks, 0);
+}
+
+TEST(fd, fd_counted_plugin_size_blocks_fallback_is_bounded)
+{
+  struct stat statp {};
+  statp.st_size = 1234;
+  statp.st_blocks = 3;
+
+  EXPECT_FALSE(FdCountedFileSizeBlocks(statp, true, 100, 1334).has_value());
+
+  statp = {};
+  statp.st_size = -1;
+  statp.st_blocks = 1;
+  EXPECT_FALSE(FdCountedFileSizeBlocks(statp, false, 100, 1334).has_value());
+  EXPECT_FALSE(FdCountedFileSizeBlocks(statp, true, 1334, 100).has_value());
+  EXPECT_FALSE(
+      FdCountedFileSizeBlocks(
+          statp, true, 0,
+          static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 1)
+          .has_value());
+}
 
 TEST(fd, fd_plugins)
 {

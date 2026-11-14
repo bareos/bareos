@@ -3,8 +3,15 @@ set -e
 set -o pipefail
 set -u
 #
-# This test checks whether the environment variables for the bpipe plugin work correctly.
-# Both the read- and the writeprogram use the set environment variables
+# This test checks whether the environment variables for the bpipe plugin
+# work correctly. Both the read- and the writeprogram use the set
+# environment variables.
+#
+# It also covers the bpipe plugin's corrected-attributes resend (the
+# fallback byte/block count reported when the plugin doesn't set an
+# exact size), including that the corrected attributes reach the
+# Director before the digest, and that a Virtual Full consolidation
+# retains both values unchanged.
 #
 
 TestName="$(basename "$(pwd)")"
@@ -17,6 +24,7 @@ export TestName
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
+
 # Windows debug: show environment vars
 if on_windows_host; then
   nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
@@ -64,6 +72,59 @@ check_log "$full_log"
 check_log "$incr_log"
 check_log "$restore_log"
 
+payload="bareos bpipe accounting payload"
+payload_bytes=${#payload}
+payload_blocks=$(((payload_bytes + 511) / 512))
+
+# The bpipe plugin did not report a corrected size/block count itself,
+# so the FD's fallback counts it from the plugin stream instead. That
+# per-file correction is only logged at debug level (not the job log,
+# to avoid flooding it for plugins backing up many files needing
+# correction) -- the catalog check below (via .sql query) is the
+# behavioral proof that the fallback was applied correctly.
+
+# The corrected attributes must reach the Director before the digest,
+# otherwise the digest is dropped with a "not same File" warning.
+expect_not_grep \
+  "not same File" \
+  "$full_log" \
+  "bpipe digest was dropped: corrected attributes reached the Director after the digest"
+
+printf '%s' "$payload" >"${runner_tmp}/expected-restored-data"
+cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.3. .dat"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=1 AND p.path='/' AND f.name='bpipe'"
+END_OF_DATA
+
+expect_grep \
+  "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/accounting.out" \
+  "Catalog does not contain exactly one corrected bpipe File row"
+# bls lists the corrected attributes once for each job.
+run_bls -d100 -vv -V Full-0001 FileStorage
+attribute_records=$(
+  grep -cE '^FileIndex=1[[:space:]]+Stream=1[[:space:]]+UATTR' "$tmp/bls.out" || true
+)
+if [ "$attribute_records" -ne 2 ]; then
+  echo "Expected one FileIndex=1 attribute record per job, found $attribute_records" >&2
+  cat "$tmp/bls.out" >&2
+  exit 2
+fi
+corrected_attribute_records=$(
+  grep -cE "^FileIndex=1[[:space:]]+Stream=1[[:space:]]+UATTR.*[[:space:]]${payload_bytes}[[:space:]]" "$tmp/bls.out" || true
+)
+if [ "$corrected_attribute_records" -ne 2 ]; then
+  echo "Expected corrected ${payload_bytes}-byte attributes for both jobs, found $corrected_attribute_records" >&2
+  cat "$tmp/bls.out" >&2
+  exit 2
+fi
+expect_grep \
+  "2 files and directories found" \
+  "$tmp/bls.out" \
+  "bls listed the file with a duplicate attribute record more than once"
+
 # validate environment variables in readprogram / writeprogram
 expected_output=(
   "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
@@ -104,5 +165,105 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
     fi
   fi
 done
+
+virtual_full_log="${runner_tmp}/virtual-full.out"
+virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
+
+run_bconsole - <<END_OF_DATA
+@$out ${virtual_full_log}
+label volume=VirtualFull-0001 storage=File2 pool=VirtualFull
+run job=backup-bareos-fd level=VirtualFull jobid=1,2 yes
+wait
+messages
+@$out ${runner_tmp}/virtual-full-sql.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=4 AND p.path='/' AND f.name='bpipe'"
+@$out ${virtual_full_restore_log}
+purge volume=Full-0001 yes
+restore jobid=4 client=bareos-fd all done yes
+wait
+messages
+END_OF_DATA
+
+check_log "$virtual_full_log"
+check_log "$virtual_full_restore_log"
+
+expect_grep \
+  "SD Files Written:[[:space:]]*1" \
+  "$virtual_full_log" \
+  "Virtual Full did not consolidate exactly one bpipe file"
+
+expect_grep \
+  "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/virtual-full-sql.out" \
+  "Virtual Full catalog row does not retain corrected bpipe attributes"
+
+expect_not_grep \
+  "not same File" \
+  "$virtual_full_log" \
+  "Virtual Full dropped the bpipe digest: corrected attributes reached the Director after the digest"
+
+cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
+
+# Full-0001 was purged from the catalog above, but still holds the
+# duplicate attribute records. Re-importing it with bscan must forward only
+# the corrected attributes, before the digest, like a live job does.
+bscan_log="${runner_tmp}/bscan.out"
+run_bscan_db -vv -s -m -V Full-0001 FileStorage
+cp "$tmp/bscan.out" "$bscan_log"
+
+expect_not_grep \
+  "not same File" \
+  "$bscan_log" \
+  "bscan dropped the digest: corrected attributes reached the catalog after it"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/bscan-accounting.out
+.sql query="SELECT count(*) || ':' || count(*) FILTER (WHERE s.st_size IS DISTINCT FROM ${payload_bytes} OR s.st_blocks IS DISTINCT FROM ${payload_blocks}) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid>5 AND p.path='/' AND f.name='bpipe'"
+END_OF_DATA
+
+# bscan assigns new JobIds (> 5) to the two re-imported jobs.
+expect_grep \
+  "^[[:space:]|]*2:0[[:space:]|]*$" \
+  "${runner_tmp}/bscan-accounting.out" \
+  "bscan did not restore one bpipe File row per job with corrected attributes"
+
+expect_grep \
+  "Updated MD5/SHA1 record" \
+  "$bscan_log" \
+  "bscan did not attach the digest to the corrected bpipe File row"
+
+# Stop at the next FileIndex, before EOS/EOT can flush the selected file.
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/bootstrap-backup.out
+update volume=Full-0001 volstatus=Used
+label volume=Bootstrap-0001 storage=File pool=Full
+run job=backup-bareos-fd fileset=BscanBootstrap level=Full yes
+wait
+messages
+END_OF_DATA
+check_log "${runner_tmp}/bootstrap-backup.out"
+
+bootstrap="${runner_tmp}/first-file.bsr"
+sed -e 's/^FileIndex=.*/FileIndex=1/' -e 's/^Count=.*/Count=1/' \
+  "${working_dir}/bareos-fd.bsr" >"$bootstrap"
+expect_grep '^FileIndex=1$' "$bootstrap" "Missing bootstrap file selection"
+
+run_bconsole - <<END_OF_DATA
+purge volume=Bootstrap-0001 yes
+END_OF_DATA
+run_bscan_db -d500 -vv -s -m -b "$bootstrap" -V Bootstrap-0001 FileStorage
+cp "$tmp/bscan.out" "${runner_tmp}/bscan-bootstrap.out"
+expect_grep "All done=" "${runner_tmp}/bscan-bootstrap.out" \
+  "bscan did not stop at bootstrap exhaustion"
+expect_not_grep "End of all Volumes" "${runner_tmp}/bscan-bootstrap.out" \
+  "Bootstrap scan unexpectedly reached EOT"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/bootstrap-accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE p.path='/' AND f.name='bscan-first'"
+END_OF_DATA
+expect_grep "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/bootstrap-accounting.out" \
+  "Bootstrap-limited bscan lost its final corrected attributes"
 
 end_test

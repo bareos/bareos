@@ -8,8 +8,23 @@ FileSet {
     }
     Plugin = "bpipe"
              ":file=/bpipe"
-             ":reader=bash ./readprogram"
+             ":reader=bash ./readprogram-accounting"
              ":writer=bash ./writeprogram"
+  }
+}
+
+FileSet {
+  Name = BscanBootstrap
+  Enable VSS = No
+
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe:file=/bscan-first"
+             ":reader=bash ./readprogram-accounting:writer=bash ./writeprogram"
+    Plugin = "bpipe:file=/bscan-second"
+             ":reader=bash ./readprogram-accounting:writer=bash ./writeprogram"
   }
 }
 
