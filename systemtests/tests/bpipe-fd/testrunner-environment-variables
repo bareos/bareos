@@ -232,4 +232,38 @@ expect_grep \
   "$bscan_log" \
   "bscan did not attach the digest to the corrected bpipe File row"
 
+# Stop at the next FileIndex, before EOS/EOT can flush the selected file.
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/bootstrap-backup.out
+update volume=Full-0001 volstatus=Used
+label volume=Bootstrap-0001 storage=File pool=Full
+run job=backup-bareos-fd fileset=BscanBootstrap level=Full yes
+wait
+messages
+END_OF_DATA
+check_log "${runner_tmp}/bootstrap-backup.out"
+
+bootstrap="${runner_tmp}/first-file.bsr"
+sed -e 's/^FileIndex=.*/FileIndex=1/' -e 's/^Count=.*/Count=1/' \
+  "${working_dir}/bareos-fd.bsr" >"$bootstrap"
+expect_grep '^FileIndex=1$' "$bootstrap" "Missing bootstrap file selection"
+
+run_bconsole - <<END_OF_DATA
+purge volume=Bootstrap-0001 yes
+END_OF_DATA
+run_bscan_db -d500 -vv -s -m -b "$bootstrap" -V Bootstrap-0001 FileStorage
+cp "$tmp/bscan.out" "${runner_tmp}/bscan-bootstrap.out"
+expect_grep "All done=" "${runner_tmp}/bscan-bootstrap.out" \
+  "bscan did not stop at bootstrap exhaustion"
+expect_not_grep "End of all Volumes" "${runner_tmp}/bscan-bootstrap.out" \
+  "Bootstrap scan unexpectedly reached EOT"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/bootstrap-accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE p.path='/' AND f.name='bscan-first'"
+END_OF_DATA
+expect_grep "1:${payload_bytes}:${payload_blocks}" \
+  "${runner_tmp}/bootstrap-accounting.out" \
+  "Bootstrap-limited bscan lost its final corrected attributes"
+
 end_test

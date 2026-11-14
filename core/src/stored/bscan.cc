@@ -431,6 +431,7 @@ static void do_scan()
 
   // Detach bscan's jcr as we are not a real Job on the tape
   ReadRecords(bjcr->sd_impl->read_dcr, RecordCb, BscanMountNextReadVolume);
+  pending_attributes.FlushAll();
 
   if (update_db) {
     db->WriteBatchFileRecords(bjcr); /* used by bulk batch file insert */
