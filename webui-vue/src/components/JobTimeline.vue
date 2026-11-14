@@ -280,7 +280,7 @@ const calendarRef  = ref(null)
 const normalizedClientFilter = computed(() => String(clientFilter ?? '').trim())
 
 // ── "Now" line (shared with the Scheduler Preview) ─────────────────────────────
-const { nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
+const { nowTick, nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
 
 // ── Month/Week/Day navigation (mirrors SchedulesPage.vue's Scheduler Preview) ──
 const calendarMode = ref(settings.jobsTimelineViewMode)
@@ -479,13 +479,13 @@ function dayBounds(dateStr) {
 const dayViewGroups = computed(() => {
   if (!dayViewDate.value) return []
   const { start, end } = dayBounds(dayViewDate.value)
-  const now = Math.min(Date.now(), end)
+  const now = Math.min(nowTick.value, end)
   return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
 })
 
 function dayBarStyle(run) {
   const { start, end } = dayBounds(dayViewDate.value)
-  const now = Math.min(Date.now(), end)
+  const now = Math.min(nowTick.value, end)
   const sRaw = parseTimelineTimestamp(run.starttime) ?? start
   const eRaw = parseTimelineTimestamp(run.endtime) ?? now
   const s = Math.max(sRaw, start)
@@ -541,7 +541,7 @@ const periodDayTicks = computed(() => {
 
 const periodNowPercent = computed(() => {
   const { start, end } = periodBounds.value
-  const now = Date.now()
+  const now = nowTick.value
   if (now < start || now > end) return null
   return ((now - start) / (end - start)) * 100
 })
@@ -549,14 +549,14 @@ const periodNowPercent = computed(() => {
 const periodViewGroups = computed(() => {
   if (inDayView.value) return []
   const { start, end } = periodBounds.value
-  const now = Math.min(Date.now(), end)
+  const now = Math.min(nowTick.value, end)
   return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
 })
 
 function periodBarStyle(run) {
   const { start, end } = periodBounds.value
   const total = end - start
-  const now = Math.min(Date.now(), end)
+  const now = Math.min(nowTick.value, end)
   const sRaw = parseTimelineTimestamp(run.starttime) ?? start
   const eRaw = parseTimelineTimestamp(run.endtime) ?? now
   const s = Math.max(sRaw, start)
