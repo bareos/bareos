@@ -25,10 +25,15 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { parseDirectorDate } from '../utils/locales.js'
 
 function sortByTimestampDescending(entries, field, fallbackField) {
   return [...entries].sort((left, right) => {
-    const timeCompare = String(right[field] ?? '').localeCompare(String(left[field] ?? ''))
+    const leftTime = parseDirectorDate(left[field])?.getTime()
+    const rightTime = parseDirectorDate(right[field])?.getTime()
+    const timeCompare = Number.isFinite(leftTime) && Number.isFinite(rightTime)
+      ? rightTime - leftTime
+      : String(right[field] ?? '').localeCompare(String(left[field] ?? ''))
     if (timeCompare !== 0) {
       return timeCompare
     }
