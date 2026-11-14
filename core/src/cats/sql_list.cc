@@ -714,8 +714,8 @@ void BareosDb::ListJobRecords(
       = (sort_column && GetJobsSortColumn(sort_column, resolved_sort_column))
             ? resolved_sort_column.c_str()
             : "StartTime";
-  const std::string order_range
-      = (descending ? std::string(" DESC") : std::string()) + range;
+  const std::string direction = descending ? " DESC" : "";
+  const std::string order_range = direction + ", Job.JobId" + direction + range;
 
   if (!count && type != VERT_LIST) {
     sendit->AddHiddenColumn(10); /* JobErrors: required for DISTINCT sorting */
