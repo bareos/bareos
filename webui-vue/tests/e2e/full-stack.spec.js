@@ -112,6 +112,98 @@ test('browser regression: log focus follows reused job routes', async ({ page })
   await expect(focused).toHaveText('Warning: job 101')
 })
 
+test('browser regression: run defaults follow the selected Director', async ({ page }) => {
+  let releaseDefaults
+  const runs = []
+  await browserFixture(page, (command, director) => {
+    if (command === 'show jobs') return { jobs: [{ name: 'Shared job', type: 'Backup', enabled: true }] }
+    if (command === '.jobs') return { jobs: [{ name: 'Shared job' }] }
+    if (command === '.jobs type=R') return { jobs: [] }
+    for (const [query, key] of [['.clients', 'clients'], ['.filesets', 'filesets'], ['.pools', 'pools'], ['.storage', 'storages']]) {
+      if (command === query) return { [key]: [{ name: 'Shared resource' }, { name: `${director} resource` }] }
+    }
+    if (command === '.defaults job="Shared job"') {
+      const defaults = {
+        client: `${director} resource`, fileset: 'Shared resource',
+        pool: `${director} resource`, storage: `${director} resource`,
+        level: director === 'bareos-dir' ? 'Full' : 'Differential',
+      }
+      if (director === 'bareos-dir-2') return new Promise(resolve => {
+        releaseDefaults = () => resolve({ defaults })
+      })
+      return { defaults }
+    }
+    if (command.startsWith('run ')) {
+      runs.push({ command, director })
+      return { run: { jobid: '303' } }
+    }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByTestId('jobs-tab-run').click()
+  await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+  const dialog = page.locator('.configure-start-dialog')
+  const submit = dialog.getByTestId('run-job-submit')
+  const selectDirector = async name => {
+    await dialog.getByLabel('Director', { exact: true }).fill(name)
+    await page.getByRole('option', { name, exact: true }).click()
+  }
+  await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('bareos-dir resource')
+  await selectDirector('bareos-dir-2')
+  await expect(submit).toBeDisabled()
+  await expect.poll(() => Boolean(releaseDefaults)).toBe(true)
+  const staleDefaults = releaseDefaults
+  await selectDirector('bareos-dir')
+  await expect(submit).toBeEnabled()
+  staleDefaults()
+  await selectDirector('bareos-dir-2')
+  await expect(submit).toBeDisabled()
+  await expect.poll(() => releaseDefaults !== staleDefaults).toBe(true)
+  releaseDefaults()
+  await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('bareos-dir-2 resource')
+  await expect(dialog.getByLabel('Pool', { exact: true })).toHaveValue('bareos-dir-2 resource')
+  await expect(dialog.getByLabel('Level', { exact: true })).toHaveValue('Differential')
+  await expect(submit).toBeEnabled()
+  await submit.click()
+  await expect.poll(() => runs.length).toBe(1)
+  expect(runs[0].director).toBe('bareos-dir-2')
+  expect(runs[0].command).toContain('client="bareos-dir-2 resource"')
+  expect(runs[0].command).toContain('pool="bareos-dir-2 resource"')
+  expect(runs[0].command).toContain('level="Differential"')
+})
+
+test('browser regression: run defaults clear an unavailable job', async ({ page }) => {
+  const defaultsCalls = []
+  await browserFixture(page, (command, director) => {
+    if (command === 'show jobs') return { jobs: [{ name: 'Shared job', type: 'Backup' }] }
+    if (command === '.jobs') return { jobs: [{ name: director === 'bareos-dir' ? 'Shared job' : 'Other job' }] }
+    if (command === '.jobs type=R') return { jobs: [] }
+    if (command.startsWith('.defaults ')) {
+      defaultsCalls.push(director)
+      return { defaults: { level: 'Full' } }
+    }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByTestId('jobs-tab-run').click()
+  await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+  const dialog = page.locator('.configure-start-dialog')
+  await expect(dialog.getByTestId('run-job-submit')).toBeEnabled()
+  await dialog.getByLabel('Director', { exact: true }).fill('bareos-dir-2')
+  await page.getByRole('option', { name: 'bareos-dir-2', exact: true }).click()
+  await dialog.getByLabel('Job *', { exact: true }).click()
+  await expect(page.getByRole('option', { name: 'Other job', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog.getByLabel('Job *', { exact: true })).toHaveValue('')
+  await expect(dialog.getByLabel('Level', { exact: true })).toHaveValue('Incremental')
+  await expect(dialog.getByTestId('run-job-submit')).toBeDisabled()
+  expect(defaultsCalls).toEqual(['bareos-dir'])
+})
+
 for (const [jobId, directorName] of [['202', 'bareos-dir'], ['101', 'bareos-dir-2']]) {
   test(`browser regression: comment target survives navigation to ${directorName}/${jobId}`, async ({ page }) => {
     let resolveSave
