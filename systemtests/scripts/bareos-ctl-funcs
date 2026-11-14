@@ -79,7 +79,9 @@ pidofproc()
   # Next try "pgrep"
   if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
     pattern=$(printf '%s\n' "$base" | sed 's/[][\\.^$*+?{}|()]/\\&/g')
-    pid=$(filter_pids_by_config_dir $("${PGREP}" -f "^([^[:space:]]*/)?${pattern}([[:space:]]|$)"))
+    # Valgrind keeps its own executable/options before the daemon token.
+    # Do not search arbitrary arguments: they may only refer to the daemon.
+    pid=$(filter_pids_by_config_dir $("${PGREP}" -f "^(([^[:space:]]*/)?valgrind([[:space:]]+-[^[:space:]]+)*[[:space:]]+)?(/|[^[:space:]-][^[:space:]]*/)?${pattern}([[:space:]]|$)"))
     if [ "$pid" != "" ]; then
       echo $pid | cut -d' ' -f 1
       return 0
@@ -89,7 +91,15 @@ pidofproc()
   # Finally try to extract it from ps
   pid=$(filter_pids_by_config_dir $(${PS:-ps} -ww -A -o pid= -o args= | awk -v name="$base" '
     {
-      command = $2
+      executable = 2
+      command = $executable
+      sub(/^.*\//, "", command)
+      if (command == "valgrind") {
+        do {
+          executable++
+        } while (executable <= NF && $executable ~ /^-/)
+        command = $executable
+      }
       sub(/^.*\//, "", command)
       if (command == name) {
         print $1
