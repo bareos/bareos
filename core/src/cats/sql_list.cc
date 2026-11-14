@@ -704,9 +704,8 @@ void BareosDb::ListJobRecords(
 
   DbLocker _{this};
 
-  /* For non-count queries the ORDER BY clause accepts an optional direction
-   * suffix (" DESC") followed by the LIMIT/OFFSET range string. The sort
-   * column itself may only come from the fixed whitelist above -- an
+  /* Match the browser's per-Director tie-breakers before limiting the rows.
+   * The sort column itself may only come from the fixed whitelist above -- an
    * unrecognized sort_column (including nullptr) falls back to the
    * pre-existing default rather than ever being interpolated directly. */
   std::string resolved_sort_column;
@@ -715,7 +714,10 @@ void BareosDb::ListJobRecords(
             ? resolved_sort_column.c_str()
             : "StartTime";
   const std::string direction = descending ? " DESC" : "";
-  const std::string order_range = direction + ", Job.JobId" + direction + range;
+  const std::string order_range
+      = direction + ", Job.StartTime" + direction
+        + (descending ? " NULLS LAST" : " NULLS FIRST") + ", Job.JobId"
+        + direction + range;
 
   if (!count && type != VERT_LIST) {
     sendit->AddHiddenColumn(10); /* JobErrors: required for DISTINCT sorting */
