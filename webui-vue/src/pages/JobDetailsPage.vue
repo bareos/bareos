@@ -51,7 +51,7 @@
                       flat round dense size="sm" icon="edit" color="primary"
                       :title="t('Edit comment')" :aria-label="t('Edit comment')"
                       data-testid="job-comment-edit"
-                      @click="commentDialogOpen = true"
+                      @click="openJobComment"
                     />
                   </q-item-section>
                 </q-item>
@@ -435,24 +435,38 @@ watch([logLines, logFocus], () => {
 })
 
 // ── data loading ──────────────────────────────────────────────────────────────
-async function ensureJobDirector() {
-  if (!requestedDirector.value) {
+async function ensureJobDirector(targetDirector = requestedDirector.value) {
+  if (!targetDirector) {
     return
   }
 
-  if (auth.user?.director === requestedDirector.value && director.isConnected) {
+  if (auth.user?.director === targetDirector && director.isConnected) {
     return
   }
 
-  await switchActiveDirector(requestedDirector.value)
+  await switchActiveDirector(targetDirector)
 }
 
 const commentDialogOpen = ref(false)
+const commentTarget = ref(null)
+
+function openJobComment() {
+  commentTarget.value = { jobId: currentJobId.value, director: currentJobDirector.value }
+  commentDialogOpen.value = true
+}
+
+watch(() => [currentJobId.value, currentJobDirector.value], () => {
+  commentDialogOpen.value = false
+  commentTarget.value = null
+}, { flush: 'sync' })
 
 async function saveJobComment(comment) {
-  await ensureJobDirector()
-  await director.call(buildJobCommentCommand(currentJobId.value, comment))
-  if (jobData.value) {
+  const target = commentTarget.value
+  if (!target) throw new Error(t('Job not found.'))
+  await ensureJobDirector(target.director)
+  if (target !== commentTarget.value) throw new Error(t('Job not found.'))
+  await director.call(buildJobCommentCommand(target.jobId, comment))
+  if (target === commentTarget.value && jobData.value) {
     jobData.value = { ...jobData.value, comment }
   }
 }

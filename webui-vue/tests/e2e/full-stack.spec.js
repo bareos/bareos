@@ -112,6 +112,47 @@ test('browser regression: log focus follows reused job routes', async ({ page })
   await expect(focused).toHaveText('Warning: job 101')
 })
 
+for (const [jobId, directorName] of [['202', 'bareos-dir'], ['101', 'bareos-dir-2']]) {
+  test(`browser regression: comment target survives navigation to ${directorName}/${jobId}`, async ({ page }) => {
+    let resolveSave
+    const updates = []
+    await browserFixture(page, (command, director) => {
+      const job = command.match(/^llist jobid=(\d+)$/)
+      if (job) return { jobs: [{
+        jobid: job[1], name: 'Comment fixture', jobstatus: 'T', type: 'B',
+        comment: `Original ${director}/${job[1]}`,
+      }] }
+      if (command.startsWith('update jobid=')) {
+        updates.push({ command, director })
+        if (updates.length === 1) return new Promise(resolve => { resolveSave = resolve })
+        return {}
+      }
+    })
+    await page.goto('/#/jobs/101?director=bareos-dir')
+    await page.getByTestId('job-comment-edit').click()
+    const dialog = page.getByTestId('comment-edit-dialog')
+    await dialog.getByLabel('Comment', { exact: true }).fill('Old target comment')
+    await page.getByTestId('comment-edit-save').click()
+    await expect.poll(() => updates.length).toBe(1)
+    await page.goto(`/#/jobs/${jobId}?director=${directorName}`)
+    await expect(dialog).not.toBeVisible()
+    const original = `Original ${directorName}/${jobId}`
+    await expect(page.getByText(original, { exact: true })).toBeVisible()
+    await page.getByTestId('job-comment-edit').click()
+    await expect(dialog.getByLabel('Comment', { exact: true })).toHaveValue(original)
+    resolveSave({})
+    await dialog.getByLabel('Comment', { exact: true }).fill('New target comment')
+    await expect(page.getByText(original, { exact: true })).toBeVisible()
+    await page.getByTestId('comment-edit-save').click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText('New target comment', { exact: true })).toBeVisible()
+    expect(updates).toEqual([
+      { command: 'update jobid=101 comment="Old target comment"', director: 'bareos-dir' },
+      { command: `update jobid=${jobId} comment="New target comment"`, director: directorName },
+    ])
+  })
+}
+
 test('browser regression: pending comment saves resist dismissal and allow retry', async ({ page }) => {
   let rejectSave
   let updates = 0
