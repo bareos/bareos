@@ -28,6 +28,8 @@
 export function createTtlCache() {
   const store = new Map()
   let generation = 0
+  let nextFetchId = 0
+  const latestFetchByKey = new Map()
 
   // Returns the cached data if present and still within ttlMs, otherwise
   // evicts the (now stale) entry so the map doesn't grow unboundedly with
@@ -44,13 +46,17 @@ export function createTtlCache() {
     return entry.data
   }
 
-  function beginFetch() {
-    return generation
+  function beginFetch(key) {
+    const fetch = { generation, id: ++nextFetchId }
+    latestFetchByKey.set(key, fetch.id)
+    return fetch
   }
 
-  function set(key, data, fetchGeneration) {
-    // Ignore stale writes from fetches started before the most recent clear().
-    if (fetchGeneration !== generation) {
+  function set(key, data, fetch) {
+    if (
+      fetch.generation !== generation
+      || fetch.id !== latestFetchByKey.get(key)
+    ) {
       return
     }
     store.set(key, { timestamp: Date.now(), data })
@@ -59,6 +65,7 @@ export function createTtlCache() {
   function clear() {
     generation += 1
     store.clear()
+    latestFetchByKey.clear()
   }
 
   return { get, beginFetch, set, clear }
