@@ -87,6 +87,36 @@ test('browser regression: column checkboxes have accessible names', async ({ pag
   }
 })
 
+test('browser regression: pending comment saves resist dismissal and allow retry', async ({ page }) => {
+  let rejectSave
+  let updates = 0
+  await browserFixture(page, command => {
+    if (command.startsWith('update jobid=')) {
+      updates += 1
+      if (updates === 1) return new Promise((_resolve, reject) => { rejectSave = reject })
+      return {}
+    }
+  })
+  await page.goto('/#/jobs/101')
+  await page.getByTestId('job-comment-edit').click()
+  const dialog = page.getByTestId('comment-edit-dialog')
+  await dialog.getByLabel('Comment', { exact: true }).fill('Retried comment')
+  await page.getByTestId('comment-edit-save').click()
+  await expect.poll(() => updates).toBe(1)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await page.locator('.q-dialog__backdrop').click({ position: { x: 5, y: 5 }, force: true })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  rejectSave(new Error('Comment update denied'))
+  await expect(page.getByTestId('comment-edit-error')).toHaveText('Comment update denied')
+  await expect(dialog.getByLabel('Comment', { exact: true })).toHaveValue('Retried comment')
+  await page.getByTestId('comment-edit-save').click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByText('Retried comment', { exact: true })).toBeVisible()
+  expect(updates).toBe(2)
+})
+
 async function expectConnected(page) {
   await expect(page.locator('[data-testid="director-status-label"]')).toContainText(
     'Connected'
