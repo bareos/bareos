@@ -84,9 +84,11 @@
             <div class="sched-day-lane-label">
               <span :title="lane.fileset">{{ midEllipsis(lane.fileset, 20) }}</span>
               <span>@</span>
-              <span class="text-primary cursor-pointer" style="text-decoration:underline"
-                    :title="lane.client"
-                    @click="router.push(clientDetailsRoute(lane))">{{ midEllipsis(lane.client, 14) }}</span>
+              <router-link :to="clientDetailsRoute(lane)"
+                           class="text-primary cursor-pointer" style="text-decoration:underline"
+                           :title="lane.client" :aria-label="lane.client">
+                {{ midEllipsis(lane.client, 14) }}
+              </router-link>
             </div>
             <div class="sched-day-lane-axis">
               <div v-for="hm in DAY_VIEW_HOUR_MARKS" :key="hm.pct" class="sched-day-hour-mark"
@@ -151,9 +153,11 @@
             <div class="sched-day-lane-label">
               <span :title="lane.fileset">{{ midEllipsis(lane.fileset, 20) }}</span>
               <span>@</span>
-              <span class="text-primary cursor-pointer" style="text-decoration:underline"
-                    :title="lane.client"
-                    @click="router.push(clientDetailsRoute(lane))">{{ midEllipsis(lane.client, 14) }}</span>
+              <router-link :to="clientDetailsRoute(lane)"
+                           class="text-primary cursor-pointer" style="text-decoration:underline"
+                           :title="lane.client" :aria-label="lane.client">
+                {{ midEllipsis(lane.client, 14) }}
+              </router-link>
             </div>
             <div class="sched-day-lane-axis">
               <div v-for="tick in periodDayTicks" :key="tick.dateStr" class="sched-period-gridline"
