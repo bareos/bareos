@@ -205,6 +205,40 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
 
+test('browser regression: next run advances with the live clock', async ({ page }) => {
+  const now = Date.parse('2026-05-28T12:00:00Z')
+  await page.clock.install({ time: new Date(now) })
+
+  await browserFixture(page, command => {
+    if (command.startsWith('status scheduler days=')) {
+      return {
+        preview: [
+          {
+            job: 'SoonJob',
+            schedule: 'SoonSchedule',
+            datetime: '2026-05-28 12:00:30',
+            runtime: (now + 30_000) / 1000,
+          },
+          {
+            job: 'LaterJob',
+            schedule: 'LaterSchedule',
+            datetime: '2026-05-28 12:01:30',
+            runtime: (now + 90_000) / 1000,
+          },
+        ],
+      }
+    }
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const stats = page.locator('.schedules-list-stats')
+  await expect(stats).toContainText('SoonSchedule')
+
+  await page.clock.fastForward(60_000)
+  await expect(stats).toContainText('LaterSchedule')
+  await expect(stats).not.toContainText('SoonSchedule')
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
