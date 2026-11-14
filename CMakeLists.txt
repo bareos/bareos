@@ -171,6 +171,13 @@ option(ENABLE_WEBUI "Build with WEBUI" ON)
 # skipped test suite would keep the build green while testing nothing.
 option(ENABLE_WEBUI_VUE_TESTS "Require the webui-vue test prerequisites" OFF)
 
+if(ENABLE_WEBUI_VUE_TESTS AND (NOT ENABLE_WEBUI OR client-only))
+  message(
+    FATAL_ERROR
+      "ENABLE_WEBUI_VUE_TESTS requires ENABLE_WEBUI=ON and client-only=OFF"
+  )
+endif()
+
 # Report a missing prerequisite for the webui-vue tests. Normally this only
 # disables the affected tests, but with ENABLE_WEBUI_VUE_TESTS=yes it aborts the
 # configure run, so that CI cannot stay green while silently testing nothing.
