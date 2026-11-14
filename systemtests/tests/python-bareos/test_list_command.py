@@ -1001,6 +1001,18 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         self.verify_joblog(result)
 
         expected = director.call(f"list joblog jobids={jobid}")
+        self.assertGreater(len(expected["joblog"]), 2)
+        for command in ("list", "llist"):
+            with self.subTest(command=command):
+                logs = director.call(f"{command} joblog jobids={jobid}")["joblog"]
+                page = director.call(
+                    f"{command} joblog jobids={jobid} limit=1 offset=1"
+                )["joblog"]
+                self.assertEqual(page, logs[1:2])
+                self.assertEqual(
+                    director.call(f"{command} joblog jobids={jobid} limit=0")["joblog"],
+                    [],
+                )
         at_limit = ",".join([str(jobid)] * 1000)
         self.assertEqual(director.call(f"list joblog jobids={at_limit}"), expected)
 
