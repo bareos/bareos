@@ -478,7 +478,9 @@ if(NOT MSVC)
       ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
       ${PROJECT_SOURCE_DIR}/src/filed/filed_globals.cc
     LINK_LIBRARIES Bareos::Lib Bareos::Findlib GTest::gtest_main
+    COMPILE_DEFINITIONS FD_PLUGIN_DIR=\"$<TARGET_FILE_DIR:bpipe-fd>\"
   )
+  add_dependencies(test_fd_plugins bpipe-fd)
 endif()
 bareos_add_test(test_is_name_valid LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 

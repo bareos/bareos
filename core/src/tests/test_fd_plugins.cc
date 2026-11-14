@@ -36,6 +36,7 @@
 
 #include "filed/filed.h"
 #include "filed/filed_globals.h"
+#include "filed/filed_jcr_impl.h"
 #include "filed/accurate.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
@@ -92,7 +93,19 @@ bool EncodeAndSendAttributes(JobControlRecord*,
                              int&,
                              bool reuse_file_index);
 
-int SaveFile(JobControlRecord*, FindFilesPacket*, bool) { return 0; }
+int saved_file_type = 0;
+int encoded_attributes = 0;
+
+int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
+{
+  if (!saved_file_type) { return 0; }
+  ff_pkt->type = saved_file_type;
+  if (saved_file_type == FT_REG) {
+    ff_pkt->FileIndex = ++jcr->JobFiles;
+    jcr->ReadBytes += 1024;
+  }
+  return 1;
+}
 
 int encoded_data_stream = STREAM_NONE;
 
@@ -101,6 +114,7 @@ bool EncodeAndSendAttributes(JobControlRecord*,
                              int& data_stream,
                              bool)
 {
+  ++encoded_attributes;
   data_stream = SelectDataStream(ff_pkt);
   encoded_data_stream = data_stream;
   return true;
@@ -115,6 +129,49 @@ bool accurate_unMarkFileAsSeen(JobControlRecord*, char*) { return true; }
 bool accurate_unMarkAllFilesAsSeen(JobControlRecord*) { return true; }
 
 bool SetCmdPlugin(BareosFilePacket*, JobControlRecord*) { return true; }
+
+class PluginSaveTest : public testing::TestWithParam<int> {
+ protected:
+  void SetUp() override
+  {
+    OSDependentInit();
+    alist<const char*> names(1, not_owned_by_alist);
+    names.append("bpipe");
+    LoadFdPlugins(FD_PLUGIN_DIR, &names);
+    jcr.fd_impl = &fd_impl;
+    fd_impl.ff = &ff_pkt;
+    jcr.JobFiles = 7;
+    NewPlugins(&jcr);
+    ASSERT_NE(jcr.plugin_ctx_list, nullptr);
+    saved_file_type = GetParam();
+    encoded_attributes = 0;
+  }
+
+  void TearDown() override
+  {
+    saved_file_type = 0;
+    FreePlugins(&jcr);
+    UnloadFdPlugins();
+  }
+
+  FiledJcrImpl fd_impl{};
+  JobControlRecord jcr{};
+  FindFilesPacket ff_pkt{};
+};
+
+TEST_P(PluginSaveTest, corrections_require_saved_attributes)
+{
+  char command[] = "bpipe:file=/plugin-file:reader=unused:writer=unused";
+  ff_pkt.top_fname = command;
+  ASSERT_EQ(PluginSave(&jcr, &ff_pkt, true), 1);
+  EXPECT_EQ(encoded_attributes, GetParam() == FT_REG ? 1 : 0);
+  EXPECT_EQ(jcr.JobFiles, GetParam() == FT_REG ? 8 : 7);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    FileTypes,
+    PluginSaveTest,
+    testing::Values(FT_REG, FT_NOCHG, FT_DIRNOCHG, FT_DIRBEGIN));
 
 TEST(fd, fill_missing_plugin_stat_blocks)
 {

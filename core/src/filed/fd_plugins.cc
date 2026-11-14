@@ -1125,8 +1125,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       // both the plugin-supplied correction and the FD-counted fallback
       // on it, so a correction is never applied/resent for a file whose
       // data transfer actually failed partway through.
-      if (file_finished_successfully && !IS_FT_OBJECT(sp.type)
-          && jcr->JobErrors == job_errors_before) {
+      if (file_finished_successfully && ff_pkt->FileIndex > 0
+          && !IS_FT_OBJECT(sp.type) && jcr->JobErrors == job_errors_before) {
         if (b_ctx->corrected_file_size_blocks) {
           corrected_file_size_blocks = b_ctx->corrected_file_size_blocks;
         } else {
