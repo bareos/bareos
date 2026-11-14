@@ -595,6 +595,7 @@
   "These hints are derived from Bareos manuals, shipped examples and plugin README files. They are frontend guidance only and may be incomplete.": "These hints are derived from Bareos manuals, shipped examples and plugin README files. They are frontend guidance only and may be incomplete.",
   "Third-party plugin": "Third-party plugin",
   "This does not delete any data from storage volumes.": "This does not delete any data from storage volumes.",
+  "This job type cannot be rerun.": "This job type cannot be rerun.",
   "Thu": "Thu",
   "Thursday": "Thursday",
   "Time": "Time",
