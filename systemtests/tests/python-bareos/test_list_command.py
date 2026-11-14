@@ -404,15 +404,26 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                         errors = {
                             job["jobid"]: int(job["joberrors"]) for job in long_jobs
                         }
-                        jobs = director.call(
-                            f"list jobs{last} sortby=joberrors{reverse}"
-                        )["jobs"]
-                        self.assertEqual(set(jobs[0]), set(expected_list_keys))
-                        self.assertEqual({job["jobid"] for job in jobs}, set(errors))
-                        sorted_errors = [errors[job["jobid"]] for job in jobs]
-                        self.assertEqual(
-                            sorted_errors, sorted(sorted_errors, reverse=bool(reverse))
-                        )
+                        for command in ("list", "llist"):
+                            query = f"{command} jobs{last} sortby=joberrors{reverse}"
+                            jobs = director.call(query)["jobs"]
+                            if command == "list":
+                                self.assertEqual(set(jobs[0]), set(expected_list_keys))
+                            self.assertEqual(
+                                {job["jobid"] for job in jobs}, set(errors)
+                            )
+                            sort_keys = [
+                                (errors[job["jobid"]], int(job["jobid"]))
+                                for job in jobs
+                            ]
+                            self.assertEqual(
+                                sort_keys, sorted(sort_keys, reverse=bool(reverse))
+                            )
+                            for offset in range(min(3, len(jobs))):
+                                page = director.call(
+                                    f"{query} limit=1 offset={offset}"
+                                )["jobs"]
+                                self.assertEqual(page, jobs[offset : offset + 1])
         finally:
             director.call(
                 f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
