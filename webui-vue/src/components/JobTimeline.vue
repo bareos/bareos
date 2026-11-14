@@ -320,7 +320,7 @@ const activeMode = computed({
       if (dayViewDate.value) {
         const d = parseDateStr(dayViewDate.value)
         viewAnchor.value = value === 'month' ? firstOfMonth(d) : mondayOf(d)
-        skipModeAnchorReset.value = true
+        skipModeAnchorReset.value = value !== calendarMode.value
       }
       calendarMode.value = value
       dayViewDate.value = null
