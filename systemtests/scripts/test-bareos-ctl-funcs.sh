@@ -36,7 +36,10 @@ config_other_pid=""
 config_exact_pid=""
 config_trailing_pid=""
 long_path_pid=""
-trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} ${long_path_pid} 2>/dev/null || true' EXIT
+valgrind_pid=""
+valgrind_other_pid=""
+valgrind_argument_pid=""
+trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} ${long_path_pid} ${valgrind_pid} ${valgrind_other_pid} ${valgrind_argument_pid} 2>/dev/null || true' EXIT
 
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${name}-other" "$python_executable" &
 other_pid=$!
@@ -125,3 +128,43 @@ if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
   echo "ps did not find a process with a long executable path" >&2
   exit 1
 fi
+
+BAREOS_CONFIG_DIR="${long_directory}/${prefix}_valgrind"
+# exec -a supplies the command line seen by both ps and pgrep without
+# requiring Valgrind to be installed on the test host.
+for command_line in \
+  "/usr/bin/valgrind --leak-check=full /tmp/${name}-other -c ${BAREOS_CONFIG_DIR}" \
+  "/usr/bin/valgrind --log-file=/tmp/$name /tmp/other -c ${BAREOS_CONFIG_DIR} /tmp/$name" \
+  "/usr/bin/valgrind --leak-check=full /tmp/$name -c ${BAREOS_CONFIG_DIR}-other"; do
+  bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
+    _ "$command_line" "$python_executable" &
+  valgrind_other_pid="$valgrind_other_pid $!"
+done
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
+  _ "/usr/bin/not-valgrind /tmp/$name -c ${BAREOS_CONFIG_DIR}" "$python_executable" &
+valgrind_argument_pid=$!
+sleep 0.1
+
+for PGREP in "$(command -v pgrep)" ""; do
+  if [ -n "$(pidofproc "$name" 0)" ]; then
+    echo "Matched a non-daemon token or a different Valgrind config" >&2
+    exit 1
+  fi
+done
+
+bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
+  _ "/usr/bin/valgrind --leak-check=full --log-file=/tmp/valgrind.log /tmp/$name -v -c ${BAREOS_CONFIG_DIR}" "$python_executable" &
+valgrind_pid=$!
+sleep 0.1
+
+for PGREP in "$(command -v pgrep)" ""; do
+  if [ "$(pidofproc "$name" 0)" != "$valgrind_pid" ]; then
+    echo "Did not find the Valgrind-wrapped daemon without a pidfile" >&2
+    exit 1
+  fi
+  status "$name" 0 >/dev/null
+done
+killproc "$name" 0 -TERM >/dev/null
+wait "$valgrind_pid" 2>/dev/null || true
+valgrind_pid=""
+kill -0 $valgrind_other_pid "$valgrind_argument_pid"
