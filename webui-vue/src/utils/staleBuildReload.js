@@ -49,6 +49,10 @@ export function isDynamicImportFailure(error) {
 // successful mount, since the same stale-chunk failure could otherwise
 // recur immediately after the reload and loop.
 export function reloadOnce(storage, reload) {
+  if (!storage) {
+    return false
+  }
+
   let alreadyAttempted = false
   try {
     alreadyAttempted = storage?.getItem(RELOAD_ATTEMPTED_KEY) === 'true'
@@ -61,8 +65,7 @@ export function reloadOnce(storage, reload) {
   try {
     storage?.setItem(RELOAD_ATTEMPTED_KEY, 'true')
   } catch {
-    // sessionStorage unavailable (e.g. private browsing quota) -- reload
-    // anyway, worst case is a single extra reload without loop protection.
+    return false
   }
   reload?.()
   return true

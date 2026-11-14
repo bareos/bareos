@@ -87,15 +87,22 @@ describe('reloadOnce', () => {
     expect(reload).toHaveBeenCalledTimes(2)
   })
 
-  it('still reloads once even if sessionStorage throws', () => {
+  it('does not reload when the loop guard cannot be stored', () => {
     const throwingStorage = {
       getItem: () => { throw new Error('quota') },
       setItem: () => { throw new Error('quota') },
     }
     const reload = vi.fn()
 
-    expect(reloadOnce(throwingStorage, reload)).toBe(true)
-    expect(reload).toHaveBeenCalledTimes(1)
+    expect(reloadOnce(throwingStorage, reload)).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('does not reload when session storage is unavailable', () => {
+    const reload = vi.fn()
+
+    expect(reloadOnce(undefined, reload)).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
   })
 })
 
