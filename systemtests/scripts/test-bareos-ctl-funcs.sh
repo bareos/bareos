@@ -21,6 +21,21 @@
 set -e
 . "$1"
 
+if [ "${2:-}" = --inherited-pidfile ]; then
+  pidfile=$(mktemp)
+  sleep 30 &
+  unrelated_pid=$!
+  trap 'kill "$unrelated_pid" 2>/dev/null || true; wait "$unrelated_pid" 2>/dev/null || true; rm -f -- "$pidfile"' EXIT
+  printf '%s\n' "$unrelated_pid" >"$pidfile"
+  status=0
+  BAREOS_PIDFILE="$pidfile" bash "$0" "$1" || status=$?
+  if ! kill -0 "$unrelated_pid" 2>/dev/null; then
+    echo "Process lookup test signaled an unrelated inherited PID" >&2
+    exit 1
+  fi
+  exit "$status"
+fi
+
 if [ "${2:-}" = --delayed-exec ]; then
   bash()
   {
@@ -48,7 +63,7 @@ wait_for_process_argv0()
   return 1
 }
 
-unset BAREOS_CONFIG_DIR
+unset BAREOS_CONFIG_DIR BAREOS_PIDFILE
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
 PS=$(command -v ps)

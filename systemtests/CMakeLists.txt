@@ -105,6 +105,13 @@ if(UNIX AND PGREP)
       bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
       "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs" --delayed-exec
   )
+  add_test(
+    NAME system:ctl-pid-lookup-inherited-pidfile
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+      --inherited-pidfile
+  )
 endif()
 
 if(UNIX)
