@@ -174,6 +174,98 @@ test('browser regression: run defaults follow the selected Director', async ({ p
   expect(runs[0].command).toContain('level="Differential"')
 })
 
+for (const outcome of ['success', 'failure', 'reselection']) {
+  test(`browser regression: selected job defaults gate submission on ${outcome}`, async ({ page }) => {
+    const requests = []
+    const runs = []
+    let initialDefaults = true
+    const defaults = name => ({
+      client: `${name} resource`, fileset: `${name} resource`,
+      pool: `${name} resource`, storage: `${name} resource`,
+      level: name === 'A' ? 'Full' : 'Differential',
+    })
+    await browserFixture(page, command => {
+      if (command === 'show jobs') return { jobs: [
+        { name: 'Job A', type: 'Backup', enabled: true },
+        { name: 'Job B', type: 'Backup', enabled: true },
+      ] }
+      if (command === '.jobs') return { jobs: [{ name: 'Job A' }, { name: 'Job B' }] }
+      if (command === '.jobs type=R') return { jobs: [] }
+      for (const [query, key] of [['.clients', 'clients'], ['.filesets', 'filesets'], ['.pools', 'pools'], ['.storage', 'storages']]) {
+        if (command === query) return { [key]: [{ name: 'A resource' }, { name: 'B resource' }] }
+      }
+      const match = command.match(/^\.defaults job="Job ([AB])"$/)
+      if (match) {
+        if (match[1] === 'A' && initialDefaults) {
+          initialDefaults = false
+          return { defaults: defaults('A') }
+        }
+        return new Promise((resolve, reject) => {
+          requests.push({ resolve, reject })
+        })
+      }
+      if (command.startsWith('run ')) {
+        runs.push(command)
+        return { run: { jobid: '303' } }
+      }
+    })
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    await page.getByTestId('jobs-tab-run').click()
+    await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+    const dialog = page.locator('.configure-start-dialog')
+    const submit = dialog.getByTestId('run-job-submit')
+    const jobField = dialog.getByLabel('Job *', { exact: true })
+    const selectJob = async name => {
+      await jobField.fill(name)
+      await page.getByRole('option', { name, exact: true }).click()
+    }
+    await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('A resource')
+    await expect(submit).toBeEnabled()
+    await selectJob('Job B')
+    await expect.poll(() => requests.length).toBe(1)
+    await expect(submit).toBeDisabled()
+    await expect(jobField).toBeEnabled()
+    expect(runs).toEqual([])
+
+    if (outcome === 'failure') {
+      requests[0].reject(new Error('Selected job defaults denied'))
+      await expect(page.locator('.q-notification__message')).toContainText('Selected job defaults denied')
+      await expect(submit).toBeDisabled()
+      await selectJob('Job A')
+      await expect.poll(() => requests.length).toBe(2)
+      requests[1].resolve({ defaults: defaults('A') })
+      await expect(submit).toBeEnabled()
+      expect(runs).toEqual([])
+      return
+    }
+
+    if (outcome === 'reselection') {
+      await selectJob('Job A')
+      await expect.poll(() => requests.length).toBe(2)
+      await selectJob('Job B')
+      await expect.poll(() => requests.length).toBe(3)
+      requests[0].resolve({ defaults: defaults('B') })
+      requests[1].reject(new Error('Stale job defaults denied'))
+      await expect(submit).toBeDisabled()
+      await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('A resource')
+      await expect(page.getByText(/Stale job defaults denied/)).not.toBeVisible()
+      requests[2].resolve({ defaults: defaults('B') })
+    } else {
+      requests[0].resolve({ defaults: defaults('B') })
+    }
+
+    await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('B resource')
+    await expect(submit).toBeEnabled()
+    await submit.click()
+    await expect.poll(() => runs.length).toBe(1)
+    expect(runs[0]).toContain('job="Job B"')
+    for (const key of ['client', 'fileset', 'pool', 'storage']) {
+      expect(runs[0]).toContain(`${key}="B resource"`)
+    }
+    expect(runs[0]).toContain('level="Differential"')
+  })
+}
+
 test('browser regression: run defaults clear an unavailable job', async ({ page }) => {
   const defaultsCalls = []
   await browserFixture(page, (command, director) => {
