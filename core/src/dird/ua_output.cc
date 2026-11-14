@@ -1418,6 +1418,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           if (optionslist.disabled) { SetDisabledFilter(ua, 2, R_JOB); }
           break;
         default:
+          SetHiddenColumn(ua, 10); /* JobErrors */
           SetAclFilter(ua, 1, Job_ACL);
           if (optionslist.current) { SetResFilter(ua, 1, R_JOB); }
           if (optionslist.enabled) { SetEnabledFilter(ua, 1, R_JOB); }
