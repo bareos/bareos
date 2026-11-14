@@ -74,7 +74,7 @@ async function browserFixture(page, commandHandler = () => undefined) {
     })
   })
   await page.goto('/#/dashboard')
-  await expectConnected(page)
+  await expect(page.getByTestId('director-status-label')).toContainText('Connected')
 }
 
 test('browser regression: column checkboxes have accessible names', async ({ page }) => {
