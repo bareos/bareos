@@ -82,12 +82,12 @@ function normalizeTableSort(value) {
         String(key).trim(),
         typeof sort === 'object' && sort !== null && !Array.isArray(sort)
           ? {
-              sortBy: typeof sort.sortBy === 'string' ? sort.sortBy : '',
+              sortBy: sort.sortBy === null || typeof sort.sortBy === 'string' ? sort.sortBy : '',
               descending: normalizeBoolean(sort.descending, false),
             }
           : null,
       ])
-      .filter(([key, sort]) => key && sort && sort.sortBy)
+      .filter(([key, sort]) => key && sort && (sort.sortBy === null || sort.sortBy))
   )
 }
 
