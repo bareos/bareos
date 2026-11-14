@@ -128,10 +128,12 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
   const fetchGeneration = clientsCache.beginFetch(cacheKey)
 
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const [listResult, dotResult, recentBackupsResult, schedulerResult] = await Promise.all([
+    const [listResult, dotResult, recentBackupsResponse, schedulerResult] = await Promise.all([
       client.call('llist clients'),
       client.call('.clients'),
-      client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+      client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B')
+        .then(result => ({ result }))
+        .catch(error => ({ error })),
       // Scheduler preview data is only needed by callers that still consume
       // `scheduledBackups` (e.g. RestorePage.vue); a failure here (e.g. an
       // ACL restriction) must not fail the whole director's clients/recent
@@ -146,15 +148,24 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
     return {
       director,
       clients: decorateClients(listResult?.clients, enabledMap, director),
-      recentBackups: decorateRecentBackups(recentBackupsResult?.jobs, director),
+      recentBackups: decorateRecentBackups(recentBackupsResponse.result?.jobs, director),
+      recentBackupsError: recentBackupsResponse.error?.message
+        ?? (recentBackupsResponse.error ? String(recentBackupsResponse.error) : ''),
       scheduledBackups: decorateScheduledBackups(schedulerResult, director),
     }
   })
 
+  const fulfilled = fulfilledDirectorValues(results)
   const data = {
-    clients: sortClients(fulfilledDirectorValues(results).flatMap(value => value.clients)),
-    recentBackups: fulfilledDirectorValues(results).flatMap(value => value.recentBackups),
-    scheduledBackups: fulfilledDirectorValues(results).flatMap(value => value.scheduledBackups),
+    clients: sortClients(fulfilled.flatMap(value => value.clients)),
+    recentBackups: fulfilled.flatMap(value => value.recentBackups),
+    scheduledBackups: fulfilled.flatMap(value => value.scheduledBackups),
+    recentBackupErrors: fulfilled
+      .filter(value => value.recentBackupsError)
+      .map(value => ({
+        director: value.director,
+        message: value.recentBackupsError,
+      })),
     directorErrors: directorAggregateErrors(results, directors, 'Failed to load clients.'),
   }
   clientsCache.set(cacheKey, data, fetchGeneration)

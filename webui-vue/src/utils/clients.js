@@ -151,8 +151,9 @@ export function withClientsScopeDirectorQuery(query, director) {
   return nextQuery
 }
 
-export function clientBackupStatusCode(client, warningFailedJobs) {
+export function clientBackupStatusCode(client, warningFailedJobs, historyAvailable = true) {
   if (!client.enabled) return 'disabled'
+  if (!historyAvailable) return 'unavailable'
   if (['E', 'f'].includes(client.lastBackup?.status)) return 'failed'
   if ((client.failureStreak ?? 0) >= warningFailedJobs) return 'warning'
   if (!client.lastBackup) return 'unknown'

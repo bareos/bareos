@@ -267,6 +267,53 @@ describe('clients aggregate helpers', () => {
           director: 'prod-a',
         }),
       ],
+      recentBackupErrors: [],
+      directorErrors: [],
+    })
+  })
+
+  it('keeps clients when recent backup history cannot be loaded', async () => {
+    const loading = fetchAggregatedClients(
+      { username: 'admin', password: 'secret' },
+      ['prod-a']
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(5))
+
+    const commands = new Map(socket.sent.slice(1).map((payload) => {
+      const command = JSON.parse(payload)
+      return [command.command, command.id]
+    }))
+    const respond = (command, data) => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response',
+          id: commands.get(command),
+          data,
+        }),
+      })
+    }
+
+    respond('llist clients', { clients: [{ name: 'alpha-fd' }] })
+    respond('.clients', { clients: [{ name: 'alpha-fd', enabled: true }] })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error',
+        id: commands.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        message: 'history request denied',
+      }),
+    })
+    respond('status scheduler days=-31,1', { schedules: [], preview: [] })
+
+    await expect(loading).resolves.toMatchObject({
+      clients: [expect.objectContaining({ name: 'alpha-fd', director: 'prod-a' })],
+      recentBackups: [],
+      recentBackupErrors: [{
+        director: 'prod-a',
+        message: 'history request denied',
+      }],
       directorErrors: [],
     })
   })
