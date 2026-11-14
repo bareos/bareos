@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :model-value="modelValue" @update:model-value="value => emit('update:modelValue', value)" @show="reset">
+  <q-dialog :model-value="modelValue" :persistent="saving" @update:model-value="value => emit('update:modelValue', value)">
     <q-card style="min-width:min(520px, 90vw)" data-testid="comment-edit-dialog">
       <q-card-section class="panel-header row items-center">
         <q-icon name="comment" class="q-mr-sm" size="sm" />
@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MAX_COMMENT_LENGTH, sanitizeComment } from '../utils/volumeBulk.js'
 
@@ -50,6 +50,12 @@ const { t } = useI18n()
 const text = ref('')
 const saving = ref(false)
 const error = ref('')
+let session = 0
+
+watch(() => props.modelValue, open => {
+  session += 1
+  if (open) reset()
+}, { immediate: true, flush: 'sync' })
 
 function reset() {
   text.value = props.comment ?? ''
@@ -61,13 +67,14 @@ async function submit() {
   if (saving.value) return
   saving.value = true
   error.value = ''
+  const submittedSession = session
   try {
     await props.save(sanitizeComment(text.value))
-    emit('update:modelValue', false)
+    if (submittedSession === session) emit('update:modelValue', false)
   } catch (e) {
-    error.value = e?.message ?? String(e)
+    if (submittedSession === session) error.value = e?.message ?? String(e)
   } finally {
-    saving.value = false
+    if (submittedSession === session) saving.value = false
   }
 }
 </script>
