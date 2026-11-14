@@ -87,6 +87,59 @@ test('browser regression: column checkboxes have accessible names', async ({ pag
   }
 })
 
+test('browser regression: schedule and job toggles refresh upcoming runs', async ({ page }) => {
+  let scheduleEnabled = true
+  let jobEnabled = true
+  let upcomingPreviewCalls = 0
+
+  await browserFixture(page, command => {
+    if (command === 'show schedules') {
+      return { schedules: { daily: { name: 'DailyCycle', enabled: scheduleEnabled } } }
+    }
+    if (command === 'show schedules all') {
+      return { jobs: { daily: { name: 'DailyJob', schedule: 'DailyCycle', enabled: jobEnabled } } }
+    }
+    if (command === '.schedule') {
+      return { schedules: [{ name: 'DailyCycle', enabled: scheduleEnabled }] }
+    }
+    if (command.startsWith('status scheduler days=')) {
+      if (command === 'status scheduler days=0,60') upcomingPreviewCalls += 1
+      return {
+        schedules: [{
+          name: 'DailyCycle',
+          enabled: scheduleEnabled,
+          jobs: [{ name: 'DailyJob', enabled: jobEnabled }],
+        }],
+        preview: [{
+          job: 'DailyJob',
+          schedule: 'DailyCycle',
+          datetime: '2026-05-28 00:00:00',
+          runtime: Date.now() / 1000 + 3600,
+        }],
+      }
+    }
+    if (command === 'disable schedule="DailyCycle"') scheduleEnabled = false
+    if (command === 'enable schedule="DailyCycle"') scheduleEnabled = true
+    if (command === 'disable job="DailyJob"') jobEnabled = false
+    if (command === 'enable job="DailyJob"') jobEnabled = true
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
+  await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(0)
+
+  const scheduleCalls = upcomingPreviewCalls
+  const scheduleGroup = page.locator('.sched-group-header').first()
+  await scheduleGroup.getByRole('button', { name: 'Expand group', exact: true }).click()
+  await scheduleGroup.locator('.q-toggle').click()
+  await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(scheduleCalls)
+
+  const jobCalls = upcomingPreviewCalls
+  const jobRow = page.locator('tbody tr').filter({ hasText: 'DailyJob' })
+  await jobRow.locator('.q-toggle').click()
+  await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(jobCalls)
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
