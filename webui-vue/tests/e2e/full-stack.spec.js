@@ -87,6 +87,31 @@ test('browser regression: column checkboxes have accessible names', async ({ pag
   }
 })
 
+test('browser regression: log focus follows reused job routes', async ({ page }) => {
+  await browserFixture(page, command => {
+    const job = command.match(/^llist jobid=(\d+)$/)
+    if (job) return { jobs: [{ jobid: job[1], name: 'Focus fixture', jobstatus: 'T', type: 'B' }] }
+    const log = command.match(/^list joblog jobid=(\d+)$/)
+    if (log) return { joblog: [
+      { logtext: `Warning: job ${log[1]}` },
+      { logtext: `Error: job ${log[1]}` },
+      { logtext: 'Termination: Backup OK' },
+    ] }
+  })
+  const focused = page.locator('.log-line--focused')
+  await page.goto('/#/jobs/101?logFocus=error')
+  await expect(focused).toHaveText('Error: job 101')
+  await page.goto('/#/jobs/202?logFocus=warning')
+  await expect(focused).toHaveText('Warning: job 202')
+  await page.goto('/#/jobs/202?logFocus=ok')
+  await expect(focused).toHaveText('Termination: Backup OK')
+  await page.goto('/#/jobs/101')
+  await expect(page.locator('.log-line').first()).toHaveText('Warning: job 101')
+  await expect(focused).toHaveCount(0)
+  await page.getByRole('button', { name: 'Next issue', exact: true }).click()
+  await expect(focused).toHaveText('Warning: job 101')
+})
+
 test('browser regression: pending comment saves resist dismissal and allow retry', async ({ page }) => {
   let rejectSave
   let updates = 0

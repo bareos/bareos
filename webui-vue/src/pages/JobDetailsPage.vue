@@ -326,6 +326,12 @@ const focusedLineIndex = ref(-1)
 const focusedIssuePosition = ref(0)
 let autoFocusPending = true
 
+watch(() => [currentJobId.value, requestedDirector.value, logFocus.value], () => {
+  autoFocusPending = true
+  focusedLineIndex.value = -1
+  focusedIssuePosition.value = 0
+}, { flush: 'sync' })
+
 function setLineRef(el, index) {
   if (el) lineRefs.value[index] = el
   else delete lineRefs.value[index]
@@ -406,7 +412,8 @@ function findFocusTargetIndex(focus) {
 // Scroll the log panel on first load: jump to and highlight the relevant
 // error/warning/termination line if logFocus was requested, otherwise fall
 // back to the default "scroll to bottom" behavior.
-watch(logLines, () => {
+watch([logLines, logFocus], () => {
+  if (!logLines.value) return
   if (autoFocusPending && logFocus.value) {
     autoFocusPending = false
     nextTick(() => {
