@@ -39,6 +39,7 @@ class ScreenshotResultTest(unittest.TestCase):
                     shutil.copy2(helper, directory)
                     environment = dict(os.environ)
                     environment.pop("PYTHONPATH", None)
+                    environment["BAREOS_BROWSER_ARTIFACTS_DIR"] = directory
                     result = subprocess.run(
                         [sys.executable, str(Path(directory) / script.name), "--help"],
                         cwd=directory,
