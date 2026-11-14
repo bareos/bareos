@@ -660,10 +660,19 @@ const previewData = ref([])
 // future or past.
 const upcomingPreviewData = ref([])
 const UPCOMING_RANGE = { from: 0, to: 60 }
+let upcomingPreviewGeneration = 0
 
 async function refreshUpcomingPreview() {
+  const generation = ++upcomingPreviewGeneration
+  const directors = [...activeDirectors.value]
+  const scopeKey = directors.join('\0')
+  const isCurrentRequest = () => (
+    generation === upcomingPreviewGeneration
+    && scopeKey === activeDirectors.value.join('\0')
+  )
+
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       upcomingPreviewData.value = []
       return
     }
@@ -676,17 +685,19 @@ async function refreshUpcomingPreview() {
 
       const result = await fetchAggregatedSchedulesStatus(
         credentials,
-        activeDirectors.value,
+        directors,
         UPCOMING_RANGE
       )
+      if (!isCurrentRequest()) return
       upcomingPreviewData.value = result.previewData
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     const statusResponse = await director.call(
       `status scheduler days=${UPCOMING_RANGE.from},${UPCOMING_RANGE.to}`
     )
+    if (!isCurrentRequest()) return
     upcomingPreviewData.value = (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
       .map(item => ({
         ...item,
