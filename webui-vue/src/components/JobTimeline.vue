@@ -621,6 +621,7 @@ const showNowLineLegend = computed(() => {
 // to cover the oldest date currently in view. Capped to avoid unbounded
 // queries when a user pages far into the past.
 const MAX_FETCH_DAYS = 366
+let timelineRefreshGeneration = 0
 const requestedFetchDays = computed(() => {
   const today = startOfToday()
   let earliest
@@ -641,7 +642,12 @@ const fetchDays = computed(() => Math.min(requestedFetchDays.value, MAX_FETCH_DA
 const beyondFetchWindow = computed(() => requestedFetchDays.value > MAX_FETCH_DAYS)
 
 async function tlRefresh() {
-  if (!director.isConnected && timelineDirectors.value.length === 0) return
+  const generation = ++timelineRefreshGeneration
+  if (!director.isConnected && timelineDirectors.value.length === 0) {
+    tlLoading.value = false
+    tlRawJobs.value = []
+    return
+  }
   tlLoading.value = true
   tlError.value   = ''
   try {
@@ -679,14 +685,19 @@ async function tlRefresh() {
     const successful = results
       .filter(result => result.status === 'fulfilled')
       .flatMap(result => result.value)
+    if (generation !== timelineRefreshGeneration) return
     if (successful.length === 0 && results.some(result => result.status === 'rejected')) {
       throw results.find(result => result.status === 'rejected').reason
     }
     tlRawJobs.value = successful
   } catch (e) {
-    tlError.value = e.message
+    if (generation === timelineRefreshGeneration) {
+      tlError.value = e.message
+    }
   } finally {
-    tlLoading.value = false
+    if (generation === timelineRefreshGeneration) {
+      tlLoading.value = false
+    }
   }
 }
 
