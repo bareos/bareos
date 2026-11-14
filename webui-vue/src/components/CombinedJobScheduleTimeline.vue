@@ -261,8 +261,9 @@ const canZoomIn = computed(() => windowIndex.value > 0)
 const canZoomOut = computed(() => windowIndex.value < windowOptions.length - 1)
 
 function panBy(offsetMs) {
+  const currentCenter = centerTime.value
   followNow.value = false
-  viewCenter.value = centerTime.value + offsetMs
+  viewCenter.value = currentCenter + offsetMs
 }
 
 function panPast() {
@@ -339,12 +340,13 @@ function startPointerPan(event) {
   const rect = axis.getBoundingClientRect()
   if (rect.width <= 0) return
 
+  const currentCenter = centerTime.value
   followNow.value = false
-  viewCenter.value = centerTime.value
+  viewCenter.value = currentCenter
   pointerPan.value = {
     pointerId: event.pointerId,
     startX: event.clientX,
-    startCenter: viewCenter.value,
+    startCenter: currentCenter,
     axisWidth: rect.width,
   }
 
