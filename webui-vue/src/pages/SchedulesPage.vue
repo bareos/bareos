@@ -961,7 +961,7 @@ function describeRunTime(run) {
 }
 
 const scheduleJobRows = computed(() => {
-  const search = jobSearch.value.trim().toLowerCase()
+  const search = String(jobSearch.value ?? '').trim().toLowerCase()
   const rows = []
   for (const sched of schedulesData.value) {
     const allJobs = Array.isArray(sched.jobs) ? sched.jobs : []
