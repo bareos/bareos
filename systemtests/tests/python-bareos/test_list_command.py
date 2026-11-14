@@ -326,6 +326,21 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 self.assertEqual(len(borders), 3)
                 self.assertTrue(all(row.count("|") == 11 for row in rows))
                 self.assertTrue(all(len(line) == len(rows[0]) for line in borders))
+        api_command = "list jobs limit=2 sortby=jobid"
+        with self.subTest(format="api", command=api_command):
+            expected_ids = [job["jobid"] for job in director.call(api_command)["jobs"]]
+            self.assertEqual(len(expected_ids), 2)
+            plain_director.call(".api 1")
+            try:
+                output = plain_director.call(api_command).decode("utf-8")
+                rows = output.splitlines()
+                self.assertEqual(len(rows), 2)
+                self.assertEqual(
+                    [row.split("|", 1)[0].strip() for row in rows], expected_ids
+                )
+                self.assertTrue(output.endswith("\n"))
+            finally:
+                plain_director.call(".api 0")
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
 

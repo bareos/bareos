@@ -805,8 +805,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           // Use value format string to send preformated value
           send->ObjectKeyValue(field->name, row[i], value.c_str());
         }
-        send->Decoration("\n");
-        send->ObjectEnd();
+        send->ObjectEnd("row", "\n");
       }
       ListDashes(send);
       break;
