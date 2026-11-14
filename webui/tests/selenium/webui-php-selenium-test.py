@@ -40,6 +40,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.chrome.service import Service as ChromeService
 
+sys.path.append(
+    os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
+    )
+)
+from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
+
 
 class BadJobException(Exception):
     """Raise when a started job doesn't result in ID"""
@@ -131,7 +138,7 @@ class WrongCredentialsException(Exception):
         super(WrongCredentialsException, self).__init__(msg)
 
 
-class SeleniumTest(unittest.TestCase):
+class SeleniumTest(ScreenshotTestCase):
 
     chrome_user_data_dir = tempfile.TemporaryDirectory()
     shared_driver = None
@@ -427,13 +434,15 @@ class SeleniumTest(unittest.TestCase):
         # Clicks on file and navigates through the tree
         # by using the arrow-keys.
         pathlist = self.restorefile.split("/")
+        tree_path = '//div[@id="filebrowser"]'
         for i in pathlist[:-1]:
-            self.wait_for_element(
-                By.XPATH, '//div[@id="filebrowser"]//a[text() = "%s/"]' % i
-            ).send_keys(Keys.ARROW_RIGHT)
+            tree_path += '/ul/li[a[text() = "%s/"]]' % i
+            self.wait_for_element(By.XPATH, tree_path + "/a").send_keys(
+                Keys.ARROW_RIGHT
+            )
         self.wait_for_element(
             By.XPATH,
-            '//div[@id="filebrowser"]//a[text() = "%s"]' % pathlist[-1],
+            tree_path + '/ul/li/a[text() = "%s"]' % pathlist[-1],
         ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
@@ -653,15 +662,15 @@ class SeleniumTest(unittest.TestCase):
         dropdown.select_by_visible_text("English")
 
         self.wait_and_click(By.ID, "submit")
-        try:
-            # if the login is wrong, then we will get an alert div
-            driver.find_element(By.XPATH, '//div[@role="alert"]')
-        except:
-            # if no alert was found, then we just wait for the spinner ...
-            self.wait_for_spinner_absence()
-        else:
-            # ... otherwise (i.e. if an alert was found) the login is wronng
+        login_result = self.wait.until(
+            lambda current_driver: EC.url_contains("/dashboard")(current_driver)
+            or EC.visibility_of_element_located((By.XPATH, '//div[@role="alert"]'))(
+                current_driver
+            )
+        )
+        if login_result is not True:
             raise WrongCredentialsException(self.username, self.password)
+        self.wait_for_spinner_absence()
 
         if self.is_shared_session_test():
             SeleniumTest.shared_session_logged_in = True
@@ -822,7 +831,7 @@ class SeleniumTest(unittest.TestCase):
         confirmation = form.get_attribute("data-confirmation")
         button.click()
         if confirmation:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             self.assertEqual(confirmation, alert.text)
             alert.accept()
 
@@ -836,10 +845,8 @@ class SeleniumTest(unittest.TestCase):
             try:
                 self.driver.find_element(by, value)
             except NoSuchElementException:
-                self.driver.save_screenshot("screenshot.png")
                 raise ElementNotFoundException(value)
             else:
-                self.driver.save_screenshot("screenshot.png")
                 raise ElementCoveredException(value)
         return element
 
@@ -859,7 +866,7 @@ class SeleniumTest(unittest.TestCase):
     def close_alert_and_get_its_text(self, accept=True):
         logger = logging.getLogger()
         try:
-            alert = self.driver.switch_to_alert()
+            alert = self.driver.switch_to.alert
             alert_text = alert.text
         except NoAlertPresentException:
             return None
@@ -972,4 +979,4 @@ def get_env():
 
 if __name__ == "__main__":
     get_env()
-    unittest.main()
+    unittest.main(testRunner=ScreenshotRunner)

@@ -32,12 +32,16 @@ export TestName
 proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
+playwright_artifacts="${tmp}/playwright-artifacts"
+if [[ -n "${BAREOS_BROWSER_ARTIFACTS_DIR:-}" ]]; then
+  playwright_artifacts="${BAREOS_BROWSER_ARTIFACTS_DIR}/playwright/${TestName}"
+fi
 
 start_test
 
 pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
 if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
-  PLAYWRIGHT_ARTIFACTS_DIR="${tmp}/playwright-artifacts" \
+  PLAYWRIGHT_ARTIFACTS_DIR="${playwright_artifacts}" \
   BAREOS_WEBUI_RESTORE_TEST_FILE="${BackupDirectory}/restore-test-files/000-webui-vue-restore-test.txt" \
   BAREOS_WEBUI_RESTORE_TEST_DESTINATION="${tmp}/webui-vue-restore-output" \
   BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \

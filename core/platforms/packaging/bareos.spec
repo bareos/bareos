@@ -918,6 +918,14 @@ make DESTDIR=%{buildroot} install/fast
 popd
 
 
+%if 0%{?webui}
+# Include the shared helper when RPM copies each documentation directory.
+install -m 644 systemtests/scripts/selenium_screenshots.py \
+  webui/tests/selenium/selenium_screenshots.py
+install -m 644 systemtests/scripts/selenium_screenshots.py \
+  webui-vue/tests/selenium/selenium_screenshots.py
+%endif
+
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
 install -d -m 755 %{buildroot}%{backend_dir}

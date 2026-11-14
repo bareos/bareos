@@ -36,7 +36,8 @@ frontend_log="${tmp}/webui-vue-frontend.out"
 proxy_config="${tmp}/bareos-webui-proxy.ini"
 proxy_pid_file="${tmp}/webui-vue-proxy.pid"
 frontend_pid_file="${tmp}/webui-vue-frontend.pid"
-required_node_major=20
+required_node_major=22
+required_node_minor=12
 PROXY_PID=""
 FRONTEND_PID=""
 
@@ -76,21 +77,23 @@ function check_node_version()
 {
   local version
   local major
+  local minor
 
   version="$("${NODE_EXECUTABLE}" --version 2>/dev/null)" || {
     echo "Failed to run Node executable: ${NODE_EXECUTABLE}" >&2
     exit 1
   }
 
-  if [[ ! "${version}" =~ ^v([0-9]+)\.[0-9]+\.[0-9]+$ ]]; then
+  if [[ ! "${version}" =~ ^v([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
     echo "Could not parse Node version from: ${version}" >&2
     exit 1
   fi
 
   major="${BASH_REMATCH[1]}"
-  if ((major < required_node_major)); then
+  minor="${BASH_REMATCH[2]}"
+  if ((major < required_node_major || (major == required_node_major && minor < required_node_minor))); then
     echo \
-      "webui-vue tests require Node >= ${required_node_major}, but found ${version} (${NODE_EXECUTABLE})." >&2
+      "webui-vue tests require Node >= ${required_node_major}.${required_node_minor}.0, but found ${version} (${NODE_EXECUTABLE})." >&2
     exit 1
   fi
 }
@@ -128,6 +131,17 @@ ${BAREOS_SCRIPTS_DIR}/cleanup
 ${BAREOS_SCRIPTS_DIR}/setup
 
 setup_data
+
+if [[ "${BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR}" = "1" ]]; then
+  # Both configured directors share one daemon in this fixture.
+  director_config="${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
+  sed -i.bak -e '/^[[:space:]]*Maximum Console Connections[[:space:]]*=/d' \
+    -e '/Maximum Concurrent Jobs/a\
+  Maximum Console Connections = 40
+' \
+    "${director_config}"
+  rm -f "${director_config}.bak"
+fi
 
 restore_test_directory="${BackupDirectory}/restore-test-files"
 mkdir -p "${restore_test_directory}"

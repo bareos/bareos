@@ -142,6 +142,16 @@ override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos
 
 
+override_dh_installdocs:
+	dh_installdocs
+	set -e; for package in bareos-webui bareos-webui-new; do \
+		docdir=debian/$$package/usr/share/doc/$$package/selenium; \
+		if [ -d "$$docdir" ]; then \
+			install -m 644 systemtests/scripts/selenium_screenshots.py "$$docdir/"; \
+		fi; \
+	done
+
+
 %:
 	dh $@ --builddirectory=cmake-build
 

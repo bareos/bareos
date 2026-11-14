@@ -34,6 +34,339 @@ const isMultiDirectorProfile
 const LOGIN_ATTEMPTS = 3
 const LOGIN_RESULT_TIMEOUT_MS = 10_000
 
+// Exercise the public application with an isolated, entirely intercepted
+// transport. In particular, no mutation can reach a real Director.
+async function browserFixture(page, commandHandler = () => undefined) {
+  const directors = ['bareos-dir', 'bareos-dir-2']
+  await page.route('**/api/**', route => route.fulfill({
+    json: route.request().url().endsWith('/directors')
+      ? { type: 'director_list', directors }
+      : { authenticatedDirectors: directors.map(director => ({ director, username: 'admin' })) },
+  }))
+  await page.routeWebSocket(/\/ws/, socket => {
+    let director = directors[0]
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'session') {
+        director = request.director
+        socket.send(JSON.stringify({ type: 'auth_ok' }))
+        return
+      }
+      if (request.type !== 'command') return
+      try {
+        const data = await commandHandler(request.command, director)
+        const job = {
+          jobid: '101', name: 'Browser-fixture', jobtype: 'B', jobstatus: 'T',
+          comment: 'Original comment',
+        }
+        socket.send(JSON.stringify({
+          type: 'response', id: request.id,
+          data: data ?? (
+            request.command.startsWith('llist jobs count') ? { jobs: [{ count: '1' }] }
+              : request.command.startsWith('llist job') ? { jobs: [job] }
+                : request.command.startsWith('list joblog') ? { joblog: [{ logtext: 'Termination: Backup OK' }] }
+                  : {}
+          ),
+        }))
+      } catch (error) {
+        socket.send(JSON.stringify({ type: 'error', id: request.id, message: error.message }))
+      }
+    })
+  })
+  await page.goto('/#/dashboard')
+  await expect(page.getByTestId('director-status-label')).toContainText('Connected')
+}
+
+test('browser regression: column checkboxes have accessible names', async ({ page }) => {
+  await browserFixture(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByRole('button', { name: 'Choose columns', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'Comment', exact: true })).toBeVisible()
+  for (const checkbox of await page.getByRole('checkbox').all()) {
+    await expect(checkbox).toHaveAccessibleName(/\S/)
+  }
+})
+
+test('browser regression: log focus follows reused job routes', async ({ page }) => {
+  await browserFixture(page, command => {
+    const job = command.match(/^llist jobid=(\d+)$/)
+    if (job) return { jobs: [{ jobid: job[1], name: 'Focus fixture', jobstatus: 'T', type: 'B' }] }
+    const log = command.match(/^list joblog jobid=(\d+)$/)
+    if (log) return { joblog: [
+      { logtext: `Warning: job ${log[1]}` },
+      { logtext: `Error: job ${log[1]}` },
+      { logtext: 'Termination: Backup OK' },
+    ] }
+  })
+  const focused = page.locator('.log-line--focused')
+  await page.goto('/#/jobs/101?logFocus=error')
+  await expect(focused).toHaveText('Error: job 101')
+  await page.goto('/#/jobs/202?logFocus=warning')
+  await expect(focused).toHaveText('Warning: job 202')
+  await page.goto('/#/jobs/202?logFocus=ok')
+  await expect(focused).toHaveText('Termination: Backup OK')
+  await page.goto('/#/jobs/101')
+  await expect(page.locator('.log-line').first()).toHaveText('Warning: job 101')
+  await expect(focused).toHaveCount(0)
+  await page.getByRole('button', { name: 'Next issue', exact: true }).click()
+  await expect(focused).toHaveText('Warning: job 101')
+})
+
+test('browser regression: run defaults follow the selected Director', async ({ page }) => {
+  let releaseDefaults
+  const runs = []
+  await browserFixture(page, (command, director) => {
+    if (command === 'show jobs') return { jobs: [{ name: 'Shared job', type: 'Backup', enabled: true }] }
+    if (command === '.jobs') return { jobs: [{ name: 'Shared job' }] }
+    if (command === '.jobs type=R') return { jobs: [] }
+    for (const [query, key] of [['.clients', 'clients'], ['.filesets', 'filesets'], ['.pools', 'pools'], ['.storage', 'storages']]) {
+      if (command === query) return { [key]: [{ name: 'Shared resource' }, { name: `${director} resource` }] }
+    }
+    if (command === '.defaults job="Shared job"') {
+      const defaults = {
+        client: `${director} resource`, fileset: 'Shared resource',
+        pool: `${director} resource`, storage: `${director} resource`,
+        level: director === 'bareos-dir' ? 'Full' : 'Differential',
+      }
+      if (director === 'bareos-dir-2') return new Promise(resolve => {
+        releaseDefaults = () => resolve({ defaults })
+      })
+      return { defaults }
+    }
+    if (command.startsWith('run ')) {
+      runs.push({ command, director })
+      return { run: { jobid: '303' } }
+    }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByTestId('jobs-tab-run').click()
+  await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+  const dialog = page.locator('.configure-start-dialog')
+  const submit = dialog.getByTestId('run-job-submit')
+  const selectDirector = async name => {
+    await dialog.getByLabel('Director', { exact: true }).fill(name)
+    await page.getByRole('option', { name, exact: true }).click()
+  }
+  await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('bareos-dir resource')
+  await selectDirector('bareos-dir-2')
+  await expect(submit).toBeDisabled()
+  await expect.poll(() => Boolean(releaseDefaults)).toBe(true)
+  const staleDefaults = releaseDefaults
+  await selectDirector('bareos-dir')
+  await expect(submit).toBeEnabled()
+  staleDefaults()
+  await selectDirector('bareos-dir-2')
+  await expect(submit).toBeDisabled()
+  await expect.poll(() => releaseDefaults !== staleDefaults).toBe(true)
+  releaseDefaults()
+  await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('bareos-dir-2 resource')
+  await expect(dialog.getByLabel('Pool', { exact: true })).toHaveValue('bareos-dir-2 resource')
+  await expect(dialog.getByLabel('Level', { exact: true })).toHaveValue('Differential')
+  await expect(submit).toBeEnabled()
+  await submit.click()
+  await expect.poll(() => runs.length).toBe(1)
+  expect(runs[0].director).toBe('bareos-dir-2')
+  expect(runs[0].command).toContain('client="bareos-dir-2 resource"')
+  expect(runs[0].command).toContain('pool="bareos-dir-2 resource"')
+  expect(runs[0].command).toContain('level="Differential"')
+})
+
+for (const outcome of ['success', 'failure', 'reselection']) {
+  test(`browser regression: selected job defaults gate submission on ${outcome}`, async ({ page }) => {
+    const requests = []
+    const runs = []
+    let initialDefaults = true
+    const defaults = name => ({
+      client: `${name} resource`, fileset: `${name} resource`,
+      pool: `${name} resource`, storage: `${name} resource`,
+      level: name === 'A' ? 'Full' : 'Differential',
+    })
+    await browserFixture(page, command => {
+      if (command === 'show jobs') return { jobs: [
+        { name: 'Job A', type: 'Backup', enabled: true },
+        { name: 'Job B', type: 'Backup', enabled: true },
+      ] }
+      if (command === '.jobs') return { jobs: [{ name: 'Job A' }, { name: 'Job B' }] }
+      if (command === '.jobs type=R') return { jobs: [] }
+      for (const [query, key] of [['.clients', 'clients'], ['.filesets', 'filesets'], ['.pools', 'pools'], ['.storage', 'storages']]) {
+        if (command === query) return { [key]: [{ name: 'A resource' }, { name: 'B resource' }] }
+      }
+      const match = command.match(/^\.defaults job="Job ([AB])"$/)
+      if (match) {
+        if (match[1] === 'A' && initialDefaults) {
+          initialDefaults = false
+          return { defaults: defaults('A') }
+        }
+        return new Promise((resolve, reject) => {
+          requests.push({ resolve, reject })
+        })
+      }
+      if (command.startsWith('run ')) {
+        runs.push(command)
+        return { run: { jobid: '303' } }
+      }
+    })
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    await page.getByTestId('jobs-tab-run').click()
+    await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+    const dialog = page.locator('.configure-start-dialog')
+    const submit = dialog.getByTestId('run-job-submit')
+    const jobField = dialog.getByLabel('Job *', { exact: true })
+    const selectJob = async name => {
+      await jobField.fill(name)
+      await page.getByRole('option', { name, exact: true }).click()
+    }
+    await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('A resource')
+    await expect(submit).toBeEnabled()
+    await selectJob('Job B')
+    await expect.poll(() => requests.length).toBe(1)
+    await expect(submit).toBeDisabled()
+    await expect(jobField).toBeEnabled()
+    expect(runs).toEqual([])
+
+    if (outcome === 'failure') {
+      requests[0].reject(new Error('Selected job defaults denied'))
+      await expect(page.locator('.q-notification__message')).toContainText('Selected job defaults denied')
+      await expect(submit).toBeDisabled()
+      await selectJob('Job A')
+      await expect.poll(() => requests.length).toBe(2)
+      requests[1].resolve({ defaults: defaults('A') })
+      await expect(submit).toBeEnabled()
+      expect(runs).toEqual([])
+      return
+    }
+
+    if (outcome === 'reselection') {
+      await selectJob('Job A')
+      await expect.poll(() => requests.length).toBe(2)
+      await selectJob('Job B')
+      await expect.poll(() => requests.length).toBe(3)
+      requests[0].resolve({ defaults: defaults('B') })
+      requests[1].reject(new Error('Stale job defaults denied'))
+      await expect(submit).toBeDisabled()
+      await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('A resource')
+      await expect(page.getByText(/Stale job defaults denied/)).not.toBeVisible()
+      requests[2].resolve({ defaults: defaults('B') })
+    } else {
+      requests[0].resolve({ defaults: defaults('B') })
+    }
+
+    await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('B resource')
+    await expect(submit).toBeEnabled()
+    await submit.click()
+    await expect.poll(() => runs.length).toBe(1)
+    expect(runs[0]).toContain('job="Job B"')
+    for (const key of ['client', 'fileset', 'pool', 'storage']) {
+      expect(runs[0]).toContain(`${key}="B resource"`)
+    }
+    expect(runs[0]).toContain('level="Differential"')
+  })
+}
+
+test('browser regression: run defaults clear an unavailable job', async ({ page }) => {
+  const defaultsCalls = []
+  await browserFixture(page, (command, director) => {
+    if (command === 'show jobs') return { jobs: [{ name: 'Shared job', type: 'Backup' }] }
+    if (command === '.jobs') return { jobs: [{ name: director === 'bareos-dir' ? 'Shared job' : 'Other job' }] }
+    if (command === '.jobs type=R') return { jobs: [] }
+    if (command.startsWith('.defaults ')) {
+      defaultsCalls.push(director)
+      return { defaults: { level: 'Full' } }
+    }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByTestId('jobs-tab-run').click()
+  await page.getByRole('button', { name: 'Customize & Start', exact: true }).first().click()
+  const dialog = page.locator('.configure-start-dialog')
+  await expect(dialog.getByTestId('run-job-submit')).toBeEnabled()
+  await dialog.getByLabel('Director', { exact: true }).fill('bareos-dir-2')
+  await page.getByRole('option', { name: 'bareos-dir-2', exact: true }).click()
+  await dialog.getByLabel('Job *', { exact: true }).click()
+  await expect(page.getByRole('option', { name: 'Other job', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(dialog.getByLabel('Job *', { exact: true })).toHaveValue('')
+  await expect(dialog.getByLabel('Level', { exact: true })).toHaveValue('Incremental')
+  await expect(dialog.getByTestId('run-job-submit')).toBeDisabled()
+  expect(defaultsCalls).toEqual(['bareos-dir'])
+})
+
+for (const [jobId, directorName] of [['202', 'bareos-dir'], ['101', 'bareos-dir-2']]) {
+  test(`browser regression: comment target survives navigation to ${directorName}/${jobId}`, async ({ page }) => {
+    let resolveSave
+    const updates = []
+    await browserFixture(page, (command, director) => {
+      const job = command.match(/^llist jobid=(\d+)$/)
+      if (job) return { jobs: [{
+        jobid: job[1], name: 'Comment fixture', jobstatus: 'T', type: 'B',
+        comment: `Original ${director}/${job[1]}`,
+      }] }
+      if (command.startsWith('update jobid=')) {
+        updates.push({ command, director })
+        if (updates.length === 1) return new Promise(resolve => { resolveSave = resolve })
+        return {}
+      }
+    })
+    await page.goto('/#/jobs/101?director=bareos-dir')
+    await page.getByTestId('job-comment-edit').click()
+    const dialog = page.getByTestId('comment-edit-dialog')
+    await dialog.getByLabel('Comment', { exact: true }).fill('Old target comment')
+    await page.getByTestId('comment-edit-save').click()
+    await expect.poll(() => updates.length).toBe(1)
+    await page.goto(`/#/jobs/${jobId}?director=${directorName}`)
+    await expect(dialog).not.toBeVisible()
+    const original = `Original ${directorName}/${jobId}`
+    await expect(page.getByText(original, { exact: true })).toBeVisible()
+    await page.getByTestId('job-comment-edit').click()
+    await expect(dialog.getByLabel('Comment', { exact: true })).toHaveValue(original)
+    resolveSave({})
+    await dialog.getByLabel('Comment', { exact: true }).fill('New target comment')
+    await expect(page.getByText(original, { exact: true })).toBeVisible()
+    await page.getByTestId('comment-edit-save').click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText('New target comment', { exact: true })).toBeVisible()
+    expect(updates).toEqual([
+      { command: 'update jobid=101 comment="Old target comment"', director: 'bareos-dir' },
+      { command: `update jobid=${jobId} comment="New target comment"`, director: directorName },
+    ])
+  })
+}
+
+test('browser regression: pending comment saves resist dismissal and allow retry', async ({ page }) => {
+  let rejectSave
+  let updates = 0
+  await browserFixture(page, command => {
+    if (command.startsWith('update jobid=')) {
+      updates += 1
+      if (updates === 1) return new Promise((_resolve, reject) => { rejectSave = reject })
+      return {}
+    }
+  })
+  await page.goto('/#/jobs/101')
+  await page.getByTestId('job-comment-edit').click()
+  const dialog = page.getByTestId('comment-edit-dialog')
+  await dialog.getByLabel('Comment', { exact: true }).fill('Retried comment')
+  await page.getByTestId('comment-edit-save').click()
+  await expect.poll(() => updates).toBe(1)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeVisible()
+  await page.locator('.q-dialog__backdrop').click({ position: { x: 5, y: 5 }, force: true })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  rejectSave(new Error('Comment update denied'))
+  await expect(page.getByTestId('comment-edit-error')).toHaveText('Comment update denied')
+  await expect(dialog.getByLabel('Comment', { exact: true })).toHaveValue('Retried comment')
+  await page.getByTestId('comment-edit-save').click()
+  await expect(dialog).not.toBeVisible()
+  await expect(page.getByText('Retried comment', { exact: true })).toBeVisible()
+  expect(updates).toBe(2)
+})
+
 async function expectConnected(page) {
   await expect(page.locator('[data-testid="director-status-label"]')).toContainText(
     'Connected'
@@ -146,7 +479,9 @@ async function selectFirstQOption(
   const combobox = field.getByRole('combobox')
   await expect(field).toBeVisible({ timeout: 20000 })
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const deadline = Date.now() + optionTimeoutMs
+  let lastError
+  while (Date.now() < deadline) {
     try {
       await combobox.click()
       const listboxId = await combobox.getAttribute('aria-controls')
@@ -158,19 +493,22 @@ async function selectFirstQOption(
         options = options.filter({ hasText })
       }
       const option = options.first()
-      await expect(option).toBeVisible({ timeout: optionTimeoutMs })
+      await expect(option).toBeVisible({
+        timeout: Math.min(1000, Math.max(1, deadline - Date.now())),
+      })
       await option.click()
       if (selected) {
         await selected()
       }
       return
-    } catch {
+    } catch (error) {
+      lastError = error
       await page.keyboard.press('Escape')
       await page.waitForTimeout(300)
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`)
+  throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
 }
 
 async function waitForQSelectReady(page, testId) {
@@ -270,8 +608,11 @@ test('opens jobs and job details through the real director connection', async ({
   await openNav(page, 'nav-jobs', /#\/jobs/)
 
   await page.getByLabel('Search in results').fill('backup-bareos-fd')
-  const firstRow = page.locator('tbody tr').first()
-  await expect(firstRow).toContainText('backup-bareos-fd')
+  const firstRow = page
+    .locator('tbody tr')
+    .filter({ hasText: 'backup-bareos-fd' })
+    .first()
+  await expect(firstRow).toBeVisible()
 
   const jobId = (await firstRow.locator('a.text-primary').first().textContent())?.trim()
   await firstRow.locator('a.text-primary').first().click()
@@ -282,6 +623,259 @@ test('opens jobs and job details through the real director connection', async ({
   await expect(page.getByText('Job Log', { exact: true })).toBeVisible()
 })
 
+test('sorts the newest capped jobs independently of display direction', async ({ page }) => {
+  test.skip(isMultiDirectorProfile, 'Exercises the single-Director listing path')
+  const rows = Array.from({ length: 1001 }, (_, index) => ({
+    jobid: String(index + 1),
+    name: `SortJob-${index + 1}`,
+    jobstatus: 'T',
+    jobtype: 'B',
+    duration: `00:${String(Math.floor((index + 1) / 60)).padStart(2, '0')}:${String((index + 1) % 60).padStart(2, '0')}`,
+  }))
+  await page.routeWebSocket(/\/ws/, (socket) => {
+    const server = socket.connectToServer()
+    socket.onMessage((message) => {
+      const request = JSON.parse(message)
+      const command = request.command ?? ''
+      if (command.startsWith('llist jobs ') && !command.includes(' last ')) {
+        const limit = Number(command.match(/\blimit=(\d+)/)?.[1] ?? rows.length)
+        const offset = Number(command.match(/\boffset=(\d+)/)?.[1] ?? 0)
+        const ordered = command.includes(' reverse ') ? [...rows].reverse() : rows
+        socket.send(JSON.stringify({
+          type: 'response',
+          id: request.id,
+          data: {
+            jobs: command.startsWith('llist jobs count')
+              ? [{ count: '1001' }]
+              : ordered.slice(offset, offset + limit),
+          },
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  const firstId = page.locator('tbody tr a.text-primary').first()
+  await expect(firstId).toHaveText('1001')
+  const idHeader = page.getByRole('columnheader', { name: /^ID\b/ })
+  await idHeader.click()
+  await expect(firstId).toHaveText('1')
+  await idHeader.click()
+  await expect(firstId).toHaveText('1001')
+
+  const durationHeader = page.getByRole('columnheader', { name: /^Duration\b/ })
+  await durationHeader.click()
+  await expect(firstId).toHaveText('2')
+  await expect(page.locator('.q-banner.bg-warning')).toContainText('1,001')
+  await durationHeader.click()
+  await expect(firstId).toHaveText('1001')
+})
+
+for (const fixture of [
+  { name: 'listed restore', listed: 'both', type: 'R', error: 'cannot be rerun' },
+  { name: 'unlisted restore', listed: 'none', type: 'R', error: 'cannot be rerun' },
+  { name: 'listed backup', listed: 'both', type: 'B' },
+  { name: 'unlisted backup', listed: 'none', type: 'B' },
+  { name: 'listed duplicate', listed: 'both', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'unlisted duplicate', listed: 'none', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'partly listed duplicate', listed: 'first', multi: true, error: 'exists on multiple selected directors' },
+  { name: 'partly listed with failed lookup', listed: 'first', multi: true, denied: true, error: 'lookup denied' },
+]) {
+  test(`validates rerun by ID for ${fixture.name}`, async ({ page }) => {
+    test.skip(isReadonlyProfile, 'Rerun requires write access')
+    test.skip(fixture.multi && !isMultiDirectorProfile, 'Requires multiple Directors')
+    const reruns = []
+    await page.routeWebSocket(/\/ws/, (socket) => {
+      const server = socket.connectToServer()
+      let currentDirector
+      socket.onMessage((message) => {
+        const request = JSON.parse(message)
+        if (request.type === 'session') {
+          currentDirector = request.director
+        }
+        const command = request.command ?? ''
+        const target = {
+          jobid: '424242',
+          name: 'Rerun-fixture',
+          jobtype: fixture.multi
+            ? (currentDirector === 'bareos-dir-2' ? 'R' : 'B')
+            : fixture.type,
+          jobstatus: 'T',
+        }
+        let data
+        if (command.startsWith('rerun ')) {
+          reruns.push({ director: currentDirector, command })
+          data = { run: { jobid: '900000' } }
+        } else if (command === 'llist jobid=424242') {
+          if (fixture.denied && currentDirector === 'bareos-dir-2') {
+            socket.send(JSON.stringify({ type: 'error', id: request.id, message: 'lookup denied' }))
+            return
+          }
+          data = { jobs: [target] }
+        } else if (command.startsWith('llist jobs ') && !command.includes(' last ')) {
+          const targetListed = fixture.listed === 'both'
+            || (fixture.listed === 'first' && currentDirector === 'bareos-dir')
+          data = {
+            jobs: command.startsWith('llist jobs count')
+              ? [{ count: '1' }]
+              : [targetListed ? target : {
+                jobid: '424241', name: 'Fixture-other', jobtype: 'B', jobstatus: 'T',
+              }],
+          }
+        }
+        if (data) {
+          socket.send(JSON.stringify({ type: 'response', id: request.id, data }))
+        } else {
+          server.send(message)
+        }
+      })
+    })
+    await login(page)
+    if (isMultiDirectorProfile) {
+      await page.getByTestId('director-scope-control').click()
+      const scopeMenu = page.getByTestId('director-scope-menu')
+      await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+      if (!fixture.multi) {
+        await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+      }
+      await page.keyboard.press('Escape')
+    }
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    await expect(page.locator('tbody tr a.text-primary').first()).toBeVisible()
+    if (fixture.multi) {
+      await expect(page.getByRole('columnheader', { name: /^Director\b/ })).toBeVisible()
+      await expect(page.locator('tbody tr').filter({ has: page.locator('a.text-primary') })).toHaveCount(2)
+    }
+    await page.getByRole('button', { name: /Rerun by Job ID/ }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Job ID *', { exact: true }).fill('424242')
+    await dialog.getByRole('button', { name: 'Rerun', exact: true }).click()
+    if (fixture.error) {
+      await expect(page.locator('.q-notification__message')).toContainText(fixture.error)
+      expect(reruns).toEqual([])
+      await expect(dialog).toBeVisible()
+    } else {
+      await expect(page.locator('.q-notification__message')).toContainText('Job restarted as ID 900000.')
+      expect(reruns).toEqual([{ director: 'bareos-dir', command: 'rerun jobid=424242 yes' }])
+      await expect(dialog).not.toBeVisible()
+    }
+  })
+}
+
+for (const logFocus of ['', 'ok']) {
+  for (const [direction, opposite, first, wrapped] of [
+    ['Next issue', 'Previous issue', 'Warning: first issue', 'Fatal error: last issue'],
+    ['Previous issue', 'Next issue', 'Fatal error: last issue', 'Warning: first issue'],
+  ]) {
+    test(`navigates ${direction} from ${logFocus || 'initial'} log focus`, async ({ page }) => {
+      await page.routeWebSocket(/\/ws/, (socket) => {
+        const server = socket.connectToServer()
+        socket.onMessage((message) => {
+          const request = JSON.parse(message)
+          if (request.command?.startsWith('list joblog jobid=')) {
+            socket.send(JSON.stringify({
+              type: 'response',
+              id: request.id,
+              data: {
+                joblog: [
+                  { logtext: 'Warning: first issue' },
+                  { logtext: 'Error: middle issue' },
+                  { logtext: 'Fatal error: last issue' },
+                  { logtext: 'Termination: Backup OK' },
+                ],
+              },
+            }))
+          } else {
+            server.send(message)
+          }
+        })
+      })
+
+      await login(page)
+      await openNav(page, 'nav-jobs', /#\/jobs/)
+      const jobLink = page.locator('tbody tr a.text-primary').first()
+      await expect(jobLink).toBeVisible()
+      const jobId = (await jobLink.textContent())?.trim()
+      expect(jobId).toMatch(/^\d+$/)
+      await page.goto(`/#/jobs/${jobId}${logFocus ? `?logFocus=${logFocus}` : ''}`)
+      await expect(page.locator('.log-line')).toHaveCount(4)
+      const focused = page.locator('.log-line--focused')
+      if (logFocus) {
+        await expect(focused).toHaveText('Termination: Backup OK')
+      } else {
+        await expect(focused).toHaveCount(0)
+      }
+
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText(first)
+      await page.getByRole('button', { name: opposite, exact: true }).click()
+      await expect(focused).toHaveText(wrapped)
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText(first)
+      await page.getByRole('button', { name: direction, exact: true }).click()
+      await expect(focused).toHaveText('Error: middle issue')
+    })
+  }
+}
+
+test('keeps Comment non-sortable without changing the active job order', async ({ page }) => {
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  const firstId = page.locator('tbody tr a.text-primary').first()
+  await expect(firstId).toBeVisible()
+  const originalFirstId = (await firstId.textContent()).trim()
+  await page.getByRole('button', { name: 'Choose columns' }).click()
+  await page.locator('.q-menu').getByText('Comment', { exact: true }).click()
+  await page.keyboard.press('Escape')
+
+  const commentHeader = page.getByRole('columnheader', { name: /^Comment\b/ })
+  await expect(commentHeader.locator('.q-table__sort-icon')).toHaveCount(0)
+  await commentHeader.click()
+  await commentHeader.click()
+  await expect(firstId).toHaveText(originalFirstId)
+  await expect(page.getByRole('columnheader', { name: /^ID\b/ })).toHaveClass(/sort-desc/)
+})
+
+test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByRole('button', { name: 'Choose columns' }).click()
+  await page.locator('.q-menu').getByText('Comment', { exact: true }).click()
+  await page.keyboard.press('Escape')
+
+  const edit = page.locator('[data-testid^="job-comment-edit-"]').first()
+  await expect(edit).toHaveCSS('opacity', '0')
+  await edit.locator('..').hover()
+  await expect(edit).toHaveCSS('opacity', '1')
+  await page.mouse.move(0, 0)
+  await expect(edit).toHaveCSS('opacity', '0')
+  await page.keyboard.press('Tab')
+  await edit.focus()
+  await expect(edit).toHaveCSS('opacity', '1')
+  await edit.click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+})
+
+test.describe('touch comment editing', () => {
+  test.use({ hasTouch: true })
+
+  test('shows the edit button without hover', async ({ page }) => {
+    await login(page)
+    await openNav(page, 'nav-jobs', /#\/jobs/)
+    expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true)
+    await page.getByRole('button', { name: 'Choose columns' }).tap()
+    await page.locator('.q-menu').getByText('Comment', { exact: true }).tap()
+    await page.keyboard.press('Escape')
+
+    const edit = page.locator('[data-testid^="job-comment-edit-"]').first()
+    await expect(edit).toHaveCSS('opacity', '1')
+    await edit.tap()
+    await expect(page.getByRole('dialog')).toBeVisible()
+  })
+})
+
 test('loads the restore workflow selections', async ({ page }) => {
   test.setTimeout(90000)
 
@@ -290,6 +884,7 @@ test('loads the restore workflow selections', async ({ page }) => {
 
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
+    hasText: /(^| \/ )bareos-fd$/,
     selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
@@ -325,7 +920,7 @@ test('restores a real file from a backup', async ({ page }) => {
 
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
-    hasText: /^bareos-fd$/,
+    hasText: /(^| \/ )bareos-fd$/,
     selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await waitForQSelectReady(page, 'restore-backup-job')
@@ -377,7 +972,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await firstClient.click()
 
   await expect(page).toHaveURL(/#\/clients\/.+/)
-  await expect(page.locator('.q-page .text-h6').first()).toContainText(
+  await expect(page.locator('.q-page .text-h5').first()).toContainText(
     clientName ?? ''
   )
   await expect(page.getByText('Client Details', { exact: true })).toBeVisible()

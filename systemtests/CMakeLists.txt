@@ -93,6 +93,19 @@ include(BareosSystemtestFunctions)
 # ps is required for systemtests
 find_program(PS ps REQUIRED)
 
+if(UNIX
+   AND PGREP
+   AND PYTHON_EXECUTABLE
+)
+  add_test(
+    NAME system:ctl-pid-lookup
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+      "${PYTHON_EXECUTABLE}"
+  )
+endif()
+
 set(USER $ENV{USER})
 
 # set the data encryption and signature keys
@@ -350,18 +363,20 @@ set(READONLY_WEBUI_SELENIUM_TESTNAMES
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
 find_program(NODE node)
-set(WEBUI_VUE_MINIMUM_NODE_MAJOR 20)
+set(WEBUI_VUE_MINIMUM_NODE_VERSION 22.12.0)
 set(WEBUI_VUE_NODE_VERSION_OK FALSE)
 set(NODE_VERSION "")
 if(NODE)
   execute_process(
     COMMAND "${NODE}" --version
+    RESULT_VARIABLE NODE_VERSION_RESULT
     OUTPUT_VARIABLE NODE_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
   )
-  if("${NODE_VERSION}" MATCHES "^v([0-9]+)\\.")
-    set(NODE_VERSION_MAJOR "${CMAKE_MATCH_1}")
-    if(NODE_VERSION_MAJOR GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_MAJOR)
+  if(NODE_VERSION_RESULT EQUAL 0 AND "${NODE_VERSION}" MATCHES
+                                     "^v([0-9]+\\.[0-9]+\\.[0-9]+)$"
+  )
+    if("${CMAKE_MATCH_1}" VERSION_GREATER_EQUAL WEBUI_VUE_MINIMUM_NODE_VERSION)
       set(WEBUI_VUE_NODE_VERSION_OK TRUE)
     endif()
   endif()
@@ -397,6 +412,27 @@ find_program(
 )
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
+
+if(PYTHON_EXECUTABLE AND PYMODULE_3_SELENIUM_FOUND)
+  add_test(
+    NAME webui:login-compatibility
+    COMMAND
+      "${PYTHON_EXECUTABLE}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/selenium/test_login_compatibility.py"
+  )
+endif()
+
+if(PHP
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/ClassLoader.php"
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/autoload_psr4.php"
+)
+  add_test(
+    NAME webui:restore-location
+    COMMAND
+      "${PHP}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/regress/webui-restore-location-test.php"
+  )
+endif()
 
 message("   PHP:                       " ${PHP})
 message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
@@ -559,12 +595,12 @@ else()
   if(NOT NODE)
     message(
       STATUS
-        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR} before configuring webui-vue browser tests."
+        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION} before configuring webui-vue browser tests."
     )
   elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
     message(
       STATUS
-        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_MAJOR}, but found ${NODE_VERSION}."
+        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION}, but found ${NODE_VERSION}."
     )
   elseif(NOT WEBUI_VUE_PLAYWRIGHT)
     message(
@@ -821,6 +857,7 @@ else()
                TIMEOUT 60 COST 1.0
   )
 
+  math(EXPR BASEPORT "${BASEPORT} + 10")
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_USERNAME "")
   set(BAREOS_WEBUI_PASSWORD "")

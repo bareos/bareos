@@ -21,6 +21,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import os
@@ -41,6 +42,218 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_job_comment_update_is_atomic(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(director, "backup-bareos-fd", "Full", wait=True)
+        director.call(f'update jobid={jobid} comment="original"')
+
+        for invalid in ("jobtype=5", "starttime=invalid", "client=missing-client"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                    director.call(f'update jobid={jobid} comment="changed" {invalid}')
+                job = director.call(f"llist jobid={jobid}")["jobs"][0]
+                self.assertEqual(job["comment"], "original")
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call(
+                f'update jobid={jobid} comment="changed" filesetid=2147483648'
+            )
+        job = director.call(f"llist jobid={jobid}")["jobs"][0]
+        self.assertEqual(job["comment"], "original")
+        self.assertEqual(job["name"], "backup-bareos-fd")
+
+        director.call(
+            f'update jobid={jobid} comment="updated" jobname=atomic-good-name'
+        )
+        job = director.call(f"llist jobid={jobid}")["jobs"][0]
+        self.assertEqual(job["comment"], "updated")
+        self.assertEqual(job["name"], "atomic-good-name")
+
+    def test_job_counts_respect_list_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        other_jobid = self.run_job(admin, "backup-test2-fd", "Full", wait=True)
+        self.configure_add(
+            admin,
+            "consoles",
+            "count-regex-deny",
+            "console=count-regex-deny password=secret profile=operator "
+            'jobacl="!backup-test2-fd,backup-.*,historical-.*" '
+            "tlsenable=no tlsrequire=no",
+        )
+        self.configure_add(
+            admin,
+            "consoles",
+            "count-no-fileset",
+            "console=count-no-fileset password=secret profile=operator "
+            "filesetacl=!SelfTest tlsenable=no tlsrequire=no",
+        )
+
+        for username in (
+            "client-bareos-fd",
+            "job-backup-bareos-fd",
+            "poolnotfull",
+            "count-regex-deny",
+            "count-no-fileset",
+        ):
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            if username == "count-regex-deny":
+                names = {row["name"] for row in console.call("list jobs")["jobs"]}
+                self.assertIn("backup-bareos-fd", names)
+                self.assertNotIn("backup-test2-fd", names)
+            if username == "count-no-fileset":
+                short_ids = {row["jobid"] for row in console.call("list jobs")["jobs"]}
+                long_ids = {row["jobid"] for row in console.call("llist jobs")["jobs"]}
+                self.assertIn(str(jobid), short_ids)
+                self.assertNotIn(str(jobid), long_ids)
+            for command in ("list", "llist"):
+                for suffix in (
+                    "",
+                    " last",
+                    " current",
+                    " last current",
+                    " search=backup",
+                ):
+                    with self.subTest(console=username, command=command, suffix=suffix):
+                        rows = console.call(f"{command} jobs{suffix}")["jobs"]
+                        count = console.call(f"{command} jobs count{suffix}")["jobs"][0]
+                        self.assertEqual(int(count["count"]), len(rows))
+                        paged_count = console.call(
+                            f"{command} jobs count{suffix} limit=0 offset=1"
+                        )["jobs"][0]
+                        self.assertEqual(int(paged_count["count"]), len(rows))
+
+        admin.call(
+            f".sql query=\"UPDATE Job SET Name='historical-count' WHERE JobId={jobid}\""
+        )
+        try:
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="count-regex-deny",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                for suffix in ("", " last", " search=historical"):
+                    rows = console.call(f"{command} jobs{suffix}")["jobs"]
+                    self.assertIn("historical-count", {row["name"] for row in rows})
+                    count = console.call(f"{command} jobs count{suffix}")["jobs"][0]
+                    self.assertEqual(int(count["count"]), len(rows))
+        finally:
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
+            )
+
+        try:
+            for id_ in (jobid, other_jobid):
+                admin.call(
+                    f".sql query=\"UPDATE Job SET Name='count-latest-selection' WHERE JobId={id_}\""
+                )
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="client-bareos-fd",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                self.assertEqual(
+                    int(
+                        console.call(
+                            f"{command} jobs count search=count-latest-selection"
+                        )["jobs"][0]["count"]
+                    ),
+                    1,
+                )
+                self.assertEqual(
+                    int(
+                        console.call(
+                            f"{command} jobs count last search=count-latest-selection"
+                        )["jobs"][0]["count"]
+                    ),
+                    0,
+                )
+        finally:
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
+            )
+            admin.call(
+                f".sql query=\"UPDATE Job SET Name='backup-test2-fd' WHERE JobId={other_jobid}\""
+            )
+
+        try:
+            admin.call(
+                '.sql query="INSERT INTO Job (Job, Name, Type, Level, JobStatus, ClientId) '
+                "SELECT 'acl-count-cursor-' || n, 'acl-count-cursor', 'B', 'F', 'T', "
+                f"CASE WHEN n <= 120 THEN (SELECT ClientId FROM Job WHERE JobId={jobid}) "
+                f"ELSE (SELECT ClientId FROM Job WHERE JobId={other_jobid}) END "
+                'FROM generate_series(1, 210) n"'
+            )
+            console = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name="client-bareos-fd",
+                password=bareos.bsock.Password("secret"),
+                **self.director_extra_options,
+            )
+            for command in ("list", "llist"):
+                count = console.call(f"{command} jobs count search=acl-count-cursor")
+                self.assertEqual(int(count["jobs"][0]["count"]), 120)
+        finally:
+            admin.call(".sql query=\"DELETE FROM Job WHERE Name='acl-count-cursor'\"")
+
+    def test_list_jobs_during_reload(self):
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+        director = bareos.bsock.DirectorConsoleJson(**options)
+        reloader = bareos.bsock.DirectorConsoleJson(**options)
+        self.get_backup_jobid(director, "backup-bareos-fd", level="Full")
+        commands = (
+            "list jobs count current",
+            "list jobs count enabled",
+            "list jobs count disabled",
+        )
+        expected = [director.call(command)["jobs"][0]["count"] for command in commands]
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                lambda: [reloader.call("reload") for _ in range(20)]
+            )
+            for _ in range(20):
+                counts = [
+                    director.call(command)["jobs"][0]["count"] for command in commands
+                ]
+                self.assertEqual(counts, expected)
+            future.result()
+
     def test_list_jobs(self):
         """
         verifying `list jobs` and `llist jobs ...` outputs correct data
@@ -87,6 +300,47 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_list_keys,
         )
+        with self.subTest(format="json", command="list backups"):
+            backups = director.call("list backups client=bareos-fd")["backups"]
+            self.assertTrue(backups)
+            for backup in backups:
+                self.assertEqual(set(backup), set(expected_list_keys))
+        plain_director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options,
+        )
+        for command in (
+            "list jobs sortby=joberrors",
+            "list jobs last sortby=joberrors",
+            "list backups client=bareos-fd",
+        ):
+            with self.subTest(format="text", command=command):
+                output = plain_director.call(command).decode("utf-8")
+                lines = output.splitlines()
+                rows = [line for line in lines if line.startswith("|")]
+                borders = [line for line in lines if line.startswith("+")]
+                self.assertGreaterEqual(len(rows), 2)
+                self.assertEqual(len(borders), 3)
+                self.assertTrue(all(row.count("|") == 11 for row in rows))
+                self.assertTrue(all(len(line) == len(rows[0]) for line in borders))
+        api_command = "list jobs limit=2 sortby=jobid"
+        with self.subTest(format="api", command=api_command):
+            expected_ids = [job["jobid"] for job in director.call(api_command)["jobs"]]
+            self.assertEqual(len(expected_ids), 2)
+            plain_director.call(".api 1")
+            try:
+                output = plain_director.call(api_command).decode("utf-8")
+                rows = output.splitlines()
+                self.assertEqual(len(rows), 2)
+                self.assertEqual(
+                    [row.split("|", 1)[0].strip() for row in rows], expected_ids
+                )
+                self.assertTrue(output.endswith("\n"))
+            finally:
+                plain_director.call(".api 0")
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
 
@@ -120,6 +374,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "priorjobid",
             "filesetid",
             "fileset",
+            "comment",
         ]
         resultkeys = list(result["jobs"][0].keys())
 
@@ -129,6 +384,63 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_long_list_keys,
         )
+        with self.subTest(format="json", command="llist backups"):
+            backups = director.call("llist backups client=bareos-fd")["backups"]
+            self.assertTrue(backups)
+            for backup in backups:
+                self.assertEqual(set(backup), set(expected_long_list_keys))
+
+        original_errors = director.call(
+            f'.sql query="SELECT JobErrors FROM Job WHERE JobId={backup_jobid_incremental}"'
+        )["query"][0]["joberrors"]
+        original_starttime = director.call(
+            f'.sql query="SELECT StartTime FROM Job WHERE JobId={backup_jobid}"'
+        )["query"][0]["starttime"]
+        director.call(
+            f'.sql query="UPDATE Job SET JobErrors=123 WHERE JobId={backup_jobid_incremental}"'
+        )
+        director.call(
+            f""".sql query="UPDATE Job SET StartTime='2000-01-01 00:00:00' WHERE JobId={backup_jobid}" """
+        )
+        try:
+            for last in ("", " last"):
+                for reverse in ("", " reverse"):
+                    with self.subTest(last=last, reverse=reverse):
+                        long_jobs = director.call(f"llist jobs{last}")["jobs"]
+                        errors = {
+                            job["jobid"]: int(job["joberrors"]) for job in long_jobs
+                        }
+                        for command in ("list", "llist"):
+                            query = f"{command} jobs{last} sortby=joberrors{reverse}"
+                            jobs = director.call(query)["jobs"]
+                            if command == "list":
+                                self.assertEqual(set(jobs[0]), set(expected_list_keys))
+                            self.assertEqual(
+                                {job["jobid"] for job in jobs}, set(errors)
+                            )
+                            sort_keys = [
+                                (
+                                    errors[job["jobid"]],
+                                    job["starttime"],
+                                    int(job["jobid"]),
+                                )
+                                for job in jobs
+                            ]
+                            self.assertEqual(
+                                sort_keys, sorted(sort_keys, reverse=bool(reverse))
+                            )
+                            for offset in range(min(3, len(jobs))):
+                                page = director.call(
+                                    f"{query} limit=1 offset={offset}"
+                                )["jobs"]
+                                self.assertEqual(page, jobs[offset : offset + 1])
+        finally:
+            director.call(
+                f""".sql query="UPDATE Job SET StartTime='{original_starttime}' WHERE JobId={backup_jobid}" """
+            )
+            director.call(
+                f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
+            )
 
         # Long list with options
 
@@ -168,6 +480,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             "priorjobid",
             "filesetid",
             "fileset",
+            "comment",
         ]
         resultkeys = list(result["jobs"][0].keys())
 
@@ -234,6 +547,15 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             result["jobs"][0]["count"],
             "",
         )
+
+        for command in ("list", "llist"):
+            for last in ("", " last"):
+                base = f"{command} jobs count{last} job=backup-bareos-fd"
+                expected_count = director.call(base)["jobs"][0]["count"]
+                for pagination in ("limit=0", "limit=1 offset=1"):
+                    with self.subTest(command=command, last=last, range=pagination):
+                        result = director.call(f"{base} {pagination}")
+                        self.assertEqual(result["jobs"][0]["count"], expected_count)
 
         result = director.call(
             "llist jobs limit=99999999999999999999999999999999999999 offset=99999999999999999999999999999999999999999999999"
@@ -677,6 +999,42 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
 
         result = director.call(f"list joblog jobid={jobid}")
         self.verify_joblog(result)
+
+        expected = director.call(f"list joblog jobids={jobid}")
+        self.assertGreater(len(expected["joblog"]), 2)
+        for command in ("list", "llist"):
+            with self.subTest(command=command):
+                logs = director.call(f"{command} joblog jobids={jobid}")["joblog"]
+                page = director.call(
+                    f"{command} joblog jobids={jobid} limit=1 offset=1"
+                )["joblog"]
+                self.assertEqual(page, logs[1:2])
+                self.assertEqual(
+                    director.call(f"{command} joblog jobids={jobid} limit=0")["joblog"],
+                    [],
+                )
+                for options in ("count", "count limit=0 offset=1"):
+                    self.assertEqual(
+                        director.call(
+                            f"{command} joblog jobids={jobid},{jobid} {options}"
+                        )["joblog"],
+                        [{"count": str(len(logs))}],
+                    )
+                self.assertEqual(
+                    director.call(f"{command} joblog jobids=0 count")["joblog"],
+                    [{"count": "0"}],
+                )
+        at_limit = ",".join([str(jobid)] * 1000)
+        self.assertEqual(director.call(f"list joblog jobids={at_limit}"), expected)
+
+        for token in (str(jobid), "0"):
+            with self.subTest(token=token):
+                over_limit = ",".join([token] * 1001)
+                with self.assertRaises(
+                    bareos.exceptions.JsonRpcErrorReceivedException
+                ) as error:
+                    director.call(f"list joblog jobids={over_limit}")
+                self.assertIn("1000", str(error.exception))
 
     def test_list_joblog_non_utf8(self):
         """
