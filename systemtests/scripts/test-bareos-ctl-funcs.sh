@@ -41,11 +41,29 @@ valgrind_other_pid=""
 valgrind_argument_pid=""
 trap 'kill ${other_pid} ${regex_pid} ${exact_pid} ${config_other_pid} ${config_exact_pid} ${config_trailing_pid} ${long_path_pid} ${valgrind_pid} ${valgrind_other_pid} ${valgrind_argument_pid} 2>/dev/null || true' EXIT
 
+wait_for_command()
+{
+  local pid="$1" expected="$2" args attempt
+  for attempt in {1..100}; do
+    if ! args=$("$PS" -ww -p "$pid" -o args=); then
+      echo "Child $pid exited before executing $expected" >&2
+      return 1
+    fi
+    if [[ "$args" == "$expected" || "$args" == "$expected "* ]]; then
+      return 0
+    fi
+    sleep 0.05
+  done
+  echo "Timed out waiting for child $pid to execute $expected" >&2
+  return 1
+}
+
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${name}-other" "$python_executable" &
 other_pid=$!
+wait_for_command "$other_pid" "${name}-other"
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "${prefix}Ax" "$python_executable" &
 regex_pid=$!
-sleep 0.1
+wait_for_command "$regex_pid" "${prefix}Ax"
 
 if [ -n "$(pidofproc "$name" 0)" ]; then
   echo "Found a different process instead of $name" >&2
@@ -56,7 +74,7 @@ kill -0 "$other_pid" "$regex_pid"
 
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' _ "/tmp/$name" "$python_executable" &
 exact_pid=$!
-sleep 0.1
+wait_for_command "$exact_pid" "/tmp/$name"
 
 if [ "$(pidofproc "$name" 0)" != "$exact_pid" ]; then
   echo "Did not find the exact process using pgrep" >&2
@@ -88,7 +106,9 @@ config_exact_pid=$!
 bash -c 'exec -a "$1" "$3" -c "import time; time.sleep(30)" -c "$2" --extra' \
   _ "/tmp/$name" "$BAREOS_CONFIG_DIR" "$python_executable" &
 config_trailing_pid=$!
-sleep 0.1
+wait_for_command "$config_other_pid" "/tmp/$name"
+wait_for_command "$config_exact_pid" "/tmp/$name"
+wait_for_command "$config_trailing_pid" "/tmp/$name"
 
 if [ "$(filter_pids_by_config_dir "$config_trailing_pid")" != "$config_trailing_pid" ]; then
   echo "Did not match a config directory followed by another argument" >&2
@@ -115,7 +135,7 @@ long_name="${name}-long"
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
   _ "${long_directory}/${long_name}" "$python_executable" &
 long_path_pid=$!
-sleep 0.1
+wait_for_command "$long_path_pid" "${long_directory}/${long_name}"
 
 PGREP=$(command -v pgrep)
 if [ "$(pidofproc "$long_name" 0)" != "$long_path_pid" ]; then
@@ -139,11 +159,12 @@ for command_line in \
   bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
     _ "$command_line" "$python_executable" &
   valgrind_other_pid="$valgrind_other_pid $!"
+  wait_for_command "$!" "$command_line"
 done
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
   _ "/usr/bin/not-valgrind /tmp/$name -c ${BAREOS_CONFIG_DIR}" "$python_executable" &
 valgrind_argument_pid=$!
-sleep 0.1
+wait_for_command "$valgrind_argument_pid" "/usr/bin/not-valgrind /tmp/$name"
 
 for PGREP in "$(command -v pgrep)" ""; do
   if [ -n "$(pidofproc "$name" 0)" ]; then
@@ -155,7 +176,7 @@ done
 bash -c 'exec -a "$1" "$2" -c "import time; time.sleep(30)"' \
   _ "/usr/bin/valgrind --leak-check=full --log-file=/tmp/valgrind.log /tmp/$name -v -c ${BAREOS_CONFIG_DIR}" "$python_executable" &
 valgrind_pid=$!
-sleep 0.1
+wait_for_command "$valgrind_pid" "/usr/bin/valgrind --leak-check=full --log-file=/tmp/valgrind.log /tmp/$name"
 
 for PGREP in "$(command -v pgrep)" ""; do
   if [ "$(pidofproc "$name" 0)" != "$valgrind_pid" ]; then
