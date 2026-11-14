@@ -78,8 +78,8 @@ export function consecutiveFailedJobsSinceSuccess(jobsNewestFirst) {
 
 // Classify a single job log line by severity, for highlighting and for
 // extracting error/warning lines (e.g. Trouble View widget, Job Details
-// log highlighting). Order matters: the "0 errors/warnings" summary guard
-// must run before the generic error/warning checks below it.
+// log highlighting). Ignore zero-count summaries and pathnames when looking
+// for severity, while retaining real error markers elsewhere on the line.
 //
 // The warning pattern covers Bareos' M_NOTSAVED file daemon messages
 // (backup.cc), which cause a job's Warning status without containing the
@@ -89,10 +89,9 @@ export function consecutiveFailedJobsSinceSuccess(jobsNewestFirst) {
 // though they don't increment the job's warning/error counters.
 export function classifyLogLine(line) {
   const l = line.toLowerCase()
-  if (/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/.test(l)) {
-    return 'normal'
-  }
-  if (/error|fatal|failed/.test(l)) return 'error'
+    .replace(/\b(?:non-fatal\s+fd\s+errors|sd\s+errors|fd\s+errors|errors|warnings?)\s*:\s*0\b/g, '')
+    .replace(/(?:\/|[a-z]:\\)[^\s"']+/g, '')
+  if (/(?<![a-z0-9_./\\-])(?:errors?|fatal|failed)\b(?!\.[a-z0-9_])/.test(l)) return 'error'
   if (
     /warning|warn|could not stat|could not access|not saved|unknown file type/.test(l)
     || /could not follow link|could not open directory|cannot open/.test(l)
