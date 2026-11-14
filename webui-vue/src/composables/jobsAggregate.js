@@ -257,7 +257,7 @@ export async function fetchAggregatedJobsPage(
           }
 
           return client.call(buildListJobsCommand({
-            limit: fetchLimit,
+            limit: rowsPerPage === 0 ? MAX_JOBS_FETCH_LIMIT : fetchLimit,
             offset: 0,
             statusFilter: currentStatusFilter,
             levelFilter,
@@ -293,14 +293,17 @@ export async function fetchAggregatedJobsPage(
         )
       ), 0)
 
+      const knownTruncated = !serverSortColumn && countResults.some(result => (
+        result.status === 'fulfilled'
+        && numberValue(directorCollection(result.value?.jobs)[0]?.count) > MAX_JOBS_FETCH_LIMIT
+      ))
+      const unknownCompleteness = !serverSortColumn
+        && countResults.some(result => result.status === 'rejected')
       return {
         director,
         jobs,
         count,
-        truncated: !serverSortColumn && countResults.some(result => (
-          result.status === 'fulfilled'
-          && numberValue(directorCollection(result.value?.jobs)[0]?.count) > MAX_JOBS_FETCH_LIMIT
-        )),
+        truncated: knownTruncated ? true : unknownCompleteness ? null : false,
         countErrors: countResults.flatMap(result => (
           result.status === 'rejected'
             ? [{
@@ -322,7 +325,11 @@ export async function fetchAggregatedJobsPage(
   return {
     jobs: paginateJobs(jobs, pagination),
     totalJobs,
-    truncated: successful.some(result => result.truncated),
+    // A failed count leaves capped-fetch completeness unknown, unless another
+    // director is already known to be truncated.
+    truncated: successful.some(result => result.truncated === true)
+      ? true
+      : successful.some(result => result.truncated === null) ? null : false,
     directorErrors: results.flatMap((result, index) => (
       result.status === 'rejected'
         ? [{

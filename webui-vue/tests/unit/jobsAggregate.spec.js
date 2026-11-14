@@ -25,6 +25,7 @@ import {
   fetchAggregatedJobsPage,
   fetchAggregatedRecentJobsPage,
   fetchAggregatedTroubleJobs,
+  MAX_JOBS_FETCH_LIMIT,
   sortJobsByPagination,
   usesDefaultJobsSorting,
 } from '../../src/composables/jobsAggregate.js'
@@ -515,6 +516,7 @@ describe('jobs aggregate helpers', () => {
         message: 'count denied',
       }),
     })
+
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response', id: commands.find(entry => entry.command === 'status director').id,
@@ -532,6 +534,48 @@ describe('jobs aggregate helpers', () => {
     })
     const result = await loading
     expect(result.jobs.map(job => job.id)).toEqual([2, 1])
+    expect(result.directorErrors).toEqual([{
+      director: 'prod-a', message: 'Failed to count jobs: count denied',
+    }])
+  })
+
+  it('uses the cap for All when the count fails and reports unknown completeness', async () => {
+    const loading = fetchAggregatedJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 0, sortBy: 'id', descending: true },
+      'f',
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(3))
+    const commands = socket.sent.slice(1).map(payload => JSON.parse(payload))
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error', id: commands.find(entry => entry.command === 'llist jobs count jobstatus=f').id,
+        message: 'count denied',
+      }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: commands.find(entry => entry.command === 'status director').id,
+        data: { running: [] },
+      }),
+    })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+    const command = JSON.parse(socket.sent[3])
+    expect(command.command).toBe(`llist jobs reverse limit=${MAX_JOBS_FETCH_LIMIT} offset=0 jobstatus=f`)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: command.id,
+        data: { jobs: [{ jobid: 2, jobstatus: 'f' }, { jobid: 1, jobstatus: 'f' }] },
+      }),
+    })
+    const result = await loading
+    expect(result.jobs.map(job => job.id)).toEqual([2, 1])
+    expect(result.totalJobs).toBe(2)
+    expect(result.truncated).toBeNull()
     expect(result.directorErrors).toEqual([{
       director: 'prod-a', message: 'Failed to count jobs: count denied',
     }])
