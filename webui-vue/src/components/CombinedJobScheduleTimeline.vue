@@ -61,10 +61,10 @@
     >
       <q-inner-loading :showing="loading" />
       <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
-      <div v-else-if="!hasContent" class="text-grey-7 text-center q-py-xl">
+      <div v-if="!hasContent && !error" class="text-grey-7 text-center q-py-xl">
         {{ t('No actual or scheduled jobs in this period.') }}
       </div>
-      <template v-else>
+      <template v-if="hasContent">
         <div class="combined-timeline__axis-header">
           <div />
           <div
