@@ -56,6 +56,32 @@ class FakeWebSocket {
   }
 }
 
+async function respondToClientAggregate(socket) {
+  socket.open()
+  socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+  await vi.waitFor(() => expect(socket.sent).toHaveLength(5))
+
+  const commandIds = new Map(socket.sent.slice(1).map((payload) => {
+    const command = JSON.parse(payload)
+    return [command.command, command.id]
+  }))
+  const responses = [
+    ['llist clients', { clients: [] }],
+    ['.clients', { clients: [] }],
+    ['llist jobs reverse limit=1000 sortby=starttime jobtype=B', { jobs: [] }],
+    ['status scheduler days=-31,1', { schedules: [], preview: [] }],
+  ]
+  for (const [command, data] of responses) {
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get(command),
+        data,
+      }),
+    })
+  }
+}
+
 describe('clients aggregate helpers', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -66,6 +92,25 @@ describe('clients aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('bypasses the cached clients aggregate when forced', async () => {
+    const credentials = { username: 'admin', password: 'secret' }
+    const initialRequest = fetchAggregatedClients(credentials, ['director-a'])
+    await respondToClientAggregate(FakeWebSocket.instances[0])
+    await initialRequest
+
+    await fetchAggregatedClients(credentials, ['director-a'])
+    expect(FakeWebSocket.instances).toHaveLength(1)
+
+    const forcedRequest = fetchAggregatedClients(
+      credentials,
+      ['director-a'],
+      { forceRefresh: true }
+    )
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    await respondToClientAggregate(FakeWebSocket.instances[1])
+    await forcedRequest
   })
 
   it('merges clients across multiple directors', async () => {
