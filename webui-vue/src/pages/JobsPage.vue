@@ -1809,7 +1809,18 @@ async function loadRunOptions({ throwOnError = false } = {}) {
 }
 
 async function onJobSelected(name) {
-  await applyJobDefaults(name)
+  const revision = runFormRevision
+  runFormReady.value = false
+  const pendingDefaults = applyJobDefaults(name, { throwOnError: true })
+  const request = defaultsRevision
+  try {
+    await pendingDefaults
+    if (revision !== runFormRevision || request !== defaultsRevision || name !== runForm.value.job) return
+    runFormReady.value = Boolean(name)
+  } catch (e) {
+    if (revision !== runFormRevision || request !== defaultsRevision || name !== runForm.value.job) return
+    $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
+  }
 }
 
 async function applyJobDefaults(name, { throwOnError = false } = {}) {
