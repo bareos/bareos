@@ -853,6 +853,7 @@ class BareosDb : public BareosDbQueryEnum {
   void ListJoblogRecordsForJobs(JobControlRecord* jcr,
                                 const std::vector<JobId_t>& jobids,
                                 const char* range,
+                                bool count,
                                 OutputFormatter* sendit,
                                 e_list_type type);
   void ListLogRecords(JobControlRecord* jcr,

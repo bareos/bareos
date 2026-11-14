@@ -457,10 +457,11 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
                                         const std::vector<JobId_t>& jobids,
                                         const char* range,
+                                        bool count,
                                         OutputFormatter* sendit,
                                         e_list_type type)
 {
-  if (jobids.empty()) { return; }
+  if (jobids.empty() && !count) { return; }
 
   // JobIds are validated, already-ACL-checked unsigned integers (the caller
   // is responsible for both), so they can be joined directly into the SQL
@@ -475,19 +476,24 @@ void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
     jobid_list += std::to_string(jobid);
     ++included;
   }
-  if (jobid_list.empty()) { return; }
+  if (jobid_list.empty() && !count) { return; }
 
   DbLocker _{this};
-  Mmsg(cmd,
-       "SELECT Log.JobId AS JobId, Time, LogText "
-       "FROM Log "
-       "WHERE Log.JobId IN (%s) "
-       "ORDER BY Log.JobId, Log.LogId %s",
-       jobid_list.c_str(), range);
+  if (count) {
+    Mmsg(cmd, "SELECT COUNT(*) AS Count FROM Log WHERE Log.JobId IN (%s)",
+         jobid_list.empty() ? "NULL" : jobid_list.c_str());
+  } else {
+    Mmsg(cmd,
+         "SELECT Log.JobId AS JobId, Time, LogText "
+         "FROM Log "
+         "WHERE Log.JobId IN (%s) "
+         "ORDER BY Log.JobId, Log.LogId %s",
+         jobid_list.c_str(), range);
+  }
 
   if (!QueryDb(jcr, cmd)) { return; }
 
-  if (type != VERT_LIST) {
+  if (!count && type != VERT_LIST) {
     /* See the comment in ListJoblogRecords(): logtext already contains
      * embedded newlines etc, so anything other than a vertical list should
      * be dumped as raw, unformatted rows. */

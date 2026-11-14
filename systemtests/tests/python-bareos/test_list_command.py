@@ -1013,6 +1013,17 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     director.call(f"{command} joblog jobids={jobid} limit=0")["joblog"],
                     [],
                 )
+                for options in ("count", "count limit=0 offset=1"):
+                    self.assertEqual(
+                        director.call(
+                            f"{command} joblog jobids={jobid},{jobid} {options}"
+                        )["joblog"],
+                        [{"count": str(len(logs))}],
+                    )
+                self.assertEqual(
+                    director.call(f"{command} joblog jobids=0 count")["joblog"],
+                    [{"count": "0"}],
+                )
         at_limit = ",".join([str(jobid)] * 1000)
         self.assertEqual(director.call(f"list joblog jobids={at_limit}"), expected)
 
