@@ -207,6 +207,19 @@ describe('build info store', () => {
     expect(store.promote).toBe(false)
   })
 
+  it('updates the cached classification when retaining a smaller director set', () => {
+    const store = useBuildInfoStore()
+    store.recordStatus('dir-a', { header: { binary_info: 'Bareos community' } })
+    store.recordStatus('dir-b', { header: { binary_info: 'Bareos subscription' } })
+
+    store.retain(['dir-b'])
+    expect(store.kind).toBe(BUILD_KINDS.subscription)
+    expect(localStorage.getItem(BUILD_KIND_STORAGE_KEY)).toBe('subscription')
+
+    setActivePinia(createPinia())
+    expect(useBuildInfoStore().kind).toBe(BUILD_KINDS.subscription)
+  })
+
   it('promotes while a newly connected director has not reported its build kind', () => {
     const store = useBuildInfoStore()
     store.recordStatus('dir-1', { header: { binary_info: 'Bareos subscription' } })
