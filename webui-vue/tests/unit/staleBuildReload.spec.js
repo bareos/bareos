@@ -163,4 +163,18 @@ describe('installStaleBuildReloadHandling', () => {
 
     expect(windowObj.location.reload).toHaveBeenCalledTimes(2)
   })
+
+  it('handles a throwing sessionStorage property without aborting setup', () => {
+    const windowObj = fakeWindow()
+    Object.defineProperty(windowObj, 'sessionStorage', {
+      get: () => { throw new Error('blocked') },
+    })
+
+    expect(() => installStaleBuildReloadHandling(undefined, { windowObj }))
+      .not.toThrow()
+    windowObj.dispatch('vite:preloadError', {
+      payload: new Error('Failed to fetch dynamically imported module'),
+    })
+    expect(windowObj.location.reload).not.toHaveBeenCalled()
+  })
 })
