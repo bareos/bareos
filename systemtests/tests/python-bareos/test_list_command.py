@@ -393,8 +393,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         original_errors = director.call(
             f'.sql query="SELECT JobErrors FROM Job WHERE JobId={backup_jobid_incremental}"'
         )["query"][0]["joberrors"]
+        original_starttime = director.call(
+            f'.sql query="SELECT StartTime FROM Job WHERE JobId={backup_jobid}"'
+        )["query"][0]["starttime"]
         director.call(
             f'.sql query="UPDATE Job SET JobErrors=123 WHERE JobId={backup_jobid_incremental}"'
+        )
+        director.call(
+            f""".sql query="UPDATE Job SET StartTime='2000-01-01 00:00:00' WHERE JobId={backup_jobid}" """
         )
         try:
             for last in ("", " last"):
@@ -413,7 +419,11 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 {job["jobid"] for job in jobs}, set(errors)
                             )
                             sort_keys = [
-                                (errors[job["jobid"]], int(job["jobid"]))
+                                (
+                                    errors[job["jobid"]],
+                                    job["starttime"],
+                                    int(job["jobid"]),
+                                )
                                 for job in jobs
                             ]
                             self.assertEqual(
@@ -425,6 +435,9 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 )["jobs"]
                                 self.assertEqual(page, jobs[offset : offset + 1])
         finally:
+            director.call(
+                f""".sql query="UPDATE Job SET StartTime='{original_starttime}' WHERE JobId={backup_jobid}" """
+            )
             director.call(
                 f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
             )
