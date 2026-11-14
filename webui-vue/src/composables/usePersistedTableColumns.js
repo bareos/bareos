@@ -77,13 +77,8 @@ export function usePersistedTableColumns(key, allColumns, options = {}) {
 
   function toggleColumn(name) {
     const hidden = new Set(hiddenColumns.value)
-    // Turning an auto-revealed column off has to persist the whole current
-    // selection, otherwise the automatic rule would immediately undo it.
-    if (autoRevealed.value.has(name)) {
-      hidden.delete(name)
-      hiddenColumns.value = [...hidden, name]
-      return
-    }
+    // Persist the effective selection before automatic revealing is disabled.
+    for (const revealed of autoRevealed.value) hidden.delete(revealed)
     if (hidden.has(name)) {
       hidden.delete(name)
     } else {

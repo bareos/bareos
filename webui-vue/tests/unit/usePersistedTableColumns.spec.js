@@ -127,4 +127,25 @@ describe('usePersistedTableColumns', () => {
     })
     expect(reloaded.visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'numvols', 'actions'])
   })
+
+  it.each(['name', 'pooltype', 'numvols'])('preserves other auto-revealed columns when toggling %s', async (name) => {
+    const options = {
+      defaultHidden: ['pooltype', 'numvols'],
+      autoRevealRows: ref([
+        { pooltype: 'a', numvols: 1 },
+        { pooltype: 'b', numvols: 2 },
+      ]),
+    }
+    const table = usePersistedTableColumns('storages.pools', COLUMNS, options)
+    expect(table.visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'numvols', 'actions'])
+
+    table.toggleColumn(name)
+    await nextTick()
+    const expected = ['name', 'pooltype', 'numvols', 'actions'].filter(column => column !== name)
+    expect(table.visibleColumns.value.map(c => c.name)).toEqual(expected)
+
+    setActivePinia(createPinia())
+    const reloaded = usePersistedTableColumns('storages.pools', COLUMNS, options)
+    expect(reloaded.visibleColumns.value.map(c => c.name)).toEqual(expected)
+  })
 })
