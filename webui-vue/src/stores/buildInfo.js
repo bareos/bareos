@@ -75,6 +75,10 @@ export const useBuildInfoStore = defineStore('build-info', () => {
       || Object.entries(next).some(([name, kind]) => kindsByDirector.value[name] !== kind)
     ) {
       kindsByDirector.value = next
+      if (Object.keys(next).length > 0) {
+        cachedKind.value = summariseBuildKinds(Object.values(next))
+        storeBuildKind(cachedKind.value)
+      }
     }
   }
 
