@@ -300,6 +300,11 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_list_keys,
         )
+        with self.subTest(format="json", command="list backups"):
+            backups = director.call("list backups client=bareos-fd")["backups"]
+            self.assertTrue(backups)
+            for backup in backups:
+                self.assertEqual(set(backup), set(expected_list_keys))
         plain_director = bareos.bsock.DirectorConsole(
             address=self.director_address,
             port=self.director_port,
@@ -307,11 +312,13 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             password=password,
             **self.director_extra_options,
         )
-        for last in ("", " last"):
-            with self.subTest(format="text", last=last):
-                output = plain_director.call(
-                    f"list jobs{last} sortby=joberrors"
-                ).decode("utf-8")
+        for command in (
+            "list jobs sortby=joberrors",
+            "list jobs last sortby=joberrors",
+            "list backups client=bareos-fd",
+        ):
+            with self.subTest(format="text", command=command):
+                output = plain_director.call(command).decode("utf-8")
                 lines = output.splitlines()
                 rows = [line for line in lines if line.startswith("|")]
                 borders = [line for line in lines if line.startswith("+")]
@@ -362,6 +369,11 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             resultkeys,
             expected_long_list_keys,
         )
+        with self.subTest(format="json", command="llist backups"):
+            backups = director.call("llist backups client=bareos-fd")["backups"]
+            self.assertTrue(backups)
+            for backup in backups:
+                self.assertEqual(set(backup), set(expected_long_list_keys))
 
         original_errors = director.call(
             f'.sql query="SELECT JobErrors FROM Job WHERE JobId={backup_jobid_incremental}"'
