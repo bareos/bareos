@@ -9,6 +9,7 @@
 #   License as published by the Free Software Foundation and included
 #   in the file LICENSE.
 
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import re
@@ -39,19 +40,53 @@ class ScreenshotResult(unittest.TextTestResult):
             return
         self.stream.writeln(f"Screenshot saved: {path}")
 
-    def addFailure(self, test, err):
-        self.capture_screenshot(test)
-        super().addFailure(test, err)
-
-    def addError(self, test, err):
-        self.capture_screenshot(test)
-        super().addError(test, err)
-
-    def addSubTest(self, test, subtest, err):
-        if err is not None:
-            self.capture_screenshot(test, subtest.id())
-        super().addSubTest(test, subtest, err)
-
 
 class ScreenshotRunner(unittest.TextTestRunner):
     resultclass = ScreenshotResult
+
+
+class ScreenshotTestCase(unittest.TestCase):
+    """Capture before unittest handles exceptions and tears down the browser.
+
+    Python 3.10 reports result callbacks only after tearDown and cleanups.
+    The setup/test execution hooks and subTest context run before both.
+    """
+
+    @contextmanager
+    def _capture_errors(self, label=None):
+        try:
+            yield
+        except (unittest.SkipTest, unittest.case._ShouldStop):
+            raise
+        except Exception:
+            outcome = self._outcome
+            if (
+                outcome is not None
+                and not outcome.expecting_failure
+                and isinstance(outcome.result, ScreenshotResult)
+            ):
+                outcome.result.capture_screenshot(self, label)
+            raise
+
+    def _callSetUp(self):
+        with self._capture_errors():
+            super()._callSetUp()
+
+    def _callTestMethod(self, method):
+        with self._capture_errors():
+            super()._callTestMethod(method)
+
+    def _callTearDown(self):
+        with self._capture_errors():
+            super()._callTearDown()
+
+    def _callCleanup(self, function, *args, **kwargs):
+        with self._capture_errors():
+            super()._callCleanup(function, *args, **kwargs)
+
+    @contextmanager
+    def subTest(self, *args, **kwargs):
+        with super().subTest(*args, **kwargs):
+            label = self._subtest.id() if self._subtest is not None else self.id()
+            with self._capture_errors(label):
+                yield

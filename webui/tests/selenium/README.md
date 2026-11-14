@@ -59,3 +59,11 @@ python webui-php-selenium-test.py -v SeleniumTest.test_run_default_job
 ## Debugging
 
 After the test fails you will see an exception that was thrown. If this does not help you, take a look inside the generated log file, located in the same path as your `webui-php-selenium-test.py` file.
+
+PHP and Vue browser tests use `ScreenshotTestCase` with `ScreenshotRunner`
+from the packaged `selenium_screenshots.py` helper. Setup, test and subtest
+exceptions trigger screenshots before browser teardown, including on Python
+3.10, where result callbacks run after cleanups. Artifacts are written below
+`${BAREOS_BROWSER_ARTIFACTS_DIR:-.}/selenium/${TestName:-standalone}/`.
+An unavailable browser or screenshot transport emits a warning without
+replacing the test failure.
