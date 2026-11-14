@@ -554,7 +554,7 @@ async function toggleSchedule(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} schedule=${quoteDirectorString(row.name)}`)
-    await Promise.all([refreshSchedules(true), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus(), refreshUpcomingPreview()])
     $q.notify({
       type: 'positive',
       message: row.enabled
@@ -576,7 +576,7 @@ async function toggleJob(row) {
   try {
     await ensureScheduleActionDirector(row.director)
     await director.call(`${action} job=${quoteDirectorString(row.job)}`)
-    await Promise.all([refreshSchedules(true), refreshStatus()])
+    await Promise.all([refreshSchedules(true), refreshStatus(), refreshUpcomingPreview()])
     await nextTick()
 
     const updatedRow = scheduleJobRows.value.find(candidate => candidate.jobScopeKey === row.jobScopeKey)
