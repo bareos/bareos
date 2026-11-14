@@ -331,6 +331,7 @@ import { useDirectorScope } from '../composables/useDirectorScope.js'
 import {
   buildClientDetailsQuery,
   clientBackupStatusCode,
+  clientVersionStatusPresentation,
   parseClientStatusSummary,
   resolveClientsScopeDirector,
   withClientsScopeDirectorQuery,
@@ -678,15 +679,8 @@ function clientBackupStatusItems(client) {
 }
 
 function clientVersionStatusItems(client) {
-  const versionStatus = clientVersionInfo(client).status
-  if (versionStatus === 'upgrade_required') {
-    return [{ label: t('Upgrade required'), color: 'negative' }]
-  }
-  if (versionStatus === 'update_required') {
-    return [{ label: t('Update available'), color: 'warning' }]
-  }
-
-  return [{ label: t('OK'), color: 'positive' }]
+  const presentation = clientVersionStatusPresentation(clientVersionInfo(client).status)
+  return [{ ...presentation, label: t(presentation.label) }]
 }
 
 function buildClientJobLocation(job) {

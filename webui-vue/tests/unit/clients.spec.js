@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
   clientBackupStatusCode,
+  clientVersionStatusPresentation,
   parseClientStatusSummary,
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
@@ -39,6 +40,17 @@ describe('clients route helpers', () => {
       lastBackup: { status: 'T' },
       failureStreak: 0,
     }, 2)).toBe('ok')
+  })
+
+  it('does not classify unknown client versions as up to date', () => {
+    expect(clientVersionStatusPresentation('unknown')).toEqual({
+      label: 'Unknown',
+      color: 'grey-6',
+    })
+    expect(clientVersionStatusPresentation('unrecognized')).toEqual({
+      label: 'Unknown',
+      color: 'grey-6',
+    })
   })
 
   it('builds the client details query with return-state fields', () => {
