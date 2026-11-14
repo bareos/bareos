@@ -291,3 +291,27 @@ TEST(AppendProcessedFileTest, AttributeResendFilterDetectsSameFileIndex)
   rec.VolSessionId = 7;
   EXPECT_FALSE(filter.IsResend(&rec));
 }
+
+TEST(AppendProcessedFileTest, AttributeResendFilterTracksInterleavedSessions)
+{
+  storagedaemon::AttributeResendFilter filter;
+  auto first = MakeRecord(1, STREAM_UNIX_ATTRIBUTES);
+  first.VolSessionId = 7;
+  first.VolSessionTime = 11;
+  auto second = first;
+  second.VolSessionId = 8;
+  auto third = first;
+  third.VolSessionTime = 12;
+
+  EXPECT_FALSE(filter.IsResend(&first));
+  EXPECT_FALSE(filter.IsResend(&second));
+  EXPECT_TRUE(filter.IsResend(&first));
+  EXPECT_FALSE(filter.IsResend(&third));
+  EXPECT_TRUE(filter.IsResend(&second));
+  EXPECT_TRUE(filter.IsResend(&third));
+
+  first.FileIndex = 2;
+  EXPECT_FALSE(filter.IsResend(&first));
+  EXPECT_TRUE(filter.IsResend(&second));
+  EXPECT_TRUE(filter.IsResend(&first));
+}

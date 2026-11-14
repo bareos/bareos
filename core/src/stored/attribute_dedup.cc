@@ -165,16 +165,12 @@ void AttributeGroupBuffer::FlushAll()
 
 bool AttributeResendFilter::IsResend(const DeviceRecord* record)
 {
-  if (seen_ && volsessionid_ == record->VolSessionId
-      && volsessiontime_ == record->VolSessionTime
-      && fileindex_ == record->FileIndex) {
-    return true;
-  }
-  seen_ = true;
-  volsessionid_ = record->VolSessionId;
-  volsessiontime_ = record->VolSessionTime;
-  fileindex_ = record->FileIndex;
-  return false;
+  auto [it, inserted] = fileindices_.try_emplace(
+      std::make_pair(record->VolSessionId, record->VolSessionTime),
+      record->FileIndex);
+  bool resend = !inserted && it->second == record->FileIndex;
+  it->second = record->FileIndex;
+  return resend;
 }
 
 }  // namespace storagedaemon

@@ -136,18 +136,16 @@ class AttributeGroupBuffer {
 
 /**
  * Detects a corrected-attributes resend for a file that was already handled:
- * returns true if the Unix attribute record has the same job and FileIndex as
- * the previous one. Used by bls and bextract.
+ * returns true if the Unix attribute record has the same FileIndex as the
+ * previous one for its job, even with interleaved jobs. Used by bls and
+ * bextract.
  */
 class AttributeResendFilter {
  public:
   bool IsResend(const DeviceRecord* record);
 
  private:
-  bool seen_{false};
-  uint32_t volsessionid_{0};
-  uint32_t volsessiontime_{0};
-  int32_t fileindex_{0};
+  std::map<std::pair<uint32_t, uint32_t>, int32_t> fileindices_;
 };
 
 }  // namespace storagedaemon
