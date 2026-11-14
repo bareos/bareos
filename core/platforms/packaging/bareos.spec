@@ -1965,8 +1965,14 @@ a2enmod rewrite &> /dev/null || true
 a2enmod proxy &> /dev/null || true
 a2enmod proxy_http &> /dev/null || true
 a2enmod proxy_wstunnel &> /dev/null || true
+if systemctl is-active --quiet apache2.service; then
+  systemctl reload apache2.service &> /dev/null || true
+fi
+%else
+if systemctl is-active --quiet httpd.service; then
+  systemctl reload httpd.service &> /dev/null || true
+fi
 %endif
-apachectl graceful &> /dev/null || true
 %logging_end
 
 %posttrans webui
