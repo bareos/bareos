@@ -140,6 +140,71 @@ test('browser regression: schedule and job toggles refresh upcoming runs', async
   await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(jobCalls)
 })
 
+test('browser regression: upcoming runs ignore an obsolete Director scope', async ({ page }) => {
+  let releaseObsoletePreview
+  let firstDirectorPreviewCalls = 0
+
+  await browserFixture(page, (command, director) => {
+    if (command === 'status scheduler days=0,60') {
+      if (director === 'bareos-dir') {
+        firstDirectorPreviewCalls += 1
+        if (firstDirectorPreviewCalls === 1) {
+          return new Promise(resolve => {
+            releaseObsoletePreview = () => resolve({
+              preview: [{
+                job: 'Old job',
+                schedule: 'Old Director',
+                datetime: '2026-05-28 01:00:00',
+                runtime: Date.now() / 1000 + 3600,
+              }],
+            })
+          })
+        }
+
+        return {
+          preview: [{
+            job: 'Current job',
+            schedule: 'Current Director',
+            datetime: '2026-05-28 02:00:00',
+            runtime: Date.now() / 1000 + 7200,
+          }],
+        }
+      }
+
+      return {
+        preview: [{
+          job: 'Other job',
+          schedule: 'Other Director',
+          datetime: '2026-05-28 03:00:00',
+          runtime: Date.now() / 1000 + 10800,
+        }],
+      }
+    }
+
+    if (command.startsWith('status scheduler days=')) {
+      return { preview: [] }
+    }
+  })
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect.poll(() => Boolean(releaseObsoletePreview)).toBe(true)
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('director-scope-control')).toContainText('bareos-dir')
+  await expect.poll(() => firstDirectorPreviewCalls).toBeGreaterThan(1)
+  await expect(page.getByText(/Current Director/)).toBeVisible()
+
+  releaseObsoletePreview()
+  await page.waitForTimeout(100)
+  await expect(page.getByText(/Current Director/)).toBeVisible()
+  await expect(page.getByText(/Old Director/)).toHaveCount(0)
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
