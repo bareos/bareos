@@ -138,6 +138,21 @@ describe('settings store', () => {
       .toEqual({ sortBy: 'enabled', descending: false })
   })
 
+  it('validates cleared and malformed sort settings on import', () => {
+    const settings = useSettingsStore()
+    settings.importSettings({ tableSort: {
+      cleared: { sortBy: null, descending: 'invalid' },
+      missing: { descending: true },
+      empty: { sortBy: '', descending: true },
+      invalid: { sortBy: 42, descending: true },
+    } })
+    const fallback = { sortBy: 'name', descending: true }
+    expect(settings.getTableSort('cleared', fallback)).toEqual({ sortBy: null, descending: false })
+    for (const key of ['missing', 'empty', 'invalid']) {
+      expect(settings.getTableSort(key, fallback)).toEqual(fallback)
+    }
+  })
+
   it('persists and restores table filter (search) settings', async () => {
     const settings = useSettingsStore()
 

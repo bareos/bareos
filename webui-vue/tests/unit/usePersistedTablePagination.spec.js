@@ -101,4 +101,17 @@ describe('usePersistedTablePagination', () => {
       })
     )
   })
+
+  it('restores a deliberately cleared sort rather than the default', async () => {
+    const defaults = { rowsPerPage: 15, sortBy: 'name', descending: false }
+    const pagination = usePersistedTablePagination('jobs.defs', defaults, { persistSort: true })
+    pagination.value.sortBy = null
+    await nextTick()
+    expect(JSON.parse(localStorage.getItem(LS_KEY)).tableSort['jobs.defs'])
+      .toEqual({ sortBy: null, descending: false })
+
+    setActivePinia(createPinia())
+    const restored = usePersistedTablePagination('jobs.defs', defaults, { persistSort: true })
+    expect(restored.value.sortBy).toBeNull()
+  })
 })
