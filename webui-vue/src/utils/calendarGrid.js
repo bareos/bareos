@@ -51,6 +51,27 @@ export function parseDateStr(dateStr) {
   return new Date(y, m - 1, d)
 }
 
+export function calendarDayBounds(date) {
+  const start = new Date(date)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 1)
+  return { start: start.getTime(), end: end.getTime() }
+}
+
+export function calendarWeekBounds(monday) {
+  const start = new Date(monday)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 7)
+  return { start: start.getTime(), end: end.getTime() }
+}
+
+export function calendarDaysBetween(start, end) {
+  const dayOrdinal = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+  return (dayOrdinal(end) - dayOrdinal(start)) / 86_400_000
+}
+
 // The 7 calendar dates of the week starting at `anchorMonday`.
 export function weekDates(anchorMonday) {
   return Array.from({ length: 7 }, (_, i) => {

@@ -96,7 +96,7 @@
                 <span class="sched-day-hour-label">{{ hm.label }}</span>
               </div>
               <div v-if="dayViewDate === todayDateStr" class="sched-now-line sched-day-now-line"
-                   :style="{ left: `${nowLinePercent}%` }"
+                   :style="{ left: `${dayViewNowPercent}%` }"
                    tabindex="0"
                    :aria-label="nowLineLabel">
                 <q-tooltip>{{ nowLineLabel }}</q-tooltip>
@@ -222,6 +222,9 @@ import {
   parseTimelineTimestamp,
 } from '../utils/jobTimeline.js'
 import {
+  calendarDayBounds,
+  calendarDaysBetween,
+  calendarWeekBounds,
   firstOfMonth,
   makeDateStr,
   mondayOf,
@@ -280,7 +283,7 @@ const calendarRef  = ref(null)
 const normalizedClientFilter = computed(() => String(clientFilter ?? '').trim())
 
 // ── "Now" line (shared with the Scheduler Preview) ─────────────────────────────
-const { nowTick, nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
+const { nowTick, nowLineLabel, todayDateStr } = useNowLine(t)
 
 // ── Month/Week/Day navigation (mirrors SchedulesPage.vue's Scheduler Preview) ──
 const calendarMode = ref(settings.jobsTimelineViewMode)
@@ -470,10 +473,8 @@ const periodHasVisibleRuns = computed(() => (
 ))
 
 // ── Day view lanes (one per director/fileset/client, duration bars) ──────────
-const DAY_MS = 86_400_000
 function dayBounds(dateStr) {
-  const start = parseDateStr(dateStr).getTime()
-  return { start, end: start + DAY_MS }
+  return calendarDayBounds(parseDateStr(dateStr))
 }
 
 const dayViewGroups = computed(() => {
@@ -483,15 +484,22 @@ const dayViewGroups = computed(() => {
   return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
 })
 
+const dayViewNowPercent = computed(() => {
+  if (!dayViewDate.value) return 0
+  const { start, end } = dayBounds(dayViewDate.value)
+  return ((nowTick.value - start) / (end - start)) * 100
+})
+
 function dayBarStyle(run) {
   const { start, end } = dayBounds(dayViewDate.value)
+  const duration = end - start
   const now = Math.min(nowTick.value, end)
   const sRaw = parseTimelineTimestamp(run.starttime) ?? start
   const eRaw = parseTimelineTimestamp(run.endtime) ?? now
   const s = Math.max(sRaw, start)
   const e = Math.min(eRaw, now)
-  const leftPct = ((s - start) / DAY_MS) * 100
-  const widthPct = Math.max(0.4, ((e - s) / DAY_MS) * 100)
+  const leftPct = ((s - start) / duration) * 100
+  const widthPct = Math.max(0.4, ((e - s) / duration) * 100)
   return { left: `${leftPct}%`, width: `${widthPct}%`, background: tlColorOf(run.status) }
 }
 
@@ -510,7 +518,7 @@ const periodBounds = computed(() => {
     const next = new Date(viewAnchor.value.getFullYear(), viewAnchor.value.getMonth() + 1, 1)
     return { start, end: next.getTime() }
   }
-  return { start, end: start + 7 * DAY_MS }
+  return calendarWeekBounds(viewAnchor.value)
 })
 
 // One tick per calendar day in the period, used both for the header row of
@@ -605,10 +613,17 @@ function jobDetailsRoute(run) {
 }
 
 // Labeled gridlines for the enlarged Day view axis (every 6 hours).
-const DAY_VIEW_HOUR_MARKS = [0, 6, 12, 18].map(h => ({
-  pct: (h / 24) * 100,
-  label: `${String(h).padStart(2, '0')}:00`,
-}))
+const DAY_VIEW_HOUR_MARKS = computed(() => {
+  const { start, end } = dayBounds(dayViewDate.value ?? todayDateStr.value)
+  return [0, 6, 12, 18].map(hour => {
+    const mark = new Date(start)
+    mark.setHours(hour, 0, 0, 0)
+    return {
+      pct: ((mark.getTime() - start) / (end - start)) * 100,
+      label: `${String(hour).padStart(2, '0')}:00`,
+    }
+  })
+})
 
 const showNowLineLegend = computed(() => {
   if (inDayView.value) return dayViewDate.value === todayDateStr.value
@@ -632,7 +647,7 @@ const requestedFetchDays = computed(() => {
   } else {
     earliest = new Date(viewAnchor.value)
   }
-  const diffDays = Math.ceil((today - earliest) / DAY_MS)
+  const diffDays = calendarDaysBetween(earliest, today)
   return Math.max(diffDays + 1, 1)
 })
 const fetchDays = computed(() => Math.min(requestedFetchDays.value, MAX_FETCH_DAYS))
