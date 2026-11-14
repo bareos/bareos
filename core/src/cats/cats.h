@@ -852,6 +852,7 @@ class BareosDb : public BareosDbQueryEnum {
   // the single requested job), this method performs no ACL checks itself.
   void ListJoblogRecordsForJobs(JobControlRecord* jcr,
                                 const std::vector<JobId_t>& jobids,
+                                const char* range,
                                 OutputFormatter* sendit,
                                 e_list_type type);
   void ListLogRecords(JobControlRecord* jcr,

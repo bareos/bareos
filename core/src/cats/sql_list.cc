@@ -456,6 +456,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 
 void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
                                         const std::vector<JobId_t>& jobids,
+                                        const char* range,
                                         OutputFormatter* sendit,
                                         e_list_type type)
 {
@@ -481,8 +482,8 @@ void BareosDb::ListJoblogRecordsForJobs(JobControlRecord* jcr,
        "SELECT Log.JobId AS JobId, Time, LogText "
        "FROM Log "
        "WHERE Log.JobId IN (%s) "
-       "ORDER BY Log.JobId, Log.LogId ",
-       jobid_list.c_str());
+       "ORDER BY Log.JobId, Log.LogId %s",
+       jobid_list.c_str(), range);
 
   if (!QueryDb(jcr, cmd)) { return; }
 
