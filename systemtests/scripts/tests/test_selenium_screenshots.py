@@ -16,12 +16,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
 from urllib3.exceptions import MaxRetryError
 
-from selenium_screenshots import ScreenshotResult
+from selenium_screenshots import ScreenshotResult, ScreenshotTestCase
 
 
 class ScreenshotResultTest(unittest.TestCase):
@@ -48,17 +49,86 @@ class ScreenshotResultTest(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertIn("usage:", result.stdout.lower())
+                    probe = textwrap.dedent("""
+                        import runpy
+                        import sys
+                        from pathlib import Path
+                        import unittest
+                        from selenium_screenshots import ScreenshotRunner
+
+                        module = runpy.run_path(sys.argv[1])
+                        base = module.get("SeleniumTest", module.get("SeleniumVueTest"))
+
+                        class BrowserCase(base):
+                            @classmethod
+                            def setUpClass(cls):
+                                pass
+
+                            @classmethod
+                            def tearDownClass(cls):
+                                pass
+
+                            def setUp(self):
+                                self.driver = self
+
+                            def save_screenshot(self, path):
+                                Path(path).write_bytes(b"screenshot")
+                                return True
+
+                            def tearDown(self):
+                                self.driver = None
+
+                            def test_failure(self):
+                                self.fail("packaged failure")
+
+                        result = ScreenshotRunner().run(
+                            unittest.TestSuite([BrowserCase("test_failure")])
+                        )
+                        assert len(result.failures) == 1
+                        assert not result.errors
+                        assert len(list(Path(".").glob("selenium/**/*.png"))) == 1
+                        """)
+                    result = subprocess.run(
+                        [sys.executable, "-c", probe, script.name],
+                        cwd=directory,
+                        env=environment,
+                        capture_output=True,
+                        text=True,
+                        timeout=15,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("Screenshot saved:", result.stderr)
 
     def test_failures_and_errors_capture_before_browser_teardown(self):
-        class BrowserCase(unittest.TestCase):
+        events = []
+
+        class BrowserCase(ScreenshotTestCase):
             def setUp(self):
                 self.driver = self
+                self.addCleanup(self.close_browser)
+                if self._testMethodName == "test_cleanup_error":
+                    self.addCleanup(self.fail_cleanup)
+                if self._testMethodName == "test_setup_error":
+                    raise ValueError("setup failed")
 
             def save_screenshot(self, path):
+                events.append(("screenshot", self._testMethodName))
                 Path(path).write_bytes(b"screenshot")
                 return True
 
             def tearDown(self):
+                events.append(("tearDown", self._testMethodName))
+                if self._testMethodName == "test_teardown_error":
+                    raise ValueError("teardown failed")
+                if self._testMethodName == "test_cleanup_error":
+                    return
+                self.driver = None
+
+            def fail_cleanup(self):
+                raise ValueError("cleanup failed")
+
+            def close_browser(self):
+                events.append(("cleanup", self._testMethodName))
                 self.driver = None
 
             def test_assertion(self):
@@ -68,6 +138,15 @@ class ScreenshotResultTest(unittest.TestCase):
                 raise ValueError("unexpected error")
 
             def test_success(self):
+                pass
+
+            def test_setup_error(self):
+                self.fail("setUp should have failed")
+
+            def test_teardown_error(self):
+                pass
+
+            def test_cleanup_error(self):
                 pass
 
             def test_subtests(self):
@@ -86,16 +165,27 @@ class ScreenshotResultTest(unittest.TestCase):
                 ).run(unittest.defaultTestLoader.loadTestsFromTestCase(BrowserCase))
 
             self.assertEqual(len(result.failures), 3)
-            self.assertEqual(len(result.errors), 1)
+            self.assertEqual(len(result.errors), 4)
             screenshots = sorted(Path(directory).glob("selenium/admin/*.png"))
-            self.assertEqual(len(screenshots), 4)
+            self.assertEqual(len(screenshots), 7)
             self.assertTrue(
                 all(path.read_bytes() == b"screenshot" for path in screenshots)
             )
             self.assertIn("Screenshot saved:", output.getvalue())
+            for method in (
+                "test_assertion",
+                "test_exception",
+                "test_setup_error",
+                "test_subtests",
+            ):
+                with self.subTest(method=method):
+                    capture = events.index(("screenshot", method))
+                    self.assertLess(capture, events.index(("cleanup", method)))
+                    if method != "test_setup_error":
+                        self.assertLess(capture, events.index(("tearDown", method)))
 
     def test_screenshot_failure_preserves_original_test_failure(self):
-        class BrowserCase(unittest.TestCase):
+        class BrowserCase(ScreenshotTestCase):
             driver = None
 
             def test_failure(self):
@@ -110,7 +200,7 @@ class ScreenshotResultTest(unittest.TestCase):
         self.assertIn("Screenshot unavailable", output.getvalue())
 
     def test_screenshot_write_failure_preserves_original_test_failure(self):
-        class BrowserCase(unittest.TestCase):
+        class BrowserCase(ScreenshotTestCase):
             driver = None
 
             def setUp(self):
@@ -136,7 +226,7 @@ class ScreenshotResultTest(unittest.TestCase):
     def test_disconnected_browser_preserves_failure_and_continues(self):
         completed = []
 
-        class BrowserCase(unittest.TestCase):
+        class BrowserCase(ScreenshotTestCase):
             def setUp(self):
                 self.driver = self
 
@@ -163,6 +253,57 @@ class ScreenshotResultTest(unittest.TestCase):
             self.assertIn("original failure", output.getvalue())
             self.assertIn("Screenshot unavailable", output.getvalue())
             self.assertIn("browser disconnected", output.getvalue())
+
+    def test_subtests_preserve_failfast_skips_and_expected_failures(self):
+        class BrowserCase(ScreenshotTestCase):
+            def setUp(self):
+                self.driver = self
+
+            def save_screenshot(self, path):
+                Path(path).write_bytes(b"screenshot")
+                return True
+
+            @unittest.expectedFailure
+            def test_expected_failure(self):
+                self.fail("expected failure")
+
+            def test_skip(self):
+                self.skipTest("skip browser action")
+
+            def test_subtests(self):
+                with self.subTest(group="outer"):
+                    with self.subTest(value=1):
+                        self.fail("subtest assertion")
+                    with self.subTest(value=2):
+                        raise ValueError("subtest error")
+
+        for failfast in (False, True):
+            with self.subTest(failfast=failfast):
+                with tempfile.TemporaryDirectory() as directory:
+                    output = io.StringIO()
+                    with patch.dict(
+                        os.environ, {"BAREOS_BROWSER_ARTIFACTS_DIR": directory}
+                    ):
+                        result = unittest.TextTestRunner(
+                            stream=output,
+                            resultclass=ScreenshotResult,
+                            failfast=failfast,
+                        ).run(
+                            unittest.defaultTestLoader.loadTestsFromTestCase(
+                                BrowserCase
+                            )
+                        )
+
+                    self.assertEqual(len(result.failures), 1)
+                    self.assertEqual(len(result.errors), 0 if failfast else 1)
+                    self.assertEqual(len(result.skipped), 1)
+                    self.assertEqual(len(result.expectedFailures), 1)
+                    self.assertEqual(
+                        len(list(Path(directory).glob("selenium/**/*.png"))),
+                        1 if failfast else 2,
+                    )
+                    self.assertIn("value=1", result.failures[0][0].id())
+                    self.assertNotIn("(None)", result.failures[0][0].id())
 
 
 if __name__ == "__main__":

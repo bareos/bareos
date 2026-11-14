@@ -47,7 +47,7 @@ sys.path.append(
         os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
     )
 )
-from selenium_screenshots import ScreenshotRunner
+from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 TIMEOUT = 15
 
 
-class SeleniumVueTest(unittest.TestCase):
+class SeleniumVueTest(ScreenshotTestCase):
     base_url = "http://127.0.0.1/bareos-webui"
     username = "admin"
     password = "admin"

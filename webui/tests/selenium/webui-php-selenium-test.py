@@ -45,7 +45,7 @@ sys.path.append(
         os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
     )
 )
-from selenium_screenshots import ScreenshotRunner
+from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
 
 
 class BadJobException(Exception):
@@ -138,7 +138,7 @@ class WrongCredentialsException(Exception):
         super(WrongCredentialsException, self).__init__(msg)
 
 
-class SeleniumTest(unittest.TestCase):
+class SeleniumTest(ScreenshotTestCase):
 
     chrome_user_data_dir = tempfile.TemporaryDirectory()
     shared_driver = None
