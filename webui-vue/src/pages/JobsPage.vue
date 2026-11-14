@@ -580,6 +580,7 @@
             outlined
             dense
             :label="t('Director')"
+            :disable="runLoading"
             @filter="filterSingletonTabDirectorOptions"
           >
             <template #selected-item="scope">
@@ -611,7 +612,7 @@
         </q-card-section>
 
         <q-card-section>
-          <q-form @submit.prevent="runJob" class="q-gutter-md">
+          <q-form @submit.prevent="runJob" class="q-gutter-md" :inert="runFormLoading">
             <q-select v-model="runForm.job"     data-testid="run-job-field" :options="visibleDotJobs"     :label="t('Job *')"     outlined dense use-input fill-input hide-selected input-debounce="0"
                       @filter="filterRunJobs"
                       @update:model-value="onJobSelected" />
@@ -642,7 +643,7 @@
             <div class="row justify-end q-gutter-sm">
               <q-btn v-close-popup flat no-caps :label="t('Cancel')" />
               <q-btn data-testid="run-job-submit" type="submit" color="primary" :label="t('Run Job')" icon="play_arrow"
-                     no-caps :loading="runLoading" :disable="!runForm.job" />
+                     no-caps :loading="runLoading" :disable="!runForm.job || !runFormReady || runFormLoading" />
             </div>
           </q-form>
         </q-card-section>
@@ -911,8 +912,7 @@ function filterSingletonTabDirectorOptions(value, update) {
   })
 }
 
-async function ensureSingletonTabDirector() {
-  const targetDirector = currentSingletonDirector.value
+async function ensureSingletonTabDirector(targetDirector = currentSingletonDirector.value) {
   if (!targetDirector) {
     return null
   }
@@ -1603,16 +1603,14 @@ async function prepareRunFormForJob(job) {
     singletonTabDirector.value = job.director
   }
   await switchToJobDirector(job)
-  await loadRunOptions({ throwOnError: true })
-  runForm.value = defaultRunForm(job.name)
-  await applyJobDefaults(job.name, { throwOnError: true })
-  return { ...runForm.value }
+  return initialiseRunForm(job.name)
 }
 
 async function openConfigureStartJob(job) {
   try {
-    await prepareRunFormForJob(job)
-    configureStartDialogOpen.value = true
+    if (await prepareRunFormForJob(job)) {
+      configureStartDialogOpen.value = true
+    }
   } catch (e) {
     $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
   }
@@ -1626,18 +1624,21 @@ async function confirmQuickStartJob(job) {
   let preparedForm
   try {
     preparedForm = await prepareRunFormForJob(job)
+    if (!preparedForm) return
   } catch (e) {
     $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
     return
   }
 
+  const targetDirector = runFormDirector.value
+  const revision = runFormRevision
   $q.dialog({
     title: t('Quick Start Job'),
     message: `${t('Start job')} <b>${escapeHtml(job.name)}</b>?${runFormSummaryHtml(preparedForm)}`,
     html: true,
     ok:     { label: t('Run Job'), color: 'primary', flat: true },
     cancel: { label: t('Cancel'), flat: true },
-  }).onOk(() => submitRunJob(preparedForm))
+  }).onOk(() => submitRunJob(preparedForm, targetDirector, revision))
 }
 
 // ── run form ──────────────────────────────────────────────────────────────────
@@ -1654,6 +1655,12 @@ const visibleDotPools = ref([])
 const visibleDotStorages = ref([])
 const visibleLevels = ref([...levels])
 const runLoading  = ref(false)
+const runFormLoading = ref(false)
+const runFormReady = ref(false)
+const runFormDirector = ref('')
+let runFormRevision = 0
+let defaultsRevision = 0
+let initializingJobName = null
 
 const runForm = ref(defaultRunForm())
 const configureStartDialogOpen = ref(false)
@@ -1740,9 +1747,35 @@ function filterRunLevels(value, update) {
   filterRunOptions(levels, visibleLevels, value, update)
 }
 
-async function loadRunOptions({ throwOnError = false } = {}) {
+async function initialiseRunForm(jobName) {
+  initializingJobName = jobName
+  const revision = ++runFormRevision
+  runFormLoading.value = true
+  runFormReady.value = false
+  runForm.value = defaultRunForm()
   try {
-    await ensureSingletonTabDirector()
+    await loadRunOptions({ throwOnError: true })
+    if (revision !== runFormRevision) return null
+    runForm.value = defaultRunForm(dotJobs.value.includes(jobName) ? jobName : null)
+    await applyJobDefaults(runForm.value.job, { throwOnError: true })
+    if (revision !== runFormRevision) return null
+    runFormDirector.value = currentSingletonDirector.value
+    runFormReady.value = true
+    return { ...runForm.value }
+  } catch (e) {
+    if (revision !== runFormRevision) return null
+    throw e
+  } finally {
+    if (revision === runFormRevision) runFormLoading.value = false
+  }
+}
+
+async function loadRunOptions({ throwOnError = false } = {}) {
+  const revision = runFormRevision
+  const targetDirector = currentSingletonDirector.value
+  try {
+    await ensureSingletonTabDirector(targetDirector)
+    if (revision !== runFormRevision) return
     const [j, restoreJobs, c, f, p, s] = await Promise.all([
       director.call('.jobs'),
       director.call('.jobs type=R'),
@@ -1751,6 +1784,7 @@ async function loadRunOptions({ throwOnError = false } = {}) {
       director.call('.pools'),
       director.call('.storage'),
     ])
+    if (revision !== runFormRevision || targetDirector !== currentSingletonDirector.value) return
     dotJobs.value = filterRunnableJobOptions(
       directorCollection(j?.jobs).map(x => x.name),
       directorCollection(restoreJobs?.jobs).map(x => x.name)
@@ -1780,9 +1814,15 @@ async function onJobSelected(name) {
 
 async function applyJobDefaults(name, { throwOnError = false } = {}) {
   if (!name) return
+  const revision = runFormRevision
+  const request = ++defaultsRevision
+  const targetDirector = currentSingletonDirector.value
   try {
-    await ensureSingletonTabDirector()
+    await ensureSingletonTabDirector(targetDirector)
+    if (revision !== runFormRevision || request !== defaultsRevision) return
     const res = await director.call(buildJobDefaultsCommand(name))
+    if (revision !== runFormRevision || request !== defaultsRevision
+        || targetDirector !== currentSingletonDirector.value || name !== runForm.value.job) return
     const d   = res?.defaults ?? res ?? {}
     if (Object.hasOwn(d, 'client')) {
       runForm.value.client = resolvePermittedRunJobDefault(dotClients.value, d.client)
@@ -1805,12 +1845,19 @@ async function applyJobDefaults(name, { throwOnError = false } = {}) {
   }
 }
 
-async function submitRunJob(form) {
+async function submitRunJob(form, targetDirector = runFormDirector.value, revision = runFormRevision) {
   const f = form
   if (!f.job) return
   runLoading.value = true
   try {
-    await ensureSingletonTabDirector()
+    if (!runFormReady.value || runFormLoading.value || revision !== runFormRevision
+        || targetDirector !== currentSingletonDirector.value) {
+      throw new Error(t('Could not load job defaults'))
+    }
+    await ensureSingletonTabDirector(targetDirector)
+    if (revision !== runFormRevision || targetDirector !== currentSingletonDirector.value) {
+      throw new Error(t('Could not load job defaults'))
+    }
     const res = await director.call(buildRunJobCommand(f))
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
@@ -2183,17 +2230,21 @@ watch(tab, async (t) => {
   if (t === 'run' && dotJobs.value.length === 0)  loadRunOptions()
 })
 
-watch(() => singletonTabDirector.value, async () => {
-  if (!isCommonJobs.value) {
-    return
+watch(currentSingletonDirector, () => {
+  const jobName = runFormLoading.value ? initializingJobName : runForm.value.job
+  ++runFormRevision
+  runFormReady.value = false
+  runFormLoading.value = false
+  runForm.value = defaultRunForm()
+  if (configureStartDialogOpen.value) {
+    initialiseRunForm(jobName).catch(e => {
+      $q.notify({ type: 'negative', message: `${t('Could not load job defaults')}: ${e.message}` })
+    })
+  } else if (tab.value === 'run') {
+    loadJobDefs()
+    loadRunOptions()
   }
-
-  if (tab.value === 'run') {
-    await ensureSingletonTabDirector()
-    await loadJobDefs()
-    await loadRunOptions()
-  }
-})
+}, { flush: 'sync' })
 </script>
 
 <style scoped>
