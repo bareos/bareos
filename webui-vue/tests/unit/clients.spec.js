@@ -22,6 +22,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
+  clientBackupStatusCode,
   parseClientStatusSummary,
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
@@ -31,6 +32,15 @@ import {
 } from '../../src/utils/clients.js'
 
 describe('clients route helpers', () => {
+  it('does not classify a client without backup history as healthy', () => {
+    expect(clientBackupStatusCode({ enabled: true }, 2)).toBe('unknown')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'T' },
+      failureStreak: 0,
+    }, 2)).toBe('ok')
+  })
+
   it('builds the client details query with return-state fields', () => {
     expect(buildClientDetailsQuery({
       director: 'prod-a',
