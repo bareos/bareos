@@ -272,6 +272,38 @@ describe('settings store', () => {
     }))
   })
 
+  it('exports a detached serialisable snapshot of nested settings', () => {
+    const settings = useSettingsStore()
+    settings.setSelectedDirectors(['dir-a'])
+    settings.setTableRowsPerPage('jobs', 25)
+    settings.setTableSort('jobs', { sortBy: 'name', descending: false })
+    settings.setTableFilter('jobs', 'query')
+    settings.setTableHiddenColumns('jobs', ['status'])
+    settings.setTableFlag('jobs', true)
+    const snapshot = settings.exportSettings()
+    expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot)
+
+    snapshot.selectedDirectors.push('dir-b')
+    snapshot.tableRowsPerPage.jobs = 50
+    snapshot.tableSort.jobs.sortBy = 'type'
+    snapshot.tableFilter.jobs = 'other'
+    snapshot.tableHiddenColumns.jobs.push('name')
+    snapshot.tableFlags.jobs = false
+    expect(settings.selectedDirectors).toEqual(['dir-a'])
+    expect(settings.getTableRowsPerPage('jobs')).toBe(25)
+    expect(settings.getTableSort('jobs')).toEqual({ sortBy: 'name', descending: false })
+    expect(settings.getTableFilter('jobs')).toBe('query')
+    expect(settings.getTableHiddenColumns('jobs')).toEqual(['status'])
+    expect(settings.getTableFlag('jobs')).toBe(true)
+
+    settings.selectedDirectors.push('dir-c')
+    settings.tableSort.jobs.descending = true
+    settings.tableHiddenColumns.jobs.push('level')
+    expect(snapshot.selectedDirectors).toEqual(['dir-a', 'dir-b'])
+    expect(snapshot.tableSort.jobs.descending).toBe(false)
+    expect(snapshot.tableHiddenColumns.jobs).toEqual(['status', 'name'])
+  })
+
   it('importSettings() applies a previously exported snapshot', () => {
     const settings = useSettingsStore()
     settings.refreshInterval = 60
