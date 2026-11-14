@@ -431,6 +431,7 @@ watch(allJobOptions, (options) => {
   const optionKeys = new Set(options.map(option => option.key))
 
   if (!jobFilterInitialized.value) {
+    if (options.length === 0) return
     visibleJobNames.value = options.map(option => option.key)
     jobFilterInitialized.value = true
     return
