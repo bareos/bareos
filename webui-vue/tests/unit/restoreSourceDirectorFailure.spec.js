@@ -84,6 +84,17 @@ vi.mock('../../src/components/PluginRestoreInfoPanel.vue', () => ({ default: { r
 const containerStub = {
   setup: (_, { slots }) => () => h('div', slots.default?.()),
 }
+const selectStub = {
+  props: ['options', 'modelValue', 'disable'],
+  emits: ['update:modelValue'],
+  setup: (props, { emit }) => () => h('select', {
+    value: props.modelValue ?? '',
+    disabled: props.disable,
+    onChange: event => emit('update:modelValue', event.target.value),
+  }, (props.options ?? []).map(option => h('option', {
+    value: option.value,
+  }, option.label))),
+}
 
 describe('Restore source director failures', () => {
   let app
@@ -101,7 +112,7 @@ describe('Restore source director failures', () => {
     app = createApp(RestorePage)
     app.config.warnHandler = () => {}
     for (const name of [
-      'QPage', 'QCard', 'QCardSection', 'QSelect', 'QItem', 'QItemSection',
+      'QPage', 'QCard', 'QCardSection', 'QItem', 'QItemSection',
       'QItemLabel', 'QCheckbox', 'QAvatar', 'QInput', 'QBtn', 'QSpace',
       'QIcon', 'QTooltip', 'QSpinner', 'QTable', 'QTh', 'QTr', 'QTd',
       'QBanner', 'QBadge', 'QSeparator', 'QScrollArea', 'QDialog',
@@ -109,9 +120,9 @@ describe('Restore source director failures', () => {
     ]) {
       app.component(name, containerStub)
     }
+    app.component('QSelect', selectStub)
     root = document.createElement('div')
     document.body.append(root)
-    app.mount(root)
   })
 
   afterEach(() => {
@@ -120,6 +131,7 @@ describe('Restore source director failures', () => {
   })
 
   it('reports a missing session and stops before loading stale restore options', async () => {
+    app.mount(root)
     await vi.waitFor(() => {
       expect(root.textContent).toContain('No session for prod-a')
     })
@@ -129,4 +141,60 @@ describe('Restore source director failures', () => {
     expect(directorCall).toHaveBeenCalledTimes(1)
     expect(directorCall).toHaveBeenCalledWith('list clients')
   })
+
+  it.each(['reject', 'resolve'])(
+    'preserves a newer source when the old connection promise settles: %s',
+    async outcome => {
+      let resolveConnection
+      let rejectConnection
+      const oldConnection = new Promise((resolve, reject) => {
+        resolveConnection = resolve
+        rejectConnection = reject
+      })
+      ensureScopeDirector.mockReset()
+        .mockResolvedValueOnce()
+        .mockImplementationOnce(() => oldConnection)
+        .mockResolvedValue()
+      directorCall.mockImplementation(async command => {
+        if (command === 'list clients') {
+          return { clients: [{ name: 'client-a' }, { name: 'client-b' }] }
+        }
+        if (command === '.jobs type=R') {
+          return { jobs: [{ name: 'RestoreFiles' }] }
+        }
+        if (command.startsWith('llist backups')) {
+          return { backups: [{ jobid: 2, name: 'backup-b', level: 'F', jobstatus: 'T' }] }
+        }
+        return {}
+      })
+      app.mount(root)
+      await vi.waitFor(() => {
+        expect(ensureScopeDirector).toHaveBeenCalledTimes(2)
+      })
+
+      const source = root.querySelector('[data-testid="restore-source-client"]')
+      source.value = 'prod-a:client-b'
+      source.dispatchEvent(new Event('change', { bubbles: true }))
+      await vi.waitFor(() => {
+        expect(root.querySelector('[data-testid="restore-job"]').value).toBe('RestoreFiles')
+        expect(directorCall.mock.calls.some(([command]) => command.startsWith('llist backups')))
+          .toBe(true)
+      })
+      const callsBefore = directorCall.mock.calls.length
+      if (outcome === 'reject') {
+        rejectConnection(new Error('Obsolete source connection failed'))
+      } else {
+        resolveConnection()
+      }
+      await oldConnection.catch(() => {})
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      expect(source.value).toBe('prod-a:client-b')
+      expect(root.querySelector('[data-testid="restore-target-client"]').value).toBe('client-b')
+      expect(root.querySelector('[data-testid="restore-job"]').value).toBe('RestoreFiles')
+      expect(root.querySelector('[data-testid="restore-backup-job"]').disabled).toBe(false)
+      expect(root.textContent).not.toContain('Obsolete source connection failed')
+      expect(directorCall).toHaveBeenCalledTimes(callsBefore)
+    },
+  )
 })

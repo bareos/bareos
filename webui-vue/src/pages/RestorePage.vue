@@ -677,13 +677,17 @@ const restoreClientOptions = computed(() =>
 
 async function ensureSelectedSourceDirector() {
   const targetDirector = sourceDirector.value
+  const targetClientKey = sourceClientKey.value
   try {
     if (!targetDirector) {
       throw new Error(t('No source director selected.'))
     }
     await ensureScopeDirector(targetDirector)
-    return true
+    return sourceDirector.value === targetDirector && sourceClientKey.value === targetClientKey
   } catch (error) {
+    if (sourceDirector.value !== targetDirector || sourceClientKey.value !== targetClientKey) {
+      return false
+    }
     directorErrors.value = [{
       director: targetDirector ?? '',
       message: error instanceof Error ? error.message : String(error),
