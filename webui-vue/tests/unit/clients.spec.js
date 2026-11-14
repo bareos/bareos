@@ -154,4 +154,15 @@ Fatal error: connection refused
       errorCount: 2,
     })
   })
+
+  it('recognizes positive plural warning and error counters', () => {
+    expect(parseClientStatusSummary('Warnings: 2\nErrors: 3')).toMatchObject({
+      warningCount: 1,
+      errorCount: 1,
+    })
+    expect(parseClientStatusSummary('Warnings: 0\nErrors: 0')).toMatchObject({
+      warningCount: 0,
+      errorCount: 0,
+    })
+  })
 })
