@@ -12,6 +12,7 @@
           <q-item-section side>
             <q-checkbox
               dense
+              :aria-label="column.label"
               :model-value="column.visible"
               @update:model-value="$emit('toggle', column.name)"
               @click.stop

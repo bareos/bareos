@@ -34,6 +34,59 @@ const isMultiDirectorProfile
 const LOGIN_ATTEMPTS = 3
 const LOGIN_RESULT_TIMEOUT_MS = 10_000
 
+// Exercise the public application with an isolated, entirely intercepted
+// transport. In particular, no mutation can reach a real Director.
+async function browserFixture(page, commandHandler = () => undefined) {
+  const directors = ['bareos-dir', 'bareos-dir-2']
+  await page.route('**/api/**', route => route.fulfill({
+    json: route.request().url().endsWith('/directors')
+      ? { type: 'director_list', directors }
+      : { authenticatedDirectors: directors.map(director => ({ director, username: 'admin' })) },
+  }))
+  await page.routeWebSocket(/\/ws/, socket => {
+    let director = directors[0]
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'session') {
+        director = request.director
+        socket.send(JSON.stringify({ type: 'auth_ok' }))
+        return
+      }
+      if (request.type !== 'command') return
+      try {
+        const data = await commandHandler(request.command, director)
+        const job = {
+          jobid: '101', name: 'Browser-fixture', jobtype: 'B', jobstatus: 'T',
+          comment: 'Original comment',
+        }
+        socket.send(JSON.stringify({
+          type: 'response', id: request.id,
+          data: data ?? (
+            request.command.startsWith('llist jobs count') ? { jobs: [{ count: '1' }] }
+              : request.command.startsWith('llist job') ? { jobs: [job] }
+                : request.command.startsWith('list joblog') ? { joblog: [{ logtext: 'Termination: Backup OK' }] }
+                  : {}
+          ),
+        }))
+      } catch (error) {
+        socket.send(JSON.stringify({ type: 'error', id: request.id, message: error.message }))
+      }
+    })
+  })
+  await page.goto('/#/dashboard')
+  await expectConnected(page)
+}
+
+test('browser regression: column checkboxes have accessible names', async ({ page }) => {
+  await browserFixture(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByRole('button', { name: 'Choose columns', exact: true }).click()
+  await expect(page.getByRole('checkbox', { name: 'Comment', exact: true })).toBeVisible()
+  for (const checkbox of await page.getByRole('checkbox').all()) {
+    await expect(checkbox).toHaveAccessibleName(/\S/)
+  }
+})
+
 async function expectConnected(page) {
   await expect(page.locator('[data-testid="director-status-label"]')).toContainText(
     'Connected'
