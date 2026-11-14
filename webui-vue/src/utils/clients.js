@@ -151,6 +151,14 @@ export function withClientsScopeDirectorQuery(query, director) {
   return nextQuery
 }
 
+export function clientBackupStatusCode(client, warningFailedJobs) {
+  if (!client.enabled) return 'disabled'
+  if (['E', 'f'].includes(client.lastBackup?.status)) return 'failed'
+  if ((client.failureStreak ?? 0) >= warningFailedJobs) return 'warning'
+  if (!client.lastBackup) return 'unknown'
+  return 'ok'
+}
+
 function normalizedStatusLines(text) {
   return String(text ?? '')
     .split(/\r?\n/)

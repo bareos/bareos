@@ -330,6 +330,7 @@ import {
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import {
   buildClientDetailsQuery,
+  clientBackupStatusCode,
   parseClientStatusSummary,
   resolveClientsScopeDirector,
   withClientsScopeDirectorQuery,
@@ -653,19 +654,24 @@ function clientVersionStatusSortValue(client) {
 }
 
 function clientBackupStatusItems(client) {
-  if (!client.enabled) {
+  const status = clientBackupStatusCode(client, backupWarningFailedJobs())
+  if (status === 'disabled') {
     return [{ label: t('Disabled'), color: 'negative' }]
   }
 
-  if (clientHasLastBackupError(client)) {
+  if (status === 'failed') {
     return [{ label: t('Last backup failed'), color: 'negative' }]
   }
 
-  if (hasFailureStreakWarning(client)) {
+  if (status === 'warning') {
     return [{
       label: t('{n} consecutive failures', { n: client.failureStreak }),
       color: 'warning',
     }]
+  }
+
+  if (status === 'unknown') {
+    return [{ label: t('No backup history'), color: 'grey-6' }]
   }
 
   return [{ label: t('Backup OK'), color: 'positive' }]
