@@ -341,13 +341,13 @@ export const useSettingsStore = defineStore('settings', () => {
   // ── backup / restore ─────────────────────────────────────────────────────
 
   /**
-   * Serialisable snapshot of user settings, suitable for JSON export.
+   * Detached serialisable snapshot of user settings, suitable for JSON export.
    * Excludes `loginUsername`: it is only a per-browser convenience default
    * for the login form and should not be silently carried over when
    * restoring a backup into a different browser/profile.
    */
   function exportSettings() {
-    return {
+    return JSON.parse(JSON.stringify({
       refreshInterval: refreshInterval.value,
       darkMode: darkMode.value,
       relativeTime: relativeTime.value,
@@ -362,7 +362,7 @@ export const useSettingsStore = defineStore('settings', () => {
       schedulesViewMode: schedulesViewMode.value,
       jobsTimelineViewMode: jobsTimelineViewMode.value,
       clientBackupWarningFailedJobs: clientBackupWarningFailedJobs.value,
-    }
+    }))
   }
 
   /**
