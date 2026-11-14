@@ -159,6 +159,15 @@ export function clientBackupStatusCode(client, warningFailedJobs) {
   return 'ok'
 }
 
+export function clientVersionStatusPresentation(status) {
+  const knownStatuses = {
+    uptodate: { label: 'OK', color: 'positive' },
+    update_required: { label: 'Update available', color: 'warning' },
+    upgrade_required: { label: 'Upgrade required', color: 'negative' },
+  }
+  return knownStatuses[status] ?? { label: 'Unknown', color: 'grey-6' }
+}
+
 function normalizedStatusLines(text) {
   return String(text ?? '')
     .split(/\r?\n/)
