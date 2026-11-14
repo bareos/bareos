@@ -465,6 +465,8 @@ const route = useRoute()
 const router = useRouter()
 const tab = ref(normaliseTab(route.query.tab))
 const directorErrors = ref([])
+// Shared by the next-run summaries and the scheduler preview's live indicator.
+const { nowTick, nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
 
 const {
   directorOptions,
@@ -948,7 +950,7 @@ function toggleGroupCollapse(key) {
 }
 
 const nextRunByScheduleKey = computed(() => {
-  const nowSeconds = Date.now() / 1000
+  const nowSeconds = nowTick.value / 1000
   const map = {}
   for (const run of upcomingPreviewData.value) {
     if (typeof run.runtime !== 'number' || run.runtime < nowSeconds) continue
@@ -1045,7 +1047,7 @@ const schedulerStatusStats = computed(() => {
     (sum, sched) => sum + (Array.isArray(sched.jobs) ? sched.jobs.length : 0),
     0
   )
-  const nowSeconds = Date.now() / 1000
+  const nowSeconds = nowTick.value / 1000
   const rawNextRun = upcomingPreviewData.value
     .filter(run => typeof run.runtime === 'number' && run.runtime >= nowSeconds)
     .sort((a, b) => a.runtime - b.runtime)[0] ?? null
@@ -1130,7 +1132,7 @@ const hasVisibleScheduleSelection = computed(() => {
 const hasPreviewRuns = computed(() => Object.keys(runsByDate.value).length > 0)
 
 const nextUpcomingRuns = computed(() => {
-  const nowSeconds = Date.now() / 1000
+  const nowSeconds = nowTick.value / 1000
   const visible = visibleScheduleKeys.value
   const filterActive = scheduleSelectionInitialized.value
   return upcomingPreviewData.value
@@ -1313,10 +1315,6 @@ onMounted(() => {
   refreshUpcomingPreview()
 })
 
-// Live "now" indicator line drawn across today's 24h axis (both the
-// compact Month/Week cell and the enlarged Day view). Shared with the Job
-// Timeline via useNowLine so both calendars tick in sync.
-const { nowLinePercent, nowLineLabel, todayDateStr } = useNowLine(t)
 const showNowLineLegend = computed(() => {
   if (inDayView.value) return dayViewDate.value === todayDateStr.value
   return calendarCells.value.some(cell => cell.isToday)
