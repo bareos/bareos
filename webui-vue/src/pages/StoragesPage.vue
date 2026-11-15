@@ -400,7 +400,7 @@ watch(storageRows, () => {
   }
 })
 
-watch(() => route.query[STORAGE_SELECTION_QUERY_KEY], () => {
+watch(() => [route.query[STORAGE_SELECTION_QUERY_KEY], route.query.director], () => {
   syncSelectionFromRoute()
 })
 
