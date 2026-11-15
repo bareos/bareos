@@ -597,6 +597,10 @@ const commandStatusPrompt = ref('')
 const commandStatusMessage = ref('')
 const commandLogScroll = ref(null)
 let _slotsTimer = null
+let storageGeneration = 0
+let slotsGeneration = 0
+let poolsGeneration = 0
+let unmounted = false
 
 // drag-and-drop state
 const dragSlot = ref(null)      // slot row being dragged
@@ -815,24 +819,46 @@ async function ensureSelectedStorageDirector() {
   await ensureScopeDirector(currentStorage.value.director)
 }
 
+function ownsStorage(name, storageDirector, generation) {
+  return !unmounted
+    && generation === storageGeneration
+    && props.storage?.name === name
+    && props.storage?.director === storageDirector
+}
+
 async function loadPools() {
-  if (!selectedStorageName.value) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const request = ++poolsGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
+    && request === poolsGeneration
+  if (!name) {
     pools.value = []
     return
   }
 
   try {
-    await ensureSelectedStorageDirector()
+    await ensureScopeDirector(storageDirector)
+    if (!isCurrent()) return
     const res = await director.call('list pools')
+    if (!isCurrent()) return
     pools.value = res?.pools ?? []
   } catch (e) {
+    if (!isCurrent()) return
     pools.value = []
     loadError.value = e?.message ?? String(e)
   }
 }
 
 async function loadSlots() {
-  if (!selectedStorageName.value) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const request = ++slotsGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
+    && request === slotsGeneration
+  if (!name) {
     allSlots.value = []
     volumeDetailsByName.value = {}
     return
@@ -841,10 +867,10 @@ async function loadSlots() {
   slotsLoading.value = true
   loadError.value = null
   try {
-    await ensureSelectedStorageDirector()
-    const res = await director.call(
-      `status storage="${selectedStorageName.value}" slots`
-    )
+    await ensureScopeDirector(storageDirector)
+    if (!isCurrent()) return
+    const res = await director.call(`status storage="${name}" slots`)
+    if (!isCurrent()) return
     allSlots.value = res?.contents ?? []
 
     const volumeNames = [...new Set(
@@ -859,6 +885,7 @@ async function loadSlots() {
       )
     )
 
+    if (!isCurrent()) return
     volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
       const result = volumeResults[index]
       if (result.status !== 'fulfilled') {
@@ -870,11 +897,12 @@ async function loadSlots() {
       return acc
     }, {})
   } catch (e) {
+    if (!isCurrent()) return
     allSlots.value = []
     volumeDetailsByName.value = {}
     loadError.value = e?.message ?? String(e)
   } finally {
-    slotsLoading.value = false
+    if (isCurrent()) slotsLoading.value = false
   }
 }
 
@@ -1273,26 +1301,38 @@ async function scrollCommandLogToBottom() {
 
 // ── Lifecycle ─────────────────────────────────────────────────
 
-watch(() => props.storage, async (next) => {
+watch([() => props.storage?.name, () => props.storage?.director], async ([
+  name, storageDirector,
+]) => {
+  const generation = ++storageGeneration
+  ++slotsGeneration
+  ++poolsGeneration
   stopAutoRefresh()
   pools.value = []
   allSlots.value = []
   volumeDetailsByName.value = {}
+  slotsLoading.value = false
   loadError.value = null
 
-  if (!next) {
+  if (!name) {
     return
   }
 
   await loadPools()
+  if (!ownsStorage(name, storageDirector, generation)) return
   await loadSlots()
+  if (!ownsStorage(name, storageDirector, generation)) return
   startAutoRefresh()
 }, { immediate: true })
 
 watch(() => director.status, async (status) => {
   if (status === 'connected' && props.storage) {
+    const { name, director: storageDirector } = props.storage
+    const generation = storageGeneration
     await loadPools()
+    if (!ownsStorage(name, storageDirector, generation)) return
     await loadSlots()
+    if (!ownsStorage(name, storageDirector, generation)) return
     startAutoRefresh()
   }
 })
@@ -1304,6 +1344,10 @@ watch(() => settings.refreshInterval, () => {
 })
 
 onUnmounted(() => {
+  unmounted = true
+  ++storageGeneration
+  ++slotsGeneration
+  ++poolsGeneration
   stopAutoRefresh()
 })
 </script>
