@@ -85,7 +85,7 @@ export function mergeStorageConfig(catalogEntries, showStoragesData) {
     if (config.address != null) next.address = String(config.address)
     if (config.port != null) next.port = String(config.port)
     if (config.mediatype != null) next.mediatype = String(config.mediatype)
-    if (config.autochanger != null) next.autochanger = isTrueFlag(config.autochanger)
+    next.autochanger = isTrueFlag(config.autochanger)
     next.enabled = config.enabled == null ? true : !isFalseFlag(config.enabled)
     merged.set(config.name, next)
   }
