@@ -589,6 +589,7 @@
   "Table showing the most recent job run per job name.": "Tabella con l'ultima esecuzione di ogni job.",
   "Tables": "",
   "Terminated Jobs": "",
+  "The Director did not confirm the pool move.": "",
   "The Director did not queue the restore job.": "",
   "The command finished and returned to the main prompt.": "",
   "The director is waiting for a numeric selection.": "",

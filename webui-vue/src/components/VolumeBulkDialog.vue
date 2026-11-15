@@ -235,6 +235,8 @@ async function run() {
     return
   }
   const entries = runnable.value
+  const confirmPoolMove = props.actionId === 'pool' && params.value.applyPoolDefaults
+  const targetPool = params.value.pool
   phase.value = 'results'
   running.value = true
   results.value = []
@@ -244,7 +246,13 @@ async function run() {
         // Commands of one volume build on each other, so a failure aborts
         // the rest for that volume but not for the remaining ones.
         for (const command of entry.commands) {
-          await props.runCommand(entry.volume, command)
+          const response = await props.runCommand(entry.volume, command)
+          if (confirmPoolMove && (
+            response?.poolmove?.volumename !== (entry.volume?.volumename ?? entry.volume?.name)
+            || response?.poolmove?.pool !== targetPool
+          )) {
+            throw new Error(t('The Director did not confirm the pool move.'))
+          }
         }
         results.value.push({ volume: entry.volume, ok: true, message: '' })
       } catch (reason) {
