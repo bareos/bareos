@@ -29,6 +29,7 @@ import re
 import subprocess
 from time import sleep
 import unittest
+import uuid
 import warnings
 
 import bareos.bsock
@@ -42,6 +43,34 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_volume_status_rejects_stale_interactive_selection(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        console = bareos.bsock.DirectorConsole(**options)
+        volume = f"StatusPromptRace-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            console.call(f"update volume={volume}")
+            choices = console.call("1").decode("utf-8")
+            full = re.search(r"^\s*(\d+): Full\s*$", choices, re.MULTILINE)
+            self.assertIsNotNone(full, choices)
+            admin.call(f"update volume={volume} volstatus=Used")
+            result = console.call(full.group(1)).decode("utf-8")
+            self.assertIn("status changed", result.lower())
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["volstatus"], "Used")
+        finally:
+            console.call(".")
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_job_comment_update_is_atomic(self):
         username = self.get_operator_username()
         director = bareos.bsock.DirectorConsoleJson(

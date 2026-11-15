@@ -213,12 +213,22 @@ static void UpdateVolstatus(UaContext* ua,
   }
 
   char ed1[50];
-  bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
-  Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s", mr->VolStatus,
-       edit_int64(mr->MediaId, ed1));
-  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
+  DbLocker _{ua->db};
+  auto old_status = ua->db->EscapeString(ua->jcr, mr->VolStatus);
+  if (!old_status) {
+    ua->ErrorMsg(T_("Could not escape Volume status.\n"));
+    return;
+  }
+  Mmsg(query,
+       "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s'",
+       kw[i], edit_int64(mr->MediaId, ed1), old_status->c_str());
+  int affected = ua->db->UpdateDb(ua->jcr, query.c_str());
+  if (affected < 0) {
     ua->ErrorMsg("%s", ua->db->strerror());
+  } else if (affected != 1) {
+    ua->ErrorMsg(T_("Volume status changed; refresh and try again.\n"));
   } else {
+    bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
     ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
   }
 }
