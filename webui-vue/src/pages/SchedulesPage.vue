@@ -696,6 +696,8 @@ async function refreshUpcomingPreview() {
     }
 
     const currentDirector = directors[0]
+    await ensureSingleScopeDirector()
+    if (!isCurrentRequest()) return
     const statusResponse = await director.call(
       `status scheduler days=${UPCOMING_RANGE.from},${UPCOMING_RANGE.to}`
     )
