@@ -616,6 +616,7 @@
   "Tape contents": "",
   "Target pool": "",
   "Terminated Jobs": "",
+  "The Director did not confirm the pool move.": "",
   "The Director did not queue the restore job.": "",
   "The command finished and returned to the main prompt.": "",
   "The data on these purged volumes is erased on the storage.": "",

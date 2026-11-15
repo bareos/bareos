@@ -19,7 +19,8 @@
    02110-1301, USA.
  */
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createApp, defineComponent, h, nextTick } from 'vue'
 import {
   MAX_COMMENT_LENGTH,
   buildJobCommentCommand,
@@ -32,6 +33,62 @@ import {
   isVolumeActionApplicable,
   sanitizeComment,
 } from '../../src/utils/volumeBulk.js'
+
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
+const { default: VolumeBulkDialog } = await import('../../src/components/VolumeBulkDialog.vue')
+
+const dialogs = []
+afterEach(() => {
+  for (const { app, host } of dialogs.splice(0)) {
+    app.unmount()
+    host.remove()
+  }
+})
+
+function renderPoolMove(response) {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  const done = vi.fn()
+  const runCommand = vi.fn().mockResolvedValue(response)
+  const app = createApp(VolumeBulkDialog, {
+    modelValue: true,
+    actionId: 'pool',
+    volumes: [{ volumename: 'Vol-1', scopeKey: 'Vol-1' }],
+    poolOptions: ['Scratch'],
+    runCommand,
+    onDone: done,
+  })
+  const stub = defineComponent({
+    setup(_, { attrs, slots }) {
+      return () => h('div', attrs, slots.default?.())
+    },
+  })
+  for (const name of [
+    'q-dialog', 'q-card', 'q-card-section', 'q-card-actions', 'q-icon',
+    'q-space', 'q-checkbox', 'q-linear-progress', 'q-list', 'q-item',
+    'q-item-section', 'q-item-label', 'q-banner', 'q-input',
+  ]) app.component(name, stub)
+  app.component('q-select', defineComponent({
+    props: { modelValue: String, options: Array },
+    emits: ['update:modelValue'],
+    setup(props, { attrs, emit }) {
+      return () => h('select', {
+        ...attrs,
+        value: props.modelValue,
+        onChange: event => emit('update:modelValue', event.target.value),
+      }, [h('option', { value: '' }), ...props.options.map(value => h('option', { value }, value))])
+    },
+  }))
+  app.component('q-btn', defineComponent({
+    props: { label: String, disable: Boolean },
+    setup(props, { attrs }) {
+      return () => h('button', { ...attrs, disabled: props.disable }, props.label)
+    },
+  }))
+  app.mount(host)
+  dialogs.push({ app, host })
+  return { host, done, runCommand }
+}
 
 describe('volume bulk helpers', () => {
   it('sanitizes comments to a single trimmed line', () => {
@@ -97,7 +154,7 @@ describe('volume bulk helpers', () => {
     expect(buildVolumeBulkPlan('prune', null)).toEqual([])
   })
 
-  it('chains frompool after a pool move when asked to', () => {
+  it('uses an atomic pool move when applying destination defaults', () => {
     const volume = { volumename: 'Vol-1' }
 
     expect(buildVolumeBulkCommands('pool', volume, { pool: 'Scratch' })).toEqual([
@@ -107,9 +164,27 @@ describe('volume bulk helpers', () => {
       pool: 'Scratch',
       applyPoolDefaults: true,
     })).toEqual([
-      'update volume="Vol-1" pool="Scratch"',
-      'update volume="Vol-1" frompool=yes',
+      'update volume="Vol-1" poolwithdefaults="Scratch"',
     ])
+  })
+
+  it.each([
+    [{}, false],
+    [{ poolmove: { volumename: 'Vol-1', pool: 'Other' } }, false],
+    [{ poolmove: { volumename: 'Vol-1', pool: 'Scratch' } }, true],
+  ])('reports success only for a matching pool-move acknowledgment', async (response, ok) => {
+    const { host, done, runCommand } = renderPoolMove(response)
+    const select = host.querySelector('[data-testid="volume-bulk-pool"]')
+    select.value = 'Scratch'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    await nextTick()
+    host.querySelector('[data-testid="volume-bulk-run"]').click()
+    await vi.waitFor(() => expect(done).toHaveBeenCalledOnce())
+    expect(runCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ volumename: 'Vol-1' }),
+      'update volume="Vol-1" poolwithdefaults="Scratch"',
+    )
+    expect(done.mock.calls[0][0][0].ok).toBe(ok)
   })
 
   it('does not chain frompool for other actions or skipped volumes', () => {

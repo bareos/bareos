@@ -142,8 +142,8 @@ export function buildVolumeBulkCommand(actionId, volume, params = {}) {
  *
  * Moving a volume to another pool only rewrites its PoolId, so the volume
  * keeps the *previous* pool's retention and limits. With
- * `params.applyPoolDefaults` the move is followed by `frompool=yes`, which
- * copies the target pool's defaults onto the volume.
+ * `params.applyPoolDefaults` the Director changes the pool and its defaults
+ * atomically.
  */
 export function buildVolumeBulkCommands(actionId, volume, params = {}) {
   const command = buildVolumeBulkCommand(actionId, volume, params)
@@ -152,7 +152,8 @@ export function buildVolumeBulkCommands(actionId, volume, params = {}) {
   }
 
   if (actionId === 'pool' && params.applyPoolDefaults) {
-    return [command, buildVolumeBulkCommand('frompool', volume, params)]
+    const name = quoteDirectorString(volume?.volumename ?? volume?.name ?? '')
+    return [`update volume=${name} poolwithdefaults=${quoteDirectorString(params.pool)}`]
   }
 
   return [command]

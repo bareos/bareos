@@ -87,9 +87,10 @@ bool UpdateCmd(UaContext* ua, const char*)
   switch (FindArgKeyword(ua, kw)) {
     case 0:
     case 1: {
-      bool comment = FindArg(ua, NT_("comment")) >= 0;
+      bool strict = FindArg(ua, NT_("comment")) >= 0
+                    || FindArg(ua, NT_("poolwithdefaults")) >= 0;
       bool updated = UpdateVolume(ua);
-      return comment ? updated : true;
+      return strict ? updated : true;
     }
     case 2:
       UpdatePool(ua);
@@ -521,6 +522,93 @@ void UpdateVolPool(UaContext* ua,
   }
 }
 
+static bool UpdateVolPoolWithDefaults(UaContext* ua,
+                                      const char* pool_name,
+                                      MediaDbRecord* mr)
+{
+  PoolDbRecord source;
+  PoolDbRecord target;
+  source.PoolId = mr->PoolId;
+  bstrncpy(target.Name, pool_name, sizeof(target.Name));
+
+  DbLocker _{ua->db};
+  if (!ua->db->GetPoolRecord(ua->jcr, &source)) {
+    ua->ErrorMsg(T_("Could not find current Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, source.Name, true)) {
+    ua->ErrorMsg(T_("Could not access current Pool.\n"));
+    return false;
+  }
+  if (!ua->db->GetPoolRecord(ua->jcr, &target)) {
+    ua->ErrorMsg(T_("Could not find target Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, target.Name, true)) {
+    ua->ErrorMsg(T_("Could not access target Pool.\n"));
+    return false;
+  }
+
+  auto source_name = ua->db->EscapeString(ua->jcr, source.Name);
+  auto target_name = ua->db->EscapeString(ua->jcr, target.Name);
+  if (!source_name || !target_name) {
+    ua->ErrorMsg(T_("Could not escape Pool names.\n"));
+    return false;
+  }
+
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "WITH pools AS ("
+       "SELECT * FROM Pool WHERE PoolId IN (%" PRIdbid ",%" PRIdbid
+       ") "
+       "ORDER BY PoolId FOR UPDATE), "
+       "moved AS ("
+       "UPDATE Media SET PoolId=dst.PoolId,"
+       "ActionOnPurge=dst.ActionOnPurge,Recycle=dst.Recycle,"
+       "VolRetention=dst.VolRetention,VolUseDuration=dst.VolUseDuration,"
+       "MaxVolJobs=dst.MaxVolJobs,MaxVolFiles=dst.MaxVolFiles,"
+       "MaxVolBytes=dst.MaxVolBytes,RecyclePoolId=dst.RecyclePoolId,"
+       "MinBlocksize=dst.MinBlocksize,MaxBlocksize=dst.MaxBlocksize "
+       "FROM pools src,pools dst "
+       "WHERE Media.MediaId=%" PRIdbid
+       " AND Media.PoolId=src.PoolId "
+       "AND src.PoolId=%" PRIdbid
+       " AND src.Name='%s' "
+       "AND dst.PoolId=%" PRIdbid
+       " AND dst.Name='%s' "
+       "RETURNING Media.MediaId), "
+       "counts AS (UPDATE Pool SET NumVols=NumVols+"
+       "CASE WHEN PoolId=%" PRIdbid
+       " THEN -1 ELSE 1 END "
+       "FROM moved WHERE PoolId IN (%" PRIdbid ",%" PRIdbid
+       ") "
+       "AND %" PRIdbid " != %" PRIdbid
+       " RETURNING PoolId) "
+       "SELECT count(*) FROM moved",
+       source.PoolId, target.PoolId, mr->MediaId, source.PoolId,
+       source_name->c_str(), target.PoolId, target_name->c_str(), source.PoolId,
+       source.PoolId, target.PoolId, source.PoolId, target.PoolId);
+  s_count_ctx updated{};
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, &updated)) {
+    ua->ErrorMsg(T_("Error updating Volume record: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (updated.count != 1) {
+    ua->ErrorMsg(T_("Volume or Pool changed; refresh and try again.\n"));
+    return false;
+  }
+  ua->send->ObjectStart("poolmove");
+  ua->send->ObjectKeyValue("volumename", mr->VolumeName);
+  ua->send->ObjectKeyValue("pool", target.Name);
+  ua->send->ObjectEnd("poolmove");
+  ua->InfoMsg(T_("Volume moved to Pool \"%s\" and defaults updated.\n"),
+              target.Name);
+  return true;
+}
+
 // Modify the RecyclePool of a Volume
 void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
 {
@@ -743,27 +831,46 @@ static bool UpdateVolume(UaContext* ua)
   char ed1[130];
   bool done = false;
   int i;
-  const char* kw[] = {NT_("VolStatus"),     /* 0 */
-                      NT_("VolRetention"),  /* 1 */
-                      NT_("VolUse"),        /* 2 */
-                      NT_("MaxVolJobs"),    /* 3 */
-                      NT_("MaxVolFiles"),   /* 4 */
-                      NT_("MaxVolBytes"),   /* 5 */
-                      NT_("Recycle"),       /* 6 */
-                      NT_("InChanger"),     /* 7 */
-                      NT_("Slot"),          /* 8 */
-                      NT_("Pool"),          /* 9 */
-                      NT_("FromPool"),      /* 10 */
-                      NT_("AllFromPool"),   /* 11 !!! see below !!! */
-                      NT_("Enabled"),       /* 12 */
-                      NT_("RecyclePool"),   /* 13 */
-                      NT_("ActionOnPurge"), /* 14 */
-                      NT_("Storage"),       /* 15 */
-                      NT_("Encrypt"),       /* 16 */
-                      NT_("Comment"),       /* 17 */
+  const char* kw[] = {NT_("VolStatus"),        /* 0 */
+                      NT_("VolRetention"),     /* 1 */
+                      NT_("VolUse"),           /* 2 */
+                      NT_("MaxVolJobs"),       /* 3 */
+                      NT_("MaxVolFiles"),      /* 4 */
+                      NT_("MaxVolBytes"),      /* 5 */
+                      NT_("Recycle"),          /* 6 */
+                      NT_("InChanger"),        /* 7 */
+                      NT_("Slot"),             /* 8 */
+                      NT_("Pool"),             /* 9 */
+                      NT_("FromPool"),         /* 10 */
+                      NT_("AllFromPool"),      /* 11 !!! see below !!! */
+                      NT_("Enabled"),          /* 12 */
+                      NT_("RecyclePool"),      /* 13 */
+                      NT_("ActionOnPurge"),    /* 14 */
+                      NT_("Storage"),          /* 15 */
+                      NT_("Encrypt"),          /* 16 */
+                      NT_("Comment"),          /* 17 */
+                      NT_("PoolWithDefaults"), /* 18 */
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
+
+  if (FindArg(ua, NT_("PoolWithDefaults")) > 0) {
+    if (FindArgWithValue(ua, NT_("PoolWithDefaults")) < 0
+        || FindArg(ua, NT_("fromallpools")) > 0) {
+      ua->ErrorMsg(
+          T_("PoolWithDefaults requires a target Pool and cannot be "
+             "combined with other Volume updates.\n"));
+      return false;
+    }
+    for (int k = 0; k < 18; ++k) {
+      if (FindArg(ua, kw[k]) > 0) {
+        ua->ErrorMsg(
+            T_("PoolWithDefaults cannot be combined with other "
+               "Volume updates.\n"));
+        return false;
+      }
+    }
+  }
 
   const bool force = FindArg(ua, NT_("force")) > 0;
 
@@ -834,6 +941,11 @@ static bool UpdateVolume(UaContext* ua)
           break;
         case 17:
           if (!UpdateVolComment(ua, ua->argv[j], &mr)) { return false; }
+          break;
+        case 18:
+          if (!UpdateVolPoolWithDefaults(ua, ua->argv[j], &mr)) {
+            return false;
+          }
           break;
       }
       done = true;

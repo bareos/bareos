@@ -27,7 +27,7 @@ import logging
 import os
 import re
 import subprocess
-from time import sleep
+from time import monotonic, sleep
 import unittest
 import uuid
 import warnings
@@ -43,6 +43,354 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_move_volume_with_pool_defaults(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        volume = f"AtomicPoolMove-{uuid.uuid4().hex}"
+        director.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            source = director.call("llist pool=Full")["pools"][0]
+            target = director.call("llist pool=Incremental")["pools"][0]
+            director.call(f"update volume={volume} volretention=1")
+            unsupported = director.call(
+                f"update volume={volume} poolwithdefaultsunsupported=Incremental"
+            )
+            self.assertNotIn("poolmove", unsupported)
+            self.assertEqual(
+                director.call(f"llist volume={volume}")["volume"]["poolid"],
+                source["poolid"],
+            )
+            with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                director.call(
+                    f"update volume={volume} pool=Incremental "
+                    "poolwithdefaults=Incremental"
+                )
+            self.assertEqual(
+                director.call(f"llist volume={volume}")["volume"]["poolid"],
+                source["poolid"],
+            )
+            response = director.call(
+                f"update volume={volume} poolwithdefaults=Incremental"
+            )
+            self.assertEqual(
+                response["poolmove"], {"volumename": volume, "pool": "Incremental"}
+            )
+            media = director.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(media["poolid"], target["poolid"])
+            for field in (
+                "volretention",
+                "voluseduration",
+                "maxvoljobs",
+                "maxvolfiles",
+                "maxvolbytes",
+                "recycle",
+                "recyclepoolid",
+                "actiononpurge",
+                "minblocksize",
+                "maxblocksize",
+            ):
+                with self.subTest(field=field):
+                    self.assertEqual(media[field], target[field])
+            self.assertEqual(
+                int(director.call("llist pool=Full")["pools"][0]["numvols"]),
+                int(source["numvols"]) - 1,
+            )
+            self.assertEqual(
+                int(director.call("llist pool=Incremental")["pools"][0]["numvols"]),
+                int(target["numvols"]) + 1,
+            )
+
+            director.call(f"update volume={volume} volretention=1")
+            director.call(f"update volume={volume} poolwithdefaults=Incremental")
+            self.assertEqual(
+                director.call(f"llist volume={volume}")["volume"]["volretention"],
+                target["volretention"],
+            )
+            self.assertEqual(
+                int(director.call("llist pool=Incremental")["pools"][0]["numvols"]),
+                int(target["numvols"]) + 1,
+            )
+        finally:
+            director.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
+    def test_pool_move_defaults_rolls_back_on_counter_failure(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        volume = f"AtomicPoolFailure-{uuid.uuid4().hex}"
+        director.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            director.call(f"update volume={volume} volretention=1")
+            before = director.call(f"llist volume={volume}")["volume"]
+            director.call(
+                '.sql query="UPDATE Pool SET NumVols=(SELECT count(*) FROM Media '
+                "WHERE Media.PoolId=Pool.PoolId) WHERE Name IN ('Full','Incremental')\""
+            )
+            source = director.call("llist pool=Full")["pools"][0]
+            target = director.call("llist pool=Incremental")["pools"][0]
+            options = dict(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=self.get_operator_password(username),
+                **self.director_extra_options,
+            )
+            mover = bareos.bsock.DirectorConsoleJson(**options)
+            observer = bareos.bsock.DirectorConsoleJson(**options)
+            director.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                director.call(
+                    f'.sql query="UPDATE Pool SET NumVols=2147483647 '
+                    f'WHERE PoolId={target["poolid"]}"'
+                )
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    pending = executor.submit(
+                        mover.call,
+                        f"update volume={volume} poolwithdefaults=Incremental",
+                    )
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%WITH pools AS%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting):
+                                break
+                            sleep(0.1)
+                        else:
+                            self.fail("Pool move did not wait for the locked pool")
+                    finally:
+                        director.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    with self.assertRaises(
+                        bareos.exceptions.JsonRpcErrorReceivedException
+                    ):
+                        pending.result(timeout=10)
+                after = director.call(f"llist volume={volume}")["volume"]
+                self.assertEqual(after["poolid"], before["poolid"])
+                self.assertEqual(after["volretention"], before["volretention"])
+                self.assertEqual(
+                    director.call("llist pool=Full")["pools"][0]["numvols"],
+                    source["numvols"],
+                )
+                self.assertEqual(
+                    director.call(
+                        f'.sql query="SELECT NumVols FROM Pool '
+                        f'WHERE PoolId={target["poolid"]}"'
+                    )["query"][0]["numvols"],
+                    "2147483647",
+                )
+            finally:
+                if transaction_open:
+                    director.call('.sql query="ROLLBACK"')
+                director.call(
+                    f'.sql query="UPDATE Pool SET NumVols={target["numvols"]} '
+                    f'WHERE PoolId={target["poolid"]}"'
+                )
+        finally:
+            director.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
+    def test_pool_move_defaults_requires_both_pool_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        restricted = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name="poolfull",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        volume = f"AtomicPoolAcl-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            before = admin.call(f"llist volume={volume}")["volume"]
+            result = restricted.call(
+                f"update volume={volume} poolwithdefaults=Incremental"
+            )
+            self.assertIn(b"Could not access target Pool", result)
+            self.assertEqual(
+                admin.call(f"llist volume={volume}")["volume"]["poolid"],
+                before["poolid"],
+            )
+            admin.call(f"update volume={volume} pool=Incremental")
+            before = admin.call(f"llist volume={volume}")["volume"]
+            result = restricted.call(f"update volume={volume} poolwithdefaults=Full")
+            self.assertIn(b"Could not access current Pool", result)
+            self.assertEqual(
+                admin.call(f"llist volume={volume}")["volume"]["poolid"],
+                before["poolid"],
+            )
+        finally:
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
+    def test_pool_move_defaults_rejects_stale_source(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        mover = bareos.bsock.DirectorConsoleJson(**options)
+        observer = bareos.bsock.DirectorConsoleJson(**options)
+        volume = f"AtomicPoolStale-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            admin.call(f"update volume={volume} volretention=1")
+            source = admin.call(f"llist volume={volume}")["volume"]
+            target = admin.call("llist pool=Incremental")["pools"][0]
+            admin.call(
+                '.sql query="UPDATE Pool SET NumVols=(SELECT count(*) FROM Media '
+                "WHERE Media.PoolId=Pool.PoolId) WHERE Name IN ('Full','Incremental')\""
+            )
+            admin.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                admin.call(
+                    f'.sql query="UPDATE Media SET PoolId={target["poolid"]} '
+                    f"WHERE VolumeName='{volume}'\""
+                )
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    pending = executor.submit(
+                        mover.call,
+                        f"update volume={volume} poolwithdefaults=Incremental",
+                    )
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%WITH pools AS%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting):
+                                break
+                            sleep(0.1)
+                        else:
+                            self.fail("Pool move did not wait for the locked volume")
+                    finally:
+                        admin.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    with self.assertRaises(
+                        bareos.exceptions.JsonRpcErrorReceivedException
+                    ):
+                        pending.result(timeout=10)
+                current = admin.call(f"llist volume={volume}")["volume"]
+                self.assertEqual(current["poolid"], target["poolid"])
+                self.assertEqual(current["volretention"], "1")
+            finally:
+                if transaction_open:
+                    admin.call('.sql query="ROLLBACK"')
+                admin.call(
+                    f'.sql query="UPDATE Media SET PoolId={source["poolid"]} '
+                    f"WHERE VolumeName='{volume}'\""
+                )
+        finally:
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
+    def test_pool_move_defaults_concurrent_counters(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        volumes = [f"AtomicConcurrent-{uuid.uuid4().hex}" for _ in range(2)]
+        created = []
+        try:
+            for volume in volumes:
+                admin.call(f"label volume={volume} storage=File pool=Full")
+                created.append(volume)
+            admin.call(
+                '.sql query="UPDATE Pool SET NumVols=(SELECT count(*) FROM Media '
+                "WHERE Media.PoolId=Pool.PoolId) WHERE Name IN ('Full','Incremental')\""
+            )
+            consoles = [bareos.bsock.DirectorConsoleJson(**options) for _ in volumes]
+            observer = bareos.bsock.DirectorConsoleJson(**options)
+            admin.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                admin.call(
+                    '.sql query="SELECT PoolId FROM Pool '
+                    "WHERE Name='Incremental' FOR UPDATE\""
+                )
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    pending = [
+                        executor.submit(
+                            console.call,
+                            f"update volume={volume} poolwithdefaults=Incremental",
+                        )
+                        for console, volume in zip(consoles, volumes)
+                    ]
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%WITH pools AS%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting) and all(
+                                not future.done() for future in pending
+                            ):
+                                break
+                            sleep(0.1)
+                        else:
+                            self.fail(
+                                "Pool moves did not overlap while the pool was locked"
+                            )
+                    finally:
+                        admin.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    for future, volume in zip(pending, volumes):
+                        self.assertEqual(
+                            future.result(timeout=10)["poolmove"]["volumename"], volume
+                        )
+            finally:
+                if transaction_open:
+                    admin.call('.sql query="ROLLBACK"')
+            counts = admin.call(
+                '.sql query="SELECT Name,NumVols,'
+                "(SELECT count(*) FROM Media WHERE Media.PoolId=Pool.PoolId) "
+                "AS actual FROM Pool WHERE Name IN ('Full','Incremental')\""
+            )["query"]
+            self.assertEqual(len(counts), 2)
+            for pool in counts:
+                self.assertEqual(pool["numvols"], pool["actual"], pool["name"])
+        finally:
+            for volume in created:
+                admin.call(f"delete volume={volume} yes")
+                os.remove(f"storage/{volume}")
+
     def test_volume_status_rejects_stale_interactive_selection(self):
         username = self.get_operator_username()
         options = dict(
