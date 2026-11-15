@@ -161,6 +161,60 @@ describe('JobTimeline refreshes', () => {
     ).not.toBeNull())
   })
 
+  it('preserves lane selection when the normalized client filter is unchanged', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const clientFilter = ref('')
+    const Root = defineComponent({
+      setup: () => () => h(JobTimeline, {
+        directors: ['director-a'],
+        clientFilter: clientFilter.value,
+      }),
+    })
+    const stub = defineComponent({
+      inheritAttrs: false,
+      setup(_, { attrs, slots }) {
+        return () => h('div', attrs, slots.default?.())
+      },
+    })
+    const app = createApp(Root)
+    for (const name of [
+      'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
+      'q-banner', 'q-checkbox', 'q-separator', 'q-inner-loading', 'q-tooltip',
+    ]) {
+      app.component(name, stub)
+    }
+    app.component('q-btn', defineComponent({
+      inheritAttrs: false,
+      props: { label: String, disable: Boolean },
+      setup(props, { attrs }) {
+        return () => h('button', { ...attrs, disabled: props.disable }, props.label)
+      },
+    }))
+    app.component('router-link', defineComponent({
+      setup(_, { attrs, slots }) {
+        return () => h('a', attrs, slots.default?.())
+      },
+    }))
+    apps.push(app)
+    app.mount(host)
+
+    await vi.waitFor(() => expect(requests).toHaveLength(1))
+    completeRequest(requests[0], 'ClientAJob', 'client-a')
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientAJob"]')
+    ).not.toBeNull())
+
+    host.querySelectorAll('button')[1].click()
+    await nextTick()
+    expect(host.textContent).toContain('No jobs in this period.')
+
+    clientFilter.value = '   '
+    await nextTick()
+    expect(host.textContent).toContain('No jobs in this period.')
+  })
+
   it('ignores a slower response from an obsolete client filter', async () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
