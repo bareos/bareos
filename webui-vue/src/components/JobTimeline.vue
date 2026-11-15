@@ -434,6 +434,11 @@ const allJobOptions = computed(() => distinctFilesetClientOptions(tlRawJobs.valu
 const jobFilterInitialized = ref(false)
 const visibleJobNames = ref([])
 
+watch(() => clientFilter, () => {
+  jobFilterInitialized.value = false
+  visibleJobNames.value = []
+})
+
 watch(allJobOptions, (options) => {
   const optionKeys = new Set(options.map(option => option.key))
 

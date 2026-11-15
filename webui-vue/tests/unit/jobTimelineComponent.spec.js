@@ -113,6 +113,54 @@ function completeRequest(request, name, clientName) {
 }
 
 describe('JobTimeline refreshes', () => {
+  it('selects lanes after the client filter changes', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const clientFilter = ref('')
+    const Root = defineComponent({
+      setup: () => () => h(JobTimeline, {
+        directors: ['director-a'],
+        clientFilter: clientFilter.value,
+      }),
+    })
+    const stub = defineComponent({
+      inheritAttrs: false,
+      setup(_, { attrs, slots }) {
+        return () => h('div', attrs, slots.default?.())
+      },
+    })
+    const app = createApp(Root)
+    for (const name of [
+      'q-card', 'q-card-section', 'q-space', 'q-btn', 'q-btn-toggle',
+      'q-banner', 'q-checkbox', 'q-separator', 'q-inner-loading', 'q-tooltip',
+    ]) {
+      app.component(name, stub)
+    }
+    app.component('router-link', defineComponent({
+      setup(_, { attrs, slots }) {
+        return () => h('a', attrs, slots.default?.())
+      },
+    }))
+    apps.push(app)
+    app.mount(host)
+
+    await vi.waitFor(() => expect(requests).toHaveLength(1))
+    completeRequest(requests[0], 'ClientAJob', 'client-a')
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientAJob"]')
+    ).not.toBeNull())
+
+    clientFilter.value = 'client-b'
+    await nextTick()
+    await vi.waitFor(() => expect(requests).toHaveLength(2))
+    completeRequest(requests[1], 'ClientBJob', 'client-b')
+
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientBJob"]')
+    ).not.toBeNull())
+  })
+
   it('ignores a slower response from an obsolete client filter', async () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
