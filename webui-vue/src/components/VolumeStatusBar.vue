@@ -22,12 +22,15 @@
 <template>
   <div v-if="segments.length" class="volume-status-bar" :data-testid="testid">
     <div class="row no-wrap items-stretch status-track">
-      <div
+      <button
         v-for="segment in segments"
         :key="segment.status"
+        type="button"
         class="status-segment cursor-pointer"
         :class="[`bg-${segment.color}`, { 'status-segment-active': segment.active }]"
         :style="{ flexGrow: segment.count }"
+        :aria-label="`${segment.status}: ${segment.count}`"
+        :aria-pressed="segment.active"
         :data-testid="`${testid}-${segment.status}`"
         @click="$emit('select', segment.status)"
       >
@@ -37,20 +40,23 @@
         <q-tooltip>
           {{ segment.status }}: {{ segment.count }} ({{ Math.round(segment.share * 100) }}%)
         </q-tooltip>
-      </div>
+      </button>
     </div>
     <div class="row items-center q-gutter-xs q-mt-xs">
-      <div
+      <button
         v-for="segment in segments"
         :key="`legend-${segment.status}`"
+        type="button"
         class="row items-center no-wrap status-legend cursor-pointer"
+        :aria-label="`${segment.status}: ${segment.count}`"
+        :aria-pressed="segment.active"
         @click="$emit('select', segment.status)"
       >
         <span class="status-swatch" :class="`bg-${segment.color}`" />
         <span class="text-caption q-ml-xs" :class="segment.active ? 'text-weight-bold' : 'text-grey-7'">
           {{ segment.status }} {{ segment.count }}
         </span>
-      </div>
+      </button>
     </div>
   </div>
 </template>
@@ -117,7 +123,22 @@ const segments = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: 0;
   transition: filter 0.15s ease;
+}
+
+.status-segment:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.status-legend {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
 }
 
 .status-segment:hover,
