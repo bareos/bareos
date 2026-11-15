@@ -140,6 +140,37 @@ test('browser regression: schedule and job toggles refresh upcoming runs', async
   await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(jobCalls)
 })
 
+test('browser regression: schedule All selection survives an empty scope', async ({ page }) => {
+  await browserFixture(page, (command, director) => {
+    if (!command.startsWith('status scheduler days=')) return
+    return {
+      schedules: director === 'bareos-dir'
+        ? [{ name: 'DailyCycle', enabled: true, jobs: [] }]
+        : [],
+      preview: [],
+    }
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const scheduleCheckboxes = page.getByRole('checkbox')
+  await expect(scheduleCheckboxes).toHaveCount(1)
+  await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'true')
+
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(scheduleCheckboxes).toHaveCount(0)
+
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(scheduleCheckboxes).toHaveCount(1)
+  await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'true')
+})
+
 test('browser regression: upcoming runs ignore an obsolete Director scope', async ({ page }) => {
   let releaseObsoletePreview
   let firstDirectorPreviewCalls = 0
