@@ -73,6 +73,23 @@ TEST(VolumeUsage, FallsBackToFileIndexSpans)
             (std::vector<size_t>{5, 15}));
 }
 
+TEST(VolumeUsage, ReservesSpaceForLaterSegments)
+{
+  std::vector<VolumeUsageSegment> segments{
+      MakeSegment(0, 0, 1),
+      MakeSegment(0, 0, 1000),
+      MakeSegment(0, 0, 1),
+  };
+  AssignVolumeUsageWeights(segments);
+
+  EXPECT_EQ(VolumeUsageSegmentWidths(segments, 60),
+            (std::vector<size_t>{1, 58, 1}));
+  const auto bar = BuildVolumeUsageTapeBar(segments, 60);
+  EXPECT_EQ(bar.size(), 60);
+  EXPECT_EQ(bar.front(), '1');
+  EXPECT_EQ(bar.back(), '3');
+}
+
 TEST(VolumeUsage, HandlesEmptyAndTinyBars)
 {
   EXPECT_TRUE(VolumeUsageSegmentWidths({}, 20).empty());

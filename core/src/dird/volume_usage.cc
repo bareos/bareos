@@ -129,7 +129,9 @@ std::vector<size_t> VolumeUsageSegmentWidths(
       const auto ratio = static_cast<long double>(segments[i].weight)
                          / static_cast<long double>(total);
       width = std::max<size_t>(1, static_cast<size_t>(ratio * bar_width));
-      width = std::min(width, bar_width - used);
+      const size_t reserved
+          = bar_width >= segments.size() ? segments.size() - i - 1 : 0;
+      width = std::min(width, bar_width - used - reserved);
     } else {
       width = 0;
     }
