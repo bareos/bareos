@@ -561,10 +561,13 @@ async function loadVolume() {
     }
     jobs.value = jobRes
     volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
-    return true
+    await loadPools()
+    return isCurrent()
   } catch (reason) {
     if (!isCurrent()) return false
     throw reason
+  } finally {
+    if (isCurrent()) loading.value = false
   }
 }
 
@@ -634,7 +637,7 @@ async function onVolumeActionDone(results) {
   }
 
   try {
-    if (await loadVolume()) await loadPools()
+    await loadVolume()
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   }
@@ -649,7 +652,7 @@ async function applyPoolDefaults() {
   try {
     await ensureVolumeDirector()
     await director.call(buildApplyPoolDefaultsCommand(volumeName.value))
-    if (await loadVolume()) await loadPools()
+    await loadVolume()
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   } finally {
@@ -706,11 +709,9 @@ watch(() => [volumeName.value, requestedDirector.value, currentVolumeDirector.va
   const request = loadVolume()
   const generation = volumeLoadGeneration
   try {
-    if (await request) await loadPools()
+    await request
   } catch (loadError) {
     if (generation === volumeLoadGeneration) error.value = loadError.message
-  } finally {
-    if (generation === volumeLoadGeneration) loading.value = false
   }
 }, { immediate: true })
 
