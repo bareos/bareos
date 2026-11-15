@@ -341,6 +341,34 @@ test('browser regression: clients list ignores an obsolete refresh', async ({ pa
   await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
 })
 
+test('browser regression: client backup status distinguishes running from no history', async ({ page }) => {
+  await browserFixture(page, command => {
+    if (command === 'llist clients') {
+      return { clients: [{ name: 'RunningClient' }, { name: 'NewClient' }] }
+    }
+    if (command === '.clients') return { clients: [] }
+    if (command.startsWith('llist jobs reverse limit=1000')) {
+      return {
+        jobs: [{
+          jobid: '101',
+          name: 'Running backup',
+          client: 'RunningClient',
+          jobstatus: 'R',
+          starttime: '2026-05-28 10:00:00',
+        }],
+      }
+    }
+    if (command.startsWith('status scheduler days=')) return { schedules: [], preview: [] }
+  })
+
+  await openNav(page, 'nav-clients', /#\/clients/)
+  const runningClient = page.getByRole('row').filter({ hasText: 'RunningClient' }).first()
+  const newClient = page.getByRole('row').filter({ hasText: 'NewClient' }).first()
+  await expect(runningClient).toContainText('Running')
+  await expect(runningClient).not.toContainText('No backup history')
+  await expect(newClient).toContainText('No backup history')
+})
+
 test('browser regression: next run advances with the live clock', async ({ page }) => {
   const now = Date.parse('2026-05-28T12:00:00Z')
   await page.clock.install({ time: new Date(now) })

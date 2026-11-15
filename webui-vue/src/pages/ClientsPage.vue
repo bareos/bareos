@@ -721,6 +721,17 @@ function clientBackupStatusItems(client) {
     return [{ label: t('Backup history unavailable'), color: 'grey-6' }]
   }
 
+  if (status === 'running') {
+    const items = [{ label: t('Running'), color: 'info' }]
+    if (hasFailureStreakWarning(client)) {
+      items.push({
+        label: t('{n} consecutive failures', { n: client.failureStreak }),
+        color: 'warning',
+      })
+    }
+    return items
+  }
+
   if (status === 'unknown') {
     return [{ label: t('No backup history'), color: 'grey-6' }]
   }

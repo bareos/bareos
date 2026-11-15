@@ -60,16 +60,18 @@ export function isStreakSuccessJobStatus(status) {
 
 // Counts how many of a single client's backup jobs, ordered newest first,
 // failed in a row since (i.e. more recent than) its last successful
-// backup. Stops counting at -- and does not include -- the first job
-// that isStreakSuccessJobStatus(). If no successful job is found at all
-// in the given (newest-first) list, every job in it is counted as part
-// of the streak: this is a lower bound (the real streak may be longer
-// than what was fetched), but it's still a failure, never "unknown".
+// backup. Active jobs do not affect the streak. Stops counting at -- and
+// does not include -- the first job that isStreakSuccessJobStatus(). If no
+// successful job is found at all in the given (newest-first) list, every
+// non-active job in it is counted as part of the streak: this is a lower
+// bound (the real streak may be longer than what was fetched), but it's
+// still a failure, never "unknown".
 export function consecutiveFailedJobsSinceSuccess(jobsNewestFirst) {
   if (!Array.isArray(jobsNewestFirst)) return 0
 
   let count = 0
   for (const job of jobsNewestFirst) {
+    if (['R', 'l'].includes(job?.status)) continue
     if (isStreakSuccessJobStatus(job?.status)) break
     count++
   }

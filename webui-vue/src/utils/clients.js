@@ -155,9 +155,9 @@ export function clientBackupStatusCode(client, warningFailedJobs, historyAvailab
   if (!client.enabled) return 'disabled'
   if (!historyAvailable) return 'unavailable'
   if (['E', 'f'].includes(client.lastBackup?.status)) return 'failed'
+  if (['R', 'l'].includes(client.lastBackup?.status)) return 'running'
   if ((client.failureStreak ?? 0) >= warningFailedJobs) return 'warning'
   if (!client.lastBackup) return 'unknown'
-  if (client.lastBackup.status === 'R') return 'unknown'
   return 'ok'
 }
 

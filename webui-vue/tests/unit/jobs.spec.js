@@ -114,6 +114,15 @@ describe('consecutiveFailedJobsSinceSuccess', () => {
     ])).toBe(2)
   })
 
+  it('does not count running jobs as failures', () => {
+    expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'R' },
+      { status: 'l' },
+      { status: 'E' },
+      { status: 'T' },
+    ])).toBe(1)
+  })
+
   it('a Warning status stops the streak just like an OK status', () => {
     expect(consecutiveFailedJobsSinceSuccess([
       { status: 'E' },
