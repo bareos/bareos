@@ -146,6 +146,7 @@ std::string BuildVolumeUsageTapeBar(
     size_t bar_width)
 {
   std::string bar;
+  if (bar_width == 0) { return bar; }
   const auto widths = VolumeUsageSegmentWidths(segments, bar_width);
   for (size_t i = 0; i < segments.size(); ++i) {
     const char marker = segments[i].marker == '#'

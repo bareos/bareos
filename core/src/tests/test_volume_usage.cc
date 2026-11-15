@@ -102,6 +102,7 @@ TEST(VolumeUsage, HandlesEmptyAndTinyBars)
   };
   AssignVolumeUsageWeights(segments);
 
+  EXPECT_EQ(BuildVolumeUsageTapeBar(segments, 0), "");
   EXPECT_EQ(VolumeUsageSegmentWidths(segments, 2),
             (std::vector<size_t>{1, 1, 0}));
   EXPECT_EQ(BuildVolumeUsageTapeBar(segments, 2), "12");
