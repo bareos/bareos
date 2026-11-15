@@ -22,8 +22,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 
-const { director } = vi.hoisted(() => ({
-  director: { call: vi.fn(), status: 'connected', isConnected: true },
+const { director, dialog } = vi.hoisted(() => ({
+  director: { call: vi.fn(), rawCall: vi.fn(), status: 'connected', isConnected: true },
+  dialog: vi.fn(),
 }))
 
 vi.mock('../../src/stores/director.js', () => ({ useDirectorStore: () => director }))
@@ -40,7 +41,7 @@ vi.mock('../../src/stores/settings.js', () => ({
   }),
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
-vi.mock('quasar', () => ({ useQuasar: () => ({ notify: vi.fn() }) }))
+vi.mock('quasar', () => ({ useQuasar: () => ({ notify: vi.fn(), dialog }) }))
 
 const { default: AutochangerPanel } = await import(
   '../../src/components/AutochangerPanel.vue'
@@ -73,9 +74,15 @@ function mountPanel(storage) {
     'q-space', 'q-banner', 'q-card', 'q-card-section', 'q-input',
     'q-icon', 'q-tooltip', 'q-td', 'q-badge', 'q-select', 'q-checkbox',
     'q-separator', 'q-inner-loading', 'q-card-actions', 'q-menu',
-    'q-list', 'q-item', 'q-item-section', 'q-item-label', 'q-spinner', 'q-scroll-area',
+    'q-list', 'q-item', 'q-item-section', 'q-item-label', 'q-spinner',
     'q-skeleton', 'router-link',
   ]) app.component(name, stub)
+  app.component('q-scroll-area', defineComponent({
+    setup(_, { slots, expose }) {
+      expose({ setScrollPosition: vi.fn() })
+      return () => h('div', slots.default?.())
+    },
+  }))
   app.component('q-btn', defineComponent({
     inheritAttrs: false,
     props: { label: String, disable: Boolean },
@@ -111,6 +118,8 @@ function mountPanel(storage) {
 
 beforeEach(() => {
   director.call.mockReset()
+  director.rawCall.mockReset()
+  dialog.mockReset()
 })
 
 afterEach(() => {
@@ -124,6 +133,59 @@ afterEach(() => {
 })
 
 describe('AutochangerPanel storage selection', () => {
+  it('rejects an export confirmation after switching away and back', async () => {
+    let confirm
+    dialog.mockReturnValue({ onOk: callback => { confirm = callback } })
+    director.call.mockImplementation(command => {
+      if (command.startsWith('status storage=')) {
+        return Promise.resolve({
+          contents: [{ type: 'slot', slotnr: 3, content: 'full', mr_volname: 'VolumeA' }],
+        })
+      }
+      return Promise.resolve({ pools: [], volumes: [] })
+    })
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(host.querySelector('[title="Export"]')).not.toBeNull())
+    host.querySelector('[title="Export"]').click()
+    expect(confirm).toBeTypeOf('function')
+
+    storage.value = { name: 'B', director: 'test-dir' }
+    await nextTick()
+    storage.value = { name: 'A', director: 'test-dir' }
+    await nextTick()
+    await confirm()
+    expect(director.rawCall).not.toHaveBeenCalled()
+  })
+
+  it.each([false, true])('exports only while the confirmed storage remains selected (change: %s)', async (change) => {
+    let confirm
+    dialog.mockReturnValue({ onOk: callback => { confirm = callback } })
+    director.call.mockImplementation(command => {
+      if (command.startsWith('status storage=')) {
+        return Promise.resolve({
+          contents: [{ type: 'slot', slotnr: 3, content: 'full', mr_volname: 'VolumeA' }],
+        })
+      }
+      return Promise.resolve({ pools: [], volumes: [] })
+    })
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(host.querySelector('[title="Export"]')).not.toBeNull())
+    host.querySelector('[title="Export"]').click()
+    const pending = confirm()
+    if (change) storage.value = { name: 'B', director: 'test-dir' }
+    await pending
+    if (change) {
+      expect(director.rawCall).not.toHaveBeenCalled()
+    } else {
+      expect(director.rawCall).toHaveBeenCalledWith(
+        'export storage="A" srcslots=3',
+        expect.any(Object)
+      )
+    }
+  })
+
   it('ignores a previous storage slot response after changing selection', async () => {
     const oldSlots = deferred()
     director.call.mockImplementation(command => {
