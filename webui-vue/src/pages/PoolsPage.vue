@@ -915,9 +915,7 @@ function openBulkAction(actionId) {
 }
 
 async function runVolumeCommand(volume, command) {
-  if (showDirectorColumn.value || isCommonPools.value) {
-    await switchToRowDirector(volume)
-  }
+  await switchToRowDirector(volume)
   return director.call(command)
 }
 
