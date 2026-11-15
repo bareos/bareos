@@ -58,12 +58,19 @@ vi.mock('../../src/components/VolumeActionsMenu.vue', () => ({
 vi.mock('../../src/components/VolumeBulkDialog.vue', () => ({
   default: defineComponent({
     props: { modelValue: Boolean, volumes: Array, runCommand: Function },
-    setup(props) {
-      return () => h('button', {
-        'data-test-action': '',
-        'data-open': String(props.modelValue),
-        onClick: () => { mocks.snapshot = props.volumes[0]; mocks.run = props.runCommand },
-      })
+    emits: ['done'],
+    setup(props, { emit }) {
+      return () => h('div', [
+        h('button', {
+          'data-test-action': '',
+          'data-open': String(props.modelValue),
+          onClick: () => { mocks.snapshot = props.volumes[0]; mocks.run = props.runCommand },
+        }),
+        h('button', {
+          'data-test-done': '',
+          onClick: () => emit('done', [{ volume: props.volumes[0], ok: false }]),
+        }),
+      ])
     },
   }),
 }))
@@ -205,6 +212,114 @@ describe('VolumeDetailsPage action identity', () => {
     expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('Other comment')
   })
 
+  it('does not show an obsolete action refresh failure on the new volume', async () => {
+    let rejectRefresh
+    let tapeLoads = 0
+    mocks.call.mockImplementation(command => {
+      if (command === 'llist volume="Tape"') {
+        tapeLoads += 1
+        if (tapeLoads === 2) return new Promise((_resolve, reject) => { rejectRefresh = reject })
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full' }] })
+      }
+      if (command === 'llist volume="Other"') {
+        return Promise.resolve({ volumes: [{ volumename: 'Other', volstatus: 'Full', comment: 'Current' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-open]')).not.toBeNull())
+    host.querySelector('[data-test-open]').click()
+    await nextTick()
+    host.querySelector('[data-test-done]').click()
+    await vi.waitFor(() => expect(rejectRefresh).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Current'))
+    rejectRefresh(new Error('Obsolete refresh failed'))
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).not.toContain('Obsolete refresh failed')
+    expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Current')
+  })
+
+  it('shows a current action refresh failure', async () => {
+    let tapeLoads = 0
+    mocks.call.mockImplementation(command => {
+      if (command === 'llist volume="Tape"') {
+        tapeLoads += 1
+        if (tapeLoads === 2) return Promise.reject(new Error('Current refresh failed'))
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-open]')).not.toBeNull())
+    host.querySelector('[data-test-open]').click()
+    await nextTick()
+    host.querySelector('[data-test-done]').click()
+    await vi.waitFor(() => expect(host.textContent).toContain('Current refresh failed'))
+  })
+
+  it('does not show an obsolete director-switch failure on the new volume', async () => {
+    let rejectSwitch
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', comment: route.params.name }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-open]')).not.toBeNull())
+    host.querySelector('[data-test-open]').click()
+    await nextTick()
+    auth.user.director = 'B'
+    mocks.switchDirector.mockReturnValue(new Promise((_resolve, reject) => { rejectSwitch = reject }))
+    host.querySelector('[data-test-done]').click()
+    await vi.waitFor(() => expect(mocks.switchDirector).toHaveBeenCalledWith('A'))
+    route.params.name = 'Other'
+    auth.user.director = 'A'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other'))
+    rejectSwitch(new Error('Obsolete switch failed'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).not.toContain('Obsolete switch failed')
+    expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other')
+  })
+
+  it('shows a current director-switch failure', async () => {
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-open]')).not.toBeNull())
+    host.querySelector('[data-test-open]').click()
+    await nextTick()
+    auth.user.director = 'B'
+    mocks.switchDirector.mockRejectedValue(new Error('Current switch failed'))
+    host.querySelector('[data-test-done]').click()
+    await vi.waitFor(() => expect(host.textContent).toContain('Current switch failed'))
+  })
   it('does not open the editor for a mismatched loaded volume', async () => {
     mocks.call.mockImplementation(command => {
       if (command.startsWith('llist volume=')) {

@@ -537,30 +537,35 @@ async function loadVolume() {
   const isCurrent = () => generation === volumeLoadGeneration
     && name === volumeName.value
     && volumeDirector === currentVolumeDirector.value
-  await ensureVolumeDirector()
-  if (!isCurrent()) return false
+  try {
+    await ensureVolumeDirector()
+    if (!isCurrent()) return false
 
-  const [volRes, jobRes, usageRes] = await Promise.all([
-    director.call(`llist volume=${quoteDirectorString(name)}`),
-    fetchJobs(name, volumeDirector, isCurrent),
-    director.call(`llist volumeusage volume=${quoteDirectorString(name)}`),
-  ])
-  if (!isCurrent()) return false
-  const raw = volRes?.volumes ?? volRes?.volume ?? null
-  if (Array.isArray(raw)) {
-    vol.value = raw[0] ?? null
-  } else {
-    vol.value = raw
-  }
-  if (vol.value) {
-    vol.value = {
-      ...vol.value,
-      director: volumeDirector || null,
+    const [volRes, jobRes, usageRes] = await Promise.all([
+      director.call(`llist volume=${quoteDirectorString(name)}`),
+      fetchJobs(name, volumeDirector, isCurrent),
+      director.call(`llist volumeusage volume=${quoteDirectorString(name)}`),
+    ])
+    if (!isCurrent()) return false
+    const raw = volRes?.volumes ?? volRes?.volume ?? null
+    if (Array.isArray(raw)) {
+      vol.value = raw[0] ?? null
+    } else {
+      vol.value = raw
     }
+    if (vol.value) {
+      vol.value = {
+        ...vol.value,
+        director: volumeDirector || null,
+      }
+    }
+    jobs.value = jobRes
+    volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
+    return true
+  } catch (reason) {
+    if (!isCurrent()) return false
+    throw reason
   }
-  jobs.value = jobRes
-  volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
-  return true
 }
 
 // Volume actions, shared with the bulk operations on the pools page.
