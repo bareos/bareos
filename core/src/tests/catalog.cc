@@ -217,6 +217,59 @@ TEST_F(CatalogTest, StalePoolDefaultsDoNotOverwriteMovedVolume)
   EXPECT_EQ(stale.VolRetention, 123);
 }
 
+TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('pool-guard-automatic','File','Append',11,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-automatic", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22,VolRetention=123,VolUseDuration=456,"
+      "VolStatus='Cleaning',MaxVolBytes=100,MaxVolJobs=2,MaxVolFiles=3,Recycle="
+      "1,"
+      "RecyclePoolId=4,ActionOnPurge=1,MinBlocksize=5,MaxBlocksize=6 "
+      "WHERE VolumeName='pool-guard-automatic'"));
+  stale.VolBytes = 42;
+  stale.FirstWritten = 1700000000;
+  stale.LastWritten = 1700000010;
+  stale.set_first_written = true;
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &stale, true));
+  EXPECT_STREQ(stale.VolStatus, "Cleaning");
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+  EXPECT_EQ(stale.VolUseDuration, 456);
+  EXPECT_EQ(stale.MaxVolBytes, 100);
+  EXPECT_EQ(stale.MaxVolJobs, 2);
+  EXPECT_EQ(stale.MaxVolFiles, 3);
+  EXPECT_EQ(stale.Recycle, 1);
+  EXPECT_EQ(stale.RecyclePoolId, 4);
+  EXPECT_EQ(stale.ActionOnPurge, 1);
+  EXPECT_EQ(stale.MinBlocksize, 5);
+  EXPECT_EQ(stale.MaxBlocksize, 6);
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+  EXPECT_EQ(stale.VolUseDuration, 456);
+  EXPECT_EQ(stale.MaxVolBytes, 100);
+  EXPECT_EQ(stale.MaxVolJobs, 2);
+  EXPECT_EQ(stale.MaxVolFiles, 3);
+  EXPECT_EQ(stale.Recycle, 1);
+  EXPECT_EQ(stale.RecyclePoolId, 4);
+  EXPECT_EQ(stale.ActionOnPurge, 1);
+  EXPECT_EQ(stale.MinBlocksize, 5);
+  EXPECT_EQ(stale.MaxBlocksize, 6);
+  EXPECT_EQ(stale.VolBytes, 42);
+  EXPECT_EQ(stale.FirstWritten, 1700000000);
+  EXPECT_EQ(stale.LastWritten, 1700000010);
+  stale.VolRetention = 789;
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &stale, true));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.VolRetention, 789);
+}
+
 TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
 {
   ASSERT_TRUE(
