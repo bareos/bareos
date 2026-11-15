@@ -703,6 +703,7 @@
   "Volume value → pool value": "Volume value → pool value",
   "Volumes": "Volumes",
   "Volumes Used": "Volumes Used",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "Volumes without a matching pool: {count}. Comparison is incomplete.",
   "Waiting": "Waiting",
   "Waiting for input": "Waiting for input",
   "Warn after N consecutive failures": "Warn after N consecutive failures",

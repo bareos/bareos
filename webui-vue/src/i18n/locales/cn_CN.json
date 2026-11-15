@@ -703,6 +703,7 @@
   "Volume value → pool value": "",
   "Volumes": "卷",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "等待",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",

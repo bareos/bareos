@@ -39,20 +39,26 @@
       </q-card-section>
 
       <template v-if="phase === 'confirm'">
-        <q-card-section v-if="!drift.length" data-testid="pool-defaults-clean">
+        <q-card-section v-if="skippedCount" data-testid="pool-defaults-incomplete">
+          <q-banner dense rounded class="bg-warning">
+            {{ t('Volumes without a matching pool: {count}. Comparison is incomplete.', { count: skippedCount }) }}
+          </q-banner>
+        </q-card-section>
+
+        <q-card-section v-if="!drift.length && !skippedCount" data-testid="pool-defaults-clean">
           <q-banner dense rounded class="bg-green-1">
             <template #avatar><q-icon name="check_circle" color="positive" /></template>
             {{ t('All {count} volumes match the settings of their pool.', { count: volumes.length }) }}
           </q-banner>
         </q-card-section>
 
-        <template v-else>
+        <template v-else-if="drift.length">
           <q-card-section class="q-pb-none">
             <q-banner dense rounded class="bg-orange-1">
               <template #avatar><q-icon name="rule" color="orange-9" /></template>
               {{ t('{deviating} of {total} volumes deviate from their pool.', {
                 deviating: drift.length,
-                total: volumes.length,
+                total: comparedCount,
               }) }}
             </q-banner>
           </q-card-section>
@@ -155,6 +161,8 @@ import {
   buildApplyPoolDefaultsCommand,
   collectPoolDefaultDrift,
   formatPoolDefaultValue,
+  indexPoolsByScope,
+  poolScopeKey,
 } from '../utils/poolDefaults.js'
 
 const props = defineProps({
@@ -172,8 +180,13 @@ const selected = ref([])
 const running = ref(false)
 const results = ref([])
 
+const poolIndex = computed(() => indexPoolsByScope(props.pools))
+const comparedCount = computed(() => props.volumes.filter(volume => (
+  poolIndex.value.has(poolScopeKey(volume.director, volume.pool))
+)).length)
+const skippedCount = computed(() => props.volumes.length - comparedCount.value)
 const drift = computed(() => (
-  collectPoolDefaultDrift(props.volumes, props.pools).map(entry => ({
+  collectPoolDefaultDrift(props.volumes, poolIndex.value).map(entry => ({
     ...entry,
     key: `${entry.volume.director ?? ''}\u0000${entry.volume.volumename}`,
   }))

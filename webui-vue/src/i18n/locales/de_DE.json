@@ -703,6 +703,7 @@
   "Volume value → pool value": "",
   "Volumes": "Medien",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "Wartend",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",

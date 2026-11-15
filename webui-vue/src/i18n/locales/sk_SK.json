@@ -703,6 +703,7 @@
   "Volume value → pool value": "",
   "Volumes": "Množstvo",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "Čaká",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",
