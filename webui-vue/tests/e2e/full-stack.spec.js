@@ -278,6 +278,37 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
   await expect(scheduleGroups).not.toContainText('ObsoleteRange')
 })
 
+test('browser regression: clients list ignores an obsolete refresh', async ({ page }) => {
+  let releaseObsoleteClients
+  let clientListRequests = 0
+
+  await browserFixture(page, (command) => {
+    if (command === 'llist clients') {
+      clientListRequests += 1
+      if (clientListRequests === 1) {
+        return new Promise(resolve => {
+          releaseObsoleteClients = () => resolve({
+            clients: [{ name: 'ObsoleteClient' }],
+          })
+        })
+      }
+      return { clients: [{ name: 'CurrentClient' }] }
+    }
+    if (command === '.clients') return { clients: [] }
+    if (command.startsWith('llist jobs reverse limit=1000')) return { jobs: [] }
+  })
+
+  await openNav(page, 'nav-clients', /#\/clients/)
+  await expect.poll(() => Boolean(releaseObsoleteClients)).toBe(true)
+  await page.getByRole('button', { name: 'Refresh' }).click()
+  await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
+
+  releaseObsoleteClients()
+  await page.waitForTimeout(100)
+  await expect(page.getByText('ObsoleteClient', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
+})
+
 test('browser regression: next run advances with the live clock', async ({ page }) => {
   const now = Date.parse('2026-05-28T12:00:00Z')
   await page.clock.install({ time: new Date(now) })

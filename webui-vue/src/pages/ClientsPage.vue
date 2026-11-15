@@ -402,27 +402,39 @@ const clientsPageDirectors = computed(() => (
   clientsListScopeDirector.value ? [clientsListScopeDirector.value] : activeDirectors.value
 ))
 const showDirectorColumn = computed(() => clientsPageDirectors.value.length > 1)
+let clientsRequestGeneration = 0
 
 async function refresh(forceRefresh = false) {
+  const generation = ++clientsRequestGeneration
+  const directors = [...clientsPageDirectors.value]
+  const scopeKey = directors.join('\0')
+  const useAggregatedClients = directors.length > 1
+    || Boolean(clientsListScopeDirector.value && isCommonClients.value)
+  const isCurrentRequest = () => (
+    generation === clientsRequestGeneration
+    && scopeKey === clientsPageDirectors.value.join('\0')
+  )
+
   loading.value = true
   error.value   = null
   directorErrors.value = []
   backupHistoryUnavailableDirectors.value = new Set()
   try {
-    if (clientsPageDirectors.value.length === 0) {
+    if (directors.length === 0) {
       rawClients.value = []
       rawRecentBackups.value = []
       backupHistoryUnavailableDirectors.value = new Set()
       return
     }
 
-    if (clientsPageDirectors.value.length > 1 || (clientsListScopeDirector.value && isCommonClients.value)) {
+    if (useAggregatedClients) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedClients(credentials, clientsPageDirectors.value, { forceRefresh })
+      const result = await fetchAggregatedClients(credentials, directors, { forceRefresh })
+      if (!isCurrentRequest()) return
       rawClients.value = result.clients
       rawRecentBackups.value = result.recentBackups
       backupHistoryUnavailableDirectors.value = new Set(
@@ -438,8 +450,9 @@ async function refresh(forceRefresh = false) {
       return
     }
 
-    const currentDirector = clientsPageDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrentRequest()) return
     const [listResult, dotResult, recentBackupsResponse] = await Promise.all([
       director.call('llist clients'),
       director.call('.clients'),
@@ -447,6 +460,7 @@ async function refresh(forceRefresh = false) {
         .then(result => ({ result }))
         .catch(error => ({ error })),
     ])
+    if (!isCurrentRequest()) return
     const list = directorCollection(listResult?.clients)
     const dot = directorCollection(dotResult?.clients)
     const enabledMap = Object.fromEntries(dot.map(c => [c.name, c.enabled]))
@@ -471,9 +485,13 @@ async function refresh(forceRefresh = false) {
       }]
     }
   } catch (e) {
-    error.value = e.message ?? String(e)
+    if (isCurrentRequest()) {
+      error.value = e.message ?? String(e)
+    }
   } finally {
-    loading.value = false
+    if (isCurrentRequest()) {
+      loading.value = false
+    }
   }
 }
 
