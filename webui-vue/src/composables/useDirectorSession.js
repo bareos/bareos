@@ -23,11 +23,24 @@ import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 
-export async function switchActiveDirector(targetDirector) {
+const pendingSwitches = new WeakMap()
+
+export function switchActiveDirector(targetDirector) {
   const auth = useAuthStore()
   const director = useDirectorStore()
   const settings = useSettingsStore()
+  const pending = pendingSwitches.get(director)
+  const switchDirector = () => performSwitch(targetDirector, auth, director, settings)
+  const result = pending ? pending.then(switchDirector) : switchDirector()
+  const finished = result.then(() => undefined, () => undefined)
+  pendingSwitches.set(director, finished)
+  finished.then(() => {
+    if (pendingSwitches.get(director) === finished) pendingSwitches.delete(director)
+  })
+  return result
+}
 
+async function performSwitch(targetDirector, auth, director, settings) {
   if (!targetDirector) {
     throw new Error('No director selected.')
   }
@@ -56,6 +69,7 @@ export async function switchActiveDirector(targetDirector) {
     return true
   } catch (error) {
     if (previousDirector && previousDirector !== targetDirector) {
+      director.disconnect()
       auth.setDirector(previousDirector)
       settings.directorName = previousDirector
       try {
