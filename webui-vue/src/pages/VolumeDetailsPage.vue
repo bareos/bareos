@@ -498,6 +498,7 @@ const volumeUsage = ref([])
 const loading     = ref(true)
 const jobsLoading = ref(false)
 const error       = ref(null)
+let volumeLoadGeneration = 0
 function formatRangeCount(count) {
   return `${formatNumber(count, settings.locale)} ${t('range(s)')}`
 }
@@ -530,13 +531,21 @@ async function ensureVolumeDirector() {
 }
 
 async function loadVolume() {
+  const generation = ++volumeLoadGeneration
+  const name = volumeName.value
+  const volumeDirector = currentVolumeDirector.value
+  const isCurrent = () => generation === volumeLoadGeneration
+    && name === volumeName.value
+    && volumeDirector === currentVolumeDirector.value
   await ensureVolumeDirector()
+  if (!isCurrent()) return false
 
   const [volRes, jobRes, usageRes] = await Promise.all([
-    director.call(`llist volume=${quoteDirectorString(volumeName.value)}`),
-    fetchJobs(),
-    director.call(`llist volumeusage volume=${quoteDirectorString(volumeName.value)}`),
+    director.call(`llist volume=${quoteDirectorString(name)}`),
+    fetchJobs(name, volumeDirector, isCurrent),
+    director.call(`llist volumeusage volume=${quoteDirectorString(name)}`),
   ])
+  if (!isCurrent()) return false
   const raw = volRes?.volumes ?? volRes?.volume ?? null
   if (Array.isArray(raw)) {
     vol.value = raw[0] ?? null
@@ -546,11 +555,12 @@ async function loadVolume() {
   if (vol.value) {
     vol.value = {
       ...vol.value,
-      director: currentVolumeDirector.value || null,
+      director: volumeDirector || null,
     }
   }
   jobs.value = jobRes
   volumeUsage.value = volumeUsageSegmentsFromResponse(usageRes)
+  return true
 }
 
 // Volume actions, shared with the bulk operations on the pools page.
@@ -566,10 +576,13 @@ const poolDefaultDifferences = computed(() => (
 ))
 
 async function loadPools() {
+  const generation = volumeLoadGeneration
   try {
     const res = await director.call('llist pools')
+    if (generation !== volumeLoadGeneration) return
     pools.value = Array.isArray(res?.pools) ? res.pools : []
   } catch {
+    if (generation !== volumeLoadGeneration) return
     pools.value = []
   }
 
@@ -616,8 +629,7 @@ async function onVolumeActionDone(results) {
   }
 
   try {
-    await loadVolume()
-    await loadPools()
+    if (await loadVolume()) await loadPools()
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   }
@@ -632,8 +644,7 @@ async function applyPoolDefaults() {
   try {
     await ensureVolumeDirector()
     await director.call(buildApplyPoolDefaultsCommand(volumeName.value))
-    await loadVolume()
-    await loadPools()
+    if (await loadVolume()) await loadPools()
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
   } finally {
@@ -645,6 +656,8 @@ const commentDialogOpen = ref(false)
 let commentTarget = null
 
 function openCommentEditor() {
+  if (vol.value?.volumename !== volumeName.value
+    || vol.value?.director !== (currentVolumeDirector.value || null)) return
   commentTarget = { name: volumeName.value, director: currentVolumeDirector.value }
   commentDialogOpen.value = true
 }
@@ -655,6 +668,8 @@ async function saveVolumeComment(comment) {
     && commentTarget === target
     && target?.name === volumeName.value
     && target.director === currentVolumeDirector.value
+    && vol.value?.volumename === target.name
+    && vol.value?.director === (target.director || null)
   if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
   await ensureVolumeDirector()
   if (!isCurrent() || auth.user?.director !== target.director || !director.isConnected) {
@@ -670,41 +685,44 @@ watch(commentDialogOpen, open => {
   if (!open) commentTarget = null
 }, { flush: 'sync' })
 
-watch(() => [volumeName.value, requestedDirector.value], () => {
+watch(() => [volumeName.value, requestedDirector.value, currentVolumeDirector.value], () => {
+  volumeLoadGeneration += 1
   actionDialog.value = { open: false, action: '', volumes: [] }
   commentDialogOpen.value = false
 }, { flush: 'sync' })
 
-watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
+watch(() => [volumeName.value, requestedDirector.value, currentVolumeDirector.value], async () => {
   loading.value = true
   error.value = null
   vol.value = null
   jobs.value = []
+  jobsLoading.value = false
   volumeUsage.value = []
+  const request = loadVolume()
+  const generation = volumeLoadGeneration
   try {
-    await loadVolume()
-    await loadPools()
+    if (await request) await loadPools()
   } catch (loadError) {
-    error.value = loadError.message
+    if (generation === volumeLoadGeneration) error.value = loadError.message
   } finally {
-    loading.value = false
+    if (generation === volumeLoadGeneration) loading.value = false
   }
 }, { immediate: true })
 
-async function fetchJobs() {
+async function fetchJobs(name, volumeDirector, isCurrent) {
   jobsLoading.value = true
   try {
-    const res = await director.call(`llist jobs volume=${quoteDirectorString(volumeName.value)}`)
+    const res = await director.call(`llist jobs volume=${quoteDirectorString(name)}`)
     const raw = res?.jobs ?? []
     const rows = Array.isArray(raw) ? raw : Object.values(raw).flat()
     return rows.map(job => ({
       ...job,
-      director: currentVolumeDirector.value || null,
+      director: volumeDirector || null,
     }))
   } catch {
     return []
   } finally {
-    jobsLoading.value = false
+    if (isCurrent()) jobsLoading.value = false
   }
 }
 
