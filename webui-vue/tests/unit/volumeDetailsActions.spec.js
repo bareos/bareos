@@ -19,7 +19,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createApp, defineComponent, h, reactive } from 'vue'
+import { createApp, defineComponent, h, nextTick, reactive } from 'vue'
 
 const mocks = vi.hoisted(() => ({ call: vi.fn(), switchDirector: vi.fn() }))
 const route = reactive({ params: { name: 'Tape' }, query: { director: 'A' } })
@@ -175,6 +175,107 @@ describe('VolumeDetailsPage action identity', () => {
     await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.open).toBe('true'))
     route.params.name = 'Other'
     await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.open).toBe('false'))
+  })
+
+  it('does not replace the current volume with a late previous load', async () => {
+    let finishTape
+    mocks.call.mockImplementation(command => {
+      if (command === 'llist volume="Tape"') {
+        return new Promise(resolve => { finishTape = resolve })
+      }
+      if (command === 'llist volume="Other"') {
+        return Promise.resolve({ volumes: [{ volumename: 'Other', volstatus: 'Full', comment: 'Other comment' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(finishTape).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other comment'))
+    finishTape({ volumes: [{ volumename: 'Tape', volstatus: 'Full', comment: 'Tape comment' }] })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other comment')
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.open).toBe('true'))
+    expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('Other comment')
+  })
+
+  it('does not open the editor for a mismatched loaded volume', async () => {
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Other', volstatus: 'Full', comment: 'Other comment' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-comment-edit"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    await nextTick()
+    expect(host.querySelector('[data-test-comment]').dataset.open).toBe('false')
+  })
+
+  it('discards an old load after navigating away and back', async () => {
+    let finishOldTape
+    let tapeLoads = 0
+    mocks.call.mockImplementation(command => {
+      if (command === 'llist volume="Tape"') {
+        tapeLoads += 1
+        if (tapeLoads === 1) return new Promise(resolve => { finishOldTape = resolve })
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full', comment: 'Current' }] })
+      }
+      if (command === 'llist volume="Other"') {
+        return Promise.resolve({ volumes: [{ volumename: 'Other', volstatus: 'Full', comment: 'Other' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(finishOldTape).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other'))
+    route.params.name = 'Tape'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Current'))
+    finishOldTape({ volumes: [{ volumename: 'Tape', volstatus: 'Full', comment: 'Stale' }] })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('Current')
+  })
+
+  it('does not dispatch an obsolete load after switching directors', async () => {
+    let finishSwitch
+    auth.user.director = 'B'
+    mocks.switchDirector.mockReturnValue(new Promise(resolve => { finishSwitch = resolve }))
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Other', volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(finishSwitch).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    auth.user.director = 'A'
+    finishSwitch()
+    await vi.waitFor(() => expect(mocks.call).toHaveBeenCalledWith('llist volume="Other"'))
+    expect(mocks.call).not.toHaveBeenCalledWith('llist volume="Tape"')
   })
 
   it('does not save a comment after navigating during a director switch', async () => {
