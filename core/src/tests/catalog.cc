@@ -22,6 +22,7 @@
 #include "include/bareos.h"
 #include "cats/cats.h"
 #include "cats/sql_pooling.h"
+#include "dird/catreq.h"
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
@@ -31,6 +32,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "lib/bsock_tcp.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "dird/jcr_util.h"
@@ -371,6 +373,97 @@ TEST_F(CatalogTest, VolumeSelectionKeepsRequestedPoolAfterConcurrentMove)
   jcr->db = nullptr;
   jcr->dir_impl->res.write_storage = nullptr;
   jcr->dir_impl->res.pool = nullptr;
+  reader->CloseDatabase(jcr);
+}
+
+TEST_F(CatalogTest, CatalogWriteRequestRejectsVolumeMovedDuringExpiration)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,VolJobs,MaxVolJobs) VALUES "
+      "('request-pool-move','File','Append',111,1,1)"));
+  BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(reader, nullptr);
+  directordaemon::StorageResource storage;
+  char media_type[] = "File";
+  storage.media_type = media_type;
+  jcr->dir_impl->res.write_storage = &storage;
+  jcr->dir_impl->jr.PoolId = 111;
+  class CaptureSocket : public BareosSocketTCP {
+   public:
+    bool send() override { return true; }
+  } socket;
+  for (const char* moved_status : {"Append", "Purged"}) {
+    SCOPED_TRACE(moved_status);
+    if (!db->SqlExec(
+            "UPDATE Media SET PoolId=111,MaxVolJobs=1,VolStatus='Append' "
+            "WHERE VolumeName='request-pool-move'")) {
+      ADD_FAILURE() << "Could not reset media record";
+      break;
+    }
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=1\n");
+    socket.message_length = strlen(socket.msg);
+    const std::string move
+        = "BEGIN; UPDATE Media SET PoolId=222,MaxVolJobs=100,VolStatus='"
+          + std::string{moved_status}
+          + "' WHERE VolumeName='request-pool-move'";
+    if (!db->SqlExec(move.c_str())) {
+      ADD_FAILURE() << "Could not lock media record";
+      break;
+    }
+    jcr->db = reader;
+
+    auto pending = std::async(std::launch::async, [&] {
+      directordaemon::CatalogRequest(jcr, &socket);
+    });
+    int waiting = 0;
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (!waiting && std::chrono::steady_clock::now() < deadline) {
+      EXPECT_TRUE(db->SqlQuery(
+          "SELECT pg_stat_clear_snapshot(); "
+          "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
+          "AND query LIKE 'UPDATE Media SET VolJobs=%'",
+          +[](void* context, int, char**) {
+            ++*static_cast<int*>(context);
+            return 0;
+          },
+          &waiting));
+      if (!waiting) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
+    }
+    EXPECT_EQ(waiting, 1);
+    if (!db->SqlExec("COMMIT")) {
+      ADD_FAILURE() << "Could not commit pool move";
+      EXPECT_TRUE(db->SqlExec("ROLLBACK"));
+    }
+    pending.get();
+    const std::string response{socket.msg};
+    EXPECT_EQ(response.rfind("1998 ", 0), 0) << response;
+    EXPECT_NE(response.find("not in Pool"), std::string::npos) << response;
+    EXPECT_NE(response.find(std::string{"catalog status is "} + moved_status),
+              std::string::npos)
+        << response;
+
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=0\n");
+    socket.message_length = strlen(socket.msg);
+    directordaemon::CatalogRequest(jcr, &socket);
+    EXPECT_EQ(std::string{socket.msg}.rfind("1000 OK ", 0), 0) << socket.msg;
+
+    EXPECT_TRUE(
+        db->SqlExec("UPDATE Media SET PoolId=111,VolStatus='Append' "
+                    "WHERE VolumeName='request-pool-move'"));
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=1\n");
+    socket.message_length = strlen(socket.msg);
+    directordaemon::CatalogRequest(jcr, &socket);
+    EXPECT_EQ(std::string{socket.msg}.rfind("1000 OK ", 0), 0) << socket.msg;
+  }
+
+  jcr->db = nullptr;
+  jcr->dir_impl->res.write_storage = nullptr;
   reader->CloseDatabase(jcr);
 }
 

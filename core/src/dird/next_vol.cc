@@ -313,6 +313,11 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
     // Keep going because we may be able to recycle volume
   }
 
+  if (mr->PoolId != jcr->dir_impl->jr.PoolId) {
+    *reason = T_("not in Pool");
+    return;
+  }
+
   // Now see if we can use the volume as is
   if (bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append")
       || bstrcmp(mr->VolStatus, "Recycle")) {
