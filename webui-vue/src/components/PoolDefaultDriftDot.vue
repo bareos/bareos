@@ -49,7 +49,7 @@ const { t } = useI18n()
 
 const tooltip = computed(() => {
   const details = props.entries.map(entry => (
-    `${t(entry.field.label)}: ${formatPoolDefaultValue(entry.field, entry.poolValue)}`
+    `${t(entry.field.label)}: ${formatPoolDefaultValue(entry.field, entry.poolValue, t)}`
   )).join(', ')
 
   return props.poolName
