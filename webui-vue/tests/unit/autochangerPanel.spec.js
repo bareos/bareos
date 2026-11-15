@@ -70,19 +70,38 @@ function mountPanel(storage) {
     },
   })
   for (const name of [
-    'q-btn', 'q-space', 'q-banner', 'q-card', 'q-card-section', 'q-input',
+    'q-space', 'q-banner', 'q-card', 'q-card-section', 'q-input',
     'q-icon', 'q-tooltip', 'q-td', 'q-badge', 'q-select', 'q-checkbox',
-    'q-separator', 'q-inner-loading', 'q-dialog', 'q-card-actions', 'q-menu',
+    'q-separator', 'q-inner-loading', 'q-card-actions', 'q-menu',
     'q-list', 'q-item', 'q-item-section', 'q-item-label', 'q-spinner', 'q-scroll-area',
     'q-skeleton', 'router-link',
   ]) app.component(name, stub)
+  app.component('q-btn', defineComponent({
+    inheritAttrs: false,
+    props: { label: String, disable: Boolean },
+    setup(props, { attrs, slots }) {
+      return () => h('button', { ...attrs, disabled: props.disable }, [
+        props.label, slots.default?.(),
+      ])
+    },
+  }))
+  app.component('q-dialog', defineComponent({
+    props: { modelValue: Boolean },
+    setup(props, { slots }) {
+      return () => props.modelValue
+        ? h('div', { 'data-test-dialog': '' }, slots.default?.())
+        : null
+    },
+  }))
   app.directive('close-popup', {})
   app.component('q-table', defineComponent({
     props: { rows: Array },
     setup(props, { slots }) {
-      return () => h('div', props.rows.map(row => slots['body-cell-mr_volname']?.({
-        row, value: row.mr_volname,
-      })))
+      return () => h('div', props.rows.flatMap(row => [
+        slots['body-cell-mr_volname']?.({ row, value: row.mr_volname }),
+        slots['body-cell-pr_name']?.({ row, value: row.pr_name }),
+        slots['body-cell-actions']?.({ row }),
+      ]))
     },
   }))
   apps.push(app)
@@ -239,5 +258,38 @@ describe('AutochangerPanel storage selection', () => {
     oldDetails.resolve({ volumes: [{ hasencryptionkey: false }] })
     await new Promise(resolve => setTimeout(resolve, 0))
     expect(host.textContent).toContain('Encryption key stored in catalog')
+  })
+
+  it.each([
+    ['[data-testid="autochanger-label-barcodes"]', 'Label barcodes'],
+    ['[title="Mount to drive"]', 'Mount Tape'],
+    ['[title="Transfer to slot"]', 'Transfer from Slot'],
+    ['[title="Label this volume into a pool"]', 'Label Slot'],
+  ])('closes the %s dialog on a different storage', async (selector, title) => {
+    director.call.mockImplementation(command => {
+      if (command === 'list pools') {
+        return Promise.resolve({ pools: [{ name: 'PoolA' }] })
+      }
+      if (command.startsWith('status storage=')) {
+        return Promise.resolve({
+          contents: [{
+            type: 'slot', slotnr: 3, content: 'full', mr_volname: 'VolumeA',
+          }],
+        })
+      }
+      return Promise.resolve({ volumes: [] })
+    })
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(host.querySelector(selector)).not.toBeNull())
+    host.querySelector(selector).click()
+    await nextTick()
+    expect(host.querySelector('[data-test-dialog]')?.textContent).toContain(title)
+    storage.value = { name: 'A', director: 'test-dir' }
+    await nextTick()
+    expect(host.querySelector('[data-test-dialog]')?.textContent).toContain(title)
+    storage.value = { name: 'B', director: 'test-dir' }
+    await nextTick()
+    expect(host.querySelector('[data-test-dialog]')).toBeNull()
   })
 })
