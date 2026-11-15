@@ -23,6 +23,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '../../src/stores/auth.js'
 import { useDirectorStore } from '../../src/stores/director.js'
+import { switchActiveDirector } from '../../src/composables/useDirectorSession.js'
 
 class FakeWebSocket {
   static instances = []
@@ -398,6 +399,55 @@ describe('director store', () => {
     })
 
     await expect(pendingCall).resolves.toEqual({ jobs: [] })
+  })
+
+  it('keeps the active session aligned after overlapping failed switches', async () => {
+    const auth = useAuthStore()
+    const director = useDirectorStore()
+    auth.login('admin', 'director-c', 'secret')
+    auth.loginDirector('admin', 'director-a', 'secret', { setCurrent: false })
+    auth.loginDirector('admin', 'director-b', 'secret', { setCurrent: false })
+
+    director.connect(auth.getCredentials())
+    const initial = FakeWebSocket.instances[0]
+    initial.open()
+    initial.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+
+    const first = switchActiveDirector('director-a').catch(error => error)
+    const second = switchActiveDirector('director-b').catch(error => error)
+    const failedTargets = new Set()
+
+    for (let round = 0; round < 10; round++) {
+      for (let tick = 0; tick < 10; tick++) await Promise.resolve()
+      if (director.status === 'disconnected') {
+        await vi.advanceTimersByTimeAsync(8_000)
+      }
+      for (const socket of FakeWebSocket.instances) {
+        if (socket.readyState !== FakeWebSocket.CONNECTING) continue
+        socket.open()
+        const target = JSON.parse(socket.sent[0]).director
+        const fail = target !== 'director-c' && !failedTargets.has(target)
+        if (fail) failedTargets.add(target)
+        socket.onmessage?.({
+          data: JSON.stringify({ type: fail ? 'auth_error' : 'auth_ok' }),
+        })
+      }
+    }
+
+    expect(await first).toBeInstanceOf(Error)
+    expect(await second).toBeInstanceOf(Error)
+    expect(failedTargets).toEqual(new Set(['director-a', 'director-b']))
+    expect(director.isConnected).toBe(true)
+    expect(auth.user.director).toBe('director-c')
+    const command = director.call('list pools')
+    const active = FakeWebSocket.instances.find(socket =>
+      socket.sent.some(message => JSON.parse(message).command === 'list pools')
+    )
+    expect(JSON.parse(active.sent[0]).director).toBe(auth.user.director)
+    active.onmessage?.({
+      data: JSON.stringify({ type: 'response', id: '1', data: { pools: [] } }),
+    })
+    await expect(command).resolves.toEqual({ pools: [] })
   })
 
   it('uses default director connection values when optional settings are omitted', () => {
