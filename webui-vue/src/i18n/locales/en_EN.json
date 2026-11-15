@@ -627,6 +627,7 @@
   "The schedule is disabled, but the job definition is enabled.": "The schedule is disabled, but the job definition is enabled.",
   "The selected backup job uses a plugin.": "The selected backup job uses a plugin.",
   "The start form and defaults lookups in this tab use the selected director while the jobs list stays aggregated.": "The start form and defaults lookups in this tab use the selected director while the jobs list stays aggregated.",
+  "The volume action was cancelled because the selection changed.": "The volume action was cancelled because the selection changed.",
   "These hints are derived from Bareos manuals, shipped examples and plugin README files. They are frontend guidance only and may be incomplete.": "These hints are derived from Bareos manuals, shipped examples and plugin README files. They are frontend guidance only and may be incomplete.",
   "These volumes are removed from the catalog together with their job records.": "These volumes are removed from the catalog together with their job records.",
   "Third-party plugin": "Third-party plugin",
