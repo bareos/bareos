@@ -657,6 +657,7 @@ const statusLoading = ref(false)
 const statusError = ref(null)
 const schedulesData = ref([])
 const previewData = ref([])
+let statusRequestGeneration = 0
 // Independent of the navigated calendar range, so "next run" info stays
 // anchored to "now" even while the user browses the calendar into the
 // future or past.
@@ -880,17 +881,28 @@ watch(viewMode, (mode) => {
 })
 
 async function refreshStatus() {
+  const generation = ++statusRequestGeneration
+  const directors = [...activeDirectors.value]
+  const scopeKey = directors.join('\0')
+  const range = { ...apiDaysRange.value }
+  const isCurrentRequest = () => (
+    generation === statusRequestGeneration
+    && scopeKey === activeDirectors.value.join('\0')
+    && range.from === apiDaysRange.value.from
+    && range.to === apiDaysRange.value.to
+  )
+
   statusLoading.value = true
   statusError.value = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       schedulesData.value = []
       previewData.value = []
       return
     }
 
-    if (isCommonSchedules.value) {
+    if (directors.length > 1) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
@@ -898,23 +910,26 @@ async function refreshStatus() {
 
       const result = await fetchAggregatedSchedulesStatus(
         credentials,
-        activeDirectors.value,
-        apiDaysRange.value
+        directors,
+        range
       )
+      if (!isCurrentRequest()) return
       schedulesData.value = result.schedulesData
       previewData.value = result.previewData
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrentRequest()) return
     const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
-      director.call(`status scheduler days=${apiDaysRange.value.from},${apiDaysRange.value.to}`),
+      director.call(`status scheduler days=${range.from},${range.to}`),
       director.call('show schedules'),
       director.call('show schedules all'),
       director.call('.schedule'),
     ])
+    if (!isCurrentRequest()) return
     schedulesData.value = buildStatusSchedules(
       statusResponse,
       showResponse,
@@ -930,9 +945,13 @@ async function refreshStatus() {
         scheduleDisplay: item.schedule ?? '',
       }))
   } catch (reason) {
-    statusError.value = reason?.message ?? String(reason)
+    if (isCurrentRequest()) {
+      statusError.value = reason?.message ?? String(reason)
+    }
   } finally {
-    statusLoading.value = false
+    if (isCurrentRequest()) {
+      statusLoading.value = false
+    }
   }
 }
 
