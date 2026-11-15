@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDirectorStore } from '../stores/director.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -90,6 +90,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const error = ref(null)
 const statusText = ref('')
+let statusRequest = 0
 
 const fields = computed(() => {
   const storage = props.storage
@@ -122,8 +123,8 @@ const fields = computed(() => {
   ]
 })
 
-async function ensureStorageDirector() {
-  const target = props.storage?.director
+async function ensureStorageDirector(storage) {
+  const target = storage?.director
   if (!target) {
     return
   }
@@ -136,23 +137,30 @@ async function ensureStorageDirector() {
 }
 
 async function reload() {
-  if (!props.storage?.name) {
+  const request = ++statusRequest
+  const storage = props.storage
+  if (!storage?.name) {
     statusText.value = ''
+    loading.value = false
     return
   }
 
   loading.value = true
   error.value = null
   try {
-    await ensureStorageDirector()
-    statusText.value = await director.rawCall(
-      `status storage=${quoteDirectorString(props.storage.name)}`
+    await ensureStorageDirector(storage)
+    if (request !== statusRequest) return
+    const text = await director.rawCall(
+      `status storage=${quoteDirectorString(storage.name)}`
     )
+    if (request === statusRequest) statusText.value = text
   } catch (reason) {
-    statusText.value = ''
-    error.value = reason?.message ?? String(reason)
+    if (request === statusRequest) {
+      statusText.value = ''
+      error.value = reason?.message ?? String(reason)
+    }
   } finally {
-    loading.value = false
+    if (request === statusRequest) loading.value = false
   }
 }
 
@@ -161,4 +169,6 @@ watch(() => props.storage, () => {
   error.value = null
   void reload()
 }, { immediate: true })
+
+onBeforeUnmount(() => { statusRequest++ })
 </script>
