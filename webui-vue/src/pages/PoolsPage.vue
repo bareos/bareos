@@ -594,6 +594,7 @@ import {
   volumeDriftFields,
 } from '../utils/poolDefaults.js'
 import { useCollapsedColumns } from '../composables/useCollapsedColumns.js'
+import { formatBooleanCommonValue } from '../utils/tableCommonValues.js'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -995,7 +996,7 @@ const {
     maxvolbytes: (value) => (Number(value) > 0 ? formatBytes(value) : '—'),
     volbytes: (value) => formatBytes(value),
     enabled: (value) => (String(value) === '0' ? t('No') : t('Yes')),
-    inchanger: (value) => (String(value) === '0' ? t('No') : t('Yes')),
+    inchanger: (value) => formatBooleanCommonValue(value, t),
   },
 })
 
