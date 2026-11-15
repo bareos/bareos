@@ -930,7 +930,7 @@ function manualRefresh() {
 
 // ── Actions ───────────────────────────────────────────────────
 
-async function runCmd(title, cmd) {
+async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = null) {
   if (commandRunning.value) return
 
   commandLogTitle.value = title
@@ -962,7 +962,13 @@ async function runCmd(title, cmd) {
   }
 
   try {
+    if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
     await ensureSelectedStorageDirector()
+    if (!isCurrent() || (expectedDirector && (
+      auth.user?.director !== expectedDirector || !director.isConnected
+    ))) {
+      throw new Error(t('The volume action was cancelled because the selection changed.'))
+    }
     await director.rawCall(cmd, {
       onChunk: (chunk) => {
         if (!chunk) return
@@ -1040,18 +1046,28 @@ async function doImport(slotNr) {
 }
 
 async function doExport(slotNr) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
   $q.dialog({
     title: 'Export Slot',
     message: `Export volume from slot ${slotNr}?`,
     ok: { color: 'primary', label: 'Export' },
     cancel: true,
   }).onOk(async () => {
+    if (!isCurrent()) {
+      $q.notify({ type: 'warning', message: t('The volume action was cancelled because the selection changed.') })
+      return
+    }
     const result = await runCmd(
       `Export Slot ${slotNr}`,
       buildExportCommand({
-        storage: selectedStorageName.value,
+        storage: name,
         srcSlot: slotNr,
-      })
+      }),
+      isCurrent,
+      storageDirector
     )
     if (shouldReloadAutochangerAfterCommand(result?.status)) {
       await loadSlots()
