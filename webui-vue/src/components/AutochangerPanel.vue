@@ -1313,6 +1313,14 @@ watch([() => props.storage?.name, () => props.storage?.director], async ([
   volumeDetailsByName.value = {}
   slotsLoading.value = false
   loadError.value = null
+  labelDialog.value = false
+  labelForm.value = { pool: '', drive: 0, slots: '', encrypted: false }
+  slotLabelDialog.value = false
+  slotLabelForm.value = { slot: null, pool: '', drive: 0, encrypted: false }
+  mountDialog.value = false
+  mountForm.value = { drive: 0, slot: '', slotFixed: false, driveFixed: false }
+  transferDialog.value = false
+  transferForm.value = { srcSlot: null, dstSlot: null }
 
   if (!name) {
     return
