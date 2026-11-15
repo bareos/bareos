@@ -282,13 +282,15 @@ bool BareosDb::UpdateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
 bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
                                  MediaDbRecord* mr,
                                  bool preserve_status_and_moved_pool,
-                                 bool require_same_pool)
+                                 bool require_same_pool,
+                                 bool* pool_changed)
 {
   char dt[MAX_TIME_LENGTH];
   time_t ttime;
   char ed1[50], ed3[50], ed4[50], ed5[50];
   char ed9[50], ed10[50], ed12[50];
 
+  if (pool_changed) { *pool_changed = false; }
   Dmsg1(100, "update_media: FirstWritten=%" PRItime "\n", mr->FirstWritten);
   DbLocker _{this};
   auto esc_medianame = EscapeString(jcr, mr->VolumeName);
@@ -387,6 +389,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
   const int affected = UpdateDb(jcr, cmd);
   bool retval = affected > 0;
   if (require_same_pool && affected == 0) {
+    if (pool_changed) { *pool_changed = true; }
     Mmsg(errmsg, T_("Volume pool changed; refresh and try again.\n"));
   }
   if (retval && preserve_status_and_moved_pool) {
