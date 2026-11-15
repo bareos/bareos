@@ -120,6 +120,49 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             director.call(f"delete volume={volume} yes")
             os.remove(f"storage/{volume}")
 
+    def test_pool_move_defaults_survives_stale_enabled_prompt(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        console = bareos.bsock.DirectorConsole(**options)
+        volume = f"PoolMoveEnabled-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            admin.call(f"update volume={volume} volretention=1")
+            source = admin.call("llist pool=Full")["pools"][0]
+            target = admin.call("llist pool=Incremental")["pools"][0]
+            console.call(f"update volume={volume}")
+            self.assertIn(b"Enter new Enabled", console.call("15"))
+            admin.call(f"update volume={volume} poolwithdefaults=Incremental")
+            result = console.call("no").decode("utf-8")
+            self.assertIn("pool changed", result.lower())
+            media = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(media["poolid"], target["poolid"])
+            self.assertEqual(media["volretention"], target["volretention"])
+            self.assertEqual(media["enabled"], "1")
+            self.assertEqual(
+                int(admin.call("llist pool=Full")["pools"][0]["numvols"]),
+                int(source["numvols"]) - 1,
+            )
+            self.assertEqual(
+                int(admin.call("llist pool=Incremental")["pools"][0]["numvols"]),
+                int(target["numvols"]) + 1,
+            )
+            admin.call(f"update volume={volume} enabled=no")
+            self.assertEqual(
+                admin.call(f"llist volume={volume}")["volume"]["enabled"], "0"
+            )
+        finally:
+            console.call(".")
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_pool_move_defaults_rolls_back_on_counter_failure(self):
         username = self.get_operator_username()
         director = bareos.bsock.DirectorConsoleJson(
