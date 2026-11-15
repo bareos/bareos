@@ -672,6 +672,7 @@
   "Volume retention expired": "",
   "Volumes": "Volumi",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "In attesa",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",

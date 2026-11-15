@@ -672,6 +672,7 @@
   "Volume retention expired": "",
   "Volumes": "Kötetek",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "Várakozik",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",

@@ -672,6 +672,7 @@
   "Volume retention expired": "",
   "Volumes": "Тома",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "Очікування",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",

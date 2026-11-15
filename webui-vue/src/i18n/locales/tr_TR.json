@@ -672,6 +672,7 @@
   "Volume retention expired": "",
   "Volumes": "hafıza kartları",
   "Volumes Used": "",
+  "Volumes without a matching pool: {count}. Comparison is incomplete.": "",
   "Waiting": "Bekleyen",
   "Waiting for input": "",
   "Warn after N consecutive failures": "",
