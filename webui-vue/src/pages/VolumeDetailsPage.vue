@@ -499,6 +499,7 @@ const loading     = ref(true)
 const jobsLoading = ref(false)
 const error       = ref(null)
 let volumeLoadGeneration = 0
+let volumeSelectionGeneration = 0
 function formatRangeCount(count) {
   return `${formatNumber(count, settings.locale)} ${t('range(s)')}`
 }
@@ -648,10 +649,28 @@ async function applyPoolDefaults() {
     return
   }
 
+  const name = volumeName.value
+  const volumeDirector = currentVolumeDirector.value
+  const selection = volumeSelectionGeneration
+  const isCurrent = () => selection === volumeSelectionGeneration
+    && name === volumeName.value
+    && volumeDirector === currentVolumeDirector.value
+
   applyingPoolDefaults.value = true
   try {
-    await ensureVolumeDirector()
-    await director.call(buildApplyPoolDefaultsCommand(volumeName.value))
+    try {
+      await ensureVolumeDirector()
+      if (!isCurrent()) return
+      if (vol.value?.volumename !== name
+        || vol.value?.director !== (volumeDirector || null)
+        || auth.user?.director !== volumeDirector || !director.isConnected) {
+        throw new Error(t('The volume action was cancelled because the selection changed.'))
+      }
+      await director.call(buildApplyPoolDefaultsCommand(name))
+    } catch (reason) {
+      if (isCurrent()) error.value = reason?.message ?? String(reason)
+      return
+    }
     await loadVolume()
   } catch (reason) {
     error.value = reason?.message ?? String(reason)
@@ -695,6 +714,7 @@ watch(commentDialogOpen, open => {
 
 watch(() => [volumeName.value, requestedDirector.value, currentVolumeDirector.value], () => {
   volumeLoadGeneration += 1
+  volumeSelectionGeneration += 1
   actionDialog.value = { open: false, action: '', volumes: [] }
   commentDialogOpen.value = false
 }, { flush: 'sync' })

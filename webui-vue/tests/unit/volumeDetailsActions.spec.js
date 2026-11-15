@@ -380,6 +380,99 @@ describe('VolumeDetailsPage action identity', () => {
     finishPools({ pools: [] })
     await vi.waitFor(() => expect(host.querySelector('[data-test-loading]').dataset.testLoading).toBe('false'))
   })
+
+  it('does not apply pool defaults to a new volume after a director switch', async () => {
+    let finishSwitch
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', pool: 'Pool', maxvoljobs: 1 }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.component('q-banner', defineComponent({
+      setup(_props, { slots }) {
+        return () => h('div', [slots.default?.(), slots.action?.()])
+      },
+    }))
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-pool-drift-apply"]')).not.toBeNull())
+    auth.user.director = 'B'
+    mocks.switchDirector.mockReturnValue(new Promise(resolve => { finishSwitch = resolve }))
+    host.querySelector('[data-testid="volume-pool-drift-apply"]').click()
+    await vi.waitFor(() => expect(mocks.switchDirector).toHaveBeenCalledWith('A'))
+    route.params.name = 'Other'
+    auth.user.director = 'A'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')).not.toBeNull())
+    finishSwitch()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(mocks.call.mock.calls.some(([command]) => command.startsWith('update volume='))).toBe(false)
+  })
+
+  it.each([false, true])('discards an old pool-default failure after navigation (return=%s)', async returnToOriginal => {
+    let rejectUpdate
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('update volume=')) {
+        return new Promise((_resolve, reject) => { rejectUpdate = reject })
+      }
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', pool: 'Pool', maxvoljobs: 1, comment: route.params.name }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.component('q-banner', defineComponent({
+      setup(_props, { slots }) {
+        return () => h('div', [slots.default?.(), slots.action?.()])
+      },
+    }))
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-pool-drift-apply"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-pool-drift-apply"]').click()
+    await vi.waitFor(() => expect(rejectUpdate).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Other'))
+    if (returnToOriginal) {
+      route.params.name = 'Tape'
+      await vi.waitFor(() => expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe('Tape'))
+    }
+    rejectUpdate(new Error('Old pool action failed'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).not.toContain('Old pool action failed')
+    expect(host.querySelector('[data-test-comment]')?.dataset.comment).toBe(returnToOriginal ? 'Tape' : 'Other')
+  })
+
+  it('shows a current pool-default failure', async () => {
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('update volume=')) return Promise.reject(new Error('Current pool action failed'))
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full', pool: 'Pool', maxvoljobs: 1 }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.component('q-banner', defineComponent({
+      setup(_props, { slots }) {
+        return () => h('div', [slots.default?.(), slots.action?.()])
+      },
+    }))
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-pool-drift-apply"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-pool-drift-apply"]').click()
+    await vi.waitFor(() => expect(host.textContent).toContain('Current pool action failed'))
+  })
   it('does not open the editor for a mismatched loaded volume', async () => {
     mocks.call.mockImplementation(command => {
       if (command.startsWith('llist volume=')) {
