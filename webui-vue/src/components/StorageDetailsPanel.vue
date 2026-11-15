@@ -164,11 +164,11 @@ async function reload() {
   }
 }
 
-watch(() => props.storage, () => {
+watch([() => props.storage?.name, () => props.storage?.director], () => {
   statusText.value = ''
   error.value = null
   void reload()
-}, { immediate: true })
+}, { immediate: true, flush: 'sync' })
 
 onBeforeUnmount(() => { statusRequest++ })
 </script>
