@@ -236,6 +236,48 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
 
+test('browser regression: schedule status ignores an obsolete calendar range', async ({ page }) => {
+  let releaseObsoleteStatus
+  let statusRequests = 0
+
+  await browserFixture(page, (command) => {
+    if (!command.startsWith('status scheduler days=') || command === 'status scheduler days=0,60') {
+      return
+    }
+
+    statusRequests += 1
+    if (statusRequests === 1) {
+      return new Promise(resolve => {
+        releaseObsoleteStatus = () => resolve({
+          schedules: [{ name: 'ObsoleteRange', enabled: true, jobs: [] }],
+          preview: [],
+        })
+      })
+    }
+
+    return {
+      schedules: [{ name: 'CurrentRange', enabled: true, jobs: [] }],
+      preview: [],
+    }
+  })
+
+  await page.getByTestId('director-scope-control').click()
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect.poll(() => Boolean(releaseObsoleteStatus)).toBe(true)
+  await page.getByRole('button', { name: 'Next period' }).click()
+  await expect.poll(() => statusRequests).toBeGreaterThan(1)
+  const scheduleGroups = page.locator('.sched-group-header')
+  await expect(scheduleGroups).toContainText('CurrentRange')
+
+  releaseObsoleteStatus()
+  await expect(scheduleGroups).toContainText('CurrentRange')
+  await expect(scheduleGroups).not.toContainText('ObsoleteRange')
+})
+
 test('browser regression: next run advances with the live clock', async ({ page }) => {
   const now = Date.parse('2026-05-28T12:00:00Z')
   await page.clock.install({ time: new Date(now) })
