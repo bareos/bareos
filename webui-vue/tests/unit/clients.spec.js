@@ -41,6 +41,16 @@ describe('clients route helpers', () => {
       lastBackup: { status: 'T' },
       failureStreak: 0,
     }, 2)).toBe('ok')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'R' },
+      failureStreak: 0,
+    }, 2)).toBe('unknown')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'R' },
+      failureStreak: 2,
+    }, 2)).toBe('warning')
   })
 
   it('does not classify unknown client versions as up to date', () => {

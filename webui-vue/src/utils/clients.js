@@ -157,6 +157,7 @@ export function clientBackupStatusCode(client, warningFailedJobs, historyAvailab
   if (['E', 'f'].includes(client.lastBackup?.status)) return 'failed'
   if ((client.failureStreak ?? 0) >= warningFailedJobs) return 'warning'
   if (!client.lastBackup) return 'unknown'
+  if (client.lastBackup.status === 'R') return 'unknown'
   return 'ok'
 }
 
