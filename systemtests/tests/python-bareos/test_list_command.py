@@ -419,6 +419,78 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             admin.call(f"delete volume={volume} yes")
             os.remove(f"storage/{volume}")
 
+    def test_cleaning_rejects_concurrent_jobmedia(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        changer = bareos.bsock.DirectorConsoleJson(**options)
+        observer = bareos.bsock.DirectorConsoleJson(**options)
+        jobid = self.get_backup_jobid(admin, "backup-bareos-fd", level="Full")
+        volume = f"CleaningRace-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            record = admin.call(f"llist volume={volume}")["volume"]
+            mediaid = record["mediaid"]
+            admin.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                admin.call(
+                    f'.sql query="SELECT MediaId FROM Media '
+                    f'WHERE MediaId={mediaid} FOR UPDATE"'
+                )
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    pending = executor.submit(
+                        changer.call, f"update volume={volume} volstatus=Cleaning"
+                    )
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%UPDATE Media SET VolStatus=%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting):
+                                break
+                            sleep(0.1)
+                        else:
+                            self.fail(
+                                "Status change did not wait for the locked volume"
+                            )
+                        admin.call(
+                            f'.sql query="INSERT INTO JobMedia (JobId,MediaId) '
+                            f'VALUES ({jobid},{mediaid})"'
+                        )
+                    finally:
+                        admin.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    with self.assertRaises(
+                        bareos.exceptions.JsonRpcErrorReceivedException
+                    ):
+                        pending.result(timeout=10)
+                self.assertEqual(
+                    admin.call(f"llist volume={volume}")["volume"]["volstatus"],
+                    record["volstatus"],
+                )
+                changer.call(f"update volume={volume} volstatus=Cleaning force")
+                self.assertEqual(
+                    admin.call(f"llist volume={volume}")["volume"]["volstatus"],
+                    "Cleaning",
+                )
+            finally:
+                if transaction_open:
+                    admin.call('.sql query="ROLLBACK"')
+                admin.call(f'.sql query="DELETE FROM JobMedia WHERE MediaId={mediaid}"')
+        finally:
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_job_comment_update_is_atomic(self):
         username = self.get_operator_username()
         director = bareos.bsock.DirectorConsoleJson(

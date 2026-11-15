@@ -279,7 +279,9 @@ bool BareosDb::UpdateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
+bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
+                                 MediaDbRecord* mr,
+                                 bool preserve_protected_status)
 {
   char dt[MAX_TIME_LENGTH];
   time_t ttime;
@@ -331,7 +333,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   Mmsg(cmd,
        "UPDATE Media SET VolJobs=%u,"
        "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolMounts=%u,VolErrors=%u,"
-       "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
+       "VolWrites=%u,MaxVolBytes=%s,VolStatus=%s'%s'%s,"
        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,"
        "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
        "MaxVolJobs=%u,MaxVolFiles=%u,Enabled=%d,LocationId=%s,"
@@ -339,10 +341,14 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        "ActionOnPurge=%u,"
        "EncryptionKey='%s',"
        "MinBlocksize=%u,MaxBlocksize=%u "
-       "WHERE VolumeName='%s'",
+       "WHERE VolumeName='%s'%s",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
        mr->VolMounts, mr->VolErrors, mr->VolWrites,
-       edit_uint64(mr->MaxVolBytes, ed2), esc_status->c_str(), mr->Slot,
+       edit_uint64(mr->MaxVolBytes, ed2),
+       preserve_protected_status
+           ? "CASE WHEN VolStatus IN ('Cleaning','Error') THEN VolStatus ELSE "
+           : "",
+       esc_status->c_str(), preserve_protected_status ? " END" : "", mr->Slot,
        mr->InChanger, edit_int64(mr->VolReadTime, ed3),
        edit_int64(mr->VolWriteTime, ed4), mr->LabelType,
        edit_int64(mr->StorageId, ed5), edit_int64(mr->PoolId, ed6),
@@ -351,11 +357,22 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
        edit_uint64(mr->LocationId, ed9), edit_uint64(mr->ScratchPoolId, ed10),
        edit_uint64(mr->RecyclePoolId, ed11), mr->RecycleCount, mr->Recycle,
        mr->ActionOnPurge, mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize,
-       esc_medianame->c_str());
+       esc_medianame->c_str(),
+       preserve_protected_status ? " RETURNING VolStatus" : "");
 
   Dmsg1(400, "%s\n", cmd);
 
   bool retval = UpdateDb(jcr, cmd) > 0;
+  if (retval && preserve_protected_status) {
+    SQL_ROW row = SqlFetchRow();
+    if (row && row[0]) {
+      bstrncpy(mr->VolStatus, row[0], sizeof(mr->VolStatus));
+    } else {
+      Mmsg(errmsg, T_("Could not retrieve updated Volume status.\n"));
+      retval = false;
+    }
+    SqlFreeResult();
+  }
 
   // Make sure InChanger is 0 for any record having the same Slot
   retval &= MakeInchangerUnique(jcr, mr);

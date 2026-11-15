@@ -106,11 +106,15 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 
   /* clang-format off */
   Mmsg(cmd,
+       "WITH updated_media AS ("
+       "UPDATE Media SET EndFile=%" PRIu32 ",EndBlock=%" PRIu32 ","
+       "VolStatus=CASE WHEN VolStatus='Cleaning' THEN 'Error' ELSE VolStatus END "
+       "WHERE MediaId=%" PRIdbid " RETURNING MediaId) "
        "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
        "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-       "VALUES (%" PRIu32 ",%" PRIdbid ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu64 ")",
+       "SELECT %" PRIu32 ",MediaId,%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu32 ",%" PRIu64 " FROM updated_media",
+       jm->EndFile, jm->EndBlock, jm->MediaId,
        jm->JobId,
-       jm->MediaId,
        jm->FirstIndex, jm->LastIndex,
        jm->StartFile, jm->EndFile,
        jm->StartBlock, jm->EndBlock,
@@ -123,17 +127,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
     Mmsg2(errmsg, T_("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
-    // Worked, now update the Media record with the EndFile and EndBlock
-    Mmsg(cmd,
-         "UPDATE Media SET EndFile=%" PRIu32 ", EndBlock=%" PRIu32
-         " WHERE MediaId=%" PRIdbid,
-         jm->EndFile, jm->EndBlock, jm->MediaId);
-    if (UpdateDb(jcr, cmd) == -1) {
-      Mmsg2(errmsg, T_("Update Media record %s failed: ERR=%s\n"), cmd,
-            sql_strerror());
-    } else {
-      return true;
-    }
+    return true;
   }
 
   return false;
