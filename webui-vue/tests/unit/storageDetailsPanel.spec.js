@@ -87,6 +87,31 @@ afterEach(() => {
 })
 
 describe('StorageDetailsPanel status', () => {
+  it('reloads and discards stale status when the storage name changes in place', async () => {
+    const oldRequest = deferred()
+    director.rawCall.mockReturnValueOnce(oldRequest.promise).mockResolvedValueOnce('Current status')
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const host = mountPanel(storage)
+    await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(1))
+    storage.value.name = 'B'
+    await vi.waitFor(() => expect(host.textContent).toContain('Current status'))
+    oldRequest.resolve('Old status')
+    await nextTick()
+    expect(director.rawCall).toHaveBeenCalledWith('status storage="B"')
+    expect(host.textContent).not.toContain('Old status')
+  })
+
+  it('reloads when the storage director changes in place', async () => {
+    director.rawCall.mockResolvedValue('Status')
+    switchDirector.mockResolvedValue()
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    mountPanel(storage)
+    await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(1))
+    storage.value.director = 'other-dir'
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('other-dir'))
+    await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(2))
+  })
+
   it('ignores a previous selection response and preserves current loading', async () => {
     const oldRequest = deferred()
     const currentRequest = deferred()
