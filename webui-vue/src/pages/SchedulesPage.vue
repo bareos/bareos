@@ -1074,6 +1074,7 @@ const allScheduleOptions = computed(() =>
 
 const visibleScheduleKeys = ref([])
 const scheduleSelectionInitialized = ref(false)
+const scheduleSelectionIntent = ref('all')
 
 watch(allScheduleOptions, (options, previousOptions) => {
   const optionKeys = new Set(options.map(option => option.key))
@@ -1081,15 +1082,35 @@ watch(allScheduleOptions, (options, previousOptions) => {
   if (!scheduleSelectionInitialized.value) {
     visibleScheduleKeys.value = options.map(option => option.key)
     scheduleSelectionInitialized.value = true
+    scheduleSelectionIntent.value = 'all'
     return
   }
 
-  const wasAllSelected = previousOptions.length > 0
-    && visibleScheduleKeys.value.length === previousOptions.length
-    && previousOptions.every(option => visibleScheduleKeys.value.includes(option.key))
-  visibleScheduleKeys.value = wasAllSelected
-    ? options.map(option => option.key)
-    : visibleScheduleKeys.value.filter(key => optionKeys.has(key))
+  if (scheduleSelectionIntent.value === 'all') {
+    visibleScheduleKeys.value = options.map(option => option.key)
+    return
+  }
+
+  if (scheduleSelectionIntent.value === 'none') {
+    visibleScheduleKeys.value = []
+    return
+  }
+
+  visibleScheduleKeys.value = visibleScheduleKeys.value.filter(key => optionKeys.has(key))
+})
+
+watch(visibleScheduleKeys, (keys) => {
+  const options = allScheduleOptions.value
+  if (options.length === 0) return
+
+  if (keys.length === 0) {
+    scheduleSelectionIntent.value = 'none'
+  } else if (keys.length === options.length
+    && options.every(option => keys.includes(option.key))) {
+    scheduleSelectionIntent.value = 'all'
+  } else {
+    scheduleSelectionIntent.value = 'custom'
+  }
 })
 
 const allSchedulesSelected = computed(
@@ -1099,9 +1120,11 @@ const allSchedulesSelected = computed(
 const noSchedulesSelected = computed(() => visibleScheduleKeys.value.length === 0)
 
 function selectAllSchedules() {
+  scheduleSelectionIntent.value = 'all'
   visibleScheduleKeys.value = allScheduleOptions.value.map(option => option.key)
 }
 function selectNoSchedules() {
+  scheduleSelectionIntent.value = 'none'
   visibleScheduleKeys.value = []
 }
 
