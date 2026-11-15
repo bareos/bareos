@@ -311,6 +311,69 @@ TEST_F(CatalogTest, ExpirationRechecksLimitsAfterPoolMove)
   EXPECT_STREQ(stale.VolStatus, "Used");
 }
 
+TEST_F(CatalogTest, VolumeSelectionKeepsRequestedPoolAfterConcurrentMove)
+{
+  directordaemon::StorageResource storage;
+  directordaemon::PoolResource pool;
+  char media_type[] = "selection-pool-test";
+  storage.media_type = media_type;
+  jcr->dir_impl->res.write_storage = &storage;
+  jcr->dir_impl->res.pool = &pool;
+  BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(reader, nullptr);
+  jcr->db = reader;
+
+  for (int new_limit : {1, 100}) {
+    ASSERT_TRUE(db->SqlExec(
+        "DELETE FROM Media WHERE MediaType='selection-pool-test';"
+        "INSERT INTO Media "
+        "(VolumeName,MediaType,VolStatus,PoolId,VolJobs,MaxVolJobs,"
+        "LastWritten) VALUES "
+        "('selection-moving','selection-pool-test','Append',111,1,1,"
+        "'2025-01-03'),"
+        "('selection-original','selection-pool-test','Append',111,0,0,"
+        "'2025-01-02'),"
+        "('selection-other','selection-pool-test','Append',222,0,0,"
+        "'2025-01-01')"));
+    std::string move = "BEGIN; UPDATE Media SET PoolId=222,MaxVolJobs="
+                       + std::to_string(new_limit)
+                       + " WHERE VolumeName='selection-moving'";
+    ASSERT_TRUE(db->SqlExec(move.c_str()));
+
+    MediaDbRecord selected;
+    selected.PoolId = 111;
+    auto pending = std::async(std::launch::async, [&] {
+      return directordaemon::FindNextVolumeForAppend(jcr, &selected, 1, nullptr,
+                                                     false, false);
+    });
+    int waiting = 0;
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (!waiting && std::chrono::steady_clock::now() < deadline) {
+      EXPECT_TRUE(db->SqlQuery(
+          "SELECT pg_stat_clear_snapshot(); "
+          "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
+          "AND query LIKE 'UPDATE Media SET VolJobs=%'",
+          +[](void* context, int, char**) {
+            ++*static_cast<int*>(context);
+            return 0;
+          },
+          &waiting));
+      if (!waiting) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
+    }
+    EXPECT_EQ(waiting, 1);
+    EXPECT_TRUE(db->SqlExec("COMMIT"));
+    EXPECT_TRUE(pending.get());
+    EXPECT_EQ(selected.PoolId, 111);
+    EXPECT_STREQ(selected.VolumeName, "selection-original");
+  }
+  jcr->db = nullptr;
+  jcr->dir_impl->res.write_storage = nullptr;
+  jcr->dir_impl->res.pool = nullptr;
+  reader->CloseDatabase(jcr);
+}
+
 TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
 {
   ASSERT_TRUE(
