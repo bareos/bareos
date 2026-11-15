@@ -541,7 +541,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -627,6 +627,7 @@ const error = ref(null)
 const directorErrors = ref([])
 const poolRows = ref([])
 const volumeRows = ref([])
+let refreshGeneration = 0
 
 const reachableDirectors = computed(() => [...new Set([
   ...director.availableDirectors,
@@ -1005,41 +1006,48 @@ function statusColor(s) {
 
 // ── Loading ───────────────────────────────────────────────────────────────────
 async function refresh() {
+  const generation = ++refreshGeneration
+  const directors = [...poolsPageDirectors.value]
+  const isCurrent = () => generation === refreshGeneration
+    && directors.join('\u0000') === poolsPageDirectors.value.join('\u0000')
   loading.value = true
   error.value = null
   directorErrors.value = []
   try {
-    if (poolsPageDirectors.value.length === 0) {
+    if (directors.length === 0) {
       poolRows.value = []
       volumeRows.value = []
       return
     }
 
-    if (poolsPageDirectors.value.length > 1 || (poolsListScopeDirector.value && isCommonPools.value)) {
+    if (directors.length > 1 || (poolsListScopeDirector.value && isCommonPools.value)) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedPoolsState(credentials, poolsPageDirectors.value)
+      const result = await fetchAggregatedPoolsState(credentials, directors)
+      if (!isCurrent()) return
       poolRows.value = result.pools
       volumeRows.value = result.volumes
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = poolsPageDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrent()) return
     const result = await fetchDirectorPoolsState(
       command => director.call(command),
       currentDirector
     )
+    if (!isCurrent()) return
     poolRows.value = result.pools
     volumeRows.value = result.volumes
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (isCurrent()) error.value = reason?.message ?? String(reason)
   } finally {
-    loading.value = false
+    if (isCurrent()) loading.value = false
   }
 }
 
@@ -1082,6 +1090,8 @@ onMounted(() => {
   syncSelectedDirectors()
   refresh()
 })
+
+onBeforeUnmount(() => { refreshGeneration++ })
 
 watch(() => directorOptions.value, () => {
   syncSelectedDirectors()

@@ -18,14 +18,17 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, defineComponent, h, ref } from 'vue'
 
 const mocks = vi.hoisted(() => ({
   ensure: vi.fn(),
   call: vi.fn(),
   error: vi.fn(),
+  fetchSingle: vi.fn(),
+  fetchAggregate: vi.fn(),
 }))
+const activeDirectors = ref(['B'])
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 vi.mock('vue-router', () => ({
@@ -34,7 +37,10 @@ vi.mock('vue-router', () => ({
 }))
 vi.mock('quasar', () => ({ useQuasar: () => ({ platform: { has: { touch: false } } }) }))
 vi.mock('../../src/stores/auth.js', () => ({
-  useAuthStore: () => ({ user: { director: 'B' } }),
+  useAuthStore: () => ({
+    user: { director: 'B' },
+    getCredentials: () => ({ password: 'test-password' }),
+  }),
 }))
 vi.mock('../../src/stores/director.js', () => ({
   useDirectorStore: () => ({
@@ -61,7 +67,7 @@ vi.mock('../../src/stores/settings.js', () => ({
 vi.mock('../../src/composables/useDirectorScope.js', () => ({
   useDirectorScope: () => ({
     directorOptions: ref([]),
-    activeDirectors: ref(['B']),
+    activeDirectors,
     isCommonScope: ref(false),
     syncSelectedDirectors: vi.fn(),
     ensureScopeDirector: mocks.ensure,
@@ -69,8 +75,8 @@ vi.mock('../../src/composables/useDirectorScope.js', () => ({
   }),
 }))
 vi.mock('../../src/composables/storagesAggregate.js', () => ({
-  fetchDirectorPoolsState: vi.fn().mockResolvedValue({ pools: [], volumes: [] }),
-  fetchAggregatedPoolsState: vi.fn(),
+  fetchDirectorPoolsState: mocks.fetchSingle,
+  fetchAggregatedPoolsState: mocks.fetchAggregate,
 }))
 vi.mock('../../src/components/PoolDefaultsCheckDialog.vue', () => ({
   default: defineComponent({
@@ -90,26 +96,39 @@ const { default: PoolsPage } = await import('../../src/pages/PoolsPage.vue')
 const apps = []
 const hosts = []
 
+beforeEach(() => {
+  activeDirectors.value = ['B']
+  mocks.fetchSingle.mockResolvedValue({ pools: [], volumes: [] })
+})
 afterEach(() => {
   apps.splice(0).forEach(app => app.unmount())
   hosts.splice(0).forEach(host => host.remove())
   mocks.ensure.mockReset()
   mocks.call.mockReset()
   mocks.error.mockReset()
+  mocks.fetchSingle.mockReset()
+  mocks.fetchAggregate.mockReset()
 })
 
-describe('PoolsPage volume commands', () => {
-  function mountPage() {
-    const host = document.createElement('div')
-    document.body.appendChild(host)
-    hosts.push(host)
-    const app = createApp(PoolsPage)
-    app.config.warnHandler = () => {}
-    apps.push(app)
-    app.mount(host)
-    return host
-  }
+function mountPage() {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  hosts.push(host)
+  const app = createApp(PoolsPage)
+  app.config.warnHandler = () => {}
+  app.component('q-table', defineComponent({
+    props: { rows: Array, loading: Boolean },
+    setup(props) {
+      return () => h('div', { 'data-test-table': '', 'data-loading': String(props.loading) },
+        props.rows.map(row => h('span', row.name ?? row.volumename)))
+    },
+  }))
+  apps.push(app)
+  app.mount(host)
+  return host
+}
 
+describe('PoolsPage volume commands', () => {
   it('switches to the volume director even in single-director scope', async () => {
     const host = mountPage()
     host.querySelector('[data-testid="run-command"]').click()
@@ -126,5 +145,65 @@ describe('PoolsPage volume commands', () => {
       expect.objectContaining({ message: 'Switch failed' })
     ))
     expect(mocks.call).not.toHaveBeenCalled()
+  })
+})
+
+describe('PoolsPage refresh', () => {
+  it('does not replace the current scope with an older refresh', async () => {
+    let resolveOld
+    const old = new Promise(resolve => { resolveOld = resolve })
+    activeDirectors.value = ['A']
+    mocks.fetchSingle.mockImplementation((_call, director) => (
+      director === 'A' ? old : Promise.resolve({
+        pools: [{ name: 'CurrentPool', director: 'B' }],
+        volumes: [],
+      })
+    ))
+    const host = mountPage()
+    await vi.waitFor(() => expect(mocks.fetchSingle).toHaveBeenCalledTimes(1))
+    activeDirectors.value = ['B']
+    await vi.waitFor(() => expect(host.textContent).toContain('CurrentPool'))
+    resolveOld({ pools: [{ name: 'OldPool', director: 'A' }], volumes: [] })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).toContain('CurrentPool')
+    expect(host.textContent).not.toContain('OldPool')
+  })
+
+  it('keeps a new refresh loading when an old aggregate request completes', async () => {
+    let resolveOld
+    let resolveCurrent
+    activeDirectors.value = ['A', 'B']
+    mocks.fetchAggregate.mockReturnValue(new Promise(resolve => { resolveOld = resolve }))
+    mocks.fetchSingle.mockReturnValue(new Promise(resolve => { resolveCurrent = resolve }))
+    const host = mountPage()
+    await vi.waitFor(() => expect(mocks.fetchAggregate).toHaveBeenCalledTimes(1))
+    activeDirectors.value = ['B']
+    await vi.waitFor(() => expect(mocks.fetchSingle).toHaveBeenCalledTimes(1))
+    resolveOld({
+      pools: [{ name: 'OldPool', director: 'A' }], volumes: [], directorErrors: [],
+    })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).not.toContain('OldPool')
+    expect(host.querySelectorAll('[data-test-table]')).toHaveLength(0)
+    resolveCurrent({ pools: [{ name: 'CurrentPool', director: 'B' }], volumes: [] })
+    await vi.waitFor(() => expect(host.textContent).toContain('CurrentPool'))
+  })
+
+  it('ignores a failure from an earlier scope', async () => {
+    let rejectOld
+    activeDirectors.value = ['A']
+    mocks.fetchSingle.mockImplementation((_call, director) => (
+      director === 'A'
+        ? new Promise((_, reject) => { rejectOld = reject })
+        : Promise.resolve({ pools: [{ name: 'CurrentPool', director: 'B' }], volumes: [] })
+    ))
+    const host = mountPage()
+    await vi.waitFor(() => expect(mocks.fetchSingle).toHaveBeenCalledTimes(1))
+    activeDirectors.value = ['B']
+    await vi.waitFor(() => expect(host.textContent).toContain('CurrentPool'))
+    rejectOld(new Error('Old scope failed'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(host.textContent).not.toContain('Old scope failed')
+    expect(host.textContent).toContain('CurrentPool')
   })
 })
