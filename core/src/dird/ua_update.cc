@@ -685,11 +685,17 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
 static bool UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
-  char ed1[50];
+  char ed1[50], ed2[50];
+  MediaDbRecord current;
   PoolDbRecord pr;
 
   DbLocker _{ua->db};
-  pr.PoolId = mr->PoolId;
+  current.MediaId = mr->MediaId;
+  if (!ua->db->GetMediaRecord(ua->jcr, &current)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+  pr.PoolId = current.PoolId;
   if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     return false;
@@ -703,11 +709,18 @@ static bool UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
     ua->ErrorMsg(T_("Could not escape comment.\n"));
     return false;
   }
-  Mmsg(query, "UPDATE Media SET Comment='%s' WHERE MediaId=%s", esc->c_str(),
-       edit_int64(mr->MediaId, ed1));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  Mmsg(query,
+       "UPDATE Media SET Comment='%s' WHERE MediaId=%s AND PoolId=%s "
+       "RETURNING 1",
+       esc->c_str(), edit_int64(current.MediaId, ed1),
+       edit_int64(current.PoolId, ed2));
+  s_count_ctx updated{};
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, &updated)) {
     ua->ErrorMsg(T_("Error updating media record Comment: ERR=%s"),
                  ua->db->strerror());
+    return false;
+  } else if (updated.count != 1) {
+    ua->ErrorMsg(T_("Volume pool changed; refresh and try again.\n"));
     return false;
   } else {
     ua->InfoMsg(T_("New Comment is: %s\n"), val);
