@@ -25,8 +25,10 @@ import logging
 import os
 import re
 import subprocess
-from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from time import monotonic, sleep
 import unittest
+import uuid
 import warnings
 
 import bareos.bsock
@@ -40,6 +42,88 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_volume_comment_checks_pool_after_interactive_prompt(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        restricted = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name="poolfull",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        volume = f"CommentPromptRace-{uuid.uuid4().hex}"
+        admin.call("update pool=Incremental")
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            admin.call(f'update volume={volume} comment="original"')
+            restricted.call(f"update volume={volume}")
+            prompt = restricted.call("19")
+            self.assertIn(b"Enter new Comment", prompt)
+            admin.call(f"update volume={volume} pool=Incremental")
+            result = restricted.call("changed")
+            self.assertIn(b"Not authorized", result)
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["comment"], "original")
+
+            admin.call(f"update volume={volume} pool=Full")
+            restricted.call(f"update volume={volume}")
+            self.assertIn(b"Enter new Comment", restricted.call("19"))
+            observer = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=self.get_operator_password(username),
+                **self.director_extra_options,
+            )
+            admin.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                admin.call(
+                    '.sql query="UPDATE Media SET PoolId='
+                    "(SELECT PoolId FROM Pool WHERE Name='Incremental') "
+                    f"WHERE VolumeName='{volume}'\""
+                )
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    pending = executor.submit(restricted.call, "changed")
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%UPDATE Media SET Comment=%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting):
+                                break
+                            sleep(0.1)
+                        else:
+                            self.fail("Comment update did not wait for the pool move")
+                    finally:
+                        admin.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    self.assertIn(b"Volume pool changed", pending.result(timeout=10))
+            finally:
+                if transaction_open:
+                    admin.call('.sql query="ROLLBACK"')
+                admin.call(
+                    f'.sql query="UPDATE Media SET PoolId='
+                    f"(SELECT PoolId FROM Pool WHERE Name='Full') "
+                    f"WHERE VolumeName='{volume}'\""
+                )
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["comment"], "original")
+        finally:
+            restricted.call(".")
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_restore_with_client_acl(self):
         """
         Check if the restore command honors the client ACL.
