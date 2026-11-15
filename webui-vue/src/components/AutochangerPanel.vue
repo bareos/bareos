@@ -933,6 +933,12 @@ function manualRefresh() {
 async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = null) {
   if (commandRunning.value) return
 
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const targetDirector = expectedDirector || storageDirector || auth.user?.director
+  const ownsCommand = () => isCurrent() && ownsStorage(name, storageDirector, generation)
+
   commandLogTitle.value = title
   commandLogCommand.value = cmd
   commandLogText.value = `$ ${cmd}\n\n`
@@ -962,10 +968,10 @@ async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = nul
   }
 
   try {
-    if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
+    if (!ownsCommand()) throw new Error(t('The volume action was cancelled because the selection changed.'))
     await ensureSelectedStorageDirector()
-    if (!isCurrent() || (expectedDirector && (
-      auth.user?.director !== expectedDirector || !director.isConnected
+    if (!ownsCommand() || (targetDirector && (
+      auth.user?.director !== targetDirector || !director.isConnected
     ))) {
       throw new Error(t('The volume action was cancelled because the selection changed.'))
     }

@@ -22,14 +22,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 
-const { director, dialog } = vi.hoisted(() => ({
+const { director, dialog, auth, switchDirector } = vi.hoisted(() => ({
   director: { call: vi.fn(), rawCall: vi.fn(), status: 'connected', isConnected: true },
   dialog: vi.fn(),
+  auth: { user: { director: 'test-dir' } },
+  switchDirector: vi.fn(),
 }))
 
 vi.mock('../../src/stores/director.js', () => ({ useDirectorStore: () => director }))
 vi.mock('../../src/stores/auth.js', () => ({
-  useAuthStore: () => ({ user: { director: 'test-dir' } }),
+  useAuthStore: () => auth,
+}))
+vi.mock('../../src/composables/useDirectorSession.js', () => ({
+  switchActiveDirector: switchDirector,
 }))
 vi.mock('../../src/stores/settings.js', () => ({
   useSettingsStore: () => ({
@@ -120,6 +125,8 @@ beforeEach(() => {
   director.call.mockReset()
   director.rawCall.mockReset()
   dialog.mockReset()
+  switchDirector.mockReset()
+  auth.user.director = 'test-dir'
 })
 
 afterEach(() => {
@@ -133,6 +140,25 @@ afterEach(() => {
 })
 
 describe('AutochangerPanel storage selection', () => {
+  it('does not update slots after storage changes during a director switch', async () => {
+    const switching = deferred()
+    director.call.mockResolvedValue({ contents: [], pools: [], volumes: [] })
+    switchDirector.mockReturnValue(switching.promise)
+    const storage = ref({ name: 'Tape', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(director.call).toHaveBeenCalled())
+    auth.user.director = 'other-dir'
+    host.querySelector('[data-testid="autochanger-update-slots"]').click()
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('test-dir'))
+    storage.value = { name: 'Tape', director: 'other-dir' }
+    await nextTick()
+    switching.resolve()
+    await vi.waitFor(() => expect(host.textContent).toContain(
+      'The volume action was cancelled because the selection changed.'
+    ))
+    expect(director.rawCall).not.toHaveBeenCalled()
+  })
+
   it('rejects an export confirmation after switching away and back', async () => {
     let confirm
     dialog.mockReturnValue({ onOk: callback => { confirm = callback } })
