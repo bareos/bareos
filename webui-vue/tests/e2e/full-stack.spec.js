@@ -66,10 +66,14 @@ async function browserFixture(page, commandHandler = () => undefined) {
       const responseToken = String(++responseSequence)
       let resolveCompletion
       const completion = new Promise(resolve => { resolveCompletion = resolve })
-      responseCompletions.set(responseToken, { promise: completion, resolve: resolveCompletion })
+      let resolveSent
+      const sent = new Promise(resolve => { resolveSent = resolve })
+      responseCompletions.set(responseToken, {
+        promise: completion, resolve: resolveCompletion, sent,
+      })
       responseTokens.add(responseToken)
       try {
-        const data = await commandHandler(request.command, director, { responseToken })
+        const data = await commandHandler(request.command, director, { responseToken, socket })
         const job = {
           jobid: '101', name: 'Browser-fixture', jobtype: 'B', jobstatus: 'T',
           comment: 'Original comment',
@@ -83,8 +87,10 @@ async function browserFixture(page, commandHandler = () => undefined) {
                   : {}
           ),
         }))
+        resolveSent()
       } catch (error) {
         socket.send(JSON.stringify({ type: 'error', id: request.id, message: error.message }))
+        resolveSent()
       }
     })
   })
@@ -262,15 +268,20 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
 
 test('browser regression: schedule status ignores an obsolete calendar range', async ({ page }) => {
   let releaseObsoleteStatus
+  let obsoleteResponseToken
+  let obsoleteSocket
+  let settledSocket
   let statusRequests = 0
 
-  await browserFixture(page, (command) => {
+  await browserFixture(page, (command, _director, { responseToken, socket }) => {
     if (!command.startsWith('status scheduler days=') || command === 'status scheduler days=0,60') {
       return
     }
 
     statusRequests += 1
     if (statusRequests === 1) {
+      obsoleteResponseToken = responseToken
+      obsoleteSocket = socket
       return new Promise(resolve => {
         releaseObsoleteStatus = () => resolve({
           schedules: [{ name: 'ObsoleteRange', enabled: true, jobs: [] }],
@@ -279,6 +290,7 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
       })
     }
 
+    if (statusRequests > 2) settledSocket = socket
     return {
       schedules: [{
         name: statusRequests === 2 ? 'CurrentRange' : 'SettledRange',
@@ -301,11 +313,32 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
   const scheduleGroups = page.locator('.sched-group-header')
   await expect(scheduleGroups).toContainText('CurrentRange')
 
+  // The next response is a same-socket barrier; record transient stale renders
+  // so its current result cannot hide an obsolete overwrite.
+  await page.evaluate(() => {
+    window.obsoleteScheduleSeen = false
+    window.obsoleteScheduleObserver = new MutationObserver(() => {
+      if ([...document.querySelectorAll('.sched-group-header')]
+        .some(header => header.textContent.includes('ObsoleteRange'))) {
+        window.obsoleteScheduleSeen = true
+      }
+    })
+    window.obsoleteScheduleObserver.observe(document.body, {
+      childList: true, subtree: true, characterData: true,
+    })
+  })
   releaseObsoleteStatus()
+  await directorResponseCompletions.get(page).get(obsoleteResponseToken).sent
   await page.getByRole('button', { name: 'Next period' }).click()
   await expect.poll(() => statusRequests).toBeGreaterThan(2)
+  expect(settledSocket).toBe(obsoleteSocket)
   await expect(scheduleGroups).toContainText('SettledRange')
   await expect(scheduleGroups).not.toContainText('ObsoleteRange')
+  const obsoleteScheduleSeen = await page.evaluate(() => {
+    window.obsoleteScheduleObserver.disconnect()
+    return window.obsoleteScheduleSeen
+  })
+  expect(obsoleteScheduleSeen).toBe(false)
 })
 
 test('browser regression: clients list ignores an obsolete refresh', async ({ page }) => {
