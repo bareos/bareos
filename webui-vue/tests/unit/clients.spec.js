@@ -33,7 +33,7 @@ import {
 } from '../../src/utils/clients.js'
 
 describe('clients route helpers', () => {
-  it('does not classify a client without backup history as healthy', () => {
+  it('distinguishes missing and active backup history from healthy', () => {
     expect(clientBackupStatusCode({ enabled: true }, 2)).toBe('unknown')
     expect(clientBackupStatusCode({ enabled: true }, 2, false)).toBe('unavailable')
     expect(clientBackupStatusCode({
@@ -45,12 +45,17 @@ describe('clients route helpers', () => {
       enabled: true,
       lastBackup: { status: 'R' },
       failureStreak: 0,
-    }, 2)).toBe('unknown')
+    }, 2)).toBe('running')
     expect(clientBackupStatusCode({
       enabled: true,
       lastBackup: { status: 'R' },
       failureStreak: 2,
-    }, 2)).toBe('warning')
+    }, 2)).toBe('running')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'l' },
+      failureStreak: 0,
+    }, 2)).toBe('running')
   })
 
   it('does not classify unknown client versions as up to date', () => {
