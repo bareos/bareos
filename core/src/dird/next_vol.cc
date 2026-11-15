@@ -82,6 +82,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   bool ok;
   bool InChanger;
   StorageResource* store = jcr->dir_impl->res.write_storage;
+  const auto requested_pool_id = mr->PoolId;
 
   bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
   Dmsg3(debuglevel,
@@ -200,14 +201,18 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
           mr->VolJobs, mr->FirstWritten);
     if (ok) {
       // If we can use the volume, check if it is expired
-      if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
+      const bool expired
+          = bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr);
+      if (expired || mr->PoolId != requested_pool_id) {
         if (retry++ < 200) { /* sanity check */
-          continue;          /* try again from the top */
+          mr->PoolId = requested_pool_id;
+          continue; /* try again from the top */
         } else {
           Jmsg(
               jcr, M_ERROR, 0,
               T_("We seem to be looping trying to find the next volume. I give "
                  "up.\n"));
+          ok = false;
         }
       }
     }
