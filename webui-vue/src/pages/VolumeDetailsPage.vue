@@ -112,7 +112,7 @@
                       flat round dense size="sm" icon="edit" color="primary"
                       :title="t('Edit comment')" :aria-label="t('Edit comment')"
                       data-testid="volume-comment-edit"
-                      @click="commentDialogOpen = true"
+                      @click="openCommentEditor"
                     />
                   </q-item-section>
                 </q-item>
@@ -642,17 +642,37 @@ async function applyPoolDefaults() {
 }
 
 const commentDialogOpen = ref(false)
+let commentTarget = null
+
+function openCommentEditor() {
+  commentTarget = { name: volumeName.value, director: currentVolumeDirector.value }
+  commentDialogOpen.value = true
+}
 
 async function saveVolumeComment(comment) {
+  const target = commentTarget
+  const isCurrent = () => commentDialogOpen.value
+    && commentTarget === target
+    && target?.name === volumeName.value
+    && target.director === currentVolumeDirector.value
+  if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
   await ensureVolumeDirector()
-  await director.call(buildVolumeCommentCommand(volumeName.value, comment))
-  if (vol.value) {
+  if (!isCurrent() || auth.user?.director !== target.director || !director.isConnected) {
+    throw new Error(t('The volume action was cancelled because the selection changed.'))
+  }
+  await director.call(buildVolumeCommentCommand(target.name, comment))
+  if (isCurrent() && vol.value) {
     vol.value = { ...vol.value, comment }
   }
 }
 
+watch(commentDialogOpen, open => {
+  if (!open) commentTarget = null
+}, { flush: 'sync' })
+
 watch(() => [volumeName.value, requestedDirector.value], () => {
   actionDialog.value = { open: false, action: '', volumes: [] }
+  commentDialogOpen.value = false
 }, { flush: 'sync' })
 
 watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {

@@ -67,6 +67,19 @@ vi.mock('../../src/components/VolumeBulkDialog.vue', () => ({
     },
   }),
 }))
+vi.mock('../../src/components/CommentEditDialog.vue', () => ({
+  default: defineComponent({
+    props: { modelValue: Boolean, save: Function, comment: String },
+    setup(props) {
+      return () => h('button', {
+        'data-test-comment': '',
+        'data-open': String(props.modelValue),
+        'data-comment': props.comment,
+        onClick: () => { mocks.saveComment = props.save },
+      })
+    },
+  }),
+}))
 
 const { default: VolumeDetailsPage } = await import('../../src/pages/VolumeDetailsPage.vue')
 let app
@@ -142,5 +155,102 @@ describe('VolumeDetailsPage action identity', () => {
     finishSwitch()
     await expect(command).rejects.toThrow()
     expect(mocks.call).not.toHaveBeenCalledWith('dangerous command')
+  })
+
+  it('closes the comment editor when navigating to another volume', async () => {
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-comment-edit"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.open).toBe('true'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.open).toBe('false'))
+  })
+
+  it('does not save a comment after navigating during a director switch', async () => {
+    let finishSwitch
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-comment-edit"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    host.querySelector('[data-test-comment]').click()
+    auth.user.director = 'B'
+    mocks.switchDirector.mockReturnValue(new Promise(resolve => { finishSwitch = resolve }))
+    const save = mocks.saveComment('old comment')
+    await vi.waitFor(() => expect(mocks.switchDirector).toHaveBeenCalledWith('A'))
+    route.params.name = 'Other'
+    finishSwitch()
+    await expect(save).rejects.toThrow()
+    expect(mocks.call.mock.calls.some(([command]) => command.startsWith('update volume='))).toBe(false)
+  })
+
+  it('updates the current volume after a successful comment save', async () => {
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full', comment: 'before' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-comment-edit"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    host.querySelector('[data-test-comment]').click()
+    await mocks.saveComment('updated')
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('updated'))
+    expect(mocks.call).toHaveBeenCalledWith('update volume="Tape" comment="updated"')
+  })
+
+  it('does not apply an old save result to a newly selected volume', async () => {
+    let finishSave
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('update volume=')) {
+        return new Promise(resolve => { finishSave = resolve })
+      }
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', comment: route.params.name }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volume-comment-edit"]')).not.toBeNull())
+    host.querySelector('[data-testid="volume-comment-edit"]').click()
+    host.querySelector('[data-test-comment]').click()
+    const save = mocks.saveComment('old comment')
+    await vi.waitFor(() => expect(finishSave).toBeTypeOf('function'))
+    route.params.name = 'Other'
+    await vi.waitFor(() => expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('Other'))
+    finishSave()
+    await save
+    expect(host.querySelector('[data-test-comment]').dataset.comment).toBe('Other')
   })
 })
