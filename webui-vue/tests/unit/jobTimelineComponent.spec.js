@@ -206,12 +206,18 @@ describe('JobTimeline refreshes', () => {
       host.querySelector('[role="img"][aria-label^="ClientAJob"]')
     ).not.toBeNull())
 
-    host.querySelectorAll('button')[1].click()
+    const findNoneButton = () => [...host.querySelectorAll('button')]
+      .find(button => button.textContent === 'None')
+    const noneButton = findNoneButton()
+    expect(noneButton).toBeDefined()
+    noneButton.click()
     await nextTick()
+    expect(findNoneButton()?.disabled).toBe(true)
     expect(host.textContent).toContain('No jobs in this period.')
 
     clientFilter.value = '   '
     await nextTick()
+    expect(findNoneButton()?.disabled).toBe(true)
     expect(host.textContent).toContain('No jobs in this period.')
   })
 
