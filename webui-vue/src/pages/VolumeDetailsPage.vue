@@ -589,11 +589,22 @@ function openVolumeAction(actionId) {
 }
 
 async function runVolumeCommand(volume, command) {
+  const isCurrent = () => actionDialog.value.open
+    && actionDialog.value.volumes.includes(volume)
+    && volume.volumename === volumeName.value
+    && volume.director
+    && volume.director === currentVolumeDirector.value
+  if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
   await ensureVolumeDirector()
+  if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
   return director.call(command)
 }
 
 async function onVolumeActionDone(results) {
+  if (!actionDialog.value.open || !results.length
+    || results.some(result => !actionDialog.value.volumes.includes(result.volume))) {
+    return
+  }
   // A deleted or purged volume may be gone; reloading surfaces that as the
   // regular "not found" state instead of showing stale data.
   const removed = actionDialog.value.action === 'delete'
@@ -639,6 +650,10 @@ async function saveVolumeComment(comment) {
     vol.value = { ...vol.value, comment }
   }
 }
+
+watch(() => [volumeName.value, requestedDirector.value], () => {
+  actionDialog.value = { open: false, action: '', volumes: [] }
+}, { flush: 'sync' })
 
 watch(() => `${volumeName.value}\u0000${requestedDirector.value}`, async () => {
   loading.value = true
