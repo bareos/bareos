@@ -917,6 +917,11 @@ function openBulkAction(actionId) {
 
 async function runVolumeCommand(volume, command) {
   await switchToRowDirector(volume)
+  if (volume?.director && (
+    auth.user?.director !== volume.director || !director.isConnected
+  )) {
+    throw new Error(t('The volume action was cancelled because the selection changed.'))
+  }
   return director.call(command)
 }
 

@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
   fetchSingle: vi.fn(),
   fetchAggregate: vi.fn(),
+  auth: { user: { director: 'B' } },
 }))
 const activeDirectors = ref(['B'])
 
@@ -38,13 +39,14 @@ vi.mock('vue-router', () => ({
 vi.mock('quasar', () => ({ useQuasar: () => ({ platform: { has: { touch: false } } }) }))
 vi.mock('../../src/stores/auth.js', () => ({
   useAuthStore: () => ({
-    user: { director: 'B' },
+    user: mocks.auth.user,
     getCredentials: () => ({ password: 'test-password' }),
   }),
 }))
 vi.mock('../../src/stores/director.js', () => ({
   useDirectorStore: () => ({
     availableDirectors: ['A', 'B'],
+    isConnected: true,
     fetchAvailableDirectors: vi.fn().mockResolvedValue(),
     call: mocks.call,
   }),
@@ -98,6 +100,8 @@ const hosts = []
 
 beforeEach(() => {
   activeDirectors.value = ['B']
+  mocks.auth.user.director = 'B'
+  mocks.ensure.mockImplementation(async director => { mocks.auth.user.director = director })
   mocks.fetchSingle.mockResolvedValue({ pools: [], volumes: [] })
 })
 afterEach(() => {
@@ -144,6 +148,18 @@ describe('PoolsPage volume commands', () => {
     await vi.waitFor(() => expect(mocks.error).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Switch failed' })
     ))
+    expect(mocks.call).not.toHaveBeenCalled()
+  })
+
+  it('rejects a volume command if another director connects first', async () => {
+    let finishSwitch
+    mocks.ensure.mockImplementation(() => new Promise(resolve => { finishSwitch = resolve }))
+    const host = mountPage()
+    host.querySelector('[data-testid="run-command"]').click()
+    expect(mocks.ensure).toHaveBeenCalledWith('A')
+    mocks.auth.user.director = 'B'
+    finishSwitch()
+    await vi.waitFor(() => expect(mocks.error).toHaveBeenCalled())
     expect(mocks.call).not.toHaveBeenCalled()
   })
 })
