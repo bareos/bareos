@@ -117,7 +117,7 @@ describe('storages aggregate helpers', () => {
       }
     )).toEqual([
       {
-        storageid: '1', name: 'File', autochanger: '0', inconfig: true,
+        storageid: '1', name: 'File', autochanger: false, inconfig: true,
         address: 'sd1', port: '9103', mediatype: 'File', enabled: true,
       },
       { storageid: '2', name: 'Removed', autochanger: '1' },
@@ -131,6 +131,16 @@ describe('storages aggregate helpers', () => {
   it('keeps catalog storages when show storages is unavailable', () => {
     expect(mergeStorageConfig([{ name: 'File', autochanger: '1' }], null)).toEqual([
       { name: 'File', autochanger: '1' },
+    ])
+  })
+
+  it('uses the configured default when a catalog autochanger flag conflicts', () => {
+    expect(mergeStorageConfig(
+      [{ name: 'File', autochanger: '1' }, { name: 'Removed', autochanger: '1' }],
+      { File: { name: 'File' } }
+    )).toEqual([
+      { name: 'File', autochanger: false, inconfig: true, enabled: true },
+      { name: 'Removed', autochanger: '1' },
     ])
   })
 
