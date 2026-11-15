@@ -341,6 +341,21 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 self.assertTrue(output.endswith("\n"))
             finally:
                 plain_director.call(".api 0")
+        jobmedia = director.call(f"list jobmedia jobid={backup_jobid}")["jobmedia"]
+        volume = jobmedia[0]["volumename"]
+        usage_command = f'list volumeusage volume="{volume}"'
+        segments = director.call(usage_command)["volumeusage"]["segments"]
+        self.assertIn(str(backup_jobid), {str(row["jobid"]) for row in segments})
+        text_output = plain_director.call(usage_command).decode("utf-8")
+        self.assertIn(str(backup_jobid), text_output)
+        plain_director.call(".api 1")
+        try:
+            output = plain_director.call(usage_command).decode("utf-8")
+            self.assertIn(str(backup_jobid), output)
+            self.assertIn(backup_jobname, output)
+            self.assertTrue(output.endswith("\n"))
+        finally:
+            plain_director.call(".api 0")
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
 

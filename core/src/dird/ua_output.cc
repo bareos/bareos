@@ -269,10 +269,14 @@ static void EmitVolumeUsageText(UaContext* ua,
     media_range.bsprintf("%" PRIu64 ":%" PRIu64 "-%" PRIu64 ":%" PRIu64,
                          segment.startfile, segment.startblock, segment.endfile,
                          segment.endblock);
-    ua->send->Decoration("  %c  %5" PRIu64 " %-21.21s %-11s %-20s %s\n",
-                         segment.marker, segment.jobid, segment.job.c_str(),
-                         index_range.c_str(), media_range.c_str(),
-                         edit_uint64_with_suffix(segment.jobbytes, bytes));
+    PoolMem row(PM_MESSAGE);
+    row.bsprintf("  %c  %5" PRIu64 " %-21.21s %-11s %-20s %s\n", segment.marker,
+                 segment.jobid, segment.job.c_str(), index_range.c_str(),
+                 media_range.c_str(),
+                 edit_uint64_with_suffix(segment.jobbytes, bytes));
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("row", row.c_str(), "%s");
+    ua->send->ObjectEnd();
   }
 }
 
