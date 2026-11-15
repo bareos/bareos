@@ -27,6 +27,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
+#include "dird/next_vol.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/bareos.h"
@@ -186,7 +187,9 @@ TEST_F(CatalogTest, StalePoolUpdateDoesNotChangeOtherChangerSlots)
   ASSERT_TRUE(db->SqlExec(
       "UPDATE Media SET PoolId=22 WHERE VolumeName='pool-guard-stale'"));
 
-  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, false, true));
+  bool pool_changed = false;
+  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, false, true, &pool_changed));
+  EXPECT_TRUE(pool_changed);
 
   MediaDbRecord current;
   bstrncpy(current.VolumeName, "pool-guard-stale", sizeof(current.VolumeName));
@@ -268,6 +271,44 @@ TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
   ASSERT_TRUE(db->UpdateMediaRecord(jcr, &stale, true));
   ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
   EXPECT_EQ(stale.VolRetention, 789);
+}
+
+TEST_F(CatalogTest, ExpirationRechecksLimitsAfterPoolMove)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media (VolumeName,MediaType,VolStatus,PoolId,VolJobs,"
+      "MaxVolJobs) VALUES ('expired-pool-move','File','Append',11,1,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "expired-pool-move", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Media SET PoolId=22,MaxVolJobs=100 "
+                  "WHERE VolumeName='expired-pool-move'"));
+
+  jcr->db = db;
+  const bool expired = directordaemon::HasVolumeExpired(jcr, &stale);
+  jcr->db = nullptr;
+  EXPECT_FALSE(expired);
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_STREQ(stale.VolStatus, "Append");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_STREQ(stale.VolStatus, "Append");
+  EXPECT_EQ(stale.MaxVolJobs, 100);
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Media SET PoolId=11,MaxVolJobs=1 "
+                  "WHERE VolumeName='expired-pool-move'"));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='expired-pool-move'"));
+  jcr->db = db;
+  const bool still_expired = directordaemon::HasVolumeExpired(jcr, &stale);
+  jcr->db = nullptr;
+  EXPECT_TRUE(still_expired);
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_STREQ(stale.VolStatus, "Used");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_STREQ(stale.VolStatus, "Used");
 }
 
 TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
