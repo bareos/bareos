@@ -798,7 +798,7 @@ const jobCols = computed(() => [
 
 .volume-tape-segment {
   flex-shrink: 0;
-  min-width: 2px;
+  min-width: 0;
 }
 
 .volume-tape-lane-row {
