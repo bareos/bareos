@@ -418,7 +418,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   /* Make sure to use db_update... rather than doing this directly,
    * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -429,7 +430,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
 static void ReplaceVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 {
   if (!GenerateNewEncryptionKey(ua, mr)) { return; }
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
   } else {
     ua->InfoMsg("Generated new encryption key for volume '%s' in catalog.\n",
@@ -440,7 +442,8 @@ static void ReplaceVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 static void RemoveVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 {
   memset(mr->EncrKey, 0, sizeof(mr->EncrKey));
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
   } else {
     ua->InfoMsg("Removed encryption key for volume '%s' from catalog.\n",
@@ -755,7 +758,8 @@ static void UpdateVolenabled(UaContext* ua, char* val, MediaDbRecord* mr)
   mr->Enabled = GetEnabled(ua, val);
   if (mr->Enabled < 0) { return; }
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record Enabled: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -773,7 +777,8 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record ActionOnPurge: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -1086,7 +1091,7 @@ static bool UpdateVolume(UaContext* ua)
         /* Make sure to use db_update... rather than doing this directly,
          *   so that any Slot is handled correctly. */
         SetStorageidInMr(NULL, &mr);
-        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
           ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                        ua->db->strerror());
         } else {
@@ -1531,7 +1536,7 @@ static void UpdateSlots(UaContext* ua)
           mr.InChanger = 1;
           if (have_enabled) { mr.Enabled = Enabled; }
           SetStorageidInMr(store.store, &mr);
-          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
             ua->ErrorMsg("%s", ua->db->strerror());
           } else {
             ua->InfoMsg(
@@ -1673,7 +1678,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
           mr.Slot = vl->bareos_slot_number;
           mr.InChanger = 1;
           SetStorageidInMr(store, &mr);
-          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
             ua->ErrorMsg("%s", ua->db->strerror());
           }
         }

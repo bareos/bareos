@@ -169,6 +169,54 @@ TEST_F(CatalogTest, EscapeStringPreservesExplicitViewLength)
   EXPECT_EQ(db->EscapeString(jcr, std::string_view{input, 3}), "a''b");
 }
 
+TEST_F(CatalogTest, StalePoolUpdateDoesNotChangeOtherChangerSlots)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,StorageId,Slot,InChanger) "
+      "VALUES ('pool-guard-stale','File','Full',11,0,0,0),"
+      "('pool-guard-other','File','Full',22,7,4,1)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-stale", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.Slot = 4;
+  stale.InChanger = 1;
+  stale.StorageId = 7;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='pool-guard-stale'"));
+
+  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, false, true));
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "pool-guard-stale", sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  bstrncpy(current.VolumeName, "pool-guard-other", sizeof(current.VolumeName));
+  current.MediaId = 0;
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.InChanger, 1);
+  EXPECT_EQ(current.Slot, 4);
+}
+
+TEST_F(CatalogTest, StalePoolDefaultsDoNotOverwriteMovedVolume)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('pool-guard-defaults','File','Full',11,123)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-defaults", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.VolRetention = 1;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='pool-guard-defaults'"));
+  EXPECT_FALSE(db->UpdateMediaDefaults(jcr, &stale));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+}
+
 TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
 {
   ASSERT_TRUE(
