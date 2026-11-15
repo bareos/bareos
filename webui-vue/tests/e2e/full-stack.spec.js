@@ -33,11 +33,15 @@ const isMultiDirectorProfile
   = process.env.BAREOS_WEBUI_PROXY_ENABLE_MULTI_DIRECTOR === '1'
 const LOGIN_ATTEMPTS = 3
 const LOGIN_RESULT_TIMEOUT_MS = 10_000
+const directorResponseCompletions = new WeakMap()
 
 // Exercise the public application with an isolated, entirely intercepted
 // transport. In particular, no mutation can reach a real Director.
 async function browserFixture(page, commandHandler = () => undefined) {
   const directors = ['bareos-dir', 'bareos-dir-2']
+  const responseCompletions = new Map()
+  directorResponseCompletions.set(page, responseCompletions)
+  let responseSequence = 0
   await page.route('**/api/**', route => route.fulfill({
     json: route.request().url().endsWith('/directors')
       ? { type: 'director_list', directors }
@@ -45,6 +49,12 @@ async function browserFixture(page, commandHandler = () => undefined) {
   }))
   await page.routeWebSocket(/\/ws/, socket => {
     let director = directors[0]
+    const responseTokens = new Set()
+    socket.onClose(() => {
+      for (const token of responseTokens) {
+        responseCompletions.get(token)?.resolve()
+      }
+    })
     socket.onMessage(async message => {
       const request = JSON.parse(message)
       if (request.type === 'session') {
@@ -53,8 +63,13 @@ async function browserFixture(page, commandHandler = () => undefined) {
         return
       }
       if (request.type !== 'command') return
+      const responseToken = String(++responseSequence)
+      let resolveCompletion
+      const completion = new Promise(resolve => { resolveCompletion = resolve })
+      responseCompletions.set(responseToken, { promise: completion, resolve: resolveCompletion })
+      responseTokens.add(responseToken)
       try {
-        const data = await commandHandler(request.command, director)
+        const data = await commandHandler(request.command, director, { responseToken })
         const job = {
           jobid: '101', name: 'Browser-fixture', jobtype: 'B', jobstatus: 'T',
           comment: 'Original comment',
@@ -75,6 +90,13 @@ async function browserFixture(page, commandHandler = () => undefined) {
   })
   await page.goto('/#/dashboard')
   await expect(page.getByTestId('director-status-label')).toContainText('Connected')
+}
+
+async function waitForDirectorResponseProcessing(page, responseToken) {
+  const completion = directorResponseCompletions.get(page)?.get(responseToken)
+  if (!completion) throw new Error(`Unknown Director response token: ${responseToken}`)
+  await completion.promise
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
 }
 
 test('browser regression: column checkboxes have accessible names', async ({ page }) => {
@@ -173,13 +195,15 @@ test('browser regression: schedule All selection survives an empty scope', async
 
 test('browser regression: upcoming runs ignore an obsolete Director scope', async ({ page }) => {
   let releaseObsoletePreview
+  let obsoletePreviewResponseToken
   let firstDirectorPreviewCalls = 0
 
-  await browserFixture(page, (command, director) => {
+  await browserFixture(page, (command, director, { responseToken }) => {
     if (command === 'status scheduler days=0,60') {
       if (director === 'bareos-dir') {
         firstDirectorPreviewCalls += 1
         if (firstDirectorPreviewCalls === 1) {
+          obsoletePreviewResponseToken = responseToken
           return new Promise(resolve => {
             releaseObsoletePreview = () => resolve({
               preview: [{
@@ -231,7 +255,7 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Current Director/)).toBeVisible()
 
   releaseObsoletePreview()
-  await page.waitForTimeout(100)
+  await waitForDirectorResponseProcessing(page, obsoletePreviewResponseToken)
   await expect(page.getByText(/Current Director/)).toBeVisible()
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
@@ -256,7 +280,11 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
     }
 
     return {
-      schedules: [{ name: 'CurrentRange', enabled: true, jobs: [] }],
+      schedules: [{
+        name: statusRequests === 2 ? 'CurrentRange' : 'SettledRange',
+        enabled: true,
+        jobs: [],
+      }],
       preview: [],
     }
   })
@@ -274,18 +302,22 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
   await expect(scheduleGroups).toContainText('CurrentRange')
 
   releaseObsoleteStatus()
-  await expect(scheduleGroups).toContainText('CurrentRange')
+  await page.getByRole('button', { name: 'Next period' }).click()
+  await expect.poll(() => statusRequests).toBeGreaterThan(2)
+  await expect(scheduleGroups).toContainText('SettledRange')
   await expect(scheduleGroups).not.toContainText('ObsoleteRange')
 })
 
 test('browser regression: clients list ignores an obsolete refresh', async ({ page }) => {
   let releaseObsoleteClients
+  let obsoleteClientsResponseToken
   let clientListRequests = 0
 
-  await browserFixture(page, (command) => {
+  await browserFixture(page, (command, _director, { responseToken }) => {
     if (command === 'llist clients') {
       clientListRequests += 1
       if (clientListRequests === 1) {
+        obsoleteClientsResponseToken = responseToken
         return new Promise(resolve => {
           releaseObsoleteClients = () => resolve({
             clients: [{ name: 'ObsoleteClient' }],
@@ -304,7 +336,7 @@ test('browser regression: clients list ignores an obsolete refresh', async ({ pa
   await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
 
   releaseObsoleteClients()
-  await page.waitForTimeout(100)
+  await waitForDirectorResponseProcessing(page, obsoleteClientsResponseToken)
   await expect(page.getByText('ObsoleteClient', { exact: true })).toHaveCount(0)
   await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
 })
