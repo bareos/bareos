@@ -254,6 +254,7 @@ import VolumeNameLink from '../components/VolumeNameLink.vue'
 import PoolDefaultsCheckDialog from '../components/PoolDefaultsCheckDialog.vue'
 import CommonValuesBar from '../components/CommonValuesBar.vue'
 import { useCollapsedColumns } from '../composables/useCollapsedColumns.js'
+import { formatBooleanCommonValue } from '../utils/tableCommonValues.js'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 import VolumeStatusBadge from '../components/VolumeStatusBadge.vue'
@@ -544,7 +545,7 @@ const {
     volretention: (value) => (Number(value) > 0 ? formatDuration(value) : '—'),
     maxvolbytes: (value) => (Number(value) > 0 ? formatBytes(value) : '∞'),
     volbytes: (value) => formatBytes(value),
-    inchanger: (value) => (String(value) === '0' ? t('No') : t('Yes')),
+    inchanger: (value) => formatBooleanCommonValue(value, t),
   },
 })
 

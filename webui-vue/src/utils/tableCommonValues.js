@@ -30,6 +30,10 @@ function defaultKeyOf(column) {
   return column.name
 }
 
+export function formatBooleanCommonValue(value, t) {
+  return value === true || String(value) === '1' ? t('Yes') : t('No')
+}
+
 export function columnValueOf(row, column) {
   if (!row || !column) {
     return undefined

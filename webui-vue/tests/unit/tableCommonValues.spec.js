@@ -26,6 +26,7 @@ import {
   columnIsUniform,
   columnValueOf,
   distinctColumnValues,
+  formatBooleanCommonValue,
   normaliseCommonValue,
 } from '../../src/utils/tableCommonValues.js'
 
@@ -100,6 +101,18 @@ describe('collectCommonColumnValues', () => {
       format: { retention: (value) => `${value / 86400} days` },
     })
     expect(common.find((entry) => entry.name === 'retention').display).toBe('1 days')
+  })
+
+  it('displays normalized and raw changer flags correctly in collapsed columns', () => {
+    const column = [{ name: 'inchanger', label: 'In Changer', field: 'inchanger' }]
+    for (const [value, expected] of [[false, 'No'], [true, 'Yes'], ['0', 'No'], ['1', 'Yes']]) {
+      const common = collectCommonColumnValues(
+        [{ inchanger: value }, { inchanger: value }],
+        column,
+        { format: { inchanger: item => formatBooleanCommonValue(item, key => key) } }
+      )
+      expect(common[0].display).toBe(expected)
+    }
   })
 
   it('skips empty values and short row sets', () => {
