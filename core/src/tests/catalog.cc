@@ -34,8 +34,12 @@
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <chrono>
+#include <future>
+#include <limits>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using directordaemon::InitDirConfig;
@@ -163,4 +167,127 @@ TEST_F(CatalogTest, EscapeStringPreservesExplicitViewLength)
   constexpr char input[] = "a'bcd";
 
   EXPECT_EQ(db->EscapeString(jcr, std::string_view{input, 3}), "a''b");
+}
+
+TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-cleaning-test','File','Cleaning')"));
+
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-cleaning-test",
+           sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Cleaning");
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1234;
+  jobmedia.MediaId = media.MediaId;
+  jobmedia.EndFile = 12;
+  jobmedia.EndBlock = 34;
+  ASSERT_TRUE(db->CreateJobmediaRecord(jcr, &jobmedia));
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  EXPECT_EQ(media.EndFile, 12);
+  EXPECT_EQ(media.EndBlock, 34);
+  int records = 0;
+  ASSERT_TRUE(db->SqlQuery(
+      "SELECT JobId FROM JobMedia WHERE JobId=1234",
+      +[](void* context, int, char**) {
+        ++*static_cast<int*>(context);
+        return 0;
+      },
+      &records));
+  EXPECT_EQ(records, 1);
+
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+
+  bstrncpy(media.VolStatus, "Full", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Full");
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Append");
+}
+
+TEST_F(CatalogTest, FailedJobMediaInsertDoesNotChangeCleaningVolume)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-failure-test','File','Cleaning')"));
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-failure-test", sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1235;
+  jobmedia.MediaId = media.MediaId;
+  jobmedia.FirstIndex = std::numeric_limits<uint32_t>::max();
+  EXPECT_FALSE(db->CreateJobmediaRecord(jcr, &jobmedia));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Cleaning");
+}
+
+TEST_F(CatalogTest, JobMediaWaitsForCleaningTransition)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-wait-test','File','Append')"));
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-wait-test", sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  BareosDb* writer = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(writer, nullptr);
+  ASSERT_TRUE(
+      db->SqlExec("BEGIN; UPDATE Media SET VolStatus='Cleaning' "
+                  "WHERE VolumeName='jobmedia-wait-test'"));
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1236;
+  jobmedia.MediaId = media.MediaId;
+  auto pending = std::async(std::launch::async, [&] {
+    return writer->CreateJobmediaRecord(jcr, &jobmedia);
+  });
+  int waiting = 0;
+  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  while (!waiting && std::chrono::steady_clock::now() < deadline) {
+    EXPECT_TRUE(db->SqlQuery(
+        "SELECT pg_stat_clear_snapshot(); "
+        "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
+        "AND query LIKE 'WITH updated_media AS%'",
+        +[](void* context, int, char**) {
+          ++*static_cast<int*>(context);
+          return 0;
+        },
+        &waiting));
+    if (!waiting) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+  }
+  EXPECT_EQ(waiting, 1);
+  EXPECT_TRUE(db->SqlExec("COMMIT"));
+  EXPECT_TRUE(pending.get());
+  writer->CloseDatabase(jcr);
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  int records = 0;
+  ASSERT_TRUE(db->SqlQuery(
+      "SELECT JobId FROM JobMedia WHERE JobId=1236",
+      +[](void* context, int, char**) {
+        ++*static_cast<int*>(context);
+        return 0;
+      },
+      &records));
+  EXPECT_EQ(records, 1);
 }

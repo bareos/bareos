@@ -274,7 +274,7 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
     Dmsg1(debuglevel, "Vol=%s has expired update media record\n",
           mr->VolumeName);
     SetStorageidInMr(NULL, mr);
-    if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, mr)) {
+    if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, mr, true)) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Catalog error updating volume \"%s\". ERR=%s\n"), mr->VolumeName,
            jcr->db->strerror());
