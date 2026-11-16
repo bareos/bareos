@@ -44,6 +44,58 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_restore_advanced_menu_exposes_jobid(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+
+        visual = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(visual.close)
+        browser = TreeBrowserConsole(visual, columns=160)
+        self.assertIn(
+            "Restore Options", browser.run(f"run job=RestoreFiles jobid={backup}")
+        )
+        browser.press("home")
+        for _ in range(5):
+            browser.press("down")
+        screen = browser.press("enter")
+        self.assertIn("JobId", screen)
+        for _ in range(4):
+            browser.press("down")
+        browser.press("enter")
+        browser.press("end")
+        self.assertIn("Please enter a JobId for restore:", browser.press("enter"))
+        browser.press("cancel")
+
+        classic = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(classic.close)
+        self.assertIn(
+            b"OK to run?", classic.call(f"run job=RestoreFiles jobid={backup}")
+        )
+        self.assertIn(b"Advanced Options", classic.call("mod"))
+        self.assertIn(b"JobId", classic.call("8"))
+        self.assertIn(b"Please enter a JobId for restore:", classic.call("5"))
+
     def test_restore_empty_where_uses_original_location(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
