@@ -197,4 +197,54 @@ describe('Restore source director failures', () => {
       expect(directorCall).toHaveBeenCalledTimes(callsBefore)
     },
   )
+
+  it('does not publish backups from an obsolete client selection', async () => {
+    let resolveClientABackups
+    const clientABackups = new Promise(resolve => {
+      resolveClientABackups = resolve
+    })
+    ensureScopeDirector.mockReset().mockResolvedValue()
+    directorCall.mockImplementation(async command => {
+      if (command === 'list clients') {
+        return { clients: [{ name: 'client-a' }, { name: 'client-b' }] }
+      }
+      if (command === '.jobs type=R') {
+        return { jobs: [{ name: 'RestoreFiles' }] }
+      }
+      if (command === 'list filesets') {
+        return { filesets: [] }
+      }
+      if (command.includes('llist backups') && command.includes('client-a')) {
+        return clientABackups
+      }
+      if (command.includes('llist backups') && command.includes('client-b')) {
+        return { backups: [{ jobid: 2, name: 'backup-b', level: 'F', jobstatus: 'T' }] }
+      }
+      return {}
+    })
+
+    app.mount(root)
+    await vi.waitFor(() => {
+      expect(directorCall.mock.calls.some(([command]) => (
+        command.includes('llist backups') && command.includes('client-a')
+      ))).toBe(true)
+    })
+
+    const source = root.querySelector('[data-testid="restore-source-client"]')
+    source.value = 'prod-a:client-b'
+    source.dispatchEvent(new Event('change', { bubbles: true }))
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-testid="restore-backup-job"]').textContent)
+        .toContain('backup-b')
+    })
+
+    resolveClientABackups({
+      backups: [{ jobid: 1, name: 'backup-a', level: 'F', jobstatus: 'T' }],
+    })
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const backupOptions = root.querySelector('[data-testid="restore-backup-job"]').textContent
+    expect(backupOptions).toContain('backup-b')
+    expect(backupOptions).not.toContain('backup-a')
+  })
 })

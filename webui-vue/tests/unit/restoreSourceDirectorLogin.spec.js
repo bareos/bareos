@@ -41,6 +41,10 @@ vi.mock('quasar', () => ({
   }),
 }))
 
+vi.mock('../../src/components/DirectorBadge.vue', () => ({
+  default: { props: ['director'], render: () => h('span') },
+}))
+
 const containerStub = {
   setup: (_, { slots }) => () => h('div', slots.default?.()),
 }
@@ -130,10 +134,11 @@ describe('Restore source director login', () => {
 
     await vi.waitFor(() => {
       expect(hasDirectorSession).toHaveBeenCalledWith('prod-a')
-      expect(root.querySelectorAll('.bg-warning')).toHaveLength(1)
-      expect(root.querySelector('.bg-warning').textContent).toContain('Log in to prod-a.')
+      const warningBanners = [...root.querySelectorAll('.bg-warning')]
+      expect(warningBanners.some(banner => banner.textContent.includes('Log in to prod-a.')))
+        .toBe(true)
+      expect(root.textContent).toContain('Please log in to director "prod-a" first.')
     })
-    expect(root.textContent).not.toContain('Please log in to director "prod-a" first.')
     expect(root.querySelector('[data-testid="restore-source-client"]').dataset.selected)
       .toBe('prod-a:client-a')
     for (const testId of ['restore-backup-job', 'restore-target-client', 'restore-job']) {

@@ -876,6 +876,8 @@ static inline bool SendDataToSd(b_ctx* bctx)
   BareosSocket* sd = bctx->jcr->store_bsock;
   bool need_more_data;
 
+  bctx->jcr->ReadBytes += sd->message_length; /* count bytes read */
+
   // Check for sparse blocks
   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)) {
     bool allZeros;
@@ -905,8 +907,6 @@ static inline bool SendDataToSd(b_ctx* bctx)
     SerBegin(bctx->wbuf, OFFSET_FADDR_SIZE);
     ser_uint64(bctx->ff_pkt->bfd.offset); /* store offset in begin of buffer */
   }
-
-  bctx->jcr->ReadBytes += sd->message_length; /* count bytes read */
 
   // Uncompressed cipher input length
   bctx->cipher_input_len = sd->message_length;

@@ -1028,6 +1028,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         PluginUpdateFfPkt(ff_pkt, &sp);
       }
 
+      const struct stat original_statp = sp.statp;
       memcpy(&ff_pkt->statp, &sp.statp, sizeof(ff_pkt->statp));
       FillMissingPluginStatBlocks(ff_pkt->statp);
       Dmsg2(debuglevel, "startBackup returned type=%d, fname=%s\n", sp.type,
@@ -1087,7 +1088,6 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
       sp.cmd = const_cast<char*>(original_cmd);
 
-      const struct stat original_statp = ff_pkt->statp;
       bool data_was_read = !ff_pkt->no_read;
       uint64_t read_bytes_before = jcr->ReadBytes;
       uint32_t job_errors_before = jcr->JobErrors;

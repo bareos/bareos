@@ -75,6 +75,10 @@ check_log "$restore_log"
 payload="bareos bpipe accounting payload"
 payload_bytes=${#payload}
 payload_blocks=$(((payload_bytes + 511) / 512))
+sparse_payload="bareos sparse accounting payload"
+sparse_payload_bytes=${#sparse_payload}
+sparse_file_bytes=$((16 * 65536 + sparse_payload_bytes))
+sparse_file_blocks=$(((sparse_file_bytes + 511) / 512))
 
 # The bpipe plugin did not report a corrected size/block count itself,
 # so the FD's fallback counts it from the plugin stream instead. That
@@ -99,9 +103,20 @@ run_bconsole - <<END_OF_DATA
 END_OF_DATA
 
 expect_grep \
-  "1:${payload_bytes}:${payload_blocks}" \
+  "^[[:space:]|]*1:${payload_bytes}:${payload_blocks}[[:space:]|]*$" \
   "${runner_tmp}/accounting.out" \
   "Catalog does not contain exactly one corrected bpipe File row"
+
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/sparse-accounting.out
+.sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE f.jobid=1 AND p.path='/' AND f.name='bpipe-sparse'"
+END_OF_DATA
+
+expect_grep \
+  "^[[:space:]|]*1:${sparse_file_bytes}:${sparse_file_blocks}[[:space:]|]*$" \
+  "${runner_tmp}/sparse-accounting.out" \
+  "Sparse bpipe fallback did not count zero-filled bytes in the file size"
+
 # bls lists the corrected attributes once for each job.
 run_bls -d100 -vv -V Full-0001 FileStorage
 attribute_records=$(
@@ -121,9 +136,9 @@ if [ "$corrected_attribute_records" -ne 2 ]; then
   exit 2
 fi
 expect_grep \
-  "2 files and directories found" \
+  "4 files and directories found" \
   "$tmp/bls.out" \
-  "bls listed the file with a duplicate attribute record more than once"
+  "bls did not list both files once per backup job"
 
 # validate environment variables in readprogram / writeprogram
 expected_output=(
@@ -188,12 +203,12 @@ check_log "$virtual_full_log"
 check_log "$virtual_full_restore_log"
 
 expect_grep \
-  "SD Files Written:[[:space:]]*1" \
+  "SD Files Written:[[:space:]]*2" \
   "$virtual_full_log" \
-  "Virtual Full did not consolidate exactly one bpipe file"
+  "Virtual Full did not consolidate both bpipe files"
 
 expect_grep \
-  "1:${payload_bytes}:${payload_blocks}" \
+  "^[[:space:]|]*1:${payload_bytes}:${payload_blocks}[[:space:]|]*$" \
   "${runner_tmp}/virtual-full-sql.out" \
   "Virtual Full catalog row does not retain corrected bpipe attributes"
 
@@ -262,7 +277,8 @@ run_bconsole - <<END_OF_DATA
 @$out ${runner_tmp}/bootstrap-accounting.out
 .sql query="SELECT count(*) || ':' || min(s.st_size) || ':' || min(s.st_blocks) AS accounting FROM file f JOIN path p USING (pathid) CROSS JOIN LATERAL decode_lstat(f.lstat, ARRAY['st_size','st_blocks']) s WHERE p.path='/' AND f.name='bscan-first'"
 END_OF_DATA
-expect_grep "1:${payload_bytes}:${payload_blocks}" \
+expect_grep \
+  "^[[:space:]|]*1:${payload_bytes}:${payload_blocks}[[:space:]|]*$" \
   "${runner_tmp}/bootstrap-accounting.out" \
   "Bootstrap-limited bscan lost its final corrected attributes"
 

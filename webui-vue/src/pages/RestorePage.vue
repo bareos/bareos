@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorErrorsBanner :errors="directorErrors" />
+    <DirectorErrorsBanner :errors="directorErrors" include-login-required />
 
     <q-card flat bordered class="bareos-panel">
       <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
@@ -648,6 +648,7 @@ const sourceClients   = ref([])
 const restoreClients  = ref([])
 const directorErrors  = ref([])
 const loadingClients = ref(false)
+let clientChangeGeneration = 0
 
 const selectedSourceClient = computed(() => (
   sourceClients.value.find(client => client.scopeKey === sourceClientKey.value) ?? null
@@ -1059,6 +1060,7 @@ const pluginOptionsHint = computed(() => {
 })
 
 async function onClientChange(clientName) {
+  const generation = ++clientChangeGeneration
   form.value.jobid = null
   browserReady.value = false
   clearBrowserState()
@@ -1086,21 +1088,36 @@ async function onClientChange(clientName) {
 
   loadingBackups.value = true
   try {
-    if (await loadRestoreSelections()) {
-      await loadBackups(selectedClient)
+    if (await loadRestoreSelections()
+        && isCurrentClientSelection(selectedClient, generation)) {
+      await loadBackups(selectedClient, generation)
     }
   } finally {
-    loadingBackups.value = false
+    if (generation === clientChangeGeneration) {
+      loadingBackups.value = false
+    }
   }
 }
 
-async function loadBackups(client) {
+function isCurrentClientSelection(client, generation) {
+  return generation === clientChangeGeneration
+    && client.scopeKey === sourceClientKey.value
+}
+
+async function loadBackups(client, generation) {
   try {
-    if (!await ensureSelectedSourceDirector()) return false
+    if (!isCurrentClientSelection(client, generation)
+        || !await ensureSelectedSourceDirector()
+        || !isCurrentClientSelection(client, generation)) {
+      return false
+    }
     const [r, filesets] = await Promise.all([
       director.call(`llist backups client=${quoteDirectorString(client.name)}`),
       director.call('list filesets').catch(() => null),
     ])
+    if (!isCurrentClientSelection(client, generation)) {
+      return false
+    }
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)
     backups.value = decorateRestoreBackupsWithPluginJobs(
@@ -1110,8 +1127,10 @@ async function loadBackups(client) {
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
     return true
   } catch (_) {
-    backups.value = []
-    pluginFilesets.value = new Map()
+    if (isCurrentClientSelection(client, generation)) {
+      backups.value = []
+      pluginFilesets.value = new Map()
+    }
     return false
   }
 }

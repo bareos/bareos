@@ -95,6 +95,17 @@ bool EncodeAndSendAttributes(JobControlRecord*,
 
 int saved_file_type = 0;
 int encoded_attributes = 0;
+bRC (*bpipe_start_backup_file)(PluginContext*, save_pkt*) = nullptr;
+
+bRC StartBackupFileWithSizeButNoBlocks(PluginContext* ctx, save_pkt* sp)
+{
+  bRC retval = bpipe_start_backup_file(ctx, sp);
+  if (retval == bRC_OK) {
+    sp->statp.st_size = 513;
+    sp->statp.st_blocks = 0;
+  }
+  return retval;
+}
 
 int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
@@ -166,6 +177,32 @@ TEST_P(PluginSaveTest, corrections_require_saved_attributes)
   ASSERT_EQ(PluginSave(&jcr, &ff_pkt, true), 1);
   EXPECT_EQ(encoded_attributes, GetParam() == FT_REG ? 1 : 0);
   EXPECT_EQ(jcr.JobFiles, GetParam() == FT_REG ? 8 : 7);
+}
+
+TEST_P(PluginSaveTest, uses_original_stats_for_fd_fallback)
+{
+  if (GetParam() != FT_REG) { GTEST_SKIP(); }
+
+  PluginFunctions* plugin_functions = nullptr;
+  for (auto* ctx : jcr.plugin_ctx_list) {
+    plugin_functions = PlugFunc(ctx->plugin);
+    break;
+  }
+  ASSERT_NE(plugin_functions, nullptr);
+
+  bpipe_start_backup_file = plugin_functions->startBackupFile;
+  plugin_functions->startBackupFile = StartBackupFileWithSizeButNoBlocks;
+
+  char command[] = "bpipe:file=/plugin-file:reader=unused:writer=unused";
+  ff_pkt.top_fname = command;
+  int status = PluginSave(&jcr, &ff_pkt, true);
+
+  plugin_functions->startBackupFile = bpipe_start_backup_file;
+  bpipe_start_backup_file = nullptr;
+
+  ASSERT_EQ(status, 1);
+  EXPECT_EQ(ff_pkt.statp.st_size, 1024);
+  EXPECT_EQ(ff_pkt.statp.st_blocks, 2);
 }
 
 INSTANTIATE_TEST_SUITE_P(
