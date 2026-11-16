@@ -2404,6 +2404,16 @@ test('opens the console and runs a raw command through the proxied director conn
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
+test('redraws a completed console command before it is sent', async ({ page }) => {
+  await login(page)
+
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list jobs client=bareos-')
+  await page.keyboard.press('Tab')
+  await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
+})
+
 async function assertDashboardResizePersists(page) {
   await page.getByTitle('Edit layout').click()
   await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()

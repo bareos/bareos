@@ -485,13 +485,14 @@ watch(() => auth.user?.director, (directorName) => {
   }
 })
 
-// Redraw the live input line whenever the prompt changes (e.g. after a
-// Director response updates it) or a selection menu ends — this is what
-// makes the prompt "reappear" below newly streamed asynchronous output
-// that didn't go through the wrapped terminal writer directly triggering
-// a redraw (e.g. the very first prompt after connecting).
+// Also redraw when asynchronous completion changes the editable command.
 watch(
-  () => [currentSession.value.currentPrompt, currentSession.value.selectionActive],
+  () => [
+    currentSession.value.currentPrompt,
+    currentSession.value.selectionActive,
+    currentSession.value.cmd,
+    currentSession.value.cursorPos,
+  ],
   () => {
     redrawInputLine()
   }
