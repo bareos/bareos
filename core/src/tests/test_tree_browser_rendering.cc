@@ -187,7 +187,7 @@ TEST(TreeBrowserRendering, DocumentsDestinationBrowserNavigation)
   std::string search_help
       = std::string(kDestinationSearchHelpLine1) + kDestinationSearchHelpLine2;
   for (std::string_view key : {"Space", "Backspace", "Up", "Down", "Tab",
-                               "PgUp", "PgDn", "Enter", "Esc", "."}) {
+                               "PgUp", "PgDn", "Enter", "Esc"}) {
     EXPECT_NE(search_help.find(key), std::string::npos) << key;
   }
 

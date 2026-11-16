@@ -1668,7 +1668,7 @@ static bool BrowseDestinationClientWhere(UaContext* ua,
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;
         first_row = 0;
-      } else if (IsCancelKey(input)) {
+      } else if (IsCancelKey(input) && !IsTextKey(input)) {
         search.clear();
         mode = DestinationBrowseMode::kBrowsing;
         cursor = 0;

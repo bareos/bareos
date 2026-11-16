@@ -102,7 +102,7 @@ inline constexpr const char* kDestinationBrowserFooter
 inline constexpr const char* kDestinationSearchHelpLine1
     = "Type substring/Space  Backspace Delete";
 inline constexpr const char* kDestinationSearchHelpLine2
-    = "Up/Down/Tab Move  PgUp/PgDn Page  Enter Accept  Esc/. Clear";
+    = "Up/Down/Tab Move  PgUp/PgDn Page  Enter Accept  Esc Clear";
 inline constexpr const char* kSelectionFooter
     = "Arrows Move  Enter Select  Type Filter  h/? Help  Esc/. Cancel";
 
