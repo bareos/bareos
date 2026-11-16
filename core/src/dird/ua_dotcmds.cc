@@ -946,6 +946,23 @@ bool DotPluginhintsCmd(UaContext* ua, const char*)
                    ua->argv[pos], ua->db->strerror());
       return false;
     }
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      ua->ErrorMsg(T_("Access to JobId=%s not allowed.\n"), ua->argv[pos]);
+      return false;
+    }
+    if (jr.ClientId) {
+      ClientDbRecord cr{};
+      cr.ClientId = jr.ClientId;
+      if (DbLocker _{ua->db}; !ua->db->GetClientRecord(ua->jcr, &cr)) {
+        ua->ErrorMsg(T_("Unable to get Client record for JobId=%s: ERR=%s\n"),
+                     ua->argv[pos], ua->db->strerror());
+        return false;
+      }
+      if (!ua->AclAccessOk(Client_ACL, cr.Name, true)) {
+        ua->ErrorMsg(T_("Access to JobId=%s not allowed.\n"), ua->argv[pos]);
+        return false;
+      }
+    }
 
     FileSetDbRecord fsr;
     fsr.FileSetId = jr.FileSetId;

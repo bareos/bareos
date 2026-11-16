@@ -42,6 +42,32 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_pluginhints_jobid_respects_job_and_client_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        allowed = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={allowed} yes")
+        denied = self.run_job(admin, "backup-test2-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={denied} yes")
+        for name in ("job-backup-bareos-fd", "client-bareos-fd"):
+            with self.subTest(console=name):
+                console = bareos.bsock.DirectorConsoleJson(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=name,
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                console.call(f".pluginhints jobid={allowed}")
+                with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                    console.call(f".pluginhints jobid={denied}")
+
     def test_job_pagination_reports_acl_filtered_rows(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
