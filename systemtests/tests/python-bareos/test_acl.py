@@ -39,9 +39,57 @@ from bareos.bsock.lowlevel import LowLevel
 import bareos.exceptions
 
 import bareos_unittest
+from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_visual_restore_run_requires_a_source(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console)
+        screen = browser.run("run job=RestoreFiles")
+        self.assertIn("Restore Options", screen)
+        screen = browser.press("enter")
+        self.assertIn("Please enter a JobId for restore:", screen)
+        self.assertNotIn("Job queued", screen)
+        screen = browser.submit_line("2147483647")
+        self.assertIn("not found in catalog", screen)
+        self.assertNotIn("Job queued", screen)
+
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        for supplied in (False, True):
+            with self.subTest(supplied=supplied):
+                command = "run job=RestoreFiles"
+                if supplied:
+                    command += f" jobid={backup}"
+                screen = browser.run(command)
+                self.assertIn("Restore Options", screen)
+                screen = browser.press("enter")
+                if not supplied:
+                    self.assertIn("Please enter a JobId for restore:", screen)
+                    screen = browser.submit_line(str(backup))
+                self.assertNotIn("Please enter a JobId for restore:", screen)
+                queued = re.search(r"Job queued\. JobId=(\d+)", screen)
+                self.assertIsNotNone(queued, screen)
+                jobid = queued.group(1)
+                self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+                admin.call(f"wait jobid={jobid}")
+
     def test_restore_copies_require_complete_authorized_chain(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
