@@ -2477,6 +2477,93 @@ test('preserves console output split across unterminated chunks', async ({ page 
   await expect(consoleOutput).toContainText('single-result')
 })
 
+test('pastes into the console editor and interactive selection', async ({ page }) => {
+  const selectionInputs = []
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    let selecting = false
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-paste-selection') {
+        selecting = true
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'Enter search text:', prompt: 'select',
+        }))
+      } else if (selecting && request.type === 'command' && request.command.startsWith('resize:')) {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'Enter search text:', prompt: 'select',
+        }))
+      } else if (request.type === 'command' && (
+        request.command.startsWith('key:text:') || request.command === 'key:space'
+      )) {
+        selectionInputs.push(request.command)
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list js')
+  await page.keyboard.press('ArrowLeft')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'ob')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('list jobs')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'unexpected\ncommand')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Pasted text cannot contain control characters.')
+  await expect(consoleOutput).not.toContainText('unexpected')
+  await expect(consoleOutput).toContainText('list jobs')
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await page.keyboard.type('webui-paste-selection')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('Enter search text:')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'example path  ')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect.poll(() => selectionInputs).toEqual(['key:text:example path', 'key:space', 'key:space'])
+})
+
+test('pastes text into the real destination browser search', async ({ page }) => {
+  test.skip(profile !== 'admin', 'Requires administrative restore access')
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('run job=RestoreFiles')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('Restore Options')
+
+  await page.keyboard.press('ArrowDown')
+  await expect(consoleOutput).toContainText('> Restore Client')
+  await page.keyboard.press('ArrowDown')
+  await expect(consoleOutput).toContainText('> Where [b: browse]')
+  await page.keyboard.type('b')
+  await expect(consoleOutput).toContainText('Browse destination client')
+  await page.keyboard.type('/')
+  await expect(consoleOutput).toContainText('Type substring')
+  await page.locator('.xterm-helper-textarea').evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'needle.dir  ')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Search: needle.dir')
+  await page.keyboard.type('x')
+  await expect.poll(() => consoleOutput.textContent()).toContain('Search: needle.dir  x')
+})
+
 test('sends the current console size when switching directors', async ({ page }) => {
   test.skip(!isMultiDirectorProfile, 'Requires multiple Directors')
 
