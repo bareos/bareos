@@ -42,6 +42,85 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_restore_copies_require_complete_authorized_chain(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        full = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={full} yes")
+        sleep(2)
+        path = os.path.join(self.backup_directory, f"copy-chain-{uuid.uuid4().hex}")
+        with open(path, "w") as data:
+            data.write("incremental data\n")
+        self.addCleanup(os.remove, path)
+        sleep(2)
+        incremental = self.run_job(admin, "backup-bareos-fd", "Incremental", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={incremental} yes")
+        prefix = f"copy-chain-{uuid.uuid4().hex}"
+        self.addCleanup(
+            admin.call, f".sql query=\"DELETE FROM Job WHERE Job LIKE '{prefix}%'\""
+        )
+        for suffix, source, name in (
+            ("full1", full, "backup-bareos-fd"),
+            ("full2", full, "backup-bareos-fd"),
+            ("incr", incremental, "backup-test2-fd"),
+        ):
+            admin.call(
+                '.sql query="INSERT INTO Job '
+                "(Job,Name,Type,Level,ClientId,JobStatus,StartTime,EndTime,"
+                "JobTDate,FileSetId,PriorJobId) "
+                f"SELECT '{prefix}-{suffix}','{name}','C',Level,ClientId,"
+                "JobStatus,StartTime,EndTime,JobTDate,FileSetId,JobId "
+                f'FROM Job WHERE JobId={source}"'
+            )
+        copy_rows = admin.call(
+            f".sql query=\"SELECT JobId FROM Job WHERE Job LIKE '{prefix}%'\""
+        )["query"]
+        copy_ids = {str(row["jobid"]) for row in copy_rows}
+        self.assertEqual(len(copy_ids), 3)
+
+        for scenario in ("denied", "missing", "complete"):
+            if scenario == "missing":
+                admin.call(
+                    f'.sql query="UPDATE Job SET PriorJobId=0 '
+                    f"WHERE Job='{prefix}-incr'\""
+                )
+            elif scenario == "complete":
+                admin.call(
+                    f'.sql query="UPDATE Job SET PriorJobId={incremental},'
+                    f"Name='backup-bareos-fd' WHERE Job='{prefix}-incr'\""
+                )
+            with self.subTest(scenario=scenario):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="job-backup-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                try:
+                    result = console.call(
+                        "restore client=bareos-fd fileset=SelfTest select copies yes"
+                    )
+                finally:
+                    console.close()
+                selected = re.search(
+                    rb"You have selected the following JobIds: ([0-9,]+)", result
+                )
+                self.assertIsNotNone(selected, result)
+                selected_ids = set(selected.group(1).decode().split(","))
+                if scenario == "complete":
+                    self.assertEqual(selected_ids, copy_ids)
+                    self.assertNotIn(b"No complete authorized copy chain", result)
+                else:
+                    self.assertEqual(selected_ids, {str(full), str(incremental)})
+                    self.assertIn(b"No complete authorized copy chain", result)
+
     def test_restore_latest_rejects_before_cutoff(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

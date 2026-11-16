@@ -57,6 +57,7 @@
 
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 #include <optional>
 
@@ -1815,6 +1816,44 @@ static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua, const char* jobids)
   return filtered_jobids;
 }
 
+static bool CopiesCoverBackupChain(UaContext* ua,
+                                   const char* originals,
+                                   const char* copies)
+{
+  std::unordered_set<JobId_t> missing;
+  for (const char* current = originals;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      return false;
+    }
+    if (status == 0) { break; }
+    missing.insert(jobid);
+  }
+
+  for (const char* current = copies;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      return false;
+    }
+    if (status == 0) { break; }
+
+    JobDbRecord jr{};
+    jr.JobId = jobid;
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      char ed1[50];
+      ua->WarningMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                     edit_int64(jobid, ed1), ua->db->strerror());
+      return false;
+    }
+    missing.erase(jr.PriorJobId);
+  }
+  return missing.empty();
+}
+
 /**
  * This routine is used to get the current backup or a backup before the
  * specified date.
@@ -1957,15 +1996,16 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
       rx->last_jobid[0] = rx->JobIds[0] = 0;
       ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
           rx->query, original_jobids);
-      if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
-        ua->WarningMsg("%s\n", ua->db->strerror());
-      }
+      bool copies_query_ok
+          = ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx);
+      if (!copies_query_ok) { ua->WarningMsg("%s\n", ua->db->strerror()); }
 
       POOLMEM* copy_jobids = FilterJobIdsByJobAcl(ua, rx->JobIds);
       FreePoolMemory(rx->JobIds);
       rx->JobIds = original_jobids;
 
-      if (*copy_jobids != 0) {
+      if (copies_query_ok
+          && CopiesCoverBackupChain(ua, original_jobids, copy_jobids)) {
         // Display only copies whose Copy Job resource is allowed.
         ua->db->ListCopiesRecords(ua->jcr, "", copy_jobids, ua->send.get(),
                                   HORZ_LIST);
@@ -1982,6 +2022,10 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
           rx->JobIds = copy_jobids;
           copy_jobids = nullptr;
         }
+      } else {
+        ua->WarningMsg(
+            T_("No complete authorized copy chain found; using original "
+               "backups.\n"));
       }
 
       if (copy_jobids) { FreePoolMemory(copy_jobids); }
