@@ -29,7 +29,7 @@
     </div>
     <template v-else>
       <div style="position:relative; width:100%; flex:1; min-height:0">
-        <Doughnut :data="chartData" :options="chartOptions" />
+        <Doughnut :data="chartData" :options="chartOptions" :aria-label="chartSummary" />
       </div>
     </template>
   </div>
@@ -68,6 +68,10 @@ const runningJobs = computed(() => ctx.aggregate.value.runningJobs ?? [])
 const loading = computed(() => ctx.loading.value)
 const statusBuckets = computed(() => groupRunningJobsByStatus(runningJobs.value))
 const totalJobs = computed(() => runningJobs.value.length)
+const chartSummary = computed(() => [
+  `${t('Total')}: ${totalJobs.value}`,
+  ...statusBuckets.value.map(bucket => `${bucket.key}: ${bucket.count}`),
+].join(', '))
 const sliceColors = computed(() => statusBuckets.value.map((bucket, index) => (
   isWaitingStatus(bucket.key)
     ? PIE_PALETTE[index % PIE_PALETTE.length]

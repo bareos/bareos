@@ -755,7 +755,8 @@ static void EmitCatalogStatusApi(UaContext* ua,
 
   ua->send->ObjectStart("catalog");
   ua->send->ObjectKeyValue("engine", "postgresql", "%s\n");
-  ua->send->ObjectKeyValue("name", ua->catalog->db_name, "%s\n");
+  ua->send->ObjectKeyValue("name", ua->catalog ? ua->catalog->db_name : "",
+                           "%s\n");
   ua->send->ObjectKeyValueBool("total_bytes_available", total_available);
   if (total_available) {
     ua->send->ObjectKeyValue("total_bytes", total_bytes, "%" PRIu64 "\n");
@@ -801,7 +802,7 @@ static void EmitCatalogStatusText(UaContext* ua,
   ua->SendMsg(T_("\nCatalog Status:\n"));
   ua->SendMsg(T_(" Status: %s\n"), status);
   ua->SendMsg(T_(" Checked at: %s\n"), checked_at);
-  ua->SendMsg(T_(" Catalog: %s\n"), ua->catalog->db_name);
+  ua->SendMsg(T_(" Catalog: %s\n"), ua->catalog ? ua->catalog->db_name : "");
   ua->SendMsg(T_(" Engine: postgresql\n"));
 
   if (total_available) {

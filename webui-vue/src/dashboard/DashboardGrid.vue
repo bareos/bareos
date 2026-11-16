@@ -170,6 +170,8 @@ const poolRefreshToken = ref(0)
 const analyticsJobs = ref([])
 const analyticsLoading = ref(false)
 let _latestFetchRequestId = 0
+let _latestPoolRequestId = 0
+let _latestAnalyticsRequestId = 0
 let _dataRequestsInFlight = 0
 let _poolRequestsInFlight = 0
 let _analyticsRequestsInFlight = 0
@@ -191,7 +193,7 @@ const hasAnalyticsWidgets = computed(() => props.dashboard.widgets.some(widget =
 
 async function fetchAnalyticsData(credentials, requestId) {
   if (!hasAnalyticsWidgets.value) {
-    if (requestId === _latestFetchRequestId) {
+    if (requestId === _latestAnalyticsRequestId) {
       analyticsJobs.value = []
     }
     return
@@ -201,7 +203,7 @@ async function fetchAnalyticsData(credentials, requestId) {
   analyticsLoading.value = true
   try {
     const result = await fetchAggregatedAnalytics(credentials, props.activeDirectors)
-    if (requestId === _latestFetchRequestId) {
+    if (requestId === _latestAnalyticsRequestId) {
       analyticsJobs.value = result.jobs
     }
   } finally {
@@ -214,6 +216,8 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
   const requestId = ++_latestFetchRequestId
   const credentials = auth.getCredentials()
   if (!credentials || props.activeDirectors.length === 0) {
+    _latestPoolRequestId += 1
+    _latestAnalyticsRequestId += 1
     if (requestId === _latestFetchRequestId) {
       snapshots.value = []
       pools.value = []
@@ -226,6 +230,8 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
   _refreshCount += 1
   const includePools = forcePools || _refreshCount % POOL_REFRESH_EVERY === 1
   const includeAnalytics = forceAnalytics || _refreshCount % ANALYTICS_REFRESH_EVERY === 1
+  const poolRequestId = includePools ? ++_latestPoolRequestId : null
+  const analyticsRequestId = includeAnalytics ? ++_latestAnalyticsRequestId : null
 
   _dataRequestsInFlight += 1
   loading.value = true
@@ -240,29 +246,36 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
           fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
         )
       ),
-      includeAnalytics ? fetchAnalyticsData(credentials, requestId) : Promise.resolve(),
+      includeAnalytics ? fetchAnalyticsData(credentials, analyticsRequestId) : Promise.resolve(),
     ])
     const fresh = results
       .filter(r => r.status === 'fulfilled')
       .map(r => r.value)
 
-    // Ignore stale completions from older requests.
-    if (requestId !== _latestFetchRequestId) return
-
-    if (includePools) {
-      snapshots.value = fresh
+    if (includePools && poolRequestId === _latestPoolRequestId) {
       pools.value = aggregateDirectorDashboardSnapshots(fresh).pools
       poolRefreshToken.value += 1
-    } else {
-      // Carry forward pool data from the previous snapshot for each director.
-      const prevPoolsByDir = Object.fromEntries(
-        snapshots.value.map(s => [s.director, s.pools ?? []])
+      const freshPoolsByDir = Object.fromEntries(
+        fresh.map(s => [s.director, s.pools ?? []])
       )
-      snapshots.value = fresh.map(s => ({
+      snapshots.value = snapshots.value.map(s => ({
         ...s,
-        pools: prevPoolsByDir[s.director] ?? [],
+        pools: freshPoolsByDir[s.director] ?? [],
       }))
     }
+
+    // Ignore stale completions for the fast-changing snapshot channel.
+    if (requestId !== _latestFetchRequestId) return
+
+    const prevPoolsByDir = Object.fromEntries(
+      snapshots.value.map(s => [s.director, s.pools ?? []])
+    )
+    snapshots.value = fresh.map(s => ({
+      ...s,
+      pools: includePools && poolRequestId === _latestPoolRequestId
+        ? s.pools ?? []
+        : prevPoolsByDir[s.director] ?? [],
+    }))
     refreshToken.value += 1
   } finally {
     _dataRequestsInFlight = Math.max(0, _dataRequestsInFlight - 1)

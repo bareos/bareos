@@ -303,6 +303,7 @@ function manualRefresh() {
 // ── auto-refresh ───────────────────────────────────────────────────────────
 const countdown = ref(settings.refreshInterval)
 let _timer = null
+let unmounted = false
 
 function startAutoRefresh() {
   stopAutoRefresh()
@@ -323,10 +324,14 @@ function stopAutoRefresh() {
 
 onMounted(async () => {
   await loadAvailableDirectors()
+  if (unmounted) return
   syncSelectedDirectors()
   startAutoRefresh()
 })
-onUnmounted(stopAutoRefresh)
+onUnmounted(() => {
+  unmounted = true
+  stopAutoRefresh()
+})
 
 watch(() => directorOptions.value, () => { syncSelectedDirectors() }, { deep: true })
 

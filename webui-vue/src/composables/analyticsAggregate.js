@@ -54,9 +54,26 @@ function sortJobs(jobs) {
 }
 
 export async function fetchAggregatedAnalytics(credentials, directors, maxJobsLimit = 1000) {
+  if (!Number.isSafeInteger(maxJobsLimit) || maxJobsLimit <= 0) {
+    throw new RangeError('Analytics page size must be a positive integer')
+  }
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const result = await client.call(`list jobs limit=${maxJobsLimit}`)
-    return decorateJobs(result?.jobs, director)
+    const jobs = []
+    let offset = 0
+    while (true) {
+      const result = await client.call(
+        `list jobs limit=${maxJobsLimit} offset=${offset} sortby=jobid`
+      )
+      const page = directorCollection(result?.jobs)
+      jobs.push(...decorateJobs(page, director))
+      const filtered = result?.meta?.range?.filtered
+      if (!Number.isSafeInteger(filtered) || filtered < 0
+          || page.length + filtered > maxJobsLimit) {
+        throw new Error('Invalid analytics pagination metadata')
+      }
+      if (page.length + filtered < maxJobsLimit) return jobs
+      offset += maxJobsLimit
+    }
   })
 
   return {

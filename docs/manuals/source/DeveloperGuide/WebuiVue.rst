@@ -161,15 +161,18 @@ https://poeditor.com/join/project/ELnLNbvQJb.
 The Bareos team maintains the project as follows:
 
 1. Run ``npm run update:i18n``.
-2. Import :file:`en_EN.json` into POEditor as Key-Value JSON and synchronize
-   the project terms, removing terms which are no longer present.
+2. Import :file:`en_EN.json` into POEditor as Key-Value JSON, adding or
+   updating Vue terms without deleting other project terms. The project is
+   shared with the classic PHP WebUI; absence from the Vue catalog alone
+   does not mean a term or its translations can be removed.
 3. Export each language as Key-Value JSON to its corresponding file in
    :file:`webui-vue/src/i18n/locales/`.
 4. Run ``npm run update:i18n`` to add any untranslated keys omitted by the
    export, then run ``npm run check:i18n`` and the unit tests before
    committing.
 
-When the project was converted to Vue JSON, matching translations were
+Remove a shared project term only after confirming that neither WebUI uses
+it. When the project was converted to Vue JSON, matching translations were
 seeded once from the classic PHP WebUI catalogs. PHP-only terms were not
 copied. The Vue translation scripts and runtime do not depend on the
 classic WebUI, so removing it does not affect Vue translations.

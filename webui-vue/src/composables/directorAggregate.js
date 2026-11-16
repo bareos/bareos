@@ -36,7 +36,7 @@ import { SESSION_AUTH_PASSWORD } from '../utils/sessionApi.js'
 import { buildListJobsCountCommand } from '../utils/jobs.js'
 import { parseDirectorDate } from '../utils/locales.js'
 
-const JOBS_PAST_24H_STATUSES = ['R', 'C', 'T', 'W', 'f']
+const JOBS_PAST_24H_STATUSES = ['R', 'C', 'T', 'W', 'f', 'E']
 
 export async function createDirectorCommandClient(credentials, options = {}) {
   const auth = useAuthStore()

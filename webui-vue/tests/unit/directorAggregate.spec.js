@@ -93,7 +93,7 @@ describe('director aggregate dashboard helpers', () => {
       }),
     })
     await vi.waitFor(() => {
-      expect(socket.sent).toHaveLength(13)
+      expect(socket.sent).toHaveLength(14)
     })
 
     const commandIds = new Map(
@@ -110,6 +110,7 @@ describe('director aggregate dashboard helpers', () => {
       ['T', '7'],
       ['W', '1'],
       ['f', '1'],
+      ['E', '3'],
     ]) {
       const command = `llist jobs count days=1 jobstatus=${status}`
       expect(commandIds.has(command)).toBe(true)
@@ -229,6 +230,7 @@ describe('director aggregate dashboard helpers', () => {
         T: 7,
         W: 1,
         f: 1,
+        E: 3,
       },
       runningJobs: [
         expect.objectContaining({
@@ -278,7 +280,7 @@ describe('director aggregate dashboard helpers', () => {
     const aggregate = aggregateDirectorDashboardSnapshots([
       {
         director: 'prod-a',
-        jobsPast24hStatusCounts: { R: 1, C: 2, T: 3, W: 4, f: 5 },
+        jobsPast24hStatusCounts: { R: 1, C: 2, T: 3, W: 4, f: 5, E: 6 },
         runningJobs: [{ scopeKey: 'prod-a:2', director: 'prod-a', id: 2, status: 'R', starttime: '2026-03-23 09:00:00' }],
         scheduledJobs: [{ scopeKey: 'prod-a:scheduled:JobA', director: 'prod-a', name: 'JobA', scheduled: '2026-03-23 21:00' }],
         catalogStatus: {
@@ -293,7 +295,7 @@ describe('director aggregate dashboard helpers', () => {
       },
       {
         director: 'prod-b',
-        jobsPast24hStatusCounts: { R: 10, C: 20, T: 30, W: 40, f: 50 },
+        jobsPast24hStatusCounts: { R: 10, C: 20, T: 30, W: 40, f: 50, E: 60 },
         runningJobs: [],
         scheduledJobs: [{ scopeKey: 'prod-b:scheduled:JobB', director: 'prod-b', name: 'JobB', scheduled: '2026-03-23 20:00' }],
         catalogStatus: {
@@ -314,6 +316,7 @@ describe('director aggregate dashboard helpers', () => {
       T: 33,
       W: 44,
       f: 55,
+      E: 66,
     })
     expect(aggregate.scheduledJobs.map(j => j.name)).toEqual(['JobB', 'JobA'])
     expect(aggregate.clientCount).toBe(5)

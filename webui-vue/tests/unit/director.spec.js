@@ -553,11 +553,13 @@ describe('director store', () => {
 
     const slowCall = director.call('.bvfs_update jobid=1', { timeoutMs: 300_000 })
 
-    // Well past the normal 30s command timeout — should still be pending.
-    vi.advanceTimersByTime(60_000)
     let settled = false
-    void slowCall.then(() => { settled = true }).catch(() => { settled = true })
-    await Promise.resolve()
+    void slowCall.then(
+      () => { settled = true },
+      () => { settled = true },
+    )
+    // Well past the normal 30s command timeout — should still be pending.
+    await vi.advanceTimersByTimeAsync(60_000)
     expect(settled).toBe(false)
 
     // Past the custom 300s timeout — should now reject.

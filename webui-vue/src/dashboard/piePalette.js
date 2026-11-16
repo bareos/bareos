@@ -42,9 +42,15 @@ export const PIE_PALETTE = [
  */
 export function getContrastTextColor(hexColor) {
   const hex = hexColor.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.55 ? '#222' : '#fff'
+  const linear = (channel) => {
+    const value = channel / 255
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  }
+  const r = linear(parseInt(hex.substring(0, 2), 16))
+  const g = linear(parseInt(hex.substring(2, 4), 16))
+  const b = linear(parseInt(hex.substring(4, 6), 16))
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  const darkContrast = (luminance + 0.05) / (linear(34) + 0.05)
+  const whiteContrast = 1.05 / (luminance + 0.05)
+  return darkContrast > whiteContrast ? '#222' : '#fff'
 }

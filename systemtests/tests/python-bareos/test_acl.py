@@ -42,6 +42,78 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_job_pagination_reports_acl_filtered_rows(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        for job in ("backup-bareos-fd", "backup-test2-fd"):
+            jobid = self.run_job(admin, job, "Full", wait=True)
+            self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+        restricted = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name="job-backup-bareos-fd",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        expected = restricted.call("list jobs sortby=jobid")["jobs"]
+        rows = []
+        filtered = 0
+        offset = 0
+        while True:
+            result = restricted.call(f"list jobs sortby=jobid limit=1 offset={offset}")
+            page = result.get("jobs", [])
+            suppressed = result["meta"]["range"]["filtered"]
+            rows.extend(page)
+            filtered += suppressed
+            if len(page) + suppressed < 1:
+                break
+            offset += 1
+        self.assertGreater(filtered, 0)
+        self.assertEqual(rows, expected)
+
+    def test_catalog_status_without_authorized_catalog(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        name = "catalog-status-denied"
+        self.configure_add(
+            admin,
+            "consoles",
+            name,
+            f"console={name} password=secret profile=operator "
+            "catalogacl=!MyCatalog tlsenable=no tlsrequire=no",
+        )
+        for api in (False, True):
+            with self.subTest(api=api):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=name,
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                console.call("gui on")
+                if api:
+                    console.call(".api 2")
+                result = console.call("status catalog").decode("utf-8")
+                if api:
+                    self.assertRegex(result, r'"status"\s*:\s*"unavailable"')
+                else:
+                    self.assertIn("Status: unavailable", result)
+                self.assertIn("Failed to open catalog database", result)
+                self.assertIn("bareos", console.call("version").decode("utf-8").lower())
+
     def test_volume_comment_checks_pool_after_interactive_prompt(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

@@ -26,7 +26,7 @@ export const JOB_STATUS_24H_CHART_SEGMENTS = [
   { status: 'C', labelKey: messageId('Waiting'), color: '#9e9e9e' },
   { status: 'T', labelKey: messageId('Successful'), color: '#28a745' },
   { status: 'W', labelKey: messageId('Warning'), color: '#ffc107' },
-  { status: 'f', labelKey: messageId('Failed'), color: '#dc3545' },
+  { status: 'f,E', labelKey: messageId('Failed'), color: '#dc3545' },
 ]
 
 function normaliseCount(value) {
@@ -38,7 +38,9 @@ export function buildJobStatus24hChartSegments(statusCounts = {}) {
   return JOB_STATUS_24H_CHART_SEGMENTS
     .map(segment => ({
       ...segment,
-      count: normaliseCount(statusCounts?.[segment.status]),
+      count: segment.status.split(',').reduce(
+        (sum, status) => sum + normaliseCount(statusCounts?.[status]), 0
+      ),
     }))
     .filter(segment => segment.count > 0)
 }

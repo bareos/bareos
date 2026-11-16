@@ -107,7 +107,7 @@ const dialogCardStyle = computed(() => (isMobile.value
   : 'min-width:520px; max-width:720px; width:100%'))
 
 const filtered = computed(() => {
-  const q = search.value.toLowerCase().trim()
+  const q = (search.value ?? '').toLowerCase().trim()
   if (!q) return allDefs
   return allDefs.filter(d =>
     d.label.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)

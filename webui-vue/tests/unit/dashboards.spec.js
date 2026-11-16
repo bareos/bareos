@@ -95,6 +95,37 @@ describe('dashboards store', () => {
 
   // ── persistence ────────────────────────────────────────────────────────────
 
+  it('keeps a deleted built-in dashboard deleted after reload', async () => {
+    const store = useDashboardStore()
+    store.removeDashboard('analytics')
+    await nextTick()
+    setActivePinia(createPinia())
+    expect(useDashboardStore().dashboards.some(d => d.id === 'analytics')).toBe(false)
+  })
+
+  it('adds newly introduced defaults without restoring a previously deleted one', () => {
+    localStorage.setItem('bareos_dashboards', JSON.stringify({
+      dashboards: [{ id: 'default', name: 'Operations', widgets: [] }],
+      activeDashboardId: 'default',
+      seededDashboardIds: ['default', 'analytics'],
+    }))
+    const store = useDashboardStore()
+    expect(store.dashboards.some(d => d.id === 'analytics')).toBe(false)
+    expect(store.dashboards.some(d => d.id === 'job-schedule-timeline')).toBe(true)
+  })
+
+  it('preserves omissions from an imported backup after reload', async () => {
+    const store = useDashboardStore()
+    store.importDashboards({
+      bareosDashboardsBackup: 1,
+      dashboards: [{ id: 'custom', name: 'Custom', widgets: [] }],
+      activeDashboardId: 'custom',
+    })
+    await nextTick()
+    setActivePinia(createPinia())
+    expect(useDashboardStore().dashboards.map(d => d.id)).toEqual(['custom'])
+  })
+
   it('persists dashboards to localStorage after mutation', async () => {
     const store = useDashboardStore()
     store.addDashboard('My Board')
@@ -380,6 +411,24 @@ describe('dashboards store', () => {
     expect(widget.layout.h).toBe(8)
   })
 
+  it('retains timeline minimum dimensions through layout updates and reload', async () => {
+    const store = useDashboardStore()
+    const dbId = store.dashboards[0].id
+    const widgetId = store.addWidget(dbId, {
+      type: 'job-schedule-timeline',
+      title: 'Timeline',
+      props: {},
+      layout: { x: 0, y: 0, w: 12, h: 12, minW: 6, minH: 10 },
+    })
+    store.updateWidgetLayout(dbId, widgetId, { x: 0, y: 0, w: 8, h: 11 })
+    store.updateWidgetLayouts(dbId, [{ i: widgetId, x: 1, y: 0, w: 7, h: 10 }])
+    await nextTick()
+    setActivePinia(createPinia())
+    const restored = useDashboardStore().dashboards.find(d => d.id === dbId)
+      .widgets.find(w => w.id === widgetId)
+    expect(restored.layout).toMatchObject({ w: 7, h: 10, minW: 6, minH: 10 })
+  })
+
   // ── layout normalisation ───────────────────────────────────────────────────
 
   it('enforces minimum widget width and height', () => {
@@ -394,5 +443,19 @@ describe('dashboards store', () => {
     const widget = store.dashboards[0].widgets.find(w => w.id === wId)
     expect(widget.layout.w).toBeGreaterThanOrEqual(2)
     expect(widget.layout.h).toBeGreaterThanOrEqual(3)
+  })
+
+  it('bounds invalid minimums and enforces valid widget-specific minimums', () => {
+    const store = useDashboardStore()
+    const dbId = store.dashboards[0].id
+    const id = store.addWidget(dbId, {
+      type: 'job-schedule-timeline',
+      layout: { w: 1, h: 2, minW: 99, minH: 10 },
+    })
+    expect(store.dashboards[0].widgets.find(w => w.id === id).layout)
+      .toMatchObject({ minW: 12, minH: 10, w: 12, h: 10 })
+    store.updateWidgetLayout(dbId, id, { w: 2, h: 3, minW: 1, minH: 1 })
+    expect(store.dashboards[0].widgets.find(w => w.id === id).layout)
+      .toMatchObject({ minW: 12, minH: 10, w: 12, h: 10 })
   })
 })

@@ -125,7 +125,8 @@ import {
   resolveQueuedViewMode,
   extractCancelableGroupJobs,
 } from '../../utils/runningJobsWidget.js'
-import { useDirectorStore } from '../../stores/director.js'
+import { useAuthStore } from '../../stores/auth.js'
+import { createDirectorCommandClient } from '../../composables/directorAggregate.js'
 import { switchActiveDirector } from '../../composables/useDirectorSession.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { useDashboardDirectorScope } from '../useDashboardDirectorScope.js'
@@ -134,7 +135,7 @@ import RunningJobRow from './RunningJobRow.vue'
 const { t } = useI18n()
 const $q = useQuasar()
 const router = useRouter()
-const director = useDirectorStore()
+const auth = useAuthStore()
 
 const ctx = inject(DASHBOARD_CONTEXT_KEY)
 const runningJobs = computed(() => ctx.aggregate.value.runningJobs)
@@ -277,10 +278,21 @@ function confirmCancelGroup(group) {
   }).onOk(() => doCancelGroup(group))
 }
 
+async function cancelJob(job, id) {
+  await switchActiveDirector(job.director)
+  const credentials = auth.getCredentials(job.director)
+  if (!credentials) throw new Error(t('Not logged in.'))
+  const client = await createDirectorCommandClient(credentials)
+  try {
+    await client.call(buildCancelJobCommand(id))
+  } finally {
+    client.disconnect()
+  }
+}
+
 async function doCancel(job) {
   try {
-    await switchActiveDirector(job.director)
-    await director.call(buildCancelJobCommand(job.id ?? job.jobid))
+    await cancelJob(job, job.id ?? job.jobid)
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: job.id ?? job.jobid }) })
     ctx.refresh()
   } catch (e) {
@@ -304,8 +316,7 @@ async function doCancelGroup(group) {
     })
 
     try {
-      await switchActiveDirector(job.director)
-      await director.call(buildCancelJobCommand(id))
+      await cancelJob(job, id)
       completed += 1
     } catch (e) {
       failed += 1

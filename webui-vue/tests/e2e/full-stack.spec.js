@@ -2344,4 +2344,14 @@ test('dashboard first resize attempt must persist', async ({ page }) => {
   const widthChanged = Math.abs(after.width - before.width) > 20
   const heightChanged = Math.abs(after.height - before.height) > 10
   expect(widthChanged || heightChanged).toBe(true)
+
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.reload()
+  await expect(firstItem).toBeVisible()
+  await expect.poll(async () => {
+    const restored = await firstItem.boundingBox()
+    if (!restored) return false
+    return Math.abs(restored.width - after.width) < 2
+      && Math.abs(restored.height - after.height) < 2
+  }).toBe(true)
 })
