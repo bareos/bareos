@@ -2595,6 +2595,7 @@ bool TreeBrowser::HandleKey(std::string_view key, TreeBrowserExit* exit_reason)
     // key being typed.
     if (tree_browser_internal::PluginPaneKeyFinishesSelection(
             key, plugin_options_mode_ == PluginOptionsEditMode::kBrowsing)) {
+      if (!CommitPluginOptions()) { return false; }
       *exit_reason = TreeBrowserExit::kDone;
       return true;
     }
