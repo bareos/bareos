@@ -74,6 +74,10 @@ TEST(time_format, correct_time_and_date_format)
             StrToUtime("1999-01-02 22:22:22"));
   EXPECT_EQ(StrToUtime("1999-01-02 22:22:22."), 0);
   EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.abc"), 0);
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.12345678901234X"), 0);
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22 foo"), 0);
+  EXPECT_EQ(StrToUtime("1999-01-02 22:22:22.12345678901234567890"),
+            StrToUtime("1999-01-02 22:22:22"));
 
 
   // leap years
