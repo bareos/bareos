@@ -96,7 +96,7 @@ inline constexpr const char* kGlobInputHelp
     = "Type wildcard pattern (e.g. *.txt)  Backspace Delete  Enter Accept  "
       "Esc Cancel";
 inline constexpr const char* kDialogTextInputHelp
-    = "Type text  Backspace Delete  Enter Accept  Esc/. Cancel";
+    = "Type text  Backspace Delete  Enter Accept  Esc Cancel";
 inline constexpr const char* kDestinationBrowserFooter
     = "Arrows Move/Scroll  Enter Open/Use  / Search  h/? Help  Esc/. Cancel";
 inline constexpr const char* kDestinationSearchHelpLine1
