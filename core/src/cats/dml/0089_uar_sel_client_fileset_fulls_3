@@ -16,7 +16,8 @@ full_backups AS (
          StartTime AS FullStartTime,
          JobFiles AS FullJobFiles,
          JobBytes AS FullJobBytes,
-         LEAD(StartTime) OVER (ORDER BY StartTime) AS NextFullStartTime
+         LEAD(StartTime) OVER (ORDER BY StartTime, JobId) AS NextFullStartTime,
+         LEAD(JobId) OVER (ORDER BY StartTime, JobId) AS NextFullJobId
     FROM completed_jobs
    WHERE Level = 'F'
 )
@@ -26,12 +27,16 @@ SELECT full_backups.JobId,
        COUNT(*) AS JobCount,
        STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
        full_backups.FullJobFiles,
-       full_backups.FullJobBytes
+       full_backups.FullJobBytes,
+       full_backups.NextFullJobId
   FROM full_backups
   JOIN completed_jobs
-    ON completed_jobs.StartTime >= full_backups.FullStartTime
+    ON (completed_jobs.StartTime, completed_jobs.JobId)
+       >= (full_backups.FullStartTime, full_backups.JobId)
    AND (full_backups.NextFullStartTime IS NULL
-        OR completed_jobs.StartTime < full_backups.NextFullStartTime)
+        OR (completed_jobs.StartTime, completed_jobs.JobId)
+           < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
  GROUP BY full_backups.JobId, full_backups.FullStartTime,
-          full_backups.FullJobFiles, full_backups.FullJobBytes
- ORDER BY full_backups.FullStartTime DESC
+          full_backups.FullJobFiles, full_backups.FullJobBytes,
+          full_backups.NextFullJobId
+ ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC

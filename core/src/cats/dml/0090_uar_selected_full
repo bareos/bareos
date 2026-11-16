@@ -1,0 +1,8 @@
+INSERT INTO temp1
+SELECT Job.JobId, Job.JobTDate
+  FROM Job, JobMedia, Media
+ WHERE Job.JobId = %s
+   AND JobMedia.JobId = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+   AND Media.Enabled = 1 %s
+ LIMIT 1
