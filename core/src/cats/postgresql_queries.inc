@@ -1175,7 +1175,10 @@ R"SQL(WITH completed_jobs AS (
   SELECT JobId, Name, Level, StartTime, JobFiles, JobBytes
     FROM Job
    WHERE ClientId = %s
-     AND FileSetId = %s
+     AND FileSetId IN (
+       SELECT FileSetId FROM FileSet
+        WHERE FileSet = (SELECT FileSet FROM FileSet WHERE FileSetId = %s)
+     )
      AND JobStatus IN ('T','W')
      AND Type = '%c'
 ),

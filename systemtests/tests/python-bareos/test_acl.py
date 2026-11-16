@@ -42,6 +42,37 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_restore_discovers_historical_fileset_version(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+        self.addCleanup(
+            admin.call, ".sql query=\"DELETE FROM FileSet WHERE MD5='history-test'\""
+        )
+        admin.call(
+            '.sql query="INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) '
+            "SELECT FileSet,'history-test','2099-01-01 00:00:00',FileSetText "
+            f'FROM FileSet WHERE FileSetId=(SELECT FileSetId FROM Job WHERE JobId={jobid})"'
+        )
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name="client-bareos-fd",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        console.call("restore")
+        result = console.call("1")
+        self.assertIn(b"Automatically selected restore point:", result)
+        console.call("done")
+
     def test_pluginhints_jobid_respects_job_and_client_acls(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
