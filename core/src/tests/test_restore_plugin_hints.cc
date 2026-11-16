@@ -373,6 +373,17 @@ TEST(PluginOptionsModel, RoundTripsBlockThroughBuild)
   EXPECT_EQ(BuildPluginOptionsBlock(block), original);
 }
 
+TEST(PluginOptionsModel, RoundTripsEscapedColonsAndEmptyAssignments)
+{
+  const std::string original
+      = R"(python:module_name=bareos-fd-postgresql:db_password=abc\:def=:empty=:flag)";
+  const auto block = ParsePluginOptionsBlock(original);
+  ASSERT_EQ(block.options.size(), 4u);
+  EXPECT_EQ(block.options[1].first, "db_password");
+  EXPECT_EQ(block.options[1].second, R"(abc\:def=)");
+  EXPECT_EQ(BuildPluginOptionsBlock(block), original);
+}
+
 TEST(PluginOptionsModel, BuildsFlagOptionWithoutEquals)
 {
   PluginOptionsBlock block;

@@ -150,11 +150,17 @@ std::string BuildPluginOptionExample(const PluginRestoreHint& hint);
 
 // One "pluginname:key1=value1:key2=value2:..." block, as sent in a
 // single "pluginoptions" protocol command / used by one FileSet
-// "Plugin = ..." definition. option.first is empty for a flag-style
-// option that has no "=value" part.
+// "Plugin = ..." definition. An empty value can be either an assignment
+// or a flag without an equals sign.
+struct PluginOption {
+  std::string first;
+  std::string second;
+  bool has_equals = false;
+};
+
 struct PluginOptionsBlock {
   std::string plugin_name;
-  std::vector<std::pair<std::string, std::string>> options;
+  std::vector<PluginOption> options;
 };
 
 // Parses one "pluginname:key1=value1:key2=value2:..." block. Options

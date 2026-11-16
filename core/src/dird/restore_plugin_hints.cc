@@ -706,6 +706,10 @@ PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block)
   size_t pos = 0;
   while (pos <= rest.size()) {
     size_t next = rest.find(':', pos);
+    while (next != std::string_view::npos && next > pos
+           && rest[next - 1] == '\\') {
+      next = rest.find(':', next + 1);
+    }
     std::string_view part
         = rest.substr(pos, next == std::string_view::npos ? next : next - pos);
     if (!part.empty()) {
@@ -714,7 +718,7 @@ PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block)
         result.options.emplace_back(std::string(part), std::string());
       } else {
         result.options.emplace_back(std::string(part.substr(0, eq)),
-                                    std::string(part.substr(eq + 1)));
+                                    std::string(part.substr(eq + 1)), true);
       }
     }
     if (next == std::string_view::npos) { break; }
@@ -727,10 +731,10 @@ std::string BuildPluginOptionsBlock(const PluginOptionsBlock& block,
                                     std::string_view separator)
 {
   std::string out = block.plugin_name;
-  for (const auto& [key, value] : block.options) {
+  for (const auto& [key, value, has_equals] : block.options) {
     out += separator;
     out += key;
-    if (!value.empty()) {
+    if (has_equals || !value.empty()) {
       out += '=';
       out += value;
     }
