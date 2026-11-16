@@ -28,6 +28,7 @@ import re
 import socket
 import struct
 import subprocess
+import tempfile
 from time import sleep
 import unittest
 import warnings
@@ -44,6 +45,116 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_reopened_tree_restores_changed_selection(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=160)
+        source_dir = os.path.join(
+            os.environ["BackupDirectory"], "weird-files", "simple-dir-1"
+        )
+        selected = os.path.join(source_dir, "other-file1.txt")
+        excluded = os.path.join(source_dir, "other-file2.txt")
+        with tempfile.TemporaryDirectory(dir=os.environ["tmp"]) as destination:
+            user_bootstrap = os.path.join(destination, "user-owned.bsr")
+            with open(user_bootstrap, "w", encoding="utf-8") as bootstrap:
+                bootstrap.write("user-owned bootstrap\n")
+            self.assertIn(
+                "Restore selection",
+                browser.run(
+                    f"restore jobid={backup} all client=bareos-fd "
+                    f"restoreclient=bareos-fd where={destination}"
+                ),
+            )
+            self.assertIn("Restore Options", browser.type_text("r"))
+            browser.press("home")
+            for _ in range(6):
+                browser.press("down")
+            browser.press("enter")
+            for _ in range(3):
+                browser.press("down")
+            self.assertIn(
+                "Please enter the Bootstrap file name:", browser.press("enter")
+            )
+            self.assertIn("Restore Options", browser.submit_line(user_bootstrap))
+            browser.press("home")
+            browser.press("down")
+            browser.press("down")
+            self.assertIn("Restore selection", browser.press("enter"))
+            browser.type_text("c")
+            browser.submit_line("unmark *")
+            self.assertIn(
+                "1 file newly marked", browser.submit_line(f"mark {selected}")
+            )
+            self.assertIn("Restore Options", browser.submit_line("done"))
+            browser.press("end")
+            response = browser.press("enter")
+            match = re.search(r"Job queued\. JobId=(\d+)", response)
+            self.assertIsNotNone(match, response)
+            restore = int(match.group(1))
+            self.addCleanup(admin.call, f"delete jobid={restore} yes")
+            self.wait_job(admin, restore)
+            restored = os.path.join(destination, selected.lstrip("/"))
+            not_restored = os.path.join(destination, excluded.lstrip("/"))
+            with open(selected, "rb") as source, open(restored, "rb") as result:
+                self.assertEqual(source.read(), result.read())
+            self.assertFalse(os.path.exists(not_restored))
+            with open(user_bootstrap, encoding="utf-8") as bootstrap:
+                self.assertEqual(bootstrap.read(), "user-owned bootstrap\n")
+
+    def test_reopened_tree_cannot_restore_an_empty_selection(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=160)
+        self.assertIn(
+            "Restore selection",
+            browser.run(
+                f"restore jobid={backup} all client=bareos-fd restoreclient=bareos-fd"
+            ),
+        )
+        self.assertIn("Restore Options", browser.type_text("r"))
+        browser.press("home")
+        browser.press("down")
+        browser.press("down")
+        self.assertIn("Restore selection", browser.press("enter"))
+        browser.type_text("u")
+        response = browser.type_text("r")
+        self.assertIn("No files selected to be restored", response)
+        self.assertNotIn("Restore Options", response)
+
     def test_restore_advanced_menu_exposes_jobid(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
