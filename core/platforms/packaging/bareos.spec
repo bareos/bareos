@@ -445,7 +445,7 @@ Group:         Productivity/Archiving/Backup
 
 %if 0%{?enable_incus}
 %package       filedaemon-incus-python-plugin
-Summary:       Bareos Recovery Imager (Barri) plugin for Bareos File daemon
+Summary:       Incus Python plugin for Bareos File daemon
 Group:         Productivity/Archiving/Backup
 Requires:      bareos-filedaemon = %{version}
 Requires:      bareos-filedaemon-python-plugin = %{version}
