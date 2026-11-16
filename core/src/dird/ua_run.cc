@@ -516,6 +516,10 @@ try_again:
       case 1:
         break;
       case 2:
+        if (jcr->dir_impl->RestoreJobId == 0 && !jcr->RestoreBootstrap
+            && !DisplayJobParameters(ua, jcr, rc)) {
+          goto bail_out;
+        }
         jcr->dir_impl->IgnoreLevelPoolOverrides = true;
         goto start_job;
       case -1:
