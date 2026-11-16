@@ -58,15 +58,6 @@ def fail(message):
     sys.exit(1)
 
 
-def connect():
-    username = os.environ["BAREOS_WEBUI_USERNAME"]
-    password = bareos.bsock.Password(os.environ["BAREOS_WEBUI_PASSWORD"])
-    port = int(os.environ["BAREOS_DIRECTOR_PORT"])
-    return bareos.bsock.DirectorConsole(
-        address="127.0.0.1", port=port, name=username, password=password
-    )
-
-
 def connect_restore_test():
     return bareos.bsock.DirectorConsole(
         address="127.0.0.1",
@@ -246,7 +237,7 @@ def check_one_fileset(director, fileset, expected_hint_text, check_resize=False)
 
 
 def main():
-    director = connect()
+    director = connect_restore_test()
     check_restore_menu_output_pause(connect_restore_test())
     for index, (fileset, expected_hint_text) in enumerate(CASES):
         check_one_fileset(director, fileset, expected_hint_text, index == 0)
