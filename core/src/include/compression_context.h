@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,10 @@ struct CompressionContext {
     void* pZLIB{nullptr}; /**< ZLIB compression session data */
 #ifdef HAVE_LZO
     void* pLZO{nullptr}; /**< LZO compression session data */
+#endif
+#ifdef HAVE_ZSTD
+    void* pZSTD{nullptr}; /**< ZSTD compression session data */
+    void* pZSTDDecompress{nullptr}; /**< ZSTD decompression session data */
 #endif
     void* pZFAST{nullptr}; /**< FASTLZ compression session data */
   } workset;

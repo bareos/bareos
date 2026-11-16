@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,9 +75,9 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
 // For decompression we use the same decompression buffer for each algorithm.
 bool AdjustDecompressionBuffers(JobControlRecord* jcr)
 {
-  uint32_t decompress_buf_size;
+  uint32_t decompress_buf_size = 0;
 
-  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  if (!SetupDecompressionBuffers(jcr, &decompress_buf_size)) { return false; }
 
   if (decompress_buf_size > 0) {
     jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
@@ -124,6 +124,8 @@ bool SetupCompressionContext(b_ctx& bctx)
       case COMPRESS_FZ4L:
         [[fallthrough]];
       case COMPRESS_FZ4H:
+        [[fallthrough]];
+      case COMPRESS_ZSTD:
         bctx.ch.level = bctx.ff_pkt->Compress_level;
         break;
       default:

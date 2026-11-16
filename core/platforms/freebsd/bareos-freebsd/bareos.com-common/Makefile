@@ -6,6 +6,7 @@ PLIST=		${PKGDIR}/pkg-plist.common
 MASTERDIR=	${.CURDIR}/../bareos.com-common
 
 LIB_DEPENDS+= liblzo2.so:archivers/lzo2 \
+              libzstd.so:archivers/zstd \
               libjansson.so:devel/jansson \
               libreadline.so:devel/readline
 

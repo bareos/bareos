@@ -149,6 +149,9 @@
 // Define to 1 if you have lzo lib
 #cmakedefine HAVE_LZO @HAVE_LZO@
 
+// Define to 1 if you have zstd lib
+#cmakedefine HAVE_ZSTD @HAVE_ZSTD@
+
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
 

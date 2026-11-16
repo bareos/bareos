@@ -37,11 +37,16 @@
 #include "lib/serial.h"
 #include "lib/compression.h"
 
+#include <limits>
 #include <zlib.h>
 
 #ifdef HAVE_LZO
 #  include <lzo/lzoconf.h>
 #  include <lzo/lzo1x.h>
+#endif
+
+#ifdef HAVE_ZSTD
+#  include <zstd.h>
 #endif
 
 #include "fastlz/fastlzlib.h"
@@ -52,6 +57,7 @@ static const std::string kCompressorNameLZO = "LZO";
 static const std::string kCompressorNameFZLZ = "FASTLZ";
 static const std::string kCompressorNameFZ4L = "LZ4";
 static const std::string kCompressorNameFZ4H = "LZ4HC";
+static const std::string kCompressorNameZSTD = "ZSTD";
 const std::string& CompressorName(uint32_t compression_algorithm)
 {
   switch (compression_algorithm) {
@@ -65,6 +71,8 @@ const std::string& CompressorName(uint32_t compression_algorithm)
       return kCompressorNameFZ4L;
     case COMPRESS_FZ4H:
       return kCompressorNameFZ4H;
+    case COMPRESS_ZSTD:
+      return kCompressorNameZSTD;
     default:
       return kCompressorNameUnknown;
   }
@@ -113,6 +121,10 @@ std::size_t RequiredCompressionOutputBufferSize(uint32_t algo,
       return max_input_size + (max_input_size / 16) + 64 + 3
              + sizeof(comp_stream_header);
       break;
+#endif
+#ifdef HAVE_ZSTD
+    case COMPRESS_ZSTD:
+      return ZSTD_compressBound(max_input_size) + sizeof(comp_stream_header);
 #endif
     case COMPRESS_FZFZ:
     case COMPRESS_FZ4L:
@@ -303,10 +315,47 @@ class lzo_compressor {
 };
 #endif
 
+#ifdef HAVE_ZSTD
+class zstd_compressor {
+  ZSTD_CCtx* context{ZSTD_createCCtx()};
+  std::optional<PoolMem> error{};
+
+ public:
+  zstd_compressor()
+  {
+    if (!context) { error.emplace("Failed to initialize ZSTD compression"); }
+  }
+
+  result<std::size_t> compress(char const* input,
+                               std::size_t size,
+                               char* output,
+                               std::size_t capacity,
+                               int level)
+  {
+    if (error) { return PoolMem{error->c_str()}; }
+
+    const std::size_t result
+        = ZSTD_compressCCtx(context, output, capacity, input, size, level);
+    if (ZSTD_isError(result)) {
+      PoolMem errmsg;
+      Mmsg(errmsg, "Compression ZSTD error: %s\n", ZSTD_getErrorName(result));
+      return errmsg;
+    }
+
+    return result;
+  }
+
+  ~zstd_compressor() { ZSTD_freeCCtx(context); }
+};
+#endif
+
 struct compressors {
   std::unique_ptr<gzip_compressor> gzip{nullptr};
 #ifdef HAVE_LZO
   std::unique_ptr<lzo_compressor> lzo{nullptr};
+#endif
+#ifdef HAVE_ZSTD
+  std::unique_ptr<zstd_compressor> zstd{nullptr};
 #endif
   std::unique_ptr<z4_compressor> lz_fast{nullptr};
   std::unique_ptr<z4_compressor> lz_default{nullptr};
@@ -360,6 +409,12 @@ result<std::size_t> ThreadlocalCompress(uint32_t algo,
     case COMPRESS_LZO1X: {
       if (!comps->lzo) comps->lzo.reset(new lzo_compressor);
       return comps->lzo->compress(input, size, output, capacity);
+    } break;
+#endif
+#ifdef HAVE_ZSTD
+    case COMPRESS_ZSTD: {
+      if (!comps->zstd) comps->zstd.reset(new zstd_compressor);
+      return comps->zstd->compress(input, size, output, capacity, level);
     } break;
 #endif
     case COMPRESS_FZFZ: {
@@ -470,6 +525,34 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
       break;
     }
 #endif
+#ifdef HAVE_ZSTD
+    case COMPRESS_ZSTD: {
+      const std::size_t zstd_bound = ZSTD_compressBound(jcr->buf_size);
+      const std::size_t wanted_size
+          = zstd_bound + sizeof(comp_stream_header) + OFFSET_FADDR_SIZE;
+      if (wanted_size > std::numeric_limits<uint32_t>::max()) {
+        Jmsg(jcr, M_FATAL, 0,
+             T_("ZSTD compression buffer size is too large: %" PRIuz "\n"),
+             wanted_size);
+        return false;
+      }
+
+      wanted_compress_buf_size = static_cast<uint32_t>(wanted_size);
+      if (wanted_compress_buf_size > *compress_buf_size) {
+        *compress_buf_size = wanted_compress_buf_size;
+      }
+
+      if (jcr->compress.workset.pZSTD) { return true; }
+
+      ZSTD_CCtx* context = ZSTD_createCCtx();
+      if (!context) {
+        Jmsg(jcr, M_FATAL, 0, T_("Failed to initialize ZSTD compression\n"));
+        return false;
+      }
+      jcr->compress.workset.pZSTD = context;
+      break;
+    }
+#endif
     case COMPRESS_FZFZ:
     case COMPRESS_FZ4L:
     case COMPRESS_FZ4H: {
@@ -526,6 +609,19 @@ bool SetupSpecificCompressionContext(JobControlRecord& jcr,
                                      uint32_t algo,
                                      uint32_t compression_level)
 {
+#ifdef HAVE_ZSTD
+  if (algo == COMPRESS_ZSTD) {
+    auto* context = reinterpret_cast<ZSTD_CCtx*>(jcr.compress.workset.pZSTD);
+    const std::size_t status = ZSTD_CCtx_setParameter(
+        context, ZSTD_c_compressionLevel, compression_level);
+    if (ZSTD_isError(status)) {
+      Jmsg(&jcr, M_FATAL, 0, T_("Cannot set ZSTD compression level: %s\n"),
+           ZSTD_getErrorName(status));
+      jcr.setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+      return false;
+    }
+  }
+#endif
   if (algo == COMPRESS_GZIP) {
     auto* pZlibStream = reinterpret_cast<z_stream*>(jcr.compress.workset.pZLIB);
     int zstatus
@@ -597,6 +693,17 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
   if (!jcr->compress.inflate_buffer && lzo_init() != LZO_E_OK) {
     Jmsg(jcr, M_FATAL, 0, T_("LZO init failed\n"));
     return false;
+  }
+#endif
+
+#ifdef HAVE_ZSTD
+  if (!jcr->compress.workset.pZSTDDecompress) {
+    ZSTD_DCtx* context = ZSTD_createDCtx();
+    if (!context) {
+      Jmsg(jcr, M_FATAL, 0, T_("Failed to initialize ZSTD decompression\n"));
+      return false;
+    }
+    jcr->compress.workset.pZSTDDecompress = context;
   }
 #endif
 
@@ -673,6 +780,37 @@ static bool compress_with_lzo(JobControlRecord* jcr,
 }
 #endif
 
+#ifdef HAVE_ZSTD
+static bool compress_with_zstd(JobControlRecord* jcr,
+                               char* rbuf,
+                               uint32_t rsize,
+                               unsigned char* cbuf,
+                               uint32_t max_compress_len,
+                               uint32_t* compress_len)
+{
+  auto* context = reinterpret_cast<ZSTD_CCtx*>(jcr->compress.workset.pZSTD);
+  const std::size_t result
+      = ZSTD_compress2(context, cbuf, max_compress_len, rbuf, rsize);
+  if (ZSTD_isError(result)) {
+    Jmsg(jcr, M_FATAL, 0, T_("Compression ZSTD error: %s\n"),
+         ZSTD_getErrorName(result));
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
+  }
+  if (result > std::numeric_limits<uint32_t>::max()) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("Compressed ZSTD block is too large: %" PRIuz "\n"), result);
+    jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
+    return false;
+  }
+
+  *compress_len = static_cast<uint32_t>(result);
+  Dmsg2(400, "ZSTD compressed len=%d uncompressed len=%d\n", *compress_len,
+        rsize);
+  return true;
+}
+#endif
+
 static bool compress_with_fastlz(JobControlRecord* jcr,
                                  char* rbuf,
                                  uint32_t rsize,
@@ -742,6 +880,16 @@ bool CompressData(JobControlRecord* jcr,
       }
       break;
 #endif
+#ifdef HAVE_ZSTD
+    case COMPRESS_ZSTD:
+      if (jcr->compress.workset.pZSTD) {
+        if (!compress_with_zstd(jcr, rbuf, rsize, cbuf, max_compress_len,
+                                compress_len)) {
+          return false;
+        }
+      }
+      break;
+#endif
     case COMPRESS_FZFZ:
     case COMPRESS_FZ4L:
     case COMPRESS_FZ4H:
@@ -770,28 +918,25 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   uLong compress_len;
   const unsigned char* cbuf;
   char* wbuf;
-  int status, real_compress_len;
+  int status;
+  const uint32_t sparse_offset
+      = sparse && want_data_stream ? OFFSET_FADDR_SIZE : 0;
+  const uint32_t header_size = with_header ? sizeof(comp_stream_header) : 0;
+  const uint32_t input_offset = sparse_offset + header_size;
+
+  if (*length < input_offset) {
+    Qmsg(jcr, M_ERROR, 0, T_("Compressed block on file %s is too short\n"),
+         last_fname);
+    return false;
+  }
 
   /* NOTE! We only use uLong and Byte because they are
    * needed by the zlib routines, they should not otherwise
    * be used in Bareos. */
-  if (sparse && want_data_stream) {
-    wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-    compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-  } else {
-    wbuf = jcr->compress.inflate_buffer;
-    compress_len = jcr->compress.inflate_buffer_size;
-  }
-
-  // See if this is a compressed stream with the new compression header or an
-  // old one.
-  if (with_header) {
-    cbuf = (const unsigned char*)*data + sizeof(comp_stream_header);
-    real_compress_len = *length - sizeof(comp_stream_header);
-  } else {
-    cbuf = (const unsigned char*)*data;
-    real_compress_len = *length;
-  }
+  wbuf = jcr->compress.inflate_buffer + sparse_offset;
+  compress_len = jcr->compress.inflate_buffer_size - sparse_offset;
+  cbuf = (const unsigned char*)*data + input_offset;
+  const uint32_t real_compress_len = *length - input_offset;
 
   Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
         static_cast<std::size_t>(compress_len), *length);
@@ -806,13 +951,8 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
     jcr->compress.inflate_buffer = CheckPoolMemorySize(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
-    if (sparse && want_data_stream) {
-      wbuf = jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-    } else {
-      wbuf = jcr->compress.inflate_buffer;
-      compress_len = jcr->compress.inflate_buffer_size;
-    }
+    wbuf = jcr->compress.inflate_buffer + sparse_offset;
+    compress_len = jcr->compress.inflate_buffer_size - sparse_offset;
     Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
           static_cast<std::size_t>(compress_len), *length);
   }
@@ -825,16 +965,17 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
 
   /* We return a decompressed data stream with the fileoffset encoded when this
    * was a sparse stream. */
-  if (sparse && want_data_stream) {
+  if (sparse_offset != 0) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
 
   *data = jcr->compress.inflate_buffer;
-  *length = compress_len;
+  *length = static_cast<uint32_t>(compress_len) + sparse_offset;
 
   Dmsg2(400,
-        "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
-        static_cast<std::size_t>(compress_len), jcr->JobBytes);
+        "Write uncompressed %" PRIu32 " bytes, total before write=%" PRIu64
+        "\n",
+        *length, jcr->JobBytes);
 
   return true;
 }
@@ -849,20 +990,21 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   lzo_uint compress_len;
   const unsigned char* cbuf;
   unsigned char* wbuf;
-  int status, real_compress_len;
+  int status;
+  const uint32_t sparse_offset
+      = sparse && want_data_stream ? OFFSET_FADDR_SIZE : 0;
+  const uint32_t input_offset = sparse_offset + sizeof(comp_stream_header);
 
-  if (sparse && want_data_stream) {
-    compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-    cbuf = (const unsigned char*)*data + OFFSET_FADDR_SIZE
-           + sizeof(comp_stream_header);
-    wbuf = (unsigned char*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-  } else {
-    compress_len = jcr->compress.inflate_buffer_size;
-    cbuf = (const unsigned char*)*data + sizeof(comp_stream_header);
-    wbuf = (unsigned char*)jcr->compress.inflate_buffer;
+  if (*length < input_offset) {
+    Qmsg(jcr, M_ERROR, 0, T_("LZO compressed block on file %s is too short\n"),
+         last_fname);
+    return false;
   }
 
-  real_compress_len = *length - sizeof(comp_stream_header);
+  compress_len = jcr->compress.inflate_buffer_size - sparse_offset;
+  cbuf = (const unsigned char*)*data + input_offset;
+  wbuf = (unsigned char*)jcr->compress.inflate_buffer + sparse_offset;
+  const uint32_t real_compress_len = *length - input_offset;
   Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
         static_cast<std::size_t>(compress_len), *length);
   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf,
@@ -875,13 +1017,8 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
     jcr->compress.inflate_buffer = CheckPoolMemorySize(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
-    if (sparse && want_data_stream) {
-      compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-      wbuf = (unsigned char*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-    } else {
-      compress_len = jcr->compress.inflate_buffer_size;
-      wbuf = (unsigned char*)jcr->compress.inflate_buffer;
-    }
+    compress_len = jcr->compress.inflate_buffer_size - sparse_offset;
+    wbuf = (unsigned char*)jcr->compress.inflate_buffer + sparse_offset;
     Dmsg2(400, "Comp_len=%" PRIuz " message_length=%" PRIu32 "\n",
           static_cast<std::size_t>(compress_len), *length);
   }
@@ -894,17 +1031,100 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
 
   /* We return a decompressed data stream with the fileoffset encoded when this
    * was a sparse stream. */
-  if (sparse && want_data_stream) {
+  if (sparse_offset != 0) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
 
   *data = jcr->compress.inflate_buffer;
-  *length = compress_len;
+  *length = static_cast<uint32_t>(compress_len) + sparse_offset;
 
   Dmsg2(400,
-        "Write uncompressed %" PRIuz " bytes, total before write=%" PRIu64 "\n",
-        static_cast<std::size_t>(compress_len), jcr->JobBytes);
+        "Write uncompressed %" PRIu32 " bytes, total before write=%" PRIu64
+        "\n",
+        *length, jcr->JobBytes);
 
+  return true;
+}
+#endif
+
+#ifdef HAVE_ZSTD
+static bool decompress_with_zstd(JobControlRecord* jcr,
+                                 const char* last_fname,
+                                 char** data,
+                                 uint32_t* length,
+                                 bool sparse,
+                                 bool want_data_stream)
+{
+  const std::size_t sparse_offset
+      = sparse && want_data_stream ? OFFSET_FADDR_SIZE : 0;
+  const std::size_t frame_offset = sparse_offset + sizeof(comp_stream_header);
+  if (*length < frame_offset) {
+    Qmsg(jcr, M_ERROR, 0, T_("ZSTD compressed block on file %s is too short\n"),
+         last_fname);
+    return false;
+  }
+
+  const void* input = *data + frame_offset;
+  const std::size_t input_size = *length - frame_offset;
+  const unsigned long long frame_size
+      = ZSTD_getFrameContentSize(input, input_size);
+  if (frame_size == ZSTD_CONTENTSIZE_ERROR) {
+    Qmsg(jcr, M_ERROR, 0,
+         T_("ZSTD uncompression error on file %s: invalid frame\n"),
+         last_fname);
+    return false;
+  }
+  if (frame_size == ZSTD_CONTENTSIZE_UNKNOWN) {
+    Qmsg(jcr, M_ERROR, 0,
+         T_("ZSTD uncompression error on file %s: unknown content size\n"),
+         last_fname);
+    return false;
+  }
+
+  const auto maximum_buffer_size
+      = static_cast<unsigned long long>(MaximumPoolMemorySize());
+  if (frame_size > maximum_buffer_size - sparse_offset) {
+    Qmsg(jcr, M_ERROR, 0,
+         T_("ZSTD uncompressed block on file %s is too large: %llu\n"),
+         last_fname, frame_size);
+    return false;
+  }
+  const uint32_t required_size
+      = static_cast<uint32_t>(frame_size + sparse_offset);
+
+  if (jcr->compress.inflate_buffer_size < required_size) {
+    jcr->compress.inflate_buffer_size = required_size;
+    jcr->compress.inflate_buffer = CheckPoolMemorySize(
+        jcr->compress.inflate_buffer,
+        static_cast<int32_t>(jcr->compress.inflate_buffer_size));
+  }
+
+  char* output = jcr->compress.inflate_buffer + sparse_offset;
+  auto* context
+      = reinterpret_cast<ZSTD_DCtx*>(jcr->compress.workset.pZSTDDecompress);
+  const std::size_t result = ZSTD_decompressDCtx(
+      context, output, static_cast<std::size_t>(frame_size), input, input_size);
+  if (ZSTD_isError(result)) {
+    Qmsg(jcr, M_ERROR, 0, T_("ZSTD uncompression error on file %s: %s\n"),
+         last_fname, ZSTD_getErrorName(result));
+    return false;
+  }
+  if (result != frame_size) {
+    Qmsg(jcr, M_ERROR, 0,
+         T_("ZSTD uncompressed size mismatch on file %s: expected %llu, got "
+            "%" PRIuz "\n"),
+         last_fname, frame_size, result);
+    return false;
+  }
+
+  if (sparse_offset != 0) {
+    memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
+  }
+
+  *data = jcr->compress.inflate_buffer;
+  *length = static_cast<uint32_t>(result + sparse_offset);
+  Dmsg2(400, "Write uncompressed %d bytes, total before write=%" PRIu64 "\n",
+        *length, jcr->JobBytes);
   return true;
 }
 #endif
@@ -921,6 +1141,15 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
   zfast_stream stream;
   zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
   char ec1[50]; /* Buffer printing huge values */
+  const uint32_t sparse_offset
+      = sparse && want_data_stream ? OFFSET_FADDR_SIZE : 0;
+  const uint32_t input_offset = sparse_offset + sizeof(comp_stream_header);
+
+  if (*length < input_offset) {
+    Qmsg(jcr, M_ERROR, 0,
+         T_("FastLZ compressed block on file %s is too short\n"), last_fname);
+    return false;
+  }
 
   switch (comp_magic) {
     case COMPRESS_FZ4L:
@@ -933,16 +1162,11 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
    * needed by the fastlz routines, they should not otherwise
    * be used in Bareos. */
   memset(&stream, 0, sizeof(stream));
-  stream.next_in = (Bytef*)*data + sizeof(comp_stream_header);
-  stream.avail_in = (uInt)*length - sizeof(comp_stream_header);
-  if (sparse && want_data_stream) {
-    stream.next_out = (Bytef*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-    stream.avail_out
-        = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-  } else {
-    stream.next_out = (Bytef*)jcr->compress.inflate_buffer;
-    stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
-  }
+  stream.next_in = (Bytef*)*data + input_offset;
+  stream.avail_in = (uInt)*length - input_offset;
+  stream.next_out = (Bytef*)jcr->compress.inflate_buffer + sparse_offset;
+  stream.avail_out
+      = (uInt)jcr->compress.inflate_buffer_size - sparse_offset;
 
   Dmsg2(400, "Comp_len=%u message_length=%" PRIu32 "\n", stream.avail_in,
         *length);
@@ -963,15 +1187,10 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
               + (jcr->compress.inflate_buffer_size >> 1);
         jcr->compress.inflate_buffer = CheckPoolMemorySize(
             jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
-        if (sparse && want_data_stream) {
-          stream.next_out
-              = (Bytef*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-          stream.avail_out
-              = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-        } else {
-          stream.next_out = (Bytef*)jcr->compress.inflate_buffer;
-          stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
-        }
+        stream.next_out
+            = (Bytef*)jcr->compress.inflate_buffer + sparse_offset;
+        stream.avail_out
+            = (uInt)jcr->compress.inflate_buffer_size - sparse_offset;
         continue;
       case Z_OK:
       case Z_STREAM_END:
@@ -984,12 +1203,12 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
 
   /* We return a decompressed data stream with the fileoffset encoded when this
    * was a sparse stream. */
-  if (sparse && want_data_stream) {
+  if (sparse_offset != 0) {
     memcpy(jcr->compress.inflate_buffer, *data, OFFSET_FADDR_SIZE);
   }
 
   *data = jcr->compress.inflate_buffer;
-  *length = stream.total_out;
+  *length = static_cast<uint32_t>(stream.total_out) + sparse_offset;
   Dmsg2(400, "Write uncompressed %" PRIu32 " bytes, total before write=%s\n",
         *length, edit_uint64(jcr->JobBytes, ec1));
   fastlzlibDecompressEnd(&stream);
@@ -1021,14 +1240,23 @@ bool DecompressData(JobControlRecord* jcr,
       uint32_t comp_magic, comp_len;
       uint16_t comp_level, comp_version;
 
+      const uint32_t sparse_offset
+          = stream == STREAM_SPARSE_COMPRESSED_DATA && want_data_stream
+                ? OFFSET_FADDR_SIZE
+                : 0;
+      if (*length < sparse_offset + sizeof(comp_stream_header)) {
+        Qmsg(jcr, M_ERROR, 0, T_("Compressed data stream is too short\n"));
+        return false;
+      }
+
       // Read compress header
       unser_declare;
-      UnserBegin(*data, sizeof(comp_stream_header));
+      UnserBegin(*data + sparse_offset, sizeof(comp_stream_header));
       unser_uint32(comp_magic);
       unser_uint32(comp_len);
       unser_uint16(comp_level);
       unser_uint16(comp_version);
-      UnserEnd(*data, sizeof(comp_stream_header));
+      UnserEnd(*data + sparse_offset, sizeof(comp_stream_header));
       Dmsg4(400,
             "Compressed data stream found: magic=0x%x, len=%" PRIu32
             ", level=%d, "
@@ -1044,7 +1272,7 @@ bool DecompressData(JobControlRecord* jcr,
       }
 
       // Size check
-      if (comp_len + sizeof(comp_stream_header) != *length) {
+      if (comp_len + sizeof(comp_stream_header) + sparse_offset != *length) {
         Qmsg(jcr, M_ERROR, 0,
              T_("Compressed header size error. comp_len=%" PRIu32 ", "
                 "message_length=%" PRIu32 "\n"),
@@ -1073,6 +1301,17 @@ bool DecompressData(JobControlRecord* jcr,
             default:
               return decompress_with_lzo(jcr, last_fname, data, length, false,
                                          want_data_stream);
+          }
+#endif
+#ifdef HAVE_ZSTD
+        case COMPRESS_ZSTD:
+          switch (stream) {
+            case STREAM_SPARSE_COMPRESSED_DATA:
+              return decompress_with_zstd(jcr, last_fname, data, length, true,
+                                          want_data_stream);
+            default:
+              return decompress_with_zstd(jcr, last_fname, data, length, false,
+                                          want_data_stream);
           }
 #endif
         case COMPRESS_FZFZ:
@@ -1130,6 +1369,19 @@ void CleanupCompression(JobControlRecord* jcr)
   if (jcr->compress.workset.pLZO) {
     free(jcr->compress.workset.pLZO);
     jcr->compress.workset.pLZO = NULL;
+  }
+#endif
+
+#ifdef HAVE_ZSTD
+  if (jcr->compress.workset.pZSTD) {
+    ZSTD_freeCCtx(reinterpret_cast<ZSTD_CCtx*>(jcr->compress.workset.pZSTD));
+    jcr->compress.workset.pZSTD = nullptr;
+  }
+
+  if (jcr->compress.workset.pZSTDDecompress) {
+    ZSTD_freeDCtx(
+        reinterpret_cast<ZSTD_DCtx*>(jcr->compress.workset.pZSTDDecompress));
+    jcr->compress.workset.pZSTDDecompress = nullptr;
   }
 #endif
 

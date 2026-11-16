@@ -142,6 +142,12 @@ if(ENABLE_LZO)
   set(HAVE_LZO 1)
 endif()
 
+option(ENABLE_ZSTD "Enable Zstandard support" ON)
+if(ENABLE_ZSTD)
+  find_package(Zstd REQUIRED)
+  set(HAVE_ZSTD 1)
+endif()
+
 include(BareosFindLibrary)
 
 bareosfindlibrary("acl")

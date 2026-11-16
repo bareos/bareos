@@ -677,9 +677,7 @@ json_t* json_datatype_header(const int type, const char* typeclass)
 }
 
 json_t* json_datatype(const int type)
-{
-  return json_datatype_header(type, NULL);
-}
+{ return json_datatype_header(type, NULL); }
 
 json_t* json_datatype(const int type, s_kw items[])
 {
@@ -1946,6 +1944,18 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
             break;
           case 'o':
             send.KeyQuotedString("Compression", "LZO");
+            break;
+          case 'r':
+            send.KeyQuotedString("Compression", "ZSTD1");
+            break;
+          case 's':
+            send.KeyQuotedString("Compression", "ZSTD3");
+            break;
+          case 't':
+            send.KeyQuotedString("Compression", "ZSTD19");
+            break;
+          case 'u':
+            send.KeyQuotedString("Compression", "ZSTD10");
             break;
           case 'f':
             p++; /* skip f */

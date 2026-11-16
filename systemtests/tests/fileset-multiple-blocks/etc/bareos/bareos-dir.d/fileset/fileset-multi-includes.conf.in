@@ -27,4 +27,18 @@ FileSet {
      }
      File=@tmpdir@/data-multi-includes/data4
   }
+@ZSTD_COMMENT@  Include {
+@ZSTD_COMMENT@     Options {
+@ZSTD_COMMENT@        Signature = XXH128
+@ZSTD_COMMENT@        Compression = ZSTD10
+@ZSTD_COMMENT@     }
+@ZSTD_COMMENT@     File=@tmpdir@/data-multi-includes/data5
+@ZSTD_COMMENT@  }
+@ZSTD_COMMENT@  Include {
+@ZSTD_COMMENT@     Options {
+@ZSTD_COMMENT@        Signature = XXH128
+@ZSTD_COMMENT@        Compression = ZSTD1
+@ZSTD_COMMENT@     }
+@ZSTD_COMMENT@     File=@tmpdir@/data-multi-includes/data6
+@ZSTD_COMMENT@  }
 }

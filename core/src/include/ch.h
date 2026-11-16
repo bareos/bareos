@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,13 +45,15 @@ constexpr std::uint32_t compression_constant(const char (&txt)[5])
 // Compression algorithm signature. 4 letters as a 32bits integer
 enum compression_type : std::uint32_t
 {
-  COMPRESS_NONE
-  = compression_constant("NONE"), /* used for incompressible block */
+  COMPRESS_NONE = compression_constant(
+      "NONE"), /* used for incompressible block */
   COMPRESS_GZIP = compression_constant("GZIP"),
   COMPRESS_LZO1X = compression_constant("LZOX"),
   COMPRESS_FZFZ = compression_constant("FZFZ"),
   COMPRESS_FZ4L = compression_constant("FZ4L"),
   COMPRESS_FZ4H = compression_constant("FZ4H"),
+  // Keep the value used by Bacula for on-volume format compatibility.
+  COMPRESS_ZSTD = compression_constant("LZOY"),
 };
 
 // double check our constants with the previously defined values
@@ -61,6 +63,7 @@ static_assert(0x4c5a4f58 == compression_constant("LZOX"));
 static_assert(0x465A465A == compression_constant("FZFZ"));
 static_assert(0x465A344C == compression_constant("FZ4L"));
 static_assert(0x465A3448 == compression_constant("FZ4H"));
+static_assert(0x4c5a4f59 == compression_constant("LZOY"));
 
 // Compression header version
 #define COMP_HEAD_VERSION 0x1

@@ -9,6 +9,7 @@ PKGINSTALL=     ${PKGDIR}/pkg-install
 PKGMESSAGE=     ${PKGDIR}/pkg-message.director
 
 LIB_DEPENDS+= liblzo2.so:archivers/lzo2 \
+              libzstd.so:archivers/zstd \
               libjansson.so:devel/jansson \
               libreadline.so:devel/readline
 

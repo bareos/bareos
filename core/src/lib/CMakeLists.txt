@@ -154,6 +154,10 @@ if(ENABLE_LZO)
   target_link_libraries(bareos PRIVATE LZO::LZO)
 endif()
 
+if(ENABLE_ZSTD)
+  target_link_libraries(bareos PRIVATE Zstd::Zstd)
+endif()
+
 if(XXHASH_ENABLE_DISPATCH)
   set_source_files_properties(
     xxhash.cc PROPERTIES COMPILE_FLAGS "-DXXHASH_ENABLE_DISPATCH"

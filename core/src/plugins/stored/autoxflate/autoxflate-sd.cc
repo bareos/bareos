@@ -462,11 +462,11 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 static bool SetupAutoInflation(PluginContext*, DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
-  uint32_t decompress_buf_size;
+  uint32_t decompress_buf_size = 0;
 
   if (jcr->buf_size == 0) { jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE; }
 
-  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  if (!SetupDecompressionBuffers(jcr, &decompress_buf_size)) { return false; }
   if (decompress_buf_size > 0) {
     // See if we need to create a new compression buffer or make sure the
     // existing is big enough.

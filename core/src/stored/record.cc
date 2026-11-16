@@ -163,6 +163,10 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
           compression_to_str(resultbuffer, "FZ4H", comp_len, comp_level,
                              comp_version);
           break;
+        case COMPRESS_ZSTD:
+          compression_to_str(resultbuffer, "ZSTD", comp_len, comp_level,
+                             comp_version);
+          break;
         default:
           tmp.bsprintf(
               T_("Compression algorithm 0x%x found, but not supported!\n"),
@@ -829,14 +833,10 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
  *           true  on success (all bytes can be written)
  */
 bool CanWriteRecordToBlock(DeviceBlock* block, const DeviceRecord* rec)
-{
-  return BlockWriteNavail(block) >= WRITE_RECHDR_LENGTH + rec->remainder;
-}
+{ return BlockWriteNavail(block) >= WRITE_RECHDR_LENGTH + rec->remainder; }
 
 uint64_t GetRecordAddress(const DeviceRecord* rec)
-{
-  return ((uint64_t)rec->File) << 32 | rec->Block;
-}
+{ return ((uint64_t)rec->File) << 32 | rec->Block; }
 
 /**
  * Read a Record from the block

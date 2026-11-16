@@ -160,6 +160,11 @@ static struct s_fs_opt FS_options[]
        {"lzfast", INC_KW_COMPRESSION, "Zff"},
        {"lz4", INC_KW_COMPRESSION, "Zf4"},
        {"lz4hc", INC_KW_COMPRESSION, "Zfh"},
+       {"zstd", INC_KW_COMPRESSION, "Zs"},
+       {"zstd1", INC_KW_COMPRESSION, "Zr"},
+       {"zstd3", INC_KW_COMPRESSION, "Zs"},
+       {"zstd10", INC_KW_COMPRESSION, "Zu"},
+       {"zstd19", INC_KW_COMPRESSION, "Zt"},
        {"blowfish", INC_KW_ENCRYPTION, "Eb"},
        {"3des", INC_KW_ENCRYPTION, "E3"},
        {"aes128", INC_KW_ENCRYPTION, "Ea1"},
@@ -1099,13 +1104,9 @@ void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass)
 }
 
 json_t* json_incexc(const int type)
-{
-  return json_datatype(type, newinc_items);
-}
+{ return json_datatype(type, newinc_items); }
 
 json_t* json_options(const int type)
-{
-  return json_datatype(type, options_items);
-}
+{ return json_datatype(type, options_items); }
 
 } /* namespace directordaemon */

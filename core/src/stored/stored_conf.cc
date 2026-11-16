@@ -255,10 +255,13 @@ static s_io_kw io_directions[] = {
     {"both", IODirection::READ_WRITE}, {"readwrite", IODirection::READ_WRITE},
     {nullptr, IODirection::READ_WRITE}};
 
-static s_kw compression_algorithms[]
-    = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
-       {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
-       {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
+static s_kw compression_algorithms[] = {{"gzip", COMPRESS_GZIP},
+                                        {"lzo", COMPRESS_LZO1X},
+                                        {"lzfast", COMPRESS_FZFZ},
+                                        {"lz4", COMPRESS_FZ4L},
+                                        {"lz4hc", COMPRESS_FZ4H},
+                                        {"zstd", COMPRESS_ZSTD},
+                                        {NULL, 0}};
 
 static void StoreAuthenticationType(lexer* lc,
                                     const ResourceItem* item,
