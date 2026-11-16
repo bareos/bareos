@@ -177,19 +177,21 @@ utime_t StrToUtime(const char* str)
   tm datetime{};
   time_t time;
 
-  char trailinggarbage[16]{""};
-
   // Check for bad argument
   if (!str || *str == 0) { return 0; }
 
   // we want the real bsscanf() and not bbsscanf()
-  if ((bsscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year,
-               &datetime.tm_mon, &datetime.tm_mday, &datetime.tm_hour,
-               &datetime.tm_min, &datetime.tm_sec, trailinggarbage)
-       != 7)
-      || !IsIgnorableTimeSuffix(trailinggarbage)) {
+  if (bsscanf(str, "%u-%u-%u %u:%u:%u", &datetime.tm_year, &datetime.tm_mon,
+              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
+              &datetime.tm_sec)
+      != 6) {
     return 0;
   }
+
+  // The successful scan matched both colons.
+  const char* seconds = strchr(strchr(str, ':') + 1, ':') + 1;
+  const char* suffix = seconds + strspn(seconds, "0123456789");
+  if (!IsIgnorableTimeSuffix(suffix)) { return 0; }
 
   // range for tm_mon is defined as 0-11
   --datetime.tm_mon;
