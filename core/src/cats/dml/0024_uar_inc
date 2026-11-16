@@ -2,7 +2,7 @@ INSERT INTO temp
 SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
        JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
   FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
+ WHERE %s
    AND Job.StartTime    < '%s'
    AND Job.ClientId     = %s
    AND Media.Enabled    = 1

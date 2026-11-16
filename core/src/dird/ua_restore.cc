@@ -79,11 +79,13 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
                                                RestoreContext* rx,
                                                bool auto_select_latest);
-static bool ResolveBackupChainForClientFileset(UaContext* ua,
-                                               RestoreContext* rx,
-                                               ClientDbRecord& cr,
-                                               FileSetDbRecord& fsr,
-                                               const char* date);
+static bool ResolveBackupChainForClientFileset(
+    UaContext* ua,
+    RestoreContext* rx,
+    ClientDbRecord& cr,
+    FileSetDbRecord& fsr,
+    const char* date,
+    const RestorePointCandidate* selected = nullptr);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
 static bool SplitPathAndFilename(UaContext* ua,
@@ -1689,6 +1691,7 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
 
   RestorePointCandidate candidate;
   candidate.JobId = str_to_int64(row[0]);
+  candidate.NextFullJobId = row[7] ? str_to_int64(row[7]) : 0;
   candidate.RestorePoint = StrToUtime(row[2]);
   candidate.JobCount = str_to_int64(row[3]);
   candidate.JobNames = std::move(display_names);
@@ -1815,7 +1818,8 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   }
 
   bstrutime(selected_date, sizeof(selected_date), selected->RestorePoint + 1);
-  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, selected_date);
+  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, selected_date,
+                                            selected);
 }
 
 /**
@@ -1934,16 +1938,19 @@ static bool CopiesCoverBackupChain(UaContext* ua,
  * This routine is used to get the current backup or a backup before the
  * specified date.
  */
-static bool ResolveBackupChainForClientFileset(UaContext* ua,
-                                               RestoreContext* rx,
-                                               ClientDbRecord& cr,
-                                               FileSetDbRecord& fsr,
-                                               const char* date)
+static bool ResolveBackupChainForClientFileset(
+    UaContext* ua,
+    RestoreContext* rx,
+    ClientDbRecord& cr,
+    FileSetDbRecord& fsr,
+    const char* date,
+    const RestorePointCandidate* selected)
 {
   if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) { return false; }
   bool ok = false;
   char ed1[50], ed2[50];
-  char pool_select[MAX_NAME_LENGTH];
+  std::string pool_select;
+  std::string lower_bound;
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
@@ -1957,23 +1964,37 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
     ua->ErrorMsg("%s\n", ua->db->strerror());
   }
   // If Pool specified, add PoolId specification
-  pool_select[0] = 0;
   if (rx->pool) {
     PoolDbRecord pr;
     bstrncpy(pr.Name, rx->pool->resource_name_, sizeof(pr.Name));
     if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
-      Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
-                edit_int64(pr.PoolId, ed1));
+      pool_select = "AND Media.PoolId=" + std::to_string(pr.PoolId) + " ";
     } else {
       ua->WarningMsg(T_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
     }
   }
 
 
-  if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
-                                  edit_int64(cr.ClientId, ed1), date,
-                                  fsr.FileSet, pool_select)) {
-    goto bail_out;
+  if (selected) {
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_selected_full>(
+        rx->query, edit_int64(selected->JobId, ed1), pool_select.c_str());
+    if (!ua->db->SqlQuery(rx->query)
+        || !ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_full>(filter_name)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      goto bail_out;
+    }
+    if (selected->NextFullJobId) {
+      pool_select +=
+          "AND (Job.StartTime, Job.JobId) < "
+          "(SELECT StartTime, JobId FROM Job WHERE JobId="
+          + std::to_string(selected->NextFullJobId) + ") ";
+    }
+  } else {
+    if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
+                                    edit_int64(cr.ClientId, ed1), date,
+                                    fsr.FileSet, pool_select.c_str())) {
+      goto bail_out;
+    }
   }
 
   /* Note, this is needed because I don't seem to get the callback from the call
@@ -2005,7 +2026,7 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
     }
     if (InsertLastFullBackupOfType(ua, rx, opposite,
                                    edit_int64(cr.ClientId, ed1), date,
-                                   fsr.FileSet, pool_select)) {
+                                   fsr.FileSet, pool_select.c_str())) {
       ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp1>(rx->query);
       if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
         // ignore warnings here, since they would not make any sense
@@ -2030,25 +2051,39 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
   }
 
   // Now find most recent Differential Job after Full save, if any
+  lower_bound = selected
+                    ? "(Job.StartTime, Job.JobId) > (SELECT StartTime, JobId "
+                      "FROM Job WHERE JobId="
+                          + std::to_string(rx->JobId) + ")"
+                    : "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_dif>(
-      rx->query, edit_uint64(rx->JobTDate, ed1), date,
-      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
+      rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
+      filter_name, fsr.FileSet, pool_select.c_str(),
+      selected ? "Job.StartTime DESC, Job.JobId DESC" : "Job.JobTDate DESC");
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
+    if (selected) { goto bail_out; }
   }
 
   // Now update JobTDate to look into Differential, if any
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
+    if (selected) { goto bail_out; }
   }
 
   // Now find all Incremental Jobs after Full/dif save
+  lower_bound = selected
+                    ? "(Job.StartTime, Job.JobId) > (SELECT StartTime, JobId "
+                      "FROM Job WHERE JobId="
+                          + std::to_string(rx->JobId) + ")"
+                    : "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_inc>(
-      rx->query, edit_uint64(rx->JobTDate, ed1), date,
-      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
+      rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
+      filter_name, fsr.FileSet, pool_select.c_str());
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
+    if (selected) { goto bail_out; }
   }
 
   // Get the JobIds from that list
@@ -2057,6 +2092,7 @@ static bool ResolveBackupChainForClientFileset(UaContext* ua,
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
+    if (selected) { goto bail_out; }
   }
 
   if (rx->JobIds[0] != 0) {
@@ -2168,6 +2204,7 @@ static int LastFullHandler(void* ctx, int, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
 
+  rx->JobId = str_to_int64(row[0]);
   rx->JobTDate = str_to_int64(row[1]);
   return 0;
 }

@@ -45,6 +45,94 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_equal_start_fulls_remain_distinct_restore_points(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        data = tempfile.NamedTemporaryFile(dir=os.environ["BackupDirectory"])
+        self.addCleanup(data.close)
+        data.write(b"full")
+        data.flush()
+        first = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={first} yes")
+        data.write(b"incremental one")
+        data.flush()
+        os.utime(data.name, (2100000000, 2100000000))
+        first_incremental = self.run_job(
+            admin, "backup-bareos-fd", "Incremental", wait=True
+        )
+        self.addCleanup(admin.call, f"delete jobid={first_incremental} yes")
+        data.write(b"differential")
+        data.flush()
+        os.utime(data.name, (2100000000, 2100000000))
+        first_differential = self.run_job(
+            admin, "backup-bareos-fd", "Differential", wait=True
+        )
+        self.addCleanup(admin.call, f"delete jobid={first_differential} yes")
+        data.write(b"incremental after differential")
+        data.flush()
+        os.utime(data.name, (2100000000, 2100000000))
+        after_differential = self.run_job(
+            admin, "backup-bareos-fd", "Incremental", wait=True
+        )
+        self.addCleanup(admin.call, f"delete jobid={after_differential} yes")
+        second = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={second} yes")
+        data.write(b"incremental two")
+        data.flush()
+        os.utime(data.name, (2100000000, 2100000000))
+        second_incremental = self.run_job(
+            admin, "backup-bareos-fd", "Incremental", wait=True
+        )
+        self.addCleanup(admin.call, f"delete jobid={second_incremental} yes")
+        admin.call(
+            '.sql query="UPDATE Job SET '
+            f"StartTime=(SELECT StartTime FROM Job WHERE JobId={first}),"
+            f"JobTDate=(SELECT JobTDate FROM Job WHERE JobId={first}) "
+            f"WHERE JobId IN ({first_incremental},{first_differential},"
+            f'{after_differential},{second},{second_incremental})"'
+        )
+
+        cases = (
+            ("restore", 1, {second, second_incremental}),
+            ("restore", 2, {first, first_differential, after_differential}),
+            ("restore restorepointmode=job", 1, {second}),
+            ("restore restorepointmode=job", 2, {first}),
+        )
+        for command, choice, expected in cases:
+            with self.subTest(command=command, choice=choice):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=username,
+                    password=self.get_operator_password(username),
+                    **self.director_extra_options,
+                )
+                try:
+                    console.call(command)
+                    points = console.call("2")
+                    self.assertIn(f"JobId={first}".encode(), points)
+                    self.assertIn(f"JobId={second}".encode(), points)
+                    result = console.call(str(choice))
+                    match = re.search(
+                        rb"You have selected the following JobIds?: ([0-9,]+)",
+                        result,
+                    )
+                    self.assertIsNotNone(match, result)
+                    self.assertEqual(
+                        {int(jobid) for jobid in match.group(1).split(b",")},
+                        {int(jobid) for jobid in expected},
+                    )
+                    console.call("quit")
+                finally:
+                    console.close()
+
     def test_reopened_tree_restores_changed_selection(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

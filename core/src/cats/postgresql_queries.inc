@@ -255,7 +255,7 @@ R"SQL(INSERT INTO temp
 SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
        JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
   FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
+ WHERE %s
    AND Job.StartTime    < '%s'
    AND Job.ClientId     = %s
    AND JobMedia.JobId   = Job.JobId
@@ -266,7 +266,7 @@ SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBy
    AND Type             = '%c'
    AND Job.FileSetId    = FileSet.FileSetId
    AND FileSet.FileSet  = '%s' %s
- ORDER BY Job.JobTDate DESC LIMIT 1
+ ORDER BY %s LIMIT 1
 )SQL",
 
 /* 0024_uar_inc */
@@ -274,7 +274,7 @@ R"SQL(INSERT INTO temp
 SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
        JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
   FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
+ WHERE %s
    AND Job.StartTime    < '%s'
    AND Job.ClientId     = %s
    AND Media.Enabled    = 1
@@ -300,7 +300,7 @@ R"SQL(SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.Star
 /* 0026_uar_sel_jobid_temp */
 R"SQL(SELECT DISTINCT JobId, StartTime
   FROM temp
- ORDER BY StartTime ASC
+ ORDER BY StartTime ASC, JobId ASC
 )SQL",
 
 /* 0027_uar_sel_all_temp1 */
@@ -311,6 +311,7 @@ R"SQL(SELECT *
 /* 0028_uar_sel_all_temp */
 R"SQL(SELECT *
   FROM temp
+ ORDER BY StartTime ASC, JobId ASC
 )SQL",
 
 /* 0029_uar_sel_fileset */
@@ -1187,7 +1188,8 @@ full_backups AS (
          StartTime AS FullStartTime,
          JobFiles AS FullJobFiles,
          JobBytes AS FullJobBytes,
-         LEAD(StartTime) OVER (ORDER BY StartTime) AS NextFullStartTime
+         LEAD(StartTime) OVER (ORDER BY StartTime, JobId) AS NextFullStartTime,
+         LEAD(JobId) OVER (ORDER BY StartTime, JobId) AS NextFullJobId
     FROM completed_jobs
    WHERE Level = 'F'
 )
@@ -1197,13 +1199,28 @@ SELECT full_backups.JobId,
        COUNT(*) AS JobCount,
        STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
        full_backups.FullJobFiles,
-       full_backups.FullJobBytes
+       full_backups.FullJobBytes,
+       full_backups.NextFullJobId
   FROM full_backups
   JOIN completed_jobs
-    ON completed_jobs.StartTime >= full_backups.FullStartTime
+    ON (completed_jobs.StartTime, completed_jobs.JobId)
+       >= (full_backups.FullStartTime, full_backups.JobId)
    AND (full_backups.NextFullStartTime IS NULL
-        OR completed_jobs.StartTime < full_backups.NextFullStartTime)
+        OR (completed_jobs.StartTime, completed_jobs.JobId)
+           < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
  GROUP BY full_backups.JobId, full_backups.FullStartTime,
-          full_backups.FullJobFiles, full_backups.FullJobBytes
- ORDER BY full_backups.FullStartTime DESC
+          full_backups.FullJobFiles, full_backups.FullJobBytes,
+          full_backups.NextFullJobId
+ ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC
+)SQL",
+
+/* 0090_uar_selected_full */
+R"SQL(INSERT INTO temp1
+SELECT Job.JobId, Job.JobTDate
+  FROM Job, JobMedia, Media
+ WHERE Job.JobId = %s
+   AND JobMedia.JobId = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+   AND Media.Enabled = 1 %s
+ LIMIT 1
 )SQL",
