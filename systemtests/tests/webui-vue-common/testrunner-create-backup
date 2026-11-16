@@ -83,9 +83,18 @@ expect_grep 'Termination:.*Backup OK' \
   "${tmp}/webui-vue-create-backup.out" \
   "Backup did not succeed."
 for job in "${JobNames[@]}"; do
-  expect_grep "${job}" \
-    "${tmp}/webui-vue-create-backup.out" \
-    "Plugin backup job ${job} did not run."
+  if ! awk -v job="$job" '
+    $1 == "Job:" { current = index($2, job ".") == 1 }
+    $1 == "Termination:" && current {
+      seen++
+      if ($2 != "Backup" || $3 != "OK") { failed = 1 }
+      current = 0
+    }
+    END { exit !(seen && !failed) }
+  ' "${tmp}/webui-vue-create-backup.out"; then
+    echo "Backup job ${job} did not complete successfully." >&2
+    exit 1
+  fi
 done
 
 # The demo FileSets above all actually run through the stock bpipe plugin
