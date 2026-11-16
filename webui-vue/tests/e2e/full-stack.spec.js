@@ -646,7 +646,9 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
   let statusRequests = 0
 
   await browserFixture(page, (command, _director, { responseToken, socket }) => {
-    if (!command.startsWith('status scheduler days=') || command === 'status scheduler days=0,60') {
+    if (!page.url().includes('/#/schedules')
+      || !command.startsWith('status scheduler days=')
+      || command === 'status scheduler days=0,60') {
       return
     }
 
