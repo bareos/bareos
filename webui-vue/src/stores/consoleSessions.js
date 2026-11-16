@@ -23,7 +23,7 @@ import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { DEFAULT_DIRECTOR_NAME, useAuthStore } from './auth.js'
 import { defaultDirectorWsUrl } from '../utils/directorCommandSocket.js'
-import { sanitizeTerminalOutput } from '../utils/terminalSanitize.js'
+import { sanitizeTerminalOutput, sanitizeTerminalText } from '../utils/terminalSanitize.js'
 
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultDirectorWsUrl()
 const RAW_CMD_TIMEOUT_MS = 300_000
@@ -317,7 +317,7 @@ function applyCompletionResult(session, director, appendLines, request, text) {
     session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
     session.cursorPos = session.cmd.length
   }
-  appendLines(director, items.join('\n'))
+  appendLines(director, items.map(sanitizeTerminalText).join('\n'))
 }
 
 function isRestoreTreePrompt(session) {
@@ -636,7 +636,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
   function appendCommand(director, text) {
     const session = getSession(director)
-    const echoedLine = `${session.currentPrompt}${text}`
+    const echoedLine = `${session.currentPrompt}${sanitizeTerminalText(text)}`
     session.output.push({
       text: echoedLine,
       cls: 'console-cmd',

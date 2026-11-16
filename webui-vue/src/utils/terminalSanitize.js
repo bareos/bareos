@@ -50,3 +50,9 @@ export function sanitizeTerminalOutput(text) {
     SGR_RE.test(match) ? match : '',
   )
 }
+
+export function sanitizeTerminalText(text) {
+  return String(text ?? '').replace(/[\x00-\x1F\x7F-\x9F]/g, char =>
+    `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`,
+  )
+}

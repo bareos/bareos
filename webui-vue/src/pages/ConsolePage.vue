@@ -110,6 +110,7 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useConsoleSessionsStore, applyConsoleKey } from '../stores/consoleSessions.js'
 import { useConsoleTerminal } from '../composables/useConsoleTerminal.js'
 import { buildDirectorOptions } from '../utils/director.js'
+import { sanitizeTerminalText } from '../utils/terminalSanitize.js'
 import {
   CONSOLE_POPUP_AUTH_REQUEST,
   CONSOLE_POPUP_AUTH_RESPONSE,
@@ -264,8 +265,8 @@ function redrawInputLine() {
   const session = currentSession.value
   const cmd = session.cmd ?? ''
   const cursorPos = session.cursorPos ?? cmd.length
-  terminal.write(`\r\x1B[K${session.currentPrompt ?? ''}${cmd}`)
-  const back = cmd.length - cursorPos
+  terminal.write(`\r\x1B[K${session.currentPrompt ?? ''}${sanitizeTerminalText(cmd)}`)
+  const back = sanitizeTerminalText(cmd.slice(cursorPos)).length
   if (back > 0) {
     terminal.write(`\x1B[${back}D`)
   }

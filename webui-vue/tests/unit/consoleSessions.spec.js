@@ -769,6 +769,34 @@ describe('console session store', () => {
     ).toContain('clients')
   })
 
+  it('renders ambiguous completion candidates as plain text in live output and replay', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => written.push(text))
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.requestCompletion('bareos-dir', 'list jobs client=bareos-')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1',
+        text: 'bareos-\x1b[31mred\nbareos-界', prompt: 'main',
+      }),
+    })
+    expect(written.join('')).toContain('bareos-\\x1b[31mred\nbareos-界')
+    expect(written.join('')).not.toContain('\x1b[31m')
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed.join('')).toContain('bareos-\\x1b[31mred\nbareos-界')
+  })
+
   it('moves interactive restore prompts onto the live input line', () => {
     const consoleSessions = useConsoleSessionsStore()
 
