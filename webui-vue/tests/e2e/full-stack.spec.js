@@ -2414,6 +2414,39 @@ test('redraws a completed console command before it is sent', async ({ page }) =
   await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
 })
 
+test('displays completion candidates without executing terminal controls', async ({ page }) => {
+  const submitted = []
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === '.client') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'bareos-\x1b[2Jname', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command.startsWith('list jobs client=')) {
+        submitted.push(request.command)
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'command received', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list jobs client=bareos-')
+  await page.keyboard.press('Tab')
+  await expect(consoleOutput).toContainText('list jobs client=bareos-\\x1b[2Jname')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('command received')
+  await expect.poll(() => submitted).toEqual(['list jobs client=bareos-\x1b[2Jname'])
+  await expect(consoleOutput).toContainText('list jobs client=bareos-\\x1b[2Jname')
+})
+
 test('preserves console output split across unterminated chunks', async ({ page }) => {
   let releaseOutput
   const outputReady = new Promise(resolve => { releaseOutput = resolve })
