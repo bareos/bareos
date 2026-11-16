@@ -59,7 +59,7 @@ Client {
   # Passive = No
   # ConnectionFromDirectorToClient = Yes
   # ConnectionFromClientToDirector = No
-  # Enabled = Yes
+  Enabled = Yes
   # HardQuota = 0
   # SoftQuota = 0
   # SoftQuotaGracePeriod = 0
@@ -302,7 +302,7 @@ JobDefs {
   # RescheduleOnError = No
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
-  # Priority = 10
+  Priority = 100
   # AllowMixedPriority = No
   # SelectionPattern =
   ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
@@ -1057,7 +1057,7 @@ Job {
   # RescheduleOnError = No
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
-  # Priority = 10
+  Priority = 10
   # AllowMixedPriority = No
   # SelectionPattern =
   # ClientRunBeforeJob = "/tmp/JobDefClientRunBeforeJob1.sh"
@@ -1159,7 +1159,7 @@ Job {
   # RescheduleOnError = No
   # RescheduleInterval = 30 minutes
   # RescheduleTimes = 5
-  # Priority = 10
+  Priority = 10
   # AllowMixedPriority = No
   # SelectionPattern =
   RunScript {
