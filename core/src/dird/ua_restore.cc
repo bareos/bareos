@@ -49,6 +49,7 @@
 #include "dird/ua_restore_point_display.h"
 #include "dird/bsr.h"
 #include "lib/breg.h"
+#include "lib/bsys.h"
 #include "lib/edit.h"
 #include "lib/berrno.h"
 #include "lib/parse_conf.h"
@@ -1354,6 +1355,96 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
   AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
+static void AddTreeSelection(RestoreContext& rx, TREE_ROOT* root)
+{
+  for (tree_node* node = FirstTreeNode(root); node; node = NextTreeNode(node)) {
+    if (node->extract) {
+      AddDeltaListFindex(&rx, node->delta_list);
+      AddFindex(rx.bsr.get(), node->JobId, node->FileIndex);
+      if (node->type != tree_node_type::NewDir) { rx.selected_files++; }
+    }
+  }
+}
+
+bool RebuildRestoreSelection(UaContext* ua,
+                             JobControlRecord* jcr,
+                             uint32_t& selected_files)
+{
+  RestoreContext rx;
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
+  AddTreeSelection(rx, jcr->dir_impl->restore_tree_root);
+  if (!rx.bsr->JobId) {
+    ua->WarningMsg(T_("No files selected to be restored.\n"));
+    return false;
+  }
+
+  if (jcr->dir_impl->res.job->Protocol == PT_NDMP_NATIVE) {
+    selected_files = rx.selected_files;
+    return true;
+  }
+
+  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
+    ua->ErrorMsg(
+        T_("Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
+    return false;
+  }
+
+  char empty_jobids[] = "";
+  rx.JobIds = jcr->JobIds ? jcr->JobIds : empty_jobids;
+  std::string buffer;
+  selected_files = WriteBsr(ua, rx, buffer);
+  if (!selected_files) {
+    ua->WarningMsg(T_("No files selected to be restored.\n"));
+    return false;
+  }
+
+  std::string path
+      = std::string(working_directory) + "/" + my_name + ".restore.XXXXXX";
+  int fd = mkstemp(path.data());
+  if (fd < 0) {
+    BErrNo be;
+    ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
+                 path.c_str(), be.bstrerror());
+    return false;
+  }
+  FILE* file = fdopen(fd, "wb");
+  if (!file) {
+    BErrNo be;
+    ua->ErrorMsg(T_("Unable to open bootstrap file %s. ERR=%s\n"), path.c_str(),
+                 be.bstrerror());
+    close(fd);
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+  bool write_ok
+      = fwrite(buffer.data(), 1, buffer.size(), file) == buffer.size();
+  if (fclose(file) != 0) { write_ok = false; }
+  if (!write_ok) {
+    ua->ErrorMsg(T_("Error writing bsr file.\n"));
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+
+  if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap
+      && SecureErase(jcr, jcr->RestoreBootstrap) != 0) {
+    ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"),
+                 jcr->RestoreBootstrap);
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+  free(jcr->RestoreBootstrap);
+  jcr->RestoreBootstrap = strdup(path.c_str());
+  jcr->dir_impl->unlink_bsr = true;
+  ua->SendMsg(T_("Bootstrap records written to %s\n"), path.c_str());
+  return true;
+}
+
 static bool AddAllFindex(RestoreContext* rx)
 {
   bool has_jobid = false;
@@ -1468,22 +1559,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
     /* Walk down through the tree finding all files marked to be
      *  extracted making a bootstrap file. */
-    if (OK) {
-      for (tree_node* node = FirstTreeNode(tree.root); node;
-           node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%" PRId32 " node=%p\n", node->FileIndex, node);
-        if (node->extract) {
-          Dmsg3(400, "JobId=%" PRIu32 " type=%d FI=%" PRId32 "\n", node->JobId,
-                to_underlying(node->type), node->FileIndex);
-          /* TODO: optimize bsr insertion when jobid are non sorted */
-          AddDeltaListFindex(rx, node->delta_list);
-          AddFindex(rx->bsr.get(), node->JobId, node->FileIndex);
-          if (node->extract && node->type != tree_node_type::NewDir) {
-            rx->selected_files++; /* count only saved files */
-          }
-        }
-      }
-    }
+    if (OK) { AddTreeSelection(*rx, tree.root); }
   }
 
   /* We keep the tree with selected restore files.

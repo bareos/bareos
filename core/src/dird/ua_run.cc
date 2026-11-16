@@ -42,6 +42,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "dird/ua_restore.h"
 #include "dird/ua_tree.h"
 #include "dird/ua_tree_browser.h"
 #include "dird/ua_tree_browser_internal.h"
@@ -50,6 +51,7 @@
 #include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
+#include "lib/bsys.h"
 #include "lib/btime.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
@@ -137,6 +139,35 @@ static int ModifyJobParameters(UaContext* ua,
 
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
+
+static bool SetRestoreBootstrap(UaContext* ua,
+                                JobControlRecord* jcr,
+                                const char* path)
+{
+  if (jcr->RestoreBootstrap && path
+      && strcmp(jcr->RestoreBootstrap, path) == 0) {
+    return true;
+  }
+  if (path && *path) {
+    FILE* fd = fopen(path, "rb");
+    if (!fd) {
+      BErrNo be;
+      ua->SendMsg(T_("Warning cannot open %s: ERR=%s\n"), path, be.bstrerror());
+      return false;
+    }
+    fclose(fd);
+  }
+  if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap
+      && SecureErase(jcr, jcr->RestoreBootstrap) != 0) {
+    ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"),
+                 jcr->RestoreBootstrap);
+    return false;
+  }
+  free(jcr->RestoreBootstrap);
+  jcr->RestoreBootstrap = path && *path ? strdup(path) : nullptr;
+  jcr->dir_impl->unlink_bsr = false;
+  return true;
+}
 
 /**
  * Rerun a job by jobid. Lookup the job data and rerun the job with that data.
@@ -643,6 +674,13 @@ try_again:
 
 bail_out:
   ua->SendMsg(T_("Job not run.\n"));
+  if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap) {
+    if (SecureErase(jcr, jcr->RestoreBootstrap) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"),
+                   jcr->RestoreBootstrap);
+    }
+    jcr->dir_impl->unlink_bsr = false;
+  }
   FreeJcr(jcr);
 
   return 0; /* do not run */
@@ -808,25 +846,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         } else {
           /* Bootstrap */
           if (GetCmd(ua, T_("Please enter the Bootstrap file name: "))) {
-            if (jcr->RestoreBootstrap) {
-              free(jcr->RestoreBootstrap);
-              jcr->RestoreBootstrap = NULL;
-            }
-            if (ua->cmd[0] != 0) {
-              FILE* fd;
-
-              jcr->RestoreBootstrap = strdup(ua->cmd);
-              fd = fopen(jcr->RestoreBootstrap, "rb");
-              if (!fd) {
-                BErrNo be;
-                ua->SendMsg(T_("Warning cannot open %s: ERR=%s\n"),
-                            jcr->RestoreBootstrap, be.bstrerror());
-                free(jcr->RestoreBootstrap);
-                jcr->RestoreBootstrap = NULL;
-              } else {
-                fclose(fd);
-              }
-            }
+            SetRestoreBootstrap(ua, jcr, ua->cmd);
             goto try_again;
           }
         }
@@ -3356,7 +3376,10 @@ static int ModifyRestoreParameters(UaContext* ua,
                                          ? jcr->dir_impl->plugin_options
                                          : "";
         tree.plugin_options_out = &plugin_options;
-        UserSelectFilesFromTree(&tree);
+        if (!UserSelectFilesFromTree(&tree)) { return -1; }
+        uint32_t selected_files = 0;
+        if (!RebuildRestoreSelection(ua, jcr, selected_files)) { return -1; }
+        rc.files = selected_files;
         if (plugin_options
             != (jcr->dir_impl->plugin_options ? jcr->dir_impl->plugin_options
                                               : "")) {
@@ -3438,25 +3461,7 @@ static int ModifyRestoreParameters(UaContext* ua,
       break;
     case RestoreOptionAction::kBootstrap:
       if (GetCmd(ua, T_("Please enter the Bootstrap file name: "))) {
-        if (jcr->RestoreBootstrap) {
-          free(jcr->RestoreBootstrap);
-          jcr->RestoreBootstrap = NULL;
-        }
-        if (ua->cmd[0] != 0) {
-          FILE* fd;
-
-          jcr->RestoreBootstrap = strdup(ua->cmd);
-          fd = fopen(jcr->RestoreBootstrap, "rb");
-          if (!fd) {
-            BErrNo be;
-            ua->SendMsg(T_("Warning cannot open %s: ERR=%s\n"),
-                        jcr->RestoreBootstrap, be.bstrerror());
-            free(jcr->RestoreBootstrap);
-            jcr->RestoreBootstrap = NULL;
-          } else {
-            fclose(fd);
-          }
-        }
+        SetRestoreBootstrap(ua, jcr, ua->cmd);
         goto try_again;
       }
       break;
@@ -3566,8 +3571,13 @@ static bool ResetRestoreContext(UaContext* ua,
   }
 
   if (rc.bootstrap) {
-    if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
-    jcr->RestoreBootstrap = strdup(rc.bootstrap);
+    if (!jcr->RestoreBootstrap && jcr->dir_impl->unlink_bsr
+        && ua->jcr->RestoreBootstrap
+        && strcmp(ua->jcr->RestoreBootstrap, rc.bootstrap) == 0) {
+      jcr->RestoreBootstrap = strdup(rc.bootstrap);
+    } else if (!SetRestoreBootstrap(ua, jcr, rc.bootstrap)) {
+      return false;
+    }
     rc.bootstrap = NULL;
   }
 
