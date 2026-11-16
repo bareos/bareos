@@ -200,6 +200,7 @@ const terminal = useConsoleTerminal({
   onResize: ({ rows, cols }) => {
     consoleSessions.setTerminalSize(selectedDirector.value, rows, cols)
   },
+  onData: handleTerminalData,
 })
 
 const directorOptions = computed(() => {
@@ -384,6 +385,36 @@ function quickSend(c) {
 
 function sendTab() {
   consoleSessions.requestCompletion(selectedDirector.value, currentSession.value.cmd)
+  redrawInputLine()
+}
+
+function handleTerminalData(data) {
+  if (!data) return
+  const session = currentSession.value
+  if (/[\x00-\x1F\x7F-\x9F]/.test(data)) {
+    consoleSessions.appendErr(
+      selectedDirector.value, t('Pasted text cannot contain control characters.')
+    )
+    return
+  }
+  if (session.selectionActive) {
+    if (session.selectionBusy) {
+      consoleSessions.appendErr(
+        selectedDirector.value, t('Cannot paste while the selection is busy.')
+      )
+      return
+    }
+    const text = data.replace(/ +$/, '')
+    if (text && !consoleSessions.sendSelectionEvent(selectedDirector.value, `key:text:${text}`)) {
+      return
+    }
+    for (let i = text.length; i < data.length; i++) {
+      if (!consoleSessions.sendSelectionEvent(selectedDirector.value, 'key:space')) return
+    }
+    return
+  }
+  session.cmd = session.cmd.slice(0, session.cursorPos) + data + session.cmd.slice(session.cursorPos)
+  session.cursorPos += data.length
   redrawInputLine()
 }
 
