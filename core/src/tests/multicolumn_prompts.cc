@@ -502,6 +502,21 @@ TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 22);
 }
 
+TEST(InteractiveSelection, ShowsAllOptionsWithoutCursorNavigation)
+{
+  std::vector<std::string> options;
+  for (int i = 1; i <= 25; ++i) {
+    options.push_back("option " + std::to_string(i));
+  }
+  InteractiveSelection selection(options);
+  const std::string output = selection.Format("", "Select", 20, false, false);
+  EXPECT_NE(output.find("1: option 1\n"), std::string::npos);
+  EXPECT_NE(output.find("25: option 25\n"), std::string::npos);
+  EXPECT_EQ(output.find("  ...\n"), std::string::npos);
+  EXPECT_EQ(selection.ApplyInput("25"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 24);
+}
+
 TEST(InteractiveSelection, HonorsSmallExplicitVisibleWindow)
 {
   /* Directors compute a smaller max_visible_options for clients that
