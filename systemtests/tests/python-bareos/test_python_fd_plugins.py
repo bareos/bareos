@@ -37,6 +37,47 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class BareosFdPythonPluginOptions(bareos_unittest.Json):
+    def test_visual_plugin_options_saved_when_finishing_selection(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(
+            admin, "backup-bareos-fd-pluginoptions", "Full", wait=True
+        )
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=160)
+        screen = browser.run(
+            f"restore jobid={backup} all client=bareos-fd restoreclient=bareos-fd"
+        )
+        self.assertIn("Focus: Plugin Options", screen)
+        for _ in range(10):
+            browser.press("down")
+        screen = browser.press("enter")
+        self.assertIn("Choose option", screen)
+        browser.type_text("extraconfig")
+        browser.press("enter")
+        browser.type_text("visual-value")
+        screen = browser.press("enter")
+        self.assertIn("extraconfig=visual-value", screen)
+        screen = browser.type_text("r")
+        self.assertIn("Restore Options", screen)
+        self.assertIn("extraconfig=visual-value", screen)
+        browser.press("cancel")
+
     def test_visual_plugin_options_respect_console_acl(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
@@ -72,6 +113,10 @@ class BareosFdPythonPluginOptions(bareos_unittest.Json):
         browser.type_text("denied-value")
         browser.press("enter")
         screen = browser.press("tab")
+        self.assertIn('No authorization for "PluginOptions"', screen)
+        self.assertIn("─ > Plugin Options", screen)
+        self.assertIn("extraconfig=denied-value", screen)
+        screen = browser.type_text("r")
         self.assertIn('No authorization for "PluginOptions"', screen)
         self.assertIn("─ > Plugin Options", screen)
         self.assertIn("extraconfig=denied-value", screen)
