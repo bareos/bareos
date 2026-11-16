@@ -42,6 +42,46 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_restore_latest_rejects_before_cutoff(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+        for command in (
+            'restore latest before="2000-01-01 00:00:00"',
+            'restore before="2000-01-01 00:00:00" latest',
+        ):
+            with self.subTest(command=command):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="client-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                result = console.call(command)
+                self.assertIn(b"latest cannot be combined with before", result)
+                self.assertNotIn(b"Automatically selected restore point:", result)
+
+        for command in ("restore latest", "restore latest current"):
+            with self.subTest(command=command):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="client-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                result = console.call(command)
+                self.assertIn(b"Automatically selected restore point:", result)
+                console.call("done")
+
     def test_restore_discovers_historical_fileset_version(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
