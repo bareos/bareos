@@ -2414,6 +2414,69 @@ test('redraws a completed console command before it is sent', async ({ page }) =
   await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
 })
 
+test('preserves console output split across unterminated chunks', async ({ page }) => {
+  let releaseOutput
+  const outputReady = new Promise(resolve => { releaseOutput = resolve })
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-output-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id,
+          text: `${'scroll-line\n'.repeat(50)}${'wide'.repeat(60)}first-\x1B[31m`,
+          prompt: 'more',
+        }))
+        await outputReady
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'second-\x1B[0m', prompt: 'more',
+        }))
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'final', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command === 'webui-empty-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'unfinished', prompt: 'more',
+        }))
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: '', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command === 'webui-single-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'single-result', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-output-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('first-')
+  await page.keyboard.type('next-command')
+  await expect(consoleOutput).toContainText('next-command')
+  releaseOutput()
+  await expect(consoleOutput).toContainText('first-second-final')
+  await expect(consoleOutput).toContainText('next-command')
+  await page.keyboard.press('Control+u')
+  await page.keyboard.type('webui-empty-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('unfinished')
+  await page.keyboard.type('webui-single-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('single-result')
+
+  await page.goto('/#/dashboard')
+  await openConsole(page)
+  await expect(consoleOutput).toContainText('first-second-final')
+  await expect(consoleOutput).toContainText('unfinished')
+  await expect(consoleOutput).toContainText('single-result')
+})
+
 test('sends the current console size when switching directors', async ({ page }) => {
   test.skip(!isMultiDirectorProfile, 'Requires multiple Directors')
 
