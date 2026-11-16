@@ -20,9 +20,30 @@ start_test
 backupjob="slow-backup-big-volume"
 parallelbackuplog="$tmp/backup-parallel-jobs.out"
 parallelrestorelog="$tmp/restore-parallel-jobs.out"
+bandwidthlog="$tmp/bandwidth-parallel-jobs.out"
 
 rm -f $parallelbackuplog
 rm -f $parallelrestorelog
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+setbandwidth limit=200 client=bareos-fd yes
+status client=bareos-fd
+setbandwidth limit=0 client=bareos-fd yes
+setbandwidth limit=200 storage=File yes
+status storage=File
+setbandwidth limit=0 storage=File yes
+quit
+END_OF_DATA
+"${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+  <"$tmp/bconcmds" >"$bandwidthlog"
+if [[ $(grep -c 'bwlimit=200kB/s' "$bandwidthlog" || :) -ne 2 ]]; then
+  echo "File or Storage daemon did not receive the bandwidth limit"
+  cat "$bandwidthlog"
+  estat=1
+fi
+
+# Keep the jobs transferring while the bandwidth command is exercised.
+"${BAREOS_GENTESTDATA_BINARY}" --size=524288 >"${BackupDirectory}/bandwidth-test.bin"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -34,8 +55,6 @@ run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
 run job=${backupjob} level=Full yes
-wait
-messages
 quit
 END_OF_DATA
 
@@ -44,6 +63,54 @@ run_bconsole
 backup_jobids=($(grep 'Job queued.' $parallelbackuplog | sed -n -e 's/^.*JobId=//p'))
 
 num_jobs=${#backup_jobids[@]}
+
+if [[ "$num_jobs" -ne 6 ]]; then
+  echo "Expected six queued backup jobs, got $num_jobs"
+  exit 1
+fi
+
+for attempt in $(seq 1 60); do
+  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+    <<<"status client=bareos-fd" >"$bandwidthlog"
+  running=0
+  for jobid in "${backup_jobids[@]}"; do
+    if grep -q "JobId $jobid Job .* is running" "$bandwidthlog"; then
+      running=$((running + 1))
+    fi
+  done
+  if [[ "$running" -eq "$num_jobs" ]]; then break; fi
+  sleep 1
+done
+if [[ "$running" -ne "$num_jobs" ]]; then
+  echo "Not all backup jobs reached the File daemon"
+  cat "$bandwidthlog"
+  exit 1
+fi
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+setbandwidth limit=200 all yes
+status client=bareos-fd
+quit
+END_OF_DATA
+"${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+  <"$tmp/bconcmds" >"$bandwidthlog"
+
+if [[ $(grep -c 'Bwlimit=204,800' "$bandwidthlog" || :) -ne "$num_jobs" ]]; then
+  echo "Not all running backup jobs received the bandwidth limit"
+  cat "$bandwidthlog"
+  estat=1
+fi
+
+{
+  echo "@$out $parallelbackuplog"
+  for jobid in "${backup_jobids[@]}"; do
+    echo "setbandwidth limit=0 jobid=$jobid yes"
+  done
+  echo "wait"
+  echo "messages"
+  echo "quit"
+} >"$tmp/bconcmds"
+run_bconsole
 
 find "$tmp" -type d -name "restore*" -exec rm -rf {} +
 

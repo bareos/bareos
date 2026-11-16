@@ -886,6 +886,13 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
                            false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
+    if (ua->jcr->file_bsock) {
+      ua->jcr->file_bsock->close();
+      delete ua->jcr->file_bsock;
+      ua->jcr->file_bsock = nullptr;
+    }
+    ua->jcr->dir_impl->res.client = nullptr;
+    ua->jcr->max_bandwidth = 0;
     return true;
   }
 
@@ -935,11 +942,13 @@ static inline bool setbwlimit_stored(UaContext* ua,
 
   if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
+    ua->jcr->dir_impl->res.write_storage = nullptr;
+    ua->jcr->max_bandwidth = 0;
     return true;
   }
 
   Dmsg0(120, "Connected to Storage daemon\n");
-  if (!SendBwlimitToFd(ua->jcr, Job)) {
+  if (!SendBwlimitToSd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Storage daemon.\n"));
   } else {
     ua->InfoMsg(T_("OK Limiting bandwidth to %" PRId64 "kb/s %s\n"),
@@ -962,7 +971,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
   int64_t limit = -1;
   ClientResource* client = NULL;
   StorageResource* store = NULL;
-  char Job[MAX_NAME_LENGTH];
+  char Job[MAX_NAME_LENGTH] = {};
   const char* lst[] = {"job", "jobid", "ujobid", "all", "state", NULL};
 
   i = FindArgWithValue(ua, NT_("limit"));
@@ -990,15 +999,26 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
         case JT_COPY:
         case JT_MIGRATE:
           store = jcr->dir_impl->res.read_storage;
+          if (store) {
+            setbwlimit_stored(ua, store, limit, Job);
+          } else {
+            ua->ErrorMsg(T_("No Storage daemon available for Job %s.\n"), Job);
+          }
           break;
         default:
           client = jcr->dir_impl->res.client;
+          if (client) {
+            SetbwlimitFiled(ua, client, limit, Job);
+          } else {
+            ua->ErrorMsg(T_("No Client available for Job %s.\n"), Job);
+          }
           break;
       }
       FreeJcr(jcr);
     }
 
     delete selection;
+    return true;
   } else if (FindArg(ua, NT_("storage")) >= 0) {
     store = get_storage_resource(ua);
   } else {
