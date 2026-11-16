@@ -88,6 +88,18 @@ describe('dashboard route helpers', () => {
     expect(map.get('d')).toBe('reports-4')
   })
 
+  it.each([
+    [['Reports', 'Reports', 'Reports 2'], ['reports', 'reports-2', 'reports-2-2']],
+    [['Reports', 'Reports 2', 'Reports'], ['reports', 'reports-2', 'reports-3']],
+  ])('round-trips natural and generated suffix collisions', (names, expected) => {
+    const dashboards = names.map((name, id) => ({ id, name }))
+    expect(dashboards.map(d => dashboardSlugFor(dashboards, d.id))).toEqual(expected)
+    for (const dashboard of dashboards) {
+      expect(resolveDashboardIdFromSlug(dashboards, dashboardSlugFor(dashboards, dashboard.id)))
+        .toBe(dashboard.id)
+    }
+  })
+
   it('ignores dashboards without a usable id', () => {
     const dashboards = [{ name: 'No Id' }, { id: 'ok', name: 'Fine' }]
     const map = buildDashboardSlugMap(dashboards)

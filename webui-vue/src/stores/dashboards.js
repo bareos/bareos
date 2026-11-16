@@ -76,14 +76,18 @@ function normaliseWidget(raw) {
 }
 
 function normaliseLayout(raw, i) {
+  const minW = Math.min(12, Math.max(MIN_W,
+    Number.isSafeInteger(Number(raw?.minW)) ? Number(raw.minW) : MIN_W))
+  const minH = Math.max(MIN_H,
+    Number.isSafeInteger(Number(raw?.minH)) ? Number(raw.minH) : MIN_H)
   return {
     x: Number.isInteger(Number(raw?.x)) ? Number(raw.x) : 0,
     y: Number.isInteger(Number(raw?.y)) ? Number(raw.y) : 0,
-    w: Math.max(MIN_W, Number.isInteger(Number(raw?.w)) ? Number(raw.w) : 4),
-    h: Math.max(MIN_H, Number.isInteger(Number(raw?.h)) ? Number(raw.h) : 5),
+    w: Math.max(minW, Number.isInteger(Number(raw?.w)) ? Number(raw.w) : 4),
+    h: Math.max(minH, Number.isInteger(Number(raw?.h)) ? Number(raw.h) : 5),
     i: String(i),
-    minW: MIN_W,
-    minH: MIN_H,
+    minW,
+    minH,
   }
 }
 
@@ -98,12 +102,13 @@ function cloneDashboard(dashboard) {
   }
 }
 
-function addMissingPreconfiguredDashboards(dashboards) {
+function addMissingPreconfiguredDashboards(dashboards, seededDashboardIds) {
   const ids = new Set(dashboards.map(dashboard => dashboard.id))
+  const seeded = new Set(seededDashboardIds)
   return [
     ...dashboards,
     ...PRECONFIGURED_DASHBOARDS
-      .filter(dashboard => !ids.has(dashboard.id))
+      .filter(dashboard => !ids.has(dashboard.id) && !seeded.has(dashboard.id))
       .map(cloneDashboard),
   ]
 }
@@ -121,13 +126,17 @@ function loadFromStorage() {
         })
         if (dashboards.length > 0) {
           const savedActiveId = parsed?.activeDashboardId
+          const seededDashboardIds = Array.isArray(parsed?.seededDashboardIds)
+            ? parsed.seededDashboardIds.filter(id => typeof id === 'string')
+            : []
           const migratedDashboards = addMissingPreconfiguredDashboards(
-            dashboards
+            dashboards, seededDashboardIds
           )
           const validActiveId = migratedDashboards.find(d => d.id === savedActiveId)?.id
           return {
             dashboards: migratedDashboards,
             activeDashboardId: validActiveId ?? migratedDashboards[0].id,
+            seededDashboardIds,
           }
         }
       }
@@ -138,12 +147,17 @@ function loadFromStorage() {
   return {
     dashboards: PRECONFIGURED_DASHBOARDS.map(cloneDashboard),
     activeDashboardId: null,
+    seededDashboardIds: [],
   }
 }
 
 export const useDashboardStore = defineStore('dashboards', () => {
   const loaded = loadFromStorage()
   const dashboards = ref(loaded.dashboards)
+  const seededDashboardIds = [...new Set([
+    ...loaded.seededDashboardIds,
+    ...PRECONFIGURED_DASHBOARDS.map(d => d.id),
+  ])]
   const activeDashboardId = ref(
     loaded.activeDashboardId ?? dashboards.value[0]?.id ?? null
   )
@@ -152,6 +166,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({
       dashboards: dashboards.value,
       activeDashboardId: activeDashboardId.value,
+      seededDashboardIds,
     }))
   }
 
@@ -272,7 +287,10 @@ export const useDashboardStore = defineStore('dashboards', () => {
       return {
         ...d,
         widgets: d.widgets.map(w =>
-          w.id === widgetId ? { ...w, layout: normaliseLayout(layout, widgetId) } : w
+          w.id === widgetId ? {
+            ...w,
+            layout: normaliseLayout({ ...layout, minW: w.layout.minW, minH: w.layout.minH }, widgetId),
+          } : w
         ),
       }
     })
@@ -287,7 +305,10 @@ export const useDashboardStore = defineStore('dashboards', () => {
         ...d,
         widgets: d.widgets.map(w => {
           const l = byId[w.id]
-          return l ? { ...w, layout: normaliseLayout(l, w.id) } : w
+          return l ? {
+            ...w,
+            layout: normaliseLayout({ ...l, minW: w.layout.minW, minH: w.layout.minH }, w.id),
+          } : w
         }),
       }
     })

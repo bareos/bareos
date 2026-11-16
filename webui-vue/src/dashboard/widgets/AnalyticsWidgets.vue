@@ -1,3 +1,22 @@
+<!--
+  BAREOS® - Backup Archiving REcovery Open Sourced
+
+  Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+  This program is Free Software; you can redistribute it and/or
+  modify it under the terms of version three of the GNU Affero General Public
+  License as published by the Free Software Foundation and included
+  in the file LICENSE.
+
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
 <template>
   <div class="q-pa-sm" :class="{ 'analytics-widget': isDashboardWidget }">
     <DirectorErrorsBanner v-if="section === 'summary'" :errors="directorErrors" />
@@ -161,6 +180,7 @@ const rawJobs = ref([])
 const loadingLocal = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
+let latestRequestId = 0
 const dashboardContext = inject(DASHBOARD_CONTEXT_KEY, null)
 const isDashboardWidget = computed(() => dashboardContext !== null)
 const section = computed(() => props.widgetProps.section ?? ({
@@ -186,6 +206,7 @@ function formatFileCount(count) {
 }
 
 async function refresh() {
+  const requestId = ++latestRequestId
   loadingLocal.value = true
   error.value = null
   directorErrors.value = []
@@ -202,6 +223,7 @@ async function refresh() {
       }
 
       const result = await fetchAggregatedAnalytics(credentials, activeDirectors.value)
+      if (requestId !== latestRequestId) return
       rawJobs.value = result.jobs
       directorErrors.value = result.directorErrors
       return
@@ -209,18 +231,22 @@ async function refresh() {
 
     const currentDirector = activeDirectors.value[0]
     await ensureSingleScopeDirector()
+    if (requestId !== latestRequestId) return
     const result = await director.call('list jobs')
+    if (requestId !== latestRequestId) return
     rawJobs.value = directorCollection(result?.jobs).map((job) => ({
       ...normaliseJob(job),
       director: currentDirector,
       scopeKey: `${currentDirector}:${normaliseJob(job).id}`,
     }))
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (requestId === latestRequestId) error.value = reason?.message ?? String(reason)
   } finally {
-    loadingLocal.value = false
+    if (requestId === latestRequestId) loadingLocal.value = false
   }
 }
+
+onUnmounted(() => { latestRequestId += 1 })
 
 const jobs = computed(() => dashboardContext
   ? directorCollection(dashboardContext.analyticsJobs.value)

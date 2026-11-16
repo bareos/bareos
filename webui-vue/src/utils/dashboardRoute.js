@@ -57,17 +57,19 @@ export function slugify(name) {
 export function buildDashboardSlugMap(dashboards) {
   const list = Array.isArray(dashboards) ? dashboards : []
   const slugById = new Map()
-  const usedCounts = new Map()
+  const usedSlugs = new Set()
 
   for (const dashboard of list) {
     const id = dashboard?.id
     if (id === undefined || id === null) continue
 
     const base = slugify(dashboard?.name)
-    const count = usedCounts.get(base) ?? 0
-    usedCounts.set(base, count + 1)
-
-    const slug = count === 0 ? base : `${base}-${count + 1}`
+    let slug = base
+    let suffix = 2
+    while (usedSlugs.has(slug)) {
+      slug = `${base}-${suffix++}`
+    }
+    usedSlugs.add(slug)
     slugById.set(id, slug)
   }
 

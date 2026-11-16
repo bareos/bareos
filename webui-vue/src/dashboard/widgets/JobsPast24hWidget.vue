@@ -51,7 +51,7 @@ const summaryStats = computed(() => {
     { label: t('Waiting'),    status: 'C', color: 'grey',     count: countByStatus('C') },
     { label: t('Successful'), status: 'T', color: 'positive', count: countByStatus('T') },
     { label: t('Warning'),    status: 'W', color: 'warning',  count: countByStatus('W') },
-    { label: t('Failed'),     status: 'f', color: 'negative', count: countByStatus('f') },
+    { label: t('Failed'),     status: 'f,E', color: 'negative', count: countByStatus('f') + countByStatus('E') },
   ]
 })
 </script>

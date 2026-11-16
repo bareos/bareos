@@ -39,7 +39,7 @@
       <div v-if="loading && !lines.length" class="text-center text-grey q-pa-md">
         {{ t('Loading…') }}
       </div>
-      <div v-else-if="!lines.length" class="text-center text-grey q-pa-md">
+      <div v-else-if="!lines.length && !error" class="text-center text-grey q-pa-md">
         <q-icon name="mdi-check-circle-outline" color="positive" size="24px" class="q-mb-xs" />
         <div>{{ t('No errors or warnings in the last 24 hours.') }}</div>
       </div>
@@ -155,8 +155,12 @@ async function loadTroubleLines() {
   // the final result stays in the widget's jobid-descending order regardless
   // of which job's request happens to complete first.
   const buckets = new Array(jobs.length).fill(null)
-  const indexByJobId = new Map(jobs.map((job, index) => [String(job.id ?? job.jobid), index]))
-  const jobById = new Map(jobs.map(job => [String(job.id ?? job.jobid), job]))
+  const logErrors = []
+  const jobsByDirector = new Map()
+  jobs.forEach((job, index) => {
+    if (!jobsByDirector.has(job.director)) jobsByDirector.set(job.director, new Map())
+    jobsByDirector.get(job.director).set(String(job.id ?? job.jobid), { job, index })
+  })
 
   // Group jobs by director so a single batched `list joblog jobids=...` call
   // per director can replace one `list joblog jobid=` call per job.
@@ -199,9 +203,9 @@ async function loadTroubleLines() {
         const rows = Array.isArray(res?.joblog) ? res.joblog : []
         for (const row of rows) {
           const jobId = String(row.jobid ?? '')
-          const index = indexByJobId.get(jobId)
-          const job = jobById.get(jobId)
-          if (index === undefined || !job) continue
+          const entry = jobsByDirector.get(director)?.get(jobId)
+          if (!entry) continue
+          const { job, index } = entry
           const time = (row.time ?? '').trim()
           const logtext = (row.logtext ?? '').trimEnd()
           const type = classifyLogLine(`${time} ${logtext}`.trim())
@@ -217,9 +221,8 @@ async function loadTroubleLines() {
             })
           }
         }
-      } catch {
-        // Skip the director's jobs whose logs could not be fetched (e.g.
-        // director offline); other directors' results are unaffected.
+      } catch (reason) {
+        logErrors.push(`${director}: ${reason?.message ?? String(reason)}`)
       }
     }))
   } finally {
@@ -228,6 +231,7 @@ async function loadTroubleLines() {
     }
     if (requestId === latestRequestId && !isUnmounted) {
       lines.value = buckets.flatMap(bucket => bucket ?? [])
+      error.value = [error.value, ...logErrors].filter(Boolean).join(' ')
       loading.value = false
     }
   }

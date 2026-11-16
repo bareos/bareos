@@ -20,6 +20,12 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { createApp, ref } from 'vue'
+import { createI18n } from 'vue-i18n'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import JobsPast24hWidget from '../../src/dashboard/widgets/JobsPast24hWidget.vue'
+import { DASHBOARD_CONTEXT_KEY } from '../../src/dashboard/dashboardContext.js'
+import { getContrastTextColor } from '../../src/dashboard/piePalette.js'
 import {
   JOB_STATUS_24H_CHART_SEGMENTS,
   buildJobStatus24hChartSegments,
@@ -32,8 +38,17 @@ describe('JOB_STATUS_24H_CHART_SEGMENTS', () => {
       { status: 'C', labelKey: 'Waiting', color: '#9e9e9e' },
       { status: 'T', labelKey: 'Successful', color: '#28a745' },
       { status: 'W', labelKey: 'Warning', color: '#ffc107' },
-      { status: 'f', labelKey: 'Failed', color: '#dc3545' },
+      { status: 'f,E', labelKey: 'Failed', color: '#dc3545' },
     ])
+  })
+
+})
+
+describe('chart label contrast', () => {
+  it('chooses the higher-contrast text for orange, dark, and light backgrounds', () => {
+    expect(getContrastTextColor('#e06c2e')).toBe('#222')
+    expect(getContrastTextColor('#2e2eb8')).toBe('#fff')
+    expect(getContrastTextColor('#ffffff')).toBe('#222')
   })
 })
 
@@ -61,7 +76,39 @@ describe('buildJobStatus24hChartSegments', () => {
       f: 2,
     })).toEqual([
       { status: 'R', labelKey: 'Running', color: '#17a2b8', count: 3 },
-      { status: 'f', labelKey: 'Failed', color: '#dc3545', count: 2 },
+      { status: 'f,E', labelKey: 'Failed', color: '#dc3545', count: 2 },
+    ])
+  })
+
+  describe('JobsPast24hWidget', () => {
+    it('shows and links both failed statuses', async () => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: '/jobs', name: 'jobs', component: { template: '<div />' } }],
+      })
+      await router.push('/jobs')
+      await router.isReady()
+      const app = createApp(JobsPast24hWidget)
+      app.use(router)
+      app.use(createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false }))
+      app.provide(DASHBOARD_CONTEXT_KEY, {
+        aggregate: ref({ jobsPast24hStatusCounts: { f: 2, E: 3 } }),
+      })
+      const host = document.createElement('div')
+      app.mount(host)
+      try {
+        const failed = [...host.querySelectorAll('a')].find(link => link.textContent.includes('Failed'))
+        expect(failed.textContent).toContain('5')
+        expect(router.resolve(failed.getAttribute('href')).query.status).toBe('f,E')
+      } finally {
+        app.unmount()
+      }
+    })
+  })
+
+  it('combines error-terminated and fatal jobs in the failed segment and link', () => {
+    expect(buildJobStatus24hChartSegments({ f: 2, E: 3 })).toEqual([
+      { status: 'f,E', labelKey: 'Failed', color: '#dc3545', count: 5 },
     ])
   })
 })
