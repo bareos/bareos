@@ -21,6 +21,7 @@
 
 #include "include/bareos.h"
 #include "dird/ua_run_helpers.h"
+#include "dird/ua_tree_browser_internal.h"
 
 #include <algorithm>
 
@@ -28,34 +29,38 @@ namespace directordaemon {
 
 std::string FitRestoreOptionText(std::string_view text, size_t width)
 {
-  if (text.size() <= width) { return std::string(text); }
-  if (width <= 3) { return std::string(text.substr(0, width)); }
-  std::string result(text.substr(0, width - 3));
-  result += "...";
-  return result;
+  if (tree_browser_internal::TextCellWidth(text) <= width) {
+    return std::string(text);
+  }
+  return tree_browser_internal::FitText(text, width, 0, width > 3);
 }
 
 std::string ScrollRestoreOptionText(std::string_view text,
                                     size_t width,
                                     size_t offset)
 {
-  if (text.size() <= width) { return std::string(text); }
-  if (width <= 2) { return std::string(text.substr(0, width)); }
+  size_t total_width = tree_browser_internal::TextCellWidth(text);
+  if (total_width <= width) { return std::string(text); }
+  if (width <= 2) {
+    return tree_browser_internal::FitText(text, width, 0, false);
+  }
 
   size_t marker_width = 0;
   if (offset > 0) { marker_width++; }
-  if (offset + width - marker_width < text.size()) { marker_width++; }
+  if (offset < total_width && width - marker_width < total_width - offset) {
+    marker_width++;
+  }
 
   if (marker_width >= width) { return std::string(width, '.'); }
 
   size_t text_width = width - marker_width;
-  size_t max_offset = text.size() > text_width ? text.size() - text_width : 0;
+  size_t max_offset = total_width > text_width ? total_width - text_width : 0;
   offset = std::min(offset, max_offset);
 
   std::string result;
   if (offset > 0) { result += '<'; }
-  result += text.substr(offset, text_width);
-  if (offset + text_width < text.size()) { result += '>'; }
+  result += tree_browser_internal::FitText(text, text_width, offset, false);
+  if (offset + text_width < total_width) { result += '>'; }
   return result;
 }
 

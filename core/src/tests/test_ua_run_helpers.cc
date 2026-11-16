@@ -33,6 +33,8 @@ TEST(UaRunHelpers, FitRestoreOptionText)
   EXPECT_EQ(FitRestoreOptionText("a longer text", 10), "a longe...");
   EXPECT_EQ(FitRestoreOptionText("a longer text", 3), "a l");
   EXPECT_EQ(FitRestoreOptionText("abc", 0), "");
+  EXPECT_EQ(FitRestoreOptionText("界界", 5), "界界");
+  EXPECT_EQ(FitRestoreOptionText("界界界", 5), "界...");
 }
 
 TEST(UaRunHelpers, ScrollRestoreOptionText)
@@ -42,6 +44,10 @@ TEST(UaRunHelpers, ScrollRestoreOptionText)
   EXPECT_EQ(ScrollRestoreOptionText("0123456789", 6, 2), "<2345>");
   EXPECT_EQ(ScrollRestoreOptionText("0123456789", 6, 99), "<56789");
   EXPECT_EQ(ScrollRestoreOptionText("0123456789", 2, 1), "01");
+  EXPECT_EQ(ScrollRestoreOptionText("a界b界c", 5, 0), "a界b>");
+  EXPECT_EQ(ScrollRestoreOptionText("a界b界c", 5, 1), "<界b>");
+  EXPECT_EQ(ScrollRestoreOptionText("a界b界c", 5, 2), "<b界>");
+  EXPECT_EQ(ScrollRestoreOptionText("a界b界c", 5, 99), "<b界c");
 }
 
 TEST(UaRunHelpers, FormatRunScheduleRelativeTime)

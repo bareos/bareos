@@ -1094,9 +1094,10 @@ static size_t RestoreOptionValueWidth(UaContext* ua)
 
 static size_t MaxRestoreOptionValueOffset(std::string_view text, size_t width)
 {
-  if (text.size() <= width) { return 0; }
-  if (width <= 2) { return text.size() - width; }
-  return text.size() - (width - 2);
+  size_t text_width = tree_browser_internal::TextCellWidth(text);
+  if (text_width <= width) { return 0; }
+  if (width <= 2) { return text_width - width; }
+  return text_width - (width - 2);
 }
 
 static void RemoveFinalNewline(std::string* text)
@@ -2066,8 +2067,9 @@ static std::string FormatOptionRowLine(std::string_view label,
   std::string line = selected ? "> " : "  ";
   if (advanced) { line += "  "; }
   line += FitRestoreOptionText(label, 22);
-  if (line.size() < kRestoreOptionLabelColumn) {
-    line.append(kRestoreOptionLabelColumn - line.size(), ' ');
+  size_t line_width = tree_browser_internal::TextCellWidth(line);
+  if (line_width < kRestoreOptionLabelColumn) {
+    line.append(kRestoreOptionLabelColumn - line_width, ' ');
   }
   line += selected ? ScrollRestoreOptionText(value, value_width, value_offset)
                    : FitRestoreOptionText(value, value_width);
