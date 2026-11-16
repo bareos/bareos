@@ -50,6 +50,8 @@ vi.mock('../../src/dashboard/widgetRegistry.js', async () => {
         h('button', { onClick: context.refresh }, 'refresh'),
         h('span', { class: 'pools' }, JSON.stringify(context.pools.value)),
         h('span', { class: 'analytics' }, JSON.stringify(context.analyticsJobs.value)),
+        h('span', { class: 'catalog' }, JSON.stringify(context.aggregate.value.catalogStatusSummary)),
+        h('span', { class: 'catalog-statuses' }, JSON.stringify(context.aggregate.value.catalogStatuses)),
       ])
     },
   })
@@ -65,6 +67,41 @@ function deferred() {
 }
 
 describe('DashboardGrid refresh', () => {
+  it('reports an unreachable director as unavailable in the catalog summary', async () => {
+    fetchSnapshot.mockReset()
+    fetchAnalytics.mockReset()
+    fetchSnapshot.mockImplementation(({ director }) => director === 'healthy'
+      ? Promise.resolve({ director, catalogStatus: { status: 'ok' } })
+      : Promise.reject(new Error('Connection failed')))
+    const app = createApp(DashboardGrid, {
+      dashboard: {
+        id: 'test',
+        widgets: [{ id: 'one', type: 'catalog-status', layout: { x: 0, y: 0, w: 3, h: 3 } }],
+      },
+      activeDirectors: ['healthy', 'offline'],
+    })
+    app.use(createPinia())
+    app.component('q-icon', defineComponent({ setup: () => () => null }))
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    app.mount(host)
+    try {
+      await vi.waitFor(() => {
+        const summary = JSON.parse(host.querySelector('.catalog').textContent)
+        expect(summary.status).toBe('warning')
+        expect(summary.unavailableDirectors).toBe(1)
+        expect(summary.directors).toBe(2)
+        const statuses = JSON.parse(host.querySelector('.catalog-statuses').textContent)
+        expect(statuses).toContainEqual(expect.objectContaining({
+          director: 'offline', status: 'unavailable', errors: ['Connection failed'],
+        }))
+      })
+    } finally {
+      app.unmount()
+      host.remove()
+    }
+  })
+
   it('keeps slow pool and analytics results after a fast refresh', async () => {
     const slowSnapshot = deferred()
     const slowAnalytics = deferred()

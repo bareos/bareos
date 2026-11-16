@@ -284,9 +284,11 @@ function aggregateCatalogStatusSummary(catalogStatuses) {
     (highest, entry) => Math.max(highest, severityRank(entry.status)),
     0
   )
+  const unavailableDirectors = statuses.filter(entry => entry.status === 'unavailable').length
+  const summaryRank = unavailableDirectors > 0 && highestSeverity === 1 ? 2 : highestSeverity
 
   return {
-    status: severityFromRank(highestSeverity),
+    status: severityFromRank(summaryRank),
     checkedAt: statuses
       .map(entry => entry.checkedAt ?? '')
       .sort((a, b) => String(b).localeCompare(String(a)))[0] ?? '',
@@ -296,7 +298,7 @@ function aggregateCatalogStatusSummary(catalogStatuses) {
     ),
     directors: statuses.length,
     availableDirectors: statuses.filter(entry => entry.status !== 'unavailable').length,
-    unavailableDirectors: statuses.filter(entry => entry.status === 'unavailable').length,
+    unavailableDirectors,
     warningDirectors: statuses.filter(entry => entry.status === 'warning').length,
     errorDirectors: statuses.filter(entry => entry.status === 'error').length,
   }

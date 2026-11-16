@@ -337,5 +337,20 @@ describe('director aggregate dashboard helpers', () => {
       warningDirectors: 1,
       errorDirectors: 0,
     })
+
+  })
+
+  it.each([
+    [['ok', 'unavailable'], 'warning'],
+    [['warning', 'unavailable'], 'warning'],
+    [['error', 'unavailable'], 'error'],
+    [['unavailable', 'unavailable'], 'unavailable'],
+    [['ok', 'ok'], 'ok'],
+  ])('reports catalog coverage for %j as %s', (statuses, expected) => {
+    const aggregate = aggregateDirectorDashboardSnapshots(statuses.map((status, index) => ({
+      director: `dir-${index}`,
+      catalogStatus: { status },
+    })))
+    expect(aggregate.catalogStatusSummary.status).toBe(expected)
   })
 })

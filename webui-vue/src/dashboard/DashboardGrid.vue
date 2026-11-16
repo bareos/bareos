@@ -215,7 +215,8 @@ async function fetchAnalyticsData(credentials, requestId) {
 async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
   const requestId = ++_latestFetchRequestId
   const credentials = auth.getCredentials()
-  if (!credentials || props.activeDirectors.length === 0) {
+  const directors = [...props.activeDirectors]
+  if (!credentials || directors.length === 0) {
     _latestPoolRequestId += 1
     _latestAnalyticsRequestId += 1
     if (requestId === _latestFetchRequestId) {
@@ -242,15 +243,22 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
   try {
     const [results] = await Promise.all([
       Promise.allSettled(
-        props.activeDirectors.map(d =>
+        directors.map(d =>
           fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
         )
       ),
       includeAnalytics ? fetchAnalyticsData(credentials, analyticsRequestId) : Promise.resolve(),
     ])
-    const fresh = results
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value)
+    const fresh = results.map((result, index) => result.status === 'fulfilled'
+      ? result.value
+      : {
+          director: directors[index],
+          catalogStatus: {
+            director: directors[index],
+            status: 'unavailable',
+            errors: [result.reason?.message ?? t('Catalog status unavailable')],
+          },
+        })
 
     if (includePools && poolRequestId === _latestPoolRequestId) {
       pools.value = aggregateDirectorDashboardSnapshots(fresh).pools
