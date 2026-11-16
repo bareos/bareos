@@ -26,6 +26,7 @@
 #include "include/bareos.h"
 
 #include <string>
+#include <utf8.h>
 
 static FILE* output_file_ = stdout;
 static bool teeout_enabled_ = false;
@@ -107,6 +108,15 @@ std::string StripAnsiEscapeSequences(std::string_view text)
       unsigned char next = static_cast<unsigned char>(text[i + 1]);
       if (next >= 0x80 && next <= 0x9f) {
         ++i;
+        continue;
+      }
+    }
+    if (value >= 0xc2 && value <= 0xf4) {
+      size_t length = value < 0xe0 ? 2 : (value < 0xf0 ? 3 : 4);
+      if (length <= text.size() - i
+          && utf8::is_valid(text.begin() + i, text.begin() + i + length)) {
+        out.append(text.substr(i, length));
+        i += length - 1;
         continue;
       }
     }
