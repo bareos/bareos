@@ -2414,6 +2414,36 @@ test('redraws a completed console command before it is sent', async ({ page }) =
   await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
 })
 
+test('sends the current console size when switching directors', async ({ page }) => {
+  test.skip(!isMultiDirectorProfile, 'Requires multiple Directors')
+
+  const sizes = new Map()
+  page.on('websocket', socket => {
+    let director
+    socket.on('framesent', ({ payload }) => {
+      const request = JSON.parse(payload)
+      if (request.type === 'session' && request.mode === 'raw') {
+        director = request.director
+      } else if (director && request.command?.startsWith('.terminalsize ')) {
+        sizes.set(director, request.command)
+      }
+    })
+  })
+
+  await login(page)
+  await page.goto('/#/console-popup?director=bareos-dir')
+  await expect(page.getByTestId('console-output')).toContainText('Connected to bareos-dir')
+  await expect.poll(() => sizes.get('bareos-dir')).toMatch(/^\.terminalsize \d+ \d+ color$/)
+
+  await page.getByRole('tab', { name: 'bareos-dir-2', exact: true }).click()
+  await expect.poll(() => sizes.get('bareos-dir-2')).toBe(sizes.get('bareos-dir'))
+
+  await page.setViewportSize({ width: 900, height: 720 })
+  await expect.poll(() => sizes.get('bareos-dir-2')).not.toBe(sizes.get('bareos-dir'))
+  await page.getByRole('tab', { name: 'bareos-dir', exact: true }).click()
+  await expect.poll(() => sizes.get('bareos-dir')).toBe(sizes.get('bareos-dir-2'))
+})
+
 async function assertDashboardResizePersists(page) {
   await page.getByTitle('Edit layout').click()
   await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()

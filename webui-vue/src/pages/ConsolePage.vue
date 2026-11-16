@@ -460,6 +460,10 @@ watch(selectedDirector, async (directorName, previousDirector) => {
   terminal.clear()
   registerTerminalWriter(directorName)
   redrawInputLine()
+  if (terminal.terminal) {
+    const { rows, cols } = terminal.terminal
+    consoleSessions.setTerminalSize(directorName, rows, cols)
+  }
 
   await router.replace({
     name: route.name,
