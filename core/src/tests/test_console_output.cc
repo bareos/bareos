@@ -70,6 +70,16 @@ TEST(ConsoleOutput, StripsAnsiForPlainSinks)
   EXPECT_EQ(console::StripAnsiEscapeSequences("plain"), "plain");
 }
 
+TEST(ConsoleOutput, PreservesUtf8WhileRemovingControls)
+{
+  EXPECT_EQ(console::StripAnsiEscapeSequences(
+                "\xc3\xbc \xe2\x82\xac \xe7\x95\x8c \xf0\x9f\x98\x80"
+                " \xc2\x9b\x1b[31mred\x1b[0m"),
+            "\xc3\xbc \xe2\x82\xac \xe7\x95\x8c \xf0\x9f\x98\x80"
+            " red");
+  EXPECT_EQ(console::StripAnsiEscapeSequences("x\x9b\x1b[2Jy"), "xy");
+}
+
 TEST(ConsoleOutput, StripsAnsiFromFileSink)
 {
   FILE* file = tmpfile();
