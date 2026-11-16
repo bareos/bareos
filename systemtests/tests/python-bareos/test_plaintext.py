@@ -25,6 +25,8 @@ import json
 import logging
 import os
 import re
+import socket
+import struct
 import subprocess
 from time import sleep
 import unittest
@@ -41,6 +43,46 @@ import bareos_unittest
 
 
 class PythonBareosPlainTest(bareos_unittest.Base):
+    def test_api_input_signals_precede_question(self):
+        for signals in (
+            (Constants.BNET_YESNO, Constants.BNET_TEXT_INPUT),
+            (Constants.BNET_TEXT_INPUT,),
+        ):
+            with self.subTest(signals=signals):
+                client, server = socket.socketpair()
+                self.addCleanup(client.close)
+                self.addCleanup(server.close)
+                console = LowLevel()
+                console.socket = client
+                question = b"Enter a value: "
+                response = b"Accepted\n"
+                packets = b"".join(struct.pack("!i", signal) for signal in signals)
+                packets += struct.pack("!i", len(question)) + question
+                packets += struct.pack("!i", len(response)) + response
+                packets += struct.pack("!i", Constants.BNET_EOD)
+                server.sendall(packets)
+                self.assertEqual(console.recv_msg(), question)
+                self.assertEqual(console.recv_msg(), response)
+
+    def test_selection_signal_follows_menu(self):
+        client, server = socket.socketpair()
+        self.addCleanup(client.close)
+        self.addCleanup(server.close)
+        console = LowLevel()
+        console.socket = client
+        menu = b"Select an option: "
+        response = b"Selected\n"
+        server.sendall(
+            struct.pack("!i", len(menu))
+            + menu
+            + struct.pack("!i", Constants.BNET_SELECT_INPUT)
+            + struct.pack("!i", len(response))
+            + response
+            + struct.pack("!i", Constants.BNET_EOD)
+        )
+        self.assertEqual(console.recv_msg(), menu)
+        self.assertEqual(console.recv_msg(), response)
+
     def test_login_to_noexisting_host(self):
         logger = logging.getLogger()
 
