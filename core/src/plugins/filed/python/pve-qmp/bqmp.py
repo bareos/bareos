@@ -5,6 +5,7 @@ import os
 import fcntl
 import logging
 import asyncio
+import signal
 import json
 import nbd
 import qemu.qmp
@@ -21,49 +22,6 @@ CMD_RESTORE = 3
 CMD_CLEANUP = 4
 CMD_RESET   = 5
 CMD_TOIMAGE = 6
-
-
-def read_ports(f):
-    ports = [ i.strip() for i in f.readlines() ]
-    return ports
-
-
-def write_ports(f, ports):
-    f.seek(0)
-    f.truncate()
-    for p in ports:
-        f.write(p + "\n")
-
-
-def acquire_port(start_port):
-    with open(lockfile,"r+") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            ports = read_ports(f)
-            port = int(start_port)
-            while str(port) in ports:
-                port += 1
-
-            ports.append(str(port))
-
-            write_ports(f, ports)
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
-    return str(port)
-
-
-def release_port(port):
-    with open(lockfile,"r+") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            ports = read_ports(f)
-
-            if str(port) in ports:
-                ports.remove(str(port))
-
-            write_ports(f, ports)
-        finally:
-            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def get_disk_name(name):
@@ -180,6 +138,7 @@ class BQMPFacade:
         self.quiesce = True
         self.incremental = False
         self.virtual_disks = {}
+        self.terminating = False
 
         if self.qga_socket == "none":
             self.qga_socket = None
@@ -231,7 +190,7 @@ class BQMPFacade:
                 "data": {
                      "device": srcnode,
                      "target": targetnode,
-                     "sync": "top",
+                     "sync": "full",
                      "on-cbw-error": "break-snapshot",
                      "job-id": "backup-" + targetnode
                 }
@@ -306,15 +265,38 @@ class BQMPFacade:
         if self.debug:
             print("blockdev-backup incr", result)
 
-    async def wait_backup_job(self):
-        while True:
-            job_info = await self.qmp_execute("query-block-jobs")
-            if job_info is None or len(job_info) == 0:
-                break
-            wanted_job = [ job for job in job_info if job["device"].startswith("backup-") ]
-            if len(wanted_job) == 0:
+    async def wait_backup_job(self, disks):
+        incomplete_jobs = [ ("backup-bqmp-" + n) for n in disks ]
+
+        while len(incomplete_jobs) > 0:
+            event = await self.listener.get()
+            dev = event["data"]["device"]
+            event_type = event["event"]
+            if dev in incomplete_jobs:
+                incomplete_jobs.remove(dev)
+            if self.terminating and event_type == 'BLOCK_JOB_CANCELLED':
+                continue
+            if event_type != "BLOCK_JOB_COMPLETED":
+                raise Exception(f"qemu block job {dev} failed: {event_type}")
+
+    async def wait_backup_job_old(self, disks):
+            while True:
+                job_info = await self.qmp_execute("query-block-jobs")
+                if job_info is None or len(job_info) == 0:
                     break
-            await asyncio.sleep(3)
+                wanted_job = [ job for job in job_info if job["device"].startswith("backup-") ]
+                if len(wanted_job) == 0:
+                        break
+                await asyncio.sleep(3)
+
+    async def cancel_backup_job(self, force=False):
+        self.terminating = True
+        job_info = await self.qmp_execute("query-block-jobs")
+        if job_info is None or len(job_info) == 0:
+            return
+        wanted_job = [ job for job in job_info if job["device"].startswith("backup-") ]
+        for j in wanted_job:
+            await self.qmp_execute("block-job-cancel", { "device": j["device"], "force": force })
 
     async def create_nbd_target(self, name):
         if self.debug:
@@ -402,7 +384,6 @@ class BQMPFacade:
         })
 
     async def start_nbd_server(self):
-        self.nbd_restore_port = acquire_port(self.nbd_restore_port)
         result = await self.qmp_execute("nbd-server-start", {
             "addr": {
                "type": "inet",
@@ -414,7 +395,6 @@ class BQMPFacade:
         })
 
     async def stop_nbd_server(self):
-        release_port(self.nbd_restore_port)
         return await self.qmp_execute("nbd-server-stop")
 
     async def pause_vm(self):
@@ -520,17 +500,24 @@ class BQMPFacade:
         print(f"has_bitmaps: {has_bitmaps} is_consistent: {is_consistent}")
 
 
-async def run_backup(bqmp, devices, nbd_targets, incremental):
-    try:
-        devicenodes = [ d for n,d,u in devices ]
-        if not incremental:
-            await bqmp.start_full_backup(devicenodes, nbd_targets)
-        else:
-            await bqmp.start_incr_backup(devicenodes, nbd_targets)
-    finally:
-        await bqmp.thaw_guest()
-    await bqmp.wait_backup_job()
+    async def run_backup(self, devices, nbd_targets, incremental):
+        self.listener = qemu.qmp.EventListener(('BLOCK_JOB_COMPLETED', 'BLOCK_JOB_CANCELLED',
+                        'BLOCK_JOB_ERROR'))
+        self.qmp.register_listener(self.listener)
 
+        try:
+            await self.freeze_guest()
+            devicenodes = [ d for n,d,u in devices ]
+            if not incremental:
+                await self.start_full_backup(devicenodes, nbd_targets)
+            else:
+                await self.start_incr_backup(devicenodes, nbd_targets)
+        finally:
+            await self.thaw_guest()
+        try:
+            await self.wait_backup_job([get_disk_name(u) for _,_,u in devices])
+        finally:
+            self.qmp.remove_listener(self.listener)
 
 def imgrestore_handler(file, offset, data, length):
     if data is not None:
@@ -597,6 +584,12 @@ async def main(qmp_path, qga_path, devicenames,
     except qemu.qmp.protocol.ConnectError as e:
         raise Exception(f"failed to connect to QMP socket at {qmp_path}")
 
+    # stop nbd server if it is running
+    try:
+        await bqmp.stop_nbd_server()
+    except:
+        pass
+
     nbd_targets = []
     devices = []
     for devicename in devicenames:
@@ -614,11 +607,6 @@ async def main(qmp_path, qga_path, devicenames,
         #await bqmp.test_query_block()
         await bqmp.test_query_nodes()
         await bqmp.test_query_jobs()
-        try:
-            await bqmp.stop_nbd_server()
-        except:
-            pass
-
         if cmd == CMD_RESET:
             for name, devicenode, upper_node in devices:
                 try:
@@ -634,21 +622,35 @@ async def main(qmp_path, qga_path, devicenames,
 
     elif cmd in [ CMD_BACKUP, CMD_INCR ]:
         incremental = (cmd == CMD_INCR)
+
+        # if there are nbd targets configured, remove them
+        for name in devicenames:
+            try:
+                await bqmp.destroy_nbd_target(get_backup_target(name))
+            except:
+                pass
+
         # doing a backup
         await bqmp.connect_ga()
 
-        bqmp.nbd_port = acquire_port(bqmp.nbd_port)
-        nbdtask = await run_nbd_server(bqmp.nbd_port, store_path, nbd_targets, incremental)
-
+        if imgrestore_path is None:
+            raise Exception("no NBD port given")
+        nbd_ipaddr = "127.0.0.1"
+        nbd_port = imgrestore_path
+        bqmp.nbd_port = nbd_port
+        server = await run_nbd_server(bqmp.nbd_port, store_path, nbd_targets, incremental)
+        nbdtask = server.task
         logger.debug("nbd server started.")
+
+        loop = asyncio.get_running_loop()
+        for s in [ signal.SIGINT, signal.SIGPIPE, signal.SIGTERM ]:
+            loop.add_signal_handler(s, signal_cleanup, s, loop, server, bqmp)
 
         for devicename in devicenames:
             await bqmp.create_nbd_target(devicename)
  
-        await bqmp.freeze_guest()
-
         try:
-            await run_backup(bqmp, devices, nbd_targets, incremental)
+            await bqmp.run_backup(devices, nbd_targets, incremental)
         finally:
             for target in nbd_targets:
                 logger.debug(f"destroy_nbd_target {target}")
@@ -659,7 +661,6 @@ async def main(qmp_path, qga_path, devicenames,
                 await nbdtask
             except asyncio.CancelledError:
                 logger.debug("nbd server stopped.")
-            release_port(bqmp.nbd_port)
     else:
         logger.warn("internal error, invalid command")
     try:
@@ -668,22 +669,47 @@ async def main(qmp_path, qga_path, devicenames,
         pass
 
 
+def signal_cleanup(signum, event_loop, server, bqmp):
+    sys.stderr.write(f"bqmp: signal {signum} received, shutting down\n")
+    asyncio.create_task(async_cleanup(event_loop, server, bqmp))
+
+
+async def async_cleanup(event_loop, server, bqmp):
+    if bqmp is not None:
+        await bqmp.cancel_backup_job()
+        await asyncio.sleep(3)
+        await bqmp.cancel_backup_job(force=True)
+    await server.discard()
+    server.task.cancel()
+    try:
+        await server.task
+    except asyncio.CancelledError:
+        pass
+
+
 async def run_nbd_server(port, path, nbd_targets, incr):
     ipaddr = "127.0.0.1"
     backing_store = None
 
+
     if path is None or path == "-":
         backing_store = bqmp_nbd.StdoutBackingStore(nbd_targets)
+        # backing_store = bqmp_nbd.AsyncBackingStore(nbd_targets)
     else:
         backing_store = bqmp_nbd.BackingStore(path, nbd_targets)
         if not incr:
             backing_store.zap()
-
+    await backing_store.init_async()
     backing_store.next()
 
     server = bqmp_nbd.NbdServer(ipaddr, int(port), backing_store)
-    task = asyncio.create_task(server.serve_forever())
-    return task
+    task = server.create_task()
+
+    loop = asyncio.get_running_loop()
+    for s in [ signal.SIGHUP, signal.SIGPIPE, signal.SIGTERM ]:
+        loop.add_signal_handler(s, signal_cleanup, s, loop, server, None)
+
+    return server
 
 
 async def main_wrapper(qmp_path, qga_path, devicenames,
@@ -698,6 +724,8 @@ async def main_wrapper(qmp_path, qga_path, devicenames,
 
 
 if __name__ == "__main__":
+    # logging.basicConfig(level=logging.DEBUG)
+
     if len(sys.argv) < 5:
         sys.stderr.write("invalid arguments\n")
         sys.exit(1)
@@ -729,7 +757,7 @@ if __name__ == "__main__":
         op = CMD_BACKUP
 
     if op in [ CMD_BACKUP, CMD_INCR ]:
-        if store_path is None and sys.stdout.isatty():
+        if (store_path is None  or store_path == "-") and sys.stdout.isatty():
             sys.stderr.write("no storage path given and stdout is a tty\n")
             sys.exit(2)
 

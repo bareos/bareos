@@ -53,19 +53,24 @@ def write_ports(f, ports):
 
 
 def acquire_port(start_port):
-    with open(lockfile,"r+") as f:
-        flock(f, LOCK_EX)
-        try:
-            ports = read_ports(f)
-            port = int(start_port)
-            while str(port) in ports:
-                port += 1
+    port = int(start_port)
+    try:
+        with open(lockfile, "x") as f:
+            write_ports(f, [ str(port) ])
+    except FileExistsError:
+        with open(lockfile,"r+") as f:
+            flock(f, LOCK_EX)
+            try:
+                ports = read_ports(f)
+                while str(port) in ports:
+                    port += 1
 
-            ports.append(str(port))
+                ports.append(str(port))
 
-            write_ports(f, ports)
-        finally:
-            flock(f, LOCK_UN)
+                write_ports(f, ports)
+            finally:
+                flock(f, LOCK_UN)
+
     return str(port)
 
 
@@ -274,6 +279,8 @@ class VMConfig:
         search = key.strip() + ":"
         i = 0
         for l in self.lines:
+            if l.startswith('['):
+                break
             if l.startswith(search):
                 return i
             i += 1
@@ -304,6 +311,8 @@ class VMConfig:
     def get_multi(self, key):
         result = []
         for l in self.lines:
+            if l.startswith('['):
+                break
             if l.startswith(key):
                 if l[len(key)].isdigit():
                     result.append(self._split(l))
@@ -472,6 +481,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.options = BareosFdProxmoxOptions()
         super().__init__(plugindef)
 
+        bareosfd.RegisterEvents([bareosfd.bEventCancelCommand])
         self.file = None
         self.io_process = None
         self.log_pipe = LogPipe()
@@ -484,7 +494,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.disk_names = None
         self.vm_was_running = False
         self.qsd_process = None
-        self.restore_nbd_port = "10809"
+        self.nbd_port = "10809"
 
     def check_options(self, mandatory_options=None):
         """Check plugin options for completeness."""
@@ -518,6 +528,13 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bareosfd.bRC_OK
 
+    def handle_plugin_event(self, event):
+        """Add hooks to specific events"""
+        if event == bareosfd.bEventCancelCommand:
+            return self.cancel_job(event)
+        else:
+            return super().handle_plugin_event(event)
+
     def _get_virtual_path(self):
         guest_name = str(self.options.guestid)
         return f"@BQMP/{guest_name}/"
@@ -532,19 +549,19 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         guest = str(self.options.guestid)
 
-        if op == "restore":
+        if op in [ "restore", "toimage" ]:
             disk_args = []
             if self.options.restoretodisk:
                 imgrestore_path = self.options.restorepath
             else:
-                imgrestore_path = self.restore_nbd_port
+                imgrestore_path = self.nbd_port
 
             for d in self.disk_names:
                 diskconf = self.vmconfig.get(d)
                 size = get_vol_size_bytes(diskconf)
                 disk_args.append(f"{d}:{size}")
         else:
-            imgrestore_path = "none"
+            imgrestore_path = self.nbd_port
             disk_args = self.disk_names
 
         qmppath = f"/var/run/qemu-server/{guest}.qmp"
@@ -784,6 +801,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             assert False
 
+        self.nbd_port = acquire_port(self.nbd_port)
         cmd = self._build_cmd(op)
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
         self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
@@ -814,13 +832,13 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bareosfd.bRC_OK
 
     def _prepare_nbd_restore(self):
-        restore_nbd_port = self.restore_nbd_port
+        restore_nbd_port = self.nbd_port
 
         storage_cfg = PVEStorageConfig()
         storage_cfg.parse_config()
         args = [ "/usr/bin/qemu-storage-daemon",
              "--nbd-server",
-            f"addr.type=inet,addr.host=127.0.0.1,addr.port={self.restore_nbd_port}"
+            f"addr.type=inet,addr.host=127.0.0.1,addr.port={restore_nbd_port}"
         ]
 
         for d in self.disk_names:
@@ -836,7 +854,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # TODO: check if port is open instead of just sleeping
         bareosfd.JobMessage(
             bareosfd.M_INFO,
-            f"Started qemu-storage-daemon at NBD port {self.restore_nbd_port} " \
+            f"Started qemu-storage-daemon at NBD port {self.nbd_port} " \
             f"pid {self.qsd_process.pid}\n",
         )
 
@@ -844,7 +862,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.qsd_process.terminate()
         self.qsd_process.wait()
         self.qsd_process = None
-        release_port(self.restore_nbd_port)
+        release_port(self.nbd_port)
 
     def create_file(self, restorepkt):
         """Create file during restore"""
@@ -872,7 +890,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 if self.options.restoretodisk:
                     cmd = self._build_cmd("toimage")
                 else:
-                    self.restore_nbd_port = acquire_port(self.restore_nbd_port)
+                    self.nbd_port = acquire_port(self.nbd_port)
                     self._recreate_vm()
                     self._prepare_nbd_restore()
                     cmd = self._build_cmd("restore")
@@ -1055,15 +1073,15 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
         return bareosfd.bRC_Error
 
-    def end_job(self):
-        bareosfd.DebugMessage(100, "end_job() called\n")
+    def _cleanup_job(self):
+        bareosfd.DebugMessage(100, "_cleanup_job() called\n")
         # on a restore job, close the pipe
         # and wait for the external process to terminate
         if chr(self.level) == " ":
             # tell the process we're done writing
             if self.io_process is not None:
                 self.io_process.stdin.close()
-                self._despool_log(init_timeout=0)
+                #self._despool_log(init_timeout=0)
 
                 if not self._wait_for_io_process():
                     return bareosfd.bRC_Error
@@ -1073,6 +1091,26 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 # remove temporary config file
                 os.unlink(self.conffile)
                 self._unlock_vm()
+        else:
+            if self.io_process is not None:
+                self._despool_log(init_timeout=0)
+
+                if not self._wait_for_io_process():
+                    return bareosfd.bRC_Error
+
+        return bareosfd.bRC_OK
+
+    def cancel_job(self, event):
+        bareosfd.DebugMessage(100, "cancel_job() called\n")
+        if self.io_process is not None:
+            self.io_process.terminate()
+            self._wait_for_io_process()
+        return self._cleanup_job()
+
+    def end_job(self):
+        bareosfd.DebugMessage(100, "end_job() called\n")
+        self._cleanup_job()
+        if chr(self.level) == " ":
                 # start vm if it was running
                 if self.vm_was_running:
                     self._start_vm()
@@ -1129,4 +1167,5 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.io_process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 pass
+        release_port(self.nbd_port)
         return self._check_io_process()

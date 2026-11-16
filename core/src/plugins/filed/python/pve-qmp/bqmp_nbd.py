@@ -120,6 +120,21 @@ class BackingStore:
             BCHUNK_OP_ZEROES, index, offset, length)
         self.file.write(header_data)
 
+    async def init_async(self):
+        pass
+
+    async def close_async(self):
+        self.file.close()
+
+    async def write_async(self, index, offset, data):
+        self.write(index, offset, data)
+
+    async def zero_async(self, index, offset, length):
+        self.zero(index, offset, length)
+
+    async def shutdown_async(self):
+        pass
+
     # switch to dumping chunk data
     def start_dump(self):
         self.close()
@@ -197,6 +212,141 @@ class StdinBackingStore(BackingStore):
         pass
 
 
+class AsyncBufferedPipe:
+    def __init__(self, maxsize, output):
+        self.queue = asyncio.Queue(maxsize=maxsize)
+        self.output = output
+        self.task = None
+        self.task_is_done = False
+
+    async def start(self):
+        self.task = asyncio.create_task(self._consumer_task())
+        self.task.add_done_callback(self._done_callback)
+
+    async def _stop(self):
+        await self.queue.join()
+        if self.task is not None:
+            self.task.cancel()
+
+    def _done_callback(self, task):
+        self.task_is_done = True
+
+    async def _consumer_task(self):
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.connect_write_pipe(
+            asyncio.Protocol, self.output)
+        high = 16 * 1024 * 1024
+        low  = 4 * 1024 * 1024
+        transport.set_write_buffer_limits(high=high, low=low)
+        writer = transport
+        try:
+            while True:
+                data = await self.queue.get()
+                writer.write(data)
+                self.queue.task_done()
+        except asyncio.CancelledError:
+            pass
+        finally:
+            writer.close()
+
+    async def write(self, data):
+        if self.task_is_done:
+            return
+
+        await self.queue.put(data)
+        # await asyncio.sleep(0)
+
+    async def close(self):
+        await self._stop()
+
+    async def shutdown(self):
+        await self.queue.shutdown_async(immediate=True)
+
+
+class AsyncBufferedBackingStore(StdoutBackingStore):
+    """
+    Extended variant of StdoutBackingStore
+    that uses an asyncio queue to buffer
+    writes.
+    Used for backups.
+    """
+    def __init__(self, exports):
+        self.mode = "wb"
+        self.exports = exports
+        self.max_buffers = 10
+        self.file = io.open(sys.stdout.fileno(), 'wb', closefd=False)
+        self.pipe = AsyncBufferedPipe(self.max_buffers, self.file)
+        self.lock = asyncio.Lock()
+
+    async def init_async(self):
+        await self.pipe.start()
+
+    async def close_async(self):
+        await self.pipe.close()
+
+    async def write_async(self, index, offset, data):
+        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
+            BCHUNK_OP_DATA, index, offset, len(data))
+        async with self.lock:
+            await self.pipe.write(header_data)
+            await self.pipe.write(data)
+
+    async def zero_async(self, index, offset, length):
+        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
+            BCHUNK_OP_ZEROES, index, offset, length)
+        async with self.lock:
+            await self.pipe.write(header_data)
+
+
+class AsyncBackingStore(StdoutBackingStore):
+    """
+    Extended variant of StdoutBackingStore
+    that uses asyncio writes.
+    Used for backups.
+    """
+    def __init__(self, exports):
+        self.mode = "wb"
+        self.exports = exports
+        self.max_buffers = 10
+        self.file = None
+        self.writer = None
+        #self.lock = asyncio.Lock()
+        self.write_count = 0
+
+    async def init_async(self):
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.connect_write_pipe(
+            lambda: asyncio.StreamReaderProtocol(asyncio.StreamReader()),
+            sys.stdout.buffer)
+        high = 128 * 1024 * 1024
+        low  = 4 * 1024 * 1024
+        transport.set_write_buffer_limits(high=high, low=low)
+        self.writer = asyncio.StreamWriter(transport, protocol, None, loop)
+
+    async def close_async(self):
+        self.writer.close()
+        await self.writer.wait_closed()
+
+    async def write_async(self, index, offset, data):
+        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
+            BCHUNK_OP_DATA, index, offset, len(data))
+        self.writer.write(header_data)
+        self.writer.write(data)
+        await self._drain()
+
+    async def _drain(self):
+        self.write_count += 1
+        if self.write_count == 4:
+            await self.writer.drain()
+            self.write_count = 0
+
+    async def zero_async(self, index, offset, length):
+        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
+            BCHUNK_OP_ZEROES, index, offset, length)
+        self.writer.write(header_data)
+        await self._drain()
+
+
 class NbdServer:
     """
     Class implementing the server.
@@ -241,7 +391,7 @@ class NbdServer:
         self.stats_bytes = 0
         self.stats_cmds = 0
         self.sessions = 0
-
+        self.task = None
 
     async def nbd_response(self, writer, handle, error=0, data=None):
         writer.write(struct.pack('>LLQ', self.NBD_RESPONSE, error, handle))
@@ -387,8 +537,8 @@ class NbdServer:
                     try:
                         # skip all-zero chunks
                         #if data == b"\x00" * len(data):
-                        #    store.zero(index, offset, length)
-                        store.write(index, offset, data)
+                        #    await store.zero_async(index, offset, length)
+                        await store.write_async(index, offset, data)
                         self.stats_bytes += len(data)
                     except IOError as ex:
                         self.log.error("[%s:%s] %s" % (host, port, ex))
@@ -398,8 +548,7 @@ class NbdServer:
                     await self.nbd_response(writer, handle)
 
                 elif cmd == self.NBD_CMD_WRITE_ZEROES:
-                    store.zero(index, offset, length)
-
+                    await store.zero_async(index, offset, length)
                     await self.nbd_response(writer, handle)
 
                 elif cmd == self.NBD_CMD_READ:
@@ -434,44 +583,29 @@ class NbdServer:
             self.stats_cmds = 0
             self.stats_bytes = 0
 
+    async def discard(self):
+        await self.backing_store.shutdown_async()
 
     async def serve_forever(self):
         """Create and run the asyncio loop"""
         try:
             server = await asyncio.start_server(self.handler, self.addr, self.port)
             await server.serve_forever()
+        except asyncio.CancelledError:
+            pass
+
         finally:
-            self.backing_store.close()
+            await self.backing_store.close_async()
+
+    def create_task(self):
+        self.task = asyncio.create_task(self.serve_forever())
+        return self.task
+
 
 async def run_nbd_server(path, export, ipaddr, port):
         backing_store = BackingStore(path, export)
         server = NbdServer(ipaddr, int(port), backing_store)
         await server.serve_forever()
-
-
-def dump_write(f, offset, data, length):
-    f.seek(offset)
-    if data is None:
-        f.seek(length, 1)
-    else:
-        f.write(data)
-
-
-def dump_command():
-    if len(sys.argv) < 4:
-        print("Usage: {} dump <bchunks directory> <number of chunk files>".format(sys.argv[0]))
-        sys.exit(1)
-    outfilename = sys.argv[2]
-    count = int(sys.argv[3])
-
-    backing_store = BackingStore("/test")
-    backing_store.start_dump()
-
-    with open(outfilename, "wb") as f:
-	    for a in range(0,count):
-                print("{} -> {}".format(a, outfilename))
-                backing_store.dump([f], dump_write)
-    backing_store.close() 
 
 
 def nbd_write(target, offset, data, length):
