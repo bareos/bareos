@@ -228,6 +228,9 @@ bool UserSelectFilesFromTree(TreeContext* tree)
 
   // Get a new context so we don't destroy restore command args
   UaContext ua{tree->ua->jcr};
+  if (tree->ua->user_acl) {
+    ua.user_acl = std::make_unique<UserAcl>(*tree->ua->user_acl);
+  }
   ua.UA_sock = tree->ua->UA_sock; /* patch in UA socket */
   ua.api = tree->ua->api;         /* keep API flag too */
   ua.batch = tree->ua->batch;     /* keep batch flag too */
