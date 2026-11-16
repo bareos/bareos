@@ -123,6 +123,33 @@ class PythonBareosAclTest(bareos_unittest.Json):
         self.assertIn("Restore Options", screen)
         browser.press("cancel")
 
+    def test_destination_browser_search_accepts_period(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=140)
+        browser.run("run job=RestoreFiles")
+        browser.press("home")
+        browser.press("down")
+        screen = browser.type_text("b")
+        self.assertIn("Browse destination client", screen)
+        screen = browser.type_text("/")
+        self.assertIn("Type substring", screen)
+        screen = browser.type_text("needle.dir")
+        self.assertIn("Type substring", screen)
+        self.assertIn("Search: needle.dir", screen)
+        screen = browser.press("enter")
+        self.assertIn('Search: "needle.dir"', screen)
+        browser.press("cancel")
+        browser.press("cancel")
+        browser.press("cancel")
+
     def test_restore_copies_require_complete_authorized_chain(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
