@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@ target_sources(
 if(HAVE_PAM)
   target_sources(console_objects PRIVATE auth_pam.cc)
 endif()
-target_link_libraries(console_objects PRIVATE Bareos::Lib)
+target_link_libraries(console_objects PUBLIC Bareos::Lib)
 
 add_executable(bconsole)
 target_sources(bconsole PRIVATE console.cc)
