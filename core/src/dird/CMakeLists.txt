@@ -132,7 +132,9 @@ if(HAVE_PAM)
   target_sources(dird_objects PRIVATE auth_pam.cc)
 endif()
 
-target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL)
+target_link_libraries(
+  dird_objects PRIVATE Bareos::Lib OpenSSL::SSL utf8cpp::utf8cpp
+)
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
