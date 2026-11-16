@@ -880,6 +880,34 @@ describe('console session store', () => {
     expect(session.output.map(line => line.text)).not.toContain('$ ')
   })
 
+  it('joins final response text to its streamed line but not the next response', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    for (const [text, prompt] of [
+      ['first-', 'more'], ['final', 'main'], ['next', 'main'],
+      ['unfinished', 'more'], ['', 'main'], ['separate', 'main'],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', text, prompt }),
+      })
+    }
+
+    const lines = consoleSessions.getSession('bareos-dir').output.map(line => line.text)
+    expect(lines).toContain('first-final')
+    expect(lines).toContain('next')
+    expect(lines).toContain('unfinished')
+    expect(lines).toContain('separate')
+  })
+
   it('keeps streamed restore progress on one output line', () => {
     const consoleSessions = useConsoleSessionsStore()
 

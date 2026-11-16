@@ -387,7 +387,7 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
     promptText,
   } = splitInteractivePrompt(message.text, message.prompt)
 
-  appendLines(director, outputText, '', isStreamingChunk)
+  appendLines(director, outputText, '', isStreamingChunk, true)
   updateSessionPrompt(session, message.prompt, promptText, isStreamingChunk)
 
   return {
@@ -432,8 +432,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   // Bounded per-director replay buffer of everything ever written to the
   // terminal (raw ANSI bytes, in order). Used to reproduce a director's
   // terminal contents when the Console page (re)mounts a terminal for it,
-  // e.g. after switching tabs. Kept as plain arrays (not reactive state)
-  // since only string concatenation/replay is needed, never rendering.
+  // e.g. after switching tabs. Entries retain response boundaries for replay.
   const terminalLogs = new Map()
   const TERMINAL_LOG_MAX_CHARS = 200_000
 
@@ -464,15 +463,17 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       // session content instead of starting blank.
       const log = terminalLogs.get(normalizedDirector)
       if (log && log.length) {
-        writer(log.join(''))
+        for (const entry of log) {
+          writer(entry.text, entry.options)
+        }
       }
     } else {
       terminalWriters.delete(normalizedDirector)
     }
   }
 
-  function writeToTerminal(director, text) {
-    if (!text) {
+  function writeToTerminal(director, text, options) {
+    if (!text && !options?.response) {
       return
     }
     const normalizedDirector = director || DEFAULT_DIRECTOR_NAME
@@ -482,13 +483,15 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       log = []
       terminalLogs.set(normalizedDirector, log)
     }
-    log.push(text)
-    let logLength = log.reduce((total, chunk) => total + chunk.length, 0)
+    if (text || log.at(-1)?.options?.streaming) {
+      log.push({ text, options })
+    }
+    let logLength = log.reduce((total, chunk) => total + chunk.text.length, 0)
     while (logLength > TERMINAL_LOG_MAX_CHARS && log.length > 1) {
-      logLength -= log.shift().length
+      logLength -= log.shift().text.length
     }
 
-    terminalWriters.get(normalizedDirector)?.(text)
+    terminalWriters.get(normalizedDirector)?.(text, options)
   }
 
   // Leaves interactive selection mode, restoring the terminal to the
@@ -559,12 +562,16 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
   }
 
-  function appendLines(director, text, cls = '', continueLine = false) {
+  function appendLines(director, text, cls = '', continueLine = false, response = false) {
     const session = getSession(director)
     const normalizedText = sanitizeTerminalOutput(
       filterConsoleNoiseText(text),
     )
     if (!normalizedText) {
+      if (response && !continueLine) {
+        writeToTerminal(director, '', { response: true, streaming: false })
+        session.outputLineOpen = false
+      }
       return
     }
 
@@ -572,9 +579,13 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     // xterm.js terminal, if any. xterm performs the actual ANSI/SGR
     // interpretation (colors, backgrounds, reverse video, cursor
     // movement) — this store no longer parses escape codes for display.
-    writeToTerminal(director, normalizedText)
+    writeToTerminal(
+      director,
+      normalizedText,
+      response ? { response: true, streaming: continueLine } : undefined,
+    )
 
-    if (!continueLine) {
+    if (!continueLine && !response) {
       session.outputLineOpen = false
     }
 
@@ -604,6 +615,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       appendLine(trailingLine)
       session.outputLineOpen = true
     } else if (normalizedText.endsWith('\n')) {
+      session.outputLineOpen = false
+    }
+    if (response && !continueLine) {
       session.outputLineOpen = false
     }
   }
