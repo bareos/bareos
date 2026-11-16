@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-import { createApp, h } from 'vue'
+import { createApp, h, nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
@@ -73,7 +73,7 @@ describe('Restore source director login', () => {
     localStorage.clear()
   })
 
-  it('keeps an actionable login banner when the source session disappears', async () => {
+  async function mountRestorePage(onDirectorCall) {
     sessionStorage.clear()
     localStorage.clear()
     const pinia = createPinia()
@@ -91,13 +91,8 @@ describe('Restore source director login', () => {
     vi.spyOn(director, 'refreshDirectorConnections').mockResolvedValue()
     vi.spyOn(useReleaseInfoStore(), 'refresh').mockResolvedValue()
     const hasDirectorSession = vi.spyOn(auth, 'hasDirectorSession')
-    const directorCall = vi.spyOn(director, 'call').mockImplementation(async command => {
-      if (command === 'list clients') {
-        auth.removeDirector('prod-a')
-        return { clients: [{ name: 'client-a' }] }
-      }
-      return {}
-    })
+    const directorCall = vi.spyOn(director, 'call')
+      .mockImplementation(command => onDirectorCall(command, auth))
 
     const router = createRouter({
       history: createMemoryHistory(),
@@ -132,6 +127,24 @@ describe('Restore source director login', () => {
     document.body.append(root)
     app.mount(root)
 
+    return { auth, director, directorCall, hasDirectorSession, router }
+  }
+
+  it('keeps an actionable login banner when the source session disappears', async () => {
+    let removeSourceSessionOnFirstClientList = true
+    const { directorCall, hasDirectorSession, router } = await mountRestorePage(
+      async (command, auth) => {
+        if (command === 'list clients') {
+          if (removeSourceSessionOnFirstClientList) {
+            auth.removeDirector('prod-a')
+            removeSourceSessionOnFirstClientList = false
+          }
+          return { clients: [{ name: 'client-a' }] }
+        }
+        return {}
+      },
+    )
+
     await vi.waitFor(() => {
       expect(hasDirectorSession).toHaveBeenCalledWith('prod-a')
       const warningBanners = [...root.querySelectorAll('.bg-warning')]
@@ -158,6 +171,47 @@ describe('Restore source director login', () => {
       mode: 'add',
       director: 'prod-a',
       returnTo,
+    })
+  })
+
+  it('reloads client-dependent restore state after reconnecting', async () => {
+    let removeSourceSessionOnFirstClientList = true
+    const { auth, director } = await mountRestorePage(async (command, authStore) => {
+      if (command === 'list clients') {
+        if (removeSourceSessionOnFirstClientList) {
+          authStore.removeDirector('prod-a')
+          removeSourceSessionOnFirstClientList = false
+        }
+        return { clients: [{ name: 'client-a' }] }
+      }
+      if (command === '.jobs type=R') {
+        return { jobs: [{ name: 'RestoreFiles' }] }
+      }
+      if (command.startsWith('llist backups')) {
+        return {
+          backups: [{ jobid: 1, name: 'backup-a', level: 'F', jobstatus: 'T' }],
+        }
+      }
+      if (command === 'list filesets') {
+        return { filesets: [] }
+      }
+      return {}
+    })
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain('Please log in to director "prod-a" first.')
+    })
+
+    auth.loginDirector('admin', 'prod-a', 'test')
+    director.status = 'disconnected'
+    await nextTick()
+    director.status = 'connected'
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-testid="restore-backup-job"]').textContent)
+        .toContain('backup-a')
+      expect(root.querySelector('[data-testid="restore-job"]').textContent)
+        .toContain('RestoreFiles')
     })
   })
 })

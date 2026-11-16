@@ -812,7 +812,8 @@ async function applyRouteSourceSelection() {
     })
 
     if (resolvedClient) {
-      if (sourceClientKey.value !== resolvedClient.scopeKey) {
+      if (sourceClientKey.value !== resolvedClient.scopeKey
+          || form.value.client !== resolvedClient.name) {
         sourceClientKey.value = resolvedClient.scopeKey
         await onClientChange(resolvedClient.scopeKey)
       }
