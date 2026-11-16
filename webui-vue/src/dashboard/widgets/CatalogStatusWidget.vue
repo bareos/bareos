@@ -77,8 +77,10 @@ const summary = computed(() => ctx.aggregate.value.catalogStatusSummary ?? {
 const loading = computed(() => ctx.loading.value)
 
 const errorMessages = computed(() => rows.value
-  .flatMap(row => row.errors ?? [])
-  .filter(Boolean))
+  .flatMap(row => (row.errors ?? []).filter(Boolean).map(message => (
+    row.director ? `${row.director}: ${message}` : message
+  )))
+)
 
 const tableRows = computed(() => {
   const merged = new Map()
