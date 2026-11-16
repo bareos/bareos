@@ -41,6 +41,7 @@ static constexpr int debuglevel = 100;
 
 namespace {
 constexpr std::chrono::seconds peek_timeout{5};
+static constexpr std::string_view new_auth_prefix = "auth: ";
 
 
 struct auth_timer {
@@ -722,14 +723,22 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
 {
   if (socket->recv() <= 0) { return false; }
 
-  std::string providers_json_b64;
-  providers_json_b64.resize(socket->message_length);
+  if (socket->message_length <= 0) {
+    Dmsg0(50, "Can not respond to request: message has bad size %d\n",
+          socket->message_length);
+    return false;
+  }
+  std::string_view message{socket->msg, (size_t)socket->message_length};
 
-  if (bsscanf(socket->msg, "auth: %s", providers_json_b64.data()) != 1) {
+  if (!message.starts_with(new_auth_prefix)) {
+    Dmsg0(50,
+          "Can not respond to request: message does not start with '%.*s'\n",
+          (int)new_auth_prefix.size(), new_auth_prefix.data());
     return false;
   }
 
-  providers_json_b64.resize(strlen(providers_json_b64.c_str()));
+  std::string providers_json_b64{message.begin() + new_auth_prefix.size(),
+                                 message.end()};
 
   std::string providers_json_str;
   providers_json_str.resize((providers_json_b64.size() * 4 + 2) / 3);
@@ -1044,8 +1053,6 @@ bool authenticate_outbound(std::span<std::unique_ptr<Prover>> provers,
                            OutboundArgs args)
 {
   auto* socket = args.socket;
-
-  static constexpr std::string_view new_auth_prefix = "auth:";
 
   // messages start with a uint32_t length
   char buffer[sizeof(uint32_t) + new_auth_prefix.size()] = {};
