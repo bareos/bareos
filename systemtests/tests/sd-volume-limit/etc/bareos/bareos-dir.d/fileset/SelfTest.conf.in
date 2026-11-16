@@ -5,7 +5,7 @@ FileSet {
   Include {
     Plugin = "bpipe"
              ":file=/tmp/my-file"
-             ":reader=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/slow-read.sh"
+             ":reader=sh -c 'sleep 5; echo Data'"
              ":writer=sh -c 'cat >/tmp/my-file'"
   }
 }

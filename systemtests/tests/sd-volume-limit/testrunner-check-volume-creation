@@ -66,6 +66,8 @@ END_OF_DATA
 
 run_bconsole
 
+check_log "${messages}"
+
 expect_grep "Full-0022" \
   "${volume_list}" \
   "Too few volumes were created!"
