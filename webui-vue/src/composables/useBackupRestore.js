@@ -107,19 +107,15 @@ export function useBackupRestore({ t, $q, onRestored } = {}) {
       }).onOk(() => {
         try {
           if (isCombined) {
-            // Validate the settings payload's shape *before* mutating
-            // anything: importDashboards() below already validates fully
-            // before committing state, but if we ran it first and then
-            // importSettings() threw on a malformed settings object, the
-            // dashboards would already have been replaced — leaving a
-            // partial restore despite the "this cannot be undone" prompt
-            // implying an all-or-nothing operation.
             if (data.settings !== undefined
               && (typeof data.settings !== 'object' || data.settings === null || Array.isArray(data.settings))) {
               throw new Error(t('This file does not contain a settings backup.'))
             }
+            const applySettings = data.settings !== undefined
+              ? settings.prepareSettingsImport(data.settings)
+              : null
             if (data.dashboards) dashStore.importDashboards(data.dashboards)
-            if (data.settings) settings.importSettings(data.settings)
+            applySettings?.()
           } else {
             dashStore.importDashboards(data)
           }

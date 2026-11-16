@@ -366,67 +366,75 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   /**
-   * Apply a previously exported settings snapshot. Unknown/missing fields
-   * are left untouched; recognised fields are re-validated with the same
-   * normalisers used when loading from localStorage.
+   * Prepare a previously exported settings snapshot for later application.
+   * Unknown/missing fields are left untouched; recognised fields are
+   * re-validated with the same normalisers used when loading from localStorage.
    */
-  function importSettings(data) {
+  function prepareSettingsImport(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
       throw new Error('This file does not contain a settings backup.')
     }
+    const updates = []
     if ('refreshInterval' in data) {
       const value = Number(data.refreshInterval)
-      if (Number.isInteger(value) && value > 0) refreshInterval.value = value
+      if (Number.isInteger(value) && value > 0) updates.push([refreshInterval, value])
     }
     if ('darkMode' in data) {
-      darkMode.value = normalizeBoolean(data.darkMode, darkMode.value)
+      updates.push([darkMode, normalizeBoolean(data.darkMode, darkMode.value)])
     }
     if ('relativeTime' in data) {
-      relativeTime.value = normalizeBoolean(data.relativeTime, relativeTime.value)
+      updates.push([relativeTime, normalizeBoolean(data.relativeTime, relativeTime.value)])
     }
     if ('locale' in data) {
-      locale.value = normalizeWebUiLocale(data.locale)
+      updates.push([locale, normalizeWebUiLocale(data.locale)])
     }
     if ('directorName' in data && data.directorName != null) {
-      directorName.value = String(data.directorName)
+      updates.push([directorName, String(data.directorName)])
     }
     if ('selectedDirectors' in data) {
-      selectedDirectors.value = normalizeSelectedDirectors(data.selectedDirectors)
+      updates.push([selectedDirectors, normalizeSelectedDirectors(data.selectedDirectors)])
     }
     if ('tableRowsPerPage' in data) {
-      tableRowsPerPage.value = normalizeTableRowsPerPage(data.tableRowsPerPage)
+      updates.push([tableRowsPerPage, normalizeTableRowsPerPage(data.tableRowsPerPage)])
     }
     if ('tableSort' in data) {
-      tableSort.value = normalizeTableSort(data.tableSort)
+      updates.push([tableSort, normalizeTableSort(data.tableSort)])
     }
     if ('tableFilter' in data) {
-      tableFilter.value = normalizeTableFilter(data.tableFilter)
+      updates.push([tableFilter, normalizeTableFilter(data.tableFilter)])
     }
     if ('tableHiddenColumns' in data) {
-      tableHiddenColumns.value = normalizeTableHiddenColumns(data.tableHiddenColumns)
+      updates.push([tableHiddenColumns, normalizeTableHiddenColumns(data.tableHiddenColumns)])
     }
 
     if ('tableFlags' in data) {
-      tableFlags.value = normalizeTableFlags(data.tableFlags)
+      updates.push([tableFlags, normalizeTableFlags(data.tableFlags)])
     }
     if ('schedulesViewMode' in data) {
-      schedulesViewMode.value = normalizeSchedulesViewMode(
+      updates.push([schedulesViewMode, normalizeSchedulesViewMode(
         data.schedulesViewMode,
         schedulesViewMode.value
-      )
+      )])
     }
     if ('jobsTimelineViewMode' in data) {
-      jobsTimelineViewMode.value = normalizeJobsTimelineViewMode(
+      updates.push([jobsTimelineViewMode, normalizeJobsTimelineViewMode(
         data.jobsTimelineViewMode,
         jobsTimelineViewMode.value
-      )
+      )])
     }
     if ('clientBackupWarningFailedJobs' in data) {
-      clientBackupWarningFailedJobs.value = normalizeClientBackupWarningFailedJobs(
+      updates.push([clientBackupWarningFailedJobs, normalizeClientBackupWarningFailedJobs(
         data.clientBackupWarningFailedJobs,
         clientBackupWarningFailedJobs.value
-      )
+      )])
     }
+    return () => {
+      for (const [target, value] of updates) target.value = value
+    }
+  }
+
+  function importSettings(data) {
+    prepareSettingsImport(data)()
   }
 
   watch(refreshInterval, save)
@@ -484,5 +492,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setJobsTimelineViewMode,
     exportSettings,
     importSettings,
+    prepareSettingsImport,
   }
 })

@@ -348,4 +348,14 @@ describe('settings store', () => {
     expect(() => settings.importSettings(null)).toThrow()
     expect(() => settings.importSettings(['not', 'an', 'object'])).toThrow()
   })
+
+  it('does not partially apply settings when a later value is malformed', () => {
+    const settings = useSettingsStore()
+    settings.refreshInterval = 30
+    expect(() => settings.importSettings({
+      refreshInterval: 45,
+      directorName: { toString: null },
+    })).toThrow()
+    expect(settings.refreshInterval).toBe(30)
+  })
 })
