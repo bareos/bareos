@@ -64,6 +64,15 @@ std::string SanitizeSelectionText(std::string_view text, bool allow_newlines)
         continue;
       }
     }
+    if (value >= 0xc2 && value <= 0xf4) {
+      size_t length = value < 0xe0 ? 2 : (value < 0xf0 ? 3 : 4);
+      if (length <= text.size() - i
+          && utf8::is_valid(text.begin() + i, text.begin() + i + length)) {
+        sanitized.append(text.substr(i, length));
+        i += length - 1;
+        continue;
+      }
+    }
     if ((value < 0x20 && !(allow_newlines && value == '\n')) || value == 0x7f
         || (value >= 0x80 && value <= 0x9f)) {
       sanitized.push_back('?');

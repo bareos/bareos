@@ -385,6 +385,18 @@ TEST(InteractiveSelection, SanitizesTerminalControls)
             "> \033[97;44m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
 }
 
+TEST(InteractiveSelection, PreservesUtf8InLabelsAndFilter)
+{
+  const std::vector<std::string> options{"\xe7\x95\x8c"};
+  InteractiveSelection selection(options);
+  EXPECT_EQ(selection.ApplyInput("key:text:\xe7\x95\x8c"),
+            SelectionInputResult::kContinue);
+  const std::string output
+      = selection.Format("Choices:\n", "Select", 20, true, true);
+  EXPECT_NE(output.find("Filter: \xe7\x95\x8c\n"), std::string::npos);
+  EXPECT_NE(output.find("1: \xe7\x95\x8c"), std::string::npos);
+}
+
 TEST(InteractiveSelection, FormatsContextualHelp)
 {
   std::vector<std::string> options{"Alpha"};
