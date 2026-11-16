@@ -176,9 +176,7 @@ if(ENABLE_CAPABILITY)
   target_link_libraries(bareos PRIVATE cap)
 endif()
 
-if(TARGET jansson::jansson)
-  target_link_libraries(bareos PUBLIC jansson::jansson)
-endif()
+target_link_libraries(bareos PUBLIC jansson::jansson)
 
 install(TARGETS bareos DESTINATION ${libdir})
 
