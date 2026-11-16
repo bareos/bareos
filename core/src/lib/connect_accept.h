@@ -93,9 +93,50 @@ bool BareosConnect(JobControlRecord* jcr,
                                           cleartext_authentication);
 }
 
-struct AuthenticationProvider {
-  virtual auth::InboundAuthenticator*
-  get_authenticator_for(global_resource::Type type, std::string_view idenity) = 0;
+struct AuthenticationProvider : public TlsConfigProvider {
+  virtual auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view idenity)
+      = 0;
+
+  const TlsResource* get_tls_config_for(global_resource::Type type,
+                                        std::string_view name) override
+  {
+    auth = get_authenticator_for(type, name);
+    if (!auth) { return nullptr; }
+    psk_type = type;
+    psk_name.assign(name);
+    return auth->tls_settings();
+  }
+
+  struct result {
+    auth::InboundAuthenticator* auth{};
+    std::optional<std::string> bad_name{};
+    std::optional<global_resource::Type> bad_type{};
+  };
+
+  result get_or_fetch(global_resource::Type type, std::string_view name)
+  {
+    result res{};
+    if (!auth) {
+      auth = get_authenticator_for(type, name);
+      psk_type = type;
+      psk_name.assign(name);
+      res.auth = auth;
+    } else if (psk_type != type) {
+      res.bad_type = psk_type;
+    } else if (name != psk_name) {
+      res.bad_name = psk_name;
+    } else {
+      res.auth = auth;
+    }
+    return res;
+  }
+
+ private:
+  auth::InboundAuthenticator* auth{};
+  global_resource::Type psk_type{};
+  std::string psk_name{};
 };
 
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,

@@ -376,52 +376,6 @@ bool BareosConnect(JobControlRecord* jcr,
   return true;
 }
 
-struct TlsWrapper : public TlsConfigProvider {
-  TlsWrapper(AuthenticationProvider* provider) : wrapped{provider} {}
-
-  const TlsResource* get_tls_config_for(global_resource::Type type,
-                                        std::string_view name) override
-  {
-    auth = wrapped->get_authenticator_for(type, name);
-    if (!auth) { return nullptr; }
-    psk_type = type;
-    psk_name.assign(name);
-    return auth->tls_settings();
-  }
-
-  struct result {
-    auth::InboundAuthenticator* auth{};
-    std::optional<std::string> bad_name{};
-    std::optional<global_resource::Type> bad_type{};
-  };
-
-  result get_or_fetch(global_resource::Type type, std::string_view name)
-  {
-    result res{};
-    if (!auth) {
-      auth = wrapped->get_authenticator_for(type, name);
-      psk_type = type;
-      psk_name.assign(name);
-      res.auth = auth;
-    } else if (psk_type != type) {
-      res.bad_type = psk_type;
-    } else if (name != psk_name) {
-      res.bad_name = psk_name;
-    } else {
-      res.auth = auth;
-    }
-    return res;
-  }
-
- private:
-  auth::InboundAuthenticator* auth{};
-  global_resource::Type psk_type{};
-  std::string psk_name{};
-
-  AuthenticationProvider* wrapped{};
-};
-
-
 std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
                                         global_resource::Type my_type,
                                         const TlsResource* initial_tls,
@@ -442,8 +396,6 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
     return std::nullopt;
   }
 
-  TlsWrapper wrapper{provider};
-
   auth_timer timer{socket};
 
   bool received_clear_text_handshake = false;
@@ -454,7 +406,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
   }
 
   if (!received_clear_text_handshake) {
-    auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, &wrapper);
+    auto tls = ParameterizeAndInitTlsConnectionAsAServer(initial_tls, provider);
     if (!tls) {
       Emsg1(M_ERROR, 0, "Could not initialize initial tls context for %s\n",
             socket->who());
@@ -489,7 +441,7 @@ std::optional<ParsedHello> BareosAccept(BareosSocket* socket,
     return std::nullopt;
   }
 
-  auto found = wrapper.get_or_fetch(parsed_hello->type, parsed_hello->name);
+  auto found = provider->get_or_fetch(parsed_hello->type, parsed_hello->name);
 
   if (!found.auth) {
     if (found.bad_name) {
