@@ -40,6 +40,40 @@ from bareos.bsock.lowlevel import LowLevel
 import bareos.exceptions
 
 import bareos_unittest
+from bareos_unittest.tree_browser_console import TreeBrowserConsole
+
+
+class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_restore_tree_stops_when_client_sends_signal(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console)
+        screen = browser.run(
+            f"restore jobid={backup} all client=bareos-fd restoreclient=bareos-fd"
+        )
+        self.assertIn("Restore selection", screen)
+        console.socket.sendall(struct.pack("!i", Constants.BNET_EOD))
+        response = console.recv_msg().decode("utf-8")
+        self.assertIn("Restore not done.", response)
+        self.assertNotIn("Bootstrap records written", response)
+        self.assertNotIn("Restore Options", response)
 
 
 class PythonBareosPlainTest(bareos_unittest.Base):
@@ -95,7 +129,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
                 address=self.director_address,
                 port=port,
                 password=bareos_password,
-                **self.director_extra_options
+                **self.director_extra_options,
             )
 
     def test_login_as_root(self):
@@ -107,7 +141,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
                 address=self.director_address,
                 port=self.director_port,
                 password=bareos_password,
-                **self.director_extra_options
+                **self.director_extra_options,
             )
             whoami = director.call("whoami").decode("utf-8")
             self.assertEqual("root", whoami.rstrip())
@@ -117,7 +151,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
                     address=self.director_address,
                     port=self.director_port,
                     password=bareos_password,
-                    **self.director_extra_options
+                    **self.director_extra_options,
                 )
 
     def test_login_as_user(self):
@@ -131,7 +165,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
         whoami = director.call("whoami").decode("utf-8")
         self.assertEqual(username, whoami.rstrip())
@@ -154,7 +188,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
                     port=self.director_port,
                     name=username,
                     password=bareos_password,
-                    **self.director_extra_options
+                    **self.director_extra_options,
                 )
 
     def test_login_with_wrong_password(self):
@@ -175,7 +209,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
                     port=self.director_port,
                     name=username,
                     password=bareos_password,
-                    **self.director_extra_options
+                    **self.director_extra_options,
                 )
 
     def test_no_autodisplay_command(self):
@@ -195,7 +229,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=bareos_password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         # get the list of all command
@@ -221,7 +255,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
 
         result = director.call(".help full").decode("utf-8")
@@ -243,7 +277,7 @@ class PythonBareosPlainTest(bareos_unittest.Base):
             port=self.director_port,
             name=username,
             password=password,
-            **self.director_extra_options
+            **self.director_extra_options,
         )
         result = director.call(".api json").decode("utf-8")
         result = director.call("whoami").decode("utf-8")

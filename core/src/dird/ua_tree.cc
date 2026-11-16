@@ -265,8 +265,10 @@ bool UserSelectFilesFromTree(TreeContext* tree)
         case TreeBrowserExit::kSwitchToClassic:
           use_browser = false;
           break;
-        case TreeBrowserExit::kDone:
         case TreeBrowserExit::kQuit:
+          ua.quit = true;
+          [[fallthrough]];
+        case TreeBrowserExit::kDone:
           leave_selection = true;
           break;
       }
