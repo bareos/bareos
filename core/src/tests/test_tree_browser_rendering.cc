@@ -191,7 +191,7 @@ TEST(TreeBrowserRendering, DocumentsDestinationBrowserNavigation)
     EXPECT_NE(search_help.find(key), std::string::npos) << key;
   }
 
-  for (std::string_view key : {"Type", "Backspace", "Enter", "Esc", "."}) {
+  for (std::string_view key : {"Type", "Backspace", "Enter", "Esc"}) {
     EXPECT_NE(std::string_view(kDialogTextInputHelp).find(key),
               std::string_view::npos)
         << key;

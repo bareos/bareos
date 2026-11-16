@@ -2931,7 +2931,7 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
         }
         editing = false;
         value_offset = 0;
-      } else if (IsCancelKey(input)) {
+      } else if (IsCancelKey(input) && !IsTextKey(input)) {
         editing = false;
         value_offset = 0;
       } else if (input == kKeyBackspace) {

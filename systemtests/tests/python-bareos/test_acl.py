@@ -90,6 +90,39 @@ class PythonBareosAclTest(bareos_unittest.Json):
                 self.addCleanup(admin.call, f"delete jobid={jobid} yes")
                 admin.call(f"wait jobid={jobid}")
 
+    def test_visual_relocation_accepts_period_in_text(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=140)
+        browser.run("run job=RestoreFiles")
+        browser.press("home")
+        browser.press("down")
+        browser.press("down")
+        browser.press("enter")
+        browser.press("right")
+        browser.press("right")
+        browser.press("down")
+        browser.press("enter")
+        screen = browser.type_text(".dir")
+        self.assertIn("Type text", screen)
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir")
+        screen = browser.press("enter")
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir")
+        browser.press("enter")
+        browser.type_text(".discard")
+        screen = browser.press("cancel")
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir(?:\s|│)")
+        screen = browser.type_text(".")
+        self.assertIn("Restore Options", screen)
+        browser.press("cancel")
+
     def test_restore_copies_require_complete_authorized_chain(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
