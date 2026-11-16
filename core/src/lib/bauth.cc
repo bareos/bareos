@@ -737,8 +737,13 @@ bool Respond(BareosSocket* socket, std::span<std::unique_ptr<Prover>> provers)
     return false;
   }
 
+  // messages are normally ended by a NL character.  Additional data
+  // may be added in future revisions.  They should be space separated, so
+  // we ignore everything after the first whitespace
+  auto b64_end = message.find_first_of(" \n", new_auth_prefix.size());
+  if (b64_end == message.npos) { b64_end = message.size(); }
   std::string providers_json_b64{message.begin() + new_auth_prefix.size(),
-                                 message.end()};
+                                 message.begin() + b64_end};
 
   std::string providers_json_str;
   providers_json_str.resize((providers_json_b64.size() * 4 + 2) / 3);
