@@ -22,6 +22,7 @@
 #ifndef BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 #define BAREOS_DIRD_UA_TREE_BROWSER_INTERNAL_H_
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <cstddef>
@@ -261,7 +262,7 @@ struct TerminalResizeInput {
   int width = 0;
 };
 
-inline int ParsePositiveInteger(std::string_view text)
+inline int ParseTerminalDimension(std::string_view text)
 {
   int value = 0;
   auto [ptr, ec]
@@ -269,7 +270,7 @@ inline int ParsePositiveInteger(std::string_view text)
   if (ec != std::errc() || ptr != text.data() + text.size() || value <= 0) {
     return 0;
   }
-  return value;
+  return std::min(value, 1000);
 }
 
 inline TerminalResizeInput ParseTerminalResizeInput(std::string_view input)
@@ -280,9 +281,9 @@ inline TerminalResizeInput ParseTerminalResizeInput(std::string_view input)
   result.is_resize = true;
   std::string_view size_view = input.substr(kResizePrefix.size());
   size_t separator = size_view.find(':');
-  result.height = ParsePositiveInteger(size_view.substr(0, separator));
+  result.height = ParseTerminalDimension(size_view.substr(0, separator));
   if (separator != std::string_view::npos) {
-    result.width = ParsePositiveInteger(size_view.substr(separator + 1));
+    result.width = ParseTerminalDimension(size_view.substr(separator + 1));
   }
   return result;
 }

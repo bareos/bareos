@@ -1725,17 +1725,10 @@ int DoPrompt(UaContext* ua,
       // reformatted to the new size on the very next redraw instead of
       // staying stuck at whatever size it had when it was first shown.
       std::string_view msg_view(user->msg, user->message_length);
-      if (msg_view.starts_with("resize:")) {
-        std::string_view size_view = msg_view.substr(strlen("resize:"));
-        size_t separator = size_view.find(':');
-        std::string rows_text(size_view.substr(0, separator));
-        int new_height = atoi(rows_text.c_str());
-        if (new_height > 0) { ua->terminal_height = new_height; }
-        if (separator != std::string_view::npos) {
-          std::string cols_text(size_view.substr(separator + 1));
-          int new_width = atoi(cols_text.c_str());
-          if (new_width > 0) { ua->terminal_width = new_width; }
-        }
+      auto resize = tree_browser_internal::ParseTerminalResizeInput(msg_view);
+      if (resize.is_resize) {
+        if (resize.height > 0) { ua->terminal_height = resize.height; }
+        if (resize.width > 0) { ua->terminal_width = resize.width; }
         max_visible_options = compute_max_visible_options();
         continue;
       }
