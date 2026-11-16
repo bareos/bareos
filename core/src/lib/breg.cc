@@ -135,7 +135,8 @@ bool BareosRegex::ExtractRegexp(const char* motif)
 
   while (*search && !ok) {
     if (search[0] == '\\' && search[1] == sep) {
-      *dest++ = *++search; /* we skip separator */
+      *dest++ = search[1];
+      search += 2;
 
     } else if (search[0] == '\\' && search[1] == '\\') {
       *dest++ = *++search; /* we skip the second \ */
