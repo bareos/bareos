@@ -670,13 +670,15 @@ TEST(PluginOptionsEditorRendering, RowLabelsShowNameAndKeyValueOptions)
   block.plugin_name = "bpipe";
   block.options.emplace_back("file", "/tmp/x");
   block.options.emplace_back("verbose", "");
+  block.options.emplace_back("empty", "", true);
 
   auto rows = BuildPluginOptionsRowLabels(block);
-  ASSERT_EQ(rows.size(), 4u);
+  ASSERT_EQ(rows.size(), 5u);
   EXPECT_EQ(rows[0], "Plugin: bpipe");
   EXPECT_EQ(rows[1], "  file = /tmp/x");
   EXPECT_EQ(rows[2], "  verbose");
-  EXPECT_EQ(rows[3], "  + add option");
+  EXPECT_EQ(rows[3], "  empty = ");
+  EXPECT_EQ(rows[4], "  + add option");
 }
 
 TEST(PluginOptionsEditorRendering, TabBarEmptyForSingleBlock)

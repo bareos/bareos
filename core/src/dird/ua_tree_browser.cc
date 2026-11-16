@@ -591,8 +591,9 @@ std::vector<std::string> BuildPluginOptionsRowLabels(
   rows.push_back(
       "Plugin: "
       + (block.plugin_name.empty() ? "(type plugin name)" : block.plugin_name));
-  for (const auto& [key, value] : block.options) {
-    rows.push_back(value.empty() ? "  " + key : "  " + key + " = " + value);
+  for (const auto& [key, value, has_equals] : block.options) {
+    rows.push_back(value.empty() && !has_equals ? "  " + key
+                                                : "  " + key + " = " + value);
   }
   rows.push_back("  + add option");
   return rows;
