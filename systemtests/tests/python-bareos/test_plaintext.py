@@ -100,13 +100,13 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
         )
 
         cases = (
-            ("restore", 1, {second, second_incremental}),
-            ("restore", 2, {first, first_differential, after_differential}),
-            ("restore restorepointmode=job", 1, {second}),
-            ("restore restorepointmode=job", 2, {first}),
+            ("restore", second, {second, second_incremental}),
+            ("restore", first, {first, first_differential, after_differential}),
+            ("restore restorepointmode=job", second, {second}),
+            ("restore restorepointmode=job", first, {first}),
         )
-        for command, choice, expected in cases:
-            with self.subTest(command=command, choice=choice):
+        for command, selected_job, expected in cases:
+            with self.subTest(command=command, selected_job=selected_job):
                 console = bareos.bsock.DirectorConsole(
                     address=self.director_address,
                     port=self.director_port,
@@ -117,9 +117,22 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
                 try:
                     console.call(command)
                     points = console.call("2")
+                    if b"FileSet@Client combinations" in points:
+                        tuple_match = re.search(
+                            rb"(?m)^\s*(\d+): SelfTest@bareos-fd\s*$", points
+                        )
+                        self.assertIsNotNone(tuple_match, points)
+                        points = console.call(tuple_match.group(1).decode())
                     self.assertIn(f"JobId={first}".encode(), points)
                     self.assertIn(f"JobId={second}".encode(), points)
-                    result = console.call(str(choice))
+                    choice = re.search(
+                        rb"(?m)^\s*(\d+):[^\n]*\bJobId="
+                        + str(selected_job).encode()
+                        + rb"\b",
+                        points,
+                    )
+                    self.assertIsNotNone(choice, points)
+                    result = console.call(choice.group(1).decode())
                     match = re.search(
                         rb"You have selected the following JobIds?: ([0-9,]+)",
                         result,
