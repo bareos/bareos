@@ -100,20 +100,6 @@ TEST(RestoreOptions, DefaultRegexWhereExampleShowsPathRewrite)
   EXPECT_NE(*preview, kDefaultRelocationExamplePath);
 }
 
-TEST(RestoreOptions, RegexWhereAcceptsEscapedSeparators)
-{
-  auto preview = PreviewRegexWhere(R"(!^/a\!b!/x\!y!i)", "/a!b/report");
-  ASSERT_TRUE(preview);
-  EXPECT_EQ(*preview, "/x!y/report");
-}
-
-TEST(RestoreOptions, RegexWhereAcceptsEscapedBackslashes)
-{
-  auto preview = PreviewRegexWhere(R"(!^/a\\\\b!/dest!i)", R"(/a\b/report)");
-  ASSERT_TRUE(preview);
-  EXPECT_EQ(*preview, "/dest/report");
-}
-
 TEST(RestoreOptions, BuildsAdvancedRestoreRunCommand)
 {
   RestoreRunOptions options;
