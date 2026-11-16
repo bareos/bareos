@@ -139,7 +139,8 @@ bool BareosRegex::ExtractRegexp(const char* motif)
       search += 2;
 
     } else if (search[0] == '\\' && search[1] == '\\') {
-      *dest++ = *++search; /* we skip the second \ */
+      *dest++ = search[1];
+      search += 2;
 
     } else if (*search == sep) { /* we found end of expression */
       *dest++ = '\0';
