@@ -711,6 +711,14 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     }
   }
 
+  if (use_latest && date_index >= 0
+      && Bstrcasecmp(ua->argk[date_index], "before")) {
+    ua->ErrorMsg(
+        T_("latest cannot be combined with before; use select "
+           "before=... instead.\n"));
+    return 0;
+  }
+
   if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!GetClientName(ua, rx)) { return 0; }
 
