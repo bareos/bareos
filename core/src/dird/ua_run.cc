@@ -1846,6 +1846,8 @@ static std::vector<RestoreOptionRow> BuildRestoreAdvancedOptionRows(
                   std::to_string(jcr->JobPriority)});
   rows.push_back({RestoreOptionAction::kBootstrap, T_("Bootstrap"),
                   NPRT(jcr->RestoreBootstrap)});
+  rows.push_back({RestoreOptionAction::kJobId, T_("JobId"),
+                  std::to_string(jcr->dir_impl->RestoreJobId)});
   rows.push_back({RestoreOptionAction::kStorage, T_("Storage"),
                   jcr->dir_impl->res.read_storage
                       ? jcr->dir_impl->res.read_storage->resource_name_
@@ -3239,8 +3241,9 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
     AddPrompt(ua, T_("When"));        /* 1 */
     AddPrompt(ua, T_("Priority"));    /* 2 */
     AddPrompt(ua, T_("Bootstrap"));   /* 3 */
-    AddPrompt(ua, T_("Storage"));     /* 4 */
-    AddPrompt(ua, T_("Restore Job")); /* 5 */
+    AddPrompt(ua, T_("JobId"));       /* 4 */
+    AddPrompt(ua, T_("Storage"));     /* 5 */
+    AddPrompt(ua, T_("Restore Job")); /* 6 */
   } else {
     AddPrompt(ua, T_("Run now"));          /* 0 */
     AddPrompt(ua, T_("Restore Client"));   /* 1 */
@@ -3258,9 +3261,10 @@ static int SelectRestoreOptionFallback(UaContext* ua, bool advanced)
   if (selected < 0) { return selected; }
   if (advanced) {
     static constexpr RestoreOptionAction kAdvancedActions[]
-        = {RestoreOptionAction::kBack,     RestoreOptionAction::kWhen,
-           RestoreOptionAction::kPriority, RestoreOptionAction::kBootstrap,
-           RestoreOptionAction::kStorage,  RestoreOptionAction::kRestoreJob};
+        = {RestoreOptionAction::kBack,      RestoreOptionAction::kWhen,
+           RestoreOptionAction::kPriority,  RestoreOptionAction::kBootstrap,
+           RestoreOptionAction::kJobId,     RestoreOptionAction::kStorage,
+           RestoreOptionAction::kRestoreJob};
     return static_cast<int>(kAdvancedActions[selected]);
   }
   static constexpr RestoreOptionAction kMainActions[] = {
