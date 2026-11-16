@@ -1923,6 +1923,7 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     print_item = true;
   }
 
+  // Preserve explicit overrides even when they match the directive's default.
   const bool explicitly_set = item.IsPresent() && !inherited;
 
   if (HasDefaultValue(item) && !explicitly_set) {
