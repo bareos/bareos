@@ -57,7 +57,7 @@ struct RestoreRunOptions {
   uint32_t files = 0;
   std::string catalog;
   std::string backup_format;
-  std::string where;
+  std::optional<std::string> where;
   std::string regex_where;
   std::string replace;
   std::string plugin_options;

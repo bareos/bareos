@@ -103,8 +103,9 @@ std::string BuildRestoreRunCommand(const RestoreRunOptions& options)
 
   if (!options.regex_where.empty()) {
     AppendQuoted(command, "regexwhere", options.regex_where);
-  } else {
-    AppendQuoted(command, "where", options.where);
+  } else if (options.where) {
+    command += " where=";
+    command += QuoteDirectorString(*options.where);
   }
 
   if (!options.replace.empty()) {

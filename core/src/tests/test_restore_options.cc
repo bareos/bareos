@@ -90,6 +90,17 @@ TEST(RestoreOptions, PrefersRegexWhereOverWhere)
             R"(run job="RestoreFiles" regexwhere="!^/home/!/restore/home/!")");
 }
 
+TEST(RestoreOptions, DistinguishesEmptyWhereFromOmittedWhere)
+{
+  RestoreRunOptions options;
+  options.restore_job = "RestoreFiles";
+  EXPECT_EQ(BuildRestoreRunCommand(options), R"(run job="RestoreFiles")");
+
+  options.where = "";
+  EXPECT_EQ(BuildRestoreRunCommand(options),
+            R"(run job="RestoreFiles" where="")");
+}
+
 TEST(RestoreOptions, DefaultRegexWhereExampleShowsPathRewrite)
 {
   auto preview = PreviewRegexWhere(kDefaultCustomRegexWhere,

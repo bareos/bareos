@@ -44,6 +44,50 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_restore_empty_where_uses_original_location(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=160)
+        self.assertIn(
+            "Restore selection",
+            browser.run(
+                f"restore jobid={backup} all client=bareos-fd "
+                'restoreclient=bareos-fd where=""'
+            ),
+        )
+        screen = browser.type_text("r")
+        self.assertIn("Restore Options", screen)
+        self.assertIn("(original location)", screen)
+        browser.press("cancel")
+        self.assertIn(
+            "Restore selection",
+            browser.run(
+                f"restore jobid={backup} all client=bareos-fd "
+                "restoreclient=bareos-fd"
+            ),
+        )
+        screen = browser.type_text("r")
+        self.assertIn("Restore Options", screen)
+        self.assertNotIn("(original location)", screen)
+        browser.press("cancel")
+
     def test_restore_tree_stops_when_client_sends_signal(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

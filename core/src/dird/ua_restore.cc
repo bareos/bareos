@@ -315,7 +315,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   run_options.catalog = ua->catalog ? ua->catalog->resource_name_ : "";
   run_options.backup_format = rx.backup_format ? rx.backup_format : "";
   run_options.regex_where = rx.RegexWhere ? rx.RegexWhere : "";
-  run_options.where = rx.where ? rx.where : "";
+  if (rx.where) { run_options.where = rx.where; }
   run_options.replace = rx.replace ? rx.replace : "";
   run_options.plugin_options = !rx.plugin_options.empty()
                                    ? rx.plugin_options
