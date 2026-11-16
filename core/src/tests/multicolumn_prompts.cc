@@ -23,8 +23,13 @@
 
 #include "dird/ua_select.h"
 #include "include/jcr.h"
+#include "lib/parse_conf.h"
 
 using namespace directordaemon;
+
+namespace directordaemon {
+bool DotTerminalsizeCmd(UaContext* ua, const char* cmd);
+}
 
 class PromptsFormatting : public ::testing::Test {
  protected:
@@ -43,6 +48,29 @@ class PromptsFormatting : public ::testing::Test {
   JobControlRecord jcr{};
   UaContext* ua{};
 };
+
+TEST_F(PromptsFormatting, TerminalSizeCommandBoundsDimensions)
+{
+  PmStrcpy(ua->cmd, ".terminalsize 2147483647 2147483647 color");
+  ParseArgs(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+  ASSERT_TRUE(DotTerminalsizeCmd(ua, ua->cmd));
+  EXPECT_EQ(ua->terminal_height, 1000);
+  EXPECT_EQ(ua->terminal_width, 1000);
+  EXPECT_TRUE(ua->supports_color);
+
+  PmStrcpy(ua->cmd, ".terminalsize 24 80");
+  ParseArgs(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+  ASSERT_TRUE(DotTerminalsizeCmd(ua, ua->cmd));
+  EXPECT_EQ(ua->terminal_height, 24);
+  EXPECT_EQ(ua->terminal_width, 80);
+  EXPECT_FALSE(ua->supports_color);
+
+  PmStrcpy(ua->cmd, ".terminalsize 2147483648 80junk");
+  ParseArgs(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+  ASSERT_TRUE(DotTerminalsizeCmd(ua, ua->cmd));
+  EXPECT_EQ(ua->terminal_height, 24);
+  EXPECT_EQ(ua->terminal_width, 80);
+}
 
 TEST_F(PromptsFormatting, ReturnsNothingOnAnEmptyList)
 {

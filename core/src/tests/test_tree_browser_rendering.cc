@@ -32,6 +32,29 @@
 
 namespace {
 
+TEST(TerminalResizeInput, BoundsOversizedDimensions)
+{
+  const auto resize
+      = directordaemon::tree_browser_internal::ParseTerminalResizeInput(
+          "resize:2147483647:2147483647");
+  EXPECT_TRUE(resize.is_resize);
+  EXPECT_EQ(resize.height, 1000);
+  EXPECT_EQ(resize.width, 1000);
+
+  const auto ordinary
+      = directordaemon::tree_browser_internal::ParseTerminalResizeInput(
+          "resize:24:80");
+  EXPECT_EQ(ordinary.height, 24);
+  EXPECT_EQ(ordinary.width, 80);
+
+  const auto invalid
+      = directordaemon::tree_browser_internal::ParseTerminalResizeInput(
+          "resize:2147483648:80junk");
+  EXPECT_TRUE(invalid.is_resize);
+  EXPECT_EQ(invalid.height, 0);
+  EXPECT_EQ(invalid.width, 0);
+}
+
 using directordaemon::restore_plugin_hints::PluginOptionsBlock;
 using directordaemon::tree_browser_internal::AlignTextColumns;
 using directordaemon::tree_browser_internal::BuildKnownOptionsHintLine;

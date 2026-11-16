@@ -32,6 +32,7 @@ FileSetText so hint resolution behaves like the real plugin would).
 """
 
 import os
+import re
 import sys
 
 import bareos.bsock
@@ -92,7 +93,7 @@ def check_restore_menu_output_pause(director):
         fail("restore menu did not return after acknowledgement: {}".format(screen))
 
 
-def check_one_fileset(director, fileset, expected_hint_text):
+def check_one_fileset(director, fileset, expected_hint_text, check_resize=False):
     tb = TreeBrowserConsole(director, lines=45, columns=140)
 
     screen = tb.run("restore client=bareos-fd fileset={}".format(fileset))
@@ -101,6 +102,11 @@ def check_one_fileset(director, fileset, expected_hint_text):
             "restore did not enter the interactive selection menu for "
             "{}: {}".format(fileset, screen)
         )
+
+    if check_resize:
+        screen = tb.submit_line("resize:45:1500")
+        if "Select item" not in screen:
+            fail("resize did not redraw the selection menu")
 
     screen = tb.press("select:1")  # "Select a FileSet@Client combination ..."
     if "FileSet@Client" not in screen:
@@ -116,6 +122,17 @@ def check_one_fileset(director, fileset, expected_hint_text):
             "did not enter the split-screen restore selection for "
             "{}: {}".format(fileset, screen)
         )
+    if check_resize:
+        for event in (None, "resize:45:1500"):
+            if event:
+                screen = tb.submit_line(event)
+            clean_screen = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", screen)
+            frame_width = max(map(len, clean_screen.splitlines()), default=0)
+            if not 900 <= frame_width <= 1000:
+                fail("resize produced frame width {}".format(frame_width))
+        screen = tb.submit_line("resize:45:140")
+        if "Restore selection" not in screen:
+            fail("resize did not redraw the restore browser")
     if "Plugin Options" not in screen:
         fail(
             "split screen is missing the Plugin Options pane for "
@@ -231,8 +248,8 @@ def check_one_fileset(director, fileset, expected_hint_text):
 def main():
     director = connect()
     check_restore_menu_output_pause(connect_restore_test())
-    for fileset, expected_hint_text in CASES:
-        check_one_fileset(director, fileset, expected_hint_text)
+    for index, (fileset, expected_hint_text) in enumerate(CASES):
+        check_one_fileset(director, fileset, expected_hint_text, index == 0)
     print("All restore-selection Plugin Options editor checks passed.")
 
 
