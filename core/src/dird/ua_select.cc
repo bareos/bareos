@@ -330,7 +330,11 @@ std::string InteractiveSelection::Format(const std::string& header,
     return output;
   }
 
-  if (max_visible_options == 0) { max_visible_options = 1; }
+  if (!supports_cursor_selection) {
+    max_visible_options = matches.size();
+  } else if (max_visible_options == 0) {
+    max_visible_options = 1;
+  }
   size_t columns
       = EffectiveColumns(matches.size(), max_visible_options, num_columns_);
 
