@@ -1028,6 +1028,41 @@ describe('console session store', () => {
     expect(session.output.some(line => line.text.includes('.terminalsize'))).toBe(false)
   })
 
+  it('defers terminal size updates until the main prompt returns', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    consoleSessions.setTerminalSize('bareos-dir', 30, 90)
+    expect(socket.sent).toHaveLength(2)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Enter name: ', prompt: 'sub',
+      }),
+    })
+    consoleSessions.setTerminalSize('bareos-dir', 35, 100)
+    expect(socket.sent).toHaveLength(2)
+    consoleSessions.sendCommand('bareos-dir', 'example')
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(3)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '2', text: '', prompt: 'main',
+      }),
+    })
+    expect(JSON.parse(socket.sent[3]).command).toBe('.terminalsize 40 120 color')
+    expect(socket.sent).toHaveLength(4)
+  })
+
   it('sends a resize: pseudo-input instead while a selection is active', () => {
     const consoleSessions = useConsoleSessionsStore()
 
