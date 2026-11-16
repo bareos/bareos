@@ -101,6 +101,7 @@ function createRuntime() {
     cmdSeq: 0,
     pendingCmds: new Map(),
     completionRequests: new Map(),
+    terminalSizeDirty: false,
   }
 }
 
@@ -519,6 +520,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       return
     }
     session.terminalSize = { rows, cols }
+    getRuntime(director).terminalSizeDirty = true
     sendTerminalSizeIfConnected(director)
   }
 
@@ -527,6 +529,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const runtime = getRuntime(director)
     if (
       !session.terminalSize
+      || !runtime.terminalSizeDirty
       || !runtime.ws
       || runtime.ws.readyState !== WebSocket.OPEN
       || runtime.closing
@@ -539,12 +542,18 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       // Inside an interactive selection/dialog, size updates travel over
       // the same symbolic key-event channel as arrow keys etc.
       sendSelectionEvent(director, `resize:${rows}:${cols}`)
+      runtime.terminalSizeDirty = false
     } else {
+      if (session.currentPrompt !== '* ' || runtime.pendingCmds.size) {
+        return
+      }
       // At the main prompt, this is a normal (silent) dot-command — it
       // produces no output, exactly like the DotTerminalsizeCmd doc
       // comment describes ("Produces no output, since it is not meant to
       // be user-visible.").
-      sendCommand(director, `.terminalsize ${rows} ${cols} color`)
+      if (sendCommand(director, `.terminalsize ${rows} ${cols} color`)) {
+        runtime.terminalSizeDirty = false
+      }
     }
   }
 
@@ -735,6 +744,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         // Mirror bconsole's initial SendTerminalSize() call so the
         // Director knows the browser's terminal size from the start of
         // the session (affects table/menu formatting width).
+        runtime.terminalSizeDirty = !!session.terminalSize
         sendTerminalSizeIfConnected(director)
         return
       }
@@ -774,6 +784,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           applyRawConsoleResponse(session, director, appendLines, writeToTerminal, msg)
         }
 
+        if (msg.prompt === 'main') {
+          sendTerminalSizeIfConnected(director)
+        }
         return
       }
 
