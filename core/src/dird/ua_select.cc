@@ -43,6 +43,7 @@
 #include <cctype>
 #include <string>
 #include <string_view>
+#include <utf8.h>
 #include <vector>
 
 namespace directordaemon {
@@ -219,7 +220,18 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     return SelectionInputResult::kContinue;
   }
   if (input == "key:backspace") {
-    if (!filter_.empty()) { filter_.pop_back(); }
+    if (!filter_.empty()) {
+      size_t start = filter_.size() - 1;
+      while (start > 0
+             && (static_cast<unsigned char>(filter_[start]) & 0xc0) == 0x80) {
+        --start;
+      }
+      if (utf8::is_valid(filter_.begin() + start, filter_.end())) {
+        filter_.resize(start);
+      } else {
+        filter_.pop_back();
+      }
+    }
   } else if (input == "key:space") {
     filter_.push_back(' ');
   } else if (input.starts_with("key:text:")) {

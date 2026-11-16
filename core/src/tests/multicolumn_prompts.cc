@@ -329,6 +329,20 @@ TEST(InteractiveSelection, FiltersAndSelectsInDirector)
   EXPECT_EQ(selection.selected_index(), 1);
 }
 
+TEST(InteractiveSelection, BackspaceRemovesOneUtf8Character)
+{
+  const std::vector<std::string> options{"Alpha", "Beta"};
+  for (const char* input : {"key:text:\xc3\xbc", "key:text:\xe7\x95\x8c",
+                            "key:text:\xf0\x9f\x98\x80"}) {
+    InteractiveSelection selection(options);
+    EXPECT_EQ(selection.ApplyInput(input), SelectionInputResult::kContinue);
+    EXPECT_EQ(selection.ApplyInput("key:backspace"),
+              SelectionInputResult::kContinue);
+    EXPECT_EQ(selection.ApplyInput("key:text:."),
+              SelectionInputResult::kCanceled);
+  }
+}
+
 TEST(InteractiveSelection, MarksSelectedLineWithPlainTextIndicator)
 {
   /* The selected line must carry a plain-text marker ("> ") in addition to
