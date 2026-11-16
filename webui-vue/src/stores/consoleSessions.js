@@ -541,8 +541,10 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     if (session.selectionActive) {
       // Inside an interactive selection/dialog, size updates travel over
       // the same symbolic key-event channel as arrow keys etc.
-      sendSelectionEvent(director, `resize:${rows}:${cols}`)
-      runtime.terminalSizeDirty = false
+      if (!runtime.pendingCmds.size
+        && sendSelectionEvent(director, `resize:${rows}:${cols}`)) {
+        runtime.terminalSizeDirty = false
+      }
     } else {
       if (session.currentPrompt !== '* ' || runtime.pendingCmds.size) {
         return
@@ -784,7 +786,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
           applyRawConsoleResponse(session, director, appendLines, writeToTerminal, msg)
         }
 
-        if (msg.prompt === 'main') {
+        if (msg.prompt === 'main' || msg.prompt === 'select') {
           sendTerminalSizeIfConnected(director)
         }
         return

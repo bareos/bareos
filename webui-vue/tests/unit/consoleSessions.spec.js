@@ -1092,6 +1092,71 @@ describe('console session store', () => {
     expect(lastSent.command).toBe('resize:30:100')
   })
 
+  it('sends the latest resize after a busy selection becomes responsive', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Working', prompt: 'select_busy',
+      }),
+    })
+    consoleSessions.setTerminalSize('bareos-dir', 30, 90)
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(1)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:', prompt: 'select',
+      }),
+    })
+    expect(JSON.parse(socket.sent[1]).command).toBe('resize:40:120')
+    expect(socket.sent).toHaveLength(2)
+  })
+
+  it('does not send an in-flight selection resize into the next text prompt', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:', prompt: 'select',
+      }),
+    })
+    consoleSessions.sendSelectionEvent('bareos-dir', 'key:enter')
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(3)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '2', text: 'Enter name: ', prompt: 'sub',
+      }),
+    })
+    expect(socket.sent).toHaveLength(3)
+    consoleSessions.sendCommand('bareos-dir', 'example')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '3', text: '', prompt: 'main',
+      }),
+    })
+    expect(JSON.parse(socket.sent[4]).command).toBe('.terminalsize 40 120 color')
+  })
+
   it('suppresses standalone director message notifications in console output', () => {
     const consoleSessions = useConsoleSessionsStore()
 
