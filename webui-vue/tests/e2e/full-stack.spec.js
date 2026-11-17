@@ -2596,6 +2596,48 @@ test('keeps the console cursor on the input after scrollback is trimmed', async 
   }).toBeLessThan(3)
 })
 
+test('redraws wrapped console input without leaving stale rows', async ({ page }) => {
+  let releaseOutput
+  const outputReady = new Promise(resolve => { releaseOutput = resolve })
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-wrapped-output') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'stream-start', prompt: 'more',
+        }))
+        await outputReady
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: '-stream-end', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-wrapped-output')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('stream-start')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', `longinput${'x'.repeat(250)}`)
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await page.keyboard.press('Home')
+  await page.keyboard.press('End')
+  const inputRows = page.locator('.xterm-rows > div').filter({ hasText: 'longinput' })
+  await expect(inputRows).toHaveCount(1)
+  releaseOutput()
+  await expect(consoleOutput).toContainText('stream-start-stream-end')
+  await expect(inputRows).toHaveCount(1)
+})
+
 test('pastes into the console editor and interactive selection', async ({ page }) => {
   const selectionInputs = []
   await page.routeWebSocket(/\/ws/, socket => {
