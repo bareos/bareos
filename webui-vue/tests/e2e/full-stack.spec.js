@@ -2558,6 +2558,44 @@ test('positions the console cursor at wide and combining characters', async ({ p
   await expect.poll(async () => combiningEnd - await cursorX()).toBeCloseTo(columnWidth, 0)
 })
 
+test('keeps the console cursor on the input after scrollback is trimmed', async ({ page }) => {
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-fill-scrollback') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id,
+          text: `${'scroll-line\n'.repeat(5100)}scrollback-filled\n`, prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-fill-scrollback')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('scrollback-filled')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', `editstart${'x'.repeat(300)}`)
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await page.keyboard.press('Home')
+  const inputRow = page.locator('.xterm-rows > div').filter({ hasText: 'editstart' }).last()
+  await expect(inputRow).toBeVisible()
+  await expect.poll(async () => {
+    const cursor = await textarea.boundingBox()
+    const row = await inputRow.boundingBox()
+    return Math.abs(cursor.y - row.y)
+  }).toBeLessThan(3)
+})
+
 test('pastes into the console editor and interactive selection', async ({ page }) => {
   const selectionInputs = []
   await page.routeWebSocket(/\/ws/, socket => {
