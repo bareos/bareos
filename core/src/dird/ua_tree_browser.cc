@@ -2727,7 +2727,11 @@ TreeBrowserExit TreeBrowser::Run()
       tree_horizontal_offset_
           = std::min(tree_horizontal_offset_, TreeHorizontalLimit());
       ClampSearchHorizontalOffset();
+      ClampSelectedHorizontalOffset();
       ClampPluginHintsOffset();
+      if (HasDetectedPlugins() && !plugin_options_blocks_.empty()) {
+        ClampPluginOptionsCursor();
+      }
       continue;
     }
 
