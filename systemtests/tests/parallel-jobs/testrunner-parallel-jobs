@@ -34,7 +34,7 @@ status storage=File
 setbandwidth limit=0 storage=File yes
 quit
 END_OF_DATA
-"${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+timeout "${BCONSOLE_TIMEOUT:-180s}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
   <"$tmp/bconcmds" >"$bandwidthlog"
 if [[ $(grep -c 'bwlimit=200kB/s' "$bandwidthlog" || :) -ne 2 ]]; then
   echo "File or Storage daemon did not receive the bandwidth limit"
@@ -70,7 +70,7 @@ if [[ "$num_jobs" -ne 6 ]]; then
 fi
 
 for attempt in $(seq 1 60); do
-  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+  timeout "${BCONSOLE_TIMEOUT:-180s}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
     <<<"status client=bareos-fd" >"$bandwidthlog"
   running=0
   for jobid in "${backup_jobids[@]}"; do
@@ -92,7 +92,7 @@ setbandwidth limit=200 all yes
 status client=bareos-fd
 quit
 END_OF_DATA
-"${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
+timeout "${BCONSOLE_TIMEOUT:-180s}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" \
   <"$tmp/bconcmds" >"$bandwidthlog"
 
 if [[ $(grep -c 'Bwlimit=204,800' "$bandwidthlog" || :) -ne "$num_jobs" ]]; then
