@@ -62,6 +62,33 @@ export function useConsoleTerminal(options = {}) {
   let lastReportedSize = null
   let dataDisposable = null
   let resizeDisposable = null
+  let writeQueue = []
+  let writing = false
+
+  // Keep cursor measurements and their writes together across xterm callbacks.
+  function enqueueWrite(operation) {
+    if (!terminal) {
+      return
+    }
+    writeQueue.push(operation)
+    if (writing) {
+      return
+    }
+    const activeTerminal = terminal
+    const next = () => {
+      if (terminal !== activeTerminal) {
+        return
+      }
+      const queued = writeQueue.shift()
+      if (!queued) {
+        writing = false
+        return
+      }
+      queued(activeTerminal, next)
+    }
+    writing = true
+    next()
+  }
 
   function reportResizeNow() {
     if (!terminal) {
@@ -148,11 +175,31 @@ export function useConsoleTerminal(options = {}) {
   }
 
   function write(data) {
-    terminal?.write(data)
+    enqueueWrite((activeTerminal, next) => activeTerminal.write(data, next))
+  }
+
+  function writeInputLine(prefix, suffix) {
+    enqueueWrite((activeTerminal, next) => {
+      activeTerminal.write(prefix, () => {
+        const buffer = activeTerminal.buffer.active
+        const column = buffer.cursorX
+        const line = buffer.baseY + buffer.cursorY
+        activeTerminal.write(suffix, () => {
+          const current = activeTerminal.buffer.active
+          const wrapped = column === activeTerminal.cols
+          const row = Math.max(1, line - current.baseY + 1 + Number(wrapped))
+          const col = wrapped ? 1 : column + 1
+          activeTerminal.write(`\x1B[${row};${col}H`, next)
+        })
+      })
+    })
   }
 
   function clear() {
-    terminal?.reset()
+    enqueueWrite((activeTerminal, next) => {
+      activeTerminal.reset()
+      next()
+    })
   }
 
   function focus() {
@@ -172,6 +219,8 @@ export function useConsoleTerminal(options = {}) {
     resizeDisposable = null
     terminal?.dispose()
     terminal = null
+    writeQueue = []
+    writing = false
     fitAddon = null
     container = null
     lastReportedSize = null
@@ -180,6 +229,7 @@ export function useConsoleTerminal(options = {}) {
   return {
     mount,
     write,
+    writeInputLine,
     clear,
     focus,
     fit,
