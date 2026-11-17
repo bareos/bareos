@@ -351,8 +351,8 @@ Example for a full restore:
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-        1: List last 20 Jobs run
-        2: List Jobs where a given File is saved
+        1: Select a FileSet@Client combination (latest backup)
+        2: Select a FileSet@Client combination (custom restore point)
         3: Enter list of comma separated JobIds to select
         4: Enter SQL list command
         5: Select the most recent backup for a client
@@ -363,8 +363,10 @@ Example for a full restore:
        10: Find the JobIds for a backup for a client before a specified time
        11: Enter a list of directories to restore for found JobIds
        12: Select full restore to a specified Job date
-       13: Cancel
-   Select item:  (1-13): <input>5</input>
+       13: List last 20 Jobs run
+       14: List Jobs where a given File is saved
+       15: Cancel
+   Select item:  (1-15): <input>5</input>
    Automatically selected FileSet: Mssql
    +-------+-------+----------+-------------+---------------------+------------+
    | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |
@@ -516,8 +518,8 @@ Followed is a example for a restore of full, differential and incremental backup
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-        1: List last 20 Jobs run
-        2: List Jobs where a given File is saved
+        1: Select a FileSet@Client combination (latest backup)
+        2: Select a FileSet@Client combination (custom restore point)
         3: Enter list of comma separated JobIds to select
         4: Enter SQL list command
         5: Select the most recent backup for a client
@@ -528,8 +530,10 @@ Followed is a example for a restore of full, differential and incremental backup
        10: Find the JobIds for a backup for a client before a specified time
        11: Enter a list of directories to restore for found JobIds
        12: Select full restore to a specified Job date
-       13: Cancel
-   Select item:  (1-13): <input>5</input>
+       13: List last 20 Jobs run
+       14: List Jobs where a given File is saved
+       15: Cancel
+   Select item:  (1-15): <input>5</input>
    Automatically selected FileSet: Mssql
    +-------+-------+----------+-------------+---------------------+------------+
    | JobId | Level | JobFiles | JobBytes    | StartTime           | VolumeName |

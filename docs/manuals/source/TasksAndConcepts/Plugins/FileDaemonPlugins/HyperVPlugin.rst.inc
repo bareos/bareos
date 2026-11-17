@@ -325,7 +325,7 @@ The next step is to restore the Virtual Machine. Therefore run the restore comma
    [...]
    5: Select the most recent backup for a client
    [...]  
-   Select item:  (1-13): <input>5</input>
+   Select item:  (1-15): <input>5</input>
    +-------+-------+----------+---------------+---------------------+------------------+
    | jobid | level | jobfiles | jobbytes      | starttime           | volumename       |
    +-------+-------+----------+---------------+---------------------+------------------+
