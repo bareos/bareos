@@ -1700,6 +1700,7 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   RestorePointCandidate candidate;
   candidate.JobId = str_to_int64(row[0]);
   candidate.NextFullJobId = row[7] ? str_to_int64(row[7]) : 0;
+  candidate.NextFullStartTime = row[8] ? row[8] : "";
   candidate.RestorePoint = StrToUtime(row[2]);
   candidate.JobCount = str_to_int64(row[3]);
   candidate.JobNames = std::move(display_names);
@@ -1992,10 +1993,18 @@ static bool ResolveBackupChainForClientFileset(
       goto bail_out;
     }
     if (selected->NextFullJobId) {
-      pool_select +=
-          "AND (Job.StartTime, Job.JobId) < "
-          "(SELECT StartTime, JobId FROM Job WHERE JobId="
-          + std::to_string(selected->NextFullJobId) + ") ";
+      if (selected->NextFullStartTime.empty()) {
+        ua->ErrorMsg(T_("Missing next Full backup boundary.\n"));
+        goto bail_out;
+      }
+      auto boundary
+          = ua->db->EscapeString(ua->jcr, selected->NextFullStartTime);
+      if (!boundary) {
+        ua->ErrorMsg(T_("Unable to escape next Full backup boundary.\n"));
+        goto bail_out;
+      }
+      pool_select += "AND (Job.StartTime, Job.JobId) < ('" + *boundary + "', "
+                     + std::to_string(selected->NextFullJobId) + ") ";
     }
   } else {
     if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
