@@ -45,6 +45,40 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_tree_browser_scrolls_unicode_names_in_display_cells(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        with tempfile.TemporaryDirectory(dir=os.environ["BackupDirectory"]) as source:
+            name = "界" * 80
+            with open(os.path.join(source, name), "w", encoding="utf-8") as file:
+                file.write("test")
+            backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+            self.addCleanup(admin.call, f"delete jobid={backup} yes")
+            console = bareos.bsock.DirectorConsole(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=self.get_operator_password(username),
+                **self.director_extra_options,
+            )
+            self.addCleanup(console.close)
+            browser = TreeBrowserConsole(console, columns=80)
+            self.assertIn("Restore selection", browser.run(f"restore jobid={backup}"))
+            browser.type_text("c")
+            browser.submit_line(f"cd {source}")
+            self.assertIn("界", browser.submit_line("browse"))
+            screen = browser.press("end")
+            self.assertIn("界", screen)
+            self.assertIn("Column: 87", screen)
+            browser.type_text("q")
+
     def test_restore_latest_accepts_filesetclient(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

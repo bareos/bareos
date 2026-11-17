@@ -1636,7 +1636,9 @@ size_t TreeBrowser::TreeHorizontalLimit() const
 
   size_t max_width = 0;
   for (const tree_node* node : rows_) {
-    if (node->fname) { max_width = std::max(max_width, strlen(node->fname)); }
+    if (node->fname) {
+      max_width = std::max(max_width, TextCellWidth(node->fname));
+    }
   }
   return MaxHorizontalOffset(max_width, path_width);
 }
