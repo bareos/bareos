@@ -45,6 +45,110 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_restore_latest_accepts_filesetclient(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        result = console.call("restore latest filesetclient=SelfTest@bareos-fd")
+        self.assertIn(f"JobId={backup}".encode(), result)
+        self.assertNotIn(b"Select a FileSet@Client combination", result)
+        self.assertIn(b"You have selected the following JobId", result)
+        console.call("quit")
+
+    def test_restore_rejects_invalid_filesetclient(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        for value in ("invalid", "@bareos-fd", "SelfTest@", "SelfTest@bareos-fd@x"):
+            with self.subTest(value=value):
+                result = console.call(f"restore latest filesetclient={value}")
+                self.assertIn(b"Expected fileset@client", result)
+
+    def test_restore_rejects_conflicting_filesetclient(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        for argument in (
+            "filesetclient=SelfTest@bareos-fd",
+            "client=bareos-fd",
+            "fileset=SelfTest",
+            "jobid=1",
+            "file=/nonexistent",
+            "directory=/nonexistent",
+            "fileregex=.*",
+        ):
+            with self.subTest(argument=argument):
+                result = console.call(
+                    f"restore latest filesetclient=SelfTest@bareos-fd {argument}"
+                )
+                self.assertIn(b"filesetclient cannot be combined", result)
+
+    def test_restore_filesetclient_respects_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        for acl in (
+            "clientacl=!bareos-fd",
+            "filesetacl=!SelfTest",
+            "jobacl=!backup-bareos-fd",
+        ):
+            with self.subTest(acl=acl):
+                name = "filesetclient-deny-" + acl.split("=")[0]
+                self.configure_add(
+                    admin,
+                    "consoles",
+                    name,
+                    f"console={name} password=secret profile=operator "
+                    f"{acl} tlsenable=no tlsrequire=no",
+                )
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=name,
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                self.addCleanup(console.close)
+                result = console.call("restore latest filesetclient=SelfTest@bareos-fd")
+                self.assertNotIn(b"You have selected the following JobId", result)
+                self.assertIn(b"No accessible FileSet@Client", result)
+
     def test_equal_start_fulls_remain_distinct_restore_points(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

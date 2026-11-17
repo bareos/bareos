@@ -56,6 +56,7 @@
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -78,7 +79,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
                                     const char* date);
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
                                                RestoreContext* rx,
-                                               bool auto_select_latest);
+                                               bool auto_select_latest,
+                                               const char* requested_tuple);
 static bool ResolveBackupChainForClientFileset(
     UaContext* ua,
     RestoreContext* rx,
@@ -500,6 +502,43 @@ static std::optional<db_list_ctx> FindJobDependencies(UaContext* ua,
  */
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 {
+  std::string requested_tuple;
+  const int tuple_index = FindArg(ua, "filesetclient");
+  if (tuple_index >= 0) {
+    char* value = ua->argv[tuple_index];
+    char* separator = value ? strchr(value, '@') : nullptr;
+    if (!separator || separator == value || separator[1] == '\0'
+        || strchr(separator + 1, '@')) {
+      ua->ErrorMsg(
+          T_("Expected fileset@client value for filesetclient keyword.\n"));
+      return 0;
+    }
+    for (int i = 1; i < ua->argc; ++i) {
+      if (i == tuple_index) { continue; }
+      const char* conflicting[]
+          = {"filesetclient", "fileset",   "client",   "jobid",
+             "file",          "directory", "fileregex"};
+      for (const char* keyword : conflicting) {
+        if (Bstrcasecmp(ua->argk[i], keyword)) {
+          ua->ErrorMsg(T_("filesetclient cannot be combined with %s.\n"),
+                       keyword);
+          return 0;
+        }
+      }
+    }
+    if (ua->argc >= MAX_CMD_ARGS) {
+      ua->ErrorMsg(T_("Too many arguments for filesetclient.\n"));
+      return 0;
+    }
+    requested_tuple = value;
+    *separator = '\0';
+    static char fileset_keyword[] = "fileset";
+    static char client_keyword[] = "client";
+    ua->argk[tuple_index] = fileset_keyword;
+    ua->argk[ua->argc] = client_keyword;
+    ua->argv[ua->argc++] = separator + 1;
+  }
+
   const char* p;
   /* Include current second if using current time */
   /* Note, we add one second here just to include any job
@@ -760,7 +799,10 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (use_latest) {
-    if (!SelectClientFilesetTupleAndRestore(ua, rx, true)) { return 0; }
+    if (!SelectClientFilesetTupleAndRestore(ua, rx, true,
+                                            requested_tuple.c_str())) {
+      return 0;
+    }
     done = true;
   }
 
@@ -788,11 +830,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 0;
       case 0: /* FileSet@Client latest restore */
       {
-        if (!SelectClientFilesetTupleAndRestore(ua, rx, true)) { return 0; }
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, true,
+                                                requested_tuple.c_str())) {
+          return 0;
+        }
       } break;
       case 1: /* FileSet@Client custom restore point */
       {
-        if (!SelectClientFilesetTupleAndRestore(ua, rx, false)) { return 0; }
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, false,
+                                                requested_tuple.c_str())) {
+          return 0;
+        }
       } break;
       case 2: /* enter a list of JobIds */
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
@@ -1715,7 +1763,8 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
 
 static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
                                                RestoreContext* rx,
-                                               bool auto_select_latest)
+                                               bool auto_select_latest,
+                                               const char* requested_tuple)
 {
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_tuples_1>(
@@ -1730,11 +1779,26 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
   }
 
   char tuple[2 * MAX_NAME_LENGTH];
-  if (DoPrompt(ua, T_("FileSet@Client"),
-               T_("Select a FileSet@Client combination"), tuple, sizeof(tuple))
-      < 0) {
-    ua->ErrorMsg(T_("No FileSet@Client combination with backups found.\n"));
-    return false;
+  if (requested_tuple && *requested_tuple) {
+    auto it = std::find_if(ua->prompts.begin(), ua->prompts.end(),
+                           [requested_tuple](const std::string& entry) {
+                             return Bstrcasecmp(entry.c_str(), requested_tuple);
+                           });
+    if (it == ua->prompts.end()) {
+      ua->ErrorMsg(
+          T_("No accessible FileSet@Client combination with backups "
+             "matches the requested value.\n"));
+      return false;
+    }
+    bstrncpy(tuple, it->c_str(), sizeof(tuple));
+  } else {
+    if (DoPrompt(ua, T_("FileSet@Client"),
+                 T_("Select a FileSet@Client combination"), tuple,
+                 sizeof(tuple))
+        < 0) {
+      ua->ErrorMsg(T_("No FileSet@Client combination with backups found.\n"));
+      return false;
+    }
   }
 
   char* at_sign = strchr(tuple, '@');
