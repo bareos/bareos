@@ -184,11 +184,14 @@ export function useConsoleTerminal(options = {}) {
         const buffer = activeTerminal.buffer.active
         const column = buffer.cursorX
         const line = buffer.baseY + buffer.cursorY
+        const marker = activeTerminal.registerMarker()
         activeTerminal.write(suffix, () => {
           const current = activeTerminal.buffer.active
           const wrapped = column === activeTerminal.cols
-          const row = Math.max(1, line - current.baseY + 1 + Number(wrapped))
+          const currentLine = marker ? marker.line : line
+          const row = Math.max(1, currentLine - current.baseY + 1 + Number(wrapped))
           const col = wrapped ? 1 : column + 1
+          marker?.dispose()
           activeTerminal.write(`\x1B[${row};${col}H`, next)
         })
       })
