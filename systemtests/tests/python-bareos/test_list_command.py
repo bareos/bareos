@@ -685,7 +685,10 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             password=self.get_operator_password(username),
             **self.director_extra_options,
         )
-        jobid = self.run_job(director, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(director.close)
+        jobid = self.run_job(director, "backup-bareos-fd", "Full")
+        self.addCleanup(director.call, f"delete jobid={jobid} yes")
+        self.wait_job(director, jobid)
         director.call(f'update jobid={jobid} comment="original"')
 
         for invalid in (
