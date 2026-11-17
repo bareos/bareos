@@ -267,7 +267,12 @@ function redrawInputLine() {
   const cursorPos = session.cursorPos ?? cmd.length
   const before = sanitizeTerminalText(cmd.slice(0, cursorPos))
   const after = sanitizeTerminalText(cmd.slice(cursorPos))
-  terminal.write(`\r\x1B[K${session.currentPrompt ?? ''}${before}\x1B[s${after}\x1B[u`)
+  const prefix = `\r\x1B[K${session.currentPrompt ?? ''}${before}`
+  if (after) {
+    terminal.writeInputLine(prefix, after)
+  } else {
+    terminal.write(prefix)
+  }
 }
 
 // Wraps the raw terminal writer so any text the store writes (command
