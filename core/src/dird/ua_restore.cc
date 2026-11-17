@@ -1402,7 +1402,15 @@ bool RebuildRestoreSelection(UaContext* ua,
 
   std::string path
       = std::string(working_directory) + "/" + my_name + ".restore.XXXXXX";
+#ifdef HAVE_MSVC
+  const int temp_error = _mktemp_s(path.data(), path.size() + 1);
+  int fd = temp_error == 0
+               ? open(path.c_str(), O_CREAT | O_EXCL | O_RDWR | O_BINARY, 0600)
+               : -1;
+  if (temp_error != 0) { errno = temp_error; }
+#else
   int fd = mkstemp(path.data());
+#endif
   if (fd < 0) {
     BErrNo be;
     ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
