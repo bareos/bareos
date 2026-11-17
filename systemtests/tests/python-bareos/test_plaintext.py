@@ -45,6 +45,50 @@ from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class RestoreTreeSignalTest(bareos_unittest.Json):
+    def test_restore_rejects_replace_with_embedded_run_argument(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        with tempfile.TemporaryDirectory() as destination:
+            result = console.call(
+                f"restore jobid={backup} client=bareos-fd "
+                'restoreclient=bareos-fd all done replace="always yes" '
+                f'where="{destination}"'
+            )
+            queued = re.search(rb"Job queued\. JobId=(\d+)", result)
+            if queued:
+                jobid = int(queued.group(1))
+                admin.call(f"wait jobid={jobid}")
+                admin.call(f"delete jobid={jobid} yes")
+            self.assertIn(b"Invalid replace option: always yes", result)
+            self.assertNotIn(b"Job queued", result)
+            result = console.call(
+                f"restore jobid={backup} client=bareos-fd "
+                "restoreclient=bareos-fd all done replace=IfNewer yes "
+                f'where="{destination}"'
+            )
+            queued = re.search(rb"Job queued\. JobId=(\d+)", result)
+            self.assertIsNotNone(queued, result)
+            jobid = int(queued.group(1))
+            self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+            admin.call(f"wait jobid={jobid}")
+
     def test_selected_file_scroll_is_clamped_after_resize(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

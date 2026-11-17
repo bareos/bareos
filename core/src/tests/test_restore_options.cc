@@ -76,7 +76,7 @@ TEST(RestoreOptions, BuildsBasicRestoreRunCommand)
             "run job=\"RestoreFiles\" client=\"backup-fd\" "
             "restoreclient=\"target-fd\" storage=\"File\" "
             "bootstrap=\"/tmp/restore.bsr\" files=2 catalog=\"MyCatalog\" "
-            "where=\"/tmp/bareos-restores\" replace=IfNewer yes");
+            "where=\"/tmp/bareos-restores\" replace=\"IfNewer\" yes");
 }
 
 TEST(RestoreOptions, PrefersRegexWhereOverWhere)

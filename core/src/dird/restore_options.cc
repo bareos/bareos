@@ -108,11 +108,7 @@ std::string BuildRestoreRunCommand(const RestoreRunOptions& options)
     command += QuoteDirectorString(*options.where);
   }
 
-  if (!options.replace.empty()) {
-    command += " replace=";
-    command += options.replace;
-  }
-
+  AppendQuoted(command, "replace", options.replace);
   AppendQuoted(command, "pluginoptions", options.plugin_options);
   AppendQuoted(command, "comment", options.comment);
   AppendQuoted(command, "when", options.when);
