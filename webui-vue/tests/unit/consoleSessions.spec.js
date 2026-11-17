@@ -394,6 +394,71 @@ describe('console session store', () => {
     expect(written).toContain(frame)
   })
 
+  it('replays a trimmed selection in the alternate screen', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    for (let i = 0; i < 3; i++) {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'raw_response', id: '1',
+          text: `Select ${i}: ${'x'.repeat(100_000)}\n`, prompt: 'select',
+        }),
+      })
+    }
+
+    const replay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replay.push(text))
+    expect(replay[0]?.slice(0, 8)).toBe('\x1b[?1049h')
+    expect(replay.join('')).toContain('Select 2:')
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', text: '', prompt: 'main' }),
+    })
+    expect(replay.join('')).toContain('\x1b[?1049l')
+    for (let i = 0; i < 3; i++) {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'raw_response', id: '1',
+          text: `Output ${i}: ${'x'.repeat(100_000)}\n`, prompt: 'main',
+        }),
+      })
+    }
+    const laterReplay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => laterReplay.push(text))
+    expect(laterReplay[0]?.slice(0, 8)).not.toBe('\x1b[?1049h')
+  })
+
+  it('keeps selection state when clearing terminal replay', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:\n', prompt: 'select',
+      }),
+    })
+    consoleSessions.clearOutput('bareos-dir')
+    const replay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replay.push(text))
+    expect(replay[0]).toBe('\x1b[?1049h')
+  })
+
   it('wraps interactive selection frames in alternate-screen and clear sequences', () => {
     const consoleSessions = useConsoleSessionsStore()
     const written = []
