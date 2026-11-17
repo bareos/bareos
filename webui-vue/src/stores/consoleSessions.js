@@ -434,6 +434,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   // terminal contents when the Console page (re)mounts a terminal for it,
   // e.g. after switching tabs. Entries retain response boundaries for replay.
   const terminalLogs = new Map()
+  const terminalLogStartsInSelection = new Map()
   const TERMINAL_LOG_MAX_CHARS = 200_000
 
   const directors = computed(() => Object.keys(sessions))
@@ -462,6 +463,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       // (e.g. after switching Director tabs) reproduces the existing
       // session content instead of starting blank.
       const log = terminalLogs.get(normalizedDirector)
+      if (terminalLogStartsInSelection.get(normalizedDirector)) {
+        writer('\x1B[?1049h')
+      }
       if (log && log.length) {
         for (const entry of log) {
           writer(entry.text, entry.options)
@@ -488,7 +492,13 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     }
     let logLength = log.reduce((total, chunk) => total + chunk.text.length, 0)
     while (logLength > TERMINAL_LOG_MAX_CHARS && log.length > 1) {
-      logLength -= log.shift().text.length
+      const removed = log.shift()
+      logLength -= removed.text.length
+      if (removed.text === '\x1B[?1049h') {
+        terminalLogStartsInSelection.set(normalizedDirector, true)
+      } else if (removed.text === '\x1B[?1049l\r\n') {
+        terminalLogStartsInSelection.set(normalizedDirector, false)
+      }
     }
 
     terminalWriters.get(normalizedDirector)?.(text, options)
@@ -859,6 +869,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     session.output = []
     session.outputLineOpen = false
     terminalLogs.set(director || DEFAULT_DIRECTOR_NAME, [])
+    terminalLogStartsInSelection.set(director || DEFAULT_DIRECTOR_NAME, session.selectionActive)
     appendInfo(director, 'Console cleared.')
   }
 
