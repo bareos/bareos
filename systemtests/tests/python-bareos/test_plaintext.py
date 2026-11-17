@@ -111,6 +111,31 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
                 )
                 self.assertIn(b"filesetclient cannot be combined", result)
 
+    def test_restore_latest_rejects_other_selection_keywords(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        for argument in (
+            "jobid=1",
+            "select",
+            "file=/nonexistent",
+            "directory=/nonexistent",
+            "fileregex=.*",
+            "before=2020-01-01",
+        ):
+            for selection in (f"latest {argument}", f"{argument} latest"):
+                with self.subTest(selection=selection):
+                    result = console.call(
+                        f"restore {selection} client=bareos-fd fileset=SelfTest"
+                    )
+                    self.assertIn(b"latest cannot be combined", result)
+
     def test_restore_filesetclient_respects_acls(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
