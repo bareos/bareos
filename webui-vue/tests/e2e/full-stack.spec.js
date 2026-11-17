@@ -2638,6 +2638,23 @@ test('redraws wrapped console input without leaving stale rows', async ({ page }
   await expect(inputRows).toHaveCount(1)
 })
 
+test('passes Meta shortcuts through while keeping console editing keys', async ({ page }) => {
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('abc')
+  const textarea = page.locator('.xterm-helper-textarea')
+  const shortcutAllowed = await textarea.evaluate(element => element.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'v', metaKey: true, bubbles: true, cancelable: true })
+  ))
+  expect(shortcutAllowed).toBe(true)
+  await expect(consoleOutput).toContainText('abc')
+  await expect(consoleOutput).not.toContainText('abcv')
+  await page.keyboard.press('Meta+ArrowLeft')
+  await page.keyboard.press('Meta+Backspace')
+  await expect(consoleOutput).toContainText('ac')
+})
+
 test('pastes into the console editor and interactive selection', async ({ page }) => {
   const selectionInputs = []
   await page.routeWebSocket(/\/ws/, socket => {
