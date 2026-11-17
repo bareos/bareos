@@ -1826,13 +1826,14 @@ std::string TreeBrowser::RenderPanel() const
           break;
         case PluginOptionsEditMode::kEditingRowValue:
           if (plugin_options_adding_new_row_) {
-            preview_block.options.emplace_back(plugin_options_pending_key_,
-                                               plugin_options_edit_buffer_);
+            preview_block.options.emplace_back(
+                plugin_options_pending_key_, plugin_options_edit_buffer_, true);
           } else if (plugin_options_cursor_ > 0
                      && plugin_options_cursor_
                             <= preview_block.options.size()) {
             preview_block.options[plugin_options_cursor_ - 1].second
                 = plugin_options_edit_buffer_;
+            preview_block.options[plugin_options_cursor_ - 1].has_equals = true;
           }
           break;
         default:
@@ -2290,7 +2291,7 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
     if (IsEnterKey(key)) {
       ActivePluginBlock().options.emplace_back(
           plugin_options_pending_key_,
-          plugin_options_boolean_value_ ? "yes" : "no");
+          plugin_options_boolean_value_ ? "yes" : "no", true);
       plugin_options_cursor_ = ActivePluginBlock().options.size();
       plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
     } else if (key == kKeyCancel) {
@@ -2322,11 +2323,13 @@ void TreeBrowser::HandlePluginOptionsPaneKey(std::string_view key)
         case PluginOptionsEditMode::kEditingRowValue:
           if (plugin_options_adding_new_row_) {
             ActivePluginBlock().options.emplace_back(
-                plugin_options_pending_key_, plugin_options_edit_buffer_);
+                plugin_options_pending_key_, plugin_options_edit_buffer_, true);
             plugin_options_cursor_ = ActivePluginBlock().options.size();
           } else {
             ActivePluginBlock().options[plugin_options_cursor_ - 1].second
                 = plugin_options_edit_buffer_;
+            ActivePluginBlock().options[plugin_options_cursor_ - 1].has_equals
+                = true;
           }
           break;
         default:
