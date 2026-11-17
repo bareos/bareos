@@ -2510,6 +2510,49 @@ test('preserves console output split across unterminated chunks', async ({ page 
   await expect(consoleOutput).toContainText('single-result')
 })
 
+test('positions the console cursor at wide and combining characters', async ({ page }) => {
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  const textarea = page.locator('.xterm-helper-textarea')
+  const cursorX = () => textarea.evaluate(element => element.getBoundingClientRect().x)
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'AB')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('AB')
+  const asciiEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(cursorX).toBeLessThan(asciiEnd)
+  const columnWidth = asciiEnd - await cursorX()
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'A界')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('A界')
+  const wideEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(async () => wideEnd - await cursorX()).toBeCloseTo(2 * columnWidth, 0)
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'Ae\u0301B')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Ae\u0301B')
+  const combiningEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(async () => combiningEnd - await cursorX()).toBeCloseTo(columnWidth, 0)
+})
+
 test('pastes into the console editor and interactive selection', async ({ page }) => {
   const selectionInputs = []
   await page.routeWebSocket(/\/ws/, socket => {
