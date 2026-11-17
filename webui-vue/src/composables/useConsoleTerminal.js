@@ -64,6 +64,7 @@ export function useConsoleTerminal(options = {}) {
   let resizeDisposable = null
   let writeQueue = []
   let writing = false
+  let inputMarker = null
 
   // Keep cursor measurements and their writes together across xterm callbacks.
   function enqueueWrite(operation) {
@@ -178,21 +179,44 @@ export function useConsoleTerminal(options = {}) {
     enqueueWrite((activeTerminal, next) => activeTerminal.write(data, next))
   }
 
+  function eraseInput(activeTerminal, next) {
+    const buffer = activeTerminal.buffer.active
+    let erase = '\r\x1B[K'
+    if (inputMarker && inputMarker.line >= 0 && buffer.type === 'normal') {
+      const row = Math.max(1, inputMarker.line - buffer.baseY + 1)
+      erase = `\x1B[${row};1H\x1B[J`
+    }
+    inputMarker?.dispose()
+    inputMarker = null
+    activeTerminal.write(erase, next)
+  }
+
+  function clearInputLine() {
+    enqueueWrite(eraseInput)
+  }
+
   function writeInputLine(prefix, suffix) {
     enqueueWrite((activeTerminal, next) => {
-      activeTerminal.write(prefix, () => {
-        const buffer = activeTerminal.buffer.active
-        const column = buffer.cursorX
-        const line = buffer.baseY + buffer.cursorY
-        const marker = activeTerminal.registerMarker()
-        activeTerminal.write(suffix, () => {
-          const current = activeTerminal.buffer.active
-          const wrapped = column === activeTerminal.cols
-          const currentLine = marker ? marker.line : line
-          const row = Math.max(1, currentLine - current.baseY + 1 + Number(wrapped))
-          const col = wrapped ? 1 : column + 1
-          marker?.dispose()
-          activeTerminal.write(`\x1B[${row};${col}H`, next)
+      eraseInput(activeTerminal, () => {
+        inputMarker = activeTerminal.registerMarker()
+        activeTerminal.write(prefix, () => {
+          if (!suffix) {
+            next()
+            return
+          }
+          const buffer = activeTerminal.buffer.active
+          const column = buffer.cursorX
+          const line = buffer.baseY + buffer.cursorY
+          const marker = activeTerminal.registerMarker()
+          activeTerminal.write(suffix, () => {
+            const current = activeTerminal.buffer.active
+            const wrapped = column === activeTerminal.cols
+            const currentLine = marker ? marker.line : line
+            const row = Math.max(1, currentLine - current.baseY + 1 + Number(wrapped))
+            const col = wrapped ? 1 : column + 1
+            marker?.dispose()
+            activeTerminal.write(`\x1B[${row};${col}H`, next)
+          })
         })
       })
     })
@@ -200,6 +224,8 @@ export function useConsoleTerminal(options = {}) {
 
   function clear() {
     enqueueWrite((activeTerminal, next) => {
+      inputMarker?.dispose()
+      inputMarker = null
       activeTerminal.reset()
       next()
     })
@@ -220,6 +246,8 @@ export function useConsoleTerminal(options = {}) {
     dataDisposable = null
     resizeDisposable?.dispose()
     resizeDisposable = null
+    inputMarker?.dispose()
+    inputMarker = null
     terminal?.dispose()
     terminal = null
     writeQueue = []
@@ -232,6 +260,7 @@ export function useConsoleTerminal(options = {}) {
   return {
     mount,
     write,
+    clearInputLine,
     writeInputLine,
     clear,
     focus,

@@ -253,9 +253,8 @@ function focusConsole() {
   terminal.focus()
 }
 
-// Redraws the live (uncommitted) input line in place: return to column 0,
-// erase to end of line, write the prompt + current command, then move the
-// real terminal cursor back to the tracked edit position. This mirrors
+// Redraws the live (uncommitted) input line in place, then moves the real
+// terminal cursor back to the tracked edit position. This mirrors
 // what a PTY line-discipline would otherwise do, since input editing here
 // is handled locally (session.cmd/cursorPos) rather than by the Director.
 function redrawInputLine() {
@@ -267,12 +266,8 @@ function redrawInputLine() {
   const cursorPos = session.cursorPos ?? cmd.length
   const before = sanitizeTerminalText(cmd.slice(0, cursorPos))
   const after = sanitizeTerminalText(cmd.slice(cursorPos))
-  const prefix = `\r\x1B[K${session.currentPrompt ?? ''}${before}`
-  if (after) {
-    terminal.writeInputLine(prefix, after)
-  } else {
-    terminal.write(prefix)
-  }
+  const prefix = `${session.currentPrompt ?? ''}${before}`
+  terminal.writeInputLine(prefix, after)
 }
 
 // Wraps the raw terminal writer so any text the store writes (command
@@ -282,7 +277,7 @@ function redrawInputLine() {
 // "sticky" below interleaved asynchronous output.
 function makeTerminalWriter() {
   return (text, options) => {
-    terminal.write('\r\x1B[K')
+    terminal.clearInputLine()
     if (responseStreaming) {
       terminal.write('\x1B8')
       if (!options?.response && responseLineOpen) {
