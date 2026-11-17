@@ -272,7 +272,7 @@ function splitInteractivePrompt(text, promptKind) {
 
   return {
     outputText,
-    promptText,
+    promptText: sanitizeTerminalText(promptText),
   }
 }
 

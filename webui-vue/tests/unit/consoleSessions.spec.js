@@ -797,6 +797,39 @@ describe('console session store', () => {
     expect(replayed.join('')).toContain('bareos-\\x1b[31mred\nbareos-界')
   })
 
+  it('renders control characters in interactive prompts as plain text', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => written.push(text))
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1',
+        text: 'Choose \x1b[2J\x07item: ', prompt: 'sub',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').currentPrompt)
+      .toBe('Choose \\x1b[2J\\x07item: ')
+    consoleSessions.appendCommand('bareos-dir', '1')
+    expect(written.join('')).toContain('Choose \\x1b[2J\\x07item: 1')
+    expect(written.join('')).not.toContain('\x1b[2J')
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed.join('')).toContain('Choose \\x1b[2J\\x07item: 1')
+    expect(replayed.join('')).not.toContain('\x1b[2J')
+  })
+
   it('moves interactive restore prompts onto the live input line', () => {
     const consoleSessions = useConsoleSessionsStore()
 
