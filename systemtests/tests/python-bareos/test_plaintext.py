@@ -83,7 +83,12 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
         )
         self.addCleanup(admin.call, f"delete jobid={after_differential} yes")
         second = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
-        self.addCleanup(admin.call, f"delete jobid={second} yes")
+        second_present = [True]
+        self.addCleanup(
+            lambda: (
+                admin.call(f"delete jobid={second} yes") if second_present[0] else None
+            )
+        )
         data.write(b"incremental two")
         data.flush()
         os.utime(data.name, (2100000000, 2100000000))
@@ -145,6 +150,38 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
                     console.call("quit")
                 finally:
                     console.close()
+
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        console.call("restore")
+        points = console.call("2")
+        if b"FileSet@Client combinations" in points:
+            tuple_match = re.search(rb"(?m)^\s*(\d+): SelfTest@bareos-fd\s*$", points)
+            self.assertIsNotNone(tuple_match, points)
+            points = console.call(tuple_match.group(1).decode())
+        choice = re.search(
+            rb"(?m)^\s*(\d+):[^\n]*\bJobId=" + str(first).encode() + rb"\b",
+            points,
+        )
+        self.assertIsNotNone(choice, points)
+        admin.call(f"delete jobid={second} yes")
+        second_present[0] = False
+        result = console.call(choice.group(1).decode())
+        match = re.search(
+            rb"You have selected the following JobIds?: ([0-9,]+)", result
+        )
+        self.assertIsNotNone(match, result)
+        self.assertEqual(
+            {int(jobid) for jobid in match.group(1).split(b",")},
+            {int(first), int(first_differential), int(after_differential)},
+        )
+        console.call("quit")
 
     def test_reopened_tree_restores_changed_selection(self):
         username = self.get_operator_username()

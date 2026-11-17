@@ -28,7 +28,8 @@ SELECT full_backups.JobId,
        STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
        full_backups.FullJobFiles,
        full_backups.FullJobBytes,
-       full_backups.NextFullJobId
+       full_backups.NextFullJobId,
+       full_backups.NextFullStartTime
   FROM full_backups
   JOIN completed_jobs
     ON (completed_jobs.StartTime, completed_jobs.JobId)
@@ -38,5 +39,5 @@ SELECT full_backups.JobId,
            < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
  GROUP BY full_backups.JobId, full_backups.FullStartTime,
           full_backups.FullJobFiles, full_backups.FullJobBytes,
-          full_backups.NextFullJobId
+          full_backups.NextFullJobId, full_backups.NextFullStartTime
  ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC

@@ -45,6 +45,7 @@ namespace directordaemon {
 struct RestorePointCandidate {
   JobId_t JobId = 0;
   JobId_t NextFullJobId = 0;
+  std::string NextFullStartTime;
   utime_t RestorePoint = 0;
   uint32_t JobCount = 0;
   std::string JobNames;  /**< Distinct job names, comma separated. */
