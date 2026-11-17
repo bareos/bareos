@@ -21,6 +21,13 @@ backupjob="slow-backup-big-volume"
 parallelbackuplog="$tmp/backup-parallel-jobs.out"
 parallelrestorelog="$tmp/restore-parallel-jobs.out"
 bandwidthlog="$tmp/bandwidth-parallel-jobs.out"
+# Hold each connected File daemon job until the bandwidth assertion finishes.
+gate_dir=$(mktemp -d "$tmp/bandwidth-gate.XXXXXX")
+trap 'touch "$gate_dir/release"' EXIT
+cat >"$tmp/bandwidth-gate.sh" <<END_OF_GATE
+touch "$gate_dir/ready.\$1"
+while [ ! -f "$gate_dir/release" ]; do sleep 1; done
+END_OF_GATE
 
 rm -f $parallelbackuplog
 rm -f $parallelrestorelog
@@ -42,7 +49,6 @@ if [[ $(grep -c 'bwlimit=200kB/s' "$bandwidthlog" || :) -ne 2 ]]; then
   estat=1
 fi
 
-# Keep the jobs transferring while the bandwidth command is exercised.
 "${BAREOS_GENTESTDATA_BINARY}" --size=524288 >"${BackupDirectory}/bandwidth-test.bin"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -74,7 +80,8 @@ for attempt in $(seq 1 60); do
     <<<"status client=bareos-fd" >"$bandwidthlog"
   running=0
   for jobid in "${backup_jobids[@]}"; do
-    if grep -q "JobId $jobid Job .* is running" "$bandwidthlog"; then
+    if [[ -f "$gate_dir/ready.$jobid" ]] \
+      && grep -q "JobId $jobid Job .* is running" "$bandwidthlog"; then
       running=$((running + 1))
     fi
   done
@@ -100,6 +107,7 @@ if [[ $(grep -c 'Bwlimit=204,800' "$bandwidthlog" || :) -ne "$num_jobs" ]]; then
   cat "$bandwidthlog"
   estat=1
 fi
+touch "$gate_dir/release"
 
 {
   echo "@$out $parallelbackuplog"
