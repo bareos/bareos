@@ -762,6 +762,15 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     return 0;
   }
 
+  if (use_latest
+      && (job_index >= 0 || use_select || use_fileregex || !files.empty()
+          || !dirs.empty())) {
+    ua->ErrorMsg(
+        T_("latest cannot be combined with jobid, select, file, "
+           "directory or fileregex.\n"));
+    return 0;
+  }
+
   if (files.size() + dirs.size() > 0 || use_fileregex) {
     if (!GetClientName(ua, rx)) { return 0; }
 
