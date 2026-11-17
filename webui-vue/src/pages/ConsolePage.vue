@@ -428,6 +428,10 @@ function handleTerminalKey(event) {
     return true
   }
 
+  if (event.metaKey && (event.key.length === 1 || event.key === 'Meta')) {
+    return true
+  }
+
   const session = currentSession.value
 
   if (session.selectionActive) {
