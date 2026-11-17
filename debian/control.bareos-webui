@@ -1,0 +1,8 @@
+Package: bareos-webui
+Architecture: all
+Section: metapackages
+Depends: apt,
+   bareos-webui-vue (= ${binary:Version}),
+   ${misc:Depends}
+Description: Metapackage for the Vue-based Bareos WebUI
+ This package installs the Vue-based Bareos WebUI.

@@ -432,13 +432,22 @@ the commit hash and packaging release suffix when checking versions. Verify that
 installed compatibility package depends on :file:`bareos-webui-php` and
 that the latter owns the PHP application files.
 
-At 26, the PHP application upgrades as :file:`bareos-webui-php`. The
-compatibility package remains installed from 25 and also requires
-:file:`bareos-webui-vue` once PHP reaches version 26. Consequently, the
-upgrade retains PHP and automatically adds Vue and
-:file:`bareos-webui-proxy`, even if the Vue preview was never installed.
-Keep the compatibility package: its dependencies also protect the
-interfaces from automatic removal.
+At 26, the PHP application upgrades as :file:`bareos-webui-php`.
+On Debian-based systems, :file:`bareos-webui` upgrades to a metapackage
+depending on :file:`bareos-webui-vue`. On RPM-based systems, the
+compatibility package from 25 requires :file:`bareos-webui-vue` once PHP
+reaches version 26. Consequently, the upgrade retains PHP and automatically
+adds Vue and :file:`bareos-webui-proxy`, even if the Vue preview was never
+installed.
+
+On Debian-based systems, the bridge marks :file:`bareos-webui-php` as
+manually installed so that a later :command:`apt autoremove` does not remove
+PHP. The Bareos 26 metapackage also applies this marking when upgrading
+an older bridge build. This marking does not pin the PHP package version
+or prevent upgrades. Fresh Bareos 26 installations do not install PHP.
+
+The Bareos 26 metapackage depends on Vue, not PHP. Keep
+:file:`bareos-webui` installed to protect Vue from automatic removal.
 
 PHP remains available at :file:`/bareos-webui`, with its existing
 configuration location unchanged. Vue uses :file:`/bareos/`.
@@ -480,8 +489,10 @@ Fresh Bareos 26 installations
 
 Installing :file:`bareos-webui` on a fresh Bareos 26 system selects
 :file:`bareos-webui-vue` and its :file:`bareos-webui-proxy` dependency,
-**not PHP**. Vue provides the generic name; the Bareos 25 compatibility
-package is not installed.
+**not PHP**. Debian-based systems install a metapackage named
+:file:`bareos-webui` depending on Vue; on RPM-based systems, Vue
+provides the generic name. The Bareos 25 compatibility package is not
+installed.
 
 .. warning::
 
