@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,7 @@
 #include "lib/util.h"
 #include "lib/base64.h"
 
+#include <utility>
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
                                    const char* password,
@@ -48,26 +49,29 @@ CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
 
 CramMd5Handshake::ComparisonResult
 CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
-    const char* challenge) const
+    std::string_view chal) const
 {
-  uint32_t a, b;
-  char buffer[MAXHOSTNAMELEN]{"?"};  // at least one character
+  // all our challenges have the form <xyz@bashed-name>,
+  // where xyz does not contain @, so we just need to check that
+  // the challenge does not end with @bashed-name>!
 
-  bool scan_success = sscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
+  // all challenges end with @...>!
+  if (chal.size() <= 2 || chal.back() != '>') {
+    return ComparisonResult::FAILURE;
+  }
 
-  // string contains the closing ">" of the challenge
-  std::string challenge_qualified_name(buffer, strlen(buffer) - 1);
+  auto found_at = chal.find('@');
+  if (found_at == chal.npos) { return ComparisonResult::FAILURE; }
 
-  Dmsg1(debuglevel_, "my_name: <%s> - challenge_name: <%s>\n",
-        own_qualified_name_bashed_spaces_.c_str(),
-        challenge_qualified_name.c_str());
+  // remove '@' and '>' !
+  auto name = chal.substr(found_at + 1, chal.size() - found_at - 2);
 
-  if (!scan_success) { return ComparisonResult::FAILURE; }
+  if (name == own_qualified_name_bashed_spaces_) {
+    // chal contains our marker, so we reject it
+    return ComparisonResult::IS_SAME;
+  }
 
-  // check if the name in the challenge matches the daemons name
-  return own_qualified_name_bashed_spaces_ == challenge_qualified_name
-             ? ComparisonResult::IS_SAME
-             : ComparisonResult::IS_DIFFERENT;
+  return ComparisonResult::IS_DIFFERENT;
 }
 
 /* Authorize other end
