@@ -591,7 +591,7 @@ This package contains the common files for the python storage plugins.
 %package -n bareos-webui-php
 Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
-# Bareos 25.1.3~pre25 introduces the PHP rename and compatibility package.
+# The PHP WebUI was renamed to bareos-webui-php in 25.1.3~pre25.
 Obsoletes:     bareos-webui < 25.1.3~pre25
 
 BuildRequires: httpd
