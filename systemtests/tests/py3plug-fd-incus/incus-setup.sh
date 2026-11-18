@@ -20,6 +20,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+set -euo pipefail
+
 #shellcheck source=../../environment.in
 . ./environment
 
@@ -35,11 +37,10 @@ if ! incus image info "${INCUS_CT_BASE_NAME}" >/dev/null 2>&1; then
   echo "Setting up ${INCUS_CT_BASE_NAME} image"
   incus --verbose image export images:alpine/edge "${tmp}/${INCUS_CT_BASE_NAME}"
   incus --verbose image import "${tmp}/${INCUS_CT_BASE_NAME}" "${tmp}/${INCUS_CT_BASE_NAME}.root" --alias "${INCUS_CT_BASE_NAME}"
-  rm -fv "${tmp}/${INCUS_CT_BASE_NAME}*"
+  rm -fv "${tmp}/${INCUS_CT_BASE_NAME}"*
 fi
 
-
-if ! incus image info "${INCUS_VM_BASE_NAME}" >/dev/null 2>&1;then
+if ! incus image info "${INCUS_VM_BASE_NAME}" >/dev/null 2>&1; then
   echo "Setting up ${INCUS_VM_BASE_NAME} image"
   incus --verbose image export images:alpine/edge "${tmp}/${INCUS_VM_BASE_NAME}" --vm
   guestfish --rw -a "${tmp}/${INCUS_VM_BASE_NAME}.root" <<EOF
@@ -51,7 +52,7 @@ EOF
   qemu-img create -f qcow2 -o preallocation=metadata "${tmp}/disk.400M.qcow2" 400M
   virt-resize --shrink /dev/sda2 "${tmp}/${INCUS_VM_BASE_NAME}.root" "${tmp}/disk.400M.qcow2"
   incus --verbose image import "${tmp}/${INCUS_VM_BASE_NAME}" "${tmp}/disk.400M.qcow2" --alias "${INCUS_VM_BASE_NAME}"
-  rm -fv "${tmp}/${INCUS_VM_BASE_NAME}*" "${tmp}/disk.400M.qcow2"
+  rm -fv "${tmp}/${INCUS_VM_BASE_NAME}"* "${tmp}/disk.400M.qcow2"
 fi
 
 incus image list
