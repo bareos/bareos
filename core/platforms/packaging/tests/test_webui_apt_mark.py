@@ -30,6 +30,9 @@ ROOT = Path(__file__).resolve().parents[4]
 
 class WebuiAptMarkTest(unittest.TestCase):
     def test_only_bridge_migrations_mark_php_manual(self):
+        # On upgrade from a 25.1.3 bridge to Bareos 26, bareos-webui switches
+        # from PHP to Vue. Keep PHP installed by marking it manual so apt
+        # autoremove cannot remove it; only bridge versions have this package.
         cases = (
             (("configure",), False),
             (("configure", ""), False),
