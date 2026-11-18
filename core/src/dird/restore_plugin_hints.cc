@@ -667,6 +667,9 @@ bool HintProvidesDefaultsElsewhere(const PluginRestoreHint& hint)
 
 std::string BuildPluginOptionExample(const PluginRestoreHint& hint)
 {
+  // BARRI's restore targets are mutually exclusive.
+  if (hint.id == "barri") { return "files=..."; }
+
   std::vector<const PluginOptionHint*> preferred;
   for (const PluginOptionHint& option : hint.options) {
     if (option.status == "required") { preferred.push_back(&option); }
