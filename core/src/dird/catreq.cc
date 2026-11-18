@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ static char Find_media[]
 static char Get_Vol_Info[]
     = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
 static char Update_media[]
-    = "CatReq Job=%127s UpdateMedia VolName=%s"
+    = "CatReq Job=%127s UpdateMedia VolName=%127s"
       " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
       " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
       " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"

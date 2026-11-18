@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,9 +100,9 @@ static char unmountcmd[] = "unmount %127s drive=%hd";
 static char releasecmd[] = "release %127s drive=%hd";
 static char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
 static char replicatecmd[]
-    = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
+    = "replicate JobId=%d Job=%S address=%S port=%d ssl=%d "
       "Authorization=%100s";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d";
+static char passiveclientcmd[] = "passive client address=%S port=%d ssl=%d";
 static char resolvecmd[] = "resolve %s";
 static char pluginoptionscmd[] = "pluginoptions %s";
 
@@ -1599,8 +1599,9 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
-  if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-             &tls_policy, sd_auth_key.c_str())
+  if (bsscanf(dir->msg, replicatecmd, &JobId, sizeof(JobName), JobName,
+              sizeof(stored_addr), stored_addr, &stored_port, &tls_policy,
+              sd_auth_key.c_str())
       != 6) {
     std::string cpy{dir->msg};
     dir->fsend(BADcmd, "replicate", cpy.c_str());
@@ -1701,8 +1702,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
-  if (sscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
-             &tls_policy)
+  if (bsscanf(cpy.c_str(), passiveclientcmd, sizeof(filed_addr), filed_addr,
+              &filed_port, &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
