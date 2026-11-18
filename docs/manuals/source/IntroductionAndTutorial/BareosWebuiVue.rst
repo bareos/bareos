@@ -13,10 +13,6 @@ It was introduced as a technical preview in Bareos 25.1.
 Starting with Bareos 26, it is the default interface selected by the
 :file:`bareos-webui` package name. The classic PHP-based
 :ref:`section-webui` remains available separately.
-Installing the PHP WebUI on Bareos 26 is not recommended: it is planned
-to reach end of life (EOL) in Bareos 27. Use Vue for new installations
-and plan to migrate existing PHP WebUI installations before upgrading
-to Bareos 27.
 
 Coexistence with the classic WebUI
 ----------------------------------
@@ -32,8 +28,11 @@ In a typical Apache deployment they use separate URLs:
 * classic WebUI: :file:`/bareos-webui`
 * Vue WebUI: :file:`/bareos/`
 
-The Apache configuration redirects :file:`/` and the former
-:file:`/bareos-webui-new/` URL to :file:`/bareos/`.
+.. note::
+
+   The default Apache configuration shipped with the Vue WebUI redirects
+   :file:`/` and the former :file:`/bareos-webui-new/` URL to
+   :file:`/bareos/`.
 
 The Vue WebUI uses the same Bareos Director console concepts as the classic
 WebUI, so user access still depends on properly configured
