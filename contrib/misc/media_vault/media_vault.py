@@ -355,8 +355,10 @@ class MediaVault():
             msg = ""
             if (json_exp.jsondata["error"]["code"] == 1
                     and json_exp.jsondata["error"]["message"] == "failed"):
-                if isinstance(json_exp.jsondata["error"]["data"]["messages"], dict):
-                    if warnings := json_exp.jsondata["error"]["data"]["messages"].get("warning"):
+                error_data = json_exp.jsondata["error"].get("data")
+                messages = error_data.get("messages") if isinstance(error_data, dict) else None
+                if isinstance(messages, dict):
+                    if warnings := messages.get("warning"):
                         msg = f"{''.join(warnings).strip()}\n"
                         logger.debug (
                                 "_bconsole_export_volumes unsuccessful\n"
