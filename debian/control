@@ -469,7 +469,9 @@ Description: Metapackage for the Vue-based Bareos WebUI
 Package: bareos-webui-new
 Architecture: all
 Section: oldlibs
+# TODO: Remove this transitional package in Bareos 27.
 Depends: bareos-webui-vue (>= 26~),
+   bareos-webui-vue (<< 27~),
    ${misc:Depends}
 Description: Transitional package for the Vue-based Bareos WebUI
  This package upgrades the Bareos 25.1 technical preview to bareos-webui-vue.

@@ -83,7 +83,14 @@ else()
 
   if(NOT client-only)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui")
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-new")
+    if(BAREOS_VERSION_MAJOR LESS 27)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-new")
+    else()
+      message(
+        FATAL_ERROR
+          "Remove bareos-webui-new from Debian packaging before Bareos 27."
+      )
+    endif()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-php")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-proxy")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui-vue")
