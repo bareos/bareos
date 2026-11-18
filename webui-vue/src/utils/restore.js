@@ -349,6 +349,20 @@ function escapeRegexWherePart(value) {
   return String(value ?? '').replace(/[!\\]/g, '\\$&')
 }
 
+function literalPrefixRule(prefix, replacement, ignoreCase = true) {
+  // Match the Director's literal RegexWhere format.
+  const literal = /^!|\\|\$[0-9]/.test(replacement)
+  const delimiter = literal ? '@' : '!'
+  const pattern = [...prefix].map(char => {
+    if (char === '\\') return String.raw`[\\]`
+    return char === delimiter || '.^$|()[]{}*+?'.includes(char) ? `\\${char}` : char
+  }).join('')
+  const target = literal
+    ? replacement.replace(/[%@\\]/g, char => ({ '%': '%25', '@': '%40', '\\': '%5C' })[char])
+    : escapeRegexWherePart(replacement)
+  return `${delimiter}^${pattern}${delimiter}${target}${delimiter}${ignoreCase ? 'i' : ''}`
+}
+
 export function buildRegexWhereFromRelocationRules({
   stripPrefix = '',
   addPrefix = '',
@@ -356,13 +370,13 @@ export function buildRegexWhereFromRelocationRules({
 } = {}) {
   const parts = []
   if (stripPrefix) {
-    parts.push(`!${escapeRegexWherePart(stripPrefix)}!!i`)
+    parts.push(literalPrefixRule(stripPrefix, ''))
   }
   if (addSuffix) {
     parts.push(`!([^/])$!$1${escapeRegexWherePart(addSuffix)}!`)
   }
   if (addPrefix) {
-    parts.push(`!^!${escapeRegexWherePart(addPrefix)}!`)
+    parts.push(literalPrefixRule('', addPrefix, false))
   }
   return parts.join(',')
 }
@@ -385,14 +399,14 @@ export function buildRegexWhereFromRelocationMode({
   switch (relocationMode) {
     case 'windows-drive':
       return sourceDrive && targetDrive
-        ? `!^${escapeRegexWherePart(sourceDrive)}!${escapeRegexWherePart(targetDrive)}!i`
+        ? literalPrefixRule(sourceDrive, targetDrive)
         : ''
     case 'replace-prefix':
       return sourcePrefix && targetPrefix
-        ? `!^${escapeRegexWherePart(sourcePrefix)}!${escapeRegexWherePart(targetPrefix)}!i`
+        ? literalPrefixRule(sourcePrefix, targetPrefix)
         : ''
     case 'strip-prefix':
-      return stripPrefix ? `!${escapeRegexWherePart(stripPrefix)}!!i` : ''
+      return stripPrefix ? literalPrefixRule(stripPrefix, '') : ''
     case 'add-suffix':
       return addSuffix ? `!([^/])$!$1${escapeRegexWherePart(addSuffix)}!` : ''
     case 'custom-regex':
@@ -483,9 +497,12 @@ function parseRegexWhereExpression(expression) {
 
     if (fields.length === 2) {
       parts.push({
-        pattern: unescapeRegexWherePart(fields[0]),
-        replacement: unescapeRegexWherePart(fields[1]),
+        pattern: fields[0],
+        replacement: delimiter === '@'
+          ? fields[1].replace(/%25|%40|%5C/g, escape => ({ '%25': '%', '%40': '@', '%5C': '\\' })[escape])
+          : unescapeRegexWherePart(fields[1]),
         flags,
+        literal: delimiter === '@',
       })
     }
   }
@@ -497,7 +514,8 @@ function applyRegexWherePreview(samplePath, regexWhere) {
   for (const part of parseRegexWhereExpression(regexWhere)) {
     try {
       const flags = part.flags.includes('i') ? 'i' : ''
-      result = result.replace(new RegExp(part.pattern, flags), part.replacement)
+      result = result.replace(new RegExp(part.pattern, flags),
+        part.literal ? () => part.replacement : part.replacement)
     } catch {
       return regexWhere || result
     }
@@ -523,20 +541,6 @@ export function previewRelocatedPath({
 
   if (relocationMode === 'where' || relocationMode === 'none') {
     return where || previewPath || ''
-  }
-
-  if (relocationMode === 'rules') {
-    let result = String(previewPath ?? '')
-    if (stripPrefix && result.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
-      result = result.slice(stripPrefix.length)
-    }
-    if (addSuffix && result.length > 0) {
-      result += addSuffix
-    }
-    if (addPrefix) {
-      result = `${addPrefix}${result}`
-    }
-    return result
   }
 
   const resolvedRegexWhere = buildRegexWhereFromRelocationMode({
@@ -623,7 +627,7 @@ export function filterRestoreBackupsByCriteria(backups, {
 
     if (normalizedBefore) {
       const starttime = String(backup?.starttime ?? '')
-      if (!starttime || starttime > normalizedBefore) {
+      if (!starttime || starttime.slice(0, normalizedBefore.length) > normalizedBefore) {
         return false
       }
     }
@@ -786,9 +790,7 @@ export function buildRestoreBackupChains(
     if (startsChain) {
       currentChain = {
         value: String(point.jobid ?? `chain-${chains.length}`),
-        label: point.displayStarttime
-          ? `Full #${point.jobid} · ${point.displayStarttime}`
-          : `Full #${point.jobid}`,
+        rootLevelCode: point.levelCode,
         rootJobid: point.jobid,
         rootStarttime: point.starttime,
         rootDisplayStarttime: point.displayStarttime,
@@ -1209,7 +1211,8 @@ export function findMatchingRestorePluginDefinition(hintId, definitions, hintsBy
 }
 
 
-export function buildRestorePluginOptionExample(pluginHint) {
+export function buildRestorePluginOptionExample(pluginHint, hintId) {
+  if (hintId === 'barri') return 'files=...'
   const options = Array.isArray(pluginHint?.options) ? pluginHint.options : []
   const preferredOptions = options.filter(option => option.status === 'required')
   const exampleOptions = (preferredOptions.length > 0 ? preferredOptions : options)
@@ -1273,7 +1276,7 @@ export function getRestorePluginHints(pluginInfo, hintsById) {
   return hintIds.map((hintId) => ({
     id: hintId,
     ...hintsById[hintId],
-    example: buildRestorePluginOptionExample(hintsById[hintId]),
+    example: buildRestorePluginOptionExample(hintsById[hintId], hintId),
   }))
 }
 
@@ -1282,7 +1285,7 @@ export function getAllRestorePluginHints(hintsById) {
     .map(([hintId, hint]) => ({
       id: hintId,
       ...hint,
-      example: buildRestorePluginOptionExample(hint),
+      example: buildRestorePluginOptionExample(hint, hintId),
     }))
     .sort((left, right) => left.displayName.localeCompare(right.displayName))
 }

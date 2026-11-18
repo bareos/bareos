@@ -40,6 +40,7 @@
         color="primary"
         :icon="showDetails ? 'expand_less' : 'expand_more'"
         :label="showDetails ? t('Hide details') : t('Show details & hints')"
+        :aria-expanded="showDetails"
         @click="showDetails = !showDetails"
       />
     </div>

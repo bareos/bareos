@@ -34,7 +34,7 @@ namespace {
 
 // clang-format off
 constexpr PluginOptionHint kBarriOptions[] = {
-    {"files", "required", "Comma-separated target devices or files to restore the BARRI image to; mutually exclusive with directory and copy.", "plugin-doc", PluginOptionType::kPath},
+    {"files", "optional", "Comma-separated target devices or files to restore the BARRI image to; mutually exclusive with directory and copy.", "plugin-doc", PluginOptionType::kPath},
     {"directory", "optional", "Restore disks into generated files below this directory; mutually exclusive with files and copy.", "plugin-doc", PluginOptionType::kPath},
     {"copy", "optional", "Copy the BARRI image to this file for manual recovery with barri-cli; mutually exclusive with files and directory.", "plugin-doc", PluginOptionType::kPath},
     {"save-unreferenced-disks", "optional", "Try to save disks that contain no snapshotted data. Default: yes.", "plugin-doc", PluginOptionType::kBoolean},

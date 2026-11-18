@@ -163,7 +163,7 @@ const {
   downloadBackup,
   triggerRestoreFilePicker,
   onRestoreFileSelected,
-} = useBackupRestore({ t, $q })
+} = useBackupRestore({ t, $q, onRestored: () => applyDark(settings.darkMode) })
 
 function applyDark(val) {
   $q.dark.set(val)

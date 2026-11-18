@@ -402,7 +402,7 @@ export const useDirectorStore = defineStore('director', () => {
 
     return new Promise((resolve, reject) => {
       const auth = useAuthStore()
-      const creds = auth.getCredentials()
+      const creds = auth.getCredentials(options.director)
       if (!creds) { return reject(new Error('Not logged in')) }
       const onChunk = typeof options.onChunk === 'function' ? options.onChunk : null
       const onStateChange = typeof options.onStateChange === 'function'

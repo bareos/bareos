@@ -835,9 +835,16 @@ async function openConsole(page) {
   const consoleOutput = page.locator('[data-testid="console-output"]')
   await page.goto('/#/console-popup')
   await expect(consoleOutput).toBeVisible()
-  await expect(page.getByTestId('console-status-label')).toContainText(
-    'Connected'
-  )
+  const connected = page.getByTestId('console-status-label').filter({ hasText: /^Connected$/ })
+  const reconnect = page.getByTestId('console-reconnect-overlay')
+    .getByRole('button', { name: 'Reconnect', exact: true })
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await expect(connected.or(reconnect).first()).toBeVisible()
+    if (await connected.isVisible()) break
+    await reconnect.click()
+    await expect(reconnect).toBeHidden()
+  }
+  await expect(connected).toBeVisible()
   return consoleOutput
 }
 
@@ -878,7 +885,9 @@ async function selectQOptionByFilterText(
       if (hasText) {
         options = options.filter({ hasText })
       }
-      const option = options.first()
+      const option = options.filter({
+        hasText: new RegExp(filterText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+      }).first()
       await expect(option).toBeVisible({ timeout: optionTimeoutMs })
       await expect(option).toContainText(filterText, { ignoreCase: true })
       // a short timeout lets a detached option fail fast so the retry can run

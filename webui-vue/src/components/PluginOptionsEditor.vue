@@ -81,13 +81,13 @@
           new-value-mode="add-unique"
           class="col-4"
           :label="t('Option')"
-          :options="filteredKeyOptions(option.key)"
+          :options="filteredKeyOptions(option.key, keySearch.get(option))"
           :option-label="opt => (typeof opt === 'string' ? opt : opt.name)"
           :option-value="opt => (typeof opt === 'string' ? opt : opt.name)"
           emit-value
           map-options
           data-testid="plugin-options-editor-row-key"
-          @filter="(val, update) => filterKeyOptions(val, update)"
+          @filter="(val, update) => update(() => keySearch.set(option, val))"
           @update:model-value="emitModelValue"
         >
           <template #option="scope">
@@ -193,6 +193,7 @@ function parsedOrEmpty(value) {
 
 const blocks = ref(parsedOrEmpty(props.modelValue))
 const activeIndex = ref(0)
+const keySearch = ref(new WeakMap())
 let lastEmitted = buildPluginOptionsDocument(blocks.value)
 
 watch(() => props.modelValue, (value) => {
@@ -201,6 +202,7 @@ watch(() => props.modelValue, (value) => {
   }
   blocks.value = parsedOrEmpty(value)
   activeIndex.value = 0
+  lastEmitted = value
 })
 
 const activeBlock = computed(() => blocks.value[activeIndex.value] ?? null)
@@ -260,7 +262,7 @@ function currentFilesetOptionKeysAndDefinition() {
   return { keys: definition?.optionKeys ?? [], definition }
 }
 
-function filteredKeyOptions(currentValue) {
+function filteredKeyOptions(currentValue, search = '') {
   const resolved = currentHint()
   const hint = resolved?.hint
   const usedKeys = new Set(
@@ -286,7 +288,8 @@ function filteredKeyOptions(currentValue) {
 
   const result = []
   for (const { label, group, options } of groups) {
-    const visible = options.filter(option => !usedKeys.has(option.name))
+    const visible = options.filter(option => !usedKeys.has(option.name)
+      && option.name.toLowerCase().includes(search.trim().toLowerCase()))
     visible.forEach((option, index) => {
       result.push({
         ...option,
@@ -302,13 +305,6 @@ function filteredKeyOptions(currentValue) {
   return result
 }
 
-function filterKeyOptions(val, update) {
-  update(() => {
-    // Options are already computed reactively via :options binding; this
-    // handler only needs to exist so q-select's use-input mode keeps the
-    // typed text instead of resetting it.
-  })
-}
 </script>
 
 <style scoped>

@@ -504,7 +504,7 @@
                       />
                     </div>
                     <q-banner
-                      v-if="quickRestoreDestination === 'original'"
+                      v-if="quickRestoreWritesInPlace"
                       dense
                       class="bg-warning text-black q-mt-sm"
                       data-testid="quick-restore-original-warning"
@@ -545,7 +545,7 @@
               <q-btn
                 color="primary" no-caps
                 :label="t('Continue to Review')"
-                :disable="!destinationStepDone"
+                    :disable="!canRestore"
                 data-testid="restore-step-3-continue"
                 @click="activeStep = 4"
               />
@@ -578,7 +578,7 @@
               </q-card-section>
               <q-card-section class="q-pt-none">
                 <q-banner
-                  v-if="quickRestoreDestination === 'original' && sourceMode === 'latest'"
+                  v-if="sourceMode === 'latest' && quickRestoreWritesInPlace"
                   dense
                   class="bg-warning text-black q-mb-sm"
                   data-testid="quick-restore-confirm-original-warning"
@@ -764,7 +764,6 @@
           flat dense
           :loading="destinationBrowseDialog.loading"
           :pagination="{ rowsPerPage: 200, sortBy: 'name' }"
-          hide-bottom
           class="destination-browser-table"
           data-testid="restore-destination-browser"
         >
@@ -1093,6 +1092,10 @@ function formatRestoreTime(value) {
 const sourceMode = ref('latest')
 const quickRestoreDestination = ref('safe')
 const quickRestoreSafeWhere = ref(defaultRestoreWhere)
+const quickRestoreWritesInPlace = computed(() => (
+  quickRestoreDestination.value === 'original'
+  || /^[\\/]+$/.test(quickRestoreSafeWhere.value?.trim() ?? '')
+))
 const sourceWorkflowOptions = computed(() => [
   {
     label: t('Quick Restore'),
@@ -1176,6 +1179,16 @@ const destinationBrowseClient = computed(() => (
   form.value.restoreclient || sourceClientName.value
 ))
 
+let destinationBrowseRequest = 0
+watch(() => [destinationBrowseDialog.value.open, destinationBrowseClient.value, sourceDirector.value],
+  ([open], [wasOpen]) => {
+    if (open && !wasOpen) return
+    destinationBrowseRequest++
+    destinationBrowseDialog.value.loading = false
+    destinationBrowseDialog.value.entries = []
+    if (open) destinationBrowseDialog.value.open = false
+  }, { flush: 'sync' })
+
 const parentDestinationBrowsePath = computed(() => (
   parentClientBrowsePath(destinationBrowseDialog.value.path)
 ))
@@ -1185,10 +1198,11 @@ const destinationBrowseBreadcrumbs = computed(() => {
     return [{ label: '/', path: '/' }]
   }
 
-  const crumbs = [{ label: '/', path: '/' }]
-  let current = ''
-  normalized.split('/').filter(Boolean).forEach((part) => {
-    current += `/${part}`
+  const root = normalized.match(/^[A-Za-z]:\//)?.[0] ?? '/'
+  const crumbs = [{ label: root, path: root }]
+  let current = root
+  normalized.slice(root.length).split('/').filter(Boolean).forEach((part) => {
+    current += `${current.endsWith('/') ? '' : '/'}${part}`
     crumbs.push({ label: part, path: current })
   })
   return crumbs
@@ -1330,8 +1344,8 @@ async function applyRouteSourceSelection() {
     if (qMode && sourceMode.value !== qMode) {
       sourceMode.value = qMode
     }
-    form.value.mergeJobs = true
-    form.value.mergeFilesets = false
+    form.value.mergeJobs = route.query.mergejobs !== '0'
+    form.value.mergeFilesets = route.query.mergefilesets === '1'
     const resolvedDirector = resolveRestoreSourceDirector(activeDirectors.value, qDirector)
 
     if (resolvedDirector) {
@@ -1377,15 +1391,11 @@ async function applyRouteSourceSelection() {
               sourceFilesetFilter.value
             )
           }
-          if (form.value.jobid !== nextJobid) {
-            form.value.jobid = nextJobid
-            await initBrowser()
-          }
+          form.value.jobid = nextJobid
+          await initBrowser()
         } else if (sourceMode.value === 'latest' && latestBackupJobid.value !== null) {
-          if (form.value.jobid !== latestBackupJobid.value) {
-            form.value.jobid = latestBackupJobid.value
-            await initBrowser()
-          }
+          form.value.jobid = latestBackupJobid.value
+          await initBrowser()
         } else if (form.value.jobid !== null) {
           form.value.jobid = null
           browserReady.value = false
@@ -1711,11 +1721,18 @@ const restoreBackupChainSummaryLabel = computed(() => {
     return ''
   }
 
-  return t('{count} jobs since Full #{jobid} from {starttime}', {
-    count: chain.jobCount,
-    jobid: chain.rootJobid,
-    starttime: chain.rootDisplayStarttime || '—',
-  })
+  const label = chain.rootLevelCode === 'F'
+    ? t('{count} jobs since Full #{jobid} from {starttime}', {
+        count: chain.jobCount,
+        jobid: chain.rootJobid,
+        starttime: chain.rootDisplayStarttime || '—',
+      })
+    : t('{count} jobs since #{jobid} from {starttime}; Full backup unavailable', {
+        count: chain.jobCount,
+        jobid: chain.rootJobid,
+        starttime: chain.rootDisplayStarttime || '—',
+      })
+  return label
 })
 
 function isRestoreTimelinePointSelected(point) {
@@ -1724,8 +1741,12 @@ function isRestoreTimelinePointSelected(point) {
 
 function restoreChainDependencyLabel(index) {
   const point = visibleRestoreChainPoints.value[index]
-  if (point?.levelCode === 'F' || index === 0) {
+  if (point?.levelCode === 'F') {
     return t('Full backup')
+  }
+
+  if (index === 0 || selectedRestoreBackupChain.value?.rootLevelCode !== 'F') {
+    return t('Full backup unavailable')
   }
 
   if (point?.levelCode === 'D') {
@@ -1757,7 +1778,6 @@ async function selectRestoreBackupChain(chain) {
   if (latestJobid === null) {
     return
   }
-  form.value.jobid = latestJobid
   form.value.jobid = latestJobid
   await onBackupJobSelected(latestJobid)
 }
@@ -1843,10 +1863,10 @@ async function loadBackups(client) {
   loadingBackups.value = true
   try {
     await ensureScopeDirector(client.director)
+    void pluginHintsStore.ensureLoaded().catch(() => null)
     const [r, filesets] = await Promise.all([
       director.call(`llist backups client=${quoteDirectorString(client.name)}`),
       director.call('list filesets').catch(() => null),
-      pluginHintsStore.ensureLoaded().catch(() => null),
     ])
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     rawPluginFilesets.value = filesets?.filesets ?? null
@@ -1865,25 +1885,42 @@ async function loadBackups(client) {
 
 // Loads recent completed backup jobs across all clients so the tuple selector
 // can offer only backup sources that really exist in the catalog.
-const MAX_ALL_CLIENT_BACKUPS = 1000
+const BACKUP_PAGE_SIZE = 1000
+let allBackupsRequest = 0
 
 async function loadAllClientBackups() {
+  const request = ++allBackupsRequest
+  const scope = sourceDirector.value
+  const current = () => request === allBackupsRequest && scope === sourceDirector.value
   loadingBackups.value = true
   try {
     await ensureSelectedSourceDirector()
-    const r = await director.call(buildListJobsCommand({
-      limit: MAX_ALL_CLIENT_BACKUPS,
-      statusFilter: 'T,W',
-      typeFilter: 'B',
-      sortColumn: 'starttime',
-      descending: true,
-    }))
-    allClientBackups.value = directorCollection(r?.jobs)
-      .sort((a, b) => Number(b.jobid) - Number(a.jobid))
-  } catch (_) {
-    allClientBackups.value = []
+    const jobs = new Map()
+    for (let offset = 0; current(); offset += BACKUP_PAGE_SIZE) {
+      const r = await director.call(buildListJobsCommand({
+        limit: BACKUP_PAGE_SIZE,
+        offset,
+        statusFilter: 'T,W',
+        typeFilter: 'B',
+        sortColumn: 'jobid',
+        descending: true,
+      }))
+      const page = directorCollection(r?.jobs)
+      const previousSize = jobs.size
+      for (const job of page) jobs.set(job.jobid, job)
+      if (page.length < BACKUP_PAGE_SIZE) break
+      if (jobs.size === previousSize) {
+        throw new Error(t('Failed to load backup history.'))
+      }
+    }
+    if (current()) allClientBackups.value = [...jobs.values()]
+  } catch (error) {
+    if (current()) {
+      allClientBackups.value = []
+      $q.notify({ type: 'negative', message: error.message || t('Failed to load backup history.') })
+    }
   } finally {
-    loadingBackups.value = false
+    if (request === allBackupsRequest) loadingBackups.value = false
   }
 }
 
@@ -1999,6 +2036,7 @@ function initBrowser() {
   if (key === browserInitKey && (browserInitPromise || browserInitComplete)) {
     return browserInitPromise || Promise.resolve()
   }
+  if (key !== browserInitKey) clearBrowserState()
   const generation = ++browserInitGeneration
   browserInitKey = key
   browserInitComplete = false
@@ -2063,8 +2101,9 @@ async function initializeBrowser(generation) {
   }
 }
 
-async function fetchDir(pathId, initGeneration = null) {
+async function fetchDir(pathId, initGeneration = browserInitGeneration) {
   await ensureSelectedSourceDirector()
+  if (initGeneration !== browserInitGeneration) return false
   const jids = mergedJobids.value
   const pathArg = pathId != null ? `pathid=${pathId}` : 'path='
   const [drPrimary, frPrimary] = await Promise.all([
@@ -2084,15 +2123,18 @@ async function fetchDir(pathId, initGeneration = null) {
       director.call(`.bvfs_lsfiles jobid=${jids} path=@ limit=2000`).catch(() => null),
     ])
 
-    if (rootDirsEmpty && Array.isArray(drFallback?.directories) && drFallback.directories.length > 0) {
+    if (rootDirsEmpty && drFallback !== null) {
       dr = drFallback
     }
-    if (rootFilesEmpty && Array.isArray(frFallback?.files) && frFallback.files.length > 0) {
+    if (rootFilesEmpty && frFallback !== null) {
       fr = frFallback
     }
   }
 
-  if (initGeneration !== null && initGeneration !== browserInitGeneration) return
+  if (initGeneration !== browserInitGeneration) return false
+  if (dr === null || fr === null) {
+    throw new Error(t('Failed to load file tree'))
+  }
 
   const dirs  = (dr?.directories ?? [])
     .filter(d => d.name && d.name !== '.' && d.name !== '..' && d.name !== './' && d.name !== '../')
@@ -2129,6 +2171,7 @@ async function fetchDir(pathId, initGeneration = null) {
   fileVersionsCache.value = new Map()
   const dirKey = versionCheckDirKey
   checkVersionsInBackground(files, dirKey)
+  return true
 }
 
 async function navigateInto(row) {
@@ -2143,17 +2186,18 @@ async function navigateInto(row) {
     label: row.name,
     pathId: row.pathId,
   })
+  const generation = browserInitGeneration
   loadingBrowser.value = true
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(row.pathId)
+    if (!await fetchDir(row.pathId, generation)) return
     navStack.value = nextStack
     browserReady.value = true
   } catch (e) {
-    browserError.value = e.message || t('Failed to load file tree')
+    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
   } finally {
-    loadingBrowser.value = false
+    if (generation === browserInitGeneration) loadingBrowser.value = false
   }
 }
 
@@ -2166,18 +2210,19 @@ async function navigateTo(index) {
   }
 
   const nextStack = truncateRestoreBreadcrumbs(navStack.value, index)
+  const generation = browserInitGeneration
   const pathId = nextStack[nextStack.length - 1].pathId
   loadingBrowser.value = true
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(pathId)
+    if (!await fetchDir(pathId, generation)) return
     navStack.value = nextStack
     browserReady.value = true
   } catch (e) {
-    browserError.value = e.message || t('Failed to load file tree')
+    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
   } finally {
-    loadingBrowser.value = false
+    if (generation === browserInitGeneration) loadingBrowser.value = false
   }
 }
 
@@ -2190,16 +2235,17 @@ async function reloadCurrentDir() {
   }
 
   const pathId = navStack.value[navStack.value.length - 1].pathId
+  const generation = browserInitGeneration
   loadingBrowser.value = true
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(pathId)
+    if (!await fetchDir(pathId, generation)) return
     browserReady.value = true
   } catch (e) {
-    browserError.value = e.message || t('Failed to load file tree')
+    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
   } finally {
-    loadingBrowser.value = false
+    if (generation === browserInitGeneration) loadingBrowser.value = false
   }
 }
 
@@ -2249,9 +2295,7 @@ const commandStatusMessage = ref('')
 const commandLogScroll = ref(null)
 
 const canRestore = computed(() =>
-  !!form.value.jobid &&
-  !!form.value.restorejob &&
-  (selectedFiles.value.size > 0 || selectedDirs.value.size > 0)
+  destinationStepDone.value && filesStepDone.value && browserReady.value
 )
 
 // Restore wizard step state: the stepper walks Backup source ->
@@ -2270,7 +2314,7 @@ const filesStepDone = computed(() => (
 ))
 const destinationLocationDone = computed(() => (
   form.value.relocationMode === 'none' || form.value.relocationMode === 'where'
-    ? !!form.value.where
+    ? !!form.value.where?.trim()
     : !!resolveRestoreRegexWhere(form.value)
 ))
 const destinationStepDone = computed(() => (
@@ -2395,16 +2439,19 @@ const restoreConfirmSummaryRows = computed(() => {
 
 function normalizeClientBrowsePath(path) {
   const value = String(path || '/')
-  const trimmed = value.replace(/[\\/]+$/, '')
+  const normalized = /^[A-Za-z]:[\\/]/.test(value) ? value.replace(/\\/g, '/') : value
+  if (/^[A-Za-z]:\/+$/.test(normalized)) return normalized.slice(0, 3)
+  const trimmed = normalized.replace(/[\\/]+$/, '')
   return trimmed || '/'
 }
 
 function parentClientBrowsePath(path) {
   const normalized = normalizeClientBrowsePath(path)
-  if (normalized === '/') {
-    return '/'
+  if (normalized === '/' || /^[A-Za-z]:\/$/.test(normalized)) {
+    return normalized
   }
   const separator = Math.max(normalized.lastIndexOf('/'), normalized.lastIndexOf('\\'))
+  if (separator === 2 && /^[A-Za-z]:\//.test(normalized)) return normalized.slice(0, 3)
   return separator <= 0 ? '/' : normalized.slice(0, separator)
 }
 
@@ -2421,14 +2468,21 @@ async function openDestinationBrowse() {
 }
 
 async function loadDestinationBrowsePath(path) {
+  const request = ++destinationBrowseRequest
+  const client = destinationBrowseClient.value
+  const target = normalizeClientBrowsePath(path)
+  const current = () => request === destinationBrowseRequest && destinationBrowseDialog.value.open
   destinationBrowseDialog.value.loading = true
   destinationBrowseDialog.value.error = ''
-  destinationBrowseDialog.value.path = normalizeClientBrowsePath(path)
+  destinationBrowseDialog.value.entries = []
+  destinationBrowseDialog.value.path = target
   try {
     await ensureSelectedSourceDirector()
+    if (!current()) return
     const response = await director.call(
-      `.clientbrowse client=${quoteDirectorString(destinationBrowseClient.value)} path=${quoteDirectorString(destinationBrowseDialog.value.path)}`
+      `.clientbrowse client=${quoteDirectorString(client)} path=${quoteDirectorString(target)}`
     )
+    if (!current()) return
     const browseResult = response?.entries
       ? response
       : (response?.['.clientbrowse'] ?? response?.clientbrowse ?? {})
@@ -2439,10 +2493,11 @@ async function loadDestinationBrowsePath(path) {
         type: String(entry.type ?? 'file'),
       }))
   } catch (error) {
+    if (!current()) return
     destinationBrowseDialog.value.entries = []
     destinationBrowseDialog.value.error = error.message || t('Unable to browse destination client.')
   } finally {
-    destinationBrowseDialog.value.loading = false
+    if (current()) destinationBrowseDialog.value.loading = false
   }
 }
 
@@ -2539,7 +2594,7 @@ function clearCommandLog() {
   commandStatusMessage.value = ''
 }
 
-async function runRestoreCommands(title, commands) {
+async function runRestoreCommands(title, commands, expectedDirector) {
   if (commandRunning.value) {
     throw new Error(t('Another command is still running.'))
   }
@@ -2552,7 +2607,7 @@ async function runRestoreCommands(title, commands) {
   commandStatusPrompt.value = ''
   commandStatusMessage.value = ''
   commandRunning.value = true
-  await scrollCommandLogToBottom()
+  void scrollCommandLogToBottom()
 
   let finalState = {
     status: 'starting',
@@ -2573,7 +2628,11 @@ async function runRestoreCommands(title, commands) {
   }
 
   try {
+    if (sourceDirector.value !== expectedDirector || auth.user?.director !== expectedDirector) {
+      throw new Error(t('The Director changed. Review the restore settings and try again.'))
+    }
     return await director.rawCallSequence(commands, {
+      director: expectedDirector,
       onChunk: (chunk) => {
         if (!chunk) {
           return
@@ -2615,9 +2674,10 @@ async function doRestore() {
     .join(',')
   const dirids   = [...selectedDirs.value.keys()].join(',')
   const jids     = mergedJobids.value
+  const expectedDirector = sourceDirector.value
+  const generation = browserInitGeneration
 
   try {
-    await ensureSelectedSourceDirector()
     const prepareCommand = buildRestoreBvfsRestoreCommand({
       jobids: jids,
       fileids,
@@ -2628,6 +2688,16 @@ async function doRestore() {
     if (sourceMode.value === 'latest') {
       applyQuickRestoreDefaults()
     }
+    const submissionState = () => JSON.stringify([
+      activeStep.value,
+      sourceMode.value,
+      form.value,
+      mergedJobids.value,
+      [...selectedFiles.value.keys()],
+      [...selectedDirs.value.keys()],
+      [...fileVersionOverrides.value],
+    ])
+    const reviewedState = submissionState()
     const src = form.value.client
     const dst = form.value.restoreclient || src
     const pluginOptions = form.value.pluginoptions.trim()
@@ -2644,9 +2714,14 @@ async function doRestore() {
       priority: Number.isInteger(form.value.priority) ? form.value.priority : null,
       yes: true,
     })
+    await ensureScopeDirector(expectedDirector)
+    if (generation !== browserInitGeneration || reviewedState !== submissionState()) {
+      throw new Error(t('The restore settings changed. Review them and try again.'))
+    }
     const result = await runRestoreCommands(
       t('Queue restore job'),
-      [prepareCommand, cmd]
+      [prepareCommand, cmd],
+      expectedDirector
     )
 
     const jobid = extractQueuedJobId(result)
@@ -2673,6 +2748,8 @@ async function doRestore() {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function clearBrowserState() {
+  browserReady.value = false
+  versionsDialog.value.open = false
   browserInitGeneration++
   browserInitKey = null
   browserInitPromise = null
@@ -2828,6 +2905,7 @@ const versionsCols = [
 ]
 
 async function openVersions(row) {
+  const generation = browserInitGeneration
   versionsDialog.value = {
     open:           true,
     loading:        true,
@@ -2838,8 +2916,12 @@ async function openVersions(row) {
     versions:       [],
     selectedFileId: fileVersionOverrides.value.get(row.fileId) ?? row.fileId,
   }
+  const dialog = versionsDialog.value
+  const current = () => generation === browserInitGeneration
+    && versionsDialog.value === dialog && dialog.open
   try {
     await ensureSelectedSourceDirector()
+    if (!current()) return
     const cachedVersions = fileVersionsCache.value.get(row.fileId)
     if (Array.isArray(cachedVersions) && cachedVersions.length > 0) {
       versionsDialog.value.versions = cachedVersions
@@ -2847,6 +2929,7 @@ async function openVersions(row) {
       const r = await director.call(
         `.bvfs_versions jobid=${versionsLookupJobId.value} client="${sourceClientName.value}" pathid=${row.pathId} fname=${row.name}`
       )
+      if (!current()) return
       const versions = filterRestoreVersionsByJobids(
         directorCollection(r?.versions),
         mergedJobids.value
@@ -2866,9 +2949,9 @@ async function openVersions(row) {
         : (versionsDialog.value.versions[0]?.fileid ?? null)
     }
   } catch (e) {
-    versionsDialog.value.error = e.message
+    if (current()) dialog.error = e.message
   } finally {
-    versionsDialog.value.loading = false
+    if (current()) dialog.loading = false
   }
 }
 
@@ -2933,8 +3016,6 @@ async function init() {
 
   if (sourceMode.value === 'latest') {
     applyQuickRestoreDefaults()
-    form.value.mergeJobs = true
-    form.value.mergeFilesets = false
     if (latestBackupJobid.value !== null && form.value.jobid !== latestBackupJobid.value) {
       form.value.jobid = latestBackupJobid.value
       await initBrowser()
@@ -3015,7 +3096,8 @@ watch(() => [
 
 watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, nextFilesets], [previousJobs, previousFilesets]) => {
   if (
-    (nextJobs === previousJobs && nextFilesets === previousFilesets)
+    applyingRouteSourceSelection
+    || (nextJobs === previousJobs && nextFilesets === previousFilesets)
     || !form.value.jobid
   ) {
     return
@@ -3024,23 +3106,14 @@ watch(() => [form.value.mergeJobs, form.value.mergeFilesets], async ([nextJobs, 
   await initBrowser()
 })
 
-watch(showPluginOptions, (visible) => {
-  if (!visible) {
-    form.value.pluginoptions = ''
-  } else if (!form.value.pluginoptions && defaultPluginOptionsDocument.value) {
-    form.value.pluginoptions = defaultPluginOptionsDocument.value
+watch([showPluginOptions, defaultPluginOptionsDocument], ([visible, doc], [, previous]) => {
+  if (doc !== previous && form.value.pluginoptions && form.value.pluginoptions !== previous) {
+    $q.notify({ type: 'warning', message: t('Plugin options were reset because the restore plugin changed.') })
   }
-})
-
-// If the detected plugin definition changes (e.g. the user switches
-// which backup job is selected) while the panel is already open and the
-// user hasn't typed anything yet, keep the prefill in sync rather than
-// leaving a stale or empty field.
-watch(defaultPluginOptionsDocument, (doc) => {
-  if (showPluginOptions.value && !form.value.pluginoptions && doc) {
-    form.value.pluginoptions = doc
+  if (!visible || doc !== previous || !form.value.pluginoptions) {
+    form.value.pluginoptions = visible ? doc : ''
   }
-})
+}, { immediate: true })
 
 // ── "Latest Backup" source mode wiring ──────────────────────────────────────
 watch(sourceMode, async (mode) => {
@@ -3162,7 +3235,8 @@ watch(() => [
 }
 
 .restore-confirm-card {
-  min-width: min(760px, 95vw);
+  width: 100%;
+  max-width: 760px;
 }
 
 .restore-confirm-summary {

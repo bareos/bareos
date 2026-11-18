@@ -276,7 +276,6 @@ describe('restore browser placeholder', () => {
       fileset: '',
       secondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
       absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
-      absoluteSecondary: '#42 · 2026-06-09 10:00:00 · 2048 B · 12 files',
     })
   })
 
@@ -356,6 +355,10 @@ describe('restore browser placeholder', () => {
     expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS' }))
       .toEqual([backups[0], backups[2]])
     expect(filterRestoreBackupsByCriteria(backups, { beforeFilter: '2026-06-05 10:00:00' }))
+      .toEqual([backups[0], backups[1]])
+    expect(filterRestoreBackupsByCriteria(backups, { beforeFilter: '2026-06-05' }))
+      .toEqual([backups[0], backups[1]])
+    expect(filterRestoreBackupsByCriteria(backups, { beforeFilter: '2026-06-05 10:00' }))
       .toEqual([backups[0], backups[1]])
     expect(filterRestoreBackupsByCriteria(backups, { filesetFilter: 'FullFS', beforeFilter: '2026-06-05 10:00:00' }))
       .toEqual([backups[0]])
@@ -522,7 +525,7 @@ describe('restore browser placeholder', () => {
 
     expect(chains[0].rootStarttime).toBe('2026-06-01 10:00:00')
     expect(chains[0].rootDisplayStarttime).toBe('relative:2026-06-01 10:00:00')
-    expect(chains[0].label).toBe('Full #1 · relative:2026-06-01 10:00:00')
+    expect(chains[0].rootLevelCode).toBe('F')
     expect(chains[0].jobs[1].displayStarttime).toBe('relative:2026-06-02 10:00:00')
   })
 
@@ -801,14 +804,29 @@ describe('restore browser placeholder', () => {
       stripPrefix: '/home',
       addPrefix: '/restore',
       addSuffix: '.restored',
-    })).toBe('!/home!!i,!([^/])$!$1.restored!,!^!/restore!')
+    })).toBe('!^/home!!i,!([^/])$!$1.restored!,!^!/restore!')
   })
 
   it('escapes regexwhere separators in relocation rules', () => {
     expect(buildRegexWhereFromRelocationRules({
       stripPrefix: '/a!b\\c',
       addPrefix: '/target!',
-    })).toBe('!/a\\!b\\\\c!!i,!^!/target\\!!')
+    })).toBe(String.raw`!^/a\!b[\\]c!!i,!^!/target\!!`)
+  })
+
+  it('changes only literal leading prefixes and preserves literal replacement text', () => {
+    const options = {
+      relocationMode: 'replace-prefix',
+      sourcePrefix: String.raw`C:\Program Files (x86)\a+b[1].old$`,
+      targetPrefix: String.raw`D:\1st\$1`,
+    }
+    expect(previewRelocatedPath({ ...options, samplePath: `${options.sourcePrefix}/report` }))
+      .toBe(String.raw`D:\1st\$1/report`)
+    for (const relocationMode of ['strip-prefix', 'rules']) {
+      expect(previewRelocatedPath({
+        relocationMode, stripPrefix: '/home', samplePath: '/var/home/alice',
+      })).toBe('/var/home/alice')
+    }
   })
 
   it('resolves restore regexwhere from relocation mode', () => {
@@ -824,7 +842,7 @@ describe('restore browser placeholder', () => {
       relocationMode: 'rules',
       stripPrefix: '/home',
       addPrefix: '/restore',
-    })).toBe('!/home!!i,!^!/restore!')
+    })).toBe('!^/home!!i,!^!/restore!')
   })
 
   it('builds regexwhere from console-style relocation modes', () => {
@@ -841,7 +859,7 @@ describe('restore browser placeholder', () => {
     expect(buildRegexWhereFromRelocationMode({
       relocationMode: 'strip-prefix',
       stripPrefix: '/home',
-    })).toBe('!/home!!i')
+    })).toBe('!^/home!!i')
     expect(buildRegexWhereFromRelocationMode({
       relocationMode: 'add-suffix',
       addSuffix: '.restored',
@@ -1200,7 +1218,7 @@ describe('restore browser placeholder', () => {
     }))
     expect(hints[0].options[0]).toEqual(expect.objectContaining({
       name: 'files',
-      status: 'required',
+      status: 'optional',
       type: 'path',
     }))
     expect(hints).toContainEqual(expect.objectContaining({
