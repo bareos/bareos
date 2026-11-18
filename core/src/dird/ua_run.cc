@@ -690,8 +690,6 @@ bool RunCmd(UaContext* ua, const char*) { return (DoRunCmd(ua, ua->cmd) != 0); }
 
 int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 {
-  int opt;
-
   // At user request modify parameters of job to be run.
   if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, T_("mod"), strlen(ua->cmd))) {
     if (jcr->is_JobType(JT_RESTORE)) {
@@ -704,11 +702,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
     AddPrompt(ua, T_("Storage")); /* 1 */
     AddPrompt(ua, T_("Job"));     /* 2 */
     AddPrompt(ua, T_("FileSet")); /* 3 */
-    if (jcr->is_JobType(JT_RESTORE)) {
-      AddPrompt(ua, T_("Restore Client")); /* 4 */
-    } else {
-      AddPrompt(ua, T_("Client")); /* 4 */
-    }
+    AddPrompt(ua, T_("Client"));        /* 4 */
     AddPrompt(ua, T_("Backup Format")); /* 5 */
     AddPrompt(ua, T_("When"));          /* 6 */
     AddPrompt(ua, T_("Priority"));      /* 7 */
@@ -727,13 +721,6 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
       } else if (jcr->is_JobType(JT_BACKUP)) {
         AddPrompt(ua, T_("Plugin Options")); /* 9 */
       }
-    } else if (jcr->is_JobType(JT_RESTORE)) {
-      AddPrompt(ua, T_("Bootstrap"));       /* 8 */
-      AddPrompt(ua, T_("Where"));           /* 9 */
-      AddPrompt(ua, T_("File Relocation")); /* 10 */
-      AddPrompt(ua, T_("Replace"));         /* 11 */
-      AddPrompt(ua, T_("JobId"));           /* 12 */
-      AddPrompt(ua, T_("Plugin Options"));  /* 13 */
     }
 
     switch (DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0)) {
@@ -830,7 +817,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         }
         break;
       case 8:
-        /* Pool or Bootstrap depending on JobType */
+        /* Pool */
         if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY)
             || jcr->is_JobType(JT_MIGRATE)
             || jcr->is_JobType(JT_VERIFY)) { /* Pool */
@@ -843,16 +830,10 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
                   jcr->dir_impl->res.pool->resource_name_);
             goto try_again;
           }
-        } else {
-          /* Bootstrap */
-          if (GetCmd(ua, T_("Please enter the Bootstrap file name: "))) {
-            SetRestoreBootstrap(ua, jcr, ua->cmd);
-            goto try_again;
-          }
         }
         break;
       case 9:
-        /* NextPool/Verify Job/Where/Plugin Options depending on JobType */
+        /* NextPool/Verify Job/Plugin Options depending on JobType */
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
             || (jcr->is_JobType(JT_BACKUP)
                 && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
@@ -867,70 +848,17 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
           rc.verify_job = select_job_resource(ua);
           if (rc.verify_job) { jcr->dir_impl->res.verify_job = rc.verify_job; }
           goto try_again;
-        } else if (jcr->is_JobType(JT_RESTORE)) { /* Where */
-          if (GetCmd(ua, T_("Please enter the full path prefix for restore (/ "
-                            "for none): "))) {
-            if (!ua->AclAccessOk(Where_ACL, ua->cmd, true)) {
-              ua->SendMsg(
-                  T_("No authorization for \"where\" specification.\n"));
-            } else {
-              if (jcr->RegexWhere) { /* cannot use regexwhere and where */
-                free(jcr->RegexWhere);
-                jcr->RegexWhere = NULL;
-              }
-              if (jcr->where) {
-                free(jcr->where);
-                jcr->where = NULL;
-              }
-              // "/" is treated as no prefix.
-              if (IsPathSeparator(ua->cmd[0]) && ua->cmd[1] == '\0') {
-                ua->cmd[0] = 0;
-              }
-              jcr->where = strdup(ua->cmd);
-            }
-            goto try_again;
-          }
         } else { /* Plugin Options */
           GetPluginOptions(ua, jcr);
           goto try_again;
         }
         break;
       case 10:
-        /* File relocation/Plugin Options depending on JobType */
-        if (jcr->is_JobType(JT_RESTORE)) {
-          SelectWhereRegexp(ua, jcr);
-          goto try_again;
-        } else if (jcr->is_JobType(JT_BACKUP)) {
+        /* Plugin Options */
+        if (jcr->is_JobType(JT_BACKUP)) {
           GetPluginOptions(ua, jcr);
           goto try_again;
         }
-        break;
-      case 11:
-        /* Replace */
-        StartPrompt(ua, T_("Replace:\n"));
-        for (int i = 0; ReplaceOptions[i].name; i++) {
-          AddPrompt(ua, ReplaceOptions[i].name);
-        }
-        opt = DoPrompt(ua, "", T_("Select replace option"), NULL, 0);
-        if (opt >= 0) {
-          rc.replace = ReplaceOptions[opt].name;
-          jcr->dir_impl->replace = ReplaceOptions[opt].token;
-        }
-        goto try_again;
-      case 12:
-        /* JobId */
-        rc.jid = NULL; /* force reprompt */
-        jcr->dir_impl->RestoreJobId = 0;
-        if (jcr->RestoreBootstrap) {
-          ua->SendMsg(T_(
-              "You must set the bootstrap file to NULL to be able to specify "
-              "a JobId.\n"));
-        }
-        goto try_again;
-      case 13:
-        /* Plugin Options */
-        GetPluginOptions(ua, jcr);
-        goto try_again;
         break;
       case -1: /* error or cancel */
         return -1;
