@@ -108,36 +108,8 @@ adjust the relevant policy. On SELinux, check
 Upgrading from Bareos 25
 ------------------------
 
-Before switching repositories, read :ref:`section-WebuiMigration26` for
-the package transition, the intermediate Bareos 25 upgrade and how fresh
-Bareos 26 installations differ.
-
-To retain an existing PHP WebUI automatically, first upgrade to
-**Bareos 25.1.3 or a later Bareos 25 release**, then to Bareos 26.
-These Bareos 25 releases package PHP as :file:`bareos-webui-php`.
-Verify that both it and the :file:`bareos-webui` compatibility package
-are installed before switching repositories. Keep the compatibility
-package installed during the upgrade, particularly on Debian systems
-where its dependencies prevent the interfaces from becoming automatically
-removable. It contains no PHP application code.
-
-For prerelease packages, ``25.1.3~pre24`` (including its commit hash and
-packaging release suffix) is still legacy. ``25.1.3~pre25`` and later
-prereleases contain the package rename. Verify the compatibility dependency
-and that :file:`bareos-webui-php` owns the PHP application files before
-upgrading.
-
-On Debian-based systems the old :file:`bareos-webui-new` preview package
-becomes a transitional package depending on :file:`bareos-webui-vue`.
-On RPM-based systems the Vue package replaces the old preview package.
-Installed PHP and Vue interfaces can therefore be retained independently.
-A fresh Bareos 26 installation of :file:`bareos-webui` selects only Vue.
-
-Do not assume that a direct upgrade from an earlier Bareos 25 release will
-preserve the PHP WebUI automatically. If the intermediate upgrade was
-skipped, back up your WebUI configuration, explicitly install
-:file:`bareos-webui-php` as part of the upgrade, and verify both the retained
-configuration and PHP access before removing legacy packages.
+For package migration and upgrade instructions, see
+:ref:`section-WebuiMigration26`.
 
 Configuring multiple directors
 ------------------------------
@@ -168,8 +140,8 @@ Then edit :file:`/etc/bareos-webui-proxy/bareos-webui-proxy.ini`:
 
 Each section name (e.g. ``bareos-dir``, ``site-b``) is shown as a selectable
 Director in the WebUI login and scope menu.
-Set ``director_name`` only when the real Bareos Director name differs from the
-section name — this is the name the Director announces in its greeting banner.
+For available options, including ``director_name``, see
+:ref:`Director section options <webui-vue-director-options>`.
 
 After changing the config, restart the proxy:
 
@@ -209,6 +181,8 @@ allows switching between them or viewing data from all Directors at once.
    * - ``max_unauthenticated_connections``
      - ``100``
      - Maximum concurrent connections that have not yet completed login.
+
+.. _webui-vue-director-options:
 
 ``[<director>]`` section options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
