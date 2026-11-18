@@ -144,12 +144,17 @@ override_dh_shlibdeps:
 
 override_dh_installdocs:
 	dh_installdocs
-	set -e; for package in bareos-webui bareos-webui-new; do \
-		docdir=debian/$$package/usr/share/doc/$$package/selenium; \
+	set -e; generate_standalone_selenium_script() { \
+		docdir=debian/$$1/usr/share/doc/$$1/selenium; \
 		if [ -d "$$docdir" ]; then \
-			install -m 644 systemtests/scripts/selenium_screenshots.py "$$docdir/"; \
+			python3 systemtests/scripts/bundle_selenium_test.py \
+				"$$2" "$$docdir/$$(basename "$$2")"; \
 		fi; \
-	done
+	}; \
+	generate_standalone_selenium_script bareos-webui \
+		webui/tests/selenium/webui-php-selenium-test.py; \
+	generate_standalone_selenium_script bareos-webui-new \
+		webui-vue/tests/selenium/webui-selenium-test.py
 
 
 %:

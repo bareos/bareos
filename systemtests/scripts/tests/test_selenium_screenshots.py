@@ -28,15 +28,22 @@ from selenium_screenshots import ScreenshotResult, ScreenshotTestCase
 class ScreenshotResultTest(unittest.TestCase):
     def test_packaged_scripts_start_without_source_tree(self):
         root = Path(__file__).resolve().parents[3]
-        helper = root / "systemtests/scripts/selenium_screenshots.py"
+        bundler = root / "systemtests/scripts/bundle_selenium_test.py"
         for script in (
             root / "webui/tests/selenium/webui-php-selenium-test.py",
             root / "webui-vue/tests/selenium/webui-selenium-test.py",
         ):
             with self.subTest(script=script.name):
-                with tempfile.TemporaryDirectory() as directory:
-                    shutil.copy2(script, directory)
-                    shutil.copy2(helper, directory)
+                with tempfile.TemporaryDirectory() as package:
+                    bundled = Path(package) / script.name
+                    directory = Path(package) / "staged"
+                    directory.mkdir()
+                    subprocess.run(
+                        [sys.executable, str(bundler), str(script), str(bundled)],
+                        check=True,
+                        timeout=15,
+                    )
+                    shutil.copy2(bundled, directory)
                     environment = dict(os.environ)
                     environment.pop("PYTHONPATH", None)
                     environment["BAREOS_BROWSER_ARTIFACTS_DIR"] = directory
@@ -55,8 +62,6 @@ class ScreenshotResultTest(unittest.TestCase):
                         import sys
                         from pathlib import Path
                         import unittest
-                        from selenium_screenshots import ScreenshotRunner
-
                         module = runpy.run_path(sys.argv[1])
                         base = module.get("SeleniumTest", module.get("SeleniumVueTest"))
 
@@ -82,7 +87,7 @@ class ScreenshotResultTest(unittest.TestCase):
                             def test_failure(self):
                                 self.fail("packaged failure")
 
-                        result = ScreenshotRunner().run(
+                        result = module["ScreenshotRunner"]().run(
                             unittest.TestSuite([BrowserCase("test_failure")])
                         )
                         assert len(result.failures) == 1
