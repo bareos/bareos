@@ -30,7 +30,6 @@ Environment variables (all optional):
 
 import logging
 import os
-import sys
 import unittest
 
 from selenium import webdriver
@@ -42,12 +41,17 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+# BEGIN source-only screenshot import
+import sys
+
 sys.path.append(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
     )
 )
 from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
+
+# END source-only screenshot import
 
 logging.basicConfig(
     level=logging.INFO,

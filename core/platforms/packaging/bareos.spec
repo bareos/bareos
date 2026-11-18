@@ -144,6 +144,9 @@ BuildRequires: qt-devel
 BuildRequires: python3-devel >= 3.6
 %endif
 
+%if 0%{?webui}
+BuildRequires: python3
+%endif
 
 %if 0%{?suse_version}
 
@@ -919,11 +922,15 @@ popd
 
 
 %if 0%{?webui}
-# Include the shared helper when RPM copies each documentation directory.
-install -m 644 systemtests/scripts/selenium_screenshots.py \
-  webui/tests/selenium/selenium_screenshots.py
-install -m 644 systemtests/scripts/selenium_screenshots.py \
-  webui-vue/tests/selenium/selenium_screenshots.py
+mkdir -p selenium-docs/webui selenium-docs/webui-vue
+cp -Rp webui/tests/selenium selenium-docs/webui/
+cp -Rp webui-vue/tests/selenium selenium-docs/webui-vue/
+python3 systemtests/scripts/bundle_selenium_test.py \
+  webui/tests/selenium/webui-php-selenium-test.py \
+  selenium-docs/webui/selenium/webui-php-selenium-test.py
+python3 systemtests/scripts/bundle_selenium_test.py \
+  webui-vue/tests/selenium/webui-selenium-test.py \
+  selenium-docs/webui-vue/selenium/webui-selenium-test.py
 %endif
 
 install -d -m 755 %{buildroot}/usr/share/applications
@@ -1029,7 +1036,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-,root,root,-)
 %doc webui/README.md webui/copyright
 %doc webui/doc/README-TRANSLATION.md
-%doc webui/tests/selenium
+%doc selenium-docs/webui/selenium
 %{_datadir}/%{name}-webui/
 %dir /etc/bareos-webui
 %{configtemplatedir}/bareos-dir.d/console/admin.conf.example
@@ -1040,7 +1047,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files webui-new
 %defattr(-,root,root,-)
-%doc webui-vue/tests/selenium
+%doc selenium-docs/webui-vue/selenium
 %{_datadir}/%{name}-webui-new/
 %config(noreplace) %{_apache_conf_dir}/bareos-webui-new.conf
 
