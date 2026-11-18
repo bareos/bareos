@@ -101,10 +101,10 @@ inline constexpr const char releasecmd[] = "release %127s drive=%hd";
 inline constexpr const char readlabelcmd[]
     = "readlabel %127s Slot=%hd drive=%hd";
 inline constexpr const char replicatecmd[]
-    = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
+    = "replicate JobId=%lu Job=%S address=%S port=%d ssl=%lu "
       "Authorization=%100s";
 inline constexpr const char passiveclientcmd[]
-    = "passive client address=%s port=%d ssl=%d";
+    = "passive client address=%S port=%d ssl=%d";
 inline constexpr const char resolvecmd[] = "resolve %s";
 inline constexpr const char pluginoptionscmd[] = "pluginoptions %s";
 
@@ -1616,8 +1616,9 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
-  if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-             &tls_policy, sd_auth_key.c_str())
+  if (bsscanf(dir->msg, replicatecmd, &JobId, sizeof(JobName), JobName,
+              sizeof(stored_addr), stored_addr, &stored_port, &tls_policy,
+              sd_auth_key.c_str())
       != 6) {
     std::string cpy{dir->msg};
     dir->fsend(BADcmd, "replicate", cpy.c_str());
@@ -1720,8 +1721,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PassiveClientCmd: %s", cpy.c_str());
-  if (sscanf(cpy.c_str(), passiveclientcmd, filed_addr, &filed_port,
-             &tls_policy)
+  if (bsscanf(cpy.c_str(), passiveclientcmd, sizeof(filed_addr), filed_addr,
+              &filed_port, &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad passiveclientcmd command: %s"), jcr->errmsg);
