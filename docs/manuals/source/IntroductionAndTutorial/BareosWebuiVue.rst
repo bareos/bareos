@@ -101,21 +101,9 @@ directive takes effect and the proxy can mark HTTPS session cookies
 SELinux and AppArmor
 --------------------
 
-On a fresh enforcing-SELinux installation, Apache may be denied access to
-the Vue proxy on localhost port 9104. A loopback address does not bypass
-network policy. The WebUI packages do not enable
-``httpd_can_network_connect`` automatically. Check its state and the
-web-server domain, then make an explicit administrator policy decision as
-described in :ref:`section-webui-selinux`. The boolean grants broad HTTPD
-network access, not localhost-only access.
-
-Before attributing a failure to confinement, verify that
-:command:`bareos-webui-proxy` is running and listening on its configured
-address. Inspect the Apache error log and SELinux AVC/AppArmor ``DENIED``
-records. The connection-error hint is conditional, not a diagnosis.
-Wrong credentials and Director ACL errors require separate investigation.
-For AppArmor, inspect and adapt the enforcing web-server profile; see
-:ref:`section-webui-apparmor`. Do not disable either security system.
+If Apache cannot reach the proxy, check SELinux/AppArmor audit logs and
+adjust the relevant policy. On SELinux, check
+``httpd_can_network_connect``. Do not disable either security system.
 
 Upgrading from Bareos 25
 ------------------------
