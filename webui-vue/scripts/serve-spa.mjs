@@ -157,6 +157,12 @@ const server = createServer(async (req, res) => {
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? `${host}:${port}`}`)
   const requestPath = url.pathname.replace(/^\/bareos(?=\/|$)/, '')
+  if (url.search !== '') {
+    socket.write('HTTP/1.1 400 Bad Request\r\n\r\n')
+    socket.destroy()
+    return
+  }
+
   if (requestPath !== '/ws' || !wsProxyHost || !wsProxyPort) {
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
     socket.destroy()

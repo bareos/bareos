@@ -111,7 +111,7 @@ describe('SPA server under /bareos/', () => {
 
   it('forwards WebSocket upgrades to the unprefixed upstream route', async () => {
     const headers = await new Promise((resolve, reject) => {
-      const request = http.get(`${baseUrl}/bareos/ws?session=a%2Fb`, {
+      const request = http.get(`${baseUrl}/bareos/ws`, {
         headers: { Connection: 'Upgrade', Upgrade: 'websocket' },
       })
       request.on('upgrade', (response, socket) => {
@@ -124,7 +124,25 @@ describe('SPA server under /bareos/', () => {
       })
       request.on('error', reject)
     })
-    expect(headers['x-upstream-path']).toBe('/ws?session=a%2Fb')
+    expect(headers['x-upstream-path']).toBe('/ws')
+  })
+
+  it('rejects WebSocket upgrades with query parameters', async () => {
+    const statusCode = await new Promise((resolve, reject) => {
+      const request = http.get(`${baseUrl}/bareos/ws?session=a%2Fb`, {
+        headers: { Connection: 'Upgrade', Upgrade: 'websocket' },
+      })
+      request.on('upgrade', (response, socket) => {
+        socket.destroy()
+        reject(new Error(`Expected request rejection, got ${response.statusCode}`))
+      })
+      request.on('response', response => {
+        response.resume()
+        resolve(response.statusCode)
+      })
+      request.on('error', reject)
+    })
+    expect(statusCode).toBe(400)
   })
 
   it('rejects encoded traversal to a sibling sharing the root prefix', async () => {
