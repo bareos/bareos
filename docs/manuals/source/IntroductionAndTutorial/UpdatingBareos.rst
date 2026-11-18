@@ -460,10 +460,8 @@ PHP-FPM and HTTPS setup; follow the
 Direct upgrades
 ^^^^^^^^^^^^^^^
 
-Do not assume that upgrading directly to 26 from a release before
-25.1.3 preserves the PHP WebUI automatically. Package-manager
-dependency resolution differs: the PHP WebUI may not be selected
-under its new name. This does not mean every direct upgrade fails.
+A direct upgrade to Bareos 26 does not guarantee that the PHP WebUI will
+remain installed.
 
 If the intermediate Bareos 25 upgrade was skipped, back up the WebUI
 configuration and explicitly install :file:`bareos-webui-php` as part of
@@ -475,8 +473,8 @@ are wanted. This route does not install the Bareos 25 compatibility package.
 Existing Vue preview installations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :file:`bareos-webui-new` technical preview exists in Bareos 25, not
-23 or 24. It migrates to :file:`bareos-webui-vue` in 26: Debian-based
+The :file:`bareos-webui-new` technical preview exists in Bareos 25. It
+migrates to :file:`bareos-webui-vue` in 26: Debian-based
 systems use a transitional package; RPM-based systems replace the preview
 package. The old :file:`/bareos-webui-new/` URL redirects to
 :file:`/bareos/`.
@@ -506,8 +504,6 @@ installed.
 If the PHP WebUI is still required during the transition, explicitly
 select :file:`bareos-webui-php`.
 Select both application packages if both interfaces are wanted.
-These package choices do not change the daemon, catalog, operating-system
-or plugin upgrade prerequisites.
 
 .. _sectionUgradeMajorRepository:
 
