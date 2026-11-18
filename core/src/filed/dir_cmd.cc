@@ -212,7 +212,7 @@ inline constexpr const char verifycmd[] = "verify level=%30s";
 inline constexpr const char Estimatecmd[] = "estimate listing=%d";
 inline constexpr const char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-inline constexpr const char resolvecmd[] = "resolve %s";
+inline constexpr const char resolvecmd[] = "resolve %S";
 
 // Responses sent to Director
 inline constexpr const char errmsg[] = "2999 Invalid command\n";
@@ -654,7 +654,7 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
-  sscanf(dir->msg, resolvecmd, &hostname);
+  bsscanf(dir->msg, resolvecmd, sizeof(hostname), hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
