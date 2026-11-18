@@ -40,12 +40,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.chrome.service import Service as ChromeService
 
+# BEGIN source-only screenshot import
 sys.path.append(
     os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../../systemtests/scripts")
     )
 )
 from selenium_screenshots import ScreenshotRunner, ScreenshotTestCase
+
+# END source-only screenshot import
 
 
 class BadJobException(Exception):
