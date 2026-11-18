@@ -77,11 +77,12 @@ The default Apache configuration:
 * proxies :file:`/bareos/api/` to :command:`bareos-webui-proxy` on port **9104**
 
 Apache removes the :file:`/bareos` prefix when forwarding to the proxy.
-The browser uses :file:`/bareos/api/session`,
-:file:`/bareos/api/session/login`, and :file:`/bareos/api/session/logout`.
-The proxy itself provides the endpoints
-:file:`/api/session`, :file:`/api/session/login`, and
-:file:`/api/session/logout`.
+The browser calls ``GET /bareos/api/session``,
+``POST /bareos/api/session/directors/<director>/login``, and
+``DELETE /bareos/api/session``.
+The proxy receives ``GET /api/session``,
+``POST /api/session/directors/<director>/login``, and
+``DELETE /api/session``.
 The WebSocket side is then used for the live director connection once the
 session has been established.
 
