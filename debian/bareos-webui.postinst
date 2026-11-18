@@ -22,7 +22,11 @@ set -e
 
 [ "$1" = configure ] || exit 0
 
-# Older bridge builds did not protect PHP against automatic removal.
+# Since 25.1.3~pre25, bareos-webui is a metapackage depending on
+# bareos-webui-php. In Bareos 26, it depends on bareos-webui-vue instead,
+# so bareos-webui-php may become eligible for apt autoremove. Mark it
+# manually to preserve an existing php-webui installation.
+
 if [ -n "$2" ] \
   && dpkg --compare-versions "$2" ge '25.1.3~pre25' \
   && dpkg --compare-versions "$2" lt '26~'; then
