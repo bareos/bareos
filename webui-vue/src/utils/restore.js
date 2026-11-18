@@ -351,7 +351,7 @@ function escapeRegexWherePart(value) {
 
 function literalPrefixRule(prefix, replacement, ignoreCase = true) {
   // Match the Director's literal RegexWhere format.
-  const literal = /^!|\\|\$[0-9]/.test(replacement)
+  const literal = /^!|\\|\$/.test(replacement)
   const delimiter = literal ? '@' : '!'
   const pattern = [...prefix].map(char => {
     if (char === '\\') return String.raw`[\\]`

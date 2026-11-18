@@ -829,6 +829,24 @@ describe('restore browser placeholder', () => {
     }
   })
 
+  it.each(['$$', '$&', '$`', "$'"])('preserves %s literally in a replacement prefix', token => {
+    expect(previewRelocatedPath({
+      relocationMode: 'replace-prefix',
+      sourcePrefix: '/home',
+      targetPrefix: `/restore/${token}`,
+      samplePath: '/home/alice',
+    })).toBe(`/restore/${token}/alice`)
+  })
+
+  it('preserves a literal add-prefix with an additional suffix rule', () => {
+    expect(previewRelocatedPath({
+      relocationMode: 'rules',
+      addPrefix: '/restore/$$',
+      addSuffix: '.restored',
+      samplePath: '/home/alice',
+    })).toBe('/restore/$$/home/alice.restored')
+  })
+
   it('resolves restore regexwhere from relocation mode', () => {
     expect(resolveRestoreRegexWhere({
       relocationMode: 'where',
