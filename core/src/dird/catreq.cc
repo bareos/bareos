@@ -60,7 +60,7 @@ static char Find_media[]
 static char Get_Vol_Info[]
     = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
 static char Update_media[]
-    = "CatReq Job=%127s UpdateMedia VolName=%s"
+    = "CatReq Job=%127s UpdateMedia VolName=%127s"
       " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
       " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
       " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
