@@ -235,24 +235,6 @@ Important differences are:
   WebUI instead of being a 1:1 port
 * the Vue WebUI depends on :command:`bareos-webui-proxy`, which is a separate
   runtime component
-* the classic WebUI can remain available while Vue workflows are evaluated
-
-When to use which WebUI
------------------------
-
-Use the classic PHP WebUI when:
-
-* you want the long-established PHP WebUI
-* your operations depend on currently documented production procedures
-* you prefer the most conservative choice
-
-Use the Vue WebUI when:
-
-* you want to evaluate the new interface
-* you want to use Vue workflows alongside or instead of the classic UI
-
-For now, the recommended approach is to keep both interfaces available and let
-users compare them against their operational needs.
 
 Further information
 -------------------
