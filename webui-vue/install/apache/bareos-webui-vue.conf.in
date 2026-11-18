@@ -9,7 +9,6 @@ RedirectMatch 301 ^/bareos-webui-new/?$ /bareos/
 RedirectMatch 301 ^/bareos$ /bareos/
 
 Alias /bareos/ @WEBUI_VUE_DIR@/
-Alias /favicon.ico @WEBUI_VUE_DIR@/favicon.ico
 
 <Directory @WEBUI_VUE_DIR@>
     Options FollowSymLinks
