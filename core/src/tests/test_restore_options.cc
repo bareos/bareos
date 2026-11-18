@@ -155,6 +155,41 @@ TEST(RestoreOptions, LiteralSourcePrefixHandlesDelimiterAndBackslash)
             "/home/a!/report.pdf");
 }
 
+TEST(RestoreOptions, LiteralReplacementHandlesTrailingBackslash)
+{
+  const auto rule = BuildLiteralPrefixRegexWhere("/source/", R"(D:\restore\)");
+  EXPECT_EQ(PreviewRegexWhere(rule, "/source/report.pdf"),
+            R"(D:\restore\report.pdf)");
+}
+
+TEST(RestoreOptions, LiteralReplacementDoesNotExpandReferences)
+{
+  const auto rule = BuildLiteralPrefixRegexWhere("/source/", R"(D:\1st/$1/)");
+  EXPECT_EQ(PreviewRegexWhere(rule, "/source/report.pdf"),
+            R"(D:\1st/$1/report.pdf)");
+}
+
+TEST(RestoreOptions, LiteralReplacementDecodesEscapesOnlyOnce)
+{
+  const auto rule
+      = BuildLiteralPrefixRegexWhere("/source@/", R"(/out\!@%5C%40/)");
+  EXPECT_EQ(PreviewRegexWhere(rule, "/source@/report.pdf"),
+            R"(/out\!@%5C%40/report.pdf)");
+}
+
+TEST(RestoreOptions, LiteralReplacementCanStartWithDelimiter)
+{
+  const auto rule = BuildLiteralPrefixRegexWhere("/source/", "!out/");
+  EXPECT_EQ(PreviewRegexWhere(rule, "/source/report.pdf"), "!out/report.pdf");
+}
+
+TEST(RestoreOptions, CustomRulesStillExpandReferencesAndChain)
+{
+  EXPECT_EQ(PreviewRegexWhere(R"(!^/source/(a\.b)/!/$1/\1/!,!^/a\.b/!/out/!)",
+                              "/source/a.b/report.pdf"),
+            "/out/a.b/report.pdf");
+}
+
 TEST(RestoreOptions, BuildsAdvancedRestoreRunCommand)
 {
   RestoreRunOptions options;
