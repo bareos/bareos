@@ -70,6 +70,8 @@ struct RestoreRunOptions {
 std::string ReplacePolicyName(ReplacePolicy policy);
 std::optional<ReplacePolicy> ParseReplacePolicy(std::string_view policy);
 std::string QuoteDirectorString(std::string_view value);
+std::string BuildLiteralPrefixRegexWhere(std::string_view source_prefix,
+                                         std::string_view replacement);
 std::string BuildRestoreRunCommand(const RestoreRunOptions& options);
 std::optional<std::string> PreviewRegexWhere(std::string_view regex_where,
                                              std::string_view path);

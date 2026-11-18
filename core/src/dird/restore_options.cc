@@ -122,6 +122,31 @@ std::string BuildRestoreRunCommand(const RestoreRunOptions& options)
   return command;
 }
 
+std::string BuildLiteralPrefixRegexWhere(std::string_view source_prefix,
+                                         std::string_view replacement)
+{
+  constexpr std::string_view kRegexMetaCharacters = R"(.^$|()[]{}*+?)";
+  std::string rule = "!^";
+  for (char character : source_prefix) {
+    if (character == '\\') {
+      // Keep the regex backslashes away from the RegexWhere delimiter.
+      rule += R"([\\])";
+    } else {
+      if (character == '!'
+          || kRegexMetaCharacters.find(character) != std::string_view::npos) {
+        rule += '\\';
+      }
+      rule += character;
+    }
+  }
+  rule += '!';
+  for (char character : replacement) {
+    if (character == '!' || character == '\\') { rule += '\\'; }
+    rule += character;
+  }
+  return rule + "!i";
+}
+
 std::optional<std::string> PreviewRegexWhere(std::string_view regex_where,
                                              std::string_view path)
 {

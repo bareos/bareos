@@ -2624,17 +2624,6 @@ static std::string NormalizeWindowsDrive(std::string drive)
   return drive;
 }
 
-static std::string EscapeRegexWherePart(std::string_view text)
-{
-  std::string escaped;
-  escaped.reserve(text.size());
-  for (char ch : text) {
-    if (ch == '!' || ch == '\\') { escaped += '\\'; }
-    escaped += ch;
-  }
-  return escaped;
-}
-
 static std::string BuildRegexWhereFromParts(char* strip_prefix,
                                             char* add_prefix,
                                             char* add_suffix)
@@ -2653,18 +2642,14 @@ static std::string RelocationRegexWhere(const RelocationEditorState& state)
     case RelocationMode::kWindowsDriveRemap: {
       std::string source = NormalizeWindowsDrive(state.source_drive) + "/";
       std::string target = NormalizeWindowsDrive(state.target_drive) + "/";
-      return "!^" + EscapeRegexWherePart(source) + "!"
-             + EscapeRegexWherePart(target) + "!i";
+      return restore_options::BuildLiteralPrefixRegexWhere(source, target);
     }
     case RelocationMode::kReplacePrefix:
-      return "!^" + EscapeRegexWherePart(state.source_prefix) + "!"
-             + EscapeRegexWherePart(state.target_prefix) + "!i";
-    case RelocationMode::kStripPrefix: {
-      std::vector<char> strip(state.source_prefix.begin(),
-                              state.source_prefix.end());
-      strip.push_back('\0');
-      return BuildRegexWhereFromParts(strip.data(), nullptr, nullptr);
-    }
+      return restore_options::BuildLiteralPrefixRegexWhere(state.source_prefix,
+                                                           state.target_prefix);
+    case RelocationMode::kStripPrefix:
+      return restore_options::BuildLiteralPrefixRegexWhere(state.source_prefix,
+                                                           "");
     case RelocationMode::kAddSuffix: {
       std::vector<char> suffix(state.suffix.begin(), state.suffix.end());
       suffix.push_back('\0');
