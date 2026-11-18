@@ -202,7 +202,7 @@ static char verifycmd[] = "verify level=%30s";
 static char Estimatecmd[] = "estimate listing=%d";
 static char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-static char resolvecmd[] = "resolve %s";
+static char resolvecmd[] = "resolve %S";
 
 // Responses sent to Director
 static char errmsg[] = "2999 Invalid command\n";
@@ -711,7 +711,7 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
-  sscanf(dir->msg, resolvecmd, &hostname);
+  bsscanf(dir->msg, resolvecmd, sizeof(hostname), hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
