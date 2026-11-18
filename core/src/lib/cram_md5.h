@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include "lib/tls_conf.h"
 
@@ -71,7 +72,7 @@ class CramMd5Handshake {
   };
 
   ComparisonResult CompareChallengeWithOwnQualifiedName(
-      const char* challenge) const;
+      std::string_view chal) const;
 };
 
 // Compute MD5(text) and return it as a lowercase hex string.
