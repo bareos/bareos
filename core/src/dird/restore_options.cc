@@ -126,25 +126,43 @@ std::string BuildLiteralPrefixRegexWhere(std::string_view source_prefix,
                                          std::string_view replacement)
 {
   constexpr std::string_view kRegexMetaCharacters = R"(.^$|()[]{}*+?)";
-  std::string rule = "!^";
+  const bool has_backreference
+      = std::adjacent_find(replacement.begin(), replacement.end(),
+                           [](char a, char b) {
+                             return a == '$' && b >= '0' && b <= '9';
+                           }) != replacement.end();
+  // The legacy parser copies the first replacement byte without unescaping it.
+  const bool needs_literal_replacement = replacement.starts_with('!')
+                                         || replacement.find('\\')
+                                                != std::string_view::npos
+                                         || has_backreference;
+  const char separator
+      = needs_literal_replacement ? kLiteralReplacementSeparator : '!';
+  std::string rule(1, separator);
+  rule += '^';
   for (char character : source_prefix) {
     if (character == '\\') {
       // Keep the regex backslashes away from the RegexWhere delimiter.
       rule += R"([\\])";
     } else {
-      if (character == '!'
+      if (character == separator
           || kRegexMetaCharacters.find(character) != std::string_view::npos) {
         rule += '\\';
       }
       rule += character;
     }
   }
-  rule += '!';
-  for (char character : replacement) {
-    if (character == '!' || character == '\\') { rule += '\\'; }
-    rule += character;
+  rule += separator;
+  if (needs_literal_replacement) {
+    rule += BregexpEncodeLiteralReplacement(replacement);
+  } else {
+    for (char character : replacement) {
+      if (character == separator) { rule += '\\'; }
+      rule += character;
+    }
   }
-  return rule + "!i";
+  rule += separator;
+  return rule + 'i';
 }
 
 std::optional<std::string> PreviewRegexWhere(std::string_view regex_where,
