@@ -414,7 +414,7 @@
               <template v-if="browserPlaceholder === 'error'">
                 <q-icon name="error_outline" size="48px" color="negative" /><br />
                 <div class="text-caption text-negative q-mt-sm q-mb-md">{{ browserError }}</div>
-                <q-btn flat dense color="primary" :label="t('Retry')" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
+                <q-btn flat dense color="primary" :label="t('Retry')" icon="refresh" @click="retryBrowser" :loading="loadingBrowser" />
               </template>
               <template v-else-if="browserPlaceholder === 'building-cache'">
                 <q-spinner size="48px" color="primary" /><br />
@@ -2023,6 +2023,12 @@ let browserInitKey = null
 let browserInitPromise = null
 let browserInitComplete = false
 let browserInitGeneration = 0
+let failedDirectoryStack = null
+
+function retryBrowser() {
+  if (loadingBrowser.value) return
+  return failedDirectoryStack ? browseDirectory(failedDirectoryStack) : initBrowser()
+}
 
 function initBrowser() {
   if (!form.value.jobid) return Promise.resolve()
@@ -2174,7 +2180,7 @@ async function fetchDir(pathId, initGeneration = browserInitGeneration) {
   return true
 }
 
-async function navigateInto(row) {
+function navigateInto(row) {
   if (!canNavigateRestoreBrowser({
     browserReady: browserReady.value,
     loadingBrowser: loadingBrowser.value,
@@ -2182,26 +2188,13 @@ async function navigateInto(row) {
     return
   }
 
-  const nextStack = pushRestoreBreadcrumb(navStack.value, {
+  return browseDirectory(pushRestoreBreadcrumb(navStack.value, {
     label: row.name,
     pathId: row.pathId,
-  })
-  const generation = browserInitGeneration
-  loadingBrowser.value = true
-  browserReady.value = false
-  browserError.value = ''
-  try {
-    if (!await fetchDir(row.pathId, generation)) return
-    navStack.value = nextStack
-    browserReady.value = true
-  } catch (e) {
-    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
-  } finally {
-    if (generation === browserInitGeneration) loadingBrowser.value = false
-  }
+  }))
 }
 
-async function navigateTo(index) {
+function navigateTo(index) {
   if (!canNavigateRestoreBrowser({
     browserReady: browserReady.value,
     loadingBrowser: loadingBrowser.value,
@@ -2209,24 +2202,10 @@ async function navigateTo(index) {
     return
   }
 
-  const nextStack = truncateRestoreBreadcrumbs(navStack.value, index)
-  const generation = browserInitGeneration
-  const pathId = nextStack[nextStack.length - 1].pathId
-  loadingBrowser.value = true
-  browserReady.value = false
-  browserError.value = ''
-  try {
-    if (!await fetchDir(pathId, generation)) return
-    navStack.value = nextStack
-    browserReady.value = true
-  } catch (e) {
-    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
-  } finally {
-    if (generation === browserInitGeneration) loadingBrowser.value = false
-  }
+  return browseDirectory(truncateRestoreBreadcrumbs(navStack.value, index))
 }
 
-async function reloadCurrentDir() {
+function reloadCurrentDir() {
   if (!canNavigateRestoreBrowser({
     browserReady: browserReady.value,
     loadingBrowser: loadingBrowser.value,
@@ -2234,16 +2213,25 @@ async function reloadCurrentDir() {
     return
   }
 
-  const pathId = navStack.value[navStack.value.length - 1].pathId
+  return browseDirectory(navStack.value)
+}
+
+async function browseDirectory(nextStack) {
+  const pathId = nextStack[nextStack.length - 1].pathId
   const generation = browserInitGeneration
   loadingBrowser.value = true
   browserReady.value = false
   browserError.value = ''
   try {
     if (!await fetchDir(pathId, generation)) return
+    navStack.value = nextStack
+    failedDirectoryStack = null
     browserReady.value = true
   } catch (e) {
-    if (generation === browserInitGeneration) browserError.value = e.message || t('Failed to load file tree')
+    if (generation === browserInitGeneration) {
+      failedDirectoryStack = nextStack
+      browserError.value = e.message || t('Failed to load file tree')
+    }
   } finally {
     if (generation === browserInitGeneration) loadingBrowser.value = false
   }
@@ -2754,6 +2742,7 @@ function clearBrowserState() {
   browserInitKey = null
   browserInitPromise = null
   browserInitComplete = false
+  failedDirectoryStack = null
   loadingBrowser.value = false
   buildingCache.value = false
   navStack.value      = [{ label: '/', pathId: null }]
