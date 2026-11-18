@@ -43,15 +43,15 @@ namespace directordaemon {
 
 // Commands received from storage daemon that need scanning
 inline constexpr const char DevStats[]
-    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
+    = "Devicestats [%lld]: Device=%S Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu";
 inline constexpr const char TapeAlerts[]
-    = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
+    = "Tapealerts [%lld]: Device=%S TapeAlert=%llu";
 inline constexpr const char JobStats[]
-    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
+    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%S";
 
 static bool quit = false;
 static bool statistics_initialized = false;
@@ -206,7 +206,8 @@ extern "C" void* statistics_thread(void*)
             uint32_t num_waiting = 0;
             uint32_t num_writers = 0;
             DBId_t media_id = 0;
-            if (bsscanf(sd->msg, DevStats, &sample_time, DevName.c_str(),
+            if (bsscanf(sd->msg, DevStats, &sample_time,
+                        (size_t)DevName.MaxSize(), DevName.c_str(),
                         &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
                         &num_waiting, &num_writers, &dsr.ReadTime,
                         &dsr.WriteTime, &media_id, &dsr.VolCatBytes,
@@ -246,7 +247,8 @@ extern "C" void* statistics_thread(void*)
             TapealertStatsDbRecord tsr;
 
             int64_t sample_time = 0;
-            if (bsscanf(sd->msg, TapeAlerts, &sample_time, DevName.c_str(),
+            if (bsscanf(sd->msg, TapeAlerts, &sample_time,
+                        (size_t)DevName.MaxSize(), DevName.c_str(),
                         &tsr.AlertFlags)
                 == 3) {
               tsr.SampleTime = static_cast<time_t>(sample_time);
@@ -274,7 +276,8 @@ extern "C" void* statistics_thread(void*)
             JobId_t job_id = 0;
             uint32_t job_files = 0;
             if (bsscanf(sd->msg, JobStats, &sample_time, &job_id, &job_files,
-                        &jsr.JobBytes, DevName.c_str())
+                        &jsr.JobBytes, (size_t)DevName.MaxSize(),
+                        DevName.c_str())
                 == 5) {
               jsr.SampleTime = static_cast<time_t>(sample_time);
               jsr.JobId = job_id;
