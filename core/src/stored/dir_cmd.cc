@@ -105,8 +105,8 @@ inline constexpr const char replicatecmd[]
       "Authorization=%100s";
 inline constexpr const char passiveclientcmd[]
     = "passive client address=%S port=%d ssl=%d";
-inline constexpr const char resolvecmd[] = "resolve %s";
-inline constexpr const char pluginoptionscmd[] = "pluginoptions %s";
+inline constexpr const char resolvecmd[] = "resolve %S";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %S";
 
 /* Responses sent to Director */
 inline constexpr const char derrmsg[] = "3900 Invalid command:";
@@ -562,7 +562,7 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
-  sscanf(dir->msg, resolvecmd, &hostname);
+  bsscanf(dir->msg, resolvecmd, sizeof(hostname), hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == NULL) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
@@ -1803,7 +1803,9 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   std::string cpy{dir->msg};
 
   Dmsg1(100, "PluginOptionsCmd: %s", cpy.c_str());
-  if (sscanf(cpy.c_str(), pluginoptionscmd, plugin_options) != 1) {
+  if (bsscanf(cpy.c_str(), pluginoptionscmd, sizeof(plugin_options),
+              plugin_options)
+      != 1) {
     PmStrcpy(jcr->errmsg, cpy.c_str());
     Jmsg(jcr, M_FATAL, 0, T_("Bad pluginoptionscmd command: %s"), jcr->errmsg);
     goto bail_out;
