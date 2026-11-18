@@ -90,27 +90,13 @@ To use it successfully, ensure that:
 HTTPS configuration
 -------------------
 
-Use HTTPS before transmitting console credentials or backup data.
-Certificate provisioning, renewal and TLS termination are administrator
-responsibilities. Bareos package hooks do not generate certificates or
-activate default SSL sites. Operating-system Apache/SSL dependencies may
-provide their own default TLS configuration; this is not proof of trusted
-HTTPS for the WebUI.
+Use HTTPS to protect console credentials and other WebUI traffic.
+Configure a trusted certificate and enforce HTTPS at the web server or
+reverse proxy; HTTP is not automatically disabled or redirected.
 
-Configure an administrator-managed HTTPS virtual host or reverse proxy
-using a certificate trusted by your users and covering the hostname used
-to access the WebUI. Follow :ref:`section-webui-https` for Apache setup
-and verification. Ensure the proxy forwards both the API and WebSocket
-requests and communicates the original connection scheme correctly.
-For Apache, enable ``mod_headers`` so the packaged
-``X-Forwarded-Proto`` directive takes effect (``a2enmod headers`` on
-Debian/Ubuntu and SUSE). This is necessary for the proxy to mark HTTPS
-session cookies ``Secure`` correctly.
-
-HTTP access is not automatically disabled or redirected to HTTPS.
-Both WebUIs show a warning on insecure HTTP connections. Configure HTTPS
-enforcement at the web server or reverse proxy according to your site's
-policy; the warning is not a substitute for transport encryption.
+For Apache, enable ``mod_headers`` so the packaged ``X-Forwarded-Proto``
+directive takes effect and the proxy can mark HTTPS session cookies
+``Secure``.
 
 SELinux and AppArmor
 --------------------

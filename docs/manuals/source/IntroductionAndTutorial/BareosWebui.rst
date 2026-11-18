@@ -445,53 +445,6 @@ Apache after validating the configuration.
    as source or downloaded by the browser. A missing PHP handler is an
    Apache/PHP-FPM integration problem, not a Director authentication error.
 
-.. _section-webui-https:
-
-HTTPS configuration
-~~~~~~~~~~~~~~~~~~~
-
-Configure HTTPS before entering console credentials or transmitting backup
-data. Certificate provisioning, hostname selection, renewal and HTTPS
-enforcement are administrator responsibilities. Bareos package hooks do not
-generate a certificate, activate a default SSL site or change existing
-administrator TLS files. Apache/SSL dependencies supplied by the operating
-system may still provide their own default certificates or sites; their
-presence does not establish trusted HTTPS for the WebUI.
-
-Obtain a certificate trusted by your users that covers the hostname used
-to access the WebUI. Configure the distribution's Apache SSL module,
-port 443 listener and HTTPS virtual host, or terminate TLS at an
-administrator-managed reverse proxy. An Apache virtual host can reference
-the administrator's certificate and key as follows:
-
-.. code-block:: apache
-
-   <VirtualHost *:443>
-       ServerName backup.example.org
-       SSLEngine on
-       SSLCertificateFile /path/to/fullchain.pem
-       SSLCertificateKeyFile /path/to/private-key.pem
-   </VirtualHost>
-
-Use your distribution's TLS file locations and restrictive private-key
-permissions, including appropriate security labels. Enable the vhost
-according to the distribution's Apache layout. Inspect the vhost listing
-(``httpd -S`` on EL, ``apache2ctl -S`` on Debian/Ubuntu) for conflicting
-default vhost names, then run ``apachectl configtest``
-(``apache2ctl configtest`` on Debian/Ubuntu), then explicitly start or
-reload Apache as appropriate. SSL module/startup-flag changes may require
-a restart rather than a reload. Verify the served certificate, hostname,
-trust chain and application login before enabling HTTP-to-HTTPS redirects.
-A reverse proxy also requires the PHP
-:file:`configuration.ini` ``trusted_proxies`` setting.
-
-Self-signed certificates require explicit client trust and administrator
-renewal; do not treat clicking through browser warnings as verification.
-HTTP remains accessible unless you configure enforcement. Both WebUIs show
-an insecure-HTTP warning, but that warning does not prevent credentials
-being sent over HTTP or verify HTTPS certificate trust.
-
-
 .. _section-webui-configuration-files:
 
 Configure your /etc/bareos-webui/directors.ini
