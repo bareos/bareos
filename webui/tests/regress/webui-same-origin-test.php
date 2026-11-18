@@ -856,6 +856,51 @@ foreach ($instanceCases as $index => $case) {
     );
 }
 
+$browserSchemeCases = array(
+    array(array(), array('SERVER_PORT' => '443'), false),
+    array(array(), array('HTTPS' => 'on', 'SERVER_PORT' => '80'), true),
+    array(
+        array('127.0.0.1'),
+        array('REMOTE_ADDR' => '127.0.0.1', 'HTTP_X_FORWARDED_PROTO' => 'https'),
+        true,
+    ),
+    array(
+        array('127.0.0.1'),
+        array(
+            'REMOTE_ADDR' => '127.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'http',
+            'HTTPS' => 'on',
+            'SERVER_PORT' => '443',
+        ),
+        false,
+    ),
+    array(
+        array('127.0.0.1'),
+        array('REMOTE_ADDR' => '203.0.113.9', 'HTTP_X_FORWARDED_PROTO' => 'https'),
+        false,
+    ),
+);
+
+$browserSchemeChecks = count($browserSchemeCases);
+
+foreach ($browserSchemeCases as $index => $case) {
+    list($proxies, $server, $expected) = $case;
+    $actual = (new RequestOrigin(array('trusted_proxies' => $proxies), $server))->isBrowserHttps();
+
+    if ($actual === $expected) {
+        continue;
+    }
+
+    $failures++;
+    printf(
+        "FAIL browser scheme case %d: %s\n  expected: %s\n  actual:   %s\n",
+        $index,
+        json_encode($case),
+        var_export($expected, true),
+        var_export($actual, true)
+    );
+}
+
 // No server argument falls back to $_SERVER, which PHP cannot express as a
 // default value.
 $_SERVER['HTTPS'] = 'on';
@@ -992,7 +1037,7 @@ $moduleSource = file_get_contents(__DIR__ . '/../../module/Application/Module.ph
 $layoutSource = file_get_contents(__DIR__ . '/../../module/Application/view/layout/layout.phtml.in');
 if (
     strpos($moduleSource, "'isSecureConnection'") === false
-    || strpos($moduleSource, 'new RequestOrigin($config)') === false
+    || strpos($moduleSource, 'new RequestOrigin($config))->isBrowserHttps()') === false
 ) {
     $failures++;
     print "FAIL Module does not pass RequestOrigin HTTPS state to the layout\n";
@@ -1018,15 +1063,16 @@ $previousIncludePath = get_include_path();
 set_include_path(__DIR__ . '/../..' . PATH_SEPARATOR . $previousIncludePath);
 
 foreach ($instanceCases as $index => $case) {
-    list($proxies, $server, $expectedSecure) = $case;
+    list($proxies, $server) = $case;
+    $browserSecure = (new RequestOrigin(array('trusted_proxies' => $proxies), $server))->isBrowserHttps();
     $html = $loginRenderer->render('login', array(
-        'isSecureConnection' => (new RequestOrigin(array('trusted_proxies' => $proxies), $server))->isHttps(),
+        'isSecureConnection' => $browserSecure,
         'content' => '<form id="login-form"></form>',
     ));
     $hasWarning = strpos($html, 'This WebUI is using an insecure HTTP connection.') !== false;
-    if ($hasWarning === $expectedSecure || strpos($html, 'id="login-form"') === false) {
+    if ($hasWarning === $browserSecure || strpos($html, 'id="login-form"') === false) {
         $failures++;
-        printf("FAIL login warning case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+        printf("FAIL login warning case %d: secure=%s\n", $index, var_export($browserSecure, true));
     }
     $noticePosition = strpos($html, 'id="php-webui-eol-notice"');
     if (
@@ -1037,7 +1083,7 @@ foreach ($instanceCases as $index => $case) {
         || strpos($html, 'href="/bareos/" class="alert-link"') === false
     ) {
         $failures++;
-        printf("FAIL login successor notice case %d: secure=%s\n", $index, var_export($expectedSecure, true));
+        printf("FAIL login successor notice case %d: secure=%s\n", $index, var_export($browserSecure, true));
     }
 }
 set_include_path($previousIncludePath);
@@ -1046,7 +1092,8 @@ $globalChecks += count($instanceCases);
 $total = count($cases) + count($proxyCases) + count($listenerCases) + count($wiringChecks)
     + count($addressCases) + count($forwardedCases) + $globalChecks
     + $serviceManagerChecks + $serviceManagerCases + $dependencyChecks
-    + $instanceChecks + $looseChecks + $configChecks + count($safeMethodCases);
+    + $instanceChecks + $browserSchemeChecks + $looseChecks + $configChecks
+    + count($safeMethodCases);
 
 // Last, so a failure anywhere above fails the run.
 if ($failures > 0) {

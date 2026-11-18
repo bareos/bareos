@@ -49,7 +49,7 @@ class Module
         $config = $serviceManager->get('Config');
         $viewModel->setVariable(
             'isSecureConnection',
-            (new RequestOrigin($config))->isHttps()
+            (new RequestOrigin($config))->isBrowserHttps()
         );
     }
 
