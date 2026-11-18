@@ -25,6 +25,7 @@
 
 namespace {
 
+using directordaemon::restore_options::BuildLiteralPrefixRegexWhere;
 using directordaemon::restore_options::BuildRestoreRunCommand;
 using directordaemon::restore_options::kDefaultCustomRegexWhere;
 using directordaemon::restore_options::kDefaultRelocationExamplePath;
@@ -109,6 +110,49 @@ TEST(RestoreOptions, DefaultRegexWhereExampleShowsPathRewrite)
   ASSERT_TRUE(preview);
   EXPECT_EQ(*preview, "/restore/home/alice/documents/report.pdf");
   EXPECT_NE(*preview, kDefaultRelocationExamplePath);
+}
+
+TEST(RestoreOptions, LiteralSourcePrefixEscapesRegexMetacharacters)
+{
+  const std::string regex_where
+      = BuildLiteralPrefixRegexWhere("/home/a.b", "/restore/home");
+
+  auto matching_path = PreviewRegexWhere(regex_where, "/home/a.b/report.pdf");
+  ASSERT_TRUE(matching_path);
+  EXPECT_EQ(*matching_path, "/restore/home/report.pdf");
+
+  auto similar_path = PreviewRegexWhere(regex_where, "/home/axb/report.pdf");
+  ASSERT_TRUE(similar_path);
+  EXPECT_EQ(*similar_path, "/home/axb/report.pdf");
+
+  const std::string strip_regex_where
+      = BuildLiteralPrefixRegexWhere("/home/a.b", "");
+
+  auto stripped_path
+      = PreviewRegexWhere(strip_regex_where, "/home/a.b/report.pdf");
+  ASSERT_TRUE(stripped_path);
+  EXPECT_EQ(*stripped_path, "/report.pdf");
+
+  auto similar_strip_path
+      = PreviewRegexWhere(strip_regex_where, "/home/axb/report.pdf");
+  ASSERT_TRUE(similar_strip_path);
+  EXPECT_EQ(*similar_strip_path, "/home/axb/report.pdf");
+  EXPECT_EQ(PreviewRegexWhere(strip_regex_where, "/mnt/home/a.b/report.pdf"),
+            "/mnt/home/a.b/report.pdf");
+}
+
+TEST(RestoreOptions, LiteralSourcePrefixHandlesDelimiterAndBackslash)
+{
+  constexpr std::string_view prefix = R"(/home/a!\)";
+  const std::string replace
+      = BuildLiteralPrefixRegexWhere(prefix, "/restore/home");
+  const std::string strip = BuildLiteralPrefixRegexWhere(prefix, "");
+
+  EXPECT_EQ(PreviewRegexWhere(replace, R"(/home/a!\/report.pdf)"),
+            "/restore/home/report.pdf");
+  EXPECT_EQ(PreviewRegexWhere(strip, R"(/home/a!\/report.pdf)"), "/report.pdf");
+  EXPECT_EQ(PreviewRegexWhere(strip, "/home/a!/report.pdf"),
+            "/home/a!/report.pdf");
 }
 
 TEST(RestoreOptions, BuildsAdvancedRestoreRunCommand)
