@@ -44,9 +44,6 @@
  *
  */
 
-#include "lib/bool_string.h"
-#include "lib/default_console.h"
-#include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "dird.h"
@@ -69,6 +66,9 @@
 #include "lib/tls_resource_items.h"
 #include "lib/output_formatter_resource.h"
 #include "lib/version.h"
+#include "lib/bool_string.h"
+#include "lib/default_console.h"
+#include "lib/resource_item.h"
 
 #include <cassert>
 #include <memory>

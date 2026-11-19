@@ -696,9 +696,6 @@ message(
   "   LZO2 support:                 ${LZO2_FOUND} ${LZO2_INCLUDE_DIRS} ${LZO2_LIBRARIES} "
 )
 message(
-  "   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_VERSION_STRING} ${JANSSON_INCLUDE_DIRS} ${JANSSON_LIBRARIES}"
-)
-message(
   "   VIXDISKLIB support:           ${VIXDISKLIB_FOUND} ${VIXDISKLIB_LIBRARIES} ${VIXDISKLIB_INCLUDE_DIRS} "
 )
 message("   LMDB support:                 ${lmdb} ${LMDB_VERSION}")
