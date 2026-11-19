@@ -104,21 +104,88 @@ The browser-based system tests use the shared WebUI Vue test setup under:
 Translations
 ------------
 
-The Vue WebUI currently reuses the legacy WebUI locale sources and generated
-catalog data.
+The Vue WebUI uses independent, flat JSON translation catalogs that are
+loaded directly by Vue I18n. They are stored in:
 
-Relevant files are:
+* :file:`webui-vue/src/i18n/locales/locales.json` for the locale list
+* :file:`webui-vue/src/i18n/locales/en_EN.json` for the English source terms
+* :file:`webui-vue/src/i18n/locales/<locale>.json` for translations
 
-* :file:`webui-vue/scripts/generate-webui-i18n.mjs`
-* :file:`webui-vue/src/generated/webui-locales.js`
-* :file:`webui-vue/src/generated/webui-messages.js`
-* :file:`webui/module/Application/language/`
+The English message is also the stable key, for example:
 
-To regenerate the committed Vue translation catalog files, run:
+.. code-block:: json
+
+   {
+     "Log in": "Anmelden",
+     "Password": "Passwort"
+   }
+
+This keeps calls such as ``t('Log in')`` readable and matches the term model
+used by the existing WebUI POEditor project. Empty translations are ignored
+at runtime and fall back to English.
+
+Adding or changing translatable text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Literal calls to ``t('…')`` and ``translate('…')`` are extracted
+automatically. Text stored in data and translated later through
+``t(value)`` must be marked where it is defined:
+
+.. code-block:: javascript
+
+   import { messageId } from '../i18n/messageId.js'
+
+   const action = {
+     label: messageId('Run action'),
+   }
+
+After changing translatable source text, update and check the catalogs:
 
 .. code-block:: shell-session
 
-   cd webui-vue && npm run generate:i18n
+   cd webui-vue
+   npm run update:i18n
+   npm run check:i18n
+
+``update:i18n`` adds new keys, removes keys no longer used by Vue, preserves
+existing translations and sorts every catalog. ``check:i18n`` makes no
+changes and verifies source synchronization, locale parity, JSON value
+types and interpolation placeholders such as ``{count}``.
+
+Translating with POEditor
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The existing Bareos WebUI project is continued for the Vue WebUI:
+https://poeditor.com/join/project/ELnLNbvQJb.
+
+The Bareos team maintains the project as follows:
+
+1. Run ``npm run update:i18n``.
+2. Import :file:`en_EN.json` into POEditor as Key-Value JSON and synchronize
+   the project terms, removing terms which are no longer present.
+3. Export each language as Key-Value JSON to its corresponding file in
+   :file:`webui-vue/src/i18n/locales/`.
+4. Run ``npm run update:i18n`` to add any untranslated keys omitted by the
+   export, then run ``npm run check:i18n`` and the unit tests before
+   committing.
+
+When the project was converted to Vue JSON, matching translations were
+seeded once from the classic PHP WebUI catalogs. PHP-only terms were not
+copied. The Vue translation scripts and runtime do not depend on the
+classic WebUI, so removing it does not affect Vue translations.
+
+The temporary ``MESSAGE_OVERRIDES`` block in
+:file:`webui-vue/src/i18n/index.js` still takes precedence over JSON
+translations for those messages. Consequently, edits to those specific
+terms in POEditor do not become visible until the override block is removed.
+
+Adding a language
+~~~~~~~~~~~~~~~~~
+
+Add the locale and its display label to :file:`locales.json`, add the
+corresponding JSON catalog import in :file:`locales/catalogs.js`, import the
+language from POEditor, and update the locale mappings in
+:file:`webui-vue/src/utils/locales.js`. Then run ``npm run check:i18n``.
 
 Documentation guidance
 ----------------------

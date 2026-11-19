@@ -133,6 +133,34 @@ if(NPM_EXECUTABLE)
 
   add_custom_target(bareos-webui-vue-audit DEPENDS "${WEBUI_VUE_AUDIT_STAMP}")
   add_custom_target(bareos-webui-vue-build DEPENDS "${WEBUI_VUE_BUILD_STAMP}")
+
+  # The lookup cache must be cleared before re-searching, otherwise a build
+  # directory configured before 'npm ci' ran keeps the NOTFOUND result and the
+  # unit tests stay disabled even after the dependencies were installed.
+  unset(VITEST_EXECUTABLE CACHE)
+  find_program(
+    VITEST_EXECUTABLE vitest
+    HINTS "${WEBUI_VUE_SRC}/node_modules/.bin"
+    NO_DEFAULT_PATH
+  )
+  if(VITEST_EXECUTABLE)
+    add_test(
+      NAME webui-vue:unit-tests
+      COMMAND "${NPM_EXECUTABLE}" run test:unit -- --run
+      WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
+    )
+    set_tests_properties(
+      webui-vue:unit-tests
+      PROPERTIES LABELS "webui-vue" TIMEOUT 120 ENVIRONMENT
+                 "PATH=$ENV{PATH}:${WEBUI_VUE_SRC}/node_modules/.bin"
+    )
+  else()
+    webui_vue_tests_unavailable(
+      "vitest not found in ${WEBUI_VUE_SRC}/node_modules/.bin — "
+      "webui-vue:unit-tests ctest disabled. "
+      "Run 'npm ci' in webui-vue/ to enable it."
+    )
+  endif()
 else()
   add_custom_target(
     bareos-webui-vue-audit
@@ -140,6 +168,9 @@ else()
     VERBATIM
   )
   add_custom_target(bareos-webui-vue-build DEPENDS bareos-webui-vue-audit)
+  webui_vue_tests_unavailable(
+    "npm not found — webui-vue:unit-tests ctest disabled."
+  )
 endif()
 
 install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)

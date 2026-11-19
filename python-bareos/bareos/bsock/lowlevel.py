@@ -713,6 +713,9 @@ class LowLevel(object):
             or data == Constants.BNET_TERMINATE
             or data == Constants.BNET_MAIN_PROMPT
             or data == Constants.BNET_SUB_PROMPT
+            or data == Constants.BNET_SELECT_INPUT
+            or data == Constants.BNET_YESNO
+            or data == Constants.BNET_TEXT_INPUT
         )
 
     def is_connected(self):

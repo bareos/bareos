@@ -44,6 +44,16 @@ update jobid=2 jobtype=archive
 list backups client=bareos-fd
 @$out $tmp/llist-backups.out
 llist backups client=bareos-fd
+@$out $tmp/comments.out
+update jobid=1 comment="job comment it's quoted"
+update volume=TestVolume001 comment="volume comment"
+llist jobid=1
+llist volume=TestVolume001
+@$out $tmp/comments-cleared.out
+update jobid=1 comment=""
+update volume=TestVolume001 comment=""
+llist jobid=1
+llist volume=TestVolume001
 quit
 END_OF_DATA
 
@@ -61,4 +71,12 @@ grep -F '2 | backup-bareos-fd | bareos-fd' "$tmp/list-backups.out"
 
 echo "Checking llist backups for jobtype=archive"
 grep -F 'jobid: 2' "$tmp/llist-backups.out"
+
+echo "Checking job and volume comments"
+grep -F "comment: job comment it's quoted" "$tmp/comments.out"
+grep -F 'comment: volume comment' "$tmp/comments.out"
+if grep -E 'comment: .+' "$tmp/comments-cleared.out"; then
+  echo "comments were not cleared"
+  estat=1
+fi
 end_test
