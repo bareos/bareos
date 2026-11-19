@@ -45,17 +45,21 @@ static bool InitPublicPrivateKeys(const char* configfile)
 
     if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, nullptr,
                               nullptr)) {
-      Emsg2(M_FATAL, 0,
-            T_("Failed to load private key for File"
-               " daemon \"%s\" in %s.\n"),
-            me->resource_name_, configfile);
-      OK = false;
+      if (me->pki_sign) {
+        Emsg2(M_FATAL, 0,
+              T_("Failed to load private key for File"
+                 " daemon \"%s\" in %s.\n"),
+              me->resource_name_, configfile);
+        OK = false;
+      } else {
+        Dmsg0(50, "Private key is missing or could not be loaded!");
+      }
     }
   }
 
   // Trusted Signers. We're always trusted.
   me->pki_signers = new alist<X509_KEYPAIR*>(10, not_owned_by_alist);
-  if (me->pki_keypair) {
+  if (me->pki_sign && me->pki_keypair) {
     me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));
   }
 
@@ -159,9 +163,6 @@ bool CheckResources()
         OK = false;
       }
     }
-
-    /* pki_encrypt implies pki_sign */
-    if (me->pki_encrypt) { me->pki_sign = true; }
 
     if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
       Emsg2(M_FATAL, 0,

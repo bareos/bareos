@@ -23,11 +23,11 @@ The available options (and ciphers) are:
 
 -  camellia256
 
--  aes128hmacsha1
-
--  aes256hmacsha1
-
 -  blowfish
+
+- aes128gcm
+
+- aes256gcm
 
 They depend on the version of the openssl library installed.
 
