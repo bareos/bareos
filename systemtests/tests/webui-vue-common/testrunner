@@ -35,6 +35,9 @@ playwright_log="${tmp}/webui-vue-playwright.out"
 playwright_artifacts="${tmp}/playwright-artifacts"
 if [[ -n "${BAREOS_BROWSER_ARTIFACTS_DIR:-}" ]]; then
   playwright_artifacts="${BAREOS_BROWSER_ARTIFACTS_DIR}/playwright/${TestName}"
+  if [[ "${playwright_artifacts}" != /* ]]; then
+    playwright_artifacts="${PWD}/${playwright_artifacts}"
+  fi
 fi
 
 start_test

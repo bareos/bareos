@@ -54,7 +54,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         jobid = self.run_job(director, "backup-bareos-fd", "Full", wait=True)
         director.call(f'update jobid={jobid} comment="original"')
 
-        for invalid in ("jobtype=5", "starttime=invalid", "client=missing-client"):
+        for invalid in (
+            "jobtype=5",
+            "starttime=invalid",
+            "client=missing-client",
+            "filesetid=invalid",
+            "filesetid=12x",
+            "filesetid=4294967296",
+        ):
             with self.subTest(invalid=invalid):
                 with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
                     director.call(f'update jobid={jobid} comment="changed" {invalid}')
@@ -142,6 +149,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                             f"{command} jobs count{suffix} limit=0 offset=1"
                         )["jobs"][0]
                         self.assertEqual(int(paged_count["count"]), len(rows))
+                        for offset in range(0, min(len(rows), 4)):
+                            page = console.call(
+                                f"{command} jobs{suffix} limit=2 offset={offset}"
+                            )["jobs"]
+                            self.assertEqual(
+                                [row["jobid"] for row in page],
+                                [row["jobid"] for row in rows[offset : offset + 2]],
+                            )
 
         admin.call(
             f".sql query=\"UPDATE Job SET Name='historical-count' WHERE JobId={jobid}\""
@@ -220,6 +235,18 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             for command in ("list", "llist"):
                 count = console.call(f"{command} jobs count search=acl-count-cursor")
                 self.assertEqual(int(count["jobs"][0]["count"]), 120)
+                rows = console.call(
+                    f"{command} jobs search=acl-count-cursor sortby=jobid reverse"
+                )["jobs"]
+                for offset in (0, 1, 119):
+                    page = console.call(
+                        f"{command} jobs search=acl-count-cursor sortby=jobid "
+                        f"reverse limit=2 offset={offset}"
+                    )["jobs"]
+                    self.assertEqual(
+                        [row["jobid"] for row in page],
+                        [row["jobid"] for row in rows[offset : offset + 2]],
+                    )
         finally:
             admin.call(".sql query=\"DELETE FROM Job WHERE Name='acl-count-cursor'\"")
 
@@ -396,13 +423,13 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         original_starttime = director.call(
             f'.sql query="SELECT StartTime FROM Job WHERE JobId={backup_jobid}"'
         )["query"][0]["starttime"]
-        director.call(
-            f'.sql query="UPDATE Job SET JobErrors=123 WHERE JobId={backup_jobid_incremental}"'
-        )
-        director.call(
-            f""".sql query="UPDATE Job SET StartTime='2000-01-01 00:00:00' WHERE JobId={backup_jobid}" """
-        )
         try:
+            director.call(
+                f'.sql query="UPDATE Job SET JobErrors=123 WHERE JobId={backup_jobid_incremental}"'
+            )
+            director.call(
+                f""".sql query="UPDATE Job SET StartTime='2000-01-01 00:00:00' WHERE JobId={backup_jobid}" """
+            )
             for last in ("", " last"):
                 for reverse in ("", " reverse"):
                     with self.subTest(last=last, reverse=reverse):
@@ -435,12 +462,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 )["jobs"]
                                 self.assertEqual(page, jobs[offset : offset + 1])
         finally:
-            director.call(
-                f""".sql query="UPDATE Job SET StartTime='{original_starttime}' WHERE JobId={backup_jobid}" """
-            )
-            director.call(
-                f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
-            )
+            try:
+                director.call(
+                    f""".sql query="UPDATE Job SET StartTime='{original_starttime}' WHERE JobId={backup_jobid}" """
+                )
+            finally:
+                director.call(
+                    f'.sql query="UPDATE Job SET JobErrors={int(original_errors)} WHERE JobId={backup_jobid_incremental}"'
+                )
 
         # Long list with options
 
@@ -1002,6 +1031,15 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
 
         expected = director.call(f"list joblog jobids={jobid}")
         self.assertGreater(len(expected["joblog"]), 2)
+        for token in (f"{jobid}x", f"{jobid}.0", "4294967296", "-1"):
+            with self.subTest(invalid_jobid=token):
+                self.assertEqual(
+                    director.call(f"list joblog jobids={token} count")["joblog"],
+                    [{"count": "0"}],
+                )
+                self.assertEqual(
+                    director.call(f"list joblog jobids={token},{jobid}"), expected
+                )
         for command in ("list", "llist"):
             with self.subTest(command=command):
                 logs = director.call(f"{command} joblog jobids={jobid}")["joblog"]

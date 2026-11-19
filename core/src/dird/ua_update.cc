@@ -44,6 +44,7 @@
 #include "lib/util.h"
 #include "volume_key.h"
 
+#include <charconv>
 
 namespace directordaemon {
 
@@ -1045,9 +1046,16 @@ static bool UpdateJob(UaContext* ua)
         case 1: /* Client name */
           client_name = ua->argv[j];
           break;
-        case 2: /* Fileset id */
-          fileset_id = str_to_uint64(ua->argv[j]);
+        case 2: { /* Fileset id */
+          const char* value = ua->argv[j];
+          const char* end = value + strlen(value);
+          const auto parsed = std::from_chars(value, end, fileset_id);
+          if (parsed.ec != std::errc{} || parsed.ptr != end || fileset_id == 0) {
+            ua->ErrorMsg(T_("Invalid FileSetId specified.\n"));
+            return false;
+          }
           break;
+        }
         case 3: /* Job name */
           job_name = ua->argv[j];
           break;

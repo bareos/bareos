@@ -36,6 +36,11 @@ import {
 
 export { MAX_JOBS_FETCH_LIMIT }
 
+export function resolveCompatibleJobsSortColumn(sortBy) {
+  if (['name', 'client', 'type', 'level', 'status'].includes(sortBy)) return null
+  return resolveJobsSortColumn(sortBy)
+}
+
 function numberValue(value) {
   const number = Number(value ?? 0)
   return Number.isFinite(number) ? number : 0
@@ -180,7 +185,7 @@ export async function fetchAggregatedJobsPage(
   // server-side equivalent, and `rowsPerPage === 0` ("All") has no bounded
   // `offset + rowsPerPage` to request in the first place -- both fall back
   // to a capped, client-sorted fetch per director.
-  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
+  const serverSortColumn = rowsPerPage > 0 ? resolveCompatibleJobsSortColumn(sortBy) : null
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -236,28 +241,9 @@ export async function fetchAggregatedJobsPage(
           Promise.allSettled([client.call('status director')]),
         ])
 
-        jobsResults = await Promise.allSettled(filters.map((currentStatusFilter, index) => {
-          const countResult = countResults[index]
-          if (countResult?.status === 'fulfilled') {
-            const count = numberValue(directorCollection(countResult.value?.jobs)[0]?.count)
-            if (count === 0) {
-              return Promise.resolve({ jobs: [] })
-            }
-
-            return client.call(buildListJobsCommand({
-              limit: Math.min(count, MAX_JOBS_FETCH_LIMIT),
-              offset: 0,
-              statusFilter: currentStatusFilter,
-              levelFilter,
-              typeFilter,
-              jobFilter,
-              clientFilter,
-              searchTerm: normalizedSearchTerm,
-            }))
-          }
-
+        jobsResults = await Promise.allSettled(filters.map((currentStatusFilter) => {
           return client.call(buildListJobsCommand({
-            limit: rowsPerPage === 0 ? MAX_JOBS_FETCH_LIMIT : fetchLimit,
+            limit: MAX_JOBS_FETCH_LIMIT,
             offset: 0,
             statusFilter: currentStatusFilter,
             levelFilter,
@@ -286,7 +272,8 @@ export async function fetchAggregatedJobsPage(
       const count = countResults.reduce((sum, result, index) => (
         sum + (
           result.status === 'fulfilled'
-            ? numberValue(directorCollection(result.value?.jobs)[0]?.count)
+            ? Math.max(numberValue(directorCollection(result.value?.jobs)[0]?.count),
+              directorCollection(jobsResults[index]?.value?.jobs).length)
             : numberValue(directorCollection(
               jobsResults[index]?.status === 'fulfilled' ? jobsResults[index].value?.jobs : []
             ).length)
@@ -298,7 +285,8 @@ export async function fetchAggregatedJobsPage(
         && numberValue(directorCollection(result.value?.jobs)[0]?.count) > MAX_JOBS_FETCH_LIMIT
       ))
       const unknownCompleteness = !serverSortColumn
-        && countResults.some(result => result.status === 'rejected')
+        && (countResults.some(result => result.status === 'rejected')
+          || jobsResults.some(result => directorCollection(result.value?.jobs).length >= MAX_JOBS_FETCH_LIMIT))
       return {
         director,
         jobs,
@@ -325,6 +313,7 @@ export async function fetchAggregatedJobsPage(
   return {
     jobs: paginateJobs(jobs, pagination),
     totalJobs,
+    browsableJobs: serverSortColumn ? totalJobs : jobs.length,
     // A failed count leaves capped-fetch completeness unknown, unless another
     // director is already known to be truncated.
     truncated: successful.some(result => result.truncated === true)
@@ -345,7 +334,7 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
   const { page = 1, rowsPerPage = 25, sortBy = 'id', descending = true } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
   const fetchLimit = offset + rowsPerPage
-  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
+  const serverSortColumn = rowsPerPage > 0 ? resolveCompatibleJobsSortColumn(sortBy) : null
 
   const results = await Promise.allSettled(directors.map(async (director) => {
     const client = await createDirectorCommandClient({
@@ -360,7 +349,7 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
           sortColumn: serverSortColumn,
           descending,
         })),
-        client.call(buildListRecentJobsCountCommand()),
+        Promise.allSettled([client.call(buildListRecentJobsCountCommand())]),
         Promise.allSettled([client.call('status director')]),
       ])
       const jobs = sortJobsByPagination(overlayRuntimeStatuses(
@@ -371,13 +360,22 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
             : []
         )
       ), pagination)
-      const count = numberValue(directorCollection(countResult?.jobs)[0]?.count)
+      const count = countResult[0].status === 'fulfilled'
+        ? Math.max(numberValue(directorCollection(countResult[0].value?.jobs)[0]?.count), jobs.length)
+        : jobs.length
 
       return {
         director,
         jobs,
         count,
-        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT,
+        truncated: !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT
+          ? true
+          : countResult[0].status === 'rejected'
+            || (!serverSortColumn && jobs.length >= MAX_JOBS_FETCH_LIMIT)
+            ? null : false,
+        countErrors: countResult[0].status === 'rejected'
+          ? [{ director, message: `Failed to count jobs: ${countResult[0].reason?.message ?? 'Unknown error.'}` }]
+          : [],
       }
     } finally {
       client.disconnect()
@@ -390,14 +388,15 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
   return {
     jobs: paginateJobs(jobs, pagination),
     totalJobs: successful.reduce((sum, result) => sum + result.count, 0),
-    truncated: successful.some(result => result.truncated),
+    truncated: successful.some(result => result.truncated === true)
+      ? true : successful.some(result => result.truncated === null) ? null : false,
     directorErrors: results.flatMap((result, index) => (
       result.status === 'rejected'
         ? [{
           director: directors[index],
           message: result.reason?.message ?? 'Failed to load recent jobs.',
         }]
-        : []
+        : result.value.countErrors
     )),
   }
 }

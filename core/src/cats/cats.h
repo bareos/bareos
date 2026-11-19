@@ -610,7 +610,10 @@ class BareosDb : public BareosDbQueryEnum {
   int ListResult(void* vctx, int nb_col, char** row);
   int ListResult(JobControlRecord* jcr,
                  OutputFormatter* send,
-                 e_list_type type);
+                 e_list_type type,
+                 bool paginate_filtered = false,
+                 uint64_t limit = 0,
+                 uint64_t offset = 0);
   bool OpenBatchConnection(JobControlRecord* jcr);
   void DbDebugPrint(FILE* fp);
 

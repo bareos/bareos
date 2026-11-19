@@ -62,7 +62,7 @@
                     tabindex="0"
                     role="button"
                     :title="t('Jump to log')"
-                    :aria-label="t('Jump to log')"
+                    :aria-label="`${displayJobStatus(props.row)}: ${t('Jump to log')}`"
                     data-testid="client-details-waiting-job"
                     @click="openJobLog(props.row)"
                     @keydown.enter="openJobLog(props.row)"

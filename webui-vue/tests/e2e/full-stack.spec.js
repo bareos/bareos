@@ -73,6 +73,18 @@ async function browserFixture(page, commandHandler = () => undefined) {
       }
     })
   })
+  await page.addInitScript(() => {
+    window.__fixtureMessages = []
+    const NativeWebSocket = window.WebSocket
+    window.WebSocket = class extends NativeWebSocket {
+      constructor(...args) {
+        super(...args)
+        this.addEventListener('message', event => {
+          queueMicrotask(() => window.__fixtureMessages.push(event.data))
+        })
+      }
+    }
+  })
   await page.goto('/#/dashboard')
   await expect(page.getByTestId('director-status-label')).toContainText('Connected')
 }
@@ -110,6 +122,28 @@ test('browser regression: log focus follows reused job routes', async ({ page })
   await expect(focused).toHaveCount(0)
   await page.getByRole('button', { name: 'Next issue', exact: true }).click()
   await expect(focused).toHaveText('Warning: job 101')
+})
+
+test('browser regression: stale job loads cannot replace the selected job', async ({ page }) => {
+  let releaseOldJob
+  await browserFixture(page, command => {
+    if (command === 'llist jobid=101') {
+      return new Promise(resolve => { releaseOldJob = resolve })
+    }
+    if (command === 'llist jobid=202') {
+      return { jobs: [{ jobid: '202', name: 'Current job', jobstatus: 'T', type: 'B' }] }
+    }
+  })
+  await page.goto('/#/jobs/101?director=bareos-dir')
+  await expect.poll(() => Boolean(releaseOldJob)).toBe(true)
+  await page.evaluate(() => { window.location.hash = '#/jobs/202?director=bareos-dir' })
+  await expect(page.getByText('Job #202 — Current job')).toBeVisible()
+  releaseOldJob({ jobs: [{ jobid: '101', name: 'Stale job', jobstatus: 'T', type: 'B' }] })
+  await expect.poll(() => page.evaluate(
+    () => window.__fixtureMessages.some(message => message.includes('Stale job'))
+  )).toBe(true)
+  await expect(page.getByText('Job #202 — Current job')).toBeVisible()
+  await expect(page.getByText('Stale job')).toHaveCount(0)
 })
 
 test('browser regression: run defaults follow the selected Director', async ({ page }) => {
@@ -246,6 +280,9 @@ for (const outcome of ['success', 'failure', 'reselection']) {
       await expect.poll(() => requests.length).toBe(3)
       requests[0].resolve({ defaults: defaults('B') })
       requests[1].reject(new Error('Stale job defaults denied'))
+      await expect.poll(() => page.evaluate(
+        () => window.__fixtureMessages.some(message => message.includes('Stale job defaults denied'))
+      )).toBe(true)
       await expect(submit).toBeDisabled()
       await expect(dialog.getByLabel('Client', { exact: true })).toHaveValue('A resource')
       await expect(page.getByText(/Stale job defaults denied/)).not.toBeVisible()
@@ -480,11 +517,12 @@ async function selectFirstQOption(
   await expect(field).toBeVisible({ timeout: 20000 })
 
   const deadline = Date.now() + optionTimeoutMs
+  const remaining = () => Math.max(1, deadline - Date.now())
   let lastError
   while (Date.now() < deadline) {
     try {
-      await combobox.click()
-      const listboxId = await combobox.getAttribute('aria-controls')
+      await combobox.click({ timeout: remaining() })
+      const listboxId = await combobox.getAttribute('aria-controls', { timeout: remaining() })
       if (!listboxId) {
         throw new Error(`Could not find the option list for ${testId}`)
       }
@@ -494,30 +532,31 @@ async function selectFirstQOption(
       }
       const option = options.first()
       await expect(option).toBeVisible({
-        timeout: Math.min(1000, Math.max(1, deadline - Date.now())),
+        timeout: Math.min(1000, remaining()),
       })
-      await option.click()
+      await option.click({ timeout: remaining() })
       if (selected) {
-        await selected()
+        await selected(deadline)
       }
       return
     } catch (error) {
       lastError = error
       await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
+      await page.waitForTimeout(Math.min(300, remaining()))
     }
   }
 
   throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
 }
 
-async function waitForQSelectReady(page, testId) {
+async function waitForQSelectReady(page, testId, deadline = Date.now() + 20000) {
   const field = page.locator(`[data-testid="${testId}"]`)
     .locator('xpath=ancestor::*[contains(@class,"q-field")]')
     .first()
-  await expect(field).toBeVisible({ timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: 20000 })
-  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: 20000 })
+  const remaining = () => Math.max(1, deadline - Date.now())
+  await expect(field).toBeVisible({ timeout: remaining() })
+  await expect(field).not.toHaveClass(/q-field--loading/, { timeout: remaining() })
+  await expect(field).not.toHaveClass(/q-field--disabled/, { timeout: remaining() })
 }
 
 test('logs in and shows the dashboard', async ({ page }) => {
@@ -851,10 +890,12 @@ test('shows comment editing on mouse hover and keyboard focus', async ({ page })
   await expect(edit).toHaveCSS('opacity', '1')
   await page.mouse.move(0, 0)
   await expect(edit).toHaveCSS('opacity', '0')
-  await page.keyboard.press('Tab')
-  await edit.focus()
+  for (let index = 0; index < 200 && !(await edit.evaluate(el => el === document.activeElement)); index++) {
+    await page.keyboard.press('Tab')
+  }
+  await expect(edit).toBeFocused()
   await expect(edit).toHaveCSS('opacity', '1')
-  await edit.click()
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
 })
 
@@ -885,7 +926,7 @@ test('loads the restore workflow selections', async ({ page }) => {
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
     hasText: /(^| \/ )bareos-fd$/,
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+    selected: deadline => waitForQSelectReady(page, 'restore-backup-job', deadline),
   })
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
   await waitForQSelectReady(page, 'restore-backup-job')
@@ -921,7 +962,7 @@ test('restores a real file from a backup', async ({ page }) => {
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
     hasText: /(^| \/ )bareos-fd$/,
-    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
+    selected: deadline => waitForQSelectReady(page, 'restore-backup-job', deadline),
   })
   await waitForQSelectReady(page, 'restore-backup-job')
   await selectFirstQOption(page, 'restore-backup-job', {

@@ -10,6 +10,7 @@
 #   in the file LICENSE.
 
 import io
+from contextlib import ExitStack
 import os
 from pathlib import Path
 import shutil
@@ -26,6 +27,84 @@ from selenium_screenshots import ScreenshotResult, ScreenshotTestCase
 
 
 class ScreenshotResultTest(unittest.TestCase):
+    def test_legacy_unittest_captures_each_failure_before_cleanup(self):
+        class BrowserCase(ScreenshotTestCase):
+            def setUp(self):
+                self.driver = self
+                self.addCleanup(self.close_browser)
+                if self._testMethodName == "test_cleanup":
+                    self.addCleanup(self.fail_cleanup)
+                if self._testMethodName == "test_setup":
+                    raise ValueError("setup")
+
+            def save_screenshot(self, path):
+                Path(path).write_bytes(b"screenshot")
+                return True
+
+            def close_browser(self):
+                self.driver = None
+
+            def fail_cleanup(self):
+                raise ValueError("cleanup")
+
+            def tearDown(self):
+                if self._testMethodName == "test_teardown":
+                    raise ValueError("teardown")
+
+            def test_setup(self):
+                pass
+
+            def test_method(self):
+                self.fail("method")
+
+            def test_teardown(self):
+                pass
+
+            def test_cleanup(self):
+                pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            with ExitStack() as stack:
+                stack.enter_context(patch.dict(os.environ, {"BAREOS_BROWSER_ARTIFACTS_DIR": directory}))
+                stack.enter_context(patch("selenium_screenshots._LEGACY_UNITTEST", True))
+                stack.enter_context(patch.object(ScreenshotTestCase, "_callSetUp", lambda self: self.setUp()))
+                stack.enter_context(patch.object(ScreenshotTestCase, "_callTestMethod", lambda self, method: method()))
+                stack.enter_context(patch.object(ScreenshotTestCase, "_callTearDown", lambda self: self.tearDown()))
+                stack.enter_context(patch.object(
+                    ScreenshotTestCase, "_callCleanup",
+                    lambda self, function, *args, **kwargs: function(*args, **kwargs),
+                ))
+                result = unittest.TextTestRunner(
+                    stream=io.StringIO(), resultclass=ScreenshotResult
+                ).run(unittest.defaultTestLoader.loadTestsFromTestCase(BrowserCase))
+            self.assertEqual(len(result.failures), 1)
+            self.assertEqual(len(result.errors), 3)
+            self.assertEqual(len(list(Path(directory).glob("selenium/**/*.png"))), 4)
+
+    def test_multiple_failures_in_one_test_keep_both_screenshots(self):
+        class BrowserCase(ScreenshotTestCase):
+            def setUp(self):
+                self.driver = self
+
+            def save_screenshot(self, path):
+                Path(path).write_bytes(b"screenshot")
+                return True
+
+            def test_failure(self):
+                self.fail("test failed")
+
+            def tearDown(self):
+                raise ValueError("teardown failed")
+
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"BAREOS_BROWSER_ARTIFACTS_DIR": directory}):
+                result = unittest.TextTestRunner(
+                    stream=io.StringIO(), resultclass=ScreenshotResult
+                ).run(unittest.TestSuite([BrowserCase("test_failure")]))
+            self.assertEqual(len(result.failures), 1)
+            self.assertEqual(len(result.errors), 1)
+            self.assertEqual(len(list(Path(directory).glob("selenium/**/*.png"))), 2)
+
     def test_packaged_scripts_start_without_source_tree(self):
         root = Path(__file__).resolve().parents[3]
         bundler = root / "systemtests/scripts/bundle_selenium_test.py"

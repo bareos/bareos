@@ -189,7 +189,7 @@ export function collectVueMessageIds(root = sourceDir) {
   ).sort()
 
   const messageIds = new Set()
-  const literalPattern = /(?:^|[^\w$.])(?:t|translate)\(\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g
+  const literalPattern = /(?:^|[^\w$.])(?:t|translate|messageId)\(\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g
 
   for (const filePath of files) {
     const source = readUtf8(filePath)

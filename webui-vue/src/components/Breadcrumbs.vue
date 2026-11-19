@@ -19,6 +19,7 @@
    02110-1301, USA.
 -->
 <template>
+  <nav :aria-label="t('Breadcrumb')">
   <q-breadcrumbs
     class="bareos-breadcrumbs text-caption q-mb-sm"
     active-color="grey-8"
@@ -35,9 +36,13 @@
       :data-testid="item.testId"
     />
   </q-breadcrumbs>
+  </nav>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 // items: [{ label, icon?, to?, testId? }]
 // The last entry is treated as the current page: omit its `to` so
 // q-breadcrumbs-el renders it as plain (non-navigable) text.

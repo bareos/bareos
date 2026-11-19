@@ -12,10 +12,14 @@ export const UNBOUNDED_TABLE_ROWS_PER_PAGE = [10, 25, 50, 100]
 
 export function usePersistedTablePagination(key, defaults = {}, options = {}) {
   const settings = useSettingsStore()
-  const fallbackRowsPerPage = Number.isInteger(defaults.rowsPerPage) && defaults.rowsPerPage >= 0
+  let fallbackRowsPerPage = Number.isInteger(defaults.rowsPerPage) && defaults.rowsPerPage >= 0
     ? defaults.rowsPerPage
     : 15
   const { allowedRowsPerPage, persistSort = false } = options
+  if (Array.isArray(allowedRowsPerPage) && allowedRowsPerPage.length
+      && !allowedRowsPerPage.includes(fallbackRowsPerPage)) {
+    fallbackRowsPerPage = allowedRowsPerPage[0]
+  }
   const storedRowsPerPage = settings.getTableRowsPerPage(key, fallbackRowsPerPage)
   // Guard against a value that was persisted before `allowedRowsPerPage` was
   // introduced (e.g. the "All" option, encoded as 0), which would otherwise

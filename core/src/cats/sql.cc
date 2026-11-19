@@ -582,8 +582,7 @@ int BareosDb::ListResult(void* vctx, int, char** row)
           value.bsprintf(" %-*s |", max_len, row[i]);
         }
 
-        // Use value format string to send preformated value.
-        send->ObjectKeyValue(field->name, row[i], value.c_str());
+        send->ObjectKeyValuePreformatted(field->name, row[i], value.c_str());
       }
       send->Decoration("\n");
       break;
@@ -610,12 +609,13 @@ int BareosDb::ListResult(void* vctx, int, char** row)
             value.bsprintf("%s\n", row[i]);
           }
 
+        } else {
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", row[i]);
         }
 
-        // Use value format string to send preformated value.
-        send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
+        key.strcat(value.c_str());
+        send->ObjectKeyValuePreformatted(field->name, row[i], key.c_str());
       }
       send->Decoration("\n");
       break;
@@ -643,7 +643,10 @@ int ListResult(void* vctx, int nb_col, char** row)
  */
 int BareosDb::ListResult(JobControlRecord* jcr,
                          OutputFormatter* send,
-                         e_list_type type)
+                         e_list_type type,
+                         bool paginate_filtered,
+                         uint64_t limit,
+                         uint64_t offset)
 {
   CheckOwnership();
 
@@ -711,6 +714,18 @@ int BareosDb::ListResult(JobControlRecord* jcr,
    * We use this to shortcut for calling the FilterData() method in the
    * OutputFormatter class. */
   filters_enabled = send->HasFilters();
+  uint64_t accepted = 0;
+  auto include_row = [&](char** current_row) {
+    if (filters_enabled && !send->FilterData(current_row)) { return false; }
+    if (!paginate_filtered) { return true; }
+    if (accepted < offset) {
+      ++accepted;
+      return false;
+    }
+    if (accepted - offset >= limit) { return false; }
+    ++accepted;
+    return true;
+  };
 
   switch (type) {
     case E_LIST_INIT:
@@ -720,7 +735,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -773,7 +788,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -802,8 +817,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
           }
-          // Use value format string to send preformated value
-          send->ObjectKeyValue(field->name, row[i], value.c_str());
+          send->ObjectKeyValuePreformatted(field->name, row[i], value.c_str());
         }
         send->ObjectEnd("row", "\n");
       }
@@ -813,7 +827,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
       Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
       while ((row = SqlFetchRow()) != NULL) {
         // See if we should allow this under the current filtering.
-        if (filters_enabled && !send->FilterData(row)) { continue; }
+        if (!include_row(row)) { continue; }
 
         send->ObjectStart();
         SqlFieldSeek(0);
@@ -843,8 +857,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             value.bsprintf("%s\n", row[i]);
           }
 
-          // Use value format string to send preformated value
-          send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
+          key.strcat(value.c_str());
+          send->ObjectKeyValuePreformatted(field->name, row[i], key.c_str());
         }
         send->Decoration("\n");
         send->ObjectEnd();

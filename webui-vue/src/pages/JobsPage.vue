@@ -118,8 +118,8 @@
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
-            <q-banner v-if="jobsTruncated" dense class="bg-warning text-white">
-              {{ t('Showing the first {limit} of {total} matching jobs. Narrow your filter to see the rest.', { limit: formatNumber(maxJobsFetchLimit), total: formatNumber(totalJobs) }) }}
+            <q-banner v-if="jobsTruncated !== false" dense class="bg-warning text-white">
+              {{ t('Results may be incomplete. Narrow your filters to see all matching jobs.') }}
             </q-banner>
             <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
               <q-chip
@@ -236,8 +236,13 @@
                     <span
                       v-if="isWaitingStatus(displayJobStatus(props.row))"
                       class="row items-center no-wrap q-gutter-x-xs justify-center cursor-pointer"
+                      role="button"
+                      tabindex="0"
+                      :aria-label="`${displayJobStatus(props.row)}: ${t('Jump to log')}`"
                       :title="t('Jump to log')"
                       @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+                      @keydown.enter="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+                      @keydown.space.prevent="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
                     >
                       <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                       <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>
@@ -668,6 +673,7 @@ import { directorCollection, normaliseJob } from '../composables/useDirectorFetc
 import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import {
   fetchAggregatedJobsPage,
+  resolveCompatibleJobsSortColumn,
   sortJobsByPagination,
 } from '../composables/jobsAggregate.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
@@ -702,7 +708,6 @@ import {
   normaliseJobsTextOptions,
   normaliseJobsTextFilter,
   paginateJobs,
-  resolveJobsSortColumn,
   resolvePermittedRunJobDefault,
   resolveRunWhenPickerValue,
   resolveJobsClientQuery,
@@ -773,7 +778,6 @@ const jobFilterOptions = ref([])
 const clientFilterOptions = ref([])
 const directorErrors = ref([])
 const fmtBytes  = formatBytes
-const maxJobsFetchLimit = MAX_JOBS_FETCH_LIMIT
 const fmtSpeed  = formatSpeed
 const jobsRowsPerPageOptions = [10, 25, 50]
 const jobDefsRowsPerPageOptions = [10, 15, 25, 50]
@@ -945,14 +949,24 @@ const totalJobs  = ref(0)
 const jobsTruncated = ref(false)
 const loading    = ref(false)
 const error      = ref(null)
+let jobsRequestRevision = 0
 async function fetchPage() {
+  const revision = ++jobsRequestRevision
+  const current = () => revision === jobsRequestRevision
   loading.value = true
   error.value   = null
   directorErrors.value = []
-  const currentPagination = pagination.value
+  const currentPagination = { ...pagination.value }
+  const directors = [...activeDirectors.value]
+  const snapshot = value => Array.isArray(value) ? [...value] : value
+  const currentStatus = snapshot(statusFilters.value)
+  const currentLevel = snapshot(levelFilters.value)
+  const currentType = snapshot(typeFilters.value)
+  const currentJob = jobFilter.value
+  const currentClient = clientFilter.value
   const { page, rowsPerPage, sortBy, descending } = currentPagination
   const offset = (page - 1) * rowsPerPage
-  const encodedStatusFilters = encodeJobsStatusFilters(statusFilters.value)
+  const encodedStatusFilters = encodeJobsStatusFilters(currentStatus)
   const normalizedSearchTerm = normaliseJobsSearchTerm(search.value)
   // Sorting and searching are resolved on the director whenever the sort
   // column has a real catalog equivalent (see the `sortby=` whitelist in
@@ -963,9 +977,9 @@ async function fetchPage() {
   // the UI but still defended against) has no bounded page to request in
   // the first place -- both fall back to a capped, client-sorted fetch
   // further down.
-  const serverSortColumn = rowsPerPage > 0 ? resolveJobsSortColumn(sortBy) : null
+  const serverSortColumn = rowsPerPage > 0 ? resolveCompatibleJobsSortColumn(sortBy) : null
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       jobs.value = []
       totalJobs.value = 0
       jobsTruncated.value = false
@@ -973,7 +987,7 @@ async function fetchPage() {
       return
     }
 
-    if (activeDirectors.value.length > 1) {
+    if (directors.length > 1) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
@@ -981,25 +995,27 @@ async function fetchPage() {
 
         const result = await fetchAggregatedJobsPage(
           credentials,
-          activeDirectors.value,
-          pagination.value,
-          statusFilters.value,
-          levelFilters.value,
-          typeFilters.value,
-          jobFilter.value,
-          clientFilter.value,
+          directors,
+          currentPagination,
+          currentStatus,
+          currentLevel,
+          currentType,
+          currentJob,
+          currentClient,
           normalizedSearchTerm,
         )
+      if (!current()) return
       jobs.value = result.jobs
       directorErrors.value = result.directorErrors
       totalJobs.value = result.totalJobs
       jobsTruncated.value = result.truncated
-      pagination.value = { ...pagination.value, rowsNumber: result.totalJobs }
+      pagination.value = { ...pagination.value, rowsNumber: result.browsableJobs }
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!current() || auth.user?.director !== currentDirector) return
     // A single combined query is used regardless of how many statuses are
     // selected: `jobstatus=T,E,f` is sent as-is and the director resolves it
     // natively via `Job.JobStatus IN (...)` (see sql_list.cc). Splitting this
@@ -1007,14 +1023,15 @@ async function fetchPage() {
     // load for no benefit.
     const countResult = await director.call(buildListJobsCountCommand({
       statusFilter: encodedStatusFilters,
-      levelFilter: levelFilters.value,
-      typeFilter: typeFilters.value,
-      jobFilter: jobFilter.value,
-      clientFilter: clientFilter.value,
+      levelFilter: currentLevel,
+      typeFilter: currentType,
+      jobFilter: currentJob,
+      clientFilter: currentClient,
       searchTerm: normalizedSearchTerm,
     }))
     const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
-    if (count === 0) {
+    if (!current() || auth.user?.director !== currentDirector) return
+    if (count === 0 && serverSortColumn) {
       jobs.value = []
       totalJobs.value = 0
       jobsTruncated.value = false
@@ -1024,24 +1041,24 @@ async function fetchPage() {
     // "Fetch everything" is now limited to the rare columns without a
     // server-side sort (duration/speed): those are still capped so a very
     // large job history never ships its entire table to the browser.
-    const truncated = !serverSortColumn && count > MAX_JOBS_FETCH_LIMIT
     const limit = serverSortColumn
       ? rowsPerPage
-      : Math.min(count, MAX_JOBS_FETCH_LIMIT)
+      : MAX_JOBS_FETCH_LIMIT
     const pageResult = await director.call(
       buildListJobsCommand({
         limit,
         offset: serverSortColumn ? offset : 0,
         statusFilter: encodedStatusFilters,
-        levelFilter: levelFilters.value,
-        typeFilter: typeFilters.value,
-        jobFilter: jobFilter.value,
-        clientFilter: clientFilter.value,
+        levelFilter: currentLevel,
+        typeFilter: currentType,
+        jobFilter: currentJob,
+        clientFilter: currentClient,
         sortColumn: serverSortColumn ?? '',
         descending: serverSortColumn ? descending : true,
         searchTerm: normalizedSearchTerm,
       })
     )
+    if (!current() || auth.user?.director !== currentDirector) return
     const fetchedJobs = directorCollection(pageResult?.jobs).map((job) => {
       const normalized = normaliseJob(job)
       return {
@@ -1050,25 +1067,30 @@ async function fetchPage() {
         scopeKey: `${currentDirector}:${normalized.id}`,
       }
     })
-    const visibleJobs = serverSortColumn
-      ? fetchedJobs
-      : paginateJobs(sortJobsByPagination(fetchedJobs, currentPagination), currentPagination)
-    const runningJobIds = visibleJobs.filter(job => isRunning(job.status)).map(job => job.id)
+    const runningJobIds = fetchedJobs.filter(job => isRunning(job.status)).map(job => job.id)
+    let updatedJobs = fetchedJobs
     if (runningJobIds.length > 0) {
       const runtimeStatus = await Promise.allSettled([director.call('status director')])
-      jobs.value = runtimeStatus[0].status === 'fulfilled'
-        ? overlayRuntimeStatuses(visibleJobs, runtimeStatus[0].value?.running)
-        : visibleJobs
-    } else {
-      jobs.value = visibleJobs
+      if (!current() || auth.user?.director !== currentDirector) return
+      if (runtimeStatus[0].status === 'fulfilled') {
+        updatedJobs = overlayRuntimeStatuses(fetchedJobs, runtimeStatus[0].value?.running)
+      }
     }
-    totalJobs.value = count
-    jobsTruncated.value = truncated
-    pagination.value = { ...pagination.value, rowsNumber: count }
+    jobs.value = serverSortColumn
+      ? updatedJobs
+      : paginateJobs(sortJobsByPagination(updatedJobs, currentPagination), currentPagination)
+    totalJobs.value = Math.max(count, fetchedJobs.length)
+    jobsTruncated.value = !serverSortColumn && (
+      count > fetchedJobs.length ? true : fetchedJobs.length >= MAX_JOBS_FETCH_LIMIT ? null : false
+    )
+    pagination.value = {
+      ...pagination.value,
+      rowsNumber: serverSortColumn ? totalJobs.value : fetchedJobs.length,
+    }
   } catch (e) {
-    error.value = e.message
+    if (current()) error.value = e.message
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
@@ -1366,9 +1388,20 @@ async function loadFilterOptions() {
 
 // ── row-level actions ─────────────────────────────────────────────────────────
 async function saveJobComment(job, comment) {
-  await switchToJobDirector(job)
-  await director.call(buildJobCommentCommand(job.id, comment))
+  await withJobDirector(job, client => client.call(buildJobCommentCommand(job.id, comment)))
   job.comment = comment
+}
+
+async function withJobDirector(job, action) {
+  const credentials = auth.getCredentials()
+  const targetDirector = job?.director || auth.user?.director
+  if (!credentials?.password || !targetDirector) throw new Error(t('Not logged in.'))
+  const client = await createDirectorCommandClient({ ...credentials, director: targetDirector })
+  try {
+    return await action(client)
+  } finally {
+    client.disconnect()
+  }
 }
 
 async function switchToJobDirector(job) {
@@ -1468,8 +1501,7 @@ function confirmCancel(job) {
 
 async function doCancel(job) {
   try {
-    await switchToJobDirector(job)
-    await director.call(buildCancelJobCommand(job.id))
+    await withJobDirector(job, client => client.call(buildCancelJobCommand(job.id)))
     $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: job.id }) })
     refresh()
   } catch (e) {
@@ -1489,26 +1521,26 @@ function confirmRerun(job) {
 
 async function doRerun(job) {
   try {
-    await switchToJobDirector(job)
     const jobId = normaliseJobId(typeof job === 'object' ? job.id : job)
     if (jobId === null) {
       throw new Error(t('Job ID must be a positive integer.'))
     }
 
-    let rerunJob = typeof job === 'object' ? job : null
-    if (!rerunJob?.type) {
-      const lookup = await director.call(buildListJobCommand(jobId))
-      const entry = directorCollection(lookup?.jobs)[0]
-      if (!entry) {
-        throw new Error(`${t('Job')} ${jobId} ${t('was not found.')}`)
+    const res = await withJobDirector(job, async (client) => {
+      let rerunJob = typeof job === 'object' ? job : null
+      if (!rerunJob?.type) {
+        const lookup = await client.call(buildListJobCommand(jobId))
+        const entry = directorCollection(lookup?.jobs)[0]
+        if (!entry) {
+          throw new Error(`${t('Job')} ${jobId} ${t('was not found.')}`)
+        }
+        rerunJob = normaliseJob(entry)
       }
-      rerunJob = normaliseJob(entry)
-    }
-    if (!canRerunJob(rerunJob)) {
-      throw new Error(t('This job type cannot be rerun.'))
-    }
-
-    const res = await director.call(buildRerunJobCommand(jobId))
+      if (!canRerunJob(rerunJob)) {
+        throw new Error(t('This job type cannot be rerun.'))
+      }
+      return client.call(buildRerunJobCommand(jobId))
+    })
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `${t('Job restarted as ID')} ${newId}.` })
     tab.value = 'list'
@@ -1531,10 +1563,9 @@ function cancelAll() {
     cancel: { label: t('Keep running'), flat: true },
   }).onOk(async () => {
     const results = await Promise.allSettled(
-      runningJobs.value.map(j => (async () => {
-        await switchToJobDirector(j)
-        return director.call(buildCancelJobCommand(j.id))
-      })())
+      runningJobs.value.map(j => (
+        withJobDirector(j, client => client.call(buildCancelJobCommand(j.id)))
+      ))
     )
     const failed = results.filter(r => r.status === 'rejected').length
     if (failed) {
@@ -1562,8 +1593,7 @@ async function setJobEnabled(job, enabled) {
   ])
 
   try {
-    await switchToJobDirector(job)
-    await director.call(buildSetJobEnabledCommand(job.name, enabled))
+    await withJobDirector(job, client => client.call(buildSetJobEnabledCommand(job.name, enabled)))
     const j = jobDefs.value.find(d => d.scopeKey === job.scopeKey)
     if (j) j.enabled = enabled
     $q.notify({
@@ -1816,6 +1846,7 @@ async function onJobSelected(name) {
   try {
     await pendingDefaults
     if (revision !== runFormRevision || request !== defaultsRevision || name !== runForm.value.job) return
+    runFormDirector.value = currentSingletonDirector.value
     runFormReady.value = Boolean(name)
   } catch (e) {
     if (revision !== runFormRevision || request !== defaultsRevision || name !== runForm.value.job) return
@@ -1904,7 +1935,8 @@ function openRerunJobIdDialog() {
 }
 
 async function submitRerun() {
-  if (rerunJobIdValue.value === null) {
+  const submittedJobId = rerunJobIdValue.value
+  if (submittedJobId === null) {
     $q.notify({ type: 'negative', message: t('Enter a positive Job ID.') })
     return
   }
@@ -1912,7 +1944,7 @@ async function submitRerun() {
   rerunLoading.value = true
   try {
     const listedMatches = jobs.value.filter(job => (
-      Number(job.id) === rerunJobIdValue.value
+      Number(job.id) === submittedJobId && activeDirectors.value.includes(job.director)
     ))
     if (listedMatches.length === 1 && isSingleDirectorScope.value) {
       if (await doRerun(listedMatches[0])) {
@@ -1922,7 +1954,7 @@ async function submitRerun() {
       return
     }
     if (listedMatches.length > 1) {
-      throw new Error(`Job ID ${rerunJobIdValue.value} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
+      throw new Error(`Job ID ${submittedJobId} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
     }
 
     const credentials = auth.getCredentials()
@@ -1937,7 +1969,7 @@ async function submitRerun() {
         director: directorName,
       })
       try {
-        const lookup = await client.call(buildListJobCommand(rerunJobIdValue.value))
+        const lookup = await client.call(buildListJobCommand(submittedJobId))
         const entry = directorCollection(lookup?.jobs)[0]
         if (entry) {
           matches.push({ ...normaliseJob(entry), director: directorName })
@@ -1948,14 +1980,14 @@ async function submitRerun() {
     }))
 
     if (matches.length > 1) {
-      throw new Error(`Job ID ${rerunJobIdValue.value} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
+      throw new Error(`Job ID ${submittedJobId} ${t('exists on multiple selected directors. Use the matching row action instead.')}`)
     }
     const rejected = results.find(result => result.status === 'rejected')
     if (rejected?.status === 'rejected') {
       throw rejected.reason
     }
     if (matches.length === 0) {
-      throw new Error(`Job ID ${rerunJobIdValue.value} ${t('was not found on the selected directors.')}`)
+      throw new Error(`Job ID ${submittedJobId} ${t('was not found on the selected directors.')}`)
     }
 
     if (await doRerun(matches[0])) {
@@ -2030,6 +2062,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  jobsRequestRevision++
   jobFilterOptions.value = []
   clientFilterOptions.value = []
   stopAutoRefresh()

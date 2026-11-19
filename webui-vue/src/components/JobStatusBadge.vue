@@ -5,7 +5,7 @@
     :class="{ 'cursor-pointer': clickable }"
     :tabindex="clickable ? 0 : undefined"
     :role="clickable ? 'button' : undefined"
-    :aria-label="clickable ? t('Jump to log') : undefined"
+    :aria-label="clickable ? `${info.label}: ${t('Jump to log')}` : undefined"
     :title="clickable ? t('Jump to log') : undefined"
     @click="clickable && $emit('click', $event)"
     @keydown.enter="clickable && $emit('click', $event)"

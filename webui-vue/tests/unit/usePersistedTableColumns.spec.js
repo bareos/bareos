@@ -128,6 +128,19 @@ describe('usePersistedTableColumns', () => {
     expect(reloaded.visibleColumns.value.map(c => c.name)).toEqual(['name', 'pooltype', 'numvols', 'actions'])
   })
 
+  it('reveals default-hidden columns only when two rows differ', () => {
+    const rows = ref([])
+    const table = usePersistedTableColumns('storages.pools', COLUMNS, {
+      defaultHidden: ['numvols'],
+      autoRevealRows: rows,
+    })
+    expect(table.visibleColumns.value.map(c => c.name)).not.toContain('numvols')
+    rows.value = [{ numvols: 1 }]
+    expect(table.visibleColumns.value.map(c => c.name)).not.toContain('numvols')
+    rows.value = [{ numvols: 1 }, { numvols: 2 }]
+    expect(table.visibleColumns.value.map(c => c.name)).toContain('numvols')
+  })
+
   it.each(['name', 'pooltype', 'numvols'])('preserves other auto-revealed columns when toggling %s', async (name) => {
     const options = {
       defaultHidden: ['pooltype', 'numvols'],

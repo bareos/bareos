@@ -4,7 +4,7 @@ This test checks the Bareos WebUI by using seleniums webdriver.
 
 ## Requirements
 
-  * Python >= 2.7
+  * Python >= 3.7
   * Selenium >= 3.4.0
   * chromedriver for Chrome/Chromium testing, geckodriver for Firefox testing.
 

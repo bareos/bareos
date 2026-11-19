@@ -22,7 +22,7 @@ set -e
 . "$1"
 python_executable="${2:?Python interpreter path required}"
 
-unset BAREOS_CONFIG_DIR
+unset BAREOS_CONFIG_DIR BAREOS_PIDFILE
 PIDOF=/bin/false
 PGREP=$(command -v pgrep)
 PS=$(command -v ps)

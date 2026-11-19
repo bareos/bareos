@@ -10,13 +10,17 @@
 #   in the file LICENSE.
 
 from contextlib import contextmanager
+from functools import wraps
 import os
 from pathlib import Path
 import re
 import unittest
+import uuid
 
 from selenium.common.exceptions import WebDriverException
 from urllib3.exceptions import MaxRetryError
+
+_LEGACY_UNITTEST = not hasattr(unittest.TestCase, "_callSetUp")
 
 
 class ScreenshotResult(unittest.TextTestResult):
@@ -29,7 +33,7 @@ class ScreenshotResult(unittest.TextTestResult):
         root = Path(os.environ.get("BAREOS_BROWSER_ARTIFACTS_DIR", "."))
         profile = os.environ.get("TestName", "standalone")
         filename = re.sub(r"[^a-zA-Z0-9_.-]", "_", label or test.id())
-        path = root / "selenium" / profile / f"{filename}-{os.getpid()}.png"
+        path = root / "selenium" / profile / f"{filename}-{os.getpid()}-{uuid.uuid4().hex}.png"
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             if not driver.save_screenshot(str(path)):
@@ -51,6 +55,37 @@ class ScreenshotTestCase(unittest.TestCase):
     Python 3.10 reports result callbacks only after tearDown and cleanups.
     The setup/test execution hooks and subTest context run before both.
     """
+
+    def run(self, result=None):
+        if not _LEGACY_UNITTEST:
+            return super().run(result)
+
+        originals = {}
+        for name in ("setUp", self._testMethodName, "tearDown"):
+            method = getattr(self, name)
+            originals[name] = self.__dict__.get(name)
+            setattr(self, name, self._wrap_legacy_call(method))
+        try:
+            return super().run(result)
+        finally:
+            for name, original in originals.items():
+                if original is None:
+                    delattr(self, name)
+                else:
+                    setattr(self, name, original)
+
+    def _wrap_legacy_call(self, function):
+        @wraps(function)
+        def wrapped(*args, **kwargs):
+            with self._capture_errors():
+                return function(*args, **kwargs)
+
+        return wrapped
+
+    def addCleanup(self, function, *args, **kwargs):
+        if _LEGACY_UNITTEST:
+            function = self._wrap_legacy_call(function)
+        return super().addCleanup(function, *args, **kwargs)
 
     @contextmanager
     def _capture_errors(self, label=None):

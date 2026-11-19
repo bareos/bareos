@@ -57,11 +57,11 @@ class PlaywrightArtifactsTest(unittest.TestCase):
                 'GOOGLE_CHROME_EXECUTABLE="chrome"\n'
                 'BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT=""\n'
             )
-            artifacts = root / "artifacts"
+            artifacts = profile / "artifacts"
             result = subprocess.run(
                 ["bash", str(RUNNER)],
                 cwd=profile,
-                env={**os.environ, "BAREOS_BROWSER_ARTIFACTS_DIR": str(artifacts)},
+                env={**os.environ, "BAREOS_BROWSER_ARTIFACTS_DIR": "artifacts"},
                 capture_output=True,
                 text=True,
             )

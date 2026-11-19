@@ -222,6 +222,7 @@ describe('jobs aggregate helpers', () => {
         }),
       ],
       totalJobs: 4,
+      browsableJobs: 4,
       truncated: false,
       directorErrors: [],
     })
@@ -361,6 +362,7 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:31', director: 'prod-a', id: 31, status: 'f' }),
       ],
       totalJobs: 4,
+      browsableJobs: 4,
       truncated: false,
       directorErrors: [],
     })
@@ -417,7 +419,7 @@ describe('jobs aggregate helpers', () => {
     })
 
     const jobsCommand = JSON.parse(socket.sent[3])
-    expect(jobsCommand.command).toBe('llist jobs reverse limit=2 offset=0 search="fd-2"')
+    expect(jobsCommand.command).toBe(`llist jobs reverse limit=${MAX_JOBS_FETCH_LIMIT} offset=0 search="fd-2"`)
 
     socket.onmessage?.({
       data: JSON.stringify({
@@ -438,6 +440,7 @@ describe('jobs aggregate helpers', () => {
         expect.objectContaining({ scopeKey: 'prod-a:9', director: 'prod-a', id: 9, client: 'fd-2' }),
       ],
       totalJobs: 2,
+      browsableJobs: 2,
       truncated: false,
       directorErrors: [],
     })
@@ -446,7 +449,7 @@ describe('jobs aggregate helpers', () => {
   it.each([
     { counts: [600, 600], limits: [600, 600], rows: 1200, truncated: false },
     { counts: [1001, 2], limits: [1000, 2], rows: 1002, truncated: true },
-    { counts: [1000, 1000], limits: [1000, 1000], rows: 2000, truncated: false },
+    { counts: [1000, 1000], limits: [1000, 1000], rows: 2000, truncated: null },
   ])('reports fallback truncation per filter for $counts', async ({
     counts, limits, rows, truncated,
   }) => {
@@ -478,7 +481,7 @@ describe('jobs aggregate helpers', () => {
     await vi.waitFor(() => expect(socket.sent).toHaveLength(6))
     for (const [index, status] of ['f', 'E'].entries()) {
       const command = socket.sent.slice(4).map(payload => JSON.parse(payload))
-        .find(entry => entry.command === `llist jobs reverse limit=${limits[index]} offset=0 jobstatus=${status}`)
+        .find(entry => entry.command === `llist jobs reverse limit=${MAX_JOBS_FETCH_LIMIT} offset=0 jobstatus=${status}`)
       expect(command).toBeDefined()
       socket.onmessage?.({
         data: JSON.stringify({
@@ -525,7 +528,7 @@ describe('jobs aggregate helpers', () => {
     })
     await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
     const command = JSON.parse(socket.sent[3])
-    expect(command.command).toBe('llist jobs reverse limit=25 offset=0 jobstatus=f')
+    expect(command.command).toBe(`llist jobs reverse limit=${MAX_JOBS_FETCH_LIMIT} offset=0 jobstatus=f`)
     socket.onmessage?.({
       data: JSON.stringify({
         type: 'response', id: command.id,
@@ -537,6 +540,41 @@ describe('jobs aggregate helpers', () => {
     expect(result.directorErrors).toEqual([{
       director: 'prod-a', message: 'Failed to count jobs: count denied',
     }])
+  })
+
+  it('fetches fallback rows even when the earlier count was zero', async () => {
+    const loading = fetchAggregatedJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 25, sortBy: 'name', descending: false },
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(3))
+    for (const payload of socket.sent.slice(1)) {
+      const command = JSON.parse(payload)
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response', id: command.id,
+          data: command.command === 'status director' ? { running: [] } : { jobs: [{ count: 0 }] },
+        }),
+      })
+    }
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+    const command = JSON.parse(socket.sent[3])
+    expect(command.command).toContain(`limit=${MAX_JOBS_FETCH_LIMIT}`)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response', id: command.id,
+        data: { jobs: [{ jobid: 1, name: 'z' }, { jobid: 2, name: 'a' }] },
+      }),
+    })
+    const result = await loading
+    expect(result.jobs.map(job => job.name)).toEqual(['a', 'z'])
+    expect(result.totalJobs).toBe(2)
+    expect(result.browsableJobs).toBe(2)
+    expect(result.truncated).toBe(false)
   })
 
   it('uses the cap for All when the count fails and reports unknown completeness', async () => {
@@ -646,13 +684,41 @@ describe('jobs aggregate helpers', () => {
     expect(result.jobs.at(-1)).toMatchObject({ id: 1 })
   })
 
+  it('reports unknown completeness when a recent-jobs fallback fills its cap', async () => {
+    const loading = fetchAggregatedRecentJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 25, sortBy: 'name' }
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(4))
+
+    for (const payload of socket.sent.slice(1)) {
+      const { id, command } = JSON.parse(payload)
+      const data = command === 'llist jobs count last current enabled'
+        ? { jobs: [{ count: '1' }] }
+        : command === 'status director'
+          ? { running: [] }
+          : { jobs: Array.from({ length: MAX_JOBS_FETCH_LIMIT }, (_, index) => ({
+              jobid: String(index + 1), name: `Job-${index + 1}`,
+            })) }
+      socket.onmessage?.({ data: JSON.stringify({ type: 'response', id, data }) })
+    }
+
+    const result = await loading
+    expect(result.totalJobs).toBe(MAX_JOBS_FETCH_LIMIT)
+    expect(result.truncated).toBeNull()
+  })
+
   it.each([
     ['status director', [2, 1], 2, []],
     ['llist jobs last current enabled reverse limit=2 offset=0 sortby=jobid', [], 0, [
       { director: 'prod-a', message: 'command denied' },
     ]],
-    ['llist jobs count last current enabled', [], 0, [
-      { director: 'prod-a', message: 'command denied' },
+    ['llist jobs count last current enabled', [2, 1], 2, [
+      { director: 'prod-a', message: 'Failed to count jobs: command denied' },
     ]],
   ])('handles denied recent-jobs command %s', async (deniedCommand, ids, totalJobs, directorErrors) => {
     const loading = fetchAggregatedRecentJobsPage(
@@ -686,7 +752,11 @@ describe('jobs aggregate helpers', () => {
 
     const result = await loading
     expect(result.jobs.map(job => job.id)).toEqual(ids)
-    expect(result).toMatchObject({ totalJobs, directorErrors, truncated: false })
+    expect(result).toMatchObject({
+      totalJobs,
+      directorErrors,
+      truncated: deniedCommand === 'llist jobs count last current enabled' ? null : false,
+    })
   })
 
   it('loads trouble jobs with a bounded server-side prefilter', async () => {

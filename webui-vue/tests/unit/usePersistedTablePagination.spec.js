@@ -71,6 +71,13 @@ describe('usePersistedTablePagination', () => {
     expect(pagination.value.rowsPerPage).toBe(0)
   })
 
+  it('uses an allowed size when the default is not an allowed option', () => {
+    const pagination = usePersistedTablePagination('jobs.list', {}, {
+      allowedRowsPerPage: [10, 25, 50],
+    })
+    expect(pagination.value.rowsPerPage).toBe(10)
+  })
+
   it('persists table sort state when enabled', async () => {
     localStorage.setItem(LS_KEY, JSON.stringify({
       tableSort: { 'jobs.defs': { sortBy: 'type', descending: true } },

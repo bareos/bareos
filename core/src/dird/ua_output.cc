@@ -48,6 +48,7 @@
 #include "dird/jcr_util.h"
 
 #include <array>
+#include <charconv>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -627,8 +628,11 @@ static bool GetAclFilteredJobidsFromCmdline(UaContext* ua,
   if (!jobids_arg) { return false; }
 
   for (const std::string& token : split_string(jobids_arg, ',')) {
-    int64_t candidate = str_to_int64(token.c_str());
-    if (candidate <= 0) {
+    JobId_t candidate = 0;
+    const auto parsed
+        = std::from_chars(token.data(), token.data() + token.size(), candidate);
+    if (parsed.ec != std::errc{} || parsed.ptr != token.data() + token.size()
+        || candidate == 0) {
       Dmsg1(200,
             "GetAclFilteredJobidsFromCmdline: Ignoring invalid jobid "
             "'%s'.\n",
@@ -637,7 +641,7 @@ static bool GetAclFilteredJobidsFromCmdline(UaContext* ua,
     }
 
     JobDbRecord jr{};
-    jr.JobId = static_cast<JobId_t>(candidate);
+    jr.JobId = candidate;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
       Dmsg1(200,
             "GetAclFilteredJobidsFromCmdline: Failed to get job record for "

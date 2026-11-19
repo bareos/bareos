@@ -29,7 +29,14 @@
                     <span v-if="row.status">
                       <span
                         v-if="row.waiting"
-                        class="row items-center no-wrap q-gutter-x-xs"
+                        class="row items-center no-wrap q-gutter-x-xs cursor-pointer"
+                        role="button"
+                        tabindex="0"
+                        :aria-label="`${row.status}: ${t('Jump to log')}`"
+                        :title="t('Jump to log')"
+                        @click="jumpToLog"
+                        @keydown.enter="jumpToLog"
+                        @keydown.space.prevent="jumpToLog"
                       >
                         <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                         <span class="text-orange-7 text-caption">{{ row.status }}</span>
@@ -111,7 +118,7 @@
         </div>
 
         <!-- Job Log -->
-        <div class="col-12">
+        <div ref="logSection" class="col-12">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
                 <span>{{ t('Job Log') }}</span>
@@ -166,6 +173,7 @@ import {
   overlayRuntimeStatuses,
 } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
+import { createDirectorCommandClient } from '../composables/directorAggregate.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -306,6 +314,7 @@ const loading       = ref(true)
 const jobData       = ref(null)
 const logLines      = ref('')
 const logContainer  = ref(null)
+const logSection = ref(null)
 const volumes       = ref([])
 const volumeDetailsByName = ref({})
 const error         = ref(null)
@@ -388,6 +397,10 @@ function jumpToIssue(direction) {
   focusIssueAt(currentPosition + direction)
 }
 
+function jumpToLog() {
+  logSection.value?.scrollIntoView({ block: 'start' })
+}
+
 // Find the log line to jump to for a given logFocus value:
 // - 'error'   → first error line (falls back to first warning line)
 // - 'warning' → first warning line (falls back to first error line)
@@ -412,11 +425,12 @@ function findFocusTargetIndex(focus) {
 // Scroll the log panel on first load: jump to and highlight the relevant
 // error/warning/termination line if logFocus was requested, otherwise fall
 // back to the default "scroll to bottom" behavior.
-watch([logLines, logFocus], () => {
+watch([logLines, logFocus, logContainer], () => {
   if (!logLines.value) return
   if (autoFocusPending && logFocus.value) {
-    autoFocusPending = false
     nextTick(() => {
+      if (!autoFocusPending || !logContainer.value) return
+      autoFocusPending = false
       const targetIndex = findFocusTargetIndex(logFocus.value)
       if (targetIndex >= 0) {
         const issuePos = issueLineIndexes.value.indexOf(targetIndex)
@@ -449,9 +463,13 @@ async function ensureJobDirector(targetDirector = requestedDirector.value) {
 
 const commentDialogOpen = ref(false)
 const commentTarget = ref(null)
+let loadRevision = 0
+let routeLoadRevision = 0
 
 function openJobComment() {
-  commentTarget.value = { jobId: currentJobId.value, director: currentJobDirector.value }
+  if (!jobData.value || String(jobData.value.id) !== String(currentJobId.value)
+      || jobData.value.director !== currentJobDirector.value) return
+  commentTarget.value = { jobId: jobData.value.id, director: jobData.value.director }
   commentDialogOpen.value = true
 }
 
@@ -463,21 +481,37 @@ watch(() => [currentJobId.value, currentJobDirector.value], () => {
 async function saveJobComment(comment) {
   const target = commentTarget.value
   if (!target) throw new Error(t('Job not found.'))
-  await ensureJobDirector(target.director)
-  if (target !== commentTarget.value) throw new Error(t('Job not found.'))
-  await director.call(buildJobCommentCommand(target.jobId, comment))
+  const credentials = auth.getCredentials()
+  if (!credentials?.password || !target.director) throw new Error(t('Not logged in.'))
+  const client = await createDirectorCommandClient({ ...credentials, director: target.director })
+  try {
+    if (target !== commentTarget.value) throw new Error(t('Job not found.'))
+    await client.call(buildJobCommentCommand(target.jobId, comment))
+  } finally {
+    client.disconnect()
+  }
   if (target === commentTarget.value && jobData.value) {
+    loadRevision++
     jobData.value = { ...jobData.value, comment }
   }
 }
 
 async function loadJob() {
-  await ensureJobDirector()
+  const revision = ++loadRevision
+  const jobId = currentJobId.value
+  const targetDirector = currentJobDirector.value
+  const current = () => revision === loadRevision
+    && String(jobId) === String(currentJobId.value)
+    && targetDirector === currentJobDirector.value
+    && (!targetDirector || auth.user?.director === targetDirector)
+  await ensureJobDirector(targetDirector)
+  if (!current()) return
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
-    director.call(buildListJobCommand(currentJobId.value)),
-    director.call(`list joblog jobid=${currentJobId.value}`),
-    director.call(`list jobmedia jobid=${currentJobId.value}`),
+    director.call(buildListJobCommand(jobId)),
+    director.call(`list joblog jobid=${jobId}`),
+    director.call(`list jobmedia jobid=${jobId}`),
   ])
+  if (!current()) return
 
   if (jobRes.status === 'fulfilled') {
     const raw   = jobRes.value
@@ -485,10 +519,11 @@ async function loadJob() {
     if (entry) {
       const loadedJob = {
         ...normaliseJob(entry),
-        director: currentJobDirector.value || null,
+        director: targetDirector || null,
       }
       if (isRunningJobStatus(loadedJob.status)) {
         const runtimeStatus = await Promise.allSettled([director.call('status director')])
+        if (!current()) return
         jobData.value = runtimeStatus[0].status === 'fulfilled'
           ? overlayRuntimeStatuses([loadedJob], runtimeStatus[0].value?.running)[0]
           : loadedJob
@@ -519,6 +554,7 @@ async function loadJob() {
     const volumeResults = await Promise.allSettled(
       volumeNames.map(name => director.call(`llist volume=${quoteDirectorString(name)}`))
     )
+    if (!current()) return
 
     volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
       const result = volumeResults[index]
@@ -539,6 +575,7 @@ async function loadJob() {
 }
 
 watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () => {
+  const revision = ++routeLoadRevision
   loading.value = true
   error.value = null
   jobData.value = null
@@ -548,9 +585,9 @@ watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () =>
   try {
     await loadJob()
   } catch (loadError) {
-    error.value = loadError.message ?? t('Failed to load job')
+    if (revision === routeLoadRevision) error.value = loadError.message ?? t('Failed to load job')
   } finally {
-    loading.value = false
+    if (revision === routeLoadRevision) loading.value = false
   }
 }, { immediate: true })
 
@@ -624,7 +661,11 @@ watch(isRunning, (running) => {
   else stopPolling()
 }, { immediate: true })
 
-onUnmounted(stopPolling)
+onUnmounted(() => {
+  loadRevision++
+  routeLoadRevision++
+  stopPolling()
+})
 
 // ── actions ───────────────────────────────────────────────────────────────────
 function escapeHtml(value) {
@@ -649,23 +690,30 @@ function confirmRerun() {
 async function openRestoreDetails() {
   if (!job.value) { return }
 
+  const selectedJob = job.value
+  const targetDirector = currentJobDirector.value
+  const jobId = currentJobId.value
   try {
-    if (currentJobDirector.value) {
-      await switchActiveDirector(currentJobDirector.value)
+    if (targetDirector) {
+      await switchActiveDirector(targetDirector)
+    }
+    if (String(currentJobId.value) !== String(jobId)
+        || currentJobDirector.value !== targetDirector) {
+      throw new Error(t('Job not found.'))
     }
     await router.push({
       name: 'restore',
       query: {
-        client: job.value.client,
-        director: currentJobDirector.value,
-        jobid: currentJobId.value,
+        client: selectedJob.client,
+        director: targetDirector,
+        jobid: jobId,
       },
     })
   } catch (error) {
     $q.notify({
       type: 'negative',
       message: t('Could not switch to director {director}: {message}', {
-        director: currentJobDirector.value || t('unknown'),
+        director: targetDirector || t('unknown'),
         message: error.message,
       }),
     })

@@ -726,10 +726,16 @@ void BareosDb::ListJobRecords(
             ? resolved_sort_column.c_str()
             : "StartTime";
   const std::string direction = descending ? " DESC" : "";
+  const std::string null_order = descending ? " NULLS LAST" : " NULLS FIRST";
+  const bool paginate_filtered
+      = !count && range && *range && sendit->HasRowFilters();
   const std::string order_range
-      = direction + ", Job.StartTime" + direction
-        + (descending ? " NULLS LAST" : " NULLS FIRST") + ", Job.JobId"
-        + direction + range;
+      = direction
+        + ((resolved_sort_column == "Job.StartTime" || resolved_sort_column.empty())
+               ? null_order
+               : "")
+        + ", Job.StartTime" + direction + null_order + ", Job.JobId"
+        + direction + (paginate_filtered ? "" : range);
 
   if (!count && type != VERT_LIST) {
     sendit->AddHiddenColumn(10); /* JobErrors: required for DISTINCT sorting */
@@ -785,7 +791,7 @@ void BareosDb::ListJobRecords(
   if (!QueryDb(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
-  ListResult(jcr, sendit, type);
+  ListResult(jcr, sendit, type, paginate_filtered, jr->limit, jr->offset);
   sendit->ArrayEnd("jobs");
 
   SqlFreeResult();
