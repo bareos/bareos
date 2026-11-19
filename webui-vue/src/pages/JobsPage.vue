@@ -119,7 +119,7 @@
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
             <q-banner v-if="jobsTruncated !== false" dense class="bg-warning text-white">
-              {{ t('Results may be incomplete. Narrow your filters to see all matching jobs.') }}
+              {{ t('Fetched {count} jobs. Results may be incomplete. Narrow your filters to see all matching jobs.', { count: formatNumber(pagination.rowsNumber, settings.locale) }) }}
             </q-banner>
             <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
               <q-chip

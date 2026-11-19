@@ -99,6 +99,48 @@ test('browser regression: column checkboxes have accessible names', async ({ pag
   }
 })
 
+test('browser regression: capped multi-Director results show the fetched total', async ({ page }) => {
+  await browserFixture(page, command => {
+    if (command.startsWith('llist jobs count')) return { jobs: [{ count: '1100' }] }
+    if (command.startsWith('llist jobs ')) {
+      const limit = Number(command.match(/\blimit=(\d+)/)?.[1] ?? 1000)
+      return { jobs: Array.from({ length: Math.min(limit, 1000) }, (_, index) => ({
+        jobid: String(index + 1), name: `Job-${index + 1}`, jobstatus: 'T',
+      })) }
+    }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.getByRole('columnheader', { name: /^Duration\b/ }).click()
+  await expect(page.getByText('Fetched 2,000 jobs. Results may be incomplete. Narrow your filters to see all matching jobs.')).toBeVisible()
+})
+
+test('browser regression: dependent readiness failure does not repeat selection', async ({ page }) => {
+  await page.setContent(`
+    <div class="q-field">
+      <span data-testid="source"></span>
+      <button role="combobox" aria-controls="options">Choose</button>
+    </div>
+    <div id="options" role="listbox"><button role="option">Option</button></div>
+  `)
+  await page.evaluate(() => {
+    window.optionClicks = 0
+    document.querySelector('[role="option"]').addEventListener('click', () => { window.optionClicks++ })
+  })
+  await expect(selectFirstQOption(page, 'source', {
+    selected: () => Promise.reject(new Error('dependent field failed')),
+  })).rejects.toThrow('dependent field failed')
+  expect(await page.evaluate(() => window.optionClicks)).toBe(1)
+})
+
+test('browser regression: comment editor is reachable and operable by keyboard', async ({ page }) => {
+  await browserFixture(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await checkCommentEditorKeyboard(page)
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
@@ -519,6 +561,7 @@ async function selectFirstQOption(
   const deadline = Date.now() + optionTimeoutMs
   const remaining = () => Math.max(1, deadline - Date.now())
   let lastError
+  let optionSelected = false
   while (Date.now() < deadline) {
     try {
       await combobox.click({ timeout: remaining() })
@@ -535,10 +578,8 @@ async function selectFirstQOption(
         timeout: Math.min(1000, remaining()),
       })
       await option.click({ timeout: remaining() })
-      if (selected) {
-        await selected(deadline)
-      }
-      return
+      optionSelected = true
+      break
     } catch (error) {
       lastError = error
       await page.keyboard.press('Escape')
@@ -546,7 +587,10 @@ async function selectFirstQOption(
     }
   }
 
-  throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
+  if (!optionSelected) {
+    throw new Error(`Could not open option menu for ${testId}`, { cause: lastError })
+  }
+  if (selected) await selected()
 }
 
 async function waitForQSelectReady(page, testId, deadline = Date.now() + 20000) {
@@ -877,9 +921,7 @@ test('keeps Comment non-sortable without changing the active job order', async (
   await expect(page.getByRole('columnheader', { name: /^ID\b/ })).toHaveClass(/sort-desc/)
 })
 
-test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
-  await login(page)
-  await openNav(page, 'nav-jobs', /#\/jobs/)
+async function checkCommentEditorKeyboard(page) {
   await page.getByRole('button', { name: 'Choose columns' }).click()
   await page.locator('.q-menu').getByText('Comment', { exact: true }).click()
   await page.keyboard.press('Escape')
@@ -890,6 +932,9 @@ test('shows comment editing on mouse hover and keyboard focus', async ({ page })
   await expect(edit).toHaveCSS('opacity', '1')
   await page.mouse.move(0, 0)
   await expect(edit).toHaveCSS('opacity', '0')
+  const start = page.getByRole('button', { name: 'Choose columns' })
+  await start.focus()
+  await expect(start).toBeFocused()
   for (let index = 0; index < 200 && !(await edit.evaluate(el => el === document.activeElement)); index++) {
     await page.keyboard.press('Tab')
   }
@@ -897,6 +942,12 @@ test('shows comment editing on mouse hover and keyboard focus', async ({ page })
   await expect(edit).toHaveCSS('opacity', '1')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('dialog')).toBeVisible()
+}
+
+test('shows comment editing on mouse hover and keyboard focus', async ({ page }) => {
+  await login(page)
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await checkCommentEditorKeyboard(page)
 })
 
 test.describe('touch comment editing', () => {
@@ -926,7 +977,7 @@ test('loads the restore workflow selections', async ({ page }) => {
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
     hasText: /(^| \/ )bareos-fd$/,
-    selected: deadline => waitForQSelectReady(page, 'restore-backup-job', deadline),
+    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await expect(page.locator('[data-testid="restore-backup-job"]')).toBeVisible()
   await waitForQSelectReady(page, 'restore-backup-job')
@@ -962,7 +1013,7 @@ test('restores a real file from a backup', async ({ page }) => {
   await waitForQSelectReady(page, 'restore-source-client')
   await selectFirstQOption(page, 'restore-source-client', {
     hasText: /(^| \/ )bareos-fd$/,
-    selected: deadline => waitForQSelectReady(page, 'restore-backup-job', deadline),
+    selected: () => waitForQSelectReady(page, 'restore-backup-job'),
   })
   await waitForQSelectReady(page, 'restore-backup-job')
   await selectFirstQOption(page, 'restore-backup-job', {
