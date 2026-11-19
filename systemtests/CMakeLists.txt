@@ -93,6 +93,35 @@ include(BareosSystemtestFunctions)
 # ps is required for systemtests
 find_program(PS ps REQUIRED)
 
+if(UNIX AND PGREP)
+  add_test(
+    NAME system:ctl-pid-lookup
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+  )
+  add_test(
+    NAME system:ctl-pid-lookup-delayed-exec
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs" --delayed-exec
+  )
+  add_test(
+    NAME system:ctl-pid-lookup-inherited-pidfile
+    COMMAND
+      bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bareos-ctl-funcs.sh"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bareos-ctl-funcs"
+      --inherited-pidfile
+  )
+endif()
+
+if(UNIX)
+  add_test(
+    NAME system:bls-compression-job-identity
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test-bls-compression.sh"
+            "${CMAKE_CURRENT_SOURCE_DIR}/scripts/functions"
+  )
+endif()
+
 set(USER $ENV{USER})
 
 # set the data encryption and signature keys
@@ -397,6 +426,27 @@ find_program(
 )
 check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
+
+if(PYTHON_EXECUTABLE AND PYMODULE_3_SELENIUM_FOUND)
+  add_test(
+    NAME webui:login-compatibility
+    COMMAND
+      "${PYTHON_EXECUTABLE}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/selenium/test_login_compatibility.py"
+  )
+endif()
+
+if(PHP
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/ClassLoader.php"
+   AND EXISTS "${CMAKE_SOURCE_DIR}/webui/vendor/composer/autoload_psr4.php"
+)
+  add_test(
+    NAME webui:restore-location
+    COMMAND
+      "${PHP}"
+      "${CMAKE_SOURCE_DIR}/webui/tests/regress/webui-restore-location-test.php"
+  )
+endif()
 
 message("   PHP:                       " ${PHP})
 message("   PYTHON_EXECUTABLE:         " ${PYTHON_EXECUTABLE})
@@ -821,6 +871,7 @@ else()
                TIMEOUT 60 COST 1.0
   )
 
+  math(EXPR BASEPORT "${BASEPORT} + 10")
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_USERNAME "")
   set(BAREOS_WEBUI_PASSWORD "")

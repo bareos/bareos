@@ -8,8 +8,34 @@ FileSet {
     }
     Plugin = "bpipe"
              ":file=/bpipe"
-             ":reader=bash ./readprogram"
+             ":reader=bash ./readprogram-accounting"
              ":writer=bash ./writeprogram"
+  }
+
+  Include {
+    Options {
+      Signature = XXH128
+      Sparse = yes
+    }
+    Plugin = "bpipe"
+             ":file=/bpipe-sparse"
+             ":reader=bash ./readprogram-sparse"
+             ":writer=bash ./writeprogram-sparse"
+  }
+}
+
+FileSet {
+  Name = BscanBootstrap
+  Enable VSS = No
+
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe:file=/bscan-first"
+             ":reader=bash ./readprogram-accounting:writer=bash ./writeprogram"
+    Plugin = "bpipe:file=/bscan-second"
+             ":reader=bash ./readprogram-accounting:writer=bash ./writeprogram"
   }
 }
 

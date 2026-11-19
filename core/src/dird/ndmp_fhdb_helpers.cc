@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,8 @@
 #include "include/protocol_types.h"
 #include "include/filetypes.h"
 #include "lib/attribs.h"
+
+#include <limits>
 
 #if HAVE_NDMP
 
@@ -194,6 +196,29 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 
     if (fstat->links.valid == NDMP9_VALIDITY_VALID) {
       statp.st_nlink = fstat->links.value;
+    }
+
+    // Derive size/blocks from the reported file size, when known.
+    // Do not guess when the NDMP data server didn't report a size.
+    // An explicitly reported but unrepresentable size must not look like
+    // a valid empty file to accounting. Preserve it as an invalid stat.
+    if (fstat->size.valid == NDMP9_VALIDITY_VALID) {
+      if (fstat->size.value > static_cast<uint64_t>(
+              std::numeric_limits<decltype(statp.st_size)>::max())) {
+        statp.st_size = -1;
+      } else {
+        uint64_t blocks
+            = fstat->size.value / 512 + (fstat->size.value % 512 != 0);
+        if (blocks > static_cast<uint64_t>(
+                std::numeric_limits<decltype(statp.st_blocks)>::max())) {
+          statp.st_size = -1;
+        } else {
+          statp.st_size
+              = static_cast<decltype(statp.st_size)>(fstat->size.value);
+          statp.st_blksize = 512;
+          statp.st_blocks = static_cast<decltype(statp.st_blocks)>(blocks);
+        }
+      }
     }
   }
 

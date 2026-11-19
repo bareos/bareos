@@ -66,6 +66,12 @@ check_for_zombie_jobs storage=File1 client=${Client}
 # check tmp/log1.out and tmp/log2.out for errors
 check_two_logs
 
+BackupJobId=$(awk '$1 == "JobId:" { print $2; exit }' "${tmp}/log1.out")
+if ! [[ "$BackupJobId" =~ ^[1-9][0-9]*$ ]]; then
+  set_error "Could not read the backup JobId from ${tmp}/log1.out."
+  end_test
+fi
+
 # check for differences between original files and restored files
 # gives an error, because top-level data directory is not backed up
 # (and has therefore other permissions)
@@ -79,10 +85,10 @@ if ! [ -d ${BackupDirectory} ]; then
   set_error "Directory ${BackupDirectory} does not exists any more."
 fi
 
-check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data2/test.dat" "gzip"
-check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data3/test.dat" "gzip" "9"
+check_compression "${Storage}" "${VolumeName}" "${BackupJobId}" "${BackupDirectory}/data2/test.dat" "gzip"
+check_compression "${Storage}" "${VolumeName}" "${BackupJobId}" "${BackupDirectory}/data3/test.dat" "gzip" "9"
 # Warning: LZ4 compression support requested in fileset but not available on this platform. Disabling ...
-#check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" "LZ4"
+#check_compression "${Storage}" "${VolumeName}" "${BackupJobId}" "${tmp}/data/data3/test.dat" "LZ4"
 
 # end tests and check for error codes
 end_test
