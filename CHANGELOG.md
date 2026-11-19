@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: allow comments in sqlquery/query [PR #2892]
 - stored: prevent deadlocks for intra-sd jobs [PR #2888]
 - systemtests: reduce autochanger fixture to five slots [PR #2921]
+- director: enable `Allow Mixed Priority` in default job [PR #2918]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2452,5 +2453,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2892]: https://github.com/bareos/bareos/pull/2892
 [PR #2894]: https://github.com/bareos/bareos/pull/2894
 [PR #2906]: https://github.com/bareos/bareos/pull/2906
+[PR #2918]: https://github.com/bareos/bareos/pull/2918
 [PR #2921]: https://github.com/bareos/bareos/pull/2921
 [unreleased]: https://github.com/bareos/bareos/tree/master
