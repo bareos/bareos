@@ -1,0 +1,41 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -euo pipefail
+
+# shellcheck source=../../environment.in
+. ./environment
+export TMPDIR="${PWD}/working"
+
+# Do not use the generic setup/cleanup: those can kill port occupants.
+# Only this fixture's database and directly owned child processes are touched.
+trap '"${BAREOS_SCRIPTS_DIR}/drop_bareos_database" >/dev/null 2>&1 || true' EXIT
+"${BAREOS_SCRIPTS_DIR}/drop_bareos_database" >/dev/null 2>&1 || true
+"${BAREOS_SCRIPTS_DIR}/create_bareos_database"
+# Use the existing DDL helpers via stdin: the standalone table/grant scripts
+# create their scratch SQL files outside the fixture.
+. "${BAREOS_SCRIPTS_DIR}/bareos-config-lib.sh"
+get_translated_sql_file "${BAREOS_SCRIPTS_DIR}/ddl/creates/postgresql.sql" \
+  | psql --no-psqlrc --quiet --set ON_ERROR_STOP=on --dbname "${db_name}"
+get_database_grant_privileges postgresql "${db_user}" "${db_password}" \
+  | sed '/^CREATE USER /d' \
+  | psql --no-psqlrc --quiet --set ON_ERROR_STOP=on --dbname "${db_name}"
+
+"${PYTHON_EXECUTABLE}" proxy_test.py "${PROXY_TEST_MODE}"

@@ -23,6 +23,7 @@
 #include "lib/cram_md5.h"
 #include "lib/ascii_control_characters.h"
 #include "lib/bnet_protocol_signals.h"
+#include "lib/bnet.h"
 #include "proxy_log.h"
 #include "lib/util.h"
 #include "lib/version.h"
@@ -32,6 +33,7 @@
 #include <array>
 #include <cassert>
 #include <cerrno>
+#include <charconv>
 #include <cstring>
 #include <ctime>
 #include <stdexcept>
@@ -61,6 +63,20 @@ std::string GetTlsPskIdentityForDirector(const std::string& console_name)
 namespace {
 
 constexpr size_t kHmacMd5DigestBytes = 16;
+
+uint32_t AuthenticationMessageId(std::string_view message)
+{
+  uint32_t id = kMessageIdUnknown;
+  const auto [end, error]
+      = std::from_chars(message.data(), message.data() + message.size(), id);
+  if (error != std::errc{} || end == message.data()
+      || (end != message.data() + message.size()
+          && *end != AsciiControlCharacters::RecordSeparator() && *end != ' '
+          && *end != '\n' && *end != '\0')) {
+    throw std::runtime_error("Director: invalid authentication response ID");
+  }
+  return id;
+}
 
 /**
  * Compute HMAC-MD5(key, data) and return the 16-byte raw digest.
@@ -213,7 +229,9 @@ bool DirectorConnection::HasPendingInput(int timeout_ms) const
   if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
   assert(fd_ >= 0);
 
-  struct pollfd pfd{fd_, POLLIN, 0};
+  struct pollfd pfd {
+    fd_, POLLIN, 0
+  };
   int rc = poll(&pfd, 1, timeout_ms);
   return rc > 0 && (pfd.revents & POLLIN);
 }
@@ -384,15 +402,48 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
         "response)");
   }
 
-  // Step 8: receive welcome (>= 18.2: "1000\x1eOK: <name> Version: ...").
-  // The director also sends a second info frame (1002\x1e...) that we discard.
+  FinishAuthentication(cfg);
+}
+
+void DirectorConnection::FinishAuthentication(const DirectorConfig& cfg)
+{
   std::string welcome = RecvFrame();
-  if (welcome.find("1000") == std::string::npos) {
-    throw std::runtime_error("Director: unexpected welcome: " + welcome);
+  const auto welcome_id = AuthenticationMessageId(welcome);
+  if (cfg.pam_credentials && welcome_id != kMessageIdPamRequired) {
+    throw std::runtime_error(
+        "Director: PAM authentication failed: Console did not request PAM");
+  }
+  if (welcome_id == kMessageIdPamRequired) {
+    if (!tls_psk_active_) {
+      throw std::runtime_error(
+          "Director: PAM authentication failed: TLS is required");
+    }
+    if (!cfg.pam_credentials || !cfg.pam_credentials->IsValid()) {
+      throw std::runtime_error(
+          "Director: PAM authentication failed: valid credentials required");
+    }
+    const char separator = AsciiControlCharacters::RecordSeparator();
+    const auto& credentials = *cfg.pam_credentials;
+    SendFrame(std::to_string(kMessageIdPamUserCredentials) + separator
+              + credentials.username + separator + credentials.password);
+    int32_t signal = 0;
+    try {
+      welcome = RecvFrame(&signal);
+    } catch (const std::runtime_error&) {
+      throw std::runtime_error("Director: PAM authentication failed");
+    }
+    if (signal == BNET_TERMINATE
+        || AuthenticationMessageId(welcome) != kMessageIdOk) {
+      throw std::runtime_error("Director: PAM authentication failed");
+    }
+  }
+  if (AuthenticationMessageId(welcome) != kMessageIdOk) {
+    throw std::runtime_error(
+        "Director: authentication failed: welcome rejected");
   }
   std::string info = RecvFrame();
-  if (info.find("1002") == std::string::npos) {
-    throw std::runtime_error("Director: unexpected info message: " + info);
+  if (AuthenticationMessageId(info) != kMessageIdInfoMessage) {
+    throw std::runtime_error("Director: unexpected info message");
   }
 
   // Step 9: activate JSON API if requested.
@@ -429,7 +480,7 @@ DirectorConnection DirectorConnection::Connect(const DirectorConfig& cfg)
 
 void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
 {
-  struct addrinfo hints{};
+  struct addrinfo hints {};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 

@@ -124,6 +124,159 @@ void WriteSignal(int fd, int32_t signal)
 }
 }  // namespace
 
+TEST(DirectorConnection, CompletesPamAuthenticationBeforeFirstCommand)
+{
+  int sockets[2] = {-1, -1};
+  ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+  DirectorConnection connection;
+  connection.fd_ = sockets[0];
+  connection.tls_psk_active_ = true;
+  connection.json_mode_ = false;
+  DirectorConfig cfg;
+  cfg.json_mode = false;
+  cfg.pam_credentials = PamCredentials{"pam-user", "pam-password"};
+
+  std::thread director([peer = sockets[1]]() {
+    WriteFrame(peer,
+               "1001\x1e"
+               "PAM required");
+    int32_t header = 0;
+    if (read(peer, &header, sizeof(header)) != sizeof(header)) {
+      close(peer);
+      return;
+    }
+    const auto size = static_cast<size_t>(ntohl(header));
+    std::string credentials(size, '\0');
+    ASSERT_EQ(read(peer, credentials.data(), size), static_cast<ssize_t>(size));
+    EXPECT_EQ(credentials,
+              "4002\x1e"
+              "pam-user\x1e"
+              "pam-password");
+    WriteFrame(peer,
+               "1000\x1e"
+               "OK: bareos-dir");
+    WriteFrame(peer,
+               "1002\x1e"
+               "additional info");
+    ASSERT_EQ(read(peer, &header, sizeof(header)), sizeof(header));
+    const auto command_size = static_cast<size_t>(ntohl(header));
+    std::string command(command_size, '\0');
+    ASSERT_EQ(read(peer, command.data(), command_size),
+              static_cast<ssize_t>(command_size));
+    EXPECT_EQ(command, "whoami\n");
+    WriteFrame(peer, "pam-user\n");
+    WriteSignal(peer, BNET_MAIN_PROMPT);
+    close(peer);
+  });
+
+  try {
+    connection.FinishAuthentication(cfg);
+    EXPECT_EQ(connection.Call("whoami").text, "pam-user\n");
+  } catch (const std::exception& ex) {
+    ADD_FAILURE() << ex.what();
+  }
+  shutdown(connection.fd_, SHUT_RDWR);
+  director.join();
+  close(connection.fd_);
+  connection.fd_ = -1;
+}
+
+TEST(DirectorConnection, RejectsUnsafeOrFailedPamWithoutLeakingCredentials)
+{
+  struct Scenario {
+    bool tls;
+    std::optional<PamCredentials> credentials;
+    std::string final_message;
+    bool sends_credentials;
+    int32_t final_signal = 0;
+  };
+  const Scenario scenarios[]{
+      {false, PamCredentials{"pam-user", "pam-secret"}, {}, false},
+      {true, std::nullopt, {}, false},
+      {true, PamCredentials{"", "pam-secret"}, {}, false},
+      {true, PamCredentials{"pam-user", ""}, {}, false},
+      {true,
+       PamCredentials{"bad\x1e"
+                      "user",
+                      "pam-secret"},
+       {},
+       false},
+      {true,
+       PamCredentials{"pam-user", std::string("bad\0secret", 10)},
+       {},
+       false},
+      {true, PamCredentials{"pam-user", "pam-secret"},
+       "1999 Authorization failed", true},
+      {true, PamCredentials{"pam-user", "pam-secret"}, {}, true},
+      {true,
+       PamCredentials{"pam-user", "pam-secret"},
+       {},
+       true,
+       BNET_TERMINATE},
+  };
+  for (const auto& scenario : scenarios) {
+    int sockets[2] = {-1, -1};
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    DirectorConnection connection;
+    connection.fd_ = sockets[0];
+    connection.tls_psk_active_ = scenario.tls;
+    DirectorConfig cfg;
+    cfg.json_mode = false;
+    cfg.pam_credentials = scenario.credentials;
+    WriteFrame(sockets[1],
+               "1001\x1e"
+               "PAM required");
+    if (!scenario.final_message.empty()) {
+      WriteFrame(sockets[1], scenario.final_message);
+    }
+    if (scenario.final_signal) {
+      WriteSignal(sockets[1], scenario.final_signal);
+    }
+    shutdown(sockets[1], SHUT_WR);
+
+    try {
+      connection.FinishAuthentication(cfg);
+      ADD_FAILURE() << "PAM should have failed";
+    } catch (const std::runtime_error& error) {
+      const std::string message = error.what();
+      EXPECT_NE(message.find("PAM authentication failed"), std::string::npos);
+      EXPECT_EQ(message.find("pam-secret"), std::string::npos);
+    }
+    char buffer[256]{};
+    const auto sent = recv(sockets[1], buffer, sizeof(buffer), MSG_DONTWAIT);
+    EXPECT_EQ(sent > 0, scenario.sends_credentials);
+    close(sockets[1]);
+    close(connection.fd_);
+    connection.fd_ = -1;
+  }
+}
+
+TEST(DirectorConnection, RejectsPamLoginWhenConsoleDoesNotRequirePam)
+{
+  for (const std::string welcome :
+       {"1000\x1e"
+        "OK",
+        "10001 wrong", "invalid 1000", "1000invalid"}) {
+    int sockets[2] = {-1, -1};
+    ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+    DirectorConnection connection;
+    connection.fd_ = sockets[0];
+    DirectorConfig cfg;
+    cfg.json_mode = false;
+    cfg.pam_credentials = PamCredentials{"pam-user", "pam-secret"};
+    WriteFrame(sockets[1], welcome);
+    WriteFrame(sockets[1],
+               "1002\x1e"
+               "info");
+    EXPECT_THROW(connection.FinishAuthentication(cfg), std::runtime_error);
+    char buffer[256]{};
+    EXPECT_LT(recv(sockets[1], buffer, sizeof(buffer), MSG_DONTWAIT), 0);
+    close(sockets[1]);
+    close(connection.fd_);
+    connection.fd_ = -1;
+  }
+}
+
 TEST(DirectorConnection, KeepsRestoreTreePromptDataWithSameCommand)
 {
   int sockets[2] = {-1, -1};

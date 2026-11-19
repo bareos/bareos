@@ -24,6 +24,10 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <filesystem>
+#include <fstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 TEST(ProxyConfig, AllowsSharedDirectorNamesAcrossSelectors)
 {
@@ -54,6 +58,43 @@ tls_psk_disable = yes
   EXPECT_EQ(cfg.configured_directors.at("site-b").port, 29101);
   EXPECT_EQ(cfg.configured_directors.at("site-b").name, "bareos-dir");
   EXPECT_TRUE(cfg.configured_directors.at("site-b").tls_psk_disable);
+}
+
+TEST(ProxyConfig, LoadsServerSidePamConsoleAndQuotedSecret)
+{
+  const auto config = LoadProxyConfigFromString(R"ini(
+[listen]
+[pam-target]
+pam_console_name = "PamConsole"
+pam_console_password = "secret#;with\"quote\\slash" # trailing comment
+[ordinary-target]
+address = localhost
+)ini");
+  const auto& pam = config.configured_directors.at("pam-target").pam_console;
+  ASSERT_TRUE(pam);
+  EXPECT_EQ(pam->name, "PamConsole");
+  EXPECT_EQ(pam->password, "secret#;with\"quote\\slash");
+  EXPECT_FALSE(config.configured_directors.at("ordinary-target").pam_console);
+}
+
+TEST(ProxyConfig, RejectsIncompleteOrUnencryptedPamConsoleConfiguration)
+{
+  for (const std::string settings :
+       {"pam_console_name = PamConsole\n",
+        "pam_console_password = private-secret\n",
+        "pam_console_name = \"\"\npam_console_password = private-secret\n",
+        "pam_console_name = PamConsole\npam_console_password = \"\"\n",
+        "pam_console_name = PamConsole\npam_console_password = private-secret\n"
+        "tls_psk_disable = yes\n"}) {
+    try {
+      LoadProxyConfigFromString("[listen]\n[pam-target]\n" + settings);
+      ADD_FAILURE() << "expected invalid PAM configuration to be rejected";
+    } catch (const ProxyConfigParseError& error) {
+      const std::string message = error.what();
+      EXPECT_NE(message.find("[pam-target]"), std::string::npos);
+      EXPECT_EQ(message.find("private-secret"), std::string::npos);
+    }
+  }
 }
 
 TEST(ProxyConfig, RejectsDuplicateSectionNames)
@@ -316,6 +357,116 @@ TEST(ProxyConfig, RejectsMissingFilesWithTypedError)
 {
   EXPECT_THROW(LoadProxyConfigFile("/definitely/missing/proxy.ini"),
                ProxyConfigFileError);
+}
+
+TEST(ProxyConfig, EnforcesFileAndDirectoryPermissions)
+{
+  auto pattern = (std::filesystem::temp_directory_path()
+                  / "bareos-proxy-permissions-XXXXXX")
+                     .string();
+  ASSERT_NE(mkdtemp(pattern.data()), nullptr);
+  const std::filesystem::path directory(pattern);
+  struct Cleanup {
+    std::filesystem::path path;
+    ~Cleanup() { std::filesystem::remove_all(path); }
+  } cleanup{directory};
+  ASSERT_EQ(chown(directory.c_str(), -1, getegid()), 0);
+  const auto file = directory / "proxy.ini";
+  {
+    std::ofstream output(file);
+    output << "[listen]\n[pam]\npam_console_name = PamConsole\n"
+              "pam_console_password = private-secret\n";
+  }
+  ASSERT_EQ(chown(file.c_str(), -1, getegid()), 0);
+  for (const mode_t mode : {0600, 0640, 0400}) {
+    ASSERT_EQ(chmod(file.c_str(), mode), 0);
+    EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
+  }
+  for (const mode_t mode : {0644, 0660, 0604, 0700, 0670, 04640, 02640}) {
+    ASSERT_EQ(chmod(file.c_str(), mode), 0) << "mode " << std::oct << mode;
+    try {
+      LoadProxyConfigFile(file.string());
+      ADD_FAILURE() << "unsafe file permissions accepted";
+    } catch (const ProxyConfigFileError& error) {
+      EXPECT_NE(std::string(error.what()).find("unsafe configuration file"),
+                std::string::npos);
+      EXPECT_NE(std::string(error.what()).find(file.string()),
+                std::string::npos);
+      EXPECT_NE(std::string(error.what()).find("mode "), std::string::npos);
+      EXPECT_NE(std::string(error.what()).find("uid="), std::string::npos);
+      EXPECT_NE(std::string(error.what()).find("gid="), std::string::npos);
+      EXPECT_NE(std::string(error.what()).find("chmod 0640"),
+                std::string::npos);
+      EXPECT_EQ(std::string(error.what()).find("private-secret"),
+                std::string::npos);
+    }
+  }
+  ASSERT_EQ(chmod(file.c_str(), 0640), 0);
+  for (const mode_t mode : {0700, 0750, 0755, 0701}) {
+    ASSERT_EQ(chmod(directory.c_str(), mode), 0);
+    EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
+  }
+  for (const mode_t mode : {0775, 0770, 0702, 0777, 01755}) {
+    ASSERT_EQ(chmod(directory.c_str(), mode), 0);
+    try {
+      LoadProxyConfigFile(file.string());
+      ADD_FAILURE() << "unsafe directory permissions accepted";
+    } catch (const ProxyConfigFileError& error) {
+      const std::string message = error.what();
+      EXPECT_NE(message.find("unsafe configuration directory"),
+                std::string::npos);
+      EXPECT_NE(message.find(directory.string()), std::string::npos);
+      EXPECT_NE(message.find("chmod 0755"), std::string::npos);
+      EXPECT_EQ(message.find("private-secret"), std::string::npos);
+    }
+  }
+  ASSERT_EQ(chmod(directory.c_str(), 0700), 0);
+  const auto link = directory / "linked.ini";
+  std::filesystem::create_symlink(file, link);
+  EXPECT_THROW(LoadProxyConfigFile(link.string()), ProxyConfigFileError);
+  if (geteuid() != 0) {
+    ASSERT_EQ(chmod(file.c_str(), 0000), 0);
+    try {
+      LoadProxyConfigFile(file.string());
+      ADD_FAILURE() << "unreadable file accepted";
+    } catch (const ProxyConfigFileError& error) {
+      const std::string message = error.what();
+      EXPECT_NE(message.find(file.string()), std::string::npos);
+      EXPECT_NE(message.find("service file read permissions"),
+                std::string::npos);
+      EXPECT_EQ(message.find("private-secret"), std::string::npos);
+    }
+    ASSERT_EQ(chmod(file.c_str(), 0640), 0);
+    ASSERT_EQ(chmod(directory.c_str(), 0000), 0);
+    EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+    ASSERT_EQ(chmod(directory.c_str(), 0700), 0);
+  }
+  if (geteuid() == 0) {
+    ASSERT_EQ(chown(file.c_str(), 1, getegid()), 0);
+    EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+    ASSERT_EQ(chown(file.c_str(), 0, getegid()), 0);
+    ASSERT_EQ(chown(directory.c_str(), 0, getegid() + 1), 0);
+    ASSERT_EQ(chmod(directory.c_str(), 0755), 0);
+    EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
+    ASSERT_EQ(chown(directory.c_str(), 0, getegid()), 0);
+    ASSERT_EQ(chown(directory.c_str(), 1, getegid()), 0);
+    EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+    ASSERT_EQ(chown(directory.c_str(), 0, getegid()), 0);
+    ASSERT_EQ(chown(file.c_str(), 0, getegid() + 1), 0);
+    EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+    ASSERT_EQ(chown(file.c_str(), 0, getegid()), 0);
+  }
+  {
+    std::ofstream output(file);
+    output << "[listen]\n[ordinary]\naddress = localhost\n";
+  }
+  ASSERT_EQ(chmod(file.c_str(), 0644), 0);
+  ASSERT_EQ(chmod(directory.c_str(), 0775), 0);
+  EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+  ASSERT_EQ(chmod(file.c_str(), 0640), 0);
+  EXPECT_THROW(LoadProxyConfigFile(file.string()), ProxyConfigFileError);
+  ASSERT_EQ(chmod(directory.c_str(), 0750), 0);
+  EXPECT_NO_THROW(LoadProxyConfigFile(file.string()));
 }
 
 TEST(ProxyConfig, ParsesMaxUnauthenticatedConnections)

@@ -47,6 +47,9 @@
 #ifndef BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 #define BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
 
+#include "pam_credentials.h"
+#include <optional>
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -77,6 +80,7 @@ struct DirectorConfig {
   std::string director_name;
   std::string username;
   std::string password;  // plaintext
+  std::optional<PamCredentials> pam_credentials;
   bool json_mode{true};
   bool tls_psk_disable{false};
 };
@@ -155,6 +159,7 @@ class DirectorConnection {
   std::string RecvResponse();
 
   void Authenticate(const DirectorConfig& cfg);
+  void FinishAuthentication(const DirectorConfig& cfg);
 };
 
 #endif  // BAREOS_WEBUI_PROXY_DIRECTOR_CONNECTION_H_
