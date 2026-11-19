@@ -531,8 +531,51 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
+        for list_command in ("list", "llist"):
+            for jobid, visible in ((jobIdBareosFdFull, True), (jobIdTestFdFull, False)):
+                root_rows = director_root.call(
+                    f"{list_command} jobmedia jobid={jobid}"
+                )["jobmedia"]
+                self.assertTrue(root_rows)
+                for volume in {row["volumename"] for row in root_rows}:
+                    rows = console_bareos_fd_json.call(
+                        f'{list_command} jobmedia volume="{volume}"'
+                    )["jobmedia"]
+                    self.assertEqual(
+                        int(jobid) in {int(r["jobid"]) for r in rows}, visible
+                    )
+                    for row in rows:
+                        self.assertNotIn("jobname", row)
+                        self.assertNotIn("clientname", row)
+
+        director_root.call(f'update jobid={jobIdTestFdFull} comment="original"')
+        console_bareos_fd_json.call(
+            f'update jobid={jobIdBareosFdFull} comment="allowed"'
+        )
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_bareos_fd_json.call(
+                f'update jobid={jobIdTestFdFull} comment="denied"'
+            )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobIdBareosFdFull}")["jobs"][0][
+                "comment"
+            ],
+            "allowed",
+        )
+        self.assertEqual(
+            director_root.call(f"llist jobid={jobIdTestFdFull}")["jobs"][0]["comment"],
+            "original",
+        )
+
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
             console_bareos_fd_json.call(".clientbrowse client=test2-fd path=/")
+
+        browse = console_bareos_fd_json.call(".clientbrowse client=bareos-fd path=/")[
+            ".clientbrowse"
+        ]
+        self.assertEqual(browse["client"], "bareos-fd")
+        self.assertEqual(browse["path"], "/")
+        self.assertIsInstance(browse["entries"], list)
 
         result = console_bareos_fd.call("restore")
         logger.debug(str(result))

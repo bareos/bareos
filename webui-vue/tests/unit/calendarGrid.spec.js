@@ -24,6 +24,12 @@ import {
   calendarDayBounds,
   calendarDaysBetween,
   calendarWeekBounds,
+  firstOfMonth,
+  makeDateStr,
+  mondayOf,
+  monthGridDates,
+  parseDateStr,
+  weekDates,
 } from '../../src/utils/calendarGrid.js'
 
 function inNewYorkTimeZone(callback) {
@@ -83,5 +89,42 @@ describe('local calendar boundaries', () => {
       expect(calendarDaysBetween(springStart, springEnd)).toBe(2)
       expect(calendarDaysBetween(fallStart, fallEnd)).toBe(2)
     })
+  })
+})
+
+function localDateStr(date) {
+  return makeDateStr(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+describe('calendar grid helpers', () => {
+  it('starts weeks on Monday and returns seven dates', () => {
+    const dates = weekDates(mondayOf(new Date(2026, 5, 17)))
+
+    expect(dates).toHaveLength(7)
+    expect(dates.map(localDateStr)).toEqual([
+      '2026-06-15',
+      '2026-06-16',
+      '2026-06-17',
+      '2026-06-18',
+      '2026-06-19',
+      '2026-06-20',
+      '2026-06-21',
+    ])
+  })
+
+  it('creates a complete Monday-first month grid', () => {
+    const dates = monthGridDates(firstOfMonth(new Date(2026, 5, 17)))
+
+    expect(dates).toHaveLength(35)
+    expect(localDateStr(dates[0])).toBe('2026-06-01')
+    expect(localDateStr(dates[29])).toBe('2026-06-30')
+    expect(dates.slice(30)).toEqual([null, null, null, null, null])
+  })
+
+  it('formats and parses local calendar dates', () => {
+    const date = parseDateStr('2026-09-15')
+
+    expect(localDateStr(date)).toBe('2026-09-15')
+    expect(makeDateStr(2026, 8, 15)).toBe('2026-09-15')
   })
 })

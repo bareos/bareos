@@ -772,7 +772,7 @@ TEST(PluginOptionsEditorRendering, BarriOptionChoicesStartWithRestoreTarget)
   auto choices = BuildPluginOptionChoices(block, {});
   ASSERT_FALSE(choices.empty());
   EXPECT_EQ(choices.front().key, "files");
-  EXPECT_EQ(choices.front().group, "Required");
+  EXPECT_EQ(choices.front().group, "Optional");
   EXPECT_EQ(choices.front().type,
             directordaemon::restore_plugin_hints::PluginOptionType::kPath);
 }

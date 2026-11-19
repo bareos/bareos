@@ -148,13 +148,13 @@ TEST(RestorePluginHints, BuildsExamplePreferringRequiredOptions)
   EXPECT_EQ(BuildPluginOptionExample(*hint), "vcserver=...:vcuser=...");
 }
 
-TEST(RestorePluginHints, BarriIncludesRequiredRestoreTarget)
+TEST(RestorePluginHints, BarriShowsOneOfItsAlternativeRestoreTargets)
 {
   const PluginRestoreHint* hint = FindPluginRestoreHint("barri");
   ASSERT_NE(hint, nullptr);
   ASSERT_FALSE(hint->options.empty());
   EXPECT_EQ(hint->options.front().name, "files");
-  EXPECT_EQ(hint->options.front().status, "required");
+  EXPECT_EQ(hint->options.front().status, "optional");
   EXPECT_EQ(hint->options.front().type, PluginOptionType::kPath);
   EXPECT_EQ(BuildPluginOptionExample(*hint), "files=...");
 }
