@@ -751,7 +751,7 @@ test('sorts the newest capped jobs independently of display direction', async ({
   const durationHeader = page.getByRole('columnheader', { name: /^Duration\b/ })
   await durationHeader.click()
   await expect(firstId).toHaveText('2')
-  await expect(page.locator('.q-banner.bg-warning')).toContainText('1,001')
+  await expect(page.locator('.q-banner.bg-warning')).toContainText('Fetched 1,000 jobs.')
   await durationHeader.click()
   await expect(firstId).toHaveText('1001')
 })
