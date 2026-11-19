@@ -50,6 +50,8 @@
 namespace storagedaemon {
 
 const int debuglevel = 150;
+static constexpr int kReservationRetryAttemptsBeforeWait = 2;
+static constexpr int kReservationRetrySleepUsec = 50000;
 
 /* Global static variables */
 static std::mutex* reservation_mutex = nullptr;
@@ -263,13 +265,19 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
      * jobs, we will simply try again, and most likely succeed.
      * This can happen if one job reserves a drive or finishes using
      * a drive at the same time a second job wants it. */
-    if (repeat++ > 1) {   /* try algorithm 3 times */
-      Bmicrosleep(30, 0); /* wait a bit */
-      Dmsg0(debuglevel, "repeat reserve algorithm\n");
-    } else if (!rctx.suitable_device
-               || !WaitForDevice(jcr, wait_for_device_retries)) {
-      Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
+    if (!rctx.suitable_device) {
+      Dmsg0(debuglevel, "Fail. !suitable_device\n");
       fail = true;
+    } else if (repeat < kReservationRetryAttemptsBeforeWait) {
+      ++repeat;
+      Bmicrosleep(0, kReservationRetrySleepUsec);
+      Dmsg0(debuglevel, "repeat reserve algorithm\n");
+    } else {
+      repeat = 0;
+      if (!WaitForDevice(jcr, wait_for_device_retries)) {
+        Dmsg0(debuglevel, "Fail. !WaitForDevice\n");
+        fail = true;
+      }
     }
     dir->signal(BNET_HEARTBEAT); /* Inform Dir that we are alive */
   }
@@ -725,7 +733,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
           dcr->dev->num_writers, rctx.have_volume);
     if (rctx.have_volume) {
       Dmsg0(debuglevel, "Call reserve_volume for append.\n");
-      if (reserve_volume(dcr, rctx.VolumeName)) {
+      if (reserve_volume(dcr, rctx.VolumeName)
+          == VolumeReservationResult::kReserved) {
         Dmsg1(debuglevel, "Reserved vol=%s\n", rctx.VolumeName);
       } else {
         Dmsg1(debuglevel, "Could not reserve vol=%s\n", rctx.VolumeName);
@@ -743,14 +752,13 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
         rctx.have_volume = false;
         rctx.VolumeName[0] = 0;
 
-        /* If there is at least one volume that is valid and in use,
-         * but we get here, check if we are running with prefers
-         * non-mounted drives.  In that case, we have selected a
-         * non-used drive and our one and only volume is mounted
-         * elsewhere, so we bail out and retry using that drive. */
-        if (dcr->FoundInUse() && !rctx.PreferMountedVols) {
+        /* If we found an appendable volume that is mounted and busy on another
+         * drive while we were still preferring non-mounted drives, retry by
+         * preferring the mounted drive that already owns that volume. */
+        if (dcr->AppendVolumeBusy() && !rctx.PreferMountedVols) {
           rctx.PreferMountedVols = true;
-          if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
+          ASSERT(dcr->VolumeName[0] == 0);
+          dcr->UnreserveDevice();
           goto bail_out;
         }
 
@@ -764,7 +772,8 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
          * bail out, and continue waiting, rather than plunging on
          * and hoping that the operator can resolve the problem. */
         if (dcr->dev->num_writers != 0) {
-          if (dcr->VolumeName[0]) { dcr->UnreserveDevice(); }
+          ASSERT(dcr->VolumeName[0] == 0);
+          dcr->UnreserveDevice();
           goto bail_out;
         }
       }
@@ -1083,7 +1092,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
 
       bool can_use = false;
       if (rctx.append) {
-        can_use = dcr->Can_i_write_volume();
+        can_use
+            = dcr->Can_i_write_volume() == VolumeWriteAvailability::Available;
       } else {
         can_use = dcr->Can_i_use_volume();
       }

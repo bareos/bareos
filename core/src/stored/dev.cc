@@ -333,7 +333,6 @@ static void InitiateDevice(JobControlRecord* jcr, Device* dev)
 void InitDeviceWaitTimers(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
-  JobControlRecord* jcr = dcr->jcr;
 
   /* ******FIXME******* put these on config variables */
   dev->min_wait = 60 * 60;
@@ -343,30 +342,14 @@ void InitDeviceWaitTimers(DeviceControlRecord* dcr)
   dev->rem_wait_sec = dev->wait_sec;
   dev->num_wait = 0;
   dev->poll = false;
-
-  jcr->sd_impl->device_wait_times.min_wait = 60 * 60;
-  jcr->sd_impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->sd_impl->device_wait_times.max_num_wait
-      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->sd_impl->device_wait_times.wait_sec
-      = jcr->sd_impl->device_wait_times.min_wait;
-  jcr->sd_impl->device_wait_times.rem_wait_sec
-      = jcr->sd_impl->device_wait_times.wait_sec;
-  jcr->sd_impl->device_wait_times.num_wait = 0;
 }
 
+/* The job wide budget is deliberately not reset here. It bounds how long a
+ * job may wait for a device in total, so it is started once per reservation
+ * and must survive the device timer resets that acquiring and mounting do. */
 void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
 {
-  /* ******FIXME******* put these on config variables */
-  jcr->sd_impl->device_wait_times.min_wait = 60 * 60;
-  jcr->sd_impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->sd_impl->device_wait_times.max_num_wait
-      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
-  jcr->sd_impl->device_wait_times.wait_sec
-      = jcr->sd_impl->device_wait_times.min_wait;
-  jcr->sd_impl->device_wait_times.rem_wait_sec
-      = jcr->sd_impl->device_wait_times.wait_sec;
-  jcr->sd_impl->device_wait_times.num_wait = 0;
+  jcr->sd_impl->device_wait_budget = DeviceWaitBudget{};
 }
 
 /**

@@ -479,7 +479,8 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       Dmsg1(150, "Got new Volume name=%s\n", VolumeName);
       dev->VolCatInfo = VolCatInfo; /* structure assignment */
       Dmsg1(100, "Call reserve_volume=%s\n", dev->VolHdr.VolumeName);
-      if (reserve_volume(dcr, dev->VolHdr.VolumeName) == NULL) {
+      if (reserve_volume(dcr, dev->VolHdr.VolumeName)
+          != VolumeReservationResult::kReserved) {
         Jmsg2(jcr, M_WARNING, 0, T_("Could not reserve volume %s on %s\n"),
               dev->VolHdr.VolumeName, dev->print_name());
         ask = true;
