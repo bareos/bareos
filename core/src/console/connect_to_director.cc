@@ -50,7 +50,7 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
 
   const char* name;
 
-  TlsResource* local_tls_resource;
+  const TlsResource* local_tls_resource;
   if (console_resource) {
     name = console_resource->resource_name_;
     ASSERT(console_resource->password_.encoding == p_encoding_md5);
