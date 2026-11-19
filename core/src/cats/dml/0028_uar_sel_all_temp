@@ -1,2 +1,3 @@
 SELECT *
   FROM temp
+ ORDER BY StartTime ASC, JobId ASC

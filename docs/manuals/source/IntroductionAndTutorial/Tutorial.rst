@@ -540,8 +540,8 @@ restore the backed up files in the Console program by entering:
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-   1: List last 20 Jobs run
-   2: List Jobs where a given File is saved
+   1: Select a FileSet@Client combination (latest backup)
+   2: Select a FileSet@Client combination (custom restore point)
    3: Enter list of comma separated JobIds to select
    4: Enter SQL list command
    5: Select the most recent backup for a client
@@ -552,8 +552,10 @@ restore the backed up files in the Console program by entering:
    10: Find the JobIds for a backup for a client before a specified time
    11: Enter a list of directories to restore for found JobIds
    12: Select full restore to a specified Job date
-   13: Cancel
-   Select item:  (1-13):
+   13: List last 20 Jobs run
+   14: List Jobs where a given File is saved
+   15: Cancel
+   Select item:  (1-15):
 
 As you can see, there are a number of options, but for the current demonstration, please
 enter :strong:`5` to do a restore of the last backup you did, and you will get the following output:
@@ -563,7 +565,7 @@ enter :strong:`5` to do a restore of the last backup you did, and you will get t
 .. code-block:: bconsole
    :caption: select resource
 
-   Select item:  (1-13): 5
+   Select item:  (1-15): 5
    Automatically selected Client: bareos-fd
    The defined FileSet resources are:
    1: Catalog

@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-ldap"
+  Description = "Smoke-test fileset backed by the bpipe plugin (LDAP-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/ldap-demo/directory.ldif"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

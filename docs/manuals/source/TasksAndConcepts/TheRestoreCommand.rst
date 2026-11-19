@@ -78,8 +78,8 @@ following selection prompt:
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-        1: List last 20 Jobs run
-        2: List Jobs where a given File is saved
+        1: Select a FileSet@Client combination (latest backup)
+        2: Select a FileSet@Client combination (custom restore point)
         3: Enter list of comma separated JobIds to select
         4: Enter SQL list command
         5: Select the most recent backup for a client
@@ -90,17 +90,17 @@ following selection prompt:
        10: Find the JobIds for a backup for a client before a specified time
        11: Enter a list of directories to restore for found JobIds
        12: Select full restore to a specified Job date
-       13: Cancel
-   Select item:  (1-13):
+       13: List last 20 Jobs run
+       14: List Jobs where a given File is saved
+       15: Cancel
+   Select item:  (1-15):
 
 There are a lot of options, and as a point of reference, most people will want to select item 5
 (the most recent backup for a client). The details of the above options are:
 
--  Item 1 will list the last 20 jobs run. If you find the Job you want, you can then select item 3
-   and enter its JobId(s).
+-  Item 1 selects the latest backup for a FileSet@Client combination.
 
--  Item 2 will list all the Jobs where a specified file is saved. If you find the Job you want,
-   you can then select item 3 and enter the JobId.
+-  Item 2 selects a custom restore point for a FileSet@Client combination.
 
 -  Item 3 allows you the enter a list of comma separated JobIds whose files will be put into the
    directory tree. You may then select which files from those JobIds to restore. Normally, you would
@@ -178,7 +178,13 @@ There are a lot of options, and as a point of reference, most people will want t
 
 -  Item 12 is a full restore to a specified job date.
 
--  Item 13 allows you to cancel the restore command.
+-  Item 13 lists the last 20 jobs run. If you find the Job you want, select item 3 and enter its
+   JobId(s).
+
+-  Item 14 lists the Jobs where a specified file is saved. If you find the Job you want, select
+   item 3 and enter its JobId.
+
+-  Item 15 allows you to cancel the restore command.
 
 For items 6, 7 and 9, note that you must specify the date/time either exactly as shown
 `YYYY-MM-DD HH:MM:SS`\  or you can enter a shorter version of the same format such as `YYYY-MM`,
@@ -194,7 +200,7 @@ my system, will print all the Clients found in the database as follows:
 .. code-block:: bconsole
    :caption: restore: select client
 
-   Select item:  (1-13): <input>5</input>
+   Select item:  (1-15): <input>5</input>
    Defined clients:
         1: Client1
         2: Client2
@@ -401,8 +407,8 @@ To enter the files, after the restore, you select item number 7 from the prompt 
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-        1: List last 20 Jobs run
-        2: List Jobs where a given File is saved
+        1: Select a FileSet@Client combination (latest backup)
+        2: Select a FileSet@Client combination (custom restore point)
         3: Enter list of comma separated JobIds to select
         4: Enter SQL list command
         5: Select the most recent backup for a client
@@ -413,8 +419,10 @@ To enter the files, after the restore, you select item number 7 from the prompt 
        10: Find the JobIds for a backup for a client before a specified time
        11: Enter a list of directories to restore for found JobIds
        12: Select full restore to a specified Job date
-       13: Cancel
-   Select item:  (1-13): <input>7</input>
+       13: List last 20 Jobs run
+       14: List Jobs where a given File is saved
+       15: Cancel
+   Select item:  (1-15): <input>7</input>
 
 which then prompts you for the client name:
 

@@ -359,7 +359,7 @@ class LowLevel(object):
         self.send(hello_msg)
 
         try:
-            (ssl, result_compatible, result) = self._cram_md5_respond(
+            ssl, result_compatible, result = self._cram_md5_respond(
                 password=self.password.md5(), tls_remote_need=0
             )
         except bareos.exceptions.SignalReceivedException as e:
@@ -573,6 +573,7 @@ class LowLevel(object):
         self.__check_socket_connection()
         try:
             timeouts = 0
+            awaiting_input_prompt = False
             while True:
                 # get the message header
                 try:
@@ -595,6 +596,8 @@ class LowLevel(object):
                     if header <= 0:
                         # header is a signal
                         self.__set_status(header)
+                        if header == Constants.BNET_TEXT_INPUT:
+                            awaiting_input_prompt = True
                         if self.is_end_of_message(header):
                             result = self.receive_buffer
                             self.receive_buffer = b""
@@ -608,6 +611,10 @@ class LowLevel(object):
                         # which might have been incomplete without new submsg.
                         lastlineindex = self.receive_buffer.rfind(b"\n") + 1
                         self.receive_buffer += submsg
+                        if awaiting_input_prompt:
+                            result = self.receive_buffer
+                            self.receive_buffer = b""
+                            return result
                         match = re.search(
                             regex, self.receive_buffer[lastlineindex:], re.DOTALL
                         )
@@ -713,6 +720,7 @@ class LowLevel(object):
             or data == Constants.BNET_TERMINATE
             or data == Constants.BNET_MAIN_PROMPT
             or data == Constants.BNET_SUB_PROMPT
+            or data == Constants.BNET_SELECT_INPUT
         )
 
     def is_connected(self):

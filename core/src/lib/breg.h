@@ -30,6 +30,15 @@
 
 #include "lib/bregex.h"
 
+#include <string>
+#include <string_view>
+
+// A distinct separator makes older File Daemons reject literal replacements
+// instead of treating them as ordinary substitutions.
+inline constexpr char kLiteralReplacementSeparator = '@';
+
+std::string BregexpEncodeLiteralReplacement(std::string_view replacement);
+
 /* Usage:
  *
  * #include "lib/breg.h"
@@ -65,6 +74,9 @@ class BareosRegex {
   char* EditSubst(const char* fname, regmatch_t pmatch[]);
   int ComputeDestLen(const char* fname, regmatch_t pmatch[]);
   bool ExtractRegexp(const char* motif);
+
+ private:
+  bool literal_replacement_ = false;
 };
 
 /* create new BareosRegex and compile regex_t */
