@@ -1065,9 +1065,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 while True:
                     entry = self.queue.get()
-                    bareosfd.JobMessage(
-                        bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n"
-                    )
+                    bareosfd.DebugMessage(100, f"Restoring {entry.tarinfo.name}\n")
                     self.tar.addfile(entry.tarinfo, entry.reader)
             except queue.ShutDown:
                 pass
@@ -1135,7 +1133,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.fname = entry.name
 
         if isinstance(entry, ChunkEntry):
-            bareosfd.JobMessage(bareosfd.M_DEBUG, f"Backing up {entry.name}\n")
+            bareosfd.DebugMessage(100, f"Backing up {entry.name}\n")
             savepkt.type = bareosfd.FT_REG
             savepkt.statp.st_size = entry.size
             for offset, field in enumerate(self.options.hijacked_stat_fields):
@@ -1148,7 +1146,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 )
             header = None
         else:
-            bareosfd.JobMessage(bareosfd.M_INFO, f"Backing up {entry.name}\n")
+            bareosfd.DebugMessage(100, f"Backing up {entry.name}\n")
             header = io.BytesIO(populate_pkt(savepkt, entry.tarinfo))
 
         self.current_record = (entry, header)
@@ -1167,7 +1165,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         relpath = restorepkt.original_file_name
         fname = f"backup{relpath.removeprefix(self.prefix)}"
         if self.is_chunk(fname):
-            bareosfd.JobMessage(bareosfd.M_DEBUG, f"Restoring {fname}\n")
+            bareosfd.DebugMessage(100, f"Restoring {fname}\n")
             # Here, we initialize the chunk collector
             fname, chunk_str = fname.removesuffix(".chunk").rsplit("-", 1)
             chunk_id = int(chunk_str)
@@ -1240,7 +1238,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             self.current_writer = writer
             return bareosfd.bRC_OK
-        bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {fname}\n")
+        bareosfd.DebugMessage(100, f"Restoring {fname}\n")
 
         # Here, we can bypass the DataPipe buffering and directly connect to the read pipe
         # pylint: disable=function-redefined
