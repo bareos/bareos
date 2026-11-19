@@ -82,7 +82,7 @@ fi
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
 @$out ${tmp}/log3.out
 setdebug level=200 trace=1 timestamp=1 client=bareos-fd
-restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mariadb_dump yes select all done
+restore restorejob=RestoreFile client=bareos-fd fileset=bareos-mariadb-dump yes select all done
 wait
 setdebug level=0 client=bareos-fd
 status dir

@@ -95,6 +95,9 @@ target_sources(
           stats.cc
           storage.cc
           ua.cc
+          ua_acct.cc
+          ua_acct_calc.cc
+          ua_acct_snapshot.cc
           ua_acl.cc
           ua_audit.cc
           ua_cmds.cc
