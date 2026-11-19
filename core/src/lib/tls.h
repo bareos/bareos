@@ -41,8 +41,8 @@ class PskCredentials;
 class TlsResource;
 
 struct TlsConfigProvider {
-  virtual const TlsResource* get(global_resource::Type type,
-                                 std::string_view idenity)
+  virtual const TlsResource* get_tls_config_for(global_resource::Type type,
+                                                std::string_view idenity)
       = 0;
 };
 
@@ -77,6 +77,10 @@ class Tls {
   virtual int TlsPendingBytes() = 0;
   virtual int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) = 0;
   virtual bool TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock) = 0;
+  virtual int TlsBsockPeekn(const BareosSocket* bsock,
+                            char* ptr,
+                            int32_t nbytes)
+      = 0;
   virtual void TlsBsockShutdown(BareosSocket* bsock) = 0;
   virtual void TlsLogConninfo(JobControlRecord* jcr,
                               const char* host,
@@ -85,6 +89,14 @@ class Tls {
       = 0;
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
+  enum class PskIdentityStatus
+  {
+    IsInUse,
+    DifferentIdentityInUse,
+    NoIdentityInUse,
+  };
+  virtual PskIdentityStatus IsPskIdentityInUse(std::string_view identity) const
+      = 0;
   virtual bool KtlsSendStatus() = 0;
   virtual bool KtlsRecvStatus() = 0;
 };

@@ -100,6 +100,7 @@ target_sources(
           var.cc
           watchdog.cc
           xxhash.cc
+          bauth.cc
 )
 
 if(HAVE_WIN32)
@@ -184,6 +185,13 @@ install(TARGETS bareos DESTINATION ${libdir})
 set_target_properties(
   bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
+
+add_subdirectory(bauth)
+
+target_link_libraries(
+  bareos PUBLIC BAuth::Verifier::cram-md5 BAuth::Prover::cram-md5
+                BAuth::Verifier::trust BAuth::Prover::trust
 )
 
 include(DebugEdit)

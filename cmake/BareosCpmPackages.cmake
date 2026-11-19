@@ -105,6 +105,21 @@ if(xxHash_ADDED)
   endif()
 endif()
 
+CPMAddPackage(
+  NAME jwt-cpp
+  VERSION 0.7.2
+  GITHUB_REPOSITORY Thalhammer/jwt-cpp
+  GIT_TAG "b0ea29a58fc852a67d4e896d266880c2c63b0c4c"
+  OPTIONS "JWT_BUILD_EXAMPLES OFF" # we only the library
+          "JWT_SSL_LIBRARY OpenSSL" # we use openssl
+          "JWT_DISABLE_PICOJSON ON" # we have no need for another json impl
+          "JWT_JSON_TRAITS_OPTIONS \"\"" # jwt does not support jansson natively
+)
+
+if(CXX_SUPPORTS_Wshadow)
+  target_compile_options(jwt-cpp INTERFACE -Wno-shadow)
+endif()
+
 # Dump package information from CPM into a YAML file
 file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
      "# List of packages provided by CPM\n" "---\n"

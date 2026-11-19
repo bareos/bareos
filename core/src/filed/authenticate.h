@@ -25,17 +25,20 @@
 #define BAREOS_FILED_AUTHENTICATE_H_
 
 #include "filed/filed_conf.h"
+#include "lib/bauth.h"
 #include "lib/bsock.h"
+#include "lib/connect_accept.h"
 #include "lib/parse_conf.h"
 #include "include/jcr.h"
 
 namespace filedaemon {
 
-struct Auth : ::TlsConfigProvider {
+struct Auth : ::AuthenticationProvider {
   Auth(std::shared_ptr<LoadedConfiguration> conf) : p{std::move(conf)} {}
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view name) override;
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view name) override;
 
   enum class inbound_type
   {
@@ -46,11 +49,13 @@ struct Auth : ::TlsConfigProvider {
 
   struct director_data {
     DirectorResource* res{};
+    Md5InboundAuthenticator auth;
   };
 
   struct storage_data {
     JobControlRecord* jcr{};
     TlsResource job{};
+    Md5InboundAuthenticator auth;
 
     ~storage_data()
     {

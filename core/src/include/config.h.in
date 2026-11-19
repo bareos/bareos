@@ -227,6 +227,8 @@
 // Default path for Bareos Python modules
 #cmakedefine PYTHON_MODULE_PATH "@PYTHON_MODULE_PATH@"
 
+#cmakedefine ENABLE_OIDC
+
 #define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 #endif  // BAREOS_INCLUDE_CONFIG_H_

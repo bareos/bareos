@@ -23,6 +23,7 @@
 
 #include "bsock_test.h"
 #include "create_resource.h"
+#include "lib/bauth.h"
 #include "lib/s_password.h"
 #include "lib/global_resource.h"
 #include "tests/bareos_test_sockets.h"
@@ -32,6 +33,7 @@
 #include <fstream>
 #include <string>
 #include <string_view>
+#include <sstream>
 
 #include <thread>
 #include <future>
@@ -496,14 +498,15 @@ static void clone_a_server_socket(BareosSocket* bs)
   bs->fsend("bareos-socket-1234567890");
 }
 
-struct dummy_auth : ::TlsConfigProvider {
+struct dummy_auth : ::AuthenticationProvider {
   dummy_auth(std::string console_name, std::string console_password)
       : name{std::move(console_name)}, password{std::move(console_password)}
   {
   }
 
-  const TlsResource* get(global_resource::Type type,
-                         std::string_view res_name) override
+  auth::InboundAuthenticator* get_authenticator_for(
+      global_resource::Type type,
+      std::string_view res_name) override
   {
     Dmsg1(10, "Cons->Dir: received %s:%s",
           std::string{global_resource::GetNameFromType(type)}.c_str(),
@@ -517,16 +520,18 @@ struct dummy_auth : ::TlsConfigProvider {
     // As such we can not check this:
     // if (res_name != name) { return nullptr; }
 
+    TlsResource res{};
     res = *dir_cons_config;
     res.password_.value = password.data();
 
-    return &res;
+    auth.emplace("server", std::move(res));
+    return &auth.value();
   }
 
   std::string name;
   std::string password;
 
-  TlsResource res{};
+  std::optional<Md5InboundAuthenticator> auth;
 };
 
 static void start_bareos_server(std::promise<bool>* promise,
@@ -598,6 +603,15 @@ static void clone_a_client_socket(std::shared_ptr<BareosSocket> UA_sock)
   EXPECT_STREQ(orig_msg.c_str(), received_msg.c_str());
 }
 
+struct LegacyOutboundAuthenticator : auth::OutboundAuthenticator {
+  bool authenticate(auth::OutboundArgs args) override
+  {
+    auto identity = "old-client";
+
+    return auth::Version1::authenticate_outbound(identity, args);
+  }
+};
+
 #if CLIENT_AS_A_THREAD
 static int connect_to_server(std::string console_name,
                              std::string console_password,
@@ -639,12 +653,23 @@ static bool connect_to_server(std::string console_name,
                              global_resource::Type::Director>(
             &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
       } else {
-        /* old style tls is only supported for clients,
-         * so we need to connect as a client*/
+        /* old style tls is only supported for clients, so we need to connect
+         * as a client.  We also have to tell the director that we are an old
+         * version, as its only supported for _old_ clients! */
 
-        return BareosConnect<global_resource::Type::Client,
-                             global_resource::Type::Director>(
-            &jcr, UA_sock.get(), console_name, &custom, cleartext_auth);
+        using formatter = hello_formatter<global_resource::Type::Client,
+                                          global_resource::Type::Director>;
+        auto qualified_name = global_resource::QualifiedName(
+            formatter::auth_type, console_name);
+
+
+        auto hello = (std::ostringstream{} << "Hello Client " << console_name
+                                           << " FdProtocolVersion=54 calling\n")
+                         .str();
+
+        LegacyOutboundAuthenticator auth;
+        return BareosConnect(&jcr, UA_sock.get(), qualified_name, &custom,
+                             &auth, hello, cleartext_auth);
       }
     }();
 
