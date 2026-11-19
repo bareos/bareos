@@ -28,6 +28,7 @@
 
 #include "cats/cats.h"
 #include "lib/mem_pool.h"
+#include "lib/thread_util.h"
 #include "dird/client_connection_handshake_mode.h"
 #include "dird/job_trigger.h"
 
@@ -111,7 +112,8 @@ struct DirectorJcrImpl {
   pthread_t SD_msg_chan{};        /**< Message channel thread id */
   bool SD_msg_chan_started{};     /**< Message channel thread started */
   std::condition_variable term_wait{}; /**< Wait for job termination */
-  pthread_cond_t nextrun_ready = PTHREAD_COND_INITIALIZER;  /**< Wait for job next run to become ready */
+  synchronized<bool> nextrun_ready{};  /**< Set when the SD announced the next run */
+  std::condition_variable nextrun_wait{}; /**< Wait for job next run to become ready */
   Resources res;                  /**< Resources assigned */
   TREE_ROOT* restore_tree_root{}; /**< Selected files to restore (some protocols need this info) */
   storagedaemon::BootStrapRecord* bsr{}; /**< Bootstrap record -- has everything */
@@ -156,7 +158,6 @@ struct DirectorJcrImpl {
   int32_t max_concurrent_jobs{};        /**< Maximum concurrent jobs */
   bool spool_data{};                    /**< Spool data in SD */
   bool acquired_resource_locks{};       /**< Set if resource locks acquired */
-  bool nextrun_ready_inited{};          /**< Set when cond var inited */
   bool fn_printed{};                    /**< Printed filename */
   bool needs_sd{};                      /**< Set if SD needed by Job */
   bool cloned{};                        /**< Set if cloned */
