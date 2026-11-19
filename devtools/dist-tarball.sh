@@ -136,7 +136,19 @@ if [ ! -r cmake/BareosVersion.cmake ]; then
   cmake -P write_version_files.cmake >/dev/null
 fi
 
-(echo -ne 'cmake/BareosVersion.cmake\0'; "$git" ls-files -z) | \
+if [ ! -f webui-vue/dist/index.html ] && command -v npm >/dev/null 2>&1; then
+  cmake -DDIST_DIR=webui-vue/dist -P webui-vue/build-dist.cmake >/dev/null
+fi
+
+{
+  printf '%s\0' 'cmake/BareosVersion.cmake'
+  "$git" ls-files -z
+  if [ -d webui-vue/dist ]; then
+    while IFS= read -r -d '' path; do
+      printf '%s\0' "$path"
+    done < <(find webui-vue/dist -type f -print0)
+  fi
+} | \
 "$sort" -u -z | \
 add_prefix | \
 "$tar" "${args[@]}" -cf - --files-from - | \
