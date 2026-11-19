@@ -1,0 +1,5 @@
+Director {
+  Name = bareos-dir
+  Password = "@fd_password@"
+  Description = "Allow the configured Director to access this file daemon."
+}

@@ -123,64 +123,80 @@ int ndmda_belay(struct ndm_session* sess)
  ****************************************************************
  */
 
-static int add_env(struct ndm_env_table* envtab, char* cmd)
+static int add_env(struct ndm_env_table* envtab, char** cmd)
 {
-  char buf[1024];
   struct ndm_env_entry* entry;
 
   for (entry = envtab->head; entry; entry = entry->next) {
-    snprintf(buf, sizeof(buf) - 1, "%s=%s", entry->pval.name,
-             entry->pval.value);
-    buf[sizeof(buf) - 1] = '\0';
-    ndmda_add_to_cmd(cmd, "-E");
-    ndmda_add_to_cmd(cmd, buf);
+    size_t length = strlen(entry->pval.name) + strlen(entry->pval.value) + 2;
+    char* buf = malloc(length);
+    int rc;
+    if (!buf) return -1;
+    snprintf(buf, length, "%s=%s", entry->pval.name, entry->pval.value);
+    rc = ndmda_add_to_cmd(cmd, "-E");
+    if (rc == 0) rc = ndmda_add_to_cmd(cmd, buf);
+    free(buf);
+    if (rc < 0) return -1;
   }
 
   return 0;
 }
 
-static int add_nlist(struct ndm_nlist_table* nlisttab, char* cmd)
+static int add_nlist(struct ndm_nlist_table* nlisttab, char** cmd)
 {
   char buf[32];
   struct ndm_nlist_entry* entry;
 
   for (entry = nlisttab->head; entry; entry = entry->next) {
-    ndmda_add_to_cmd(cmd, entry->name.original_path);
+    if (ndmda_add_to_cmd(cmd, entry->name.original_path) < 0) return -1;
     if (entry->name.fh_info.valid == NDMP9_VALIDITY_VALID) {
       snprintf(buf, sizeof(buf), "@%llu", entry->name.fh_info.value);
-      ndmda_add_to_cmd(cmd, buf);
+      if (ndmda_add_to_cmd(cmd, buf) < 0) return -1;
     } else {
-      ndmda_add_to_cmd(cmd, "@-");
+      if (ndmda_add_to_cmd(cmd, "@-") < 0) return -1;
     }
-    ndmda_add_to_cmd(cmd, entry->name.destination_path);
+    if (ndmda_add_to_cmd(cmd, entry->name.destination_path) < 0) return -1;
   }
 
   return 0;
 }
 
 
+static int start_formatter(struct ndm_session* sess, const char* mode)
+{
+  struct ndm_data_agent* da = sess->data_acb;
+  char* cmd = NULL;
+  char formatter[sizeof da->bu_type + 5];
+  int rc = -1;
+
+  snprintf(formatter, sizeof formatter, "wrap_%s", da->bu_type);
+  if (ndmda_add_to_cmd(&cmd, formatter) < 0) goto done;
+  if (sess->param->log_level > 0) {
+    char tmpbuf[40];
+    snprintf(tmpbuf, sizeof(tmpbuf), "-d%d", sess->param->log_level);
+    if (ndmda_add_to_cmd(&cmd, tmpbuf) < 0) goto done;
+  }
+  if (ndmda_add_to_cmd(&cmd, mode) < 0
+      || ndmda_add_to_cmd(&cmd, "-I#3") < 0
+      || add_env(&da->env_tab, &cmd) < 0) goto done;
+  if (strcmp(mode, "-c") != 0 && add_nlist(&da->nlist_tab, &cmd) < 0) goto done;
+  ndma_send_logmsg(sess, NDMP9_LOG_DEBUG, sess->plumb.data, "CMD: %s", cmd);
+  rc = ndmda_pipe_fork_exec(sess, cmd, strcmp(mode, "-c") == 0);
+done:
+  free(cmd);
+  if (rc < 0) {
+    ndmalogf(sess, 0, 0, "Could not build or start formatter: %s",
+             strerror(errno));
+  }
+  return rc;
+}
+
 ndmp9_error ndmda_data_start_backup(struct ndm_session* sess)
 {
   struct ndm_data_agent* da = sess->data_acb;
   ndmp9_error error = NDMP9_NO_ERR;
-  char cmd[NDMDA_MAX_CMD];
 
-  strcpy(cmd, "wrap_");
-  strcat(cmd, da->bu_type);
-
-  if (sess->param->log_level > 0) {
-    char tmpbuf[40];
-    snprintf(tmpbuf, sizeof(tmpbuf), "-d%d", sess->param->log_level);
-    ndmda_add_to_cmd(cmd, tmpbuf);
-  }
-
-  ndmda_add_to_cmd(cmd, "-c");
-  ndmda_add_to_cmd(cmd, "-I#3");
-  add_env(&da->env_tab, cmd);
-
-  ndma_send_logmsg(sess, NDMP9_LOG_DEBUG, sess->plumb.data, "CMD: %s", cmd);
-
-  if (ndmda_pipe_fork_exec(sess, cmd, 1) < 0) { return NDMP9_UNDEFINED_ERR; }
+  if (start_formatter(sess, "-c") < 0) { return NDMP9_UNDEFINED_ERR; }
 
   ndmis_data_start(sess, NDMCHAN_MODE_WRITE);
 
@@ -194,25 +210,7 @@ ndmp9_error ndmda_data_start_recover(struct ndm_session* sess)
 {
   struct ndm_data_agent* da = sess->data_acb;
   ndmp9_error error = NDMP9_NO_ERR;
-  char cmd[NDMDA_MAX_CMD];
-
-  strcpy(cmd, "wrap_");
-  strcat(cmd, da->bu_type);
-
-  if (sess->param->log_level > 0) {
-    char tmpbuf[40];
-    snprintf(tmpbuf, sizeof(tmpbuf), "-d%d", sess->param->log_level);
-    ndmda_add_to_cmd(cmd, tmpbuf);
-  }
-
-  ndmda_add_to_cmd(cmd, "-x");
-  ndmda_add_to_cmd(cmd, "-I#3");
-  add_env(&da->env_tab, cmd);
-  add_nlist(&da->nlist_tab, cmd);
-
-  ndma_send_logmsg(sess, NDMP9_LOG_DEBUG, sess->plumb.data, "CMD: %s", cmd);
-
-  if (ndmda_pipe_fork_exec(sess, cmd, 0) < 0) { return NDMP9_UNDEFINED_ERR; }
+  if (start_formatter(sess, "-x") < 0) { return NDMP9_UNDEFINED_ERR; }
 
   ndmis_data_start(sess, NDMCHAN_MODE_READ);
 
@@ -226,18 +224,7 @@ ndmp9_error ndmda_data_start_recover_fh(struct ndm_session* sess)
 {
   struct ndm_data_agent* da = sess->data_acb;
   ndmp9_error error = NDMP9_NO_ERR;
-  char cmd[NDMDA_MAX_CMD];
-
-  strcpy(cmd, "wrap_");
-  strcat(cmd, da->bu_type);
-  ndmda_add_to_cmd(cmd, "-t");
-  ndmda_add_to_cmd(cmd, "-I#3");
-  add_env(&da->env_tab, cmd);
-  add_nlist(&da->nlist_tab, cmd);
-
-  ndma_send_logmsg(sess, NDMP9_LOG_DEBUG, sess->plumb.data, "CMD: %s", cmd);
-
-  if (ndmda_pipe_fork_exec(sess, cmd, 0) < 0) { return NDMP9_UNDEFINED_ERR; }
+  if (start_formatter(sess, "-t") < 0) { return NDMP9_UNDEFINED_ERR; }
 
   ndmis_data_start(sess, NDMCHAN_MODE_READ);
 
@@ -547,6 +534,53 @@ again:
 void ndmp9_fstat_from_wrap_fstat(ndmp9_file_stat* fstat9,
                                  struct wrap_fstat* fstatw);
 
+static ndmp9_recovery_status ndmda_recovery_status_from_errno(int err)
+{
+  switch (err) {
+    case 0:
+      return NDMP9_RECOVERY_SUCCESSFUL;
+    case EPERM:
+    case EACCES:
+    case EROFS:
+      return NDMP9_RECOVERY_FAILED_PERMISSION;
+    case ENOENT:
+      return NDMP9_RECOVERY_FAILED_NOT_FOUND;
+    case ENOTDIR:
+      return NDMP9_RECOVERY_FAILED_NO_DIRECTORY;
+    case ENOMEM:
+      return NDMP9_RECOVERY_FAILED_OUT_OF_MEMORY;
+    case EIO:
+    case ENOSPC:
+      return NDMP9_RECOVERY_FAILED_IO_ERROR;
+    default:
+      return NDMP9_RECOVERY_FAILED_UNDEFINED_ERROR;
+  }
+}
+
+/*
+ * The formatter reports the result of one name list entry. Remember it in
+ * the entry and tell the control agent (NDMP_LOG_FILE).
+ */
+static void ndmda_recovery_result(struct ndm_session* sess,
+                                  int rr_errno,
+                                  char* path)
+{
+  struct ndm_data_agent* da = sess->data_acb;
+  struct ndm_nlist_entry* entry;
+  ndmp9_recovery_status status = ndmda_recovery_status_from_errno(rr_errno);
+
+  for (entry = da->nlist_tab.head; entry; entry = entry->next) {
+    if (entry->result_err == NDMP9_UNDEFINED_ERR
+        && strcmp(entry->name.original_path, path) == 0) {
+      entry->result_err = rr_errno ? NDMP9_FILE_NOT_FOUND_ERR : NDMP9_NO_ERR;
+      entry->result_count++;
+      break;
+    }
+  }
+
+  ndma_notify_log_file(sess, path, status);
+}
+
 int ndmda_wrap_in(struct ndm_session* sess, char* wrap_line)
 {
   struct wrap_msg_buf _wmsg, *wmsg = &_wmsg;
@@ -593,9 +627,13 @@ int ndmda_wrap_in(struct ndm_session* sess, char* wrap_line)
                            wmsg->body.data_read.length);
       break;
 
+    case WRAP_MSGTYPE_RECOVERY_RESULT:
+      ndmda_recovery_result(sess, wmsg->body.recovery_result.rr_errno,
+                            wmsg->body.recovery_result.path);
+      break;
+
     case WRAP_MSGTYPE_ADD_ENV:
     case WRAP_MSGTYPE_DATA_STATS:
-    case WRAP_MSGTYPE_RECOVERY_RESULT:
       ndmalogf(sess, 0, 2, "Unimplemented wrap: %s", wrap_line);
       break;
   }

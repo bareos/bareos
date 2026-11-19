@@ -1,0 +1,12 @@
+Fileset {
+  Name = "ndmp-fileset"
+  Include {
+    Options {
+        meta = "HIST=F" # Y F D
+        meta = "DIRECT=N" # Y
+        meta = "UPDATE=Y"
+        meta = "BUTYPE=DUMP"
+    }
+    File = @current_test_directory@/tmp/ndmp-data
+  }
+}

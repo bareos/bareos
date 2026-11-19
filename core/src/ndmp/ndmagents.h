@@ -874,9 +874,7 @@ extern void ndmda_fh_flush(struct ndm_session* sess);
 extern int ndmda_pipe_fork_exec(struct ndm_session* sess,
                                 char* cmd,
                                 int is_backup);
-extern int ndmda_add_to_cmd_with_escapes(char* cmd, char* word, char* special);
-extern int ndmda_add_to_cmd(char* cmd, char* word);
-extern int ndmda_add_to_cmd_allow_file_wildcards(char* cmd, char* word);
+extern int ndmda_add_to_cmd(char** cmd, const char* word);
 
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 
@@ -1395,6 +1393,9 @@ extern ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
 /* ndma_noti_calls.c */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 extern int ndma_notify_data_halted(struct ndm_session* sess);
+extern int ndma_notify_log_file(struct ndm_session* sess,
+                                char* name,
+                                ndmp9_recovery_status status);
 extern int ndma_notify_data_read(struct ndm_session* sess,
                                  uint64_t offset,
                                  uint64_t length);

@@ -1,0 +1,13 @@
+#
+# The NDMP DATA agent, emulated by ndmjob.
+# ndmjob has the NDMP credentials hardcoded to ndmp/ndmp.
+#
+Client {
+  Name = ndmjob
+  Address = 127.0.0.1
+  Port = @ndmjob_port@
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                         # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "ndmp"
+  Password = "ndmp"
+}
