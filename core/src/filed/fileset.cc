@@ -455,6 +455,9 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
       case 'm':
         SetBit(FO_MTIMEONLY, fo->flags);
         break;
+      case 'j':
+        SetBit(FO_NTFS_CHANGE_JOURNAL, fo->flags);
+        break;
       case 'N':
         SetBit(FO_HONOR_NODUMP, fo->flags);
         break;

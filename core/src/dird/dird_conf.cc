@@ -1905,6 +1905,9 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
       case 'm':
         send.KeyBool("MtimeOnly", true);
         break;
+      case 'j':
+        send.KeyBool("NtfsChangeJournal", true);
+        break;
       case 'k':
         send.KeyBool("KeepAtime", true);
         break;

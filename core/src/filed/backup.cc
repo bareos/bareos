@@ -38,6 +38,9 @@
 #include "filed/heartbeat.h"
 #include "filed/backup.h"
 #include "filed/filed_jcr_impl.h"
+#ifdef HAVE_WIN32
+#  include "win32/filed/ntfs_filelist.h"
+#endif
 #include "include/ch.h"
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
@@ -191,6 +194,10 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   }
 
   // Subroutine SaveFile() is called for each file
+#ifdef HAVE_WIN32
+  NtfsFileList ntfs_file_list;
+  jcr->fd_impl->ff->file_list = &ntfs_file_list;
+#endif
   if (!FindFiles(jcr, (FindFilesPacket*)jcr->fd_impl->ff, SaveFile,
                  PluginSave)) {
     ok = false; /* error */
@@ -212,7 +219,16 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   CloseVssBackupSession(jcr);
 #endif
 
+#ifdef HAVE_WIN32
+  bool accurate_finished = AccurateFinish(jcr);
+  jcr->fd_impl->ff->file_list = nullptr;
+  if (ok && accurate_finished && !jcr->IsJobCanceled() && !jcr->IsIncomplete()
+      && jcr->JobErrors == 0) {
+    ntfs_file_list.SaveCheckpoints(jcr);
+  }
+#else
   AccurateFinish(jcr); /* send deleted or base file list to SD */
+#endif
 
   hb_send.reset();
 
