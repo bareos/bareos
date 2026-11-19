@@ -53,7 +53,7 @@ struct UserAcl {
   std::vector<std::string> acl_lists[Num_ACL];
 
   template <typename Resource,
-            AclConfig Resource::* Accessor = &Resource::user_acl>
+            AclConfig Resource::*Accessor = &Resource::user_acl>
   static std::unique_ptr<UserAcl> from_config(Resource* res)
   {
     auto result = std::make_unique<UserAcl>(res->resource_name_);
@@ -192,6 +192,7 @@ class UaContext {
   void WarningMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
   void InfoMsg(const char* fmt, ...) PRINTF_LIKE(2, 3);
   void SendCmdUsage(const char* msg);
+  void SetConsoleConnected(bool connected) { console_is_connected = connected; }
 
   void vSendMsg(int signal,
                 const char* messagetype,

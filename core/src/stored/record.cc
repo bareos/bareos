@@ -481,9 +481,11 @@ const char* record_to_str(PoolMem& resultbuffer,
   char stream_buf[100];
 
   resultbuffer.bsprintf(
-      "FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5u", rec->FileIndex,
-      rec->Stream, stream_to_ascii(stream_buf, rec->Stream, rec->FileIndex),
-      rec->data_len);
+      "FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5u VolSessionId=%" PRIu32
+      " VolSessionTime=%" PRIu32,
+      rec->FileIndex, rec->Stream,
+      stream_to_ascii(stream_buf, rec->Stream, rec->FileIndex), rec->data_len,
+      rec->VolSessionId, rec->VolSessionTime);
   IndentMultilineString(
       resultbuffer, get_record_short_info(record_info_buf, jcr, rec), " | ");
 

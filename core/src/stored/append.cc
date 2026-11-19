@@ -40,7 +40,6 @@
 #include "include/jcr.h"
 #include "include/streams.h"
 #include "lib/berrno.h"
-#include "lib/crypto.h"
 #include "lib/berrno.h"
 #include <algorithm>
 
@@ -60,51 +59,14 @@ inline constexpr const char OK_replicate[] = "3000 OK replicate data\n";
 }  // namespace
 
 namespace storagedaemon {
-ProcessedFileData::ProcessedFileData(DeviceRecord* record)
-    : volsessionid_(record->VolSessionId)
-    , volsessiontime_(record->VolSessionTime)
-    , fileindex_(record->FileIndex)
-    , stream_(record->Stream)
-    , data_len_(record->data_len)
-    , data_(record->data, record->data + record->data_len)
-{
-}
-
-DeviceRecord ProcessedFileData::GetData()
-{
-  DeviceRecord devicerecord{};
-  devicerecord.VolSessionId = volsessionid_;
-  devicerecord.VolSessionTime = volsessiontime_;
-  devicerecord.FileIndex = fileindex_;
-  devicerecord.Stream = stream_;
-  devicerecord.data_len = data_len_;
-  devicerecord.data = data_.data();
-
-  return devicerecord;
-}
-
-ProcessedFile::ProcessedFile(int32_t fileindex) : fileindex_(fileindex) {}
 
 void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  std::for_each(attributes_.begin(), attributes_.end(),
-                [jcr](ProcessedFileData& attribute) {
-                  DeviceRecord devicerecord = attribute.GetData();
-                  SendAttrsToDir(jcr, &devicerecord);
-                });
-}
-
-void ProcessedFile::AddAttribute(DeviceRecord* record)
-{
-  attributes_.emplace_back(ProcessedFileData(record));
-}
-
-bool IsAttribute(DeviceRecord* record)
-{
-  return record->maskedStream == STREAM_UNIX_ATTRIBUTES
-         || record->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
-         || record->maskedStream == STREAM_RESTORE_OBJECT
-         || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
+  const std::vector<ProcessedFileData>& attributes = GetAttributes();
+  for (std::size_t i : SelectAttributesToSend(attributes)) {
+    DeviceRecord devicerecord = attributes[i].GetData();
+    SendAttrsToDir(jcr, &devicerecord);
+  }
 }
 
 static bool SaveFullyProcessedFilesAttributes(

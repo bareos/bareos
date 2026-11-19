@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,26 @@
 #include "lib/cli.h"
 #include <random>
 #include <cstring>
+#include <cstdio>
+
+#if defined(HAVE_WIN32)
+#  include <fcntl.h>
+#  include <io.h>
+#endif
 
 static void print_random(long);
 
 int main(int argc, char** argv)
 {
+#if defined(HAVE_WIN32)
+  // stdout defaults to text mode on Windows, which silently rewrites
+  // every 0x0A byte in our pseudo-random binary output to 0x0D 0x0A,
+  // inflating the resulting file's size. Since callers (systemtests)
+  // rely on generating files of an exact, known size, stdout must be
+  // switched to binary mode before any data is written.
+  _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
   CLI::App app{"Generate a stream of pseudo-random testdata"};
 
   constexpr bool k_is_1000 = false;

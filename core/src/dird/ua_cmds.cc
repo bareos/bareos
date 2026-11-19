@@ -40,6 +40,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/ua_db.h"
+#include "dird/ua_acct.h"
 #include "dird/ua_impexp.h"
 #include "dird/ua_input.h"
 #include "dird/ua_label.h"
@@ -153,7 +154,9 @@ static bool VersionCmd(UaContext* ua, const char* cmd);
 static bool wait_cmd(UaContext* ua, const char* cmd);
 static bool WhoAmICmd(UaContext* ua, const char* cmd);
 
-static void DoJobDelete(UaContext* ua, JobId_t JobId);
+static void DoJobDelete(UaContext* ua,
+                        JobId_t JobId,
+                        bool refresh_accounting = true);
 static bool DeleteJobIdRange(UaContext* ua, char* tok);
 static bool DeleteVolume(UaContext* ua);
 static bool DeletePool(UaContext* ua);
@@ -445,8 +448,11 @@ static struct ua_cmdstruct commands[] = {
      NT_("all | dir=<dir-name> | director | scheduler | "
          "schedule=<schedule-name> | client=<client-name> | "
          "storage=<storage-name> slots | days=<nr_days> | job=<job-name> | "
-         "subscriptions [clients] [plugins] [all] [anonymize] "
+         "subscriptions [clients] [plugins] [all] [anonymize] [legacy] "
+         "[logical] "
          "[client=<client-name>] | "
+         "subscriptions state | "
+         "subscriptions recalculate | "
          "configuration"),
      true, true},
     {NT_("setbandwidth"), SetbwlimitCmd, T_("Sets bandwidth"),
@@ -2229,6 +2235,7 @@ static bool ReloadCmd(UaContext* ua, const char*)
   } else {
     ua->send->ObjectKeyValueBool("success", result, "failed to reload\n");
   }
+
   ua->send->ObjectEnd("reload");
 
   return result;
@@ -2423,7 +2430,8 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
                   j2 - j1);
         if (!GetYesno(ua, buf) || !ua->pint32_val) { return true; }
       }
-      for (j = j1; j <= j2; j++) { DoJobDelete(ua, j); }
+      for (j = j1; j <= j2; j++) { DoJobDelete(ua, j, false); }
+      QueueMissingSubscriptionAccounting(ua);
     } else {
       ua->ErrorMsg(T_("Illegal JobId range %s - %s should define increasing "
                       "JobIds, ignored\n"),
@@ -2437,12 +2445,12 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
 }
 
 // DoJobDelete now performs the actual delete operation atomically
-static void DoJobDelete(UaContext* ua, JobId_t JobId)
+static void DoJobDelete(UaContext* ua, JobId_t JobId, bool refresh_accounting)
 {
   char ed1[50];
 
   edit_int64(JobId, ed1);
-  PurgeJobsFromCatalog(ua, ed1);
+  PurgeJobsFromCatalog(ua, ed1, refresh_accounting);
   ua->send->ArrayItem(
       ed1, T_("Jobid %s and associated records deleted from the catalog.\n"));
 }
@@ -2485,7 +2493,9 @@ static bool DeleteVolume(UaContext* ua)
     }
   }
 
-  ua->db->DeleteMediaRecord(ua->jcr, &mr);
+  if (ua->db->DeleteMediaRecord(ua->jcr, &mr)) {
+    QueueMissingSubscriptionAccounting(ua);
+  }
   ua->send->ArrayStart("volumes");
   ua->send->ArrayItem(mr.VolumeName, T_("Volume %s deleted.\n"));
   ua->send->ArrayEnd("volumes");

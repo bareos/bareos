@@ -37,6 +37,7 @@ export TestName
 
 # Fill ${BackupDirectory} with data.
 setup_data
+printf 'webui real restore test\n' >"${BackupDirectory}/webui-restore-test.txt"
 
 bin/bareos start
 bin/bareos status
