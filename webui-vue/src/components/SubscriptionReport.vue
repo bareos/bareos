@@ -7,15 +7,98 @@
       <div class="subscription-print-date">{{ t('Generated') }}: {{ generatedAt }}</div>
     </div>
 
-    <!-- Meta info -->
-    <table class="sub-meta-table q-mb-md">
-      <tbody>
-        <tr><th>{{ t('Version') }}</th>     <td>{{ data.version }}</td></tr>
-        <tr><th>{{ t('OS') }}</th>          <td>{{ data.os }}</td></tr>
-        <tr><th>{{ t('Binary Info') }}</th> <td>{{ data['binary-info'] }}</td></tr>
-        <tr><th>{{ t('Report Time') }}</th> <td>{{ data['report-time'] }}</td></tr>
-      </tbody>
-    </table>
+    <div class="sub-report-context q-mb-md">
+      <section v-if="data.subscription_accounting" class="sub-status-panel">
+        <div class="sub-status-heading">
+          <h3>{{ t('Accounting snapshot') }}</h3>
+          <span v-if="data.accounting_snapshot?.refresh_thread_state" class="sub-worker-state"
+                :class="{ 'sub-worker-state--busy': workerBusy }">
+            {{ t('Accounting worker') }}: {{ data.accounting_snapshot.refresh_thread_state }}
+            <q-spinner v-if="workerBusy" size="xs" class="q-ml-xs"
+                       :aria-label="t('Accounting worker is busy')" role="status" />
+          </span>
+          <q-btn v-if="refreshable && data.subscription_accounting.calculated_at" flat round dense size="sm" icon="refresh"
+                 class="subscription-refresh"
+                 :aria-label="t('Refresh calculation')"
+                 :title="canRefresh ? t('Refresh calculation') : t('Refresh is available when the accounting worker is idle.')"
+                 :loading="refreshLoading"
+                 :disable="!canRefresh || refreshDisabled"
+                 @click="requestRefresh" />
+        </div>
+        <dl class="sub-status-details">
+          <div>
+            <dt>{{ t('Size source') }}</dt>
+            <dd>{{ data.subscription_accounting.source === 'measured'
+              ? t('Measured')
+              : data.subscription_accounting.source === 'mixed'
+                ? t('Measured and estimated')
+                : t('Estimated') }}</dd>
+          </div>
+          <div v-if="data.subscription_accounting.calculated_at">
+            <dt>{{ t('Accounting snapshot') }}</dt>
+            <dd>{{ snapshotAgeLabel }} <span class="sub-context-date">{{ data.subscription_accounting.calculated_at }}</span></dd>
+          </div>
+          <div v-if="data.accounting_snapshot?.last_full_duration_ms != null">
+            <dt>{{ t('Last successful full recalculation') }}</dt>
+            <dd>
+              {{ formatNumber(data.accounting_snapshot.last_full_duration_ms / 1000, settings.locale) }}
+              {{ t('seconds') }} <span class="sub-context-date">{{ data.accounting_snapshot.last_full_completed_at }}</span>
+            </dd>
+          </div>
+        </dl>
+        <div class="sub-status-notices">
+          <div v-if="data.accounting_snapshot?.pending_jobs" class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('Pending accounting jobs') }}: {{ data.accounting_snapshot.pending_jobs }}
+          </div>
+          <div v-if="data.accounting_snapshot?.last_refresh_error" class="text-negative">
+            {{ data.accounting_snapshot.last_refresh_error }}
+            <div v-if="!anonymized && data.accounting_snapshot.last_refresh_diagnostic?.type === 'invalid_lstat'"
+                 class="sub-refresh-diagnostic">
+              <span>{{ t('File') }}: {{ data.accounting_snapshot.last_refresh_diagnostic.path }}</span>
+              <span>{{ t('Reason') }}: {{ data.accounting_snapshot.last_refresh_diagnostic.reason }}</span>
+              <a v-if="refreshable && data.accounting_snapshot.last_refresh_diagnostic.jobid"
+                 href="#" class="text-primary"
+                 @click.prevent="emit('open-job', data.accounting_snapshot.last_refresh_diagnostic.jobid)">
+                {{ t('Job') }} #{{ data.accounting_snapshot.last_refresh_diagnostic.jobid }}
+              </a>
+            </div>
+          </div>
+          <div v-if="Number(data.subscription_accounting.estimated_combinations) > 0" class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('Estimated sizes for {count} of {total} Client/FileSet combinations', {
+              count: data.subscription_accounting.estimated_combinations,
+              total: data.subscription_accounting.combinations,
+            }) }}
+          </div>
+          <div v-if="!data.subscription_accounting.calculated_at" class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('No accounting snapshot is available; all sizes are estimates.') }}
+          </div>
+          <div v-if="data.subscription_accounting.calculated_at && snapshotIsStale"
+               class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('Accounting snapshot is more than 24 hours old.') }}
+          </div>
+          <div v-if="data.subscription_accounting.refresh_failed" class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('Latest accounting refresh failed.') }}
+          </div>
+          <div v-if="data.subscription_accounting.multiple_catalogs" class="sub-warning">
+            <q-icon name="warning" aria-hidden="true" />
+            {{ t('Multiple catalogs are not supported; only the first configured catalog is refreshed.') }}
+          </div>
+        </div>
+      </section>
+
+      <!-- Meta info -->
+      <dl class="sub-report-meta">
+        <div><dt>{{ t('Version') }}</dt><dd>{{ data.version }}</dd></div>
+        <div><dt>{{ t('OS') }}</dt><dd>{{ data.os }}</dd></div>
+        <div><dt>{{ t('Binary Info') }}</dt><dd>{{ data['binary-info'] }}</dd></div>
+        <div><dt>{{ t('Report Time') }}</dt><dd>{{ data['report-time'] }}</dd></div>
+      </dl>
+    </div>
 
     <!-- Unit Summary -->
     <template v-if="data['unit-summary']">
@@ -90,7 +173,7 @@
 
     <!-- Full detail -->
     <template v-if="data['unit-detail']?.length">
-      <div class="text-h6 q-mb-xs q-mt-sm">{{ t('Full Detail') }}</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">{{ t('Client / Plugin Breakdown') }}</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
@@ -112,6 +195,58 @@
       </table>
     </template>
 
+    <template v-if="data.accounting?.length">
+      <div class="sub-accounting-heading q-mb-xs q-mt-sm">
+        <div class="text-h6">{{ t('Accounting Details') }}</div>
+        <q-checkbox v-if="refreshable" :model-value="showLogicalSize"
+                    :label="t('Show logical size')" class="print-hide"
+                    @update:model-value="emit('update:showLogicalSize', $event)" />
+      </div>
+      <div v-if="data.summary?.warning" class="sub-warning q-mb-md" role="alert">
+        <q-icon name="warning" aria-hidden="true" />
+        {{ data.summary.warning }}
+      </div>
+      <table class="sub-table q-mb-md">
+        <thead>
+          <tr>
+            <th>{{ t('Client') }}</th><th>{{ t('FileSet') }}</th>
+            <th>{{ t('Files') }}</th><th>{{ t('Accounted size (GB)') }}</th>
+            <th v-if="showLogicalSize">{{ t('Logical size (GB)') }}</th><th>{{ t('Rule') }}</th>
+            <th>{{ t('Chain jobs') }}</th>
+          </tr>
+        </thead>
+        <tbody v-for="(row, i) in data.accounting" :key="i"
+               :class="row.accounting_issue ? 'sub-accounting-group--issue' : ''">
+          <tr>
+            <td>{{ row.client }}</td><td>{{ row.fileset }}</td>
+            <td>{{ row.excluded ? '—' : formatNumber(row.files, settings.locale) }}</td>
+            <td>{{ row.excluded ? '—' : fmtGB(row.bytes / 1e9) }}</td>
+            <td v-if="showLogicalSize">{{ row.excluded ? '—' : fmtGB(row.logical_bytes / 1e9) }}</td>
+            <td :title="row.rule_explanation">{{ row.rule_code }}</td><td>{{ row.jobs_in_chain }}</td>
+          </tr>
+          <tr v-if="row.accounting_issue" class="sub-accounting-issue">
+            <td :colspan="showLogicalSize ? 7 : 6">
+              <q-icon name="warning" size="xs" class="q-mr-xs" />
+              <template v-if="refreshable && row.baseline_full_jobid && row.accounting_issue_before_jobid"><span>{{ row.accounting_issue_before_jobid }}</span><a href="#" @click.prevent="emit('open-job', row.baseline_full_jobid)">{{ row.baseline_full_jobid }}</a><span>{{ row.accounting_issue_after_jobid }}</span></template>
+              <template v-else>{{ row.accounting_issue }}</template>
+            </td>
+          </tr>
+        </tbody>
+        <tbody>
+          <tr v-if="data.summary" class="sub-row--total">
+            <td>{{ t('TOTAL') }}</td><td></td>
+            <td>{{ formatNumber(data.summary.total_files, settings.locale) }}</td>
+            <td>{{ fmtGB(data.summary.total_bytes / 1e9) }}</td>
+            <td v-if="showLogicalSize">{{ fmtGB(data.summary.total_logical_bytes / 1e9) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="text-caption q-mb-md">
+        {{ data.accounting_rule_legend }}
+      </div>
+    </template>
+
     <!-- Checksum -->
     <div class="text-caption text-grey q-mb-md">
       {{ t('Checksum') }}: {{ data.checksum }}
@@ -120,21 +255,59 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useSettingsStore } from '../stores/settings.js'
 import { useI18n } from 'vue-i18n'
-import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
+import { formatLocalDateTime, formatNumber, formatRelativeDate } from '../utils/locales.js'
 import { subscriptionRemainingSummary } from '../utils/subscription.js'
 
 const props = defineProps({
   data:      { type: Object, required: true },
   anonymized:{ type: Boolean, default: false },
+  refreshable: { type: Boolean, default: false },
+  refreshLoading: { type: Boolean, default: false },
+  refreshDisabled: { type: Boolean, default: false },
+  showLogicalSize: { type: Boolean, default: false },
 })
+const emit = defineEmits(['refresh', 'open-job', 'update:showLogicalSize'])
 
 const settings = useSettingsStore()
 const { t } = useI18n()
 const generatedAt = formatLocalDateTime(new Date(), settings.locale)
 const remainingSummary = computed(() => subscriptionRemainingSummary(props.data?.['unit-summary']))
+const now = ref(Date.now())
+const receivedAt = ref(now.value)
+watch(() => props.data, () => {
+  now.value = Date.now()
+  receivedAt.value = now.value
+})
+const snapshotAgeSeconds = computed(() => {
+  const age = props.data.subscription_accounting?.age_seconds
+  if (age === undefined || age === null || !Number.isFinite(Number(age))) return null
+  return Number(age) + (now.value - receivedAt.value) / 1000
+})
+const snapshotIsStale = computed(() => (
+  props.data.subscription_accounting?.stale
+  || (snapshotAgeSeconds.value !== null && snapshotAgeSeconds.value > 24 * 60 * 60)
+))
+const snapshotAgeLabel = computed(() => (
+  snapshotAgeSeconds.value === null
+    ? t('Unknown age')
+    : formatRelativeDate(new Date(Date.now() - snapshotAgeSeconds.value * 1000), settings.locale)
+))
+const canRefresh = computed(() => (
+  props.data.accounting_snapshot?.refresh_thread_state === 'idle'
+))
+const workerBusy = computed(() => (
+  ['running', 'queued'].includes(props.data.accounting_snapshot?.refresh_thread_state)
+))
+let ageTimer
+onMounted(() => { ageTimer = setInterval(() => { now.value = Date.now() }, 1000) })
+onUnmounted(() => { clearInterval(ageTimer) })
+
+function requestRefresh() {
+  if (canRefresh.value && !props.refreshDisabled && !props.refreshLoading) emit('refresh')
+}
 
 function fmtGB(gbStr) {
   return formatNumber(parseFloat(gbStr), settings.locale, {
@@ -145,19 +318,116 @@ function fmtGB(gbStr) {
 </script>
 
 <style scoped>
+.sub-warning {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--q-warning);
+  border-radius: 4px;
+  background: #fff8e6;
+  color: #333;
+}
+.sub-warning > .q-icon,
+.sub-accounting-issue .q-icon {
+  color: var(--q-warning);
+  flex-shrink: 0;
+}
+.sub-accounting-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.subscription-refresh {
+  @media print {
+    display: none;
+  }
+}
 /* Print header — hidden on screen, shown when printing */
 .subscription-print-header {
   display: none;
 }
 
-.sub-meta-table th {
-  text-align: left;
-  font-weight: 600;
-  padding: 4px 12px 4px 0;
-  min-width: 140px;
+.sub-report-context {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  gap: 20px;
 }
-.sub-meta-table td {
-  padding: 4px 0;
+.sub-status-panel {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+}
+.sub-status-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.sub-status-heading h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0 auto 0 0;
+}
+.sub-worker-state {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  padding: 3px 8px;
+  background: #f0f0f0;
+  font-size: 0.8rem;
+}
+.sub-worker-state--busy {
+  background: #e6f2fa;
+}
+.sub-status-details,
+.sub-report-meta {
+  margin: 0;
+  font-size: 0.85rem;
+}
+.sub-status-details > div,
+.sub-report-meta > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 8px;
+  padding: 5px 0;
+}
+.sub-status-details dt,
+.sub-report-meta dt {
+  color: #666;
+}
+.sub-status-details dd,
+.sub-report-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sub-context-date {
+  display: block;
+  color: #666;
+  font-size: 0.8rem;
+}
+.sub-status-notices:not(:empty) {
+  border-top: 1px solid #eee;
+  margin-top: 12px;
+  padding-top: 10px;
+  font-size: 0.85rem;
+}
+.sub-status-notices > div + div {
+  margin-top: 4px;
+}
+.sub-refresh-diagnostic {
+  display: grid;
+  margin-left: 20px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+  .sub-report-context {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Unit Summary card */
@@ -218,6 +488,19 @@ function fmtGB(gbStr) {
 .sub-row--total td {
   font-weight: 600;
   border-top: 2px solid #bbb;
+}
+.sub-accounting-group--issue {
+  background: #fff8e6;
+  border-left: 3px solid var(--q-warning);
+  break-inside: avoid;
+}
+.sub-accounting-group--issue > tr:first-child > td {
+  border-bottom: 0;
+}
+.sub-accounting-group--issue > .sub-accounting-issue > td {
+  border-top: 0;
+  padding: 0 10px 8px 24px;
+  color: #333;
 }
 
 @media print {

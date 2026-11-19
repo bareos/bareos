@@ -31,6 +31,7 @@ JobName=ai-backup-bareos-fd
 
 #shellcheck source=../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
+. ./accounting.sh
 start_test
 
 # Delete file during incremental, do a consolidation and check deleted file disappears
@@ -52,6 +53,13 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/another-file'"
 run job=$JobName level=Incremental yes
 wait
+END_OF_DATA
+run_bconsole
+
+check_subscription_accounting deleted-file 0 || exit 1
+
+cat <<END_OF_DATA >$tmp/bconcmds
+.api 2
 @$out $tmp/delete-file_consolidate.out
 run job=Consolidate yes
 wait
@@ -101,5 +109,7 @@ expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into J
 expect_not_grep "purged JobIds .*${lastinc_job}.* as they were consolidated into Job ${jobid}" \
   "$tmp/delete-file_messages.out" \
   "last incremental job was consolidated."
+
+check_subscription_accounting deleted-file-consolidated 0 deleted-file || exit 1
 
 end_test

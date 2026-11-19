@@ -71,6 +71,7 @@
 #include "lib/version.h"
 
 #include <cassert>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <unordered_map>
