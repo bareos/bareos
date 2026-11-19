@@ -2,6 +2,7 @@ Job {
   Name = "BackupCatalog"
   Description = "Backup the catalog database (after the nightly save)"
   JobDefs = "DefaultJob"
+  Allow Mixed Priority = no
   Level = Full
   FileSet="Catalog"
 

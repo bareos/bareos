@@ -8,6 +8,7 @@ JobDefs {
   Messages = Standard
   Pool = AI-Incremental
   Priority = 10
+  Allow Mixed Priority = yes
   Write Bootstrap = "@working_dir@/%c.bsr"
   Full Backup Pool = AI-Consolidated
   AllowDuplicateJobs = no

@@ -3414,7 +3414,10 @@ static void PrintConfigCb(const ResourceItem& item,
 
   if (item.is_required) { print = true; }
 
-  if (HasDefaultValue(item)) {
+  // Preserve explicit overrides even when they match the directive's default.
+  const bool explicitly_set = item.IsPresent() && !inherited;
+
+  if (HasDefaultValue(item) && !explicitly_set) {
     if (verbose && !item.is_deprecated) {
       print = true;
       inherited = true;

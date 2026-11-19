@@ -8,5 +8,6 @@ JobDefs {
   Messages = Standard
   Pool = Backup
   Priority = 10
+  Allow Mixed Priority = yes
   Write Bootstrap = "@working_dir@/%c.bsr"
 }

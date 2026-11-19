@@ -1923,7 +1923,10 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
     print_item = true;
   }
 
-  if (HasDefaultValue(item)) {
+  // Preserve explicit overrides even when they match the directive's default.
+  const bool explicitly_set = item.IsPresent() && !inherited;
+
+  if (HasDefaultValue(item) && !explicitly_set) {
     Dmsg1(200, "%s: default value\n", item.name);
 
     if (verbose && !item.is_deprecated) {
