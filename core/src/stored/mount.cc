@@ -72,7 +72,7 @@ enum
  *   locked.
  *
  */
-bool DeviceControlRecord::MountNextWriteVolume()
+bool DeviceControlRecord::MountNextWriteVolume(bool current_job_is_writer)
 {
   int retry = 0;
   bool ask = false, recycle, autochanger;
@@ -85,6 +85,13 @@ bool DeviceControlRecord::MountNextWriteVolume()
   InitDeviceWaitTimers(dcr);
 
   lock_mutex(mount_mutex);
+
+  auto wait_for_writers = [&] {
+    unlock_mutex(mount_mutex);
+    const bool writers_finished = WaitForDeviceWritersToFinish(dev, jcr);
+    lock_mutex(mount_mutex);
+    return writers_finished;
+  };
 
   /* Attempt to mount the next volume. If something non-fatal goes
    *  wrong, we come back here to re-try (new op messages, re-read
@@ -107,15 +114,23 @@ mount_next_vol:
           dev->must_load());
   }
 
+prepare_mount:
   if (jcr->IsJobCanceled()) {
     Jmsg(jcr, M_FATAL, 0, T_("Job %" PRIu32 " canceled.\n"), jcr->JobId);
     goto bail_out;
   }
   recycle = false;
 
+  // EOM recovery must keep all writers blocked until the new volume is ready.
+  if (!current_job_is_writer && (dev->MustUnload() || dev->swap_dev)
+      && dev->num_writers > 0) {
+    if (!wait_for_writers()) { goto bail_out; }
+    goto prepare_mount;
+  }
+
   if (dev->MustUnload()) { ask = true; /* ask operator to mount tape */ }
 
-  DoUnload();
+  if (!DoUnload()) { goto bail_out; }
   DoSwapping(true /*IsWriting*/);
   DoLoad(true /*IsWriting*/);
 
@@ -140,8 +155,26 @@ mount_next_vol:
    * If the device is already open close it first as otherwise we could
    * potentially write to an already open device a new volume label.
    * This is only interesting for non tape devices. */
+  if (!current_job_is_writer && retry && dev->num_writers > 0) {
+    if (dev->IsOpen() && dev->CanWrite()
+        && bstrcmp(dcr->VolumeName, dev->VolHdr.VolumeName)
+        && !(dev->poll && dev->HasCap(CAP_CLOSEONPOLL))) {
+      if (block) { EmptyBlock(block); }
+      dev->SetAppend();
+      unlock_mutex(mount_mutex);
+      return true;
+    }
+    if (!wait_for_writers()) { goto bail_out; }
+    goto prepare_mount;
+  }
+
   if (!dev->IsTape()) {
-    if (retry && dev->IsOpen()) { dev->close(dcr); }
+    if (retry && dev->IsOpen()) {
+      if (!dev->close(dcr)) {
+        Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
+        goto bail_out;
+      }
+    }
   }
 
   switch (AutoloadDevice(dcr, true /* writing */, NULL)) {
@@ -216,7 +249,14 @@ mount_next_vol:
         dev->VolHdr.VolumeName, dev->print_name());
 
   if (dev->poll && dev->HasCap(CAP_CLOSEONPOLL)) {
-    dev->close(dcr);
+    if (!current_job_is_writer && dev->num_writers > 0) {
+      if (!wait_for_writers()) { goto bail_out; }
+      goto prepare_mount;
+    }
+    if (!dev->close(dcr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
+      goto bail_out;
+    }
     FreeVolume(dev);
   }
 
@@ -549,7 +589,7 @@ bool DeviceControlRecord::DoUnload()
 
   if (dev->MustUnload()) {
     Dmsg1(100, "MustUnload release %s\n", dev->print_name());
-    ReleaseVolume();
+    return ReleaseVolume();
   }
   return true;
 }
@@ -793,9 +833,10 @@ void DeviceControlRecord::mark_volume_not_inchanger()
  * Either because we are going to hang a new volume, or because
  * of explicit user request, we release the current volume.
  */
-void DeviceControlRecord::ReleaseVolume()
+bool DeviceControlRecord::ReleaseVolume()
 {
   DeviceControlRecord* dcr = this;
+  bool close_succeeded = true;
 
   UnloadAutochanger(dcr, -1);
 
@@ -821,12 +862,14 @@ void DeviceControlRecord::ReleaseVolume()
   VolumeName[0] = 0;
 
   if (dev->IsOpen() && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
-    dev->close(dcr);
+    close_succeeded = dev->close(dcr);
+    if (!close_succeeded) { Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg); }
   }
 
   // If we have not closed the device, then at least rewind the tape
   if (dev->IsOpen()) { dev->OfflineOrRewind(); }
   Dmsg0(190, "ReleaseVolume\n");
+  return close_succeeded;
 }
 
 /**

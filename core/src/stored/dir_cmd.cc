@@ -1242,8 +1242,12 @@ static bool ReleaseCmd(JobControlRecord* jcr)
         SendDirBusyMessage(dir, dev);
       } else { /* device not being used */
         Dmsg0(90, "Device not in use, releasing\n");
-        dcr->ReleaseVolume();
-        dir->fsend(T_("3022 Device \"%s\" released.\n"), dev->print_name());
+        if (dcr->ReleaseVolume()) {
+          dir->fsend(T_("3022 Device \"%s\" released.\n"), dev->print_name());
+        } else {
+          dir->fsend(T_("3999 Device \"%s\" could not be released.\n"),
+                     dev->print_name());
+        }
       }
       dev->Unlock();
       FreeDeviceControlRecord(dcr);

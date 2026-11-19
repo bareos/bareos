@@ -63,13 +63,6 @@ DeviceControlRecord::DeviceControlRecord()
     Mmsg(errmsg, T_("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
     Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
   }
-
-  if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
-    BErrNo be;
-
-    Mmsg(errmsg, T_("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-    Jmsg0(NULL, M_ERROR_TERM, 0, "%s", errmsg.c_str());
-  }
 }
 
 static int const rdebuglevel = 100;
@@ -78,6 +71,48 @@ static int const rdebuglevel = 100;
 static void AttachDcrToDev(DeviceControlRecord* dcr);
 static void DetachDcrFromDev(DeviceControlRecord* dcr);
 static void SetDcrFromVol(DeviceControlRecord* dcr, VolumeList* vol);
+
+bool WaitForDeviceWritersToFinish(Device* dev, JobControlRecord* jcr)
+{
+  bool wait_failed = false;
+  bool writers_finished;
+  bool close_failed;
+
+  dev->Lock();
+  ASSERT(dev->blocked() == BST_DOING_ACQUIRE);
+  const uint64_t close_failure_count = dev->close_failure_count;
+  UnblockDevice(dev);
+
+  while (dev->num_writers > 0 && !jcr->IsJobCanceled()) {
+    timeval now{};
+    gettimeofday(&now, nullptr);
+    timespec timeout{now.tv_sec + 1, now.tv_usec * 1000};
+
+    int status = dev->NextVolTimedwait(&timeout);
+    if (status != 0 && status != ETIMEDOUT) {
+      BErrNo be;
+      Jmsg1(jcr, M_FATAL, 0, T_("pthread timedwait error. ERR=%s\n"),
+            be.bstrerror(status));
+      wait_failed = true;
+      break;
+    }
+  }
+
+  // A releasing writer may still own the device block after the last flush.
+  dev->WaitUntilOtherThreadReleasesBlock();
+  BlockDevice(dev, BST_DOING_ACQUIRE);
+  writers_finished = dev->num_writers == 0;
+  close_failed = dev->close_failure_count != close_failure_count;
+  dev->Unlock();
+
+  if (close_failed) {
+    Jmsg(jcr, M_FATAL, 0,
+         T_("A writer failed to close device %s during volume handoff.\n"),
+         dev->print_name());
+  }
+  return writers_finished && !wait_failed && !close_failed
+         && !jcr->IsJobCanceled();
+}
 
 /**
  * Acquire device for reading.
@@ -432,7 +467,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
 
 
   {
-    dev->rLock(true);
+    dev->WaitUntilOtherThreadReleasesBlock();
     BlockDevice(dev, BST_DOING_ACQUIRE);
     dev->Unlock();
     Dmsg1(190, "jid=%" PRIu32 " Do mount_next_write_vol\n", jcr->JobId);
@@ -487,7 +522,6 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   bool retval = true;
   char tbuf[100];
-  int was_blocked = BST_NOT_BLOCKED;
 
   Jmsg(jcr, M_INFO, 0, "Releasing device %s.\n", dev->print_name());
 
@@ -495,26 +529,32 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   now = (utime_t)time(NULL);
   UpdateJobStatistics(jcr, now);
 
+  // Honor another job's acquisition/despooling block before using the backend.
+  dev->Lock();
+  dev->WaitUntilOtherThreadReleasesBlock();
+  if (!dev->IsBlocked()) {
+    BlockDevice(dev, BST_RELEASING);
+  } else {
+    // The wait permits an existing block only when this thread owns it.
+    dev->SetBlocked(BST_RELEASING);
+  }
+  dev->Unlock();
+
   /* Some devices do cache write operations (e.g. DropletDevice).
    * Therefore flushing the cache is required to determine
    * if a job have been written successfully.
    * As a flush operation can take quite a long time,
-   * this must be done before acquiring locks.
+   * this must be done without holding the device mutex.
    * A previous implementation did the flush inside dev->close(),
    * which resulted in various locking problems. */
   if (!jcr->IsJobCanceled()) {
     if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
+      retval = false;
     }
   }
 
   dev->Lock();
-  if (!dev->IsBlocked()) {
-    BlockDevice(dev, BST_RELEASING);
-  } else {
-    was_blocked = dev->blocked();
-    dev->SetBlocked(BST_RELEASING);
-  }
 
   with_volume_lock([&] {
     Dmsg1(100, "releasing device %s\n", dev->print_name());
@@ -588,7 +628,10 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     // If no writers, close if file or !CAP_ALWAYS_OPEN
     if (dev->num_writers == 0
         && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
-      dev->close(dcr);
+      if (!dev->close(dcr)) {
+        Jmsg(jcr, M_FATAL, 0, "%s", dev->errmsg);
+        retval = false;
+      }
       FreeVolume(dev);
     }
   });
@@ -640,14 +683,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
   ReleaseDeviceCond();
 
-  // If we are the thread that blocked the device, then unblock it
-  if (pthread_equal(dev->no_wait_id, pthread_self())) {
-    dev->dunblock(true);
-  } else {
-    // Otherwise, reset the prior block status and unlock
-    dev->SetBlocked(was_blocked);
-    dev->Unlock();
-  }
+  dev->dunblock(true);
 
   if (dcr->keep_dcr) {
     DetachDcrFromDev(dcr);
@@ -800,7 +836,6 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
   unlock_mutex(dcr->mutex_);
 
   pthread_mutex_destroy(&dcr->mutex_);
-  pthread_mutex_destroy(&dcr->r_mutex);
 
   delete dcr;
 }
