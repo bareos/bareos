@@ -99,10 +99,32 @@ describe('fetchCombinedTimelineData', () => {
         director: 'dir-a',
         scheduleKey: 'dir-a:nightly',
         scheduleDisplay: 'nightly',
-        scopeKey: 'dir-a:preview:nightly:backup:t1',
+        scopeKey: 'dir-a:preview:nightly:backup:t1:0',
       }),
     ])
     expect(result.errors).toEqual([])
+  })
+
+  it('expands real unfiltered triggers into eligible jobs on their own Director', async () => {
+    createDirectorCommandClient.mockImplementation(async ({ director }) => makeClient({
+      'status scheduler': {
+        schedules: [{
+          name: 'nightly',
+          jobs: [
+            { name: `${director}-backup`, enabled: true, client: 'server' },
+            { name: 'disabled', enabled: false },
+          ],
+        }],
+        preview: [{ schedule: 'nightly', runtime: 123 }],
+      },
+    }))
+
+    const result = await fetchCombinedTimelineData({}, ['dir-a', 'dir-b'], OPTIONS)
+    expect(result.scheduledRuns.map(({ director, job, client }) => ({ director, job, client })))
+      .toEqual([
+        { director: 'dir-a', job: 'dir-a-backup', client: 'server' },
+        { director: 'dir-b', job: 'dir-b-backup', client: 'server' },
+      ])
   })
 
   it('overlays runtime status only when a job is running', async () => {

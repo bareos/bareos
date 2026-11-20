@@ -57,14 +57,22 @@ export async function fetchCombinedTimelineData(
       const actualJobs = jobs.some(job => isRunningJobStatus(job.status))
         ? overlayRuntimeStatuses(jobs, statusResult?.running)
         : jobs
+      const eligibleJobsBySchedule = new Map(
+        (Array.isArray(schedulerResult?.schedules) ? schedulerResult.schedules : [])
+          .map(({ name, jobs }) => [name, (jobs ?? []).filter(job => job.enabled && job.name)])
+      )
       const scheduledRuns = (
         Array.isArray(schedulerResult?.preview) ? schedulerResult.preview : []
+      ).flatMap(run => run.job
+        ? [run]
+        : (eligibleJobsBySchedule.get(run.schedule) ?? [])
+            .map(({ name, client }) => ({ ...run, job: name, client }))
       ).map((run, index) => ({
         ...run,
         director: directorName,
         scheduleKey: scheduleScopeKey(directorName, run?.schedule),
         scheduleDisplay: run?.schedule ?? '',
-        scopeKey: `${directorName}:preview:${run?.schedule ?? ''}:${run?.job ?? index}:${run?.runtime ?? index}`,
+        scopeKey: `${directorName}:preview:${run.schedule ?? ''}:${run.job}:${run.runtime ?? ''}:${index}`,
       }))
 
       return { actualJobs, scheduledRuns }
