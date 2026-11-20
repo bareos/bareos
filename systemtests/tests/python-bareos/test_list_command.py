@@ -210,12 +210,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     0,
                 )
         finally:
-            admin.call(
-                f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
-            )
-            admin.call(
-                f".sql query=\"UPDATE Job SET Name='backup-test2-fd' WHERE JobId={other_jobid}\""
-            )
+            try:
+                admin.call(
+                    f".sql query=\"UPDATE Job SET Name='backup-bareos-fd' WHERE JobId={jobid}\""
+                )
+            finally:
+                admin.call(
+                    f".sql query=\"UPDATE Job SET Name='backup-test2-fd' WHERE JobId={other_jobid}\""
+                )
 
         try:
             admin.call(
