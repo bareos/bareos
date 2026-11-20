@@ -49,12 +49,6 @@ async function browserFixture(page, commandHandler = () => undefined) {
   }))
   await page.routeWebSocket(/\/ws/, socket => {
     let director = directors[0]
-    const responseTokens = new Set()
-    socket.onClose(() => {
-      for (const token of responseTokens) {
-        responseCompletions.get(token)?.resolve()
-      }
-    })
     socket.onMessage(async message => {
       const request = JSON.parse(message)
       if (request.type === 'session') {
@@ -64,14 +58,9 @@ async function browserFixture(page, commandHandler = () => undefined) {
       }
       if (request.type !== 'command') return
       const responseToken = String(++responseSequence)
-      let resolveCompletion
-      const completion = new Promise(resolve => { resolveCompletion = resolve })
       let resolveSent
       const sent = new Promise(resolve => { resolveSent = resolve })
-      responseCompletions.set(responseToken, {
-        promise: completion, resolve: resolveCompletion, sent,
-      })
-      responseTokens.add(responseToken)
+      responseCompletions.set(responseToken, { sent })
       try {
         const data = await commandHandler(request.command, director, { responseToken, socket })
         const job = {
@@ -79,7 +68,7 @@ async function browserFixture(page, commandHandler = () => undefined) {
           comment: 'Original comment',
         }
         socket.send(JSON.stringify({
-          type: 'response', id: request.id,
+          type: 'response', id: request.id, fixtureResponseToken: responseToken,
           data: data ?? (
             request.command.startsWith('llist jobs count') ? { jobs: [{ count: '1' }] }
               : request.command.startsWith('llist job') ? { jobs: [job] }
@@ -89,7 +78,9 @@ async function browserFixture(page, commandHandler = () => undefined) {
         }))
         resolveSent()
       } catch (error) {
-        socket.send(JSON.stringify({ type: 'error', id: request.id, message: error.message }))
+        socket.send(JSON.stringify({
+          type: 'error', id: request.id, fixtureResponseToken: responseToken, message: error.message,
+        }))
         resolveSent()
       }
     })
@@ -113,8 +104,10 @@ async function browserFixture(page, commandHandler = () => undefined) {
 async function waitForDirectorResponseProcessing(page, responseToken) {
   const completion = directorResponseCompletions.get(page)?.get(responseToken)
   if (!completion) throw new Error(`Unknown Director response token: ${responseToken}`)
-  await completion.promise
-  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
+  await completion.sent
+  await page.waitForFunction(token => window.__fixtureMessages.some(message =>
+    JSON.parse(message).fixtureResponseToken === token
+  ), responseToken)
 }
 
 test('browser regression: column checkboxes have accessible names', async ({ page }) => {
@@ -407,34 +400,56 @@ test('browser regression: schedule status ignores an obsolete calendar range', a
 test('browser regression: clients list ignores an obsolete refresh', async ({ page }) => {
   let releaseObsoleteClients
   let obsoleteClientsResponseToken
+  let obsoleteSocket
+  let barrierSocket
   let clientListRequests = 0
 
-  await browserFixture(page, (command, _director, { responseToken }) => {
+  await browserFixture(page, (command, _director, { responseToken, socket }) => {
     if (command === 'llist clients') {
       clientListRequests += 1
       if (clientListRequests === 1) {
         obsoleteClientsResponseToken = responseToken
+        obsoleteSocket = socket
         return new Promise(resolve => {
           releaseObsoleteClients = () => resolve({
             clients: [{ name: 'ObsoleteClient' }],
           })
         })
       }
-      return { clients: [{ name: 'CurrentClient' }] }
+      if (clientListRequests === 2) return { clients: [{ name: 'CurrentClient' }] }
+      barrierSocket = socket
+      return { clients: [{ name: 'SettledClient' }] }
     }
     if (command === '.clients') return { clients: [] }
     if (command.startsWith('llist jobs reverse limit=1000')) return { jobs: [] }
   })
 
+  await page.getByTestId('director-scope-control').click()
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
   await openNav(page, 'nav-clients', /#\/clients/)
   await expect.poll(() => Boolean(releaseObsoleteClients)).toBe(true)
   await page.getByRole('button', { name: 'Refresh' }).click()
-  await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
+  await expect(page.getByText('CurrentClient', { exact: true })).toBeVisible()
 
+  await page.evaluate(() => {
+    window.obsoleteClientSeen = false
+    const observer = new MutationObserver(() => {
+      if (document.body.textContent.includes('ObsoleteClient')) {
+        window.obsoleteClientSeen = true
+      }
+    })
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+  })
   releaseObsoleteClients()
   await waitForDirectorResponseProcessing(page, obsoleteClientsResponseToken)
+  await page.getByRole('button', { name: 'Refresh' }).click()
+  await expect(page.getByText('SettledClient', { exact: true })).toBeVisible()
+  expect(barrierSocket).toBe(obsoleteSocket)
   await expect(page.getByText('ObsoleteClient', { exact: true })).toHaveCount(0)
-  await expect(page.getByText('CurrentClient', { exact: true })).toHaveCount(2)
+  expect(await page.evaluate(() => window.obsoleteClientSeen)).toBe(false)
 })
 
 test('browser regression: client backup status distinguishes running from no history', async ({ page }) => {
