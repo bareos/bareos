@@ -180,11 +180,16 @@ test('browser regression: waiting job opens the log section', async ({ page }) =
     if (command === 'status director') {
       return { running: [{ jobid: '101', status: 'Job is waiting for mount' }] }
     }
-    if (command.startsWith('llist job')) {
+    if (command.startsWith('llist job') && !command.startsWith('llist jobs count')) {
       return { jobs: [{ jobid: '101', name: 'Waiting job', jobstatus: 'R', type: 'B' }] }
     }
     if (command.startsWith('list joblog')) return { joblog: [] }
   })
+  await page.getByTestId('director-scope-control').click()
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
   await openNav(page, 'nav-jobs', /#\/jobs/)
   await page.setViewportSize({ width: 800, height: 400 })
   await page.getByRole('button', { name: /Job is waiting for mount: Jump to log/ }).first().click()
