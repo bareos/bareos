@@ -1288,8 +1288,7 @@ function buildCellLanes(dateStr) {
 }
 
 const calendarCells = computed(() => {
-  const today = startOfToday()
-  const todayStr = makeDateStr(today.getFullYear(), today.getMonth(), today.getDate())
+  const todayStr = todayDateStr.value
 
   if (viewMode.value === 'week') {
     return weekDates(viewAnchor.value).map((day) => {
