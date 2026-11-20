@@ -57,7 +57,7 @@
       ref="bodyRef"
       class="combined-timeline__body col"
       :class="{ 'combined-timeline__body--panning': pointerPan !== null }"
-      @wheel.prevent="onTimelineWheel"
+      @wheel="onTimelineWheel"
     >
       <q-inner-loading :showing="loading" />
       <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
@@ -313,10 +313,15 @@ function axisRatioFromEvent(event) {
 }
 
 function onTimelineWheel(event) {
+  if (!event.ctrlKey && !event.metaKey) return
+
   const direction = Math.sign(event.deltaY)
   if (direction === 0) return
   const nextIndex = windowIndex.value + (direction > 0 ? 1 : -1)
+  if (nextIndex < 0 || nextIndex >= windowOptions.length) return
+
   zoomToIndex(nextIndex, axisRatioFromEvent(event))
+  event.preventDefault()
 }
 
 function isTimelineInteractiveTarget(target) {

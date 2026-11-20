@@ -176,4 +176,33 @@ describe('CombinedJobScheduleTimeline', () => {
     expect(onRangeChange.mock.calls[0][0].start)
       .toBe(Date.parse('2026-05-27T12:01:00') - 12 * 60 * 60 * 1000)
   })
+
+  it('only prevents modified wheel zoom when the zoom level changes', async () => {
+    const host = mountTimeline({})
+    const body = host.querySelector('.combined-timeline__body')
+    const dispatchWheel = (options) => {
+      const event = new WheelEvent('wheel', {
+        bubbles: true,
+        cancelable: true,
+        ...options,
+      })
+      body.dispatchEvent(event)
+      return event
+    }
+
+    expect(dispatchWheel({ deltaY: 1 }).defaultPrevented).toBe(false)
+    expect(host.querySelector('.combined-timeline__zoom-label').textContent).toContain('24 h')
+
+    const zoomEvent = dispatchWheel({ deltaY: 1, ctrlKey: true })
+    expect(zoomEvent.defaultPrevented).toBe(true)
+    await nextTick()
+    expect(host.querySelector('.combined-timeline__zoom-label').textContent).toContain('3 d')
+
+    dispatchWheel({ deltaY: 1, ctrlKey: true })
+    dispatchWheel({ deltaY: 1, ctrlKey: true })
+    const limitEvent = dispatchWheel({ deltaY: 1, ctrlKey: true })
+    await nextTick()
+    expect(limitEvent.defaultPrevented).toBe(false)
+    expect(host.querySelector('.combined-timeline__zoom-label').textContent).toContain('30 d')
+  })
 })
