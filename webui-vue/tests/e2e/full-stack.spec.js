@@ -194,12 +194,12 @@ test('browser regression: schedule and job toggles refresh upcoming runs', async
           enabled: scheduleEnabled,
           jobs: [{ name: 'DailyJob', enabled: jobEnabled }],
         }],
-        preview: [{
+        preview: scheduleEnabled && jobEnabled ? [{
           job: 'DailyJob',
           schedule: 'DailyCycle',
           datetime: '2026-05-28 00:00:00',
           runtime: Date.now() / 1000 + 3600,
-        }],
+        }] : [],
       }
     }
     if (command === 'disable schedule="DailyCycle"') scheduleEnabled = false
@@ -211,17 +211,24 @@ test('browser regression: schedule and job toggles refresh upcoming runs', async
   await openNav(page, 'nav-schedules', /#\/schedules/)
   await expect(page.getByText('Scheduler Jobs', { exact: true })).toBeVisible()
   await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(0)
+  const nextRun = page.locator('.schedules-list-stats').getByText(/Next run:/)
+  await expect(nextRun).toBeVisible()
 
   const scheduleCalls = upcomingPreviewCalls
   const scheduleGroup = page.locator('.sched-group-header').first()
   await scheduleGroup.getByRole('button', { name: 'Expand group', exact: true }).click()
   await scheduleGroup.locator('.q-toggle').click()
   await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(scheduleCalls)
+  await expect(nextRun).toHaveCount(0)
+
+  await scheduleGroup.locator('.q-toggle').click()
+  await expect(nextRun).toBeVisible()
 
   const jobCalls = upcomingPreviewCalls
   const jobRow = page.locator('tbody tr').filter({ hasText: 'DailyJob' })
   await jobRow.locator('.q-toggle').click()
   await expect.poll(() => upcomingPreviewCalls).toBeGreaterThan(jobCalls)
+  await expect(nextRun).toHaveCount(0)
 })
 
 test('browser regression: schedule All selection survives an empty scope', async ({ page }) => {
