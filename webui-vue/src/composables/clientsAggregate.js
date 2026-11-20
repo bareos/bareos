@@ -102,11 +102,12 @@ function sortClients(clients) {
 
 const CACHE_TTL_MS = 60_000 // 60 seconds TTL
 
-function buildCacheKey(credentials, directors) {
+function buildCacheKey(credentials, directors, includeDiagnostics) {
   return JSON.stringify({
     user: credentials?.username ?? '',
     credential: hashCacheFingerprint(credentials?.password),
     directors: [...directors].sort(),
+    includeDiagnostics,
   })
 }
 
@@ -114,8 +115,10 @@ export function clearClientsCache() {
   clientsCache.clear()
 }
 
-export async function fetchAggregatedClients(credentials, directors, { forceRefresh = false } = {}) {
-  const cacheKey = buildCacheKey(credentials, directors)
+export async function fetchAggregatedClients(
+  credentials, directors, { forceRefresh = false, includeDiagnostics = true } = {}
+) {
+  const cacheKey = buildCacheKey(credentials, directors, includeDiagnostics)
   if (!forceRefresh) {
     const cached = clientsCache.get(cacheKey, CACHE_TTL_MS)
     if (cached) {
@@ -129,14 +132,12 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
       const [listResult, dotResult, recentBackupsResponse, schedulerResult] = await Promise.all([
         client.call('llist clients'),
         client.call('.clients'),
-        client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B')
-          .then(result => ({ result }))
-          .catch(error => ({ error })),
-        // Scheduler preview data is only needed by callers that still consume
-        // `scheduledBackups` (e.g. RestorePage.vue); a failure here (e.g. an
-        // ACL restriction) must not fail the whole director's clients/recent
-        // backups aggregate for callers that don't need it (e.g. ClientsPage.vue).
-        client.call('status scheduler days=-31,1').catch(() => null),
+        ...(includeDiagnostics ? [
+          client.call('llist jobs reverse limit=1000 sortby=starttime jobtype=B')
+            .then(result => ({ result }))
+            .catch(error => ({ error })),
+          client.call('status scheduler days=-31,1').catch(() => null),
+        ] : []),
       ])
 
       const enabledMap = Object.fromEntries(
@@ -146,9 +147,9 @@ export async function fetchAggregatedClients(credentials, directors, { forceRefr
       return {
         director,
         clients: decorateClients(listResult?.clients, enabledMap, director),
-        recentBackups: decorateRecentBackups(recentBackupsResponse.result?.jobs, director),
-        recentBackupsError: recentBackupsResponse.error?.message
-          ?? (recentBackupsResponse.error ? String(recentBackupsResponse.error) : ''),
+        recentBackups: decorateRecentBackups(recentBackupsResponse?.result?.jobs, director),
+        recentBackupsError: recentBackupsResponse?.error?.message
+          ?? (recentBackupsResponse?.error ? String(recentBackupsResponse.error) : ''),
         scheduledBackups: decorateScheduledBackups(schedulerResult, director),
       }
     })

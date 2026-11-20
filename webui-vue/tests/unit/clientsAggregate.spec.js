@@ -21,7 +21,11 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { decorateScheduledBackups, fetchAggregatedClients } from '../../src/composables/clientsAggregate.js'
+import {
+  clearClientsCache,
+  decorateScheduledBackups,
+  fetchAggregatedClients,
+} from '../../src/composables/clientsAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -85,6 +89,7 @@ async function respondToClientAggregate(socket) {
 describe('clients aggregate helpers', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    clearClientsCache()
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
@@ -92,6 +97,7 @@ describe('clients aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('only associates a named preview with its job, while expanding schedule-wide previews', () => {
@@ -125,6 +131,68 @@ describe('clients aggregate helpers', () => {
     expect(FakeWebSocket.instances).toHaveLength(2)
     await respondToClientAggregate(FakeWebSocket.instances[1])
     await forcedRequest
+  })
+
+  it('loads clients without diagnostics and caches both modes independently', async () => {
+    const credentials = { username: 'admin', password: 'secret' }
+    const directors = ['prod-a']
+    const clientsOnly = { includeDiagnostics: false }
+    const jobCommand = 'llist jobs reverse limit=1000 sortby=starttime jobtype=B'
+    const schedulerCommand = 'status scheduler days=-31,1'
+
+    async function start(options, includeDiagnostics = false) {
+      const index = FakeWebSocket.instances.length
+      const result = fetchAggregatedClients(credentials, directors, options)
+      const socket = FakeWebSocket.instances[index]
+      expect(socket).toBeDefined()
+      socket.open()
+      socket.onmessage({ data: JSON.stringify({ type: 'auth_ok' }) })
+      const expected = ['llist clients', '.clients']
+      if (includeDiagnostics) expected.push(jobCommand, schedulerCommand)
+      await vi.waitFor(() => {
+        expect(socket.sent.slice(1).map(payload => JSON.parse(payload).command)).toEqual(expected)
+      })
+      const commands = new Map(socket.sent.slice(1).map(payload => {
+        const { command, id } = JSON.parse(payload)
+        return [command, id]
+      }))
+      const respond = (command, data) => {
+        socket.onmessage({ data: JSON.stringify({ type: 'response', id: commands.get(command), data }) })
+      }
+      respond('llist clients', { clients: [{ name: 'alpha-fd' }] })
+      respond('.clients', { clients: [{ name: 'alpha-fd', enabled: false }] })
+      return { result, respond }
+    }
+
+    const initial = await start(clientsOnly)
+    await expect(initial.result).resolves.toMatchObject({
+      clients: [{ name: 'alpha-fd', enabled: false }],
+      directorErrors: [],
+    })
+
+    // Warm clients-only data cannot satisfy a diagnostics load.
+    const full = await start(undefined, true)
+    let diagnosticsFinished = false
+    const fullResult = full.result.then(result => {
+      diagnosticsFinished = true
+      return result
+    })
+
+    const refresh = await start({ ...clientsOnly, forceRefresh: true })
+    const refreshedClients = await refresh.result
+    expect(diagnosticsFinished).toBe(false)
+    full.respond(jobCommand, { jobs: [{ jobid: 7 }] })
+    full.respond(schedulerCommand, {
+      preview: [{ client: 'alpha-fd', job: 'Nightly', runtime: Math.floor(Date.now() / 1000) - 60 }],
+    })
+    const withDiagnostics = await fullResult
+    expect(withDiagnostics).toMatchObject({
+      recentBackups: [{ id: 7 }],
+      scheduledBackups: [{ job: 'Nightly', client: 'alpha-fd' }],
+    })
+
+    await expect(fetchAggregatedClients(credentials, directors)).resolves.toBe(withDiagnostics)
+    await expect(fetchAggregatedClients(credentials, directors, clientsOnly)).resolves.toBe(refreshedClients)
   })
 
   it('merges clients across multiple directors', async () => {
