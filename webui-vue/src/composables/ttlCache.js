@@ -21,32 +21,31 @@
 
 // Small helper implementing a TTL cache that is safe to use with
 // concurrent/in-flight async fetches:
-//  - expired entries are pruned lazily on read instead of growing forever
+//  - expired entries are pruned on cache access and the store has a hard cap
 //  - clear() bumps a generation counter so that any fetch that was already
 //    in flight when clear() was called (e.g. triggered by logout) will not
 //    resurrect stale data into the cache once it resolves.
 export function createTtlCache() {
+  const maxEntries = 128
   const store = new Map()
   let generation = 0
   let nextFetchId = 0
   const latestFetchByKey = new Map()
 
-  // Returns the cached data if present and still within ttlMs, otherwise
-  // evicts the (now stale) entry so the map doesn't grow unboundedly with
-  // dead entries, and returns undefined.
-  function get(key, ttlMs) {
-    const entry = store.get(key)
-    if (!entry) {
-      return undefined
+  function pruneExpired(ttlMs) {
+    const now = Date.now()
+    for (const [entryKey, entry] of store) {
+      if (now - entry.timestamp >= ttlMs) store.delete(entryKey)
     }
-    if (Date.now() - entry.timestamp >= ttlMs) {
-      store.delete(key)
-      return undefined
-    }
-    return entry.data
   }
 
-  function beginFetch(key) {
+  function get(key, ttlMs) {
+    pruneExpired(ttlMs)
+    return store.get(key)?.data
+  }
+
+  function beginFetch(key, ttlMs = 60_000) {
+    pruneExpired(ttlMs)
     const fetch = { generation, id: ++nextFetchId }
     latestFetchByKey.set(key, fetch.id)
     return fetch
@@ -59,7 +58,21 @@ export function createTtlCache() {
     ) {
       return
     }
+    if (!store.has(key)) {
+      while (store.size >= maxEntries) {
+        store.delete(store.keys().next().value)
+      }
+    }
     store.set(key, { timestamp: Date.now(), data })
+  }
+
+  function finishFetch(key, fetch) {
+    if (
+      fetch.generation === generation
+      && fetch.id === latestFetchByKey.get(key)
+    ) {
+      latestFetchByKey.delete(key)
+    }
   }
 
   function clear() {
@@ -68,7 +81,7 @@ export function createTtlCache() {
     latestFetchByKey.clear()
   }
 
-  return { get, beginFetch, set, clear }
+  return { get, beginFetch, set, finishFetch, clear }
 }
 
 // Cheap, non-cryptographic string hash (FNV-1a, 32-bit) used to fold a

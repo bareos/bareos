@@ -210,24 +210,28 @@ export async function fetchAggregatedSchedulesShow(credentials, directors, { for
       return cached
     }
   }
-  const fetchGeneration = schedulesShowCache.beginFetch(cacheKey)
+  const fetchGeneration = schedulesShowCache.beginFetch(cacheKey, CACHE_TTL_MS)
 
-  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const [showResponse, scheduleStateResponse] = await Promise.all([
-      client.call('show schedules'),
-      client.call('.schedule'),
-    ])
-    return {
-      schedules: buildShownSchedules(showResponse, scheduleStateResponse, director),
+  try {
+    const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+      const [showResponse, scheduleStateResponse] = await Promise.all([
+        client.call('show schedules'),
+        client.call('.schedule'),
+      ])
+      return {
+        schedules: buildShownSchedules(showResponse, scheduleStateResponse, director),
+      }
+    })
+
+    const data = {
+      schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
+      directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
     }
-  })
-
-  const data = {
-    schedules: sortSchedules(fulfilledDirectorValues(results).flatMap(value => value.schedules)),
-    directorErrors: directorAggregateErrors(results, directors, 'Failed to load schedules.'),
+    schedulesShowCache.set(cacheKey, data, fetchGeneration)
+    return data
+  } finally {
+    schedulesShowCache.finishFetch(cacheKey, fetchGeneration)
   }
-  schedulesShowCache.set(cacheKey, data, fetchGeneration)
-  return data
 }
 
 export function eligibleSchedulePreview(response) {

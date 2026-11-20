@@ -75,20 +75,24 @@ export async function fetchAggregatedFilesets(credentials, directors, { forceRef
       return cached
     }
   }
-  const fetchGeneration = filesetsCache.beginFetch(cacheKey)
+  const fetchGeneration = filesetsCache.beginFetch(cacheKey, CACHE_TTL_MS)
 
-  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const result = await client.call('list filesets')
-    return {
-      director,
-      filesets: decorateFilesets(result?.filesets, director),
+  try {
+    const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+      const result = await client.call('list filesets')
+      return {
+        director,
+        filesets: decorateFilesets(result?.filesets, director),
+      }
+    })
+
+    const data = {
+      filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
+      directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
     }
-  })
-
-  const data = {
-    filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
-    directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
+    filesetsCache.set(cacheKey, data, fetchGeneration)
+    return data
+  } finally {
+    filesetsCache.finishFetch(cacheKey, fetchGeneration)
   }
-  filesetsCache.set(cacheKey, data, fetchGeneration)
-  return data
 }

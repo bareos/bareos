@@ -59,6 +59,27 @@ describe('createTtlCache', () => {
     expect(cache.get('k', 60000)).toBeUndefined()
   })
 
+  it('prunes expired entries when another key is accessed', () => {
+    const cache = createTtlCache()
+    cache.set('expired', 'old', cache.beginFetch('expired', 1000))
+
+    vi.advanceTimersByTime(1000)
+    cache.beginFetch('new', 1000)
+
+    expect(cache.get('expired', 60000)).toBeUndefined()
+  })
+
+  it('keeps the number of cached keys bounded', () => {
+    const cache = createTtlCache()
+    for (let index = 0; index < 129; index += 1) {
+      const key = `key-${index}`
+      cache.set(key, index, cache.beginFetch(key))
+    }
+
+    expect(cache.get('key-0', 60000)).toBeUndefined()
+    expect(cache.get('key-128', 60000)).toBe(128)
+  })
+
   it('applies the ttl given on read, not on write', () => {
     const cache = createTtlCache()
     cache.set('k', 'v', cache.beginFetch('k'))
@@ -97,6 +118,19 @@ describe('createTtlCache', () => {
 
     cache.set('k', 'fresh', second)
     cache.set('k', 'stale', first)
+
+    expect(cache.get('k', 1000)).toBe('fresh')
+  })
+
+  it('does not let a stale fetch finish cleanup for a newer request', () => {
+    const cache = createTtlCache()
+    const first = cache.beginFetch('k')
+    const second = cache.beginFetch('k')
+
+    cache.finishFetch('k', first)
+    cache.set('k', 'fresh', second)
+    cache.finishFetch('k', second)
+    cache.set('k', 'stale', second)
 
     expect(cache.get('k', 1000)).toBe('fresh')
   })
