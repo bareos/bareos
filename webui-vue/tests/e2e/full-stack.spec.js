@@ -325,6 +325,43 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
 
+test('browser regression: Definitions ignore a forced refresh from the previous scope', async ({ page }) => {
+  let toggled = false
+  let releaseObsolete
+  let obsoleteToken
+  const definitions = name => ({ schedules: { [name]: { name } } })
+  await browserFixture(page, (command, director, { responseToken }) => {
+    if (command === 'disable schedule="FirstSchedule"') {
+      toggled = true
+      return {}
+    }
+    if (command !== 'show schedules') return {}
+    if (director === 'bareos-dir-2') return definitions('CurrentScopeSchedule')
+    if (!toggled) return definitions('FirstSchedule')
+    if (!releaseObsolete) {
+      obsoleteToken = responseToken
+      return new Promise(resolve => {
+        releaseObsolete = () => resolve(definitions('ObsoleteScopeSchedule'))
+      })
+    }
+    return definitions('FirstSchedule')
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await page.getByTestId('schedules-tab-show').click()
+  await page.getByRole('row').filter({ hasText: 'FirstSchedule' }).getByRole('switch').click()
+  await expect.poll(() => Boolean(releaseObsolete)).toBe(true)
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('FirstSchedule', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('CurrentScopeSchedule', { exact: true })).toBeVisible()
+  releaseObsolete()
+  await waitForDirectorResponseProcessing(page, obsoleteToken)
+  await expect(page.getByText('ObsoleteScopeSchedule', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('CurrentScopeSchedule', { exact: true })).toBeVisible()
+})
+
 test('browser regression: Next run follows eligible jobs after a toggle', async ({ page }) => {
   let dailyEnabled = true
   await browserFixture(page, (command, director) => {

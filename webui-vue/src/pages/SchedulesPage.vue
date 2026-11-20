@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorErrorsBanner :errors="directorErrors" />
+    <DirectorErrorsBanner :errors="tab === 'show' ? definitionDirectorErrors : directorErrors" />
 
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status" :label="t('Status')" no-caps data-testid="schedules-tab-status" />
@@ -491,43 +491,54 @@ async function ensureScheduleActionDirector(targetDirector) {
 
 const schedLoading = ref(false)
 const schedError = ref(null)
+const definitionDirectorErrors = ref([])
 const shownSchedules = ref([])
+let definitionsGeneration = 0
 const scheduleSearch = usePersistedTableFilter('schedules.show')
 const togglingName = ref(null)
 
 async function refreshSchedules(forceRefresh = false) {
+  const generation = ++definitionsGeneration
+  const directors = [...activeDirectors.value]
+  const scopeKey = directors.join('\0')
+  const isCurrentRequest = () => generation === definitionsGeneration
+    && scopeKey === activeDirectors.value.join('\0')
+
   schedLoading.value = true
   schedError.value = null
-  directorErrors.value = []
+  definitionDirectorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       shownSchedules.value = []
       return
     }
 
-    if (isCommonSchedules.value) {
+    if (directors.length > 1) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedSchedulesShow(credentials, activeDirectors.value, { forceRefresh })
+      const result = await fetchAggregatedSchedulesShow(credentials, directors, { forceRefresh })
+      if (!isCurrentRequest()) return
       shownSchedules.value = result.schedules
-      directorErrors.value = result.directorErrors
+      definitionDirectorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrentRequest()) return
     const [showResponse, scheduleStateResponse] = await Promise.all([
       director.call('show schedules'),
       director.call('.schedule'),
     ])
+    if (!isCurrentRequest()) return
     shownSchedules.value = buildShownSchedules(showResponse, scheduleStateResponse, currentDirector)
   } catch (reason) {
-    schedError.value = reason?.message ?? String(reason)
+    if (isCurrentRequest()) schedError.value = reason?.message ?? String(reason)
   } finally {
-    schedLoading.value = false
+    if (isCurrentRequest()) schedLoading.value = false
   }
 }
 
@@ -1353,6 +1364,11 @@ watch(() => directorOptions.value, () => {
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
+  definitionsGeneration += 1
+  shownSchedules.value = []
+  definitionDirectorErrors.value = []
+  schedError.value = null
+  schedLoading.value = false
   upcomingPreviewData.value = []
   if (tab.value === 'show') {
     refreshSchedules()
