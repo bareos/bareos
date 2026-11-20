@@ -743,6 +743,19 @@ test('browser regression: log focus follows reused job routes', async ({ page })
   await expect(focused).toHaveText('Warning: job 101')
 })
 
+test('browser regression: unknown terminated status filters its jobs', async ({ page }) => {
+  await browserFixture(page, command => {
+    if (command === 'status director') {
+      return { terminated: [{ jobid: '321', name: 'UnknownStatusJob', status: '' }] }
+    }
+  })
+  await openNav(page, 'nav-director', /#\/director/)
+  const card = page.locator('.bareos-panel').filter({ hasText: 'Terminated Jobs' })
+  await expect(card.getByText('UnknownStatusJob', { exact: true }).first()).toBeVisible()
+  await card.getByText(/Unknown: [1-9]/).click()
+  await expect(card.getByText('UnknownStatusJob', { exact: true }).first()).toBeVisible()
+})
+
 test('browser regression: waiting job opens the log section', async ({ page }) => {
   await browserFixture(page, command => {
     if (command === 'status director') {

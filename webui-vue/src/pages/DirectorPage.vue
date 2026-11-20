@@ -263,7 +263,7 @@
                       :selected="terminatedJobsQuickFilter === status"
                       @click="terminatedJobsQuickFilter = status"
                     >
-                      {{ jobStatusLabel(status) }}: {{ count }}
+                      {{ jobStatusLabel(status || 'Unknown') }}: {{ count }}
                     </q-chip>
                   </div>
                 </q-card-section>
@@ -938,14 +938,14 @@ const terminatedJobsStats = computed(() => {
   const all = terminatedJobsAll.value
   const byStatus = {}
   for (const job of all) {
-    const status = job.status || t('Unknown')
+    const status = job.status || ''
     byStatus[status] = (byStatus[status] ?? 0) + 1
   }
   return { total: all.length, byStatus }
 })
 const terminatedJobs = computed(() => terminatedJobsAll.value.filter((job) => {
   if (terminatedJobsQuickFilter.value === 'all') return true
-  return job.status === terminatedJobsQuickFilter.value
+  return (job.status || '') === terminatedJobsQuickFilter.value
 }))
 
 const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
