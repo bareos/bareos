@@ -22,6 +22,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildClientDetailsQuery,
+  clientBackupStatusCode,
+  clientVersionStatusPresentation,
+  parseClientStatusSummary,
   resolveClientDetailsDashboardOrigin,
   resolveClientDetailsJobsOrigin,
   resolveClientsListQuery,
@@ -30,6 +33,42 @@ import {
 } from '../../src/utils/clients.js'
 
 describe('clients route helpers', () => {
+  it('distinguishes missing and active backup history from healthy', () => {
+    expect(clientBackupStatusCode({ enabled: true }, 2)).toBe('unknown')
+    expect(clientBackupStatusCode({ enabled: true }, 2, false)).toBe('unavailable')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'T' },
+      failureStreak: 0,
+    }, 2)).toBe('ok')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'R' },
+      failureStreak: 0,
+    }, 2)).toBe('running')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'R' },
+      failureStreak: 2,
+    }, 2)).toBe('running')
+    expect(clientBackupStatusCode({
+      enabled: true,
+      lastBackup: { status: 'l' },
+      failureStreak: 0,
+    }, 2)).toBe('running')
+  })
+
+  it('does not classify unknown client versions as up to date', () => {
+    expect(clientVersionStatusPresentation('unknown')).toEqual({
+      label: 'Unknown',
+      color: 'grey-6',
+    })
+    expect(clientVersionStatusPresentation('unrecognized')).toEqual({
+      label: 'Unknown',
+      color: 'grey-6',
+    })
+  })
+
   it('builds the client details query with return-state fields', () => {
     expect(buildClientDetailsQuery({
       director: 'prod-a',
@@ -74,7 +113,6 @@ describe('clients route helpers', () => {
       clientsTab: 'timeline',
       clientsScopeDirector: 'prod-a',
     })).toEqual({
-      tab: 'timeline',
       scopeDirector: 'prod-a',
     })
 
@@ -125,5 +163,60 @@ describe('clients route helpers', () => {
     expect(resolveClientsScopeDirector({ scopeDirector: 'prod-a' })).toBe('prod-a')
     expect(resolveClientsScopeDirector({ scopeDirector: 42 })).toBe('')
     expect(resolveClientsScopeDirector({})).toBe('')
+  })
+
+  it('parses a concise client status summary from raw status text', () => {
+    expect(parseClientStatusSummary(`
+bareos-fd Version: 26.0.0 (27Apr26)
+No Jobs running.
+Errors: 0
+Warnings: 0
+    `)).toEqual({
+      reachable: true,
+      version: '26.0.0 (27Apr26)',
+      runningJobs: 0,
+      warningCount: 0,
+      errorCount: 0,
+    })
+
+    expect(parseClientStatusSummary(`
+Failed to connect to Client.
+1 Job running.
+Warning: could not stat file
+Fatal error: connection refused
+    `)).toEqual({
+      reachable: false,
+      version: '',
+      runningJobs: 1,
+      warningCount: 1,
+      errorCount: 2,
+    })
+  })
+
+  it('recognizes positive plural warning and error counters', () => {
+    expect(parseClientStatusSummary('Warnings: 2\nErrors: 3')).toMatchObject({
+      warningCount: 2,
+      errorCount: 3,
+    })
+    expect(parseClientStatusSummary('Warnings: 0\nErrors: 0')).toMatchObject({
+      warningCount: 0,
+      errorCount: 0,
+    })
+
+  })
+
+  it('does not suppress a diagnostic because the other category is zero', () => {
+    expect(parseClientStatusSummary('Warnings: 0 Errors: 3')).toMatchObject({
+      warningCount: 0, errorCount: 3,
+    })
+    expect(parseClientStatusSummary('Warnings: 2 Errors: 0')).toMatchObject({
+      warningCount: 2, errorCount: 0,
+    })
+  })
+
+  it('does not double-count diagnostic lines also represented by summary counters', () => {
+    expect(parseClientStatusSummary('Warning: one\nWarning: two\nWarnings: 2\nFatal error: one\nErrors: 1'))
+      .toMatchObject({ warningCount: 2, errorCount: 1 })
+    expect(parseClientStatusSummary('Errors: 0\nFatal error: failed')).toMatchObject({ errorCount: 1 })
   })
 })

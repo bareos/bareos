@@ -21,7 +21,7 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedFilesets } from '../../src/composables/filesetsAggregate.js'
+import { clearFilesetsCache, fetchAggregatedFilesets } from '../../src/composables/filesetsAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -59,6 +59,7 @@ class FakeWebSocket {
 describe('filesets aggregate helpers', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    clearFilesetsCache()
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
@@ -66,6 +67,69 @@ describe('filesets aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  const credentials = { username: 'admin', password: 'secret' }
+  const directors = ['prod-a', 'prod-b']
+
+  async function startLoad(options) {
+    const firstSocket = FakeWebSocket.instances.length
+    const result = fetchAggregatedFilesets(credentials, directors, options)
+    const sockets = FakeWebSocket.instances.slice(firstSocket)
+    expect(sockets).toHaveLength(2)
+    for (const socket of sockets) {
+      socket.open()
+      socket.onmessage({ data: JSON.stringify({ type: 'auth_ok' }) })
+    }
+    await vi.waitFor(() => {
+      for (const socket of sockets) expect(socket.sent).toHaveLength(2)
+    })
+    return { result, sockets }
+  }
+
+  function respond(socket, name) {
+    const { id } = JSON.parse(socket.sent[1])
+    socket.onmessage({
+      data: JSON.stringify({
+        type: 'response', id, data: { filesets: [{ fileset: name }] },
+      }),
+    })
+  }
+
+  it.each([false, true])('retries after a partial result (forceRefresh=%s)', async (forceRefresh) => {
+    if (forceRefresh) {
+      const cached = await startLoad()
+      cached.sockets.forEach(socket => respond(socket, 'Old'))
+      await cached.result
+    }
+
+    const partial = await startLoad({ forceRefresh })
+    respond(partial.sockets[0], 'Available')
+    partial.sockets[1].close()
+    await expect(partial.result).resolves.toMatchObject({
+      filesets: [{ name: 'Available', director: 'prod-a' }],
+      directorErrors: [{ director: 'prod-b' }],
+    })
+
+    const retried = await startLoad()
+    retried.sockets.forEach(socket => respond(socket, 'Recovered'))
+    const complete = await retried.result
+    expect(complete.filesets).toHaveLength(2)
+    expect(complete.directorErrors).toEqual([])
+    await expect(fetchAggregatedFilesets(credentials, directors)).resolves.toBe(complete)
+  })
+
+  it('does not let an older partial refresh discard a newer complete result', async () => {
+    const earlier = await startLoad()
+    const later = await startLoad({ forceRefresh: true })
+    later.sockets.forEach(socket => respond(socket, 'New'))
+    const complete = await later.result
+
+    respond(earlier.sockets[0], 'Old')
+    earlier.sockets[1].close()
+    await earlier.result
+    await expect(fetchAggregatedFilesets(credentials, directors)).resolves.toBe(complete)
   })
 
   it('merges filesets across multiple directors', async () => {

@@ -20,8 +20,10 @@
  */
 
 import { createI18n } from 'vue-i18n'
-import { DEFAULT_WEBUI_LOCALE } from '../generated/webui-locales.js'
-import { WEBUI_MESSAGES } from '../generated/webui-messages.js'
+import {
+  DEFAULT_WEBUI_LOCALE,
+  WEBUI_MESSAGES,
+} from './locales/catalogs.js'
 import { normalizeWebUiLocale } from '../utils/locales.js'
 
 const MESSAGE_OVERRIDES = {

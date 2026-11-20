@@ -25,6 +25,8 @@ directorAggregateErrors,
 fulfilledDirectorValues,
 runDirectorAggregates,
 } from './directorAggregateRunner.js'
+import { filesetsCache } from './directorAggregateCaches.js'
+import { hashCacheFingerprint } from './ttlCache.js'
 
 function decorateFilesets(entries, director) {
   return directorCollection(entries).map(entry => ({
@@ -51,17 +53,51 @@ function sortFilesets(filesets) {
   })
 }
 
-export async function fetchAggregatedFilesets(credentials, directors) {
-  const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const result = await client.call('list filesets')
-    return {
-      director,
-      filesets: decorateFilesets(result?.filesets, director),
-    }
-  })
+const CACHE_TTL_MS = 60_000 // 60 seconds TTL
 
-  return {
-    filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
-    directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
+function buildCacheKey(credentials, directors) {
+  return JSON.stringify({
+    user: credentials?.username ?? '',
+    credential: hashCacheFingerprint(credentials?.password),
+    directors: [...directors].sort(),
+  })
+}
+
+export function clearFilesetsCache() {
+  filesetsCache.clear()
+}
+
+export async function fetchAggregatedFilesets(credentials, directors, { forceRefresh = false } = {}) {
+  const cacheKey = buildCacheKey(credentials, directors)
+  if (!forceRefresh) {
+    const cached = filesetsCache.get(cacheKey, CACHE_TTL_MS)
+    if (cached) {
+      return cached
+    }
+  }
+  const fetchGeneration = filesetsCache.beginFetch(cacheKey, CACHE_TTL_MS)
+
+  try {
+    const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
+      const result = await client.call('list filesets')
+      return {
+        director,
+        filesets: decorateFilesets(result?.filesets, director),
+      }
+    })
+
+    const data = {
+      filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
+      directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
+    }
+    if (data.directorErrors.length === 0) {
+      filesetsCache.set(cacheKey, data, fetchGeneration)
+    } else {
+      // A partial refresh must not leave the prior complete entry masking a retry.
+      filesetsCache.discard(cacheKey, fetchGeneration)
+    }
+    return data
+  } finally {
+    filesetsCache.finishFetch(cacheKey, fetchGeneration)
   }
 }

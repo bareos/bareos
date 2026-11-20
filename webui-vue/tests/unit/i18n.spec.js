@@ -21,18 +21,30 @@
 
 import { describe, expect, it } from 'vitest'
 import { translate } from '../../src/i18n/index.js'
+import cn from '../../src/i18n/locales/cn_CN.json'
+import de from '../../src/i18n/locales/de_DE.json'
 
 describe('webui translations', () => {
-  it('reuses PHP WebUI translations for shared labels', () => {
+  it('loads seeded translations from the independent JSON catalogs', () => {
     expect(translate('de_DE', 'Restore')).toBe('Wiederherstellen')
     expect(translate('de_DE', 'Schedules')).toBe('Zeitpläne')
     expect(translate('de_DE', 'Storages')).toBe('Speicher')
+    expect(translate('nl_BE', 'Warning')).toBe('Waarschuwing')
+    expect(translate('es_ES', 'January')).toBe('Enero')
+    expect(translate('sk_SK', 'Warning')).toBe('Varovanie')
+    expect(translate('sk_SK', 'Recycle')).toBe('Recyklovať')
   })
 
   it('falls back to the English msgid for Vue-only labels', () => {
-    expect(translate('de_DE', 'Advanced connection settings')).toBe('Advanced connection settings')
+    expect(translate('de_DE', 'Configuration Status')).toBe('Configuration Status')
     expect(translate('de_DE', 'Cancel failed: {message}', { message: 'boom' })).toBe('Cancel failed: boom')
     expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
     expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')
+  })
+
+  it('uses catalog values for dashboard messages', () => {
+    expect(translate('cn_CN', 'Recent Jobs')).toBe(cn['Recent Jobs'])
+    expect(translate('de_DE', 'Jobs Past 24 h')).toBe(de['Jobs Past 24 h'])
+    expect(cn['Recent Jobs']).toBe('最近的作业')
   })
 })

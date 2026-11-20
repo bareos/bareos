@@ -21,7 +21,11 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedClients } from '../../src/composables/clientsAggregate.js'
+import {
+  clearClientsCache,
+  decorateScheduledBackups,
+  fetchAggregatedClients,
+} from '../../src/composables/clientsAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -56,9 +60,36 @@ class FakeWebSocket {
   }
 }
 
+async function respondToClientAggregate(socket) {
+  socket.open()
+  socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+  await vi.waitFor(() => expect(socket.sent).toHaveLength(5))
+
+  const commandIds = new Map(socket.sent.slice(1).map((payload) => {
+    const command = JSON.parse(payload)
+    return [command.command, command.id]
+  }))
+  const responses = [
+    ['llist clients', { clients: [] }],
+    ['.clients', { clients: [] }],
+    ['llist jobs reverse limit=1000 sortby=starttime jobtype=B', { jobs: [] }],
+    ['status scheduler days=-31,1', { schedules: [], preview: [] }],
+  ]
+  for (const [command, data] of responses) {
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandIds.get(command),
+        data,
+      }),
+    })
+  }
+}
+
 describe('clients aggregate helpers', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    clearClientsCache()
     FakeWebSocket.instances = []
     vi.stubGlobal('WebSocket', FakeWebSocket)
     vi.useFakeTimers()
@@ -66,6 +97,102 @@ describe('clients aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('only associates a named preview with its job, while expanding schedule-wide previews', () => {
+    const runtime = Math.floor(Date.now() / 1000) - 60
+    const schedules = [{
+      name: 'nightly', enabled: true,
+      jobs: [{ name: 'no-client' }, { name: 'backup', client: 'alpha', enabled: true }],
+    }]
+    const preview = (job) => [{ schedule: 'nightly', runtime, ...(job ? { job } : {}) }]
+    expect(decorateScheduledBackups({ schedules, preview: preview('no-client') }, 'dir')).toEqual([])
+    expect(decorateScheduledBackups({ schedules, preview: preview('backup') }, 'dir'))
+      .toEqual([expect.objectContaining({ job: 'backup', client: 'alpha' })])
+    expect(decorateScheduledBackups({ schedules, preview: preview() }, 'dir'))
+      .toEqual([expect.objectContaining({ job: 'backup', client: 'alpha' })])
+  })
+
+  it('bypasses the cached clients aggregate when forced', async () => {
+    const credentials = { username: 'admin', password: 'secret' }
+    const initialRequest = fetchAggregatedClients(credentials, ['director-a'])
+    await respondToClientAggregate(FakeWebSocket.instances[0])
+    await initialRequest
+
+    await fetchAggregatedClients(credentials, ['director-a'])
+    expect(FakeWebSocket.instances).toHaveLength(1)
+
+    const forcedRequest = fetchAggregatedClients(
+      credentials,
+      ['director-a'],
+      { forceRefresh: true }
+    )
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    await respondToClientAggregate(FakeWebSocket.instances[1])
+    await forcedRequest
+  })
+
+  it('loads clients without diagnostics and caches both modes independently', async () => {
+    const credentials = { username: 'admin', password: 'secret' }
+    const directors = ['prod-a']
+    const clientsOnly = { includeDiagnostics: false }
+    const jobCommand = 'llist jobs reverse limit=1000 sortby=starttime jobtype=B'
+    const schedulerCommand = 'status scheduler days=-31,1'
+
+    async function start(options, includeDiagnostics = false) {
+      const index = FakeWebSocket.instances.length
+      const result = fetchAggregatedClients(credentials, directors, options)
+      const socket = FakeWebSocket.instances[index]
+      expect(socket).toBeDefined()
+      socket.open()
+      socket.onmessage({ data: JSON.stringify({ type: 'auth_ok' }) })
+      const expected = ['llist clients', '.clients']
+      if (includeDiagnostics) expected.push(jobCommand, schedulerCommand)
+      await vi.waitFor(() => {
+        expect(socket.sent.slice(1).map(payload => JSON.parse(payload).command)).toEqual(expected)
+      })
+      const commands = new Map(socket.sent.slice(1).map(payload => {
+        const { command, id } = JSON.parse(payload)
+        return [command, id]
+      }))
+      const respond = (command, data) => {
+        socket.onmessage({ data: JSON.stringify({ type: 'response', id: commands.get(command), data }) })
+      }
+      respond('llist clients', { clients: [{ name: 'alpha-fd' }] })
+      respond('.clients', { clients: [{ name: 'alpha-fd', enabled: false }] })
+      return { result, respond }
+    }
+
+    const initial = await start(clientsOnly)
+    await expect(initial.result).resolves.toMatchObject({
+      clients: [{ name: 'alpha-fd', enabled: false }],
+      directorErrors: [],
+    })
+
+    // Warm clients-only data cannot satisfy a diagnostics load.
+    const full = await start(undefined, true)
+    let diagnosticsFinished = false
+    const fullResult = full.result.then(result => {
+      diagnosticsFinished = true
+      return result
+    })
+
+    const refresh = await start({ ...clientsOnly, forceRefresh: true })
+    const refreshedClients = await refresh.result
+    expect(diagnosticsFinished).toBe(false)
+    full.respond(jobCommand, { jobs: [{ jobid: 7 }] })
+    full.respond(schedulerCommand, {
+      preview: [{ client: 'alpha-fd', job: 'Nightly', runtime: Math.floor(Date.now() / 1000) - 60 }],
+    })
+    const withDiagnostics = await fullResult
+    expect(withDiagnostics).toMatchObject({
+      recentBackups: [{ id: 7 }],
+      scheduledBackups: [{ job: 'Nightly', client: 'alpha-fd' }],
+    })
+
+    await expect(fetchAggregatedClients(credentials, directors)).resolves.toBe(withDiagnostics)
+    await expect(fetchAggregatedClients(credentials, directors, clientsOnly)).resolves.toBe(refreshedClients)
   })
 
   it('merges clients across multiple directors', async () => {
@@ -85,8 +212,8 @@ describe('clients aggregate helpers', () => {
     socketA.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     socketB.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
     await vi.waitFor(() => {
-      expect(socketA.sent).toHaveLength(3)
-      expect(socketB.sent).toHaveLength(3)
+      expect(socketA.sent).toHaveLength(5)
+      expect(socketB.sent).toHaveLength(5)
     })
 
     const socketCommands = (socket) => new Map(
@@ -119,6 +246,29 @@ describe('clients aggregate helpers', () => {
         },
       }),
     })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        data: {
+          jobs: [{ jobid: 7, client: 'alpha-fd', jobstatus: 'T', jobtype: 'B' }],
+        },
+      }),
+    })
+    socketA.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsA.get('status scheduler days=-31,1'),
+        data: {
+          schedules: [{
+            name: 'Nightly',
+            enabled: true,
+            jobs: [{ name: 'Nightly', client: 'alpha-fd', enabled: true }],
+          }],
+          preview: [{ schedule: 'Nightly', runtime: Math.floor(Date.now() / 1000) - 3600 }],
+        },
+      }),
+    })
 
     socketB.onmessage?.({
       data: JSON.stringify({
@@ -140,6 +290,25 @@ describe('clients aggregate helpers', () => {
         },
       }),
     })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        data: {
+          jobs: [{ jobid: 8, clientname: 'beta-fd', jobstatus: 'E', jobtype: 'B' }],
+        },
+      }),
+    })
+    socketB.onmessage?.({
+      data: JSON.stringify({
+        type: 'response',
+        id: commandsB.get('status scheduler days=-31,1'),
+        data: {
+          schedules: [],
+          preview: [],
+        },
+      }),
+    })
 
     await expect(loading).resolves.toEqual({
       clients: [
@@ -156,6 +325,77 @@ describe('clients aggregate helpers', () => {
           enabled: true,
         }),
       ],
+      recentBackups: [
+        expect.objectContaining({
+          id: 7,
+          client: 'alpha-fd',
+          status: 'T',
+          type: 'B',
+          director: 'prod-a',
+        }),
+        expect.objectContaining({
+          id: 8,
+          client: 'beta-fd',
+          status: 'E',
+          type: 'B',
+          director: 'prod-b',
+        }),
+      ],
+      scheduledBackups: [
+        expect.objectContaining({
+          client: 'alpha-fd',
+          job: 'Nightly',
+          schedule: 'Nightly',
+          director: 'prod-a',
+        }),
+      ],
+      recentBackupErrors: [],
+      directorErrors: [],
+    })
+  })
+
+  it('keeps clients when recent backup history cannot be loaded', async () => {
+    const loading = fetchAggregatedClients(
+      { username: 'admin', password: 'secret' },
+      ['prod-a']
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(5))
+
+    const commands = new Map(socket.sent.slice(1).map((payload) => {
+      const command = JSON.parse(payload)
+      return [command.command, command.id]
+    }))
+    const respond = (command, data) => {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response',
+          id: commands.get(command),
+          data,
+        }),
+      })
+    }
+
+    respond('llist clients', { clients: [{ name: 'alpha-fd' }] })
+    respond('.clients', { clients: [{ name: 'alpha-fd', enabled: true }] })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'error',
+        id: commands.get('llist jobs reverse limit=1000 sortby=starttime jobtype=B'),
+        message: 'history request denied',
+      }),
+    })
+    respond('status scheduler days=-31,1', { schedules: [], preview: [] })
+
+    await expect(loading).resolves.toMatchObject({
+      clients: [expect.objectContaining({ name: 'alpha-fd', director: 'prod-a' })],
+      recentBackups: [],
+      recentBackupErrors: [{
+        director: 'prod-a',
+        message: 'history request denied',
+      }],
       directorErrors: [],
     })
   })

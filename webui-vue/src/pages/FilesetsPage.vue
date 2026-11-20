@@ -6,13 +6,28 @@
       <q-card-section class="panel-header row items-center">
         <span>{{ t('Filesets') }}</span>
         <q-space />
-        <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
+        <q-input
+          v-model="filesetsSearch"
+          dense
+          outlined
+          clearable
+          dark
+          standout
+          :placeholder="t('Search…')"
+          style="width:200px"
+          data-testid="filesets-search"
+        >
+          <template #prepend><q-icon name="search" /></template>
+        </q-input>
+        <ColumnPickerMenu :columns="toggleableFilesetCols" @toggle="toggleFilesetCol" />
+        <q-btn flat round dense icon="refresh" color="white" :title="t('Refresh')" :aria-label="t('Refresh')" @click="refresh(true)" />
       </q-card-section>
       <q-card-section class="q-pa-none">
-        <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+        <q-banner v-if="error" dense rounded class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
         <q-table
-          :rows="filesets"
-          :columns="columns"
+          v-if="!(loading && !filesets.length)"
+          :rows="filteredFilesets"
+          :columns="visibleFilesetCols"
           row-key="scopeKey"
           dense flat
           :loading="loading"
@@ -58,6 +73,7 @@
             </q-tr>
           </template>
         </q-table>
+        <TableSkeleton v-else :columns="visibleFilesetCols.length" :rows="6" />
       </q-card-section>
     </q-card>
   </q-page>
@@ -69,10 +85,14 @@ import { useI18n } from 'vue-i18n'
 import { directorCollection } from '../composables/useDirectorFetch.js'
 import { fetchAggregatedFilesets } from '../composables/filesetsAggregate.js'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
 import { usePersistedTablePagination } from '../composables/usePersistedTablePagination.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import ColumnPickerMenu from '../components/ColumnPickerMenu.vue'
 import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
+import TableSkeleton from '../components/TableSkeleton.vue'
 
 const auth = useAuthStore()
 const director = useDirectorStore()
@@ -81,8 +101,9 @@ const rawFilesets = ref([])
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
+const filesetsSearch = usePersistedTableFilter('filesets.list')
 const filesetsPagination = usePersistedTablePagination('filesets.list', {
-  rowsPerPage: 15,
+  rowsPerPage: 20,
 })
 
 const {
@@ -96,32 +117,40 @@ const {
 } = useDirectorScope({ t })
 
 const showDirectorColumn = computed(() => isCommonFilesets.value)
+let refreshGeneration = 0
 
-async function refresh() {
+async function refresh(forceRefresh = false) {
+  const generation = ++refreshGeneration
+  const directors = [...activeDirectors.value]
+  const isCurrent = () => generation === refreshGeneration
+    && directors.join('\u0000') === activeDirectors.value.join('\u0000')
   loading.value = true
   error.value = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       rawFilesets.value = []
       return
     }
 
-    if (isCommonFilesets.value) {
+    if (directors.length > 1) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedFilesets(credentials, activeDirectors.value)
+      const result = await fetchAggregatedFilesets(credentials, directors, { forceRefresh })
+      if (!isCurrent()) return
       rawFilesets.value = result.filesets
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrent()) return
     const result = await director.call('list filesets')
+    if (!isCurrent()) return
     rawFilesets.value = directorCollection(result?.filesets).map(entry => ({
       name: entry.fileset ?? entry.name ?? '',
       description: entry.description ?? '',
@@ -134,13 +163,23 @@ async function refresh() {
       scopeKey: `${currentDirector}:${entry.fileset ?? entry.name ?? ''}`,
     }))
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (isCurrent()) error.value = reason?.message ?? String(reason)
   } finally {
-    loading.value = false
+    if (isCurrent()) loading.value = false
   }
 }
 
 const filesets = computed(() => directorCollection(rawFilesets.value))
+
+function filesetMatchesSearch(fileset) {
+  const needle = String(filesetsSearch.value ?? '').trim().toLowerCase()
+  if (!needle) return true
+  return [fileset.name, fileset.director]
+    .filter(Boolean)
+    .some(value => String(value).toLowerCase().includes(needle))
+}
+
+const filteredFilesets = computed(() => filesets.value.filter(filesetMatchesSearch))
 
 const columns = computed(() => [
   ...(showDirectorColumn.value ? [{
@@ -150,6 +189,12 @@ const columns = computed(() => [
   { name: 'createtime', label: t('Created'),     field: 'createtime', align: 'left', sortable: true },
   { name: 'md5',        label: t('Config Hash'), field: 'md5',        align: 'left', sortable: true },
 ])
+
+const {
+  visibleColumns: visibleFilesetCols,
+  toggleableColumns: toggleableFilesetCols,
+  toggleColumn: toggleFilesetCol,
+} = usePersistedTableColumns('filesets.list', columns, { essential: ['name', 'director'] })
 
 onMounted(() => {
   director.fetchAvailableDirectors().catch(() => {})

@@ -882,7 +882,9 @@ async function loadClients() {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedClients(credentials, activeDirectors.value)
+      const result = await fetchAggregatedClients(credentials, activeDirectors.value, {
+        includeDiagnostics: false,
+      })
       sourceClients.value = result.clients
       directorErrors.value = result.directorErrors
     } else {

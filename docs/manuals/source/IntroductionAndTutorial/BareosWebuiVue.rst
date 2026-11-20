@@ -71,6 +71,12 @@ The Vue WebUI is installed separately from the classic PHP WebUI via the
 :file:`bareos-webui-new` package and keeps its own Apache configuration file
 :file:`bareos-webui-new.conf`.
 
+On RPM-based systems, enable and start the proxy service:
+
+.. code-block:: shell-session
+
+   systemctl enable --now bareos-webui-proxy
+
 After installation, open the preview at:
 
 .. code-block:: text
@@ -95,6 +101,7 @@ template into place and add one section per Director:
 
 .. code-block:: shell-session
 
+   mkdir -p /etc/bareos-webui-proxy
    cp /usr/lib/bareos/defaultconfigs/bareos-webui-proxy.ini \
       /etc/bareos-webui-proxy/bareos-webui-proxy.ini
 

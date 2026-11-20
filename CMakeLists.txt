@@ -166,8 +166,42 @@ if(BUILD_UNIVERSAL_CLIENT)
 endif()
 
 option(ENABLE_WEBUI "Build with WEBUI" ON)
+# When enabled, missing prerequisites for the webui-vue tests are a hard error
+# instead of silently disabling those tests. Meant for CI, where a silently
+# skipped test suite would keep the build green while testing nothing.
+option(ENABLE_WEBUI_VUE_TESTS "Require the webui-vue test prerequisites" OFF)
+
+if(ENABLE_WEBUI_VUE_TESTS AND (NOT ENABLE_WEBUI OR client-only))
+  message(
+    FATAL_ERROR
+      "ENABLE_WEBUI_VUE_TESTS requires ENABLE_WEBUI=ON and client-only=OFF"
+  )
+endif()
+
+# Report a missing prerequisite for the webui-vue tests. Normally this only
+# disables the affected tests, but with ENABLE_WEBUI_VUE_TESTS=yes it aborts the
+# configure run, so that CI cannot stay green while silently testing nothing.
+function(webui_vue_tests_unavailable)
+  string(JOIN "" reason ${ARGN})
+  if(ENABLE_WEBUI_VUE_TESTS)
+    message(
+      FATAL_ERROR
+        "${reason}\n"
+        "This is fatal because ENABLE_WEBUI_VUE_TESTS is enabled. "
+        "Install the missing prerequisite or reconfigure with "
+        "-DENABLE_WEBUI_VUE_TESTS=no."
+    )
+  else()
+    message(STATUS "${reason}")
+  endif()
+endfunction()
+
 option(docs-only "Build only the documentation" OFF)
 option(docs-build-json "Update the configuration schema JSON files" OFF)
+
+if(ENABLE_WEBUI_VUE_TESTS AND docs-only)
+  message(FATAL_ERROR "ENABLE_WEBUI_VUE_TESTS requires docs-only=OFF")
+endif()
 
 set(ENABLE_BARRI_INIT ON)
 if(client-only OR "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")

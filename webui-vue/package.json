@@ -8,7 +8,9 @@
   },
   "scripts": {
     "generate:version": "node scripts/generate-bareos-version.mjs",
-    "generate:i18n": "node scripts/generate-webui-i18n.mjs",
+    "generate:i18n": "node scripts/generate-webui-i18n.mjs --write",
+    "update:i18n": "node scripts/generate-webui-i18n.mjs --write",
+    "check:i18n": "node scripts/generate-webui-i18n.mjs --check",
     "dev": "npm run generate:version && vite",
     "build": "npm run generate:version && env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
     "preview": "vite preview",

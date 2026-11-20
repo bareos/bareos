@@ -4,8 +4,11 @@
 
 <script setup>
 import { onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore }     from './stores/auth.js'
+import { useBuildInfoStore } from './stores/buildInfo.js'
 import { useDirectorStore } from './stores/director.js'
+import { formatDocumentTitle } from './utils/commercialOffering.js'
 import {
   CONSOLE_POPUP_AUTH_REQUEST,
   CONSOLE_POPUP_AUTH_RESPONSE,
@@ -13,6 +16,17 @@ import {
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
+const buildInfo = useBuildInfoStore()
+const route = useRoute()
+
+watch(
+  () => [route.meta?.title, buildInfo.promote],
+  ([pageTitle, unsupported]) => {
+    document.title = formatDocumentTitle(pageTitle, unsupported)
+    document.body.classList.toggle('bareos-unsupported-build', unsupported)
+  },
+  { immediate: true },
+)
 
 function handleConsolePopupAuth(event) {
   if (event.origin !== window.location.origin) {
