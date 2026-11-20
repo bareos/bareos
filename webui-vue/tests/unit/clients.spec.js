@@ -195,8 +195,8 @@ Fatal error: connection refused
 
   it('recognizes positive plural warning and error counters', () => {
     expect(parseClientStatusSummary('Warnings: 2\nErrors: 3')).toMatchObject({
-      warningCount: 1,
-      errorCount: 1,
+      warningCount: 2,
+      errorCount: 3,
     })
     expect(parseClientStatusSummary('Warnings: 0\nErrors: 0')).toMatchObject({
       warningCount: 0,
@@ -207,10 +207,16 @@ Fatal error: connection refused
 
   it('does not suppress a diagnostic because the other category is zero', () => {
     expect(parseClientStatusSummary('Warnings: 0 Errors: 3')).toMatchObject({
-      warningCount: 0, errorCount: 1,
+      warningCount: 0, errorCount: 3,
     })
     expect(parseClientStatusSummary('Warnings: 2 Errors: 0')).toMatchObject({
-      warningCount: 1, errorCount: 0,
+      warningCount: 2, errorCount: 0,
     })
+  })
+
+  it('does not double-count diagnostic lines also represented by summary counters', () => {
+    expect(parseClientStatusSummary('Warning: one\nWarning: two\nWarnings: 2\nFatal error: one\nErrors: 1'))
+      .toMatchObject({ warningCount: 2, errorCount: 1 })
+    expect(parseClientStatusSummary('Errors: 0\nFatal error: failed')).toMatchObject({ errorCount: 1 })
   })
 })

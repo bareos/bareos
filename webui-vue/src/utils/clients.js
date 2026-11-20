@@ -186,20 +186,23 @@ export function parseClientStatusSummary(text) {
   const runningJobs = lowerText.includes('no jobs running')
     ? 0
     : (runningJobsMatch ? Number(runningJobsMatch[1]) : null)
-  const warningLines = lines.filter(line => (
-    /\b(?:warnings?|warn|alert|could not|cannot)\b/i.test(line)
-    && !/\bwarnings?\s*:\s*0\b/i.test(line)
-  ))
-  const errorLines = lines.filter(line => (
-    /\b(?:errors?|fatal|failed|failure|connection refused|unable to connect)\b/i.test(line)
-    && !/\berrors?\s*:\s*0\b/i.test(line)
-  ))
+  function countDiagnostics(category, pattern) {
+    let reported = 0
+    let diagnosticLines = 0
+    const counter = new RegExp(`\\b${category}s?\\s*:\\s*(\\d+)\\b`, 'gi')
+    for (const line of lines) {
+      for (const match of line.matchAll(counter)) reported += Number(match[1])
+      const details = line.replace(/\b(?:errors?|warnings?)\s*:\s*\d+\b/gi, '')
+      if (pattern.test(details)) diagnosticLines++
+    }
+    return Math.max(reported, diagnosticLines)
+  }
 
   return {
     reachable: !/\b(?:connection refused|unable to connect|failed to connect|failed authorization)\b/i.test(normalizedText),
     version: versionMatch?.[1]?.trim() ?? '',
     runningJobs,
-    warningCount: warningLines.length,
-    errorCount: errorLines.length,
+    warningCount: countDiagnostics('warning', /\b(?:warnings?|warn|alert|could not|cannot)\b/i),
+    errorCount: countDiagnostics('error', /\b(?:errors?|fatal|failed|failure|connection refused|unable to connect)\b/i),
   }
 }
