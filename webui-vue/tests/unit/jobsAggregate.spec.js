@@ -368,6 +368,40 @@ describe('jobs aggregate helpers', () => {
     })
   })
 
+  it.each(['id', 'duration'])('deduplicates jobs changing status with %s sorting', async sortBy => {
+    const loading = fetchAggregatedJobsPage(
+      { username: 'admin', password: 'secret' },
+      ['prod-a'],
+      { page: 1, rowsPerPage: 25, sortBy, descending: true },
+      ['R', 'T'],
+    )
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    await vi.waitFor(() => expect(socket.sent.length).toBeGreaterThanOrEqual(4))
+    const respond = (entry, data) => socket.onmessage?.({
+      data: JSON.stringify({ type: 'response', id: entry.id, data }),
+    })
+    const initial = socket.sent.slice(1).map(payload => JSON.parse(payload))
+    for (const entry of initial) {
+      if (entry.command === 'status director') respond(entry, { running: [] })
+      if (entry.command.startsWith('llist jobs count')) {
+        respond(entry, { jobs: [{ count: entry.command.includes('jobstatus=R') ? '1' : '0' }] })
+      }
+    }
+    await vi.waitFor(() => expect(socket.sent).toHaveLength(6))
+    const entries = socket.sent.slice(1).map(payload => JSON.parse(payload))
+    for (const entry of entries.filter(item => item.command.startsWith('llist jobs ') && !item.command.includes(' count '))) {
+      const status = entry.command.includes('jobstatus=R') ? 'R' : 'T'
+      respond(entry, { jobs: [{ jobid: '7', name: 'Transition', jobstatus: status }] })
+    }
+    await expect(loading).resolves.toMatchObject({
+      jobs: [expect.objectContaining({ scopeKey: 'prod-a:7' })],
+      totalJobs: 1,
+      browsableJobs: 1,
+    })
+  })
+
   it('sends search server-side and keeps all rows for the All option', async () => {
     const loading = fetchAggregatedJobsPage(
       {

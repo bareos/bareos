@@ -260,11 +260,13 @@ export async function fetchAggregatedJobsPage(
         throw rejectedJobsResult.reason
       }
 
-      const jobs = sortJobsByPagination(overlayRuntimeStatuses(jobsResults.flatMap((result) => (
+      const fetchedJobs = jobsResults.flatMap((result) => (
         result.status === 'fulfilled'
           ? decorateJobs(result.value?.jobs, director)
           : []
-      )), decorateRuntimeJobs(
+      ))
+      const uniqueJobs = [...new Map(fetchedJobs.map(job => [job.scopeKey, job])).values()]
+      const jobs = sortJobsByPagination(overlayRuntimeStatuses(uniqueJobs, decorateRuntimeJobs(
         directorStatusResult[0]?.status === 'fulfilled'
           ? directorStatusResult[0].value?.running
           : []
@@ -278,7 +280,7 @@ export async function fetchAggregatedJobsPage(
               jobsResults[index]?.status === 'fulfilled' ? jobsResults[index].value?.jobs : []
             ).length)
         )
-      ), 0)
+      ), 0) - (fetchedJobs.length - uniqueJobs.length)
 
       const knownTruncated = !serverSortColumn && countResults.some(result => (
         result.status === 'fulfilled'
