@@ -330,7 +330,45 @@ class MediaVault():
                 logger.debug("bconsole export cmd finish ok'\n")
 
         except bareos.exceptions.JsonRpcErrorReceivedException as json_exp:
-            logger.error("%s\n",json_exp, exc_info=True)
+            # We need to examine the error message to determine if the failure was caused
+            # by non empty export slots.
+            # So we can display a meaningful error message to the user.
+            # Typical Error message
+            #    {
+            #    "jsonrpc": 2.0,
+            #    "id": "None",
+            #    "error": {
+            #        "code": 1,
+            #        "message": "failed",
+            #        "data": {
+            #        "result": {},
+            #        "messages": {
+            #            "warning": [
+            #            "Deselecting slot XXX doesn't have wanted status.\n",
+            #            "Deselecting slot YYY doesn't have wanted status.\n",
+            #            "Not enough free export slots available to export 24 volumes\n"
+            #            ]
+            #          }
+            #        }
+            #      }
+            #    }
+            msg = ""
+            if (json_exp.jsondata["error"]["code"] == 1
+                    and json_exp.jsondata["error"]["message"] == "failed"):
+                error_data = json_exp.jsondata["error"].get("data")
+                messages = error_data.get("messages") if isinstance(error_data, dict) else None
+                if isinstance(messages, dict):
+                    if warnings := messages.get("warning"):
+                        msg = f"{''.join(warnings).strip()}\n"
+                        logger.debug (
+                                "_bconsole_export_volumes unsuccessful\n"
+                                "export command failed: %s\n",len(msg)
+                            )
+                        print("Error/Warnings occurs during volumes export\n")
+                        print(msg)
+                        return False
+            # In all other case we get out by raising the original error.
+            logger.error("%s\n", json_exp, exc_info=True)
             raise bareos.exceptions.Error(json_exp)
         except bareos.exceptions.Error as berr:
             logger.error("%s\n",berr, exc_info=True)
@@ -350,6 +388,7 @@ class MediaVault():
             logger.debug(line)
 
         logger.debug("leaving _bconsole_export_volumes()\n")
+        return True
 
 
     def _bconsole_update_slots(self):
@@ -440,7 +479,10 @@ class MediaVault():
             dest="return_time",default=90,type=int
         )
         parser.add_argument(
-            "--min_volgb", help="minimal volume size in gigabytes without unit (default 4096GB, 4TB)",
+            "--min_volgb", help=(
+                "minimal volume size in gigabytes without unit"
+                " (default 4096GB, 4TB)"
+            ),
             dest="min_volgb",default=4096,type=int
         )
         parser.add_argument(
@@ -602,12 +644,13 @@ class MediaVault():
 
         try:
             self.vault_create_eject_list()
-            self.vault_eject_volumes()
+            if not self.vault_eject_volumes():
+                return False
         except bareos.exceptions.Error as berr:
             logger.error("Bareos Exception %s\n", berr, exc_info=True)
             return False
         except RuntimeError as error:
-            logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
+            logger.error(" -- Runtime error -- %s\n",error, exc_info=True)
             return False
 
         logger.debug("Volumes exported: %s\n",str(self.volumes_exported))
@@ -810,11 +853,16 @@ class MediaVault():
 
         # Run export command
         try:
-            self._bconsole_export_volumes()
+            if not self._bconsole_export_volumes():
+                return False
         except bareos.exceptions.Error as berr:
             msg = f"bconsole export volume failure {berr}\n"
             logger.error(msg, exc_info=True)
             raise
+        except RuntimeError as rerr:
+            msg = f"Runtime error during export of volumes {rerr}\n"
+            logger.error(msg, exc_info=True)
+            return False
         except Exception as err:
             logger.error("Unknown error during export of volumes %s",err, exc_info=True)
             raise
@@ -935,6 +983,7 @@ class MediaVault():
                 raise
 
         logger.debug("leaving vault_eject_volumes()\n")
+        return True
 
 
 if __name__ == "__main__":
