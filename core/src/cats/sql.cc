@@ -643,10 +643,7 @@ int ListResult(void* vctx, int nb_col, char** row)
  */
 int BareosDb::ListResult(JobControlRecord* jcr,
                          OutputFormatter* send,
-                         e_list_type type,
-                         bool paginate_filtered,
-                         uint64_t limit,
-                         uint64_t offset)
+                         e_list_type type)
 {
   CheckOwnership();
 
@@ -714,17 +711,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
    * We use this to shortcut for calling the FilterData() method in the
    * OutputFormatter class. */
   filters_enabled = send->HasFilters();
-  uint64_t accepted = 0;
   auto include_row = [&](char** current_row) {
-    if (filters_enabled && !send->FilterData(current_row)) { return false; }
-    if (!paginate_filtered) { return true; }
-    if (accepted < offset) {
-      ++accepted;
-      return false;
-    }
-    if (accepted - offset >= limit) { return false; }
-    ++accepted;
-    return true;
+    return !filters_enabled || send->FilterData(current_row);
   };
 
   switch (type) {

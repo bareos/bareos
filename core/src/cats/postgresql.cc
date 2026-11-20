@@ -514,6 +514,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
 {
   SQL_ROW row;
   bool retval = false;
+  bool stopped = false;
 
   Dmsg1(500, "BigSqlQuery starts with '%s'\n", query);
 
@@ -547,12 +548,15 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
     }
     while ((row = SqlFetchRow()) != NULL) {
       Dmsg1(500, "Fetching %d rows\n", num_rows_);
-      if (ResultHandler(ctx, num_fields_, row)) break;
+      if (ResultHandler(ctx, num_fields_, row)) {
+        stopped = true;
+        break;
+      }
     }
     PQclear(result_);
     result_ = NULL;
 
-  } while (num_rows_ > 0);
+  } while (!stopped && num_rows_ > 0);
 
   SqlQueryWithoutHandler("CLOSE _bar_cursor");
 

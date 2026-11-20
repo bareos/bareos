@@ -225,7 +225,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 "SELECT 'acl-count-cursor-' || n, 'acl-count-cursor', 'B', 'F', 'T', "
                 f"CASE WHEN n <= 120 THEN (SELECT ClientId FROM Job WHERE JobId={jobid}) "
                 f"ELSE (SELECT ClientId FROM Job WHERE JobId={other_jobid}) END "
-                'FROM generate_series(1, 210) n"'
+                'FROM generate_series(1, 340) n"'
             )
             console = bareos.bsock.DirectorConsoleJson(
                 address=self.director_address,
@@ -240,7 +240,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 rows = console.call(
                     f"{command} jobs search=acl-count-cursor sortby=jobid reverse"
                 )["jobs"]
-                for offset in (0, 1, 119):
+                for offset in (0, 1, 99, 100, 119, 120):
                     page = console.call(
                         f"{command} jobs search=acl-count-cursor sortby=jobid "
                         f"reverse limit=2 offset={offset}"

@@ -32,6 +32,8 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 
+#include <charconv>
+
 /* -----------------------------------------------------------------------
  *
  *   Generic Routines (or almost generic)
@@ -787,11 +789,71 @@ void BareosDb::ListJobRecords(
     }
     sendit->ClearFilters();
     Mmsg(cmd, "SELECT %" PRIu64 " AS count", ctx.count);
+  } else if (paginate_filtered) {
+    // Collect only the authorized page through a cursor, then render those
+    // IDs with the regular formatter so horizontal widths remain consistent.
+    struct PageContext {
+      OutputFormatter* send;
+      uint64_t offset;
+      uint64_t limit;
+      uint64_t accepted = 0;
+      std::vector<JobId_t> ids;
+      bool invalid_id = false;
+    } ctx{sendit, jr->offset, jr->limit, 0, {}, false};
+    std::string source_query(cmd);
+    source_query.erase(source_query.find_last_not_of(" \t\r\n;") + 1);
+    auto select_row = [](void* context, int, char** row) {
+      auto& page = *static_cast<PageContext*>(context);
+      if (!page.send->FilterData(row)) { return 0; }
+      if (page.accepted < page.offset) {
+        ++page.accepted;
+        return 0;
+      }
+      JobId_t id = 0;
+      if (!row[0]) {
+        page.invalid_id = true;
+        return 1;
+      }
+      const auto end = row[0] + strlen(row[0]);
+      const auto parsed = std::from_chars(row[0], end, id);
+      if (parsed.ec != std::errc{} || parsed.ptr != end || id == 0) {
+        page.invalid_id = true;
+        return 1;
+      }
+      page.ids.push_back(id);
+      return page.ids.size() >= page.limit ? 1 : 0;
+    };
+    if (jr->limit > 0 && !BigSqlQuery(cmd, select_row, &ctx)) {
+      Jmsg(jcr, M_FATAL, 0, T_("Error selecting job page: %s\n"),
+           sql_strerror());
+      return;
+    }
+    if (ctx.invalid_id) {
+      Jmsg(jcr, M_FATAL, 0, T_("Invalid job ID in catalog result.\n"));
+      return;
+    }
+    std::string ids;
+    for (const auto id : ctx.ids) {
+      if (!ids.empty()) { ids += ','; }
+      ids += std::to_string(id);
+    }
+    if (ids.empty()) {
+      Mmsg(cmd, "SELECT * FROM (%s) AS selected_jobs WHERE false",
+           source_query.c_str());
+    } else {
+      Mmsg(cmd,
+           "SELECT selected_jobs.* FROM (%s) AS selected_jobs "
+           "JOIN unnest(ARRAY[%s]::bigint[]) WITH ORDINALITY "
+           "AS page_ids(jobid, position) ON selected_jobs.jobid = "
+           "page_ids.jobid "
+           "ORDER BY page_ids.position",
+           source_query.c_str(), ids.c_str());
+    }
   }
   if (!QueryDb(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
-  ListResult(jcr, sendit, type, paginate_filtered, jr->limit, jr->offset);
+  ListResult(jcr, sendit, type);
   sendit->ArrayEnd("jobs");
 
   SqlFreeResult();
