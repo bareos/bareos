@@ -479,6 +479,7 @@ async function doMultiDirectorLogin() {
     shouldRedirect,
   } = planMultiDirectorLoginOutcome({ successfulDirectors, failedAttempts })
 
+  remainingDirectorFailures.value = nextRemainingDirectorFailures
   if (allFailed) {
     errorMsg.value = t('Could not log in to any configured director. Retry the remaining directors.')
     password.value = ''
@@ -493,7 +494,6 @@ async function doMultiDirectorLogin() {
   }
 
   primaryDirector.value = finalDirector
-  remainingDirectorFailures.value = nextRemainingDirectorFailures
   await finalizeSuccessfulLogin(finalDirector, { redirect: shouldRedirect })
 }
 

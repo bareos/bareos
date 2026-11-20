@@ -1358,6 +1358,47 @@ test('advertises Bareos services unless the director is a subscription build', a
     .toHaveAttribute('href', 'https://www.bareos.com/meet/')
 })
 
+test('browser regression: retry updates the remaining director failure', async ({ page }) => {
+  let failures = 0
+  await page.route('**/api/**', route => {
+    const url = route.request().url()
+    if (url.endsWith('/directors')) {
+      return route.fulfill({ json: { type: 'director_list', directors: ['director-a', 'director-b'] } })
+    }
+    if (url.endsWith('/session/directors/director-a/login')) {
+      return route.fulfill({ json: { authenticatedDirectors: [{ director: 'director-a', username: 'admin' }] } })
+    }
+    if (url.endsWith('/session/directors/director-b/login')) {
+      failures++
+      return route.fulfill({
+        status: failures === 1 ? 401 : 503,
+        json: { message: failures === 1 ? 'Authentication failed' : 'Connection refused' },
+      })
+    }
+    return route.fulfill({ status: 401 })
+  })
+  await page.routeWebSocket(/\/ws/, socket => {
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'session') socket.send(JSON.stringify({ type: 'auth_ok' }))
+      if (request.type === 'command') socket.send(JSON.stringify({ type: 'response', id: request.id, data: {} }))
+    })
+  })
+  await page.goto('/#/login')
+  await expect(page.getByTestId('login-target-directors')).toContainText('director-b')
+  await page.getByTestId('login-username').fill('admin')
+  await page.getByTestId('login-password').fill('secret')
+  await page.getByTestId('login-submit').click()
+  const directorB = page.locator('.director-login-status').filter({ hasText: 'director-b' })
+  await expect(directorB).toContainText('Authentication failed')
+  await expect(page.getByRole('button', { name: 'Skip failed directors' })).toBeVisible()
+  await page.getByTestId('login-password').fill('secret')
+  await page.getByTestId('login-submit').click()
+  await expect(directorB).toContainText('Connection refused')
+  await page.getByRole('button', { name: 'Skip failed directors' }).click()
+  await expect(page).toHaveURL(/#\/dashboard/)
+})
+
 test('loads translations from the Vue JSON catalogs', async ({ page }) => {
   await page.goto('/')
   await page.locator('.login-language-select').click()
