@@ -752,7 +752,7 @@
         "MaximumChangerWait": {
           "datatype": "TIME",
           "code": 0,
-          "default_value": "300",
+          "default_value": "600",
           "equals": true
         },
         "MaximumOpenWait": {
