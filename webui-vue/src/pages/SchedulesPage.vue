@@ -43,16 +43,17 @@
                      :rows-per-page-options="statusRowsPerPageOptions"
                      v-model:pagination="statusPagination">
               <template #body="props">
-                <q-tr v-if="props.row._isGroupHeader" class="sched-group-header cursor-pointer"
-                      tabindex="0"
-                      role="button"
-                      :aria-label="props.row.collapsed ? t('Expand group') : t('Collapse group')"
-                      @click="toggleGroupCollapse(props.row.scheduleKey)"
-                      @keydown.enter.prevent="toggleGroupCollapse(props.row.scheduleKey)"
-                      @keydown.space.prevent="toggleGroupCollapse(props.row.scheduleKey)">
+                <q-tr v-if="props.row._isGroupHeader" class="sched-group-header"
+                      :class="{ 'cursor-pointer': !scheduleSearchActive }"
+                      :tabindex="scheduleSearchActive ? null : 0"
+                      :role="scheduleSearchActive ? null : 'button'"
+                      :aria-label="scheduleSearchActive ? null : (props.row.collapsed ? t('Expand group') : t('Collapse group'))"
+                      @click="toggleGroupIfAllowed(props.row.scheduleKey)"
+                      @keydown.enter="handleGroupKeydown(props.row.scheduleKey, $event)"
+                      @keydown.space="handleGroupKeydown(props.row.scheduleKey, $event)">
                   <q-td key="job" class="q-pl-sm">
                     <div class="row items-center no-wrap q-gutter-xs">
-                      <q-btn
+                      <q-btn v-if="!scheduleSearchActive"
                         flat
                         round
                         dense
@@ -60,7 +61,7 @@
                         :icon="props.row.collapsed ? 'chevron_right' : 'expand_more'"
                         :title="props.row.collapsed ? t('Expand group') : t('Collapse group')"
                         :aria-label="props.row.collapsed ? t('Expand group') : t('Collapse group')"
-                        @click.stop="toggleGroupCollapse(props.row.scheduleKey)"
+                        @click.stop="toggleGroupIfAllowed(props.row.scheduleKey)"
                       />
                       <span class="text-weight-bold">{{ props.row.schedule }}</span>
                       <q-chip
@@ -961,6 +962,7 @@ async function refreshStatus() {
 watch([() => calendarBounds.value.start, () => calendarBounds.value.end], refreshStatus, { immediate: true })
 
 const jobSearch = usePersistedTableFilter('schedules.status')
+const scheduleSearchActive = computed(() => String(jobSearch.value ?? '').trim().length > 0)
 const expandedSchedules = ref(new Set())
 
 function toggleGroupCollapse(key) {
@@ -971,6 +973,16 @@ function toggleGroupCollapse(key) {
     next.add(key)
   }
   expandedSchedules.value = next
+}
+
+function toggleGroupIfAllowed(key) {
+  if (!scheduleSearchActive.value) toggleGroupCollapse(key)
+}
+
+function handleGroupKeydown(key, event) {
+  if (scheduleSearchActive.value) return
+  event.preventDefault()
+  toggleGroupCollapse(key)
 }
 
 const nextRunByScheduleKey = computed(() => {
