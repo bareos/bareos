@@ -188,11 +188,11 @@ export function parseClientStatusSummary(text) {
     : (runningJobsMatch ? Number(runningJobsMatch[1]) : null)
   const warningLines = lines.filter(line => (
     /\b(?:warnings?|warn|alert|could not|cannot)\b/i.test(line)
-    && !/\b(?:errors?|warnings?)\s*:\s*0\b/i.test(line)
+    && !/\bwarnings?\s*:\s*0\b/i.test(line)
   ))
   const errorLines = lines.filter(line => (
     /\b(?:errors?|fatal|failed|failure|connection refused|unable to connect)\b/i.test(line)
-    && !/\b(?:errors?|warnings?)\s*:\s*0\b/i.test(line)
+    && !/\berrors?\s*:\s*0\b/i.test(line)
   ))
 
   return {

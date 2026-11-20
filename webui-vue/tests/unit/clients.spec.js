@@ -202,5 +202,15 @@ Fatal error: connection refused
       warningCount: 0,
       errorCount: 0,
     })
+
+  })
+
+  it('does not suppress a diagnostic because the other category is zero', () => {
+    expect(parseClientStatusSummary('Warnings: 0 Errors: 3')).toMatchObject({
+      warningCount: 0, errorCount: 1,
+    })
+    expect(parseClientStatusSummary('Warnings: 2 Errors: 0')).toMatchObject({
+      warningCount: 1, errorCount: 0,
+    })
   })
 })
