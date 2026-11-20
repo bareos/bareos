@@ -35,6 +35,24 @@ export const sourceDir = path.join(projectRoot, 'src')
 export const localesDir = path.join(sourceDir, 'i18n', 'locales')
 export const localeManifestPath = path.join(localesDir, 'locales.json')
 
+// Preserve dashboard IDs previously supplied by runtime overrides.
+const dashboardMessageIds = [
+  'Jobs Past 24 h',
+  'Recent Jobs',
+  'Pool Storage (Bytes)',
+  'Pool Storage (Volumes)',
+  'Trouble View',
+  'Database Table Sizes',
+  'Summary counts of jobs started in the last 24 hours by status.',
+  'Table showing the most recent job run per job name.',
+  'Live list of currently running jobs with progress.',
+  'Cumulative job, file, and byte totals across all directors.',
+  'Doughnut chart showing bytes stored across pools.',
+  'Doughnut chart showing volume count across pools.',
+  'Error and warning lines from job logs in the last 24 hours.',
+  'Database size and per-table size breakdown.',
+]
+
 function readUtf8(filePath) {
   return readFileSync(filePath, 'utf8')
 }
@@ -84,6 +102,7 @@ export function collectVueMessageIds(root = sourceDir) {
   const messages = new Set()
   if (root === sourceDir) {
     for (const locale of readLocaleManifest().locales) messages.add(locale.label)
+    for (const message of dashboardMessageIds) messages.add(message)
   }
 
   for (const filePath of files) {

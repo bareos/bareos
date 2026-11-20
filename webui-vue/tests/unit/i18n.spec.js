@@ -21,6 +21,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { translate } from '../../src/i18n/index.js'
+import cn from '../../src/i18n/locales/cn_CN.json'
+import de from '../../src/i18n/locales/de_DE.json'
 
 describe('webui translations', () => {
   it('loads seeded translations from the independent JSON catalogs', () => {
@@ -38,5 +40,11 @@ describe('webui translations', () => {
     expect(translate('de_DE', 'Cancel failed: {message}', { message: 'boom' })).toBe('Cancel failed: boom')
     expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
     expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')
+  })
+
+  it('uses catalog values for dashboard messages', () => {
+    expect(translate('cn_CN', 'Recent Jobs')).toBe(cn['Recent Jobs'])
+    expect(translate('de_DE', 'Jobs Past 24 h')).toBe(de['Jobs Past 24 h'])
+    expect(cn['Recent Jobs']).toBe('最近的作业')
   })
 })
