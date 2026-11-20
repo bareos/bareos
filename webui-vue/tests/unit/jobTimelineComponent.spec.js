@@ -70,6 +70,8 @@ const apps = []
 const hosts = []
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 8, 18, 12, 0, 0))
   requests.length = 0
   directorState.isConnected = true
   createDirectorCommandClient.mockReset()
@@ -89,6 +91,7 @@ beforeEach(() => {
 afterEach(() => {
   apps.splice(0).forEach(app => app.unmount())
   hosts.splice(0).forEach(host => host.remove())
+  vi.useRealTimers()
 })
 
 function completeRequest(request, name, clientName) {
