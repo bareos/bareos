@@ -131,18 +131,15 @@
       <div v-else ref="calendarRef" class="sched-day-view sched-period-view">
         <div class="sched-period-ticks">
           <div class="sched-period-tick-axis">
-            <div v-for="tick in periodDayTicks" :key="tick.dateStr"
-                 class="sched-period-tick"
+            <button v-for="tick in periodDayTicks" :key="tick.dateStr"
+                 type="button" class="sched-period-tick"
                  :class="{ 'sched-period-tick--today': tick.isToday }"
                  :style="{ left: `${tick.pct}%`, width: `${tick.widthPct}%` }"
                  :data-date="tick.dateStr"
-                 tabindex="0"
-                 role="button"
                  :aria-label="t('View job runs for {date}', { date: tick.dateStr })"
-                 @click="openDayView(tick.dateStr)"
-                 @keydown.enter="openDayView(tick.dateStr)">
+                 @click="openDayView(tick.dateStr)">
               <span v-if="tick.label" class="sched-period-tick-label">{{ tick.label }}</span>
-            </div>
+            </button>
           </div>
         </div>
         <div v-for="group in periodViewGroups" :key="`pgroup-${group.director ?? 'single'}`">

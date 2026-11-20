@@ -489,9 +489,18 @@ $bareos-blue-dark: #005a96;
 }
 
 .sched-period-tick {
+  display: block;
   position: absolute;
   top: 0;
   bottom: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 

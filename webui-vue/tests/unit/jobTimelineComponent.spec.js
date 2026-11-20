@@ -155,6 +155,7 @@ describe('JobTimeline refreshes', () => {
 
     const tick = host.querySelector('.sched-period-tick')
     expect(tick).not.toBeNull()
+    expect(tick.tagName).toBe('BUTTON')
     expect(Number.parseFloat(tick.style.width)).toBeGreaterThan(1)
   })
 
