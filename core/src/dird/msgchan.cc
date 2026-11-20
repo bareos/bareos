@@ -71,7 +71,7 @@ inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
 inline constexpr const char OK_job[]
     = "3000 OK Job SDid=%lu SDtime=%lu Authorization=%100s\n";
 inline constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%100s\n";
-inline constexpr const char OK_device[] = "3000 OK use device device=%s\n";
+inline constexpr const char OK_device[] = "3000 OK use device device=%127s\n";
 
 /* Storage Daemon requests */
 inline constexpr const char Job_start[] = "3010 Job %127s start\n";
@@ -175,6 +175,7 @@ bool ReserveReadDevice(JobControlRecord* jcr,
     if (BgetDirmsg(sd_socket) > 0) {
       Dmsg1(100, "<stored: %s", sd_socket->msg);
       // ****FIXME**** save actual device name
+      ASSERT(device_name.MaxSize() >= 128);
       ok = bsscanf(sd_socket->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
@@ -251,6 +252,7 @@ bool ReserveWriteDevice(JobControlRecord* jcr,
     if (BgetDirmsg(jcr->store_bsock) > 0) {
       Dmsg1(100, "<stored: %s", jcr->store_bsock->msg);
       // ****FIXME**** save actual device name
+      ASSERT(device_name.MaxSize() >= 128);
       ok = bsscanf(jcr->store_bsock->msg, OK_device, device_name.c_str()) == 1;
     } else {
       ok = false;
@@ -371,7 +373,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   Dmsg1(100, ">stored: %s", sd_socket->msg);
   if (BgetDirmsg(sd_socket) > 0) {
     Dmsg1(100, "<stored: %s", sd_socket->msg);
-    char auth_key[100];
+    char auth_key[101];
     if (bsscanf(sd_socket->msg, OK_job, &jcr->VolSessionId,
                 &jcr->VolSessionTime, auth_key)
         != 3) {
@@ -465,7 +467,7 @@ extern "C" void* msg_thread(void* arg)
   BareosSocket* sd;
   int JobStatus;
   int n;
-  char auth_key[100];
+  char auth_key[101];
   char Job[MAX_NAME_LENGTH];
   uint32_t JobFiles, JobErrors;
   uint64_t JobBytes;

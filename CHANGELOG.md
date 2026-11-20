@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtests: reduce autochanger fixture to five slots [PR #2921]
 - director: enable `Allow Mixed Priority` in default job [PR #2918]
 - plugins: Decrease Incus log verbosity [PR #2922]
+- dird: fix not checking if file exists when writing bsr [PR #2934]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2457,4 +2458,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2918]: https://github.com/bareos/bareos/pull/2918
 [PR #2921]: https://github.com/bareos/bareos/pull/2921
 [PR #2922]: https://github.com/bareos/bareos/pull/2922
+[PR #2934]: https://github.com/bareos/bareos/pull/2934
 [unreleased]: https://github.com/bareos/bareos/tree/master
