@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -179,7 +179,7 @@ static struct s_fd_dir_cmds cmds[] = {
 static char hello_client[] = "Hello Client %s FdProtocolVersion=%d calling\n";
 
 // Responses received from the director
-static const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
+static const char OKversion[] = "1000 OK: %S Version: %S (%u %S %u)";
 
 // Commands received from director that need scanning
 static char setauthorizationcmd[] = "setauthorization Authorization=%100s";
@@ -187,9 +187,9 @@ static char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d";
-static char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
+static char storaddrv0cmd[] = "storage address=%S port=%d ssl=%d";
 static char storaddrv1cmd[]
-    = "storage address=%s port=%d ssl=%d Authorization=%100s";
+    = "storage address=%S port=%d ssl=%d Authorization=%100s";
 static char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
 static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
 static char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
@@ -202,7 +202,7 @@ static char verifycmd[] = "verify level=%30s";
 static char Estimatecmd[] = "estimate listing=%d";
 static char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
-static char resolvecmd[] = "resolve %s";
+static char resolvecmd[] = "resolve %S";
 
 // Responses sent to Director
 static char errmsg[] = "2999 Invalid command\n";
@@ -565,14 +565,15 @@ void* handle_director_connection(BareosSocket* dir)
 
 static bool ParseOkVersion(const char* string)
 {
-  char name[MAX_NAME_LENGTH];
-  char version[MAX_NAME_LENGTH];
+  char name[MAX_NAME_LENGTH] = {};
+  char version[MAX_NAME_LENGTH] = {};
   unsigned int day = 0;
-  char month[100];
+  char month[100] = {};
   unsigned int year = 0;
   int number = 0;
 
-  number = sscanf(string, OKversion, &name, &version, &day, &month, &year);
+  number = bsscanf(string, OKversion, sizeof(name), name, sizeof(version),
+                   version, &day, sizeof(month), month, &year);
   Dmsg2(120, "OK message: %s, Version: %s\n", name, version);
   return (number == 5);
 }
@@ -710,7 +711,7 @@ static bool ResolveCmd(JobControlRecord* jcr)
   char addresses[2048];
   char hostname[2048];
 
-  sscanf(dir->msg, resolvecmd, &hostname);
+  bsscanf(dir->msg, resolvecmd, sizeof(hostname), hostname);
 
   if ((addr_list = BnetHost2IpAddrs(hostname, 0, &errstr)) == nullptr) {
     dir->fsend(T_("%s: Failed to resolve %s\n"), my_name, hostname);
@@ -1447,10 +1448,11 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   Dmsg1(100, "StorageCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
-  if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy,
-             sd_auth_key.c_str())
+  if (bsscanf(dir->msg, storaddrv1cmd, sizeof(stored_addr), stored_addr,
+              &stored_port, &tls_policy, sd_auth_key.c_str())
       != 4) {
-    if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy)
+    if (bsscanf(dir->msg, storaddrv0cmd, sizeof(stored_addr), stored_addr,
+                &stored_port, &tls_policy)
         != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, T_("Bad storage command: %s\n"), jcr->errmsg);

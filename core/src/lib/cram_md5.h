@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,8 @@
 */
 #ifndef BAREOS_LIB_CRAM_MD5_H_
 #define BAREOS_LIB_CRAM_MD5_H_
+
+#include <string_view>
 
 #include "lib/tls_conf.h"
 
@@ -68,7 +70,7 @@ class CramMd5Handshake {
   };
 
   ComparisonResult CompareChallengeWithOwnQualifiedName(
-      const char* challenge) const;
+      std::string_view chal) const;
 };
 
 void hmac_md5(uint8_t* text,
