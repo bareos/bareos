@@ -265,6 +265,68 @@ test('browser regression: schedule job sorting keeps groups intact in both direc
   await expect.poll(names).toEqual(['GroupOne', 'ZuluJob', 'BravoJob', 'GroupTwo', 'CharlieJob', 'AlphaJob'])
 })
 
+test('browser regression: schedule continuation pages retain their group header', async ({ page }) => {
+  const jobs = Array.from({ length: 25 }, (_, index) => ({
+    name: `LargeJob${String(index + 1).padStart(2, '0')}`,
+  }))
+  await browserFixture(page, command => {
+    if (!command.startsWith('status scheduler days=')) return
+    return {
+      schedules: [{ name: 'LargeGroup', jobs }, { name: 'SmallGroup', jobs: [{ name: 'SmallJob' }] }],
+      preview: [],
+    }
+  })
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const panel = page.locator('.bareos-panel').filter({ hasText: 'Scheduler Jobs' })
+  const table = panel.locator('table')
+  await expect(table.locator('.sched-group-header')).toHaveCount(2)
+  await panel.getByRole('combobox', { name: 'Records per page:' }).click()
+  await page.getByRole('option', { name: '10', exact: true }).click()
+  await table.locator('.sched-group-header').filter({ hasText: 'LargeGroup' })
+    .getByRole('button', { name: 'Expand group', exact: true }).click()
+  const collectJobs = () => table.locator('tbody a').allTextContents()
+  const allJobs = []
+  for (let pageNumber = 0; pageNumber < 3; pageNumber++) {
+    await expect(table.locator('tbody tr').first()).toContainText('LargeGroup')
+    allJobs.push(...await collectJobs())
+    if (pageNumber < 2) await panel.getByRole('button', { name: 'Next page' }).click()
+  }
+  expect(allJobs).toEqual(jobs.map(job => job.name))
+  await expect(table.locator('.sched-group-header')).toContainText(['LargeGroup', 'SmallGroup'])
+  const jobHeader = table.getByRole('columnheader', { name: /Job/ })
+  await jobHeader.click()
+  await jobHeader.click()
+  const sortedJobs = []
+  for (let pageNumber = 0; pageNumber < 3; pageNumber++) {
+    await expect(table.locator('.sched-group-header').filter({ hasText: 'LargeGroup' })).toHaveCount(1)
+    if (pageNumber > 0) await expect(table.locator('tbody tr').first()).toContainText('LargeGroup')
+    sortedJobs.push(...await collectJobs())
+    if (pageNumber < 2) await panel.getByRole('button', { name: 'Next page' }).click()
+  }
+  expect(sortedJobs).toEqual(jobs.map(job => job.name).reverse())
+  await table.locator('.sched-group-header').filter({ hasText: 'LargeGroup' })
+    .getByRole('button', { name: 'Collapse group', exact: true }).click()
+  await expect(table.locator('tbody a')).toHaveCount(0)
+  await expect(table.locator('.sched-group-header')).toContainText(['SmallGroup', 'LargeGroup'])
+})
+
+test('browser regression: schedule pagination rejects an imported one-row page', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('bareos_settings', JSON.stringify({
+    tableRowsPerPage: { 'schedules.status': 1 },
+  })))
+  await browserFixture(page, command => {
+    if (!command.startsWith('status scheduler days=')) return
+    return { schedules: [{ name: 'Group', jobs: [{ name: 'Job' }] }], preview: [] }
+  })
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const panel = page.locator('.bareos-panel').filter({ hasText: 'Scheduler Jobs' })
+  await expect(panel.getByRole('combobox', { name: 'Records per page:' })).toHaveValue('10')
+})
+
 test('browser regression: schedule All selection survives an empty scope', async ({ page }) => {
   await browserFixture(page, (command, director) => {
     if (!command.startsWith('status scheduler days=')) return

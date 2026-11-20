@@ -461,6 +461,9 @@ const statusRowsPerPageOptions = [10, 25, 50, 100]
 const statusPagination = usePersistedTablePagination('schedules.status', {
   rowsPerPage: 20,
 })
+if (statusPagination.value.rowsPerPage === 1) {
+  statusPagination.value.rowsPerPage = statusRowsPerPageOptions[0]
+}
 
 const validTabs = new Set(['status', 'show'])
 function normaliseTab(value) {
@@ -1083,7 +1086,20 @@ const scheduleJobRows = computed(() => {
       })
     }
   }
-  return rows
+  const rowsPerPage = statusPagination.value.rowsPerPage
+  if (rowsPerPage <= 1) return rows
+
+  const pagedRows = []
+  let header
+  for (const row of rows) {
+    if (row._isGroupHeader) {
+      header = row
+    } else if (pagedRows.length % rowsPerPage === 0) {
+      pagedRows.push({ ...header, idx: pagedRows.length })
+    }
+    pagedRows.push({ ...row, idx: pagedRows.length })
+  }
+  return pagedRows
 })
 
 function keepScheduleGroupOrder(rows) {
