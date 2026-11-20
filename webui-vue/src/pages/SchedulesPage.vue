@@ -418,6 +418,7 @@ import {
   buildStatusSchedules,
   fetchAggregatedSchedulesShow,
   fetchAggregatedSchedulesStatus,
+  eligibleSchedulePreview,
   getEffectiveScheduleJobState,
 } from '../composables/schedulesAggregate.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -689,7 +690,8 @@ async function refreshUpcomingPreview() {
       const result = await fetchAggregatedSchedulesStatus(
         credentials,
         directors,
-        UPCOMING_RANGE
+        UPCOMING_RANGE,
+        { eligibleOnly: true }
       )
       if (!isCurrentRequest()) return
       upcomingPreviewData.value = result.previewData
@@ -703,7 +705,7 @@ async function refreshUpcomingPreview() {
       `status scheduler days=${UPCOMING_RANGE.from},${UPCOMING_RANGE.to}`
     )
     if (!isCurrentRequest()) return
-    upcomingPreviewData.value = (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
+    upcomingPreviewData.value = eligibleSchedulePreview(statusResponse)
       .map(item => ({
         ...item,
         director: currentDirector,

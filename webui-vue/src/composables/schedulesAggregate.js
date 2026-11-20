@@ -230,7 +230,15 @@ export async function fetchAggregatedSchedulesShow(credentials, directors, { for
   return data
 }
 
-export async function fetchAggregatedSchedulesStatus(credentials, directors, range) {
+export function eligibleSchedulePreview(response) {
+  const names = new Set((response?.schedules ?? [])
+    .filter(schedule => schedule.jobs?.some(job => job.enabled === true))
+    .map(schedule => schedule.name))
+  return (Array.isArray(response?.preview) ? response.preview : [])
+    .filter(run => names.has(run.schedule))
+}
+
+export async function fetchAggregatedSchedulesStatus(credentials, directors, range, { eligibleOnly = false } = {}) {
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
     const [statusResponse, showResponse, showAllResponse, scheduleStateResponse] = await Promise.all([
       client.call(`status scheduler days=${range.from},${range.to}`),
@@ -247,7 +255,8 @@ export async function fetchAggregatedSchedulesStatus(credentials, directors, ran
         scheduleStateResponse,
         director
       ),
-      previewData: (Array.isArray(statusResponse?.preview) ? statusResponse.preview : [])
+      previewData: (eligibleOnly ? eligibleSchedulePreview(statusResponse)
+        : (Array.isArray(statusResponse?.preview) ? statusResponse.preview : []))
         .map(item => ({
           ...item,
           director,

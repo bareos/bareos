@@ -268,6 +268,7 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
           obsoletePreviewResponseToken = responseToken
           return new Promise(resolve => {
             releaseObsoletePreview = () => resolve({
+              schedules: [{ name: 'Old Director', jobs: [{ name: 'Old job', enabled: true }] }],
               preview: [{
                 job: 'Old job',
                 schedule: 'Old Director',
@@ -279,6 +280,7 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
         }
 
         return {
+          schedules: [{ name: 'Current Director', jobs: [{ name: 'Current job', enabled: true }] }],
           preview: [{
             job: 'Current job',
             schedule: 'Current Director',
@@ -289,6 +291,7 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
       }
 
       return {
+        schedules: [{ name: 'Other Director', jobs: [{ name: 'Other job', enabled: true }] }],
         preview: [{
           job: 'Other job',
           schedule: 'Other Director',
@@ -322,6 +325,38 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
 
+test('browser regression: Next run follows eligible jobs after a toggle', async ({ page }) => {
+  let dailyEnabled = true
+  await browserFixture(page, (command, director) => {
+    if (director !== 'bareos-dir') return {}
+    if (command === 'disable job="DailyJob"') {
+      dailyEnabled = false
+      return {}
+    }
+    if (!command.startsWith('status scheduler days=')) return {}
+    return {
+      schedules: [
+        { name: 'DailyCycle', enabled: true, jobs: [{ name: 'DailyJob', enabled: dailyEnabled }] },
+        { name: 'WeeklyCycle', enabled: true, jobs: [{ name: 'WeeklyJob', enabled: true }] },
+      ],
+      preview: [
+        { schedule: 'DailyCycle', runtime: Math.floor(Date.now() / 1000) + 3600 },
+        { schedule: 'WeeklyCycle', runtime: Math.floor(Date.now() / 1000) + 7200 },
+      ],
+    }
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const nextRun = page.locator('.schedules-list-stats').getByText(/Next run:/)
+  await expect(nextRun).toContainText('DailyCycle')
+  await page.getByRole('button', { name: 'Expand group', exact: true })
+    .filter({ hasText: 'DailyCycle' }).click()
+  const dailyRow = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'DailyJob' }) })
+  await dailyRow.getByRole('switch').click()
+  await expect.poll(() => dailyEnabled).toBe(false)
+  await expect(nextRun).toContainText('WeeklyCycle', { timeout: 2000 })
+})
+
 test('browser regression: Next run drops the previous scope even when refresh fails', async ({ page }) => {
   let firstDirectorCalls = 0
   let rejectNarrowedRequest
@@ -335,10 +370,11 @@ test('browser regression: Next run drops the previous scope even when refresh fa
         rejectNarrowedRequest = () => reject(new Error('Preview unavailable'))
       })
     }
-    return { preview: [{
-      schedule: first ? 'LaterRun' : 'RemovedDirectorRun',
-      runtime: Math.floor(Date.now() / 1000) + (first ? 7200 : 3600),
-    }] }
+    const name = first ? 'LaterRun' : 'RemovedDirectorRun'
+    return {
+      schedules: [{ name, jobs: [{ name: 'Backup', enabled: true }] }],
+      preview: [{ schedule: name, runtime: Math.floor(Date.now() / 1000) + (first ? 7200 : 3600) }],
+    }
   })
 
   await openNav(page, 'nav-schedules', /#\/schedules/)
@@ -519,6 +555,10 @@ test('browser regression: next run advances with the live clock', async ({ page 
   await browserFixture(page, command => {
     if (command.startsWith('status scheduler days=')) {
       return {
+        schedules: [
+          { name: 'SoonSchedule', jobs: [{ name: 'SoonJob', enabled: true }] },
+          { name: 'LaterSchedule', jobs: [{ name: 'LaterJob', enabled: true }] },
+        ],
         preview: [
           {
             job: 'SoonJob',
