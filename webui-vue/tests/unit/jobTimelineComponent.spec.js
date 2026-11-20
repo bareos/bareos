@@ -207,6 +207,51 @@ describe('JobTimeline refreshes', () => {
     ).not.toBeNull())
   })
 
+  it('selects newly appearing lanes while All is active', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const stub = defineComponent({
+      inheritAttrs: false,
+      setup(_, { attrs, slots }) {
+        return () => h('div', attrs, slots.default?.())
+      },
+    })
+    const app = createApp(JobTimeline, { directors: ['director-a'] })
+    for (const name of [
+      'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
+      'q-banner', 'q-checkbox', 'q-separator', 'q-inner-loading', 'q-tooltip',
+    ]) {
+      app.component(name, stub)
+    }
+    app.component('q-btn', defineComponent({
+      props: { label: String, disable: Boolean },
+      setup(props, { attrs }) {
+        return () => h('button', { ...attrs, disabled: props.disable }, props.label)
+      },
+    }))
+    app.component('router-link', defineComponent({
+      setup(_, { attrs, slots }) {
+        return () => h('a', attrs, slots.default?.())
+      },
+    }))
+    apps.push(app)
+    app.mount(host)
+
+    await vi.waitFor(() => expect(requests).toHaveLength(1))
+    completeRequest(requests[0], 'ClientAJob', 'client-a')
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientAJob"]')
+    ).not.toBeNull())
+
+    host.querySelector('[aria-label="Refresh"]').click()
+    await vi.waitFor(() => expect(requests).toHaveLength(2))
+    completeRequest(requests[1], 'ClientBJob', 'client-b')
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientBJob"]')
+    ).not.toBeNull())
+  })
+
   it('preserves lane selection when the normalized client filter is unchanged', async () => {
     const host = document.createElement('div')
     document.body.appendChild(host)

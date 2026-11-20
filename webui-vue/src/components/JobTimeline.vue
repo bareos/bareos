@@ -58,8 +58,8 @@
         <q-checkbox
           v-for="option in allJobOptions"
           :key="option.key"
-          v-model="visibleJobNames"
-          :val="option.key"
+          :model-value="visibleJobNameSet.has(option.key)"
+          @update:model-value="setJobVisibility(option.key, $event)"
           dense
         >
           <template #default>
@@ -430,9 +430,11 @@ watch(calendarMode, (mode) => {
 const allJobOptions = computed(() => distinctFilesetClientOptions(tlRawJobs.value))
 const jobFilterInitialized = ref(false)
 const visibleJobNames = ref([])
+const jobSelectionIntent = ref('all')
 
 watch(normalizedClientFilter, () => {
   jobFilterInitialized.value = false
+  jobSelectionIntent.value = 'all'
   visibleJobNames.value = []
 })
 
@@ -443,6 +445,16 @@ watch(allJobOptions, (options) => {
     if (options.length === 0) return
     visibleJobNames.value = options.map(option => option.key)
     jobFilterInitialized.value = true
+    jobSelectionIntent.value = 'all'
+    return
+  }
+
+  if (jobSelectionIntent.value === 'all') {
+    visibleJobNames.value = options.map(option => option.key)
+    return
+  }
+  if (jobSelectionIntent.value === 'none') {
+    visibleJobNames.value = []
     return
   }
 
@@ -454,8 +466,25 @@ const allJobsSelected = computed(
     && visibleJobNames.value.length === allJobOptions.value.length
 )
 const noJobsSelected = computed(() => visibleJobNames.value.length === 0)
-function selectAllJobs() { visibleJobNames.value = allJobOptions.value.map(option => option.key) }
-function selectNoJobs() { visibleJobNames.value = [] }
+function selectAllJobs() {
+  jobSelectionIntent.value = 'all'
+  visibleJobNames.value = allJobOptions.value.map(option => option.key)
+}
+function selectNoJobs() {
+  jobSelectionIntent.value = 'none'
+  visibleJobNames.value = []
+}
+function setJobVisibility(key, visible) {
+  const selected = new Set(visibleJobNames.value)
+  if (visible) selected.add(key)
+  else selected.delete(key)
+  visibleJobNames.value = allJobOptions.value
+    .map(option => option.key)
+    .filter(optionKey => selected.has(optionKey))
+  jobSelectionIntent.value = visibleJobNames.value.length === 0
+    ? 'none'
+    : allJobsSelected.value ? 'all' : 'custom'
+}
 
 const visibleJobNameSet = computed(() => new Set(visibleJobNames.value))
 const visibleJobs = computed(() => (
