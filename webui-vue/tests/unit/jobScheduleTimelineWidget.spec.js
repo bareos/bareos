@@ -95,6 +95,7 @@ function mountWidget(activeDirectors) {
       provideDashboardContext({
         activeDirectors,
         refreshToken: ref(0),
+        aggregate: ref({ scheduledJobs: [] }),
       })
       return () => h(JobScheduleTimelineWidget)
     },
@@ -112,6 +113,24 @@ afterEach(() => {
 })
 
 describe('JobScheduleTimelineWidget director scope', () => {
+  it('rejects a dashboard context without an aggregate ref', () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const Root = defineComponent({
+      setup() {
+        expect(() => provideDashboardContext({
+          activeDirectors: ref([]),
+          refreshToken: ref(0),
+        })).toThrow(/aggregate refs/)
+        return () => h('div')
+      },
+    })
+    const app = createApp(Root)
+    apps.push(app)
+    app.mount(host)
+  })
+
   it('clears and ignores results from an obsolete director scope', async () => {
     const activeDirectors = ref(['director-a'])
     const initialRequest = deferred()

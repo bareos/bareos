@@ -29,9 +29,10 @@
  export const DASHBOARD_CONTEXT_KEY = Symbol('dashboardContext')
 
  function assertDashboardContext(context) {
-   if (!isRef(context?.activeDirectors) || !isRef(context?.refreshToken)) {
+   if (!isRef(context?.activeDirectors) || !isRef(context?.refreshToken)
+       || !isRef(context?.aggregate)) {
      throw new Error(
-       'Dashboard widgets require activeDirectors and refreshToken refs from provideDashboardContext().'
+       'Dashboard widgets require activeDirectors, refreshToken and aggregate refs from provideDashboardContext().'
      )
    }
    return context
