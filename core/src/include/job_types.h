@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,5 +40,12 @@ enum JobTypes : char
   JT_SCAN = 'S',         /**< Scan Job */
   JT_CONSOLIDATE = 'O'   /**< Always Incremental Consolidate Job */
 };
+
+/* Only these job types carry enough information in the catalog to be
+ * scheduled again by the "rerun" command. */
+constexpr bool IsRerunableJobType(JobTypes type)
+{
+  return type == JT_BACKUP || type == JT_COPY || type == JT_MIGRATE;
+}
 
 #endif  // BAREOS_INCLUDE_JOB_TYPES_H_

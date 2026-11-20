@@ -142,6 +142,21 @@ override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos
 
 
+override_dh_installdocs:
+	dh_installdocs
+	set -e; generate_standalone_selenium_script() { \
+		docdir=debian/$$1/usr/share/doc/$$1/selenium; \
+		if [ -d "$$docdir" ]; then \
+			python3 systemtests/scripts/bundle_selenium_test.py \
+				"$$2" "$$docdir/$$(basename "$$2")"; \
+		fi; \
+	}; \
+	generate_standalone_selenium_script bareos-webui \
+		webui/tests/selenium/webui-php-selenium-test.py; \
+	generate_standalone_selenium_script bareos-webui-new \
+		webui-vue/tests/selenium/webui-selenium-test.py
+
+
 %:
 	dh $@ --builddirectory=cmake-build
 

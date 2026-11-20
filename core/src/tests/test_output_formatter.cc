@@ -22,5 +22,47 @@
 #include "include/bareos.h"
 
 #include "lib/output_formatter.h"
+#include <cstdarg>
+#include <string>
 
 TEST(output_formatter, constructor_destructor) {}
+
+static bool CaptureOutput(void* context, const char* format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  PoolMem output;
+  output.Bvsprintf(format, args);
+  va_end(args);
+  *static_cast<std::string*>(context) += output.c_str();
+  return true;
+}
+
+TEST(output_formatter, preformattedTextKeepsPercentSigns)
+{
+  for (int mode : {API_MODE_OFF, API_MODE_ON}) {
+    std::string output;
+    OutputFormatter formatter(CaptureOutput, &output, nullptr, nullptr, mode);
+    formatter.ObjectStart();
+    formatter.ObjectKeyValuePreformatted("comment", "100% %s",
+                                        " comment: 100% %s\n");
+    formatter.ObjectEnd();
+    EXPECT_EQ(output, " comment: 100% %s\n");
+  }
+}
+
+#if HAVE_JANSSON
+TEST(output_formatter, preformattedJsonKeepsRawValue)
+{
+  std::string output;
+  OutputFormatter formatter(CaptureOutput, &output, nullptr, nullptr, API_MODE_JSON);
+  formatter.ArrayStart("jobs");
+  formatter.ObjectStart();
+  formatter.ObjectKeyValuePreformatted("comment", "100% %s", " padded text ");
+  formatter.ObjectEnd();
+  formatter.ArrayEnd("jobs");
+  formatter.FinalizeResult(true);
+  EXPECT_NE(output.find("\"comment\": \"100% %s\""), std::string::npos);
+  EXPECT_EQ(output.find("padded text"), std::string::npos);
+}
+#endif

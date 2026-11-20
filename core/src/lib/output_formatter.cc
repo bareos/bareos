@@ -510,6 +510,22 @@ void OutputFormatter::ObjectKeyValue(const char* key,
   }
 }
 
+void OutputFormatter::ObjectKeyValuePreformatted(const char* key,
+                                                const char* value,
+                                                const char* text)
+{
+#if HAVE_JANSSON
+  if (api == API_MODE_JSON) {
+    ObjectKeyValue(key, value);
+    return;
+  }
+#else
+  (void)key;
+  (void)value;
+#endif
+  result_message_plain->strcat(text);
+}
+
 void OutputFormatter::rewrap(PoolMem& string, int wrap)
 {
   char *p, *q;
@@ -667,6 +683,17 @@ bool OutputFormatter::has_acl_filters()
     if (tuple->type == OF_FILTER_ACL) { return true; }
   }
 
+  return false;
+}
+
+bool OutputFormatter::HasRowFilters()
+{
+  if (!filters) { return false; }
+  for (of_filter_tuple* tuple : filters) {
+    if (tuple->type != OF_FILTER_LIMIT && tuple->type != OF_FILTER_OFFSET) {
+      return true;
+    }
+  }
   return false;
 }
 
