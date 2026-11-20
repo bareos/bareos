@@ -199,6 +199,10 @@ endfunction()
 option(docs-only "Build only the documentation" OFF)
 option(docs-build-json "Update the configuration schema JSON files" OFF)
 
+if(ENABLE_WEBUI_VUE_TESTS AND docs-only)
+  message(FATAL_ERROR "ENABLE_WEBUI_VUE_TESTS requires docs-only=OFF")
+endif()
+
 set(ENABLE_BARRI_INIT ON)
 if(client-only OR "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
   set(ENABLE_BARRI_INIT OFF)
