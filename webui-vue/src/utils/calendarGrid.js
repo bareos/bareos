@@ -67,6 +67,16 @@ export function calendarWeekBounds(monday) {
   return { start: start.getTime(), end: end.getTime() }
 }
 
+export function schedulerDaysCovering({ start, end }, now) {
+  const hour = 3_600_000
+  const day = 24 * hour
+  // The Director samples hours, then sets the minute from each Run directive.
+  return {
+    from: Math.floor((start - hour - now) / day),
+    to: Math.ceil((end + hour - now) / day),
+  }
+}
+
 export function calendarDaysBetween(start, end) {
   const dayOrdinal = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
   return (dayOrdinal(end) - dayOrdinal(start)) / 86_400_000

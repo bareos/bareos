@@ -427,6 +427,34 @@ test('browser regression: Next run drops the previous scope even when refresh fa
   await expect(nextRun).toHaveCount(0)
 })
 
+test.describe('New York schedule calendar', () => {
+  test.use({ timezoneId: 'America/New_York' })
+
+  test('keeps Sunday evening when browsing back across fall DST', async ({ page }) => {
+    const now = Date.parse('2026-11-02T17:00:00Z')
+    const day = 86_400_000
+    await page.clock.setFixedTime(new Date(now))
+    await browserFixture(page, (command, director) => {
+      const offsets = /^status scheduler days=(-?\d+),(-?\d+)$/.exec(command)
+      if (!offsets || director !== 'bareos-dir') return {}
+      const [, from, to] = offsets.map(Number)
+      return {
+        schedules: [{ name: 'Evening', enabled: true, jobs: [] }],
+        preview: ['2026-11-01T23:00:00Z', '2026-11-02T23:00:00Z']
+          .map(Date.parse)
+          .filter(instant => instant >= now + from * day && instant < now + to * day)
+          .map(instant => ({ schedule: 'Evening', runtime: instant / 1000 })),
+      }
+    })
+
+    await openNav(page, 'nav-schedules', /#\/schedules/)
+    await page.getByRole('button', { name: 'Week', exact: true }).click()
+    await page.getByRole('button', { name: 'View schedule details for 2026-11-02' }).click()
+    await page.getByRole('button', { name: 'Previous day' }).click()
+    await expect(page.getByRole('img', { name: /Evening.*18:00/ })).toBeVisible({ timeout: 3000 })
+  })
+})
+
 test('browser regression: schedule status ignores an obsolete calendar range', async ({ page }) => {
   let releaseObsoleteStatus
   let obsoleteResponseToken

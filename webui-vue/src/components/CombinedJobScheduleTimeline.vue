@@ -171,7 +171,7 @@ import {
   buildCombinedTimelineGroups,
   parseTimelineTimestamp,
 } from '../utils/jobTimeline.js'
-import { startOfToday } from '../utils/calendarGrid.js'
+import { schedulerDaysCovering, startOfToday } from '../utils/calendarGrid.js'
 import { formatLocalDateTime } from '../utils/locales.js'
 import { midEllipsis } from '../utils/strings.js'
 
@@ -408,17 +408,11 @@ const beyondJobFetchWindow = computed(() => {
 })
 
 function currentRangePayload() {
-  const reference = Date.now()
   return {
     start: bounds.value.start,
     end: bounds.value.end,
     jobDays: jobDays.value,
-    // The Director samples one hour at a time relative to its current
-    // instant. Include the boundary hours, then clip to the visible window.
-    schedulerRange: {
-      from: Math.floor((bounds.value.start - HOUR_MS - reference) / DAY_MS),
-      to: Math.ceil((bounds.value.end + HOUR_MS - reference) / DAY_MS),
-    },
+    schedulerRange: schedulerDaysCovering(bounds.value, Date.now()),
   }
 }
 

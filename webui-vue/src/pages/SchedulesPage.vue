@@ -428,11 +428,13 @@ import { useNowLine } from '../composables/useNowLine.js'
 import { quoteDirectorString } from '../utils/directorStrings.js'
 import { formatRelativeDate } from '../utils/locales.js'
 import {
+  calendarWeekBounds,
   firstOfMonth,
   makeDateStr,
   mondayOf,
   monthGridDates,
   parseDateStr,
+  schedulerDaysCovering,
   startOfToday,
   weekDates,
 } from '../utils/calendarGrid.js'
@@ -734,26 +736,13 @@ const viewMode = ref(settings.schedulesViewMode)
 
 const viewAnchor = ref(viewMode.value === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date()))
 
-const apiDaysRange = computed(() => {
-  const today = startOfToday()
-  const MS_DAY = 86400_000
-  let from
-  let to
+const calendarBounds = computed(() => {
   if (viewMode.value === 'month') {
     const y = viewAnchor.value.getFullYear()
     const m = viewAnchor.value.getMonth()
-    const first = new Date(y, m, 1)
-    const last = new Date(y, m + 1, 0)
-    from = Math.floor((first - today) / MS_DAY)
-    to = Math.floor((last - today) / MS_DAY) + 1
-  } else {
-    const mon = new Date(viewAnchor.value)
-    const sun = new Date(mon)
-    sun.setDate(sun.getDate() + 6)
-    from = Math.floor((mon - today) / MS_DAY)
-    to = Math.floor((sun - today) / MS_DAY) + 1
+    return { start: +new Date(y, m, 1), end: +new Date(y, m + 1, 1) }
   }
-  return { from, to }
+  return calendarWeekBounds(viewAnchor.value)
 })
 
 const MONTH_NAMES = computed(() => [
@@ -876,10 +865,10 @@ function nextDay() {
 }
 
 // previewData only covers the Month/Week window currently loaded via
-// apiDaysRange (which is derived from viewAnchor). Day view navigation
+// calendarBounds (which is derived from viewAnchor). Day view navigation
 // (prevDay/nextDay/goToday) can walk past that window's edges, so keep
 // viewAnchor tracking the viewed day — this keeps the underlying grid in
-// sync for when the user goes Back, and (via the apiDaysRange watcher)
+// sync for when the user goes Back, and (via the calendarBounds watcher)
 // triggers a re-fetch whenever the day being viewed falls outside the
 // currently loaded range instead of silently showing stale/empty data.
 watch(dayViewDate, (dateStr) => {
@@ -897,12 +886,13 @@ async function refreshStatus() {
   const generation = ++statusRequestGeneration
   const directors = [...activeDirectors.value]
   const scopeKey = directors.join('\0')
-  const range = { ...apiDaysRange.value }
+  const { start, end } = calendarBounds.value
+  const range = schedulerDaysCovering({ start, end }, Date.now())
   const isCurrentRequest = () => (
     generation === statusRequestGeneration
     && scopeKey === activeDirectors.value.join('\0')
-    && range.from === apiDaysRange.value.from
-    && range.to === apiDaysRange.value.to
+    && start === calendarBounds.value.start
+    && end === calendarBounds.value.end
   )
 
   statusLoading.value = true
@@ -968,7 +958,7 @@ async function refreshStatus() {
   }
 }
 
-watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
+watch([() => calendarBounds.value.start, () => calendarBounds.value.end], refreshStatus, { immediate: true })
 
 const jobSearch = usePersistedTableFilter('schedules.status')
 const expandedSchedules = ref(new Set())
@@ -1163,14 +1153,15 @@ function selectNoSchedules() {
 }
 
 const runsByDate = computed(() => {
+  const { start, end } = calendarBounds.value
   const visible = visibleScheduleKeys.value
   const filterActive = scheduleSelectionInitialized.value
   const map = {}
   for (const run of previewData.value) {
     if (filterActive && !visible.includes(run.scheduleKey)) continue
-    const ts = run.runtime
-    if (!ts) continue
-    const d = new Date(ts * 1000)
+    const instant = run.runtime * 1000
+    if (!(instant >= start && instant < end)) continue
+    const d = new Date(instant)
     const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     if (!map[date]) map[date] = []
