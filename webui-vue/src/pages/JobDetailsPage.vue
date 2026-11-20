@@ -469,6 +469,7 @@ const commentDialogOpen = ref(false)
 const commentTarget = ref(null)
 let loadRevision = 0
 let routeLoadRevision = 0
+const pendingLoads = new Set()
 
 function openJobComment() {
   if (!jobData.value || String(jobData.value.id) !== String(currentJobId.value)
@@ -501,6 +502,16 @@ async function saveJobComment(comment) {
 }
 
 async function loadJob() {
+  const target = { jobId: currentJobId.value, director: currentJobDirector.value, revision: loadRevision + 1 }
+  pendingLoads.add(target)
+  try {
+    await loadJobRequest()
+  } finally {
+    pendingLoads.delete(target)
+  }
+}
+
+async function loadJobRequest() {
   const revision = ++loadRevision
   const jobId = currentJobId.value
   const targetDirector = currentJobDirector.value
@@ -651,7 +662,16 @@ function startPolling() {
   stopPolling()
   _pollTimer = setInterval(async () => {
     if (!isRunning.value) { stopPolling(); return }
-    await loadJob()
+    const target = { jobId: currentJobId.value, director: currentJobDirector.value }
+    if ([...pendingLoads].some(load => load.jobId === target.jobId
+      && load.director === target.director && load.revision === loadRevision)) return
+    try {
+      await loadJob()
+    } catch (loadError) {
+      if (currentJobId.value === target.jobId && currentJobDirector.value === target.director) {
+        error.value = loadError.message ?? t('Failed to load job')
+      }
+    }
   }, 5000)
 }
 

@@ -192,6 +192,27 @@ test('browser regression: waiting job opens the log section', async ({ page }) =
   await expect(page.getByTestId('job-log-section')).toBeInViewport()
 })
 
+test('browser regression: slow job polling can complete', async ({ page }) => {
+  await page.clock.install()
+  let requests = 0
+  let releasePoll
+  await browserFixture(page, command => {
+    if (command === 'llist jobid=101') {
+      requests++
+      if (requests === 1) return { jobs: [{ jobid: '101', name: 'Polling job', jobstatus: 'R', type: 'B' }] }
+      return new Promise(resolve => { releasePoll = resolve })
+    }
+  })
+  await page.goto('/#/jobs/101?director=bareos-dir')
+  await expect(page.getByText('Job #101 — Polling job')).toBeVisible()
+  await page.clock.fastForward(5000)
+  await expect.poll(() => requests).toBe(2)
+  await page.clock.fastForward(5000)
+  expect(requests).toBe(2)
+  releasePoll({ jobs: [{ jobid: '101', name: 'Polling job', jobstatus: 'T', type: 'B' }] })
+  await expect(page.getByRole('status', { name: 'OK', exact: true })).toBeVisible()
+})
+
 test('browser regression: stale job loads cannot replace the selected job', async ({ page }) => {
   let releaseOldJob
   await browserFixture(page, command => {
