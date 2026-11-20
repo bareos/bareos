@@ -35,9 +35,14 @@ import {
   localeOptions,
   localeToIntl,
   normalizeWebUiLocale,
+  parseDirectorDate,
 } from '../../src/utils/locales.js'
 
 describe('webui locales', () => {
+  it('parses both full and abbreviated Director month aliases', () => {
+    expect(parseDirectorDate('18-septiembre-26 20:44')).toEqual(new Date(2026, 8, 18, 20, 44))
+    expect(parseDirectorDate('18-Sep-26 20:44')).toEqual(new Date(2026, 8, 18, 20, 44))
+  })
   it('lists the supported Vue WebUI locales', () => {
     expect(WEBUI_LOCALES.map(({ value }) => value)).toEqual([
       'cn_CN',

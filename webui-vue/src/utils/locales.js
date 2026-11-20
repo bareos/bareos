@@ -332,7 +332,7 @@ export function parseDirectorDate(value) {
   if (!Number.isNaN(direct.getTime())) return direct
 
   const match = String(value).match(
-    /^(\d{1,2})-([A-Za-zÀ-ÿ]{3,9})-(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/i,
+    /^(\d{1,2})-([A-Za-zÀ-ÿ]{3,10})-(\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/i,
   )
   if (!match) return null
 
