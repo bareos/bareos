@@ -358,6 +358,86 @@ test('browser regression: schedule All selection survives an empty scope', async
   await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'true')
 })
 
+test('browser regression: schedule status clears old scope during a failed switch', async ({ page }) => {
+  let rejectStatus
+  await browserFixture(page, (command, director) => {
+    if (!command.startsWith('status scheduler days=')) return
+    if (director === 'bareos-dir-2' && command !== 'status scheduler days=0,60') {
+      return new Promise((resolve, reject) => {
+        rejectStatus = () => reject(new Error('New status unavailable'))
+      })
+    }
+    return {
+      schedules: [{ name: 'OldScopeSchedule', jobs: [{ name: 'OldScopeJob', enabled: true }] }],
+      preview: [{ schedule: 'OldScopeSchedule', job: 'OldScopeJob', runtime: Date.now() / 1000 + 3600 }],
+    }
+  })
+
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect(page.locator('.sched-group-header')).toContainText('OldScopeSchedule')
+  await expect(page.getByRole('checkbox', { name: 'OldScopeSchedule' })).toBeVisible()
+
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await scopeMenu.getByText('bareos-dir', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect.poll(() => Boolean(rejectStatus)).toBe(true)
+  await expect(page.locator('.sched-group-header')).toHaveCount(0)
+  await expect(page.getByRole('checkbox', { name: 'OldScopeSchedule' })).toHaveCount(0)
+  rejectStatus()
+  await expect(page.getByText('New status unavailable')).toBeVisible()
+  await expect(page.locator('.sched-group-header')).toHaveCount(0)
+  await expect(page.getByText('OldScopeSchedule', { exact: true })).toHaveCount(0)
+})
+
+test('browser regression: schedule status ignores an obsolete aggregate scope', async ({ page }) => {
+  let releaseObsolete
+  let obsoleteToken
+  let firstDirectorCalls = 0
+  await browserFixture(page, (command, director, { responseToken }) => {
+    if (!command.startsWith('status scheduler days=')) return
+    if (command === 'status scheduler days=0,60') return { schedules: [], preview: [] }
+    if (director === 'bareos-dir-2') {
+      obsoleteToken = responseToken
+      return new Promise(resolve => {
+        releaseObsolete = () => resolve({
+          schedules: [{ name: 'ObsoleteOther', jobs: [] }], preview: [],
+        })
+      })
+    }
+    firstDirectorCalls += 1
+    return {
+      schedules: [{ name: firstDirectorCalls === 2 ? 'ObsoleteAggregate' : 'CurrentScope', jobs: [] }],
+      preview: [],
+    }
+  })
+
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  await expect(page.locator('.sched-group-header')).toContainText('CurrentScope')
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await expect.poll(() => Boolean(releaseObsolete)).toBe(true)
+  await expect(page.locator('.sched-group-header')).toHaveCount(0)
+  await page.getByTestId('director-scope-control').click()
+  await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.sched-group-header')).toContainText('CurrentScope')
+  releaseObsolete()
+  await waitForDirectorResponseProcessing(page, obsoleteToken)
+  await expect(page.locator('.sched-group-header')).toContainText('CurrentScope')
+  await expect(page.getByText('ObsoleteAggregate', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('ObsoleteOther', { exact: true })).toHaveCount(0)
+})
+
 test('browser regression: upcoming runs ignore an obsolete Director scope', async ({ page }) => {
   let releaseObsoletePreview
   let obsoletePreviewResponseToken

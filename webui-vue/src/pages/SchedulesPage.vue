@@ -1410,6 +1410,8 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
   definitionDirectorErrors.value = []
   schedError.value = null
   schedLoading.value = false
+  schedulesData.value = []
+  previewData.value = []
   upcomingPreviewData.value = []
   if (tab.value === 'show') {
     refreshSchedules()
