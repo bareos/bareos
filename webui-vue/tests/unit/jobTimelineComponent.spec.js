@@ -113,6 +113,51 @@ function completeRequest(request, name, clientName) {
 }
 
 describe('JobTimeline refreshes', () => {
+  it('gives each period day a full-width click target', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const app = createApp(JobTimeline, { directors: ['director-a'] })
+    const componentStub = defineComponent({
+      inheritAttrs: false,
+      setup(_, { attrs, slots }) {
+        return () => h('div', attrs, slots.default?.())
+      },
+    })
+    for (const name of [
+      'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
+      'q-banner', 'q-inner-loading', 'q-tooltip', 'q-separator', 'q-checkbox',
+    ]) {
+      app.component(name, componentStub)
+    }
+    app.component('q-btn', defineComponent({
+      props: { label: String, disable: Boolean },
+      setup(props, { attrs }) {
+        return () => h('button', { ...attrs, disabled: props.disable }, props.label)
+      },
+    }))
+    app.component('router-link', defineComponent({
+      setup(_, { attrs, slots }) {
+        return () => h('a', attrs, slots.default?.())
+      },
+    }))
+    apps.push(app)
+    app.mount(host)
+
+    await vi.waitFor(() => expect(requests).toHaveLength(1))
+    completeRequest(requests[0], 'ClientAJob', 'client-a')
+    await vi.waitFor(() => expect(
+      host.querySelector('[role="img"][aria-label^="ClientAJob"]')
+    ).not.toBeNull())
+
+    host.querySelector('button').click()
+    await nextTick()
+
+    const tick = host.querySelector('.sched-period-tick')
+    expect(tick).not.toBeNull()
+    expect(Number.parseFloat(tick.style.width)).toBeGreaterThan(1)
+  })
+
   it('selects lanes after the client filter changes', async () => {
     const host = document.createElement('div')
     document.body.appendChild(host)

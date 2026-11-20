@@ -134,7 +134,7 @@
             <div v-for="tick in periodDayTicks" :key="tick.dateStr"
                  class="sched-period-tick"
                  :class="{ 'sched-period-tick--today': tick.isToday }"
-                 :style="{ left: `${tick.pct}%` }"
+                 :style="{ left: `${tick.pct}%`, width: `${tick.widthPct}%` }"
                  :data-date="tick.dateStr"
                  tabindex="0"
                  role="button"
@@ -538,10 +538,14 @@ const periodDayTicks = computed(() => {
   const cursor = new Date(start)
   while (cursor.getTime() < end) {
     const dateStr = makeDateStr(cursor.getFullYear(), cursor.getMonth(), cursor.getDate())
+    const nextDay = new Date(cursor)
+    nextDay.setDate(nextDay.getDate() + 1)
+    const tickEnd = Math.min(end, nextDay.getTime())
     const showLabel = calendarMode.value === 'week' || cursor.getDate() === 1 || cursor.getDay() === 1
     ticks.push({
       dateStr,
       pct: ((cursor.getTime() - start) / total) * 100,
+      widthPct: ((tickEnd - cursor.getTime()) / total) * 100,
       isToday: dateStr === todayStr,
       label: showLabel
         ? (calendarMode.value === 'week' ? `${DAY_ABBR.value[(cursor.getDay() + 6) % 7]} ${cursor.getDate()}` : String(cursor.getDate()))
