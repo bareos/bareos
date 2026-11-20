@@ -51,13 +51,12 @@ export function createTtlCache() {
     return fetch
   }
 
+  function isLatestFetch(key, fetch) {
+    return fetch.generation === generation && fetch.id === latestFetchByKey.get(key)
+  }
+
   function set(key, data, fetch) {
-    if (
-      fetch.generation !== generation
-      || fetch.id !== latestFetchByKey.get(key)
-    ) {
-      return
-    }
+    if (!isLatestFetch(key, fetch)) return
     if (!store.has(key)) {
       while (store.size >= maxEntries) {
         store.delete(store.keys().next().value)
@@ -66,13 +65,12 @@ export function createTtlCache() {
     store.set(key, { timestamp: Date.now(), data })
   }
 
+  function discard(key, fetch) {
+    if (isLatestFetch(key, fetch)) store.delete(key)
+  }
+
   function finishFetch(key, fetch) {
-    if (
-      fetch.generation === generation
-      && fetch.id === latestFetchByKey.get(key)
-    ) {
-      latestFetchByKey.delete(key)
-    }
+    if (isLatestFetch(key, fetch)) latestFetchByKey.delete(key)
   }
 
   function clear() {
@@ -81,7 +79,7 @@ export function createTtlCache() {
     latestFetchByKey.clear()
   }
 
-  return { get, beginFetch, set, finishFetch, clear }
+  return { get, beginFetch, set, discard, finishFetch, clear }
 }
 
 // Cheap, non-cryptographic string hash (FNV-1a, 32-bit) used to fold a

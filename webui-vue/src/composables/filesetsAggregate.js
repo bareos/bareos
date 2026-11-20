@@ -90,7 +90,12 @@ export async function fetchAggregatedFilesets(credentials, directors, { forceRef
       filesets: sortFilesets(fulfilledDirectorValues(results).flatMap(value => value.filesets)),
       directorErrors: directorAggregateErrors(results, directors, 'Failed to load filesets.'),
     }
-    filesetsCache.set(cacheKey, data, fetchGeneration)
+    if (data.directorErrors.length === 0) {
+      filesetsCache.set(cacheKey, data, fetchGeneration)
+    } else {
+      // A partial refresh must not leave the prior complete entry masking a retry.
+      filesetsCache.discard(cacheKey, fetchGeneration)
+    }
     return data
   } finally {
     filesetsCache.finishFetch(cacheKey, fetchGeneration)
