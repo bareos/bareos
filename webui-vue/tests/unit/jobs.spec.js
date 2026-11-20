@@ -116,6 +116,7 @@ describe('consecutiveFailedJobsSinceSuccess', () => {
 
   it('does not count running jobs as failures', () => {
     expect(consecutiveFailedJobsSinceSuccess([
+      { status: 'C' },
       { status: 'R' },
       { status: 'l' },
       { status: 'E' },

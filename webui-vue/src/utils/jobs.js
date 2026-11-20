@@ -71,7 +71,7 @@ export function consecutiveFailedJobsSinceSuccess(jobsNewestFirst) {
 
   let count = 0
   for (const job of jobsNewestFirst) {
-    if (['R', 'l'].includes(job?.status)) continue
+    if (['C', 'R', 'l'].includes(job?.status)) continue
     if (isStreakSuccessJobStatus(job?.status)) break
     count++
   }
