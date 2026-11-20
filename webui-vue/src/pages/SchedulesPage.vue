@@ -194,8 +194,8 @@
               <q-checkbox
                 v-for="option in allScheduleOptions"
                 :key="option.key"
-                v-model="visibleScheduleKeys"
-                :val="option.key"
+                :model-value="visibleScheduleKeys.includes(option.key)"
+                @update:model-value="setScheduleVisibility(option.key, $event)"
                 dense
                 :color="scheduleColor(option.label) ? undefined : 'primary'"
               >
@@ -439,6 +439,7 @@ import {
   startOfToday,
   weekDates,
 } from '../utils/calendarGrid.js'
+import { projectScheduleSelection } from '../utils/scheduleSelection.js'
 import {
   withJobsSearchQuery,
 } from '../utils/jobs.js'
@@ -1111,10 +1112,9 @@ const allScheduleOptions = computed(() =>
 const visibleScheduleKeys = ref([])
 const scheduleSelectionInitialized = ref(false)
 const scheduleSelectionIntent = ref('all')
+const customScheduleKeys = ref(new Set())
 
-watch(allScheduleOptions, (options, previousOptions) => {
-  const optionKeys = new Set(options.map(option => option.key))
-
+watch(allScheduleOptions, (options) => {
   if (!scheduleSelectionInitialized.value) {
     visibleScheduleKeys.value = options.map(option => option.key)
     scheduleSelectionInitialized.value = true
@@ -1122,31 +1122,11 @@ watch(allScheduleOptions, (options, previousOptions) => {
     return
   }
 
-  if (scheduleSelectionIntent.value === 'all') {
-    visibleScheduleKeys.value = options.map(option => option.key)
-    return
-  }
-
-  if (scheduleSelectionIntent.value === 'none') {
-    visibleScheduleKeys.value = []
-    return
-  }
-
-  visibleScheduleKeys.value = visibleScheduleKeys.value.filter(key => optionKeys.has(key))
-})
-
-watch(visibleScheduleKeys, (keys) => {
-  const options = allScheduleOptions.value
-  if (options.length === 0) return
-
-  if (keys.length === 0) {
-    scheduleSelectionIntent.value = 'none'
-  } else if (keys.length === options.length
-    && options.every(option => keys.includes(option.key))) {
-    scheduleSelectionIntent.value = 'all'
-  } else {
-    scheduleSelectionIntent.value = 'custom'
-  }
+  visibleScheduleKeys.value = projectScheduleSelection(
+    options,
+    scheduleSelectionIntent.value,
+    customScheduleKeys.value
+  )
 })
 
 const allSchedulesSelected = computed(
@@ -1157,11 +1137,40 @@ const noSchedulesSelected = computed(() => visibleScheduleKeys.value.length === 
 
 function selectAllSchedules() {
   scheduleSelectionIntent.value = 'all'
+  customScheduleKeys.value = new Set()
   visibleScheduleKeys.value = allScheduleOptions.value.map(option => option.key)
 }
 function selectNoSchedules() {
   scheduleSelectionIntent.value = 'none'
+  customScheduleKeys.value = new Set()
   visibleScheduleKeys.value = []
+}
+function setScheduleVisibility(key, selected) {
+  const currentIntent = scheduleSelectionIntent.value
+  const customKeys = currentIntent === 'custom'
+    ? new Set(customScheduleKeys.value)
+    : new Set(visibleScheduleKeys.value)
+  if (selected) customKeys.add(key)
+  else customKeys.delete(key)
+
+  const options = allScheduleOptions.value
+  const nextVisible = projectScheduleSelection(options, 'custom', customKeys)
+  if (nextVisible.length === 0) {
+    scheduleSelectionIntent.value = customKeys.size ? 'custom' : 'none'
+  } else if (nextVisible.length === options.length) {
+    scheduleSelectionIntent.value = 'all'
+  } else {
+    scheduleSelectionIntent.value = 'custom'
+  }
+
+  customScheduleKeys.value = scheduleSelectionIntent.value === 'custom'
+    ? customKeys
+    : new Set()
+  visibleScheduleKeys.value = projectScheduleSelection(
+    options,
+    scheduleSelectionIntent.value,
+    customScheduleKeys.value
+  )
 }
 
 const runsByDate = computed(() => {
