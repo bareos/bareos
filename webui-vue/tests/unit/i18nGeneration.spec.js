@@ -44,6 +44,11 @@ describe('webui i18n generation', () => {
     expect(messageIds).toContain('All known plugin hints')
     expect(messageIds).toContain('Configuration Status')
     expect(messageIds).toContain('Try the subscription release')
+    expect(messageIds).toContain('Unsupported build – not for production use')
+    expect(messageIds).toContain('Subscription build')
+    expect(messageIds).toContain('Community build')
+    expect(messageIds).toContain('Pre-release build')
+    expect(messageIds).toContain('Self-compiled build')
     expect(messageIds).toContain('Virtual Full')
   })
 

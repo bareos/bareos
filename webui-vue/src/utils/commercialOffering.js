@@ -45,7 +45,7 @@ export const EXPERT_CIRCLE_URL = 'https://www.bareos.com/meet/'
 
 export const SUBSCRIPTION_ONLY_PLUGINS = ['Proxmox', 'Hyper-V', 'Barri']
 
-export const UNSUPPORTED_BUILD_TEXT = 'Unsupported build – not for production use'
+export const UNSUPPORTED_BUILD_TEXT = messageId('Unsupported build – not for production use')
 
 export const COMMERCIAL_OFFERINGS = Object.freeze([
   {
@@ -135,11 +135,11 @@ export function summariseBuildKinds(kinds) {
 
 export function buildKindLabel(kind) {
   switch (kind) {
-    case BUILD_KINDS.subscription: return 'Subscription build'
-    case BUILD_KINDS.community: return 'Community build'
-    case BUILD_KINDS.prerelease: return 'Pre-release build'
-    case BUILD_KINDS.selfcompiled: return 'Self-compiled build'
-    default: return 'Community build'
+    case BUILD_KINDS.subscription: return messageId('Subscription build')
+    case BUILD_KINDS.community: return messageId('Community build')
+    case BUILD_KINDS.prerelease: return messageId('Pre-release build')
+    case BUILD_KINDS.selfcompiled: return messageId('Self-compiled build')
+    default: return messageId('Community build')
   }
 }
 
