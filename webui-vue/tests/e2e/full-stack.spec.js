@@ -99,6 +99,15 @@ test('browser regression: column checkboxes have accessible names', async ({ pag
   }
 })
 
+test('browser regression: passive job status retains its accessible name', async ({ page }) => {
+  await browserFixture(page)
+  await page.goto('/#/jobs/101?director=bareos-dir')
+  await expect(page.getByText('Job #101 — Browser-fixture')).toBeVisible()
+  await expect(page.getByRole('status', { name: 'OK', exact: true })).toBeVisible()
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await expect(page.getByRole('button', { name: 'OK: Jump to log', exact: true }).first()).toBeVisible()
+})
+
 test('browser regression: capped multi-Director results show the fetched total', async ({ page }) => {
   await browserFixture(page, command => {
     if (command.startsWith('llist jobs count')) return { jobs: [{ count: '1100' }] }
