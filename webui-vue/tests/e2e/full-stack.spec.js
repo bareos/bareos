@@ -231,6 +231,40 @@ test('browser regression: schedule and job toggles refresh upcoming runs', async
   await expect(nextRun).toHaveCount(0)
 })
 
+test('browser regression: schedule job sorting keeps groups intact in both directions', async ({ page }) => {
+  await browserFixture(page, command => {
+    if (!command.startsWith('status scheduler days=')) return
+    return {
+      schedules: [
+        { name: 'GroupOne', jobs: [{ name: 'ZuluJob' }, { name: 'BravoJob' }] },
+        { name: 'GroupTwo', jobs: [{ name: 'AlphaJob' }, { name: 'CharlieJob' }] },
+      ],
+      preview: [],
+    }
+  })
+
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const table = page.locator('.bareos-panel').filter({ hasText: 'Scheduler Jobs' }).locator('table')
+  await expect(table.locator('.sched-group-header')).toHaveCount(2)
+  for (const group of await table.locator('.sched-group-header').all()) {
+    await group.getByRole('button', { name: 'Expand group', exact: true }).click()
+  }
+  const rows = table.locator('tbody tr')
+  await expect(rows).toHaveCount(6)
+  const names = async () => rows.evaluateAll(elements => elements.map(row =>
+    row.querySelector('.text-weight-bold, a')?.textContent.trim()
+  ))
+  expect(await names()).toEqual(['GroupOne', 'ZuluJob', 'BravoJob', 'GroupTwo', 'AlphaJob', 'CharlieJob'])
+  const jobHeader = table.getByRole('columnheader', { name: /Job/ })
+  await jobHeader.click()
+  await expect.poll(names).toEqual(['GroupTwo', 'AlphaJob', 'CharlieJob', 'GroupOne', 'BravoJob', 'ZuluJob'])
+  await jobHeader.click()
+  await expect.poll(names).toEqual(['GroupOne', 'ZuluJob', 'BravoJob', 'GroupTwo', 'CharlieJob', 'AlphaJob'])
+})
+
 test('browser regression: schedule All selection survives an empty scope', async ({ page }) => {
   await browserFixture(page, (command, director) => {
     if (!command.startsWith('status scheduler days=')) return

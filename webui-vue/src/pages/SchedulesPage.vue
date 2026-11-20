@@ -40,6 +40,7 @@
             <q-table v-if="!(statusLoading && !scheduleJobRows.length)"
                      :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
+                     :sort-method="keepScheduleGroupOrder"
                      :rows-per-page-options="statusRowsPerPageOptions"
                      v-model:pagination="statusPagination">
               <template #body="props">
@@ -1013,17 +1014,26 @@ function describeRunTime(run) {
 const scheduleJobRows = computed(() => {
   const search = String(jobSearch.value ?? '').trim().toLowerCase()
   const rows = []
-  for (const sched of schedulesData.value) {
+  const sortByJob = statusPagination.value.sortBy === 'job'
+  const direction = statusPagination.value.descending ? -1 : 1
+  const groups = schedulesData.value.map(sched => {
     const allJobs = Array.isArray(sched.jobs) ? sched.jobs : []
     const scheduleMatches = sched.name.toLowerCase().includes(search)
-    const jobs = search
+    let jobs = search
       ? allJobs.filter(job => scheduleMatches || job.name.toLowerCase().includes(search))
       : allJobs
 
-    if (search && !scheduleMatches && !jobs.length) {
-      continue
+    if (sortByJob) {
+      jobs = [...jobs].sort((a, b) => direction * a.name.localeCompare(b.name))
     }
+    return { sched, jobs, scheduleMatches }
+  }).filter(({ jobs, scheduleMatches }) => !search || scheduleMatches || jobs.length)
 
+  if (sortByJob) {
+    groups.sort((a, b) => direction * (a.jobs[0]?.name ?? '').localeCompare(b.jobs[0]?.name ?? ''))
+  }
+
+  for (const { sched, jobs } of groups) {
     const collapsed = !search && !expandedSchedules.value.has(sched.scopeKey)
     const nextRun = describeRunTime(nextRunByScheduleKey.value[sched.scopeKey])
 
@@ -1075,6 +1085,10 @@ const scheduleJobRows = computed(() => {
   }
   return rows
 })
+
+function keepScheduleGroupOrder(rows) {
+  return rows
+}
 
 const schedulerStatusStats = computed(() => {
   const groups = schedulesData.value
