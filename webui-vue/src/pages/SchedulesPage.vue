@@ -178,7 +178,7 @@
                 size="sm"
                 color="primary"
                 :label="t('All')"
-                :disable="allSchedulesSelected"
+                :disable="scheduleSelectionIntent === 'all'"
                 @click="selectAllSchedules"
               />
               <q-btn
@@ -188,7 +188,7 @@
                 size="sm"
                 color="primary"
                 :label="t('None')"
-                :disable="noSchedulesSelected"
+                :disable="scheduleSelectionIntent === 'none'"
                 @click="selectNoSchedules"
               />
               <q-separator vertical inset />
@@ -1159,12 +1159,6 @@ watch(allScheduleOptions, (options) => {
   )
 })
 
-const allSchedulesSelected = computed(
-  () => allScheduleOptions.value.length > 0
-    && visibleScheduleKeys.value.length === allScheduleOptions.value.length
-)
-const noSchedulesSelected = computed(() => visibleScheduleKeys.value.length === 0)
-
 function selectAllSchedules() {
   scheduleSelectionIntent.value = 'all'
   customScheduleKeys.value = new Set()
@@ -1183,21 +1177,10 @@ function setScheduleVisibility(key, selected) {
   if (selected) customKeys.add(key)
   else customKeys.delete(key)
 
-  const options = allScheduleOptions.value
-  const nextVisible = projectScheduleSelection(options, 'custom', customKeys)
-  if (nextVisible.length === 0) {
-    scheduleSelectionIntent.value = customKeys.size ? 'custom' : 'none'
-  } else if (nextVisible.length === options.length) {
-    scheduleSelectionIntent.value = 'all'
-  } else {
-    scheduleSelectionIntent.value = 'custom'
-  }
-
-  customScheduleKeys.value = scheduleSelectionIntent.value === 'custom'
-    ? customKeys
-    : new Set()
+  scheduleSelectionIntent.value = 'custom'
+  customScheduleKeys.value = customKeys
   visibleScheduleKeys.value = projectScheduleSelection(
-    options,
+    allScheduleOptions.value,
     scheduleSelectionIntent.value,
     customScheduleKeys.value
   )

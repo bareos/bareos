@@ -901,6 +901,64 @@ test('browser regression: schedule selection follows scope and preserves None', 
   await expect(scheduleCheckboxes.first()).toHaveAttribute('aria-checked', 'false')
 })
 
+test('browser regression: schedule custom selection survives a narrower scope', async ({ page }) => {
+  await browserFixture(page, (command, director) => {
+    if (!command.startsWith('status scheduler days=')) return
+    const prefix = director === 'bareos-dir' ? 'A' : 'B'
+    return {
+      schedules: ['1', '2'].map(number => ({ name: `${prefix}${number}`, jobs: [] })),
+      preview: [],
+    }
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const check = (name) => page.getByRole('checkbox', { name, exact: true })
+  await expect(check('bareos-dir / A1')).toBeChecked()
+  await expect(check('bareos-dir-2 / B2')).toBeChecked()
+  await check('bareos-dir / A2').click()
+  await check('bareos-dir-2 / B2').click()
+
+  const scopeMenu = page.getByTestId('director-scope-menu')
+  const narrow = async () => {
+    await page.getByTestId('director-scope-control').click()
+    await scopeMenu.getByText('bareos-dir-2', { exact: true }).first().click()
+    await page.keyboard.press('Escape')
+    await expect(check('A1')).toBeVisible()
+  }
+  const broaden = async () => {
+    await page.getByTestId('director-scope-control').click()
+    await scopeMenu.getByRole('button', { name: 'Select all' }).click()
+    await page.keyboard.press('Escape')
+    await expect(check('bareos-dir-2 / B2')).toBeVisible()
+  }
+
+  await narrow()
+  await expect(check('A1')).toBeChecked()
+  await expect(check('A2')).not.toBeChecked()
+  await check('A2').click()
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toBeEnabled()
+  await broaden()
+  await expect(check('bareos-dir / A1')).toBeChecked()
+  await expect(check('bareos-dir / A2')).toBeChecked()
+  await expect(check('bareos-dir-2 / B1')).toBeChecked()
+  await expect(check('bareos-dir-2 / B2')).not.toBeChecked()
+
+  await narrow()
+  await page.getByRole('button', { name: 'All', exact: true }).click()
+  await broaden()
+  await expect(check('bareos-dir-2 / B2')).toBeChecked()
+  await check('bareos-dir / A1').click()
+  await check('bareos-dir / A2').click()
+  await narrow()
+  await expect(check('A1')).not.toBeChecked()
+  await expect(check('A2')).not.toBeChecked()
+  await expect(page.getByRole('button', { name: 'None', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'None', exact: true }).click()
+  await broaden()
+  await expect(check('bareos-dir-2 / B1')).not.toBeChecked()
+  await expect(check('bareos-dir-2 / B2')).not.toBeChecked()
+})
+
 test('browser regression: log focus follows reused job routes', async ({ page }) => {
   await browserFixture(page, command => {
     const job = command.match(/^llist jobid=(\d+)$/)
