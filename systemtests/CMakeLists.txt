@@ -420,6 +420,9 @@ if(PYTHON_EXECUTABLE AND PYMODULE_3_SELENIUM_FOUND)
       "${PYTHON_EXECUTABLE}"
       "${CMAKE_SOURCE_DIR}/webui/tests/selenium/test_login_compatibility.py"
   )
+  if(NOT ENABLE_WEBUI)
+    set_tests_properties(webui:login-compatibility PROPERTIES DISABLED true)
+  endif()
 endif()
 
 if(PHP
@@ -432,6 +435,9 @@ if(PHP
       "${PHP}"
       "${CMAKE_SOURCE_DIR}/webui/tests/regress/webui-restore-location-test.php"
   )
+  if(NOT ENABLE_WEBUI)
+    set_tests_properties(webui:restore-location PROPERTIES DISABLED true)
+  endif()
 endif()
 
 message("   PHP:                       " ${PHP})
@@ -446,7 +452,8 @@ message("   WEBUI_VUE_VITE:            " ${WEBUI_VUE_VITE})
 message("   WEBUI_VUE_TEST_DIST:       " ${WEBUI_VUE_TEST_DIST})
 message("   WEBUI_VUE_USE_DIST_FIRST:  " ${WEBUI_VUE_PREFER_PREBUILT_DIST})
 
-if(PHP
+if(ENABLE_WEBUI
+   AND PHP
    AND PYTHON_EXECUTABLE
    AND PYMODULE_3_SELENIUM_FOUND
    AND CHROMEDRIVER
@@ -455,9 +462,13 @@ if(PHP
   message(STATUS "OK: all requirements for webui tests were met.")
 else()
   set(ENABLE_WEBUI_SELENIUM_TEST FALSE)
-  message(
-    STATUS "NOT OK: disabling webui tests as not all requirements were found."
-  )
+  if(NOT ENABLE_WEBUI)
+    message(STATUS "Disabling webui tests because ENABLE_WEBUI is OFF.")
+  else()
+    message(
+      STATUS "NOT OK: disabling webui tests as not all requirements were found."
+    )
+  endif()
 endif()
 
 set(WEBUI_TEST_PREFIX "webui:")
@@ -578,7 +589,8 @@ set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS
     admin-smoke-multi-director
 )
 
-if(NODE
+if(ENABLE_WEBUI
+   AND NODE
    AND WEBUI_VUE_NODE_VERSION_OK
    AND GOOGLE_CHROME
    AND WEBUI_VUE_PLAYWRIGHT
@@ -588,30 +600,36 @@ if(NODE
   message(STATUS "OK: all requirements for webui-vue browser tests were met.")
 else()
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST FALSE)
-  message(
-    STATUS
-      "NOT OK: disabling webui-vue browser tests as not all requirements were found."
-  )
-  if(NOT NODE)
+  if(NOT ENABLE_WEBUI)
+    message(
+      STATUS "Disabling webui-vue browser tests because ENABLE_WEBUI is OFF."
+    )
+  else()
     message(
       STATUS
-        "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION} before configuring webui-vue browser tests."
+        "NOT OK: disabling webui-vue browser tests as not all requirements were found."
     )
-  elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
-    message(
-      STATUS
-        "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION}, but found ${NODE_VERSION}."
-    )
-  elseif(NOT WEBUI_VUE_PLAYWRIGHT)
-    message(
-      STATUS
-        "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
-    )
-  elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
-    message(
-      STATUS
-        "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
-    )
+    if(NOT NODE)
+      message(
+        STATUS
+          "Install Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION} before configuring webui-vue browser tests."
+      )
+    elseif(NOT WEBUI_VUE_NODE_VERSION_OK)
+      message(
+        STATUS
+          "webui-vue browser tests require Node >= ${WEBUI_VUE_MINIMUM_NODE_VERSION}, but found ${NODE_VERSION}."
+      )
+    elseif(NOT WEBUI_VUE_PLAYWRIGHT)
+      message(
+        STATUS
+          "Install webui-vue Playwright before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+      )
+    elseif(NOT WEBUI_VUE_TEST_DIST AND NOT WEBUI_VUE_VITE)
+      message(
+        STATUS
+          "Provide a prebuilt webui-vue dist/ or install Vite before configuring, e.g. with: cd ${CMAKE_SOURCE_DIR}/webui-vue && npm ci"
+      )
+    endif()
   endif()
 endif()
 
@@ -756,7 +774,8 @@ endif()
 
 set(WEBUI_VUE_SELENIUM_TEST_NAME admin-selenium-smoke)
 
-if(NODE
+if(ENABLE_WEBUI
+   AND NODE
    AND WEBUI_VUE_NODE_VERSION_OK
    AND GOOGLE_CHROME
    AND CHROMEDRIVER
@@ -767,10 +786,16 @@ if(NODE
   message(STATUS "OK: all requirements for webui-vue selenium tests were met.")
 else()
   set(ENABLE_WEBUI_VUE_SELENIUM_TEST FALSE)
-  message(
-    STATUS
-      "NOT OK: disabling webui-vue selenium tests as requirements are missing."
-  )
+  if(NOT ENABLE_WEBUI)
+    message(
+      STATUS "Disabling webui-vue selenium tests because ENABLE_WEBUI is OFF."
+    )
+  else()
+    message(
+      STATUS
+        "NOT OK: disabling webui-vue selenium tests as requirements are missing."
+    )
+  endif()
 endif()
 
 if(NOT ENABLE_WEBUI_VUE_SELENIUM_TEST)
