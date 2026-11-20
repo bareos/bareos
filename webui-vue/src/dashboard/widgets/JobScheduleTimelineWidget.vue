@@ -36,6 +36,7 @@ import { useI18n } from 'vue-i18n'
 import { fetchCombinedTimelineData } from '../../composables/combinedTimeline.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { useAuthStore } from '../../stores/auth.js'
+import { buildCombinedTimelineFetchOptions } from '../../utils/jobTimeline.js'
 import CombinedJobScheduleTimeline from '../../components/CombinedJobScheduleTimeline.vue'
 
 const { t } = useI18n()
@@ -92,14 +93,16 @@ async function refreshCurrentRange() {
 
   error.value = ''
   const directors = [...activeDirectors.value]
+  const fetchOptions = buildCombinedTimelineFetchOptions(
+    range.start,
+    range.end,
+    Date.now()
+  )
   try {
     const result = await fetchCombinedTimelineData(
       credentials,
       directors,
-      {
-        jobDays: range.jobDays,
-        schedulerRange: range.schedulerRange,
-      }
+      fetchOptions
     )
     if (generation !== directorScopeGeneration || scopeKey !== directorScopeKey.value) return
     actualJobs.value = result.actualJobs

@@ -50,6 +50,8 @@ vi.mock('../../src/components/CombinedJobScheduleTimeline.vue', async () => {
           h('button', {
             'data-testid': 'range',
             onClick: () => emit('range-change', {
+              start: Date.now() - 7 * 86_400_000,
+              end: Date.now(),
               jobDays: 7,
               schedulerRange: { from: -7, to: 1 },
             }),

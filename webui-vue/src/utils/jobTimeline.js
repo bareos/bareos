@@ -19,6 +19,8 @@
    02110-1301, USA.
  */
 
+import { schedulerDaysCovering } from './calendarGrid.js'
+
 export function parseTimelineTimestamp(str) {
   if (!str || str.startsWith('0000')) return null
   return new Date(str.replace(' ', 'T')).getTime()
@@ -30,6 +32,24 @@ export function parseSchedulerRuntime(value) {
 }
 
 export const CENTERED_TIMELINE_WINDOW_MS = 86_400_000
+
+export function buildCombinedTimelineFetchOptions(
+  start,
+  end,
+  now = Date.now(),
+  maxJobFetchDays = 366
+) {
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+  const todayMs = today.getTime()
+  const requestedJobDays = Math.ceil((todayMs - start) / CENTERED_TIMELINE_WINDOW_MS) + 1
+
+  return {
+    schedulerRange: schedulerDaysCovering({ start, end }, now),
+    jobDays: Math.max(1, Math.min(requestedJobDays, maxJobFetchDays)),
+    beyondJobFetchWindow: requestedJobDays > maxJobFetchDays,
+  }
+}
 
 export function buildCenteredTimelineDayBounds(
   now,

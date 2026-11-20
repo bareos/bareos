@@ -167,11 +167,11 @@ import { useSettingsStore } from '../stores/settings.js'
 import { buildClientDetailsQuery } from '../utils/clients.js'
 import { buildJobDetailsQuery } from '../utils/jobs.js'
 import {
+  buildCombinedTimelineFetchOptions,
   buildCenteredTimelineDayBounds,
   buildCombinedTimelineGroups,
   parseTimelineTimestamp,
 } from '../utils/jobTimeline.js'
-import { schedulerDaysCovering, startOfToday } from '../utils/calendarGrid.js'
 import { formatLocalDateTime } from '../utils/locales.js'
 import { midEllipsis } from '../utils/strings.js'
 
@@ -396,23 +396,26 @@ onBeforeUnmount(() => {
   cleanupPointerPan()
 })
 
-const jobDays = computed(() => {
-  const today = startOfToday().getTime()
-  const requestedDays = Math.ceil((today - bounds.value.start) / DAY_MS) + 1
-  return Math.max(1, Math.min(requestedDays, MAX_JOB_FETCH_DAYS))
-})
+const fetchOptions = computed(() => buildCombinedTimelineFetchOptions(
+  bounds.value.start,
+  bounds.value.end,
+  nowTick.value,
+  MAX_JOB_FETCH_DAYS
+))
 
 const beyondJobFetchWindow = computed(() => {
-  const today = startOfToday().getTime()
-  return Math.ceil((today - bounds.value.start) / DAY_MS) + 1 > MAX_JOB_FETCH_DAYS
+  return fetchOptions.value.beyondJobFetchWindow
 })
 
 function currentRangePayload() {
+  const options = buildCombinedTimelineFetchOptions(
+    bounds.value.start, bounds.value.end, Date.now(), MAX_JOB_FETCH_DAYS
+  )
   return {
     start: bounds.value.start,
     end: bounds.value.end,
-    jobDays: jobDays.value,
-    schedulerRange: schedulerDaysCovering(bounds.value, Date.now()),
+    jobDays: options.jobDays,
+    schedulerRange: options.schedulerRange,
   }
 }
 

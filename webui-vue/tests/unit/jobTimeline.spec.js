@@ -21,11 +21,38 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  buildCombinedTimelineFetchOptions,
   buildCenteredTimelineDayBounds,
   buildCombinedTimelineGroups,
   buildTimelineLanes,
   distinctFilesetClientOptions,
 } from '../../src/utils/jobTimeline.js'
+
+describe('buildCombinedTimelineFetchOptions', () => {
+  it('recalculates relative options as a pinned absolute range crosses midnight', () => {
+    const start = Date.parse('2026-09-18T12:00:00')
+    const end = Date.parse('2026-09-19T12:00:00')
+
+    expect(buildCombinedTimelineFetchOptions(
+      start,
+      end,
+      Date.parse('2026-09-18T20:30:00')
+    )).toEqual({
+      schedulerRange: { from: -1, to: 1 },
+      jobDays: 1,
+      beyondJobFetchWindow: false,
+    })
+    expect(buildCombinedTimelineFetchOptions(
+      start,
+      end,
+      Date.parse('2026-09-19T00:30:00')
+    )).toEqual({
+      schedulerRange: { from: -1, to: 1 },
+      jobDays: 2,
+      beyondJobFetchWindow: false,
+    })
+  })
+})
 
 describe('buildCenteredTimelineDayBounds', () => {
   it('builds a rolling 24-hour window centered on the current time', () => {
