@@ -19,7 +19,7 @@
    02110-1301, USA.
  */
 
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
 import { describe, expect, it } from 'vitest'
 
@@ -49,7 +49,24 @@ describe('webui i18n generation', () => {
     expect(messageIds).toContain('Community build')
     expect(messageIds).toContain('Pre-release build')
     expect(messageIds).toContain('Self-compiled build')
+    expect(messageIds).toContain('Spanish')
     expect(messageIds).toContain('Virtual Full')
+  })
+
+  it('excludes generated directories while scanning ordinary source', () => {
+    const root = `${projectRoot}/.i18n-extraction-test`
+    mkdirSync(root)
+    try {
+      mkdirSync(`${root}/generated`)
+      mkdirSync(`${root}/ordinary`)
+      writeFileSync(`${root}/generated/obsolete.js`, "t('obsolete generated message')")
+      writeFileSync(`${root}/ordinary/current.js`, "t('current source message')")
+      const messages = collectVueMessageIds(root)
+      expect(messages).not.toContain('obsolete generated message')
+      expect(messages).toContain('current source message')
+    } finally {
+      rmSync(root, { recursive: true })
+    }
   })
 
   it('uses Vue-owned catalogs with no PHP WebUI dependency', () => {

@@ -52,7 +52,7 @@ function walkFiles(root, predicate, result = []) {
     const entryPath = path.join(root, entry)
     const stats = statSync(entryPath)
     if (stats.isDirectory()) {
-      if (entryPath !== localesDir && !entryPath.includes(`${path.sep}generated${path.sep}`)) {
+      if (entryPath !== localesDir && entry !== 'generated') {
         walkFiles(entryPath, predicate, result)
       }
       continue
@@ -82,6 +82,9 @@ function compareMessageIds(left, right) {
 export function collectVueMessageIds(root = sourceDir) {
   const files = walkFiles(root, entryPath => /\.(js|vue)$/.test(entryPath)).sort()
   const messages = new Set()
+  if (root === sourceDir) {
+    for (const locale of readLocaleManifest().locales) messages.add(locale.label)
+  }
 
   for (const filePath of files) {
     const source = readUtf8(filePath)
