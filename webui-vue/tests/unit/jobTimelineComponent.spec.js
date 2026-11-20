@@ -115,37 +115,42 @@ function completeRequest(request, name, clientName) {
   })
 }
 
+function mountTimeline(root = JobTimeline, props = { directors: ['director-a'] }) {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  hosts.push(host)
+  const app = createApp(root, props)
+  const stub = defineComponent({
+    inheritAttrs: false,
+    setup(_, { attrs, slots }) {
+      return () => h('div', attrs, slots.default?.())
+    },
+  })
+  for (const name of [
+    'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
+    'q-banner', 'q-checkbox', 'q-separator', 'q-inner-loading', 'q-tooltip',
+  ]) {
+    app.component(name, stub)
+  }
+  app.component('q-btn', defineComponent({
+    props: { label: String, disable: Boolean },
+    setup(props, { attrs }) {
+      return () => h('button', { ...attrs, disabled: props.disable }, props.label)
+    },
+  }))
+  app.component('router-link', defineComponent({
+    setup(_, { attrs, slots }) {
+      return () => h('a', attrs, slots.default?.())
+    },
+  }))
+  apps.push(app)
+  app.mount(host)
+  return host
+}
+
 describe('JobTimeline refreshes', () => {
   it('gives each period day a full-width click target', async () => {
-    const host = document.createElement('div')
-    document.body.appendChild(host)
-    hosts.push(host)
-    const app = createApp(JobTimeline, { directors: ['director-a'] })
-    const componentStub = defineComponent({
-      inheritAttrs: false,
-      setup(_, { attrs, slots }) {
-        return () => h('div', attrs, slots.default?.())
-      },
-    })
-    for (const name of [
-      'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
-      'q-banner', 'q-inner-loading', 'q-tooltip', 'q-separator', 'q-checkbox',
-    ]) {
-      app.component(name, componentStub)
-    }
-    app.component('q-btn', defineComponent({
-      props: { label: String, disable: Boolean },
-      setup(props, { attrs }) {
-        return () => h('button', { ...attrs, disabled: props.disable }, props.label)
-      },
-    }))
-    app.component('router-link', defineComponent({
-      setup(_, { attrs, slots }) {
-        return () => h('a', attrs, slots.default?.())
-      },
-    }))
-    apps.push(app)
-    app.mount(host)
+    const host = mountTimeline()
 
     await vi.waitFor(() => expect(requests).toHaveLength(1))
     completeRequest(requests[0], 'ClientAJob', 'client-a')
@@ -211,35 +216,7 @@ describe('JobTimeline refreshes', () => {
   })
 
   it('selects newly appearing lanes while All is active', async () => {
-    const host = document.createElement('div')
-    document.body.appendChild(host)
-    hosts.push(host)
-    const stub = defineComponent({
-      inheritAttrs: false,
-      setup(_, { attrs, slots }) {
-        return () => h('div', attrs, slots.default?.())
-      },
-    })
-    const app = createApp(JobTimeline, { directors: ['director-a'] })
-    for (const name of [
-      'q-card', 'q-card-section', 'q-space', 'q-btn-toggle',
-      'q-banner', 'q-checkbox', 'q-separator', 'q-inner-loading', 'q-tooltip',
-    ]) {
-      app.component(name, stub)
-    }
-    app.component('q-btn', defineComponent({
-      props: { label: String, disable: Boolean },
-      setup(props, { attrs }) {
-        return () => h('button', { ...attrs, disabled: props.disable }, props.label)
-      },
-    }))
-    app.component('router-link', defineComponent({
-      setup(_, { attrs, slots }) {
-        return () => h('a', attrs, slots.default?.())
-      },
-    }))
-    apps.push(app)
-    app.mount(host)
+    const host = mountTimeline()
 
     await vi.waitFor(() => expect(requests).toHaveLength(1))
     completeRequest(requests[0], 'ClientAJob', 'client-a')
