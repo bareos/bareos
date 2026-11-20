@@ -41,7 +41,14 @@ describe('toUserVisibleDirectorError', () => {
 
   it('normalizes generic connection errors', () => {
     expect(toUserVisibleDirectorError('Cannot connect to proxy at ws://example.test/ws'))
-      .toBe('Could not connect to director.')
+      .toBe('Could not connect to director. If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.')
+  })
+
+  it('localizes policy troubleshooting without replacing a specific connection message', () => {
+    expect(toUserVisibleDirectorError('ws error', {
+      connectionMessage: 'WebSocket unavailable.',
+      securityPolicyHint: 'Check the local security policy.',
+    })).toBe('WebSocket unavailable. Check the local security policy.')
   })
 
   it('preserves unexpected director errors', () => {

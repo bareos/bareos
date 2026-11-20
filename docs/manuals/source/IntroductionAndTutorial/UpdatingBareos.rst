@@ -364,6 +364,11 @@ In most cases, a Bareos major upgrade can be achieved by:
 It is generally sufficient to upgrade directly to the latest release, without having to install any intermediate releases.
 However, it is required to read the release notes of all intermediate releases.
 
+For automatic preservation of an existing PHP WebUI when upgrading to
+Bareos 26 from any earlier version, first upgrade to **Bareos 25.1.3 or
+a later Bareos 25 release**, then to Bareos 26. See
+:ref:`section-WebuiMigration26` before switching repositories.
+
 One exception is when using a |mysql| Bareos catalog,
 which have been removed with Bareos :sinceVersion:`21.0.0: MySQL backend removed`.
 Therefore you first have to upgrade to Bareos 20 and migrate the |mysql| into a |postgresql| Bareos Catalog, see :ref:`section-MigrationMysqlToPostgresql`.
@@ -377,6 +382,128 @@ If you not have already done those steps, please refer to instructions in :ref:`
 .. warning::
 
    If you use any third party plugins, you should check and test their functionalities with the new major version beforehand.
+
+.. _section-WebuiMigration26:
+
+WebUI package migration to Bareos 26
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Why upgrade through Bareos 25
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before Bareos 25.1.3, :file:`bareos-webui` contains the PHP WebUI.
+In Bareos 26, installing that name on a fresh system selects the Vue WebUI
+instead. Changing the default package alone cannot reliably preserve the
+PHP WebUI for existing users across package managers while selecting only
+the Vue WebUI for new installations.
+
+Starting with Bareos **25.1.3**, the PHP WebUI is packaged as
+:file:`bareos-webui-php`. The old :file:`bareos-webui` becomes a small
+compatibility package depending on :file:`bareos-webui-php`, without
+containing application code. This records the PHP WebUI as a
+separately installed package before the default changes in 26. This package
+layout also applies to subsequent Bareos 25 releases.
+
+Upgrading through one of these Bareos 25 releases allows automatic
+preservation of the PHP WebUI. This intermediate step is not necessary for
+fresh installations or Vue WebUI-only upgrades.
+
+Existing PHP WebUI installations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bareos releases before 25.1.3 used :file:`bareos-webui` as the package name
+for the PHP WebUI. To retain the PHP WebUI automatically:
+
+#. Back up the WebUI configuration, including :file:`/etc/bareos-webui/`,
+   and follow the general major-upgrade prerequisites above.
+#. Upgrade to **Bareos 25.1.3 or a later Bareos 25 release** before
+   switching to the Bareos 26 repositories. Keep the WebUI and Director
+   major versions matched during this intermediate upgrade.
+#. Verify that **both** :file:`bareos-webui` and
+   :file:`bareos-webui-php` are installed. Keep the compatibility package
+   installed; merely having these packages available in a repository is
+   not sufficient.
+#. Switch to the Bareos 26 repositories and upgrade. Verify the retained
+   configuration and access to the PHP WebUI after the upgrade.
+
+For prerelease installations, upgrade to the latest available Bareos 25
+prerelease before upgrading to Bareos 26. Verify that the compatibility
+package depends on :file:`bareos-webui-php` and that the latter owns the
+PHP WebUI application files.
+
+At 26, the PHP WebUI upgrades as :file:`bareos-webui-php`.
+On Debian-based systems, :file:`bareos-webui` upgrades to a metapackage
+depending on :file:`bareos-webui-vue`. On RPM-based systems, the
+compatibility package from 25 requires :file:`bareos-webui-vue` once the
+PHP WebUI package reaches version 26. Consequently, the upgrade retains
+the PHP WebUI and automatically adds the Vue WebUI and
+:file:`bareos-webui-proxy`, even if the Vue WebUI preview was never
+installed.
+
+On Debian-based systems, during an upgrade from the Bareos 25
+:file:`bareos-webui` compatibility package, the Bareos 26 metapackage marks
+:file:`bareos-webui-php` as manually installed so a later
+:command:`apt autoremove` does not remove the PHP WebUI. This marking does
+not pin the :file:`bareos-webui-php` package version or prevent upgrades.
+Fresh Bareos 26 installations do not install the PHP WebUI.
+
+The Bareos 26 metapackage depends on the Vue WebUI, not the PHP WebUI. Keep
+:file:`bareos-webui` installed to protect Vue from automatic removal.
+
+The PHP WebUI remains available at :file:`/bareos-webui/`; its configuration
+location is unchanged. The Vue WebUI uses :file:`/bareos/`.
+Installing the packages does not replace the required proxy, login,
+PHP-FPM and HTTPS setup; follow the
+:ref:`PHP WebUI <section-install-webui>` and
+:ref:`Vue WebUI <section-webui-vue>` instructions.
+
+Direct upgrades
+^^^^^^^^^^^^^^^
+
+A direct upgrade to Bareos 26 does not guarantee that the PHP WebUI will
+remain installed.
+
+If the intermediate Bareos 25 upgrade was skipped, back up the WebUI
+configuration and explicitly install :file:`bareos-webui-php` as part of
+the Bareos 26 upgrade to retain the PHP WebUI. Verify the retained
+configuration and access to the PHP WebUI before removing legacy
+packages. Explicitly select :file:`bareos-webui-vue` too if both interfaces
+are wanted. This route does not install the Bareos 25 compatibility package.
+
+Existing Vue preview installations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :file:`bareos-webui-new` technical preview exists in Bareos 25. It
+migrates to :file:`bareos-webui-vue` in 26: Debian-based
+systems use a transitional package; RPM-based systems replace the preview
+package. The old :file:`/bareos-webui-new/` URL redirects to
+:file:`/bareos/`.
+
+Vue WebUI-only installations can upgrade directly to 26. If the PHP WebUI is
+also installed, first upgrade to Bareos 25.1.3 or a later Bareos 25 release,
+or explicitly select the PHP WebUI as described above to retain it.
+
+Fresh Bareos 26 installations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Installing :file:`bareos-webui` on a fresh Bareos 26 system selects
+:file:`bareos-webui-vue` and its :file:`bareos-webui-proxy` dependency,
+**not the PHP WebUI**. Debian-based systems install a metapackage named
+:file:`bareos-webui` depending on Vue; on RPM-based systems, Vue
+provides the generic name. The Bareos 25 compatibility package is not
+installed.
+
+.. warning::
+
+   Installing the PHP WebUI on Bareos 26 is not recommended. It is
+   planned to reach end of life (EOL) in Bareos 27. Use the Vue WebUI for new
+   installations and plan to migrate existing PHP WebUI installations before
+   upgrading to Bareos 27. Retaining the PHP WebUI during the
+   Bareos 26 upgrade allows time for this transition.
+
+If the PHP WebUI is still required during the transition, explicitly
+select :file:`bareos-webui-php`.
+Select both application packages if both interfaces are wanted.
 
 .. _sectionUgradeMajorRepository:
 

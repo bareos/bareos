@@ -106,16 +106,21 @@ class AuthController extends AbstractActionController
         $this->bsock->set_config($config['directors'][$director]);
         $this->bsock->set_user_credentials($username, $password);
 
+        $connectionFailed = false;
         try {
             $authenticated = $this->bsock->connect_and_authenticate();
         } catch (\Exception $e) {
             error_log($e->getMessage());
             error_log($e->getTraceAsString());
+            $connectionFailed = $e instanceof \Bareos\BSock\ConnectionException;
             $authenticated = false;
         }
 
         if (!$authenticated) {
             $err_msg = "Sorry, cannot authenticate. Wrong username, password or SSL/TLS handshake failed.";
+            if ($connectionFailed) {
+                $err_msg = "Could not connect to director. If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.";
+            }
             return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
         }
 

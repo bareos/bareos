@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+[ "$1" = configure ] || exit 0
+
+command -v a2enmod >/dev/null
+a2enmod rewrite proxy_fcgi
+
+command -v a2enconf >/dev/null
+a2enconf bareos-webui
+
+apache2ctl configtest
+if command -v systemctl >/dev/null && systemctl is-active --quiet apache2; then
+  systemctl reload apache2
+fi

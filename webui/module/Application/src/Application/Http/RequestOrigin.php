@@ -103,11 +103,39 @@ class RequestOrigin
     }
 
     /**
-     * Whether the browser reached this request over https.
+     * Whether the browser-facing request explicitly used HTTPS.
+     *
+     * Unlike isHttps(), this does not infer HTTPS from SERVER_PORT.
+     *
+     * @return bool
+     */
+    public function isBrowserHttps()
+    {
+        return $this->explicitHttps() === true;
+    }
+
+    /**
+     * Whether this request should be treated as HTTPS for origin and cookie
+     * handling, using SERVER_PORT as a fallback when no explicit signal exists.
      *
      * @return bool
      */
     public function isHttps()
+    {
+        $explicitHttps = $this->explicitHttps();
+        if ($explicitHttps !== null) {
+            return $explicitHttps;
+        }
+
+        return isset($this->server['SERVER_PORT']) && (int)$this->server['SERVER_PORT'] === 443;
+    }
+
+    /**
+     * Resolve HTTPS from an explicit proxy or server signal.
+     *
+     * @return bool|null null when neither signal is available
+     */
+    private function explicitHttps()
     {
         if ($this->isTrustedProxy() && !empty($this->server['HTTP_X_FORWARDED_PROTO'])) {
             $proto = self::firstForwardedValue($this->server['HTTP_X_FORWARDED_PROTO']);
@@ -116,17 +144,11 @@ class RequestOrigin
             }
         }
 
-        if (isset($this->server['HTTPS']) && strtolower($this->server['HTTPS']) !== 'off') {
+        if (isset($this->server['HTTPS']) && $this->server['HTTPS'] !== '' && strtolower($this->server['HTTPS']) !== 'off') {
             return true;
         }
 
-        // HTTPS is optional in CGI (RFC 3875 4.1.18); SERVER_PORT is not
-        // (4.1.15), so the port is the only guaranteed scheme signal.
-        if (isset($this->server['SERVER_PORT']) && (int)$this->server['SERVER_PORT'] === 443) {
-            return true;
-        }
-
-        return false;
+        return null;
     }
 
     /**

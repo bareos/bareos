@@ -33,6 +33,7 @@ export function toUserVisibleDirectorError(
   {
     authenticationMessage = 'Authentication failed',
     connectionMessage = 'Could not connect to director.',
+    securityPolicyHint = 'If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.',
   } = {},
 ) {
   const normalized = String(message ?? '').trim()
@@ -55,10 +56,13 @@ export function toUserVisibleDirectorError(
   if (
     lower.includes('cannot connect to proxy')
     || lower.includes('timed out while connecting')
+    || lower.includes('timed out while loading directors')
+    || lower.includes('failed to load directors')
     || lower.includes('could not connect to director')
+    || lower.startsWith('director: could not connect to ')
     || lower.includes('ws error')
   ) {
-    return connectionMessage
+    return `${connectionMessage} ${securityPolicyHint}`.trim()
   }
 
   return normalized

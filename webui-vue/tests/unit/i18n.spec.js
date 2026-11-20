@@ -35,4 +35,9 @@ describe('webui translations', () => {
     expect(translate('de_DE', 'encrypt newly labeled volumes')).toBe('encrypt newly labeled volumes')
     expect(translate('de_DE', 'Encryption key stored in catalog')).toBe('Encryption key stored in catalog')
   })
+
+  it('translates the insecure-connection warning into German', () => {
+    expect(translate('de_DE', 'This WebUI is using an insecure HTTP connection. Credentials and data may be exposed.'))
+      .toBe('Diese WebUI verwendet eine unsichere HTTP-Verbindung. Zugangsdaten und Daten könnten offengelegt werden.')
+  })
 })

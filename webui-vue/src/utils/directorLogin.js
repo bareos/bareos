@@ -19,9 +19,16 @@
    02110-1301, USA.
  */
 
+import { toUserVisibleDirectorError } from './directorErrors.js'
+
 export function directorListLoadErrorMessage(error, t) {
+  const message = error?.message || t('Unknown error')
   return t('Director list request failed: {message}', {
-    message: error?.message || t('Unknown error'),
+    message: toUserVisibleDirectorError(message, {
+      connectionMessage: message,
+      authenticationMessage: t('Authentication failed'),
+      securityPolicyHint: t('If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.'),
+    }),
   })
 }
 

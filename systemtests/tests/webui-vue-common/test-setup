@@ -29,6 +29,9 @@ export TestName
 . ./environment
 . "${BAREOS_SCRIPTS_DIR}/functions"
 
+# The Vue WebUI is served under /bareos/ in production; match that test path.
+export BAREOS_WEBUI_BASE_URL="${BAREOS_WEBUI_BASE_URL%/}/bareos/"
+
 proxy_port="${BAREOS_WEBUI_PROXY_PORT}"
 bundle_dir="${current_test_directory}/webui-vue-dist"
 proxy_log="${tmp}/webui-vue-proxy.out"

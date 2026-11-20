@@ -9,12 +9,14 @@
 
 cmake_minimum_required(VERSION 3.17)
 
-set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-new)
+set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-vue)
 
 # Detect Apache configuration directory
 if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   # FreeBSD apache24 stores extra configs in ${PREFIX}/etc/apache24/Includes
   set(HTTPD_CONF ${sysconfdir}/apache24/Includes)
+elseif(BAREOS_PLATFORM MATCHES "^(debian|ubuntu|univention)$")
+  set(HTTPD_CONF ${sysconfdir}/apache2/conf-available)
 elseif(EXISTS ${sysconfdir}/httpd/conf.d)
   set(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
 elseif(EXISTS ${sysconfdir}/apache2/conf.d)
@@ -28,8 +30,8 @@ else()
 endif()
 
 configure_file(
-  install/apache/bareos-webui-new.conf.in
-  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-new.conf @ONLY
+  install/apache/bareos-webui-vue.conf.in
+  ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf @ONLY
 )
 
 configure_file(
@@ -145,7 +147,7 @@ endif()
 install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-new.conf
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf
   DESTINATION ${HTTPD_CONF}/
   COMPONENT webui-vue
 )

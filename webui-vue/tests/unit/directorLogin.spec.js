@@ -34,7 +34,7 @@ describe('director login helpers', () => {
 
   it('formats the list_directors load error with the concrete cause', () => {
     expect(directorListLoadErrorMessage(new Error('Cannot connect to proxy'), t))
-      .toBe('Director list request failed: Cannot connect to proxy')
+      .toBe('Director list request failed: Cannot connect to proxy If SELinux or AppArmor is enabled, it may be blocking the connection. Check the web-server and security logs.')
   })
 
   it('falls back to an unknown error message when needed', () => {
