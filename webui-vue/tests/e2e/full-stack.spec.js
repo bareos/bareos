@@ -213,6 +213,48 @@ test('browser regression: slow job polling can complete', async ({ page }) => {
   await expect(page.getByRole('status', { name: 'OK', exact: true })).toBeVisible()
 })
 
+test('browser regression: job details recover after a failed poll', async ({ page }) => {
+  await page.clock.install()
+  let requests = 0
+  await browserFixture(page, command => {
+    if (command === 'llist jobid=101') {
+      requests++
+      if (requests === 2) throw new Error('Temporary polling failure')
+      return { jobs: [{ jobid: '101', name: 'Polling job', jobstatus: 'R', type: 'B' }] }
+    }
+  })
+  await page.goto('/#/jobs/101?director=bareos-dir')
+  await expect(page.getByText('Job #101 — Polling job')).toBeVisible()
+  await page.clock.fastForward(5000)
+  await expect(page.getByText('Temporary polling failure')).toBeVisible()
+  await expect(page.getByTestId('job-details-cancel')).toHaveCount(0)
+  await page.clock.fastForward(5000)
+  await expect.poll(() => requests).toBe(3)
+  await expect(page.getByText('Temporary polling failure')).toHaveCount(0)
+  await expect(page.getByText('Job #101 — Polling job')).toBeVisible()
+  await expect(page.getByTestId('job-details-cancel')).toBeVisible()
+  await expect(page.getByTestId('job-log-section')).toBeVisible()
+})
+
+test('browser regression: stale successful load cannot clear a newer job error', async ({ page }) => {
+  let releaseOldJob
+  await browserFixture(page, command => {
+    if (command === 'llist jobid=101') {
+      return new Promise(resolve => { releaseOldJob = resolve })
+    }
+    if (command === 'llist jobid=202') throw new Error('Current job failed')
+  })
+  await page.goto('/#/jobs/101?director=bareos-dir')
+  await expect.poll(() => Boolean(releaseOldJob)).toBe(true)
+  await page.evaluate(() => { window.location.hash = '#/jobs/202?director=bareos-dir' })
+  await expect(page.getByText('Current job failed')).toBeVisible()
+  releaseOldJob({ jobs: [{ jobid: '101', name: 'Stale job', jobstatus: 'T', type: 'B' }] })
+  await expect.poll(() => page.evaluate(
+    () => window.__fixtureMessages.some(message => message.includes('Stale job'))
+  )).toBe(true)
+  await expect(page.getByText('Current job failed')).toBeVisible()
+})
+
 test('browser regression: stale job loads cannot replace the selected job', async ({ page }) => {
   let releaseOldJob
   await browserFixture(page, command => {

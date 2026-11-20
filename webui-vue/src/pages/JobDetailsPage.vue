@@ -587,6 +587,7 @@ async function loadJobRequest() {
       ...row,
     }))
   }
+  if (jobRes.status === 'fulfilled' && current()) error.value = null
 }
 
 watch(() => `${currentJobId.value}\u0000${requestedDirector.value}`, async () => {
