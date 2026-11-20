@@ -30,6 +30,7 @@ describe('webui translations', () => {
     expect(translate('nl_BE', 'Warning')).toBe('Waarschuwing')
     expect(translate('es_ES', 'January')).toBe('Enero')
     expect(translate('sk_SK', 'Warning')).toBe('Varovanie')
+    expect(translate('sk_SK', 'Recycle')).toBe('Recyklovať')
   })
 
   it('falls back to the English msgid for Vue-only labels', () => {
