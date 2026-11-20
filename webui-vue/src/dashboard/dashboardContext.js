@@ -24,4 +24,25 @@
  * loading state, refresh function) from DashboardGrid down to all widgets
  * without prop-drilling.
  */
-export const DASHBOARD_CONTEXT_KEY = Symbol('dashboardContext')
+ import { inject, isRef, provide } from 'vue'
+
+ export const DASHBOARD_CONTEXT_KEY = Symbol('dashboardContext')
+
+ function assertDashboardContext(context) {
+   if (!isRef(context?.activeDirectors) || !isRef(context?.refreshToken)) {
+     throw new Error(
+       'Dashboard widgets require activeDirectors and refreshToken refs from provideDashboardContext().'
+     )
+   }
+   return context
+ }
+
+ export function provideDashboardContext(context) {
+   const validatedContext = assertDashboardContext(context)
+   provide(DASHBOARD_CONTEXT_KEY, validatedContext)
+   return validatedContext
+ }
+
+ export function useDashboardContext() {
+   return assertDashboardContext(inject(DASHBOARD_CONTEXT_KEY))
+ }

@@ -72,7 +72,7 @@ vi.mock('../../src/components/CombinedJobScheduleTimeline.vue', async () => {
 const { default: JobScheduleTimelineWidget } = await import(
   '../../src/dashboard/widgets/JobScheduleTimelineWidget.vue'
 )
-const { DASHBOARD_CONTEXT_KEY } = await import('../../src/dashboard/dashboardContext.js')
+const { provideDashboardContext } = await import('../../src/dashboard/dashboardContext.js')
 
 const apps = []
 const hosts = []
@@ -90,11 +90,16 @@ function mountWidget(activeDirectors) {
   document.body.appendChild(host)
   hosts.push(host)
 
-  const app = createApp(JobScheduleTimelineWidget)
-  app.provide(DASHBOARD_CONTEXT_KEY, {
-    activeDirectors,
-    refreshToken: ref(0),
+  const Root = defineComponent({
+    setup() {
+      provideDashboardContext({
+        activeDirectors,
+        refreshToken: ref(0),
+      })
+      return () => h(JobScheduleTimelineWidget)
+    },
   })
+  const app = createApp(Root)
   apps.push(app)
   app.mount(host)
   return host

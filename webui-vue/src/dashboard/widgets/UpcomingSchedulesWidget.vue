@@ -100,9 +100,9 @@
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
+import { useDashboardContext } from '../dashboardContext.js'
 import { useDashboardDirectorScope } from '../useDashboardDirectorScope.js'
 import {
   formatRelativeDate,
@@ -115,7 +115,7 @@ import DirectorLabel from '../../components/DirectorLabel.vue'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
-const ctx = inject(DASHBOARD_CONTEXT_KEY)
+const ctx = useDashboardContext()
 
 const scheduledJobs = computed(() => (
   ctx?.aggregate?.value?.scheduledJobs ?? []

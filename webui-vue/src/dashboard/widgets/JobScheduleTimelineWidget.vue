@@ -31,17 +31,17 @@
 </template>
 
 <script setup>
-import { computed, inject, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchCombinedTimelineData } from '../../composables/combinedTimeline.js'
-import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
+import { useDashboardContext } from '../dashboardContext.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { buildCombinedTimelineFetchOptions } from '../../utils/jobTimeline.js'
 import CombinedJobScheduleTimeline from '../../components/CombinedJobScheduleTimeline.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
-const ctx = inject(DASHBOARD_CONTEXT_KEY)
+const ctx = useDashboardContext()
 
 const activeDirectors = computed(() => ctx?.activeDirectors?.value ?? [])
 const actualJobs = ref([])
