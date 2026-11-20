@@ -74,13 +74,21 @@ export function buildCenteredTimelineDayBounds(
 // fileset+client, sorted chronologically. Used for the Day, Week, and
 // Month views alike — only the caller-supplied [start, now) window and the
 // resulting bar geometry differ between them.
-export function buildTimelineLanes(jobs, { start, now, multiDirectorTimeline }) {
+export function buildTimelineLanes(
+  jobs,
+  { start, end = Infinity, now, multiDirectorTimeline }
+) {
   const directorGroups = new Map()
 
   for (const job of jobs ?? []) {
     const startedAt = parseTimelineTimestamp(job.starttime)
     const endedAt = parseTimelineTimestamp(job.endtime) ?? now
-    if (startedAt === null || endedAt < start || startedAt > now) continue
+    if (
+      startedAt === null
+      || endedAt < start
+      || startedAt >= end
+      || startedAt > now
+    ) continue
 
     const directorKey = multiDirectorTimeline ? (job.director ?? '') : ''
     if (!directorGroups.has(directorKey)) {

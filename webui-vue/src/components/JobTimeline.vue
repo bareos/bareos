@@ -512,7 +512,12 @@ const dayViewGroups = computed(() => {
   if (!dayViewDate.value) return []
   const { start, end } = dayBounds(dayViewDate.value)
   const now = Math.min(nowTick.value, end)
-  return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
+  return buildTimelineLanes(visibleJobs.value, {
+    start,
+    end,
+    now,
+    multiDirectorTimeline: multiDirectorTimeline.value,
+  })
 })
 
 const dayViewNowPercent = computed(() => {
@@ -593,7 +598,12 @@ const periodViewGroups = computed(() => {
   if (inDayView.value) return []
   const { start, end } = periodBounds.value
   const now = Math.min(nowTick.value, end)
-  return buildTimelineLanes(visibleJobs.value, { start, now, multiDirectorTimeline: multiDirectorTimeline.value })
+  return buildTimelineLanes(visibleJobs.value, {
+    start,
+    end,
+    now,
+    multiDirectorTimeline: multiDirectorTimeline.value,
+  })
 })
 
 function periodBarStyle(run) {

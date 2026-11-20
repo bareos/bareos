@@ -84,6 +84,37 @@ describe('buildCenteredTimelineDayBounds', () => {
 })
 
 describe('buildTimelineLanes', () => {
+  it('excludes runs starting at the exclusive period end but keeps overlaps', () => {
+    const start = Date.parse('2026-05-27T00:00:00')
+    const end = Date.parse('2026-05-28T00:00:00')
+    const groups = buildTimelineLanes([
+      {
+        id: 1,
+        name: 'OverlappingJob',
+        client: 'client-a',
+        fileset: 'Daily',
+        starttime: '2026-05-27 23:00:00',
+        endtime: '2026-05-28 01:00:00',
+      },
+      {
+        id: 2,
+        name: 'NextPeriodJob',
+        client: 'client-a',
+        fileset: 'Daily',
+        starttime: '2026-05-28 00:00:00',
+        endtime: '2026-05-28 01:00:00',
+      },
+    ], {
+      start,
+      end,
+      now: end,
+      multiDirectorTimeline: false,
+    })
+
+    expect(groups.flatMap(group => group.lanes).flatMap(lane => lane.runs).map(run => run.id))
+      .toEqual([1])
+  })
+
   it('groups multi-director timelines by director without prefixing each lane label', () => {
     const groups = buildTimelineLanes([
       {
