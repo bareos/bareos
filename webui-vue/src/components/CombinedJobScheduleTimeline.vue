@@ -396,14 +396,6 @@ onBeforeUnmount(() => {
   cleanupPointerPan()
 })
 
-const schedulerRange = computed(() => {
-  const today = startOfToday().getTime()
-  return {
-    from: Math.floor((bounds.value.start - today) / DAY_MS),
-    to: Math.ceil((bounds.value.end - today) / DAY_MS),
-  }
-})
-
 const jobDays = computed(() => {
   const today = startOfToday().getTime()
   const requestedDays = Math.ceil((today - bounds.value.start) / DAY_MS) + 1
@@ -416,11 +408,17 @@ const beyondJobFetchWindow = computed(() => {
 })
 
 function currentRangePayload() {
+  const reference = Date.now()
   return {
     start: bounds.value.start,
     end: bounds.value.end,
     jobDays: jobDays.value,
-    schedulerRange: schedulerRange.value,
+    // The Director samples one hour at a time relative to its current
+    // instant. Include the boundary hours, then clip to the visible window.
+    schedulerRange: {
+      from: Math.floor((bounds.value.start - HOUR_MS - reference) / DAY_MS),
+      to: Math.ceil((bounds.value.end + HOUR_MS - reference) / DAY_MS),
+    },
   }
 }
 

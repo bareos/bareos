@@ -73,6 +73,17 @@ afterEach(() => {
 })
 
 describe('CombinedJobScheduleTimeline', () => {
+  it('requests scheduler coverage for both sides of the default noon window', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-27T12:00:00'))
+    const onRangeChange = vi.fn()
+    mountTimeline({ onRangeChange })
+
+    expect(onRangeChange).toHaveBeenCalledWith(expect.objectContaining({
+      schedulerRange: { from: -1, to: 1 },
+    }))
+  })
+
   it('keeps partial timeline data visible alongside director errors', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-05-27T12:00:00'))
