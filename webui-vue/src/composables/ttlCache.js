@@ -82,13 +82,9 @@ export function createTtlCache() {
   return { get, beginFetch, set, discard, finishFetch, clear }
 }
 
-// Cheap, non-cryptographic string hash (FNV-1a, 32-bit) used to fold a
-// session credential (e.g. password) into a cache key without storing the
-// raw secret as a literal Map key. This is not a security boundary by
-// itself -- it only ensures cache entries are scoped per authenticated
-// session rather than per username, so a re-login with different
-// credentials under the same username can't reuse another session's
-// cached catalog data within the TTL window.
+// Fold credentials into the cache key without storing the raw password.
+// This non-cryptographic hash cannot distinguish proxy sessions, which
+// all use the same password sentinel. Auth transitions clear the caches.
 export function hashCacheFingerprint(value) {
   let hash = 0x811c9dc5
   const input = String(value ?? '')

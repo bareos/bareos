@@ -29,7 +29,8 @@ import {
   fulfilledDirectorValues,
   runDirectorAggregates,
 } from './directorAggregateRunner.js'
-import { createTtlCache, hashCacheFingerprint } from './ttlCache.js'
+import { clientsCache } from './directorAggregateCaches.js'
+import { hashCacheFingerprint } from './ttlCache.js'
 
 function decorateClients(entries, enabledMap, director) {
   return directorCollection(entries).map((entry) => {
@@ -99,16 +100,12 @@ function sortClients(clients) {
   })
 }
 
-const clientsCache = createTtlCache()
 const CACHE_TTL_MS = 60_000 // 60 seconds TTL
 
 function buildCacheKey(credentials, directors) {
   return JSON.stringify({
     user: credentials?.username ?? '',
-    // Fold the session credential into the key so a re-login under the same
-    // username (but a different password/session) can't reuse another
-    // session's cached catalog data within the TTL window.
-    session: hashCacheFingerprint(credentials?.password),
+    credential: hashCacheFingerprint(credentials?.password),
     directors: [...directors].sort(),
   })
 }

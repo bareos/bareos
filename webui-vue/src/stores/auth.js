@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { clearDirectorAggregateCaches } from '../composables/directorAggregateCaches.js'
 import {
   fetchCurrentSession,
   SESSION_AUTH_PASSWORD,
@@ -47,6 +48,11 @@ export const useAuthStore = defineStore('auth', () => {
   ))
   let restorePromise = null
 
+  function invalidateSessionData() {
+    restorePromise = null
+    clearDirectorAggregateCaches()
+  }
+
   function setCurrentUser(director = DEFAULT_DIRECTOR_NAME) {
     const normalizedDirector = normalizeDirectorName(director)
     const directorUser = directorUsers.value[normalizedDirector]
@@ -70,6 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
+    invalidateSessionData()
     directorUsers.value = {
       ...directorUsers.value,
       [normalizedDirector]: { username: normalizedUsername },
@@ -84,6 +91,8 @@ export const useAuthStore = defineStore('auth', () => {
   function applySession(session, password = SESSION_AUTH_PASSWORD, options = {}) {
     const nextDirectorUsers = normalizeDirectorUsers(session)
     const mergeMode = options.merge === true
+    // A replacement session may have different ACLs even with identical users.
+    invalidateSessionData()
     directorUsers.value = mergeMode
       ? { ...directorUsers.value, ...nextDirectorUsers }
       : nextDirectorUsers
@@ -136,7 +145,11 @@ export const useAuthStore = defineStore('auth', () => {
       return false
     }
 
-    return setCurrentUser(director)
+    const normalizedDirector = normalizeDirectorName(director)
+    if (normalizedDirector !== user.value.director) {
+      invalidateSessionData()
+    }
+    return setCurrentUser(normalizedDirector)
   }
 
   function removeDirector(director = DEFAULT_DIRECTOR_NAME) {
@@ -147,13 +160,13 @@ export const useAuthStore = defineStore('auth', () => {
 
     const nextDirectorUsers = { ...directorUsers.value }
     delete nextDirectorUsers[normalizedDirector]
-    directorUsers.value = nextDirectorUsers
-
     if (Object.keys(nextDirectorUsers).length === 0) {
       logout()
       return true
     }
 
+    invalidateSessionData()
+    directorUsers.value = nextDirectorUsers
     if (user.value?.director === normalizedDirector) {
       setCurrentUser(firstAuthenticatedDirector(nextDirectorUsers))
     }
@@ -161,6 +174,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
+    invalidateSessionData()
     user.value = null
     directorUsers.value = {}
     _password.value = ''
@@ -176,26 +190,29 @@ export const useAuthStore = defineStore('auth', () => {
       return restorePromise
     }
 
-    restorePromise = (async () => {
+    const request = (async () => {
+      let session
       try {
-        const session = await fetchCurrentSession()
+        session = await fetchCurrentSession()
+      } catch {
+        session = null
+      }
+
+      // Do not apply a response superseded by a login, logout or newer restore.
+      if (restorePromise === request) {
         if (session) {
           applySession(session, SESSION_AUTH_PASSWORD,
             preferredDirector ? { preferredDirector } : {})
         } else {
           logout()
         }
-      } catch {
-        logout()
-      } finally {
-        initialized.value = true
-        restorePromise = null
       }
 
       return isLoggedIn.value
     })()
 
-    return restorePromise
+    restorePromise = request
+    return request
   }
 
   function getCredentials(director = user.value?.director || DEFAULT_DIRECTOR_NAME) {

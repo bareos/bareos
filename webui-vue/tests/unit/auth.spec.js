@@ -19,10 +19,23 @@
    02110-1301, USA.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { fetchAggregatedClients } from '../../src/composables/clientsAggregate.js'
+import { fetchAggregatedFilesets } from '../../src/composables/filesetsAggregate.js'
+import { fetchAggregatedSchedulesShow } from '../../src/composables/schedulesAggregate.js'
 import { useAuthStore } from '../../src/stores/auth.js'
+import { createDirectorCommandSession } from '../../src/utils/directorCommandSocket.js'
 import { SESSION_AUTH_PASSWORD } from '../../src/utils/sessionApi.js'
+
+vi.mock('../../src/utils/directorCommandSocket.js', async (importOriginal) => ({
+  ...await importOriginal(),
+  createDirectorCommandSession: vi.fn(),
+}))
+
+const session = {
+  authenticatedDirectors: [{ director: 'bareos-dir', username: 'admin' }],
+}
 
 describe('auth store', () => {
   beforeEach(() => {
@@ -33,6 +46,10 @@ describe('auth store', () => {
       ok: false,
       text: async () => JSON.stringify({ message: 'No active session' }),
     })))
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('keeps login credentials in memory only', () => {
@@ -212,5 +229,126 @@ describe('auth store', () => {
     }, SESSION_AUTH_PASSWORD)
 
     expect(auth.authenticatedDirectors).toEqual(['site-b'])
+  })
+
+  it('does not reapply a session restore that finished after logout', async () => {
+    let respond
+    global.fetch.mockReturnValueOnce(new Promise(resolve => { respond = resolve }))
+    const auth = useAuthStore()
+    const restoring = auth.restoreSession()
+    auth.logout()
+    respond({ status: 200, ok: true, text: async () => JSON.stringify(session) })
+    await expect(restoring).resolves.toBe(false)
+    expect(auth.getCredentials()).toBeNull()
+  })
+})
+
+describe('Director aggregate cache lifecycle', () => {
+  function load(auth, options) {
+    const credentials = auth.getCredentials('bareos-dir')
+    return Promise.all([
+      fetchAggregatedClients(credentials, ['bareos-dir'], options),
+      fetchAggregatedFilesets(credentials, ['bareos-dir'], options),
+      fetchAggregatedSchedulesShow(credentials, ['bareos-dir'], options),
+    ])
+  }
+
+  function serve(name, wait) {
+    createDirectorCommandSession.mockImplementation(async () => ({
+      call: async () => {
+        await wait
+        return {
+          clients: [{ name }],
+          filesets: [{ fileset: name }],
+          schedules: [{ name }],
+        }
+      },
+      close: vi.fn(),
+    }))
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    createDirectorCommandSession.mockReset()
+    const auth = useAuthStore()
+    auth.login('admin')
+    auth.loginDirector('ops', 'site-b', SESSION_AUTH_PASSWORD, { setCurrent: false })
+    serve('old')
+  })
+
+  function expectRows([clients, filesets, schedules], name) {
+    expect(clients.clients).toMatchObject([{ name }])
+    expect(filesets.filesets).toMatchObject([{ name }])
+    expect(schedules.schedules).toMatchObject([{ name }])
+  }
+
+  it.each([
+    ['same-user login', auth => auth.login('admin')],
+    ['same-user session replacement', auth => auth.applySession({
+      authenticatedDirectors: [
+        ...session.authenticatedDirectors,
+        { director: 'site-b', username: 'ops' },
+      ],
+    })],
+    ['Director addition', auth => auth.loginDirector('ops', 'site-c', SESSION_AUTH_PASSWORD, { setCurrent: false })],
+    ['Director removal', auth => auth.removeDirector('site-b')],
+  ])('invalidates all three caches after %s', async (_label, transition) => {
+    const auth = useAuthStore()
+    expectRows(await load(auth), 'old')
+    expect(createDirectorCommandSession).toHaveBeenCalledTimes(3)
+
+    transition(auth)
+    serve('new')
+    expectRows(await load(auth), 'new')
+    expect(createDirectorCommandSession).toHaveBeenCalledTimes(6)
+  })
+
+  it('invalidates all three caches when switching between authenticated Directors', async () => {
+    const auth = useAuthStore()
+    expectRows(await load(auth), 'old')
+
+    expect(auth.setDirector('site-b')).toBe(true)
+    expect(auth.user.director).toBe('site-b')
+    serve('new')
+    expectRows(await load(auth), 'new')
+    expect(createDirectorCommandSession).toHaveBeenCalledTimes(6)
+  })
+
+  it('preserves caches when reselecting the current Director', async () => {
+    const auth = useAuthStore()
+    expectRows(await load(auth), 'old')
+
+    expect(auth.setDirector(' bareos-dir ')).toBe(true)
+    expect(auth.user.director).toBe('bareos-dir')
+    serve('new')
+    expectRows(await load(auth), 'old')
+    expect(createDirectorCommandSession).toHaveBeenCalledTimes(3)
+  })
+
+  it('clears cached data at logout and blocks earlier requests from repopulating it', async () => {
+    const auth = useAuthStore()
+    await load(auth)
+    let release
+    serve('in-flight', new Promise(resolve => { release = resolve }))
+    const inFlight = load(auth, { forceRefresh: true })
+    auth.logout()
+    release()
+    await inFlight
+
+    // Same cache key as before logout, without allowing a login to clear it again.
+    const credentials = { username: 'admin', password: SESSION_AUTH_PASSWORD }
+    const loggedOut = await Promise.all([
+      fetchAggregatedClients(credentials, ['bareos-dir']),
+      fetchAggregatedFilesets(credentials, ['bareos-dir']),
+      fetchAggregatedSchedulesShow(credentials, ['bareos-dir']),
+    ])
+    for (const result of loggedOut) {
+      expect(result.directorErrors).toMatchObject([{ director: 'bareos-dir' }])
+    }
+
+    auth.login('admin')
+    serve('new')
+    expectRows(await load(auth), 'new')
+    expect(createDirectorCommandSession).toHaveBeenCalledTimes(9)
   })
 })
