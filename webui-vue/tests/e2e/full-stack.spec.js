@@ -175,6 +175,23 @@ test('browser regression: log focus follows reused job routes', async ({ page })
   await expect(focused).toHaveText('Warning: job 101')
 })
 
+test('browser regression: waiting job opens the log section', async ({ page }) => {
+  await browserFixture(page, command => {
+    if (command === 'status director') {
+      return { running: [{ jobid: '101', status: 'Job is waiting for mount' }] }
+    }
+    if (command.startsWith('llist job')) {
+      return { jobs: [{ jobid: '101', name: 'Waiting job', jobstatus: 'R', type: 'B' }] }
+    }
+    if (command.startsWith('list joblog')) return { joblog: [] }
+  })
+  await openNav(page, 'nav-jobs', /#\/jobs/)
+  await page.setViewportSize({ width: 800, height: 400 })
+  await page.getByRole('button', { name: /Job is waiting for mount: Jump to log/ }).first().click()
+  await expect(page).toHaveURL(/logFocus=section/)
+  await expect(page.getByTestId('job-log-section')).toBeInViewport()
+})
+
 test('browser regression: stale job loads cannot replace the selected job', async ({ page }) => {
   let releaseOldJob
   await browserFixture(page, command => {

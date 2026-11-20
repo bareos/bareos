@@ -841,7 +841,7 @@ export function buildJobDetailsQuery({
     query.dashboardOrigin = '1'
   }
 
-  if (logFocus === 'error' || logFocus === 'warning' || logFocus === 'ok') {
+  if (['error', 'warning', 'ok', 'section'].includes(logFocus)) {
     query.logFocus = logFocus
   }
 

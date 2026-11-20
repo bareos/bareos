@@ -240,9 +240,9 @@
                       tabindex="0"
                       :aria-label="`${displayJobStatus(props.row)}: ${t('Jump to log')}`"
                       :title="t('Jump to log')"
-                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
-                      @keydown.enter="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
-                      @keydown.space.prevent="openJobDetails(props.row, resolveJobLogFocus(props.row.status))"
+                      @click="openJobDetails(props.row, resolveJobLogFocus(props.row.status) || 'section')"
+                      @keydown.enter="openJobDetails(props.row, resolveJobLogFocus(props.row.status) || 'section')"
+                      @keydown.space.prevent="openJobDetails(props.row, resolveJobLogFocus(props.row.status) || 'section')"
                     >
                       <q-icon name="hourglass_empty" color="orange-7" size="16px" class="animated-spin" />
                       <span class="text-orange-7 text-caption">{{ displayJobStatus(props.row) }}</span>

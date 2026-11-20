@@ -118,7 +118,7 @@
         </div>
 
         <!-- Job Log -->
-        <div ref="logSection" class="col-12">
+        <div ref="logSection" class="col-12" data-testid="job-log-section">
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header row items-center">
                 <span>{{ t('Job Log') }}</span>
@@ -328,7 +328,7 @@ const volumesPagination = usePersistedTablePagination('job-details.volumes', {
 
 const logFocus = computed(() => {
   const value = route.query.logFocus
-  return value === 'error' || value === 'warning' || value === 'ok' ? value : ''
+  return ['error', 'warning', 'ok', 'section'].includes(value) ? value : ''
 })
 const lineRefs = ref({})
 const focusedLineIndex = ref(-1)
@@ -425,7 +425,11 @@ function findFocusTargetIndex(focus) {
 // Scroll the log panel on first load: jump to and highlight the relevant
 // error/warning/termination line if logFocus was requested, otherwise fall
 // back to the default "scroll to bottom" behavior.
-watch([logLines, logFocus, logContainer], () => {
+watch([logLines, logFocus, logContainer, logSection], () => {
+  if (autoFocusPending && logFocus.value === 'section' && logSection.value) {
+    autoFocusPending = false
+    nextTick(jumpToLog)
+  }
   if (!logLines.value) return
   if (autoFocusPending && logFocus.value) {
     nextTick(() => {

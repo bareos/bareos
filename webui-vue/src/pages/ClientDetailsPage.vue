@@ -200,7 +200,7 @@ async function openJobLog(job) {
   await router.push({
     name: 'job-details',
     params: { id: job.id },
-    query: buildClientJobDetailsQuery(job, resolveJobLogFocus(job.status)),
+    query: buildClientJobDetailsQuery(job, resolveJobLogFocus(job.status) || 'section'),
   })
 }
 
