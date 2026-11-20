@@ -322,6 +322,38 @@ test('browser regression: upcoming runs ignore an obsolete Director scope', asyn
   await expect(page.getByText(/Old Director/)).toHaveCount(0)
 })
 
+test('browser regression: Next run drops the previous scope even when refresh fails', async ({ page }) => {
+  let firstDirectorCalls = 0
+  let rejectNarrowedRequest
+  let narrowedToken
+  await browserFixture(page, (command, director, { responseToken }) => {
+    if (command !== 'status scheduler days=0,60') return
+    const first = director === 'bareos-dir'
+    if (first && ++firstDirectorCalls > 1) {
+      narrowedToken = responseToken
+      return new Promise((_, reject) => {
+        rejectNarrowedRequest = () => reject(new Error('Preview unavailable'))
+      })
+    }
+    return { preview: [{
+      schedule: first ? 'LaterRun' : 'RemovedDirectorRun',
+      runtime: Math.floor(Date.now() / 1000) + (first ? 7200 : 3600),
+    }] }
+  })
+
+  await openNav(page, 'nav-schedules', /#\/schedules/)
+  const nextRun = page.locator('.schedules-list-stats').getByText(/Next run:/)
+  await expect(nextRun).toContainText('RemovedDirectorRun')
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByText('bareos-dir-2', { exact: true }).first().click()
+  await page.keyboard.press('Escape')
+  await expect.poll(() => Boolean(rejectNarrowedRequest)).toBe(true)
+  await expect(nextRun).toHaveCount(0, { timeout: 2000 })
+  rejectNarrowedRequest()
+  await waitForDirectorResponseProcessing(page, narrowedToken)
+  await expect(nextRun).toHaveCount(0)
+})
+
 test('browser regression: schedule status ignores an obsolete calendar range', async ({ page }) => {
   let releaseObsoleteStatus
   let obsoleteResponseToken

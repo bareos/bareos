@@ -1351,6 +1351,7 @@ watch(() => directorOptions.value, () => {
 })
 
 watch(() => activeDirectors.value.join('\u0000'), () => {
+  upcomingPreviewData.value = []
   if (tab.value === 'show') {
     refreshSchedules()
   }
