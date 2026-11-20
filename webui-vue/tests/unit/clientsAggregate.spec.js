@@ -21,7 +21,7 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedClients } from '../../src/composables/clientsAggregate.js'
+import { decorateScheduledBackups, fetchAggregatedClients } from '../../src/composables/clientsAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -92,6 +92,20 @@ describe('clients aggregate helpers', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('only associates a named preview with its job, while expanding schedule-wide previews', () => {
+    const runtime = Math.floor(Date.now() / 1000) - 60
+    const schedules = [{
+      name: 'nightly', enabled: true,
+      jobs: [{ name: 'no-client' }, { name: 'backup', client: 'alpha', enabled: true }],
+    }]
+    const preview = (job) => [{ schedule: 'nightly', runtime, ...(job ? { job } : {}) }]
+    expect(decorateScheduledBackups({ schedules, preview: preview('no-client') }, 'dir')).toEqual([])
+    expect(decorateScheduledBackups({ schedules, preview: preview('backup') }, 'dir'))
+      .toEqual([expect.objectContaining({ job: 'backup', client: 'alpha' })])
+    expect(decorateScheduledBackups({ schedules, preview: preview() }, 'dir'))
+      .toEqual([expect.objectContaining({ job: 'backup', client: 'alpha' })])
   })
 
   it('bypasses the cached clients aggregate when forced', async () => {

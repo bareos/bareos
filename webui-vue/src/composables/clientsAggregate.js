@@ -69,7 +69,7 @@ export function decorateScheduledBackups(response, director) {
     const jobs = Array.isArray(schedule?.jobs) ? schedule.jobs : []
     const previewJobs = preview?.client
       ? [{ name: preview.job ?? '', client: preview.client, enabled: true }]
-      : jobs
+      : preview?.job ? jobs.filter(job => job?.name === preview.job) : jobs
 
     for (const job of previewJobs) {
       if (!job?.client || job.enabled === false || schedule?.enabled === false) {
