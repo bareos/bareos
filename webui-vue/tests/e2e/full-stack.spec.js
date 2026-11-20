@@ -585,6 +585,37 @@ test('browser regression: clients list ignores an obsolete refresh', async ({ pa
   expect(await page.evaluate(() => window.obsoleteClientSeen)).toBe(false)
 })
 
+test('browser regression: filesets ignore an obsolete forced refresh', async ({ page }) => {
+  let releaseOld
+  let oldToken
+  const requests = new Map()
+  await browserFixture(page, (command, director, { responseToken }) => {
+    if (command !== 'list filesets') return
+    const count = (requests.get(director) ?? 0) + 1
+    requests.set(director, count)
+    if (director === 'bareos-dir' && count === 2) {
+      oldToken = responseToken
+      return new Promise(resolve => {
+        releaseOld = () => resolve({ filesets: [{ fileset: 'ObsoleteFileset' }] })
+      })
+    }
+    return { filesets: [{ fileset: count >= 3 ? 'NewestFileset' : 'CurrentFileset' }] }
+  })
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await page.goto('/#/filesets')
+  await expect(page.getByText('CurrentFileset').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Refresh' }).click()
+  await expect.poll(() => Boolean(releaseOld)).toBe(true)
+  await page.getByRole('button', { name: 'Refresh' }).click()
+  await expect(page.getByText('NewestFileset').first()).toBeVisible()
+  releaseOld()
+  await waitForDirectorResponseProcessing(page, oldToken)
+  await expect(page.getByText('ObsoleteFileset')).toHaveCount(0)
+  await expect(page.getByText('NewestFileset').first()).toBeVisible()
+})
+
 test('browser regression: client backup status distinguishes running from no history', async ({ page }) => {
   await browserFixture(page, command => {
     if (command === 'llist clients') {

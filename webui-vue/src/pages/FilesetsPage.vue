@@ -117,32 +117,40 @@ const {
 } = useDirectorScope({ t })
 
 const showDirectorColumn = computed(() => isCommonFilesets.value)
+let refreshGeneration = 0
 
 async function refresh(forceRefresh = false) {
+  const generation = ++refreshGeneration
+  const directors = [...activeDirectors.value]
+  const isCurrent = () => generation === refreshGeneration
+    && directors.join('\u0000') === activeDirectors.value.join('\u0000')
   loading.value = true
   error.value = null
   directorErrors.value = []
   try {
-    if (activeDirectors.value.length === 0) {
+    if (directors.length === 0) {
       rawFilesets.value = []
       return
     }
 
-    if (isCommonFilesets.value) {
+    if (directors.length > 1) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedFilesets(credentials, activeDirectors.value, { forceRefresh })
+      const result = await fetchAggregatedFilesets(credentials, directors, { forceRefresh })
+      if (!isCurrent()) return
       rawFilesets.value = result.filesets
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = activeDirectors.value[0]
+    const currentDirector = directors[0]
     await ensureSingleScopeDirector()
+    if (!isCurrent()) return
     const result = await director.call('list filesets')
+    if (!isCurrent()) return
     rawFilesets.value = directorCollection(result?.filesets).map(entry => ({
       name: entry.fileset ?? entry.name ?? '',
       description: entry.description ?? '',
@@ -155,9 +163,9 @@ async function refresh(forceRefresh = false) {
       scopeKey: `${currentDirector}:${entry.fileset ?? entry.name ?? ''}`,
     }))
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (isCurrent()) error.value = reason?.message ?? String(reason)
   } finally {
-    loading.value = false
+    if (isCurrent()) loading.value = false
   }
 }
 
