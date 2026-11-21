@@ -107,7 +107,7 @@ const fields = computed(() => {
         : '',
     },
     { label: t('Media Type'), value: storage.mediatype },
-    { label: t('Device'), value: storage.device },
+    { label: t('Device'), value: Array.isArray(storage.device) ? storage.device.join(', ') : storage.device },
     {
       label: t('Status'),
       component: EnabledBadge,

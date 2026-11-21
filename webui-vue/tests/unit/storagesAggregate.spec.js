@@ -113,13 +113,13 @@ describe('storages aggregate helpers', () => {
         { storageid: '2', name: 'Removed', autochanger: '1' },
       ],
       {
-        File: { name: 'File', address: 'sd1', port: 9103, mediatype: 'File' },
+        File: { name: 'File', address: 'sd1', port: 9103, mediatype: 'File', Device: ['FileDevice'] },
         Tape: { name: 'Tape', address: 'sd2', mediatype: 'LTO', autochanger: true, enabled: false },
       }
     )).toEqual([
       {
         storageid: '1', name: 'File', autochanger: false, inconfig: true,
-        address: 'sd1', port: '9103', mediatype: 'File', enabled: true,
+        address: 'sd1', port: '9103', mediatype: 'File', device: ['FileDevice'], enabled: true,
       },
       { storageid: '2', name: 'Removed', autochanger: '1' },
       {

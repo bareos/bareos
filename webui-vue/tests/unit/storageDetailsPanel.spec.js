@@ -90,6 +90,12 @@ afterEach(() => {
 })
 
 describe('StorageDetailsPanel status', () => {
+  it('displays configured device names', () => {
+    director.rawCall.mockResolvedValue('Status')
+    const host = mountPanel(ref({ name: 'A', director: 'test-dir', device: ['Drive1', 'Drive2'] }))
+    expect(host.textContent).toContain('Drive1, Drive2')
+  })
+
   it('reloads and discards stale status when the storage name changes in place', async () => {
     const oldRequest = deferred()
     director.rawCall.mockReturnValueOnce(oldRequest.promise).mockResolvedValueOnce('Current status')
