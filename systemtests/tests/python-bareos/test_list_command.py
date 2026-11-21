@@ -45,23 +45,26 @@ import bareos_unittest
 class PythonBareosListCommandTest(bareos_unittest.Json):
     def test_move_volume_with_pool_defaults(self):
         username = self.get_operator_username()
-        director = bareos.bsock.DirectorConsoleJson(
+        options = dict(
             address=self.director_address,
             port=self.director_port,
             name=username,
             password=self.get_operator_password(username),
             **self.director_extra_options,
         )
+        director = bareos.bsock.DirectorConsoleJson(**options)
+        console = bareos.bsock.DirectorConsole(**options)
         volume = f"AtomicPoolMove-{uuid.uuid4().hex}"
         director.call(f"label volume={volume} storage=File pool=Full")
         try:
             source = director.call("llist pool=Full")["pools"][0]
             target = director.call("llist pool=Incremental")["pools"][0]
             director.call(f"update volume={volume} volretention=1")
-            unsupported = director.call(
+            prompt = console.call(
                 f"update volume={volume} poolwithdefaultsunsupported=Incremental"
             )
-            self.assertNotIn("poolmove", unsupported)
+            self.assertIn(b"Parameters to modify", prompt)
+            console.call(".")
             self.assertEqual(
                 director.call(f"llist volume={volume}")["volume"]["poolid"],
                 source["poolid"],
@@ -117,6 +120,8 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 int(target["numvols"]) + 1,
             )
         finally:
+            if console.socket is not None:
+                console.close()
             director.call(f"delete volume={volume} yes")
             os.remove(f"storage/{volume}")
 
