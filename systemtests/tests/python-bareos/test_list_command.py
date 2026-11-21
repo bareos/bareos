@@ -45,14 +45,21 @@ import bareos_unittest
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
     @staticmethod
-    def cleanup_cleaning_race(admin, volume, mediaid, jobid):
+    def delete_temporary_volume(admin, volume):
+        admin.call(f"delete volume={volume} yes")
+        admin.call(
+            '.sql query="UPDATE Pool SET NumVols=(SELECT count(*) FROM Media '
+            "WHERE Media.PoolId=Pool.PoolId) WHERE Name IN ('Full','Incremental')\""
+        )
+        os.remove(f"storage/{volume}")
+
+    def cleanup_cleaning_race(self, admin, volume, mediaid, jobid):
         if mediaid is not None:
             admin.call(
                 f'.sql query="DELETE FROM JobMedia WHERE MediaId={mediaid} '
                 f'AND JobId={jobid}"'
             )
-        admin.call(f"delete volume={volume} yes")
-        os.remove(f"storage/{volume}")
+        self.delete_temporary_volume(admin, volume)
 
     def test_cleaning_race_cleanup_preserves_volume_if_unlink_fails(self):
         admin = Mock()
@@ -100,8 +107,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     f"WHERE VolumeName='{volume}'\""
                 )
         finally:
-            director.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(director, volume)
 
     def test_pool_defaults_rejects_combined_comment_without_changes(self):
         username = self.get_operator_username()
@@ -134,8 +140,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 director.call("llist pool=Full")["pools"][0]["volretention"],
             )
         finally:
-            director.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(director, volume)
 
     def test_move_volume_with_pool_defaults(self):
         username = self.get_operator_username()
@@ -216,8 +221,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         finally:
             if console.socket is not None:
                 console.close()
-            director.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(director, volume)
 
     def test_pool_move_defaults_survives_stale_enabled_prompt(self):
         username = self.get_operator_username()
@@ -259,8 +263,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             )
         finally:
             console.call(".")
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(admin, volume)
 
     def test_pool_move_defaults_rolls_back_on_counter_failure(self):
         username = self.get_operator_username()
@@ -346,8 +349,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     f'WHERE PoolId={target["poolid"]}"'
                 )
         finally:
-            director.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(director, volume)
 
     def test_pool_move_defaults_requires_both_pool_acls(self):
         username = self.get_operator_username()
@@ -386,8 +388,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 before["poolid"],
             )
         finally:
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(admin, volume)
 
     def test_pool_move_defaults_rejects_stale_source(self):
         username = self.get_operator_username()
@@ -455,8 +456,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     f"WHERE VolumeName='{volume}'\""
                 )
         finally:
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(admin, volume)
 
     def test_pool_move_defaults_concurrent_counters(self):
         username = self.get_operator_username()
@@ -540,8 +540,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                 self.assertEqual(pool["numvols"], pool["actual"], pool["name"])
         finally:
             for volume in created:
-                admin.call(f"delete volume={volume} yes")
-                os.remove(f"storage/{volume}")
+                self.delete_temporary_volume(admin, volume)
+            counts = admin.call(
+                '.sql query="SELECT Name,NumVols,'
+                "(SELECT count(*) FROM Media WHERE Media.PoolId=Pool.PoolId) "
+                "AS actual FROM Pool WHERE Name IN ('Full','Incremental')\""
+            )["query"]
+            for pool in counts:
+                self.assertEqual(pool["numvols"], pool["actual"], pool["name"])
 
     def test_volume_status_rejects_stale_interactive_selection(self):
         username = self.get_operator_username()
@@ -568,8 +574,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             self.assertEqual(record["volstatus"], "Used")
         finally:
             console.call(".")
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(admin, volume)
 
     def test_volume_status_rejects_pool_move_after_interactive_selection(self):
         username = self.get_operator_username()
@@ -597,8 +602,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             self.assertEqual(record["volstatus"], "Append")
         finally:
             console.call(".")
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.delete_temporary_volume(admin, volume)
 
     def test_cleaning_rejects_concurrent_jobmedia(self):
         username = self.get_operator_username()
