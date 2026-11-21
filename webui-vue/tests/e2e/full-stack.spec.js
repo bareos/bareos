@@ -110,6 +110,20 @@ async function waitForDirectorResponseProcessing(page, responseToken) {
   ), responseToken)
 }
 
+test('browser regression: the last dashboard can be renamed but not deleted', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('bareos_dashboards', JSON.stringify({
+      dashboards: [{ id: 'only', name: 'Only', widgets: [] }],
+      activeDashboardId: 'only',
+      seededDashboardIds: ['default', 'analytics', 'job-schedule-timeline'],
+    }))
+  })
+  await browserFixture(page)
+  await page.getByTitle('Edit layout').click()
+  await expect(page.getByRole('button', { name: 'Rename dashboard' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Delete dashboard' })).toHaveCount(0)
+})
+
 test('browser regression: dashboard widgets drag only from their headers', async ({ page }) => {
   await browserFixture(page)
   await page.getByTitle('Edit layout').click()

@@ -40,7 +40,7 @@
           replace
         >
           <!-- Rename / delete buttons shown in edit mode -->
-          <div v-if="editMode && dashStore.dashboards.length > 1" class="row items-center no-wrap q-ml-xs">
+          <div v-if="editMode" class="row items-center no-wrap q-ml-xs">
             <q-btn
               flat round dense
               icon="edit"
@@ -49,6 +49,7 @@
               @click.stop="startRename(db)"
             />
             <q-btn
+              v-if="dashStore.dashboards.length > 1"
               flat round dense
               icon="delete_outline"
               color="negative"
