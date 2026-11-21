@@ -360,7 +360,7 @@ describe('VolumeDetailsPage action identity', () => {
     let otherLoads = 0
     let poolLoads = 0
     mocks.call.mockImplementation(command => {
-      if (command === 'update volume="Tape" frompool=yes') {
+      if (command === 'update volume="Tape" frompool=yes expectedpoolid=42') {
         return new Promise(resolve => { finishUpdate = resolve })
       }
       if (command === 'llist volume="Tape"') {
@@ -374,7 +374,7 @@ describe('VolumeDetailsPage action identity', () => {
       if (command === 'llist pools') {
         poolLoads += 1
         if (poolLoads === 2) return new Promise(resolve => { finishPools = resolve })
-        return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+        return Promise.resolve({ pools: [{ name: 'Pool', poolid: 42, maxvoljobs: 2 }] })
       }
       return Promise.resolve({ jobs: [], volumes: [] })
     })
@@ -418,7 +418,7 @@ describe('VolumeDetailsPage action identity', () => {
       if (command.startsWith('llist volume=')) {
         return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', pool: 'Pool', maxvoljobs: 1 }] })
       }
-      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', poolid: 42, maxvoljobs: 2 }] })
       return Promise.resolve({ jobs: [], volumes: [] })
     })
     host = document.createElement('div')
@@ -453,7 +453,7 @@ describe('VolumeDetailsPage action identity', () => {
       if (command.startsWith('llist volume=')) {
         return Promise.resolve({ volumes: [{ volumename: route.params.name, volstatus: 'Full', pool: 'Pool', maxvoljobs: 1, comment: route.params.name }] })
       }
-      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', poolid: 42, maxvoljobs: 2 }] })
       return Promise.resolve({ jobs: [], volumes: [] })
     })
     host = document.createElement('div')
@@ -487,7 +487,7 @@ describe('VolumeDetailsPage action identity', () => {
       if (command.startsWith('llist volume=')) {
         return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full', pool: 'Pool', maxvoljobs: 1 }] })
       }
-      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', maxvoljobs: 2 }] })
+      if (command === 'llist pools') return Promise.resolve({ pools: [{ name: 'Pool', poolid: 42, maxvoljobs: 2 }] })
       return Promise.resolve({ jobs: [], volumes: [] })
     })
     host = document.createElement('div')
