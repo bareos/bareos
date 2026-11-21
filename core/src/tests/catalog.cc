@@ -448,6 +448,31 @@ TEST_F(CatalogTest, SlotUpdatePreservesConcurrentStatusAndPoolChanges)
   EXPECT_EQ(current.Slot, 4);
 }
 
+TEST_F(CatalogTest, VolumeReservationRejectsConcurrentPoolMove)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media (VolumeName,MediaType,VolStatus,PoolId) "
+      "VALUES ('reservation-pool-move','File','Append',11)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "reservation-pool-move", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  bstrncpy(stale.VolStatus, "Used", sizeof(stale.VolStatus));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='reservation-pool-move'"));
+
+  bool pool_changed = false;
+  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, true, true, &pool_changed));
+  EXPECT_TRUE(pool_changed);
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "reservation-pool-move",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_STREQ(current.VolStatus, "Append");
+}
+
 TEST_F(CatalogTest, ExpirationRechecksLimitsAfterPoolMove)
 {
   ASSERT_TRUE(db->SqlExec(
