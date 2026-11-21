@@ -76,7 +76,7 @@
           flat
           :loading="loading"
           :filter="deviceSearch"
-          :row-class="storageRowClass"
+          :table-row-class-fn="storageRowClass"
           v-model:pagination="devicesPagination"
           @row-click="(event, row) => toggleSelectedStorage(row)"
         >

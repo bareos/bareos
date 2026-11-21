@@ -133,6 +133,24 @@ describe('StoragesPage route selection', () => {
     await vi.waitFor(() => expect(host.querySelector('[data-testid="storages-detail-hint"]')).not.toBeNull())
   })
 
+  it('marks the selected storage row through the table row-class function', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(StoragesPage)
+    app.config.warnHandler = () => {}
+    app.component('q-table', defineComponent({
+      props: { rows: Array, tableRowClassFn: Function },
+      setup: props => () => h('div', props.rows.map(row => (
+        h('div', { class: props.tableRowClassFn?.(row), 'data-test-row': row.director })
+      ))),
+    }))
+    app.mount(host)
+
+    await vi.waitFor(() => expect(host.querySelector('[data-test-row="A"]')).not.toBeNull())
+    expect(host.querySelector('[data-test-row="A"]').className).toBe('storages-row-selected')
+    expect(host.querySelector('[data-test-row="B"]').className).toBe('')
+  })
+
   it('ignores refresh results from a previous director scope', async () => {
     host = document.createElement('div')
     document.body.appendChild(host)
