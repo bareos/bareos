@@ -462,6 +462,35 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             admin.call(f"delete volume={volume} yes")
             os.remove(f"storage/{volume}")
 
+    def test_volume_status_rejects_pool_move_after_interactive_selection(self):
+        username = self.get_operator_username()
+        options = dict(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        admin = bareos.bsock.DirectorConsoleJson(**options)
+        console = bareos.bsock.DirectorConsole(**options)
+        volume = f"StatusPoolRace-{uuid.uuid4().hex}"
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            console.call(f"update volume={volume}")
+            choices = console.call("1").decode("utf-8")
+            full = re.search(r"^\s*(\d+): Full\s*$", choices, re.MULTILINE)
+            self.assertIsNotNone(full, choices)
+            admin.call(f"update volume={volume} pool=Incremental")
+            result = console.call(full.group(1)).decode("utf-8")
+            self.assertIn("status changed", result.lower())
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["pool"], "Incremental")
+            self.assertEqual(record["volstatus"], "Append")
+        finally:
+            console.call(".")
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_cleaning_rejects_concurrent_jobmedia(self):
         username = self.get_operator_username()
         options = dict(

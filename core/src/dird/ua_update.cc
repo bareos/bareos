@@ -214,7 +214,7 @@ static void UpdateVolstatus(UaContext* ua,
       break;
   }
 
-  char ed1[50];
+  char ed1[50], ed2[50];
   DbLocker _{ua->db};
   auto old_status = ua->db->EscapeString(ua->jcr, mr->VolStatus);
   if (!old_status) {
@@ -227,20 +227,24 @@ static void UpdateVolstatus(UaContext* ua,
     Mmsg(query,
          "SELECT MediaId FROM Media WHERE MediaId=%s FOR UPDATE;"
          "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s' "
-         "AND NOT EXISTS (SELECT 1 FROM JobMedia WHERE "
+         "AND PoolId=%s AND NOT EXISTS (SELECT 1 FROM JobMedia WHERE "
          "JobMedia.MediaId=Media.MediaId)",
-         ed1, kw[i], ed1, old_status->c_str());
+         ed1, kw[i], ed1, old_status->c_str(),
+         edit_int64(mr->PoolId, ed2));
   } else {
     Mmsg(query,
-         "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s'",
-         kw[i], edit_int64(mr->MediaId, ed1), old_status->c_str());
+         "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s' "
+         "AND PoolId=%s",
+         kw[i], edit_int64(mr->MediaId, ed1), old_status->c_str(),
+         edit_int64(mr->PoolId, ed2));
   }
   int affected = ua->db->UpdateDb(ua->jcr, query.c_str());
   if (affected < 0) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else if (affected != 1) {
     ua->ErrorMsg(T_(
-        "Volume status changed or it contains jobs; refresh and try again.\n"));
+        "Volume pool or status changed or it contains jobs; refresh and try "
+        "again.\n"));
   } else {
     bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
     ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
