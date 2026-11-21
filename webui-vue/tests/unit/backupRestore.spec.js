@@ -77,6 +77,21 @@ describe('combined dashboard and settings restore', () => {
     expect(settings.refreshInterval).toBe(30)
   })
 
+  it.each([null, false, 0, ''])('rejects a present invalid dashboards value %s', async dashboards => {
+    const settings = useSettingsStore()
+    settings.refreshInterval = 30
+    const original = useDashboardStore().dashboards.map(d => d.id)
+    const { notify, onRestored } = await restore({
+      bareosWebuiBackup: 1,
+      dashboards,
+      settings: { refreshInterval: 45 },
+    })
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'negative' }))
+    expect(onRestored).not.toHaveBeenCalled()
+    expect(settings.refreshInterval).toBe(30)
+    expect(useDashboardStore().dashboards.map(d => d.id)).toEqual(original)
+  })
+
   it('rejects invalid settings before changing dashboards', async () => {
     const dashboards = useDashboardStore()
     const before = dashboards.dashboards.map(d => d.id)

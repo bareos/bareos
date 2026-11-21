@@ -114,7 +114,7 @@ export function useBackupRestore({ t, $q, onRestored } = {}) {
             const applySettings = data.settings !== undefined
               ? settings.prepareSettingsImport(data.settings)
               : null
-            if (data.dashboards) dashStore.importDashboards(data.dashboards)
+            if (Object.hasOwn(data, 'dashboards')) dashStore.importDashboards(data.dashboards)
             applySettings?.()
           } else {
             dashStore.importDashboards(data)
