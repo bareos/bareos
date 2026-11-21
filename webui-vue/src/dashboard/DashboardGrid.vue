@@ -30,6 +30,9 @@
     class="dashboard-grid-root"
     :class="{ 'grid-interacting': interactionActive }"
   >
+    <DirectorErrorsBanner v-if="hasAnalyticsWidgets" :errors="analyticsResult.directorErrors" include-login-required>
+      {{ t('Analytics results may be incomplete.') }}
+    </DirectorErrorsBanner>
     <!-- Empty state -->
     <div
       v-if="!dashboard.widgets.length"
@@ -140,6 +143,7 @@ import {
   fetchDirectorDashboardSnapshot,
 } from '../composables/directorAggregate.js'
 import { fetchAggregatedAnalytics } from '../composables/analyticsAggregate.js'
+import DirectorErrorsBanner from '../components/DirectorErrorsBanner.vue'
 import WidgetShell from './WidgetShell.vue'
 import WidgetConfigDialog from './WidgetConfigDialog.vue'
 
@@ -167,7 +171,8 @@ const refreshToken = ref(0)
 const pools        = ref([])
 const poolLoading  = ref(false)
 const poolRefreshToken = ref(0)
-const analyticsJobs = ref([])
+const analyticsResult = ref({ jobs: [], directorErrors: [] })
+const analyticsJobs = computed(() => analyticsResult.value.jobs)
 const analyticsLoading = ref(false)
 let _latestFetchRequestId = 0
 let _latestPoolRequestId = 0
@@ -194,7 +199,7 @@ const hasAnalyticsWidgets = computed(() => props.dashboard.widgets.some(widget =
 async function fetchAnalyticsData(credentials, requestId) {
   if (!hasAnalyticsWidgets.value) {
     if (requestId === _latestAnalyticsRequestId) {
-      analyticsJobs.value = []
+      analyticsResult.value = { jobs: [], directorErrors: [] }
     }
     return
   }
@@ -204,7 +209,7 @@ async function fetchAnalyticsData(credentials, requestId) {
   try {
     const result = await fetchAggregatedAnalytics(credentials, props.activeDirectors)
     if (requestId === _latestAnalyticsRequestId) {
-      analyticsJobs.value = result.jobs
+      analyticsResult.value = result
     }
   } finally {
     _analyticsRequestsInFlight = Math.max(0, _analyticsRequestsInFlight - 1)
@@ -222,7 +227,7 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
     if (requestId === _latestFetchRequestId) {
       snapshots.value = []
       pools.value = []
-      analyticsJobs.value = []
+      analyticsResult.value = { jobs: [], directorErrors: [] }
       analyticsLoading.value = false
     }
     return

@@ -41,6 +41,12 @@ vi.mock('../../src/composables/analyticsAggregate.js', () => ({
 vi.mock('../../src/dashboard/WidgetShell.vue', () => ({
   default: defineComponent({ setup: (_, { slots }) => () => h('div', slots.default?.()) }),
 }))
+vi.mock('../../src/components/DirectorErrorsBanner.vue', () => ({
+  default: defineComponent({
+    props: ['errors'],
+    setup: props => () => h('div', { class: 'director-errors' }, JSON.stringify(props.errors)),
+  }),
+}))
 vi.mock('../../src/dashboard/widgetRegistry.js', async () => {
   const { DASHBOARD_CONTEXT_KEY } = await import('../../src/dashboard/dashboardContext.js')
   const probe = defineComponent({
@@ -126,7 +132,7 @@ describe('DashboardGrid refresh', () => {
       host.querySelector('button').click()
       await vi.waitFor(() => expect(fetchSnapshot).toHaveBeenCalledTimes(2))
       slowSnapshot.resolve({ director: 'dir', pools: [{ name: 'PoolA' }] })
-      slowAnalytics.resolve({ jobs: [{ id: 42 }] })
+      slowAnalytics.resolve({ jobs: [{ id: 42 }], directorErrors: [] })
       await vi.waitFor(() => {
         expect(host.querySelector('.pools').textContent).toContain('PoolA')
         expect(host.querySelector('.analytics').textContent).toContain('42')
@@ -145,7 +151,7 @@ describe('DashboardGrid refresh', () => {
     fetchSnapshot.mockReturnValueOnce(oldSnapshot.promise)
       .mockResolvedValueOnce({ director: 'new', pools: [{ name: 'NewPool' }] })
     fetchAnalytics.mockReturnValueOnce(oldAnalytics.promise)
-      .mockResolvedValueOnce({ jobs: [{ id: 99 }] })
+      .mockResolvedValueOnce({ jobs: [{ id: 99 }], directorErrors: [] })
     const directors = ref(['old'])
     const dashboard = {
       id: 'test',
@@ -167,11 +173,48 @@ describe('DashboardGrid refresh', () => {
         expect(host.querySelector('.analytics').textContent).toContain('99')
       })
       oldSnapshot.resolve({ director: 'old', pools: [{ name: 'OldPool' }] })
-      oldAnalytics.resolve({ jobs: [{ id: 1 }] })
+      oldAnalytics.resolve({ jobs: [{ id: 1 }], directorErrors: [] })
       await new Promise(resolve => setTimeout(resolve, 0))
       expect(host.querySelector('.pools').textContent).toContain('NewPool')
       expect(host.querySelector('.pools').textContent).not.toContain('OldPool')
       expect(host.querySelector('.analytics').textContent).not.toContain('"id":1')
+    } finally {
+      app.unmount()
+      host.remove()
+    }
+  })
+
+  it('shows partial analytics errors even without a summary widget and clears them after refresh', async () => {
+    fetchSnapshot.mockReset()
+    fetchAnalytics.mockReset()
+    fetchSnapshot.mockResolvedValue({ director: 'healthy', pools: [] })
+    fetchAnalytics.mockResolvedValueOnce({
+      jobs: [{ id: 42 }],
+      directorErrors: [{ director: 'offline', message: 'Connection failed' }],
+    }).mockResolvedValueOnce({ jobs: [{ id: 42 }, { id: 43 }], directorErrors: [] })
+    const directors = ref(['healthy', 'offline'])
+    const dashboard = {
+      id: 'test',
+      widgets: [{ id: 'one', type: 'analytics-treemap', layout: { x: 0, y: 0, w: 3, h: 3 } }],
+    }
+    const app = createApp(defineComponent({
+      setup: () => () => h(DashboardGrid, { dashboard, activeDirectors: directors.value }),
+    }))
+    app.use(createPinia())
+    app.component('q-icon', defineComponent({ setup: () => () => null }))
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    app.mount(host)
+    try {
+      await vi.waitFor(() => {
+        expect(host.querySelector('.analytics').textContent).toContain('42')
+        expect(host.querySelector('.director-errors').textContent).toContain('Connection failed')
+      })
+      directors.value = ['healthy']
+      await vi.waitFor(() => {
+        expect(host.querySelector('.analytics').textContent).toContain('43')
+        expect(host.querySelector('.director-errors').textContent).toBe('[]')
+      })
     } finally {
       app.unmount()
       host.remove()

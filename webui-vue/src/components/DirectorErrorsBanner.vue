@@ -28,6 +28,7 @@
     <template #avatar>
       <q-icon name="warning" />
     </template>
+    <slot />
     <div
       v-for="item in visibleErrors"
       :key="`${item.director}\u0000${item.message}`"
@@ -49,9 +50,13 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  includeLoginRequired: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const visibleErrors = computed(() => (
-  (props.errors ?? []).filter(item => !isDirectorLoginRequiredError(item?.message))
+  (props.errors ?? []).filter(item => props.includeLoginRequired || !isDirectorLoginRequiredError(item?.message))
 ))
 </script>
