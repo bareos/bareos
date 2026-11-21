@@ -146,6 +146,32 @@ test('browser regression: the 24-hour Jobs filter applies to counts and lists', 
   )).toBe(true)
 })
 
+test('browser regression: job details return to the 24-hour Jobs filter', async ({ page }) => {
+  const commands = []
+  await browserFixture(page, command => {
+    commands.push(command)
+    if (command.startsWith('llist jobs count')) return { jobs: [{ count: '1' }] }
+    if (command.startsWith('llist jobs ')) {
+      return { jobs: [{ jobid: '1', name: 'Example', jobstatus: 'T' }] }
+    }
+  })
+  await page.goto('/#/jobs?days=1&status=T')
+  await page.locator('tbody tr a.text-primary').first().click()
+  await expect(page).toHaveURL(/jobsDays=1/)
+  commands.length = 0
+  await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Jobs' }).click()
+  await expect(page.getByText('Last 24 hours', { exact: true })).toBeVisible()
+  await expect.poll(() => commands.some(command =>
+    command.startsWith('llist jobs count') && command.includes('days=1')
+  )).toBe(true)
+
+  await page.getByText('Last 24 hours', { exact: true }).locator('..').getByRole('button').click()
+  await page.locator('tbody tr a.text-primary').first().click()
+  await expect(page).not.toHaveURL(/jobsDays=/)
+  await page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Jobs' }).click()
+  await expect(page.getByText('Last 24 hours', { exact: true })).toHaveCount(0)
+})
+
 test('browser regression: the last dashboard can be renamed but not deleted', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('bareos_dashboards', JSON.stringify({

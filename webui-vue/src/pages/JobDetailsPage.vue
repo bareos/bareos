@@ -758,6 +758,7 @@ async function doRerun() {
         query: buildJobDetailsQuery({
           director: currentJobDirector.value,
           jobsAction: typeof route.query.jobsAction === 'string' ? route.query.jobsAction : '',
+          jobsDays: route.query.jobsDays,
           jobsStatus: typeof route.query.jobsStatus === 'string' ? route.query.jobsStatus : '',
           jobsLevel: typeof route.query.jobsLevel === 'string' ? route.query.jobsLevel : '',
           jobsType: typeof route.query.jobsType === 'string' ? route.query.jobsType : '',

@@ -889,6 +889,7 @@ const currentSingletonDirector = computed(() => (
 ))
 const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   jobsAction: tab.value,
+  jobsDays: jobsDays.value,
   jobsStatus: statusFilters.value,
   jobsLevel: levelFilters.value,
   jobsType: typeFilters.value,
@@ -1432,6 +1433,7 @@ async function openJobDetails(job, logFocus) {
     query: buildJobDetailsQuery({
       director: job.director,
       jobsAction: tab.value,
+      jobsDays: jobsDays.value,
       jobsStatus: statusFilters.value,
       jobsLevel: levelFilters.value,
       jobsType: typeFilters.value,
