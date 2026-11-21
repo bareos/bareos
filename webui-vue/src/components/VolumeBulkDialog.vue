@@ -63,10 +63,11 @@
           <div class="console-output volume-bulk-commands" data-testid="volume-bulk-commands">
             <div v-for="entry in plan" :key="entry.volume.scopeKey">
               <template v-if="entry.commands.length">
+                <div v-if="entry.volume.director"># {{ entry.volume.director }} / {{ entry.volume.volumename }}</div>
                 <div v-for="command in entry.commands" :key="command">{{ command }}</div>
               </template>
               <span v-else class="text-grey-6">
-                # {{ entry.volume.volumename }}: {{ t('skipped') }} ({{ entry.skipReason }})
+                # {{ entry.volume.director ? `${entry.volume.director} / ` : '' }}{{ entry.volume.volumename }}: {{ t('skipped') }} ({{ entry.skipReason }})
               </span>
             </div>
           </div>
@@ -116,6 +117,7 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>{{ result.volume.volumename }}</q-item-label>
+                <q-item-label v-if="result.volume.director" caption>{{ result.volume.director }}</q-item-label>
                 <q-item-label v-if="!result.ok" caption class="text-negative">{{ result.message }}</q-item-label>
               </q-item-section>
             </q-item>

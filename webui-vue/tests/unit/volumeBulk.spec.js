@@ -46,7 +46,7 @@ afterEach(() => {
   }
 })
 
-function renderPoolMove(response) {
+function renderPoolMove(response, volumes = [{ volumename: 'Vol-1', scopeKey: 'Vol-1' }]) {
   const host = document.createElement('div')
   document.body.appendChild(host)
   const done = vi.fn()
@@ -54,7 +54,7 @@ function renderPoolMove(response) {
   const app = createApp(VolumeBulkDialog, {
     modelValue: true,
     actionId: 'pool',
-    volumes: [{ volumename: 'Vol-1', scopeKey: 'Vol-1' }],
+    volumes,
     poolOptions: ['Scratch'],
     runCommand,
     onDone: done,
@@ -92,6 +92,31 @@ function renderPoolMove(response) {
 }
 
 describe('volume bulk helpers', () => {
+  it('identifies Directors in command previews and results', async () => {
+    const volumes = [
+      { volumename: 'Tape', director: 'A', scopeKey: 'A:Tape' },
+      { volumename: 'Tape', director: 'B', scopeKey: 'B:Tape' },
+    ]
+    const { host, done, runCommand } = renderPoolMove(
+      { poolmove: { volumename: 'Tape', pool: 'Scratch' } }, volumes,
+    )
+    runCommand.mockRejectedValueOnce(new Error('Failed on A'))
+    const select = host.querySelector('[data-testid="volume-bulk-pool"]')
+    select.value = 'Scratch'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    await nextTick()
+    const commands = host.querySelector('[data-testid="volume-bulk-commands"]').textContent
+    expect(commands).toContain('A / Tape')
+    expect(commands).toContain('B / Tape')
+    host.querySelector('[data-testid="volume-bulk-run"]').click()
+    await vi.waitFor(() => expect(done).toHaveBeenCalledOnce())
+    const results = [...host.querySelectorAll('.volume-bulk-results > div')]
+    expect(results).toHaveLength(2)
+    expect(results[0].textContent).toContain('A')
+    expect(results[0].textContent).toContain('Failed on A')
+    expect(results[1].textContent).toContain('B')
+  })
+
   it.each([
     [['Append'], false],
     [['Append', 'Purged'], true],
