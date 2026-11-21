@@ -28,7 +28,7 @@
         type="button"
         class="status-segment cursor-pointer"
         :class="[`bg-${segment.color}`, { 'status-segment-active': segment.active }]"
-        :style="{ flexGrow: segment.count }"
+        :style="{ flexGrow: segment.count, color: segment.textColor }"
         :aria-label="`${segment.status}: ${segment.count}`"
         :aria-pressed="segment.active"
         :data-testid="`${testid}-${segment.status}`"
@@ -106,6 +106,7 @@ const segments = computed(() => {
       count,
       share: count / total,
       color: STATUS_COLORS[status] ?? 'info',
+      textColor: ['Archive', 'Disabled'].includes(status) ? '#fff' : '#000',
       active: activeSet.has(status),
     }))
 })
@@ -125,7 +126,6 @@ const segments = computed(() => {
   justify-content: center;
   padding: 0;
   border: 0;
-  transition: filter 0.15s ease;
 }
 
 .status-segment:focus-visible {
@@ -143,14 +143,13 @@ const segments = computed(() => {
 
 .status-segment:hover,
 .status-segment-active {
-  filter: brightness(1.15);
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .status-segment-label {
   font-size: 10px;
   line-height: 1;
-  color: #fff;
+  color: inherit;
   font-weight: 600;
 }
 

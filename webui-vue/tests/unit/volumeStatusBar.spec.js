@@ -31,6 +31,21 @@ afterEach(() => {
 })
 
 describe('VolumeStatusBar filters', () => {
+  it('uses contrasting foregrounds for light and dark status segments', () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const app = createApp(VolumeStatusBar, {
+      volumes: [{ volstatus: 'Full' }, { volstatus: 'Archive' }],
+    })
+    app.component('q-tooltip', { template: '<span><slot /></span>' })
+    apps.push(app)
+    app.mount(host)
+
+    expect(host.querySelector('[data-testid="volume-status-bar-Full"]').style.color).toBe('rgb(0, 0, 0)')
+    expect(host.querySelector('[data-testid="volume-status-bar-Archive"]').style.color).toBe('rgb(255, 255, 255)')
+  })
+
   it('exposes focusable status buttons with their selection state', () => {
     const select = vi.fn()
     const host = document.createElement('div')
