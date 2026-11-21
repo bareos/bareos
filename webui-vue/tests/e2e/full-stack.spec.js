@@ -1569,7 +1569,7 @@ test('advertises Bareos services unless the director is a subscription build', a
     'background-color',
     'rgb(0, 86, 139)',
   )
-  await expect(page).toHaveTitle('Bareos (unsupported build)')
+  await expect(page).toHaveTitle('Director - Bareos (unsupported build)')
   const ribbon = page.getByTestId('unsupported-build-ribbon')
   await expect(ribbon).toBeVisible()
   await expect(ribbon).toHaveCSS('background-color', 'rgb(255, 179, 0)')
@@ -1678,7 +1678,7 @@ test('hides the service advertisement for subscription builds', async ({ page })
   await expect(page.getByTestId('unsupported-build-ribbon')).toHaveCount(0)
   await expect(page.getByTestId('unsupported-build-sash')).toHaveCount(0)
   await expect(page.locator('body')).not.toHaveClass(/bareos-unsupported-build/)
-  await expect(page).toHaveTitle('Bareos')
+  await expect(page).toHaveTitle('Director - Bareos')
   await page.getByTestId('account-menu').click()
   await expect(page.getByTestId('menu-offering-evaluation')).toHaveCount(0)
   await expect(page.getByTestId('menu-offering-support')).toHaveCount(0)
@@ -2146,12 +2146,26 @@ test('navigates through client, pool, and volume detail pages', async ({
   await page.goBack()
 
   await openNav(page, 'nav-storages', /#\/storages/)
-  await page.getByRole('tab', { name: 'Pools' }).click()
+  await expect(page.locator('.q-page').getByText('Storages', { exact: true }).first()).toBeVisible()
+  await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
+  const firstStorageRow = page.locator('tbody tr').first()
+  const storageName = (
+    await firstStorageRow.getByTestId('storages-row-name').textContent()
+  )?.trim()
+  await firstStorageRow.click()
+  await expect(page).toHaveURL(/#\/storages\?.*storage=/)
+  await expect(page.getByTestId('storages-detail')).toBeVisible()
+  await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+  await page.reload()
+  await expect(page.getByTestId('storages-detail-name')).toContainText(storageName ?? '')
+  await page.getByTestId('storages-detail-close').click()
+  await expect(page.getByTestId('storages-detail-hint')).toBeVisible()
+  await openNav(page, 'nav-pools', /#\/pools/)
   const firstPool = page.locator('tbody tr a.text-primary').first()
   const poolName = (await firstPool.textContent())?.trim()
   await firstPool.click()
 
-  await expect(page).toHaveURL(/#\/storages\/pools\/.+/)
+  await expect(page).toHaveURL(/#\/pools\/.+/)
   await expect(page.locator('.q-page .text-h5').first()).toContainText(
     poolName ?? ''
   )
@@ -2161,7 +2175,7 @@ test('navigates through client, pool, and volume detail pages', async ({
   await page.getByRole('tab', { name: 'Volumes' }).click()
   const firstVolume = page.locator('tbody tr a.text-primary').first()
   await firstVolume.click()
-  await expect(page).toHaveURL(/#\/storages\/volumes\/.+/)
+  await expect(page).toHaveURL(/#\/volumes\/.+/)
   await expect(page.getByText('Volume Properties', { exact: true })).toBeVisible()
 })
 

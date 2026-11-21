@@ -102,4 +102,35 @@ describe('director session switching', () => {
       director: 'bareos-dir-a',
     })
   })
+
+  it('skips a queued switch when its caller is no longer current', async () => {
+    const auth = useAuthStore()
+    const settings = useSettingsStore()
+    const director = useDirectorStore()
+    let finishConnecting
+    const connecting = new Promise(resolve => { finishConnecting = resolve })
+
+    auth.login('admin', 'bareos-dir-a', 'secret')
+    auth.loginDirector('ops', 'bareos-dir-b', 'secret', { setCurrent: false })
+    auth.loginDirector('backup', 'bareos-dir-c', 'secret', { setCurrent: false })
+    settings.directorName = 'bareos-dir-a'
+    director.disconnect = vi.fn()
+    director.connectAndWait = vi.fn()
+      .mockImplementationOnce(() => connecting)
+      .mockResolvedValue(true)
+
+    const firstSwitch = switchActiveDirector('bareos-dir-b')
+    await vi.waitFor(() => expect(director.connectAndWait).toHaveBeenCalledOnce())
+    let current = true
+    const queuedSwitch = switchActiveDirector('bareos-dir-c', () => current)
+    current = false
+    finishConnecting(true)
+    await firstSwitch
+
+    await expect(queuedSwitch).resolves.toBe(false)
+    expect(director.disconnect).toHaveBeenCalledOnce()
+    expect(director.connectAndWait).toHaveBeenCalledOnce()
+    expect(auth.user?.director).toBe('bareos-dir-b')
+    expect(settings.directorName).toBe('bareos-dir-b')
+  })
 })

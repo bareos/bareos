@@ -51,6 +51,8 @@ describe('webui i18n generation', () => {
     expect(messageIds).toContain('Self-compiled build')
     expect(messageIds).toContain('Spanish')
     expect(messageIds).toContain('Virtual Full')
+    expect(messageIds).toContain('Action On Purge')
+    expect(messageIds).toContain('in drive {drive}')
   })
 
   it('excludes generated directories while scanning ordinary source', () => {

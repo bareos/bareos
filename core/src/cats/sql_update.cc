@@ -279,14 +279,19 @@ bool BareosDb::UpdateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
+bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
+                                 MediaDbRecord* mr,
+                                 bool preserve_status_and_moved_pool,
+                                 bool require_same_pool,
+                                 bool* pool_changed,
+                                 bool preserve_pool_defaults)
 {
   char dt[MAX_TIME_LENGTH];
   time_t ttime;
-  char ed1[50], ed2[50], ed3[50], ed4[50];
-  char ed5[50], ed6[50], ed7[50], ed8[50];
-  char ed9[50], ed10[50], ed11[50];
+  char ed1[50], ed3[50], ed4[50], ed5[50];
+  char ed9[50], ed10[50], ed12[50];
 
+  if (pool_changed) { *pool_changed = false; }
   Dmsg1(100, "update_media: FirstWritten=%" PRItime "\n", mr->FirstWritten);
   DbLocker _{this};
   auto esc_medianame = EscapeString(jcr, mr->VolumeName);
@@ -294,7 +299,9 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   auto esc_status = EscapeString(jcr, mr->VolStatus);
   if (!esc_status) { return false; }
 
-  if (mr->set_first_written) {
+  // Interactive updates do not change write timestamps and must not perform
+  // unguarded preliminary writes before checking the observed pool.
+  if (!require_same_pool && mr->set_first_written) {
     Dmsg1(400, "Set FirstWritten Vol=%s\n", mr->VolumeName);
     ttime = mr->FirstWritten;
     bstrutime(dt, sizeof(dt), ttime);
@@ -307,7 +314,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   }
 
   /* Label just done? */
-  if (mr->set_label_date) {
+  if (!require_same_pool && mr->set_label_date) {
     ttime = mr->LabelDate;
     if (ttime == 0) { ttime = time(NULL); }
     bstrutime(dt, sizeof(dt), ttime);
@@ -318,7 +325,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     UpdateDb(jcr, cmd);
   }
 
-  if (mr->LastWritten != 0) {
+  if (!require_same_pool && mr->LastWritten != 0) {
     ttime = mr->LastWritten;
     bstrutime(dt, sizeof(dt), ttime);
     Mmsg(cmd,
@@ -328,39 +335,128 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     UpdateDb(jcr, cmd);
   }
 
+  // Compare against the pool in the retained record at update time, not at
+  // read time: a pool move can commit between the read and this statement.
+  const auto pool_value = [mr, preserve_status_and_moved_pool](
+                              const char* column, auto value) {
+          auto encoded = std::to_string(value);
+          if (!preserve_status_and_moved_pool) { return encoded; }
+          return "CASE WHEN PoolId=" + std::to_string(mr->PoolId) + " THEN "
+                 + encoded + " ELSE " + column + " END";
+        };
+
+  std::string pool_default_assignments;
+  if (!preserve_pool_defaults) {
+    pool_default_assignments
+        = "MaxVolBytes=" + pool_value("MaxVolBytes", mr->MaxVolBytes)
+          + ",VolRetention=" + pool_value("VolRetention", mr->VolRetention)
+          + ",VolUseDuration="
+          + pool_value("VolUseDuration", mr->VolUseDuration)
+          + ",MaxVolJobs=" + pool_value("MaxVolJobs", mr->MaxVolJobs)
+          + ",MaxVolFiles=" + pool_value("MaxVolFiles", mr->MaxVolFiles)
+          + ",RecyclePoolId="
+          + pool_value("RecyclePoolId", mr->RecyclePoolId)
+          + ",Recycle=" + pool_value("Recycle", mr->Recycle)
+          + ",ActionOnPurge="
+          + pool_value("ActionOnPurge", mr->ActionOnPurge)
+          + ",MinBlocksize=" + pool_value("MinBlocksize", mr->MinBlocksize)
+          + ",MaxBlocksize=" + pool_value("MaxBlocksize", mr->MaxBlocksize)
+          + ",";
+  }
+
   Mmsg(cmd,
        "UPDATE Media SET VolJobs=%u,"
        "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolMounts=%u,VolErrors=%u,"
-       "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
+       "VolWrites=%u,%sVolStatus=%s'%s'%s,"
        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,"
-       "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
-       "MaxVolJobs=%u,MaxVolFiles=%u,Enabled=%d,LocationId=%s,"
-       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%u,Recycle=%d,"
-       "ActionOnPurge=%u,"
-       "EncryptionKey='%s',"
-       "MinBlocksize=%u,MaxBlocksize=%u "
-       "WHERE VolumeName='%s'",
+       "LabelType=%d,StorageId=%s,PoolId=%s,Enabled=%d,LocationId=%s,"
+       "ScratchPoolId=%s,RecycleCount=%u,"
+       "EncryptionKey='%s' "
+       "WHERE VolumeName='%s'%s%s%s",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
        mr->VolMounts, mr->VolErrors, mr->VolWrites,
-       edit_uint64(mr->MaxVolBytes, ed2), esc_status->c_str(), mr->Slot,
-       mr->InChanger, edit_int64(mr->VolReadTime, ed3),
+       pool_default_assignments.c_str(),
+       preserve_status_and_moved_pool
+           ? "CASE WHEN VolStatus IN ('Cleaning','Error') THEN VolStatus ELSE "
+           : "",
+       esc_status->c_str(), preserve_status_and_moved_pool ? " END" : "",
+       mr->Slot, mr->InChanger, edit_int64(mr->VolReadTime, ed3),
        edit_int64(mr->VolWriteTime, ed4), mr->LabelType,
-       edit_int64(mr->StorageId, ed5), edit_int64(mr->PoolId, ed6),
-       edit_uint64(mr->VolRetention, ed7), edit_uint64(mr->VolUseDuration, ed8),
-       mr->MaxVolJobs, mr->MaxVolFiles, mr->Enabled,
-       edit_uint64(mr->LocationId, ed9), edit_uint64(mr->ScratchPoolId, ed10),
-       edit_uint64(mr->RecyclePoolId, ed11), mr->RecycleCount, mr->Recycle,
-       mr->ActionOnPurge, mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize,
-       esc_medianame->c_str());
+       edit_int64(mr->StorageId, ed5), pool_value("PoolId", mr->PoolId).c_str(),
+       mr->Enabled, edit_uint64(mr->LocationId, ed9),
+       edit_uint64(mr->ScratchPoolId, ed10), mr->RecycleCount, mr->EncrKey,
+       esc_medianame->c_str(), require_same_pool ? " AND PoolId=" : "",
+       require_same_pool ? edit_int64(mr->PoolId, ed12) : "",
+       preserve_status_and_moved_pool
+           ? " RETURNING VolStatus,PoolId,MaxVolBytes,VolRetention,"
+             "VolUseDuration,MaxVolJobs,MaxVolFiles,RecyclePoolId,Recycle,"
+             "ActionOnPurge,MinBlocksize,MaxBlocksize"
+           : "");
 
   Dmsg1(400, "%s\n", cmd);
 
-  bool retval = UpdateDb(jcr, cmd) > 0;
+  const int affected = UpdateDb(jcr, cmd);
+  bool retval = affected > 0;
+  if (require_same_pool && affected == 0) {
+    if (pool_changed) { *pool_changed = true; }
+    Mmsg(errmsg, T_("Volume pool changed; refresh and try again.\n"));
+  }
+  if (retval && preserve_status_and_moved_pool) {
+    SQL_ROW row = SqlFetchRow();
+    if (row && row[0]) {
+      bstrncpy(mr->VolStatus, row[0], sizeof(mr->VolStatus));
+      mr->PoolId = str_to_int64(row[1]);
+      mr->MaxVolBytes = str_to_uint64(row[2]);
+      mr->VolRetention = str_to_uint64(row[3]);
+      mr->VolUseDuration = str_to_uint64(row[4]);
+      mr->MaxVolJobs = str_to_uint32(row[5]);
+      mr->MaxVolFiles = str_to_uint32(row[6]);
+      mr->RecyclePoolId = str_to_int64(row[7]);
+      mr->Recycle = str_to_int32(row[8]);
+      mr->ActionOnPurge = str_to_uint32(row[9]);
+      mr->MinBlocksize = str_to_uint32(row[10]);
+      mr->MaxBlocksize = str_to_uint32(row[11]);
+    } else {
+      Mmsg(errmsg, T_("Could not retrieve updated Volume status.\n"));
+      retval = false;
+    }
+    SqlFreeResult();
+  }
 
   // Make sure InChanger is 0 for any record having the same Slot
-  retval &= MakeInchangerUnique(jcr, mr);
+  if (retval || !require_same_pool) { retval &= MakeInchangerUnique(jcr, mr); }
 
   return retval;
+}
+
+bool BareosDb::UpdateMediaStatisticsRecord(JobControlRecord* jcr,
+                                           MediaDbRecord* mr)
+{
+  return UpdateMediaRecord(jcr, mr, true, false, nullptr, true);
+}
+
+bool BareosDb::UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr)
+{
+  char ed1[50], ed2[50];
+
+  DbLocker _{this};
+  auto esc = EscapeString(jcr, mr->VolumeName);
+  if (!esc) { return false; }
+
+  Mmsg(cmd,
+       "UPDATE Media SET Slot=%d,InChanger=%d,StorageId=%s "
+       "WHERE VolumeName='%s' AND PoolId=%s",
+       mr->Slot, mr->InChanger, edit_int64(mr->StorageId, ed1), esc->c_str(),
+       edit_int64(mr->PoolId, ed2));
+
+  const int affected = UpdateDb(jcr, cmd);
+  if (affected == 0) {
+    Mmsg(errmsg, T_("Volume pool changed; refresh and try again.\n"));
+    return false;
+  }
+  if (affected < 0) { return false; }
+
+  return MakeInchangerUnique(jcr, mr);
 }
 
 /**
@@ -369,9 +465,13 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
+bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr,
+                                   MediaDbRecord* mr,
+                                   int64_t expected_pool_id)
 {
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
+  const int64_t pool_id
+      = expected_pool_id > 0 ? expected_pool_id : mr->PoolId;
 
   DbLocker _{this};
   if (mr->VolumeName[0]) {
@@ -382,11 +482,12 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
          "ActionOnPurge=%u,Recycle=%d,VolRetention=%s,VolUseDuration=%s,"
          "MaxVolJobs=%u,MaxVolFiles=%u,MaxVolBytes=%s,RecyclePoolId=%s,"
          "MinBlocksize=%u,MaxBlocksize=%u "
-         "WHERE VolumeName='%s'",
+         "WHERE VolumeName='%s' AND PoolId=%s",
          mr->ActionOnPurge, mr->Recycle, edit_uint64(mr->VolRetention, ed1),
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
          edit_uint64(mr->MaxVolBytes, ed3), edit_uint64(mr->RecyclePoolId, ed4),
-         mr->MinBlocksize, mr->MaxBlocksize, esc->c_str());
+         mr->MinBlocksize, mr->MaxBlocksize, esc->c_str(),
+         edit_int64(pool_id, ed5));
   } else {
     Mmsg(cmd,
          "UPDATE Media SET "
@@ -402,7 +503,12 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
 
   Dmsg1(400, "%s\n", cmd);
 
-  return UpdateDb(jcr, cmd) != -1;
+  const int affected = UpdateDb(jcr, cmd);
+  if (affected == 0 && mr->VolumeName[0]) {
+    Mmsg(errmsg, T_("Volume pool changed; refresh and try again.\n"));
+    return false;
+  }
+  return affected != -1;
 }
 
 

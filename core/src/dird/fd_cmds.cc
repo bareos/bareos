@@ -999,7 +999,7 @@ bool CancelFileDaemonJob(UaContext* ua, JobControlRecord* jcr)
   fd->close();
   delete ua->jcr->file_bsock;
   ua->jcr->file_bsock = NULL;
-  jcr->file_bsock->SetTerminated();
+  if (jcr->file_bsock) { jcr->file_bsock->SetTerminated(); }
   jcr->MyThreadSendSignal(kTimeoutSignal);
   return true;
 }

@@ -339,6 +339,11 @@ pool
 pools
    Used in the show, list, and llist commands. Takes no arguments.
 
+poolwithdefaults
+   Used with ``update volume=<name> poolwithdefaults=<pool>`` to move a
+   Volume and apply the target Pool's defaults atomically. Access to both
+   Pools is required. Do not combine it with other Volume update keywords.
+
 select
    Used in the restore command. Takes no argument.
 

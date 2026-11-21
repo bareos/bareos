@@ -38,10 +38,12 @@
 #include "dird/storage.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
+#include "dird/ua_prune.h"
 #include "dird/ua_select.h"
 #include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+#include "dird/volstatus_change.h"
 #include "volume_key.h"
 
 #include <charconv>
@@ -85,9 +87,14 @@ bool UpdateCmd(UaContext* ua, const char*)
 
   switch (FindArgKeyword(ua, kw)) {
     case 0:
-    case 1:
-      UpdateVolume(ua);
-      return true;
+    case 1: {
+      bool strict = FindArg(ua, NT_("comment")) >= 0
+                    || FindArg(ua, NT_("poolwithdefaults")) >= 0
+                    || FindArg(ua, NT_("frompool")) >= 0
+                    || FindArg(ua, NT_("expectedpoolid")) >= 0;
+      bool updated = UpdateVolume(ua);
+      return strict ? updated : true;
+    }
     case 2:
       UpdatePool(ua);
       return true;
@@ -132,7 +139,34 @@ bool UpdateCmd(UaContext* ua, const char*)
   return true;
 }
 
-static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
+static bool VolumeHasJobs(UaContext* ua, const MediaDbRecord* mr)
+{
+  PoolMem query(PM_MESSAGE);
+  s_count_ctx cnt;
+  cnt.count = 0;
+  Mmsg(query, "SELECT 1 FROM JobMedia WHERE MediaId=%" PRIdbid " LIMIT 1",
+       mr->MediaId);
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str(), DelCountHandler,
+                                            static_cast<void*>(&cnt))) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return true;  // assume the worst
+  }
+  return cnt.count != 0;
+}
+
+static VolStatusChange CheckVolStatusChange(UaContext* ua,
+                                            const MediaDbRecord* mr,
+                                            const char* requested)
+{
+  bool has_jobs
+      = VolStatusEquals(requested, NT_("Cleaning")) && VolumeHasJobs(ua, mr);
+  return CheckVolStatusChange(mr->VolStatus, requested, has_jobs);
+}
+
+static void UpdateVolstatus(UaContext* ua,
+                            const char* val,
+                            MediaDbRecord* mr,
+                            bool force)
 {
   PoolMem query(PM_MESSAGE);
   const char* kw[] = {NT_("Append"),   NT_("Archive"),
@@ -151,16 +185,71 @@ static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
   }
   if (!found) {
     ua->ErrorMsg(T_("Invalid VolStatus specified: %s\n"), val);
+    return;
+  }
+
+  switch (CheckVolStatusChange(ua, mr, kw[i])) {
+    case VolStatusChange::kUnchanged:
+      ua->InfoMsg(T_("Volume status is already: %s\n"), mr->VolStatus);
+      return;
+    case VolStatusChange::kRecycleRequiresPurged:
+      if (!force) {
+        ua->ErrorMsg(
+            T_("Volume \"%s\" has status %s. Only Purged volumes can be set "
+               "to Recycle, as recycling relabels the volume and loses its "
+               "data. Purge the volume first or add \"force\".\n"),
+            mr->VolumeName, mr->VolStatus);
+        return;
+      }
+      break;
+    case VolStatusChange::kCleaningRequiresEmptyVolume:
+      if (!force) {
+        ua->ErrorMsg(
+            T_("Volume \"%s\" still contains jobs. Only volumes without jobs "
+               "can be set to Cleaning, as cleaning volumes are never used "
+               "for backups. Add \"force\" to override.\n"),
+            mr->VolumeName);
+        return;
+      }
+      break;
+    case VolStatusChange::kAllowed:
+      break;
+  }
+
+  char ed1[50], ed2[50];
+  DbLocker _{ua->db};
+  auto old_status = ua->db->EscapeString(ua->jcr, mr->VolStatus);
+  if (!old_status) {
+    ua->ErrorMsg(T_("Could not escape Volume status.\n"));
+    return;
+  }
+  if (VolStatusEquals(kw[i], NT_("Cleaning")) && !force) {
+    // The second statement sees JobMedia committed while the row lock waited.
+    edit_int64(mr->MediaId, ed1);
+    Mmsg(query,
+         "SELECT MediaId FROM Media WHERE MediaId=%s FOR UPDATE;"
+         "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s' "
+         "AND PoolId=%s AND NOT EXISTS (SELECT 1 FROM JobMedia WHERE "
+         "JobMedia.MediaId=Media.MediaId)",
+         ed1, kw[i], ed1, old_status->c_str(),
+         edit_int64(mr->PoolId, ed2));
   } else {
-    char ed1[50];
+    Mmsg(query,
+         "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s AND VolStatus='%s' "
+         "AND PoolId=%s",
+         kw[i], edit_int64(mr->MediaId, ed1), old_status->c_str(),
+         edit_int64(mr->PoolId, ed2));
+  }
+  int affected = ua->db->UpdateDb(ua->jcr, query.c_str());
+  if (affected < 0) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+  } else if (affected != 1) {
+    ua->ErrorMsg(T_(
+        "Volume pool or status changed or it contains jobs; refresh and try "
+        "again.\n"));
+  } else {
     bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
-    Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s",
-         mr->VolStatus, edit_int64(mr->MediaId, ed1));
-    if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
-      ua->ErrorMsg("%s", ua->db->strerror());
-    } else {
-      ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
-    }
+    ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
   }
 }
 
@@ -336,7 +425,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   /* Make sure to use db_update... rather than doing this directly,
    * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaSlotRecord(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -347,7 +436,8 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
 static void ReplaceVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 {
   if (!GenerateNewEncryptionKey(ua, mr)) { return; }
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
   } else {
     ua->InfoMsg("Generated new encryption key for volume '%s' in catalog.\n",
@@ -358,7 +448,8 @@ static void ReplaceVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 static void RemoveVolEncryptionKey(UaContext* ua, MediaDbRecord* mr)
 {
   memset(mr->EncrKey, 0, sizeof(mr->EncrKey));
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record: ERR=%s"), ua->db->strerror());
   } else {
     ua->InfoMsg("Removed encryption key for volume '%s' from catalog.\n",
@@ -452,6 +543,93 @@ void UpdateVolPool(UaContext* ua,
   }
 }
 
+static bool UpdateVolPoolWithDefaults(UaContext* ua,
+                                      const char* pool_name,
+                                      MediaDbRecord* mr)
+{
+  PoolDbRecord source;
+  PoolDbRecord target;
+  source.PoolId = mr->PoolId;
+  bstrncpy(target.Name, pool_name, sizeof(target.Name));
+
+  DbLocker _{ua->db};
+  if (!ua->db->GetPoolRecord(ua->jcr, &source)) {
+    ua->ErrorMsg(T_("Could not find current Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, source.Name, true)) {
+    ua->ErrorMsg(T_("Could not access current Pool.\n"));
+    return false;
+  }
+  if (!ua->db->GetPoolRecord(ua->jcr, &target)) {
+    ua->ErrorMsg(T_("Could not find target Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, target.Name, true)) {
+    ua->ErrorMsg(T_("Could not access target Pool.\n"));
+    return false;
+  }
+
+  auto source_name = ua->db->EscapeString(ua->jcr, source.Name);
+  auto target_name = ua->db->EscapeString(ua->jcr, target.Name);
+  if (!source_name || !target_name) {
+    ua->ErrorMsg(T_("Could not escape Pool names.\n"));
+    return false;
+  }
+
+  PoolMem query(PM_MESSAGE);
+  Mmsg(query,
+       "WITH pools AS ("
+       "SELECT * FROM Pool WHERE PoolId IN (%" PRIdbid ",%" PRIdbid
+       ") "
+       "ORDER BY PoolId FOR UPDATE), "
+       "moved AS ("
+       "UPDATE Media SET PoolId=dst.PoolId,"
+       "ActionOnPurge=dst.ActionOnPurge,Recycle=dst.Recycle,"
+       "VolRetention=dst.VolRetention,VolUseDuration=dst.VolUseDuration,"
+       "MaxVolJobs=dst.MaxVolJobs,MaxVolFiles=dst.MaxVolFiles,"
+       "MaxVolBytes=dst.MaxVolBytes,RecyclePoolId=dst.RecyclePoolId,"
+       "MinBlocksize=dst.MinBlocksize,MaxBlocksize=dst.MaxBlocksize "
+       "FROM pools src,pools dst "
+       "WHERE Media.MediaId=%" PRIdbid
+       " AND Media.PoolId=src.PoolId "
+       "AND src.PoolId=%" PRIdbid
+       " AND src.Name='%s' "
+       "AND dst.PoolId=%" PRIdbid
+       " AND dst.Name='%s' "
+       "RETURNING Media.MediaId), "
+       "counts AS (UPDATE Pool SET NumVols=NumVols+"
+       "CASE WHEN PoolId=%" PRIdbid
+       " THEN -1 ELSE 1 END "
+       "FROM moved WHERE PoolId IN (%" PRIdbid ",%" PRIdbid
+       ") "
+       "AND %" PRIdbid " != %" PRIdbid
+       " RETURNING PoolId) "
+       "SELECT count(*) FROM moved",
+       source.PoolId, target.PoolId, mr->MediaId, source.PoolId,
+       source_name->c_str(), target.PoolId, target_name->c_str(), source.PoolId,
+       source.PoolId, target.PoolId, source.PoolId, target.PoolId);
+  s_count_ctx updated{};
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, &updated)) {
+    ua->ErrorMsg(T_("Error updating Volume record: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (updated.count != 1) {
+    ua->ErrorMsg(T_("Volume or Pool changed; refresh and try again.\n"));
+    return false;
+  }
+  ua->send->ObjectStart("poolmove");
+  ua->send->ObjectKeyValue("volumename", mr->VolumeName);
+  ua->send->ObjectKeyValue("pool", target.Name);
+  ua->send->ObjectEnd("poolmove");
+  ua->InfoMsg(T_("Volume moved to Pool \"%s\" and defaults updated.\n"),
+              target.Name);
+  return true;
+}
+
 // Modify the RecyclePool of a Volume
 void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
 {
@@ -502,23 +680,39 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
 }
 
 // Refresh the Volume information from the Pool record
-static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
+static bool UpdateVolFromPool(UaContext* ua,
+                              MediaDbRecord* mr,
+                              int64_t expected_pool_id = 0)
 {
   PoolDbRecord pr;
 
+  if (expected_pool_id > 0 && mr->PoolId != expected_pool_id) {
+    ua->ErrorMsg(
+        T_("Volume pool changed since preview; refresh and try again.\n"));
+    return false;
+  }
+
   pr.PoolId = mr->PoolId;
-  if (!ua->db->GetPoolRecord(ua->jcr, &pr)
-      || !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
-    return;
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    ua->ErrorMsg(T_("Could not find current Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+    ua->ErrorMsg(T_("Not authorized to update Volume defaults.\n"));
+    return false;
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaDefaults(ua->jcr, mr, expected_pool_id)) {
     ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"),
                  ua->db->strerror());
+    return false;
   } else {
     ua->InfoMsg(T_("Volume defaults updated from \"%s\" Pool record.\n"),
                 pr.Name);
   }
+  return true;
 }
 
 // Refresh the Volume information from the Pool record for all Volumes
@@ -586,7 +780,8 @@ static void UpdateVolenabled(UaContext* ua, char* val, MediaDbRecord* mr)
   mr->Enabled = GetEnabled(ua, val);
   if (mr->Enabled < 0) { return; }
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record Enabled: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -604,13 +799,60 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
     ua->ErrorMsg(T_("Error updating media record ActionOnPurge: ERR=%s"),
                  ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New ActionOnPurge is: %s\n"),
                 action_on_purge_to_string(mr->ActionOnPurge, ret));
   }
+}
+
+static bool UpdateVolComment(UaContext* ua, const char* val, MediaDbRecord* mr)
+{
+  PoolMem query(PM_MESSAGE);
+  char ed1[50], ed2[50];
+  MediaDbRecord current;
+  PoolDbRecord pr;
+
+  DbLocker _{ua->db};
+  current.MediaId = mr->MediaId;
+  if (!ua->db->GetMediaRecord(ua->jcr, &current)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+  pr.PoolId = current.PoolId;
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+    ua->ErrorMsg(T_("Not authorized to update Volume comment.\n"));
+    return false;
+  }
+  auto esc = ua->db->EscapeString(ua->jcr, val);
+  if (!esc) {
+    ua->ErrorMsg(T_("Could not escape comment.\n"));
+    return false;
+  }
+  Mmsg(query,
+       "UPDATE Media SET Comment='%s' WHERE MediaId=%s AND PoolId=%s "
+       "RETURNING 1",
+       esc->c_str(), edit_int64(current.MediaId, ed1),
+       edit_int64(current.PoolId, ed2));
+  s_count_ctx updated{};
+  if (!ua->db->SqlQuery(query.c_str(), DelCountHandler, &updated)) {
+    ua->ErrorMsg(T_("Error updating media record Comment: ERR=%s"),
+                 ua->db->strerror());
+    return false;
+  } else if (updated.count != 1) {
+    ua->ErrorMsg(T_("Volume pool changed; refresh and try again.\n"));
+    return false;
+  } else {
+    ua->InfoMsg(T_("New Comment is: %s\n"), val);
+  }
+  return true;
 }
 
 /**
@@ -628,26 +870,75 @@ static bool UpdateVolume(UaContext* ua)
   char ed1[130];
   bool done = false;
   int i;
-  const char* kw[] = {NT_("VolStatus"),     /* 0 */
-                      NT_("VolRetention"),  /* 1 */
-                      NT_("VolUse"),        /* 2 */
-                      NT_("MaxVolJobs"),    /* 3 */
-                      NT_("MaxVolFiles"),   /* 4 */
-                      NT_("MaxVolBytes"),   /* 5 */
-                      NT_("Recycle"),       /* 6 */
-                      NT_("InChanger"),     /* 7 */
-                      NT_("Slot"),          /* 8 */
-                      NT_("Pool"),          /* 9 */
-                      NT_("FromPool"),      /* 10 */
-                      NT_("AllFromPool"),   /* 11 !!! see below !!! */
-                      NT_("Enabled"),       /* 12 */
-                      NT_("RecyclePool"),   /* 13 */
-                      NT_("ActionOnPurge"), /* 14 */
-                      NT_("Storage"),       /* 15 */
-                      NT_("Encrypt"),       /* 16 */
+  const int expected_pool_arg
+      = FindArgWithValue(ua, NT_("expectedpoolid"));
+  int64_t expected_pool_id = 0;
+  const char* kw[] = {NT_("VolStatus"),        /* 0 */
+                      NT_("VolRetention"),     /* 1 */
+                      NT_("VolUse"),           /* 2 */
+                      NT_("MaxVolJobs"),       /* 3 */
+                      NT_("MaxVolFiles"),      /* 4 */
+                      NT_("MaxVolBytes"),      /* 5 */
+                      NT_("Recycle"),          /* 6 */
+                      NT_("InChanger"),        /* 7 */
+                      NT_("Slot"),             /* 8 */
+                      NT_("Pool"),             /* 9 */
+                      NT_("FromPool"),         /* 10 */
+                      NT_("AllFromPool"),      /* 11 !!! see below !!! */
+                      NT_("Enabled"),          /* 12 */
+                      NT_("RecyclePool"),      /* 13 */
+                      NT_("ActionOnPurge"),    /* 14 */
+                      NT_("Storage"),          /* 15 */
+                      NT_("Encrypt"),          /* 16 */
+                      NT_("Comment"),          /* 17 */
+                      NT_("PoolWithDefaults"), /* 18 */
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
+
+  if (FindArg(ua, NT_("comment")) > 0
+      && (FindArg(ua, NT_("frompool")) > 0
+          || FindArg(ua, NT_("allfrompool")) > 0)) {
+    ua->ErrorMsg(T_("Comment cannot be combined with FromPool or "
+                    "AllFromPool.\n"));
+    return false;
+  }
+
+  if (FindArg(ua, NT_("expectedpoolid")) > 0) {
+    if (expected_pool_arg <= 0
+        || FindArg(ua, NT_("frompool")) <= 0
+        || !IsAnInteger(ua->argv[expected_pool_arg])) {
+      ua->ErrorMsg(T_("ExpectedPoolId requires a positive PoolId with "
+                      "frompool=yes.\n"));
+      return false;
+    }
+    expected_pool_id = str_to_int64(ua->argv[expected_pool_arg]);
+    if (expected_pool_id <= 0) {
+      ua->ErrorMsg(T_("ExpectedPoolId requires a positive PoolId with "
+                      "frompool=yes.\n"));
+      return false;
+    }
+  }
+
+  if (FindArg(ua, NT_("PoolWithDefaults")) > 0) {
+    if (FindArgWithValue(ua, NT_("PoolWithDefaults")) < 0
+        || FindArg(ua, NT_("fromallpools")) > 0) {
+      ua->ErrorMsg(
+          T_("PoolWithDefaults requires a target Pool and cannot be "
+             "combined with other Volume updates.\n"));
+      return false;
+    }
+    for (int k = 0; k < 18; ++k) {
+      if (FindArg(ua, kw[k]) > 0) {
+        ua->ErrorMsg(
+            T_("PoolWithDefaults cannot be combined with other "
+               "Volume updates.\n"));
+        return false;
+      }
+    }
+  }
+
+  const bool force = FindArg(ua, NT_("force")) > 0;
 
   for (i = 0; kw[i]; i++) {
     int j;
@@ -659,7 +950,7 @@ static bool UpdateVolume(UaContext* ua)
       if (i != AllFromPool && !SelectMediaDbr(ua, &mr)) { return false; }
       switch (i) {
         case 0:
-          UpdateVolstatus(ua, ua->argv[j], &mr);
+          UpdateVolstatus(ua, ua->argv[j], &mr, force);
           break;
         case 1:
           UpdateVolretention(ua, ua->argv[j], &mr);
@@ -694,7 +985,7 @@ static bool UpdateVolume(UaContext* ua)
           UpdateVolPool(ua, ua->argv[j], &mr, &pr);
           break;
         case 10:
-          UpdateVolFromPool(ua, &mr);
+          if (!UpdateVolFromPool(ua, &mr, expected_pool_id)) { return false; }
           return true;
         case 11:
           UpdateAllVolsFromPool(ua, ua->argv[j]);
@@ -713,6 +1004,14 @@ static bool UpdateVolume(UaContext* ua)
           break;
         case 16:
           UpdateVolEncryption(ua, ua->argv[j], &mr);
+          break;
+        case 17:
+          if (!UpdateVolComment(ua, ua->argv[j], &mr)) { return false; }
+          break;
+        case 18:
+          if (!UpdateVolPoolWithDefaults(ua, ua->argv[j], &mr)) {
+            return false;
+          }
           break;
       }
       done = true;
@@ -749,12 +1048,13 @@ static bool UpdateVolume(UaContext* ua)
     AddPrompt(ua, T_("RecyclePool"));                /* 15 */
     AddPrompt(ua, T_("Action On Purge"));            /* 16 */
     AddPrompt(ua, T_("Storage"));                    /* 17 */
-    AddPrompt(ua, T_("Done"));                       /* 18 */
+    AddPrompt(ua, T_("Comment"));                    /* 18 */
+    AddPrompt(ua, T_("Done"));                       /* 19 */
     i = DoPrompt(ua, "", T_("Select parameter to modify"), NULL, 0);
 
     /* For All Volumes, All Volumes from Pool, and Done, we don't need
      * a Volume record */
-    if (i != 12 && i != 13 && i != 18) {
+    if (i != 12 && i != 13 && i != 19) {
       if (!SelectMediaDbr(ua, &mr)) { /* Get Volume record */
         return false;
       }
@@ -765,22 +1065,21 @@ static bool UpdateVolume(UaContext* ua)
         /* Modify Volume Status */
         ua->InfoMsg(T_("Current Volume status is: %s\n"), mr.VolStatus);
         StartPrompt(ua, T_("Possible Values are:\n"));
-        AddPrompt(ua, NT_("Append"));
-        AddPrompt(ua, NT_("Archive"));
-        AddPrompt(ua, NT_("Disabled"));
-        AddPrompt(ua, NT_("Full"));
-        AddPrompt(ua, NT_("Used"));
-        AddPrompt(ua, NT_("Cleaning"));
-        if (bstrcmp(mr.VolStatus, NT_("Purged"))) {
-          AddPrompt(ua, NT_("Recycle"));
+        for (const char* status :
+             {NT_("Append"), NT_("Archive"), NT_("Disabled"), NT_("Full"),
+              NT_("Used"), NT_("Cleaning"), NT_("Recycle"), NT_("Read-Only")}) {
+          auto change = CheckVolStatusChange(ua, &mr, status);
+          if (change == VolStatusChange::kAllowed
+              || (force && change != VolStatusChange::kUnchanged)) {
+            AddPrompt(ua, status);
+          }
         }
-        AddPrompt(ua, NT_("Read-Only"));
         if (DoPrompt(ua, "", T_("Choose new Volume Status"), ua->cmd,
                      sizeof(mr.VolStatus))
             < 0) {
           return true;
         }
-        UpdateVolstatus(ua, ua->cmd, &mr);
+        UpdateVolstatus(ua, ua->cmd, &mr, force);
         break;
       case 1: /* Retention */
         ua->InfoMsg(T_("Current retention period is: %s\n"),
@@ -841,7 +1140,7 @@ static bool UpdateVolume(UaContext* ua)
         /* Make sure to use db_update... rather than doing this directly,
          *   so that any Slot is handled correctly. */
         SetStorageidInMr(NULL, &mr);
-        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+        if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
           ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                        ua->db->strerror());
         } else {
@@ -943,6 +1242,11 @@ static bool UpdateVolume(UaContext* ua)
         UpdateVolStorage(ua, sr.Name, &mr);
         ua->InfoMsg(T_("New Storage is: %s\n"), sr.Name);
         return true;
+
+      case 18:
+        if (!GetCmd(ua, T_("Enter new Comment: "))) { return false; }
+        if (!UpdateVolComment(ua, ua->cmd, &mr)) { return false; }
+        break;
 
       default: /* Done or error */
         ua->InfoMsg(T_("Selection terminated.\n"));
@@ -1288,7 +1592,7 @@ static void UpdateSlots(UaContext* ua)
           mr.InChanger = 1;
           if (have_enabled) { mr.Enabled = Enabled; }
           SetStorageidInMr(store.store, &mr);
-          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
             ua->ErrorMsg("%s", ua->db->strerror());
           } else {
             ua->InfoMsg(
@@ -1430,7 +1734,7 @@ void UpdateSlotsFromVolList(UaContext* ua,
           mr.Slot = vl->bareos_slot_number;
           mr.InChanger = 1;
           SetStorageidInMr(store, &mr);
-          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr)) {
+          if (!ua->db->UpdateMediaRecord(ua->jcr, &mr, false, true)) {
             ua->ErrorMsg("%s", ua->db->strerror());
           }
         }

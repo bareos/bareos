@@ -20,35 +20,14 @@
 -->
 
 <template>
-  <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
-    <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-route-tab :label="t('Devices')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'storages') }" />
-      <q-route-tab :label="t('Pools')"        no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'pools') }" />
-      <q-route-tab :label="t('Volumes')"      no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'volumes') }" />
-      <q-route-tab :label="t('Autochangers')" no-caps :to="{ path: '/storages', query: buildStoragesTabQuery(route.query, 'autochangers') }" />
-    </q-tabs>
-
-    <!-- ── Toolbar ─────────────────────────────────────────── -->
+  <div class="autochanger-panel">
+    <!-- Toolbar -->
     <div class="row items-center q-gutter-sm q-mb-md">
-      <q-select
-        v-model="selectedStorage"
-        :options="storageOptions"
-        option-label="label"
-        option-value="value"
-        emit-value
-        map-options
-        :label="t('Autochanger')"
-        outlined
-        dense
-        style="min-width:200px"
-        :loading="storagesLoading"
-      />
-
-      <q-btn flat round dense icon="refresh" :title="t('Refresh')"
+      <q-btn flat round dense icon="refresh" :title="t('Refresh')" :aria-label="t('Refresh')"
              :loading="slotsLoading" @click="manualRefresh" />
 
       <DirectorBadge
-        v-if="isCommonAutochangerScope && currentStorage"
+        v-if="showDirector && currentStorage?.director"
         :director="currentStorage.director"
       >
         {{ currentStorage.director }}
@@ -57,38 +36,20 @@
       <q-space />
 
       <q-btn outline color="primary" icon="sync_alt" :label="t('Update Slots')"
-             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" />
+             :disable="!selectedStorageName || commandRunning" @click="doUpdateSlots" data-testid="autochanger-update-slots" />
 
       <q-btn outline color="primary" icon="label" :label="t('Label barcodes')"
-             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" />
+             :disable="!selectedStorageName || commandRunning" @click="openLabelDialog" data-testid="autochanger-label-barcodes" />
 
       <q-btn outline color="primary" icon="monitor_heart" :label="t('Status')"
-             :disable="!selectedStorageName || commandRunning" @click="showStatus" />
+             :disable="!selectedStorageName || commandRunning" @click="showStatus" data-testid="autochanger-status" />
     </div>
 
-    <q-banner v-if="loadError" class="bg-negative text-white q-mb-md" rounded>
+    <q-banner v-if="loadError" dense rounded class="bg-negative text-white q-mb-md">
       {{ loadError }}
     </q-banner>
 
-    <q-banner
-      v-if="visibleDirectorErrors.length"
-      class="bg-warning text-black q-mb-md"
-      rounded
-    >
-      <template #avatar>
-        <q-icon name="warning" />
-      </template>
-      <div v-for="item in visibleDirectorErrors" :key="item.director" class="row items-center q-gutter-xs">
-        <DirectorBadge :director="item.director" size="sm" />
-        <span>{{ item.message }}</span>
-      </div>
-    </q-banner>
 
-    <!-- No autochanger storages -->
-    <q-banner v-if="!storagesLoading && storageOptions.length === 0"
-              class="bg-warning text-white q-mb-md" rounded>
-      {{ t('No autochanger storages configured.') }}
-    </q-banner>
 
     <!-- ── Slot Tables ────────────────────────────────────── -->
     <div v-if="selectedStorageName" class="row q-col-gutter-md">
@@ -96,16 +57,24 @@
       <!-- Storage Slots (left, wide) -->
       <div class="col-12 col-md-8">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(storageSlots.length, t('Slots')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(storageSlots.length, t('Slots')) }}</span>
+            <q-space />
+            <q-input v-model="slotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:200px" clearable data-testid="autochanger-slots-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableSlotCols" @toggle="toggleSlotCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !storageSlots.length)"
               :rows="storageSlots"
-              :columns="slotCols"
+              :columns="visibleSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="slotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
               virtual-scroll
@@ -163,7 +132,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -186,7 +155,7 @@
                         name: 'pool-details',
                         params: { name: props.value },
                         query: {
-                          ...buildAutochangerSelectionQuery(route.query, currentStorage),
+                          ...buildAutochangerOriginQuery({}, currentStorage),
                           ...(currentStorage?.director ? { director: currentStorage.director } : {}),
                         },
                       }"
@@ -203,18 +172,19 @@
                 <q-td :props="props" class="text-right">
                   <template v-if="props.row.content === 'full' && slotInDriveMap[props.row.slotnr] == null">
                     <q-btn flat round dense size="sm" icon="play_circle"
-                           :title="t('Mount to drive')"
+                           :title="t('Mount to drive')" :aria-label="t('Mount to drive')"
                            @click="openSlotMountDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="swap_horiz"
-                           :title="t('Transfer to slot')"
+                           :title="t('Transfer to slot')" :aria-label="t('Transfer to slot')"
                            @click="openTransferDialog(props.row.slotnr)" />
                     <q-btn flat round dense size="sm" icon="upload"
-                           :title="t('Export')"
+                           :title="t('Export')" :aria-label="t('Export')"
                            @click="doExport(props.row.slotnr)" />
                   </template>
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleSlotCols.length" :rows="8" />
           </q-card-section>
         </q-card>
       </div>
@@ -224,16 +194,24 @@
 
         <!-- Drives -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
-            {{ formatCountLabel(drives.length, t('Drives')) }}
+          <q-card-section class="panel-header row items-center">
+            <span>{{ formatCountLabel(drives.length, t('Drives')) }}</span>
+            <q-space />
+            <q-input v-model="drivesSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:160px" clearable data-testid="autochanger-drives-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableDriveCols" @toggle="toggleDriveCol" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !drives.length)"
               :rows="drives"
-              :columns="driveCols"
+              :columns="visibleDriveCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="drivesSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -282,7 +260,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -291,34 +269,42 @@
                 <q-td :props="props" class="text-right">
                   <q-btn v-if="props.row.content === 'full'"
                          flat round dense size="sm" icon="eject"
-                         :title="t('Release')"
+                         :title="t('Release')" :aria-label="t('Release')"
                          @click="doRelease(props.row.slotnr)" />
                   <q-btn v-else
                          flat round dense size="sm" icon="play_circle"
-                         :title="t('Mount')"
+                         :title="t('Mount')" :aria-label="t('Mount')"
                          @click="openMountDialog(props.row.slotnr)" />
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleDriveCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
         <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center no-wrap">
+          <q-card-section class="panel-header row items-center no-wrap q-gutter-xs">
             <span class="col">
               {{ formatCountLabel(importSlots.length, t('Import/Export Slots')) }}
             </span>
+            <q-input v-model="ieSlotsSearch" dense outlined :placeholder="t('Search…')"
+                     style="width:140px" clearable data-testid="autochanger-ieslots-search">
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <ColumnPickerMenu :columns="toggleableIeSlotCols" @toggle="toggleIeSlotCol" />
              <q-btn flat round dense size="sm" icon="download"
-                   :title="t('Import all')" :disable="commandRunning" @click="doImportAll" />
+                   :title="t('Import all')" :aria-label="t('Import all')" :disable="commandRunning" @click="doImportAll" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
+              v-if="!(slotsLoading && !importSlots.length)"
               :rows="importSlots"
-              :columns="ieSlotCols"
+              :columns="visibleIeSlotCols"
               row-key="slotnr"
               dense flat
               :loading="slotsLoading"
+              :filter="ieSlotsSearch"
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
@@ -349,7 +335,7 @@
                       :query="buildAutochangerVolumeDetailsQuery(currentStorage)"
                     />
                     <q-btn flat round dense size="xs" icon="content_copy"
-                           :title="t('Copy volume name')"
+                           :title="t('Copy volume name')" :aria-label="t('Copy volume name')"
                            @click.stop="copyName(props.value)" />
                   </div>
                 </q-td>
@@ -358,12 +344,13 @@
                 <q-td :props="props" class="text-right">
                    <q-btn v-if="props.row.content === 'full'"
                           flat round dense size="sm" icon="download"
-                          :title="t('Import')"
+                          :title="t('Import')" :aria-label="t('Import')"
                           :disable="commandRunning"
                           @click="doImport(props.row.slotnr)" />
                 </q-td>
               </template>
             </q-table>
+            <TableSkeleton v-else :columns="visibleIeSlotCols.length" :rows="4" />
           </q-card-section>
         </q-card>
 
@@ -377,7 +364,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Label barcodes') }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="labelForm.pool"
@@ -417,7 +404,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Mount Tape') }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-input v-model="mountForm.slot"
@@ -443,7 +430,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Transfer from Slot {slot}', { slot: transferForm.srcSlot }) }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="transferForm.dstSlot"
@@ -467,7 +454,7 @@
         <q-card-section class="row items-center q-pb-none">
           <span class="text-h6">{{ t('Label Slot {slot}', { slot: slotLabelForm.slot }) }}</span>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense :title="t('Close')" :aria-label="t('Close')" v-close-popup />
         </q-card-section>
         <q-card-section class="q-gutter-sm">
           <q-select v-model="slotLabelForm.pool"
@@ -526,7 +513,7 @@
           dense
           icon="delete_sweep"
           :disable="commandRunning"
-          :title="t('Clear')"
+          :title="t('Clear')" :aria-label="t('Clear')"
           @click="clearCommandLog"
         />
       </q-card-section>
@@ -537,20 +524,17 @@
         </q-scroll-area>
       </q-card-section>
     </q-card>
-  </component>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useQuasar } from 'quasar'
-import { directorCollection } from '../composables/useDirectorFetch.js'
 import { switchActiveDirector } from '../composables/useDirectorSession.js'
-import { fetchAggregatedAutochangerStorages } from '../composables/storagesAggregate.js'
 import {
   buildExportCommand,
   buildImportCommand,
@@ -559,40 +543,31 @@ import {
   shouldReloadAutochangerAfterCommand,
   shouldRefreshAutochangerTables,
 } from '../utils/autochanger.js'
-import {
-  AUTOCHANGER_DIRECTOR_QUERY_KEY,
-  AUTOCHANGER_STORAGE_QUERY_KEY,
-  buildAutochangerSelectionQuery,
-  buildStoragesTabQuery,
-  resolveAutochangerSelection,
-  resolveStoragesScopeDirector,
-} from '../utils/storagesRoute.js'
-import { isDirectorLoginRequiredError } from '../utils/directorErrors.js'
-import DirectorBadge from '../components/DirectorBadge.vue'
-import VolumeNameLink from '../components/VolumeNameLink.vue'
+import { buildAutochangerOriginQuery } from '../utils/storagesRoute.js'
+import { usePersistedTableFilter } from '../composables/usePersistedTableFilter.js'
+import { usePersistedTableColumns } from '../composables/usePersistedTableColumns.js'
+import DirectorBadge from './DirectorBadge.vue'
+import VolumeNameLink from './VolumeNameLink.vue'
+import TableSkeleton from './TableSkeleton.vue'
+import ColumnPickerMenu from './ColumnPickerMenu.vue'
 
-const { embedded } = defineProps({
-  embedded: {
-    type: Boolean,
-    default: false,
-  },
+const props = defineProps({
+  // Decorated storage row (name, director, scopeKey) owned by the parent
+  // page; `null` means nothing is selected and the panel stays idle.
+  storage: { type: Object, default: null },
+  // Show the owning director, which is only meaningful across directors.
+  showDirector: { type: Boolean, default: false },
 })
 
 const auth = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
-const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 
 // ── State ───────────────────────────────────────────────────
 
-const autochangerStorages = ref([])
-const storagesLoading = ref(false)
 const loadError = ref(null)
-const directorErrors = ref([])
-const selectedStorage = ref(null)
 
 const allSlots = ref([])
 const slotsLoading = ref(false)
@@ -622,79 +597,22 @@ const commandStatusPrompt = ref('')
 const commandStatusMessage = ref('')
 const commandLogScroll = ref(null)
 let _slotsTimer = null
+let storageGeneration = 0
+let slotsGeneration = 0
+let poolsGeneration = 0
+let unmounted = false
 
 // drag-and-drop state
 const dragSlot = ref(null)      // slot row being dragged
 const dragOverDrive = ref(null) // drive number being hovered during drag
 const dragOverSlot = ref(null)  // slot number being hovered during drag
 const dragOverImportSlot = ref(null) // import/export slot number hovered during drag
+let dragStorage = null
 
 // ── Computed ─────────────────────────────────────────────────
 
-const reachableDirectors = computed(() => [...new Set([
-  ...director.availableDirectors,
-  auth.user?.director,
-  settings.directorName,
-].filter(Boolean))])
-
-const directorOptions = computed(() => (
-  reachableDirectors.value.map(value => ({ label: value, value }))
-))
-
-function syncSelectedDirectors() {
-  const validDirectors = reachableDirectors.value
-  const selected = settings.selectedDirectors.filter(value => validDirectors.includes(value))
-
-  if (selected.length > 0) {
-    if (selected.length !== settings.selectedDirectors.length) {
-      settings.setSelectedDirectors(selected)
-    }
-    return
-  }
-
-  const fallbackDirector = auth.user?.director || settings.directorName
-  if (fallbackDirector) {
-    settings.setSelectedDirectors([fallbackDirector])
-  }
-}
-
-const activeDirectors = computed(() => {
-  const selected = settings.selectedDirectors.filter(value => (
-    reachableDirectors.value.includes(value)
-  ))
-
-  if (selected.length > 0) {
-    return selected
-  }
-
-  const currentDirector = auth.user?.director || settings.directorName
-  return currentDirector ? [currentDirector] : []
-})
-
-const isAutochangerRouteActive = computed(() => !embedded || route.query.tab === 'autochangers')
-const queriedStorageName = computed(() => (
-  typeof route.query[AUTOCHANGER_STORAGE_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_STORAGE_QUERY_KEY]
-    : ''
-))
-const queriedDirectorName = computed(() => (
-  typeof route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY] === 'string'
-    ? route.query[AUTOCHANGER_DIRECTOR_QUERY_KEY]
-    : ''
-))
-const storagesScopeDirector = computed(() => resolveStoragesScopeDirector(route.query))
-const autochangerScopeDirectors = computed(() => (
-  storagesScopeDirector.value ? [storagesScopeDirector.value] : activeDirectors.value
-))
-const currentStorage = computed(() => (
-  autochangerStorages.value.find(storage => storage.scopeKey === selectedStorage.value) ?? null
-))
+const currentStorage = computed(() => props.storage ?? null)
 const selectedStorageName = computed(() => currentStorage.value?.name ?? null)
-const isCommonAutochangerScope = computed(() => autochangerScopeDirectors.value.length > 1)
-const storageOptions = computed(() => autochangerStorages.value.map(storage => ({
-  label: isCommonAutochangerScope.value ? storage.label : storage.name,
-  value: storage.scopeKey,
-})))
 
 const drives = computed(() =>
   allSlots.value.filter(s => s.type === 'drive')
@@ -724,9 +642,6 @@ const emptySlotOptions = computed(() =>
     .filter(s => s.content === 'empty')
     .map(s => ({ label: `Slot ${s.slotnr}`, value: s.slotnr }))
 )
-const visibleDirectorErrors = computed(() => (
-  directorErrors.value.filter(item => !isDirectorLoginRequiredError(item?.message))
-))
 
 function buildAutochangerVolumeDetailsQuery(storage) {
   if (!storage) {
@@ -734,7 +649,7 @@ function buildAutochangerVolumeDetailsQuery(storage) {
   }
 
   return {
-    ...buildAutochangerSelectionQuery(route.query, storage),
+    ...buildAutochangerOriginQuery({}, storage),
     ...(storage.director ? { director: storage.director } : {}),
   }
 }
@@ -836,6 +751,29 @@ const slotCols = [
   { name: 'actions',     label: '',          field: 'actions',     align: 'right' },
 ]
 
+const {
+  visibleColumns: visibleSlotCols,
+  toggleableColumns: toggleableSlotCols,
+  toggleColumn: toggleSlotCol,
+} = usePersistedTableColumns('autochanger.slots', slotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleDriveCols,
+  toggleableColumns: toggleableDriveCols,
+  toggleColumn: toggleDriveCol,
+} = usePersistedTableColumns('autochanger.drives', driveCols, { essential: ['slotnr', 'actions'] })
+
+const {
+  visibleColumns: visibleIeSlotCols,
+  toggleableColumns: toggleableIeSlotCols,
+  toggleColumn: toggleIeSlotCol,
+} = usePersistedTableColumns('autochanger.ieSlots', ieSlotCols, { essential: ['drag', 'slotnr', 'actions'] })
+
+const slotsSearch = usePersistedTableFilter('autochanger.slots')
+const drivesSearch = usePersistedTableFilter('autochanger.drives')
+const ieSlotsSearch = usePersistedTableFilter('autochanger.ieSlots')
+
+
 // ── Helpers ───────────────────────────────────────────────────
 
 function copyName(name) {
@@ -862,63 +800,6 @@ function formatCountLabel(count, label) {
 
 // ── Data Loading ──────────────────────────────────────────────
 
-async function loadStorages() {
-  storagesLoading.value = true
-  loadError.value = null
-  directorErrors.value = []
-  try {
-    if (autochangerScopeDirectors.value.length === 0) {
-      autochangerStorages.value = []
-      selectedStorage.value = null
-      return
-    }
-
-    if (isCommonAutochangerScope.value) {
-      const credentials = auth.getCredentials()
-      if (!credentials?.password) {
-        throw new Error(t('Not logged in.'))
-      }
-
-      const result = await fetchAggregatedAutochangerStorages(
-        credentials,
-        autochangerScopeDirectors.value
-      )
-      autochangerStorages.value = result.storages
-      directorErrors.value = result.directorErrors
-    } else {
-      await ensureScopeDirector(autochangerScopeDirectors.value[0])
-      const res = await director.call('list storages')
-      const list = directorCollection(res?.storages)
-      autochangerStorages.value = list
-        .filter(s => String(s.autochanger) === '1')
-        .map(storage => ({
-          ...storage,
-          director: autochangerScopeDirectors.value[0],
-          scopeKey: `${autochangerScopeDirectors.value[0]}:${storage.name}`,
-          label: `${autochangerScopeDirectors.value[0]} / ${storage.name}`,
-        }))
-    }
-
-    const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
-      storageName: queriedStorageName.value,
-      directorName: queriedDirectorName.value,
-      scopeDirector: storagesScopeDirector.value,
-      activeDirectors: autochangerScopeDirectors.value,
-    })
-    if (queriedSelection) {
-      selectedStorage.value = queriedSelection.scopeKey
-    } else if (!autochangerStorages.value.some(storage => storage.scopeKey === selectedStorage.value)) {
-      selectedStorage.value = autochangerStorages.value[0]?.scopeKey ?? null
-    }
-  } catch (e) {
-    autochangerStorages.value = []
-    selectedStorage.value = null
-    loadError.value = e?.message ?? String(e)
-  } finally {
-    storagesLoading.value = false
-  }
-}
-
 async function ensureScopeDirector(targetDirector) {
   if (!targetDirector) {
     return
@@ -939,24 +820,66 @@ async function ensureSelectedStorageDirector() {
   await ensureScopeDirector(currentStorage.value.director)
 }
 
+function ownsStorage(name, storageDirector, generation) {
+  return !unmounted
+    && generation === storageGeneration
+    && props.storage?.name === name
+    && props.storage?.director === storageDirector
+}
+
+function ownsDrag() {
+  return Boolean(dragSlot.value && dragStorage
+    && ownsStorage(dragStorage.name, dragStorage.director, dragStorage.generation))
+}
+
+function clearDragState() {
+  dragSlot.value = null
+  dragStorage = null
+  dragOverDrive.value = null
+  dragOverSlot.value = null
+  dragOverImportSlot.value = null
+}
+
+function takeCurrentDrag() {
+  const slot = dragSlot.value
+  const isCurrent = ownsDrag()
+  clearDragState()
+  return isCurrent ? slot : null
+}
+
 async function loadPools() {
-  if (!selectedStorageName.value) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const request = ++poolsGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
+    && request === poolsGeneration
+  if (!name) {
     pools.value = []
     return
   }
 
   try {
-    await ensureSelectedStorageDirector()
+    await ensureScopeDirector(storageDirector)
+    if (!isCurrent()) return
     const res = await director.call('list pools')
+    if (!isCurrent()) return
     pools.value = res?.pools ?? []
   } catch (e) {
+    if (!isCurrent()) return
     pools.value = []
     loadError.value = e?.message ?? String(e)
   }
 }
 
 async function loadSlots() {
-  if (!selectedStorageName.value) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const request = ++slotsGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
+    && request === slotsGeneration
+  if (!name) {
     allSlots.value = []
     volumeDetailsByName.value = {}
     return
@@ -965,10 +888,10 @@ async function loadSlots() {
   slotsLoading.value = true
   loadError.value = null
   try {
-    await ensureSelectedStorageDirector()
-    const res = await director.call(
-      `status storage="${selectedStorageName.value}" slots`
-    )
+    await ensureScopeDirector(storageDirector)
+    if (!isCurrent()) return
+    const res = await director.call(`status storage="${name}" slots`)
+    if (!isCurrent()) return
     allSlots.value = res?.contents ?? []
 
     const volumeNames = [...new Set(
@@ -983,6 +906,7 @@ async function loadSlots() {
       )
     )
 
+    if (!isCurrent()) return
     volumeDetailsByName.value = volumeNames.reduce((acc, name, index) => {
       const result = volumeResults[index]
       if (result.status !== 'fulfilled') {
@@ -994,11 +918,12 @@ async function loadSlots() {
       return acc
     }, {})
   } catch (e) {
+    if (!isCurrent()) return
     allSlots.value = []
     volumeDetailsByName.value = {}
     loadError.value = e?.message ?? String(e)
   } finally {
-    slotsLoading.value = false
+    if (isCurrent()) slotsLoading.value = false
   }
 }
 
@@ -1026,8 +951,14 @@ function manualRefresh() {
 
 // ── Actions ───────────────────────────────────────────────────
 
-async function runCmd(title, cmd) {
+async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = null) {
   if (commandRunning.value) return
+
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const targetDirector = expectedDirector || storageDirector || auth.user?.director
+  const ownsCommand = () => isCurrent() && ownsStorage(name, storageDirector, generation)
 
   commandLogTitle.value = title
   commandLogCommand.value = cmd
@@ -1044,6 +975,7 @@ async function runCmd(title, cmd) {
     prompt: '',
     message: '',
   }
+  let commandStarted = false
 
   const applyCommandState = (nextState) => {
     finalState = {
@@ -1052,28 +984,38 @@ async function runCmd(title, cmd) {
       status: nextState?.status || finalState.status,
     }
 
+    if (!ownsCommand()) return
     commandStatus.value = finalState.status
     commandStatusPrompt.value = finalState.prompt ?? ''
     commandStatusMessage.value = finalState.message ?? ''
   }
 
   try {
+    if (!ownsCommand()) throw new Error(t('The volume action was cancelled because the selection changed.'))
     await ensureSelectedStorageDirector()
+    if (!ownsCommand() || (targetDirector && (
+      auth.user?.director !== targetDirector || !director.isConnected
+    ))) {
+      throw new Error(t('The volume action was cancelled because the selection changed.'))
+    }
+    commandStarted = true
     await director.rawCall(cmd, {
       onChunk: (chunk) => {
-        if (!chunk) return
+        if (!chunk || !ownsCommand()) return
         commandLogText.value += chunk
         void scrollCommandLogToBottom()
       },
       onStateChange: applyCommandState,
     })
   } catch (e) {
-    commandLogText.value += `\nError: ${e.message}\n`
-    applyCommandState({
-      status: 'failed',
-      message: e.message,
-    })
-    void scrollCommandLogToBottom()
+    if (!commandStarted || ownsCommand()) {
+      commandLogText.value += `\nError: ${e.message}\n`
+      applyCommandState({
+        status: 'failed',
+        message: e.message,
+      })
+      void scrollCommandLogToBottom()
+    }
   } finally {
     commandRunning.value = false
   }
@@ -1085,7 +1027,21 @@ async function runCmd(title, cmd) {
     })
   }
 
-  return finalState
+  return {
+    ...finalState,
+    storageName: name,
+    storageDirector,
+    generation,
+  }
+}
+
+async function reloadSlotsAfterCommand(result) {
+  if (
+    shouldReloadAutochangerAfterCommand(result?.status)
+    && ownsStorage(result.storageName, result.storageDirector, result.generation)
+  ) {
+    await loadSlots()
+  }
 }
 
 async function doUpdateSlots() {
@@ -1093,9 +1049,7 @@ async function doUpdateSlots() {
     'Update Slots',
     `update slots storage="${selectedStorageName.value}"`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function defaultDriveNumber() {
@@ -1117,9 +1071,7 @@ async function doImportAll() {
     'Import All',
     `import storage="${selectedStorageName.value}"`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doImport(slotNr) {
@@ -1130,28 +1082,34 @@ async function doImport(slotNr) {
         srcSlot: slotNr,
       })
     )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doExport(slotNr) {
+  const name = selectedStorageName.value
+  const storageDirector = currentStorage.value?.director
+  const generation = storageGeneration
+  const isCurrent = () => ownsStorage(name, storageDirector, generation)
   $q.dialog({
     title: 'Export Slot',
     message: `Export volume from slot ${slotNr}?`,
     ok: { color: 'primary', label: 'Export' },
     cancel: true,
   }).onOk(async () => {
+    if (!isCurrent()) {
+      $q.notify({ type: 'warning', message: t('The volume action was cancelled because the selection changed.') })
+      return
+    }
     const result = await runCmd(
       `Export Slot ${slotNr}`,
       buildExportCommand({
-        storage: selectedStorageName.value,
+        storage: name,
         srcSlot: slotNr,
-      })
+      }),
+      isCurrent,
+      storageDirector
     )
-    if (shouldReloadAutochangerAfterCommand(result?.status)) {
-      await loadSlots()
-    }
+    await reloadSlotsAfterCommand(result)
   })
 }
 
@@ -1186,9 +1144,7 @@ async function doTransfer() {
     `move storage="${selectedStorageName.value}"` +
     ` srcslots=${srcSlot} dstslots=${dstSlot}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doMount() {
@@ -1198,9 +1154,7 @@ async function doMount() {
     `mount storage="${selectedStorageName.value}"` +
     ` slot=${mountForm.value.slot} drive=${mountForm.value.drive}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doUnmount(driveNr) {
@@ -1208,9 +1162,7 @@ async function doUnmount(driveNr) {
     `Unmount Drive ${driveNr}`,
     `unmount storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doRelease(driveNr) {
@@ -1218,9 +1170,7 @@ async function doRelease(driveNr) {
     `Release Drive ${driveNr}`,
     `release storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doLabelBarcodes() {
@@ -1234,9 +1184,7 @@ async function doLabelBarcodes() {
     encrypted,
   })
   const result = await runCmd(t('Label barcodes'), cmd)
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function openSlotLabelDialog(slotNr) {
@@ -1260,21 +1208,24 @@ async function doSlotLabel() {
     encrypted,
   })
   const result = await runCmd(`Label Slot ${slot}`, cmd)
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 // ── Drag-and-drop ─────────────────────────────────────────────
 
 function onSlotDragStart(event, row) {
   dragSlot.value = row
+  dragStorage = {
+    name: selectedStorageName.value,
+    director: currentStorage.value?.director,
+    generation: storageGeneration,
+  }
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', String(row.slotnr))
 }
 
 function onDragOverDrive(event, drive) {
-  if (dragSlot.value?.type !== 'slot') return
+  if (!ownsDrag() || dragSlot.value?.type !== 'slot') return
   if (drive.content !== 'empty') return
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
@@ -1288,21 +1239,18 @@ function onDragLeaveDrive() {
 async function onDropToDrive(event, drive) {
   event.preventDefault()
   dragOverDrive.value = null
-  const slot = dragSlot.value
-  dragSlot.value = null
+  const slot = takeCurrentDrag()
   if (!slot || slot.type !== 'slot' || drive.content !== 'empty') return
   const result = await runCmd(
       `Mount Slot ${slot.slotnr} → Drive ${drive.slotnr}`,
       `mount storage="${selectedStorageName.value}"` +
       ` slot=${slot.slotnr} drive=${drive.slotnr}`
     )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function onDragOverSlot(event, row) {
-  if (!dragSlot.value) return
+  if (!ownsDrag()) return
   if (row.slotnr === dragSlot.value.slotnr) return // same slot
   if (row.content !== 'empty') return
   event.preventDefault()
@@ -1317,8 +1265,7 @@ function onDragLeaveSlot() {
 async function onDropToSlot(event, row) {
   event.preventDefault()
   dragOverSlot.value = null
-  const src = dragSlot.value
-  dragSlot.value = null
+  const src = takeCurrentDrag()
   if (!src || row.content !== 'empty' || row.slotnr === src.slotnr) return
   if (src.type === 'import_slot') {
     const result = await runCmd(
@@ -1329,24 +1276,19 @@ async function onDropToSlot(event, row) {
           dstSlot: row.slotnr,
         })
     )
-    if (shouldReloadAutochangerAfterCommand(result?.status)) {
-      await loadSlots()
-    }
+    await reloadSlotsAfterCommand(result)
   } else {
       const result = await runCmd(
         `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
         `move storage="${selectedStorageName.value}"` +
         ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
       )
-      if (shouldReloadAutochangerAfterCommand(result?.status)) {
-        await loadSlots()
-      }
+      await reloadSlotsAfterCommand(result)
    }
 }
 
 function onDragOverImportSlot(event, row) {
-  if (dragSlot.value?.type !== 'slot') return
-  if (!dragSlot.value) return
+  if (!ownsDrag() || dragSlot.value?.type !== 'slot') return
   if (row.content !== 'empty') return
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
@@ -1360,8 +1302,7 @@ function onDragLeaveImportSlot() {
 async function onDropToImportSlot(event, row) {
   event.preventDefault()
   dragOverImportSlot.value = null
-  const src = dragSlot.value
-  dragSlot.value = null
+  const src = takeCurrentDrag()
   if (!src || src.type !== 'slot' || row.content !== 'empty') return
   const result = await runCmd(
     `Export Slot ${src.slotnr} → Import/Export Slot ${row.slotnr}`,
@@ -1371,9 +1312,7 @@ async function onDropToImportSlot(event, row) {
       dstSlot: row.slotnr,
     })
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function showStatus() {
@@ -1381,55 +1320,6 @@ async function showStatus() {
     `Status: ${selectedStorageName.value}`,
     `status storage="${selectedStorageName.value}"`
   )
-}
-
-async function refreshSelectedStorageViewsIfStable(previousSelection) {
-  if (!selectedStorage.value || selectedStorage.value !== previousSelection) {
-    return
-  }
-
-  await loadPools()
-  await loadSlots()
-  startAutoRefresh()
-}
-
-async function syncRouteToSelectedStorage() {
-  if (!isAutochangerRouteActive.value) {
-    return
-  }
-
-  const targetQuery = buildAutochangerSelectionQuery(route.query, currentStorage.value)
-  const currentStorageName = queriedStorageName.value
-  const currentDirectorName = queriedDirectorName.value
-  const targetStorageName = targetQuery[AUTOCHANGER_STORAGE_QUERY_KEY] ?? ''
-  const targetDirectorName = targetQuery[AUTOCHANGER_DIRECTOR_QUERY_KEY] ?? ''
-
-  if (
-    route.query.tab === targetQuery.tab
-    && currentStorageName === targetStorageName
-    && currentDirectorName === targetDirectorName
-  ) {
-    return
-  }
-
-  await router.replace({
-    path: '/storages',
-    query: targetQuery,
-  })
-}
-
-function syncSelectedStorageFromRoute() {
-  const queriedSelection = resolveAutochangerSelection(autochangerStorages.value, {
-    storageName: queriedStorageName.value,
-    directorName: queriedDirectorName.value,
-    scopeDirector: storagesScopeDirector.value,
-    activeDirectors: autochangerScopeDirectors.value,
-  })
-  if (!queriedSelection || selectedStorage.value === queriedSelection.scopeKey) {
-    return
-  }
-
-  selectedStorage.value = queriedSelection.scopeKey
 }
 
 function clearCommandLog() {
@@ -1446,74 +1336,62 @@ async function scrollCommandLogToBottom() {
 
 // ── Lifecycle ─────────────────────────────────────────────────
 
-onMounted(async () => {
-  await director.fetchAvailableDirectors().catch(() => {})
-  syncSelectedDirectors()
-  const previousSelection = selectedStorage.value
-  await loadStorages()
-  await refreshSelectedStorageViewsIfStable(previousSelection)
-})
+watch([() => props.storage?.name, () => props.storage?.director], async ([
+  name, storageDirector,
+]) => {
+  const generation = ++storageGeneration
+  ++slotsGeneration
+  ++poolsGeneration
+  clearDragState()
+  stopAutoRefresh()
+  pools.value = []
+  allSlots.value = []
+  volumeDetailsByName.value = {}
+  slotsLoading.value = false
+  loadError.value = null
+  labelDialog.value = false
+  labelForm.value = { pool: '', drive: 0, slots: '', encrypted: false }
+  slotLabelDialog.value = false
+  slotLabelForm.value = { slot: null, pool: '', drive: 0, encrypted: false }
+  mountDialog.value = false
+  mountForm.value = { drive: 0, slot: '', slotFixed: false, driveFixed: false }
+  transferDialog.value = false
+  transferForm.value = { srcSlot: null, dstSlot: null }
 
-watch(() => director.status, async (s) => {
-  if (s === 'connected') {
-    syncSelectedDirectors()
-    const previousSelection = selectedStorage.value
-    await loadStorages()
-    await refreshSelectedStorageViewsIfStable(previousSelection)
-  }
-})
-
-watch(() => directorOptions.value, () => {
-  syncSelectedDirectors()
-})
-
-watch(() => autochangerScopeDirectors.value.join('\u0000'), async () => {
-  const previousSelection = selectedStorage.value
-  await loadStorages()
-  await refreshSelectedStorageViewsIfStable(previousSelection)
-})
-
-watch(() => [
-  queriedStorageName.value,
-  queriedDirectorName.value,
-  storagesScopeDirector.value,
-  route.query.tab,
-], () => {
-  if (!autochangerStorages.value.length || !isAutochangerRouteActive.value) {
+  if (!name) {
     return
   }
 
-  syncSelectedStorageFromRoute()
-})
-
-watch(selectedStorage, async (next) => {
-  if (!next) {
-    await syncRouteToSelectedStorage()
-    pools.value = []
-    allSlots.value = []
-    volumeDetailsByName.value = {}
-    stopAutoRefresh()
-    return
-  }
-
-  await syncRouteToSelectedStorage()
   await loadPools()
+  if (!ownsStorage(name, storageDirector, generation)) return
   await loadSlots()
+  if (!ownsStorage(name, storageDirector, generation)) return
   startAutoRefresh()
-})
+}, { immediate: true })
 
-watch(isAutochangerRouteActive, async (active) => {
-  if (active) {
-    syncSelectedStorageFromRoute()
-    await syncRouteToSelectedStorage()
+watch(() => director.status, async (status) => {
+  if (status === 'connected' && props.storage) {
+    const { name, director: storageDirector } = props.storage
+    const generation = storageGeneration
+    await loadPools()
+    if (!ownsStorage(name, storageDirector, generation)) return
+    await loadSlots()
+    if (!ownsStorage(name, storageDirector, generation)) return
+    startAutoRefresh()
   }
 })
 
 watch(() => settings.refreshInterval, () => {
-  startAutoRefresh()
+  if (props.storage) {
+    startAutoRefresh()
+  }
 })
 
 onUnmounted(() => {
+  unmounted = true
+  ++storageGeneration
+  ++slotsGeneration
+  ++poolsGeneration
   stopAutoRefresh()
 })
 </script>

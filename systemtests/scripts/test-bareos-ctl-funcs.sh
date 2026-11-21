@@ -114,6 +114,9 @@ if [ "$(filter_pids_by_config_dir "$config_trailing_pid")" != "$config_trailing_
   echo "Did not match a config directory followed by another argument" >&2
   exit 1
 fi
+kill "$config_trailing_pid"
+wait "$config_trailing_pid" 2>/dev/null || true
+config_trailing_pid=""
 
 PGREP=$(command -v pgrep)
 if [ "$(pidofproc "$name" 0)" != "$config_exact_pid" ]; then

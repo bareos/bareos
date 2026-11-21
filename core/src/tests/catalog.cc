@@ -22,27 +22,70 @@
 #include "include/bareos.h"
 #include "cats/cats.h"
 #include "cats/sql_pooling.h"
+#include "dird/catreq.h"
 #include "dird/get_database_connection.h"
 #include "dird/dird_conf.h"
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/job.h"
+#include "dird/next_vol.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "include/bareos.h"
+#include "lib/bsock_tcp.h"
 #include "lib/parse_conf.h"
 #include "lib/output_formatter.h"
 #include "lib/util.h"
 #include "dird/jcr_util.h"
 
+#include <chrono>
 #include <cstdarg>
+#include <future>
 #include <jansson.h>
+#include <limits>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
+
+static int BackendPid(BareosDb* connection)
+{
+  int pid = 0;
+  EXPECT_TRUE(connection->SqlQuery(
+      "SELECT pg_backend_pid()",
+      +[](void* context, int, char** row) {
+        *static_cast<int*>(context) = std::atoi(row[0]);
+        return 0;
+      },
+      &pid));
+  return pid;
+}
+
+static bool WaitForBlockedBackend(BareosDb* blocker, int pid)
+{
+  const std::string query
+      = "SELECT pg_stat_clear_snapshot(); SELECT 1 FROM pg_stat_activity WHERE "
+        "wait_event_type='Lock' AND pid="
+        + std::to_string(pid)
+        + " AND pg_backend_pid() = ANY(pg_blocking_pids(pid))";
+  int waiting = 0;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  while (!waiting && std::chrono::steady_clock::now() < deadline) {
+    EXPECT_TRUE(blocker->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char**) {
+          ++*static_cast<int*>(context);
+          return 0;
+        },
+        &waiting));
+    if (!waiting) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
+  }
+  return waiting == 1;
+}
 
 class CatalogTest : public ::testing::Test {
  protected:
@@ -267,4 +310,498 @@ TEST_F(CatalogTest, EscapeStringPreservesExplicitViewLength)
   constexpr char input[] = "a'bcd";
 
   EXPECT_EQ(db->EscapeString(jcr, std::string_view{input, 3}), "a''b");
+}
+
+TEST_F(CatalogTest, StalePoolUpdateDoesNotChangeOtherChangerSlots)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,StorageId,Slot,InChanger) "
+      "VALUES ('pool-guard-stale','File','Full',11,0,0,0),"
+      "('pool-guard-other','File','Full',22,7,4,1)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-stale", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.Slot = 4;
+  stale.InChanger = 1;
+  stale.StorageId = 7;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='pool-guard-stale'"));
+
+  bool pool_changed = false;
+  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, false, true, &pool_changed));
+  EXPECT_TRUE(pool_changed);
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "pool-guard-stale", sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  bstrncpy(current.VolumeName, "pool-guard-other", sizeof(current.VolumeName));
+  current.MediaId = 0;
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.InChanger, 1);
+  EXPECT_EQ(current.Slot, 4);
+}
+
+TEST_F(CatalogTest, StalePoolDefaultsDoNotOverwriteMovedVolume)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('pool-guard-defaults','File','Full',11,123)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-defaults", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.VolRetention = 1;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='pool-guard-defaults'"));
+  EXPECT_FALSE(db->UpdateMediaDefaults(jcr, &stale));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+}
+
+TEST_F(CatalogTest, PoolDefaultsRequireExpectedPoolIdentity)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('expected-pool-defaults','File','Full',22,123)"));
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "expected-pool-defaults",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  current.VolRetention = 1;
+
+  EXPECT_FALSE(db->UpdateMediaDefaults(jcr, &current, 11));
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_EQ(current.VolRetention, 123);
+
+  current.VolRetention = 1;
+  ASSERT_TRUE(db->UpdateMediaDefaults(jcr, &current, 22));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.VolRetention, 1);
+}
+
+TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('pool-guard-automatic','File','Append',11,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "pool-guard-automatic", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22,VolRetention=123,VolUseDuration=456,"
+      "VolStatus='Cleaning',MaxVolBytes=100,MaxVolJobs=2,MaxVolFiles=3,Recycle="
+      "1,"
+      "RecyclePoolId=4,ActionOnPurge=1,MinBlocksize=5,MaxBlocksize=6 "
+      "WHERE VolumeName='pool-guard-automatic'"));
+  stale.VolBytes = 42;
+  stale.FirstWritten = 1700000000;
+  stale.LastWritten = 1700000010;
+  stale.set_first_written = true;
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &stale, true));
+  EXPECT_STREQ(stale.VolStatus, "Cleaning");
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+  EXPECT_EQ(stale.VolUseDuration, 456);
+  EXPECT_EQ(stale.MaxVolBytes, 100);
+  EXPECT_EQ(stale.MaxVolJobs, 2);
+  EXPECT_EQ(stale.MaxVolFiles, 3);
+  EXPECT_EQ(stale.Recycle, 1);
+  EXPECT_EQ(stale.RecyclePoolId, 4);
+  EXPECT_EQ(stale.ActionOnPurge, 1);
+  EXPECT_EQ(stale.MinBlocksize, 5);
+  EXPECT_EQ(stale.MaxBlocksize, 6);
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_EQ(stale.VolRetention, 123);
+  EXPECT_EQ(stale.VolUseDuration, 456);
+  EXPECT_EQ(stale.MaxVolBytes, 100);
+  EXPECT_EQ(stale.MaxVolJobs, 2);
+  EXPECT_EQ(stale.MaxVolFiles, 3);
+  EXPECT_EQ(stale.Recycle, 1);
+  EXPECT_EQ(stale.RecyclePoolId, 4);
+  EXPECT_EQ(stale.ActionOnPurge, 1);
+  EXPECT_EQ(stale.MinBlocksize, 5);
+  EXPECT_EQ(stale.MaxBlocksize, 6);
+  EXPECT_EQ(stale.VolBytes, 42);
+  EXPECT_EQ(stale.FirstWritten, 1700000000);
+  EXPECT_EQ(stale.LastWritten, 1700000010);
+  stale.VolRetention = 789;
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &stale, true));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_EQ(stale.VolRetention, 789);
+}
+
+TEST_F(CatalogTest, StatisticsUpdateDoesNotRestoreChangedPoolDefaults)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,"
+      "MaxVolJobs) VALUES ('statistics-pool-defaults','File','Append',11,30,"
+      "300,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "statistics-pool-defaults",
+           sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.VolBytes = 42;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET VolRetention=90,VolUseDuration=900,MaxVolJobs=2 "
+      "WHERE VolumeName='statistics-pool-defaults'"));
+
+  ASSERT_TRUE(db->UpdateMediaStatisticsRecord(jcr, &stale));
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "statistics-pool-defaults",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.VolBytes, 42);
+  EXPECT_EQ(current.VolRetention, 90);
+  EXPECT_EQ(current.VolUseDuration, 900);
+  EXPECT_EQ(current.MaxVolJobs, 2);
+}
+
+TEST_F(CatalogTest, SlotUpdatePreservesConcurrentStatusAndPoolChanges)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,StorageId) "
+                  "VALUES ('slot-update-status','File','Cleaning',11,7)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "slot-update-status", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.Slot = 4;
+  stale.InChanger = 1;
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1240;
+  jobmedia.MediaId = stale.MediaId;
+  jobmedia.EndFile = 12;
+  jobmedia.EndBlock = 34;
+  ASSERT_TRUE(db->CreateJobmediaRecord(jcr, &jobmedia));
+
+  ASSERT_TRUE(db->UpdateMediaSlotRecord(jcr, &stale));
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "slot-update-status",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_STREQ(current.VolStatus, "Error");
+  EXPECT_EQ(current.Slot, 4);
+  EXPECT_EQ(current.InChanger, 1);
+
+  stale.Slot = 5;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='slot-update-status'"));
+  EXPECT_FALSE(db->UpdateMediaSlotRecord(jcr, &stale));
+  bstrncpy(current.VolumeName, "slot-update-status",
+           sizeof(current.VolumeName));
+  current.MediaId = 0;
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_EQ(current.Slot, 4);
+}
+
+TEST_F(CatalogTest, VolumeReservationRejectsConcurrentPoolMove)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media (VolumeName,MediaType,VolStatus,PoolId) "
+      "VALUES ('reservation-pool-move','File','Append',11)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "reservation-pool-move", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  bstrncpy(stale.VolStatus, "Used", sizeof(stale.VolStatus));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='reservation-pool-move'"));
+
+  bool pool_changed = false;
+  EXPECT_FALSE(db->UpdateMediaRecord(jcr, &stale, true, true, &pool_changed));
+  EXPECT_TRUE(pool_changed);
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "reservation-pool-move",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_STREQ(current.VolStatus, "Append");
+}
+
+TEST_F(CatalogTest, ExpirationRechecksLimitsAfterPoolMove)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media (VolumeName,MediaType,VolStatus,PoolId,VolJobs,"
+      "MaxVolJobs) VALUES ('expired-pool-move','File','Append',11,1,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "expired-pool-move", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Media SET PoolId=22,MaxVolJobs=100 "
+                  "WHERE VolumeName='expired-pool-move'"));
+
+  jcr->db = db;
+  const bool expired = directordaemon::HasVolumeExpired(jcr, &stale);
+  jcr->db = nullptr;
+  EXPECT_FALSE(expired);
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_STREQ(stale.VolStatus, "Append");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_STREQ(stale.VolStatus, "Append");
+  EXPECT_EQ(stale.MaxVolJobs, 100);
+
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Media SET PoolId=11,MaxVolJobs=1 "
+                  "WHERE VolumeName='expired-pool-move'"));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='expired-pool-move'"));
+  jcr->db = db;
+  const bool still_expired = directordaemon::HasVolumeExpired(jcr, &stale);
+  jcr->db = nullptr;
+  EXPECT_TRUE(still_expired);
+  EXPECT_EQ(stale.PoolId, 22);
+  EXPECT_STREQ(stale.VolStatus, "Used");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  EXPECT_STREQ(stale.VolStatus, "Used");
+}
+
+TEST_F(CatalogTest, VolumeSelectionKeepsRequestedPoolAfterConcurrentMove)
+{
+  directordaemon::StorageResource storage;
+  directordaemon::PoolResource pool;
+  char media_type[] = "selection-pool-test";
+  storage.media_type = media_type;
+  jcr->dir_impl->res.write_storage = &storage;
+  jcr->dir_impl->res.pool = &pool;
+  BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(reader, nullptr);
+  const int reader_pid = BackendPid(reader);
+  ASSERT_GT(reader_pid, 0);
+  jcr->db = reader;
+
+  for (int new_limit : {1, 100}) {
+    ASSERT_TRUE(db->SqlExec(
+        "DELETE FROM Media WHERE MediaType='selection-pool-test';"
+        "INSERT INTO Media "
+        "(VolumeName,MediaType,VolStatus,PoolId,VolJobs,MaxVolJobs,"
+        "LastWritten) VALUES "
+        "('selection-moving','selection-pool-test','Append',111,1,1,"
+        "'2025-01-03'),"
+        "('selection-original','selection-pool-test','Append',111,0,0,"
+        "'2025-01-02'),"
+        "('selection-other','selection-pool-test','Append',222,0,0,"
+        "'2025-01-01')"));
+    std::string move = "BEGIN; UPDATE Media SET PoolId=222,MaxVolJobs="
+                       + std::to_string(new_limit)
+                       + " WHERE VolumeName='selection-moving'";
+    ASSERT_TRUE(db->SqlExec(move.c_str()));
+
+    MediaDbRecord selected;
+    selected.PoolId = 111;
+    auto pending = std::async(std::launch::async, [&] {
+      return directordaemon::FindNextVolumeForAppend(jcr, &selected, 1, nullptr,
+                                                     false, false);
+    });
+    EXPECT_TRUE(WaitForBlockedBackend(db, reader_pid));
+    EXPECT_TRUE(db->SqlExec("COMMIT"));
+    EXPECT_TRUE(pending.get());
+    EXPECT_EQ(selected.PoolId, 111);
+    EXPECT_STREQ(selected.VolumeName, "selection-original");
+  }
+  jcr->db = nullptr;
+  jcr->dir_impl->res.write_storage = nullptr;
+  jcr->dir_impl->res.pool = nullptr;
+  reader->CloseDatabase(jcr);
+}
+
+TEST_F(CatalogTest, CatalogWriteRequestRejectsVolumeMovedDuringExpiration)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,VolJobs,MaxVolJobs) VALUES "
+      "('request-pool-move','File','Append',111,1,1)"));
+  BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(reader, nullptr);
+  const int reader_pid = BackendPid(reader);
+  ASSERT_GT(reader_pid, 0);
+  directordaemon::StorageResource storage;
+  char media_type[] = "File";
+  storage.media_type = media_type;
+  jcr->dir_impl->res.write_storage = &storage;
+  jcr->dir_impl->jr.PoolId = 111;
+  class CaptureSocket : public BareosSocketTCP {
+   public:
+    bool send() override { return true; }
+  } socket;
+  for (const char* moved_status : {"Append", "Purged"}) {
+    SCOPED_TRACE(moved_status);
+    if (!db->SqlExec(
+            "UPDATE Media SET PoolId=111,MaxVolJobs=1,VolStatus='Append' "
+            "WHERE VolumeName='request-pool-move'")) {
+      ADD_FAILURE() << "Could not reset media record";
+      break;
+    }
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=1\n");
+    socket.message_length = strlen(socket.msg);
+    const std::string move
+        = "BEGIN; UPDATE Media SET PoolId=222,MaxVolJobs=100,VolStatus='"
+          + std::string{moved_status}
+          + "' WHERE VolumeName='request-pool-move'";
+    if (!db->SqlExec(move.c_str())) {
+      ADD_FAILURE() << "Could not lock media record";
+      break;
+    }
+    jcr->db = reader;
+
+    auto pending = std::async(std::launch::async, [&] {
+      directordaemon::CatalogRequest(jcr, &socket);
+    });
+    EXPECT_TRUE(WaitForBlockedBackend(db, reader_pid));
+    if (!db->SqlExec("COMMIT")) {
+      ADD_FAILURE() << "Could not commit pool move";
+      EXPECT_TRUE(db->SqlExec("ROLLBACK"));
+    }
+    pending.get();
+    const std::string response{socket.msg};
+    EXPECT_EQ(response.rfind("1998 ", 0), 0) << response;
+    EXPECT_NE(response.find("not in Pool"), std::string::npos) << response;
+    EXPECT_NE(response.find(std::string{"catalog status is "} + moved_status),
+              std::string::npos)
+        << response;
+
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=0\n");
+    socket.message_length = strlen(socket.msg);
+    directordaemon::CatalogRequest(jcr, &socket);
+    EXPECT_EQ(std::string{socket.msg}.rfind("1000 OK ", 0), 0) << socket.msg;
+
+    EXPECT_TRUE(
+        db->SqlExec("UPDATE Media SET PoolId=111,VolStatus='Append' "
+                    "WHERE VolumeName='request-pool-move'"));
+    PmStrcpy(socket.msg,
+             "CatReq Job=test GetVolInfo VolName=request-pool-move write=1\n");
+    socket.message_length = strlen(socket.msg);
+    directordaemon::CatalogRequest(jcr, &socket);
+    EXPECT_EQ(std::string{socket.msg}.rfind("1000 OK ", 0), 0) << socket.msg;
+  }
+
+  jcr->db = nullptr;
+  jcr->dir_impl->res.write_storage = nullptr;
+  reader->CloseDatabase(jcr);
+}
+
+TEST_F(CatalogTest, JobMediaOnCleaningVolumePreservesRecordAndMarksError)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-cleaning-test','File','Cleaning')"));
+
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-cleaning-test",
+           sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Cleaning");
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1234;
+  jobmedia.MediaId = media.MediaId;
+  jobmedia.EndFile = 12;
+  jobmedia.EndBlock = 34;
+  ASSERT_TRUE(db->CreateJobmediaRecord(jcr, &jobmedia));
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  EXPECT_EQ(media.EndFile, 12);
+  EXPECT_EQ(media.EndBlock, 34);
+  int records = 0;
+  ASSERT_TRUE(db->SqlQuery(
+      "SELECT JobId FROM JobMedia WHERE JobId=1234",
+      +[](void* context, int, char**) {
+        ++*static_cast<int*>(context);
+        return 0;
+      },
+      &records));
+  EXPECT_EQ(records, 1);
+
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+
+  bstrncpy(media.VolStatus, "Full", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Full");
+  bstrncpy(media.VolStatus, "Append", sizeof(media.VolStatus));
+  ASSERT_TRUE(db->UpdateMediaRecord(jcr, &media, true));
+  EXPECT_STREQ(media.VolStatus, "Append");
+}
+
+TEST_F(CatalogTest, FailedJobMediaInsertDoesNotChangeCleaningVolume)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-failure-test','File','Cleaning')"));
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-failure-test", sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1235;
+  jobmedia.MediaId = media.MediaId;
+  jobmedia.FirstIndex = std::numeric_limits<uint32_t>::max();
+  EXPECT_FALSE(db->CreateJobmediaRecord(jcr, &jobmedia));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Cleaning");
+}
+
+TEST_F(CatalogTest, JobMediaWaitsForCleaningTransition)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media (VolumeName,MediaType,VolStatus) "
+                  "VALUES ('jobmedia-wait-test','File','Append')"));
+  MediaDbRecord media;
+  bstrncpy(media.VolumeName, "jobmedia-wait-test", sizeof(media.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  BareosDb* writer = db->CloneDatabaseConnection(jcr, true, false, true);
+  ASSERT_NE(writer, nullptr);
+  const int writer_pid = BackendPid(writer);
+  ASSERT_GT(writer_pid, 0);
+  ASSERT_TRUE(
+      db->SqlExec("BEGIN; UPDATE Media SET VolStatus='Cleaning' "
+                  "WHERE VolumeName='jobmedia-wait-test'"));
+
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1236;
+  jobmedia.MediaId = media.MediaId;
+  auto pending = std::async(std::launch::async, [&] {
+    return writer->CreateJobmediaRecord(jcr, &jobmedia);
+  });
+  EXPECT_TRUE(WaitForBlockedBackend(db, writer_pid));
+  EXPECT_TRUE(db->SqlExec("COMMIT"));
+  EXPECT_TRUE(pending.get());
+  writer->CloseDatabase(jcr);
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
+  EXPECT_STREQ(media.VolStatus, "Error");
+  int records = 0;
+  ASSERT_TRUE(db->SqlQuery(
+      "SELECT JobId FROM JobMedia WHERE JobId=1236",
+      +[](void* context, int, char**) {
+        ++*static_cast<int*>(context);
+        return 0;
+      },
+      &records));
+  EXPECT_EQ(records, 1);
 }

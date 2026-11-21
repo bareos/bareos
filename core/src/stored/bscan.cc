@@ -1086,7 +1086,7 @@ static bool CreateMediaRecord(BareosDb* t_db,
     Pmsg1(000, T_("Could not create media record. ERR=%s\n"), t_db->strerror());
     return false;
   }
-  if (!t_db->UpdateMediaRecord(bjcr, t_mr)) {
+  if (!t_db->UpdateMediaRecord(bjcr, t_mr, true)) {
     Pmsg1(000, T_("Could not update media record. ERR=%s\n"), t_db->strerror());
     return false;
   }
@@ -1103,7 +1103,7 @@ static bool UpdateMediaRecord(BareosDb* t_db, MediaDbRecord* t_mr)
   if (!update_db && !update_vol_info) { return true; }
 
   t_mr->LastWritten = lasttime;
-  if (DbLocker _{t_db}; !t_db->UpdateMediaRecord(bjcr, t_mr)) {
+  if (DbLocker _{t_db}; !t_db->UpdateMediaRecord(bjcr, t_mr, true)) {
     Pmsg1(000, T_("Could not update media record. ERR=%s\n"), t_db->strerror());
     return false;
   }

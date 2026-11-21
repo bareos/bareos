@@ -25,8 +25,10 @@ import logging
 import os
 import re
 import subprocess
-from time import sleep
+from concurrent.futures import ThreadPoolExecutor
+from time import monotonic, sleep
 import unittest
+import uuid
 import warnings
 
 import bareos.bsock
@@ -40,6 +42,93 @@ import bareos_unittest
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_volume_comment_checks_pool_after_interactive_prompt(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        restricted = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name="poolfull",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        volume = f"CommentPromptRace-{uuid.uuid4().hex}"
+        admin.call("update pool=Incremental")
+        admin.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            admin.call(f'update volume={volume} comment="original"')
+            restricted.call(f"update volume={volume}")
+            prompt = restricted.call("19")
+            self.assertIn(b"Enter new Comment", prompt)
+            admin.call(f"update volume={volume} pool=Incremental")
+            result = restricted.call("changed")
+            self.assertIn(b"Not authorized", result)
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["comment"], "original")
+
+            admin.call(f"update volume={volume} pool=Full")
+            restricted.call(f"update volume={volume}")
+            self.assertIn(b"Enter new Comment", restricted.call("19"))
+            observer = bareos.bsock.DirectorConsoleJson(
+                address=self.director_address,
+                port=self.director_port,
+                name=username,
+                password=self.get_operator_password(username),
+                **self.director_extra_options,
+            )
+            admin.call('.sql query="BEGIN"')
+            transaction_open = True
+            try:
+                admin.call(
+                    '.sql query="UPDATE Media SET PoolId='
+                    "(SELECT PoolId FROM Pool WHERE Name='Incremental') "
+                    f"WHERE VolumeName='{volume}'\""
+                )
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    pending = executor.submit(restricted.call, "changed")
+                    try:
+                        deadline = monotonic() + 10
+                        while monotonic() < deadline:
+                            waiting = observer.call(
+                                '.sql query="SELECT count(*) AS waiting FROM '
+                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                "AND query LIKE '%UPDATE Media SET Comment=%'\""
+                            )["query"][0]["waiting"]
+                            if int(waiting):
+                                break
+                            sleep(0.1)
+                        else:
+                            restricted.close()
+                            self.fail("Comment update did not wait for the pool move")
+                    finally:
+                        admin.call('.sql query="COMMIT"')
+                        transaction_open = False
+                    self.assertIn(
+                        b"Volume pool changed",
+                        self.wait_for_console_call(pending, restricted),
+                    )
+            finally:
+                if transaction_open:
+                    admin.call('.sql query="ROLLBACK"')
+                admin.call(
+                    f'.sql query="UPDATE Media SET PoolId='
+                    f"(SELECT PoolId FROM Pool WHERE Name='Full') "
+                    f"WHERE VolumeName='{volume}'\""
+                )
+            record = admin.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(record["comment"], "original")
+        finally:
+            if restricted.socket is not None:
+                restricted.call(".")
+            admin.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_restore_with_client_acl(self):
         """
         Check if the restore command honors the client ACL.
@@ -258,6 +347,22 @@ class PythonBareosAclTest(bareos_unittest.Json):
         for volume in result["volumes"]:
             self.assertEqual(volume["pool"], "Full")
 
+        volumes = director_root.call("llist media all")["volumes"]
+        allowed_volume = next(v["volumename"] for v in volumes if v["pool"] == "Full")
+        denied_volume = next(
+            v["volumename"] for v in volumes if v["pool"] == "Incremental"
+        )
+        director_root.call(f'update volume="{denied_volume}" comment="original"')
+        console_poolfull.call(f'update volume="{allowed_volume}" comment="allowed"')
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            console_poolfull.call(f'update volume="{denied_volume}" comment="denied"')
+        volumes = {
+            v["volumename"]: v["comment"]
+            for v in director_root.call("llist media all")["volumes"]
+        }
+        self.assertEqual(volumes[allowed_volume], "allowed")
+        self.assertEqual(volumes[denied_volume], "original")
+
         #
         # login as console 'poolnotfull'
         #
@@ -368,6 +473,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         full_rows = admin.call(f"llist jobmedia jobid={full}")["jobmedia"]
         volume = full_rows[0]["volumename"]
+        usage_command = f'list volumeusage volume="{volume}"'
+        for name, visible in (("poolfull", True), ("poolnotfull", False)):
+            segments = consoles[name].call(usage_command)["volumeusage"]["segments"]
+            self.assertEqual(full in {str(row["jobid"]) for row in segments}, visible)
         moved_ids = {
             row["jobmediaid"] for row in full_rows if row["volumename"] == volume
         }
@@ -384,6 +493,11 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     moved_ids.isdisjoint(row["jobmediaid"] for row in denied)
                 )
                 self.assertTrue(moved_ids <= {row["jobmediaid"] for row in allowed})
+            for name, visible in (("poolfull", False), ("poolnotfull", True)):
+                segments = consoles[name].call(usage_command)["volumeusage"]["segments"]
+                self.assertEqual(
+                    full in {str(row["jobid"]) for row in segments}, visible
+                )
         finally:
             admin.call(f'update volume="{volume}" pool=Full')
 
@@ -397,6 +511,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     "jobmedia"
                 ]
                 self.assertIn(full, {row["jobid"] for row in rows})
+            segments = consoles["client-bareos-fd"].call(usage_command)["volumeusage"][
+                "segments"
+            ]
+            self.assertIn(full, {str(row["jobid"]) for row in segments})
             admin.call(
                 f'.sql query="UPDATE Job SET ClientId=2147483647 WHERE JobId={full}"'
             )
@@ -405,6 +523,10 @@ class PythonBareosAclTest(bareos_unittest.Json):
                     "jobmedia"
                 ]
                 self.assertNotIn(full, {row["jobid"] for row in rows})
+            segments = consoles["job-backup-bareos-fd"].call(usage_command)[
+                "volumeusage"
+            ]["segments"]
+            self.assertNotIn(full, {str(row["jobid"]) for row in segments})
         finally:
             admin.call(
                 f'.sql query="UPDATE Job SET ClientId={int(original_client)} WHERE JobId={full}"'
@@ -478,6 +600,22 @@ class PythonBareosAclTest(bareos_unittest.Json):
         #
         self._test_list_with_valid_jobid(director, jobid1)
         self._test_list_with_invalid_jobid(director, jobid2)
+
+        for list_command in ("list", "llist"):
+            for jobid, visible in ((jobid1, True), (jobid2, False)):
+                root_rows = director_root.call(
+                    f"{list_command} jobmedia jobid={jobid}"
+                )["jobmedia"]
+                self.assertTrue(root_rows)
+                for volume in {row["volumename"] for row in root_rows}:
+                    rows = director.call(f'{list_command} jobmedia volume="{volume}"')[
+                        "jobmedia"
+                    ]
+                    ids = {int(row["jobid"]) for row in rows}
+                    self.assertEqual(int(jobid) in ids, visible)
+                    for row in rows:
+                        self.assertNotIn("jobname", row)
+                        self.assertNotIn("clientname", row)
 
         director_root.call(f'update jobid={jobid2} comment="original"')
         director.call(f'update jobid={jobid1} comment="allowed"')

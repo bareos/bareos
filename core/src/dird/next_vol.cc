@@ -82,6 +82,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   bool ok;
   bool InChanger;
   StorageResource* store = jcr->dir_impl->res.write_storage;
+  const auto requested_pool_id = mr->PoolId;
 
   bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
   Dmsg3(debuglevel,
@@ -200,14 +201,18 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
           mr->VolJobs, mr->FirstWritten);
     if (ok) {
       // If we can use the volume, check if it is expired
-      if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
+      const bool expired
+          = bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr);
+      if (expired || mr->PoolId != requested_pool_id) {
         if (retry++ < 200) { /* sanity check */
-          continue;          /* try again from the top */
+          mr->PoolId = requested_pool_id;
+          continue; /* try again from the top */
         } else {
           Jmsg(
               jcr, M_ERROR, 0,
               T_("We seem to be looping trying to find the next volume. I give "
                  "up.\n"));
+          ok = false;
         }
       }
     }
@@ -226,63 +231,66 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
  */
 bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
 {
-  bool expired = false;
   char ed1[50];
 
-  /* Check limits and expirations if "Append" and it has been used i.e.
-   * mr->VolJobs > 0 */
-  if (bstrcmp(mr->VolStatus, "Append") && mr->VolJobs > 0) {
-    // First handle Max Volume Bytes
-    if ((mr->MaxVolBytes > 0 && mr->VolBytes >= mr->MaxVolBytes)) {
-      Jmsg(jcr, M_INFO, 0,
-           T_("Max Volume bytes=%s exceeded. Marking Volume \"%s\" as Full.\n"),
-           edit_uint64_with_commas(mr->MaxVolBytes, ed1), mr->VolumeName);
-      bstrncpy(mr->VolStatus, "Full", sizeof(mr->VolStatus));
-      expired = true;
-    } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
-      // Max Jobs written to volume
-      Jmsg(jcr, M_INFO, 0,
-           T_("Max Volume jobs=%s exceeded. Marking Volume \"%s\" as Used.\n"),
-           edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
-      Dmsg3(debuglevel, "MaxVolJobs=%" PRIu32 " JobId=%" PRIu32 " Vol=%s\n",
-            mr->MaxVolJobs, jcr->JobId, mr->VolumeName);
-      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
-      expired = true;
-    } else if (mr->MaxVolFiles > 0 && mr->MaxVolFiles <= mr->VolFiles) {
-      // Max Files written to volume
-      Jmsg(jcr, M_INFO, 0,
-           T_("Max Volume files=%s exceeded. Marking Volume \"%s\" as Used.\n"),
-           edit_uint64_with_commas(mr->MaxVolFiles, ed1), mr->VolumeName);
-      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
-      expired = true;
-    } else if (mr->VolUseDuration > 0) {
-      // Use duration expiration
-      utime_t now = time(NULL);
-      if (mr->VolUseDuration <= (now - mr->FirstWritten)) {
-        Jmsg(jcr, M_INFO, 0,
-             T_("Max configured use duration=%s sec. exceeded. Marking Volume "
-                "\"%s\" as Used.\n"),
-             edit_uint64_with_commas(mr->VolUseDuration, ed1), mr->VolumeName);
-        bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
-        expired = true;
-      }
-    }
-  }
+  for (int retry = 0; retry < 200; ++retry) {
+    const char* message = nullptr;
+    uint64_t limit = 0;
+    utime_t now = time(NULL);
 
-  if (expired) {
-    // Need to update media
+    if (!bstrcmp(mr->VolStatus, "Append") || mr->VolJobs == 0) { return false; }
+
+    if (mr->MaxVolBytes > 0 && mr->VolBytes >= mr->MaxVolBytes) {
+      message = T_(
+          "Max Volume bytes=%s exceeded. Marking Volume \"%s\" as Full.\n");
+      limit = mr->MaxVolBytes;
+      bstrncpy(mr->VolStatus, "Full", sizeof(mr->VolStatus));
+    } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
+      message
+          = T_("Max Volume jobs=%s exceeded. Marking Volume \"%s\" as Used.\n");
+      limit = mr->MaxVolJobs;
+      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
+    } else if (mr->MaxVolFiles > 0 && mr->MaxVolFiles <= mr->VolFiles) {
+      message = T_(
+          "Max Volume files=%s exceeded. Marking Volume \"%s\" as Used.\n");
+      limit = mr->MaxVolFiles;
+      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
+    } else if (mr->VolUseDuration > 0
+               && mr->VolUseDuration <= (now - mr->FirstWritten)) {
+      message = T_(
+          "Max configured use duration=%s sec. exceeded. Marking Volume "
+          "\"%s\" as Used.\n");
+      limit = mr->VolUseDuration;
+      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
+    }
+
+    if (!message) { return false; }
+
     Dmsg1(debuglevel, "Vol=%s has expired update media record\n",
           mr->VolumeName);
     SetStorageidInMr(NULL, mr);
-    if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, mr)) {
+    DbLocker _{jcr->db};
+    bool pool_changed = false;
+    const std::string expected_status{mr->VolStatus};
+    if (jcr->db->UpdateMediaRecord(jcr, mr, true, true, &pool_changed)) {
+      if (expected_status == mr->VolStatus) {
+        Jmsg(jcr, M_INFO, 0, message, edit_uint64_with_commas(limit, ed1),
+             mr->VolumeName);
+      }
+      return true;
+    }
+
+    if (!pool_changed || !jcr->db->GetMediaRecord(jcr, mr)) {
       Jmsg(jcr, M_ERROR, 0,
            T_("Catalog error updating volume \"%s\". ERR=%s\n"), mr->VolumeName,
            jcr->db->strerror());
+      return true;
     }
   }
-  Dmsg2(debuglevel, "Vol=%s expired=%d\n", mr->VolumeName, expired);
-
-  return expired;
+  Jmsg(jcr, M_ERROR, 0,
+       T_("Volume \"%s\" changed pools repeatedly during expiration.\n"),
+       mr->VolumeName);
+  return true;
 }
 
 /**
@@ -303,6 +311,11 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
     *reason = T_("volume has expired");
     // Keep going because we may be able to recycle volume
+  }
+
+  if (mr->PoolId != jcr->dir_impl->jr.PoolId) {
+    *reason = T_("not in Pool");
+    return;
   }
 
   // Now see if we can use the volume as is

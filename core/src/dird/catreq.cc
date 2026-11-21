@@ -349,7 +349,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
     /* Update the database, then before sending the response to the SD,
      * check if the Volume has expired. */
-    if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
+    if (!jcr->db->UpdateMediaStatisticsRecord(jcr, &mr)) {
       Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Media record. %s"),
            jcr->db->strerror());
       bs->fsend(T_("1993 Update Media error\n"));

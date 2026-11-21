@@ -106,9 +106,16 @@ int NdmpLoadNext(struct ndm_session* sess)
     // set FirstWritten Timestamp
     mr.FirstWritten = (utime_t)time(NULL);
 
-    if (DbLocker _{jcr->db}; !jcr->db->UpdateMediaRecord(jcr, &mr)) {
+    if (DbLocker _{jcr->db};
+        !jcr->db->UpdateMediaRecord(jcr, &mr, true, true)) {
       Jmsg(jcr, M_FATAL, 0, T_("Catalog error updating Media record. %s"),
            jcr->db->strerror());
+      goto bail_out;
+    }
+    if (!bstrcmp(mr.VolStatus, "Used")) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Volume \"%s\" changed to status %s while being reserved.\n"),
+           mr.VolumeName, mr.VolStatus);
       goto bail_out;
     }
 

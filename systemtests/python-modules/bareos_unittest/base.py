@@ -86,6 +86,19 @@ class Base(unittest.TestCase):
     def get_name_of_test(self):
         return self.id().split(".", 1)[1]
 
+    def wait_for_console_call(self, future, console, timeout=10):
+        return self.wait_for_console_calls([future], [console], timeout)[0]
+
+    def wait_for_console_calls(self, futures, consoles, timeout=10):
+        """Close sockets for outstanding calls before a failing wait can join."""
+        try:
+            return [future.result(timeout=timeout) for future in futures]
+        except Exception:
+            for future, console in zip(futures, consoles):
+                if not future.done():
+                    console.close()
+            raise
+
     def get_operator_username(self, tls=None):
         if tls is None:
             if bareos.bsock.DirectorConsole.is_tls_psk_available():
