@@ -89,7 +89,8 @@ bool UpdateCmd(UaContext* ua, const char*)
     case 0:
     case 1: {
       bool strict = FindArg(ua, NT_("comment")) >= 0
-                    || FindArg(ua, NT_("poolwithdefaults")) >= 0;
+                    || FindArg(ua, NT_("poolwithdefaults")) >= 0
+                    || FindArg(ua, NT_("expectedpoolid")) >= 0;
       bool updated = UpdateVolume(ua);
       return strict ? updated : true;
     }
@@ -678,23 +679,39 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
 }
 
 // Refresh the Volume information from the Pool record
-static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
+static bool UpdateVolFromPool(UaContext* ua,
+                              MediaDbRecord* mr,
+                              int64_t expected_pool_id = 0)
 {
   PoolDbRecord pr;
 
+  if (expected_pool_id > 0 && mr->PoolId != expected_pool_id) {
+    ua->ErrorMsg(
+        T_("Volume pool changed since preview; refresh and try again.\n"));
+    return false;
+  }
+
   pr.PoolId = mr->PoolId;
-  if (!ua->db->GetPoolRecord(ua->jcr, &pr)
-      || !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
-    return;
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    ua->ErrorMsg(T_("Could not find current Pool: ERR=%s\n"),
+                 ua->db->strerror());
+    return false;
+  }
+  if (!ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+    ua->ErrorMsg(T_("Not authorized to update Volume defaults.\n"));
+    return false;
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
-  if (DbLocker _{ua->db}; !ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
+  if (DbLocker _{ua->db};
+      !ua->db->UpdateMediaDefaults(ua->jcr, mr, expected_pool_id)) {
     ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"),
                  ua->db->strerror());
+    return false;
   } else {
     ua->InfoMsg(T_("Volume defaults updated from \"%s\" Pool record.\n"),
                 pr.Name);
   }
+  return true;
 }
 
 // Refresh the Volume information from the Pool record for all Volumes
@@ -852,6 +869,9 @@ static bool UpdateVolume(UaContext* ua)
   char ed1[130];
   bool done = false;
   int i;
+  const int expected_pool_arg
+      = FindArgWithValue(ua, NT_("expectedpoolid"));
+  int64_t expected_pool_id = 0;
   const char* kw[] = {NT_("VolStatus"),        /* 0 */
                       NT_("VolRetention"),     /* 1 */
                       NT_("VolUse"),           /* 2 */
@@ -874,6 +894,22 @@ static bool UpdateVolume(UaContext* ua)
                       NULL};
 
 #define AllFromPool 11 /* keep this updated with above */
+
+  if (FindArg(ua, NT_("expectedpoolid")) > 0) {
+    if (expected_pool_arg <= 0
+        || FindArg(ua, NT_("frompool")) <= 0
+        || !IsAnInteger(ua->argv[expected_pool_arg])) {
+      ua->ErrorMsg(T_("ExpectedPoolId requires a positive PoolId with "
+                      "frompool=yes.\n"));
+      return false;
+    }
+    expected_pool_id = str_to_int64(ua->argv[expected_pool_arg]);
+    if (expected_pool_id <= 0) {
+      ua->ErrorMsg(T_("ExpectedPoolId requires a positive PoolId with "
+                      "frompool=yes.\n"));
+      return false;
+    }
+  }
 
   if (FindArg(ua, NT_("PoolWithDefaults")) > 0) {
     if (FindArgWithValue(ua, NT_("PoolWithDefaults")) < 0
@@ -940,7 +976,7 @@ static bool UpdateVolume(UaContext* ua)
           UpdateVolPool(ua, ua->argv[j], &mr, &pr);
           break;
         case 10:
-          UpdateVolFromPool(ua, &mr);
+          if (!UpdateVolFromPool(ua, &mr, expected_pool_id)) { return false; }
           return true;
         case 11:
           UpdateAllVolsFromPool(ua, ua->argv[j]);

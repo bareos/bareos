@@ -103,7 +103,7 @@ afterEach(() => {
 })
 
 describe('PoolDefaultsCheckDialog', () => {
-  const pool = { director: 'dir-a', name: 'Full', recycle: 1 }
+  const pool = { director: 'dir-a', poolid: '41', name: 'Full', recycle: 1 }
   const matching = { director: 'dir-a', pool: 'Full', volumename: 'Good', recycle: 1 }
   const missing = { director: 'dir-b', pool: 'Full', volumename: 'Unknown', recycle: 1 }
   const different = { director: 'dir-a', pool: 'Full', volumename: 'Changed', recycle: 0 }
@@ -144,6 +144,9 @@ describe('PoolDefaultsCheckDialog', () => {
     host.querySelector('[data-testid="pool-defaults-apply"]').click()
     await vi.waitFor(() => expect(runCommand).toHaveBeenCalled())
     expect(runCommand).toHaveBeenCalledTimes(1)
-    expect(runCommand.mock.calls[0][0].volumename).toBe('V2')
+    expect(runCommand).toHaveBeenCalledWith(
+      second,
+      'update volume="V2" frompool=yes expectedpoolid=41'
+    )
   })
 })

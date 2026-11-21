@@ -129,9 +129,14 @@ export function collectPoolDefaultDrift(volumes, pools) {
   return drift
 }
 
-/** Command applying the owning pool's defaults to a volume. */
-export function buildApplyPoolDefaultsCommand(volumeName) {
-  return `update volume=${quoteDirectorString(volumeName)} frompool=yes`
+/** Command applying the previewed pool's defaults to a volume. */
+export function buildApplyPoolDefaultsCommand(volumeName, poolId) {
+  const expectedPoolId = String(poolId ?? '')
+  if (!/^[1-9]\d*$/.test(expectedPoolId)) {
+    throw new Error('A pool ID is required to apply pool defaults.')
+  }
+
+  return `update volume=${quoteDirectorString(volumeName)} frompool=yes expectedpoolid=${expectedPoolId}`
 }
 
 /**

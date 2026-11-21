@@ -326,6 +326,30 @@ TEST_F(CatalogTest, StalePoolDefaultsDoNotOverwriteMovedVolume)
   EXPECT_EQ(stale.VolRetention, 123);
 }
 
+TEST_F(CatalogTest, PoolDefaultsRequireExpectedPoolIdentity)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,VolRetention) "
+                  "VALUES ('expected-pool-defaults','File','Full',22,123)"));
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "expected-pool-defaults",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  current.VolRetention = 1;
+
+  EXPECT_FALSE(db->UpdateMediaDefaults(jcr, &current, 11));
+
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_EQ(current.VolRetention, 123);
+
+  current.VolRetention = 1;
+  ASSERT_TRUE(db->UpdateMediaDefaults(jcr, &current, 22));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.VolRetention, 1);
+}
+
 TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
 {
   ASSERT_TRUE(

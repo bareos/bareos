@@ -96,7 +96,7 @@
             <div class="text-caption text-grey-7">{{ t('Commands to run') }}</div>
             <div class="console-output pool-defaults-commands" data-testid="pool-defaults-commands">
               <div v-for="entry in selected" :key="entry.key">
-                {{ buildApplyPoolDefaultsCommand(entry.volume.volumename) }}
+                {{ buildApplyPoolDefaultsCommand(entry.volume.volumename, entry.pool.poolid) }}
               </div>
             </div>
           </q-card-section>
@@ -247,7 +247,7 @@ async function run() {
       try {
         await props.runCommand(
           entry.volume,
-          buildApplyPoolDefaultsCommand(entry.volume.volumename)
+          buildApplyPoolDefaultsCommand(entry.volume.volumename, entry.pool.poolid)
         )
         results.value.push({ volume: entry.volume, ok: true, message: '' })
       } catch (reason) {

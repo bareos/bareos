@@ -957,7 +957,9 @@ class BareosDb : public BareosDbQueryEnum {
                          bool preserve_pool_defaults = false);
   bool UpdateMediaStatisticsRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr);
-  bool UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr);
+  bool UpdateMediaDefaults(JobControlRecord* jcr,
+                           MediaDbRecord* mr,
+                           int64_t expected_pool_id = 0);
   bool UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool UpdateQuotaGracetime(JobControlRecord* jcr, JobDbRecord* jr);
   bool UpdateQuotaSoftlimit(JobControlRecord* jcr, JobDbRecord* jr);

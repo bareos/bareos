@@ -465,9 +465,13 @@ bool BareosDb::UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr)
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
+bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr,
+                                   MediaDbRecord* mr,
+                                   int64_t expected_pool_id)
 {
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
+  const int64_t pool_id
+      = expected_pool_id > 0 ? expected_pool_id : mr->PoolId;
 
   DbLocker _{this};
   if (mr->VolumeName[0]) {
@@ -483,7 +487,7 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
          edit_uint64(mr->VolUseDuration, ed2), mr->MaxVolJobs, mr->MaxVolFiles,
          edit_uint64(mr->MaxVolBytes, ed3), edit_uint64(mr->RecyclePoolId, ed4),
          mr->MinBlocksize, mr->MaxBlocksize, esc->c_str(),
-         edit_int64(mr->PoolId, ed5));
+         edit_int64(pool_id, ed5));
   } else {
     Mmsg(cmd,
          "UPDATE Media SET "

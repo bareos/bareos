@@ -174,9 +174,15 @@ describe('poolDefaults', () => {
     expect(drift[1].pool.director).toBe('prod-b')
   })
 
-  it('builds the apply command with a quoted volume name', () => {
-    expect(buildApplyPoolDefaultsCommand('Full-0001')).toBe(
-      'update volume="Full-0001" frompool=yes'
+  it('builds the apply command with the previewed pool identity', () => {
+    expect(buildApplyPoolDefaultsCommand('Full-0001', '42')).toBe(
+      'update volume="Full-0001" frompool=yes expectedpoolid=42'
+    )
+  })
+
+  it('requires a valid pool identity for an apply command', () => {
+    expect(() => buildApplyPoolDefaultsCommand('Full-0001', '')).toThrow(
+      'A pool ID is required to apply pool defaults.'
     )
   })
 })
