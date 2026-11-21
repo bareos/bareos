@@ -150,10 +150,11 @@ describe('analytics aggregate helpers', () => {
       const request = JSON.parse(payload)
       if (request.type !== 'command') return
       const offset = Number(request.command.match(/offset=(\d+)/)?.[1] ?? 0)
+      const limit = Number(request.command.match(/limit=(\d+)/)?.[1] ?? 0)
       queueMicrotask(() => socket.onmessage?.({
         data: JSON.stringify({
           type: 'response', id: request.id,
-          data: { jobs: jobs.slice(offset, offset + 2), meta: { range: { filtered: 0 } } },
+          data: { jobs: jobs.slice(offset, offset + limit), meta: { range: { filtered: 0 } } },
         }),
       }))
     }
@@ -176,7 +177,7 @@ describe('analytics aggregate helpers', () => {
       const request = JSON.parse(payload)
       if (request.type !== 'command') return
       queueMicrotask(() => socket.onmessage?.({
-        data: JSON.stringify(request.command.includes('offset=0')
+        data: JSON.stringify(request.command.includes('limit=1 offset=0')
           ? {
               type: 'response', id: request.id,
               data: { jobs: [{ jobid: 1, name: 'Backup' }], meta: { range: { filtered: 0 } } },
@@ -193,7 +194,7 @@ describe('analytics aggregate helpers', () => {
     ])
   })
 
-  it('continues past pages filtered by Director ACLs', async () => {
+  it('uses a single snapshot when Director ACLs filter a page', async () => {
     const loading = fetchAggregatedAnalytics(
       { username: 'admin', password: 'secret' },
       ['prod-a'],
@@ -203,14 +204,14 @@ describe('analytics aggregate helpers', () => {
     socket.send = (payload) => {
       const request = JSON.parse(payload)
       if (request.type !== 'command') return
-      const offset = Number(request.command.match(/offset=(\d+)/)?.[1] ?? 0)
-      const pages = {
-        0: { jobs: [], meta: { range: { filtered: 2 } } },
-        2: { jobs: [{ jobid: 3, name: 'Allowed', jobbytes: 30 }], meta: { range: { filtered: 1 } } },
-        4: { jobs: [{ jobid: 5, name: 'Allowed', jobbytes: 50 }], meta: { range: { filtered: 0 } } },
-      }
+      const data = request.command === 'list jobs sortby=jobid'
+        ? { jobs: [
+            { jobid: 3, name: 'Allowed', jobbytes: 30 },
+            { jobid: 5, name: 'Allowed', jobbytes: 50 },
+          ] }
+        : { jobs: [], meta: { range: { filtered: 7 } } }
       queueMicrotask(() => socket.onmessage?.({
-        data: JSON.stringify({ type: 'response', id: request.id, data: pages[offset] }),
+        data: JSON.stringify({ type: 'response', id: request.id, data }),
       }))
     }
     socket.open()
@@ -218,6 +219,64 @@ describe('analytics aggregate helpers', () => {
     const result = await loading
     expect(result.directorErrors).toEqual([])
     expect(result.jobs.map(job => job.id)).toEqual([5, 3])
+  })
+
+  it('restarts when an already-read row is deleted between pages', async () => {
+    const loading = fetchAggregatedAnalytics(
+      { username: 'admin', password: 'secret' }, ['prod-a'], 2
+    )
+    const socket = FakeWebSocket.instances[0]
+    const jobs = [1, 2, 3, 4, 5].map(jobid => ({ jobid, name: 'Backup' }))
+    let requests = 0
+    socket.send = (payload) => {
+      const request = JSON.parse(payload)
+      if (request.type !== 'command') return
+      const offset = Number(request.command.match(/offset=(\d+)/)[1])
+      const limit = Number(request.command.match(/limit=(\d+)/)[1])
+      const page = jobs.slice(offset, offset + limit)
+      if (requests++ === 0) jobs.shift()
+      queueMicrotask(() => socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response', id: request.id,
+          data: { jobs: page, meta: { range: { filtered: 0 } } },
+        }),
+      }))
+    }
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    const result = await loading
+    expect(result.directorErrors).toEqual([])
+    expect(result.jobs.map(job => job.id)).toEqual([5, 4, 3, 2])
+    expect(requests).toBeGreaterThan(2)
+  })
+
+  it('reports an error if the pagination anchor keeps moving', async () => {
+    const loading = fetchAggregatedAnalytics(
+      { username: 'admin', password: 'secret' }, ['prod-a'], 1
+    )
+    const socket = FakeWebSocket.instances[0]
+    let firstPage = true
+    socket.send = (payload) => {
+      const request = JSON.parse(payload)
+      if (request.type !== 'command') return
+      const page = firstPage
+        ? [{ jobid: 1, name: 'Backup' }]
+        : [{ jobid: 2, name: 'Backup' }]
+      firstPage = !firstPage
+      queueMicrotask(() => socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'response', id: request.id,
+          data: { jobs: page, meta: { range: { filtered: 0 } } },
+        }),
+      }))
+    }
+    socket.open()
+    socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
+    const result = await loading
+    expect(result.jobs).toEqual([])
+    expect(result.directorErrors).toEqual([
+      { director: 'prod-a', message: 'Analytics jobs changed during pagination' },
+    ])
   })
 
   it('reports missing pagination metadata instead of incomplete totals', async () => {

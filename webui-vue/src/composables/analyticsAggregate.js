@@ -54,26 +54,42 @@ function sortJobs(jobs) {
 }
 
 export async function fetchAggregatedAnalytics(credentials, directors, maxJobsLimit = 1000) {
-  if (!Number.isSafeInteger(maxJobsLimit) || maxJobsLimit <= 0) {
+  if (!Number.isSafeInteger(maxJobsLimit) || maxJobsLimit <= 0 || maxJobsLimit >= Number.MAX_SAFE_INTEGER) {
     throw new RangeError('Analytics page size must be a positive integer')
   }
   const results = await runDirectorAggregates(credentials, directors, async ({ client, director }) => {
-    const jobs = []
-    let offset = 0
-    while (true) {
-      const result = await client.call(
-        `list jobs limit=${maxJobsLimit} offset=${offset} sortby=jobid`
-      )
-      const page = directorCollection(result?.jobs)
-      jobs.push(...decorateJobs(page, director))
-      const filtered = result?.meta?.range?.filtered
-      if (!Number.isSafeInteger(filtered) || filtered < 0
-          || page.length + filtered > maxJobsLimit) {
-        throw new Error('Invalid analytics pagination metadata')
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const jobs = []
+      let offset = 0
+      let anchor = null
+      while (true) {
+        const limit = anchor === null ? maxJobsLimit : maxJobsLimit + 1
+        const result = await client.call(
+          `list jobs limit=${limit} offset=${offset} sortby=jobid`
+        )
+        const page = directorCollection(result?.jobs)
+        const filtered = result?.meta?.range?.filtered
+        if (!Number.isSafeInteger(filtered) || filtered < 0 || page.length > limit) {
+          throw new Error('Invalid analytics pagination metadata')
+        }
+        if (filtered > 0) {
+          // A filtered row has no visible ID to use as an overlap anchor.
+          const snapshot = await client.call('list jobs sortby=jobid')
+          return decorateJobs(snapshot?.jobs, director)
+        }
+        const entries = decorateJobs(page, director)
+        if (entries.some((job, index) => !Number.isSafeInteger(job.id) || job.id <= 0
+            || (index > 0 && job.id <= entries[index - 1].id))) {
+          throw new Error('Invalid analytics job ordering')
+        }
+        if (anchor !== null && entries[0]?.id !== anchor) break
+        jobs.push(...(anchor === null ? entries : entries.slice(1)))
+        if (page.length < limit) return jobs
+        offset += page.length - 1
+        anchor = entries.at(-1).id
       }
-      if (page.length + filtered < maxJobsLimit) return jobs
-      offset += maxJobsLimit
     }
+    throw new Error('Analytics jobs changed during pagination')
   })
 
   return {
