@@ -653,6 +653,7 @@ async function applyPoolDefaults() {
 
   const name = volumeName.value
   const volumeDirector = currentVolumeDirector.value
+  const expectedPoolId = poolRecord.value?.poolid
   const selection = volumeSelectionGeneration
   const isCurrent = () => selection === volumeSelectionGeneration
     && name === volumeName.value
@@ -668,7 +669,7 @@ async function applyPoolDefaults() {
         || auth.user?.director !== volumeDirector || !director.isConnected) {
         throw new Error(t('The volume action was cancelled because the selection changed.'))
       }
-      await director.call(buildApplyPoolDefaultsCommand(name))
+      await director.call(buildApplyPoolDefaultsCommand(name, expectedPoolId))
     } catch (reason) {
       if (isCurrent()) error.value = reason?.message ?? String(reason)
       return
