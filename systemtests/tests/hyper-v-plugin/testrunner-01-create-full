@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -91,13 +91,16 @@ check_for_zombie_jobs storage=File
 
 check_log "${runner_tmp}/backup.out"
 check_log "${runner_tmp}/restore.out"
+check_vm_disks_merged
 
 restore_dir="${runner_tmp}/restores"
 mkdir -p "${restore_dir}"
 
 # get the restored vm and its disk
+# the restored vm is created from the configuration of the backup snapshot,
+# so it is named like that snapshot ("Bareos JobId <n>"), not like the original vm
 cat <<EOF >"${runner_tmp}/ps_commands2"
-^vm = Get-VM -Name "${vm_name}" | Where-Object { ^_.VMId -ne "${vm_id}" };
+^vm = Get-VM | Where-Object { ^_.VMId -ne "${vm_id}" -and (^_.Name -eq "${vm_name}" -or ^_.Name -like "Bareos JobId *") } | Sort-Object CreationTime | Select-Object -Last 1;
 ^path = ^vm.HardDrives.Path;
 if (^path.getType().FullName -ne "System.String") { exit 1; };
 ^template = Get-Content vm.info.template -Raw;
