@@ -543,7 +543,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDirectorScope } from '../composables/useDirectorScope.js'
 import { usePersistedTablePagination, UNBOUNDED_TABLE_ROWS_PER_PAGE } from '../composables/usePersistedTablePagination.js'
@@ -622,6 +622,11 @@ const poolQuickFilter = ref('all')
 const expandedPools = ref([])
 const volumeFilters = ref(resolveVolumeFilters(route.query))
 const selectedVolumes = ref([])
+let rowNavigationGeneration = 0
+
+onBeforeRouteLeave(() => {
+  rowNavigationGeneration += 1
+})
 const loading = ref(false)
 const error = ref(null)
 const directorErrors = ref([])
@@ -1061,8 +1066,11 @@ async function refresh() {
 }
 
 async function openPoolDetails(pool) {
+  const generation = ++rowNavigationGeneration
   try {
     await switchToRowDirector(pool)
+    if (generation !== rowNavigationGeneration) return
+
     await router.push({
       name: 'pool-details',
       params: { name: pool.name },
@@ -1073,13 +1081,18 @@ async function openPoolDetails(pool) {
       }),
     })
   } catch (reason) {
-    reportRowError(pool, reason)
+    if (generation === rowNavigationGeneration) {
+      reportRowError(pool, reason)
+    }
   }
 }
 
 async function openVolumeDetails(volume, originTab) {
+  const generation = ++rowNavigationGeneration
   try {
     await switchToRowDirector(volume)
+    if (generation !== rowNavigationGeneration) return
+
     await router.push({
       name: 'volume-details',
       params: { name: volume.volumename },
@@ -1090,7 +1103,9 @@ async function openVolumeDetails(volume, originTab) {
       }),
     })
   } catch (reason) {
-    reportRowError(volume, reason)
+    if (generation === rowNavigationGeneration) {
+      reportRowError(volume, reason)
+    }
   }
 }
 

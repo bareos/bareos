@@ -28,6 +28,8 @@ const mocks = vi.hoisted(() => ({
   fetchSingle: vi.fn(),
   fetchAggregate: vi.fn(),
   routeReplace: vi.fn(),
+  routePush: vi.fn(),
+  leaveGuard: null,
   auth: { user: { director: 'B' } },
 }))
 const activeDirectors = ref(['B'])
@@ -35,7 +37,8 @@ const activeDirectors = ref(['B'])
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
-  useRouter: () => ({ replace: mocks.routeReplace, push: vi.fn() }),
+  useRouter: () => ({ replace: mocks.routeReplace, push: mocks.routePush }),
+  onBeforeRouteLeave: guard => { mocks.leaveGuard = guard },
 }))
 vi.mock('quasar', () => ({ useQuasar: () => ({ platform: { has: { touch: false } } }) }))
 vi.mock('../../src/stores/auth.js', () => ({
@@ -114,6 +117,8 @@ afterEach(() => {
   mocks.fetchSingle.mockReset()
   mocks.fetchAggregate.mockReset()
   mocks.routeReplace.mockReset()
+  mocks.routePush.mockReset()
+  mocks.leaveGuard = null
 })
 
 function mountPage() {
@@ -188,6 +193,52 @@ describe('PoolsPage pool-volume navigation', () => {
     await vi.waitFor(() => expect(mocks.routeReplace).toHaveBeenCalled())
     expect(mocks.routeReplace).toHaveBeenCalledTimes(1)
     expect(mocks.routeReplace.mock.calls[0][0].query.scopeDirector).toBe('A')
+  })
+
+  it('does not open pool details after the user leaves the page', async () => {
+    let finishSwitch
+    mocks.fetchSingle.mockResolvedValue({
+      pools: [{ name: 'Full', director: 'A', pooltype: 'Backup' }],
+      volumes: [],
+    })
+    mocks.ensure.mockImplementation(() => new Promise(resolve => { finishSwitch = resolve }))
+    const host = mountPage()
+    await vi.waitFor(() => expect(host.querySelector('a')).not.toBeNull())
+
+    host.querySelector('a').click()
+    await vi.waitFor(() => expect(mocks.ensure).toHaveBeenCalledWith('A'))
+    mocks.leaveGuard?.()
+    finishSwitch()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(mocks.routePush).not.toHaveBeenCalled()
+  })
+
+  it('lets a newer volume navigation supersede an earlier pool click', async () => {
+    let finishPoolSwitch
+    let finishVolumeSwitch
+    mocks.fetchSingle.mockResolvedValue({
+      pools: [{ name: 'Full', director: 'A', pooltype: 'Backup' }],
+      volumes: [{ volumename: 'V1', director: 'A', pool: 'Full' }],
+    })
+    mocks.ensure
+      .mockImplementationOnce(() => new Promise(resolve => { finishPoolSwitch = resolve }))
+      .mockImplementationOnce(() => new Promise(resolve => { finishVolumeSwitch = resolve }))
+    const host = mountPage()
+    await vi.waitFor(() => expect(host.querySelectorAll('a').length).toBeGreaterThanOrEqual(2))
+
+    const links = [...host.querySelectorAll('a')]
+    links.find(link => link.textContent.trim() === 'Full').click()
+    await vi.waitFor(() => expect(mocks.ensure).toHaveBeenCalledTimes(1))
+    links.find(link => link.textContent.trim() === 'V1').click()
+    await vi.waitFor(() => expect(mocks.ensure).toHaveBeenCalledTimes(2))
+
+    finishVolumeSwitch()
+    await vi.waitFor(() => expect(mocks.routePush).toHaveBeenCalledTimes(1))
+    expect(mocks.routePush.mock.calls[0][0].name).toBe('volume-details')
+    finishPoolSwitch()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(mocks.routePush).toHaveBeenCalledTimes(1)
   })
 })
 
