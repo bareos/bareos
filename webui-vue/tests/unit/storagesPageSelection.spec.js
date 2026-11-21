@@ -18,7 +18,7 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, defineComponent, h, reactive, ref } from 'vue'
 
 const route = reactive({ query: { storage: 'Tape', director: 'A' } })
@@ -80,6 +80,10 @@ afterEach(() => {
 })
 
 describe('StoragesPage route selection', () => {
+  beforeEach(() => {
+    route.query = { storage: 'Tape', director: 'A' }
+  })
+
   it('updates the selected storage when only its director changes', async () => {
     host = document.createElement('div')
     document.body.appendChild(host)
@@ -89,5 +93,27 @@ describe('StoragesPage route selection', () => {
     await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A'))
     route.query.director = 'B'
     await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('B'))
+  })
+
+  it('exposes storage names as keyboard-accessible selection buttons', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(StoragesPage)
+    app.config.warnHandler = () => {}
+    app.component('q-table', defineComponent({
+      props: { rows: Array },
+      setup: (props, { slots }) => () => h('div', props.rows.map(row => (
+        slots['body-cell-name']?.({ row, value: row.name })
+      ))),
+    }))
+    app.mount(host)
+
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="storages-row-name"]')).not.toBeNull())
+    const storageName = host.querySelector('[data-testid="storages-row-name"]')
+    expect(storageName.tagName).toBe('BUTTON')
+    expect(storageName.tabIndex).toBe(0)
+
+    storageName.click()
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="storages-detail-hint"]')).not.toBeNull())
   })
 })

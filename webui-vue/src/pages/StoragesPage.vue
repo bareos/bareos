@@ -93,7 +93,15 @@
                 >
                   <q-tooltip>{{ props.row.autochanger ? t('Autochanger') : t('Single device') }}</q-tooltip>
                 </q-icon>
-                <span data-testid="storages-row-name">{{ props.value }}</span>
+                <button
+                  type="button"
+                  class="storage-name-button"
+                  :aria-pressed="props.row.scopeKey === selectedStorageKey"
+                  data-testid="storages-row-name"
+                  @click.stop="toggleSelectedStorage(props.row)"
+                >
+                  {{ props.value }}
+                </button>
               </div>
             </q-td>
           </template>
@@ -438,6 +446,21 @@ watch(() => activeDirectors.value.join('\u0000'), () => {
 
 .storages-detail-hint {
   border-style: dashed;
+}
+
+.storage-name-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.storage-name-button:focus-visible {
+  outline: 2px solid var(--q-primary);
+  outline-offset: 2px;
 }
 
 :deep(.q-table tbody tr) {
