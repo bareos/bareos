@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -48,4 +48,28 @@ ps_exec()
 
   # echo "${command}"
   powershell -NoLogo -NonInteractive -Command "${command}"
+}
+
+# After a backup, the plugin must leave the vm on its own disks.  If a disk is
+# still a differencing disk (.avhdx), the merge of the backup snapshot failed
+# and the next backup of this vm fails (bareos/bareos#2624).
+check_vm_disks_merged()
+{
+  local result_file="${runner_tmp}/disks_merged.txt"
+  rm -f "${result_file}"
+  cat <<EOF >"${runner_tmp}/ps_merged"
+^paths = @();
+for (^i = 0; ^i -lt 30; ^i++) {
+  ^paths = @((Get-VM -Id "${vm_id}").HardDrives.Path);
+  if (-not (^paths -like '*.avhdx')) { break; };
+  Start-Sleep -Seconds 2;
+};
+^state = if (^paths -like '*.avhdx') { 'not merged' } else { 'merged' };
+(^state + ': ' + (^paths -join ', ')) | Out-File -Encoding Ascii -NoNewLine -FilePath "${result_file}";
+EOF
+  ps_exec "${runner_tmp}/ps_merged"
+  echo "disks of vm ${vm_name} after the backup: $(cat "${result_file}" 2>/dev/null)"
+  if ! grep -q "^merged:" "${result_file}" 2>/dev/null; then
+    set_error "vm ${vm_name} is still on a differencing disk after the backup: $(cat "${result_file}" 2>/dev/null)"
+  fi
 }
