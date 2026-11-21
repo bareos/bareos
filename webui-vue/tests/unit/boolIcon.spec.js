@@ -20,14 +20,14 @@
 
 import { createApp } from 'vue'
 import { createI18n } from 'vue-i18n'
-import { Quasar } from 'quasar/dist/quasar.client.js'
+import { QIcon, Quasar } from 'quasar/dist/quasar.client.js'
 import { describe, expect, it } from 'vitest'
 import BoolIcon from '../../src/components/BoolIcon.vue'
 
 describe('boolean icon accessibility', () => {
   it.each([[true, 'Yes'], [false, 'No']])('exposes the %s label', (value, label) => {
     const app = createApp(BoolIcon, { value })
-    app.use(Quasar)
+    app.use(Quasar, { components: { QIcon } })
     app.use(createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false }))
     const host = document.createElement('div')
     app.mount(host)
