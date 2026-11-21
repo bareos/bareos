@@ -176,7 +176,8 @@ export const useDashboardStore = defineStore('dashboards', () => {
     } catch (error) {
       console.error('Failed to save dashboards:', error)
       if (!saveFailed) {
-        Notify.create({ type: 'negative', message: i18n.global.t('Dashboard changes could not be saved.') })
+        const t = i18n.global.t
+        Notify.create({ type: 'negative', message: t('Dashboard changes could not be saved.') })
       }
       saveFailed = true
     }
