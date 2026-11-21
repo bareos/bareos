@@ -232,4 +232,13 @@ describe('volume tape usage helpers', () => {
     expect(segments.map(segment => segment.colorIndex)).toEqual([0, 1, 0])
     expect(segments.some(segment => segment.hasOverlaps)).toBe(false)
   })
+
+  it('treats a shared boundary as sequential but detects a real overlap', () => {
+    const first = { jobid: 1, startblock: 100, endblock: 200 }
+    const touching = { jobid: 2, startblock: 200, endblock: 300 }
+    const overlapping = { jobid: 2, startblock: 199, endblock: 300 }
+
+    expect(buildVolumeTapeSegments([first, touching])[0].hasOverlaps).toBe(false)
+    expect(buildVolumeTapeSegments([first, overlapping])[0].hasOverlaps).toBe(true)
+  })
 })

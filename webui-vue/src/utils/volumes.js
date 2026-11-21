@@ -150,7 +150,7 @@ function hasOverlappingMediaRanges(segments) {
 
   let currentEnd = mediaEndPosition(segments[0])
   for (let i = 1; i < segments.length; i += 1) {
-    if (mediaPosition(segments[i]) <= currentEnd) {
+    if (mediaPosition(segments[i]) < currentEnd) {
       return true
     }
     currentEnd = Math.max(currentEnd, mediaEndPosition(segments[i]))
