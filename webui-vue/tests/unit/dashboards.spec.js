@@ -320,7 +320,12 @@ describe('dashboards store', () => {
 
   it('importDashboards() rejects a dashboards array with no valid entries', () => {
     const store = useDashboardStore()
-    expect(() => store.importDashboards({ dashboards: [{ id: '', name: '' }] })).toThrow()
+    const before = store.exportDashboards()
+    expect(() => store.importDashboards({
+      bareosDashboardsBackup: 1,
+      dashboards: [{ id: '', name: '' }],
+    })).toThrow()
+    expect(store.exportDashboards()).toEqual(before)
   })
 
   it('importDashboards() drops dashboards and widgets with duplicate ids', () => {
