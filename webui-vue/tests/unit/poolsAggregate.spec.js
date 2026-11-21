@@ -21,7 +21,10 @@
 
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchAggregatedPools } from '../../src/composables/poolsAggregate.js'
+import {
+  fetchAggregatedPoolsState,
+  fetchDirectorPoolsState,
+} from '../../src/composables/storagesAggregate.js'
 
 class FakeWebSocket {
   static instances = []
@@ -74,8 +77,28 @@ describe('poolsAggregate', () => {
     vi.useRealTimers()
   })
 
-  it('aggregates pool bytes and volume counts across two directors', async () => {
-    const loading = fetchAggregatedPools(
+  it('loads one director with scoped pools, volumes and byte totals', async () => {
+    const call = vi.fn(async command => {
+      if (command === 'llist pools') return { pools: [{ name: 'Full', numvols: '2' }] }
+      if (command === 'llist volumes') return { volumes: [
+        { volumename: 'V1', pool: 'Full', volbytes: '100', comment: 'offsite' },
+        { volumename: 'V2', pool: 'Full', volbytes: '200' },
+      ] }
+      throw new Error(`Unexpected command: ${command}`)
+    })
+
+    const result = await fetchDirectorPoolsState(call, 'dir-a')
+    expect(result.pools).toEqual([
+      expect.objectContaining({ name: 'Full', director: 'dir-a', scopeKey: 'dir-a:Full', totalbytes: 300, numvols: 2 }),
+    ])
+    expect(result.volumes).toEqual([
+      expect.objectContaining({ volumename: 'V1', director: 'dir-a', scopeKey: 'dir-a:V1', volbytes: 100, comment: 'offsite' }),
+      expect.objectContaining({ volumename: 'V2', director: 'dir-a', scopeKey: 'dir-a:V2', volbytes: 200 }),
+    ])
+  })
+
+  it('aggregates scoped pool bytes and catalog counts across two directors', async () => {
+    const loading = fetchAggregatedPoolsState(
       { username: 'admin', password: 'secret' },
       ['dir-a', 'dir-b']
     )
@@ -149,21 +172,21 @@ describe('poolsAggregate', () => {
     const fullA = result.pools.find(p => p.scopeKey === 'dir-a:Full')
     expect(fullA).toBeDefined()
     expect(fullA.totalbytes).toBe(300)     // 100 + 200
-    expect(fullA.totalvolumes).toBe(2)
+    expect(fullA.numvols).toBe(2)
 
     const fullB = result.pools.find(p => p.scopeKey === 'dir-b:Full')
     expect(fullB).toBeDefined()
     expect(fullB.totalbytes).toBe(50)
-    expect(fullB.totalvolumes).toBe(1)
+    expect(fullB.numvols).toBe(1)
 
     const incremental = result.pools.find(p => p.scopeKey === 'dir-b:Incremental')
     expect(incremental).toBeDefined()
     expect(incremental.totalbytes).toBe(60)   // 10 + 20 + 30
-    expect(incremental.totalvolumes).toBe(3)
+    expect(incremental.numvols).toBe(3)
   })
 
   it('returns zero bytes and volumes for a pool with no volumes', async () => {
-    const loading = fetchAggregatedPools(
+    const loading = fetchAggregatedPoolsState(
       { username: 'admin', password: 'secret' },
       ['dir-a']
     )
@@ -194,11 +217,11 @@ describe('poolsAggregate', () => {
 
     expect(result.pools).toHaveLength(1)
     expect(result.pools[0].totalbytes).toBe(0)
-    expect(result.pools[0].totalvolumes).toBe(0)
+    expect(result.pools[0].numvols).toBe(0)
   })
 
   it('returns a directorError and partial results when one director fails', async () => {
-    const loading = fetchAggregatedPools(
+    const loading = fetchAggregatedPoolsState(
       { username: 'admin', password: 'secret' },
       ['dir-ok', 'dir-fail']
     )
@@ -236,8 +259,8 @@ describe('poolsAggregate', () => {
     expect(result.directorErrors[0].director).toBe('dir-fail')
   })
 
-  it('exposes a sorted poolNames list of unique names', async () => {
-    const loading = fetchAggregatedPools(
+  it('sorts pool rows by name', async () => {
+    const loading = fetchAggregatedPoolsState(
       { username: 'admin', password: 'secret' },
       ['dir-a']
     )
@@ -271,6 +294,6 @@ describe('poolsAggregate', () => {
     })
 
     const result = await loading
-    expect(result.poolNames).toEqual(['Alpha', 'Midway', 'Zebra'])
+    expect(result.pools.map(pool => pool.name)).toEqual(['Alpha', 'Midway', 'Zebra'])
   })
 })
