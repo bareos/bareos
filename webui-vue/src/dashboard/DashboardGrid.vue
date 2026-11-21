@@ -30,7 +30,7 @@
     class="dashboard-grid-root"
     :class="{ 'grid-interacting': interactionActive }"
   >
-    <DirectorErrorsBanner v-if="hasAnalyticsWidgets" :errors="analyticsResult.directorErrors" include-login-required>
+    <DirectorErrorsBanner v-if="hasAnalyticsWidgets && analyticsScopeMatches" :errors="analyticsResult.directorErrors" include-login-required>
       {{ t('Analytics results may be incomplete.') }}
     </DirectorErrorsBanner>
     <!-- Empty state -->
@@ -171,8 +171,12 @@ const refreshToken = ref(0)
 const pools        = ref([])
 const poolLoading  = ref(false)
 const poolRefreshToken = ref(0)
-const analyticsResult = ref({ jobs: [], directorErrors: [] })
-const analyticsJobs = computed(() => analyticsResult.value.jobs)
+const analyticsResult = ref({ jobs: [], directorErrors: [], directors: [] })
+const analyticsScopeMatches = computed(() => (
+  JSON.stringify([...analyticsResult.value.directors].sort())
+    === JSON.stringify([...props.activeDirectors].sort())
+))
+const analyticsJobs = computed(() => analyticsScopeMatches.value ? analyticsResult.value.jobs : [])
 const analyticsLoading = ref(false)
 let _latestFetchRequestId = 0
 let _latestPoolRequestId = 0
@@ -196,10 +200,10 @@ const hasAnalyticsWidgets = computed(() => props.dashboard.widgets.some(widget =
   widget.type.startsWith('analytics-')
 )))
 
-async function fetchAnalyticsData(credentials, requestId) {
+async function fetchAnalyticsData(credentials, requestId, directors) {
   if (!hasAnalyticsWidgets.value) {
     if (requestId === _latestAnalyticsRequestId) {
-      analyticsResult.value = { jobs: [], directorErrors: [] }
+      analyticsResult.value = { jobs: [], directorErrors: [], directors }
     }
     return
   }
@@ -207,9 +211,9 @@ async function fetchAnalyticsData(credentials, requestId) {
   _analyticsRequestsInFlight += 1
   analyticsLoading.value = true
   try {
-    const result = await fetchAggregatedAnalytics(credentials, props.activeDirectors)
+    const result = await fetchAggregatedAnalytics(credentials, directors)
     if (requestId === _latestAnalyticsRequestId) {
-      analyticsResult.value = result
+      analyticsResult.value = { ...result, directors }
     }
   } finally {
     _analyticsRequestsInFlight = Math.max(0, _analyticsRequestsInFlight - 1)
@@ -227,7 +231,7 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
     if (requestId === _latestFetchRequestId) {
       snapshots.value = []
       pools.value = []
-      analyticsResult.value = { jobs: [], directorErrors: [] }
+      analyticsResult.value = { jobs: [], directorErrors: [], directors: [] }
       analyticsLoading.value = false
     }
     return
@@ -252,7 +256,7 @@ async function fetchData({ forcePools = false, forceAnalytics = false } = {}) {
           fetchDirectorDashboardSnapshot({ ...credentials, director: d }, { includePools })
         )
       ),
-      includeAnalytics ? fetchAnalyticsData(credentials, analyticsRequestId) : Promise.resolve(),
+      includeAnalytics ? fetchAnalyticsData(credentials, analyticsRequestId, directors) : Promise.resolve(),
     ])
     const fresh = results.map((result, index) => result.status === 'fulfilled'
       ? result.value
@@ -315,6 +319,7 @@ provide(DASHBOARD_CONTEXT_KEY, {
   poolRefreshToken,
   analyticsJobs,
   analyticsLoading,
+  analyticsScopeMatches,
   activeDirectors: computed(() => props.activeDirectors),
   directorOptions: computed(() => props.directorOptions),
 })

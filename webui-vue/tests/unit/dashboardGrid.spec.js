@@ -56,6 +56,7 @@ vi.mock('../../src/dashboard/widgetRegistry.js', async () => {
         h('button', { onClick: context.refresh }, 'refresh'),
         h('span', { class: 'pools' }, JSON.stringify(context.pools.value)),
         h('span', { class: 'analytics' }, JSON.stringify(context.analyticsJobs.value)),
+        h('span', { class: 'analytics-scope' }, String(context.analyticsScopeMatches.value)),
         h('span', { class: 'catalog' }, JSON.stringify(context.aggregate.value.catalogStatusSummary)),
         h('span', { class: 'catalog-statuses' }, JSON.stringify(context.aggregate.value.catalogStatuses)),
       ])
@@ -218,6 +219,41 @@ describe('DashboardGrid refresh', () => {
     } finally {
       app.unmount()
       host.remove()
+    }
+  })
+
+  it('hides old analytics while a different Director scope is loading', async () => {
+    const pending = deferred()
+    fetchSnapshot.mockReset()
+    fetchAnalytics.mockReset()
+    fetchSnapshot.mockImplementation(({ director }) => Promise.resolve({ director, pools: [] }))
+    fetchAnalytics.mockResolvedValueOnce({ jobs: [{ id: 11 }], directorErrors: [] })
+      .mockReturnValueOnce(pending.promise)
+    const directors = ref(['first'])
+    const dashboard = {
+      id: 'test',
+      widgets: [{ id: 'one', type: 'analytics-summary', layout: { x: 0, y: 0, w: 3, h: 3 } }],
+    }
+    const app = createApp(defineComponent({
+      setup: () => () => h(DashboardGrid, { dashboard, activeDirectors: directors.value }),
+    }))
+    app.use(createPinia())
+    app.component('q-icon', defineComponent({ setup: () => () => null }))
+    const host = document.createElement('div')
+    app.mount(host)
+    try {
+      await vi.waitFor(() => expect(host.querySelector('.analytics').textContent).toContain('11'))
+      directors.value = ['second']
+      await nextTick()
+      expect(host.querySelector('.analytics').textContent).toBe('[]')
+      expect(host.querySelector('.analytics-scope').textContent).toBe('false')
+      pending.resolve({ jobs: [{ id: 22 }], directorErrors: [] })
+      await vi.waitFor(() => {
+        expect(host.querySelector('.analytics').textContent).toContain('22')
+        expect(host.querySelector('.analytics-scope').textContent).toBe('true')
+      })
+    } finally {
+      app.unmount()
     }
   })
 })

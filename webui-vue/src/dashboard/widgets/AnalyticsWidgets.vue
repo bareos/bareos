@@ -24,7 +24,10 @@
       {{ error }}
     </q-banner>
 
-    <div v-if="section === 'summary'" class="row q-gutter-md items-stretch wrap analytics-summary-stats">
+    <div v-if="section === 'summary' && !analyticsScopeMatches" class="flex flex-center">
+      <q-spinner size="40px" color="primary" />
+    </div>
+    <div v-else-if="section === 'summary'" class="row q-gutter-md items-stretch wrap analytics-summary-stats">
       <div v-for="s in overallStats" :key="s.label" class="col-auto">
         <div class="text-caption text-grey-6" style="white-space:nowrap">{{ s.label }}</div>
         <router-link
@@ -251,6 +254,7 @@ onUnmounted(() => { latestRequestId += 1 })
 const jobs = computed(() => dashboardContext
   ? directorCollection(dashboardContext.analyticsJobs.value)
   : directorCollection(rawJobs.value))
+const analyticsScopeMatches = computed(() => dashboardContext?.analyticsScopeMatches?.value ?? true)
 const loading = computed(() => dashboardContext
   ? dashboardContext.analyticsLoading.value
   : loadingLocal.value)
