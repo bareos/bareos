@@ -22,6 +22,7 @@
 #include "dird/volume_usage.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 namespace directordaemon {
 
@@ -53,16 +54,15 @@ std::string VolumeUsageSegmentMarker(size_t index)
 
 void AssignVolumeUsageMarkersByJob(std::vector<VolumeUsageSegment>& segments)
 {
-  std::vector<uint64_t> jobids;
+  std::unordered_map<uint64_t, char> markers;
+  markers.reserve(segments.size());
   for (auto& segment : segments) {
-    const auto found = std::find(jobids.begin(), jobids.end(), segment.jobid);
-    if (found == jobids.end()) {
-      jobids.push_back(segment.jobid);
-      segment.marker = VolumeUsageSegmentMarker(jobids.size() - 1)[0];
-    } else {
-      segment.marker = VolumeUsageSegmentMarker(
-          static_cast<size_t>(std::distance(jobids.begin(), found)))[0];
-    }
+    const auto marker
+        = markers
+              .try_emplace(segment.jobid,
+                           VolumeUsageSegmentMarker(markers.size())[0])
+              .first;
+    segment.marker = marker->second;
   }
 }
 

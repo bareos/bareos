@@ -166,6 +166,22 @@ TEST(VolumeUsage, ReusesMarkersForRepeatedJobRanges)
   EXPECT_EQ(segments[2].marker, '1');
 }
 
+TEST(VolumeUsage, AssignsMarkersInFirstSeenOrderAcrossWraparound)
+{
+  std::vector<VolumeUsageSegment> segments;
+  for (uint64_t jobid = 100; jobid < 162; ++jobid) {
+    segments.push_back(MakeSegment(1, 1, 1, jobid, 0, 1));
+  }
+  segments.push_back(MakeSegment(1, 1, 1, 101, 2, 3));
+  AssignVolumeUsageMarkersByJob(segments);
+
+  EXPECT_EQ(segments[0].marker, '1');
+  EXPECT_EQ(segments[1].marker, '2');
+  EXPECT_EQ(segments[60].marker, 'z');
+  EXPECT_EQ(segments[61].marker, '1');
+  EXPECT_EQ(segments[62].marker, '2');
+}
+
 TEST(VolumeUsage, TouchingBoundaryIsNotOverlap)
 {
   // Sequential jobs where one job's EndBlock equals the next job's
