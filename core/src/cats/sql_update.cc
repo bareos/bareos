@@ -283,7 +283,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
                                  MediaDbRecord* mr,
                                  bool preserve_status_and_moved_pool,
                                  bool require_same_pool,
-                                 bool* pool_changed)
+                                 bool* pool_changed,
+                                 bool preserve_pool_defaults)
 {
   char dt[MAX_TIME_LENGTH];
   time_t ttime;
@@ -336,29 +337,45 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
 
   // Compare against the pool in the retained record at update time, not at
   // read time: a pool move can commit between the read and this statement.
-  const auto pool_value
-      = [mr, preserve_status_and_moved_pool](const char* column, auto value) {
+  const auto pool_value = [mr, preserve_status_and_moved_pool](
+                              const char* column, auto value) {
           auto encoded = std::to_string(value);
           if (!preserve_status_and_moved_pool) { return encoded; }
           return "CASE WHEN PoolId=" + std::to_string(mr->PoolId) + " THEN "
                  + encoded + " ELSE " + column + " END";
         };
 
+  std::string pool_default_assignments;
+  if (!preserve_pool_defaults) {
+    pool_default_assignments
+        = "MaxVolBytes=" + pool_value("MaxVolBytes", mr->MaxVolBytes)
+          + ",VolRetention=" + pool_value("VolRetention", mr->VolRetention)
+          + ",VolUseDuration="
+          + pool_value("VolUseDuration", mr->VolUseDuration)
+          + ",MaxVolJobs=" + pool_value("MaxVolJobs", mr->MaxVolJobs)
+          + ",MaxVolFiles=" + pool_value("MaxVolFiles", mr->MaxVolFiles)
+          + ",RecyclePoolId="
+          + pool_value("RecyclePoolId", mr->RecyclePoolId)
+          + ",Recycle=" + pool_value("Recycle", mr->Recycle)
+          + ",ActionOnPurge="
+          + pool_value("ActionOnPurge", mr->ActionOnPurge)
+          + ",MinBlocksize=" + pool_value("MinBlocksize", mr->MinBlocksize)
+          + ",MaxBlocksize=" + pool_value("MaxBlocksize", mr->MaxBlocksize)
+          + ",";
+  }
+
   Mmsg(cmd,
        "UPDATE Media SET VolJobs=%u,"
        "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolMounts=%u,VolErrors=%u,"
-       "VolWrites=%u,MaxVolBytes=%s,VolStatus=%s'%s'%s,"
+       "VolWrites=%u,%sVolStatus=%s'%s'%s,"
        "Slot=%d,InChanger=%d,VolReadTime=%s,VolWriteTime=%s,"
-       "LabelType=%d,StorageId=%s,PoolId=%s,VolRetention=%s,VolUseDuration=%s,"
-       "MaxVolJobs=%s,MaxVolFiles=%s,Enabled=%d,LocationId=%s,"
-       "ScratchPoolId=%s,RecyclePoolId=%s,RecycleCount=%u,Recycle=%s,"
-       "ActionOnPurge=%s,"
-       "EncryptionKey='%s',"
-       "MinBlocksize=%s,MaxBlocksize=%s "
+       "LabelType=%d,StorageId=%s,PoolId=%s,Enabled=%d,LocationId=%s,"
+       "ScratchPoolId=%s,RecycleCount=%u,"
+       "EncryptionKey='%s' "
        "WHERE VolumeName='%s'%s%s%s",
        mr->VolJobs, mr->VolFiles, mr->VolBlocks, edit_uint64(mr->VolBytes, ed1),
        mr->VolMounts, mr->VolErrors, mr->VolWrites,
-       pool_value("MaxVolBytes", mr->MaxVolBytes).c_str(),
+       pool_default_assignments.c_str(),
        preserve_status_and_moved_pool
            ? "CASE WHEN VolStatus IN ('Cleaning','Error') THEN VolStatus ELSE "
            : "",
@@ -366,16 +383,8 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
        mr->Slot, mr->InChanger, edit_int64(mr->VolReadTime, ed3),
        edit_int64(mr->VolWriteTime, ed4), mr->LabelType,
        edit_int64(mr->StorageId, ed5), pool_value("PoolId", mr->PoolId).c_str(),
-       pool_value("VolRetention", mr->VolRetention).c_str(),
-       pool_value("VolUseDuration", mr->VolUseDuration).c_str(),
-       pool_value("MaxVolJobs", mr->MaxVolJobs).c_str(),
-       pool_value("MaxVolFiles", mr->MaxVolFiles).c_str(), mr->Enabled,
-       edit_uint64(mr->LocationId, ed9), edit_uint64(mr->ScratchPoolId, ed10),
-       pool_value("RecyclePoolId", mr->RecyclePoolId).c_str(), mr->RecycleCount,
-       pool_value("Recycle", mr->Recycle).c_str(),
-       pool_value("ActionOnPurge", mr->ActionOnPurge).c_str(), mr->EncrKey,
-       pool_value("MinBlocksize", mr->MinBlocksize).c_str(),
-       pool_value("MaxBlocksize", mr->MaxBlocksize).c_str(),
+       mr->Enabled, edit_uint64(mr->LocationId, ed9),
+       edit_uint64(mr->ScratchPoolId, ed10), mr->RecycleCount, mr->EncrKey,
        esc_medianame->c_str(), require_same_pool ? " AND PoolId=" : "",
        require_same_pool ? edit_int64(mr->PoolId, ed12) : "",
        preserve_status_and_moved_pool
@@ -418,6 +427,12 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
   if (retval || !require_same_pool) { retval &= MakeInchangerUnique(jcr, mr); }
 
   return retval;
+}
+
+bool BareosDb::UpdateMediaStatisticsRecord(JobControlRecord* jcr,
+                                           MediaDbRecord* mr)
+{
+  return UpdateMediaRecord(jcr, mr, true, false, nullptr, true);
 }
 
 bool BareosDb::UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr)

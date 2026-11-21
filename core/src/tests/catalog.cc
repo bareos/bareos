@@ -379,6 +379,34 @@ TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
   EXPECT_EQ(stale.VolRetention, 789);
 }
 
+TEST_F(CatalogTest, StatisticsUpdateDoesNotRestoreChangedPoolDefaults)
+{
+  ASSERT_TRUE(db->SqlExec(
+      "INSERT INTO Media "
+      "(VolumeName,MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,"
+      "MaxVolJobs) VALUES ('statistics-pool-defaults','File','Append',11,30,"
+      "300,1)"));
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "statistics-pool-defaults",
+           sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.VolBytes = 42;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET VolRetention=90,VolUseDuration=900,MaxVolJobs=2 "
+      "WHERE VolumeName='statistics-pool-defaults'"));
+
+  ASSERT_TRUE(db->UpdateMediaStatisticsRecord(jcr, &stale));
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "statistics-pool-defaults",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.VolBytes, 42);
+  EXPECT_EQ(current.VolRetention, 90);
+  EXPECT_EQ(current.VolUseDuration, 900);
+  EXPECT_EQ(current.MaxVolJobs, 2);
+}
+
 TEST_F(CatalogTest, SlotUpdatePreservesConcurrentStatusAndPoolChanges)
 {
   ASSERT_TRUE(

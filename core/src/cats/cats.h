@@ -953,7 +953,9 @@ class BareosDb : public BareosDbQueryEnum {
                          MediaDbRecord* mr,
                          bool preserve_status_and_moved_pool = false,
                          bool require_same_pool = false,
-                         bool* pool_changed = nullptr);
+                         bool* pool_changed = nullptr,
+                         bool preserve_pool_defaults = false);
+  bool UpdateMediaStatisticsRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr);
   bool UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
