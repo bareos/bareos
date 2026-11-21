@@ -954,6 +954,7 @@ async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = nul
     prompt: '',
     message: '',
   }
+  let commandStarted = false
 
   const applyCommandState = (nextState) => {
     finalState = {
@@ -962,6 +963,7 @@ async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = nul
       status: nextState?.status || finalState.status,
     }
 
+    if (!ownsCommand()) return
     commandStatus.value = finalState.status
     commandStatusPrompt.value = finalState.prompt ?? ''
     commandStatusMessage.value = finalState.message ?? ''
@@ -975,21 +977,24 @@ async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = nul
     ))) {
       throw new Error(t('The volume action was cancelled because the selection changed.'))
     }
+    commandStarted = true
     await director.rawCall(cmd, {
       onChunk: (chunk) => {
-        if (!chunk) return
+        if (!chunk || !ownsCommand()) return
         commandLogText.value += chunk
         void scrollCommandLogToBottom()
       },
       onStateChange: applyCommandState,
     })
   } catch (e) {
-    commandLogText.value += `\nError: ${e.message}\n`
-    applyCommandState({
-      status: 'failed',
-      message: e.message,
-    })
-    void scrollCommandLogToBottom()
+    if (!commandStarted || ownsCommand()) {
+      commandLogText.value += `\nError: ${e.message}\n`
+      applyCommandState({
+        status: 'failed',
+        message: e.message,
+      })
+      void scrollCommandLogToBottom()
+    }
   } finally {
     commandRunning.value = false
   }
@@ -1001,7 +1006,21 @@ async function runCmd(title, cmd, isCurrent = () => true, expectedDirector = nul
     })
   }
 
-  return finalState
+  return {
+    ...finalState,
+    storageName: name,
+    storageDirector,
+    generation,
+  }
+}
+
+async function reloadSlotsAfterCommand(result) {
+  if (
+    shouldReloadAutochangerAfterCommand(result?.status)
+    && ownsStorage(result.storageName, result.storageDirector, result.generation)
+  ) {
+    await loadSlots()
+  }
 }
 
 async function doUpdateSlots() {
@@ -1009,9 +1028,7 @@ async function doUpdateSlots() {
     'Update Slots',
     `update slots storage="${selectedStorageName.value}"`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function defaultDriveNumber() {
@@ -1033,9 +1050,7 @@ async function doImportAll() {
     'Import All',
     `import storage="${selectedStorageName.value}"`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doImport(slotNr) {
@@ -1046,9 +1061,7 @@ async function doImport(slotNr) {
         srcSlot: slotNr,
       })
     )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doExport(slotNr) {
@@ -1075,9 +1088,7 @@ async function doExport(slotNr) {
       isCurrent,
       storageDirector
     )
-    if (shouldReloadAutochangerAfterCommand(result?.status)) {
-      await loadSlots()
-    }
+    await reloadSlotsAfterCommand(result)
   })
 }
 
@@ -1112,9 +1123,7 @@ async function doTransfer() {
     `move storage="${selectedStorageName.value}"` +
     ` srcslots=${srcSlot} dstslots=${dstSlot}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doMount() {
@@ -1124,9 +1133,7 @@ async function doMount() {
     `mount storage="${selectedStorageName.value}"` +
     ` slot=${mountForm.value.slot} drive=${mountForm.value.drive}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doUnmount(driveNr) {
@@ -1134,9 +1141,7 @@ async function doUnmount(driveNr) {
     `Unmount Drive ${driveNr}`,
     `unmount storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doRelease(driveNr) {
@@ -1144,9 +1149,7 @@ async function doRelease(driveNr) {
     `Release Drive ${driveNr}`,
     `release storage="${selectedStorageName.value}" drive=${driveNr}`
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function doLabelBarcodes() {
@@ -1160,9 +1163,7 @@ async function doLabelBarcodes() {
     encrypted,
   })
   const result = await runCmd(t('Label barcodes'), cmd)
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function openSlotLabelDialog(slotNr) {
@@ -1186,9 +1187,7 @@ async function doSlotLabel() {
     encrypted,
   })
   const result = await runCmd(`Label Slot ${slot}`, cmd)
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 // ── Drag-and-drop ─────────────────────────────────────────────
@@ -1222,9 +1221,7 @@ async function onDropToDrive(event, drive) {
       `mount storage="${selectedStorageName.value}"` +
       ` slot=${slot.slotnr} drive=${drive.slotnr}`
     )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 function onDragOverSlot(event, row) {
@@ -1255,18 +1252,14 @@ async function onDropToSlot(event, row) {
           dstSlot: row.slotnr,
         })
     )
-    if (shouldReloadAutochangerAfterCommand(result?.status)) {
-      await loadSlots()
-    }
+    await reloadSlotsAfterCommand(result)
   } else {
       const result = await runCmd(
         `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
         `move storage="${selectedStorageName.value}"` +
         ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
       )
-      if (shouldReloadAutochangerAfterCommand(result?.status)) {
-        await loadSlots()
-      }
+      await reloadSlotsAfterCommand(result)
    }
 }
 
@@ -1297,9 +1290,7 @@ async function onDropToImportSlot(event, row) {
       dstSlot: row.slotnr,
     })
   )
-  if (shouldReloadAutochangerAfterCommand(result?.status)) {
-    await loadSlots()
-  }
+  await reloadSlotsAfterCommand(result)
 }
 
 async function showStatus() {

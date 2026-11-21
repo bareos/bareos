@@ -212,6 +212,44 @@ describe('AutochangerPanel storage selection', () => {
     }
   })
 
+  it('keeps an in-flight command log and refresh scoped to its original storage', async () => {
+    const rawCommand = deferred()
+    let commandCallbacks
+    director.call.mockImplementation(command => {
+      if (command === 'list pools') return Promise.resolve({ pools: [] })
+      if (command.startsWith('status storage=')) return Promise.resolve({ contents: [] })
+      return Promise.resolve({})
+    })
+    director.rawCall.mockImplementation((_command, callbacks) => {
+      commandCallbacks = callbacks
+      return rawCommand.promise
+    })
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(host.querySelector('[aria-label="Import all"]')).not.toBeNull())
+
+    host.querySelector('[aria-label="Import all"]').click()
+    await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalled())
+
+    storage.value = { name: 'B', director: 'test-dir' }
+    await vi.waitFor(() => expect(director.call).toHaveBeenCalledWith(
+      'status storage="B" slots'
+    ))
+    const bRefreshCount = director.call.mock.calls.filter(
+      ([command]) => command === 'status storage="B" slots'
+    ).length
+
+    commandCallbacks.onChunk('Output from storage A')
+    await nextTick()
+    expect(host.textContent).not.toContain('Output from storage A')
+
+    rawCommand.resolve({})
+    await vi.waitFor(() => expect(host.querySelector('[aria-label="Import all"]').disabled).toBe(false))
+    expect(director.call.mock.calls.filter(
+      ([command]) => command === 'status storage="B" slots'
+    )).toHaveLength(bRefreshCount)
+  })
+
   it('ignores a previous storage slot response after changing selection', async () => {
     const oldSlots = deferred()
     director.call.mockImplementation(command => {
