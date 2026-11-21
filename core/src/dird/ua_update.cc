@@ -90,6 +90,7 @@ bool UpdateCmd(UaContext* ua, const char*)
     case 1: {
       bool strict = FindArg(ua, NT_("comment")) >= 0
                     || FindArg(ua, NT_("poolwithdefaults")) >= 0
+                    || FindArg(ua, NT_("frompool")) >= 0
                     || FindArg(ua, NT_("expectedpoolid")) >= 0;
       bool updated = UpdateVolume(ua);
       return strict ? updated : true;

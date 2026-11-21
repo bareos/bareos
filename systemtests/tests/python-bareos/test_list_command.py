@@ -43,6 +43,45 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_frompool_reports_missing_pool_as_failure(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        volume = f"MissingPoolDefaults-{uuid.uuid4().hex}"
+        director.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            poolid = director.call(f"llist volume={volume}")["volume"]["poolid"]
+            director.call(
+                f'.sql query="UPDATE Media SET PoolId=2147483647 '
+                f"WHERE VolumeName='{volume}'\""
+            )
+            try:
+                signals = []
+                original_is_end = director.is_end_of_message
+
+                def capture_signal(signal):
+                    signals.append(signal)
+                    return original_is_end(signal)
+
+                director.is_end_of_message = capture_signal
+                with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                    director.call(f"update volume={volume} frompool=yes")
+                self.assertIn(Constants.BNET_CMD_FAILED, signals)
+            finally:
+                director.is_end_of_message = original_is_end
+                director.call(
+                    f'.sql query="UPDATE Media SET PoolId={poolid} '
+                    f"WHERE VolumeName='{volume}'\""
+                )
+        finally:
+            director.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_pool_defaults_rejects_combined_comment_without_changes(self):
         username = self.get_operator_username()
         director = bareos.bsock.DirectorConsoleJson(
