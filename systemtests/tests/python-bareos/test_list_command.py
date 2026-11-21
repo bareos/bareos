@@ -216,6 +216,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 break
                             sleep(0.1)
                         else:
+                            mover.close()
                             self.fail("Pool move did not wait for the locked pool")
                     finally:
                         director.call('.sql query="COMMIT"')
@@ -223,7 +224,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     with self.assertRaises(
                         bareos.exceptions.JsonRpcErrorReceivedException
                     ):
-                        pending.result(timeout=10)
+                        self.wait_for_console_call(pending, mover)
                 after = director.call(f"llist volume={volume}")["volume"]
                 self.assertEqual(after["poolid"], before["poolid"])
                 self.assertEqual(after["volretention"], before["volretention"])
@@ -335,6 +336,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 break
                             sleep(0.1)
                         else:
+                            mover.close()
                             self.fail("Pool move did not wait for the locked volume")
                     finally:
                         admin.call('.sql query="COMMIT"')
@@ -342,7 +344,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     with self.assertRaises(
                         bareos.exceptions.JsonRpcErrorReceivedException
                     ):
-                        pending.result(timeout=10)
+                        self.wait_for_console_call(pending, mover)
                 current = admin.call(f"llist volume={volume}")["volume"]
                 self.assertEqual(current["poolid"], target["poolid"])
                 self.assertEqual(current["volretention"], "1")
@@ -408,15 +410,18 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 break
                             sleep(0.1)
                         else:
+                            for console in consoles:
+                                console.close()
                             self.fail(
                                 "Pool moves did not overlap while the pool was locked"
                             )
                     finally:
                         admin.call('.sql query="COMMIT"')
                         transaction_open = False
-                    for future, volume in zip(pending, volumes):
+                    results = self.wait_for_console_calls(pending, consoles)
+                    for result, volume in zip(results, volumes):
                         self.assertEqual(
-                            future.result(timeout=10)["poolmove"]["volumename"], volume
+                            result["poolmove"]["volumename"], volume
                         )
             finally:
                 if transaction_open:
@@ -532,6 +537,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                                 break
                             sleep(0.1)
                         else:
+                            changer.close()
                             self.fail(
                                 "Status change did not wait for the locked volume"
                             )
@@ -545,7 +551,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                     with self.assertRaises(
                         bareos.exceptions.JsonRpcErrorReceivedException
                     ):
-                        pending.result(timeout=10)
+                        self.wait_for_console_call(pending, changer)
                 self.assertEqual(
                     admin.call(f"llist volume={volume}")["volume"]["volstatus"],
                     record["volstatus"],

@@ -104,11 +104,15 @@ class PythonBareosAclTest(bareos_unittest.Json):
                                 break
                             sleep(0.1)
                         else:
+                            restricted.close()
                             self.fail("Comment update did not wait for the pool move")
                     finally:
                         admin.call('.sql query="COMMIT"')
                         transaction_open = False
-                    self.assertIn(b"Volume pool changed", pending.result(timeout=10))
+                    self.assertIn(
+                        b"Volume pool changed",
+                        self.wait_for_console_call(pending, restricted),
+                    )
             finally:
                 if transaction_open:
                     admin.call('.sql query="ROLLBACK"')
@@ -120,7 +124,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
             record = admin.call(f"llist volume={volume}")["volume"]
             self.assertEqual(record["comment"], "original")
         finally:
-            restricted.call(".")
+            if restricted.socket is not None:
+                restricted.call(".")
             admin.call(f"delete volume={volume} yes")
             os.remove(f"storage/{volume}")
 
