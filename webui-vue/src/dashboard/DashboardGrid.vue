@@ -80,7 +80,6 @@
       :is-resizable="editMode"
       :use-css-transforms="true"
       :vertical-compact="true"
-      drag-allow-from=".widget-drag-handle"
       @layout-updated="onLayoutUpdated"
     >
       <GridItem
@@ -93,6 +92,7 @@
         :h="layoutMap[widget.id]?.h ?? widget.layout.h"
         :min-w="widget.layout.minW ?? 2"
         :min-h="widget.layout.minH ?? 3"
+        drag-allow-from=".widget-drag-handle"
         @resize="onItemResize"
         @resized="onItemResized"
         @move="onItemMove"

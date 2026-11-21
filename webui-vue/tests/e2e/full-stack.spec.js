@@ -110,6 +110,22 @@ async function waitForDirectorResponseProcessing(page, responseToken) {
   ), responseToken)
 }
 
+test('browser regression: dashboard widgets drag only from their headers', async ({ page }) => {
+  await browserFixture(page)
+  await page.getByTitle('Edit layout').click()
+  const item = page.locator('.vgl-item').first()
+  await expect(item.locator('.widget-drag-handle')).toBeVisible()
+  const before = await item.boundingBox()
+  if (!before) throw new Error('Could not get widget bounds')
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width / 2 + 120, before.y + before.height / 2 + 90, { steps: 10 })
+  await page.mouse.up()
+  const after = await item.boundingBox()
+  expect(after?.x).toBe(before.x)
+  expect(after?.y).toBe(before.y)
+})
+
 test('browser regression: column checkboxes have accessible names', async ({ page }) => {
   await browserFixture(page)
   await openNav(page, 'nav-jobs', /#\/jobs/)
