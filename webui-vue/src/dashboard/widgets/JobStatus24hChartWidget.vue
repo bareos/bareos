@@ -86,7 +86,7 @@ const chartData = computed(() => ({
 function goToJobsStatus(status) {
   return router.push({
     name: 'jobs',
-    query: withJobsStatusFilterQuery({}, status),
+    query: withJobsStatusFilterQuery({ days: '1' }, status),
   })
 }
 

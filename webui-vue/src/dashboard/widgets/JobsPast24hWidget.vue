@@ -22,7 +22,7 @@
   <div class="row q-col-gutter-md text-center q-pa-sm">
     <div class="col" v-for="s in summaryStats" :key="s.label">
       <router-link
-        :to="{ name: 'jobs', query: withJobsStatusFilterQuery({}, s.status) }"
+        :to="{ name: 'jobs', query: withJobsStatusFilterQuery({ days: '1' }, s.status) }"
         class="text-decoration-none"
       >
         <StatNumber :value="s.count" :label="s.label" :color="s.color" />

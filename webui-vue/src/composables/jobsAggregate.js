@@ -170,6 +170,7 @@ export async function fetchAggregatedJobsPage(
   jobFilter = '',
   clientFilter = '',
   searchTerm = '',
+  days,
 ) {
   const { page = 1, rowsPerPage = 25, sortBy = 'id', descending = true } = pagination ?? {}
   const offset = Math.max(0, (page - 1) * rowsPerPage)
@@ -212,6 +213,7 @@ export async function fetchAggregatedJobsPage(
               sortColumn: serverSortColumn,
               descending,
               searchTerm: normalizedSearchTerm,
+              days,
             }))
           ))),
           Promise.allSettled(filters.map(currentStatusFilter => (
@@ -222,6 +224,7 @@ export async function fetchAggregatedJobsPage(
               jobFilter,
               clientFilter,
               searchTerm: normalizedSearchTerm,
+              days,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
@@ -236,6 +239,7 @@ export async function fetchAggregatedJobsPage(
               jobFilter,
               clientFilter,
               searchTerm: normalizedSearchTerm,
+              days,
             }))
           ))),
           Promise.allSettled([client.call('status director')]),
@@ -251,6 +255,7 @@ export async function fetchAggregatedJobsPage(
             jobFilter,
             clientFilter,
             searchTerm: normalizedSearchTerm,
+            days,
           }))
         }))
       }

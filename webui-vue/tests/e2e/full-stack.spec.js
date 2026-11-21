@@ -110,6 +110,42 @@ async function waitForDirectorResponseProcessing(page, responseToken) {
   ), responseToken)
 }
 
+test('browser regression: the 24-hour Jobs filter applies to counts and lists', async ({ page }) => {
+  const commands = []
+  await browserFixture(page, command => {
+    commands.push(command)
+    if (command.startsWith('llist jobs count')) return { jobs: [{ count: '1' }] }
+    if (command.startsWith('llist jobs ')) {
+      return { jobs: [{ jobid: '1', name: 'Example', jobstatus: 'T' }] }
+    }
+  })
+  commands.length = 0
+  await page.goto('/#/jobs?days=1&status=T')
+  await expect(page.getByText('Last 24 hours', { exact: true })).toBeVisible()
+  await expect.poll(() => commands.some(command =>
+    command.startsWith('llist jobs count') && command.includes('days=1')
+  )).toBe(true)
+  await expect.poll(() => commands.some(command =>
+    command.startsWith('llist jobs ') && !command.startsWith('llist jobs count') && command.includes('days=1')
+  )).toBe(true)
+  commands.length = 0
+  await page.getByTestId('director-scope-control').click()
+  await page.getByTestId('director-scope-menu').getByRole('button', { name: 'Select all' }).click()
+  await page.keyboard.press('Escape')
+  await expect.poll(() => commands.filter(command =>
+    command.startsWith('llist jobs count') && command.includes('days=1')
+  ).length).toBeGreaterThanOrEqual(2)
+  await expect.poll(() => commands.filter(command =>
+    command.startsWith('llist jobs ') && !command.startsWith('llist jobs count') && command.includes('days=1')
+  ).length).toBeGreaterThanOrEqual(2)
+  commands.length = 0
+  await page.getByText('Last 24 hours', { exact: true }).locator('..').getByRole('button').click()
+  await expect(page.getByText('Last 24 hours', { exact: true })).toHaveCount(0)
+  await expect.poll(() => commands.some(command =>
+    command.startsWith('llist jobs count') && !command.includes('days=1')
+  )).toBe(true)
+})
+
 test('browser regression: the last dashboard can be renamed but not deleted', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('bareos_dashboards', JSON.stringify({
