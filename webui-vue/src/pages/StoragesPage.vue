@@ -234,6 +234,8 @@ const directorErrors = ref([])
 const storageRows = ref([])
 const selectedStorageKey = ref(null)
 let refreshGeneration = 0
+let storageRowsScope = null
+let preserveSelectionQuery = false
 
 const reachableDirectors = computed(() => [...new Set([
   ...director.availableDirectors,
@@ -301,6 +303,7 @@ async function refresh() {
   const generation = ++refreshGeneration
   const requestedDirectors = [...storagesPageDirectors.value]
   const requestedScopeDirector = storagesListScopeDirector.value
+  const requestedScope = JSON.stringify([requestedScopeDirector, requestedDirectors])
   const isCurrentRefresh = () => (
     generation === refreshGeneration
     && requestedScopeDirector === storagesListScopeDirector.value
@@ -311,8 +314,15 @@ async function refresh() {
   loading.value = true
   error.value = null
   directorErrors.value = []
+  if (storageRowsScope !== requestedScope) {
+    storageRowsScope = requestedScope
+    preserveSelectionQuery = true
+    storageRows.value = []
+    selectedStorageKey.value = null
+  }
   try {
     if (requestedDirectors.length === 0) {
+      preserveSelectionQuery = false
       storageRows.value = []
       return
     }
@@ -326,6 +336,7 @@ async function refresh() {
       const result = await fetchAggregatedStorages(credentials, requestedDirectors)
       if (!isCurrentRefresh()) return
 
+      preserveSelectionQuery = false
       storageRows.value = result.storages
       directorErrors.value = result.directorErrors
       return
@@ -341,6 +352,7 @@ async function refresh() {
     )
     if (!isCurrentRefresh()) return
 
+    preserveSelectionQuery = false
     storageRows.value = result
   } catch (reason) {
     if (isCurrentRefresh()) {
@@ -423,6 +435,7 @@ function syncSelectionFromRoute() {
 // Drop the selection when the selected storage is no longer listed, for
 // instance after a director scope change or a refresh.
 watch(storageRows, () => {
+  if (preserveSelectionQuery && storageRows.value.length === 0) return
   syncSelectionFromRoute()
 
   if (!selectedStorage.value && resolveStorageSelectionQuery(route.query)) {

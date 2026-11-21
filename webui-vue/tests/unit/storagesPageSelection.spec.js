@@ -90,8 +90,9 @@ afterEach(() => {
 
 function deferred() {
   let resolve
-  const promise = new Promise(complete => { resolve = complete })
-  return { promise, resolve }
+  let reject
+  const promise = new Promise((complete, fail) => { resolve = complete; reject = fail })
+  return { promise, resolve, reject }
 }
 
 describe('StoragesPage route selection', () => {
@@ -169,5 +170,51 @@ describe('StoragesPage route selection', () => {
     await Promise.resolve()
 
     expect(host.querySelector('[data-test-selected]')?.textContent).toBe('B')
+  })
+
+  it('removes old scope rows and details while the new scope loads or fails', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(StoragesPage)
+    app.config.warnHandler = () => {}
+    app.component('q-table', defineComponent({
+      props: { rows: Array },
+      setup: props => () => h('div', { 'data-test-rows': '' }, props.rows.map(row => row.director).join(',')),
+    }))
+    app.component('q-banner', defineComponent({
+      setup: (_props, { slots }) => () => h('div', slots.default?.()),
+    }))
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A'))
+    expect(host.querySelector('[data-test-rows]')?.textContent).toBe('A,B')
+
+    const pending = deferred()
+    fetchAggregatedStorages.mockReturnValue(pending.promise)
+    route.query = { storage: 'Tape', director: 'A', scopeDirector: 'B' }
+    await vi.waitFor(() => expect(fetchAggregatedStorages).toHaveBeenCalledWith(expect.anything(), ['B']))
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')).toBeNull())
+    expect(host.querySelector('[data-test-rows]')?.textContent ?? '').toBe('')
+
+    pending.reject(new Error('Director B unavailable'))
+    await vi.waitFor(() => expect(host.textContent).toContain('Director B unavailable'))
+    expect(host.querySelector('[data-test-selected]')).toBeNull()
+    expect(host.querySelector('[data-test-rows]')?.textContent ?? '').toBe('')
+  })
+
+  it('keeps the selected storage during a refresh of the same scope', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(StoragesPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A'))
+
+    const pending = deferred()
+    fetchAggregatedStorages.mockReturnValue(pending.promise)
+    route.query.scopeDirector = ''
+    await vi.waitFor(() => expect(fetchAggregatedStorages).toHaveBeenCalledTimes(2))
+    expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A')
+    pending.resolve(defaultStorageResult)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A'))
   })
 })
