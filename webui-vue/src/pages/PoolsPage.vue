@@ -779,9 +779,13 @@ function volumesOfPool(pool) {
 
 function showPoolInVolumeList(pool) {
   const filters = { ...volumeFilters.value, pools: [pool.name], statuses: [], mediatypes: [] }
+  const query = withStoragesScopeDirectorQuery(
+    buildPoolsTabQuery(route.query, 'volumes'),
+    pool.director,
+  )
   router.replace({
     path: '/pools',
-    query: buildVolumeFiltersQuery(buildPoolsTabQuery(route.query, 'volumes'), filters),
+    query: buildVolumeFiltersQuery(query, filters),
   })
 }
 

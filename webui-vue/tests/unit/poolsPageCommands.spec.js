@@ -173,7 +173,7 @@ describe('PoolsPage volume commands', () => {
 })
 
 describe('PoolsPage pool-volume navigation', () => {
-  it('writes the tab and pool filter in one route replacement', async () => {
+  it('writes the tab and pool filter in one route replacement scoped to its director', async () => {
     mocks.fetchSingle.mockResolvedValue({
       pools: [{ name: 'Full', director: 'A', pooltype: 'Backup' }],
       volumes: [],
@@ -187,6 +187,7 @@ describe('PoolsPage pool-volume navigation', () => {
 
     await vi.waitFor(() => expect(mocks.routeReplace).toHaveBeenCalled())
     expect(mocks.routeReplace).toHaveBeenCalledTimes(1)
+    expect(mocks.routeReplace.mock.calls[0][0].query.scopeDirector).toBe('A')
   })
 })
 
