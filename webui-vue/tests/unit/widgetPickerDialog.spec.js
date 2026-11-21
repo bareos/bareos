@@ -21,7 +21,9 @@
 import { createApp, defineComponent, h, nextTick } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({ t: key => key === 'Jobs Past 24 h' ? 'Historique traduit' : key }),
+}))
 vi.mock('quasar', () => ({ useQuasar: () => ({ screen: { lt: { sm: false } } }) }))
 const { default: WidgetPickerDialog } = await import('../../src/dashboard/WidgetPickerDialog.vue')
 
@@ -38,6 +40,8 @@ describe('WidgetPickerDialog', () => {
       emits: ['update:modelValue'],
       setup: (_, { emit }) => () => h('div', [
         h('button', { class: 'search', onClick: () => emit('update:modelValue', 'running') }),
+        h('button', { class: 'translated', onClick: () => emit('update:modelValue', 'traduit') }),
+        h('button', { class: 'english', onClick: () => emit('update:modelValue', 'jobs past 24 h') }),
         h('button', { class: 'clear', onClick: () => emit('update:modelValue', null) }),
       ]),
     }))
@@ -49,6 +53,13 @@ describe('WidgetPickerDialog', () => {
       host.querySelector('.search').click()
       await nextTick()
       expect(host.querySelectorAll('.widget-picker-card').length).toBeLessThan(count)
+      host.querySelector('.translated').click()
+      await nextTick()
+      expect(host.querySelectorAll('.widget-picker-card')).toHaveLength(1)
+      expect(host.textContent).toContain('Historique traduit')
+      host.querySelector('.english').click()
+      await nextTick()
+      expect(host.textContent).toContain('Historique traduit')
       host.querySelector('.clear').click()
       await nextTick()
       expect(host.querySelectorAll('.widget-picker-card').length).toBe(count)

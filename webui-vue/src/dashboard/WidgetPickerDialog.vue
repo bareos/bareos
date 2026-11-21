@@ -109,9 +109,8 @@ const dialogCardStyle = computed(() => (isMobile.value
 const filtered = computed(() => {
   const q = (search.value ?? '').toLowerCase().trim()
   if (!q) return allDefs
-  return allDefs.filter(d =>
-    d.label.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)
-  )
+  return allDefs.filter(d => [d.label, d.description, t(d.label), t(d.description)]
+    .some(text => text.toLowerCase().includes(q)))
 })
 
 function pick(def) {
