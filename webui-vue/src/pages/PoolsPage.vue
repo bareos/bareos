@@ -823,8 +823,8 @@ const onlyDeviatingVolumes = computed({
   set: (value) => settings.setTableFlag('storages.volumes.onlyDeviating', value),
 })
 
-const filteredVolumes = computed(() => {
-  const byFilters = filterVolumes(volumeRows.value, volumeFilters.value)
+function filterVisibleVolumes(filters) {
+  const byFilters = filterVolumes(volumeRows.value, filters)
     .filter(volume => (
       !onlyDeviatingVolumes.value
       || volumeDriftFields(volumeDriftIndex.value, volume).size > 0
@@ -836,7 +836,9 @@ const filteredVolumes = computed(() => {
   return byFilters.filter(volume => SEARCH_FIELDS.some(field => (
     String(volume[field] ?? '').toLowerCase().includes(needle)
   )))
-})
+}
+
+const filteredVolumes = computed(() => filterVisibleVolumes(volumeFilters.value))
 
 const volumeDriftIndex = computed(
   () => buildPoolDefaultDriftIndex(volumeRows.value, poolRows.value),
@@ -856,14 +858,7 @@ function driftCellClass(volume, fieldId) {
 // would make all other segments disappear and the filter unclickable.
 const statusBarVolumes = computed(() => {
   const withoutStatus = { ...volumeFilters.value, statuses: [] }
-  const byFilters = filterVolumes(volumeRows.value, withoutStatus)
-  const needle = String(volSearch.value ?? '').trim().toLowerCase()
-  if (!needle) {
-    return byFilters
-  }
-  return byFilters.filter(volume => SEARCH_FIELDS.some(field => (
-    String(volume[field] ?? '').toLowerCase().includes(needle)
-  )))
+  return filterVisibleVolumes(withoutStatus)
 })
 
 const filteredVolumesBytes = computed(() => (

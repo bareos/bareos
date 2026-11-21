@@ -19,7 +19,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createApp, defineComponent, h, ref } from 'vue'
+import { createApp, defineComponent, h, reactive, ref } from 'vue'
 
 const mocks = vi.hoisted(() => ({
   ensure: vi.fn(),
@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   auth: { user: { director: 'B' } },
 }))
 const activeDirectors = ref(['B'])
+const tableFlags = reactive({})
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 vi.mock('vue-router', () => ({
@@ -64,8 +65,8 @@ vi.mock('../../src/stores/settings.js', () => ({
     setTableRowsPerPage: vi.fn(),
     getTableHiddenColumns: (_key, fallback) => fallback,
     setTableHiddenColumns: vi.fn(),
-    getTableFlag: (_key, fallback) => fallback,
-    setTableFlag: vi.fn(),
+    getTableFlag: (key, fallback) => tableFlags[key] ?? fallback,
+    setTableFlag: (key, value) => { tableFlags[key] = value },
     getTablePinnedColumns: () => [],
     setTablePinnedColumns: vi.fn(),
   }),
@@ -103,6 +104,7 @@ const apps = []
 const hosts = []
 
 beforeEach(() => {
+  tableFlags['storages.volumes.onlyDeviating'] = false
   activeDirectors.value = ['B']
   mocks.auth.user.director = 'B'
   mocks.ensure.mockImplementation(async director => { mocks.auth.user.director = director })
@@ -146,6 +148,22 @@ function mountPage() {
 }
 
 describe('PoolsPage volume commands', () => {
+  it('applies the drift filter to status counts without hiding other selectable statuses', async () => {
+    tableFlags['storages.volumes.onlyDeviating'] = true
+    mocks.fetchSingle.mockResolvedValue({
+      pools: [{ name: 'Full', director: 'B', recycle: 1 }],
+      volumes: [
+        { volumename: 'Changed', scopeKey: 'B:Changed', director: 'B', pool: 'Full', volstatus: 'Append', recycle: 0 },
+        { volumename: 'Matching', scopeKey: 'B:Matching', director: 'B', pool: 'Full', volstatus: 'Full', recycle: 1 },
+      ],
+    })
+    const host = mountPage()
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volumes-status-bar-Append"]')).not.toBeNull())
+    expect(host.querySelector('[data-testid="volumes-status-bar-Full"]')).toBeNull()
+    host.querySelector('[data-testid="volumes-status-bar-Append"]').click()
+    await vi.waitFor(() => expect(host.querySelector('[data-testid="volumes-status-bar-Append"]').getAttribute('aria-pressed')).toBe('true'))
+  })
+
   it('switches to the volume director even in single-director scope', async () => {
     const host = mountPage()
     host.querySelector('[data-testid="run-command"]').click()
