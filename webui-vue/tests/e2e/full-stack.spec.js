@@ -2342,10 +2342,7 @@ test('opens the console and runs a raw command through the proxied director conn
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
-test('dashboard first resize attempt must persist', async ({ page }) => {
-  await login(page)
-  await page.goto('/#/dashboard')
-
+async function assertDashboardResizePersists(page) {
   await page.getByTitle('Edit layout').click()
   await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()
 
@@ -2367,13 +2364,22 @@ test('dashboard first resize attempt must persist', async ({ page }) => {
   await page.mouse.move(startX - 260, startY - 120, { steps: 16 })
   await page.mouse.up()
 
-  await page.waitForTimeout(350)
-  const after = await firstItem.boundingBox()
-  if (!after) throw new Error('Could not get resized widget bounds')
-
-  const widthChanged = Math.abs(after.width - before.width) > 20
-  const heightChanged = Math.abs(after.height - before.height) > 10
-  expect(widthChanged || heightChanged).toBe(true)
+  let after
+  let previous
+  let stableSamples = 0
+  await expect.poll(async () => {
+    const bounds = await firstItem.boundingBox()
+    if (!bounds) return false
+    const changed = Math.abs(bounds.width - before.width) > 20
+      || Math.abs(bounds.height - before.height) > 10
+    stableSamples = changed && previous
+      && Math.abs(bounds.width - previous.width) < 1
+      && Math.abs(bounds.height - previous.height) < 1
+      ? stableSamples + 1 : 0
+    previous = bounds
+    if (stableSamples >= 2) after = bounds
+    return stableSamples >= 2
+  }).toBe(true)
 
   await page.getByRole('button', { name: 'Done' }).click()
   await page.reload()
@@ -2384,4 +2390,15 @@ test('dashboard first resize attempt must persist', async ({ page }) => {
     return Math.abs(restored.width - after.width) < 2
       && Math.abs(restored.height - after.height) < 2
   }).toBe(true)
+}
+
+test('dashboard first resize attempt must persist', async ({ page }) => {
+  await login(page)
+  await page.goto('/#/dashboard')
+  await assertDashboardResizePersists(page)
+})
+
+test('browser regression: dashboard first resize attempt must persist', async ({ page }) => {
+  await browserFixture(page)
+  await assertDashboardResizePersists(page)
 })
