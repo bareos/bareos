@@ -43,6 +43,40 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    def test_pool_defaults_rejects_combined_comment_without_changes(self):
+        username = self.get_operator_username()
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        volume = f"PoolComment-{uuid.uuid4().hex}"
+        director.call(f"label volume={volume} storage=File pool=Full")
+        try:
+            director.call(f'update volume={volume} volretention=1 comment="original"')
+            for pool_option in ("frompool=yes", "allfrompool=Full"):
+                with self.subTest(pool_option=pool_option):
+                    with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                        director.call(
+                            f'update volume={volume} volretention=2 '
+                            f'{pool_option} comment="changed"'
+                        )
+                    media = director.call(f"llist volume={volume}")["volume"]
+                    self.assertEqual(media["comment"], "original")
+                    self.assertEqual(media["volretention"], "1")
+            director.call(f"update volume={volume} frompool=yes")
+            media = director.call(f"llist volume={volume}")["volume"]
+            self.assertEqual(media["comment"], "original")
+            self.assertEqual(
+                media["volretention"],
+                director.call("llist pool=Full")["pools"][0]["volretention"],
+            )
+        finally:
+            director.call(f"delete volume={volume} yes")
+            os.remove(f"storage/{volume}")
+
     def test_move_volume_with_pool_defaults(self):
         username = self.get_operator_username()
         options = dict(

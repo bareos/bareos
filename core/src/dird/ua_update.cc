@@ -895,6 +895,14 @@ static bool UpdateVolume(UaContext* ua)
 
 #define AllFromPool 11 /* keep this updated with above */
 
+  if (FindArg(ua, NT_("comment")) > 0
+      && (FindArg(ua, NT_("frompool")) > 0
+          || FindArg(ua, NT_("allfrompool")) > 0)) {
+    ua->ErrorMsg(T_("Comment cannot be combined with FromPool or "
+                    "AllFromPool.\n"));
+    return false;
+  }
+
   if (FindArg(ua, NT_("expectedpoolid")) > 0) {
     if (expected_pool_arg <= 0
         || FindArg(ua, NT_("frompool")) <= 0
