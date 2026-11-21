@@ -64,16 +64,13 @@ class PythonBareosAclTest(bareos_unittest.Json):
         expected = restricted.call("list jobs sortby=jobid")["jobs"]
         rows = []
         filtered = 0
-        offset = 0
-        while True:
+        for offset in range(len(expected) + 1):
             result = restricted.call(f"list jobs sortby=jobid limit=1 offset={offset}")
             page = result.get("jobs", [])
             suppressed = result["meta"]["range"]["filtered"]
+            self.assertEqual(page, expected[offset : offset + 1])
             rows.extend(page)
             filtered += suppressed
-            if len(page) + suppressed < 1:
-                break
-            offset += 1
         self.assertGreater(filtered, 0)
         self.assertEqual(rows, expected)
 
