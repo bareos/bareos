@@ -34,8 +34,6 @@
  */
 
 import { defineStore } from 'pinia'
-import { Notify } from 'quasar'
-import { i18n } from '../i18n/index.js'
 import { ref, watch } from 'vue'
 import { PRECONFIGURED_DASHBOARDS } from '../dashboard/defaultDashboard.js'
 
@@ -164,7 +162,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
     loaded.activeDashboardId ?? dashboards.value[0]?.id ?? null
   )
 
-  let saveFailed = false
+  const saveFailed = ref(false)
   function save() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
@@ -172,14 +170,10 @@ export const useDashboardStore = defineStore('dashboards', () => {
         activeDashboardId: activeDashboardId.value,
         seededDashboardIds,
       }))
-      saveFailed = false
+      saveFailed.value = false
     } catch (error) {
       console.error('Failed to save dashboards:', error)
-      if (!saveFailed) {
-        const t = i18n.global.t
-        Notify.create({ type: 'negative', message: t('Dashboard changes could not be saved.') })
-      }
-      saveFailed = true
+      saveFailed.value = true
     }
   }
 
@@ -360,6 +354,7 @@ export const useDashboardStore = defineStore('dashboards', () => {
 
   return {
     dashboards,
+    saveFailed,
     activeDashboardId,
     activeDashboard,
     setActiveDashboard,

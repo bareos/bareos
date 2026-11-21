@@ -114,6 +114,10 @@
       </div>
     </div>
 
+    <q-banner v-if="dashStore.saveFailed" class="bg-negative text-white q-mb-sm" rounded dense>
+      {{ t('Dashboard changes could not be saved.') }}
+    </q-banner>
+
     <!-- Edit mode banner -->
     <q-banner v-if="editMode" class="bg-blue-1 text-blue-9 q-mb-sm" rounded dense>
       <template #avatar><q-icon name="info" color="blue-9" /></template>

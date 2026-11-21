@@ -22,14 +22,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
-import { Notify } from 'quasar'
 import { useDashboardStore } from '../../src/stores/dashboards.js'
 import { PRECONFIGURED_DASHBOARDS } from '../../src/dashboard/defaultDashboard.js'
-
-vi.mock('quasar', async (importOriginal) => ({
-  ...(await importOriginal()),
-  Notify: { create: vi.fn() },
-}))
 
 // Derived from the store's own seed list so that adding another
 // preconfigured dashboard does not break every expectation here.
@@ -47,26 +41,26 @@ describe('dashboards store', () => {
 
   it('reports failed persistence and reports again after a successful save', async () => {
     const store = useDashboardStore()
-    const notify = vi.spyOn(Notify, 'create').mockImplementation(() => {})
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const write = vi.spyOn(Storage.prototype, 'setItem')
     try {
       write.mockImplementation(() => { throw new Error('Storage full') })
       store.renameDashboard(store.dashboards[0].id, 'First')
       await nextTick()
-      expect(notify).toHaveBeenCalledTimes(1)
+      expect(store.saveFailed).toBe(true)
       expect(store.dashboards[0].name).toBe('First')
       store.renameDashboard(store.dashboards[0].id, 'Second')
       await nextTick()
-      expect(notify).toHaveBeenCalledTimes(1)
+      expect(store.saveFailed).toBe(true)
       write.mockRestore()
       store.renameDashboard(store.dashboards[0].id, 'Saved')
       await nextTick()
       expect(JSON.parse(localStorage.getItem('bareos_dashboards')).dashboards[0].name).toBe('Saved')
+      expect(store.saveFailed).toBe(false)
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Storage full') })
       store.renameDashboard(store.dashboards[0].id, 'Failed again')
       await nextTick()
-      expect(notify).toHaveBeenCalledTimes(2)
+      expect(store.saveFailed).toBe(true)
     } finally {
       vi.restoreAllMocks()
     }
