@@ -212,8 +212,8 @@ bool read_records(const std::vector<std::string>& volumenames)
     Jmsg(jcr, M_FATAL, 0, T_("bSdEventSetupRecordTranslation call failed!\n"));
   }
 
-  uint32_t decompress_buf_size;
-  SetupDecompressionBuffers(jcr, &decompress_buf_size);
+  uint32_t decompress_buf_size = 0;
+  if (!SetupDecompressionBuffers(jcr, &decompress_buf_size)) { return false; }
   if (decompress_buf_size > 0) {
     // See if we need to create a new compression buffer or make sure the
     // existing is big enough.
@@ -311,7 +311,7 @@ int main(int argc, const char* argv[])
   }
 
   OutputBlockSize(block_size);
-  read_records(volumes);
+  if (!read_records(volumes)) { return 1; }
 
   OutputStatus();
 

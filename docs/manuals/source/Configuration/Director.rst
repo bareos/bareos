@@ -644,7 +644,7 @@ The directives within an Options resource may be one of the following:
 
 .. config:option:: dir/fileset/include/options/compression
 
-   :type: <GZIP|GZIP1|...|GZIP9|LZO|LZFAST|LZ4|LZ4HC>
+   :type: <GZIP|GZIP1|...|GZIP9|LZO|LZFAST|LZ4|LZ4HC|ZSTD|ZSTD1|ZSTD3|ZSTD10|ZSTD19>
 
    Configures the software compression to be used by the File Daemon.
    The compression is done on a file by file basis.
@@ -724,6 +724,16 @@ The directives within an Options resource may be one of the following:
         Both LZ4 and LZ4HC have the same decompression speed which is about twice
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
         good candidates.
+
+   ZSTD
+        All files saved will be software compressed using the Zstandard
+        compression format.
+
+        Specifying :strong:`ZSTD` uses compression level 3 and is identical to
+        :strong:`ZSTD3`. The explicitly selectable levels are
+        :strong:`ZSTD1`, :strong:`ZSTD3`, :strong:`ZSTD10` and
+        :strong:`ZSTD19`. Higher levels generally improve the compression ratio
+        at the cost of additional CPU time and memory during compression.
 
 
 

@@ -47,6 +47,7 @@
 #endif
 #include "lib/mem_pool.h"
 
+#include <limits>
 #include <stdarg.h>
 #include <string.h>
 
@@ -142,6 +143,11 @@ POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size) noexcept
 {
   if (size <= SizeofPoolMemory(obuf)) { return obuf; }
   return ReallocPoolMemory(obuf, size);
+}
+
+int32_t MaximumPoolMemorySize() noexcept
+{
+  return std::numeric_limits<int32_t>::max() - HEAD_SIZE;
 }
 
 void FreePoolMemory(POOLMEM* obuf) noexcept { free(GetPmHeader(obuf)); }

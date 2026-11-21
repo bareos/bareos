@@ -108,6 +108,7 @@ BuildRequires: pkgconfig
 BuildRequires: pkgconfig(jansson)
 BuildRequires: pkgconfig(json-c)
 BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: pkgconfig(libzstd)
 BuildRequires: postgresql-devel
 BuildRequires: python-rpm-macros
 BuildRequires: readline-devel
