@@ -411,7 +411,7 @@ const PALETTE = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
   '#0277BD', '#2E7D32', '#EF6C00', '#6A1B9A', '#AD1457']
 
 const clientBytes = computed(() => {
-  const map = {}
+  const map = Object.create(null)
   for (const j of jobs.value) {
     if (!j.client) continue
     const label = prefixedLabel(j.director, j.client)
@@ -521,7 +521,7 @@ const levelChartOptions = computed(() => ({
 }))
 
 const jobGroups = computed(() => {
-  const map = {}
+  const map = Object.create(null)
   for (const j of jobs.value) {
     if (j.type === 'R') continue
     const label = prefixedLabel(j.director, j.name)

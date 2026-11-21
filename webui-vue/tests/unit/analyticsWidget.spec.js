@@ -24,6 +24,7 @@ import { DASHBOARD_CONTEXT_KEY } from '../../src/dashboard/dashboardContext.js'
 
 const { fetchAnalytics } = vi.hoisted(() => ({ fetchAnalytics: vi.fn() }))
 const activeDirectors = ref(['old-a', 'old-b'])
+const isCommonScope = ref(true)
 vi.mock('../../src/composables/analyticsAggregate.js', () => ({
   fetchAggregatedAnalytics: fetchAnalytics,
 }))
@@ -32,7 +33,7 @@ vi.mock('../../src/composables/useDirectorScope.js', () => ({
     directorOptions: ref([]),
     selectedDirectorsModel: ref([]),
     activeDirectors,
-    isCommonScope: ref(true),
+    isCommonScope,
     scopeLabel: ref('All'),
     syncSelectedDirectors: () => {},
     ensureSingleScopeDirector: async () => {},
@@ -117,6 +118,22 @@ describe('standalone analytics', () => {
   })
 
   describe('dashboard analytics', () => {
+    it.each(['analytics-client-bytes', 'analytics-treemap'])('shows special catalog names in %s', type => {
+      isCommonScope.value = false
+      const { app, host } = mountDashboardWidget(type, [
+        { client: 'constructor', name: 'constructor', director: 'A', bytes: 42, files: 1, type: 'B' },
+        { client: '__proto__', name: '__proto__', director: 'A', bytes: 21, files: 1, type: 'B' },
+      ])
+      try {
+        expect(host.textContent).toContain('constructor')
+        expect(host.textContent).toContain('__proto__')
+      } finally {
+        app.unmount()
+        isCommonScope.value = true
+        vi.unstubAllGlobals()
+      }
+    })
+
     it('ranks client tiles by the selected metric before applying the limit', async () => {
       const jobs = Array.from({ length: 12 }, (_, i) => ({
         client: `bytes-${i}`, name: `job-${i}`, director: 'A', bytes: 100 + i, files: 0,
