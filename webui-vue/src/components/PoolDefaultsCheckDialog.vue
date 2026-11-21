@@ -223,6 +223,16 @@ watch(() => props.modelValue, (open) => {
   }
 })
 
+watch(
+  () => [props.volumes, props.pools],
+  () => {
+    if (phase.value !== 'confirm') return
+    const selectedKeys = new Set(selected.value.map(entry => entry.key))
+    selected.value = drift.value.filter(entry => selectedKeys.has(entry.key))
+  },
+  { deep: true },
+)
+
 async function run() {
   if (running.value || !selected.value.length) {
     return

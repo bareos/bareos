@@ -19,7 +19,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createApp, defineComponent, h } from 'vue'
+import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
@@ -62,6 +62,41 @@ function renderDialog(volumes, pools) {
   return host
 }
 
+function renderReactiveDialog(volumes, pools, runCommand) {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  hosts.push(host)
+  const modelValue = ref(false)
+  const app = createApp(defineComponent({
+    setup: () => () => h(PoolDefaultsCheckDialog, {
+      modelValue: modelValue.value,
+      volumes: volumes.value,
+      pools: pools.value,
+      runCommand,
+    }),
+  }))
+  const stub = defineComponent({
+    setup(_, { attrs, slots }) {
+      return () => h('div', attrs, slots.default?.())
+    },
+  })
+  for (const name of [
+    'q-dialog', 'q-card', 'q-card-section', 'q-icon', 'q-space', 'q-btn',
+    'q-banner', 'q-card-actions', 'q-td', 'q-linear-progress', 'q-list',
+    'q-item', 'q-item-section', 'q-item-label',
+  ]) app.component(name, stub)
+  app.component('q-table', defineComponent({
+    props: { rows: Array },
+    setup(props) {
+      return () => h('div', props.rows.map(row => h('span', row.volume.volumename)))
+    },
+  }))
+  apps.push(app)
+  app.mount(host)
+  modelValue.value = true
+  return host
+}
+
 afterEach(() => {
   apps.splice(0).forEach(app => app.unmount())
   hosts.splice(0).forEach(host => host.remove())
@@ -91,5 +126,24 @@ describe('PoolDefaultsCheckDialog', () => {
     expect(host.querySelector('[data-testid="pool-defaults-clean"]')?.textContent)
       .toContain('All 1 volumes match')
     expect(host.textContent).not.toContain('Comparison is incomplete')
+  })
+
+  it('does not apply settings for volumes removed from the current comparison', async () => {
+    const first = { ...different, volumename: 'V1' }
+    const second = { ...different, volumename: 'V2' }
+    const volumes = ref([first, second])
+    const pools = ref([pool])
+    const runCommand = vi.fn().mockResolvedValue(undefined)
+    const host = renderReactiveDialog(volumes, pools, runCommand)
+    await nextTick()
+
+    volumes.value = [second]
+    await nextTick()
+    expect(host.querySelector('[data-testid="pool-defaults-commands"]').textContent).not.toContain('V1')
+
+    host.querySelector('[data-testid="pool-defaults-apply"]').click()
+    await vi.waitFor(() => expect(runCommand).toHaveBeenCalled())
+    expect(runCommand).toHaveBeenCalledTimes(1)
+    expect(runCommand.mock.calls[0][0].volumename).toBe('V2')
   })
 })
