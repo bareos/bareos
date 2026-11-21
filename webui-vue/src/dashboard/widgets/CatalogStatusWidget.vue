@@ -24,7 +24,7 @@
       <q-spinner size="14px" color="primary" />
     </div>
     <q-badge
-      v-if="summary.status === 'warning' || summary.status === 'error'"
+      v-if="summary.status === 'warning' || summary.status === 'error' || (summary.status === 'unavailable' && errorMessages.length)"
       rounded
       :color="summary.status === 'error' ? 'negative' : 'warning'"
       :label="summary.status"

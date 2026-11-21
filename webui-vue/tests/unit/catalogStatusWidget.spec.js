@@ -91,4 +91,30 @@ describe('catalog status widget', () => {
       app.unmount()
     }
   })
+
+  it('shows the Director error when all catalog statuses are unavailable', () => {
+    const app = createApp(CatalogStatusWidget)
+    app.component('q-badge', defineComponent({
+      props: ['label'],
+      setup: (props, { slots }) => () => h('div', [props.label, slots.default?.()]),
+    }))
+    app.component('q-tooltip', defineComponent({
+      setup: (_, { slots }) => () => h('div', slots.default?.()),
+    }))
+    app.component('q-spinner', defineComponent({ setup: () => () => null }))
+    const aggregate = aggregateDirectorDashboardSnapshots([
+      { director: 'offline', catalogStatus: {
+        director: 'offline', status: 'unavailable', errors: ['Connection failed'],
+      } },
+    ])
+    app.provide(DASHBOARD_CONTEXT_KEY, { aggregate: ref(aggregate), loading: ref(false) })
+    const host = document.createElement('div')
+    app.mount(host)
+    try {
+      expect(host.textContent).toContain('Catalog status unavailable')
+      expect(host.textContent).toContain('offline: Connection failed')
+    } finally {
+      app.unmount()
+    }
+  })
 })
