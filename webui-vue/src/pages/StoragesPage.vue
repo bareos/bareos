@@ -233,6 +233,7 @@ const error = ref(null)
 const directorErrors = ref([])
 const storageRows = ref([])
 const selectedStorageKey = ref(null)
+let refreshGeneration = 0
 
 const reachableDirectors = computed(() => [...new Set([
   ...director.availableDirectors,
@@ -297,37 +298,58 @@ function deviceMatchesQuickFilter(storage) {
 }
 
 async function refresh() {
+  const generation = ++refreshGeneration
+  const requestedDirectors = [...storagesPageDirectors.value]
+  const requestedScopeDirector = storagesListScopeDirector.value
+  const isCurrentRefresh = () => (
+    generation === refreshGeneration
+    && requestedScopeDirector === storagesListScopeDirector.value
+    && requestedDirectors.length === storagesPageDirectors.value.length
+    && requestedDirectors.every((name, index) => name === storagesPageDirectors.value[index])
+  )
+
   loading.value = true
   error.value = null
   directorErrors.value = []
   try {
-    if (storagesPageDirectors.value.length === 0) {
+    if (requestedDirectors.length === 0) {
       storageRows.value = []
       return
     }
 
-    if (storagesPageDirectors.value.length > 1 || (storagesListScopeDirector.value && isCommonStorages.value)) {
+    if (requestedDirectors.length > 1 || (requestedScopeDirector && isCommonStorages.value)) {
       const credentials = auth.getCredentials()
       if (!credentials?.password) {
         throw new Error(t('Not logged in.'))
       }
 
-      const result = await fetchAggregatedStorages(credentials, storagesPageDirectors.value)
+      const result = await fetchAggregatedStorages(credentials, requestedDirectors)
+      if (!isCurrentRefresh()) return
+
       storageRows.value = result.storages
       directorErrors.value = result.directorErrors
       return
     }
 
-    const currentDirector = storagesPageDirectors.value[0]
+    const currentDirector = requestedDirectors[0]
     await ensureSingleScopeDirector()
-    storageRows.value = await fetchDirectorStorages(
+    if (!isCurrentRefresh()) return
+
+    const result = await fetchDirectorStorages(
       command => director.call(command),
       currentDirector
     )
+    if (!isCurrentRefresh()) return
+
+    storageRows.value = result
   } catch (reason) {
-    error.value = reason?.message ?? String(reason)
+    if (isCurrentRefresh()) {
+      error.value = reason?.message ?? String(reason)
+    }
   } finally {
-    loading.value = false
+    if (isCurrentRefresh()) {
+      loading.value = false
+    }
   }
 }
 

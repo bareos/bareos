@@ -72,12 +72,27 @@ vi.mock('../../src/components/StorageDetailsPanel.vue', () => ({
 }))
 
 const { default: StoragesPage } = await import('../../src/pages/StoragesPage.vue')
+const { fetchAggregatedStorages } = await import('../../src/composables/storagesAggregate.js')
+const defaultStorageResult = {
+  storages: [
+    { name: 'Tape', director: 'A', scopeKey: 'A:Tape', enabled: true },
+    { name: 'Tape', director: 'B', scopeKey: 'B:Tape', enabled: true },
+  ],
+  directorErrors: [],
+}
 let app
 let host
 afterEach(() => {
   app?.unmount()
   host?.remove()
+  fetchAggregatedStorages.mockReset().mockResolvedValue(defaultStorageResult)
 })
+
+function deferred() {
+  let resolve
+  const promise = new Promise(complete => { resolve = complete })
+  return { promise, resolve }
+}
 
 describe('StoragesPage route selection', () => {
   beforeEach(() => {
@@ -115,5 +130,44 @@ describe('StoragesPage route selection', () => {
 
     storageName.click()
     await vi.waitFor(() => expect(host.querySelector('[data-testid="storages-detail-hint"]')).not.toBeNull())
+  })
+
+  it('ignores refresh results from a previous director scope', async () => {
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(StoragesPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('A'))
+
+    const staleA = deferred()
+    const currentB = deferred()
+    fetchAggregatedStorages.mockImplementation((_credentials, directors) => (
+      directors[0] === 'A' ? staleA.promise : currentB.promise
+    ))
+    route.query = { storage: 'Tape', director: 'A', scopeDirector: 'A' }
+    await vi.waitFor(() => expect(fetchAggregatedStorages).toHaveBeenCalledWith(
+      expect.anything(),
+      ['A']
+    ))
+    route.query = { storage: 'Tape', director: 'B', scopeDirector: 'B' }
+    await vi.waitFor(() => expect(fetchAggregatedStorages).toHaveBeenCalledWith(
+      expect.anything(),
+      ['B']
+    ))
+
+    currentB.resolve({
+      storages: [{ name: 'Tape', director: 'B', scopeKey: 'B:Tape', enabled: true }],
+      directorErrors: [],
+    })
+    await vi.waitFor(() => expect(host.querySelector('[data-test-selected]')?.textContent).toBe('B'))
+    staleA.resolve({
+      storages: [{ name: 'Tape', director: 'A', scopeKey: 'A:Tape', enabled: true }],
+      directorErrors: [],
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(host.querySelector('[data-test-selected]')?.textContent).toBe('B')
   })
 })
