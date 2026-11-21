@@ -360,8 +360,8 @@ export async function fetchDirectorDashboardSnapshot(credentials, options = {}) 
         ).map(v => normaliseVolume(v))
       : []
 
-    const bytesByPool = {}
-    const volumesByPool = {}
+    const bytesByPool = Object.create(null)
+    const volumesByPool = Object.create(null)
     for (const v of volumes) {
       const key = v.pool ?? ''
       bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)

@@ -208,7 +208,11 @@ describe('director aggregate dashboard helpers', () => {
       data: JSON.stringify({
         type: 'response',
         id: commandIds.get('llist pools'),
-        data: { pools: [{ name: 'Default', poolid: '1', numvols: '2' }] },
+        data: { pools: [
+          { name: 'Default', poolid: '1', numvols: '2' },
+          { name: 'constructor', poolid: '2', numvols: '1' },
+          { name: '__proto__', poolid: '3', numvols: '1' },
+        ] },
       }),
     })
     socket.onmessage?.({
@@ -218,6 +222,8 @@ describe('director aggregate dashboard helpers', () => {
         data: { volumes: [
           { volumename: 'Vol-0001', pool: 'Default', volbytes: '1024' },
           { volumename: 'Vol-0002', pool: 'Default', volbytes: '2048' },
+          { volumename: 'Vol-0003', pool: 'constructor', volbytes: '42' },
+          { volumename: 'Vol-0004', pool: '__proto__', volbytes: '21' },
         ]},
       }),
     })
@@ -253,6 +259,11 @@ describe('director aggregate dashboard helpers', () => {
       ],
       clientCount: 2,
       storageCount: 1,
+      pools: expect.arrayContaining([
+        expect.objectContaining({ name: 'Default', totalbytes: 3072, totalvolumes: 2 }),
+        expect.objectContaining({ name: 'constructor', totalbytes: 42, totalvolumes: 1 }),
+        expect.objectContaining({ name: '__proto__', totalbytes: 21, totalvolumes: 1 }),
+      ]),
       jobTotals: {
         jobs: 12,
         files: 1200,
