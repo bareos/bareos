@@ -24,7 +24,7 @@
   PoolDetailsPage so both pages render volume status consistently.
 -->
 <template>
-  <q-badge :color="color" :label="status" />
+  <q-badge :color="color" text-color="black" :label="status" />
 </template>
 
 <script setup>

@@ -19,8 +19,9 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createApp } from 'vue'
+import { createApp, defineComponent, h } from 'vue'
 import VolumeStatusBar from '../../src/components/VolumeStatusBar.vue'
+import VolumeStatusBadge from '../../src/components/VolumeStatusBadge.vue'
 
 const apps = []
 const hosts = []
@@ -31,6 +32,24 @@ afterEach(() => {
 })
 
 describe('VolumeStatusBar filters', () => {
+  it('uses dark text on a Full volume badge', () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    hosts.push(host)
+    const app = createApp(VolumeStatusBadge, { status: 'Full' })
+    app.component('q-badge', defineComponent({
+      props: { color: String, textColor: String, label: String },
+      setup: props => () => h('span', {
+        'data-color': props.color,
+        'data-text-color': props.textColor,
+      }, props.label),
+    }))
+    apps.push(app)
+    app.mount(host)
+
+    expect(host.querySelector('span').dataset).toMatchObject({ color: 'warning', textColor: 'black' })
+  })
+
   it('uses contrasting foregrounds for light and dark status segments', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
