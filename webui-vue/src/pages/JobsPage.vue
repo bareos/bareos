@@ -121,7 +121,11 @@
             <q-banner v-if="jobsTruncated !== false" dense class="bg-warning text-white">
               {{ t('Fetched {count} jobs. Results may be incomplete. Narrow your filters to see all matching jobs.', { count: formatNumber(pagination.rowsNumber, settings.locale) }) }}
             </q-banner>
-            <div v-if="search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
+            <div v-if="jobsDays || search || jobFilter || clientFilter || (statusFilters?.length ?? 0) || (levelFilters?.length ?? 0) || (typeFilters?.length ?? 0)" class="q-px-md q-pt-sm">
+              <q-chip v-if="jobsDays" removable color="primary" text-color="white"
+                      icon="schedule" class="q-mb-xs q-mr-xs" @remove="clearJobsDays">
+                {{ t('Last 24 hours') }}
+              </q-chip>
               <q-chip
                 v-if="search"
                 removable
@@ -325,7 +329,7 @@
               </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
-                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <div>{{ formatBytes(props.row.bytes) }}</div>
                   <q-linear-progress
                     v-if="isRunning(props.row.status)"
                     indeterminate
@@ -772,6 +776,7 @@ const levelFilters = ref(resolveJobsLevelFilters(route.query))
 const typeFilters = ref(resolveJobsTypeFilters(route.query))
 const jobFilter = ref(resolveJobsJobQuery(route.query))
 const clientFilter = ref(resolveJobsClientQuery(route.query))
+const jobsDays = computed(() => route.query.days === '1' ? 1 : undefined)
 const jobFilterInput = ref(jobFilter.value)
 const clientFilterInput = ref(clientFilter.value)
 const jobFilterOptions = ref([])
@@ -884,6 +889,7 @@ const currentSingletonDirector = computed(() => (
 ))
 const timelineJobDetailsQuery = computed(() => buildJobDetailsQuery({
   jobsAction: tab.value,
+  jobsDays: jobsDays.value,
   jobsStatus: statusFilters.value,
   jobsLevel: levelFilters.value,
   jobsType: typeFilters.value,
@@ -964,6 +970,7 @@ async function fetchPage() {
   const currentType = snapshot(typeFilters.value)
   const currentJob = jobFilter.value
   const currentClient = clientFilter.value
+  const currentDays = jobsDays.value
   const { page, rowsPerPage, sortBy, descending } = currentPagination
   const offset = (page - 1) * rowsPerPage
   const encodedStatusFilters = encodeJobsStatusFilters(currentStatus)
@@ -1003,6 +1010,7 @@ async function fetchPage() {
           currentJob,
           currentClient,
           normalizedSearchTerm,
+          currentDays,
         )
       if (!current()) return
       jobs.value = result.jobs
@@ -1028,6 +1036,7 @@ async function fetchPage() {
       jobFilter: currentJob,
       clientFilter: currentClient,
       searchTerm: normalizedSearchTerm,
+      days: currentDays,
     }))
     const count = Number(directorCollection(countResult?.jobs)[0]?.count ?? 0)
     if (!current() || auth.user?.director !== currentDirector) return
@@ -1056,6 +1065,7 @@ async function fetchPage() {
         sortColumn: serverSortColumn ?? '',
         descending: serverSortColumn ? descending : true,
         searchTerm: normalizedSearchTerm,
+        days: currentDays,
       })
     )
     if (!current() || auth.user?.director !== currentDirector) return
@@ -1423,6 +1433,7 @@ async function openJobDetails(job, logFocus) {
     query: buildJobDetailsQuery({
       director: job.director,
       jobsAction: tab.value,
+      jobsDays: jobsDays.value,
       jobsStatus: statusFilters.value,
       jobsLevel: levelFilters.value,
       jobsType: typeFilters.value,
@@ -2080,6 +2091,17 @@ watch(() => director.isConnected, (connected) => {
     }
     startAutoRefresh()
   }
+})
+
+function clearJobsDays() {
+  const query = { ...route.query }
+  delete query.days
+  router.replace({ path: route.path, query })
+}
+
+watch(jobsDays, () => {
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
 })
 
 watch(() => route.query.status, (value) => {

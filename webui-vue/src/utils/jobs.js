@@ -697,6 +697,7 @@ export function buildJobDetailsQuery({
   jobsJob,
   jobsClient,
   jobsSearch,
+  jobsDays,
   clientName,
   clientDirector,
   clientsTab,
@@ -723,6 +724,10 @@ export function buildJobDetailsQuery({
 
   if (director) {
     query.director = director
+  }
+
+  if (jobsDays === 1 || jobsDays === '1') {
+    query.jobsDays = '1'
   }
 
   if (jobsAction && jobsAction !== 'list') {
@@ -853,6 +858,10 @@ export function buildJobDetailsQuery({
 export function resolveJobsListQuery(query) {
   const nextQuery = {}
 
+  if (query?.jobsDays === '1') {
+    nextQuery.days = '1'
+  }
+
   if (typeof query?.jobsAction === 'string' && query.jobsAction && query.jobsAction !== 'list') {
     nextQuery.action = query.jobsAction
   }
@@ -899,6 +908,7 @@ export function resolveJobDetailsQuery(query) {
     jobsJob: normaliseJobsTextFilter(query?.jobsJob),
     jobsClient: normaliseJobsTextFilter(query?.jobsClient),
     jobsSearch: typeof query?.jobsSearch === 'string' ? query.jobsSearch : '',
+    jobsDays: query?.jobsDays,
     clientName: typeof query?.clientName === 'string' ? query.clientName : '',
     clientDirector: typeof query?.clientDirector === 'string' ? query.clientDirector : '',
     clientsTab: typeof query?.clientsTab === 'string' ? query.clientsTab : '',

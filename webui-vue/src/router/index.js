@@ -16,7 +16,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', redirect: '/dashboard' },
-      { path: 'dashboard', name: 'dashboard', component: () => import('../pages/DashboardPage.vue'), meta: { title: 'Dashboard' } },
+      { path: 'dashboard/:slug?', name: 'dashboard', component: () => import('../pages/DashboardPage.vue'), meta: { title: 'Dashboard' } },
       { path: 'jobs', name: 'jobs', component: () => import('../pages/JobsPage.vue'), meta: { title: 'Jobs' } },
       { path: 'jobs/:id', name: 'job-details', component: () => import('../pages/JobDetailsPage.vue'), meta: { title: 'Job Details' } },
       { path: 'restore', name: 'restore', component: () => import('../pages/RestorePage.vue'), meta: { title: 'Restore' } },
@@ -28,7 +28,6 @@ const routes = [
       { path: 'pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue'), meta: { title: 'Pool Details' } },
       { path: 'volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue'), meta: { title: 'Volume Details' } },
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue'), meta: { title: 'Director' } },
-      { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue'), meta: { title: 'Analytics' } },
       { path: 'filesets',  name: 'filesets',  component: () => import('../pages/FilesetsPage.vue'), meta: { title: 'Filesets' } },
       { path: 'acls',      name: 'acls',      component: () => import('../pages/AclPage.vue'), meta: { title: 'Command ACL' } },
       { path: 'settings',  name: 'settings',  component: () => import('../pages/SettingsPage.vue'), meta: { title: 'Settings' } },

@@ -649,6 +649,14 @@ describe('jobs filter helpers', () => {
     })).toEqual({})
   })
 
+  it('preserves the 24-hour filter through job details and back', () => {
+    const details = buildJobDetailsQuery({ director: 'prod-a', jobsDays: 1 })
+    expect(details).toEqual({ director: 'prod-a', jobsDays: '1' })
+    expect(resolveJobsListQuery(resolveJobDetailsQuery(details))).toEqual({ days: '1' })
+    expect(resolveJobsListQuery(resolveJobDetailsQuery({ jobsDays: '2' }))).toEqual({})
+    expect(resolveJobsListQuery(buildJobDetailsQuery({ director: 'prod-a' }))).toEqual({})
+  })
+
   it('sanitizes job details query state from route query fields', () => {
     expect(resolveJobDetailsQuery({
       director: 'prod-a',

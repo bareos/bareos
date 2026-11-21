@@ -23,10 +23,21 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPoolDetailsQuery,
   buildPoolVolumeDetailsQuery,
+  poolChartLabels,
   resolvePoolDetailsPoolsOrigin,
   resolvePoolDetailsVolumeQuery,
   resolvePoolDetailsVolumeOrigin,
 } from '../../src/utils/pools.js'
+
+describe('pool chart labels', () => {
+  it('distinguishes pools from multiple Directors without lengthening single-Director labels', () => {
+    expect(poolChartLabels([{ director: 'A', name: 'Full' }])).toEqual(['Full'])
+    expect(poolChartLabels([
+      { director: 'A', name: 'Full' },
+      { director: 'B', name: 'Full' },
+    ])).toEqual(['A / Full', 'B / Full'])
+  })
+})
 
 describe('pool route helpers', () => {
   it('builds pool details query with optional volume origin', () => {
