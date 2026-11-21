@@ -56,8 +56,7 @@ describe('VolumeStatusBar filters', () => {
       expect(document.activeElement).toBe(button)
       button.click()
     }
-    expect(select).toHaveBeenCalledTimes(2)
-    expect(select).toHaveBeenCalledWith('Full')
+    expect(select.mock.calls).toEqual([['Full'], ['Full']])
     expect(buttons.filter(button => button.getAttribute('aria-pressed') === 'false')).toHaveLength(2)
   })
 })
