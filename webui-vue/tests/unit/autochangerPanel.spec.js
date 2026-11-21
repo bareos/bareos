@@ -77,11 +77,17 @@ function mountPanel(storage) {
   })
   for (const name of [
     'q-space', 'q-banner', 'q-card', 'q-card-section', 'q-input',
-    'q-icon', 'q-tooltip', 'q-td', 'q-badge', 'q-select', 'q-checkbox',
+    'q-icon', 'q-tooltip', 'q-badge', 'q-select', 'q-checkbox',
     'q-separator', 'q-inner-loading', 'q-card-actions', 'q-menu',
     'q-list', 'q-item', 'q-item-section', 'q-item-label', 'q-spinner',
     'q-skeleton', 'router-link',
   ]) app.component(name, stub)
+  app.component('q-td', defineComponent({
+    inheritAttrs: false,
+    setup(_, { attrs, slots }) {
+      return () => h('div', attrs, slots.default?.())
+    },
+  }))
   app.component('q-scroll-area', defineComponent({
     setup(_, { slots, expose }) {
       expose({ setScrollPosition: vi.fn() })
@@ -109,11 +115,17 @@ function mountPanel(storage) {
   app.component('q-table', defineComponent({
     props: { rows: Array },
     setup(props, { slots }) {
-      return () => h('div', props.rows.flatMap(row => [
+      return () => h('div', props.rows.map(row => h('div', {
+        'data-test-row': `${row.type}-${row.slotnr}`,
+      }, [
+        slots['body-cell-drag']?.({ row, value: row.slotnr }),
+        h('div', {
+          'data-test-drop-target': row.type === 'drive' ? row.slotnr : undefined,
+        }, slots['body-cell-content']?.({ row, value: row.content })),
         slots['body-cell-mr_volname']?.({ row, value: row.mr_volname }),
         slots['body-cell-pr_name']?.({ row, value: row.pr_name }),
         slots['body-cell-actions']?.({ row }),
-      ]))
+      ])))
     },
   }))
   apps.push(app)
@@ -248,6 +260,51 @@ describe('AutochangerPanel storage selection', () => {
     expect(director.call.mock.calls.filter(
       ([command]) => command === 'status storage="B" slots'
     )).toHaveLength(bRefreshCount)
+  })
+
+  it('rejects a drive drop started from another storage', async () => {
+    director.call.mockImplementation(command => {
+      if (command === 'list pools') return Promise.resolve({ pools: [] })
+      if (command === 'status storage="A" slots') {
+        return Promise.resolve({
+          contents: [
+            { type: 'slot', slotnr: 3, content: 'full', mr_volname: 'VolumeA' },
+            { type: 'drive', slotnr: 0, content: 'empty' },
+          ],
+        })
+      }
+      if (command === 'status storage="B" slots') {
+        return Promise.resolve({
+          contents: [{ type: 'drive', slotnr: 0, content: 'empty' }],
+        })
+      }
+      return Promise.resolve({})
+    })
+    const storage = ref({ name: 'A', director: 'test-dir' })
+    const { host } = mountPanel(storage)
+    await vi.waitFor(() => expect(host.querySelector('[draggable="true"]')).not.toBeNull())
+
+    const dragEvent = new Event('dragstart', { bubbles: true })
+    Object.defineProperty(dragEvent, 'dataTransfer', {
+      value: { effectAllowed: '', setData: vi.fn() },
+    })
+    const dragSource = host.querySelector('[draggable="true"]')
+    dragSource.dispatchEvent(dragEvent)
+    expect(dragEvent.dataTransfer.setData).toHaveBeenCalledWith('text/plain', '3')
+    storage.value = { name: 'B', director: 'test-dir' }
+    let dropTarget
+    await vi.waitFor(() => {
+      dropTarget = host.querySelector('[data-test-drop-target="0"] > div')
+      expect(dropTarget).not.toBeNull()
+    })
+
+    const dropEvent = new Event('drop', { bubbles: true, cancelable: true })
+    Object.defineProperty(dropEvent, 'dataTransfer', { value: { dropEffect: '' } })
+    dropTarget.dispatchEvent(dropEvent)
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(dropEvent.defaultPrevented).toBe(true)
+    expect(director.rawCall).not.toHaveBeenCalled()
   })
 
   it('ignores a previous storage slot response after changing selection', async () => {

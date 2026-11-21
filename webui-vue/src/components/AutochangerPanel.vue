@@ -607,6 +607,7 @@ const dragSlot = ref(null)      // slot row being dragged
 const dragOverDrive = ref(null) // drive number being hovered during drag
 const dragOverSlot = ref(null)  // slot number being hovered during drag
 const dragOverImportSlot = ref(null) // import/export slot number hovered during drag
+let dragStorage = null
 
 // ── Computed ─────────────────────────────────────────────────
 
@@ -824,6 +825,26 @@ function ownsStorage(name, storageDirector, generation) {
     && generation === storageGeneration
     && props.storage?.name === name
     && props.storage?.director === storageDirector
+}
+
+function ownsDrag() {
+  return Boolean(dragSlot.value && dragStorage
+    && ownsStorage(dragStorage.name, dragStorage.director, dragStorage.generation))
+}
+
+function clearDragState() {
+  dragSlot.value = null
+  dragStorage = null
+  dragOverDrive.value = null
+  dragOverSlot.value = null
+  dragOverImportSlot.value = null
+}
+
+function takeCurrentDrag() {
+  const slot = dragSlot.value
+  const isCurrent = ownsDrag()
+  clearDragState()
+  return isCurrent ? slot : null
 }
 
 async function loadPools() {
@@ -1194,12 +1215,17 @@ async function doSlotLabel() {
 
 function onSlotDragStart(event, row) {
   dragSlot.value = row
+  dragStorage = {
+    name: selectedStorageName.value,
+    director: currentStorage.value?.director,
+    generation: storageGeneration,
+  }
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', String(row.slotnr))
 }
 
 function onDragOverDrive(event, drive) {
-  if (dragSlot.value?.type !== 'slot') return
+  if (!ownsDrag() || dragSlot.value?.type !== 'slot') return
   if (drive.content !== 'empty') return
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
@@ -1213,8 +1239,7 @@ function onDragLeaveDrive() {
 async function onDropToDrive(event, drive) {
   event.preventDefault()
   dragOverDrive.value = null
-  const slot = dragSlot.value
-  dragSlot.value = null
+  const slot = takeCurrentDrag()
   if (!slot || slot.type !== 'slot' || drive.content !== 'empty') return
   const result = await runCmd(
       `Mount Slot ${slot.slotnr} → Drive ${drive.slotnr}`,
@@ -1225,7 +1250,7 @@ async function onDropToDrive(event, drive) {
 }
 
 function onDragOverSlot(event, row) {
-  if (!dragSlot.value) return
+  if (!ownsDrag()) return
   if (row.slotnr === dragSlot.value.slotnr) return // same slot
   if (row.content !== 'empty') return
   event.preventDefault()
@@ -1240,8 +1265,7 @@ function onDragLeaveSlot() {
 async function onDropToSlot(event, row) {
   event.preventDefault()
   dragOverSlot.value = null
-  const src = dragSlot.value
-  dragSlot.value = null
+  const src = takeCurrentDrag()
   if (!src || row.content !== 'empty' || row.slotnr === src.slotnr) return
   if (src.type === 'import_slot') {
     const result = await runCmd(
@@ -1264,8 +1288,7 @@ async function onDropToSlot(event, row) {
 }
 
 function onDragOverImportSlot(event, row) {
-  if (dragSlot.value?.type !== 'slot') return
-  if (!dragSlot.value) return
+  if (!ownsDrag() || dragSlot.value?.type !== 'slot') return
   if (row.content !== 'empty') return
   event.preventDefault()
   event.dataTransfer.dropEffect = 'move'
@@ -1279,8 +1302,7 @@ function onDragLeaveImportSlot() {
 async function onDropToImportSlot(event, row) {
   event.preventDefault()
   dragOverImportSlot.value = null
-  const src = dragSlot.value
-  dragSlot.value = null
+  const src = takeCurrentDrag()
   if (!src || src.type !== 'slot' || row.content !== 'empty') return
   const result = await runCmd(
     `Export Slot ${src.slotnr} → Import/Export Slot ${row.slotnr}`,
@@ -1320,6 +1342,7 @@ watch([() => props.storage?.name, () => props.storage?.director], async ([
   const generation = ++storageGeneration
   ++slotsGeneration
   ++poolsGeneration
+  clearDragState()
   stopAutoRefresh()
   pools.value = []
   allSlots.value = []
