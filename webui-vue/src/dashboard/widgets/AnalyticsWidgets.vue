@@ -427,9 +427,6 @@ const clientBytes = computed(() => {
     map[label].files += j.files
   }
   return Object.values(map)
-    .sort((a, b) => b.bytes - a.bytes)
-    .slice(0, 12)
-    .map((c, i) => ({ ...c, color: PALETTE[i % PALETTE.length] }))
 })
 
 const clientTreemapMode = ref('bytes')
@@ -441,9 +438,14 @@ const clientTreemapTiles = computed(() => {
   const W = clientTreemapW.value
   const H = clientTreemapH.value
   if (!W || !H) return []
-  const groups = clientBytes.value.filter(c => c[clientTreemapMode.value] > 0)
+  const groups = clientBytes.value
+    .filter(c => c[clientTreemapMode.value] > 0)
+    .sort((a, b) => b[clientTreemapMode.value] - a[clientTreemapMode.value])
+    .slice(0, 12)
   if (!groups.length) return []
-  const items = groups.map(g => ({ ...g, value: g[clientTreemapMode.value] }))
+  const items = groups.map((g, i) => ({
+    ...g, value: g[clientTreemapMode.value], color: PALETTE[i % PALETTE.length],
+  }))
   const tiles = squarify(items, 0, 0, W, H)
   return tiles.map(t => ({
     name: t.name,

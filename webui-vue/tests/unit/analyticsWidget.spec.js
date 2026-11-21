@@ -20,6 +20,7 @@
 
 import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
+import { DASHBOARD_CONTEXT_KEY } from '../../src/dashboard/dashboardContext.js'
 
 const { fetchAnalytics } = vi.hoisted(() => ({ fetchAnalytics: vi.fn() }))
 const activeDirectors = ref(['old-a', 'old-b'])
@@ -57,6 +58,33 @@ function deferred() {
   return { promise, resolve }
 }
 
+function mountDashboardWidget(type, jobs) {
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    disconnect() {}
+  })
+  const app = createApp(AnalyticsWidgets, { widgetProps: { type } })
+  app.provide(DASHBOARD_CONTEXT_KEY, {
+    analyticsJobs: ref(jobs),
+    analyticsLoading: ref(false),
+    aggregate: ref({}),
+  })
+  app.component('router-link', defineComponent({
+    props: ['to'],
+    setup: (props, { slots }) => () => h('a', { 'data-query': JSON.stringify(props.to?.query) }, slots.default?.()),
+  }))
+  app.component('q-btn-toggle', defineComponent({
+    emits: ['update:modelValue'],
+    setup: (_, { emit }) => () => h('button', { onClick: () => emit('update:modelValue', 'files') }, 'Files'),
+  }))
+  for (const name of ['q-banner', 'q-spinner', 'q-icon', 'q-chip']) {
+    app.component(name, defineComponent({ setup: (_, { slots }) => () => h('div', slots.default?.()) }))
+  }
+  const host = document.createElement('div')
+  app.mount(host)
+  return { host, app }
+}
+
 describe('standalone analytics', () => {
   it('does not replace current results with an older director selection', async () => {
     const old = deferred()
@@ -86,5 +114,25 @@ describe('standalone analytics', () => {
     } finally {
       app.unmount()
     }
+  })
+
+  describe('dashboard analytics', () => {
+    it('ranks client tiles by the selected metric before applying the limit', async () => {
+      const jobs = Array.from({ length: 12 }, (_, i) => ({
+        client: `bytes-${i}`, name: `job-${i}`, director: 'A', bytes: 100 + i, files: 0,
+      }))
+      jobs.push({ client: 'files-only', name: 'files-job', director: 'A', bytes: 0, files: 1000 })
+      const { app, host } = mountDashboardWidget('analytics-client-bytes', jobs)
+      try {
+        expect(host.textContent).not.toContain('files-only')
+        host.querySelector('button').click()
+        await nextTick()
+        expect(host.textContent).toContain('files-only')
+        expect(host.textContent).not.toContain('No data')
+      } finally {
+        app.unmount()
+        vi.unstubAllGlobals()
+      }
+    })
   })
 })
