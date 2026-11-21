@@ -25,8 +25,9 @@
     name="circle"
     size="8px"
     color="orange-8"
-    class="q-ml-xs"
+    class="q-ml-xs pool-drift-dot"
     role="img"
+    tabindex="0"
     :aria-label="tooltip"
   >
     <q-tooltip>{{ tooltip }}</q-tooltip>
@@ -57,3 +58,10 @@ const tooltip = computed(() => {
     : t('Differs from the pool defaults: {details}', { details })
 })
 </script>
+
+<style scoped>
+.pool-drift-dot:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+</style>

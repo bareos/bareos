@@ -42,6 +42,7 @@ const { default: PoolDefaultDriftDot } = await import(
 describe('PoolDefaultDriftDot', () => {
   it('localizes pool values in the accessible tooltip', () => {
     const host = document.createElement('div')
+    document.body.appendChild(host)
     const app = createApp(PoolDefaultDriftDot, {
       poolName: 'Full',
       entries: [
@@ -59,11 +60,16 @@ describe('PoolDefaultDriftDot', () => {
     app.component('q-icon', stub)
     app.component('q-tooltip', stub)
     app.mount(host)
-    const tooltip = host.querySelector('[role="img"]').getAttribute('aria-label')
+    const anchor = host.querySelector('[role="img"]')
+    const tooltip = anchor.getAttribute('aria-label')
     expect(tooltip).toContain('Recycle: Ja')
     expect(tooltip).toContain('Other: Nein')
     expect(tooltip).toContain('Max Jobs: unbegrenzt')
     expect(tooltip).toContain('Retention: nicht gesetzt')
+    expect(anchor.tabIndex).toBe(0)
+    anchor.focus()
+    expect(document.activeElement).toBe(anchor)
     app.unmount()
+    host.remove()
   })
 })
