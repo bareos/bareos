@@ -171,6 +171,8 @@ export function resolveAutochangerSelection(storages, {
     if (exactMatch) {
       return exactMatch
     }
+
+    return null
   }
 
   if (activeDirectors.length === 1) {

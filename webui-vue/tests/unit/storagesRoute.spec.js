@@ -168,6 +168,24 @@ describe('storages route helpers', () => {
     })
   })
 
+  it('does not fall back to another director when the route specifies one', () => {
+    const storages = [
+      { name: 'TapeLibrary', director: 'prod-b', scopeKey: 'prod-b:TapeLibrary' },
+    ]
+
+    expect(resolveAutochangerSelection(storages, {
+      storageName: 'TapeLibrary',
+      directorName: 'prod-a',
+      activeDirectors: ['prod-b'],
+    })).toBeNull()
+
+    expect(resolveAutochangerSelection(storages, {
+      storageName: 'TapeLibrary',
+      directorName: 'prod-a',
+      activeDirectors: ['prod-a', 'prod-b'],
+    })).toBeNull()
+  })
+
   it('falls back to the single active director when no explicit director is given', () => {
     expect(resolveAutochangerSelection([
       { name: 'TapeLibrary', director: 'prod-a', scopeKey: 'prod-a:TapeLibrary' },
