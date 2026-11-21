@@ -618,7 +618,9 @@ async function runVolumeCommand(volume, command) {
     && volume.director === currentVolumeDirector.value
   if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
   await ensureVolumeDirector()
-  if (!isCurrent()) throw new Error(t('The volume action was cancelled because the selection changed.'))
+  if (!isCurrent() || auth.user?.director !== volume.director || !director.isConnected) {
+    throw new Error(t('The volume action was cancelled because the selection changed.'))
+  }
   return director.call(command)
 }
 

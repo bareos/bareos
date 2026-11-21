@@ -164,6 +164,37 @@ describe('VolumeDetailsPage action identity', () => {
     expect(mocks.call).not.toHaveBeenCalledWith('dangerous command')
   })
 
+  it('does not send a command after a queued switch changes the session director', async () => {
+    let finishSwitch
+    mocks.call.mockImplementation(command => {
+      if (command.startsWith('llist volume=')) {
+        return Promise.resolve({ volumes: [{ volumename: 'Tape', volstatus: 'Full' }] })
+      }
+      if (command === 'llist pools') return Promise.resolve({ pools: [] })
+      return Promise.resolve({ jobs: [], volumes: [] })
+    })
+    host = document.createElement('div')
+    document.body.appendChild(host)
+    app = createApp(VolumeDetailsPage)
+    app.config.warnHandler = () => {}
+    app.mount(host)
+    await vi.waitFor(() => expect(host.querySelector('[data-test-open]')).not.toBeNull())
+    host.querySelector('[data-test-open]').click()
+    await vi.waitFor(() => expect(host.querySelector('[data-test-action]')?.dataset.open).toBe('true'))
+    host.querySelector('[data-test-action]').click()
+
+    auth.user.director = 'B'
+    const switching = new Promise(resolve => { finishSwitch = resolve })
+    mocks.switchDirector.mockReturnValue(switching)
+    const command = mocks.run(mocks.snapshot, 'dangerous command')
+    await vi.waitFor(() => expect(mocks.switchDirector).toHaveBeenCalledWith('A'))
+    switching.then(() => { auth.user.director = 'B' })
+    finishSwitch()
+
+    await expect(command).rejects.toThrow()
+    expect(mocks.call).not.toHaveBeenCalledWith('dangerous command')
+  })
+
   it('closes the comment editor when navigating to another volume', async () => {
     mocks.call.mockImplementation(command => {
       if (command.startsWith('llist volume=')) {
