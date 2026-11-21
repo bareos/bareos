@@ -121,6 +121,7 @@ function decorateVolumes(entries, director) {
   return collection.map((entry) => {
     const volume = normaliseVolume(entry)
     return {
+      ...entry,
       ...volume,
       director,
       scopeKey: storageScopeKey(director, volume.volumename),

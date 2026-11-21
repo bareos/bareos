@@ -26,6 +26,7 @@ import {
   fetchAggregatedPoolsState,
   fetchAggregatedStorages,
   mergeStorageConfig,
+  normaliseDirectorPoolsState,
 } from '../../src/composables/storagesAggregate.js'
 
 class FakeWebSocket {
@@ -256,6 +257,40 @@ describe('storages aggregate helpers', () => {
         }),
       ],
       directorErrors: [],
+    })
+  })
+
+  it('preserves raw pool-default fields alongside normalized volume values', () => {
+    const state = normaliseDirectorPoolsState('prod-a', [
+      { name: 'Full', poolid: '7' },
+    ], [{
+      volumename: 'Full-0001',
+      pool: 'Full',
+      volbytes: '10',
+      volretention: '7200',
+      voluseduration: '600',
+      maxvoljobs: '2',
+      maxvolfiles: '3',
+      maxvolbytes: '500',
+      recycle: '1',
+      actiononpurge: 'truncate',
+      recyclepoolid: '4',
+      minblocksize: '2',
+      maxblocksize: '8',
+    }])
+
+    expect(state.volumes[0]).toMatchObject({
+      retention: '7200',
+      volretention: '7200',
+      voluseduration: '600',
+      maxvoljobs: '2',
+      maxvolfiles: '3',
+      maxvolbytes: 500,
+      recycle: '1',
+      actiononpurge: 'truncate',
+      recyclepoolid: '4',
+      minblocksize: '2',
+      maxblocksize: '8',
     })
   })
 
