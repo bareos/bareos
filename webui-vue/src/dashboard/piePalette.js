@@ -36,9 +36,7 @@ export const PIE_PALETTE = [
 ]
 
 /**
- * Returns '#222' or '#fff', whichever gives better contrast when used as
- * text/label colour on top of the given hex background colour. Used for
- * in-slice data labels so they stay readable across the whole palette.
+ * Selects a readable in-slice label colour for the given hex background.
  */
 export function getContrastTextColor(hexColor) {
   const hex = hexColor.replace('#', '')
@@ -52,5 +50,7 @@ export function getContrastTextColor(hexColor) {
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
   const darkContrast = (luminance + 0.05) / (linear(34) + 0.05)
   const whiteContrast = 1.05 / (luminance + 0.05)
-  return darkContrast > whiteContrast ? '#222' : '#fff'
+  if (darkContrast >= 4.5 && darkContrast > whiteContrast) return '#222'
+  if (whiteContrast >= 4.5) return '#fff'
+  return '#000'
 }

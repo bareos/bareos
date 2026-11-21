@@ -49,6 +49,7 @@ describe('chart label contrast', () => {
     expect(getContrastTextColor('#e06c2e')).toBe('#222')
     expect(getContrastTextColor('#2e2eb8')).toBe('#fff')
     expect(getContrastTextColor('#ffffff')).toBe('#222')
+    expect(getContrastTextColor('#888888')).toBe('#000')
   })
 })
 
