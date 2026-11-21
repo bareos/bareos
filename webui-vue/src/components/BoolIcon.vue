@@ -3,6 +3,7 @@
     :name="value ? 'check' : 'close'"
     :color="value ? 'positive' : 'grey'"
     role="img"
+    aria-hidden="false"
     :aria-label="value ? t('Yes') : t('No')"
   />
 </template>
