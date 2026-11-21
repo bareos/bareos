@@ -53,7 +53,7 @@ function decorateRecentBackups(entries, director) {
   }))
 }
 
-function decorateScheduledBackups(response, director) {
+export function decorateScheduledBackups(response, director) {
   const schedules = new Map(
     (Array.isArray(response?.schedules) ? response.schedules : [])
       .map(schedule => [schedule?.name, schedule])
