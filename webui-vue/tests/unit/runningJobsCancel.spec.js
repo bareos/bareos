@@ -161,12 +161,14 @@ describe('running-job cancellation', () => {
         socket.onmessage?.({ data: JSON.stringify({ type: 'auth_ok' }) })
         await vi.waitFor(() => expect(socket.sent.some(item => item.type === 'command')).toBe(true))
         const request = socket.sent.find(item => item.type === 'command')
-        await switchActiveDirector('b')
+        if (index === 0) await switchActiveDirector('b')
         socket.onmessage?.({ data: JSON.stringify({ type: 'response', id: request.id, data: {} }) })
       }
       await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'positive' })
       ))
+      expect(auth.getCredentials().director).toBe('b')
+      expect(director.disconnect).toHaveBeenCalledTimes(1)
     } finally {
       app.unmount()
       vi.unstubAllGlobals()

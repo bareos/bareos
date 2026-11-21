@@ -279,7 +279,6 @@ function confirmCancelGroup(group) {
 }
 
 async function cancelJob(job, id) {
-  await switchActiveDirector(job.director)
   const credentials = auth.getCredentials(job.director)
   if (!credentials) throw new Error(t('Not logged in.'))
   const client = await createDirectorCommandClient(credentials)
