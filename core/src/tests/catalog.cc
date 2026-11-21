@@ -51,6 +51,42 @@
 using directordaemon::InitDirConfig;
 using directordaemon::my_config;
 
+static int BackendPid(BareosDb* connection)
+{
+  int pid = 0;
+  EXPECT_TRUE(connection->SqlQuery(
+      "SELECT pg_backend_pid()",
+      +[](void* context, int, char** row) {
+        *static_cast<int*>(context) = std::atoi(row[0]);
+        return 0;
+      },
+      &pid));
+  return pid;
+}
+
+static bool WaitForBlockedBackend(BareosDb* blocker, int pid)
+{
+  const std::string query
+      = "SELECT pg_stat_clear_snapshot(); SELECT 1 FROM pg_stat_activity WHERE "
+        "wait_event_type='Lock' AND pid="
+        + std::to_string(pid)
+        + " AND pg_backend_pid() = ANY(pg_blocking_pids(pid))";
+  int waiting = 0;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  while (!waiting && std::chrono::steady_clock::now() < deadline) {
+    EXPECT_TRUE(blocker->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char**) {
+          ++*static_cast<int*>(context);
+          return 0;
+        },
+        &waiting));
+    if (!waiting) { std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
+  }
+  return waiting == 1;
+}
+
 class CatalogTest : public ::testing::Test {
  protected:
   std::string catalog_backend_name;
@@ -545,6 +581,8 @@ TEST_F(CatalogTest, VolumeSelectionKeepsRequestedPoolAfterConcurrentMove)
   jcr->dir_impl->res.pool = &pool;
   BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
   ASSERT_NE(reader, nullptr);
+  const int reader_pid = BackendPid(reader);
+  ASSERT_GT(reader_pid, 0);
   jcr->db = reader;
 
   for (int new_limit : {1, 100}) {
@@ -570,23 +608,7 @@ TEST_F(CatalogTest, VolumeSelectionKeepsRequestedPoolAfterConcurrentMove)
       return directordaemon::FindNextVolumeForAppend(jcr, &selected, 1, nullptr,
                                                      false, false);
     });
-    int waiting = 0;
-    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    while (!waiting && std::chrono::steady_clock::now() < deadline) {
-      EXPECT_TRUE(db->SqlQuery(
-          "SELECT pg_stat_clear_snapshot(); "
-          "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
-          "AND query LIKE 'UPDATE Media SET VolJobs=%'",
-          +[](void* context, int, char**) {
-            ++*static_cast<int*>(context);
-            return 0;
-          },
-          &waiting));
-      if (!waiting) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      }
-    }
-    EXPECT_EQ(waiting, 1);
+    EXPECT_TRUE(WaitForBlockedBackend(db, reader_pid));
     EXPECT_TRUE(db->SqlExec("COMMIT"));
     EXPECT_TRUE(pending.get());
     EXPECT_EQ(selected.PoolId, 111);
@@ -606,6 +628,8 @@ TEST_F(CatalogTest, CatalogWriteRequestRejectsVolumeMovedDuringExpiration)
       "('request-pool-move','File','Append',111,1,1)"));
   BareosDb* reader = db->CloneDatabaseConnection(jcr, true, false, true);
   ASSERT_NE(reader, nullptr);
+  const int reader_pid = BackendPid(reader);
+  ASSERT_GT(reader_pid, 0);
   directordaemon::StorageResource storage;
   char media_type[] = "File";
   storage.media_type = media_type;
@@ -639,23 +663,7 @@ TEST_F(CatalogTest, CatalogWriteRequestRejectsVolumeMovedDuringExpiration)
     auto pending = std::async(std::launch::async, [&] {
       directordaemon::CatalogRequest(jcr, &socket);
     });
-    int waiting = 0;
-    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    while (!waiting && std::chrono::steady_clock::now() < deadline) {
-      EXPECT_TRUE(db->SqlQuery(
-          "SELECT pg_stat_clear_snapshot(); "
-          "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
-          "AND query LIKE 'UPDATE Media SET VolJobs=%'",
-          +[](void* context, int, char**) {
-            ++*static_cast<int*>(context);
-            return 0;
-          },
-          &waiting));
-      if (!waiting) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      }
-    }
-    EXPECT_EQ(waiting, 1);
+    EXPECT_TRUE(WaitForBlockedBackend(db, reader_pid));
     if (!db->SqlExec("COMMIT")) {
       ADD_FAILURE() << "Could not commit pool move";
       EXPECT_TRUE(db->SqlExec("ROLLBACK"));
@@ -768,6 +776,8 @@ TEST_F(CatalogTest, JobMediaWaitsForCleaningTransition)
   ASSERT_TRUE(db->GetMediaRecord(jcr, &media));
   BareosDb* writer = db->CloneDatabaseConnection(jcr, true, false, true);
   ASSERT_NE(writer, nullptr);
+  const int writer_pid = BackendPid(writer);
+  ASSERT_GT(writer_pid, 0);
   ASSERT_TRUE(
       db->SqlExec("BEGIN; UPDATE Media SET VolStatus='Cleaning' "
                   "WHERE VolumeName='jobmedia-wait-test'"));
@@ -778,23 +788,7 @@ TEST_F(CatalogTest, JobMediaWaitsForCleaningTransition)
   auto pending = std::async(std::launch::async, [&] {
     return writer->CreateJobmediaRecord(jcr, &jobmedia);
   });
-  int waiting = 0;
-  auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-  while (!waiting && std::chrono::steady_clock::now() < deadline) {
-    EXPECT_TRUE(db->SqlQuery(
-        "SELECT pg_stat_clear_snapshot(); "
-        "SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' "
-        "AND query LIKE 'WITH updated_media AS%'",
-        +[](void* context, int, char**) {
-          ++*static_cast<int*>(context);
-          return 0;
-        },
-        &waiting));
-    if (!waiting) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-  }
-  EXPECT_EQ(waiting, 1);
+  EXPECT_TRUE(WaitForBlockedBackend(db, writer_pid));
   EXPECT_TRUE(db->SqlExec("COMMIT"));
   EXPECT_TRUE(pending.get());
   writer->CloseDatabase(jcr);
