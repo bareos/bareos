@@ -29,6 +29,7 @@ import re
 import subprocess
 from time import monotonic, sleep
 import unittest
+from unittest.mock import Mock
 import uuid
 import warnings
 
@@ -43,6 +44,26 @@ import bareos_unittest
 
 
 class PythonBareosListCommandTest(bareos_unittest.Json):
+    @staticmethod
+    def cleanup_cleaning_race(admin, volume, mediaid, jobid):
+        if mediaid is not None:
+            admin.call(
+                f'.sql query="DELETE FROM JobMedia WHERE MediaId={mediaid} '
+                f'AND JobId={jobid}"'
+            )
+        admin.call(f"delete volume={volume} yes")
+        os.remove(f"storage/{volume}")
+
+    def test_cleaning_race_cleanup_preserves_volume_if_unlink_fails(self):
+        admin = Mock()
+        admin.call.side_effect = RuntimeError("unlink failed")
+
+        with self.assertRaisesRegex(RuntimeError, "unlink failed"):
+            self.cleanup_cleaning_race(admin, "test-volume", 42, 43)
+        admin.call.assert_called_once_with(
+            '.sql query="DELETE FROM JobMedia WHERE MediaId=42 AND JobId=43"'
+        )
+
     def test_frompool_reports_missing_pool_as_failure(self):
         username = self.get_operator_username()
         director = bareos.bsock.DirectorConsoleJson(
@@ -594,6 +615,7 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
         jobid = self.get_backup_jobid(admin, "backup-bareos-fd", level="Full")
         volume = f"CleaningRace-{uuid.uuid4().hex}"
         admin.call(f"label volume={volume} storage=File pool=Full")
+        mediaid = None
         try:
             record = admin.call(f"llist volume={volume}")["volume"]
             mediaid = record["mediaid"]
@@ -647,10 +669,8 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             finally:
                 if transaction_open:
                     admin.call('.sql query="ROLLBACK"')
-                admin.call(f'.sql query="DELETE FROM JobMedia WHERE MediaId={mediaid}"')
         finally:
-            admin.call(f"delete volume={volume} yes")
-            os.remove(f"storage/{volume}")
+            self.cleanup_cleaning_race(admin, volume, mediaid, jobid)
 
     def test_job_comment_update_is_atomic(self):
         username = self.get_operator_username()
