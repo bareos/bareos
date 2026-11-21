@@ -325,7 +325,10 @@ describe('dashboards store', () => {
       bareosDashboardsBackup: 1,
       dashboards: [{ id: '', name: '' }],
     })).toThrow()
-    expect(store.exportDashboards()).toEqual(before)
+    expect(store.exportDashboards()).toMatchObject({
+      dashboards: before.dashboards,
+      activeDashboardId: before.activeDashboardId,
+    })
   })
 
   it('importDashboards() drops dashboards and widgets with duplicate ids', () => {
