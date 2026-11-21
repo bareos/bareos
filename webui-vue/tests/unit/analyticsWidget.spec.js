@@ -118,6 +118,26 @@ describe('standalone analytics', () => {
   })
 
   describe('dashboard analytics', () => {
+    it.each([
+      ['analytics-client-bytes', 'client', 'client-shared'],
+      ['analytics-treemap', 'job', 'job-shared'],
+    ])('links %s groups to the exact Director and resource', (type, key, name) => {
+      const { app, host } = mountDashboardWidget(type, [
+        { client: 'client-shared', name: 'job-shared', director: 'A', bytes: 42, files: 1, type: 'B' },
+        { client: 'client-shared', name: 'job-shared', director: 'B', bytes: 21, files: 1, type: 'B' },
+      ])
+      try {
+        const queries = [...host.querySelectorAll('a')].map(link => JSON.parse(link.dataset.query))
+        expect(queries).toEqual(expect.arrayContaining([
+          { scopeDirector: 'A', [key]: name },
+          { scopeDirector: 'B', [key]: name },
+        ]))
+      } finally {
+        app.unmount()
+        vi.unstubAllGlobals()
+      }
+    })
+
     it.each(['analytics-client-bytes', 'analytics-treemap'])('shows special catalog names in %s', type => {
       isCommonScope.value = false
       const { app, host } = mountDashboardWidget(type, [

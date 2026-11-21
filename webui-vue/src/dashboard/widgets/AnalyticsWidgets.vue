@@ -156,7 +156,8 @@ import { useAuthStore } from '../../stores/auth.js'
 import { useDirectorStore } from '../../stores/director.js'
 import { useSettingsStore } from '../../stores/settings.js'
 import {
-  withJobsSearchQuery,
+  withJobsClientQuery,
+  withJobsJobQuery,
   withJobsStatusFilterQuery,
 } from '../../utils/jobs.js'
 import { formatNumber } from '../../utils/locales.js'
@@ -420,7 +421,7 @@ const clientBytes = computed(() => {
         name: label,
         bytes: 0,
         files: 0,
-        jobsQuery: withJobsSearchQuery({}, j.client),
+        jobsQuery: withJobsClientQuery({ scopeDirector: j.director }, j.client),
       }
     }
     map[label].bytes += j.bytes
@@ -530,7 +531,7 @@ const jobGroups = computed(() => {
         name: label,
         bytes: 0,
         files: 0,
-        jobsQuery: withJobsSearchQuery({}, j.name),
+        jobsQuery: withJobsJobQuery({ scopeDirector: j.director }, j.name),
       }
     }
     map[label].bytes += j.bytes
