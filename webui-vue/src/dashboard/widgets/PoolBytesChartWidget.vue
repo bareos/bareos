@@ -48,6 +48,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels'
 import { useSettingsStore } from '../../stores/settings.js'
 import { formatBytes } from '../../mock/index.js'
+import { poolChartLabels } from '../../utils/pools.js'
 import { DASHBOARD_CONTEXT_KEY } from '../dashboardContext.js'
 import { PIE_PALETTE, getContrastTextColor } from '../piePalette.js'
 import { CenterTextPlugin } from '../centerTextPlugin.js'
@@ -69,7 +70,7 @@ const chartData = computed(() => {
     .sort((a, b) => (b.totalbytes ?? 0) - (a.totalbytes ?? 0))
 
   return {
-    labels: sorted.map(p => p.name),
+    labels: poolChartLabels(sorted),
     datasets: [{
       data: sorted.map(p => p.totalbytes ?? 0),
       backgroundColor: sorted.map((_, i) => PIE_PALETTE[i % PIE_PALETTE.length]),

@@ -26,6 +26,13 @@ import {
 import { resolveJobDetailsQuery } from './jobs.js'
 import { buildVolumeDetailsQuery } from './volumes.js'
 
+export function poolChartLabels(pools) {
+  const multipleDirectors = new Set(pools.map(pool => pool.director).filter(Boolean)).size > 1
+  return pools.map(pool => multipleDirectors && pool.director
+    ? `${pool.director} / ${pool.name}`
+    : pool.name)
+}
+
 export function buildPoolDetailsQuery({
   director,
   poolsTab,
