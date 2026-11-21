@@ -786,14 +786,15 @@ function showPoolInVolumeList(pool) {
   })
 }
 
-const maxPoolBytes = computed(() =>
-  Math.max(1, ...pools.value.map(p => p.totalbytes))
-)
-function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
-
 function maxOf(arr, field) {
-  return Math.max(1, ...arr.map(p => Number(p[field]) || 0))
+  let max = 1
+  for (const pool of arr) {
+    max = Math.max(max, Number(pool[field]) || 0)
+  }
+  return max
 }
+const maxPoolBytes = computed(() => maxOf(pools.value, 'totalbytes'))
+function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
 const maxNumVols      = computed(() => maxOf(pools.value, 'numvols'))
 const maxMaxVols      = computed(() => maxOf(pools.value.filter(p => Number(p.maxvols) > 0), 'maxvols'))
 const maxRetentionSecs= computed(() => maxOf(pools.value, 'volretention'))
