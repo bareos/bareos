@@ -369,7 +369,26 @@ const poolRecord = ref(null)
 const poolDefaultsDialogOpen = ref(false)
 
 async function runVolumeCommand(volume, command) {
-  await ensurePoolDirector()
+  const routeDirector = requestedDirector.value
+  const targetDirector = volume.director || routeDirector || currentPoolDirector.value
+  if (routeDirector && targetDirector !== routeDirector) {
+    throw new Error(t('The pool changed directors. Refresh the pool defaults comparison before applying.'))
+  }
+
+  if (targetDirector && (
+    auth.user?.director !== targetDirector || !director.isConnected
+  )) {
+    await switchActiveDirector(targetDirector)
+  }
+
+  if (targetDirector && (
+    (requestedDirector.value && requestedDirector.value !== targetDirector)
+    || auth.user?.director !== targetDirector
+    || !director.isConnected
+  )) {
+    throw new Error(t('The pool changed directors. Refresh the pool defaults comparison before applying.'))
+  }
+
   return director.call(command)
 }
 
