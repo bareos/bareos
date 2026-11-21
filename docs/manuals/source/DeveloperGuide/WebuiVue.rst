@@ -186,9 +186,10 @@ Adding a language
 ~~~~~~~~~~~~~~~~~
 
 Add the locale and its display label to :file:`locales.json`, add the
-corresponding JSON catalog import in :file:`locales/catalogs.js`, import the
-language from POEditor, and update the locale mappings in
-:file:`webui-vue/src/utils/locales.js`. Then run ``npm run check:i18n``.
+corresponding JSON catalog import and register it in ``CATALOGS`` in
+:file:`locales/catalogs.js`, import the language from POEditor, and update
+the locale mappings in :file:`webui-vue/src/utils/locales.js`. Then run
+``npm run check:i18n``.
 
 Documentation guidance
 ----------------------
