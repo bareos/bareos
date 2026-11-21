@@ -420,6 +420,30 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr,
   return retval;
 }
 
+bool BareosDb::UpdateMediaSlotRecord(JobControlRecord* jcr, MediaDbRecord* mr)
+{
+  char ed1[50], ed2[50];
+
+  DbLocker _{this};
+  auto esc = EscapeString(jcr, mr->VolumeName);
+  if (!esc) { return false; }
+
+  Mmsg(cmd,
+       "UPDATE Media SET Slot=%d,InChanger=%d,StorageId=%s "
+       "WHERE VolumeName='%s' AND PoolId=%s",
+       mr->Slot, mr->InChanger, edit_int64(mr->StorageId, ed1), esc->c_str(),
+       edit_int64(mr->PoolId, ed2));
+
+  const int affected = UpdateDb(jcr, cmd);
+  if (affected == 0) {
+    Mmsg(errmsg, T_("Volume pool changed; refresh and try again.\n"));
+    return false;
+  }
+  if (affected < 0) { return false; }
+
+  return MakeInchangerUnique(jcr, mr);
+}
+
 /**
  * Update the Media Record Default values from Pool
  *

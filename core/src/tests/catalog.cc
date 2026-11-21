@@ -379,6 +379,47 @@ TEST_F(CatalogTest, AutomaticUpdatePreservesMovedVolumePoolAndDefaults)
   EXPECT_EQ(stale.VolRetention, 789);
 }
 
+TEST_F(CatalogTest, SlotUpdatePreservesConcurrentStatusAndPoolChanges)
+{
+  ASSERT_TRUE(
+      db->SqlExec("INSERT INTO Media "
+                  "(VolumeName,MediaType,VolStatus,PoolId,StorageId) "
+                  "VALUES ('slot-update-status','File','Cleaning',11,7)"));
+
+  MediaDbRecord stale;
+  bstrncpy(stale.VolumeName, "slot-update-status", sizeof(stale.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &stale));
+  stale.Slot = 4;
+  stale.InChanger = 1;
+  JobMediaDbRecord jobmedia;
+  jobmedia.JobId = 1240;
+  jobmedia.MediaId = stale.MediaId;
+  jobmedia.EndFile = 12;
+  jobmedia.EndBlock = 34;
+  ASSERT_TRUE(db->CreateJobmediaRecord(jcr, &jobmedia));
+
+  ASSERT_TRUE(db->UpdateMediaSlotRecord(jcr, &stale));
+
+  MediaDbRecord current;
+  bstrncpy(current.VolumeName, "slot-update-status",
+           sizeof(current.VolumeName));
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_STREQ(current.VolStatus, "Error");
+  EXPECT_EQ(current.Slot, 4);
+  EXPECT_EQ(current.InChanger, 1);
+
+  stale.Slot = 5;
+  ASSERT_TRUE(db->SqlExec(
+      "UPDATE Media SET PoolId=22 WHERE VolumeName='slot-update-status'"));
+  EXPECT_FALSE(db->UpdateMediaSlotRecord(jcr, &stale));
+  bstrncpy(current.VolumeName, "slot-update-status",
+           sizeof(current.VolumeName));
+  current.MediaId = 0;
+  ASSERT_TRUE(db->GetMediaRecord(jcr, &current));
+  EXPECT_EQ(current.PoolId, 22);
+  EXPECT_EQ(current.Slot, 4);
+}
+
 TEST_F(CatalogTest, ExpirationRechecksLimitsAfterPoolMove)
 {
   ASSERT_TRUE(db->SqlExec(

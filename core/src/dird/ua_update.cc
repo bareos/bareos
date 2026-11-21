@@ -419,8 +419,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   /* Make sure to use db_update... rather than doing this directly,
    * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
-  if (DbLocker _{ua->db};
-      !ua->db->UpdateMediaRecord(ua->jcr, mr, false, true)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaSlotRecord(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                  ua->db->strerror());
   } else {
