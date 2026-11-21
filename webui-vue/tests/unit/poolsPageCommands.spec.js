@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
   fetchSingle: vi.fn(),
   fetchAggregate: vi.fn(),
+  routeReplace: vi.fn(),
   auth: { user: { director: 'B' } },
 }))
 const activeDirectors = ref(['B'])
@@ -34,7 +35,7 @@ const activeDirectors = ref(['B'])
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => ({ replace: mocks.routeReplace, push: vi.fn() }),
 }))
 vi.mock('quasar', () => ({ useQuasar: () => ({ platform: { has: { touch: false } } }) }))
 vi.mock('../../src/stores/auth.js', () => ({
@@ -112,6 +113,7 @@ afterEach(() => {
   mocks.error.mockReset()
   mocks.fetchSingle.mockReset()
   mocks.fetchAggregate.mockReset()
+  mocks.routeReplace.mockReset()
 })
 
 function mountPage() {
@@ -121,10 +123,16 @@ function mountPage() {
   const app = createApp(PoolsPage)
   app.config.warnHandler = () => {}
   app.component('q-table', defineComponent({
-    props: { rows: Array, loading: Boolean },
-    setup(props) {
+    props: { rows: Array, columns: Array, loading: Boolean },
+    setup(props, { slots }) {
       return () => h('div', { 'data-test-table': '', 'data-loading': String(props.loading) },
-        props.rows.map(row => h('span', row.name ?? row.volumename)))
+        slots.body
+          ? props.rows.map(row => slots.body({
+            row,
+            cols: [{ name: 'name', value: row.name }],
+            expand: true,
+          }))
+          : props.rows.map(row => h('span', row.name ?? row.volumename)))
     },
   }))
   apps.push(app)
@@ -161,6 +169,24 @@ describe('PoolsPage volume commands', () => {
     finishSwitch()
     await vi.waitFor(() => expect(mocks.error).toHaveBeenCalled())
     expect(mocks.call).not.toHaveBeenCalled()
+  })
+})
+
+describe('PoolsPage pool-volume navigation', () => {
+  it('writes the tab and pool filter in one route replacement', async () => {
+    mocks.fetchSingle.mockResolvedValue({
+      pools: [{ name: 'Full', director: 'A', pooltype: 'Backup' }],
+      volumes: [],
+    })
+    const host = mountPage()
+    await vi.waitFor(() => expect(host.querySelector(
+      '[data-testid="pool-show-volumes-Full"]'
+    )).not.toBeNull())
+
+    host.querySelector('[data-testid="pool-show-volumes-Full"]').click()
+
+    await vi.waitFor(() => expect(mocks.routeReplace).toHaveBeenCalled())
+    expect(mocks.routeReplace).toHaveBeenCalledTimes(1)
   })
 })
 
