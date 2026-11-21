@@ -281,7 +281,7 @@ async function fetchRecentJobs() {
     // fires on ref replacement, even when page/rowsPerPage/sortBy/descending
     // are unchanged), causing an infinite re-fetch loop and a permanently
     // spinning loading indicator.
-    pagination.value.rowsNumber = result.totalJobs
+    pagination.value.rowsNumber = result.browsableJobs
     error.value = result.directorErrors.map(entry => entry.message).join(' ')
   } catch (fetchError) {
     if (requestId !== latestRequestId) return

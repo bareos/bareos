@@ -710,6 +710,7 @@ describe('jobs aggregate helpers', () => {
     const result = await loading
     expect(result).toMatchObject({
       totalJobs: 25,
+      browsableJobs: 25,
       truncated: false,
       directorErrors: [],
     })
@@ -743,6 +744,7 @@ describe('jobs aggregate helpers', () => {
 
     const result = await loading
     expect(result.totalJobs).toBe(MAX_JOBS_FETCH_LIMIT)
+    expect(result.browsableJobs).toBe(MAX_JOBS_FETCH_LIMIT)
     expect(result.truncated).toBeNull()
   })
 

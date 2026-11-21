@@ -386,10 +386,12 @@ export async function fetchAggregatedRecentJobsPage(credentials, directors, pagi
 
   const successful = results.filter(result => result.status === 'fulfilled').map(result => result.value)
   const jobs = sortJobsByPagination(successful.flatMap(result => result.jobs), pagination)
+  const totalJobs = successful.reduce((sum, result) => sum + result.count, 0)
 
   return {
     jobs: paginateJobs(jobs, pagination),
-    totalJobs: successful.reduce((sum, result) => sum + result.count, 0),
+    totalJobs,
+    browsableJobs: serverSortColumn ? totalJobs : jobs.length,
     truncated: successful.some(result => result.truncated === true)
       ? true : successful.some(result => result.truncated === null) ? null : false,
     directorErrors: results.flatMap((result, index) => (
