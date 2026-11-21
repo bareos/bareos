@@ -453,6 +453,10 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
             for volume in volumes:
                 admin.call(f"label volume={volume} storage=File pool=Full")
                 created.append(volume)
+            mediaids = [
+                int(admin.call(f"llist volume={volume}")["volume"]["mediaid"])
+                for volume in volumes
+            ]
             admin.call(
                 '.sql query="UPDATE Pool SET NumVols=(SELECT count(*) FROM Media '
                 "WHERE Media.PoolId=Pool.PoolId) WHERE Name IN ('Full','Incremental')\""
@@ -478,13 +482,14 @@ class PythonBareosListCommandTest(bareos_unittest.Json):
                         deadline = monotonic() + 10
                         while monotonic() < deadline:
                             waiting = observer.call(
-                                '.sql query="SELECT count(*) AS waiting FROM '
-                                "pg_stat_activity WHERE wait_event_type='Lock' "
+                                '.sql query="SELECT count(DISTINCT CASE '
+                                f"WHEN query LIKE '%WHERE Media.MediaId={mediaids[0]} AND%' THEN 1 "
+                                f"WHEN query LIKE '%WHERE Media.MediaId={mediaids[1]} AND%' THEN 2 "
+                                "END) AS waiting FROM pg_stat_activity "
+                                "WHERE wait_event_type='Lock' "
                                 "AND query LIKE '%WITH pools AS%'\""
                             )["query"][0]["waiting"]
-                            if int(waiting) and all(
-                                not future.done() for future in pending
-                            ):
+                            if int(waiting) == len(volumes):
                                 break
                             sleep(0.1)
                         else:
