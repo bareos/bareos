@@ -150,6 +150,11 @@ async function reload() {
   try {
     await ensureStorageDirector(storage)
     if (request !== statusRequest) return
+    if (storage.director && (
+      auth.user?.director !== storage.director || !director.isConnected
+    )) {
+      throw new Error(t('The storage Director changed before the status request was sent.'))
+    }
     const text = await director.rawCall(
       `status storage=${quoteDirectorString(storage.name)}`
     )

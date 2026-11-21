@@ -21,14 +21,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 
-const { director, switchDirector } = vi.hoisted(() => ({
+const { director, auth, switchDirector } = vi.hoisted(() => ({
   director: { rawCall: vi.fn(), isConnected: true },
+  auth: { user: { director: 'test-dir' } },
   switchDirector: vi.fn(),
 }))
 
 vi.mock('../../src/stores/director.js', () => ({ useDirectorStore: () => director }))
 vi.mock('../../src/stores/auth.js', () => ({
-  useAuthStore: () => ({ user: { director: 'test-dir' } }),
+  useAuthStore: () => auth,
 }))
 vi.mock('../../src/composables/useDirectorSession.js', () => ({
   switchActiveDirector: switchDirector,
@@ -80,6 +81,8 @@ function mountPanel(storage) {
 beforeEach(() => {
   director.rawCall.mockReset()
   switchDirector.mockReset()
+  director.isConnected = true
+  auth.user.director = 'test-dir'
 })
 afterEach(() => {
   apps.splice(0).forEach(app => app.unmount())
@@ -103,7 +106,9 @@ describe('StorageDetailsPanel status', () => {
 
   it('reloads when the storage director changes in place', async () => {
     director.rawCall.mockResolvedValue('Status')
-    switchDirector.mockResolvedValue()
+    switchDirector.mockImplementation(async target => {
+      auth.user.director = target
+    })
     const storage = ref({ name: 'A', director: 'test-dir' })
     mountPanel(storage)
     await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(1))
@@ -158,5 +163,22 @@ describe('StorageDetailsPanel status', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
     expect(director.rawCall).toHaveBeenCalledTimes(1)
     expect(director.rawCall).toHaveBeenCalledWith('status storage="B"')
+  })
+
+  it('does not send status to a different director after a queued switch', async () => {
+    const switching = deferred()
+    switchDirector.mockReturnValue(switching.promise)
+    const host = mountPanel(ref({ name: 'Tape', director: 'storage-dir' }))
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('storage-dir'))
+    switching.promise.then(() => {
+      auth.user.director = 'queued-dir'
+    })
+
+    switching.resolve()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(director.rawCall).not.toHaveBeenCalled()
+    expect(host.textContent).toContain(
+      'The storage Director changed before the status request was sent.'
+    )
   })
 })
