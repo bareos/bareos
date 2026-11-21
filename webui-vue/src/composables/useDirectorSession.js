@@ -25,12 +25,16 @@ import { useSettingsStore } from '../stores/settings.js'
 
 const pendingSwitches = new WeakMap()
 
-export function switchActiveDirector(targetDirector) {
+export function switchActiveDirector(targetDirector, isCurrent = () => true) {
   const auth = useAuthStore()
   const director = useDirectorStore()
   const settings = useSettingsStore()
   const pending = pendingSwitches.get(director)
-  const switchDirector = () => performSwitch(targetDirector, auth, director, settings)
+  const switchDirector = () => (
+    isCurrent()
+      ? performSwitch(targetDirector, auth, director, settings)
+      : Promise.resolve(false)
+  )
   const result = pending ? pending.then(switchDirector) : switchDirector()
   const finished = result.then(() => undefined, () => undefined)
   pendingSwitches.set(director, finished)

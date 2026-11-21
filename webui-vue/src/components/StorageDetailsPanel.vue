@@ -123,7 +123,7 @@ const fields = computed(() => {
   ]
 })
 
-async function ensureStorageDirector(storage) {
+async function ensureStorageDirector(storage, isCurrent) {
   const target = storage?.director
   if (!target) {
     return
@@ -133,7 +133,7 @@ async function ensureStorageDirector(storage) {
     return
   }
 
-  await switchActiveDirector(target)
+  await switchActiveDirector(target, isCurrent)
 }
 
 async function reload() {
@@ -148,8 +148,9 @@ async function reload() {
   loading.value = true
   error.value = null
   try {
-    await ensureStorageDirector(storage)
-    if (request !== statusRequest) return
+    const isCurrent = () => request === statusRequest
+    await ensureStorageDirector(storage, isCurrent)
+    if (!isCurrent()) return
     if (storage.director && (
       auth.user?.director !== storage.director || !director.isConnected
     )) {

@@ -113,7 +113,10 @@ describe('StorageDetailsPanel status', () => {
     mountPanel(storage)
     await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(1))
     storage.value.director = 'other-dir'
-    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('other-dir'))
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith(
+      'other-dir',
+      expect.any(Function)
+    ))
     await vi.waitFor(() => expect(director.rawCall).toHaveBeenCalledTimes(2))
   })
 
@@ -156,9 +159,13 @@ describe('StorageDetailsPanel status', () => {
     director.rawCall.mockResolvedValue('Current status')
     const storage = ref({ name: 'A', director: 'other-dir' })
     const host = mountPanel(storage)
-    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('other-dir'))
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith(
+      'other-dir',
+      expect.any(Function)
+    ))
     storage.value = { name: 'B', director: 'test-dir' }
     await vi.waitFor(() => expect(host.textContent).toContain('Current status'))
+    expect(switchDirector.mock.calls[0][1]()).toBe(false)
     switching.resolve()
     await new Promise(resolve => setTimeout(resolve, 0))
     expect(director.rawCall).toHaveBeenCalledTimes(1)
@@ -169,7 +176,10 @@ describe('StorageDetailsPanel status', () => {
     const switching = deferred()
     switchDirector.mockReturnValue(switching.promise)
     const host = mountPanel(ref({ name: 'Tape', director: 'storage-dir' }))
-    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith('storage-dir'))
+    await vi.waitFor(() => expect(switchDirector).toHaveBeenCalledWith(
+      'storage-dir',
+      expect.any(Function)
+    ))
     switching.promise.then(() => {
       auth.user.director = 'queued-dir'
     })
