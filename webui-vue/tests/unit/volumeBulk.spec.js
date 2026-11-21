@@ -36,6 +36,7 @@ import {
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 const { default: VolumeBulkDialog } = await import('../../src/components/VolumeBulkDialog.vue')
+const { default: VolumeActionsMenu } = await import('../../src/components/VolumeActionsMenu.vue')
 
 const dialogs = []
 afterEach(() => {
@@ -91,6 +92,27 @@ function renderPoolMove(response) {
 }
 
 describe('volume bulk helpers', () => {
+  it.each([
+    [['Append'], false],
+    [['Append', 'Purged'], true],
+    [null, true],
+  ])('only offers truncate when applicable for statuses %s', (statuses, visible) => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const app = createApp(VolumeActionsMenu, { count: 1, statuses })
+    app.config.warnHandler = () => {}
+    const stub = defineComponent({
+      setup(_, { attrs, slots }) {
+        return () => h('div', attrs, slots.default?.())
+      },
+    })
+    for (const name of ['q-btn-dropdown', 'q-list', 'q-item', 'q-item-section',
+      'q-item-label', 'q-icon', 'q-separator']) app.component(name, stub)
+    app.mount(host)
+    dialogs.push({ app, host })
+    expect(!!host.querySelector('[data-testid="volume-actions-truncate"]')).toBe(visible)
+  })
+
   it('sanitizes comments to a single trimmed line', () => {
     expect(sanitizeComment('  first\r\nsecond\tthird  ')).toBe('first second third')
     expect(sanitizeComment(null)).toBe('')

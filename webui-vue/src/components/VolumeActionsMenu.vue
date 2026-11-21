@@ -101,5 +101,9 @@ const statusActions = computed(() => VOLUME_BULK_ACTIONS.filter(
     && (!props.statuses
       || props.statuses.some(status => isVolumeActionApplicable(action, status))),
 ))
-const destructiveActions = VOLUME_BULK_ACTIONS.filter(action => action.destructive)
+const destructiveActions = computed(() => VOLUME_BULK_ACTIONS.filter(
+  action => action.destructive
+    && (!props.statuses
+      || props.statuses.some(status => isVolumeActionApplicable(action, status))),
+))
 </script>
