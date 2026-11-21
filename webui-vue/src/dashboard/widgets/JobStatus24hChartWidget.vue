@@ -25,7 +25,7 @@
     </div>
     <q-spinner v-if="loading && !chartData.labels.length" size="40px" />
     <div v-else-if="!chartData.labels.length" class="text-grey text-caption text-center">
-      {{ t('No job data available') }}
+      {{ t('No running, waiting, successful, warning, or failed jobs') }}
     </div>
     <template v-else>
       <div style="position:relative; width:100%; flex:1; min-height:0">
@@ -131,7 +131,7 @@ const chartOptions = computed(() => ({
       },
     },
     centerText: {
-      lines: [String(totalJobs.value), t('Total')],
+      lines: [String(totalJobs.value), t('Shown statuses')],
       fonts: ['600 15px sans-serif', '11px sans-serif'],
       colors: ['#333', '#888'],
     },

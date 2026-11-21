@@ -19,17 +19,48 @@
    02110-1301, USA.
  */
 
-import { describe, expect, it } from 'vitest'
-import { createApp, ref } from 'vue'
+import { describe, expect, it, vi } from 'vitest'
+import { createApp, defineComponent, h, ref } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import JobsPast24hWidget from '../../src/dashboard/widgets/JobsPast24hWidget.vue'
+import JobStatus24hChartWidget from '../../src/dashboard/widgets/JobStatus24hChartWidget.vue'
 import { DASHBOARD_CONTEXT_KEY } from '../../src/dashboard/dashboardContext.js'
 import { getContrastTextColor } from '../../src/dashboard/piePalette.js'
 import {
   JOB_STATUS_24H_CHART_SEGMENTS,
   buildJobStatus24hChartSegments,
 } from '../../src/dashboard/jobStatus24hChart.js'
+
+vi.mock('vue-chartjs', () => ({
+  Doughnut: defineComponent({
+    props: ['options'],
+    setup: props => () => h('canvas', { 'data-center': JSON.stringify(props.options.plugins.centerText.lines) }),
+  }),
+}))
+
+describe('job status chart coverage', () => {
+  it.each([
+    [{ A: 2 }, null, 'No running, waiting, successful, warning, or failed jobs'],
+    [{ T: 1, A: 2 }, ['1', 'Shown statuses'], null],
+  ])('does not present displayed statuses as all jobs', (counts, center, message) => {
+    const app = createApp(JobStatus24hChartWidget)
+    app.use(createRouter({ history: createMemoryHistory(), routes: [] }))
+    app.use(createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false }))
+    app.provide(DASHBOARD_CONTEXT_KEY, {
+      aggregate: ref({ jobsPast24hStatusCounts: counts }),
+      loading: ref(false),
+    })
+    const host = document.createElement('div')
+    app.mount(host)
+    try {
+      if (message) expect(host.textContent).toContain(message)
+      else expect(JSON.parse(host.querySelector('canvas').dataset.center)).toEqual(center)
+    } finally {
+      app.unmount()
+    }
+  })
+})
 
 describe('JOB_STATUS_24H_CHART_SEGMENTS', () => {
   it('defines the fixed status order and colors used by the chart', () => {
