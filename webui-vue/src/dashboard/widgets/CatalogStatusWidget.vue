@@ -163,7 +163,14 @@ const chartOptions = computed(() => ({
       },
     },
     centerText: {
-      lines: [formatBytes(summary.value.totalBytes ?? 0), t('Total')],
+      lines: [
+        summary.value.totalBytesAvailableDirectors
+          ? formatBytes(summary.value.totalBytes)
+          : t('Unavailable'),
+        summary.value.totalBytesAvailableDirectors < summary.value.directors
+          ? t('Partial total')
+          : t('Total'),
+      ],
       fonts: ['600 15px sans-serif', '11px sans-serif'],
       colors: ['#333', '#888'],
     },

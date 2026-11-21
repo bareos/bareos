@@ -25,7 +25,10 @@ import { aggregateDirectorDashboardSnapshots } from '../../src/composables/direc
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: key => key }) }))
 vi.mock('vue-chartjs', () => ({
-  Doughnut: defineComponent({ setup: () => () => h('canvas') }),
+  Doughnut: defineComponent({
+    props: ['options'],
+    setup: props => () => h('canvas', { 'data-center': JSON.stringify(props.options.plugins.centerText.lines) }),
+  }),
 }))
 
 const { default: CatalogStatusWidget } = await import(
@@ -33,6 +36,32 @@ const { default: CatalogStatusWidget } = await import(
 )
 
 describe('catalog status widget', () => {
+  it.each([
+    [false, false, ['Unavailable', 'Partial total']],
+    [true, false, ['42.00 B', 'Partial total']],
+    [true, true, ['84.00 B', 'Total']],
+  ])('distinguishes unavailable and partial catalog totals', (first, second, expected) => {
+    const app = createApp(CatalogStatusWidget)
+    app.component('q-badge', defineComponent({ setup: (_, { slots }) => () => h('div', slots.default?.()) }))
+    app.component('q-tooltip', defineComponent({ setup: (_, { slots }) => () => h('div', slots.default?.()) }))
+    app.component('q-spinner', defineComponent({ setup: () => () => null }))
+    const aggregate = aggregateDirectorDashboardSnapshots([first, second].map((available, index) => ({
+      director: `dir-${index}`,
+      catalogStatus: {
+        status: 'ok', catalog: { totalBytesAvailable: available, totalBytes: 42 },
+        tables: [{ name: 'job', bytes: 42 }],
+      },
+    })))
+    app.provide(DASHBOARD_CONTEXT_KEY, { aggregate: ref(aggregate), loading: ref(false) })
+    const host = document.createElement('div')
+    app.mount(host)
+    try {
+      expect(JSON.parse(host.querySelector('canvas').dataset.center)).toEqual(expected)
+    } finally {
+      app.unmount()
+    }
+  })
+
   it('shows incomplete coverage and identifies the failing director', () => {
     const app = createApp(CatalogStatusWidget)
     app.component('q-badge', defineComponent({

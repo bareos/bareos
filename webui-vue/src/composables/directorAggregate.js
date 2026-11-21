@@ -272,6 +272,7 @@ function aggregateCatalogStatusSummary(catalogStatuses) {
       status: 'unavailable',
       checkedAt: '',
       totalBytes: 0,
+      totalBytesAvailableDirectors: 0,
       directors: 0,
       availableDirectors: 0,
       unavailableDirectors: 0,
@@ -296,6 +297,7 @@ function aggregateCatalogStatusSummary(catalogStatuses) {
       (sum, entry) => sum + (entry.catalog?.totalBytesAvailable ? numberValue(entry.catalog.totalBytes) : 0),
       0
     ),
+    totalBytesAvailableDirectors: statuses.filter(entry => entry.catalog?.totalBytesAvailable).length,
     directors: statuses.length,
     availableDirectors: statuses.filter(entry => entry.status !== 'unavailable').length,
     unavailableDirectors,

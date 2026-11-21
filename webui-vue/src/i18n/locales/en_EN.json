@@ -489,6 +489,7 @@
   "Overlapping JobMedia ranges detected. Each lane is a seek range; other jobs may have blocks inside that range.": "Overlapping JobMedia ranges detected. Each lane is a seek range; other jobs may have blocks inside that range.",
   "Pan to the future": "Pan to the future",
   "Pan to the past": "Pan to the past",
+  "Partial total": "Partial total",
   "Passive": "Passive",
   "Password": "Password",
   "Permissions come directly from the Director's": "Permissions come directly from the Director's",

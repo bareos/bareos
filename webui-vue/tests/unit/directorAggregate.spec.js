@@ -342,6 +342,7 @@ describe('director aggregate dashboard helpers', () => {
       status: 'warning',
       checkedAt: '2026-03-23 12:00:00',
       totalBytes: 3000,
+      totalBytesAvailableDirectors: 2,
       directors: 2,
       availableDirectors: 2,
       unavailableDirectors: 0,
