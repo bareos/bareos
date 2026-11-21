@@ -130,12 +130,13 @@
             }) }}
           </div>
           <q-list dense bordered separator class="pool-defaults-results">
-            <q-item v-for="result in results" :key="result.volume.volumename">
+            <q-item v-for="result in results" :key="result.key">
               <q-item-section avatar>
                 <q-icon :name="result.ok ? 'check_circle' : 'error'" :color="result.ok ? 'positive' : 'negative'" />
               </q-item-section>
               <q-item-section>
                 <q-item-label>{{ result.volume.volumename }}</q-item-label>
+                <q-item-label v-if="result.volume.director" caption>{{ result.volume.director }}</q-item-label>
                 <q-item-label v-if="!result.ok" caption class="text-negative">{{ result.message }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -249,9 +250,10 @@ async function run() {
           entry.volume,
           buildApplyPoolDefaultsCommand(entry.volume.volumename, entry.pool.poolid)
         )
-        results.value.push({ volume: entry.volume, ok: true, message: '' })
+        results.value.push({ key: entry.key, volume: entry.volume, ok: true, message: '' })
       } catch (reason) {
         results.value.push({
+          key: entry.key,
           volume: entry.volume,
           ok: false,
           message: reason?.message ?? String(reason),

@@ -149,4 +149,22 @@ describe('PoolDefaultsCheckDialog', () => {
       'update volume="V2" frompool=yes expectedpoolid=41'
     )
   })
+
+  it('distinguishes results for same-named volumes on different Directors', async () => {
+    const volumes = ref([
+      { ...different, volumename: 'Tape' },
+      { ...different, volumename: 'Tape', director: 'dir-b' },
+    ])
+    const pools = ref([pool, { ...pool, director: 'dir-b', poolid: '42' }])
+    const runCommand = vi.fn().mockRejectedValueOnce(new Error('Failed on dir-a')).mockResolvedValueOnce()
+    const host = renderReactiveDialog(volumes, pools, runCommand)
+    await nextTick()
+    host.querySelector('[data-testid="pool-defaults-apply"]').click()
+    await vi.waitFor(() => expect(runCommand).toHaveBeenCalledTimes(2))
+    const rows = [...host.querySelectorAll('.pool-defaults-results > div')]
+    expect(rows).toHaveLength(2)
+    expect(rows[0].textContent).toContain('dir-a')
+    expect(rows[0].textContent).toContain('Failed on dir-a')
+    expect(rows[1].textContent).toContain('dir-b')
+  })
 })
