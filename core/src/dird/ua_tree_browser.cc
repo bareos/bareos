@@ -1264,6 +1264,7 @@ class TreeBrowser {
   bool showing_selected_files_ = false;
   std::vector<tree_node*> selected_nodes_;
   std::vector<std::string> selected_paths_;
+  std::vector<bool> selected_partial_;
   size_t selected_max_path_length_ = 0;
   size_t selected_cursor_ = 0;
   size_t selected_horizontal_offset_ = 0;
@@ -1487,6 +1488,7 @@ void TreeBrowser::RebuildSelectedFiles()
                             : nullptr;
   selected_nodes_.clear();
   selected_paths_.clear();
+  selected_partial_.clear();
   selected_max_path_length_ = 0;
 
   for (tree_node* node = FirstTreeNode(tree_->root); node;
@@ -1495,6 +1497,8 @@ void TreeBrowser::RebuildSelectedFiles()
 
     POOLMEM* path = tree_getpath(node);
     selected_nodes_.push_back(node);
+    selected_partial_.push_back(IsDirectoryNode(node)
+                                && HasExcludedDescendants(node));
     selected_paths_.emplace_back(path ? path
                                       : (node->fname ? node->fname : ""));
     selected_max_path_length_ = std::max(selected_max_path_length_,
@@ -2165,15 +2169,9 @@ std::string TreeBrowser::RenderSelectedFiles() const
   for (size_t row = 0; row < max_visible; ++row) {
     size_t i = first + row;
     if (i < last) {
-      tree_node* node = selected_nodes_[i];
       bool highlighted = i == selected_cursor_;
       std::string entry = highlighted ? "> *" : "  *";
-      if (node->type == tree_node_type::Dir
-          || node->type == tree_node_type::DirWin) {
-        entry += HasExcludedDescendants(node) ? " [partial] " : " ";
-      } else {
-        entry += " ";
-      }
+      entry += selected_partial_[i] ? " [partial] " : " ";
       entry += FitText(selected_paths_[i], SearchPathWidth(),
                        selected_horizontal_offset_, false);
       out += FrameLine(width, entry, color, highlighted, '*');
