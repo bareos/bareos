@@ -634,6 +634,18 @@ TEST(InteractiveSelection, RendersMultipleColumnsWhenWideEnough)
   EXPECT_EQ(std::count(output.begin(), output.end(), '\n'), 5);
 }
 
+TEST(InteractiveSelection, PadsMulticolumnOptionsByDisplayCellWidth)
+{
+  const std::vector<std::string> options{"long", "界"};
+  InteractiveSelection selection(options);
+  selection.SetColumnLayout(/*rows_per_column=*/1, /*num_columns=*/2);
+
+  const std::string output
+      = selection.Format("", "Select", /*max_visible_options=*/1, true, false);
+
+  EXPECT_NE(output.find("> 1: long    2: 界\n"), std::string::npos) << output;
+}
+
 TEST(InteractiveSelection, LeftRightNavigateBetweenColumns)
 {
   std::vector<std::string> options;

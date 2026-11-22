@@ -85,6 +85,17 @@ std::string SanitizeSelectionText(std::string_view text, bool allow_newlines)
   return sanitized;
 }
 
+size_t SelectionEntryCellWidth(std::string_view option,
+                               size_t one_based_index,
+                               bool supports_cursor_selection)
+{
+  size_t width = supports_cursor_selection ? 2 : 0;
+  width += std::to_string(one_based_index).size() + 2;
+  width += tree_browser_internal::TextCellWidth(
+      SanitizeSelectionText(option, false));
+  return width;
+}
+
 }  // namespace
 
 /* Imported variables */
@@ -408,12 +419,11 @@ std::string InteractiveSelection::Format(const std::string& header,
     // Column width is based on the widest entry actually shown, so it
     // adapts to the current filter/scroll window instead of reserving
     // space for the single longest option overall.
-    size_t index_digits = std::to_string(options_.size()).length();
     size_t max_entry_length = 0;
     for (size_t position = first; position < last; ++position) {
       size_t i = matches[position];
-      size_t entry_length
-          = 2 /* marker */ + index_digits + 2 /* ": " */ + options_[i].size();
+      size_t entry_length = SelectionEntryCellWidth(
+          options_[i], i + 1, supports_cursor_selection);
       max_entry_length = std::max(max_entry_length, entry_length);
     }
     constexpr size_t kColumnGap = 2;
@@ -427,7 +437,8 @@ std::string InteractiveSelection::Format(const std::string& header,
         append_entry(i);
         // Escape codes have no visible width, so pad based on the actual
         // printable length rather than the appended string's byte length.
-        size_t printable_length = 2 + index_digits + 2 + options_[i].size();
+        size_t printable_length = SelectionEntryCellWidth(
+            options_[i], i + 1, supports_cursor_selection);
         bool is_last_column_entry
             = (col == last_col - 1) || (position + max_visible_options >= last);
         if (!is_last_column_entry && printable_length < column_width) {
@@ -1680,18 +1691,35 @@ int DoPrompt(UaContext* ua,
     // columns only add breadth, they never reduce the height budget.
     auto compute_num_columns = [&] {
       if (ua->terminal_width <= 0) { return size_t{1}; }
-      size_t index_digits = std::to_string(ua->prompts.size()).length();
-      size_t max_option_length = 1;
-      for (auto& option : ua->prompts) {
-        max_option_length = std::max(max_option_length, option.size());
+      const size_t needed_columns = std::max<size_t>(
+          1, (ua->prompts.size() + max_visible_options - 1)
+                 / max_visible_options);
+      std::vector<size_t> column_widths(needed_columns, 0);
+      const bool supports_cursor_selection = ua->terminal_height > 0;
+      for (size_t i = 0; i < ua->prompts.size(); ++i) {
+        size_t column = i / max_visible_options;
+        column_widths[column] = std::max(
+            column_widths[column],
+            SelectionEntryCellWidth(ua->prompts[i], i + 1,
+                                    supports_cursor_selection));
       }
-      // marker(2) + "N: "(index_digits + 2) + option text + column gap(2)
-      size_t column_width = 2 + index_digits + 2 + max_option_length + 2;
-      size_t columns_that_fit = std::max<size_t>(
-          1, static_cast<size_t>(ua->terminal_width) / column_width);
-      size_t needed_columns = (ua->prompts.size() + max_visible_options - 1)
-                              / max_visible_options;
-      return std::min(columns_that_fit, std::max<size_t>(1, needed_columns));
+      for (size_t candidate = needed_columns; candidate > 1; --candidate) {
+        bool fits = true;
+        for (size_t first_column = 0;
+             first_column + candidate <= needed_columns; ++first_column) {
+          size_t width = 2 * (candidate - 1);
+          for (size_t column = first_column;
+               column < first_column + candidate; ++column) {
+            width += column_widths[column];
+          }
+          if (width > static_cast<size_t>(ua->terminal_width)) {
+            fits = false;
+            break;
+          }
+        }
+        if (fits) { return candidate; }
+      }
+      return size_t{1};
     };
 
     InteractiveSelection selection(ua->prompts);
