@@ -193,6 +193,22 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
                 result = console.call(f"restore latest filesetclient={value}")
                 self.assertIn(b"Expected fileset@client", result)
 
+    def test_run_rejects_invalid_filesetclient(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+
+        result = console.call(
+            "run job=backup-bareos-fd filesetclient=SelfTest@bareos-fd@extra"
+        )
+        self.assertIn(b"Expected fileset@client", result)
+
     def test_restore_rejects_conflicting_filesetclient(self):
         username = self.get_operator_username()
         console = bareos.bsock.DirectorConsole(

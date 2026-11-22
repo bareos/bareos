@@ -4413,7 +4413,8 @@ static bool SetFilesetClientArgument(UaContext* ua, RunContext& rc, char* value)
   }
 
   char* separator = strchr(value, '@');
-  if (!separator || separator == value || separator[1] == '\0') {
+  if (!separator || separator == value || separator[1] == '\0'
+      || strchr(separator + 1, '@')) {
     ua->SendMsg(
         T_("Expected fileset@client value for filesetclient keyword.\n"));
     return false;
