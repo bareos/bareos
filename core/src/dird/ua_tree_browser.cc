@@ -1189,6 +1189,7 @@ class TreeBrowser {
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
+  size_t SelectedPathWidth(bool partial) const;
   size_t TreePathWidth() const;
   size_t TreeHorizontalLimit() const;
   size_t SearchHorizontalLimit() const;
@@ -1266,6 +1267,7 @@ class TreeBrowser {
   std::vector<std::string> selected_paths_;
   std::vector<bool> selected_partial_;
   size_t selected_max_path_length_ = 0;
+  size_t selected_max_partial_path_length_ = 0;
   size_t selected_cursor_ = 0;
   size_t selected_horizontal_offset_ = 0;
 
@@ -1490,6 +1492,7 @@ void TreeBrowser::RebuildSelectedFiles()
   selected_paths_.clear();
   selected_partial_.clear();
   selected_max_path_length_ = 0;
+  selected_max_partial_path_length_ = 0;
 
   for (tree_node* node = FirstTreeNode(tree_->root); node;
        node = NextTreeNode(node)) {
@@ -1501,8 +1504,10 @@ void TreeBrowser::RebuildSelectedFiles()
                                 && HasExcludedDescendants(node));
     selected_paths_.emplace_back(path ? path
                                       : (node->fname ? node->fname : ""));
-    selected_max_path_length_ = std::max(selected_max_path_length_,
-                                         TextCellWidth(selected_paths_.back()));
+    size_t& max_length = selected_partial_.back()
+                             ? selected_max_partial_path_length_
+                             : selected_max_path_length_;
+    max_length = std::max(max_length, TextCellWidth(selected_paths_.back()));
     if (path) { FreePoolMemory(path); }
   }
 
@@ -1720,6 +1725,16 @@ size_t TreeBrowser::SearchPathWidth() const
   return width > kSearchRowChrome ? width - kSearchRowChrome : 0;
 }
 
+size_t TreeBrowser::SelectedPathWidth(bool partial) const
+{
+  constexpr size_t kFrameWidth = 2;
+  const size_t prefix_width = partial ? sizeof("> * [partial] ") - 1
+                                      : sizeof("> * ") - 1;
+  size_t width = ScreenWidth();
+  return width > kFrameWidth + prefix_width ? width - kFrameWidth - prefix_width
+                                             : 0;
+}
+
 size_t TreeBrowser::TreePathWidth() const
 {
   // Two frame borders plus the cursor, mark and directory marker prefix.
@@ -1757,9 +1772,11 @@ size_t TreeBrowser::SearchHorizontalLimit() const
 
 size_t TreeBrowser::SelectedHorizontalLimit() const
 {
-  size_t path_width = SearchPathWidth();
-  if (path_width == 0 || selected_paths_.empty()) { return 0; }
-  return MaxHorizontalOffset(selected_max_path_length_, path_width);
+  if (selected_paths_.empty()) { return 0; }
+  return std::max(
+      MaxHorizontalOffset(selected_max_path_length_, SelectedPathWidth(false)),
+      MaxHorizontalOffset(selected_max_partial_path_length_,
+                          SelectedPathWidth(true)));
 }
 
 std::string TreeBrowser::RenderPanel() const
@@ -2172,7 +2189,8 @@ std::string TreeBrowser::RenderSelectedFiles() const
       bool highlighted = i == selected_cursor_;
       std::string entry = highlighted ? "> *" : "  *";
       entry += selected_partial_[i] ? " [partial] " : " ";
-      entry += FitText(selected_paths_[i], SearchPathWidth(),
+      entry += FitText(selected_paths_[i],
+                       SelectedPathWidth(selected_partial_[i]),
                        selected_horizontal_offset_, false);
       out += FrameLine(width, entry, color, highlighted, '*');
     } else if (selected_nodes_.empty() && row == 0) {
