@@ -1255,10 +1255,22 @@ static bool ListDestinationClientDirectory(
     return false;
   }
 
-  jcr->file_bsock->fsend("estimate listing=1\n");
-  while (jcr->file_bsock->recv() >= 0) {
+  if (!jcr->file_bsock->fsend("estimate listing=1\n")) {
+    cleanup();
+    ua->ErrorMsg(T_("Unable to request a Client directory listing.\n"));
+    return false;
+  }
+
+  bool estimate_completed = false;
+  int receive_status;
+  while ((receive_status = jcr->file_bsock->recv()) >= 0) {
     std::string_view output(jcr->file_bsock->msg,
                             jcr->file_bsock->message_length);
+    if (output.starts_with("2000 OK estimate files=")) {
+      estimate_completed = true;
+      continue;
+    }
+
     size_t start = 0;
     while (start < output.size()) {
       size_t end = output.find('\n', start);
@@ -1276,6 +1288,15 @@ static bool ListDestinationClientDirectory(
       }
       start = end + 1;
     }
+  }
+
+  if (receive_status != BNET_SIGNAL
+      || jcr->file_bsock->message_length != BNET_EOD
+      || jcr->file_bsock->errors || !estimate_completed) {
+    entries->clear();
+    cleanup();
+    ua->ErrorMsg(T_("Client directory listing did not complete.\n"));
+    return false;
   }
 
   cleanup();
