@@ -24,6 +24,7 @@ bandwidthlog="$tmp/bandwidth-parallel-jobs.out"
 # Hold each connected File daemon job until the bandwidth assertion finishes.
 gate_dir=$(mktemp -d "$tmp/bandwidth-gate.XXXXXX")
 trap 'touch "$gate_dir/release"' EXIT
+trap 'touch "$gate_dir/release"; estat=999; end_test' TERM INT
 cat >"$tmp/bandwidth-gate.sh" <<END_OF_GATE
 touch "$gate_dir/ready.\$1"
 while [ ! -f "$gate_dir/release" ]; do sleep 1; done
