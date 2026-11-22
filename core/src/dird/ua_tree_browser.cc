@@ -754,6 +754,13 @@ std::vector<PluginOptionChoice> BuildPluginOptionChoices(
   return choices;
 }
 
+bool ShouldCommitPluginOptions(bool has_seeded_defaults,
+                               std::string_view initial_document,
+                               std::string_view current_document)
+{
+  return !has_seeded_defaults || initial_document != current_document;
+}
+
 PluginOptionsRowWindow ComputePluginOptionsRowWindow(size_t plugin_rows,
                                                      size_t reserved_top,
                                                      size_t row_count)
@@ -1286,6 +1293,8 @@ class TreeBrowser {
   // points past the last existing option, at the "+ add option" row);
   // false when editing an existing row's value in place.
   bool plugin_options_adding_new_row_ = false;
+  bool plugin_options_has_seeded_defaults_ = false;
+  std::string plugin_options_initial_document_;
 
   bool estimate_calculated_ = false;
   bool estimate_stale_ = false;
@@ -1552,6 +1561,8 @@ void TreeBrowser::FocusPluginOptionsPane()
 
   std::string existing
       = tree_->plugin_options_out ? *tree_->plugin_options_out : "";
+  plugin_options_has_seeded_defaults_
+      = existing.empty() && !plugin_hint_definitions_.empty();
   plugin_options_blocks_
       = restore_plugin_hints::ParsePluginOptionsDocument(existing);
   if (plugin_options_blocks_.empty()) {
@@ -1562,6 +1573,8 @@ void TreeBrowser::FocusPluginOptionsPane()
     }
     plugin_options_blocks_.push_back(std::move(block));
   }
+  plugin_options_initial_document_
+      = restore_plugin_hints::BuildPluginOptionsDocument(plugin_options_blocks_);
   plugin_options_active_block_ = 0;
   plugin_options_cursor_ = 0;
   plugin_options_choice_cursor_ = 0;
@@ -1590,6 +1603,12 @@ bool TreeBrowser::CommitPluginOptions()
   }
   std::string document = restore_plugin_hints::BuildPluginOptionsDocument(
       plugin_options_blocks_);
+  if (!tree_browser_internal::ShouldCommitPluginOptions(
+          plugin_options_has_seeded_defaults_,
+          plugin_options_initial_document_, document)) {
+    status_line_ = "Plugin Options unchanged.";
+    return true;
+  }
   // Authorize every "pluginname:key=value:..." block individually --
   // SendPluginOptions() (dird/fd_cmds.cc) sends one "pluginoptions"
   // protocol command per block, so checking only the combined
@@ -1603,6 +1622,8 @@ bool TreeBrowser::CommitPluginOptions()
     return false;
   }
   *tree_->plugin_options_out = document;
+  plugin_options_has_seeded_defaults_ = false;
+  plugin_options_initial_document_ = document;
   status_line_
       = document.empty() ? "Plugin Options cleared." : "Plugin Options saved.";
   return true;

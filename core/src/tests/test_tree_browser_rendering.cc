@@ -104,6 +104,7 @@ using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
 using directordaemon::tree_browser_internal::RenderFrameBorder;
 using directordaemon::tree_browser_internal::QuoteClassicArgument;
 using directordaemon::tree_browser_internal::SortDirectoriesFirst;
+using directordaemon::tree_browser_internal::ShouldCommitPluginOptions;
 using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
 using directordaemon::visual_busy_internal::BusySpinner;
@@ -714,6 +715,13 @@ TEST(PluginOptionsEditorRendering, RowLabelsShowNamePlaceholderWhenEmpty)
   ASSERT_EQ(rows.size(), 2u);
   EXPECT_EQ(rows[0], "Plugin: (type plugin name)");
   EXPECT_EQ(rows[1], "  + add option");
+}
+
+TEST(PluginOptionsEditorRendering, DoesNotCommitUntouchedSeededDefaults)
+{
+  EXPECT_FALSE(ShouldCommitPluginOptions(true, "python", "python"));
+  EXPECT_TRUE(ShouldCommitPluginOptions(true, "python", "python:mode=restore"));
+  EXPECT_TRUE(ShouldCommitPluginOptions(false, "", ""));
 }
 
 TEST(PluginOptionsEditorRendering, RowLabelsShowNameAndKeyValueOptions)

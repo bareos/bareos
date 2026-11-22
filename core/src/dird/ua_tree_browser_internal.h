@@ -446,6 +446,10 @@ std::string BuildKnownOptionsHintLine(
         directordaemon::restore_plugin_hints::FileSetPluginDefinition>&
         definitions);
 
+bool ShouldCommitPluginOptions(bool has_seeded_defaults,
+                               std::string_view initial_document,
+                               std::string_view current_document);
+
 struct PluginOptionChoice {
   std::string key;
   std::string group;
