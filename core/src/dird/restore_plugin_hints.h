@@ -230,6 +230,12 @@ std::string BuildPluginOptionsBlock(const PluginOptionsBlock& block,
 std::vector<PluginOptionsBlock> ParsePluginOptionsDocument(
     std::string_view document);
 
+// Returns true if blocks for the same plugin loader select different
+// module_name values. Such a document cannot be represented by one loader
+// context and must not be sent to a File Daemon.
+bool HasConflictingPluginModuleNames(
+    const std::vector<PluginOptionsBlock>& blocks);
+
 // Inverse of ParsePluginOptionsDocument(): joins blocks back into a
 // single newline-separated document.
 std::string BuildPluginOptionsDocument(

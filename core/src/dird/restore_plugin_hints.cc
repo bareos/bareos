@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <map>
 #include <optional>
 
 namespace directordaemon::restore_plugin_hints {
@@ -757,6 +758,22 @@ std::vector<PluginOptionsBlock> ParsePluginOptionsDocument(
     line_start = line_end + 1;
   }
   return blocks;
+}
+
+bool HasConflictingPluginModuleNames(
+    const std::vector<PluginOptionsBlock>& blocks)
+{
+  std::map<std::string, std::string> module_names_by_plugin;
+  for (const PluginOptionsBlock& block : blocks) {
+    for (const PluginOption& option : block.options) {
+      if (option.first != "module_name" || !option.has_equals) { continue; }
+
+      const auto [it, inserted]
+          = module_names_by_plugin.emplace(block.plugin_name, option.second);
+      if (!inserted && it->second != option.second) { return true; }
+    }
+  }
+  return false;
 }
 
 std::string BuildPluginOptionsDocument(

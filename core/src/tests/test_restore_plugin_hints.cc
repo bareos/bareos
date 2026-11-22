@@ -40,6 +40,7 @@ using directordaemon::restore_plugin_hints::ExtractFileSetPluginDefinitions;
 using directordaemon::restore_plugin_hints::FileSetPluginDefinition;
 using directordaemon::restore_plugin_hints::FindMatchingPluginDefinition;
 using directordaemon::restore_plugin_hints::FindPluginRestoreHint;
+using directordaemon::restore_plugin_hints::HasConflictingPluginModuleNames;
 using directordaemon::restore_plugin_hints::HintProvidesDefaultsElsewhere;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsBlock;
 using directordaemon::restore_plugin_hints::ParsePluginOptionsDocument;
@@ -407,6 +408,26 @@ TEST(PluginOptionsModel, RoundTripsDocumentThroughBuild)
       = ParsePluginOptionsDocument("bpipe:file=/tmp/x\nbarri:verbose");
   EXPECT_EQ(BuildPluginOptionsDocument(blocks),
             "bpipe:file=/tmp/x\nbarri:verbose");
+}
+
+TEST(PluginOptionsModel, RejectsConflictingModuleNamesForOneLoader)
+{
+  const auto blocks = ParsePluginOptionsDocument(
+      "python:module_name=alpha:target=/a\n"
+      "python:module_name=beta:target=/b");
+  EXPECT_TRUE(HasConflictingPluginModuleNames(blocks));
+}
+
+TEST(PluginOptionsModel, AllowsSameModuleNameAndDifferentLoaders)
+{
+  const auto same_module = ParsePluginOptionsDocument(
+      "python:module_name=alpha:target=/a\n"
+      "python:module_name=alpha:target=/b");
+  EXPECT_FALSE(HasConflictingPluginModuleNames(same_module));
+
+  const auto different_loaders = ParsePluginOptionsDocument(
+      "python:module_name=alpha\nbarri:module_name=beta");
+  EXPECT_FALSE(HasConflictingPluginModuleNames(different_loaders));
 }
 
 TEST(PluginOptionsModel, BuildsEmptyDocumentForNoBlocks)

@@ -761,9 +761,17 @@ bool SendPluginOptions(JobControlRecord* jcr)
     // sent one entry at a time. Parsing/re-building each block (instead
     // of just splitting on '\n') normalizes the wire form and is
     // covered by restore_plugin_hints' own unit tests.
-    for (const auto& block :
-         directordaemon::restore_plugin_hints::ParsePluginOptionsDocument(
-             jcr->dir_impl->plugin_options)) {
+    const auto blocks
+        = directordaemon::restore_plugin_hints::ParsePluginOptionsDocument(
+            jcr->dir_impl->plugin_options);
+    if (directordaemon::restore_plugin_hints::
+            HasConflictingPluginModuleNames(blocks)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Conflicting module_name values for one plugin loader.\n"));
+      return false;
+    }
+
+    for (const auto& block : blocks) {
       std::string line
           = directordaemon::restore_plugin_hints::BuildPluginOptionsBlock(
               block);
