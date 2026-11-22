@@ -1185,6 +1185,7 @@ class TreeBrowser {
                                     plugin_hint_definitions_);
   }
   void ClampPluginOptionsCursor();
+  size_t PluginOptionsReservedRows(size_t plugin_rows) const;
 
   size_t ScreenWidth() const;
   size_t SearchPathWidth() const;
@@ -1668,8 +1669,7 @@ void TreeBrowser::ClampPluginOptionsCursor()
   size_t max_row = row_count > 0 ? row_count - 1 : 0;
   plugin_options_cursor_ = std::min(plugin_options_cursor_, max_row);
 
-  size_t reserved_top = plugin_options_blocks_.size() > 1 ? 1 : 0;
-  reserved_top += 1;  // current plugin-options string preview
+  size_t reserved_top = PluginOptionsReservedRows(SplitPanelRows().second);
   PluginOptionsRowWindow layout = ComputePluginOptionsRowWindow(
       SplitPanelRows().second, reserved_top, row_count);
   size_t max_offset = row_count > layout.window ? row_count - layout.window : 0;
@@ -1681,6 +1681,13 @@ void TreeBrowser::ClampPluginOptionsCursor()
     plugin_options_row_offset_ = plugin_options_cursor_ - layout.window + 1;
   }
   plugin_options_row_offset_ = std::min(plugin_options_row_offset_, max_offset);
+}
+
+size_t TreeBrowser::PluginOptionsReservedRows(size_t plugin_rows) const
+{
+  size_t tab_rows = plugin_options_blocks_.size() > 1 ? 1 : 0;
+  return tab_rows
+         + (!plugin_pane_focused_ || plugin_rows > tab_rows + 1 ? 1 : 0);
 }
 
 size_t TreeBrowser::MaxVisibleRows(bool detail_header, bool plugin_split) const
@@ -1942,9 +1949,8 @@ std::string TreeBrowser::RenderPanel() const
 
     std::string tab_bar = BuildPluginOptionsTabBar(
         plugin_options_blocks_, plugin_options_active_block_);
-    size_t tab_rows = tab_bar.empty() ? 0 : 1;
-    bool show_preview = !plugin_pane_focused_ || plugin_rows > tab_rows + 1;
-    size_t reserved_top = tab_rows + (show_preview ? 1 : 0);
+    size_t reserved_top = PluginOptionsReservedRows(plugin_rows);
+    bool show_preview = reserved_top > (tab_bar.empty() ? 0u : 1u);
     PluginOptionsRowWindow layout
         = ComputePluginOptionsRowWindow(plugin_rows, reserved_top, row_count);
     if (choosing_option || choosing_boolean) { layout.show_hint = false; }
