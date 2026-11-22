@@ -450,6 +450,19 @@ TEST(TreeBrowserRendering, RendersBlockingBusyScreenWithinTerminal)
   EXPECT_EQ(line_count, 24);
 }
 
+TEST(TreeBrowserRendering, FitsBusyScreenWithinVeryShortTerminals)
+{
+  for (int height = 1; height < 5; ++height) {
+    std::string screen = RenderBusyScreen(
+        80, height, false, "Busy", "Working...", "Details", '/');
+    size_t rows = static_cast<size_t>(
+                      std::count(screen.begin(), screen.end(), '\n'))
+                  + 1;
+    EXPECT_EQ(rows, static_cast<size_t>(height)) << height;
+    EXPECT_NE(screen.find("Working... /"), std::string::npos);
+  }
+}
+
 TEST(TreeBrowserRendering, OmitsDetailsWhenThePanelIsTooNarrow)
 {
   EXPECT_EQ(AlignTextColumns("long filename", "1 kB  date", 10), "long fi...");

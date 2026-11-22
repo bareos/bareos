@@ -115,10 +115,28 @@ std::string RenderBusyScreen(int width,
   size_t screen_width = width > 0
                             ? std::max(size_t{2}, static_cast<size_t>(width))
                             : kDefaultWidth;
+  if (height > 0 && height < static_cast<int>(kChromeRows + 1)) {
+    std::string screen;
+    if (height >= 3) {
+      screen += FrameBorder(screen_width, color, FrameBorderStyle::kTop, title);
+    }
+    if (height >= 4) {
+      screen += FrameBorder(screen_width, color, FrameBorderStyle::kBottom);
+    }
+    screen += StyledLine(screen_width,
+                         " " + std::string(message) + " " + spinner,
+                         kFrameHighlightColor, color);
+    if (height >= 2) {
+      screen += StyledLine(screen_width, T_("Please wait; input is disabled"),
+                           kFrameHelpColor, color);
+    }
+    if (!screen.empty() && screen.back() == '\n') { screen.pop_back(); }
+    return screen;
+  }
+
   size_t content_rows = height > static_cast<int>(kChromeRows)
                             ? static_cast<size_t>(height) - kChromeRows
-                        : height > 0 ? 3
-                                     : kDefaultContentRows;
+                            : kDefaultContentRows;
 
   std::string screen
       = FrameBorder(screen_width, color, FrameBorderStyle::kTop, title);
