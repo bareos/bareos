@@ -1914,7 +1914,9 @@ std::string TreeBrowser::RenderPanel() const
 
     std::string tab_bar = BuildPluginOptionsTabBar(
         plugin_options_blocks_, plugin_options_active_block_);
-    size_t reserved_top = (tab_bar.empty() ? 0 : 1) + 1;
+    size_t tab_rows = tab_bar.empty() ? 0 : 1;
+    bool show_preview = !plugin_pane_focused_ || plugin_rows > tab_rows + 1;
+    size_t reserved_top = tab_rows + (show_preview ? 1 : 0);
     PluginOptionsRowWindow layout
         = ComputePluginOptionsRowWindow(plugin_rows, reserved_top, row_count);
     if (choosing_option || choosing_boolean) { layout.show_hint = false; }
@@ -1929,7 +1931,9 @@ std::string TreeBrowser::RenderPanel() const
     }
 
     if (!tab_bar.empty()) { out += FrameLine(width, tab_bar, color); }
-    out += PluginOptionsResultLine(width, current_string, color);
+    if (show_preview) {
+      out += PluginOptionsResultLine(width, current_string, color);
+    }
     for (size_t row = 0; row < layout.window; ++row) {
       size_t i = offset + row;
       bool selected = plugin_pane_focused_ && i == visual_cursor;

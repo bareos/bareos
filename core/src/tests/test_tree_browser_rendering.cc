@@ -889,4 +889,13 @@ TEST(PluginOptionsEditorRendering, RowWindowAccountsForReservedTopRow)
   EXPECT_FALSE(layout.show_hint);
 }
 
+TEST(PluginOptionsEditorRendering, KeepsEditorRowWhenPreviewDoesNotFit)
+{
+  auto layout = ComputePluginOptionsRowWindow(/*plugin_rows=*/2,
+                                              /*reserved_top=*/1,
+                                              /*row_count=*/3);
+  EXPECT_EQ(layout.window, 1u);
+  EXPECT_FALSE(layout.show_hint);
+}
+
 }  // namespace
