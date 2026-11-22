@@ -895,8 +895,11 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         return
       }
 
-      runtime.pendingCmds.delete(id)
-      exitSelectionMode(session, director)
+      if (session.selectionActive) {
+        session.selectionBusy = true
+      } else {
+        runtime.pendingCmds.delete(id)
+      }
       appendErr(director, 'Command timed out.')
     }, timeoutMs)
 

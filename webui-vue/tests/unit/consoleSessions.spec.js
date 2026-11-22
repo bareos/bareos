@@ -500,7 +500,7 @@ describe('console session store', () => {
     expect(written[1]).toBe('Done\n')
   })
 
-  it('restores the main screen buffer if a command times out mid-selection', () => {
+  it('keeps selection busy after a command times out until a response arrives', () => {
     const consoleSessions = useConsoleSessionsStore()
     const written = []
     consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
@@ -530,12 +530,38 @@ describe('console session store', () => {
 
     written.length = 0
     consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')
+    const request = JSON.parse(socket.sent.at(-1))
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: request.id,
+        text: 'Calculating estimate... |',
+        prompt: 'select_busy',
+      }),
+    })
     vi.advanceTimersByTime(300_000)
 
-    // A pending command timing out mid-selection must not leave the
-    // terminal stuck on the alternate screen buffer.
-    expect(session.selectionActive).toBe(false)
-    expect(written).toContain('\u001B[?1049l\r\n')
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(
+      session.output.some(({ text }) => text === 'Command timed out.'),
+    ).toBe(true)
+    expect(written).not.toContain('\u001B[?1049l\r\n')
+    const sentCount = socket.sent.length
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(false)
+    expect(socket.sent).toHaveLength(sentCount)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: request.id,
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(false)
   })
 
   it('restores the main screen buffer if the Director reports an error mid-selection', () => {
