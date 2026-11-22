@@ -566,7 +566,10 @@ try_again:
       case 1:
         break;
       case 2:
-        jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        if (!jcr->is_JobLevel(L_VIRTUAL_FULL) || rc.pool_override
+            || rc.pool_name) {
+          jcr->dir_impl->IgnoreLevelPoolOverrides = true;
+        }
         goto start_job;
       case -1:
         goto bail_out;
