@@ -621,6 +621,18 @@ PluginOptionsBlock BuildInitialPluginOptionsBlock(
 {
   PluginOptionsBlock block;
   block.plugin_name = definition.plugin_name;
+  if (definition.plugin_name == "grpc") {
+    for (const PluginOption& option :
+         ParsePluginOptionsBlock(definition.raw).options) {
+      if (option.first == "module_name") {
+        block.options.push_back(option);
+        break;
+      }
+      if (!option.has_equals) { block.options.push_back(option); }
+    }
+    return block;
+  }
+
   if (std::optional<std::string> module_name
       = ExtractModuleNameOption(definition.raw);
       module_name && !module_name->empty()) {

@@ -233,6 +233,21 @@ TEST(RestorePluginHints, BuildsInitialBlockWithModuleNamePrefilled)
   EXPECT_EQ(block.options[0].second, "bareos-fd-vmware");
 }
 
+TEST(RestorePluginHints, BuildsInitialBlockWithGrpcRoutingSegments)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = "
+      "\"grpc:bareos-grpc-fd-plugin-bridge:python:"
+      "module_name=custom_restore\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  const PluginOptionsBlock block
+      = BuildInitialPluginOptionsBlock(definitions[0]);
+  EXPECT_EQ(BuildPluginOptionsBlock(block),
+            "grpc:bareos-grpc-fd-plugin-bridge:python:"
+            "module_name=custom_restore");
+}
+
 TEST(RestorePluginHints, BuildsInitialBlockWithoutModuleNameOption)
 {
   auto definitions = ExtractFileSetPluginDefinitions(
