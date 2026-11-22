@@ -732,7 +732,8 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         SelectJobLevel(ua, jcr);
         switch (jcr->getJobType()) {
           case JT_BACKUP:
-            if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (!rc.pool_override && !rc.pool_name
+                && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
               ApplyPoolOverrides(jcr, true);
               rc.pool = jcr->dir_impl->res.pool;
               rc.level_override = true;
@@ -1974,7 +1975,8 @@ static void ApplyBackupLevelChange(JobControlRecord* jcr,
   index = (index + direction + static_cast<int>(std::size(kBackupLevels)))
           % static_cast<int>(std::size(kBackupLevels));
   jcr->setJobLevel(kBackupLevels[index]);
-  if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+  if (!rc.pool_override && !rc.pool_name
+      && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
     ApplyPoolOverrides(jcr, true);
     rc.pool = jcr->dir_impl->res.pool;
     rc.level_override = true;
@@ -2226,7 +2228,8 @@ static int ModifyBackupParameters(UaContext* ua,
       return 2;
     case BackupOptionAction::kLevel:
       SelectJobLevel(ua, jcr);
-      if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+      if (!rc.pool_override && !rc.pool_name
+          && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
         ApplyPoolOverrides(jcr, true);
         rc.pool = jcr->dir_impl->res.pool;
         rc.level_override = true;
