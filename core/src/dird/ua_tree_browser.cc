@@ -772,6 +772,11 @@ PluginOptionsRowWindow ComputePluginOptionsRowWindow(size_t plugin_rows,
   return {window, show_hint};
 }
 
+bool CanDisplayPluginOptionsRow(size_t plugin_rows, size_t tab_rows)
+{
+  return plugin_rows > tab_rows;
+}
+
 }  // namespace tree_browser_internal
 
 namespace {
@@ -784,6 +789,7 @@ using tree_browser_internal::BuildPluginOptionChoices;
 using tree_browser_internal::BuildPluginOptionsAdvertisement;
 using tree_browser_internal::BuildPluginOptionsRowLabels;
 using tree_browser_internal::BuildPluginOptionsTabBar;
+using tree_browser_internal::CanDisplayPluginOptionsRow;
 using tree_browser_internal::CaseFoldForSearch;
 using tree_browser_internal::ComputePluginOptionsRowWindow;
 using tree_browser_internal::DefaultCursorFor;
@@ -1136,7 +1142,7 @@ class TreeBrowser {
   void ClampPluginHintsOffset();
   void CalculateEstimate();
   void InvalidateEstimate();
-  void FocusPluginOptionsPane();
+  bool FocusPluginOptionsPane();
   void TogglePluginPaneFocus();
   bool CommitPluginOptions();
   restore_plugin_hints::PluginOptionsBlock& ActivePluginBlock()
@@ -1211,6 +1217,12 @@ class TreeBrowser {
   void HandlePluginOptionsPaneKey(std::string_view key);
   void GatherPluginHints();
   bool HasDetectedPlugins() const { return !plugin_hint_definitions_.empty(); }
+  bool CanFocusPluginOptionsPane() const
+  {
+    if (!HasDetectedPlugins() || !tree_->plugin_options_out) { return false; }
+    size_t tab_rows = plugin_options_blocks_.size() > 1 ? 1 : 0;
+    return CanDisplayPluginOptionsRow(SplitPanelRows().second, tab_rows);
+  }
   std::vector<std::string> DetectedPluginHintLines() const
   {
     return BuildDetectedPluginHintLines(plugin_hint_definitions_,
@@ -1553,9 +1565,13 @@ void TreeBrowser::InvalidateEstimate()
   if (estimate_calculated_) { estimate_stale_ = true; }
 }
 
-void TreeBrowser::FocusPluginOptionsPane()
+bool TreeBrowser::FocusPluginOptionsPane()
 {
-  plugin_pane_focused_ = true;
+  plugin_pane_focused_ = false;
+  if (!HasDetectedPlugins() || !tree_->plugin_options_out) {
+    status_line_ = "Plugin Options are not available for this restore.";
+    return false;
+  }
   plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
   plugin_options_row_offset_ = 0;
 
@@ -1575,9 +1591,15 @@ void TreeBrowser::FocusPluginOptionsPane()
   }
   plugin_options_initial_document_
       = restore_plugin_hints::BuildPluginOptionsDocument(plugin_options_blocks_);
+  if (!CanFocusPluginOptionsPane()) {
+    status_line_ = "Terminal too small to display Plugin Options.";
+    return false;
+  }
+  plugin_pane_focused_ = true;
   plugin_options_active_block_ = 0;
   plugin_options_cursor_ = 0;
   plugin_options_choice_cursor_ = 0;
+  return true;
 }
 
 void TreeBrowser::TogglePluginPaneFocus()
@@ -2805,6 +2827,11 @@ TreeBrowserExit TreeBrowser::Run()
       ClampSearchHorizontalOffset();
       ClampSelectedHorizontalOffset();
       ClampPluginHintsOffset();
+      if (plugin_pane_focused_ && !CanFocusPluginOptionsPane()) {
+        plugin_pane_focused_ = false;
+        plugin_options_mode_ = PluginOptionsEditMode::kBrowsing;
+        status_line_ = "Terminal too small to display Plugin Options.";
+      }
       if (HasDetectedPlugins() && !plugin_options_blocks_.empty()) {
         ClampPluginOptionsCursor();
       }

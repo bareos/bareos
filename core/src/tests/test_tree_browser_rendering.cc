@@ -61,6 +61,7 @@ using directordaemon::tree_browser_internal::BuildKnownOptionsHintLine;
 using directordaemon::tree_browser_internal::BuildPluginOptionChoices;
 using directordaemon::tree_browser_internal::BuildPluginOptionsRowLabels;
 using directordaemon::tree_browser_internal::BuildPluginOptionsTabBar;
+using directordaemon::tree_browser_internal::CanDisplayPluginOptionsRow;
 using directordaemon::tree_browser_internal::CaseFoldForSearch;
 using directordaemon::tree_browser_internal::ComputePluginOptionsRowWindow;
 using directordaemon::tree_browser_internal::EstimateStatus;
@@ -896,6 +897,12 @@ TEST(PluginOptionsEditorRendering, KeepsEditorRowWhenPreviewDoesNotFit)
                                               /*row_count=*/3);
   EXPECT_EQ(layout.window, 1u);
   EXPECT_FALSE(layout.show_hint);
+}
+
+TEST(PluginOptionsEditorRendering, RequiresVisibleRowBeforeTakingFocus)
+{
+  EXPECT_TRUE(CanDisplayPluginOptionsRow(/*plugin_rows=*/2, /*tab_rows=*/1));
+  EXPECT_FALSE(CanDisplayPluginOptionsRow(/*plugin_rows=*/1, /*tab_rows=*/1));
 }
 
 }  // namespace

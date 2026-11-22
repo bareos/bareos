@@ -474,6 +474,8 @@ struct PluginOptionsRowWindow {
   bool show_hint;
 };
 
+bool CanDisplayPluginOptionsRow(size_t plugin_rows, size_t tab_rows);
+
 // reserved_top accounts for the tab bar row (1 when there's more than
 // one plugin block being edited, else 0); row_count is the total
 // number of editor rows (as returned by BuildPluginOptionsRowLabels()'s
