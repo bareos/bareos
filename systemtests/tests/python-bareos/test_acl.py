@@ -533,8 +533,18 @@ class PythonBareosAclTest(bareos_unittest.Json):
             **self.director_extra_options,
         )
 
-        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+        with self.assertRaises(
+            bareos.exceptions.JsonRpcErrorReceivedException
+        ) as error:
             console_bareos_fd_json.call(".clientbrowse client=test2-fd path=/")
+        self.assertIn(
+            'No authorization. Client "test2-fd".', str(error.exception)
+        )
+
+        result = console_bareos_fd_json.call(
+            ".clientbrowse client=bareos-fd path=/"
+        )
+        self.assertIn("bareos-fd", str(result))
 
         result = console_bareos_fd.call("restore")
         logger.debug(str(result))
