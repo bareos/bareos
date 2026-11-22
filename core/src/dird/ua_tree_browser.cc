@@ -1497,6 +1497,7 @@ void TreeBrowser::CalculateEstimate()
   });
   busy_indicator.Start();
 
+  bool estimate_complete = true;
   FileDbRecord fdbr;
   struct stat statp;
   for (tree_node* node = FirstTreeNode(tree_->root); node;
@@ -1512,14 +1513,21 @@ void TreeBrowser::CalculateEstimate()
       if (S_ISREG(statp.st_mode) && statp.st_size > 0) {
         estimated_bytes_ += static_cast<uint64_t>(statp.st_size);
       }
+    } else {
+      estimate_complete = false;
     }
     FreePoolMemory(path);
     busy_indicator.Tick();
   }
   estimate_running_ = false;
-  estimate_calculated_ = true;
+  estimate_calculated_ = estimate_complete;
   estimate_stale_ = false;
-  status_line_ = "Estimated selected data";
+  if (estimate_complete) {
+    status_line_ = "Estimated selected data";
+  } else {
+    estimated_bytes_ = 0;
+    status_line_ = "Estimate incomplete; press e to retry";
+  }
 }
 
 void TreeBrowser::InvalidateEstimate()
