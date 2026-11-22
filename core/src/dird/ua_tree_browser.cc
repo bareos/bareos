@@ -407,6 +407,20 @@ bool IsTopLevelSelection(const tree_node* node)
   return true;
 }
 
+bool HasExcludedDescendants(tree_node* node)
+{
+  tree_node* child;
+  foreach_child(child, node) {
+    if ((child->type != tree_node_type::NewDir
+         && child->type != tree_node_type::Root
+         && !child->extract)
+        || HasExcludedDescendants(child)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void SortDirectoriesFirst(std::vector<tree_node*>* nodes)
 {
   std::stable_partition(nodes->begin(), nodes->end(),
@@ -753,6 +767,7 @@ using tree_browser_internal::EstimateStatus;
 using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
+using tree_browser_internal::HasExcludedDescendants;
 using tree_browser_internal::IsBackKey;
 using tree_browser_internal::IsCancelKey;
 using tree_browser_internal::IsEditKey;
@@ -2043,8 +2058,7 @@ std::string TreeBrowser::RenderSelectedFiles() const
   std::string out
       = FrameBorder(width, color, FrameBorderStyle::kTop, "Selected files");
   out += FrameLine(
-      width,
-      " Top-level selections; marked directories include their descendants",
+      width, " Top-level selections; [partial] directories have exclusions",
       color);
   out += FrameBorder(width, color, FrameBorderStyle::kMiddle);
 
@@ -2062,8 +2076,15 @@ std::string TreeBrowser::RenderSelectedFiles() const
   for (size_t row = 0; row < max_visible; ++row) {
     size_t i = first + row;
     if (i < last) {
+      tree_node* node = selected_nodes_[i];
       bool highlighted = i == selected_cursor_;
       std::string entry = highlighted ? "> *" : "  *";
+      if (node->type == tree_node_type::Dir
+          || node->type == tree_node_type::DirWin) {
+        entry += HasExcludedDescendants(node) ? " [partial] " : " ";
+      } else {
+        entry += " ";
+      }
       entry += FitText(selected_paths_[i], SearchPathWidth(),
                        selected_horizontal_offset_, false);
       out += FrameLine(width, entry, color, highlighted, '*');

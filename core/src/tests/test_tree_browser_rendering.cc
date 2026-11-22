@@ -67,6 +67,7 @@ using directordaemon::tree_browser_internal::EstimateStatus;
 using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
 using directordaemon::tree_browser_internal::FrameBorderStyle;
+using directordaemon::tree_browser_internal::HasExcludedDescendants;
 using directordaemon::tree_browser_internal::IsTopLevelSelection;
 using directordaemon::tree_browser_internal::kBrowserFooter;
 using directordaemon::tree_browser_internal::kBrowserHelp;
@@ -327,6 +328,26 @@ TEST(TreeBrowserRendering, CollapsesSelectionsBelowMarkedDirectories)
   synthetic_file.parent = &synthetic_directory;
   synthetic_file.extract = true;
   EXPECT_FALSE(IsTopLevelSelection(&synthetic_file));
+}
+
+TEST(TreeBrowserRendering, DetectsExcludedDescendantsOfMarkedDirectories)
+{
+  TREE_ROOT* root = new_tree(1);
+  char directory_path[] = "";
+  char directory_name[] = "d";
+  tree_node* directory = insert_tree_node(
+      directory_path, directory_name, tree_node_type::Dir, root, root);
+  char excluded_path[] = "d";
+  char excluded_name[] = "skip";
+  tree_node* excluded_file = insert_tree_node(
+      excluded_path, excluded_name, tree_node_type::File, root, directory);
+  directory->extract = true;
+
+  EXPECT_TRUE(HasExcludedDescendants(directory));
+
+  excluded_file->extract = true;
+  EXPECT_FALSE(HasExcludedDescendants(directory));
+  FreeTree(root);
 }
 
 TEST(TreeBrowserRendering, SortsDirectoriesBeforeFiles)
