@@ -52,9 +52,12 @@
 #include <string>
 
 #if !defined(HAVE_WIN32)
+#  include <atomic>
+#  include <pthread.h>
 #  include <sys/select.h>
 #  include <sys/ioctl.h>
 #  include <termios.h>
+#  include <type_traits>
 #  include <unistd.h>
 #  include <csignal>
 #else
@@ -264,6 +267,111 @@ static bool EnableWindowsAnsiConsoleIfPossible()
 #endif
 
 #if !defined(HAVE_WIN32)
+using ConsoleSignalHandler = void (*)(int);
+static_assert(std::is_integral_v<pthread_t> || std::is_pointer_v<pthread_t>);
+static_assert(std::atomic<pthread_t>::is_always_lock_free);
+static_assert(std::atomic<ConsoleSignalHandler>::is_always_lock_free);
+
+// Synchronous faults must remain on the faulting thread, not be forwarded.
+static constexpr int kConsoleTerminationSignals[] = {
+    SIGTERM, SIGUSR1, SIGALRM, SIGIO, SIGURG, SIGVTALRM,
+#  ifdef SIGPWR
+    SIGPWR,
+#  endif
+};
+static constexpr size_t kConsoleSignalCount
+    = sizeof(kConsoleTerminationSignals)
+      / sizeof(kConsoleTerminationSignals[0]);
+static std::atomic<pthread_t> console_main_thread;
+static std::atomic<ConsoleSignalHandler>
+    console_signal_handlers[kConsoleSignalCount];
+static sigset_t console_termination_signals;
+static bool console_signal_routing_enabled = false;
+
+static void RouteConsoleSignal(int sig)
+{
+  int saved_errno = errno;
+  pthread_t main_thread = console_main_thread.load(std::memory_order_acquire);
+  if (pthread_self() != main_thread) {
+    if (pthread_kill(main_thread, sig) != 0) {
+      constexpr char message[]
+          = "Unable to route console termination signal.\n";
+      (void)write(STDERR_FILENO, message, sizeof(message) - 1);
+      _exit(BEXIT_FAILURE);
+    }
+    errno = saved_errno;
+    return;
+  }
+  for (size_t i = 0; i < kConsoleSignalCount; ++i) {
+    if (kConsoleTerminationSignals[i] == sig) {
+      auto handler = console_signal_handlers[i].load(std::memory_order_acquire);
+      errno = saved_errno;
+      handler(sig);
+      return;
+    }
+  }
+  _exit(BEXIT_FAILURE);
+}
+
+static bool InstallConsoleSignalRouting()
+{
+  console_main_thread.store(pthread_self(), std::memory_order_release);
+  sigemptyset(&console_termination_signals);
+  for (size_t i = 0; i < kConsoleSignalCount; ++i) {
+    int sig = kConsoleTerminationSignals[i];
+    struct sigaction action {};
+    if (sigaction(sig, nullptr, &action) != 0) { return false; }
+    if (action.sa_handler == SIG_DFL || action.sa_handler == SIG_IGN) {
+      continue;
+    }
+    if (action.sa_flags & SA_SIGINFO) {
+      errno = EINVAL;
+      return false;
+    }
+    console_signal_handlers[i].store(action.sa_handler,
+                                     std::memory_order_release);
+    sigaddset(&console_termination_signals, sig);
+    action.sa_handler = RouteConsoleSignal;
+    if (sigaction(sig, &action, nullptr) != 0) { return false; }
+  }
+  console_signal_routing_enabled = true;
+  return true;
+}
+
+class BlockConsoleTerminationSignals {
+ public:
+  BlockConsoleTerminationSignals()
+  {
+    if (!console_signal_routing_enabled) { return; }
+    int error = pthread_sigmask(SIG_BLOCK, &console_termination_signals, &old_);
+    if (error != 0) {
+      BErrNo be;
+      ConsoleOutputFormat(T_("Unable to block console signals: %s\n"),
+                          be.bstrerror(error));
+      valid_ = false;
+    } else {
+      blocked_ = true;
+    }
+  }
+  ~BlockConsoleTerminationSignals()
+  {
+    if (blocked_) {
+      int error = pthread_sigmask(SIG_SETMASK, &old_, nullptr);
+      if (error != 0) {
+        BErrNo be;
+        ConsoleOutputFormat(T_("Unable to restore console signal mask: %s\n"),
+                            be.bstrerror(error));
+      }
+    }
+  }
+  bool valid() const { return valid_; }
+
+ private:
+  sigset_t old_{};
+  bool valid_ = true;
+  bool blocked_ = false;
+};
+
 static int selection_terminal_fd = -1;
 static termios selection_original_termios{};
 static bool selection_raw_mode_active = false;
@@ -292,6 +400,8 @@ struct TerminalRawModeGuard {
     raw.c_iflag &= ~(IXON | ICRNL);
     raw.c_cc[VMIN] = 1;
     raw.c_cc[VTIME] = 0;
+    BlockConsoleTerminationSignals blocked_signals;
+    if (!blocked_signals.valid()) { return; }
     active = (tcsetattr(fd, TCSANOW, &raw) == 0);
     if (active) {
       selection_terminal_fd = fd;
@@ -320,6 +430,8 @@ struct TerminalSelectionScreenGuard {
 
   TerminalSelectionScreenGuard()
   {
+    BlockConsoleTerminationSignals blocked_signals;
+    if (!blocked_signals.valid()) { return; }
     ConsoleOutput("\033[?1049h\033[H");
     active = true;
     selection_screen_active = true;
@@ -1495,6 +1607,13 @@ int main(int argc, char* argv[])
   signal(SIGCONT, GotSigcontinue);
   signal(SIGTTIN, GotSigtin);
   signal(SIGTTOU, GotSigtout);
+
+  if (!no_signals && !InstallConsoleSignalRouting()) {
+    BErrNo be;
+    ConsoleOutputFormat(T_("Unable to install console signal routing: %s\n"),
+                        be.bstrerror());
+    return BEXIT_FAILURE;
+  }
 #endif
 
   OSDependentInit();
