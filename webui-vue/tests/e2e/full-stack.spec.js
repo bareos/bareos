@@ -2720,6 +2720,7 @@ test('pastes into the console editor and interactive selection', async ({ page }
   await page.keyboard.type('webui-paste-selection')
   await page.keyboard.press('Enter')
   await expect(consoleOutput).toContainText('Enter search text:')
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
   await textarea.evaluate(element => {
     const clipboardData = new DataTransfer()
     clipboardData.setData('text/plain', 'example path  ')
