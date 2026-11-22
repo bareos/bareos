@@ -407,6 +407,7 @@ function handleTerminalKey(event) {
       ArrowDown: 'key:down',
       ArrowLeft: 'key:left',
       ArrowRight: 'key:right',
+      Tab: 'key:tab',
       Enter: 'key:enter',
       Escape: 'key:cancel',
       Backspace: 'key:backspace',
