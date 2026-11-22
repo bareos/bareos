@@ -68,6 +68,7 @@ using directordaemon::tree_browser_internal::FitText;
 using directordaemon::tree_browser_internal::FormatDetailColumns;
 using directordaemon::tree_browser_internal::FrameBorderStyle;
 using directordaemon::tree_browser_internal::HasExcludedDescendants;
+using directordaemon::tree_browser_internal::IsDirectoryNode;
 using directordaemon::tree_browser_internal::IsTopLevelSelection;
 using directordaemon::tree_browser_internal::kBrowserFooter;
 using directordaemon::tree_browser_internal::kBrowserHelp;
@@ -374,6 +375,21 @@ TEST(TreeBrowserRendering, SortsDirectoriesBeforeFiles)
 
   EXPECT_EQ(nodes, (std::vector<tree_node*>{&directory_a, &directory_b, &file_a,
                                             &file_b}));
+}
+
+TEST(TreeBrowserRendering, IdentifiesEmptyDirectoryRowsAsNavigable)
+{
+  tree_node unix_directory;
+  unix_directory.type = tree_node_type::Dir;
+  tree_node windows_directory;
+  windows_directory.type = tree_node_type::DirWin;
+  tree_node file;
+  file.type = tree_node_type::File;
+
+  EXPECT_TRUE(IsDirectoryNode(&unix_directory));
+  EXPECT_TRUE(IsDirectoryNode(&windows_directory));
+  EXPECT_FALSE(IsDirectoryNode(&file));
+  EXPECT_FALSE(IsDirectoryNode(nullptr));
 }
 
 TEST(TreeBrowserRendering, FormatsEstimateStatus)

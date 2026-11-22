@@ -326,6 +326,8 @@ std::string StyleFrameContent(std::string content,
 
 bool IsTopLevelSelection(const tree_node* node);
 
+bool IsDirectoryNode(const tree_node* node);
+
 bool HasExcludedDescendants(tree_node* node);
 
 void SortDirectoriesFirst(std::vector<tree_node*>* nodes);

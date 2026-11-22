@@ -419,6 +419,12 @@ bool IsTopLevelSelection(const tree_node* node)
   return true;
 }
 
+bool IsDirectoryNode(const tree_node* node)
+{
+  return node && (node->type == tree_node_type::Dir
+                  || node->type == tree_node_type::DirWin);
+}
+
 bool HasExcludedDescendants(tree_node* node)
 {
   tree_node* child;
@@ -780,6 +786,7 @@ using tree_browser_internal::FitText;
 using tree_browser_internal::FormatDetailColumns;
 using tree_browser_internal::FrameBorderStyle;
 using tree_browser_internal::HasExcludedDescendants;
+using tree_browser_internal::IsDirectoryNode;
 using tree_browser_internal::IsBackKey;
 using tree_browser_internal::IsCancelKey;
 using tree_browser_internal::IsEditKey;
@@ -1306,7 +1313,7 @@ void TreeBrowser::SyncAfterClassicCommand()
 
 void TreeBrowser::EnterDirectory(tree_node* node)
 {
-  if (!TreeNodeHasChild(node)) { return; }
+  if (!IsDirectoryNode(node) && !TreeNodeHasChild(node)) { return; }
   tree_->node = node;
   RebuildRows();
   cursor_ = DefaultCursor();
@@ -1743,7 +1750,7 @@ std::string TreeBrowser::RenderPanel() const
       tree_node* node = rows_[DisplayedCursorToChildIndex(i, row_offset)];
       std::string entry = highlighted ? "> " : "  ";
       entry += MarkTag(node);
-      entry += TreeNodeHasChild(node) ? "/" : " ";
+      entry += IsDirectoryNode(node) || TreeNodeHasChild(node) ? "/" : " ";
       entry += FitText(node->fname ? node->fname : "", TreePathWidth(),
                        tree_horizontal_offset_, false);
       if (detail_view_) {
