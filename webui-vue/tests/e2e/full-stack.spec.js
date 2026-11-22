@@ -2414,6 +2414,19 @@ test('redraws a completed console command before it is sent', async ({ page }) =
   await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
 })
 
+test('redraws the pending console command after a terminal resize', async ({ page }) => {
+  await login(page)
+
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  const command = `list jobs client=${'x'.repeat(60)}`
+  await page.keyboard.type(command)
+  await expect(consoleOutput).toContainText(command)
+
+  await page.setViewportSize({ width: 500, height: 800 })
+  await expect(consoleOutput).toContainText(command)
+})
+
 test('displays completion candidates without executing terminal controls', async ({ page }) => {
   const submitted = []
   await page.routeWebSocket(/\/ws/, socket => {

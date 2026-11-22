@@ -199,6 +199,7 @@ const terminalContainerEl = ref(null)
 const terminal = useConsoleTerminal({
   onResize: ({ rows, cols }) => {
     consoleSessions.setTerminalSize(selectedDirector.value, rows, cols)
+    redrawInputLine()
   },
   onData: handleTerminalData,
 })
