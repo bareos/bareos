@@ -2100,6 +2100,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
             && !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_,
                                 true)) {
           ua->ErrorMsg(T_("Unauthorized command from this console.\n"));
+          FreeJcr(jcr);
+          jcr = NULL;
           goto bail_out;
         }
 
