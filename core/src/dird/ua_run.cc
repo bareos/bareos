@@ -1353,7 +1353,8 @@ static size_t DestinationBrowseHorizontalLimit(
 
   size_t max_width = 0;
   for (const auto& row : rows) {
-    max_width = std::max(max_width, row.label.size());
+    max_width
+        = std::max(max_width, tree_browser_internal::TextCellWidth(row.label));
   }
   return tree_browser_internal::MaxHorizontalOffset(max_width, text_width);
 }
