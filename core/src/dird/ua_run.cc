@@ -3415,13 +3415,25 @@ static int ModifyRestoreParameters(UaContext* ua,
       }
       break;
     case RestoreOptionAction::kJobId:
-      rc.jid = NULL;
-      jcr->dir_impl->RestoreJobId = 0;
       if (jcr->RestoreBootstrap) {
         ua->SendMsg(
             T_("You must set the bootstrap file to NULL to be able to specify "
                "a JobId.\n"));
+        goto try_again;
       }
+      if (!GetPint(ua, T_("Please enter a JobId for restore: "))) {
+        if (ua->cmd[0] == '.') { goto try_again; }
+        break;
+      }
+      {
+        std::string job_id = std::to_string(ua->int64_val);
+        if (!ua->db->FindJobById(jcr, job_id)) {
+          ua->SendMsg(T_("JobId %s not found in catalog.\n"), job_id.c_str());
+          goto try_again;
+        }
+      }
+      rc.jid = NULL;
+      jcr->dir_impl->RestoreJobId = ua->int64_val;
       goto try_again;
     case RestoreOptionAction::kRestoreJob:
       rc.job = select_job_resource(ua);
