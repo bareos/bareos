@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 
 namespace directordaemon {
 
@@ -85,11 +86,23 @@ std::string FormatRunScheduleRelativeTime(time_t when, time_t now)
 {
   struct Unit {
     time_t seconds;
-    const char* singular;
+    const char* future_singular;
+    const char* future_plural;
+    const char* past_singular;
+    const char* past_plural;
   };
   static const Unit units[] = {
-      {31536000, NT_("year")}, {2592000, NT_("month")}, {604800, NT_("week")},
-      {86400, NT_("day")},     {3600, NT_("hour")},     {60, NT_("minute")},
+      {31536000, "in %llu year", "in %llu years", "%llu year ago",
+       "%llu years ago"},
+      {2592000, "in %llu month", "in %llu months", "%llu month ago",
+       "%llu months ago"},
+      {604800, "in %llu week", "in %llu weeks", "%llu week ago",
+       "%llu weeks ago"},
+      {86400, "in %llu day", "in %llu days", "%llu day ago", "%llu days ago"},
+      {3600, "in %llu hour", "in %llu hours", "%llu hour ago",
+       "%llu hours ago"},
+      {60, "in %llu minute", "in %llu minutes", "%llu minute ago",
+       "%llu minutes ago"},
   };
 
   time_t difference = when >= now ? when - now : now - when;
@@ -97,12 +110,20 @@ std::string FormatRunScheduleRelativeTime(time_t when, time_t now)
 
   for (const auto& unit : units) {
     if (difference >= unit.seconds) {
-      time_t count = difference / unit.seconds;
-      std::string text = std::to_string(count);
-      text += " ";
-      text += T_(unit.singular);
-      if (count != 1) { text += "s"; }
-      return when >= now ? T_("in ") + text : text + T_(" ago");
+      unsigned long long count
+          = static_cast<unsigned long long>(difference / unit.seconds);
+      const char* singular
+          = when >= now ? unit.future_singular : unit.past_singular;
+      const char* plural = when >= now ? unit.future_plural : unit.past_plural;
+#ifdef ENABLE_NLS
+      const char* format
+          = ngettext(singular, plural, static_cast<unsigned long>(count));
+#else
+      const char* format = count == 1 ? singular : plural;
+#endif
+      char text[128];
+      std::snprintf(text, sizeof(text), format, count);
+      return text;
     }
   }
 
