@@ -60,7 +60,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 namespace directordaemon {
@@ -144,9 +146,12 @@ static bool SetRestoreBootstrap(UaContext* ua,
                                 JobControlRecord* jcr,
                                 const char* path)
 {
-  if (jcr->RestoreBootstrap && path
-      && strcmp(jcr->RestoreBootstrap, path) == 0) {
-    return true;
+  if (jcr->RestoreBootstrap && path) {
+    if (strcmp(jcr->RestoreBootstrap, path) == 0) { return true; }
+    std::error_code error;
+    if (std::filesystem::equivalent(jcr->RestoreBootstrap, path, error)) {
+      return true;
+    }
   }
   if (path && *path) {
     FILE* fd = fopen(path, "rb");
