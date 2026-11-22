@@ -1207,6 +1207,7 @@ class TreeBrowser {
   std::string RenderSearchResults() const;
   std::string RenderSelectedFiles() const;
   std::string RenderHelp() const;
+  std::vector<std::string_view> HelpLines() const;
   std::string RenderPluginHints() const;
 
   // Handles one "key:*" event. Sets *exit_reason and returns true when the
@@ -1267,6 +1268,7 @@ class TreeBrowser {
   size_t selected_horizontal_offset_ = 0;
 
   bool showing_help_ = false;
+  size_t help_offset_ = 0;
   bool showing_plugin_hints_ = false;
   bool plugin_hints_show_all_ = false;
   size_t plugin_hints_offset_ = 0;
@@ -2197,23 +2199,16 @@ std::string TreeBrowser::RenderSelectedFiles() const
   return out;
 }
 
-std::string TreeBrowser::RenderHelp() const
+std::vector<std::string_view> TreeBrowser::HelpLines() const
 {
-  size_t width = ScreenWidth();
-  bool color = ua_->supports_color;
-  std::string title = "Restore Browser Help";
   std::vector<std::string_view> lines;
   if (showing_selected_files_) {
-    title = "Selected Files Help";
     lines.assign(kSelectedFilesHelp.begin(), kSelectedFilesHelp.end());
   } else if (showing_search_results_) {
-    title = "Search Results Help";
     lines.assign(kSearchResultsHelp.begin(), kSearchResultsHelp.end());
   } else if (showing_plugin_hints_) {
-    title = "Plugin Hints Help";
     lines.assign(kPluginHintsHelp.begin(), kPluginHintsHelp.end());
   } else if (plugin_pane_focused_) {
-    title = "Plugin Options Help";
     if (plugin_options_mode_ == PluginOptionsEditMode::kChoosingBooleanValue) {
       lines.assign(kPluginBooleanHelp.begin(), kPluginBooleanHelp.end());
     } else {
@@ -2222,16 +2217,37 @@ std::string TreeBrowser::RenderHelp() const
   } else {
     lines.assign(kBrowserHelp.begin(), kBrowserHelp.end());
   }
+  return lines;
+}
 
+std::string TreeBrowser::RenderHelp() const
+{
+  size_t width = ScreenWidth();
+  bool color = ua_->supports_color;
+  std::string title = "Restore Browser Help";
+  if (showing_selected_files_) {
+    title = "Selected Files Help";
+  } else if (showing_search_results_) {
+    title = "Search Results Help";
+  } else if (showing_plugin_hints_) {
+    title = "Plugin Hints Help";
+  } else if (plugin_pane_focused_) {
+    title = "Plugin Options Help";
+  }
+  std::vector<std::string_view> lines = HelpLines();
   std::string out = FrameBorder(width, color, FrameBorderStyle::kTop, title);
 
   size_t visible_rows = MaxVisibleRows();
+  size_t max_offset
+      = lines.size() > visible_rows ? lines.size() - visible_rows : 0;
+  size_t offset = std::min(help_offset_, max_offset);
   for (size_t row = 0; row < visible_rows; ++row) {
-    out += FrameLine(width, row < lines.size() ? lines[row] : "", color);
+    size_t index = offset + row;
+    out += FrameLine(width, index < lines.size() ? lines[index] : "", color);
   }
   out += FrameBorder(width, color, FrameBorderStyle::kBottom);
   out += StatusBar(width, " Contextual help", color);
-  out += HelpLine(width, "h/?/Enter/Esc/. Return", color);
+  out += HelpLine(width, "Up/Down Scroll  h/?/Enter/Esc/. Return", color);
   RemoveFinalNewline(&out);
   return out;
 }
@@ -2616,7 +2632,21 @@ void TreeBrowser::HandleSelectedFilesKey(std::string_view key)
 
 void TreeBrowser::HandleHelpKey(std::string_view key)
 {
-  if (IsHelpReturnKey(key)) { showing_help_ = false; }
+  if (IsHelpReturnKey(key)) {
+    showing_help_ = false;
+    help_offset_ = 0;
+    return;
+  }
+
+  size_t visible_rows = MaxVisibleRows();
+  size_t line_count = HelpLines().size();
+  size_t max_offset
+      = line_count > visible_rows ? line_count - visible_rows : 0;
+  if (IsPreviousRowKey(key)) {
+    if (help_offset_ > 0) { help_offset_--; }
+  } else if (key == kKeyDown && help_offset_ < max_offset) {
+    help_offset_++;
+  }
 }
 
 void TreeBrowser::HandlePluginHintsKey(std::string_view key)
