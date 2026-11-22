@@ -797,8 +797,9 @@ bool DotFilesetClientsCmd(UaContext* ua, const char*)
     foreach_res (client, R_CLIENT) {
       if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
       ua->send->ObjectStart();
-      ua->send->ObjectKeyValue("name", "%s@%s", fs->resource_name_,
-                               client->resource_name_);
+      PoolMem selector(PM_NAME);
+      Mmsg(selector, "%s@%s", fs->resource_name_, client->resource_name_);
+      ua->send->ObjectKeyValue("name", selector.c_str(), "%s\n");
       ua->send->ObjectEnd();
     }
   }
