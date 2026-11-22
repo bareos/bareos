@@ -910,11 +910,19 @@ std::string PluginOptionsRowLine(size_t width,
                                  bool editing,
                                  bool color)
 {
-  if (width < 2) { return FitText(text, width) + "\n"; }
+  std::string display_text;
+  if (selected && !color) {
+    display_text = "> ";
+    display_text += text;
+  } else {
+    display_text = text;
+  }
+
+  if (width < 2) { return FitText(display_text, width) + "\n"; }
 
   size_t inner_width = width - 2;
-  size_t text_width = TextCellWidth(text);
-  std::string content = FitText(text, inner_width);
+  size_t text_width = TextCellWidth(display_text);
+  std::string content = FitText(display_text, inner_width);
 
   if (color) {
     if (editing) {
