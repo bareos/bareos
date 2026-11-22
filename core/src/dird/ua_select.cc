@@ -1703,18 +1703,26 @@ int DoPrompt(UaContext* ua,
             SelectionEntryCellWidth(ua->prompts[i], i + 1,
                                     supports_cursor_selection));
       }
-      for (size_t candidate = needed_columns; candidate > 1; --candidate) {
+      const size_t terminal_width = static_cast<size_t>(ua->terminal_width);
+      const size_t min_width
+          = *std::min_element(column_widths.begin(), column_widths.end());
+      const size_t max_candidate = std::min(
+          needed_columns, (terminal_width + 2) / (min_width + 2));
+      for (size_t candidate = max_candidate; candidate > 1; --candidate) {
         bool fits = true;
+        size_t width = 2 * (candidate - 1);
+        for (size_t column = 0; column < candidate; ++column) {
+          width += column_widths[column];
+        }
         for (size_t first_column = 0;
              first_column + candidate <= needed_columns; ++first_column) {
-          size_t width = 2 * (candidate - 1);
-          for (size_t column = first_column;
-               column < first_column + candidate; ++column) {
-            width += column_widths[column];
-          }
-          if (width > static_cast<size_t>(ua->terminal_width)) {
+          if (width > terminal_width) {
             fits = false;
             break;
+          }
+          if (first_column + candidate < needed_columns) {
+            width -= column_widths[first_column];
+            width += column_widths[first_column + candidate];
           }
         }
         if (fits) { return candidate; }
