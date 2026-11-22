@@ -146,13 +146,6 @@ static bool SetRestoreBootstrap(UaContext* ua,
                                 JobControlRecord* jcr,
                                 const char* path)
 {
-  if (jcr->RestoreBootstrap && path) {
-    if (strcmp(jcr->RestoreBootstrap, path) == 0) { return true; }
-    std::error_code error;
-    if (std::filesystem::equivalent(jcr->RestoreBootstrap, path, error)) {
-      return true;
-    }
-  }
   if (path && *path) {
     FILE* fd = fopen(path, "rb");
     if (!fd) {
@@ -161,6 +154,13 @@ static bool SetRestoreBootstrap(UaContext* ua,
       return false;
     }
     fclose(fd);
+  }
+  if (jcr->RestoreBootstrap && path) {
+    if (strcmp(jcr->RestoreBootstrap, path) == 0) { return true; }
+    std::error_code error;
+    if (std::filesystem::equivalent(jcr->RestoreBootstrap, path, error)) {
+      return true;
+    }
   }
   if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap
       && SecureErase(jcr, jcr->RestoreBootstrap) != 0) {
