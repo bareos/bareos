@@ -498,6 +498,25 @@ TEST(InteractiveSelection, AcceptsEmptyLineAsSelection)
   EXPECT_EQ(selection.selected_index(), 0);
 }
 
+TEST(InteractiveSelection, DoesNotSelectHiddenOptionsOnEmptyInput)
+{
+  const std::vector<std::string> options{"Alpha", "Beta"};
+  InteractiveSelection selection(options);
+
+  EXPECT_EQ(selection.ApplyInput("2"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.ApplyInput("key:text:no match"),
+            SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.ApplyInput("key:enter"),
+            SelectionInputResult::kContinue);
+  EXPECT_EQ(selection.ApplyInput(""), SelectionInputResult::kContinue);
+
+  const std::vector<std::string> empty_options;
+  InteractiveSelection empty_selection(empty_options);
+  EXPECT_EQ(empty_selection.ApplyInput("key:enter"),
+            SelectionInputResult::kContinue);
+  EXPECT_EQ(empty_selection.ApplyInput(""), SelectionInputResult::kContinue);
+}
+
 TEST(InteractiveSelection, AcceptsPlainTextFiltersFromLineBasedClients)
 {
   std::vector<std::string> options{"Alpha", "Makefile", "Gamma"};

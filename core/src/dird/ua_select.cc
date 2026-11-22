@@ -99,6 +99,7 @@ InteractiveSelection::InteractiveSelection(
 
 bool InteractiveSelection::Matches(size_t index) const
 {
+  if (index >= options_.size()) { return false; }
   if (filter_.empty()) { return true; }
   std::string text = std::to_string(index + 1) + ": " + options_[index];
   std::string filter = filter_;
@@ -204,7 +205,8 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
   if (input.empty()) {
     // An empty input line in non-interactive/scripting mode selects
     // the currently highlighted default option (Option 1).
-    return SelectionInputResult::kSelected;
+    return Matches(selected_index_) ? SelectionInputResult::kSelected
+                                    : SelectionInputResult::kContinue;
   }
   if (input == "key:up") {
     SelectNext(-1);
