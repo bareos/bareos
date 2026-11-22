@@ -297,6 +297,8 @@ enum class FrameBorderStyle
 
 size_t TextCellWidth(std::string_view text);
 
+std::string QuoteClassicArgument(std::string_view argument);
+
 std::string CaseFoldForSearch(std::string_view text);
 
 void RemoveLastUtf8Character(std::string* text);

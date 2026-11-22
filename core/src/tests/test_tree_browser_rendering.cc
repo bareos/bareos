@@ -100,6 +100,7 @@ using directordaemon::tree_browser_internal::kSelectionFooter;
 using directordaemon::tree_browser_internal::MaxHorizontalOffset;
 using directordaemon::tree_browser_internal::RemoveLastUtf8Character;
 using directordaemon::tree_browser_internal::RenderFrameBorder;
+using directordaemon::tree_browser_internal::QuoteClassicArgument;
 using directordaemon::tree_browser_internal::SortDirectoriesFirst;
 using directordaemon::tree_browser_internal::StyleFrameContent;
 using directordaemon::tree_browser_internal::TextCellWidth;
@@ -118,6 +119,12 @@ TEST(TreeBrowserRendering, FitsAndPadsAscii)
 {
   EXPECT_EQ(FitText("abcdef", 5), "ab...");
   EXPECT_EQ(FitText("abc", 5), "abc  ");
+}
+
+TEST(TreeBrowserRendering, QuotesClassicArgumentsWithoutChangingPattern)
+{
+  EXPECT_EQ(QuoteClassicArgument("files with \\ and \"quotes\""),
+            "\"files with \\\\ and \\\"quotes\\\"\"");
 }
 
 TEST(TreeBrowserRendering, DocumentsRestoreBrowserKeyAliases)

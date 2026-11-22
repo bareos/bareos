@@ -219,6 +219,18 @@ size_t TextCellWidth(std::string_view text)
   return width;
 }
 
+std::string QuoteClassicArgument(std::string_view argument)
+{
+  std::string quoted{"\""};
+  quoted.reserve(argument.size() + 2);
+  for (char character : argument) {
+    if (character == '\\' || character == '"') { quoted.push_back('\\'); }
+    quoted.push_back(character);
+  }
+  quoted.push_back('"');
+  return quoted;
+}
+
 std::string CaseFoldForSearch(std::string_view text)
 {
   std::string folded;
@@ -1396,19 +1408,13 @@ void TreeBrowser::RunGlobMarkUnmark()
   entering_glob_pattern_ = false;
   std::string pattern = glob_pattern_;
   glob_pattern_.clear();
-  // Strip any embedded quotes: the pattern is always wrapped in double
-  // quotes below so a literal glob (with spaces, etc.) survives
-  // ParseArgsOnly() unsplit.
-  pattern.erase(std::remove(pattern.begin(), pattern.end(), '"'),
-                pattern.end());
   if (pattern.empty()) {
     status_line_ = "Cancelled: empty pattern";
     return;
   }
 
-  std::string cmdline = glob_mark_ ? "mark \"" : "unmark \"";
-  cmdline += pattern;
-  cmdline += "\"";
+  std::string cmdline = glob_mark_ ? "mark " : "unmark ";
+  cmdline += tree_browser_internal::QuoteClassicArgument(pattern);
 
   PmStrcpy(ua_->cmd, cmdline.c_str());
   ExecuteClassicTreeCommand(ua_, tree_);
