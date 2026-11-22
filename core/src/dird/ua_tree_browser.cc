@@ -377,7 +377,11 @@ std::string RenderFrameBorder(size_t width,
     content += title;
     content += " ";
   }
-  while (TextCellWidth(content) < inner_width) { content += "─"; }
+  size_t content_width = TextCellWidth(content);
+  while (content_width < inner_width) {
+    content += "─";
+    content_width++;
+  }
   return std::string(left) + FitText(content, inner_width, 0, false)
          + std::string(right);
 }
