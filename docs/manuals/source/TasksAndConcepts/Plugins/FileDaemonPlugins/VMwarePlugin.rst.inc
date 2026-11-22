@@ -610,11 +610,16 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    Priority:        10
    Plugin Options:  *None*
    OK to run? (yes/mod/no): <input>mod</input>
-   Parameters to modify:
-        1: Level
-        ...
-       14: Plugin Options
-   Select parameter to modify (1-14): <input>14</input>
+   Restore options to modify:
+        1: Run now
+        2: Restore Client
+        3: Where
+        4: Files
+        5: File Relocation
+        6: Replace Policy
+        7: Plugin Options
+        8: Advanced Options
+   Select restore option to modify (1-8): <input>7</input>
    Please enter Plugin Options string: <input>python:localvmdk=yes</input>
    Run Restore job
    JobName:         RestoreFiles
