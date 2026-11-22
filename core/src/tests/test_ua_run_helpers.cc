@@ -113,6 +113,9 @@ TEST(UaRunHelpers, NormalizeBrowsePath)
   EXPECT_EQ(NormalizeBrowsePath("///"), "/");
   EXPECT_EQ(NormalizeBrowsePath("/etc/"), "/etc");
   EXPECT_EQ(NormalizeBrowsePath("/etc"), "/etc");
+  EXPECT_EQ(NormalizeBrowsePath("C:/"), "C:/");
+  EXPECT_EQ(NormalizeBrowsePath("C://"), "C:/");
+  EXPECT_EQ(NormalizeBrowsePath("C:/Users/"), "C:/Users");
 }
 
 TEST(UaRunHelpers, ParentAndBasename)
@@ -121,11 +124,16 @@ TEST(UaRunHelpers, ParentAndBasename)
   EXPECT_EQ(ParentBrowsePath("/etc"), "/");
   EXPECT_EQ(ParentBrowsePath("/etc/ssl/"), "/etc");
   EXPECT_EQ(ParentBrowsePath("relative"), "/");
+  EXPECT_EQ(ParentBrowsePath("C:/"), "C:/");
+  EXPECT_EQ(ParentBrowsePath("C:/Users"), "C:/");
+  EXPECT_EQ(ParentBrowsePath("C:/Users/Bareos"), "C:/Users");
 
   EXPECT_EQ(BrowsePathBasename("/"), "/");
   EXPECT_EQ(BrowsePathBasename("/etc"), "etc");
   EXPECT_EQ(BrowsePathBasename("/etc/ssl/"), "ssl");
   EXPECT_EQ(BrowsePathBasename("relative"), "relative");
+  EXPECT_EQ(BrowsePathBasename("C:/"), "C:/");
+  EXPECT_EQ(BrowsePathBasename("C:/Users"), "Users");
 }
 
 TEST(UaRunHelpers, IsImmediateBrowseChild)
@@ -141,6 +149,9 @@ TEST(UaRunHelpers, IsImmediateBrowseChild)
   EXPECT_FALSE(IsImmediateBrowseChild("/etc", "/etc/ssl/certs"));
   EXPECT_FALSE(IsImmediateBrowseChild("/etc", "/etcetera"));
   EXPECT_FALSE(IsImmediateBrowseChild("/etc", "/etc/"));
+  EXPECT_TRUE(IsImmediateBrowseChild("C:/", "C:/Users"));
+  EXPECT_FALSE(IsImmediateBrowseChild("C:/", "C:/Users/Bareos"));
+  EXPECT_FALSE(IsImmediateBrowseChild("C:/", "D:/Users"));
 }
 
 TEST(UaRunHelpers, RemoveLastBrowseSearchCharacter)

@@ -24,8 +24,25 @@
 #include "dird/ua_tree_browser_internal.h"
 
 #include <algorithm>
+#include <cctype>
 
 namespace directordaemon {
+
+namespace {
+
+bool IsDriveRoot(std::string_view path)
+{
+  return path.size() == 3 && std::isalpha(static_cast<unsigned char>(path[0]))
+         && path[1] == ':' && IsPathSeparator(path[2]);
+}
+
+bool HasDriveRootPrefix(std::string_view path)
+{
+  return path.size() >= 3 && std::isalpha(static_cast<unsigned char>(path[0]))
+         && path[1] == ':' && IsPathSeparator(path[2]);
+}
+
+}  // namespace
 
 std::string FitRestoreOptionText(std::string_view text, size_t width)
 {
@@ -151,7 +168,9 @@ std::string NormalizeBrowsePath(std::string_view path)
 {
   std::string normalized(path);
   if (normalized.empty()) { return "/"; }
-  while (normalized.size() > 1 && IsPathSeparator(normalized.back())) {
+  const size_t minimum_size = HasDriveRootPrefix(normalized) ? 3 : 1;
+  while (normalized.size() > minimum_size
+         && IsPathSeparator(normalized.back())) {
     normalized.pop_back();
   }
   return normalized.empty() ? "/" : normalized;
@@ -160,16 +179,19 @@ std::string NormalizeBrowsePath(std::string_view path)
 std::string ParentBrowsePath(std::string_view path)
 {
   std::string normalized = NormalizeBrowsePath(path);
-  if (normalized == "/") { return normalized; }
+  if (normalized == "/" || IsDriveRoot(normalized)) { return normalized; }
   size_t separator = normalized.find_last_of("/\\");
   if (separator == std::string::npos || separator == 0) { return "/"; }
+  if (HasDriveRootPrefix(normalized) && separator == 2) {
+    return normalized.substr(0, 3);
+  }
   return normalized.substr(0, separator);
 }
 
 std::string BrowsePathBasename(std::string_view path)
 {
   std::string normalized = NormalizeBrowsePath(path);
-  if (normalized == "/") { return normalized; }
+  if (normalized == "/" || IsDriveRoot(normalized)) { return normalized; }
   size_t separator = normalized.find_last_of("/\\");
   if (separator == std::string::npos) { return normalized; }
   return normalized.substr(separator + 1);
@@ -179,6 +201,12 @@ bool IsImmediateBrowseChild(std::string_view parent, std::string_view child)
 {
   std::string normalized_parent = NormalizeBrowsePath(parent);
   if (child == normalized_parent) { return false; }
+  if (IsDriveRoot(normalized_parent)) {
+    if (!child.starts_with(normalized_parent)) { return false; }
+    std::string_view remainder = child.substr(normalized_parent.size());
+    return !remainder.empty()
+           && remainder.find_first_of("/\\") == std::string_view::npos;
+  }
   if (normalized_parent == "/") {
     if (child.empty() || child.front() != '/') { return false; }
     std::string_view remainder = child.substr(1);
