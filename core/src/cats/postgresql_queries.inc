@@ -1185,6 +1185,7 @@ R"SQL(WITH completed_jobs AS (
 ),
 full_backups AS (
   SELECT JobId,
+         Name AS FullJobName,
          StartTime AS FullStartTime,
          JobFiles AS FullJobFiles,
          JobBytes AS FullJobBytes,
@@ -1201,7 +1202,8 @@ SELECT full_backups.JobId,
        full_backups.FullJobFiles,
        full_backups.FullJobBytes,
        full_backups.NextFullJobId,
-       full_backups.NextFullStartTime
+       full_backups.NextFullStartTime,
+       full_backups.FullJobName
   FROM full_backups
   JOIN completed_jobs
     ON (completed_jobs.StartTime, completed_jobs.JobId)
@@ -1211,7 +1213,8 @@ SELECT full_backups.JobId,
            < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
  GROUP BY full_backups.JobId, full_backups.FullStartTime,
           full_backups.FullJobFiles, full_backups.FullJobBytes,
-          full_backups.NextFullJobId, full_backups.NextFullStartTime
+          full_backups.NextFullJobId, full_backups.NextFullStartTime,
+          full_backups.FullJobName
  ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC
 )SQL",
 

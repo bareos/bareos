@@ -1721,6 +1721,7 @@ static int ClientFilesetTupleHandler(void* ctx, int, char** row)
 struct ClientFilesetFullHandlerCtx {
   UaContext* ua = nullptr;
   std::vector<RestorePointCandidate>* candidates = nullptr;
+  RestoreContext::RestorePointMode mode = RestoreContext::RestorePointMode::Chain;
 };
 
 static int ClientFilesetFullHandler(void* ctx, int, char** row)
@@ -1732,25 +1733,30 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   auto* handler_ctx = static_cast<ClientFilesetFullHandlerCtx*>(ctx);
   UaContext* ua = handler_ctx->ua;
 
-  POOLMEM* job_names = GetPoolMemory(PM_FNAME);
-  PmStrcpy(job_names, row[4]);
   std::string display_names;
+  if (handler_ctx->mode == RestoreContext::RestorePointMode::Job) {
+    if (!row[9] || !ua->AclAccessOk(Job_ACL, row[9])) { return 0; }
+    display_names = row[9];
+  } else {
+    POOLMEM* job_names = GetPoolMemory(PM_FNAME);
+    PmStrcpy(job_names, row[4]);
 #if defined(_WIN32)
-  for (char* job_name = strtok(job_names, "\n"); job_name;
-       job_name = strtok(nullptr, "\n")) {
+    for (char* job_name = strtok(job_names, "\n"); job_name;
+         job_name = strtok(nullptr, "\n")) {
 #else
-  char* saveptr = nullptr;
-  for (char* job_name = strtok_r(job_names, "\n", &saveptr); job_name;
-       job_name = strtok_r(NULL, "\n", &saveptr)) {
+    char* saveptr = nullptr;
+    for (char* job_name = strtok_r(job_names, "\n", &saveptr); job_name;
+         job_name = strtok_r(NULL, "\n", &saveptr)) {
 #endif
-    if (!ua->AclAccessOk(Job_ACL, job_name)) {
-      FreePoolMemory(job_names);
-      return 0;
+      if (!ua->AclAccessOk(Job_ACL, job_name)) {
+        FreePoolMemory(job_names);
+        return 0;
+      }
+      if (!display_names.empty()) { display_names += ", "; }
+      display_names += job_name;
     }
-    if (!display_names.empty()) { display_names += ", "; }
-    display_names += job_name;
+    FreePoolMemory(job_names);
   }
-  FreePoolMemory(job_names);
 
   RestorePointCandidate candidate;
   candidate.JobId = str_to_int64(row[0]);
@@ -1842,7 +1848,8 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       filter_name);
 
   std::vector<RestorePointCandidate> candidates;
-  ClientFilesetFullHandlerCtx handler_ctx{ua, &candidates};
+  ClientFilesetFullHandlerCtx handler_ctx{ua, &candidates,
+                                           rx->restore_point_mode};
   const RestorePointCandidate* selected = nullptr;
   char selected_date[MAX_TIME_LENGTH];
   if (auto_select_latest) {
