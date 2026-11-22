@@ -27,6 +27,11 @@ describe('sanitizeTerminalOutput', () => {
     expect(sanitizeTerminalOutput('a\tb\r\nc\n')).toBe('a\tb\r\nc\n')
   })
 
+  it('renders bare carriage returns visibly without changing line endings', () => {
+    expect(sanitizeTerminalOutput('before\rafter\r\nnext'))
+      .toBe('before\\x0dafter\r\nnext')
+  })
+
   it('keeps SGR color sequences', () => {
     const text = '\x1B[1;94mdir\x1B[0m \x1B[97;44mx\x1B[39m \x1B[m'
     expect(sanitizeTerminalOutput(text)).toBe(text)

@@ -22,10 +22,10 @@
 /*
  * Director output is shown in xterm.js with its SGR colors intact, but it
  * also carries names and text that users or clients control. Only SGR
- * sequences, newlines, carriage returns and tabs may reach the terminal;
- * every other escape sequence or control character is dropped, so such
- * text cannot move the cursor, clear the screen, retitle the terminal or
- * make it answer back into the console input.
+ * sequences, line endings and tabs may reach the terminal; bare carriage
+ * returns and every other escape sequence or control character are made
+ * harmless, so such text cannot move the cursor, clear the screen, retitle
+ * the terminal or make it answer back into the console input.
  */
 const TERMINAL_CONTROL_RE = new RegExp(
   [
@@ -46,7 +46,9 @@ const TERMINAL_CONTROL_RE = new RegExp(
 const SGR_RE = /^\x1B\[[0-9;:]*m$/
 
 export function sanitizeTerminalOutput(text) {
-  return String(text ?? '').replace(TERMINAL_CONTROL_RE, match =>
+  return String(text ?? '')
+    .replace(/\r(?!\n)/g, '\\x0d')
+    .replace(TERMINAL_CONTROL_RE, match =>
     SGR_RE.test(match) ? match : '',
   )
 }
