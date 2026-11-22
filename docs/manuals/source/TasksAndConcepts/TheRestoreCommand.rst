@@ -178,11 +178,11 @@ There are a lot of options, and as a point of reference, most people will want t
 
 -  Item 12 is a full restore to a specified job date.
 
--  Item 13 lists the last 20 jobs run. If you find the Job you want, select item 3 and enter its
-   JobId(s).
+-  Item 13 lists the last 20 jobs run. If you find the Job you want, press Enter to return to the
+   restore menu if prompted, then select item 3 and enter its JobId(s).
 
--  Item 14 lists the Jobs where a specified file is saved. If you find the Job you want, select
-   item 3 and enter its JobId.
+-  Item 14 lists the Jobs where a specified file is saved. If you find the Job you want, press
+   Enter to return to the restore menu if prompted, then select item 3 and enter its JobId.
 
 -  Item 15 allows you to cancel the restore command.
 
