@@ -170,14 +170,15 @@ PluginOptionsBlock ParsePluginOptionsBlock(std::string_view block);
 // Builds a starting PluginOptionsBlock for a freshly-opened Plugin
 // Options editor, seeded from a FileSet's already-configured
 // "Plugin = ..." definition: the plugin loader name (e.g. "python"),
-// plus -- if present -- its "module_name=" option as a pre-filled row
+// its "module_name=" and "module_path=" options as pre-filled rows
 // (e.g. for "python:module_name=bareos-fd-vmware:file=...", this
 // returns {plugin_name: "python", options: [{"module_name",
 // "bareos-fd-vmware"}]}), since the wire string is only valid restore
-// input once the identity of the wrapped module is known. Other
-// backup-only options (file=, reader=, ...) are intentionally not
-// copied, since they describe the backup source rather than restore
-// options.
+// input once the identity and search path of the wrapped module are
+// known. Other backup-only options (file=, reader=, ...) are
+// intentionally not copied, since they describe the backup source
+// rather than restore options. gRPC definitions also retain their
+// positional bridge and inferior-loader segments.
 PluginOptionsBlock BuildInitialPluginOptionsBlock(
     const FileSetPluginDefinition& definition);
 

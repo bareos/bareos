@@ -233,19 +233,35 @@ TEST(RestorePluginHints, BuildsInitialBlockWithModuleNamePrefilled)
   EXPECT_EQ(block.options[0].second, "bareos-fd-vmware");
 }
 
+TEST(RestorePluginHints, BuildsInitialBlockWithModuleSearchPath)
+{
+  auto definitions = ExtractFileSetPluginDefinitions(
+      "  Plugin = "
+      "\"python:module_name=custom_restore:"
+      "module_path=/opt/custom-plugins:file=/backup/source\"\n");
+  ASSERT_EQ(definitions.size(), 1u);
+
+  const PluginOptionsBlock block
+      = BuildInitialPluginOptionsBlock(definitions[0]);
+  EXPECT_EQ(BuildPluginOptionsBlock(block),
+            "python:module_name=custom_restore:"
+            "module_path=/opt/custom-plugins");
+}
+
 TEST(RestorePluginHints, BuildsInitialBlockWithGrpcRoutingSegments)
 {
   auto definitions = ExtractFileSetPluginDefinitions(
       "  Plugin = "
       "\"grpc:bareos-grpc-fd-plugin-bridge:python:"
-      "module_name=custom_restore\"\n");
+      "module_name=custom_restore:module_path=/opt/custom-plugins:"
+      "file=/backup/source\"\n");
   ASSERT_EQ(definitions.size(), 1u);
 
   const PluginOptionsBlock block
       = BuildInitialPluginOptionsBlock(definitions[0]);
   EXPECT_EQ(BuildPluginOptionsBlock(block),
             "grpc:bareos-grpc-fd-plugin-bridge:python:"
-            "module_name=custom_restore");
+            "module_name=custom_restore:module_path=/opt/custom-plugins");
 }
 
 TEST(RestorePluginHints, BuildsInitialBlockWithoutModuleNameOption)
