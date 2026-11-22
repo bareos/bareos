@@ -70,6 +70,7 @@ using directordaemon::tree_browser_internal::FrameBorderStyle;
 using directordaemon::tree_browser_internal::HasExcludedDescendants;
 using directordaemon::tree_browser_internal::IsDirectoryNode;
 using directordaemon::tree_browser_internal::IsTopLevelSelection;
+using directordaemon::tree_browser_internal::IsPluginHintsScrollKey;
 using directordaemon::tree_browser_internal::kBrowserFooter;
 using directordaemon::tree_browser_internal::kBrowserHelp;
 using directordaemon::tree_browser_internal::kDestinationBrowserFooter;
@@ -390,6 +391,13 @@ TEST(TreeBrowserRendering, IdentifiesEmptyDirectoryRowsAsNavigable)
   EXPECT_TRUE(IsDirectoryNode(&windows_directory));
   EXPECT_FALSE(IsDirectoryNode(&file));
   EXPECT_FALSE(IsDirectoryNode(nullptr));
+}
+
+TEST(TreeBrowserRendering, KeepsTabAvailableForPluginOptionsFromHints)
+{
+  EXPECT_TRUE(IsPluginHintsScrollKey("key:up"));
+  EXPECT_TRUE(IsPluginHintsScrollKey("key:down"));
+  EXPECT_FALSE(IsPluginHintsScrollKey("key:tab"));
 }
 
 TEST(TreeBrowserRendering, FormatsEstimateStatus)

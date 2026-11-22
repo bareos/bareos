@@ -798,6 +798,7 @@ using tree_browser_internal::IsHomeKey;
 using tree_browser_internal::IsNextRowKey;
 using tree_browser_internal::IsParentRowCursor;
 using tree_browser_internal::IsPreviousRowKey;
+using tree_browser_internal::IsPluginHintsScrollKey;
 using tree_browser_internal::IsScrollLeftKey;
 using tree_browser_internal::IsScrollRightKey;
 using tree_browser_internal::IsTextKey;
@@ -2572,7 +2573,7 @@ void TreeBrowser::HandlePluginHintsKey(std::string_view key)
     showing_help_ = true;
   } else if (IsPreviousRowKey(key)) {
     if (plugin_hints_offset_ > 0) { plugin_hints_offset_--; }
-  } else if (IsNextRowKey(key)) {
+  } else if (IsPluginHintsScrollKey(key)) {
     if (plugin_hints_offset_ < max_offset) { plugin_hints_offset_++; }
   } else if (key == "key:text:a") {
     plugin_hints_show_all_ = !plugin_hints_show_all_;

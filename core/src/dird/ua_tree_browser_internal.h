@@ -176,7 +176,7 @@ inline constexpr std::array<std::string_view, 5> kSelectedFilesHelp = {
     "h/?: open help; h/?/Enter/Esc/.: return from help",
 };
 inline constexpr std::array<std::string_view, 4> kPluginHintsHelp = {
-    "Up/Down/Tab: scroll plugin hints",
+    "Up/Down: scroll plugin hints",
     "a: toggle all known hints or only detected plugins",
     "o/Tab: focus Plugin Options; p/Esc: return to files",
     "h/?: open help; h/?/Enter/Esc/.: return from help",
@@ -234,6 +234,10 @@ inline bool IsNextRowKey(std::string_view key)
   return key == kKeyTab || key == kKeyDown;
 }
 inline bool IsPreviousRowKey(std::string_view key) { return key == kKeyUp; }
+inline bool IsPluginHintsScrollKey(std::string_view key)
+{
+  return key == kKeyUp || key == kKeyDown;
+}
 inline bool IsScrollLeftKey(std::string_view key) { return key == kKeyLeft; }
 inline bool IsScrollRightKey(std::string_view key) { return key == kKeyRight; }
 inline bool IsHomeKey(std::string_view key) { return key == kKeyHome; }
