@@ -108,6 +108,13 @@ class Globbing : public testing::Test {
   TreeContext tree;
 };
 
+TEST_F(Globbing, FailedClassicSelectionReadQuitsFileSelection)
+{
+  EXPECT_EQ(RunOneClassicTreeCommand(ua, &tree),
+            ClassicCommandOutcome::kLeaveSelection);
+  EXPECT_TRUE(ua->quit);
+}
+
 TEST_F(Globbing, globbing_in_markcmd)
 {
   const std::vector<std::string> files = {

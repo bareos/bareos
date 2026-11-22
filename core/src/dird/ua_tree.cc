@@ -193,6 +193,7 @@ ClassicCommandOutcome ExecuteClassicTreeCommand(UaContext* ua,
 ClassicCommandOutcome RunOneClassicTreeCommand(UaContext* ua, TreeContext* tree)
 {
   if (!GetCmd(ua, "$ ", true)) {
+    ua->quit = true;
     return ClassicCommandOutcome::kLeaveSelection;
   }
   return ExecuteClassicTreeCommand(ua, tree);
