@@ -64,31 +64,48 @@ export function useConsoleTerminal(options = {}) {
   let resizeDisposable = null
   let writeQueue = []
   let writing = false
+  let cancelActiveWrite = null
   let inputMarker = null
 
   // Keep cursor measurements and their writes together across xterm callbacks.
   function enqueueWrite(operation) {
-    if (!terminal) {
-      return
-    }
-    writeQueue.push(operation)
-    if (writing) {
-      return
-    }
-    const activeTerminal = terminal
-    const next = () => {
-      if (terminal !== activeTerminal) {
+    return new Promise((resolve) => {
+      if (!terminal) {
+        resolve()
         return
       }
-      const queued = writeQueue.shift()
-      if (!queued) {
-        writing = false
+      const queuedWrite = {
+        run(activeTerminal, next) {
+          operation(activeTerminal, () => {
+            if (cancelActiveWrite === queuedWrite.cancel) {
+              cancelActiveWrite = null
+            }
+            resolve()
+            next()
+          })
+        },
+        cancel: resolve,
+      }
+      writeQueue.push(queuedWrite)
+      if (writing) {
         return
       }
-      queued(activeTerminal, next)
-    }
-    writing = true
-    next()
+      const activeTerminal = terminal
+      const next = () => {
+        if (terminal !== activeTerminal) {
+          return
+        }
+        const queued = writeQueue.shift()
+        if (!queued) {
+          writing = false
+          return
+        }
+        cancelActiveWrite = queued.cancel
+        queued.run(activeTerminal, next)
+      }
+      writing = true
+      next()
+    })
   }
 
   function reportResizeNow() {
@@ -176,7 +193,7 @@ export function useConsoleTerminal(options = {}) {
   }
 
   function write(data) {
-    enqueueWrite((activeTerminal, next) => activeTerminal.write(data, next))
+    return enqueueWrite((activeTerminal, next) => activeTerminal.write(data, next))
   }
 
   function eraseInput(activeTerminal, next) {
@@ -192,11 +209,11 @@ export function useConsoleTerminal(options = {}) {
   }
 
   function clearInputLine() {
-    enqueueWrite(eraseInput)
+    return enqueueWrite(eraseInput)
   }
 
   function writeInputLine(prefix, suffix) {
-    enqueueWrite((activeTerminal, next) => {
+    return enqueueWrite((activeTerminal, next) => {
       eraseInput(activeTerminal, () => {
         inputMarker = activeTerminal.registerMarker()
         activeTerminal.write(prefix, () => {
@@ -223,7 +240,7 @@ export function useConsoleTerminal(options = {}) {
   }
 
   function clear() {
-    enqueueWrite((activeTerminal, next) => {
+    return enqueueWrite((activeTerminal, next) => {
       inputMarker?.dispose()
       inputMarker = null
       activeTerminal.reset()
@@ -248,6 +265,9 @@ export function useConsoleTerminal(options = {}) {
     resizeDisposable = null
     inputMarker?.dispose()
     inputMarker = null
+    cancelActiveWrite?.()
+    cancelActiveWrite = null
+    writeQueue.forEach(queued => queued.cancel())
     terminal?.dispose()
     terminal = null
     writeQueue = []

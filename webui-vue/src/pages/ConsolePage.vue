@@ -109,6 +109,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useConsoleSessionsStore, applyConsoleKey } from '../stores/consoleSessions.js'
 import { useConsoleTerminal } from '../composables/useConsoleTerminal.js'
+import { createConsoleResponseWriter } from '../composables/consoleResponseWriter.js'
 import { buildDirectorOptions } from '../utils/director.js'
 import { sanitizeTerminalText } from '../utils/terminalSanitize.js'
 import {
@@ -195,8 +196,6 @@ async function requestPopupCredentials() {
 
 // ── terminal ──────────────────────────────────────────────────────────────────
 const terminalContainerEl = ref(null)
-let responseStreaming = false
-let responseLineOpen = false
 const terminal = useConsoleTerminal({
   onResize: ({ rows, cols }) => {
     consoleSessions.setTerminalSize(selectedDirector.value, rows, cols)
@@ -244,8 +243,7 @@ const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes
 
 function clearOutput() {
   terminal.clear()
-  responseStreaming = false
-  responseLineOpen = false
+  responseWriter.reset()
   consoleSessions.clearOutput(selectedDirector.value)
 }
 
@@ -267,8 +265,10 @@ function redrawInputLine() {
   const before = sanitizeTerminalText(cmd.slice(0, cursorPos))
   const after = sanitizeTerminalText(cmd.slice(cursorPos))
   const prefix = `${session.currentPrompt ?? ''}${before}`
-  terminal.writeInputLine(prefix, after)
+  return terminal.writeInputLine(prefix, after)
 }
+
+const responseWriter = createConsoleResponseWriter(terminal, redrawInputLine)
 
 // Wraps the raw terminal writer so any text the store writes (command
 // echoes, Director responses, selection frames) first erases whatever
@@ -276,39 +276,7 @@ function redrawInputLine() {
 // mirroring how a readline-style line discipline keeps the prompt
 // "sticky" below interleaved asynchronous output.
 function makeTerminalWriter() {
-  return (text, options) => {
-    terminal.clearInputLine()
-    if (responseStreaming) {
-      terminal.write('\x1B8')
-      if (!options?.response && responseLineOpen) {
-        terminal.write('\r\n')
-      }
-    }
-    terminal.write(text)
-    if (options?.response) {
-      const visibleText = text.replace(/\x1B\[[0-9;:]*m/g, '')
-      if (visibleText) {
-        responseLineOpen = !visibleText.endsWith('\n')
-      }
-      responseStreaming = options.streaming
-      if (responseStreaming) {
-        terminal.write('\x1B7')
-        if (responseLineOpen) {
-          terminal.write('\r\n')
-        }
-        redrawInputLine()
-        return
-      }
-      if (responseLineOpen) {
-        terminal.write('\r\n')
-        responseLineOpen = false
-      }
-    } else {
-      responseStreaming = false
-      responseLineOpen = false
-    }
-    redrawInputLine()
-  }
+  return responseWriter.write
 }
 
 function registerTerminalWriter(directorName) {
@@ -317,8 +285,7 @@ function registerTerminalWriter(directorName) {
 
 function unregisterTerminalWriter(directorName) {
   consoleSessions.setTerminalWriter(directorName, null)
-  responseStreaming = false
-  responseLineOpen = false
+  responseWriter.reset()
 }
 
 function mountTerminal() {
