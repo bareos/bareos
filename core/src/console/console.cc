@@ -352,6 +352,39 @@ static void RestoreActiveSelectionTerminalState()
     selection_raw_mode_active = false;
   }
 }
+#else
+struct TerminalRawModeGuard {
+  HANDLE handle = INVALID_HANDLE_VALUE;
+  DWORD original_mode = 0;
+  bool active = false;
+
+  TerminalRawModeGuard()
+  {
+    handle = GetStdHandle(STD_INPUT_HANDLE);
+    if (handle == INVALID_HANDLE_VALUE || !GetConsoleMode(handle, &original_mode)) {
+      return;
+    }
+
+    DWORD raw_mode = original_mode
+                     & ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
+                                | ENABLE_PROCESSED_INPUT);
+    raw_mode |= ENABLE_WINDOW_INPUT;
+    active = SetConsoleMode(handle, raw_mode) != 0;
+  }
+
+  ~TerminalRawModeGuard() { Restore(); }
+
+  void Restore()
+  {
+    if (active) {
+      SetConsoleMode(handle, original_mode);
+      active = false;
+    }
+  }
+
+  TerminalRawModeGuard(const TerminalRawModeGuard&) = delete;
+  TerminalRawModeGuard& operator=(const TerminalRawModeGuard&) = delete;
+};
 #endif
 
 // Read one plain line from a file/pipe (e.g. scripted bconcmds input) into
@@ -529,25 +562,6 @@ static bool ReadSelectionInput(FILE* input,
   // single-keystroke navigation, and would never send arrow keys through).
   HANDLE input_handle = GetStdHandle(STD_INPUT_HANDLE);
   if (input_handle == INVALID_HANDLE_VALUE) { return false; }
-
-  DWORD original_mode = 0;
-  if (!GetConsoleMode(input_handle, &original_mode)) { return false; }
-
-  // Always restore the original console mode before returning, even on an
-  // early/error return, so a crash or unexpected disconnect while the
-  // selection menu is on screen doesn't leave the user's terminal stuck in
-  // raw mode (no line editing/echo) for the rest of their session.
-  struct ConsoleModeGuard {
-    HANDLE handle;
-    DWORD mode;
-    ~ConsoleModeGuard() { SetConsoleMode(handle, mode); }
-  } restore_mode{input_handle, original_mode};
-
-  DWORD raw_mode = original_mode
-                   & ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT
-                              | ENABLE_PROCESSED_INPUT);
-  raw_mode |= ENABLE_WINDOW_INPUT; /* to receive resize events below */
-  if (!SetConsoleMode(input_handle, raw_mode)) { return false; }
 
   std::string event;
   wchar_t pending_high_surrogate = 0;
@@ -731,6 +745,11 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
     // Ctrl-C aborting a long-running command) is unaffected.
     std::optional<TerminalRawModeGuard> raw_mode_guard;
     std::unique_ptr<TerminalSelectionScreenGuard> selection_screen_guard;
+#else
+    // Keep processed input disabled across all key reads in this selection
+    // exchange so Ctrl-C is delivered as a key event instead of terminating
+    // the console process.
+    std::optional<TerminalRawModeGuard> raw_mode_guard;
 #endif
 
     tid = StartBsockTimer(UA_sock, timeout);
@@ -755,6 +774,8 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
             selection_screen_guard
                 = std::make_unique<TerminalSelectionScreenGuard>();
           }
+#else
+          if (tty_input && !raw_mode_guard) { raw_mode_guard.emplace(); }
 #endif
           if (tty_input) { ConsoleOutput("\033[2J\033[H"); }
         } else if (UA_sock->message_length == BNET_END_SELECT) {
@@ -768,6 +789,9 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
           if (tty_input && !raw_mode_guard) {
             raw_mode_guard.emplace(fileno(input));
           }
+#else
+          if (tty_input && !raw_mode_guard) { raw_mode_guard.emplace(); }
+          if (tty_input && !raw_mode_guard->active) { break; }
 #endif
           if (!ReadSelectionInput(input, UA_sock, tty_input != 0)) { break; }
           if (!UA_sock->send()) { break; }
