@@ -69,18 +69,22 @@ export function useConsoleTerminal(options = {}) {
 
   // Keep cursor measurements and their writes together across xterm callbacks.
   function enqueueWrite(operation) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if (!terminal) {
         resolve()
         return
       }
       const queuedWrite = {
         run(activeTerminal, next) {
-          operation(activeTerminal, () => {
+          operation(activeTerminal, (error) => {
             if (cancelActiveWrite === queuedWrite.cancel) {
               cancelActiveWrite = null
             }
-            resolve()
+            if (error) {
+              reject(error)
+            } else {
+              resolve()
+            }
             next()
           })
         },
@@ -212,33 +216,61 @@ export function useConsoleTerminal(options = {}) {
     return enqueueWrite(eraseInput)
   }
 
-  function writeInputLine(prefix, suffix) {
-    return enqueueWrite((activeTerminal, next) => {
-      eraseInput(activeTerminal, () => {
-        if (terminal !== activeTerminal) {
+  function writeInputLineOn(activeTerminal, prefix, suffix, next) {
+    eraseInput(activeTerminal, () => {
+      if (terminal !== activeTerminal) {
+        return
+      }
+      inputMarker = activeTerminal.registerMarker()
+      activeTerminal.write(prefix, () => {
+        if (!suffix) {
+          next()
           return
         }
-        inputMarker = activeTerminal.registerMarker()
-        activeTerminal.write(prefix, () => {
-          if (!suffix) {
-            next()
-            return
-          }
-          const buffer = activeTerminal.buffer.active
-          const column = buffer.cursorX
-          const line = buffer.baseY + buffer.cursorY
-          const marker = activeTerminal.registerMarker()
-          activeTerminal.write(suffix, () => {
-            const current = activeTerminal.buffer.active
-            const wrapped = column === activeTerminal.cols
-            const currentLine = marker ? marker.line : line
-            const row = Math.max(1, currentLine - current.baseY + 1 + Number(wrapped))
-            const col = wrapped ? 1 : column + 1
-            marker?.dispose()
-            activeTerminal.write(`\x1B[${row};${col}H`, next)
-          })
+        const buffer = activeTerminal.buffer.active
+        const column = buffer.cursorX
+        const line = buffer.baseY + buffer.cursorY
+        const marker = activeTerminal.registerMarker()
+        activeTerminal.write(suffix, () => {
+          const current = activeTerminal.buffer.active
+          const wrapped = column === activeTerminal.cols
+          const currentLine = marker ? marker.line : line
+          const row = Math.max(1, currentLine - current.baseY + 1 + Number(wrapped))
+          const col = wrapped ? 1 : column + 1
+          marker?.dispose()
+          activeTerminal.write(`\x1B[${row};${col}H`, next)
         })
       })
+    })
+  }
+
+  function writeInputLine(prefix, suffix) {
+    return enqueueWrite((activeTerminal, next) => {
+      writeInputLineOn(activeTerminal, prefix, suffix, next)
+    })
+  }
+
+  function runExclusive(operation) {
+    return enqueueWrite((activeTerminal, next) => {
+      const call = (action) => new Promise(resolve => {
+        if (terminal !== activeTerminal) {
+          resolve()
+          return
+        }
+        action(resolve)
+      })
+      const adapter = {
+        get terminal() { return terminal === activeTerminal ? activeTerminal : null },
+        write: data => call(done => activeTerminal.write(data, done)),
+        clearInputLine: () => call(done => eraseInput(activeTerminal, done)),
+        writeInputLine: (prefix, suffix) => call(
+          done => writeInputLineOn(activeTerminal, prefix, suffix, done),
+        ),
+      }
+      Promise.resolve().then(() => operation(adapter)).then(
+        () => next(),
+        error => next(error),
+      )
     })
   }
 
@@ -285,6 +317,7 @@ export function useConsoleTerminal(options = {}) {
     write,
     clearInputLine,
     writeInputLine,
+    runExclusive,
     clear,
     focus,
     fit,

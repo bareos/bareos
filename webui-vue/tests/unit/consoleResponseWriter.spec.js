@@ -31,6 +31,7 @@ async function renderResponse(parts) {
     get terminal() { return emulator },
     clearInputLine: () => write('\r\x1B[K'),
     write,
+    runExclusive: operation => operation(terminal),
   }
   const writer = createConsoleResponseWriter(terminal, () => write('> '))
 

@@ -7,17 +7,17 @@ export function createConsoleResponseWriter(terminal, redrawInputLine) {
 
   function write(text, options) {
     const writeGeneration = generation
-    writes = writes.then(async () => {
+    writes = writes.then(() => terminal.runExclusive(async (active) => {
       if (writeGeneration !== generation) {
         return
       }
-      await terminal.clearInputLine()
+      await active.clearInputLine()
       if (writeGeneration !== generation) {
         return
       }
       let restoredWrap = false
       if (responseStreaming) {
-        await terminal.write('\x1B8')
+        await active.write('\x1B8')
         if (writeGeneration !== generation) {
           return
         }
@@ -25,20 +25,20 @@ export function createConsoleResponseWriter(terminal, redrawInputLine) {
           && (text.startsWith('\n') || text.startsWith('\r\n')))
         responseWrapPending = false
         if (restoredWrap) {
-          await terminal.write('\r\n')
+          await active.write('\r\n')
           if (writeGeneration !== generation) {
             return
           }
         }
         if (!options?.response && responseLineOpen && !restoredWrap) {
-          await terminal.write('\r\n')
+          await active.write('\r\n')
           if (writeGeneration !== generation) {
             return
           }
         }
       }
 
-      await terminal.write(text)
+      await active.write(text)
       if (writeGeneration !== generation) {
         return
       }
@@ -49,27 +49,27 @@ export function createConsoleResponseWriter(terminal, redrawInputLine) {
         }
         responseStreaming = options.streaming
         if (responseStreaming) {
-          const activeTerminal = terminal.terminal
+          const activeTerminal = active.terminal
           responseWrapPending = Boolean(
             activeTerminal
             && activeTerminal.buffer.active.cursorX === activeTerminal.cols,
           )
-          await terminal.write('\x1B7')
+          await active.write('\x1B7')
           if (writeGeneration !== generation) {
             return
           }
           if (responseLineOpen) {
-            await terminal.write('\r\n')
+            await active.write('\r\n')
             if (writeGeneration !== generation) {
               return
             }
           }
-          await redrawInputLine()
+          await redrawInputLine(active)
           return
         }
         responseWrapPending = false
         if (responseLineOpen) {
-          await terminal.write('\r\n')
+          await active.write('\r\n')
           if (writeGeneration !== generation) {
             return
           }
@@ -80,8 +80,8 @@ export function createConsoleResponseWriter(terminal, redrawInputLine) {
         responseLineOpen = false
         responseWrapPending = false
       }
-      await redrawInputLine()
-    })
+      await redrawInputLine(active)
+    }))
     return writes
   }
 

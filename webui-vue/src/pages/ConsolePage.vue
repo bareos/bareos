@@ -257,8 +257,8 @@ function focusConsole() {
 // terminal cursor back to the tracked edit position. This mirrors
 // what a PTY line-discipline would otherwise do, since input editing here
 // is handled locally (session.cmd/cursorPos) rather than by the Director.
-function redrawInputLine() {
-  if (!terminal.terminal || currentSession.value.selectionActive) {
+function redrawInputLine(target = terminal) {
+  if (!target.terminal || currentSession.value.selectionActive) {
     return
   }
   const session = currentSession.value
@@ -267,7 +267,7 @@ function redrawInputLine() {
   const before = sanitizeTerminalText(cmd.slice(0, cursorPos))
   const after = sanitizeTerminalText(cmd.slice(cursorPos))
   const prefix = `${session.currentPrompt ?? ''}${before}`
-  return terminal.writeInputLine(prefix, after)
+  return target.writeInputLine(prefix, after)
 }
 
 const responseWriter = createConsoleResponseWriter(terminal, redrawInputLine)
