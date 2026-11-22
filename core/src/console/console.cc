@@ -668,6 +668,7 @@ static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
 
   // Silently drain the reply (there should be none), same as any other
   // command's response cycle, but without printing anything.
+  btimer_t* tid = StartBsockTimer(UA_sock, timeout);
   int status;
   while ((status = UA_sock->recv()) >= 0
          || ((status == BNET_SIGNAL) && (UA_sock->message_length != BNET_EOD)
@@ -676,6 +677,7 @@ static void SendTerminalSize(FILE* input, BareosSocket* UA_sock)
     if (status == BNET_SIGNAL) { continue; }
     // Discard any unexpected output instead of showing it to the user.
   }
+  StopBsockTimer(tid);
 }
 
 static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
