@@ -504,12 +504,14 @@ TEST(InteractiveSelection, CancelsNonMatchingPlainTextLineInput)
   EXPECT_EQ(selection.ApplyInput("y"), SelectionInputResult::kCanceled);
 }
 
-TEST(InteractiveSelection, CancelsOutOfRangeNumericLineInput)
+TEST(InteractiveSelection, KeepsSelectionOpenAfterOutOfRangeNumericLineInput)
 {
   std::vector<std::string> options{"Alpha", "Makefile", "Gamma"};
   InteractiveSelection selection(options);
 
-  EXPECT_EQ(selection.ApplyInput("99"), SelectionInputResult::kCanceled);
+  EXPECT_EQ(selection.ApplyInput("99"), SelectionInputResult::kOutOfRange);
+  EXPECT_EQ(selection.ApplyInput("2"), SelectionInputResult::kSelected);
+  EXPECT_EQ(selection.selected_index(), 1);
 }
 
 TEST(InteractiveSelection, KeepsSelectionInVisibleWindow)

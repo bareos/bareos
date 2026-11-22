@@ -38,6 +38,7 @@ enum class SelectionInputResult
 {
   kContinue,
   kSelected,
+  kOutOfRange,
   kCanceled,
 };
 

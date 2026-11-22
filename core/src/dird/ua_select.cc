@@ -257,7 +257,7 @@ SelectionInputResult InteractiveSelection::ApplyInput(std::string_view input)
     size_t selected = static_cast<size_t>(strtoul(value.c_str(), nullptr, 10));
     if (selected < 1 || selected > options_.size()) {
       return input.starts_with("key:") ? SelectionInputResult::kContinue
-                                       : SelectionInputResult::kCanceled;
+                                       : SelectionInputResult::kOutOfRange;
     }
     selected_index_ = selected - 1;
     return SelectionInputResult::kSelected;
@@ -1746,6 +1746,11 @@ int DoPrompt(UaContext* ua,
       }
 
       auto result = selection.ApplyInput(user->msg);
+      if (result == SelectionInputResult::kOutOfRange) {
+        ua->WarningMsg(T_("Please enter a number between 1 and %zu.\n"),
+                       ua->prompts.size());
+        continue;
+      }
       if (result == SelectionInputResult::kCanceled) {
         item = -1;
         ua->InfoMsg(T_("Selection aborted, nothing done.\n"));
