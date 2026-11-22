@@ -624,8 +624,8 @@ PluginOptionsBlock BuildInitialPluginOptionsBlock(
   const PluginOptionsBlock parsed = ParsePluginOptionsBlock(definition.raw);
   if (definition.plugin_name == "grpc") {
     for (const PluginOption& option : parsed.options) {
-      if (!option.has_equals || option.first == "module_name"
-          || option.first == "module_path") {
+      const auto name = ToLower(option.first);
+      if (!option.has_equals || name == "module_name" || name == "module_path") {
         block.options.push_back(option);
       }
     }
@@ -633,8 +633,9 @@ PluginOptionsBlock BuildInitialPluginOptionsBlock(
   }
 
   for (const PluginOption& option : parsed.options) {
+    const auto name = ToLower(option.first);
     if (option.has_equals
-        && (option.first == "module_name" || option.first == "module_path")) {
+        && (name == "module_name" || name == "module_path")) {
       block.options.push_back(option);
     }
   }

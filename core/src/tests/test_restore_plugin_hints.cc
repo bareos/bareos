@@ -264,6 +264,19 @@ TEST(RestorePluginHints, BuildsInitialBlockWithGrpcRoutingSegments)
             "module_name=custom_restore:module_path=/opt/custom-plugins");
 }
 
+TEST(RestorePluginHints, PreservesModuleOptionsRegardlessOfKeyCase)
+{
+  for (const auto& prefix : {"python3", "grpc:bridge:python"}) {
+    const std::string definition
+        = std::string("Plugin = \"") + prefix
+          + ":MODULE_NAME=custom:MODULE_PATH=/opt/custom:file=/ignored\"\n";
+    const auto definitions = ExtractFileSetPluginDefinitions(definition);
+    ASSERT_EQ(definitions.size(), 1u);
+    EXPECT_EQ(BuildPluginOptionsBlock(BuildInitialPluginOptionsBlock(definitions[0])),
+             std::string(prefix) + ":MODULE_NAME=custom:MODULE_PATH=/opt/custom");
+  }
+}
+
 TEST(RestorePluginHints, BuildsInitialBlockWithoutModuleNameOption)
 {
   auto definitions = ExtractFileSetPluginDefinitions(
