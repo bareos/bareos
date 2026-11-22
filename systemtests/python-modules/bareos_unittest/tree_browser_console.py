@@ -115,14 +115,6 @@ class TreeBrowserConsole:
         """
         return self.press("text:" + text)
 
-    def wait_for_text(self, substring, attempts=1):
-        """Return True once `substring` appears in the most recently
-        received screen text. `attempts` > 1 allows a caller to poll
-        across a few additional no-op resize refreshes if needed, though
-        in practice each press()/run() call already blocks until the
-        Director's response is fully received.
-        """
-        for _ in range(max(1, attempts)):
-            if substring in self.last_screen:
-                return True
+    def wait_for_text(self, substring):
+        """Return whether `substring` appears in the current screen snapshot."""
         return substring in self.last_screen
