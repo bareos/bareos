@@ -59,6 +59,22 @@ static bool PurgeJobsByStatus(UaContext* ua);
 static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client);
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
 
+struct StatusJobDeleteContext {
+  std::vector<JobId_t> jobs;
+  bool truncated{false};
+};
+
+static int StatusJobDeleteHandler(void* ctx, int, char** row)
+{
+  auto* results = static_cast<StatusJobDeleteContext*>(ctx);
+  if (results->jobs.size() >= MAX_DEL_LIST_LEN) {
+    results->truncated = true;
+    return 1;
+  }
+  results->jobs.push_back(static_cast<JobId_t>(str_to_int64(row[0])));
+  return 0;
+}
+
 /**
  * Purge records from database
  *
@@ -354,13 +370,22 @@ static bool PurgeJobsByStatus(UaContext* ua)
       = "SELECT JobId FROM Job WHERE JobStatus IN (" + jobStatuses
         + ") ORDER BY JobId";
 
-  std::vector<JobId_t> delete_list;
-  if (!ua->db->SqlQuery(select_jobs_by_status.c_str(), JobDeleteHandler,
-                        &delete_list)) {
+  StatusJobDeleteContext delete_results;
+  if (!ua->db->SqlQuery(select_jobs_by_status.c_str(), StatusJobDeleteHandler,
+                        &delete_results)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     return false;
   }
 
+  if (delete_results.truncated) {
+    ua->ErrorMsg(
+        T_("More than %" PRIuz
+           " jobs match the selected statuses; no jobs were purged.\n"),
+        delete_results.jobs.size());
+    return false;
+  }
+
+  auto& delete_list = delete_results.jobs;
   if (delete_list.empty()) {
     ua->WarningMsg(T_("No Jobs found with the selected status to purge.\n"));
   } else {
