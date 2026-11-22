@@ -2693,7 +2693,8 @@ test('pastes into the console editor and interactive selection', async ({ page }
           type: 'raw_response', id: request.id, text: 'Enter search text:', prompt: 'select',
         }))
       } else if (request.type === 'command' && (
-        request.command.startsWith('key:text:') || request.command === 'key:space'
+        request.command.startsWith('key:text:')
+        || request.command === 'key:space' || request.command === 'key:tab'
       )) {
         selectionInputs.push(request.command)
       } else {
@@ -2735,6 +2736,12 @@ test('pastes into the console editor and interactive selection', async ({ page }
     element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
   })
   await expect.poll(() => selectionInputs).toEqual(['key:text:example path', 'key:space', 'key:space'])
+  await page.keyboard.press('Shift+Tab')
+  await expect(textarea).not.toBeFocused()
+  expect(selectionInputs).not.toContain('key:tab')
+  await textarea.focus()
+  await page.keyboard.press('Tab')
+  await expect.poll(() => selectionInputs.at(-1)).toBe('key:tab')
 })
 
 test('pastes text into the real destination browser search', async ({ page }) => {

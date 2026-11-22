@@ -408,6 +408,9 @@ function handleTerminalKey(event) {
   const session = currentSession.value
 
   if (session.selectionActive) {
+    if (event.key === 'Tab' && event.shiftKey) {
+      return false
+    }
     const selectionEvents = {
       ArrowUp: 'key:up',
       ArrowDown: 'key:down',
