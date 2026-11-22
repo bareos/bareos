@@ -92,6 +92,12 @@ TEST(UaRunHelpers, ParseEstimateListingLine)
       &directory));
   EXPECT_EQ(path, "/etc/l");
   EXPECT_FALSE(directory);
+
+  EXPECT_TRUE(ParseEstimateListingLine(
+      "-rw-r--r-- 1 root root 12 2026-05-04 12:34:56 /tmp/report -> final",
+      &path, &directory));
+  EXPECT_EQ(path, "/tmp/report -> final");
+  EXPECT_FALSE(directory);
 }
 
 TEST(UaRunHelpers, ParseEstimateListingLineRejectsNonListingLines)

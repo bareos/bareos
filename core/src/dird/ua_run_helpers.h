@@ -50,7 +50,7 @@ bool IsListingTimestamp(std::string_view text, size_t pos);
 
 /**
  * Parse one line of an estimate listing into the file name and whether it
- * is a directory. A symlink target (" -> ...") is dropped.
+ * is a directory. Symlink targets (" -> ...") are dropped.
  */
 bool ParseEstimateListingLine(std::string_view line,
                               std::string* path,

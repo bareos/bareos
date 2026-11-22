@@ -128,17 +128,21 @@ bool ParseEstimateListingLine(std::string_view line,
                               bool* directory)
 {
   if (line.empty()) { return false; }
+  bool symlink = false;
   switch (line.front()) {
     case 'd':
       *directory = true;
       break;
     case '-':
-    case 'l':
     case 'b':
     case 'c':
     case 'f':
     case 's':
       *directory = false;
+      break;
+    case 'l':
+      *directory = false;
+      symlink = true;
       break;
     default:
       return false;
@@ -158,8 +162,10 @@ bool ParseEstimateListingLine(std::string_view line,
   if (filename >= line.size()) { return false; }
 
   std::string parsed(line.substr(filename));
-  size_t link_separator = parsed.find(" -> ");
-  if (link_separator != std::string::npos) { parsed.resize(link_separator); }
+  if (symlink) {
+    size_t link_separator = parsed.find(" -> ");
+    if (link_separator != std::string::npos) { parsed.resize(link_separator); }
+  }
   *path = std::move(parsed);
   return !path->empty();
 }
