@@ -1952,7 +1952,9 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
   return true;
 }
 
-static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua, const char* jobids)
+static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua,
+                                     const char* jobids,
+                                     bool warn_denied = false)
 {
   char ed1[50];
   POOLMEM* filtered_jobids = GetPoolMemory(PM_FNAME);
@@ -1975,7 +1977,15 @@ static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua, const char* jobids)
                      edit_int64(jobid, ed1), ua->db->strerror());
       continue;
     }
-    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) { continue; }
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      if (warn_denied) {
+        ua->WarningMsg(
+            T_("JobId=%s (Job=%s) is not authorized and was removed from the "
+               "restore selection.\n"),
+            edit_int64(jobid, ed1), jr.Name);
+      }
+      continue;
+    }
     if (*filtered_jobids != 0) { PmStrcat(filtered_jobids, ","); }
     PmStrcat(filtered_jobids, edit_int64(jobid, ed1));
   }
@@ -2191,7 +2201,15 @@ static bool ResolveBackupChainForClientFileset(
   }
 
   if (rx->JobIds[0] != 0) {
-    POOLMEM* filtered_jobids = FilterJobIdsByJobAcl(ua, rx->JobIds);
+    POOLMEM* filtered_jobids
+        = FilterJobIdsByJobAcl(ua, rx->JobIds, !selected);
+    if (selected && strcmp(filtered_jobids, rx->JobIds) != 0) {
+      ua->WarningMsg(
+          T_("The selected backup chain contains unauthorized jobs; "
+             "cancelling the restore to avoid restoring an incomplete chain.\n"));
+      FreePoolMemory(filtered_jobids);
+      goto bail_out;
+    }
     FreePoolMemory(rx->JobIds);
     rx->JobIds = filtered_jobids;
   }
