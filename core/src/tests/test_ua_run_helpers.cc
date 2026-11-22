@@ -32,6 +32,7 @@ TEST(UaRunHelpers, FitRestoreOptionText)
   EXPECT_EQ(FitRestoreOptionText("exactly10!", 10), "exactly10!");
   EXPECT_EQ(FitRestoreOptionText("a longer text", 10), "a longe...");
   EXPECT_EQ(FitRestoreOptionText("a longer text", 3), "a l");
+  EXPECT_EQ(FitRestoreOptionText("a longer text", 4), "a...");
   EXPECT_EQ(FitRestoreOptionText("abc", 0), "");
   EXPECT_EQ(FitRestoreOptionText("界界", 5), "界界");
   EXPECT_EQ(FitRestoreOptionText("界界界", 5), "界...");

@@ -34,7 +34,9 @@
 
 namespace directordaemon {
 
-/** Truncate text to width columns, ending in "..." if it was cut. */
+/**
+ * Truncate text to width columns; append "..." only when width is greater than 3.
+ */
 std::string FitRestoreOptionText(std::string_view text, size_t width);
 
 /** Show a width column window of text starting at offset, with < > markers. */
