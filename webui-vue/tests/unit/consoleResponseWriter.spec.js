@@ -63,4 +63,11 @@ describe('createConsoleResponseWriter', () => {
 
     expect(split).toEqual(unsplit)
   })
+
+  it('does not add a blank line when a newline follows the right margin', async () => {
+    for (const newline of ['\n', '\r\n']) {
+      expect(await renderResponse(['1234567890', `${newline}X`]))
+        .toEqual(await renderResponse([`1234567890${newline}X`]))
+    }
+  })
 })

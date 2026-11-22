@@ -21,7 +21,8 @@ export function createConsoleResponseWriter(terminal, redrawInputLine) {
         if (writeGeneration !== generation) {
           return
         }
-        restoredWrap = responseWrapPending
+        restoredWrap = responseWrapPending && !(options?.response
+          && (text.startsWith('\n') || text.startsWith('\r\n')))
         responseWrapPending = false
         if (restoredWrap) {
           await terminal.write('\r\n')
