@@ -31,16 +31,18 @@ namespace directordaemon {
 
 namespace {
 
+bool IsBrowseSeparator(char c) { return c == '/' || c == '\\'; }
+
 bool IsDriveRoot(std::string_view path)
 {
   return path.size() == 3 && std::isalpha(static_cast<unsigned char>(path[0]))
-         && path[1] == ':' && IsPathSeparator(path[2]);
+         && path[1] == ':' && IsBrowseSeparator(path[2]);
 }
 
 bool HasDriveRootPrefix(std::string_view path)
 {
   return path.size() >= 3 && std::isalpha(static_cast<unsigned char>(path[0]))
-         && path[1] == ':' && IsPathSeparator(path[2]);
+         && path[1] == ':' && IsBrowseSeparator(path[2]);
 }
 
 }  // namespace
@@ -229,7 +231,10 @@ bool IsImmediateBrowseChild(std::string_view parent, std::string_view child)
   std::string normalized_parent = NormalizeBrowsePath(parent);
   if (child == normalized_parent) { return false; }
   if (IsDriveRoot(normalized_parent)) {
-    if (!child.starts_with(normalized_parent)) { return false; }
+    if (child.size() < 3 || child.substr(0, 2) != normalized_parent.substr(0, 2)
+        || !IsBrowseSeparator(child[2])) {
+      return false;
+    }
     std::string_view remainder = child.substr(normalized_parent.size());
     return !remainder.empty()
            && remainder.find_first_of("/\\") == std::string_view::npos;

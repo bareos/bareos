@@ -157,6 +157,11 @@ TEST(UaRunHelpers, IsImmediateBrowseChild)
   EXPECT_FALSE(IsImmediateBrowseChild("/etc", "/etcetera"));
   EXPECT_FALSE(IsImmediateBrowseChild("/etc", "/etc/"));
   EXPECT_TRUE(IsImmediateBrowseChild("C:/", "C:/Users"));
+  EXPECT_TRUE(IsImmediateBrowseChild("C:\\", "C:/Users"));
+  EXPECT_TRUE(IsImmediateBrowseChild("C:/", "C:\\Users"));
+  EXPECT_FALSE(IsImmediateBrowseChild("C:\\", "C:/Users/Bareos"));
+  EXPECT_FALSE(IsImmediateBrowseChild("C:\\", "D:/Users"));
+  EXPECT_FALSE(IsImmediateBrowseChild("C:\\", "C:/"));
   EXPECT_FALSE(IsImmediateBrowseChild("C:/", "C:/Users/Bareos"));
   EXPECT_FALSE(IsImmediateBrowseChild("C:/", "D:/Users"));
 }
