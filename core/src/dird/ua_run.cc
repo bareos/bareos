@@ -2576,13 +2576,22 @@ static RelocationMode NextRelocationMode(RelocationMode mode, int direction)
   return static_cast<RelocationMode>(index);
 }
 
-static std::string NormalizeWindowsDrive(std::string drive)
+static bool TryNormalizeWindowsDrive(std::string_view drive,
+                                     std::string* normalized)
 {
-  if (drive.empty()) { return "C:"; }
-  drive[0] = static_cast<char>(toupper(drive[0]));
-  if (drive.size() == 1) { drive += ":"; }
-  if (drive.size() > 2) { drive.resize(2); }
-  return drive;
+  if (drive.size() != 1
+      && !(drive.size() == 2 && drive[1] == ':')) {
+    return false;
+  }
+  unsigned char letter = static_cast<unsigned char>(drive[0]);
+  if (!((letter >= 'A' && letter <= 'Z')
+        || (letter >= 'a' && letter <= 'z'))) {
+    return false;
+  }
+  if (letter >= 'a' && letter <= 'z') { letter -= 'a' - 'A'; }
+  normalized->assign(1, static_cast<char>(letter));
+  normalized->push_back(':');
+  return true;
 }
 
 static std::string BuildRegexWhereFromParts(char* strip_prefix,
@@ -2601,8 +2610,8 @@ static std::string RelocationRegexWhere(const RelocationEditorState& state)
     case RelocationMode::kNone:
       return "";
     case RelocationMode::kWindowsDriveRemap: {
-      std::string source = NormalizeWindowsDrive(state.source_drive) + "/";
-      std::string target = NormalizeWindowsDrive(state.target_drive) + "/";
+      std::string source = state.source_drive + "/";
+      std::string target = state.target_drive + "/";
       return restore_options::BuildLiteralPrefixRegexWhere(source, target);
     }
     case RelocationMode::kReplacePrefix:
@@ -2645,8 +2654,7 @@ static void UpdateRelocationExampleForMode(RelocationEditorState* state)
 {
   switch (state->mode) {
     case RelocationMode::kWindowsDriveRemap:
-      state->example_path = NormalizeWindowsDrive(state->source_drive)
-                            + "/Users/Alice/Documents/"
+      state->example_path = state->source_drive + "/Users/Alice/Documents/"
                             + kRelocationExampleFile;
       break;
     case RelocationMode::kReplacePrefix:
@@ -2673,9 +2681,9 @@ static std::vector<RelocationEditorRow> BuildRelocationRows(
   switch (state.mode) {
     case RelocationMode::kWindowsDriveRemap:
       rows.push_back({RelocationAction::kSourceDrive, T_("Source drive"),
-                      NormalizeWindowsDrive(state.source_drive), true});
+                      state.source_drive, true});
       rows.push_back({RelocationAction::kTargetDrive, T_("Target drive"),
-                      NormalizeWindowsDrive(state.target_drive), true});
+                      state.target_drive, true});
       break;
     case RelocationMode::kReplacePrefix:
       rows.push_back({RelocationAction::kSourcePrefix, T_("Source prefix"),
@@ -2890,10 +2898,17 @@ static bool SelectRelocationVisual(UaContext* ua, JobControlRecord* jcr)
       if (IsEnterKey(input) || input.empty()) {
         if (std::string* target
             = RelocationEditableValue(&state, editing_action)) {
-          *target = edit_buffer;
           if (editing_action == RelocationAction::kSourceDrive
               || editing_action == RelocationAction::kTargetDrive) {
-            *target = NormalizeWindowsDrive(*target);
+            std::string normalized;
+            if (TryNormalizeWindowsDrive(edit_buffer, &normalized)) {
+              *target = std::move(normalized);
+            } else {
+              ua->WarningMsg(
+                  T_("Drive must be an ASCII letter with an optional colon.\n"));
+            }
+          } else {
+            *target = edit_buffer;
           }
           if (editing_action != RelocationAction::kExamplePath) {
             UpdateRelocationExampleForMode(&state);
