@@ -264,6 +264,11 @@ static bool EnableWindowsAnsiConsoleIfPossible()
 #endif
 
 #if !defined(HAVE_WIN32)
+static int selection_terminal_fd = -1;
+static termios selection_original_termios{};
+static bool selection_raw_mode_active = false;
+static bool selection_screen_active = false;
+
 // Puts the given tty into raw, no-echo mode for as long as this guard is
 // alive, restoring the original termios settings on destruction (including
 // on early/exceptional return paths). This must span the *entire*
@@ -288,11 +293,22 @@ struct TerminalRawModeGuard {
     raw.c_cc[VMIN] = 1;
     raw.c_cc[VTIME] = 0;
     active = (tcsetattr(fd, TCSANOW, &raw) == 0);
+    if (active) {
+      selection_terminal_fd = fd;
+      selection_original_termios = original;
+      selection_raw_mode_active = true;
+    }
   }
 
-  ~TerminalRawModeGuard()
+  ~TerminalRawModeGuard() { Restore(); }
+
+  void Restore()
   {
-    if (active) { tcsetattr(fd, TCSANOW, &original); }
+    if (active) {
+      tcsetattr(fd, TCSANOW, &original);
+      active = false;
+      selection_raw_mode_active = false;
+    }
   }
 
   TerminalRawModeGuard(const TerminalRawModeGuard&) = delete;
@@ -306,17 +322,36 @@ struct TerminalSelectionScreenGuard {
   {
     ConsoleOutput("\033[?1049h\033[H");
     active = true;
+    selection_screen_active = true;
   }
 
-  ~TerminalSelectionScreenGuard()
+  ~TerminalSelectionScreenGuard() { Restore(); }
+
+  void Restore()
   {
-    if (active) { ConsoleOutput("\033[?1049l\r\n"); }
+    if (active) {
+      ConsoleOutput("\033[?1049l\r\n");
+      active = false;
+      selection_screen_active = false;
+    }
   }
 
   TerminalSelectionScreenGuard(const TerminalSelectionScreenGuard&) = delete;
   TerminalSelectionScreenGuard& operator=(const TerminalSelectionScreenGuard&)
       = delete;
 };
+
+static void RestoreActiveSelectionTerminalState()
+{
+  if (selection_screen_active) {
+    ConsoleOutput("\033[?1049l\r\n");
+    selection_screen_active = false;
+  }
+  if (selection_raw_mode_active) {
+    tcsetattr(selection_terminal_fd, TCSANOW, &selection_original_termios);
+    selection_raw_mode_active = false;
+  }
+}
 #endif
 
 // Read one plain line from a file/pipe (e.g. scripted bconcmds input) into
@@ -1619,6 +1654,9 @@ int main(int argc, char* argv[])
 
 static void TerminateConsole(int sig)
 {
+#if !defined(HAVE_WIN32)
+  RestoreActiveSelectionTerminalState();
+#endif
   static bool already_here = false;
 
   if (already_here) { /* avoid recursive termination problems */
