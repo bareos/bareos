@@ -413,6 +413,17 @@ TEST(InteractiveSelection, SanitizesTerminalControls)
             "> \033[97;44m1: unsafe?]52;c;Y2xpcGJvYXJk??31m\033[0m\n");
 }
 
+TEST(InteractiveSelection, ReplacesInvalidUtf8InSelectionLabels)
+{
+  const std::string invalid_text{"\xA0" "bad" "\xE2", 5};
+  const std::vector<std::string> options{invalid_text};
+  InteractiveSelection selection(options);
+
+  const std::string output
+      = selection.Format("", "Select", 20, true, false);
+  EXPECT_NE(output.find("1: ?bad?\n"), std::string::npos);
+}
+
 TEST(InteractiveSelection, PreservesUtf8InLabelsAndFilter)
 {
   const std::vector<std::string> options{"\xe7\x95\x8c"};

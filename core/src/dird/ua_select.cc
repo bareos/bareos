@@ -76,6 +76,8 @@ std::string SanitizeSelectionText(std::string_view text, bool allow_newlines)
     if ((value < 0x20 && !(allow_newlines && value == '\n')) || value == 0x7f
         || (value >= 0x80 && value <= 0x9f)) {
       sanitized.push_back('?');
+    } else if (value >= 0x80) {
+      sanitized.push_back('?');
     } else {
       sanitized.push_back(text[i]);
     }
