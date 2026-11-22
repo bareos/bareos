@@ -2639,16 +2639,24 @@ test('redraws wrapped console input without leaving stale rows', async ({ page }
   const textarea = page.locator('.xterm-helper-textarea')
   await textarea.evaluate(element => {
     const clipboardData = new DataTransfer()
-    clipboardData.setData('text/plain', `longinput${'x'.repeat(250)}`)
+    clipboardData.setData(
+      'text/plain',
+      `longinput${'x'.repeat(100)}middleinput${'y'.repeat(100)}endinput`
+    )
     element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
   })
   await page.keyboard.press('Home')
   await page.keyboard.press('End')
-  const inputRows = page.locator('.xterm-rows > div').filter({ hasText: 'longinput' })
-  await expect(inputRows).toHaveCount(1)
+  const inputRows = page.locator('.xterm-rows > div')
+  const expectInputMarkersOnce = async () => {
+    for (const marker of ['longinput', 'middleinput', 'endinput']) {
+      await expect(inputRows.filter({ hasText: marker })).toHaveCount(1)
+    }
+  }
+  await expectInputMarkersOnce()
   releaseOutput()
   await expect(consoleOutput).toContainText('stream-start-stream-end')
-  await expect(inputRows).toHaveCount(1)
+  await expectInputMarkersOnce()
 })
 
 test('passes Meta shortcuts through while keeping console editing keys', async ({ page }) => {
