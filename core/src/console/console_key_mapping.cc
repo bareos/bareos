@@ -133,6 +133,14 @@ std::string MapAnsiEscapeSequenceToSelectionEvent(std::string_view sequence)
   if (sequence[1] == 'O') {
     if (sequence.size() != 3) { return ""; }
     switch (sequence[2]) {
+      case 'A':
+        return "key:up";
+      case 'B':
+        return "key:down";
+      case 'C':
+        return "key:right";
+      case 'D':
+        return "key:left";
       case 'H':
         return "key:home";
       case 'F':

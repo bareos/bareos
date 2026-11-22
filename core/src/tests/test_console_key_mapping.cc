@@ -104,6 +104,14 @@ TEST(ConsoleKeyMapping, AnsiCursorKeysMapToNavigation)
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[4~"), "key:end");
 }
 
+TEST(ConsoleKeyMapping, ApplicationModeArrowKeysMapToNavigation)
+{
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1bOA"), "key:up");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1bOB"), "key:down");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1bOC"), "key:right");
+  EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1bOD"), "key:left");
+}
+
 TEST(ConsoleKeyMapping, AnsiInsertAndDeleteKeysMapToMarkAndUnmark)
 {
   EXPECT_EQ(MapAnsiEscapeSequenceToSelectionEvent("\x1b[2~"), "key:insert");
