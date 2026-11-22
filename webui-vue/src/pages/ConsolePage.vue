@@ -241,6 +241,7 @@ const consoleStatusLabel = computed(() => ({
 }[consoleStatus.value] ?? consoleStatus.value))
 
 const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes', 'list pools', 'messages', 'help', 'version']
+let componentMounted = false
 
 function clearOutput() {
   terminal.clear()
@@ -290,10 +291,14 @@ function unregisterTerminalWriter(directorName) {
 }
 
 function mountTerminal() {
+  if (!componentMounted || !terminalContainerEl.value) {
+    return false
+  }
   terminal.mount(terminalContainerEl.value)
   terminal.terminal?.attachCustomKeyEventHandler(handleTerminalKey)
   registerTerminalWriter(selectedDirector.value)
   redrawInputLine()
+  return true
 }
 
 function ensureSelectedSession() {
@@ -470,13 +475,17 @@ function handleTerminalKey(event) {
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  componentMounted = true
   director.fetchAvailableDirectors().catch(() => {})
   await requestPopupCredentials()
-  mountTerminal()
+  if (!mountTerminal()) {
+    return
+  }
   ensureSelectedSession()
 })
 
 onUnmounted(() => {
+  componentMounted = false
   unregisterTerminalWriter(selectedDirector.value)
   terminal.dispose()
 })
