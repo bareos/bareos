@@ -317,7 +317,7 @@ function applyCompletionResult(session, director, appendLines, request, text) {
     session.cmd = replaceCompletionText(session.cmd, request, commonPrefix)
     session.cursorPos = session.cmd.length
   }
-  appendLines(director, items.map(sanitizeTerminalText).join('\n'))
+  appendLines(director, `${items.map(sanitizeTerminalText).join('\n')}\n`)
 }
 
 function isRestoreTreePrompt(session) {

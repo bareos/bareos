@@ -881,11 +881,11 @@ describe('console session store', () => {
         text: 'bareos-\x1b[31mred\nbareos-界', prompt: 'main',
       }),
     })
-    expect(written.join('')).toContain('bareos-\\x1b[31mred\nbareos-界')
+    expect(written.join('')).toContain('bareos-\\x1b[31mred\nbareos-界\n')
     expect(written.join('')).not.toContain('\x1b[31m')
     const replayed = []
     consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
-    expect(replayed.join('')).toContain('bareos-\\x1b[31mred\nbareos-界')
+    expect(replayed.join('')).toContain('bareos-\\x1b[31mred\nbareos-界\n')
   })
 
   it('renders control characters in interactive prompts as plain text', () => {
