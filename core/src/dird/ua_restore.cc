@@ -1762,8 +1762,12 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   candidate.JobId = str_to_int64(row[0]);
   candidate.NextFullJobId = row[7] ? str_to_int64(row[7]) : 0;
   candidate.NextFullStartTime = row[8] ? row[8] : "";
-  candidate.RestorePoint = StrToUtime(row[2]);
-  candidate.JobCount = str_to_int64(row[3]);
+  candidate.RestorePoint = StrToUtime(
+      handler_ctx->mode == RestoreContext::RestorePointMode::Job ? row[1]
+                                                                  : row[2]);
+  candidate.JobCount = handler_ctx->mode == RestoreContext::RestorePointMode::Job
+                           ? 1
+                           : str_to_int64(row[3]);
   candidate.JobNames = std::move(display_names);
   candidate.JobFiles = str_to_uint64(row[5]);
   candidate.JobBytes = str_to_uint64(row[6]);
