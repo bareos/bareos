@@ -215,6 +215,9 @@ export function useConsoleTerminal(options = {}) {
   function writeInputLine(prefix, suffix) {
     return enqueueWrite((activeTerminal, next) => {
       eraseInput(activeTerminal, () => {
+        if (terminal !== activeTerminal) {
+          return
+        }
         inputMarker = activeTerminal.registerMarker()
         activeTerminal.write(prefix, () => {
           if (!suffix) {
