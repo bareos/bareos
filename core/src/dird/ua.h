@@ -33,6 +33,9 @@
 #include "lib/bsock.h"
 #include "dird/dird_conf.h"
 
+#include <optional>
+#include <string>
+
 class JobControlRecord;
 class BareosDb;
 class guid_list;
@@ -262,7 +265,9 @@ struct RestoreContext {
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
   JobId_t JobId = 0;
-  char* backup_format = nullptr;
+  /** Restore command arguments are copied so tree-selection commands cannot
+   * invalidate values that are used to build the restore run command later. */
+  std::optional<std::string> backup_format;
   char* ClientName = nullptr;        /**< Backup client */
   char* RestoreClientName = nullptr; /**< Restore client */
   char last_jobid[20]{0};
@@ -272,10 +277,10 @@ struct RestoreContext {
   PoolResource* pool = nullptr;
   int restore_jobs = 0;
   uint32_t selected_files = 0;
-  char* comment = nullptr;
-  char* where = nullptr;
-  char* RegexWhere = nullptr;
-  char* replace = nullptr;
+  std::optional<std::string> comment;
+  std::optional<std::string> where;
+  std::optional<std::string> RegexWhere;
+  std::optional<std::string> replace;
   /** Plugin Options supplied via the "restore ... pluginoptions=" command
    * line argument. Copied into an owning std::string (rather than kept
    * as a pointer into ua->argv[]/ua->args) because the interactive tree

@@ -127,8 +127,8 @@ bool RestoreCmd(UaContext* ua, const char*)
   JobResource* job;
   int i;
   JobControlRecord* jcr = ua->jcr;
-  char *strip_prefix, *add_prefix, *add_suffix, *regexp;
-  strip_prefix = add_prefix = add_suffix = regexp = NULL;
+  char *strip_prefix, *add_prefix, *add_suffix;
+  strip_prefix = add_prefix = add_suffix = NULL;
 
   rx.path = GetPoolMemory(PM_FNAME);
   rx.fname = GetPoolMemory(PM_FNAME);
@@ -138,19 +138,19 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
   i = FindArgWithValue(ua, "comment");
-  if (i >= 0) {
+  if (i >= 0 && ua->argv[i]) {
     rx.comment = ua->argv[i];
-    if (!IsCommentLegal(ua, rx.comment)) { goto bail_out; }
+    if (!IsCommentLegal(ua, rx.comment->c_str())) { goto bail_out; }
   }
 
   i = FindArgWithValue(ua, "backupformat");
-  if (i >= 0) { rx.backup_format = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.backup_format = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "where");
-  if (i >= 0) { rx.where = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.where = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "replace");
-  if (i >= 0) { rx.replace = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.replace = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "pluginoptions");
   if (i >= 0 && ua->argv[i]) { rx.plugin_options = ua->argv[i]; }
@@ -165,7 +165,7 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (i >= 0) { add_suffix = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "regexwhere");
-  if (i >= 0) { rx.RegexWhere = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.RegexWhere = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "fileregex");
   if (i >= 0) {
@@ -198,23 +198,23 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   if (strip_prefix || add_suffix || add_prefix) {
     int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-    regexp = (char*)malloc(len * sizeof(char));
-
-    bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
-    rx.RegexWhere = regexp;
+    std::vector<char> regex_buffer(len);
+    bregexp_build_where(regex_buffer.data(), len, strip_prefix, add_prefix,
+                        add_suffix);
+    rx.RegexWhere = regex_buffer.data();
   }
 
   /* TODO: add acl for regexwhere ? */
 
   if (rx.RegexWhere) {
-    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
+    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere->c_str(), true)) {
       ua->ErrorMsg(T_("\"RegexWhere\" specification not authorized.\n"));
       goto bail_out;
     }
   }
 
   if (rx.where) {
-    if (!ua->AclAccessOk(Where_ACL, rx.where, true)) {
+    if (!ua->AclAccessOk(Where_ACL, rx.where->c_str(), true)) {
       ua->ErrorMsg(T_("\"where\" specification not authorized.\n"));
       goto bail_out;
     }
@@ -318,14 +318,14 @@ bool RestoreCmd(UaContext* ua, const char*)
   run_options.bootstrap = jcr->RestoreBootstrap ? jcr->RestoreBootstrap : "";
   run_options.files = rx.selected_files;
   run_options.catalog = ua->catalog ? ua->catalog->resource_name_ : "";
-  run_options.backup_format = rx.backup_format ? rx.backup_format : "";
-  run_options.regex_where = rx.RegexWhere ? rx.RegexWhere : "";
-  if (rx.where) { run_options.where = rx.where; }
-  run_options.replace = rx.replace ? rx.replace : "";
+  run_options.backup_format = rx.backup_format.value_or("");
+  run_options.regex_where = rx.RegexWhere.value_or("");
+  if (rx.where) { run_options.where = *rx.where; }
+  run_options.replace = rx.replace.value_or("");
   run_options.plugin_options = !rx.plugin_options.empty()
                                    ? rx.plugin_options
                                    : rx.interactive_plugin_options;
-  run_options.comment = rx.comment ? rx.comment : "";
+  run_options.comment = rx.comment.value_or("");
   run_options.yes = FindArg(ua, NT_("yes")) > 0;
 
   PmStrcpy(ua->cmd,
@@ -343,8 +343,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   return true;
 
 bail_out:
-  if (regexp) { free(regexp); }
-
   /* restore_tree_root only gets freed if either the backup starts
    * or the ua session ends.  Since the first definitely does not happen
    * after this point, and we cannot control the second one, we need
