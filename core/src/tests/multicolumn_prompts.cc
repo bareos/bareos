@@ -646,6 +646,25 @@ TEST(InteractiveSelection, PadsMulticolumnOptionsByDisplayCellWidth)
   EXPECT_NE(output.find("> 1: long    2: 界\n"), std::string::npos) << output;
 }
 
+TEST(InteractiveSelection, FitsUnequalColumnWidthsAfterFiltering)
+{
+  const std::vector<std::string> options{
+      "skip-abcdefghijklmnopqrst", "find-a", "find-b"};
+  InteractiveSelection selection(options);
+  EXPECT_EQ(selection.ComputeColumnCount(1, 30, true), 1u);
+  selection.ApplyInput("key:text:find");
+  EXPECT_EQ(selection.ComputeColumnCount(1, 30, true), 2u);
+
+  const std::vector<std::string> uneven{"abc", "abcdefghijklmnop"};
+  InteractiveSelection grid(uneven);
+  const size_t columns = grid.ComputeColumnCount(1, 31, true);
+  ASSERT_EQ(columns, 2u);
+  grid.SetColumnLayout(1, columns);
+  const std::string output = grid.Format("", "Select", 1, true, false);
+  EXPECT_NE(output.find("> 1: abc    2: abcdefghijklmnop\n"),
+            std::string::npos);
+}
+
 TEST(InteractiveSelection, LeftRightNavigateBetweenColumns)
 {
   std::vector<std::string> options;

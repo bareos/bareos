@@ -145,6 +145,47 @@ void InteractiveSelection::SetColumnLayout(size_t rows_per_column,
   num_columns_ = std::max<size_t>(1, num_columns);
 }
 
+size_t InteractiveSelection::ComputeColumnCount(
+    size_t rows_per_column,
+    size_t terminal_width,
+    bool supports_cursor_selection) const
+{
+  if (terminal_width == 0 || rows_per_column == 0) { return 1; }
+  std::vector<size_t> widths;
+  size_t matched = 0;
+  for (size_t i = 0; i < options_.size(); ++i) {
+    if (!Matches(i)) { continue; }
+    if (matched % rows_per_column == 0) { widths.push_back(0); }
+    widths.back() = std::max(widths.back(), SelectionEntryCellWidth(
+                                                options_[i], i + 1,
+                                                supports_cursor_selection));
+    ++matched;
+  }
+  if (widths.empty()) { return 1; }
+  const size_t min_width = *std::min_element(widths.begin(), widths.end());
+  const size_t max_candidate
+      = std::min(widths.size(), (terminal_width + 2) / (min_width + 2));
+  for (size_t candidate = max_candidate; candidate > 1; --candidate) {
+    size_t width = 2 * (candidate - 1);
+    for (size_t column = 0; column < candidate; ++column) {
+      width += widths[column];
+    }
+    bool fits = true;
+    for (size_t first = 0; first + candidate <= widths.size(); ++first) {
+      if (width > terminal_width) {
+        fits = false;
+        break;
+      }
+      if (first + candidate < widths.size()) {
+        width -= widths[first];
+        width += widths[first + candidate];
+      }
+    }
+    if (fits) { return candidate; }
+  }
+  return 1;
+}
+
 size_t InteractiveSelection::EffectiveColumns(size_t match_count,
                                               size_t rows_per_column,
                                               size_t max_columns) const
@@ -416,18 +457,15 @@ std::string InteractiveSelection::Format(const std::string& header,
     size_t last = std::min(matches.size(), last_col * max_visible_options);
     if (first_col > 0) { output.append("  ...\n"); }
 
-    // Column width is based on the widest entry actually shown, so it
-    // adapts to the current filter/scroll window instead of reserving
-    // space for the single longest option overall.
-    size_t max_entry_length = 0;
+    std::vector<size_t> column_widths(last_col - first_col, 0);
     for (size_t position = first; position < last; ++position) {
       size_t i = matches[position];
       size_t entry_length = SelectionEntryCellWidth(
           options_[i], i + 1, supports_cursor_selection);
-      max_entry_length = std::max(max_entry_length, entry_length);
+      size_t col = position / max_visible_options - first_col;
+      column_widths[col] = std::max(column_widths[col], entry_length);
     }
     constexpr size_t kColumnGap = 2;
-    size_t column_width = max_entry_length + kColumnGap;
 
     for (size_t row = 0; row < max_visible_options; ++row) {
       for (size_t col = first_col; col < last_col; ++col) {
@@ -441,6 +479,7 @@ std::string InteractiveSelection::Format(const std::string& header,
             options_[i], i + 1, supports_cursor_selection);
         bool is_last_column_entry
             = (col == last_col - 1) || (position + max_visible_options >= last);
+        size_t column_width = column_widths[col - first_col] + kColumnGap;
         if (!is_last_column_entry && printable_length < column_width) {
           output.append(column_width - printable_length, ' ');
         }
@@ -1689,51 +1728,16 @@ int DoPrompt(UaContext* ua,
     // a short-but-wide terminal can still show many (or all) options at
     // once. rows_per_column stays whatever max_visible_options is, i.e.
     // columns only add breadth, they never reduce the height budget.
-    auto compute_num_columns = [&] {
-      if (ua->terminal_width <= 0) { return size_t{1}; }
-      const size_t needed_columns = std::max<size_t>(
-          1, (ua->prompts.size() + max_visible_options - 1)
-                 / max_visible_options);
-      std::vector<size_t> column_widths(needed_columns, 0);
-      const bool supports_cursor_selection = ua->terminal_height > 0;
-      for (size_t i = 0; i < ua->prompts.size(); ++i) {
-        size_t column = i / max_visible_options;
-        column_widths[column] = std::max(
-            column_widths[column],
-            SelectionEntryCellWidth(ua->prompts[i], i + 1,
-                                    supports_cursor_selection));
-      }
-      const size_t terminal_width = static_cast<size_t>(ua->terminal_width);
-      const size_t min_width
-          = *std::min_element(column_widths.begin(), column_widths.end());
-      const size_t max_candidate = std::min(
-          needed_columns, (terminal_width + 2) / (min_width + 2));
-      for (size_t candidate = max_candidate; candidate > 1; --candidate) {
-        bool fits = true;
-        size_t width = 2 * (candidate - 1);
-        for (size_t column = 0; column < candidate; ++column) {
-          width += column_widths[column];
-        }
-        for (size_t first_column = 0;
-             first_column + candidate <= needed_columns; ++first_column) {
-          if (width > terminal_width) {
-            fits = false;
-            break;
-          }
-          if (first_column + candidate < needed_columns) {
-            width -= column_widths[first_column];
-            width += column_widths[first_column + candidate];
-          }
-        }
-        if (fits) { return candidate; }
-      }
-      return size_t{1};
-    };
-
     InteractiveSelection selection(ua->prompts);
     bool showing_help = false;
     for (;;) {
-      selection.SetColumnLayout(max_visible_options, compute_num_columns());
+      selection.SetColumnLayout(
+          max_visible_options,
+          selection.ComputeColumnCount(
+              max_visible_options,
+              ua->terminal_width > 0 ? static_cast<size_t>(ua->terminal_width)
+                                     : 0,
+              ua->terminal_height > 0));
       // A client only ever reports a terminal size (see
       // DotTerminalsizeCmd()/console.cc's SendTerminalSize()) when it also
       // implements the raw-mode cursor-key reader in

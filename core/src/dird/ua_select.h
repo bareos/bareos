@@ -70,6 +70,9 @@ class InteractiveSelection {
    * the original single-column behavior). Must be called again whenever
    * either value changes, e.g. after a terminal resize. */
   void SetColumnLayout(size_t rows_per_column, size_t num_columns);
+  size_t ComputeColumnCount(size_t rows_per_column,
+                            size_t terminal_width,
+                            bool supports_cursor_selection) const;
 
  private:
   bool Matches(size_t index) const;
