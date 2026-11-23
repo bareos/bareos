@@ -333,7 +333,14 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
         after_differential = self.run_job(
             admin, "backup-bareos-fd", "Incremental", wait=True
         )
-        self.addCleanup(admin.call, f"delete jobid={after_differential} yes")
+        after_differential_present = [True]
+        self.addCleanup(
+            lambda: (
+                admin.call(f"delete jobid={after_differential} yes")
+                if after_differential_present[0]
+                else None
+            )
+        )
         second = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
         second_present = [True]
         self.addCleanup(
@@ -444,6 +451,23 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
             {int(first), int(first_differential), int(after_differential)},
         )
         console.call("quit")
+
+        console.call("restore")
+        points = console.call("2")
+        if b"FileSet@Client combinations" in points:
+            tuple_match = re.search(rb"(?m)^\s*(\d+): SelfTest@bareos-fd\s*$", points)
+            self.assertIsNotNone(tuple_match, points)
+            points = console.call(tuple_match.group(1).decode())
+        choice = re.search(
+            rb"(?m)^\s*(\d+):[^\n]*\bJobId=" + str(first).encode() + rb"\b",
+            points,
+        )
+        self.assertIsNotNone(choice, points)
+        admin.call(f"delete jobid={after_differential} yes")
+        after_differential_present[0] = False
+        result = console.call(choice.group(1).decode())
+        self.assertIn(b"The selected restore chain changed after it was listed", result)
+        self.assertNotIn(b"You have selected the following JobIds", result)
 
     def test_reopened_tree_restores_changed_selection(self):
         username = self.get_operator_username()

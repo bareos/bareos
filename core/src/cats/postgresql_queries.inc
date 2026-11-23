@@ -1203,8 +1203,29 @@ SELECT full_backups.JobId,
        full_backups.FullJobBytes,
        full_backups.NextFullJobId,
        full_backups.NextFullStartTime,
-       full_backups.FullJobName
+       full_backups.FullJobName,
+       STRING_AGG(completed_jobs.JobId::text, ','
+                  ORDER BY completed_jobs.StartTime, completed_jobs.JobId)
+         FILTER (WHERE completed_jobs.JobId = full_backups.JobId
+                   OR completed_jobs.JobId = latest_diff.JobId
+                   OR (completed_jobs.Level = 'I'
+                       AND (latest_diff.JobId IS NULL
+                            OR (completed_jobs.StartTime, completed_jobs.JobId)
+                               > (latest_diff.StartTime, latest_diff.JobId))
+                       AND (completed_jobs.JobFiles > 0
+                            OR EXISTS (SELECT 1 FROM JobMedia
+                                       WHERE JobMedia.JobId = completed_jobs.JobId))))
+         AS RequiredJobIds
   FROM full_backups
+  LEFT JOIN LATERAL (
+    SELECT JobId, StartTime FROM completed_jobs
+     WHERE Level = 'D'
+       AND (StartTime, JobId) > (full_backups.FullStartTime, full_backups.JobId)
+       AND (full_backups.NextFullStartTime IS NULL
+            OR (StartTime, JobId)
+               < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
+     ORDER BY StartTime DESC, JobId DESC LIMIT 1
+  ) AS latest_diff ON TRUE
   JOIN completed_jobs
     ON (completed_jobs.StartTime, completed_jobs.JobId)
        >= (full_backups.FullStartTime, full_backups.JobId)
@@ -1214,7 +1235,7 @@ SELECT full_backups.JobId,
  GROUP BY full_backups.JobId, full_backups.FullStartTime,
           full_backups.FullJobFiles, full_backups.FullJobBytes,
           full_backups.NextFullJobId, full_backups.NextFullStartTime,
-          full_backups.FullJobName
+          full_backups.FullJobName, latest_diff.JobId, latest_diff.StartTime
  ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC
 )SQL",
 

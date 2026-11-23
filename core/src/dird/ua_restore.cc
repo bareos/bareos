@@ -1762,6 +1762,7 @@ static int ClientFilesetFullHandler(void* ctx, int, char** row)
   candidate.JobId = str_to_int64(row[0]);
   candidate.NextFullJobId = row[7] ? str_to_int64(row[7]) : 0;
   candidate.NextFullStartTime = row[8] ? row[8] : "";
+  candidate.RequiredJobIds = row[10] ? row[10] : "";
   candidate.RestorePoint = StrToUtime(
       handler_ctx->mode == RestoreContext::RestorePointMode::Job ? row[1]
                                                                   : row[2]);
@@ -2208,6 +2209,13 @@ static bool ResolveBackupChainForClientFileset(
   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
     if (selected) { goto bail_out; }
+  }
+
+  if (selected && selected->RequiredJobIds != rx->JobIds) {
+    ua->ErrorMsg(
+        T_("The selected restore chain changed after it was listed; "
+           "select the restore point again.\n"));
+    goto bail_out;
   }
 
   if (selected) {

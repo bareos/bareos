@@ -247,6 +247,49 @@ TEST_F(CatalogTest, selected_chain_reports_unavailable_required_media)
   ASSERT_TRUE(db->SqlExec("ROLLBACK"));
 }
 
+TEST_F(CatalogTest, restore_point_captures_required_jobs_when_listed)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    BEGIN;
+    CREATE TEMP TABLE Job (
+      JobId bigint, Name text, Level char, StartTime timestamp, JobFiles bigint,
+      JobBytes bigint, ClientId bigint, FileSetId bigint, JobStatus char, Type char
+    ) ON COMMIT DROP;
+    CREATE TEMP TABLE FileSet (FileSetId bigint, FileSet text) ON COMMIT DROP;
+    CREATE TEMP TABLE JobMedia (JobId bigint) ON COMMIT DROP;
+    INSERT INTO FileSet VALUES (1, 'SelfTest'), (2, 'SelfTest');
+    INSERT INTO Job VALUES
+      (1, 'full', 'F', '2026-01-01 00:00:00', 1, 1, 1, 1, 'T', 'B'),
+      (2, 'oldinc', 'I', '2026-01-01 00:01:00', 1, 1, 1, 1, 'T', 'B'),
+      (3, 'diff', 'D', '2026-01-01 00:02:00', 1, 1, 1, 2, 'T', 'B'),
+      (4, 'inc', 'I', '2026-01-01 00:02:00', 1, 1, 1, 2, 'T', 'B'),
+      (5, 'empty', 'I', '2026-01-01 00:03:00', 0, 0, 1, 1, 'T', 'B'),
+      (6, 'nextfull', 'F', '2026-01-01 00:04:00', 1, 1, 1, 1, 'T', 'B');
+  )SQL"));
+
+  auto listed = [&]() {
+    PoolMem query;
+    db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_fulls_3>(
+        query, "1", "1", 'B');
+    std::vector<std::string> chains;
+    EXPECT_TRUE(db->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char** row) {
+          static_cast<std::vector<std::string>*>(context)->emplace_back(
+              row[10]);
+          return 0;
+        },
+        &chains));
+    return chains;
+  };
+  const auto snapshot = listed();
+  EXPECT_EQ(snapshot, (std::vector<std::string>{"6", "1,3,4"}));
+  ASSERT_TRUE(db->SqlExec("DELETE FROM Job WHERE JobId=4"));
+  EXPECT_EQ(listed(), (std::vector<std::string>{"6", "1,3"}));
+  EXPECT_EQ(snapshot.back(), "1,3,4");
+  ASSERT_TRUE(db->SqlExec("ROLLBACK"));
+}
+
 static bool CaptureCatalogOutput(void* context, const char* format, ...)
 {
   va_list args;
