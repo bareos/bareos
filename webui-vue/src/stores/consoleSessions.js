@@ -862,6 +862,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
         }
       }
       exitSelectionMode(session, director)
+      session.currentPrompt = '* '
       rejectAll(director, 'WebSocket closed')
       clearTimeout(runtime.exitDisconnectTimer)
       runtime.exitDisconnectTimer = null

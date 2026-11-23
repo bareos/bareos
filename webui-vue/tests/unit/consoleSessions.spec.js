@@ -1245,6 +1245,39 @@ describe('console session store', () => {
     expect(session.output.some(line => line.text.includes('.terminalsize'))).toBe(false)
   })
 
+  it('resets the prompt on socket close and sends terminal size on reconnect', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const credentials = { username: 'admin', password: 'secret', director: 'bareos-dir' }
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const oldSocket = FakeWebSocket.instances[0]
+    oldSocket.open()
+    oldSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    oldSocket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'select', text: 'Select:' }),
+    })
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.currentPrompt).toBe('')
+    oldSocket.close()
+    expect(session.currentPrompt).toBe('* ')
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const newSocket = FakeWebSocket.instances[1]
+    newSocket.open()
+    newSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    expect(JSON.parse(newSocket.sent[1]).command).toBe('.terminalsize 40 120 color')
+    newSocket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '2', prompt: 'sub', text: 'Name: ' }),
+    })
+    oldSocket.onclose?.()
+    expect(session.currentPrompt).toBe('Name: ')
+    expect(session.status).toBe('connected')
+  })
+
   it('defers terminal size updates until the main prompt returns', () => {
     const consoleSessions = useConsoleSessionsStore()
     consoleSessions.connectSession('bareos-dir', {
