@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -313,7 +313,7 @@ void SplitPathAndFilename(const char* fname,
 }
 
 // Extremely simple sscanf. Handles only %(u,d,hu,hd,ld,qd,qu,lu,lld,llu,c,nns)
-const int BIG = 1000;
+static constexpr size_t BIG = 1000;
 int bsscanf(const char* buf, const char* fmt, ...)
 {
   va_list ap;
@@ -322,7 +322,7 @@ int bsscanf(const char* buf, const char* fmt, ...)
   char* cp;
   int l = 0;
   int h = 0;
-  int max_len = BIG;
+  size_t max_len = BIG;
   uint64_t value;
   int64_t svalue;
   bool error = false;
@@ -395,8 +395,12 @@ int bsscanf(const char* buf, const char* fmt, ...)
           error = true;
           break;
         case 's':
+        parse_string:
           cp = (char*)va_arg(ap, char*);
-          while (*buf && !B_ISSPACE(*buf) && max_len-- > 0) { *cp++ = *buf++; }
+          while (*buf && !B_ISSPACE(*buf) && max_len > 0) {
+            *cp++ = *buf++;
+            max_len -= 1;
+          }
           *cp = 0;
           count++;
           max_len = BIG;
@@ -409,6 +413,18 @@ int bsscanf(const char* buf, const char* fmt, ...)
         case '%':
           if (*buf++ != '%') { error = true; }
           break;
+        case 'S': {
+          size_t buffer_size = va_arg(ap, size_t);
+
+          if (buffer_size <= 0) {
+            error = true; /* error: bad buffer length */
+            break;
+          }
+
+          // allow space for NUL
+          max_len = buffer_size - 1;
+          goto parse_string;
+        } break;
         default:
           fmt--;
           max_len = 0;

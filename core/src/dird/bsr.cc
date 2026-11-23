@@ -40,6 +40,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <fcntl.h>
 
 namespace directordaemon {
 
@@ -256,9 +257,9 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
     jcr->dir_impl->unlink_bsr = false;
   } else {
     lock_mutex(mutex);
-    uniq++;
+    auto val = uniq++;
     unlock_mutex(mutex);
-    Mmsg(fname, "%s/%s.restore.%u.bsr", working_directory, my_name, uniq);
+    Mmsg(fname, "%s/%s.restore.%u.bsr", working_directory, my_name, val);
     jcr->dir_impl->unlink_bsr = true;
   }
   if (jcr->RestoreBootstrap) { free(jcr->RestoreBootstrap); }
@@ -274,8 +275,23 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
   std::string buffer;
 
   MakeUniqueRestoreFilename(ua, fname);
-  fd = fopen(fname.c_str(), "w+b");
+
+  int descriptor = open(fname.c_str(),
+                        O_CREAT | O_WRONLY | O_EXCL | O_TRUNC | O_BINARY
+#ifndef HAVE_WIN32
+                            | O_CLOEXEC
+#endif
+                        ,
+                        0640);
+  if (descriptor < 0) {
+    BErrNo be;
+    ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
+                 fname.c_str(), be.bstrerror());
+    goto bail_out;
+  }
+  fd = fdopen(descriptor, "wb");
   if (!fd) {
+    close(descriptor);
     BErrNo be;
     ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
                  fname.c_str(), be.bstrerror());
