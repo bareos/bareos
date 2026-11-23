@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui test: fix restore selection in release build, update php in windows installer [PR #2890]
 - stored: prevent deadlocks for intra-sd jobs [PR #2901]
 - webui: prepare Bareos 25.1.3 upgrade, rename  `bareos-webui` to `bareos-webui-php`, introduce `bareos-webui` metapackage [PR #2916]
+- dird: fix not checking if file exists when writing bsr [PR #2936]
 
 ### Fixed
 - fix bvfs restore with real tmp tables [PR #2895]
@@ -2416,4 +2417,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2895]: https://github.com/bareos/bareos/pull/2895
 [PR #2901]: https://github.com/bareos/bareos/pull/2901
 [PR #2916]: https://github.com/bareos/bareos/pull/2916
+[PR #2936]: https://github.com/bareos/bareos/pull/2936
 [unreleased]: https://github.com/bareos/bareos/tree/master
