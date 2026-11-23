@@ -2053,7 +2053,9 @@ static bool ResolveBackupChainForClientFileset(
   bool ok = false;
   char ed1[50], ed2[50];
   std::string pool_select;
+  std::string media_select;
   std::string lower_bound;
+  std::string chain_boundary;
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
@@ -2077,15 +2079,9 @@ static bool ResolveBackupChainForClientFileset(
     }
   }
 
+  media_select = pool_select;
 
   if (selected) {
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_selected_full>(
-        rx->query, edit_int64(selected->JobId, ed1), pool_select.c_str());
-    if (!ua->db->SqlQuery(rx->query)
-        || !ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_full>(filter_name)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-      goto bail_out;
-    }
     if (selected->NextFullJobId) {
       if (selected->NextFullStartTime.empty()) {
         ua->ErrorMsg(T_("Missing next Full backup boundary.\n"));
@@ -2097,9 +2093,17 @@ static bool ResolveBackupChainForClientFileset(
         ua->ErrorMsg(T_("Unable to escape next Full backup boundary.\n"));
         goto bail_out;
       }
-      pool_select += "AND (Job.StartTime, Job.JobId) < ('" + *boundary + "', "
-                     + std::to_string(selected->NextFullJobId) + ") ";
+      chain_boundary = "AND (Job.StartTime, Job.JobId) < ('" + *boundary + "', "
+                       + std::to_string(selected->NextFullJobId) + ") ";
     }
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_selected_full>(
+        rx->query, edit_int64(selected->JobId, ed1), pool_select.c_str());
+    if (!ua->db->SqlQuery(rx->query)
+        || !ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_full>(filter_name)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      goto bail_out;
+    }
+    pool_select += chain_boundary;
   } else {
     if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
                                     edit_int64(cr.ClientId, ed1), date,
@@ -2204,6 +2208,30 @@ static bool ResolveBackupChainForClientFileset(
   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
     if (selected) { goto bail_out; }
+  }
+
+  if (selected) {
+    int unavailable = 0;
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_unavailable_selected_chain>(
+        rx->query, edit_int64(selected->JobId, ed1), date,
+        chain_boundary.c_str(), media_select.c_str(), media_select.c_str());
+    if (!ua->db->SqlQuery(
+            rx->query,
+            +[](void* context, int, char**) {
+              ++*static_cast<int*>(context);
+              return 0;
+            },
+            &unavailable)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      goto bail_out;
+    }
+    if (unavailable) {
+      ua->ErrorMsg(
+          T_("The selected restore point is unavailable because a required "
+             "backup or volume is missing, disabled, or outside the selected "
+             "pool.\n"));
+      goto bail_out;
+    }
   }
 
   if (rx->JobIds[0] != 0) {

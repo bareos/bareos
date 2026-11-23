@@ -1228,3 +1228,54 @@ SELECT Job.JobId, Job.JobTDate
    AND Media.Enabled = 1 %s
  LIMIT 1
 )SQL",
+
+/* 0091_uar_unavailable_selected_chain */
+R"SQL(WITH anchor AS (
+  SELECT JobId, StartTime, ClientId, FileSetId, Type, Level, JobFiles
+    FROM Job WHERE JobId = %s
+),
+eligible AS (
+  SELECT Job.JobId, Job.StartTime, Job.Level, Job.JobFiles
+    FROM Job
+    JOIN FileSet ON FileSet.FileSetId = Job.FileSetId
+    JOIN anchor ON anchor.ClientId = Job.ClientId AND anchor.Type = Job.Type
+    JOIN FileSet AS anchor_fileset ON anchor_fileset.FileSetId = anchor.FileSetId
+   WHERE FileSet.FileSet = anchor_fileset.FileSet
+     AND Job.JobStatus IN ('T','W')
+     AND Job.Level IN ('D','I')
+     AND (Job.StartTime, Job.JobId) > (anchor.StartTime, anchor.JobId)
+     AND Job.StartTime < '%s' %s
+),
+latest_diff AS (
+  SELECT * FROM eligible WHERE Level = 'D'
+   ORDER BY StartTime DESC, JobId DESC LIMIT 1
+),
+required AS (
+  SELECT JobId, Level, JobFiles FROM anchor
+  UNION ALL
+  SELECT JobId, Level, JobFiles FROM latest_diff
+  UNION ALL
+  SELECT eligible.JobId, eligible.Level, eligible.JobFiles FROM eligible
+   WHERE eligible.Level = 'I'
+     AND NOT EXISTS (
+       SELECT 1 FROM latest_diff
+        WHERE (eligible.StartTime, eligible.JobId)
+              <= (latest_diff.StartTime, latest_diff.JobId)
+     )
+)
+SELECT required.JobId FROM required
+ WHERE (required.Level <> 'I' OR required.JobFiles > 0
+        OR EXISTS (SELECT 1 FROM JobMedia WHERE JobMedia.JobId = required.JobId))
+   AND (
+     NOT EXISTS (SELECT 1 FROM temp WHERE temp.JobId = required.JobId)
+     OR NOT EXISTS (
+       SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+        WHERE JobMedia.JobId = required.JobId AND Media.Enabled = 1 %s
+     )
+     OR EXISTS (
+       SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+        WHERE JobMedia.JobId = required.JobId
+          AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+     )
+   )
+)SQL",

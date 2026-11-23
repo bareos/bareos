@@ -91,7 +91,8 @@ class BareosDbQueryEnum {
     uar_sel_client_fileset_tuples_1 = 80,
     uar_sel_client_fileset_fulls_3 = 81,
     uar_selected_full = 82,
-    SQL_QUERY_NUMBER = 83
+    uar_unavailable_selected_chain = 83,
+    SQL_QUERY_NUMBER = 84
   };
 };
 
