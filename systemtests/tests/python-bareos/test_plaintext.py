@@ -359,6 +359,16 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
         cases = (
             ("restore", second, {second, second_incremental}),
             ("restore", first, {first, first_differential, after_differential}),
+            (
+                "restore filesetclient=SelfTest@bareos-fd",
+                second,
+                {second, second_incremental},
+            ),
+            (
+                "restore filesetclient=SelfTest@bareos-fd",
+                first,
+                {first, first_differential, after_differential},
+            ),
             ("restore restorepointmode=job", second, {second}),
             ("restore restorepointmode=job", first, {first}),
         )

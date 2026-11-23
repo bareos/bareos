@@ -1805,6 +1805,7 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       ua->ErrorMsg(
           T_("No accessible FileSet@Client combination with backups "
              "matches the requested value.\n"));
+      ua->prompts.clear();
       return false;
     }
     bstrncpy(tuple, it->c_str(), sizeof(tuple));
@@ -1817,6 +1818,7 @@ static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
       return false;
     }
   }
+  ua->prompts.clear();
 
   char* at_sign = strchr(tuple, '@');
   if (!at_sign) {
