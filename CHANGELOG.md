@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - webui test: fix restore selection in release build, update php in windows installer [PR #2889]
+- dird: fix not checking if file exists when writing bsr [PR #2938]
 
 ## [23.1.9] - 2026-10-26
 
@@ -1822,4 +1823,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2880]: https://github.com/bareos/bareos/pull/2880
 [PR #2885]: https://github.com/bareos/bareos/pull/2885
 [PR #2889]: https://github.com/bareos/bareos/pull/2889
+[PR #2938]: https://github.com/bareos/bareos/pull/2938
 [unreleased]: https://github.com/bareos/bareos/tree/master
