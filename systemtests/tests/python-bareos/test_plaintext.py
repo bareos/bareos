@@ -469,6 +469,82 @@ class RestoreTreeSignalTest(bareos_unittest.Json):
         self.assertIn(b"The selected restore chain changed after it was listed", result)
         self.assertNotIn(b"You have selected the following JobIds", result)
 
+    def test_selected_restore_uses_copies_when_original_media_is_disabled(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(admin.close)
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        copy_name = f"restore-copy-test-{backup}"
+        volume_name = f"restore-disabled-test-{backup}"
+        self.addCleanup(
+            admin.call,
+            f".sql query=\"DELETE FROM Media WHERE VolumeName='{volume_name}'\"",
+        )
+        self.addCleanup(
+            admin.call, f".sql query=\"DELETE FROM Job WHERE Job='{copy_name}'\""
+        )
+        self.addCleanup(
+            admin.call,
+            '.sql query="DELETE FROM JobMedia WHERE '
+            f"JobId IN (SELECT JobId FROM Job WHERE Job='{copy_name}') "
+            f"OR MediaId IN (SELECT MediaId FROM Media WHERE VolumeName='{volume_name}')\"",
+        )
+        admin.call(
+            '.sql query="INSERT INTO Job '
+            "(Job,Name,Type,Level,ClientId,FileSetId,JobStatus,StartTime,EndTime,"
+            "JobTDate,JobFiles,JobBytes,PriorJobId) "
+            f"SELECT '{copy_name}',Name,'C',Level,ClientId,FileSetId,JobStatus,"
+            f'StartTime,EndTime,JobTDate,JobFiles,JobBytes,JobId FROM Job WHERE JobId={backup}"'
+        )
+        admin.call(
+            '.sql query="INSERT INTO JobMedia '
+            "(JobId,MediaId,FirstIndex,LastIndex,StartFile,EndFile,StartBlock,EndBlock,JobBytes,VolIndex) "
+            "SELECT c.JobId,j.MediaId,j.FirstIndex,j.LastIndex,j.StartFile,j.EndFile,"
+            "j.StartBlock,j.EndBlock,j.JobBytes,j.VolIndex FROM JobMedia j "
+            f"JOIN Job c ON c.PriorJobId=j.JobId AND c.Job='{copy_name}' "
+            f'WHERE j.JobId={backup}"'
+        )
+        admin.call(
+            '.sql query="INSERT INTO Media (VolumeName,MediaType,VolStatus,Enabled) '
+            f"VALUES ('{volume_name}','File','Full',0)\""
+        )
+        admin.call(
+            '.sql query="INSERT INTO JobMedia (JobId,MediaId) '
+            f"SELECT {backup},MediaId FROM Media WHERE VolumeName='{volume_name}'\""
+        )
+
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        console.call("restore copies filesetclient=SelfTest@bareos-fd")
+        response = console.call("2")
+        if b"The following restore points" in response:
+            choice = re.search(
+                rb"(?m)^\s*(\d+):[^\n]*\bJobId=" + str(backup).encode() + rb"\b",
+                response,
+            )
+            self.assertIsNotNone(choice, response)
+            response = console.call(choice.group(1).decode())
+        self.assertIn(b"Do you want to restore from these copies?", response)
+        response = console.call("yes")
+        selected = re.search(
+            rb"You have selected the following JobIds?: (\d+)", response
+        )
+        self.assertIsNotNone(selected, response)
+        self.assertNotEqual(int(selected.group(1)), int(backup))
+
     def test_reopened_tree_restores_changed_selection(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(

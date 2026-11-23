@@ -2097,20 +2097,26 @@ static bool ResolveBackupChainForClientFileset(
       chain_boundary = "AND (Job.StartTime, Job.JobId) < ('" + *boundary + "', "
                        + std::to_string(selected->NextFullJobId) + ") ";
     }
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_selected_full>(
-        rx->query, edit_int64(selected->JobId, ed1), pool_select.c_str());
-    if (!ua->db->SqlQuery(rx->query)
-        || !ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_full>(filter_name)) {
+    rx->last_jobid[0] = rx->JobIds[0] = 0;
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_required_selected_chain>(
+        rx->query, edit_int64(selected->JobId, ed1), date,
+        chain_boundary.c_str());
+    if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
       goto bail_out;
     }
-    pool_select += chain_boundary;
-  } else {
-    if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
-                                    edit_int64(cr.ClientId, ed1), date,
-                                    fsr.FileSet, pool_select.c_str())) {
+    if (selected->RequiredJobIds != rx->JobIds) {
+      ua->ErrorMsg(
+          T_("The selected restore chain changed after it was listed; "
+             "select the restore point again.\n"));
       goto bail_out;
     }
+    goto chain_resolved;
+  }
+  if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
+                                  edit_int64(cr.ClientId, ed1), date,
+                                  fsr.FileSet, pool_select.c_str())) {
+    goto bail_out;
   }
 
   /* Note, this is needed because I don't seem to get the callback from the call
@@ -2167,39 +2173,27 @@ static bool ResolveBackupChainForClientFileset(
   }
 
   // Now find most recent Differential Job after Full save, if any
-  lower_bound = selected
-                    ? "(Job.StartTime, Job.JobId) > (SELECT StartTime, JobId "
-                      "FROM Job WHERE JobId="
-                          + std::to_string(rx->JobId) + ")"
-                    : "Job.JobTDate > " + std::to_string(rx->JobTDate);
+  lower_bound = "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_dif>(
       rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
-      filter_name, fsr.FileSet, pool_select.c_str(),
-      selected ? "Job.StartTime DESC, Job.JobId DESC" : "Job.JobTDate DESC");
+      filter_name, fsr.FileSet, pool_select.c_str(), "Job.JobTDate DESC");
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
-    if (selected) { goto bail_out; }
   }
 
   // Now update JobTDate to look into Differential, if any
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
-    if (selected) { goto bail_out; }
   }
 
   // Now find all Incremental Jobs after Full/dif save
-  lower_bound = selected
-                    ? "(Job.StartTime, Job.JobId) > (SELECT StartTime, JobId "
-                      "FROM Job WHERE JobId="
-                          + std::to_string(rx->JobId) + ")"
-                    : "Job.JobTDate > " + std::to_string(rx->JobTDate);
+  lower_bound = "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_inc>(
       rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
       filter_name, fsr.FileSet, pool_select.c_str());
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
-    if (selected) { goto bail_out; }
   }
 
   // Get the JobIds from that list
@@ -2208,40 +2202,9 @@ static bool ResolveBackupChainForClientFileset(
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_temp>(rx->query);
   if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
-    if (selected) { goto bail_out; }
   }
 
-  if (selected && selected->RequiredJobIds != rx->JobIds) {
-    ua->ErrorMsg(
-        T_("The selected restore chain changed after it was listed; "
-           "select the restore point again.\n"));
-    goto bail_out;
-  }
-
-  if (selected) {
-    int unavailable = 0;
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_unavailable_selected_chain>(
-        rx->query, edit_int64(selected->JobId, ed1), date,
-        chain_boundary.c_str(), media_select.c_str(), media_select.c_str());
-    if (!ua->db->SqlQuery(
-            rx->query,
-            +[](void* context, int, char**) {
-              ++*static_cast<int*>(context);
-              return 0;
-            },
-            &unavailable)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-      goto bail_out;
-    }
-    if (unavailable) {
-      ua->ErrorMsg(
-          T_("The selected restore point is unavailable because a required "
-             "backup or volume is missing, disabled, or outside the selected "
-             "pool.\n"));
-      goto bail_out;
-    }
-  }
-
+chain_resolved:
   if (rx->JobIds[0] != 0) {
     POOLMEM* filtered_jobids
         = FilterJobIdsByJobAcl(ua, rx->JobIds, !selected);
@@ -2261,8 +2224,14 @@ static bool ResolveBackupChainForClientFileset(
       POOLMEM* original_jobids = GetPoolMemory(PM_FNAME);
       PmStrcpy(original_jobids, rx->JobIds);
       rx->last_jobid[0] = rx->JobIds[0] = 0;
-      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
-          rx->query, original_jobids);
+      if (selected) {
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_available_jobid_copies>(
+            rx->query, original_jobids, media_select.c_str(),
+            media_select.c_str());
+      } else {
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
+            rx->query, original_jobids);
+      }
       bool copies_query_ok
           = ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx);
       if (!copies_query_ok) { ua->WarningMsg("%s\n", ua->db->strerror()); }
@@ -2296,6 +2265,29 @@ static bool ResolveBackupChainForClientFileset(
       }
 
       if (copy_jobids) { FreePoolMemory(copy_jobids); }
+    }
+
+    if (selected) {
+      int unavailable = 0;
+      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_unavailable_restore_media>(
+          rx->query, rx->JobIds, media_select.c_str(), media_select.c_str());
+      if (!ua->db->SqlQuery(
+              rx->query,
+              +[](void* context, int, char**) {
+                ++*static_cast<int*>(context);
+                return 0;
+              },
+              &unavailable)) {
+        ua->ErrorMsg("%s\n", ua->db->strerror());
+        goto bail_out;
+      }
+      if (unavailable) {
+        ua->ErrorMsg(
+            T_("The selected restore point is unavailable because a required "
+               "backup or volume is missing, disabled, or outside the selected "
+               "pool.\n"));
+        goto bail_out;
+      }
     }
 
     // Display a list of Jobs selected for this restore

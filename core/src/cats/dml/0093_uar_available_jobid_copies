@@ -1,0 +1,16 @@
+# Select usable copies without requiring the original media to be available.
+SELECT DISTINCT Job.JobId, Job.StartTime
+  FROM Job
+ WHERE Job.Type = 'C'
+   AND Job.JobStatus IN ('T','W')
+   AND Job.PriorJobId IN (%s)
+   AND EXISTS (
+     SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId AND Media.Enabled = 1 %s
+   )
+   AND NOT EXISTS (
+     SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId
+        AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+   )
+ ORDER BY Job.StartTime, Job.JobId

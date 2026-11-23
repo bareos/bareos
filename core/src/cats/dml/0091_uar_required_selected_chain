@@ -1,7 +1,7 @@
-# Check required jobs against the resolved chain and their media.
+# Resolve required jobs without filtering on media availability.
 WITH anchor AS (
   SELECT JobId, StartTime, ClientId, FileSetId, Type, Level, JobFiles
-    FROM Job WHERE JobId = %s
+    FROM Job WHERE JobId = %s AND Level = 'F' AND JobStatus IN ('T','W')
 ),
 eligible AS (
   SELECT Job.JobId, Job.StartTime, Job.Level, Job.JobFiles
@@ -20,11 +20,11 @@ latest_diff AS (
    ORDER BY StartTime DESC, JobId DESC LIMIT 1
 ),
 required AS (
-  SELECT JobId, Level, JobFiles FROM anchor
+  SELECT JobId, StartTime, Level, JobFiles FROM anchor
   UNION ALL
-  SELECT JobId, Level, JobFiles FROM latest_diff
+  SELECT JobId, StartTime, Level, JobFiles FROM latest_diff
   UNION ALL
-  SELECT eligible.JobId, eligible.Level, eligible.JobFiles FROM eligible
+  SELECT eligible.JobId, eligible.StartTime, eligible.Level, eligible.JobFiles FROM eligible
    WHERE eligible.Level = 'I'
      AND NOT EXISTS (
        SELECT 1 FROM latest_diff
@@ -35,15 +35,4 @@ required AS (
 SELECT required.JobId FROM required
  WHERE (required.Level <> 'I' OR required.JobFiles > 0
         OR EXISTS (SELECT 1 FROM JobMedia WHERE JobMedia.JobId = required.JobId))
-   AND (
-     NOT EXISTS (SELECT 1 FROM temp WHERE temp.JobId = required.JobId)
-     OR NOT EXISTS (
-       SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
-        WHERE JobMedia.JobId = required.JobId AND Media.Enabled = 1 %s
-     )
-     OR EXISTS (
-       SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
-        WHERE JobMedia.JobId = required.JobId
-          AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
-     )
-   )
+ ORDER BY required.StartTime, required.JobId

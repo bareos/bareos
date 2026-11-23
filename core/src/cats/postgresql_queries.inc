@@ -1250,10 +1250,10 @@ SELECT Job.JobId, Job.JobTDate
  LIMIT 1
 )SQL",
 
-/* 0091_uar_unavailable_selected_chain */
+/* 0091_uar_required_selected_chain */
 R"SQL(WITH anchor AS (
   SELECT JobId, StartTime, ClientId, FileSetId, Type, Level, JobFiles
-    FROM Job WHERE JobId = %s
+    FROM Job WHERE JobId = %s AND Level = 'F' AND JobStatus IN ('T','W')
 ),
 eligible AS (
   SELECT Job.JobId, Job.StartTime, Job.Level, Job.JobFiles
@@ -1272,11 +1272,11 @@ latest_diff AS (
    ORDER BY StartTime DESC, JobId DESC LIMIT 1
 ),
 required AS (
-  SELECT JobId, Level, JobFiles FROM anchor
+  SELECT JobId, StartTime, Level, JobFiles FROM anchor
   UNION ALL
-  SELECT JobId, Level, JobFiles FROM latest_diff
+  SELECT JobId, StartTime, Level, JobFiles FROM latest_diff
   UNION ALL
-  SELECT eligible.JobId, eligible.Level, eligible.JobFiles FROM eligible
+  SELECT eligible.JobId, eligible.StartTime, eligible.Level, eligible.JobFiles FROM eligible
    WHERE eligible.Level = 'I'
      AND NOT EXISTS (
        SELECT 1 FROM latest_diff
@@ -1287,16 +1287,40 @@ required AS (
 SELECT required.JobId FROM required
  WHERE (required.Level <> 'I' OR required.JobFiles > 0
         OR EXISTS (SELECT 1 FROM JobMedia WHERE JobMedia.JobId = required.JobId))
-   AND (
-     NOT EXISTS (SELECT 1 FROM temp WHERE temp.JobId = required.JobId)
-     OR NOT EXISTS (
-       SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
-        WHERE JobMedia.JobId = required.JobId AND Media.Enabled = 1 %s
-     )
-     OR EXISTS (
-       SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
-        WHERE JobMedia.JobId = required.JobId
-          AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
-     )
+ ORDER BY required.StartTime, required.JobId
+)SQL",
+
+/* 0092_uar_unavailable_restore_media */
+R"SQL(WITH requested AS (SELECT unnest(ARRAY[%s]::bigint[]) AS JobId)
+SELECT requested.JobId
+  FROM requested LEFT JOIN Job ON Job.JobId = requested.JobId
+ WHERE Job.JobId IS NULL
+    OR NOT EXISTS (
+      SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId AND Media.Enabled = 1 %s
+    )
+    OR EXISTS (
+      SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId
+         AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+    )
+ ORDER BY requested.JobId
+)SQL",
+
+/* 0093_uar_available_jobid_copies */
+R"SQL(SELECT DISTINCT Job.JobId, Job.StartTime
+  FROM Job
+ WHERE Job.Type = 'C'
+   AND Job.JobStatus IN ('T','W')
+   AND Job.PriorJobId IN (%s)
+   AND EXISTS (
+     SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId AND Media.Enabled = 1 %s
    )
+   AND NOT EXISTS (
+     SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId
+        AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+   )
+ ORDER BY Job.StartTime, Job.JobId
 )SQL",

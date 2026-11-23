@@ -85,6 +85,8 @@ const char *BareosDb::query_names[] = {
 "uar_sel_client_fileset_tuples_1",
 "uar_sel_client_fileset_fulls_3",
 "uar_selected_full",
-"uar_unavailable_selected_chain",
+"uar_required_selected_chain",
+"uar_unavailable_restore_media",
+"uar_available_jobid_copies",
 NULL
 };
