@@ -717,6 +717,18 @@ describe('console session store', () => {
     expect(replayed).toEqual(['second line\n'])
   })
 
+  it('retains the newest replay chunks after repeated eviction and compaction', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    for (let i = 0; i < 5000; i += 1) {
+      consoleSessions.appendInfo('bareos-dir', `${String(i).padStart(4, '0')}${'x'.repeat(95)}`)
+    }
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed).toHaveLength(2000)
+    expect(replayed[0]).toBe(`3000${'x'.repeat(95)}\n`)
+    expect(replayed.at(-1)).toBe(`4999${'x'.repeat(95)}\n`)
+  })
+
   it('clears the replay buffer when the console output is cleared', () => {
     const consoleSessions = useConsoleSessionsStore()
 

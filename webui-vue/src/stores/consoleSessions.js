@@ -474,8 +474,9 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
       if (terminalLogStartsInSelection.get(normalizedDirector)) {
         writer('\x1B[?1049h')
       }
-      if (log && log.length) {
-        for (const entry of log) {
+      if (log) {
+        for (let i = log.head; i < log.entries.length; i += 1) {
+          const entry = log.entries[i]
           writer(entry.text, entry.options)
         }
       }
@@ -492,21 +493,25 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
     let log = terminalLogs.get(normalizedDirector)
     if (!log) {
-      log = []
+      log = { entries: [], head: 0, charCount: 0 }
       terminalLogs.set(normalizedDirector, log)
     }
-    if (text || log.at(-1)?.options?.streaming) {
-      log.push({ text, options })
+    if (text || log.entries.at(-1)?.options?.streaming) {
+      log.entries.push({ text, options })
+      log.charCount += text.length
     }
-    let logLength = log.reduce((total, chunk) => total + chunk.text.length, 0)
-    while (logLength > TERMINAL_LOG_MAX_CHARS && log.length > 1) {
-      const removed = log.shift()
-      logLength -= removed.text.length
+    while (log.charCount > TERMINAL_LOG_MAX_CHARS && log.entries.length - log.head > 1) {
+      const removed = log.entries[log.head++]
+      log.charCount -= removed.text.length
       if (removed.text === '\x1B[?1049h') {
         terminalLogStartsInSelection.set(normalizedDirector, true)
       } else if (removed.text === '\x1B[?1049l\r\n') {
         terminalLogStartsInSelection.set(normalizedDirector, false)
       }
+    }
+    if (log.head >= 1024 && log.head * 2 >= log.entries.length) {
+      log.entries = log.entries.slice(log.head)
+      log.head = 0
     }
 
     terminalWriters.get(normalizedDirector)?.(text, options)
@@ -877,7 +882,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     session.output = []
     session.outputLineOpen = false
-    terminalLogs.set(director || DEFAULT_DIRECTOR_NAME, [])
+    terminalLogs.delete(director || DEFAULT_DIRECTOR_NAME)
     terminalLogStartsInSelection.set(director || DEFAULT_DIRECTOR_NAME, session.selectionActive)
     appendInfo(director, 'Console cleared.')
   }
