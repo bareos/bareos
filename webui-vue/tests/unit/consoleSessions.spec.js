@@ -295,6 +295,43 @@ describe('console session store', () => {
     expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(true)
   })
 
+  it('keeps selection input blocked through streamed output until a prompt arrives', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    for (const [prompt, text] of [
+      ['select_busy', 'Building tree'],
+      ['more', '86 files inserted\n'],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', prompt, text }),
+      })
+    }
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(session.output.map(line => line.text).join('\n')).toContain('86 files inserted')
+    expect(consoleSessions.sendCommand('bareos-dir', 'status')).toBe(false)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:enter')).toBe(false)
+    expect(socket.sent).toHaveLength(2)
+
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'sub', text: '$ ' }),
+    })
+    expect(session.selectionActive).toBe(false)
+    expect(session.currentPrompt).toBe('$ ')
+    expect(consoleSessions.sendCommand('bareos-dir', 'status')).toBe(true)
+  })
+
   it('normalizes terminal inverse selection markers for browser display', () => {
     const consoleSessions = useConsoleSessionsStore()
 

@@ -371,6 +371,14 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
     }
   }
 
+  if (message.prompt === 'more' && session.selectionActive && session.selectionBusy) {
+    appendLines(director, message.text, '', true, true)
+    return {
+      outputText: message.text,
+      promptText: '',
+    }
+  }
+
   if (session.selectionActive) {
     // Leaving interactive selection: return to the main screen buffer and
     // start normal output on a fresh line.
@@ -886,6 +894,11 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
 
     if (runtime.closing) {
       appendInfo(director, 'Console is disconnecting. Reconnect before sending commands.')
+      return false
+    }
+
+    if (session.selectionActive && session.selectionBusy) {
+      appendErr(director, 'Cannot send a command while the selection is busy.')
       return false
     }
 
