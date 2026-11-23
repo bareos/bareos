@@ -1,0 +1,67 @@
+# List the latest restore point in every Full backup chain, newest first.
+
+WITH completed_jobs AS (
+  SELECT JobId, Name, Level, StartTime, JobFiles, JobBytes
+    FROM Job
+   WHERE ClientId = %s
+     AND FileSetId IN (
+       SELECT FileSetId FROM FileSet
+        WHERE FileSet = (SELECT FileSet FROM FileSet WHERE FileSetId = %s)
+     )
+     AND JobStatus IN ('T','W')
+     AND Type = '%c'
+),
+full_backups AS (
+  SELECT JobId,
+         Name AS FullJobName,
+         StartTime AS FullStartTime,
+         JobFiles AS FullJobFiles,
+         JobBytes AS FullJobBytes,
+         LEAD(StartTime) OVER (ORDER BY StartTime, JobId) AS NextFullStartTime,
+         LEAD(JobId) OVER (ORDER BY StartTime, JobId) AS NextFullJobId
+    FROM completed_jobs
+   WHERE Level = 'F'
+)
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
+       full_backups.FullJobFiles,
+       full_backups.FullJobBytes,
+       full_backups.NextFullJobId,
+       full_backups.NextFullStartTime,
+       full_backups.FullJobName,
+       STRING_AGG(completed_jobs.JobId::text, ','
+                  ORDER BY completed_jobs.StartTime, completed_jobs.JobId)
+         FILTER (WHERE completed_jobs.JobId = full_backups.JobId
+                   OR completed_jobs.JobId = latest_diff.JobId
+                   OR (completed_jobs.Level = 'I'
+                       AND (latest_diff.JobId IS NULL
+                            OR (completed_jobs.StartTime, completed_jobs.JobId)
+                               > (latest_diff.StartTime, latest_diff.JobId))
+                       AND (completed_jobs.JobFiles > 0
+                            OR EXISTS (SELECT 1 FROM JobMedia
+                                       WHERE JobMedia.JobId = completed_jobs.JobId))))
+         AS RequiredJobIds
+  FROM full_backups
+  LEFT JOIN LATERAL (
+    SELECT JobId, StartTime FROM completed_jobs
+     WHERE Level = 'D'
+       AND (StartTime, JobId) > (full_backups.FullStartTime, full_backups.JobId)
+       AND (full_backups.NextFullStartTime IS NULL
+            OR (StartTime, JobId)
+               < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
+     ORDER BY StartTime DESC, JobId DESC LIMIT 1
+  ) AS latest_diff ON TRUE
+  JOIN completed_jobs
+    ON (completed_jobs.StartTime, completed_jobs.JobId)
+       >= (full_backups.FullStartTime, full_backups.JobId)
+   AND (full_backups.NextFullStartTime IS NULL
+        OR (completed_jobs.StartTime, completed_jobs.JobId)
+           < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
+ GROUP BY full_backups.JobId, full_backups.FullStartTime,
+          full_backups.FullJobFiles, full_backups.FullJobBytes,
+          full_backups.NextFullJobId, full_backups.NextFullStartTime,
+          full_backups.FullJobName, latest_diff.JobId, latest_diff.StartTime
+ ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC

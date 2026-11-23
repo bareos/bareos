@@ -10,4 +10,10 @@ Job {
   Full Backup Pool = Full
   Maximum Bandwidth = 50K
   MaximumConcurrentJobs = 10
+  RunScript {
+    RunsWhen = Before
+    Runs On Client = Yes
+    FailJobOnError = Yes
+    Command = "bash @tmpdir@/bandwidth-gate.sh %i"
+  }
 }

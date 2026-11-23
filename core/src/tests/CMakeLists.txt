@@ -416,9 +416,32 @@ if(ENABLE_BCONSOLE)
     test_config_parser_console LINK_LIBRARIES Bareos::Console Bareos::Lib
                                               Bareos::Findlib GTest::gtest_main
   )
+  bareos_add_test(
+    test_console_key_mapping LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                            GTest::gtest_main
+  )
+  bareos_add_test(
+    test_console_output LINK_LIBRARIES Bareos::Console Bareos::Lib
+                                       GTest::gtest_main
+  )
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(Readline REQUIRED)
+    bareos_add_test(
+      test_console_signal
+      LINK_LIBRARIES Bareos::Console Bareos::Lib Readline::Readline CLI11::CLI11
+                     GTest::gtest_main ${CMAKE_DL_LIBS}
+    )
+  endif()
+  bareos_add_test(test_tree_browser_rendering LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_pool_list_columns LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_plugin_hints LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(test_restore_options LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_volume_usage LINK_LIBRARIES ${LINK_LIBRARIES})
   bareos_add_test(test_volstatus_change LINK_LIBRARIES ${LINK_LIBRARIES})
+  bareos_add_test(
+    test_ua_restore_point_display LINK_LIBRARIES ${LINK_LIBRARIES}
+  )
+  bareos_add_test(test_ua_run_helpers LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
 
 # Keep alphabetically ordered

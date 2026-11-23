@@ -39,6 +39,7 @@
 #include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/fd_sendfileset.h"
+#include "dird/restore_plugin_hints.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"
 #include "dird/fd_cmds.h"
@@ -750,16 +751,43 @@ bool SendPluginOptions(JobControlRecord* jcr)
   POOLMEM* msg;
 
   if (jcr->dir_impl->plugin_options) {
-    msg = GetPoolMemory(PM_FNAME);
-    PmStrcpy(msg, jcr->dir_impl->plugin_options);
-    BashSpaces(msg);
-
-    fd->fsend(pluginoptionscmd, msg);
-    FreePoolMemory(msg);
-
-    if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
-      Jmsg(jcr, M_FATAL, 0, T_("Plugin options failed.\n"));
+    // The interactive "pluginoptions=" argument may contain more than
+    // one "pluginname:key=value:..." block, one per detected plugin,
+    // separated by newlines (see the plugin options editor in
+    // ua_tree_browser.cc / restore_plugin_hints.h). Each block still
+    // addresses exactly one plugin (see GetPluginName() in
+    // filed/fd_plugins.cc), so send one "pluginoptions" command per
+    // block, matching how the FdPluginOptions alist below is already
+    // sent one entry at a time. Parsing/re-building each block (instead
+    // of just splitting on '\n') normalizes the wire form and is
+    // covered by restore_plugin_hints' own unit tests.
+    const auto blocks
+        = directordaemon::restore_plugin_hints::ParsePluginOptionsDocument(
+            jcr->dir_impl->plugin_options);
+    if (directordaemon::restore_plugin_hints::
+            HasConflictingPluginModuleNames(blocks)) {
+      Jmsg(jcr, M_FATAL, 0,
+           T_("Conflicting module_name values for one plugin loader.\n"));
       return false;
+    }
+
+    for (const auto& block : blocks) {
+      std::string line
+          = directordaemon::restore_plugin_hints::BuildPluginOptionsBlock(
+              block);
+      if (line.empty()) { continue; }
+
+      msg = GetPoolMemory(PM_FNAME);
+      PmStrcpy(msg, line.c_str());
+      BashSpaces(msg);
+
+      fd->fsend(pluginoptionscmd, msg);
+      FreePoolMemory(msg);
+
+      if (!response(jcr, fd, OKPluginOptions, "PluginOptions", DISPLAY_ERROR)) {
+        Jmsg(jcr, M_FATAL, 0, T_("Plugin options failed.\n"));
+        return false;
+      }
     }
   }
   if (jcr->dir_impl->res.job && jcr->dir_impl->res.job->FdPluginOptions

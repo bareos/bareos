@@ -547,12 +547,12 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    select which files from those JobIds are to be restored.
 
    To select the JobIds, you have the following choices:
-        1: List last 20 Jobs run
+        1: Select a FileSet@Client combination (latest backup)
         ...
         5: Select the most recent backup for a client
         ...
-       13: Cancel
-   Select item:  (1-13): <input>5</input>
+       15: Cancel
+   Select item:  (1-15): <input>5</input>
    Automatically selected Client: vmw5-bareos-centos6-64-devel-fd
    The defined FileSet resources are:
         1: Catalog
@@ -610,11 +610,16 @@ For restoring to local VMDK, the plugin option :strong:`localvmdk=yes` must be p
    Priority:        10
    Plugin Options:  *None*
    OK to run? (yes/mod/no): <input>mod</input>
-   Parameters to modify:
-        1: Level
-        ...
-       14: Plugin Options
-   Select parameter to modify (1-14): <input>14</input>
+   Restore options to modify:
+        1: Run now
+        2: Restore Client
+        3: Where
+        4: Files
+        5: File Relocation
+        6: Replace Policy
+        7: Plugin Options
+        8: Advanced Options
+   Select restore option to modify (1-8): <input>7</input>
    Please enter Plugin Options string: <input>python:localvmdk=yes</input>
    Run Restore job
    JobName:         RestoreFiles

@@ -255,7 +255,7 @@ R"SQL(INSERT INTO temp
 SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
        JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
   FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
+ WHERE %s
    AND Job.StartTime    < '%s'
    AND Job.ClientId     = %s
    AND JobMedia.JobId   = Job.JobId
@@ -266,7 +266,7 @@ SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBy
    AND Type             = '%c'
    AND Job.FileSetId    = FileSet.FileSetId
    AND FileSet.FileSet  = '%s' %s
- ORDER BY Job.JobTDate DESC LIMIT 1
+ ORDER BY %s LIMIT 1
 )SQL",
 
 /* 0024_uar_inc */
@@ -274,7 +274,7 @@ R"SQL(INSERT INTO temp
 SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
        JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
   FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
+ WHERE %s
    AND Job.StartTime    < '%s'
    AND Job.ClientId     = %s
    AND Media.Enabled    = 1
@@ -300,7 +300,7 @@ R"SQL(SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.Star
 /* 0026_uar_sel_jobid_temp */
 R"SQL(SELECT DISTINCT JobId, StartTime
   FROM temp
- ORDER BY StartTime ASC
+ ORDER BY StartTime ASC, JobId ASC
 )SQL",
 
 /* 0027_uar_sel_all_temp1 */
@@ -311,6 +311,7 @@ R"SQL(SELECT *
 /* 0028_uar_sel_all_temp */
 R"SQL(SELECT *
   FROM temp
+ ORDER BY StartTime ASC, JobId ASC
 )SQL",
 
 /* 0029_uar_sel_fileset */
@@ -1158,4 +1159,168 @@ INNER JOIN (
 ) LastJob
 ON Job.JobId = LastJob.MaxJobId
 ;
+)SQL",
+
+/* 0088_uar_sel_client_fileset_tuples_1 */
+R"SQL(SELECT DISTINCT Client.Name, FileSet.FileSet, Job.Name
+  FROM Job, Client, FileSet
+ WHERE Job.ClientId   = Client.ClientId
+   AND Job.FileSetId  = FileSet.FileSetId
+   AND Job.JobStatus IN ('T','W')
+   AND Job.Type       = '%c'
+ ORDER BY Client.Name, FileSet.FileSet, Job.Name
+)SQL",
+
+/* 0089_uar_sel_client_fileset_fulls_3 */
+R"SQL(WITH completed_jobs AS (
+  SELECT JobId, Name, Level, StartTime, JobFiles, JobBytes
+    FROM Job
+   WHERE ClientId = %s
+     AND FileSetId IN (
+       SELECT FileSetId FROM FileSet
+        WHERE FileSet = (SELECT FileSet FROM FileSet WHERE FileSetId = %s)
+     )
+     AND JobStatus IN ('T','W')
+     AND Type = '%c'
+),
+full_backups AS (
+  SELECT JobId,
+         Name AS FullJobName,
+         StartTime AS FullStartTime,
+         JobFiles AS FullJobFiles,
+         JobBytes AS FullJobBytes,
+         LEAD(StartTime) OVER (ORDER BY StartTime, JobId) AS NextFullStartTime,
+         LEAD(JobId) OVER (ORDER BY StartTime, JobId) AS NextFullJobId
+    FROM completed_jobs
+   WHERE Level = 'F'
+)
+SELECT full_backups.JobId,
+       full_backups.FullStartTime,
+       MAX(completed_jobs.StartTime) AS RestorePoint,
+       COUNT(*) AS JobCount,
+       STRING_AGG(DISTINCT completed_jobs.Name, E'\n') AS JobNames,
+       full_backups.FullJobFiles,
+       full_backups.FullJobBytes,
+       full_backups.NextFullJobId,
+       full_backups.NextFullStartTime,
+       full_backups.FullJobName,
+       STRING_AGG(completed_jobs.JobId::text, ','
+                  ORDER BY completed_jobs.StartTime, completed_jobs.JobId)
+         FILTER (WHERE completed_jobs.JobId = full_backups.JobId
+                   OR completed_jobs.JobId = latest_diff.JobId
+                   OR (completed_jobs.Level = 'I'
+                       AND (latest_diff.JobId IS NULL
+                            OR (completed_jobs.StartTime, completed_jobs.JobId)
+                               > (latest_diff.StartTime, latest_diff.JobId))
+                       AND (completed_jobs.JobFiles > 0
+                            OR EXISTS (SELECT 1 FROM JobMedia
+                                       WHERE JobMedia.JobId = completed_jobs.JobId))))
+         AS RequiredJobIds
+  FROM full_backups
+  LEFT JOIN LATERAL (
+    SELECT JobId, StartTime FROM completed_jobs
+     WHERE Level = 'D'
+       AND (StartTime, JobId) > (full_backups.FullStartTime, full_backups.JobId)
+       AND (full_backups.NextFullStartTime IS NULL
+            OR (StartTime, JobId)
+               < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
+     ORDER BY StartTime DESC, JobId DESC LIMIT 1
+  ) AS latest_diff ON TRUE
+  JOIN completed_jobs
+    ON (completed_jobs.StartTime, completed_jobs.JobId)
+       >= (full_backups.FullStartTime, full_backups.JobId)
+   AND (full_backups.NextFullStartTime IS NULL
+        OR (completed_jobs.StartTime, completed_jobs.JobId)
+           < (full_backups.NextFullStartTime, full_backups.NextFullJobId))
+ GROUP BY full_backups.JobId, full_backups.FullStartTime,
+          full_backups.FullJobFiles, full_backups.FullJobBytes,
+          full_backups.NextFullJobId, full_backups.NextFullStartTime,
+          full_backups.FullJobName, latest_diff.JobId, latest_diff.StartTime
+ ORDER BY full_backups.FullStartTime DESC, full_backups.JobId DESC
+)SQL",
+
+/* 0090_uar_selected_full */
+R"SQL(INSERT INTO temp1
+SELECT Job.JobId, Job.JobTDate
+  FROM Job, JobMedia, Media
+ WHERE Job.JobId = %s
+   AND JobMedia.JobId = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+   AND Media.Enabled = 1 %s
+ LIMIT 1
+)SQL",
+
+/* 0091_uar_required_selected_chain */
+R"SQL(WITH anchor AS (
+  SELECT JobId, StartTime, ClientId, FileSetId, Type, Level, JobFiles
+    FROM Job WHERE JobId = %s AND Level = 'F' AND JobStatus IN ('T','W')
+),
+eligible AS (
+  SELECT Job.JobId, Job.StartTime, Job.Level, Job.JobFiles
+    FROM Job
+    JOIN FileSet ON FileSet.FileSetId = Job.FileSetId
+    JOIN anchor ON anchor.ClientId = Job.ClientId AND anchor.Type = Job.Type
+    JOIN FileSet AS anchor_fileset ON anchor_fileset.FileSetId = anchor.FileSetId
+   WHERE FileSet.FileSet = anchor_fileset.FileSet
+     AND Job.JobStatus IN ('T','W')
+     AND Job.Level IN ('D','I')
+     AND (Job.StartTime, Job.JobId) > (anchor.StartTime, anchor.JobId)
+     AND Job.StartTime < '%s' %s
+),
+latest_diff AS (
+  SELECT * FROM eligible WHERE Level = 'D'
+   ORDER BY StartTime DESC, JobId DESC LIMIT 1
+),
+required AS (
+  SELECT JobId, StartTime, Level, JobFiles FROM anchor
+  UNION ALL
+  SELECT JobId, StartTime, Level, JobFiles FROM latest_diff
+  UNION ALL
+  SELECT eligible.JobId, eligible.StartTime, eligible.Level, eligible.JobFiles FROM eligible
+   WHERE eligible.Level = 'I'
+     AND NOT EXISTS (
+       SELECT 1 FROM latest_diff
+        WHERE (eligible.StartTime, eligible.JobId)
+              <= (latest_diff.StartTime, latest_diff.JobId)
+     )
+)
+SELECT required.JobId FROM required
+ WHERE (required.Level <> 'I' OR required.JobFiles > 0
+        OR EXISTS (SELECT 1 FROM JobMedia WHERE JobMedia.JobId = required.JobId))
+ ORDER BY required.StartTime, required.JobId
+)SQL",
+
+/* 0092_uar_unavailable_restore_media */
+R"SQL(WITH requested AS (SELECT unnest(ARRAY[%s]::bigint[]) AS JobId)
+SELECT requested.JobId
+  FROM requested LEFT JOIN Job ON Job.JobId = requested.JobId
+ WHERE Job.JobId IS NULL
+    OR NOT EXISTS (
+      SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId AND Media.Enabled = 1 %s
+    )
+    OR EXISTS (
+      SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId
+         AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+    )
+ ORDER BY requested.JobId
+)SQL",
+
+/* 0093_uar_available_jobid_copies */
+R"SQL(SELECT DISTINCT Job.JobId, Job.StartTime
+  FROM Job
+ WHERE Job.Type = 'C'
+   AND Job.JobStatus IN ('T','W')
+   AND Job.PriorJobId IN (%s)
+   AND EXISTS (
+     SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId AND Media.Enabled = 1 %s
+   )
+   AND NOT EXISTS (
+     SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+      WHERE JobMedia.JobId = Job.JobId
+        AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+   )
+ ORDER BY Job.StartTime, Job.JobId
 )SQL",

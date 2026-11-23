@@ -171,6 +171,169 @@ TEST_F(CatalogTest, big_query_stops_when_handler_requests_it)
   EXPECT_EQ(rows, 1);
 }
 
+TEST_F(CatalogTest, selected_chain_resolves_before_checking_chosen_media)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    BEGIN;
+    CREATE TEMP TABLE Job (
+      JobId bigint, StartTime timestamp, ClientId bigint, FileSetId bigint,
+      Type char, Level char, JobFiles bigint, JobStatus char
+    ) ON COMMIT DROP;
+    CREATE TEMP TABLE FileSet (FileSetId bigint, FileSet text) ON COMMIT DROP;
+    CREATE TEMP TABLE JobMedia (JobId bigint, MediaId bigint) ON COMMIT DROP;
+    CREATE TEMP TABLE Media (MediaId bigint, Enabled integer, PoolId bigint)
+      ON COMMIT DROP;
+    INSERT INTO FileSet VALUES (1, 'SelfTest'), (2, 'SelfTest');
+    INSERT INTO Job VALUES
+      (1, '2026-01-01 00:00:00', 1, 1, 'B', 'F', 1, 'T'),
+      (2, '2026-01-01 00:01:00', 1, 1, 'B', 'I', 1, 'T'),
+      (3, '2026-01-01 00:02:00', 1, 2, 'B', 'D', 1, 'T'),
+      (4, '2026-01-01 00:03:00', 1, 2, 'B', 'I', 1, 'T'),
+      (5, '2026-01-01 00:04:00', 1, 1, 'B', 'F', 1, 'T'),
+      (6, '2026-01-01 00:05:00', 1, 1, 'B', 'I', 1, 'T'),
+      (7, '2026-01-01 00:03:30', 1, 1, 'B', 'I', 0, 'T'),
+      (8, '2026-01-01 01:00:00', 1, 1, 'C', 'F', 1, 'T'),
+      (9, '2026-01-01 01:01:00', 1, 1, 'C', 'D', 1, 'T'),
+      (10, '2026-01-01 01:02:00', 1, 1, 'C', 'I', 1, 'T'),
+      (11, '2026-01-01 01:03:00', 1, 1, 'C', 'D', 1, 'E'),
+      (12, '2026-01-01 01:04:00', 1, 1, 'C', 'D', 1, 'T'),
+      (13, '2026-01-01 01:05:00', 1, 1, 'C', 'D', 1, 'T');
+    ALTER TABLE Job ADD COLUMN PriorJobId bigint;
+    UPDATE Job SET PriorJobId = CASE WHEN JobId=8 THEN 1 WHEN JobId=10 THEN 4
+                               WHEN JobId IN (9,11,12,13) THEN 3 END;
+    INSERT INTO Media VALUES (1, 1, 1), (2, 0, 1), (3, 1, 2);
+    INSERT INTO JobMedia VALUES (1, 1), (2, 2), (3, 1), (4, 1), (5, 1), (6, 2),
+      (8, 3), (9, 3), (10, 3), (11, 3), (12, 2), (13, 3);
+  )SQL"));
+
+  auto required = [&]() {
+    PoolMem query;
+    db->FillQuery<BareosDb::SQL_QUERY::uar_required_selected_chain>(
+        query, "1", "2026-01-01 00:06:00",
+        "AND (Job.StartTime, Job.JobId) < ('2026-01-01 00:04:00', 5)");
+    std::vector<std::string> ids;
+    EXPECT_TRUE(db->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char** row) {
+          static_cast<std::vector<std::string>*>(context)->emplace_back(row[0]);
+          return 0;
+        },
+        &ids));
+    return ids;
+  };
+  auto unavailable = [&](const char* jobs, const char* pool) {
+    PoolMem query;
+    db->FillQuery<BareosDb::SQL_QUERY::uar_unavailable_restore_media>(
+        query, jobs, pool, pool);
+    std::vector<std::string> ids;
+    EXPECT_TRUE(db->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char** row) {
+          static_cast<std::vector<std::string>*>(context)->emplace_back(row[0]);
+          return 0;
+        },
+        &ids));
+    return ids;
+  };
+  auto available_copies = [&](const char* pool) {
+    PoolMem query;
+    db->FillQuery<BareosDb::SQL_QUERY::uar_available_jobid_copies>(
+        query, "1,3,4", pool, pool);
+    std::vector<std::string> ids;
+    EXPECT_TRUE(db->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char** row) {
+          static_cast<std::vector<std::string>*>(context)->emplace_back(row[0]);
+          return 0;
+        },
+        &ids));
+    return ids;
+  };
+
+  EXPECT_EQ(required(), (std::vector<std::string>{"1", "3", "4"}));
+  EXPECT_TRUE(unavailable("1,3,4", "").empty());
+  ASSERT_TRUE(db->SqlExec("INSERT INTO JobMedia VALUES (4, 2)"));
+  EXPECT_EQ(required(), (std::vector<std::string>{"1", "3", "4"}));
+  EXPECT_EQ(unavailable("1,3,4", ""), std::vector<std::string>{"4"});
+  ASSERT_TRUE(db->SqlExec("INSERT INTO JobMedia VALUES (9, 2)"));
+  EXPECT_EQ(available_copies(""), (std::vector<std::string>{"8", "10", "13"}));
+  EXPECT_TRUE(available_copies("AND Media.PoolId=1").empty());
+  EXPECT_TRUE(unavailable("8,10,13", "").empty());
+  EXPECT_EQ(unavailable("8,10,13", "AND Media.PoolId=1"),
+            (std::vector<std::string>{"8", "10", "13"}));
+  ASSERT_TRUE(db->SqlExec("DELETE FROM JobMedia WHERE JobId=4"));
+  EXPECT_EQ(unavailable("1,3,4", ""), std::vector<std::string>{"4"});
+  ASSERT_TRUE(db->SqlExec("INSERT INTO JobMedia VALUES (4, 3)"));
+  EXPECT_TRUE(unavailable("1,3,4", "").empty());
+  EXPECT_EQ(unavailable("1,3,4", "AND Media.PoolId=1"),
+            std::vector<std::string>{"4"});
+  ASSERT_TRUE(db->SqlExec("DELETE FROM JobMedia WHERE JobId=3"));
+  EXPECT_EQ(unavailable("1,3,4", ""), std::vector<std::string>{"3"});
+  ASSERT_TRUE(db->SqlExec("INSERT INTO JobMedia VALUES (3, 1)"));
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Job SET StartTime='2026-01-01 00:02:00' "
+                  "WHERE JobId=4"));
+  ASSERT_TRUE(db->SqlExec("UPDATE Media SET Enabled=0 WHERE MediaId=3"));
+  EXPECT_EQ(unavailable("1,3,4", ""), std::vector<std::string>{"4"});
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Job SET StartTime='2026-01-01 00:04:00' "
+                  "WHERE JobId=4"));
+  EXPECT_EQ(unavailable("1,3,4", ""), std::vector<std::string>{"4"});
+  ASSERT_TRUE(
+      db->SqlExec("UPDATE Job SET StartTime='2026-01-01 00:04:00' "
+                  "WHERE JobId=6"));
+  EXPECT_EQ(required(), (std::vector<std::string>{"1", "3", "4"}));
+  ASSERT_TRUE(db->SqlExec("DELETE FROM JobMedia WHERE JobId=1"));
+  EXPECT_EQ(unavailable("1,3,4", ""), (std::vector<std::string>{"1", "4"}));
+  ASSERT_TRUE(db->SqlExec("DELETE FROM Job WHERE JobId=4"));
+  EXPECT_EQ(required(), (std::vector<std::string>{"1", "3"}));
+  EXPECT_EQ(unavailable("4", ""), std::vector<std::string>{"4"});
+  ASSERT_TRUE(db->SqlExec("ROLLBACK"));
+}
+
+TEST_F(CatalogTest, restore_point_captures_required_jobs_when_listed)
+{
+  ASSERT_TRUE(db->SqlExec(R"SQL(
+    BEGIN;
+    CREATE TEMP TABLE Job (
+      JobId bigint, Name text, Level char, StartTime timestamp, JobFiles bigint,
+      JobBytes bigint, ClientId bigint, FileSetId bigint, JobStatus char, Type char
+    ) ON COMMIT DROP;
+    CREATE TEMP TABLE FileSet (FileSetId bigint, FileSet text) ON COMMIT DROP;
+    CREATE TEMP TABLE JobMedia (JobId bigint) ON COMMIT DROP;
+    INSERT INTO FileSet VALUES (1, 'SelfTest'), (2, 'SelfTest');
+    INSERT INTO Job VALUES
+      (1, 'full', 'F', '2026-01-01 00:00:00', 1, 1, 1, 1, 'T', 'B'),
+      (2, 'oldinc', 'I', '2026-01-01 00:01:00', 1, 1, 1, 1, 'T', 'B'),
+      (3, 'diff', 'D', '2026-01-01 00:02:00', 1, 1, 1, 2, 'T', 'B'),
+      (4, 'inc', 'I', '2026-01-01 00:02:00', 1, 1, 1, 2, 'T', 'B'),
+      (5, 'empty', 'I', '2026-01-01 00:03:00', 0, 0, 1, 1, 'T', 'B'),
+      (6, 'nextfull', 'F', '2026-01-01 00:04:00', 1, 1, 1, 1, 'T', 'B');
+  )SQL"));
+
+  auto listed = [&]() {
+    PoolMem query;
+    db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_fulls_3>(
+        query, "1", "1", 'B');
+    std::vector<std::string> chains;
+    EXPECT_TRUE(db->SqlQuery(
+        query.c_str(),
+        +[](void* context, int, char** row) {
+          static_cast<std::vector<std::string>*>(context)->emplace_back(
+              row[10]);
+          return 0;
+        },
+        &chains));
+    return chains;
+  };
+  const auto snapshot = listed();
+  EXPECT_EQ(snapshot, (std::vector<std::string>{"6", "1,3,4"}));
+  ASSERT_TRUE(db->SqlExec("DELETE FROM Job WHERE JobId=4"));
+  EXPECT_EQ(listed(), (std::vector<std::string>{"6", "1,3"}));
+  EXPECT_EQ(snapshot.back(), "1,3,4");
+  ASSERT_TRUE(db->SqlExec("ROLLBACK"));
+}
+
 static bool CaptureCatalogOutput(void* context, const char* format, ...)
 {
   va_list args;

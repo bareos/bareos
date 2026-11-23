@@ -243,4 +243,6 @@ echo "webui-vue frontend listening on ${BAREOS_WEBUI_BASE_URL}"
 # Keep every freshly-created webui-vue environment immediately usable for
 # restore testing, including when test-setup is invoked directly for manual
 # testing rather than through CTest.
-./testrunner-create-backup
+if [[ "${BAREOS_WEBUI_VUE_DEFER_BACKUP:-0}" != "1" ]]; then
+  ./testrunner-create-backup
+fi

@@ -32,6 +32,49 @@
 #include "lib/parse_conf.h"
 #include "lib/alist.h"
 
+#include <utility>
+
+namespace {
+constexpr std::pair<char, std::string_view> kLiteralReplacementEscapes[] = {
+    {'%', "%25"}, {kLiteralReplacementSeparator, "%40"}, {'\\', "%5C"}};
+
+void DecodeLiteralReplacement(char* replacement)
+{
+  const std::string_view encoded{replacement};
+  char* dest = replacement;
+  for (size_t i = 0; i < encoded.size();) {
+    bool escaped = false;
+    for (const auto& [character, escape] : kLiteralReplacementEscapes) {
+      if (encoded.substr(i, escape.size()) == escape) {
+        *dest++ = character;
+        i += escape.size();
+        escaped = true;
+        break;
+      }
+    }
+    if (!escaped) { *dest++ = encoded[i++]; }
+  }
+  *dest = '\0';
+}
+}  // namespace
+
+std::string BregexpEncodeLiteralReplacement(std::string_view replacement)
+{
+  std::string encoded;
+  for (char character : replacement) {
+    bool escaped = false;
+    for (const auto& [value, escape] : kLiteralReplacementEscapes) {
+      if (character == value) {
+        encoded += escape;
+        escaped = true;
+        break;
+      }
+    }
+    if (!escaped) { encoded += character; }
+  }
+  return encoded;
+}
+
 BareosRegex* NewBregexp(const char* motif)
 {
   Dmsg0(500, "bregexp: creating new bregexp object\n");
@@ -119,8 +162,10 @@ bool BareosRegex::ExtractRegexp(const char* motif)
   if (!motif) { return false; }
 
   char sep = motif[0];
+  literal_replacement_ = sep == kLiteralReplacementSeparator;
 
-  if (!(sep == '!' || sep == ':' || sep == ';' || sep == '|' || sep == ','
+  if (!(literal_replacement_ || sep == '!' || sep == ':' || sep == ';'
+        || sep == '|' || sep == ','
         || sep == '&' || sep == '%' || sep == '=' || sep == '~' || sep == '/'
         || sep == '#')) {
     return false;
@@ -135,7 +180,8 @@ bool BareosRegex::ExtractRegexp(const char* motif)
 
   while (*search && !ok) {
     if (search[0] == '\\' && search[1] == sep) {
-      *dest++ = *++search; /* we skip separator */
+      ++search;
+      *dest++ = *search++; /* copy the escaped separator once */
 
     } else if (search[0] == '\\' && search[1] == '\\') {
       *dest++ = *++search; /* we skip the second \ */
@@ -161,6 +207,8 @@ bool BareosRegex::ExtractRegexp(const char* motif)
     /* bad regexp */
     return false;
   }
+
+  if (literal_replacement_) { DecodeLiteralReplacement(subst); }
 
   ok = false;
   /* find options */
@@ -243,7 +291,8 @@ int BareosRegex::ComputeDestLen(const char* fname, regmatch_t pmatch[])
 
   for (p = psubst++; *p; p = psubst++) {
     /* match $1 \1 back references */
-    if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
+    if (!literal_replacement_ && (*p == '$' || *p == '\\')
+        && ('0' <= *psubst && *psubst <= '9')) {
       no = *psubst++ - '0';
 
       /* we check if the back reference exists */
@@ -283,7 +332,8 @@ char* BareosRegex::EditSubst(const char* fname, regmatch_t pmatch[])
 
   for (p = psubst++; *p; p = psubst++) {
     /* match $1 \1 back references */
-    if ((*p == '$' || *p == '\\') && ('0' <= *psubst && *psubst <= '9')) {
+    if (!literal_replacement_ && (*p == '$' || *p == '\\')
+        && ('0' <= *psubst && *psubst <= '9')) {
       no = *psubst++ - '0';
 
       /* have a back reference ? */

@@ -1,0 +1,15 @@
+# Check all media of the jobs actually selected for restore.
+WITH requested AS (SELECT unnest(ARRAY[%s]::bigint[]) AS JobId)
+SELECT requested.JobId
+  FROM requested LEFT JOIN Job ON Job.JobId = requested.JobId
+ WHERE Job.JobId IS NULL
+    OR NOT EXISTS (
+      SELECT 1 FROM JobMedia JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId AND Media.Enabled = 1 %s
+    )
+    OR EXISTS (
+      SELECT 1 FROM JobMedia LEFT JOIN Media ON Media.MediaId = JobMedia.MediaId
+       WHERE JobMedia.JobId = requested.JobId
+         AND NOT COALESCE(Media.Enabled = 1 %s, FALSE)
+    )
+ ORDER BY requested.JobId

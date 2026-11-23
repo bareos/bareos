@@ -91,6 +91,9 @@ extern bool DotJobdefsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobsCmd(UaContext* ua, const char* cmd);
 extern bool DotJobstatusCmd(UaContext* ua, const char* cmd);
 extern bool DotFilesetsCmd(UaContext* ua, const char* cmd);
+extern bool DotFilesetClientsCmd(UaContext* ua, const char* cmd);
+extern bool DotPluginhintsCmd(UaContext* ua, const char* cmd);
+extern bool DotClientbrowseCmd(UaContext* ua, const char* cmd);
 extern bool DotClientsCmd(UaContext* ua, const char* cmd);
 extern bool DotConsolesCmd(UaContext* ua, const char* cmd);
 extern bool DotUsersCmd(UaContext* ua, const char* cmd);
@@ -119,6 +122,7 @@ extern bool DotBvfsClearCacheCmd(UaContext* ua, const char* cmd);
 extern bool DotApiCmd(UaContext* ua, const char* cmd);
 extern bool DotSqlCmd(UaContext* ua, const char* cmd);
 extern bool DotAuthorizedCmd(UaContext* ua, const char* cmd);
+extern bool DotTerminalsizeCmd(UaContext* ua, const char* cmd);
 
 /* ua_status.c */
 extern bool DotStatusCmd(UaContext* ua, const char* cmd);
@@ -235,6 +239,9 @@ static struct ua_cmdstruct commands[] = {
      false, false},
     {NT_(".clients"), DotClientsCmd, T_("List all client resources"),
      NT_("[enabled | disabled]"), true, false},
+    {NT_(".clientbrowse"), DotClientbrowseCmd,
+     T_("List a client directory for restore destination browsing"),
+     NT_("client=<client-name> path=<path>"), true, false},
     {NT_(".consoles"), DotConsolesCmd, T_("List all console resources"), NULL,
      true, false},
     {NT_(".users"), DotUsersCmd, T_("List all user resources"), NULL, true,
@@ -245,6 +252,8 @@ static struct ua_cmdstruct commands[] = {
      false, false},
     {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
+    {NT_(".filesetclients"), DotFilesetClientsCmd,
+     T_("List fileset@client combinations"), NULL, false, false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
      NT_("[ all ] [ item=cmd ] [ full ]"), false, false},
     {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
@@ -267,6 +276,9 @@ static struct ua_cmdstruct commands[] = {
      NT_("type=<pooltype>"), true, false},
     {NT_(".profiles"), DotProfilesCmd, T_("List all profile resources"), NULL,
      true, false},
+    {NT_(".pluginhints"), DotPluginhintsCmd,
+     T_("List restore plugin option hints"),
+     NT_("[ fileset=<fileset-name> | jobid=<jobid> ]"), false, false},
     {NT_(".quit"), quit_cmd, T_("Close connection"), NULL, false, false},
     {NT_(".sql"), DotSqlCmd, T_("Send an arbitrary SQL command"),
      NT_("query=<sqlquery>"), false, true},
@@ -282,6 +294,9 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".storages"), DotStorageCmd, T_("List all storage resources"),
      NT_("[enabled | disabled]"), true, false},
     {NT_(".types"), DotTypesCmd, T_("List all job types"), NULL, false, false},
+    {NT_(".terminalsize"), DotTerminalsizeCmd,
+     T_("Report the client's terminal size (internal use)"),
+     NT_("<lines> <columns> [color]"), false, false},
     {NT_(".volstatus"), DotVolstatusCmd, T_("List all volume status"), NULL,
      true, false},
     {NT_(".bvfs_lsdirs"), DotBvfsLsdirsCmd, T_("List directories using BVFS"),
@@ -395,7 +410,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_("purge"), PurgeCmd, T_("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | "
          "volume=<volume>]] | "
-         "[jobs [client=<client> | volume=<volume>] | pool=<pool>] "
+         "[jobs [client=<client> | volume=<volume> | pool=<pool>] "
          "[jobstatus=<status>]] | "
          "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] "
          "[devicetype=<type>] [drive=<drivenum>] [action=<action>]] | "
@@ -408,7 +423,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("where=</path> client=<client-name> storage=<storage-name> "
          "bootstrap=<file> "
          "restorejob=<job-name> comment=<text> jobid=<jobid> "
-         "fileset=<fileset-name> "
+         "fileset=<fileset-name> filesetclient=<fileset-name>@<client-name> "
          "replace=<always|never|ifolder|ifnewer> "
          "pluginoptions=<plugin-options-string> "
          "regexwhere=<regex> fileregex=<regex> "
@@ -416,6 +431,7 @@ static struct ua_cmdstruct commands[] = {
          "pool=<pool-name> file=<filename> directory=<directory> "
          "before=<date> "
          "strip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix> "
+         "restorepointmode=<chain|job> "
          "select=<date> select before current copies done all"),
      false, true},
     {NT_("relabel"), RelabelCmd, T_("Relabel a tape"),
@@ -435,6 +451,7 @@ static struct ua_cmdstruct commands[] = {
      true},
     {NT_("run"), RunCmd, T_("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> "
+         "filesetclient=<fileset-name>@<client-name> "
          "level=<level> "
          "storage=<storage-name> where=<directory-prefix> "
          "when=<universal-time-specification> "
@@ -869,6 +886,13 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   if (!ConnectToFileDaemon(ua->jcr, ua->jcr->dir_impl->res.client, 1, 15,
                            false)) {
     ua->ErrorMsg(T_("Failed to connect to Client.\n"));
+    if (ua->jcr->file_bsock) {
+      ua->jcr->file_bsock->close();
+      delete ua->jcr->file_bsock;
+      ua->jcr->file_bsock = nullptr;
+    }
+    ua->jcr->dir_impl->res.client = nullptr;
+    ua->jcr->max_bandwidth = 0;
     return true;
   }
 
@@ -918,11 +942,13 @@ static inline bool setbwlimit_stored(UaContext* ua,
 
   if (!ConnectToStorageDaemon(ua->jcr, store, 1, 15, false)) {
     ua->ErrorMsg(T_("Failed to connect to Storage daemon.\n"));
+    ua->jcr->dir_impl->res.write_storage = nullptr;
+    ua->jcr->max_bandwidth = 0;
     return true;
   }
 
   Dmsg0(120, "Connected to Storage daemon\n");
-  if (!SendBwlimitToFd(ua->jcr, Job)) {
+  if (!SendBwlimitToSd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Storage daemon.\n"));
   } else {
     ua->InfoMsg(T_("OK Limiting bandwidth to %" PRId64 "kb/s %s\n"),
@@ -945,7 +971,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
   int64_t limit = -1;
   ClientResource* client = NULL;
   StorageResource* store = NULL;
-  char Job[MAX_NAME_LENGTH];
+  char Job[MAX_NAME_LENGTH] = {};
   const char* lst[] = {"job", "jobid", "ujobid", "all", "state", NULL};
 
   i = FindArgWithValue(ua, NT_("limit"));
@@ -956,7 +982,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
     limit = ((int64_t)ua->pint32_val * 1024); /* kb/s */
   }
 
-  if (FindArgKeyword(ua, lst) > 0) {
+  if (FindArgKeyword(ua, lst) >= 0) {
     JobControlRecord* jcr;
     alist<JobId_t*>* selection;
 
@@ -973,15 +999,26 @@ static bool SetbwlimitCmd(UaContext* ua, const char*)
         case JT_COPY:
         case JT_MIGRATE:
           store = jcr->dir_impl->res.read_storage;
+          if (store) {
+            setbwlimit_stored(ua, store, limit, Job);
+          } else {
+            ua->ErrorMsg(T_("No Storage daemon available for Job %s.\n"), Job);
+          }
           break;
         default:
           client = jcr->dir_impl->res.client;
+          if (client) {
+            SetbwlimitFiled(ua, client, limit, Job);
+          } else {
+            ua->ErrorMsg(T_("No Client available for Job %s.\n"), Job);
+          }
           break;
       }
       FreeJcr(jcr);
     }
 
     delete selection;
+    return true;
   } else if (FindArg(ua, NT_("storage")) >= 0) {
     store = get_storage_resource(ua);
   } else {

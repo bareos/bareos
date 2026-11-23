@@ -2404,6 +2404,403 @@ test('opens the console and runs a raw command through the proxied director conn
   await expect(consoleOutput).toContainText('Terminated Jobs:')
 })
 
+test('redraws a completed console command before it is sent', async ({ page }) => {
+  await login(page)
+
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list jobs client=bareos-')
+  await page.keyboard.press('Tab')
+  await expect(consoleOutput).toContainText('list jobs client=bareos-fd')
+})
+
+test('redraws the pending console command after a terminal resize', async ({ page }) => {
+  await login(page)
+
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  const command = `list jobs client=${'x'.repeat(60)}`
+  await page.keyboard.type(command)
+  await expect(consoleOutput).toContainText(command)
+
+  await page.setViewportSize({ width: 500, height: 800 })
+  await expect(consoleOutput).toContainText(command)
+})
+
+test('displays completion candidates without executing terminal controls', async ({ page }) => {
+  const submitted = []
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === '.client') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'bareos-\x1b[2Jname', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command.startsWith('list jobs client=')) {
+        submitted.push(request.command)
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'command received', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list jobs client=bareos-')
+  await page.keyboard.press('Tab')
+  await expect(consoleOutput).toContainText('list jobs client=bareos-\\x1b[2Jname')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('command received')
+  await expect.poll(() => submitted).toEqual(['list jobs client=bareos-\x1b[2Jname'])
+  await expect(consoleOutput).toContainText('list jobs client=bareos-\\x1b[2Jname')
+})
+
+test('preserves console output split across unterminated chunks', async ({ page }) => {
+  let releaseOutput
+  const outputReady = new Promise(resolve => { releaseOutput = resolve })
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-output-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id,
+          text: `${'scroll-line\n'.repeat(50)}${'wide'.repeat(60)}first-\x1B[31m`,
+          prompt: 'more',
+        }))
+        await outputReady
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'second-\x1B[0m', prompt: 'more',
+        }))
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'final', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command === 'webui-empty-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'unfinished', prompt: 'more',
+        }))
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: '', prompt: 'main',
+        }))
+      } else if (request.type === 'command' && request.command === 'webui-single-test') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'single-result', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-output-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('first-')
+  await page.keyboard.type('next-command')
+  await expect(consoleOutput).toContainText('next-command')
+  await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('ArrowLeft')
+  releaseOutput()
+  await expect(consoleOutput).toContainText('first-second-final')
+  await expect(consoleOutput).toContainText('next-command')
+  await page.keyboard.type('Z')
+  await expect(consoleOutput).toContainText('next-commaZnd')
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await page.keyboard.type('webui-empty-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('unfinished')
+  await page.keyboard.type('webui-single-test')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('single-result')
+
+  await page.goto('/#/dashboard')
+  await openConsole(page)
+  await expect(consoleOutput).toContainText('first-second-final')
+  await expect(consoleOutput).toContainText('unfinished')
+  await expect(consoleOutput).toContainText('single-result')
+})
+
+test('positions the console cursor at wide and combining characters', async ({ page }) => {
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  const textarea = page.locator('.xterm-helper-textarea')
+  const cursorX = () => textarea.evaluate(element => element.getBoundingClientRect().x)
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'AB')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('AB')
+  const asciiEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(cursorX).toBeLessThan(asciiEnd)
+  const columnWidth = asciiEnd - await cursorX()
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'A界')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('A界')
+  const wideEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(async () => wideEnd - await cursorX()).toBeCloseTo(2 * columnWidth, 0)
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'Ae\u0301B')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Ae\u0301B')
+  const combiningEnd = await cursorX()
+  await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('ArrowLeft')
+  await expect.poll(async () => combiningEnd - await cursorX()).toBeCloseTo(columnWidth, 0)
+})
+
+test('keeps the console cursor on the input after scrollback is trimmed', async ({ page }) => {
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-fill-scrollback') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id,
+          text: `${'scroll-line\n'.repeat(5100)}scrollback-filled\n`, prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-fill-scrollback')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('scrollback-filled')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', `editstart${'x'.repeat(300)}`)
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await page.keyboard.press('Home')
+  const inputRow = page.locator('.xterm-rows > div').filter({ hasText: 'editstart' }).last()
+  await expect(inputRow).toBeVisible()
+  await expect.poll(async () => {
+    const cursor = await textarea.boundingBox()
+    const row = await inputRow.boundingBox()
+    return Math.abs(cursor.y - row.y)
+  }).toBeLessThan(3)
+})
+
+test('redraws wrapped console input without leaving stale rows', async ({ page }) => {
+  let releaseOutput
+  const outputReady = new Promise(resolve => { releaseOutput = resolve })
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    socket.onMessage(async message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-wrapped-output') {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'stream-start', prompt: 'more',
+        }))
+        await outputReady
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: '-stream-end', prompt: 'main',
+        }))
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('webui-wrapped-output')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('stream-start')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData(
+      'text/plain',
+      `longinput${'x'.repeat(100)}middleinput${'y'.repeat(100)}endinput`
+    )
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await page.keyboard.press('Home')
+  await page.keyboard.press('End')
+  const inputRows = page.locator('.xterm-rows > div')
+  const expectInputMarkersOnce = async () => {
+    for (const marker of ['longinput', 'middleinput', 'endinput']) {
+      await expect(inputRows.filter({ hasText: marker })).toHaveCount(1)
+    }
+  }
+  await expectInputMarkersOnce()
+  releaseOutput()
+  await expect(consoleOutput).toContainText('stream-start-stream-end')
+  await expectInputMarkersOnce()
+})
+
+test('passes Meta shortcuts through while keeping console editing keys', async ({ page }) => {
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('abc')
+  const textarea = page.locator('.xterm-helper-textarea')
+  const shortcutAllowed = await textarea.evaluate(element => element.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'v', metaKey: true, bubbles: true, cancelable: true })
+  ))
+  expect(shortcutAllowed).toBe(true)
+  await expect(consoleOutput).toContainText('abc')
+  await expect(consoleOutput).not.toContainText('abcv')
+  await page.keyboard.press('Meta+ArrowLeft')
+  await page.keyboard.press('Meta+Backspace')
+  await expect(consoleOutput).toContainText('ac')
+})
+
+test('pastes into the console editor and interactive selection', async ({ page }) => {
+  const selectionInputs = []
+  await page.routeWebSocket(/\/ws/, socket => {
+    const server = socket.connectToServer()
+    let selecting = false
+    socket.onMessage(message => {
+      const request = JSON.parse(message)
+      if (request.type === 'command' && request.command === 'webui-paste-selection') {
+        selecting = true
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'Enter search text:', prompt: 'select',
+        }))
+      } else if (selecting && request.type === 'command' && request.command.startsWith('resize:')) {
+        socket.send(JSON.stringify({
+          type: 'raw_response', id: request.id, text: 'Enter search text:', prompt: 'select',
+        }))
+      } else if (request.type === 'command' && (
+        request.command.startsWith('key:text:')
+        || request.command === 'key:space' || request.command === 'key:tab'
+      )) {
+        selectionInputs.push(request.command)
+      } else {
+        server.send(message)
+      }
+    })
+  })
+
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('list js')
+  await page.keyboard.press('ArrowLeft')
+  const textarea = page.locator('.xterm-helper-textarea')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'ob')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('list jobs')
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'unexpected\ncommand')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Pasted text cannot contain control characters.')
+  await expect(consoleOutput).not.toContainText('unexpected')
+  await expect(consoleOutput).toContainText('list jobs')
+
+  await page.keyboard.press('End')
+  await page.keyboard.press('Control+u')
+  await page.keyboard.type('webui-paste-selection')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('Enter search text:')
+  await expect(page.getByRole('button', { name: 'Clear' })).toBeDisabled()
+  await textarea.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'example path  ')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect.poll(() => selectionInputs).toEqual(['key:text:example path', 'key:space', 'key:space'])
+  await page.keyboard.press('Shift+Tab')
+  await expect(textarea).not.toBeFocused()
+  expect(selectionInputs).not.toContain('key:tab')
+  await textarea.focus()
+  await page.keyboard.press('Tab')
+  await expect.poll(() => selectionInputs.at(-1)).toBe('key:tab')
+})
+
+test('pastes text into the real destination browser search', async ({ page }) => {
+  test.skip(profile !== 'admin', 'Requires administrative restore access')
+  await login(page)
+  const consoleOutput = await openConsole(page)
+  await consoleOutput.click()
+  await page.keyboard.type('run job=RestoreFiles')
+  await page.keyboard.press('Enter')
+  await expect(consoleOutput).toContainText('Restore Options')
+
+  await page.keyboard.press('ArrowDown')
+  await expect(consoleOutput).toContainText('> Restore Client')
+  await page.keyboard.press('ArrowDown')
+  await expect(consoleOutput).toContainText('> Where [b: browse]')
+  await page.keyboard.type('b')
+  await expect(consoleOutput).toContainText('Browse destination client')
+  await page.keyboard.type('/')
+  await expect(consoleOutput).toContainText('Type substring')
+  await page.locator('.xterm-helper-textarea').evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'needle.dir  ')
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true }))
+  })
+  await expect(consoleOutput).toContainText('Search: needle.dir')
+  await page.keyboard.type('x')
+  await expect.poll(() => consoleOutput.textContent()).toContain('Search: needle.dir  x')
+})
+
+test('sends the current console size when switching directors', async ({ page }) => {
+  test.skip(!isMultiDirectorProfile, 'Requires multiple Directors')
+
+  const sizes = new Map()
+  page.on('websocket', socket => {
+    let director
+    socket.on('framesent', ({ payload }) => {
+      const request = JSON.parse(payload)
+      if (request.type === 'session' && request.mode === 'raw') {
+        director = request.director
+      } else if (director && request.command?.startsWith('.terminalsize ')) {
+        sizes.set(director, request.command)
+      }
+    })
+  })
+
+  await login(page)
+  await page.goto('/#/console-popup?director=bareos-dir')
+  await expect(page.getByTestId('console-output')).toContainText('Connected to bareos-dir')
+  await expect.poll(() => sizes.get('bareos-dir')).toMatch(/^\.terminalsize \d+ \d+ color$/)
+
+  await page.getByRole('tab', { name: 'bareos-dir-2', exact: true }).click()
+  await expect.poll(() => sizes.get('bareos-dir-2')).toBe(sizes.get('bareos-dir'))
+
+  await page.setViewportSize({ width: 900, height: 720 })
+  await expect.poll(() => sizes.get('bareos-dir-2')).not.toBe(sizes.get('bareos-dir'))
+  await page.getByRole('tab', { name: 'bareos-dir', exact: true }).click()
+  await expect.poll(() => sizes.get('bareos-dir')).toBe(sizes.get('bareos-dir-2'))
+})
+
 async function assertDashboardResizePersists(page) {
   await page.getByTitle('Edit layout').click()
   await expect(page.getByRole('button', { name: 'Done' })).toBeVisible()

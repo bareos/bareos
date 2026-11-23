@@ -1,0 +1,14 @@
+FileSet {
+  Name = "PluginOptionsTest-python"
+  Description = "Smoke-test fileset backed by the bpipe plugin (generic Python plugin-style demo data)"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "bpipe"
+             ":file=/python-demo/generic.dat"
+             ":reader=bash @current_test_directory@/readprogram"
+             ":writer=bash @current_test_directory@/writeprogram"
+  }
+}

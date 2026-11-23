@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
@@ -21,7 +23,15 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { Terminal } from '@xterm/xterm'
+import { createConsoleResponseWriter } from '../../src/composables/consoleResponseWriter.js'
 import { useConsoleSessionsStore } from '../../src/stores/consoleSessions.js'
+
+vi.hoisted(() => {
+  vi.stubGlobal('window', {
+    location: { protocol: 'http:', host: 'localhost:3000', pathname: '/' },
+  })
+})
 
 class FakeWebSocket {
   static instances = []
@@ -204,6 +214,607 @@ describe('console session store', () => {
     expect(consoleSessions.getSession('bareos-dir').cmd).toBe('list clients ')
   })
 
+  it('replaces Director-owned selection snapshots and sends key events', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionText).toContain('> 1: Alpha')
+
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(true)
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: 'key:down',
+      stream: true,
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n  1: Alpha\n> 2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+    expect(session.selectionText).toContain('> 2: Beta')
+    expect(session.output.map(line => line.text)).not.toContain('> 1: Alpha')
+  })
+
+  it('blocks selection key events while a busy frame is active', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Calculating estimate... |',
+        prompt: 'select_busy',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    const sentCount = socket.sent.length
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(false)
+    expect(socket.sent).toHaveLength(sentCount)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n',
+        prompt: 'select',
+      }),
+    })
+
+    expect(session.selectionBusy).toBe(false)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(true)
+  })
+
+  it('keeps selection input blocked through streamed output until a prompt arrives', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    for (const [prompt, text] of [
+      ['select_busy', 'Building tree'],
+      ['more', '86 files inserted\n'],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', prompt, text }),
+      })
+    }
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(session.output.map(line => line.text).join('\n')).toContain('86 files inserted')
+    expect(consoleSessions.sendCommand('bareos-dir', 'status')).toBe(false)
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:enter')).toBe(false)
+    expect(socket.sent).toHaveLength(2)
+
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'sub', text: '$ ' }),
+    })
+    expect(session.selectionActive).toBe(false)
+    expect(session.currentPrompt).toBe('$ ')
+    expect(consoleSessions.sendCommand('bareos-dir', 'status')).toBe(true)
+  })
+
+  it('shows a streamed question after leaving the busy screen', async () => {
+    vi.useRealTimers()
+    const consoleSessions = useConsoleSessionsStore()
+    const emulator = new Terminal({ cols: 80, rows: 8, scrollback: 20 })
+    const write = data => new Promise(resolve => emulator.write(data, resolve))
+    const terminal = {
+      get terminal() { return emulator },
+      clearInputLine: () => write('\r\x1B[K'),
+      write,
+      runExclusive: operation => operation(terminal),
+    }
+    const writer = createConsoleResponseWriter(
+      terminal,
+      () => write(consoleSessions.getSession('bareos-dir').currentPrompt),
+    )
+    let pending = Promise.resolve()
+    consoleSessions.setTerminalWriter('bareos-dir', (text, options) => {
+      pending = writer.write(text, options)
+    })
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin', password: 'secret', director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    for (const [prompt, text] of [
+      ['select_busy', 'Building tree'],
+      ['more', 'Do you want to restore all the files? (yes|no): '],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', prompt, text }),
+      })
+    }
+    expect(consoleSessions.sendCommand('bareos-dir', 'yes')).toBe(false)
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'sub', text: '' }),
+    })
+    await pending
+    const visible = Array.from({ length: 8 }, (_, row) =>
+      emulator.buffer.active.getLine(row).translateToString(true),
+    ).join('\n')
+    expect(visible).toContain('Do you want to restore all the files? (yes|no):')
+    expect(consoleSessions.sendCommand('bareos-dir', 'yes')).toBe(true)
+    consoleSessions.disconnectSession('bareos-dir')
+    emulator.dispose()
+  })
+
+  it('normalizes terminal inverse selection markers for browser display', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const selectionText = consoleSessions.getSession('bareos-dir').selectionText
+    expect(selectionText).toContain('> 1: Alpha')
+    expect(selectionText).toContain('  2: Beta')
+    expect(selectionText).not.toMatch(/\x1B/)
+
+    const selectionLines = consoleSessions.getSession('bareos-dir').selectionLines
+    expect(selectionLines).toContainEqual({ text: '  1: Alpha', selected: true })
+    expect(selectionLines).toContainEqual({ text: '  2: Beta', selected: false })
+  })
+
+  it('forwards raw ANSI output verbatim to the registered terminal writer', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: '\u001B[31mERROR\u001B[0m \u001B[32mOK\u001B[0m\n',
+        prompt: 'main',
+      }),
+    })
+
+    // The store no longer parses ANSI/SGR codes itself — it forwards the
+    // raw bytes verbatim so xterm.js can interpret them, exactly as a
+    // real terminal emulator would.
+    expect(written).toContain('\u001B[31mERROR\u001B[0m \u001B[32mOK\u001B[0m\n')
+
+    // The plain-text (ANSI-stripped) representation is still kept in
+    // `output` for non-rendering consumers (e.g. completion parsing).
+    const line = consoleSessions.getSession('bareos-dir').output.find(entry => entry.text === 'ERROR OK')
+    expect(line).toBeTruthy()
+    expect(line.segments).toBeUndefined()
+  })
+
+  it('preserves raw ANSI background/foreground codes used for terminal frames', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    const frame = '\u001B[97;44m  Bright-white text on blue background  \u001B[0m\n'
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: frame,
+        prompt: 'main',
+      }),
+    })
+
+    expect(written).toContain(frame)
+  })
+
+  it('replays a trimmed selection in the alternate screen', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    for (let i = 0; i < 3; i++) {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'raw_response', id: '1',
+          text: `Select ${i}: ${'x'.repeat(100_000)}\n`, prompt: 'select',
+        }),
+      })
+    }
+
+    const replay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replay.push(text))
+    expect(replay[0]?.slice(0, 8)).toBe('\x1b[?1049h')
+    expect(replay.join('')).toContain('Select 2:')
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', text: '', prompt: 'main' }),
+    })
+    expect(replay.join('')).toContain('\x1b[?1049l')
+    for (let i = 0; i < 3; i++) {
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'raw_response', id: '1',
+          text: `Output ${i}: ${'x'.repeat(100_000)}\n`, prompt: 'main',
+        }),
+      })
+    }
+    const laterReplay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => laterReplay.push(text))
+    expect(laterReplay[0]?.slice(0, 8)).not.toBe('\x1b[?1049h')
+  })
+
+  it('keeps selection state when clearing terminal replay', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:\n', prompt: 'select',
+      }),
+    })
+    consoleSessions.clearOutput('bareos-dir')
+    const replay = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replay.push(text))
+    expect(replay[0]).toBe('\x1b[?1049h')
+  })
+
+  it('wraps interactive selection frames in alternate-screen and clear sequences', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    written.length = 0
+    const frame = 'Select:\n> \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n'
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', text: frame, prompt: 'select' }),
+    })
+
+    // Entering selection mode switches to the alternate screen buffer
+    // (mirroring bconsole's TerminalSelectionScreenGuard), then clears
+    // and redraws the frame (mirroring the BNET_START_SELECT handling in
+    // console.cc) — this makes each arrow-key redraw overwrite in place
+    // instead of scrolling.
+    expect(written).toEqual(['\u001B[?1049h', `\u001B[2J\u001B[H${frame}`])
+
+    written.length = 0
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '2', text: 'Done\n', prompt: 'main' }),
+    })
+
+    // Leaving selection mode returns to the main screen buffer before
+    // any further normal output is written.
+    expect(written[0]).toBe('\u001B[?1049l\r\n')
+    expect(written[1]).toBe('Done\n')
+  })
+
+  it('keeps selection busy after a command times out until a response arrives', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+
+    written.length = 0
+    consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')
+    const request = JSON.parse(socket.sent.at(-1))
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: request.id,
+        text: 'Calculating estimate... |',
+        prompt: 'select_busy',
+      }),
+    })
+    vi.advanceTimersByTime(300_000)
+
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(true)
+    expect(
+      session.output.some(({ text }) => text === 'Command timed out.'),
+    ).toBe(true)
+    expect(written).not.toContain('\u001B[?1049l\r\n')
+    const sentCount = socket.sent.length
+    expect(consoleSessions.sendSelectionEvent('bareos-dir', 'key:down')).toBe(false)
+    expect(socket.sent).toHaveLength(sentCount)
+
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: request.id,
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    expect(session.selectionActive).toBe(true)
+    expect(session.selectionBusy).toBe(false)
+  })
+
+  it('restores the main screen buffer if the Director reports an error mid-selection', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+
+    written.length = 0
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'error', id: '1', message: 'boom' }),
+    })
+
+    expect(session.selectionActive).toBe(false)
+    expect(written).toContain('\u001B[?1049l\r\n')
+  })
+
+  it('restores the main screen buffer if the WebSocket closes unexpectedly mid-selection', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => written.push(text))
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> 1: Alpha\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.selectionActive).toBe(true)
+
+    written.length = 0
+    socket.onclose?.()
+
+    expect(session.selectionActive).toBe(false)
+    expect(written).toContain('\u001B[?1049l\r\n')
+  })
+
+  it('replays prior terminal output to a newly registered writer', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'first line\n',
+        prompt: 'main',
+      }),
+    })
+
+    // Simulate switching away from and back to this director's tab: a
+    // fresh terminal instance registers its writer and should receive
+    // the full prior output in one shot instead of starting blank.
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => replayed.push(text))
+
+    expect(replayed.join('')).toContain('first line')
+
+    // Further live output continues to reach the newly registered writer.
+    replayed.length = 0
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '2',
+        text: 'second line\n',
+        prompt: 'main',
+      }),
+    })
+    expect(replayed).toEqual(['second line\n'])
+  })
+
+  it('retains the newest replay chunks after repeated eviction and compaction', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    for (let i = 0; i < 5000; i += 1) {
+      consoleSessions.appendInfo('bareos-dir', `${String(i).padStart(4, '0')}${'x'.repeat(95)}`)
+    }
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed).toHaveLength(2000)
+    expect(replayed[0]).toBe(`3000${'x'.repeat(95)}\n`)
+    expect(replayed.at(-1)).toBe(`4999${'x'.repeat(95)}\n`)
+  })
+
+  it('clears the replay buffer when the console output is cleared', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', text: 'stale line\n', prompt: 'main' }),
+    })
+
+    consoleSessions.clearOutput('bareos-dir')
+
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', (text) => replayed.push(text))
+    expect(replayed.join('')).not.toContain('stale line')
+    expect(replayed.join('')).toContain('Console cleared.')
+  })
+
   it('uses value completion commands for known argument keywords', () => {
     const consoleSessions = useConsoleSessionsStore()
 
@@ -358,6 +969,67 @@ describe('console session store', () => {
     ).toContain('clients')
   })
 
+  it('renders ambiguous completion candidates as plain text in live output and replay', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => written.push(text))
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.requestCompletion('bareos-dir', 'list jobs client=bareos-')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1',
+        text: 'bareos-\x1b[31mred\nbareos-界', prompt: 'main',
+      }),
+    })
+    expect(written.join('')).toContain('bareos-\\x1b[31mred\nbareos-界\n')
+    expect(written.join('')).not.toContain('\x1b[31m')
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed.join('')).toContain('bareos-\\x1b[31mred\nbareos-界\n')
+  })
+
+  it('renders control characters in interactive prompts as plain text', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const written = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => written.push(text))
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1',
+        text: 'Choose \x1b[2J\x07item: ', prompt: 'sub',
+      }),
+    })
+
+    expect(consoleSessions.getSession('bareos-dir').currentPrompt)
+      .toBe('Choose \\x1b[2J\\x07item: ')
+    consoleSessions.appendCommand('bareos-dir', '1')
+    expect(written.join('')).toContain('Choose \\x1b[2J\\x07item: 1')
+    expect(written.join('')).not.toContain('\x1b[2J')
+    const replayed = []
+    consoleSessions.setTerminalWriter('bareos-dir', text => replayed.push(text))
+    expect(replayed.join('')).toContain('Choose \\x1b[2J\\x07item: 1')
+    expect(replayed.join('')).not.toContain('\x1b[2J')
+  })
+
   it('moves interactive restore prompts onto the live input line', () => {
     const consoleSessions = useConsoleSessionsStore()
 
@@ -467,6 +1139,34 @@ describe('console session store', () => {
     expect(session.output.map(line => line.text)).toContain('/home/pai/')
     expect(session.currentPrompt).toBe('$ ')
     expect(session.output.map(line => line.text)).not.toContain('$ ')
+  })
+
+  it('joins final response text to its streamed line but not the next response', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    for (const [text, prompt] of [
+      ['first-', 'more'], ['final', 'main'], ['next', 'main'],
+      ['unfinished', 'more'], ['', 'main'], ['separate', 'main'],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', text, prompt }),
+      })
+    }
+
+    const lines = consoleSessions.getSession('bareos-dir').output.map(line => line.text)
+    expect(lines).toContain('first-final')
+    expect(lines).toContain('next')
+    expect(lines).toContain('unfinished')
+    expect(lines).toContain('separate')
   })
 
   it('keeps streamed restore progress on one output line', () => {
@@ -583,6 +1283,200 @@ describe('console session store', () => {
     consoleSessions.disconnectSession('bareos-dir', { reason: 'Disconnected' })
     vi.advanceTimersByTime(20_000)
     expect(socket.sent).toHaveLength(3)
+  })
+
+  it('sends the terminal size as a silent .terminalsize command on connect', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    // Reported before connecting, mirroring the terminal having already
+    // been fitted by the time the WebSocket session is established.
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    expect(JSON.parse(socket.sent[1])).toEqual({
+      type: 'command',
+      id: '1',
+      command: '.terminalsize 40 120 color',
+      stream: true,
+    })
+
+    // The command is sent silently — it must not appear as a visible
+    // command echo in the session output.
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.output.some(line => line.text.includes('.terminalsize'))).toBe(false)
+  })
+
+  it('resets the prompt on socket close and sends terminal size on reconnect', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    const credentials = { username: 'admin', password: 'secret', director: 'bareos-dir' }
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const oldSocket = FakeWebSocket.instances[0]
+    oldSocket.open()
+    oldSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    oldSocket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'select', text: 'Select:' }),
+    })
+    const session = consoleSessions.getSession('bareos-dir')
+    expect(session.currentPrompt).toBe('')
+    oldSocket.close()
+    expect(session.currentPrompt).toBe('* ')
+
+    consoleSessions.connectSession('bareos-dir', credentials)
+    const newSocket = FakeWebSocket.instances[1]
+    newSocket.open()
+    newSocket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    expect(JSON.parse(newSocket.sent[1]).command).toBe('.terminalsize 40 120 color')
+    newSocket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '2', prompt: 'sub', text: 'Name: ' }),
+    })
+    oldSocket.onclose?.()
+    expect(session.currentPrompt).toBe('Name: ')
+    expect(session.status).toBe('connected')
+  })
+
+  it('defers terminal size updates until the main prompt returns', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    consoleSessions.setTerminalSize('bareos-dir', 30, 90)
+    expect(socket.sent).toHaveLength(2)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Enter name: ', prompt: 'sub',
+      }),
+    })
+    consoleSessions.setTerminalSize('bareos-dir', 35, 100)
+    expect(socket.sent).toHaveLength(2)
+    consoleSessions.sendCommand('bareos-dir', 'example')
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(3)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '2', text: '', prompt: 'main',
+      }),
+    })
+    expect(JSON.parse(socket.sent[3]).command).toBe('.terminalsize 40 120 color')
+    expect(socket.sent).toHaveLength(4)
+  })
+
+  it('sends a resize: pseudo-input instead while a selection is active', () => {
+    const consoleSessions = useConsoleSessionsStore()
+
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response',
+        id: '1',
+        text: 'Select:\n> \u001B[7m1: Alpha\u001B[0m\n  2: Beta\n',
+        prompt: 'select',
+      }),
+    })
+
+    consoleSessions.setTerminalSize('bareos-dir', 30, 100)
+
+    const lastSent = JSON.parse(socket.sent[socket.sent.length - 1])
+    expect(lastSent.command).toBe('resize:30:100')
+  })
+
+  it('sends the latest resize after a busy selection becomes responsive', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Working', prompt: 'select_busy',
+      }),
+    })
+    consoleSessions.setTerminalSize('bareos-dir', 30, 90)
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(1)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:', prompt: 'select',
+      }),
+    })
+    expect(JSON.parse(socket.sent[1]).command).toBe('resize:40:120')
+    expect(socket.sent).toHaveLength(2)
+  })
+
+  it('does not send an in-flight selection resize into the next text prompt', () => {
+    const consoleSessions = useConsoleSessionsStore()
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '1', text: 'Select:', prompt: 'select',
+      }),
+    })
+    consoleSessions.sendSelectionEvent('bareos-dir', 'key:enter')
+    consoleSessions.setTerminalSize('bareos-dir', 40, 120)
+    expect(socket.sent).toHaveLength(3)
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '2', text: 'Enter name: ', prompt: 'sub',
+      }),
+    })
+    expect(socket.sent).toHaveLength(3)
+    consoleSessions.sendCommand('bareos-dir', 'example')
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'raw_response', id: '3', text: '', prompt: 'main',
+      }),
+    })
+    expect(JSON.parse(socket.sent[4]).command).toBe('.terminalsize 40 120 color')
   })
 
   it('suppresses standalone director message notifications in console output', () => {

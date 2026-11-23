@@ -39,9 +39,293 @@ from bareos.bsock.lowlevel import LowLevel
 import bareos.exceptions
 
 import bareos_unittest
+from bareos_unittest.tree_browser_console import TreeBrowserConsole
 
 
 class PythonBareosAclTest(bareos_unittest.Json):
+    def test_visual_restore_run_requires_a_source(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console)
+        screen = browser.run("run job=RestoreFiles")
+        self.assertIn("Restore Options", screen)
+        screen = browser.press("enter")
+        self.assertIn("Please enter a JobId for restore:", screen)
+        self.assertNotIn("Job queued", screen)
+        screen = browser.submit_line("2147483647")
+        self.assertIn("not found in catalog", screen)
+        self.assertNotIn("Job queued", screen)
+
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        backup = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={backup} yes")
+        for supplied in (False, True):
+            with self.subTest(supplied=supplied):
+                command = "run job=RestoreFiles"
+                if supplied:
+                    command += f" jobid={backup}"
+                screen = browser.run(command)
+                self.assertIn("Restore Options", screen)
+                screen = browser.press("enter")
+                if not supplied:
+                    self.assertIn("Please enter a JobId for restore:", screen)
+                    screen = browser.submit_line(str(backup))
+                self.assertNotIn("Please enter a JobId for restore:", screen)
+                queued = re.search(r"Job queued\. JobId=(\d+)", screen)
+                self.assertIsNotNone(queued, screen)
+                jobid = queued.group(1)
+                self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+                admin.call(f"wait jobid={jobid}")
+
+    def test_visual_relocation_accepts_period_in_text(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=140)
+        browser.run("run job=RestoreFiles")
+        browser.press("home")
+        browser.press("down")
+        browser.press("down")
+        browser.press("enter")
+        browser.press("right")
+        browser.press("right")
+        browser.press("down")
+        browser.press("enter")
+        screen = browser.type_text(".dir")
+        self.assertIn("Type text", screen)
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir")
+        screen = browser.press("enter")
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir")
+        browser.press("enter")
+        browser.type_text(".discard")
+        screen = browser.press("cancel")
+        self.assertRegex(screen, r"Source prefix\s+/home\.dir(?:\s|│)")
+        screen = browser.type_text(".")
+        self.assertIn("Restore Options", screen)
+        browser.press("cancel")
+
+    def test_destination_browser_search_accepts_period(self):
+        username = self.get_operator_username()
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        self.addCleanup(console.close)
+        browser = TreeBrowserConsole(console, columns=140)
+        browser.run("run job=RestoreFiles")
+        browser.press("home")
+        browser.press("down")
+        screen = browser.type_text("b")
+        self.assertIn("Browse destination client", screen)
+        screen = browser.type_text("/")
+        self.assertIn("Type substring", screen)
+        screen = browser.type_text("needle.dir")
+        self.assertIn("Type substring", screen)
+        self.assertIn("Search: needle.dir", screen)
+        screen = browser.press("enter")
+        self.assertIn('Search: "needle.dir"', screen)
+        browser.press("cancel")
+        browser.press("cancel")
+        browser.press("cancel")
+
+    def test_restore_copies_require_complete_authorized_chain(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        full = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={full} yes")
+        sleep(2)
+        path = os.path.join(self.backup_directory, f"copy-chain-{uuid.uuid4().hex}")
+        with open(path, "w") as data:
+            data.write("incremental data\n")
+        self.addCleanup(os.remove, path)
+        sleep(2)
+        incremental = self.run_job(admin, "backup-bareos-fd", "Incremental", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={incremental} yes")
+        prefix = f"copy-chain-{uuid.uuid4().hex}"
+        self.addCleanup(
+            admin.call, f".sql query=\"DELETE FROM Job WHERE Job LIKE '{prefix}%'\""
+        )
+        for suffix, source, name in (
+            ("full1", full, "backup-bareos-fd"),
+            ("full2", full, "backup-bareos-fd"),
+            ("incr", incremental, "backup-test2-fd"),
+        ):
+            admin.call(
+                '.sql query="INSERT INTO Job '
+                "(Job,Name,Type,Level,ClientId,JobStatus,StartTime,EndTime,"
+                "JobTDate,FileSetId,PriorJobId) "
+                f"SELECT '{prefix}-{suffix}','{name}','C',Level,ClientId,"
+                "JobStatus,StartTime,EndTime,JobTDate,FileSetId,JobId "
+                f'FROM Job WHERE JobId={source}"'
+            )
+        copy_rows = admin.call(
+            f".sql query=\"SELECT JobId FROM Job WHERE Job LIKE '{prefix}%'\""
+        )["query"]
+        copy_ids = {str(row["jobid"]) for row in copy_rows}
+        self.assertEqual(len(copy_ids), 3)
+
+        for scenario in ("denied", "missing", "complete"):
+            if scenario == "missing":
+                admin.call(
+                    f'.sql query="UPDATE Job SET PriorJobId=0 '
+                    f"WHERE Job='{prefix}-incr'\""
+                )
+            elif scenario == "complete":
+                admin.call(
+                    f'.sql query="UPDATE Job SET PriorJobId={incremental},'
+                    f"Name='backup-bareos-fd' WHERE Job='{prefix}-incr'\""
+                )
+            with self.subTest(scenario=scenario):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="job-backup-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                try:
+                    result = console.call(
+                        "restore client=bareos-fd fileset=SelfTest select copies yes"
+                    )
+                finally:
+                    console.close()
+                selected = re.search(
+                    rb"You have selected the following JobIds: ([0-9,]+)", result
+                )
+                self.assertIsNotNone(selected, result)
+                selected_ids = set(selected.group(1).decode().split(","))
+                if scenario == "complete":
+                    self.assertEqual(selected_ids, copy_ids)
+                    self.assertNotIn(b"No complete authorized copy chain", result)
+                else:
+                    self.assertEqual(selected_ids, {str(full), str(incremental)})
+                    self.assertIn(b"No complete authorized copy chain", result)
+
+    def test_restore_latest_rejects_before_cutoff(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+        for command in (
+            'restore latest before="2000-01-01 00:00:00"',
+            'restore before="2000-01-01 00:00:00" latest',
+        ):
+            with self.subTest(command=command):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="client-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                result = console.call(command)
+                self.assertIn(b"latest cannot be combined with before", result)
+                self.assertNotIn(b"Automatically selected restore point:", result)
+
+        for command in ("restore latest", "restore latest current"):
+            with self.subTest(command=command):
+                console = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name="client-bareos-fd",
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                result = console.call(command)
+                self.assertIn(b"Automatically selected restore point:", result)
+                console.call("done")
+
+    def test_restore_discovers_historical_fileset_version(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        jobid = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={jobid} yes")
+        self.addCleanup(
+            admin.call, ".sql query=\"DELETE FROM FileSet WHERE MD5='history-test'\""
+        )
+        admin.call(
+            '.sql query="INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) '
+            "SELECT FileSet,'history-test','2099-01-01 00:00:00',FileSetText "
+            f'FROM FileSet WHERE FileSetId=(SELECT FileSetId FROM Job WHERE JobId={jobid})"'
+        )
+        console = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            name="client-bareos-fd",
+            password=bareos.bsock.Password("secret"),
+            **self.director_extra_options,
+        )
+        console.call("restore")
+        result = console.call("1")
+        self.assertIn(b"Automatically selected restore point:", result)
+        console.call("done")
+
+    def test_pluginhints_jobid_respects_job_and_client_acls(self):
+        username = self.get_operator_username()
+        admin = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=self.get_operator_password(username),
+            **self.director_extra_options,
+        )
+        allowed = self.run_job(admin, "backup-bareos-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={allowed} yes")
+        denied = self.run_job(admin, "backup-test2-fd", "Full", wait=True)
+        self.addCleanup(admin.call, f"delete jobid={denied} yes")
+        for name in ("job-backup-bareos-fd", "client-bareos-fd"):
+            with self.subTest(console=name):
+                console = bareos.bsock.DirectorConsoleJson(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=name,
+                    password=bareos.bsock.Password("secret"),
+                    **self.director_extra_options,
+                )
+                console.call(f".pluginhints jobid={allowed}")
+                with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+                    console.call(f".pluginhints jobid={denied}")
+
     def test_job_pagination_reports_acl_filtered_rows(self):
         username = self.get_operator_username()
         admin = bareos.bsock.DirectorConsoleJson(
@@ -241,29 +525,92 @@ class PythonBareosAclTest(bareos_unittest.Json):
             password=bareos_password,
             **self.director_extra_options,
         )
+        console_bareos_fd_json = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=console_bareos_fd_username,
+            password=bareos_password,
+            **self.director_extra_options,
+        )
+
+        with self.assertRaises(
+            bareos.exceptions.JsonRpcErrorReceivedException
+        ) as error:
+            console_bareos_fd_json.call(".clientbrowse client=test2-fd path=/")
+        self.assertIn(
+            'Client "test2-fd" not found.', str(error.exception)
+        )
+
+        result = console_bareos_fd_json.call(
+            ".clientbrowse client=bareos-fd path=/"
+        )
+        self.assertIn("bareos-fd", str(result))
 
         result = console_bareos_fd.call("restore")
         logger.debug(str(result))
 
         #
-        # restore: 1: List last 20 Jobs run
+        # restore: 1: Select a FileSet@Client combination (latest backup)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected.
+        #
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        # The latest restore point is now selected automatically,
+        # without any further interactive prompt.
+        self.assertIn(b"Automatically selected restore point:", result)
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 2: Select a FileSet@Client combination (custom restore
+        # point)
+        #
+        # Only the bareos-fd client should be accessible
+        # and is therefore autoselected. Since more than one restore
+        # chain exists, the interactive restore chain picker is shown
+        # and we select the first (newest) one manually.
+        #
+        result = console_bareos_fd.call("2")
+        logger.debug(str(result))
+        self.assertIn(
+            b"Automatically selected FileSet@Client: SelfTest@bareos-fd", result
+        )
+        self.assertIn(b"Select restore point", result)
+        result = console_bareos_fd.call("1")
+        logger.debug(str(result))
+        # Exit the file tree selection
+        result = console_bareos_fd.call("done")
+        logger.debug(str(result))
+
+        result = console_bareos_fd.call("restore")
+
+        #
+        # restore: 13: List last 20 Jobs run
         #
         # This requires access to the "sqlquery" command,
         # which this console does not have.
         #
-        result = console_bareos_fd.call("1")
+        result = console_bareos_fd.call("13")
         logger.debug(str(result))
         self.assertEqual(b"SQL query not authorized.", result.strip())
 
         result = console_bareos_fd.call("restore")
 
         #
-        # restore: 2: List Jobs where a given File is saved
+        # restore: 14: List Jobs where a given File is saved
         #
         # Only the bareos-fd client should be accessable
         # and is therefore autoselected.
         #
-        result = console_bareos_fd.call("2")
+        result = console_bareos_fd.call("14")
         logger.debug(str(result))
         self.assertIn(b"Automatically selected Client: bareos-fd", result)
         result = console_bareos_fd.call("Makefile")

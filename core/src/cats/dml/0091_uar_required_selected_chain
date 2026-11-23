@@ -1,0 +1,38 @@
+# Resolve required jobs without filtering on media availability.
+WITH anchor AS (
+  SELECT JobId, StartTime, ClientId, FileSetId, Type, Level, JobFiles
+    FROM Job WHERE JobId = %s AND Level = 'F' AND JobStatus IN ('T','W')
+),
+eligible AS (
+  SELECT Job.JobId, Job.StartTime, Job.Level, Job.JobFiles
+    FROM Job
+    JOIN FileSet ON FileSet.FileSetId = Job.FileSetId
+    JOIN anchor ON anchor.ClientId = Job.ClientId AND anchor.Type = Job.Type
+    JOIN FileSet AS anchor_fileset ON anchor_fileset.FileSetId = anchor.FileSetId
+   WHERE FileSet.FileSet = anchor_fileset.FileSet
+     AND Job.JobStatus IN ('T','W')
+     AND Job.Level IN ('D','I')
+     AND (Job.StartTime, Job.JobId) > (anchor.StartTime, anchor.JobId)
+     AND Job.StartTime < '%s' %s
+),
+latest_diff AS (
+  SELECT * FROM eligible WHERE Level = 'D'
+   ORDER BY StartTime DESC, JobId DESC LIMIT 1
+),
+required AS (
+  SELECT JobId, StartTime, Level, JobFiles FROM anchor
+  UNION ALL
+  SELECT JobId, StartTime, Level, JobFiles FROM latest_diff
+  UNION ALL
+  SELECT eligible.JobId, eligible.StartTime, eligible.Level, eligible.JobFiles FROM eligible
+   WHERE eligible.Level = 'I'
+     AND NOT EXISTS (
+       SELECT 1 FROM latest_diff
+        WHERE (eligible.StartTime, eligible.JobId)
+              <= (latest_diff.StartTime, latest_diff.JobId)
+     )
+)
+SELECT required.JobId FROM required
+ WHERE (required.Level <> 'I' OR required.JobFiles > 0
+        OR EXISTS (SELECT 1 FROM JobMedia WHERE JobMedia.JobId = required.JobId))
+ ORDER BY required.StartTime, required.JobId

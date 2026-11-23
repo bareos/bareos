@@ -41,18 +41,27 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
+#include "dird/ua_tree_browser.h"
+#include "dird/ua_visual_busy.h"
 #include "dird/ua_run.h"
 #include "dird/ua_restore.h"
+#include "dird/restore_options.h"
+#include "dird/ua_restore_point_display.h"
 #include "dird/bsr.h"
 #include "lib/breg.h"
+#include "lib/bsys.h"
 #include "lib/edit.h"
 #include "lib/berrno.h"
 #include "lib/parse_conf.h"
 #include "lib/tree.h"
 #include "include/protocol_types.h"
 
+#include <algorithm>
+#include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
+#include <optional>
 
 namespace directordaemon {
 
@@ -68,6 +77,17 @@ static int FilesetHandler(void* ctx, int num_fields, char** row);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     const char* date);
+static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
+                                               RestoreContext* rx,
+                                               bool auto_select_latest,
+                                               const char* requested_tuple);
+static bool ResolveBackupChainForClientFileset(
+    UaContext* ua,
+    RestoreContext* rx,
+    ClientDbRecord& cr,
+    FileSetDbRecord& fsr,
+    const char* date,
+    const RestorePointCandidate* selected = nullptr);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
 static bool SplitPathAndFilename(UaContext* ua,
@@ -103,14 +123,12 @@ static bool AddAllFindex(RestoreContext* rx);
 bool RestoreCmd(UaContext* ua, const char*)
 {
   RestoreContext rx; /* restore context */
-  PoolMem buf;
+  restore_options::RestoreRunOptions run_options;
   JobResource* job;
   int i;
   JobControlRecord* jcr = ua->jcr;
-  char* escaped_bsr_name = NULL;
-  char* escaped_where_name = NULL;
-  char *strip_prefix, *add_prefix, *add_suffix, *regexp;
-  strip_prefix = add_prefix = add_suffix = regexp = NULL;
+  char *strip_prefix, *add_prefix, *add_suffix;
+  strip_prefix = add_prefix = add_suffix = NULL;
 
   rx.path = GetPoolMemory(PM_FNAME);
   rx.fname = GetPoolMemory(PM_FNAME);
@@ -120,22 +138,22 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
   i = FindArgWithValue(ua, "comment");
-  if (i >= 0) {
+  if (i >= 0 && ua->argv[i]) {
     rx.comment = ua->argv[i];
-    if (!IsCommentLegal(ua, rx.comment)) { goto bail_out; }
+    if (!IsCommentLegal(ua, rx.comment->c_str())) { goto bail_out; }
   }
 
   i = FindArgWithValue(ua, "backupformat");
-  if (i >= 0) { rx.backup_format = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.backup_format = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "where");
-  if (i >= 0) { rx.where = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.where = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "replace");
-  if (i >= 0) { rx.replace = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.replace = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "pluginoptions");
-  if (i >= 0) { rx.plugin_options = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.plugin_options = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "strip_prefix");
   if (i >= 0) { strip_prefix = ua->argv[i]; }
@@ -147,12 +165,26 @@ bool RestoreCmd(UaContext* ua, const char*)
   if (i >= 0) { add_suffix = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "regexwhere");
-  if (i >= 0) { rx.RegexWhere = ua->argv[i]; }
+  if (i >= 0 && ua->argv[i]) { rx.RegexWhere = ua->argv[i]; }
 
   i = FindArgWithValue(ua, "fileregex");
   if (i >= 0) {
     if (!CheckAndSetFileregex(ua, &rx, ua->argv[i])) {
       ua->ErrorMsg(T_("Invalid \"FileRegex\" value.\n"));
+      goto bail_out;
+    }
+  }
+
+  i = FindArgWithValue(ua, "restorepointmode");
+  if (i >= 0) {
+    if (Bstrcasecmp(ua->argv[i], "chain")) {
+      rx.restore_point_mode = RestoreContext::RestorePointMode::Chain;
+    } else if (Bstrcasecmp(ua->argv[i], "job")) {
+      rx.restore_point_mode = RestoreContext::RestorePointMode::Job;
+    } else {
+      ua->ErrorMsg(T_("Invalid \"restorepointmode\" value \"%s\"; "
+                      "expected \"chain\" or \"job\".\n"),
+                   ua->argv[i]);
       goto bail_out;
     }
   }
@@ -166,23 +198,23 @@ bool RestoreCmd(UaContext* ua, const char*)
 
   if (strip_prefix || add_suffix || add_prefix) {
     int len = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
-    regexp = (char*)malloc(len * sizeof(char));
-
-    bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
-    rx.RegexWhere = regexp;
+    std::vector<char> regex_buffer(len);
+    bregexp_build_where(regex_buffer.data(), len, strip_prefix, add_prefix,
+                        add_suffix);
+    rx.RegexWhere = regex_buffer.data();
   }
 
   /* TODO: add acl for regexwhere ? */
 
   if (rx.RegexWhere) {
-    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere, true)) {
+    if (!ua->AclAccessOk(Where_ACL, rx.RegexWhere->c_str(), true)) {
       ua->ErrorMsg(T_("\"RegexWhere\" specification not authorized.\n"));
       goto bail_out;
     }
   }
 
   if (rx.where) {
-    if (!ua->AclAccessOk(Where_ACL, rx.where, true)) {
+    if (!ua->AclAccessOk(Where_ACL, rx.where->c_str(), true)) {
       ua->ErrorMsg(T_("\"where\" specification not authorized.\n"));
       goto bail_out;
     }
@@ -279,59 +311,25 @@ bool RestoreCmd(UaContext* ua, const char*)
   }
   if (!GetRestoreClientName(ua, rx)) { goto bail_out; }
 
-  escaped_bsr_name = escape_filename(jcr->RestoreBootstrap);
+  run_options.restore_job = job->resource_name_;
+  run_options.backup_client = rx.ClientName ? rx.ClientName : "";
+  run_options.restore_client = rx.RestoreClientName ? rx.RestoreClientName : "";
+  run_options.storage = rx.store ? rx.store->resource_name_ : "";
+  run_options.bootstrap = jcr->RestoreBootstrap ? jcr->RestoreBootstrap : "";
+  run_options.files = rx.selected_files;
+  run_options.catalog = ua->catalog ? ua->catalog->resource_name_ : "";
+  run_options.backup_format = rx.backup_format.value_or("");
+  run_options.regex_where = rx.RegexWhere.value_or("");
+  if (rx.where) { run_options.where = *rx.where; }
+  run_options.replace = rx.replace.value_or("");
+  run_options.plugin_options = !rx.plugin_options.empty()
+                                   ? rx.plugin_options
+                                   : rx.interactive_plugin_options;
+  run_options.comment = rx.comment.value_or("");
+  run_options.yes = FindArg(ua, NT_("yes")) > 0;
 
-  Mmsg(ua->cmd,
-       "run job=\"%s\" client=\"%s\" restoreclient=\"%s\" storage=\"%s\""
-       " bootstrap=\"%s\" files=%u catalog=\"%s\"",
-       job->resource_name_, rx.ClientName, rx.RestoreClientName,
-       rx.store ? rx.store->resource_name_ : "",
-       escaped_bsr_name ? escaped_bsr_name : jcr->RestoreBootstrap,
-       rx.selected_files, ua->catalog->resource_name_);
-
-  // Build run command
-  if (rx.backup_format) {
-    Mmsg(buf, " backupformat=%s", rx.backup_format);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  PmStrcpy(buf, "");
-  if (rx.RegexWhere) {
-    escaped_where_name = escape_filename(rx.RegexWhere);
-    Mmsg(buf, " regexwhere=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.RegexWhere);
-
-  } else if (rx.where) {
-    escaped_where_name = escape_filename(rx.where);
-    Mmsg(buf, " where=\"%s\"",
-         escaped_where_name ? escaped_where_name : rx.where);
-  }
-  PmStrcat(ua->cmd, buf);
-
-  if (rx.replace) {
-    Mmsg(buf, " replace=%s", rx.replace);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  if (rx.plugin_options) {
-    Mmsg(buf, " pluginoptions=%s", rx.plugin_options);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  if (rx.comment) {
-    Mmsg(buf, " comment=\"%s\"", rx.comment);
-    PmStrcat(ua->cmd, buf);
-  }
-
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
-  if (regexp) { free(regexp); }
-
-  if (FindArg(ua, NT_("yes")) > 0) {
-    PmStrcat(ua->cmd, " yes"); /* pass it on to the run command */
-  }
+  PmStrcpy(ua->cmd,
+           restore_options::BuildRestoreRunCommand(run_options).c_str());
 
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
 
@@ -345,12 +343,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   return true;
 
 bail_out:
-  if (escaped_bsr_name != NULL) { free(escaped_bsr_name); }
-
-  if (escaped_where_name != NULL) { free(escaped_where_name); }
-
-  if (regexp) { free(regexp); }
-
   /* restore_tree_root only gets freed if either the backup starts
    * or the ua session ends.  Since the first definitely does not happen
    * after this point, and we cannot control the second one, we need
@@ -508,6 +500,43 @@ static std::optional<db_list_ctx> FindJobDependencies(UaContext* ua,
  */
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 {
+  std::string requested_tuple;
+  const int tuple_index = FindArg(ua, "filesetclient");
+  if (tuple_index >= 0) {
+    char* value = ua->argv[tuple_index];
+    char* separator = value ? strchr(value, '@') : nullptr;
+    if (!separator || separator == value || separator[1] == '\0'
+        || strchr(separator + 1, '@')) {
+      ua->ErrorMsg(
+          T_("Expected fileset@client value for filesetclient keyword.\n"));
+      return 0;
+    }
+    for (int i = 1; i < ua->argc; ++i) {
+      if (i == tuple_index) { continue; }
+      const char* conflicting[]
+          = {"filesetclient", "fileset",   "client",   "jobid",
+             "file",          "directory", "fileregex"};
+      for (const char* keyword : conflicting) {
+        if (Bstrcasecmp(ua->argk[i], keyword)) {
+          ua->ErrorMsg(T_("filesetclient cannot be combined with %s.\n"),
+                       keyword);
+          return 0;
+        }
+      }
+    }
+    if (ua->argc >= MAX_CMD_ARGS) {
+      ua->ErrorMsg(T_("Too many arguments for filesetclient.\n"));
+      return 0;
+    }
+    requested_tuple = value;
+    *separator = '\0';
+    static char fileset_keyword[] = "fileset";
+    static char client_keyword[] = "client";
+    ua->argk[tuple_index] = fileset_keyword;
+    ua->argk[ua->argc] = client_keyword;
+    ua->argv[ua->argc++] = separator + 1;
+  }
+
   const char* p;
   /* Include current second if using current time */
   /* Note, we add one second here just to include any job
@@ -521,10 +550,15 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 
   JobId_t JobId;
   bool done = false;
+
+  auto pause_after_informational_output = [ua]() {
+    if (ua->terminal_height <= 0 || ua->api != 0 || ua->batch) { return true; }
+    return GetCmd(ua, T_("Press Enter to return to the restore menu: "), true);
+  };
   int i, j;
   const char* list[] = {
-      T_("List last 20 Jobs run"),
-      T_("List Jobs where a given File is saved"),
+      T_("Select a FileSet@Client combination (latest backup)"),
+      T_("Select a FileSet@Client combination (custom restore point)"),
       T_("Enter list of comma separated JobIds to select"),
       T_("Enter SQL list command"),
       T_("Select the most recent backup for a client"),
@@ -535,6 +569,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       T_("Find the JobIds for a backup for a client before a specified time"),
       T_("Enter a list of directories to restore for found JobIds"),
       T_("Select full restore to a specified Job date"),
+      T_("List last 20 Jobs run"),
+      T_("List Jobs where a given File is saved"),
       T_("Cancel"),
       NULL};
 
@@ -548,26 +584,28 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "pool",      /* 6 */
                       "all",       /* 7 */
                       "fileregex", /* 8 */
+                      "latest",    /* 9 */
 
                       // The keyword below are handled by individual arg lookups
-                      "client",        /* 9 */
-                      "storage",       /* 10 */
-                      "fileset",       /* 11 */
-                      "where",         /* 12 */
-                      "yes",           /* 13 */
-                      "bootstrap",     /* 14 */
-                      "done",          /* 15 */
-                      "strip_prefix",  /* 16 */
-                      "add_prefix",    /* 17 */
-                      "add_suffix",    /* 18 */
-                      "regexwhere",    /* 19 */
-                      "restoreclient", /* 20 */
-                      "copies",        /* 21 */
-                      "comment",       /* 22 */
-                      "restorejob",    /* 23 */
-                      "replace",       /* 24 */
-                      "pluginoptions", /* 25 */
-                      "archive",       /* 26 */
+                      "client",           /* 10 */
+                      "storage",          /* 11 */
+                      "fileset",          /* 12 */
+                      "where",            /* 13 */
+                      "yes",              /* 14 */
+                      "bootstrap",        /* 15 */
+                      "done",             /* 16 */
+                      "strip_prefix",     /* 17 */
+                      "add_prefix",       /* 18 */
+                      "add_suffix",       /* 19 */
+                      "regexwhere",       /* 20 */
+                      "restoreclient",    /* 21 */
+                      "copies",           /* 22 */
+                      "comment",          /* 23 */
+                      "restorejob",       /* 24 */
+                      "replace",          /* 25 */
+                      "pluginoptions",    /* 26 */
+                      "archive",          /* 27 */
+                      "restorepointmode", /* 28 */
                       NULL};
 
   rx->JobIds[0] = 0;
@@ -576,6 +614,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   std::vector<char*> dirs;
   bool use_select = false;
   bool use_fileregex = false;
+  bool use_latest = false;
 
   // these are just used to check if any option specifies them in some way
   // this way we can give the user some feedback.  I.e.
@@ -704,10 +743,30 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       case 8: /* fileregex */
         use_fileregex = true;
         break;
+      case 9: /* latest */
+        use_latest = true;
+        break;
       default:
         // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
+  }
+
+  if (use_latest && date_index >= 0
+      && Bstrcasecmp(ua->argk[date_index], "before")) {
+    ua->ErrorMsg(
+        T_("latest cannot be combined with before; use select "
+           "before=... instead.\n"));
+    return 0;
+  }
+
+  if (use_latest
+      && (job_index >= 0 || use_select || use_fileregex || !files.empty()
+          || !dirs.empty())) {
+    ua->ErrorMsg(
+        T_("latest cannot be combined with jobid, select, file, "
+           "directory or fileregex.\n"));
+    return 0;
   }
 
   if (files.size() + dirs.size() > 0 || use_fileregex) {
@@ -746,6 +805,14 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     done = true;
   }
 
+  if (use_latest) {
+    if (!SelectClientFilesetTupleAndRestore(ua, rx, true,
+                                            requested_tuple.c_str())) {
+      return 0;
+    }
+    done = true;
+  }
+
   if (!done) {
     ua->SendMsg(
         T_("\nFirst you select one or more JobIds that contain files\n"
@@ -768,36 +835,19 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     switch (DoPrompt(ua, "", T_("Select item: "), NULL, 0)) {
       case -1: /* error or cancel */
         return 0;
-      case 0: /* list last 20 Jobs run */
+      case 0: /* FileSet@Client latest restore */
       {
-        PoolMem query;
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs>(query,
-                                                              filter_name);
-        if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
-          ua->ErrorMsg(T_("SQL query not authorized.\n"));
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, true,
+                                                requested_tuple.c_str())) {
           return 0;
         }
-        gui_save = ua->jcr->gui;
-        ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
-                             true);
-        ua->jcr->gui = gui_save;
-        done = false;
       } break;
-      case 1: { /* list where a file is saved */
-        if (!GetClientName(ua, rx)) { return 0; }
-        if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
-        std::string_view cmd_view{ua->cmd};
-        auto fname = ua->db->EscapeString(ua->jcr, cmd_view);
-        if (!fname) { return 0; }
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(
-            rx->query, rx->ClientName, fname->c_str());
-        gui_save = ua->jcr->gui;
-        ua->jcr->gui = true;
-        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
-                             true);
-        ua->jcr->gui = gui_save;
-        done = false;
+      case 1: /* FileSet@Client custom restore point */
+      {
+        if (!SelectClientFilesetTupleAndRestore(ua, rx, false,
+                                                requested_tuple.c_str())) {
+          return 0;
+        }
       } break;
       case 2: /* enter a list of JobIds */
         if (!GetCmd(ua, T_("Enter JobId(s), comma separated, to restore: "))) {
@@ -917,13 +967,47 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
             || !IsAnInteger(ua->cmd)) {
           return 0;
         }
-
         std::optional jobids = FindJobDependencies(ua, ua->cmd);
         if (!jobids) { return 0; }
         PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
       } break;
-      case 12: /* Cancel or quit */
+      case 12: /* list last 20 Jobs run */
+      {
+        PoolMem query;
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_list_jobs>(query,
+                                                              filter_name);
+        if (!ua->AclAccessOk(Command_ACL, NT_("sqlquery"), true)) {
+          ua->ErrorMsg(T_("SQL query not authorized.\n"));
+          return 0;
+        }
+        gui_save = ua->jcr->gui;
+        ua->jcr->gui = true;
+        ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send.get(), HORZ_LIST,
+                             true);
+        ua->jcr->gui = gui_save;
+        if (!pause_after_informational_output()) { return 0; }
+        done = false;
+      } break;
+      case 13: { /* list where a file is saved */
+        if (!GetClientName(ua, rx)) { return 0; }
+        if (!GetCmd(ua, T_("Enter Filename (no path):"))) { return 0; }
+        std::string_view cmd_view{ua->cmd};
+        auto fname = ua->db->EscapeString(ua->jcr, cmd_view);
+        if (!fname) { return 0; }
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_file>(
+            rx->query, rx->ClientName, fname->c_str());
+        gui_save = ua->jcr->gui;
+        ua->jcr->gui = true;
+        ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send.get(), HORZ_LIST,
+                             true);
+        ua->jcr->gui = gui_save;
+        if (!pause_after_informational_output()) { return 0; }
+        done = false;
+      } break;
+      case 14: /* Cancel or quit */
+        return 0;
+      default:
         return 0;
     }
   }
@@ -1328,6 +1412,104 @@ static void AddDeltaListFindex(RestoreContext* rx, struct delta_list* lst)
   AddFindex(rx->bsr.get(), lst->JobId, lst->FileIndex);
 }
 
+static void AddTreeSelection(RestoreContext& rx, TREE_ROOT* root)
+{
+  for (tree_node* node = FirstTreeNode(root); node; node = NextTreeNode(node)) {
+    if (node->extract) {
+      AddDeltaListFindex(&rx, node->delta_list);
+      AddFindex(rx.bsr.get(), node->JobId, node->FileIndex);
+      if (node->type != tree_node_type::NewDir) { rx.selected_files++; }
+    }
+  }
+}
+
+bool RebuildRestoreSelection(UaContext* ua,
+                             JobControlRecord* jcr,
+                             uint32_t& selected_files)
+{
+  RestoreContext rx;
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
+  AddTreeSelection(rx, jcr->dir_impl->restore_tree_root);
+  if (!rx.bsr->JobId) {
+    ua->WarningMsg(T_("No files selected to be restored.\n"));
+    return false;
+  }
+
+  if (jcr->dir_impl->res.job->Protocol == PT_NDMP_NATIVE) {
+    selected_files = rx.selected_files;
+    return true;
+  }
+
+  if (!AddVolumeInformationToBsr(ua, rx.bsr.get())) {
+    ua->ErrorMsg(
+        T_("Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
+    return false;
+  }
+
+  char empty_jobids[] = "";
+  rx.JobIds = jcr->JobIds ? jcr->JobIds : empty_jobids;
+  std::string buffer;
+  selected_files = WriteBsr(ua, rx, buffer);
+  if (!selected_files) {
+    ua->WarningMsg(T_("No files selected to be restored.\n"));
+    return false;
+  }
+
+  std::string path
+      = std::string(working_directory) + "/" + my_name + ".restore.XXXXXX";
+#ifdef HAVE_MSVC
+  const int temp_error = _mktemp_s(path.data(), path.size() + 1);
+  int fd = temp_error == 0
+               ? open(path.c_str(), O_CREAT | O_EXCL | O_RDWR | O_BINARY, 0600)
+               : -1;
+  if (temp_error != 0) { errno = temp_error; }
+#else
+  int fd = mkstemp(path.data());
+#endif
+  if (fd < 0) {
+    BErrNo be;
+    ua->ErrorMsg(T_("Unable to create bootstrap file %s. ERR=%s\n"),
+                 path.c_str(), be.bstrerror());
+    return false;
+  }
+  FILE* file = fdopen(fd, "wb");
+  if (!file) {
+    BErrNo be;
+    ua->ErrorMsg(T_("Unable to open bootstrap file %s. ERR=%s\n"), path.c_str(),
+                 be.bstrerror());
+    close(fd);
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+  bool write_ok
+      = fwrite(buffer.data(), 1, buffer.size(), file) == buffer.size();
+  if (fclose(file) != 0) { write_ok = false; }
+  if (!write_ok) {
+    ua->ErrorMsg(T_("Error writing bsr file.\n"));
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+
+  if (jcr->dir_impl->unlink_bsr && jcr->RestoreBootstrap
+      && SecureErase(jcr, jcr->RestoreBootstrap) != 0) {
+    ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"),
+                 jcr->RestoreBootstrap);
+    if (SecureErase(jcr, path.c_str()) != 0) {
+      ua->ErrorMsg(T_("Unable to remove bootstrap file %s.\n"), path.c_str());
+    }
+    return false;
+  }
+  free(jcr->RestoreBootstrap);
+  jcr->RestoreBootstrap = strdup(path.c_str());
+  jcr->dir_impl->unlink_bsr = true;
+  ua->SendMsg(T_("Bootstrap records written to %s\n"), path.c_str());
+  return true;
+}
+
 static bool AddAllFindex(RestoreContext* rx)
 {
   bool has_jobid = false;
@@ -1373,8 +1555,24 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
-              rx->JobIds);
+  std::optional<VisualBusyIndicator> busy_indicator;
+  if (TreeBrowserSupported(ua)) {
+    busy_indicator.emplace(ua, [ua, rx, &tree](char spinner) {
+      std::string detail = T_("JobIds: ");
+      detail += rx->JobIds;
+      detail += T_(" | Files inserted: ");
+      detail += std::to_string(tree.FileCount);
+      return visual_busy_internal::RenderBusyScreen(
+          ua->terminal_width, ua->terminal_height, ua->supports_color,
+          T_("Building directory tree"), T_("Building directory tree..."),
+          detail, spinner);
+    });
+    tree.busy_indicator = &*busy_indicator;
+    busy_indicator->Start();
+  } else {
+    ua->InfoMsg(T_("\nBuilding directory tree for JobId(s) %s ...  "),
+                rx->JobIds);
+  }
 
   ua->LogAuditEventInfoMsg(T_("Building directory tree for JobId(s) %s"),
                            rx->JobIds);
@@ -1384,6 +1582,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
                            (void*)&tree)) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
+  tree.busy_indicator = nullptr;
 
 
   /* Look at the first JobId on the list (presumably the oldest) and
@@ -1419,27 +1618,13 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 
     if (FindArg(ua, NT_("done")) < 0) {
       // Let the user interact in selecting which files to restore
+      tree.plugin_options_out = &rx->interactive_plugin_options;
       OK = UserSelectFilesFromTree(&tree);
     }
 
     /* Walk down through the tree finding all files marked to be
      *  extracted making a bootstrap file. */
-    if (OK) {
-      for (tree_node* node = FirstTreeNode(tree.root); node;
-           node = NextTreeNode(node)) {
-        Dmsg2(400, "FI=%" PRId32 " node=%p\n", node->FileIndex, node);
-        if (node->extract) {
-          Dmsg3(400, "JobId=%" PRIu32 " type=%d FI=%" PRId32 "\n", node->JobId,
-                to_underlying(node->type), node->FileIndex);
-          /* TODO: optimize bsr insertion when jobid are non sorted */
-          AddDeltaListFindex(rx, node->delta_list);
-          AddFindex(rx->bsr.get(), node->JobId, node->FileIndex);
-          if (node->extract && node->type != tree_node_type::NewDir) {
-            rx->selected_files++; /* count only saved files */
-          }
-        }
-      }
-    }
+    if (OK) { AddTreeSelection(*rx, tree.root); }
   }
 
   /* We keep the tree with selected restore files.
@@ -1448,6 +1633,287 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   ua->jcr->dir_impl->restore_tree_root = tree.root;
 
   return OK;
+}
+
+static bool SelectBackupsBeforeDate(UaContext* ua,
+                                    RestoreContext* rx,
+                                    const char* date)
+{
+  int i;
+  ClientDbRecord cr;
+  FileSetDbRecord fsr;
+  char ed1[50];
+  char fileset_name[MAX_NAME_LENGTH];
+
+  if (!GetClientDbr(ua, &cr)) { return false; }
+  if (rx->ClientName) { free(rx->ClientName); }
+  rx->ClientName = strdup(cr.Name);
+
+  i = FindArgWithValue(ua, "FileSet");
+  if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
+    if (!ua->AclAccessOk(FileSet_ACL, ua->argv[i])) { return false; }
+    bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
+                   ua->db->strerror());
+      i = -1;
+    }
+  } else if (i >= 0) {
+    ua->ErrorMsg(T_("FileSet argument: %s\n"), ua->errmsg.c_str());
+  }
+
+  if (i < 0) {
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_fileset>(
+        rx->query, edit_int64(cr.ClientId, ed1), ed1);
+    StartPrompt(ua, T_("The defined FileSet resources are:\n"));
+    if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+    }
+    if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), fileset_name,
+                 sizeof(fileset_name))
+        < 0) {
+      ua->ErrorMsg(T_("No FileSet found for client \"%s\".\n"), cr.Name);
+      return false;
+    }
+    bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
+    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+      ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
+                     ua->db->strerror());
+      ua->SendMsg(
+          T_("This probably means you modified the FileSet.\n"
+             "Continuing anyway.\n"));
+    }
+  }
+
+  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, date);
+}
+
+// Tuple rows are ordered, so rows of one tuple are adjacent.
+struct ClientFilesetTupleHandlerCtx {
+  UaContext* ua = nullptr;
+  std::string last_tuple;
+};
+
+static int ClientFilesetTupleHandler(void* ctx, int, char** row)
+{
+  auto* handler_ctx = static_cast<ClientFilesetTupleHandlerCtx*>(ctx);
+  UaContext* ua = handler_ctx->ua;
+  if (!row[0] || !row[1] || !row[2]) { return 0; }
+  if (!ua->AclAccessOk(Client_ACL, row[0])
+      || !ua->AclAccessOk(FileSet_ACL, row[1])
+      || !ua->AclAccessOk(Job_ACL, row[2])) {
+    return 0;
+  }
+  PoolMem tuple(PM_NAME);
+  Mmsg(tuple, "%s@%s", row[1], row[0]);
+  if (handler_ctx->last_tuple == tuple.c_str()) { return 0; }
+  handler_ctx->last_tuple = tuple.c_str();
+  AddPrompt(ua, tuple.c_str());
+  return 0;
+}
+
+/**
+ * Context threaded through ClientFilesetFullHandler() via the SqlQuery()
+ * callback's void* ctx: the UaContext (for ACL checks/messages) plus the
+ * candidate list being built up, kept index-aligned with ua->prompts so
+ * DoPrompt()'s returned index can be used directly against \p candidates.
+ */
+struct ClientFilesetFullHandlerCtx {
+  UaContext* ua = nullptr;
+  std::vector<RestorePointCandidate>* candidates = nullptr;
+  RestoreContext::RestorePointMode mode = RestoreContext::RestorePointMode::Chain;
+};
+
+static int ClientFilesetFullHandler(void* ctx, int, char** row)
+{
+  if (!row[0] || !row[1] || !row[2] || !row[3] || !row[4] || !row[5]
+      || !row[6]) {
+    return 0;
+  }
+  auto* handler_ctx = static_cast<ClientFilesetFullHandlerCtx*>(ctx);
+  UaContext* ua = handler_ctx->ua;
+
+  std::string display_names;
+  if (handler_ctx->mode == RestoreContext::RestorePointMode::Job) {
+    if (!row[9] || !ua->AclAccessOk(Job_ACL, row[9])) { return 0; }
+    display_names = row[9];
+  } else {
+    POOLMEM* job_names = GetPoolMemory(PM_FNAME);
+    PmStrcpy(job_names, row[4]);
+#if defined(_WIN32)
+    for (char* job_name = strtok(job_names, "\n"); job_name;
+         job_name = strtok(nullptr, "\n")) {
+#else
+    char* saveptr = nullptr;
+    for (char* job_name = strtok_r(job_names, "\n", &saveptr); job_name;
+         job_name = strtok_r(NULL, "\n", &saveptr)) {
+#endif
+      if (!ua->AclAccessOk(Job_ACL, job_name)) {
+        FreePoolMemory(job_names);
+        return 0;
+      }
+      if (!display_names.empty()) { display_names += ", "; }
+      display_names += job_name;
+    }
+    FreePoolMemory(job_names);
+  }
+
+  RestorePointCandidate candidate;
+  candidate.JobId = str_to_int64(row[0]);
+  candidate.NextFullJobId = row[7] ? str_to_int64(row[7]) : 0;
+  candidate.NextFullStartTime = row[8] ? row[8] : "";
+  candidate.RequiredJobIds = row[10] ? row[10] : "";
+  candidate.RestorePoint = StrToUtime(
+      handler_ctx->mode == RestoreContext::RestorePointMode::Job ? row[1]
+                                                                  : row[2]);
+  candidate.JobCount = handler_ctx->mode == RestoreContext::RestorePointMode::Job
+                           ? 1
+                           : str_to_int64(row[3]);
+  candidate.JobNames = std::move(display_names);
+  candidate.JobFiles = str_to_uint64(row[5]);
+  candidate.JobBytes = str_to_uint64(row[6]);
+
+  std::string line = FormatRestorePointCandidate(candidate, time(NULL));
+  handler_ctx->candidates->push_back(std::move(candidate));
+  AddPrompt(ua, line.c_str());
+  return 0;
+}
+
+static bool SelectClientFilesetTupleAndRestore(UaContext* ua,
+                                               RestoreContext* rx,
+                                               bool auto_select_latest,
+                                               const char* requested_tuple)
+{
+  char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_tuples_1>(
+      rx->query, filter_name);
+  StartPrompt(ua,
+              T_("The following FileSet@Client combinations have backups:\n"));
+  ClientFilesetTupleHandlerCtx tuple_ctx{ua, {}};
+  if (!ua->db->SqlQuery(rx->query, ClientFilesetTupleHandler,
+                        (void*)&tuple_ctx)) {
+    ua->ErrorMsg("%s\n", ua->db->strerror());
+    return false;
+  }
+
+  char tuple[2 * MAX_NAME_LENGTH];
+  if (requested_tuple && *requested_tuple) {
+    auto it = std::find_if(ua->prompts.begin(), ua->prompts.end(),
+                           [requested_tuple](const std::string& entry) {
+                             return Bstrcasecmp(entry.c_str(), requested_tuple);
+                           });
+    if (it == ua->prompts.end()) {
+      ua->ErrorMsg(
+          T_("No accessible FileSet@Client combination with backups "
+             "matches the requested value.\n"));
+      ua->prompts.clear();
+      return false;
+    }
+    bstrncpy(tuple, it->c_str(), sizeof(tuple));
+  } else {
+    if (DoPrompt(ua, T_("FileSet@Client"),
+                 T_("Select a FileSet@Client combination"), tuple,
+                 sizeof(tuple))
+        < 0) {
+      ua->ErrorMsg(T_("No FileSet@Client combination with backups found.\n"));
+      return false;
+    }
+  }
+  ua->prompts.clear();
+
+  char* at_sign = strchr(tuple, '@');
+  if (!at_sign) {
+    ua->ErrorMsg(T_("Invalid FileSet@Client selection: %s\n"), tuple);
+    return false;
+  }
+  *at_sign = 0;
+
+  ClientDbRecord cr;
+  bstrncpy(cr.Name, at_sign + 1, sizeof(cr.Name));
+  if (!ua->db->GetClientRecord(ua->jcr, &cr)) {
+    ua->ErrorMsg(T_("Error getting Client \"%s\": ERR=%s\n"), at_sign + 1,
+                 ua->db->strerror());
+    return false;
+  }
+  if (rx->ClientName) { free(rx->ClientName); }
+  rx->ClientName = strdup(cr.Name);
+
+  FileSetDbRecord fsr;
+  bstrncpy(fsr.FileSet, tuple, sizeof(fsr.FileSet));
+  if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) { return false; }
+  if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
+    ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
+                   ua->db->strerror());
+    ua->SendMsg(
+        T_("This probably means you modified the FileSet.\n"
+           "Continuing anyway.\n"));
+  }
+
+  char ed1[50], ed2[50];
+  ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_client_fileset_fulls_3>(
+      rx->query, edit_int64(cr.ClientId, ed1), edit_int64(fsr.FileSetId, ed2),
+      filter_name);
+
+  std::vector<RestorePointCandidate> candidates;
+  ClientFilesetFullHandlerCtx handler_ctx{ua, &candidates,
+                                           rx->restore_point_mode};
+  const RestorePointCandidate* selected = nullptr;
+  char selected_date[MAX_TIME_LENGTH];
+  if (auto_select_latest) {
+    /* Query is ordered newest-first, so the "(latest backup)" quick restore
+     * just takes the first chain and resolves it directly -- no further
+     * question is asked here, matching what the menu/command label
+     * promises. */
+    ua->prompts.clear();
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler,
+                          (void*)&handler_ctx)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+    if (candidates.empty()) {
+      ua->ErrorMsg(
+          T_("No backup found for FileSet \"%s\" and Client \"%s\".\n"),
+          fsr.FileSet, cr.Name);
+      return false;
+    }
+    selected = &candidates.front();
+    ua->prompts.clear();
+    if (!ua->api && !ua->runscript) {
+      ua->SendMsg(T_("Automatically selected restore point: %s\n"),
+                  FormatRestorePointCandidate(*selected, time(NULL)).c_str());
+    }
+  } else {
+    /* Let the user pick which restore point to use. The interactive
+     * prompt itself already appends its own selection/navigation hints,
+     * so the header here only needs to describe the list. */
+    StartPrompt(ua, T_("The following restore points are available "
+                       "(newest first):\n"));
+    if (!ua->db->SqlQuery(rx->query, ClientFilesetFullHandler,
+                          (void*)&handler_ctx)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      return false;
+    }
+    char selection[MAX_TIME_LENGTH];
+    int index = DoPrompt(ua, T_("restore point"), T_("Select restore point"),
+                         selection, sizeof(selection));
+    if (index < 0 || static_cast<size_t>(index) >= candidates.size()) {
+      return false;
+    }
+    selected = &candidates[index];
+  }
+
+  if (rx->restore_point_mode == RestoreContext::RestorePointMode::Job) {
+    /* Bypass chain/dependency resolution entirely: restore only the
+     * anchor Full job the user picked. */
+    rx->last_jobid[0] = rx->JobIds[0] = 0;
+    char ed3[50];
+    PmStrcpy(rx->JobIds, edit_int64(selected->JobId, ed3));
+    return true;
+  }
+
+  bstrutime(selected_date, sizeof(selected_date), selected->RestorePoint + 1);
+  return ResolveBackupChainForClientFileset(ua, rx, cr, fsr, selected_date,
+                                            selected);
 }
 
 /**
@@ -1493,21 +1959,104 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
   return true;
 }
 
+static POOLMEM* FilterJobIdsByJobAcl(UaContext* ua,
+                                     const char* jobids,
+                                     bool warn_denied = false)
+{
+  char ed1[50];
+  POOLMEM* filtered_jobids = GetPoolMemory(PM_FNAME);
+  *filtered_jobids = 0;
+  JobDbRecord jr;
+
+  for (const char* current = jobids;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      break;
+    }
+    if (status == 0) { break; }
+
+    jr = JobDbRecord{};
+    jr.JobId = jobid;
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->WarningMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                     edit_int64(jobid, ed1), ua->db->strerror());
+      continue;
+    }
+    if (!ua->AclAccessOk(Job_ACL, jr.Name, true)) {
+      if (warn_denied) {
+        ua->WarningMsg(
+            T_("JobId=%s (Job=%s) is not authorized and was removed from the "
+               "restore selection.\n"),
+            edit_int64(jobid, ed1), jr.Name);
+      }
+      continue;
+    }
+    if (*filtered_jobids != 0) { PmStrcat(filtered_jobids, ","); }
+    PmStrcat(filtered_jobids, edit_int64(jobid, ed1));
+  }
+
+  return filtered_jobids;
+}
+
+static bool CopiesCoverBackupChain(UaContext* ua,
+                                   const char* originals,
+                                   const char* copies)
+{
+  std::unordered_set<JobId_t> missing;
+  for (const char* current = originals;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      return false;
+    }
+    if (status == 0) { break; }
+    missing.insert(jobid);
+  }
+
+  for (const char* current = copies;;) {
+    JobId_t jobid;
+    int status = GetNextJobidFromList(&current, &jobid);
+    if (status < 0) {
+      ua->WarningMsg(T_("Invalid JobId in list.\n"));
+      return false;
+    }
+    if (status == 0) { break; }
+
+    JobDbRecord jr{};
+    jr.JobId = jobid;
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      char ed1[50];
+      ua->WarningMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                     edit_int64(jobid, ed1), ua->db->strerror());
+      return false;
+    }
+    missing.erase(jr.PriorJobId);
+  }
+  return missing.empty();
+}
+
 /**
  * This routine is used to get the current backup or a backup before the
  * specified date.
  */
-static bool SelectBackupsBeforeDate(UaContext* ua,
-                                    RestoreContext* rx,
-                                    const char* date)
+static bool ResolveBackupChainForClientFileset(
+    UaContext* ua,
+    RestoreContext* rx,
+    ClientDbRecord& cr,
+    FileSetDbRecord& fsr,
+    const char* date,
+    const RestorePointCandidate* selected)
 {
-  int i;
-  ClientDbRecord cr;
-  FileSetDbRecord fsr;
+  if (!ua->AclAccessOk(FileSet_ACL, fsr.FileSet)) { return false; }
   bool ok = false;
   char ed1[50], ed2[50];
-  char pool_select[MAX_NAME_LENGTH];
-  char fileset_name[MAX_NAME_LENGTH];
+  std::string pool_select;
+  std::string media_select;
+  std::string lower_bound;
+  std::string chain_boundary;
   char filter_name = RestoreContext::FilterIdentifier(rx->job_filter);
 
   // Create temp tables
@@ -1520,67 +2069,53 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::uar_create_temp1>()) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
   }
-  // Select Client from the Catalog
-  if (!GetClientDbr(ua, &cr)) { goto bail_out; }
-  if (rx->ClientName) { free(rx->ClientName); }
-  rx->ClientName = strdup(cr.Name);
-
-  // Get FileSet
-  i = FindArgWithValue(ua, "FileSet");
-
-  if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
-    bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
-    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->ErrorMsg(T_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
-                   ua->db->strerror());
-      i = -1;
-    }
-  } else if (i >= 0) { /* name is invalid */
-    ua->ErrorMsg(T_("FileSet argument: %s\n"), ua->errmsg.c_str());
-  }
-
-  if (i < 0) { /* fileset not found */
-    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_fileset>(
-        rx->query, edit_int64(cr.ClientId, ed1), ed1);
-
-    StartPrompt(ua, T_("The defined FileSet resources are:\n"));
-    if (!ua->db->SqlQuery(rx->query, FilesetHandler, (void*)ua)) {
-      ua->ErrorMsg("%s\n", ua->db->strerror());
-    }
-    if (DoPrompt(ua, T_("FileSet"), T_("Select FileSet resource"), fileset_name,
-                 sizeof(fileset_name))
-        < 0) {
-      ua->ErrorMsg(T_("No FileSet found for client \"%s\".\n"), cr.Name);
-      goto bail_out;
-    }
-
-    bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
-    if (!ua->db->GetFilesetRecord(ua->jcr, &fsr)) {
-      ua->WarningMsg(T_("Error getting FileSet record: %s\n"),
-                     ua->db->strerror());
-      ua->SendMsg(
-          T_("This probably means you modified the FileSet.\n"
-             "Continuing anyway.\n"));
-    }
-  }
-
   // If Pool specified, add PoolId specification
-  pool_select[0] = 0;
   if (rx->pool) {
     PoolDbRecord pr;
     bstrncpy(pr.Name, rx->pool->resource_name_, sizeof(pr.Name));
     if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
-      Bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
-                edit_int64(pr.PoolId, ed1));
+      pool_select = "AND Media.PoolId=" + std::to_string(pr.PoolId) + " ";
     } else {
       ua->WarningMsg(T_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
     }
   }
 
+  media_select = pool_select;
 
+  if (selected) {
+    if (selected->NextFullJobId) {
+      if (selected->NextFullStartTime.empty()) {
+        ua->ErrorMsg(T_("Missing next Full backup boundary.\n"));
+        goto bail_out;
+      }
+      auto boundary
+          = ua->db->EscapeString(ua->jcr, selected->NextFullStartTime);
+      if (!boundary) {
+        ua->ErrorMsg(T_("Unable to escape next Full backup boundary.\n"));
+        goto bail_out;
+      }
+      chain_boundary = "AND (Job.StartTime, Job.JobId) < ('" + *boundary + "', "
+                       + std::to_string(selected->NextFullJobId) + ") ";
+    }
+    rx->last_jobid[0] = rx->JobIds[0] = 0;
+    ua->db->FillQuery<BareosDb::SQL_QUERY::uar_required_selected_chain>(
+        rx->query, edit_int64(selected->JobId, ed1), date,
+        chain_boundary.c_str());
+    if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
+      ua->ErrorMsg("%s\n", ua->db->strerror());
+      goto bail_out;
+    }
+    if (selected->RequiredJobIds != rx->JobIds) {
+      ua->ErrorMsg(
+          T_("The selected restore chain changed after it was listed; "
+             "select the restore point again.\n"));
+      goto bail_out;
+    }
+    goto chain_resolved;
+  }
   if (!InsertLastFullBackupOfType(ua, rx, rx->job_filter,
                                   edit_int64(cr.ClientId, ed1), date,
-                                  fsr.FileSet, pool_select)) {
+                                  fsr.FileSet, pool_select.c_str())) {
     goto bail_out;
   }
 
@@ -1613,7 +2148,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
     if (InsertLastFullBackupOfType(ua, rx, opposite,
                                    edit_int64(cr.ClientId, ed1), date,
-                                   fsr.FileSet, pool_select)) {
+                                   fsr.FileSet, pool_select.c_str())) {
       ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_all_temp1>(rx->query);
       if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
         // ignore warnings here, since they would not make any sense
@@ -1638,9 +2173,10 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
 
   // Now find most recent Differential Job after Full save, if any
+  lower_bound = "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_dif>(
-      rx->query, edit_uint64(rx->JobTDate, ed1), date,
-      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
+      rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
+      filter_name, fsr.FileSet, pool_select.c_str(), "Job.JobTDate DESC");
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1652,9 +2188,10 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   }
 
   // Now find all Incremental Jobs after Full/dif save
+  lower_bound = "Job.JobTDate > " + std::to_string(rx->JobTDate);
   ua->db->FillQuery<BareosDb::SQL_QUERY::uar_inc>(
-      rx->query, edit_uint64(rx->JobTDate, ed1), date,
-      edit_int64(cr.ClientId, ed2), filter_name, fsr.FileSet, pool_select);
+      rx->query, lower_bound.c_str(), date, edit_int64(cr.ClientId, ed2),
+      filter_name, fsr.FileSet, pool_select.c_str());
   if (!ua->db->SqlQuery(rx->query)) {
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
@@ -1667,31 +2204,89 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
+chain_resolved:
+  if (rx->JobIds[0] != 0) {
+    POOLMEM* filtered_jobids
+        = FilterJobIdsByJobAcl(ua, rx->JobIds, !selected);
+    if (selected && strcmp(filtered_jobids, rx->JobIds) != 0) {
+      ua->WarningMsg(
+          T_("The selected backup chain contains unauthorized jobs; "
+             "cancelling the restore to avoid restoring an incomplete chain.\n"));
+      FreePoolMemory(filtered_jobids);
+      goto bail_out;
+    }
+    FreePoolMemory(rx->JobIds);
+    rx->JobIds = filtered_jobids;
+  }
+
   if (rx->JobIds[0] != 0) {
     if (FindArg(ua, NT_("copies")) > 0) {
-      // Display a list of all copies
-      ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send.get(),
-                                HORZ_LIST);
-
-      if (FindArg(ua, NT_("yes")) > 0) {
-        ua->pint32_val = 1;
+      POOLMEM* original_jobids = GetPoolMemory(PM_FNAME);
+      PmStrcpy(original_jobids, rx->JobIds);
+      rx->last_jobid[0] = rx->JobIds[0] = 0;
+      if (selected) {
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_available_jobid_copies>(
+            rx->query, original_jobids, media_select.c_str(),
+            media_select.c_str());
       } else {
-        GetYesno(ua,
-                 T_("\nDo you want to restore from these copies? (yes|no): "));
+        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
+            rx->query, original_jobids);
+      }
+      bool copies_query_ok
+          = ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx);
+      if (!copies_query_ok) { ua->WarningMsg("%s\n", ua->db->strerror()); }
+
+      POOLMEM* copy_jobids = FilterJobIdsByJobAcl(ua, rx->JobIds);
+      FreePoolMemory(rx->JobIds);
+      rx->JobIds = original_jobids;
+
+      if (copies_query_ok
+          && CopiesCoverBackupChain(ua, original_jobids, copy_jobids)) {
+        // Display only copies whose Copy Job resource is allowed.
+        ua->db->ListCopiesRecords(ua->jcr, "", copy_jobids, ua->send.get(),
+                                  HORZ_LIST);
+
+        if (FindArg(ua, NT_("yes")) > 0) {
+          ua->pint32_val = 1;
+        } else {
+          GetYesno(
+              ua, T_("\nDo you want to restore from these copies? (yes|no): "));
+        }
+
+        if (ua->pint32_val) {
+          FreePoolMemory(rx->JobIds);
+          rx->JobIds = copy_jobids;
+          copy_jobids = nullptr;
+        }
+      } else {
+        ua->WarningMsg(
+            T_("No complete authorized copy chain found; using original "
+               "backups.\n"));
       }
 
-      if (ua->pint32_val) {
-        PoolMem JobIds(PM_FNAME);
+      if (copy_jobids) { FreePoolMemory(copy_jobids); }
+    }
 
-        /* Change the list of jobs needed to do the restore to the copies of the
-         * Job. */
-        PmStrcpy(JobIds, rx->JobIds);
-        rx->last_jobid[0] = rx->JobIds[0] = 0;
-        ua->db->FillQuery<BareosDb::SQL_QUERY::uar_sel_jobid_copies>(
-            rx->query, JobIds.c_str());
-        if (!ua->db->SqlQuery(rx->query, JobidHandler, (void*)rx)) {
-          ua->WarningMsg("%s\n", ua->db->strerror());
-        }
+    if (selected) {
+      int unavailable = 0;
+      ua->db->FillQuery<BareosDb::SQL_QUERY::uar_unavailable_restore_media>(
+          rx->query, rx->JobIds, media_select.c_str(), media_select.c_str());
+      if (!ua->db->SqlQuery(
+              rx->query,
+              +[](void* context, int, char**) {
+                ++*static_cast<int*>(context);
+                return 0;
+              },
+              &unavailable)) {
+        ua->ErrorMsg("%s\n", ua->db->strerror());
+        goto bail_out;
+      }
+      if (unavailable) {
+        ua->ErrorMsg(
+            T_("The selected restore point is unavailable because a required "
+               "backup or volume is missing, disabled, or outside the selected "
+               "pool.\n"));
+        goto bail_out;
       }
     }
 
@@ -1756,6 +2351,7 @@ static int LastFullHandler(void* ctx, int, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
 
+  rx->JobId = str_to_int64(row[0]);
   rx->JobTDate = str_to_int64(row[1]);
   return 0;
 }
@@ -1763,8 +2359,9 @@ static int LastFullHandler(void* ctx, int, char** row)
 // Callback handler build FileSet name prompt list
 static int FilesetHandler(void* ctx, int, char** row)
 {
+  UaContext* ua = (UaContext*)ctx;
   /* row[0] = FileSet (name) */
-  if (row[0]) { AddPrompt((UaContext*)ctx, row[0]); }
+  if (row[0] && ua->AclAccessOk(FileSet_ACL, row[0])) { AddPrompt(ua, row[0]); }
   return 0;
 }
 
