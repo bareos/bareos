@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,14 +43,14 @@ namespace directordaemon {
 
 // Commands received from storage daemon that need scanning
 static char DevStats[]
-    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
+    = "Devicestats [%lld]: Device=%S Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
       "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
       "VolFiles=%llu, "
       "VolBlocks=%llu";
-static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
+static char TapeAlerts[] = "Tapealerts [%lld]: Device=%S TapeAlert=%llu";
 static char JobStats[]
-    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
+    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%S";
 
 static bool quit = false;
 static bool statistics_initialized = false;
@@ -202,11 +202,12 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             DeviceStatisticsDbRecord dsr;
 
-            if (sscanf(sd->msg, DevStats, &dsr.SampleTime, DevName.c_str(),
-                       &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
-                       &dsr.NumWaiting, &dsr.NumWriters, &dsr.ReadTime,
-                       &dsr.WriteTime, &dsr.MediaId, &dsr.VolCatBytes,
-                       &dsr.VolCatFiles, &dsr.VolCatBlocks)
+            if (bsscanf(sd->msg, DevStats, &dsr.SampleTime,
+                        (size_t)DevName.MaxSize(), DevName.c_str(),
+                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
+                        &dsr.NumWaiting, &dsr.NumWriters, &dsr.ReadTime,
+                        &dsr.WriteTime, &dsr.MediaId, &dsr.VolCatBytes,
+                        &dsr.VolCatFiles, &dsr.VolCatBlocks)
                 == 13) {
               Dmsg5(200,
                     "New Devstats [%lld]: Device=%s Read=%llu, Write=%llu, "
@@ -237,7 +238,8 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             TapealertStatsDbRecord tsr;
 
-            if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(),
+            if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime,
+                       (size_t)DevName.MaxSize(), DevName.c_str(),
                        &tsr.AlertFlags)
                 == 3) {
               UnbashSpaces(DevName);
@@ -258,8 +260,9 @@ extern "C" void* statistics_thread(void*)
             PoolMem DevName(PM_NAME);
             JobStatisticsDbRecord jsr;
 
-            if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId,
-                       &jsr.JobFiles, &jsr.JobBytes, DevName.c_str())
+            if (bsscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId,
+                        &jsr.JobFiles, &jsr.JobBytes, (size_t)DevName.MaxSize(),
+                        DevName.c_str())
                 == 5) {
               UnbashSpaces(DevName);
 

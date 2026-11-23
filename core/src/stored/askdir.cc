@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -78,7 +78,7 @@ static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
 static char OK_media[]
     = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
       " VolBlocks=%lu VolBytes=%lld VolMounts=%lu VolErrors=%lu VolWrites=%lu"
-      " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
+      " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%19s"
       " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
       " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
       " LabelType=%ld MediaId=%lld EncryptionKey=%127s"
