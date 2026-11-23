@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -683,10 +683,12 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
 
     // Wait for Client to terminate
     while ((n = BgetDirmsg(fd)) >= 0) {
+      int status;
       if (!fd_ok
-          && sscanf(fd->msg, EndJob, &jcr->dir_impl->FDJobStatus, &JobFiles,
-                    &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt)
+          && bsscanf(fd->msg, EndJob, &status, &JobFiles, &ReadBytes, &JobBytes,
+                     &JobErrors, &VSS, &Encrypt)
                  == 7) {
+        jcr->dir_impl->FDJobStatus = status;
         fd_ok = true;
         jcr->setJobStatusWithPriorityCheck(jcr->dir_impl->FDJobStatus);
         Dmsg1(100, "FDStatus=%c\n", (char)jcr->getJobStatus());
