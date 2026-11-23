@@ -296,7 +296,14 @@ static void RouteConsoleSignal(int sig)
     if (pthread_kill(main_thread, sig) != 0) {
       constexpr char message[]
           = "Unable to route console termination signal.\n";
-      (void)write(STDERR_FILENO, message, sizeof(message) - 1);
+      size_t offset = 0;
+      while (offset < sizeof(message) - 1) {
+        ssize_t written = write(STDERR_FILENO, message + offset,
+                                sizeof(message) - 1 - offset);
+        if (written < 0 && errno == EINTR) { continue; }
+        if (written <= 0) { break; }
+        offset += static_cast<size_t>(written);
+      }
       _exit(BEXIT_FAILURE);
     }
     errno = saved_errno;

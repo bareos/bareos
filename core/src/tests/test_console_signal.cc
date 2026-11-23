@@ -90,7 +90,10 @@ extern "C" int intercepted_tcsetattr(int fd,
 
 void intercepted_console_output(const char* text)
 {
-  (void)write(STDOUT_FILENO, text, strlen(text));
+  size_t length = strlen(text);
+  if (write(STDOUT_FILENO, text, length) != static_cast<ssize_t>(length)) {
+    _exit(11);
+  }
   if (injection == Injection::Screen && strstr(text, "\033[?1049h")) {
     injection = Injection::None;
     InjectSignal();
