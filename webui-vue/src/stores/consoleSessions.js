@@ -30,6 +30,7 @@ const RAW_CMD_TIMEOUT_MS = 300_000
 const COMPLETION_TIMEOUT_MS = 5_000
 const EXIT_DISCONNECT_TIMEOUT_MS = 1_500
 const KEEPALIVE_INTERVAL_MS = 20_000
+const TERMINAL_LOG_MAX_CHARS = 200_000
 const COMPLETION_NOISE_PREFIXES = [
   'Automatically selected Catalog:',
   'Using Catalog ',
@@ -78,6 +79,7 @@ function createSession(director) {
     outputLineOpen: false,
     selectionActive: false,
     selectionBusy: false,
+    selectionPendingOutput: '',
     selectionText: '',
     selectionLines: [],
     cmd: '',
@@ -342,6 +344,20 @@ function updateSessionPrompt(session, promptKind, promptText, isStreamingChunk) 
   }
 }
 
+function leaveSelection(session, director, writeToTerminal) {
+  if (session.selectionActive) {
+    writeToTerminal(director, '\x1B[?1049l\r\n')
+    if (session.selectionPendingOutput) {
+      writeToTerminal(director, session.selectionPendingOutput, { response: true, streaming: true })
+    }
+  }
+  session.selectionPendingOutput = ''
+  session.selectionActive = false
+  session.selectionBusy = false
+  session.selectionText = ''
+  session.selectionLines = []
+}
+
 function applyRawConsoleResponse(session, director, appendLines, writeToTerminal, message) {
   if (message.prompt === 'select' || message.prompt === 'select_busy') {
     if (!session.selectionActive) {
@@ -373,22 +389,17 @@ function applyRawConsoleResponse(session, director, appendLines, writeToTerminal
 
   if (message.prompt === 'more' && session.selectionActive && session.selectionBusy) {
     appendLines(director, message.text, '', true, true)
+    session.selectionPendingOutput = (
+      session.selectionPendingOutput
+      + sanitizeTerminalOutput(filterConsoleNoiseText(message.text))
+    ).slice(-TERMINAL_LOG_MAX_CHARS)
     return {
       outputText: message.text,
       promptText: '',
     }
   }
 
-  if (session.selectionActive) {
-    // Leaving interactive selection: return to the main screen buffer and
-    // start normal output on a fresh line.
-    writeToTerminal(director, '\x1B[?1049l\r\n')
-  }
-
-  session.selectionActive = false
-  session.selectionBusy = false
-  session.selectionText = ''
-  session.selectionLines = []
+  leaveSelection(session, director, writeToTerminal)
   const isStreamingChunk = message.prompt === 'more'
   const {
     outputText,
@@ -443,7 +454,6 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   // e.g. after switching tabs. Entries retain response boundaries for replay.
   const terminalLogs = new Map()
   const terminalLogStartsInSelection = new Map()
-  const TERMINAL_LOG_MAX_CHARS = 200_000
 
   const directors = computed(() => Object.keys(sessions))
 
@@ -526,13 +536,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
   // leaves the user stuck on the alternate buffer with no way back to
   // their normal scrollback.
   function exitSelectionMode(session, director) {
-    if (session.selectionActive) {
-      writeToTerminal(director, '\x1B[?1049l\r\n')
-    }
-    session.selectionActive = false
-    session.selectionBusy = false
-    session.selectionText = ''
-    session.selectionLines = []
+    leaveSelection(session, director, writeToTerminal)
   }
 
   // Sends the browser-reported terminal size to the Director using the
@@ -882,6 +886,7 @@ export const useConsoleSessionsStore = defineStore('consoleSessions', () => {
     const session = getSession(director)
     session.output = []
     session.outputLineOpen = false
+    session.selectionPendingOutput = ''
     terminalLogs.delete(director || DEFAULT_DIRECTOR_NAME)
     terminalLogStartsInSelection.set(director || DEFAULT_DIRECTOR_NAME, session.selectionActive)
     appendInfo(director, 'Console cleared.')

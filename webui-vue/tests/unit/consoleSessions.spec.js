@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
@@ -21,7 +23,15 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { Terminal } from '@xterm/xterm'
+import { createConsoleResponseWriter } from '../../src/composables/consoleResponseWriter.js'
 import { useConsoleSessionsStore } from '../../src/stores/consoleSessions.js'
+
+vi.hoisted(() => {
+  vi.stubGlobal('window', {
+    location: { protocol: 'http:', host: 'localhost:3000', pathname: '/' },
+  })
+})
 
 class FakeWebSocket {
   static instances = []
@@ -330,6 +340,56 @@ describe('console session store', () => {
     expect(session.selectionActive).toBe(false)
     expect(session.currentPrompt).toBe('$ ')
     expect(consoleSessions.sendCommand('bareos-dir', 'status')).toBe(true)
+  })
+
+  it('shows a streamed question after leaving the busy screen', async () => {
+    vi.useRealTimers()
+    const consoleSessions = useConsoleSessionsStore()
+    const emulator = new Terminal({ cols: 80, rows: 8, scrollback: 20 })
+    const write = data => new Promise(resolve => emulator.write(data, resolve))
+    const terminal = {
+      get terminal() { return emulator },
+      clearInputLine: () => write('\r\x1B[K'),
+      write,
+      runExclusive: operation => operation(terminal),
+    }
+    const writer = createConsoleResponseWriter(
+      terminal,
+      () => write(consoleSessions.getSession('bareos-dir').currentPrompt),
+    )
+    let pending = Promise.resolve()
+    consoleSessions.setTerminalWriter('bareos-dir', (text, options) => {
+      pending = writer.write(text, options)
+    })
+    consoleSessions.connectSession('bareos-dir', {
+      username: 'admin', password: 'secret', director: 'bareos-dir',
+    })
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'auth_ok', director: 'bareos-dir' }),
+    })
+    consoleSessions.sendCommand('bareos-dir', 'restore')
+    for (const [prompt, text] of [
+      ['select_busy', 'Building tree'],
+      ['more', 'Do you want to restore all the files? (yes|no): '],
+    ]) {
+      socket.onmessage?.({
+        data: JSON.stringify({ type: 'raw_response', id: '1', prompt, text }),
+      })
+    }
+    expect(consoleSessions.sendCommand('bareos-dir', 'yes')).toBe(false)
+    socket.onmessage?.({
+      data: JSON.stringify({ type: 'raw_response', id: '1', prompt: 'sub', text: '' }),
+    })
+    await pending
+    const visible = Array.from({ length: 8 }, (_, row) =>
+      emulator.buffer.active.getLine(row).translateToString(true),
+    ).join('\n')
+    expect(visible).toContain('Do you want to restore all the files? (yes|no):')
+    expect(consoleSessions.sendCommand('bareos-dir', 'yes')).toBe(true)
+    consoleSessions.disconnectSession('bareos-dir')
+    emulator.dispose()
   })
 
   it('normalizes terminal inverse selection markers for browser display', () => {
