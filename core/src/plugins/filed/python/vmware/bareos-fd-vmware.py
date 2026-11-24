@@ -669,15 +669,16 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.vadp.vm:
             cbt_data["ConnParams"]["VmMoRef"] = "moref=" + self.vadp.vm._GetMoId()
 
-        cbt_data["ConnParams"]["VsphereHostName"] = self.options["vcserver"]
-        cbt_data["ConnParams"]["VsphereUsername"] = self.options["vcuser"]
-        cbt_data["ConnParams"]["VspherePassword"] = self.options["vcpass"]
-        cbt_data["ConnParams"]["VsphereThumbPrint"] = ":".join(
-            [
-                self.options["vcthumbprint"][i : i + 2]
-                for i in range(0, len(self.options["vcthumbprint"]), 2)
-            ]
-        )
+        if self.options.get("localvmdk") != "yes":
+            cbt_data["ConnParams"]["VsphereHostName"] = self.options["vcserver"]
+            cbt_data["ConnParams"]["VsphereUsername"] = self.options["vcuser"]
+            cbt_data["ConnParams"]["VspherePassword"] = self.options["vcpass"]
+            cbt_data["ConnParams"]["VsphereThumbPrint"] = ":".join(
+                [
+                    self.options["vcthumbprint"][i : i + 2]
+                    for i in range(0, len(self.options["vcthumbprint"]), 2)
+                ]
+            )
 
         self.vadp.writeStringToFile(json_filename, json.dumps(cbt_data))
         self.cbt_json_local_file_path = json_filename
