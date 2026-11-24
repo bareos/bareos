@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - fix bvfs restore with real tmp tables [PR #2895]
+- Use VMWare credentails from plugin options  [PR #2945]
 
 ## [25.1.2] - 2026-10-26
 
@@ -2420,4 +2421,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2916]: https://github.com/bareos/bareos/pull/2916
 [PR #2936]: https://github.com/bareos/bareos/pull/2936
 [PR #2944]: https://github.com/bareos/bareos/pull/2944
+[PR #2945]: https://github.com/bareos/bareos/pull/2945
 [unreleased]: https://github.com/bareos/bareos/tree/master
