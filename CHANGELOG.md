@@ -133,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dird: add some checks to user provided input [PR #2879]
 - catalog: upgrade PathId field to bigint [PR #2858]
 - fix bvfs restore with real tmp tables [PR #2894]
+- Use VMWare credentails from plugin options  [PR #2935]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2460,5 +2461,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2921]: https://github.com/bareos/bareos/pull/2921
 [PR #2922]: https://github.com/bareos/bareos/pull/2922
 [PR #2934]: https://github.com/bareos/bareos/pull/2934
+[PR #2935]: https://github.com/bareos/bareos/pull/2935
 [PR #2941]: https://github.com/bareos/bareos/pull/2941
 [unreleased]: https://github.com/bareos/bareos/tree/master
