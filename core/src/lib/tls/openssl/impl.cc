@@ -862,10 +862,9 @@ ssl_ptr make_ssl_from_res(const TlsResource* res)
                         T_("Error loading certificate verification stores"));
       return {};
     }
-  } else if (verify_peer != VerifyPeerSetting::Disabled) {
-    /* At least one CA is required for peer verification */
-    Dmsg0(100, T_("Either a certificate file or a directory must be"
-                  " specified as a verification store\n"));
+  } else {
+    Dmsg0(100, "Using default certificates");
+    SSL_CTX_set_default_verify_paths(openssl_ctx_.get());
   }
 
   if (!crlfile_.empty()) {
