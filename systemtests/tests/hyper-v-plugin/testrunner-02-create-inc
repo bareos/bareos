@@ -20,7 +20,7 @@
 #   02110-1301, USA.
 
 #
-# Run a hyper-v full backup and restore it
+# Run a hyper-v incremental backup and restore it
 #
 
 set -e
@@ -163,7 +163,7 @@ check_recursive_diff_of_dirs "${data_dir}" "${restore_dir}"
 
 expect_grep "Backup Level:[[:space:]]*Incremental" \
   "${runner_tmp}/backup.out" \
-  "Did not create a full backup"
+  "Did not create an incremental backup"
 
 cat <<EOF >"${runner_tmp}/ps_commands"
 Get-VM -Id "${restored_id}" | Remove-VM -Force
