@@ -541,44 +541,23 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(X509* cert, const char* host)
 {
   ASSERT(cert);
 
-  int cnLastPos = -1;
+  /* From the OpenSSL docs:
+   * The functions return 1 for a successful match, 0 for a failed match and -1
+   * for an internal error: typically a memory allocation failure or an ASN.1
+   * decoding error.
+   * All functions can also return -2 if the input is malformed.
+   * For example, X509_check_host() returns -2 if the provided name contains
+   * embedded NULs. */
 
-  // Check subjectAltName extensions first
-  if (general_names_ptr sans{static_cast<GENERAL_NAMES*>(
-          X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr))}) {
-    const int num = sk_GENERAL_NAME_num(sans.get());
-    for (int i = 0; i < num; ++i) {
-      const GENERAL_NAME* name = sk_GENERAL_NAME_value(sans.get(), i);
-      if (name->type == GEN_DNS) {
-        const ASN1_IA5STRING* dns = name->d.dNSName;
-        const char* dns_data
-            = reinterpret_cast<const char*>(ASN1_STRING_get0_data(dns));
-        const int dns_len = ASN1_STRING_length(dns);
-        if (dns_data && dns_len > 0) {
-          std::string_view dns_view{dns_data, static_cast<size_t>(dns_len)};
-          if (dns_view.find('\0') == std::string_view::npos
-              && Bstrcasecmp(std::string(dns_view).c_str(), host)) {
-            return true;
-          }
-        }
-      }
+  int ret = X509_check_host(cert, host, strlen(host), 0, NULL);
+  if (ret > 0) {
+    return true;
+  } else {
+    if (ret < 0) {
+      Dmsg0(100, "Could not check host because of an internal ssl error\n");
     }
+    return false;
   }
-
-  // Try verifying against the subject name
-  auto* subject = X509_get_subject_name(cert);
-  if (subject != NULL) {
-    // Loop through all CNs
-    for (;;) {
-      const std::optional<CommonName> common_name
-          = GetCommonName(subject, cnLastPos);
-      if (!common_name) { break; }
-
-      cnLastPos = common_name->index;
-      if (Bstrcasecmp(common_name->value.c_str(), host)) { return true; }
-    }
-  }
-  return false;
 }
 
 bool TlsOpenSsl::TlsBsockConnect(JobControlRecord* jcr, BareosSocket* bsock)
