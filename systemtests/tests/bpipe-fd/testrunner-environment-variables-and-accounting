@@ -40,6 +40,9 @@ END_OF_DATA
     cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out "$report"
 status subscriptions logical client=bareos-fd
+.api 2
+@$out "$report.json"
+status subscriptions client=bareos-fd
 END_OF_DATA
     run_bconsole
     if grep -qF "Background refresh worker: idle." "$report" \
@@ -55,6 +58,29 @@ END_OF_DATA
   cat "${runner_tmp}/accounting-refresh-request.out" >&2
   cat "$report" >&2
   return 1
+}
+
+expect_bpipe_accounting()
+{
+  "${PYTHON_EXECUTABLE}" - "$1.json" "$accounted_bytes" "$logical_bytes" \
+    "$accounting_rule" "$2" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1]) as report:
+    text = report.read()
+result = json.JSONDecoder().raw_decode(text[text.index("{") :])[0]["result"]
+rows = [
+    row for row in result["accounting"]
+    if row["fileset"] == "SelfTest" and row["client"] == "bareos-fd"
+]
+assert len(rows) == 1, rows
+row = rows[0]
+expected = (2, int(sys.argv[2]), int(sys.argv[3]), sys.argv[4], int(sys.argv[5]))
+actual = (row["files"], row["bytes"], row["logical_bytes"],
+          row["rule_code"], row["jobs_in_chain"])
+assert actual == expected, (actual, expected)
+PY
 }
 
 # Windows debug: show environment vars
@@ -215,18 +241,16 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
   fi
 done
 
+logical_bytes=$((payload_bytes + sparse_file_bytes))
 if on_windows_host; then
-  accounted_bytes=$payload_bytes
+  accounted_bytes=$logical_bytes
   accounting_rule=L
 else
-  accounted_bytes=$((payload_blocks * 512))
+  accounted_bytes=$(((payload_blocks + sparse_file_blocks) * 512))
   accounting_rule=A
 fi
 
-expect_grep \
-  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*2$" \
-  "${runner_tmp}/accounting-before-virtual-full.out" \
-  "Subscription accounting did not count the original bpipe backup correctly"
+expect_bpipe_accounting "${runner_tmp}/accounting-before-virtual-full.out" 2
 
 virtual_full_log="${runner_tmp}/virtual-full.out"
 virtual_full_restore_log="${runner_tmp}/virtual-full-restore.out"
@@ -266,10 +290,7 @@ expect_not_grep \
   "$virtual_full_log" \
   "Virtual Full dropped the bpipe digest: corrected attributes reached the Director after the digest"
 
-expect_grep \
-  "^SelfTest@bareos-fd[[:space:]]*1[[:space:]]*${accounted_bytes} B[[:space:]]*${payload_bytes} B[[:space:]]*${accounting_rule}[[:space:]]*1$" \
-  "${runner_tmp}/virtual-full-accounting.out" \
-  "Subscription accounting changed after bpipe consolidation"
+expect_bpipe_accounting "${runner_tmp}/virtual-full-accounting.out" 1
 
 cmp "${runner_tmp}/expected-restored-data" "$tmp/readprogram.5. .dat"
 
