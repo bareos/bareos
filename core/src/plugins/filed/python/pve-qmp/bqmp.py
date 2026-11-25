@@ -7,12 +7,15 @@ import logging
 import asyncio
 import signal
 import json
+import subprocess
 import nbd
 import qemu.qmp
 
 import bqmp_nbd
 
 logger = logging.getLogger(__name__)
+
+PULL_MODE = True
 
 lockfile = "/var/lib/bareos/bqmp.state"
 
@@ -23,6 +26,7 @@ CMD_CLEANUP = 4
 CMD_RESET   = 5
 CMD_TOIMAGE = 6
 
+unclean_shutdown = False
 
 def get_disk_name(name):
     if name.startswith("drive-"):
@@ -69,6 +73,31 @@ def get_nbd_export_name(name):
     return "bqmp-" + name
 
 
+def get_snap_node(name):
+    return "bqmp-snap-" + name
+
+
+def get_snap_export_name(name):
+    return "bqmp-snap-" + name
+
+
+def get_snap_path(uid, name, path):
+    return f"{path}/bqmp-{uid}-{name}.qcow2"
+
+
+def create_snapshot_image(uid, name, path, size):
+    file = get_snap_path(uid, name, path)
+    args = [ "/usr/bin/qemu-img", "create",
+                "-f", "qcow2", file, str(size) ]
+    p = subprocess.run(args, capture_output=True)
+    if p.returncode == 0:
+        return file
+    else:
+        raise Exception(
+            "failed to create snapshot image: {p.stdout} ({p.returncode})"
+        )
+
+
 class VirtualDisk:
     def __init__(self):
         self.disk_name = None
@@ -101,10 +130,13 @@ class VirtualDisk:
             bitmap = None
             self.bitmaps = r["dirty-bitmaps"]
             for b in self.bitmaps:
-                if b["name"] == "bqmp-bitmap":
-                    bitmap = b
-                    self.has_bitmap = True
-                    break
+                if "name" in b:
+                    if b["name"] == "bqmp-bitmap":
+                        bitmap = b
+                        self.has_bitmap = True
+                        break
+                else:
+                    print("wtf:", b)
             if bitmap is not None:
                 self.is_consistent = True
                 if "inconsistent" in bitmap:
@@ -125,7 +157,7 @@ class VirtualDisk:
 
 class BQMPFacade:
 
-    def __init__(self, qmp_socket, qga_socket=None, debug=False):
+    def __init__(self, selected_disks, snapshot_path, qmp_socket, qga_socket=None, debug=False):
         self.qmp_socket = qmp_socket
         self.qga_socket = qga_socket
         self.debug = debug
@@ -134,10 +166,11 @@ class BQMPFacade:
         self.qmp = qemu.qmp.QMPClient("bqmp")
         self.nbd_ipaddr = "127.0.0.1"
         self.nbd_port   = "10789"
-        self.nbd_restore_port = "10809"
         self.quiesce = True
         self.incremental = False
+        self.selected_disks = selected_disks
         self.virtual_disks = {}
+        self.snapshot_path = snapshot_path
         self.terminating = False
 
         if self.qga_socket == "none":
@@ -160,9 +193,11 @@ class BQMPFacade:
         await self.qmp.disconnect()
 
     async def qmp_execute(self, cmd, args = {}):
+        if self.debug:
+            print("qmp_execute ",cmd,args)
         result = await self.qmp.execute(cmd, args)
         if self.debug:
-            print(cmd, args, result)
+            print(" result: ", result)
         return result
 
     async def freeze_guest(self):
@@ -174,6 +209,139 @@ class BQMPFacade:
         if self.qmpga is None:
             return {}
         return await self.qmpga.execute("guest-fsfreeze-thaw", {})
+
+    async def add_snapshot_image(self, vdisk):
+        path = create_snapshot_image(self.nbd_port,
+                vdisk.disk_name, self.snapshot_path, vdisk.size)
+        snap_node = get_snap_node(vdisk.disk_name)
+        return await self.qmp_execute("blockdev-add", {
+            "driver": "qcow2",
+            "node-name": snap_node,
+            "file": {
+                "driver": "file",
+                "filename": path,
+                "aio": "io_uring",
+                "cache": { "direct": True, "no-flush": True}
+            },
+            "backing": vdisk.upper_node,
+            "discard": "ignore",
+            "cache": { "direct": True, "no-flush": True }
+        })
+
+    async def remove_snapshot_image(self, vdisk):
+        await self.qmp_execute("blockdev-del", {
+            "node-name": get_snap_node(vdisk.disk_name)
+        })
+        os.unlink(get_snap_path(self.nbd_port, vdisk.disk_name, self.snapshot_path))
+
+    def _add_snap_action(self, vdisk, actions, incremental=False):
+        # For incremental backups, clear the bitmap so next time all
+        # changes are visible from the point in time the snapshot
+        # was taken.
+        # Also add a temporary bitmap which will track new changes
+        # that occur during the backup. It will be merged with
+        # the incremental bitmap after the backup is complete.
+        if not incremental:
+            actions.append(
+                {
+                    "type": "block-dirty-bitmap-clear",
+                    "data": {
+                        "node": vdisk.upper_node,
+                        "name": "bqmp-bitmap"
+                    }
+                })
+
+        actions.append(
+            {
+                "type": "block-dirty-bitmap-disable",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap"
+                }
+            })
+        actions.append(
+            {
+                "type": "block-dirty-bitmap-add",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap-tmp"
+                }
+            })
+        actions.append(
+                {
+                    "type": "blockdev-backup",
+                    "data": {
+                        "device": vdisk.upper_node,
+                        "target": get_snap_node(vdisk.disk_name),
+                        "sync": "none",
+                        "job-id": get_snap_node(vdisk.disk_name),
+                        "on-cbw-error": "break-snapshot",
+                    }
+                })
+
+    async def add_snapshot_export(self, devicename):
+        await self.qmp_execute("block-export-add", {
+                    "id": get_snap_node(devicename),
+                    "type": "nbd",
+                    "node-name": get_node_name(devicename),
+                    "name": get_snap_node(devicename),
+                    "bitmaps": [ "bqmp-bitmap" ]
+                })
+
+    async def remove_snapshot_export(self, devicename):
+        await self.qmp_execute("block-export-del", { "id": get_snap_node(devicename) })
+
+    async def cancel_snapshot_backup(self, devicename):
+        await self.qmp_execute("block-job-cancel", { "device": get_snap_node(devicename) })
+
+    async def merge_bitmaps_1(self, vdisk):
+        await self.qmp_execute("block-dirty-bitmap-enable", {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap"
+                })
+        await self.qmp_execute("block-dirty-bitmap-merge", {
+                    "node": vdisk.upper_node,
+                    "target": "bqmp-bitmap",
+                    "bitmaps": [ "bqmp-bitmap-tmp" ]
+                })
+        await self.qmp_execute("block-dirty-bitmap-remove", {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap-tmp"
+                })
+
+    async def merge_bitmaps(self, vdisk):
+        args = { "actions": [
+            {
+                "type": "block-dirty-bitmap-clear",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap"
+                }
+            },
+            {
+                "type": "block-dirty-bitmap-enable",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap"
+                }
+            },
+            {
+                "type": "block-dirty-bitmap-merge",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "target": "bqmp-bitmap",
+                    "bitmaps": [ "bqmp-bitmap-tmp" ]
+                }
+            },
+            {
+                "type": "block-dirty-bitmap-remove",
+                "data": {
+                    "node": vdisk.upper_node,
+                    "name": "bqmp-bitmap-tmp"
+                }
+            },
+        ]}
+        await self.qmp_execute("transaction", args)
 
     def _add_full_action(self, srcnode, targetnode, actions):
         actions.append(
@@ -209,6 +377,79 @@ class BQMPFacade:
                      "job-id": "backup-" + targetnode
                 }
             })
+
+    async def start_snapshot_backup(self, incremental=False):
+        args = { "actions": [] }
+
+        for diskname in self.selected_disks:
+            vdisk = self.virtual_disks[diskname]
+            await self.add_snapshot_image(vdisk)
+            await self.setup_bitmap(vdisk.upper_node)
+            self._add_snap_action(vdisk, args["actions"], incremental)
+
+        if self.debug:
+            print("start_snapshot_backup args:", args)
+
+        await self.freeze_guest()
+        result = await self.qmp.execute("transaction", args)
+        if self.debug:
+            print("start_snapshot_backup result:", result)
+        await self.thaw_guest()
+
+    async def pull_snapshot_blocks(self, backing_store, incremental=False):
+        await self.start_nbd_server()
+
+        index = 0
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            await self.add_snapshot_export(vdisk.disk_name)
+            export = (get_snap_export_name(vdisk.disk_name), vdisk.size)
+            nbd_addr = ("127.0.0.1", self.nbd_port)
+            bqmp_nbd.read_nbd_image(index, export, nbd_addr,
+                "bqmp-bitmap", backing_store, incremental)
+            index += 1
+
+    async def end_snapshot_backup(self):
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            await self.cancel_snapshot_backup(vdisk.disk_name)
+        await self.wait_snapshot_jobs()
+        await asyncio.sleep(3)
+        # stopping the nbd server removes all exports
+        await self.stop_nbd_server()
+
+        # no transaction
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            #await self.remove_snapshot_export(vdisk.disk_name)
+            # delete blockdev
+            await self.remove_snapshot_image(vdisk)
+
+        #transaction?
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            await self.merge_bitmaps(vdisk)
+
+    async def abort_snapshot_backup(self):
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            await self.cancel_snapshot_backup(vdisk.disk_name)
+        await self.wait_snapshot_jobs()
+
+        # stopping the nbd server removes all exports
+        await self.stop_nbd_server()
+
+        # no transaction
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            #await self.remove_snapshot_export(vdisk.disk_name)
+            # delete blockdev
+            await self.remove_snapshot_image(vdisk)
+
+        #transaction?
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            await self.merge_bitmaps(vdisk)
 
     async def start_full_backup(self, srcnodes, targetnodes):
         args = { "actions": [] }
@@ -289,6 +530,16 @@ class BQMPFacade:
                         break
                 await asyncio.sleep(3)
 
+    async def wait_snapshot_jobs(self):
+            while True:
+                job_info = await self.qmp_execute("query-block-jobs")
+                if job_info is None or len(job_info) == 0:
+                    break
+                wanted_job = [ job for job in job_info if job["device"] in self.selected_disks ]
+                if len(wanted_job) == 0:
+                        break
+                await asyncio.sleep(1)
+
     async def cancel_backup_job(self, force=False):
         self.terminating = True
         job_info = await self.qmp_execute("query-block-jobs")
@@ -319,7 +570,7 @@ class BQMPFacade:
         })
 
     def get_virtual_node(self, diskname):
-        return self.virtual_disks[get_node_name(diskname)]
+        return self.virtual_disks[diskname]
 
     def get_virtual_disk(self, nodename):
         return self.virtual_disks[get_disk_name(nodename)]
@@ -332,7 +583,7 @@ class BQMPFacade:
         })
 
     async def setup_bitmap(self, nodename):
-        disk = self.get_virtual_node(nodename)
+        disk = self.get_virtual_disk(nodename)
 
         if disk.has_bitmap and not disk.is_consistent:
             await self.remove_bitmap(nodename)
@@ -369,6 +620,12 @@ class BQMPFacade:
             "name": "bqmp-bitmap"
         })
 
+    async def remove_temp_bitmap(self, nodename):
+        result = await self.qmp_execute("block-dirty-bitmap-remove", {
+            "node": nodename,
+            "name": "bqmp-bitmap-tmp"
+        })
+
     async def add_restore_export(self, name, nodename):
         result = await self.qmp_execute("block-export-add", {
             "type": "nbd",
@@ -389,7 +646,7 @@ class BQMPFacade:
                "type": "inet",
                "data": {
                   "host": "127.0.0.1",
-                  "port": self.nbd_restore_port
+                  "port": self.nbd_port
                }
             }              
         })
@@ -519,6 +776,31 @@ class BQMPFacade:
         finally:
             self.qmp.remove_listener(self.listener)
 
+    async def run_snapshot_backup(self, store_path, incremental=False):
+        backing_store = None
+        exports = []
+        for d in self.selected_disks:
+            vdisk = self.virtual_disks[d]
+            exports.append((get_snap_export_name(vdisk.disk_name), vdisk.size))
+
+        if store_path is None or store_path == "-":
+            backing_store = bqmp_nbd.StdoutBackingStore(exports)
+        else:
+            backing_store = bqmp_nbd.BackingStore(store_path, exports)
+        if not incremental:
+            backing_store.zap()
+
+        backing_store.next()
+        try:
+            await self.start_snapshot_backup(incremental)
+            await self.pull_snapshot_blocks(backing_store, incremental)
+            await self.end_snapshot_backup()
+        except Exception as e:
+            await self.abort_snapshot_backup()
+            raise e
+        finally:
+            backing_store.close()
+
 def imgrestore_handler(file, offset, data, length):
     if data is not None:
         file.seek(offset)
@@ -551,8 +833,37 @@ def restore_to_images(store_path, devicenames, image_path, incr=False):
         f.close()
 
 
+async def cleanup(bqmp, devicenames):
+    for name in devicenames:
+        vdisk = bqmp.virtual_disks[name]
+        try:
+            await bqmp.destroy_nbd_target(get_backup_target(name))
+        except:
+            pass
+        try:
+            await bqmp.remove_snapshot_export(name)
+        except:
+            pass
+        try:
+            await bqmp.cancel_snapshot_backup(name)
+        except:
+            pass
+        try:
+            await bqmp.remove_snapshot_image(vdisk)
+        except:
+            pass
+        try:
+            await bqmp.remove_temp_bitmap(vdisk.upper_node)
+        except:
+            pass
+    try:
+        await bqmp.stop_nbd_server()
+    except:
+        pass
+
+
 async def main(qmp_path, qga_path, devicenames,
-        cmd, store_path, imgrestore_path):
+        cmd, store_path, imgrestore_path, snapshot_path):
     debug = False
     if cmd == CMD_CLEANUP:
         debug = True
@@ -578,7 +889,8 @@ async def main(qmp_path, qga_path, devicenames,
         bqmp_nbd.restore_to_nbd(store_path, nbd_targets, count, nbd_ipaddr, nbd_restore_port)
         return
 
-    bqmp = BQMPFacade(qmp_path, qga_path, debug=debug)
+    bqmp = BQMPFacade(devicenames, snapshot_path, qmp_path, qga_path, debug=debug)
+
     try:
         await bqmp.connect()
     except qemu.qmp.protocol.ConnectError as e:
@@ -604,8 +916,8 @@ async def main(qmp_path, qga_path, devicenames,
             nbd_targets.append((get_backup_target(devicename), size))
 
     if cmd in [ CMD_CLEANUP, CMD_RESET ]:
-        #await bqmp.test_query_block()
-        await bqmp.test_query_nodes()
+        await bqmp.test_query_block()
+        #await bqmp.test_query_nodes()
         await bqmp.test_query_jobs()
         if cmd == CMD_RESET:
             for name, devicenode, upper_node in devices:
@@ -613,24 +925,15 @@ async def main(qmp_path, qga_path, devicenames,
                     await bqmp.remove_bitmap(devicenode)
                 except:
                     pass
-
-        for name in devicenames:
-            try:
-                await bqmp.destroy_nbd_target(get_backup_target(name))
-            except:
-                pass
+        await cleanup(bqmp, devicenames)
 
     elif cmd in [ CMD_BACKUP, CMD_INCR ]:
+        # doing a backup
         incremental = (cmd == CMD_INCR)
 
-        # if there are nbd targets configured, remove them
-        for name in devicenames:
-            try:
-                await bqmp.destroy_nbd_target(get_backup_target(name))
-            except:
-                pass
+        # cleanup in case of an unclean job shutdown
+        await cleanup(bqmp, devicenames)
 
-        # doing a backup
         await bqmp.connect_ga()
 
         if imgrestore_path is None:
@@ -638,29 +941,33 @@ async def main(qmp_path, qga_path, devicenames,
         nbd_ipaddr = "127.0.0.1"
         nbd_port = imgrestore_path
         bqmp.nbd_port = nbd_port
-        server = await run_nbd_server(bqmp.nbd_port, store_path, nbd_targets, incremental)
-        nbdtask = server.task
-        logger.debug("nbd server started.")
 
-        loop = asyncio.get_running_loop()
-        for s in [ signal.SIGINT, signal.SIGPIPE, signal.SIGTERM ]:
-            loop.add_signal_handler(s, signal_cleanup, s, loop, server, bqmp)
+        if PULL_MODE:
+            await bqmp.run_snapshot_backup(store_path, incremental)
+        else:
+            server = await run_nbd_server(bqmp.nbd_port, store_path, nbd_targets, incremental)
+            nbdtask = server.task
+            logger.debug("nbd server started.")
 
-        for devicename in devicenames:
-            await bqmp.create_nbd_target(devicename)
- 
-        try:
-            await bqmp.run_backup(devices, nbd_targets, incremental)
-        finally:
-            for target in nbd_targets:
-                logger.debug(f"destroy_nbd_target {target}")
-                await bqmp.destroy_nbd_target(target[0])
+            loop = asyncio.get_running_loop()
+            for s in [ signal.SIGINT, signal.SIGPIPE, signal.SIGTERM, signal.SIGALRM ]:
+                loop.add_signal_handler(s, signal_cleanup, s, loop, server, bqmp)
 
-            nbdtask.cancel()
+            for devicename in devicenames:
+               await bqmp.create_nbd_target(devicename)
+
             try:
-                await nbdtask
-            except asyncio.CancelledError:
-                logger.debug("nbd server stopped.")
+                await bqmp.run_backup(devices, nbd_targets, incremental)
+            finally:
+                for target in nbd_targets:
+                    logger.debug(f"destroy_nbd_target {target}")
+                    await bqmp.destroy_nbd_target(target[0])
+
+                nbdtask.cancel()
+                try:
+                    await nbdtask
+                except asyncio.CancelledError:
+                    logger.debug("nbd server stopped.")
     else:
         logger.warn("internal error, invalid command")
     try:
@@ -670,11 +977,16 @@ async def main(qmp_path, qga_path, devicenames,
 
 
 def signal_cleanup(signum, event_loop, server, bqmp):
-    sys.stderr.write(f"bqmp: signal {signum} received, shutting down\n")
+    if signum == signal.SIGALRM:
+        sys.stderr.write(f"bqmp: write backpressure threshold exceeded, shutting down\n")
+    else:
+        sys.stderr.write(f"bqmp: signal {signum} received, shutting down\n")
     asyncio.create_task(async_cleanup(event_loop, server, bqmp))
 
 
 async def async_cleanup(event_loop, server, bqmp):
+    global unclean_shutdown
+    unclean_shutdown = True
     if bqmp is not None:
         await bqmp.cancel_backup_job()
         await asyncio.sleep(3)
@@ -713,11 +1025,12 @@ async def run_nbd_server(port, path, nbd_targets, incr):
 
 
 async def main_wrapper(qmp_path, qga_path, devicenames,
-        cmd, store_path, imgrestore_path):
+        cmd, store_path, imgrestore_path, snapshot_path):
     try:
-        await main(qmp_path, qga_path, devicenames, cmd, store_path, imgrestore_path)
+        await main(qmp_path, qga_path, devicenames, cmd,
+                store_path, imgrestore_path, snapshot_path)
     except Exception as e:
-        raise(e)
+        raise e
         sys.stderr.write(str(e))
         sys.stderr.write('\n')
         sys.exit(3)
@@ -735,10 +1048,14 @@ if __name__ == "__main__":
     disks = sys.argv[4].split(",")
     store_path = None
     imgrestore_path = None
+    snapshot_path = "/var/lib/bareos"
+
     if len(sys.argv) > 5:
         store_path = sys.argv[5]
     if len(sys.argv) > 6:
         imgrestore_path = sys.argv[6]
+    if len(sys.argv) > 7:
+        snapshot_path = sys.argv[7]
 
     if command == "restore":
         op = CMD_RESTORE
@@ -763,4 +1080,6 @@ if __name__ == "__main__":
 
     count = 0
     asyncio.run(main_wrapper(qmp_path, qga_path,
-        disks, op, store_path, imgrestore_path))
+        disks, op, store_path, imgrestore_path, snapshot_path))
+    if unclean_shutdown:
+        sys.exit(4)

@@ -41,10 +41,18 @@ logger = logging.getLogger(__package__)
 class AbortedNegotiationError(IOError):
     pass
 
+WRITE_TIMEOUT = 10
+
 BCHUNK_MAGIC = 0x4b4e5842
 HEADER_FORMAT = '<LHHQQ'
 BCHUNK_OP_DATA = 1
 BCHUNK_OP_ZEROES = 12
+
+DIRTY_CONTEXT = "qemu:dirty-bitmap:"
+BASE_CONTEXT = "base:allocation"
+NBD_STATE_HOLE = 1 << 0
+NBD_STATE_ZERO = 1 << 1
+QEMU_STATE_DIRTY = 1 << 0
 
 class BackingStore:
     """
@@ -127,13 +135,15 @@ class BackingStore:
         self.file.close()
 
     async def write_async(self, index, offset, data):
+        signal.alarm(WRITE_TIMEOUT)
         self.write(index, offset, data)
 
     async def zero_async(self, index, offset, length):
+        signal.alarm(WRITE_TIMEOUT)
         self.zero(index, offset, length)
 
     async def shutdown_async(self):
-        pass
+        signal.alarm(0)
 
     # switch to dumping chunk data
     def start_dump(self):
@@ -553,8 +563,6 @@ class NbdServer:
 
                 elif cmd == self.NBD_CMD_READ:
                     try:
-                        #store.seek(offset)
-                        #data = store.read(length)
                         pass
                     except IOError as ex:
                         self.log.error("[%s:%s] %s" % (host, port, ex))
@@ -564,7 +572,6 @@ class NbdServer:
                     await self.nbd_response(writer, handle, data=data)
 
                 elif cmd == self.NBD_CMD_FLUSH:
-                    #store.flush()
                     await self.nbd_response(writer, handle)
 
                 else:
@@ -638,3 +645,121 @@ def restore_to_nbd(path, exports, count, ipaddr, port):
     backing_store.close() 
 
     nbdconn.shutdown()
+
+
+def log(s):
+    sys.stderr.write(s + "\n")
+    sys.stderr.flush()
+
+
+def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incremental=False):
+    has_dirty = False
+    has_alloc = False
+    dirty_context = DIRTY_CONTEXT + bitmap_name
+
+    nbdconn = nbd.NBD()
+    nbdconn.set_export_name(export[0])
+    nbdconn.add_meta_context(dirty_context)
+    nbdconn.add_meta_context(BASE_CONTEXT)
+    host, port = nbd_addr
+    nbdconn.connect_tcp(host, port)
+
+    has_dirty = nbdconn.can_meta_context(dirty_context)
+    has_alloc = nbdconn.can_meta_context(BASE_CONTEXT)
+    disk_size = nbdconn.get_size()
+    #log(f"connected to {export}, reported size {disk_size}, expected size {export[1]}")
+
+    offset = 0
+    QUERY_STEP = 1 * 1024 * 1024 * 1024
+
+    block_map = {}
+    dirty_map = {}
+
+    def status_callback(metacontext, offset, entries, err):
+        if err.value != 0:
+            raise Exception(f"error querying block status: {err.string}")
+        curr = offset
+        for i in range(0, len(entries), 2):
+            length, flags = entries[i], entries[i + 1]
+            is_zero = flags & (NBD_STATE_HOLE | NBD_STATE_ZERO)
+            is_dirty = flags & (QEMU_STATE_DIRTY)
+
+            descr = ""
+            if metacontext == BASE_CONTEXT:
+                #if is_zero:
+                #    descr += "Z"
+                #log(f"BASE_CONTEXT {curr} {length} {flags} {descr}")
+                block_map[curr] = (length, flags)
+            elif metacontext == dirty_context:
+                #if is_dirty:
+                #    descr += "D"
+                #log(f"DIRTY_CONTEXT {curr} {length} {flags} {descr}")
+                dirty_map[curr] = (length, flags)
+            curr += length
+
+    while offset < disk_size:
+        query_len = min(QUERY_STEP, disk_size - offset)
+        nbdconn.block_status(query_len, offset, status_callback)
+        offset += query_len
+
+    for offset in dirty_map:
+        length, flags = dirty_map[offset]
+        is_dirty = (flags & QEMU_STATE_DIRTY) != 0
+        if incremental and not is_dirty:
+            continue
+
+        subrange_offset = offset
+        subrange_end = offset + length
+
+        while subrange_offset < subrange_end:
+            if has_alloc:
+                alloc_length, alloc_flags = find_alloc_at(block_map,
+                        subrange_offset, subrange_end)
+            else:
+                alloc_length, alloc_flags = (subrange_end - subrange_offset), 0
+
+            is_zero = (alloc_flags & (NBD_STATE_HOLE | NBD_STATE_ZERO)) != 0
+
+            if is_zero:
+                backing_store.zero(drv_index, subrange_offset, alloc_length)
+            else:
+                read_nbd_range(nbdconn, subrange_offset, alloc_length, drv_index, backing_store)
+            subrange_offset += alloc_length
+
+    nbdconn.shutdown()
+
+
+def find_alloc_at(block_map, target_offset, max_end):
+    for b_offset, (b_length, b_flags) in block_map.items():
+        if b_offset <= target_offset < (b_offset + b_length):
+            remaining = (b_offset + b_length) - target_offset
+            return min(remaining, max_end - target_offset), b_flags
+    return (max_end - target_offset), 0
+
+
+def read_nbd_range(nbdconn, offset, length, drv_index, backing_store):
+    # print(f"read_nbd_range {offset},{length}")
+    MAX_CHUNK_SIZE = 32 * 1024 * 1024
+    curr = offset
+    end = offset + length
+
+    while curr < end:
+        to_read = min(MAX_CHUNK_SIZE, end - curr)
+        data = nbdconn.pread(to_read, curr)
+        backing_store.write(drv_index, curr, data)
+        curr += to_read
+
+
+async def test2():
+    testdata = b"A" * 1024 * 1024
+    exports = ( "Test", 10000 )
+    store = AsyncBackingStore(exports)
+    print("1")
+    await store.init_async()
+    for i in range(0, 1024):
+        await store.write_async(0, i * len(testdata), testdata)
+    await store.close_async()
+    print("2")
+
+if __name__ == "__main__":
+    asyncio.run(test2())

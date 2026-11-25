@@ -27,6 +27,7 @@
 
 import os
 import subprocess
+import threading
 import time
 import datetime
 import tempfile
@@ -326,6 +327,7 @@ class LogPipe:
 
     def __init__(self):
         self._read_fd, self._write_fd = pipe()
+        self.lock = threading.Lock()
 
         # make reading end non-blocking so we can poll() with timeout
         fcntl(self._read_fd, F_SETFL, fcntl(self._read_fd, F_GETFL) | O_NONBLOCK)
@@ -377,26 +379,27 @@ class LogPipe:
 
     def read(self, length, *, timeout=100):
         """read() like call with timeout in milliseconds."""
-        res = self._read_poller.poll(timeout)
-        if len(res) == 0:
-            raise TimeoutError
+        with self.lock:
+            res = self._read_poller.poll(timeout)
+            if len(res) == 0:
+                raise TimeoutError
 
-        # there must be exactly one result and that must have our read_fd as fd
-        assert len(res) == 1
-        fd, event = res[0]
-        assert fd == self._read_fd
+            # there must be exactly one result and that must have our read_fd as fd
+            assert len(res) == 1
+            fd, event = res[0]
+            assert fd == self._read_fd
 
-        if event & POLLIN:
-            return read(self._read_fd, length)
-        # some other event happened, probably an error
-        raise IOError(f"Unexpected bitmask on poll(): {event}")
+            if event & POLLIN:
+                return read(self._read_fd, length)
+            # some other event happened, probably an error
+            raise IOError(f"Unexpected bitmask on poll(): {event}")
 
 
 class UnknownOptionException(Exception):
     """Raised when using an unknown option."""
 
 
-class BareosFdProxmoxOptions:
+class BareosFdPveQmpOptions:
     """Holds plugin options."""
 
     def __init__(self):
@@ -405,6 +408,7 @@ class BareosFdProxmoxOptions:
             "guestid": self.make_opt(int),
             "restorepath": self.make_opt(str, "/var/lib/vz/dump"),
             "restoretodisk": self.make_opt(bool, False),
+            "snapshotpath": self.make_opt(str, "/var/lib/bareos"),
         }
 
     @staticmethod
@@ -478,7 +482,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100, f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
 
-        self.options = BareosFdProxmoxOptions()
+        self.options = BareosFdPveQmpOptions()
         super().__init__(plugindef)
 
         bareosfd.RegisterEvents([bareosfd.bEventCancelCommand])
@@ -495,6 +499,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.vm_was_running = False
         self.qsd_process = None
         self.nbd_port = "10809"
+        self.wait_msg_done = False
 
     def check_options(self, mandatory_options=None):
         """Check plugin options for completeness."""
@@ -574,7 +579,8 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             op, qmppath, qgapath,
             ",".join(disk_args),
             "-",
-            imgrestore_path
+            imgrestore_path,
+            self.options.snapshotpath
         )
 
     def _read_vm_config(self):
@@ -1160,7 +1166,10 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return False
 
     def _wait_for_io_process(self, timeout=10):
-        bareosfd.JobMessage(bareosfd.M_INFO, "waiting for command to finish\n")
+        if not self.wait_msg_done:
+            bareosfd.JobMessage(bareosfd.M_INFO, "waiting for command to finish\n")
+            self.wait_msg_done = True
+
         while self.io_process.returncode is None:
             self._despool_log()
             try:
