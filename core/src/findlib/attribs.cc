@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -368,32 +368,59 @@ bool SetAttributes(JobControlRecord* jcr,
    * simply fall through and we will do it the universal way. */
 #endif
 
-  old_mask = umask(0);
-  if (IsBopen(ofd)) {
-    boffset_t fsize;
-    char ec1[50], ec2[50];
 
-    fsize = blseek(ofd, 0, SEEK_END);
-    if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0
-        && fsize != (boffset_t)attr->statp.st_size) {
-      Jmsg3(jcr, M_ERROR, 0,
-            T_("File size of restored file %s not correct. Original %s, "
-               "restored %s.\n"),
-            attr->ofname, edit_uint64(attr->statp.st_size, ec1),
-            edit_uint64(fsize, ec2));
+  /* For some reason someone decided to implement windows support by
+   * implementing a posix layer that translates "normal" posix calls
+   * to a windows implementation, so that (in theory) you can just
+   * write this as if it was unix-only, and have it work on windows.
+   *
+   * Sadly this implementation of this layer is not normal, and you
+   * constantly run into situations where the code looks completely correct,
+   * but its actually doing something different than you expect.
+   *
+   * Normally attr->statp.st_size is signed, so to check for "unset" sizes
+   * (which are mostly set to 0 or -1), you can just check st_size > 0.
+   * And this is the way this code checked it for ages, until someone
+   * (which is sadly me) decided to test sparse files + io in core on windows.
+   * Conclusion: The stat field on windows is unsigned, so st_size{-1} > 0
+   * always holds.
+   *
+   * As such we introduced this ugly function to do the check here.
+   * */
+
+  auto has_set_size = [](struct stat& input) -> bool {
+    if constexpr (std::is_unsigned_v<decltype(input.st_size)>) {
+      return (input.st_size != 0)
+             && (input.st_size
+                 != std::numeric_limits<decltype(input.st_size)>::max());
+    } else {
+      return input.st_size > 0;
     }
-  } else {
-    struct stat st;
-    char ec1[50], ec2[50];
+  };
 
-    if (lstat(attr->ofname, &st) == 0) {
-      if (attr->type == FT_REG && st.st_size > 0 && attr->statp.st_size > 0
-          && st.st_size != attr->statp.st_size) {
+  old_mask = umask(0);
+  if (has_set_size(attr->statp) && attr->type == FT_REG) {
+    if (IsBopen(ofd)) {
+      boffset_t fsize;
+      fsize = blseek(ofd, 0, SEEK_END);
+
+      if (fsize > 0 && fsize != (boffset_t)attr->statp.st_size) {
         Jmsg3(jcr, M_ERROR, 0,
-              T_("File size of restored file %s not correct. Original %s, "
-                 "restored %s.\n"),
-              attr->ofname, edit_uint64(attr->statp.st_size, ec1),
-              edit_uint64(st.st_size, ec2));
+              T_("File size of restored file %s not correct. Original %zu, "
+                 "restored %zu.\n"),
+              attr->ofname, static_cast<size_t>(attr->statp.st_size),
+              static_cast<size_t>(fsize));
+      }
+    } else {
+      struct stat st;
+      if (lstat(attr->ofname, &st) == 0) {
+        if (st.st_size > 0 && st.st_size != attr->statp.st_size) {
+          Jmsg3(jcr, M_ERROR, 0,
+                T_("File size of restored file %s not correct. Original %zu, "
+                   "restored %zu.\n"),
+                attr->ofname, static_cast<size_t>(attr->statp.st_size),
+                static_cast<size_t>(st.st_size));
+        }
       }
     }
   }
