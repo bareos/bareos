@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui test: fix restore selection in release build, update php in windows installer [PR #2887]
 - dird: fix not checking if file exists when writing bsr [PR #2937]
 
+### Fixed
+- Use VMWare credentails from plugin options  [PR #2946]
+
 ## [24.0.12] - 2026-10-26
 
 ### Breaking changes
@@ -2092,4 +2095,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2884]: https://github.com/bareos/bareos/pull/2884
 [PR #2887]: https://github.com/bareos/bareos/pull/2887
 [PR #2937]: https://github.com/bareos/bareos/pull/2937
+[PR #2946]: https://github.com/bareos/bareos/pull/2946
 [unreleased]: https://github.com/bareos/bareos/tree/master
