@@ -179,7 +179,7 @@ static const ResourceItem dev_items[] = {
   { "ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_dev, changer_name), {}},
   { "ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_dev, changer_command), {}},
   { "AlertCommand", CFG_TYPE_STRNAME, ITEM(res_dev, alert_command), {}},
-  { "MaximumChangerWait", CFG_TYPE_TIME, ITEM(res_dev, max_changer_wait), {config::DefaultValue{"300"}}},
+  { "MaximumChangerWait", CFG_TYPE_TIME, ITEM(res_dev, max_changer_wait), {config::DefaultValue{"600"}}},
   { "MaximumOpenWait", CFG_TYPE_TIME, ITEM(res_dev, max_open_wait), {config::DefaultValue{"300"}}},
   { "MaximumOpenVolumes", CFG_TYPE_PINT32, ITEM(res_dev, max_open_vols), {config::DefaultValue{"1"}}},
   { "MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_dev, max_network_buffer_size), {config::DeprecatedSince{24, 0, 0}, config::Description{"Replaced by MaximumNetworkBufferSize (SD->Storage)."}}},
