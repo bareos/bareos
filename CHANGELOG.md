@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.1.10] - 2026-11-25
 
 ### Changed
 - webui test: fix restore selection in release build [PR #2889]
@@ -1092,6 +1092,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [23.1.7]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.7
 [23.1.8]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.8
 [23.1.9]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.9
+[23.1.10]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.10
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -1835,4 +1836,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2889]: https://github.com/bareos/bareos/pull/2889
 [PR #2938]: https://github.com/bareos/bareos/pull/2938
 [PR #2947]: https://github.com/bareos/bareos/pull/2947
-[unreleased]: https://github.com/bareos/bareos/tree/master
