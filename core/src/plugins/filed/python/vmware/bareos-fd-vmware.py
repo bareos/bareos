@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -702,6 +702,17 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # instead of the VM moref that was stored at backup time
         if self.vadp.vm:
             cbt_data["ConnParams"]["VmMoRef"] = "moref=" + self.vadp.vm._GetMoId()
+
+        if self.options.get("localvmdk") != "yes":
+            cbt_data["ConnParams"]["VsphereHostName"] = self.options["vcserver"]
+            cbt_data["ConnParams"]["VsphereUsername"] = self.options["vcuser"]
+            cbt_data["ConnParams"]["VspherePassword"] = self.options["vcpass"]
+            cbt_data["ConnParams"]["VsphereThumbPrint"] = ":".join(
+                [
+                    self.options["vcthumbprint"][i : i + 2]
+                    for i in range(0, len(self.options["vcthumbprint"]), 2)
+                ]
+            )
 
         self.vadp.writeStringToFile(json_filename, json.dumps(cbt_data))
         self.cbt_json_local_file_path = json_filename
@@ -2745,6 +2756,13 @@ class BareosVADPWrapper(object):
         )
         # for the restoreobject we don't need changedArea data
         del cbt_data["DiskChangeInfo"]["changedArea"]
+
+        # connection information should not be stored in the restore object
+        del cbt_data["ConnParams"]["VsphereHostName"]
+        del cbt_data["ConnParams"]["VsphereUsername"]
+        del cbt_data["ConnParams"]["VspherePassword"]
+        del cbt_data["ConnParams"]["VsphereThumbPrint"]
+
         self.changed_disk_areas_json = json.dumps(cbt_data)
 
     def json2cbt(self, cbt_json_string):
