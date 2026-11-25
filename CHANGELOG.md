@@ -6,11 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- webui test: fix restore selection in release build, update php in windows installer [PR #2887]
-- dird: fix not checking if file exists when writing bsr [PR #2937]
+- webui test: fix restore selection in release build [PR #2887]
+- update php in windows installer [PR #2887]
 
 ### Fixed
+- dird: fix not checking if file exists when writing bsr [PR #2937]
 - Use VMWare credentails from plugin options  [PR #2946]
+
+### Security
+- Fix Stack buffer overflow when parsing a date value in the restore command causes director crash [PR #2937] [GHSA-7cxc-jpxq-vmw3](https://github.com/bareos/bareos/security/advisories/GHSA-7cxc-jpxq-vmw3)
+- Fix CRAM-MD5 challenge overflows a stack buffer [PR #2937] [GHSA-v74j-x8v5-8mqx](https://github.com/bareos/bareos/security/advisories/GHSA-v74j-x8v5-8mqx)
+- Fix restore command can be used to overwrite arbitrary files [PR #2937] [GHSA-594w-fmvx-6xp3](https://github.com/bareos/bareos/security/advisories/GHSA-594w-fmvx-6xp3)
+- Fix VMWare plugin stores connection information in restore-object [PR #2946] [GHSA-f3m8-f6f4-v58g](https://github.com/bareos/bareos/security/advisories/GHSA-f3m8-f6f4-v58g)
 
 ## [24.0.12] - 2026-10-26
 
