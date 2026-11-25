@@ -191,7 +191,10 @@ class SeleniumVueTest(unittest.TestCase):
         self.by_testid("nav-restore").click()
         self.wait_for_url("#/restore")
         self.wait_for(
-            By.CSS_SELECTOR, '[data-testid="restore-source-client"]', timeout=20
+            By.XPATH,
+            '//*[@data-testid="restore-source-client"]/ancestor::*'
+            '[contains(concat(" ", normalize-space(@class), " "), " q-field ")]',
+            timeout=20,
         )
 
 

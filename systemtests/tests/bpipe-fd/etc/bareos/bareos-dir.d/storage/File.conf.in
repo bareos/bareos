@@ -6,3 +6,12 @@ Storage {
   Media Type = File
   Port = @sd_port@
 }
+
+Storage {
+  Name = File2
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage2
+  Media Type = File
+  Port = @sd_port@
+}
