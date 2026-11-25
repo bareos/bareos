@@ -27,4 +27,6 @@ endif()
 
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
-add_requirements("${SYSTEMTEST_PREFIX}${BASENAME}" "failing-virtual" "simple")
+add_requirements(
+  "${SYSTEMTEST_PREFIX}${BASENAME}" "failing-virtual" "simple-and-accounting"
+)

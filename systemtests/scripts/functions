@@ -501,10 +501,67 @@ bls_files_verbose()
   local STORAGE=${1}
   local VOLUME=${2}
   local LOCAL_CONF=${3:-${BAREOS_CONFIG_DIR}}
-  # JobId is not yet evaluated
-
   "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${LOCAL_CONF}" -v "${STORAGE}"
   return $?
+}
+
+bls_compressed_records_for_path()
+{
+  local BLS_OUT="$1"
+  local FILENAME="$2"
+  local JOBID="${3:-}"
+
+  awk -v filename="$FILENAME" -v jobid="$JOBID" '
+    function field(name, i, prefix) {
+      prefix = name "="
+      for (i = 1; i <= NF && $i != "|"; i++) {
+        if (index($i, prefix) == 1) {
+          return substr($i, length(prefix) + 1)
+        }
+      }
+      return ""
+    }
+    /^(FileIndex=[0-9]+|Begin Job Session Record:)/ {
+      session_id = field("VolSessionId")
+      session_time = field("VolSessionTime")
+      session = session_id SUBSEP session_time
+    }
+    /^Begin Job Session Record:/ {
+      jobs[session] = field("JobId")
+    }
+    /^FileIndex=[0-9]+/ {
+      if (session_id == "" || session_time == "") {
+        missing_identity = 1
+      }
+      file_key = session SUBSEP field("FileIndex")
+      records[++count] = $0
+      keys[count] = file_key
+      sessions[count] = session
+      compressed[count] = $3 ~ /^((SPARSE|WIN32|ENCRYPTED(-WIN32)?)-)?COMPRESSED$/
+    }
+    /^[[:space:]]*\| / {
+      file_path = $0
+      sub(/^[[:space:]]*\| /, "", file_path)
+      if (file_path == filename ||
+          (length(file_path) > length(filename) &&
+           substr(file_path, length(file_path) - length(filename), 1) == "/" &&
+           substr(file_path, length(file_path) - length(filename) + 1) == filename)) {
+        matching[file_key] = 1
+      }
+    }
+    END {
+      if (missing_identity) {
+        print "Missing session identity in verbose bls records." > "/dev/stderr"
+        exit 1
+      }
+      for (i = 1; i <= count; i++) {
+        if (compressed[i] && matching[keys[i]] &&
+            (jobid == "" || jobs[sessions[i]] == jobid)) {
+          print records[i]
+        }
+      }
+    }
+  ' <<<"$BLS_OUT"
 }
 
 is_file_compressed()
@@ -513,12 +570,21 @@ is_file_compressed()
   local VOLUME=${2}
   local FILENAME=${3}
   local LOCAL_CONF=${4:-${BAREOS_CONFIG_DIR}}
+  local BLS_OUT
+  local FILE_RECORDS
+  local OUT
 
   print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
-  if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}" | grep -A1 "${FILENAME}" | grep -i "COMPRESSED"); then
+  BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}")
+  if ! FILE_RECORDS=$(bls_compressed_records_for_path "$BLS_OUT" "$FILENAME"); then
+    set_error "Could not match verbose bls records for ${FILENAME}."
+    return 1
+  fi
+  OUT="$FILE_RECORDS"
+  if [[ -n "$OUT" ]]; then
     return 0
   else
-    print_debug ${OUT}
+    print_debug "${OUT:-No compressed record found for ${FILENAME}}"
     return 1
   fi
 }
@@ -527,13 +593,15 @@ check_compression()
 {
   local STORAGE=${1}
   local VOLUME=${2}
-  # JobId is not yet evaluated
   local JOBID=${3}
   local FILENAME=${4}
   local COMPRESSION=${5:-'GZIP'}
   local COMPRESSION_LEVEL=${6:-}
 
   local COMPRESSION_DESCRIPTION="${COMPRESSION}"
+  local BLS_OUT
+  local FILE_RECORDS
+  local OUT
   if [ "${COMPRESSION_LEVEL}" ]; then
     COMPRESSION_DESCRIPTION="${COMPRESSION}, level=${COMPRESSION_LEVEL}"
   fi
@@ -542,7 +610,11 @@ check_compression()
   BLS_OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}")
   print_debug "$BLS_OUT"
   echo "$BLS_OUT"
-  if OUT=$(echo "$BLS_OUT" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
+  if ! FILE_RECORDS=$(bls_compressed_records_for_path "$BLS_OUT" "$FILENAME" "$JOBID"); then
+    set_error "Could not match verbose bls records for job=${JOBID}, file=${FILENAME}."
+    return 1
+  fi
+  if OUT=$(sed -E 's/\| Sparse: StartAddress=[0-9]+\. /| /' <<<"$FILE_RECORDS" | grep -iF "| ${COMPRESSION_DESCRIPTION}, "); then
     print_debug "$OUT"
   else
     set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."
