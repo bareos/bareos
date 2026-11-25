@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pa-md">
-    <DirectorErrorsBanner :errors="directorErrors" />
+    <DirectorErrorsBanner :errors="directorErrors" include-login-required />
 
     <q-card flat bordered class="bareos-panel">
       <q-card-section class="panel-header">{{ t('Restore Files') }}</q-card-section>
@@ -648,6 +648,7 @@ const sourceClients   = ref([])
 const restoreClients  = ref([])
 const directorErrors  = ref([])
 const loadingClients = ref(false)
+let clientChangeGeneration = 0
 
 const selectedSourceClient = computed(() => (
   sourceClients.value.find(client => client.scopeKey === sourceClientKey.value) ?? null
@@ -676,7 +677,29 @@ const restoreClientOptions = computed(() =>
 )
 
 async function ensureSelectedSourceDirector() {
-  await ensureScopeDirector(sourceDirector.value)
+  const targetDirector = sourceDirector.value
+  const targetClientKey = sourceClientKey.value
+  try {
+    if (!targetDirector) {
+      throw new Error(t('No source director selected.'))
+    }
+    await ensureScopeDirector(targetDirector)
+    return sourceDirector.value === targetDirector && sourceClientKey.value === targetClientKey
+  } catch (error) {
+    if (sourceDirector.value !== targetDirector || sourceClientKey.value !== targetClientKey) {
+      return false
+    }
+    directorErrors.value = [{
+      director: targetDirector ?? '',
+      message: error instanceof Error ? error.message : String(error),
+    }]
+    restoreClients.value = []
+    restoreJobs.value = []
+    backups.value = []
+    pluginFilesets.value = new Map()
+    clearSelectedSourceData()
+    return false
+  }
 }
 
 function buildRestoreJobDetailsQuery() {
@@ -789,7 +812,8 @@ async function applyRouteSourceSelection() {
     })
 
     if (resolvedClient) {
-      if (sourceClientKey.value !== resolvedClient.scopeKey) {
+      if (sourceClientKey.value !== resolvedClient.scopeKey
+          || form.value.client !== resolvedClient.name) {
         sourceClientKey.value = resolvedClient.scopeKey
         await onClientChange(resolvedClient.scopeKey)
       }
@@ -814,10 +838,7 @@ async function applyRouteSourceSelection() {
   }
 
   if (sourceDirector.value) {
-    await Promise.all([
-      loadRestoreClients(),
-      loadRestoreJobs(),
-    ])
+    await loadRestoreSelections()
   } else {
     restoreClients.value = []
     restoreJobs.value = []
@@ -925,12 +946,12 @@ async function loadRestoreJobs() {
   if (!sourceDirector.value) {
     restoreJobs.value = []
     form.value.restorejob = ''
-    return
+    return false
   }
 
   loadingRestoreJobs.value = true
   try {
-    await ensureSelectedSourceDirector()
+    if (!await ensureSelectedSourceDirector()) return false
     const r = await director.call('.jobs type=R')
     restoreJobs.value = directorCollection(r?.jobs)
     if (!restoreJobs.value.some(job => job.name === form.value.restorejob)) {
@@ -939,9 +960,11 @@ async function loadRestoreJobs() {
     if (restoreJobs.value.length && !form.value.restorejob) {
       form.value.restorejob = restoreJobs.value[0].name
     }
+    return true
   } catch (_) {
     restoreJobs.value = []
     form.value.restorejob = ''
+    return false
   } finally {
     loadingRestoreJobs.value = false
   }
@@ -951,11 +974,11 @@ async function loadRestoreClients() {
   if (!sourceDirector.value) {
     restoreClients.value = []
     form.value.restoreclient = ''
-    return
+    return false
   }
 
   try {
-    await ensureSelectedSourceDirector()
+    if (!await ensureSelectedSourceDirector()) return false
     const r = await director.call('list clients')
     restoreClients.value = directorCollection(r?.clients)
       .map(client => ({
@@ -967,10 +990,21 @@ async function loadRestoreClients() {
     if (!restoreClients.value.some(client => client.name === form.value.restoreclient)) {
       form.value.restoreclient = sourceClientName.value || ''
     }
+    return true
   } catch (_) {
     restoreClients.value = []
     form.value.restoreclient = ''
+    return false
   }
+}
+
+async function loadRestoreSelections() {
+  if (!await ensureSelectedSourceDirector()) return false
+  const results = await Promise.all([
+    loadRestoreClients(),
+    loadRestoreJobs(),
+  ])
+  return results.every(Boolean)
 }
 
 // ── Backups for selected client ──────────────────────────────────────────────
@@ -1027,6 +1061,7 @@ const pluginOptionsHint = computed(() => {
 })
 
 async function onClientChange(clientName) {
+  const generation = ++clientChangeGeneration
   form.value.jobid = null
   browserReady.value = false
   clearBrowserState()
@@ -1041,11 +1076,9 @@ async function onClientChange(clientName) {
   }
 
   if (!selectedClient) {
+    loadingBackups.value = false
     if (sourceDirector.value) {
-      await Promise.all([
-        loadRestoreClients(),
-        loadRestoreJobs(),
-      ])
+      await loadRestoreSelections()
     } else {
       restoreClients.value = []
       restoreJobs.value = []
@@ -1054,21 +1087,38 @@ async function onClientChange(clientName) {
     return
   }
 
-  await Promise.all([
-    loadRestoreClients(),
-    loadRestoreJobs(),
-  ])
-  await loadBackups(selectedClient)
-}
-
-async function loadBackups(client) {
   loadingBackups.value = true
   try {
-    await ensureScopeDirector(client.director)
+    if (await loadRestoreSelections()
+        && isCurrentClientSelection(selectedClient, generation)) {
+      await loadBackups(selectedClient, generation)
+    }
+  } finally {
+    if (generation === clientChangeGeneration) {
+      loadingBackups.value = false
+    }
+  }
+}
+
+function isCurrentClientSelection(client, generation) {
+  return generation === clientChangeGeneration
+    && client.scopeKey === sourceClientKey.value
+}
+
+async function loadBackups(client, generation) {
+  try {
+    if (!isCurrentClientSelection(client, generation)
+        || !await ensureSelectedSourceDirector()
+        || !isCurrentClientSelection(client, generation)) {
+      return false
+    }
     const [r, filesets] = await Promise.all([
       director.call(`llist backups client=${quoteDirectorString(client.name)}`),
       director.call('list filesets').catch(() => null),
     ])
+    if (!isCurrentClientSelection(client, generation)) {
+      return false
+    }
     const pluginFilesetFlags = buildRestorePluginFilesetMap(filesets?.filesets)
     pluginFilesets.value = buildRestorePluginFilesetDetails(filesets?.filesets)
     backups.value = decorateRestoreBackupsWithPluginJobs(
@@ -1076,11 +1126,17 @@ async function loadBackups(client) {
       pluginFilesetFlags
     )
       .sort((a, b) => Number(b.jobid) - Number(a.jobid))
-  } catch (_) {
-    backups.value = []
-    pluginFilesets.value = new Map()
-  } finally {
-    loadingBackups.value = false
+    return true
+  } catch (error) {
+    if (isCurrentClientSelection(client, generation)) {
+      directorErrors.value = [{
+        director: client.director ?? sourceDirector.value ?? '',
+        message: error instanceof Error ? error.message : String(error),
+      }]
+      backups.value = []
+      pluginFilesets.value = new Map()
+    }
+    return false
   }
 }
 
@@ -1126,7 +1182,7 @@ async function initBrowser() {
   browserReady.value   = false
   browserError.value   = ''
   try {
-    await ensureSelectedSourceDirector()
+    if (!await ensureSelectedSourceDirector()) return
     // Step 1: get merged jobids
     const command = buildRestoreBvfsJobidsCommand(form.value.jobid, {
       mergeJobs: form.value.mergeJobs,
@@ -1153,7 +1209,7 @@ async function initBrowser() {
 
     // Step 3: browse root
     navStack.value = [{ label: '/', pathId: null }]
-    await fetchDir(null)
+    if (!await fetchDir(null)) return
     browserReady.value = true
   } catch (e) {
     browserError.value = e.message || t('Failed to load file tree')
@@ -1163,7 +1219,7 @@ async function initBrowser() {
 }
 
 async function fetchDir(pathId) {
-  await ensureSelectedSourceDirector()
+  if (!await ensureSelectedSourceDirector()) return false
   const jids = mergedJobids.value
   const pathArg = pathId != null ? `pathid=${pathId}` : 'path='
   const [drPrimary, frPrimary] = await Promise.all([
@@ -1226,6 +1282,7 @@ async function fetchDir(pathId) {
   fileVersionsCache.value = new Map()
   const dirKey = versionCheckDirKey
   checkVersionsInBackground(files, dirKey)
+  return true
 }
 
 async function navigateInto(row) {
@@ -1244,7 +1301,7 @@ async function navigateInto(row) {
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(row.pathId)
+    if (!await fetchDir(row.pathId)) return
     navStack.value = nextStack
     browserReady.value = true
   } catch (e) {
@@ -1268,7 +1325,7 @@ async function navigateTo(index) {
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(pathId)
+    if (!await fetchDir(pathId)) return
     navStack.value = nextStack
     browserReady.value = true
   } catch (e) {
@@ -1291,7 +1348,7 @@ async function reloadCurrentDir() {
   browserReady.value = false
   browserError.value = ''
   try {
-    await fetchDir(pathId)
+    if (!await fetchDir(pathId)) return
     browserReady.value = true
   } catch (e) {
     browserError.value = e.message || t('Failed to load file tree')
@@ -1560,7 +1617,7 @@ async function doRestore() {
   const jids     = mergedJobids.value
 
   try {
-    await ensureSelectedSourceDirector()
+    if (!await ensureSelectedSourceDirector()) return
     const prepareCommand = buildRestoreBvfsRestoreCommand({
       jobids: jids,
       fileids,
@@ -1732,7 +1789,7 @@ function versionCount(fileId) {
 
 async function checkVersionsInBackground(files, dirKey) {
   if (!files.length || !versionCheckEnabled.value) return
-  await ensureSelectedSourceDirector()
+  if (!await ensureSelectedSourceDirector()) return
   const jids = mergedJobids.value
   const lookupJobId = versionsLookupJobId.value
   const client = sourceClientName.value
@@ -1784,7 +1841,10 @@ async function openVersions(row) {
     selectedFileId: fileVersionOverrides.value.get(row.fileId) ?? row.fileId,
   }
   try {
-    await ensureSelectedSourceDirector()
+    if (!await ensureSelectedSourceDirector()) {
+      versionsDialog.value.open = false
+      return
+    }
     const cachedVersions = fileVersionsCache.value.get(row.fileId)
     if (Array.isArray(cachedVersions) && cachedVersions.length > 0) {
       versionsDialog.value.versions = cachedVersions
@@ -1870,6 +1930,10 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
     return
   }
 
+  if (selectedSourceClient.value?.director === next) {
+    return
+  }
+
   if (selectedSourceClient.value && selectedSourceClient.value.director !== next) {
     sourceClientKey.value = ''
     clearSelectedSourceData()
@@ -1883,10 +1947,7 @@ watch(() => commonSourceDirector.value, async (next, previous) => {
     return
   }
 
-  await Promise.all([
-    loadRestoreClients(),
-    loadRestoreJobs(),
-  ])
+  await loadRestoreSelections()
 })
 
 watch(() => [

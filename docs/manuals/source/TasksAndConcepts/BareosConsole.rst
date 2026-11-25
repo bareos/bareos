@@ -1520,7 +1520,9 @@ status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
               client=<client-name> | storage=<storage-name> slots |
-              subscriptions [clients] [plugins] [all] [anonymize] [client=<client-name>] |
+              subscriptions [legacy] [clients] [plugins] [all] [anonymize] [logical]
+                            [client=<client-name>] |
+              subscriptions state | subscriptions recalculate |
               configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
@@ -1700,6 +1702,7 @@ status scheduler
 
 
 .. _status-subscription:
+.. _bareos-console-subscription-accounting:
 
 status subscriptions
    In case you have a service contract for Bareos, the command
@@ -1736,7 +1739,48 @@ status subscriptions
 
    This shows a combined list of clients and plugins, together with the
    use-count of the plugins and the aggregated amount of backed up frontend
-   data (in gigabytes).
+   data (in gigabytes). Sizes use the last successful accounting snapshot
+   for Client/FileSet combinations with file-based data. Missing or excluded
+   combinations retain the former job-based size, and the report
+   identifies how many combinations use job-based sizes. Before the first
+   successful accounting refresh, all sizes are job-based. The text report and
+   structured ``subscription_accounting`` object show the snapshot time,
+   how many combinations are job-based, and warnings when the snapshot is
+   older than 24 hours or the latest refresh failed.
+   The structured object also supplies ``age_seconds`` when a snapshot
+   exists, computed in the catalog's time frame rather than from the
+   Director's local report timestamp.
+   The existing count of backup units is unchanged; volume-based units are
+   calculated from
+   these file-based or job-based sizes. Each report reads its metadata,
+   detail, summary, and checksum from a consistent catalog snapshot,
+   even if a background refresh completes while it is being generated.
+   For comparison, append ``legacy`` (for example,
+   ``status subscriptions all legacy``) to use the original latest successful
+   Full job sizes, ``max(ReadBytes, JobBytes)``, instead of snapshot sizes.
+   Counts, aggregation and unit calculation remain unchanged. The snapshot
+   is neither refreshed nor modified; structured output identifies this
+   mode with ``subscription_accounting.source = "legacy"``. This option
+   also works with ``clients``, ``plugins``, ``client=`` and ``anonymize``,
+   but ``accounting`` is not a valid report modifier; accounting details
+   are included by default.
+   A Client/FileSet chain containing an opaque backup image (for example,
+   barri or an NDMP stream with unknown file size) cannot be measured per
+   file, even when accompanying log files have measurable attributes. The
+   entire combination is therefore not summed from its File rows; instead
+   the job-level size of the chain's latest Full backup
+   (``max(ReadBytes, JobBytes)``) is used.
+   NDMP stream containers are ignored when actual per-file history is
+   available; those combinations continue to use file-based sizes. Native
+   NDMP backups without a synthetic container are detected from their saved
+   ``NDMPJobEnvironment`` record when file history is absent.
+   If the Full job has no recorded size, the combination is excluded with
+   the distinct ``opaque_backup_image`` reason, or ``ndmp_no_file_history``
+   for NDMP backups without measurable file history and without a
+   usable Full job size.
+   MSSQL VDI streams under ``/@MSSQL/`` with the plugin's zero-size
+   placeholder attributes also use this fallback. The plugin need not be
+   changed, and ordinary empty files are not treated as opaque streams.
    At the end a summary shows the accounting-mode (i.e. count- or volume-based)
    alongside with the used, configured and remaining units.
    The value for the configured units can be set in
@@ -1844,6 +1888,201 @@ status subscriptions
      In the current version there is no unknown data and detail is now the
      default.
 
+   The goal of subscription accounting is to determine the amount of primary
+   data backed up from the original systems, not the accumulated backup
+   history, transferred bytes, or space occupied on backup storage. Catalog
+   measurements are used where available; job-size estimates are a fallback
+   when source-data measurements are unavailable. These estimates are proxies
+   for primary-data size, not direct measurements of it. File versions are
+   deduplicated within each Client/FileSet chain, but overlapping data backed
+   up through different Client/FileSet combinations is not globally
+   deduplicated.
+
+   The default :bcommand:`status subscriptions` report and its ``all`` variant
+   include the underlying per-Client/FileSet file counts and byte totals.
+   The subscription-unit sections reuse these snapshot sizes where available,
+   retaining their plugin grouping and count-based unit rules. The accounting
+   details display the
+   latest successfully calculated result for every Client/FileSet
+   combination. A completed backup updates its cumulative chain result in
+   the background. On startup, or when a status command finds a missing
+   result, the worker queues a backfill or repair; the command returns
+   immediately and reports pending work while retaining any previous valid
+   result. These calculations do not affect the backup job's final status.
+
+   Bareos does not run a daily full-chain accounting scan by default. Use
+   :bcommand:`status subscriptions recalculate` to request an explicit
+   full recalculation of all Client/FileSet combinations, for example after
+   a catalog repair or when reconciling the incremental results. The command
+   queues the calculation in the background and returns immediately;
+   repeated requests while a full refresh is running or queued are coalesced.
+   Do not combine ``recalculate`` with report modifiers or filters.
+   Recalculation requires the ``status`` command permission and unrestricted
+   access to all Client, Job, and FileSet resources.
+   The duration and completion timestamp of the last successful full
+   recalculation are persisted separately from routine per-job updates.
+   Execution time excludes queue wait and includes saving the results.
+   Structured output exposes ``accounting_snapshot.last_full_duration_ms``
+   and ``last_full_completed_at`` only after a successful full recalculation.
+   Failed recalculations preserve these values.
+   If an installation was upgraded from a version that provided a scheduled
+   ``SubscriptionAccounting`` Admin Job, remove that Job and Schedule from
+   the Director configuration to disable the former daily full refresh.
+
+   The accounting status report shows whether the worker is idle, queued,
+   running, or unavailable. Structured output includes the worker state in
+   ``accounting_snapshot.refresh_thread_state`` and
+   ``accounting_snapshot.generation``. The lightweight command
+   :bcommand:`status subscriptions state` returns the worker state and the
+   same in-memory generation as ``accounting_status.generation``, without
+   loading the report. It is intended for clients that poll for changes: fetch
+   the full report when the generation or worker state changes, or when the
+   user explicitly requests a reload. When creating a full report, capture its
+   generation and worker-state baseline before reading the catalog snapshot.
+   A refresh that completes during the read then advances the generation and
+   is detected by the next poll. The generation advances when work is queued
+   and when worker processing completes, including failures. It resets on
+   Director restart, so clients must fetch a full report after connecting or
+   entering the Subscription view to establish a fresh baseline.
+
+   Measured Client/FileSet combinations provide two sizes: allocated bytes,
+   based on ``st_blocks * 512`` for Unix-like clients, and logical bytes,
+   based on ``st_size``. Rule ``J`` combinations instead use an estimate from
+   the baseline Full job, repeating that estimate in the logical field.
+   Allocated bytes are sparse-file
+   aware and approximate what :command:`du` would report on the client;
+   logical bytes represent the sum of the backed-up file lengths and are
+   independent of filesystem allocation and compression. The primary
+   accounting figure intentionally counts allocated source data, not the
+   virtual length of sparse files: a sparse file can therefore contribute
+   much less than its ``st_size``, even when restored as a file of that
+   length. For measured rows, neither figure measures bytes transferred
+   during backup or guarantees the allocation of the restored copy. Rule
+   ``J`` is the exception: it is a baseline Full job-size estimate rather
+   than a per-file measurement. Measured values describe files in the most
+   recent backup chain, not the sum of everything that has ever been
+   transferred by every backup job. A file saved unchanged by successive
+   Incrementals is counted only once, using its newest version;
+   a file recorded as deleted by accurate mode is not counted. Without
+   Accurate, Bareos has no delete records, so files deleted from the client
+   remain counted until the next Full backup.
+
+   .. code-block:: bconsole
+      :caption: status subscriptions
+
+      *<input>status subscriptions</input>
+
+      Real (File.LStat-based) subscription accounting report from snapshot at 2026-09-30 12:00:00:
+      FileSet@Client       Files  Accounted size  Rule  Chain jobs
+      -----------------  -------  --------------  ----  ----------
+      system@linux-fd    128,532        24.31 GB  A              4
+      system@windows-fd   84,221        12.00 GB  L              3
+      -----------------  -------  --------------  ----  ----------
+      TOTAL              212,753        36.32 GB
+
+      Rule:
+        A = allocated size (st_blocks * 512 bytes)
+        L = logical size (st_size)
+        J = job size of the latest Full (estimated; opaque plugin image or NDMP without file history)
+      Size units are decimal (1 KB = 1,000 bytes).
+
+      Grand total: 212,753 files, 36.32 GB (36,323,289,088 bytes) across 2 accounted Client/FileSet combination(s)
+
+   The optional ``client=<client-name>`` filter
+   can be used to restrict both report sections to a single client,
+   for example
+   :bcommand:`status subscriptions client=linux-fd`.
+
+   The console table identifies each combination as ``FileSet@Client``.
+   ``Accounted size`` follows the rule shown in the legend. The optional
+   ``logical`` keyword adds a ``Logical size`` column and logical total,
+   for example :bcommand:`status subscriptions logical client=linux-fd`.
+   In the WebUI, select ``Show logical size`` to display the same comparison;
+   this is off on each visit to the Subscription tab. PDF reports follow the
+   current selection; JSON downloads always include the logical-size fields.
+   Logical size represents file lengths for measured rows; for rule ``J``,
+   it repeats the job-size estimate rather than an independently measured
+   logical size. Sizes in the table use shortened decimal
+   units. Grand totals show shortened sizes followed by exact byte counts in
+   parentheses; JSON retains numeric byte counts.
+   ``Chain jobs`` is the number of jobs used in the calculation, not a list
+   of JobIds. Combinations sized from the job (rule ``J``) are estimates and
+   have ``estimated`` set to true in the structured output. If any
+   combination is excluded, the totals are incomplete: the
+   text report says so and the structured summary sets ``incomplete`` to
+   true. Excluded combinations appear in the same table with ``-`` for
+   unavailable values and a ``Status / Reason`` column explaining the
+   exclusion. This column is omitted when no combinations are excluded.
+
+   The report includes the snapshot calculation time. A snapshot older than
+   24 hours is flagged as stale. If the latest background refresh failed,
+   the report warns that it is showing the last successful snapshot; a
+   failed refresh never replaces previously calculated totals. If no
+   snapshot has completed yet, the command reports that no data is available
+   and includes the latest refresh error, if any. Changes to backups,
+   pruning, or catalog data are reflected after the next successful refresh.
+   Structured output also includes an ``accounting_snapshot`` object with
+   ``available``, ``calculated_at``, and ``stale`` fields, plus
+   ``last_refresh_error`` when the latest refresh failed.
+
+   If invalid file attributes stop a calculation, the error identifies the
+   first offending JobId, FileIndex, full path, Client, FileSet, and reason.
+   The structured response also includes these values in
+   ``accounting_snapshot.last_refresh_diagnostic``; the WebUI makes the
+   offending JobId a link to that job in the selected Director. Anonymized
+   reports omit the identifying diagnostic and show only a generic failure.
+   A scan stops at its first invalid row, so the diagnostic does not list any
+   later invalid attributes.
+
+   For measured Client/FileSet combinations, ``bytes`` in the structured
+   output and the main text line report allocated bytes using
+   ``st_blocks*512`` for Unix/Linux/macOS/BSD clients, or logical size using
+   ``st_size`` for Windows clients (detected via their reported operating
+   system information), since the ``st_blocks`` value reported by Bareos's
+   Windows compatibility layer is synthetic. For rule ``J``, ``bytes`` is the
+   baseline Full job-size estimate instead. The secondary
+   ``logical_bytes`` field reports logical file size for measured rows, or the
+   job-size estimate for rule ``J``. The structured summary always includes
+   ``total_logical_bytes``, regardless of the ``logical`` display option.
+   For implementation details and current test coverage, see the
+   :ref:`developer-subscription-accounting` chapter.
+
+   .. limitation:: status subscriptions has its own limitations
+
+      - Multiple Catalog resources are not supported: the background worker
+        refreshes only the first configured Catalog, while the status report
+        reads the selected Catalog. The Director logs a warning and the
+        subscription status commands warn when multiple catalogs are
+        configured. Other catalogs may have no current accounting snapshot,
+        and totals do not span catalogs.
+      - A Client/FileSet combination with an unusable backup chain, for
+        example because required catalog records were purged, appears as an
+        excluded row with reason ``no_usable_chain``. It contributes no size
+        to the grand total, which is marked incomplete. Combinations that
+        never had a completed Full backup have no accounting row and are
+        absent from the report.
+      - An NDMP Client/FileSet chain with only the synthetic archive row
+        and no per-file history uses the baseline Full job size as a
+        rule J estimate. This counts transferred record-stream bytes,
+        not the logical or allocated size of the source files. If that
+        job size is unavailable or zero, the combination is excluded
+        with reason ``ndmp_no_file_history``. The synthetic archive
+        row's placeholder size is never used.
+      - Copy, Migrate, Virtual Full, and Always-Incremental consolidation
+        jobs are supported and contribute their own File rows like an
+        ordinary Full backup would.
+      - Delta-plugin multi-part files (:config:option:`dir/job/accurate`
+        + delta plugins) are not specially merged in this first version;
+        only the latest JobId's File row per path is used. The Hyper-V
+        plugin uses these parts to restore changed virtual-disk ranges.
+        Its disk File rows use ``st_size`` for virtual disk capacity and
+        ``st_blocks`` for sector size, not allocated blocks. On Windows
+        clients, the report therefore counts virtual disk capacity for
+        such rows rather than the allocated size of the virtual disk.
+      - A running background refresh cannot be cancelled from the
+        console. It stops only when the Director reloads its
+        configuration or shuts down.
+
    .. limitation:: status subscriptions may account the same data multiple times
 
       In some circumstances the number of backup units determined by
@@ -1853,10 +2092,16 @@ status subscriptions
       If you back up a VM using a plugin and with a |fd| installed inside of
       the VM, that will also be accounted twice.
 
+      :bcommand:`status subscriptions` (see above) computes real
+      numbers from actual catalog file data instead of estimating, and
+      deduplicates file versions within each Client/FileSet chain, but does
+      not deduplicate overlapping files across FileSets. It has its own
+      documented limitations (see above).
+
    .. note::
-      :bcommand:`status subscriptions` report can also be obtained using |webui|
-      see :ref:`WebuiSubscription` for more information about how to generate
-      and download the report.
+      The Vue WebUI subscription page uses :bcommand:`status subscriptions
+      all` and displays the same measured/estimated and snapshot warnings.
+      Its PDF and JSON downloads include the accounting provenance.
 
 status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated

@@ -1,0 +1,248 @@
+{
+  "provenance": {
+    "emulator_pr": 2855,
+    "emulator_commit": "b2f98af6682b97b68370642a3f4e5522d24ee1bc",
+    "stat_conversion_commit": "5f1dfd5b1dd9a2ddb0921c4724ffb8835a3251e1",
+    "generated": "2026-10-07",
+    "mode": "NDMP_BAREOS",
+    "normalization": "source path prefix only; LStat unchanged"
+  },
+  "client": {
+    "name": "ndmjob",
+    "uname": ""
+  },
+  "fileset": {
+    "fileset": "ndmp-fileset",
+    "filesettext": "FileSet {\n  Name = \"ndmp-fileset\"\n  Include {\n    Options {\n      HardLinks = No\n      AclSupport = Yes\n      XattrSupport = Yes\n      Meta = \"HIST=F\"\n      Meta = \"DIRECT=N\"\n      Meta = \"UPDATE=Y\"\n      Meta = \"BUTYPE=DUMP\"\n    }\n    File = \"/ndmp-accounting/bareos\"\n  }\n}\n\n",
+    "md5": "06/Fc3YEX5/goWZjN8FHvC",
+    "createtime": "2026-10-07T07:32:34"
+  },
+  "jobs": [
+    {
+      "type": "B",
+      "level": "F",
+      "jobstatus": "T",
+      "starttime": "2026-10-07T07:32:36",
+      "endtime": "2026-10-07T07:32:37",
+      "jobtdate": 1791351157,
+      "jobfiles": 8,
+      "jobbytes": 10240,
+      "readbytes": 0,
+      "files": [
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/",
+          "name": "empty",
+          "lstat": "A A IGk A Pp Pp A A IA A Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/",
+          "name": "full",
+          "lstat": "A A IGk QB Pp Pp A QB IA D Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/",
+          "name": "",
+          "lstat": "A A EHt d Pp Pp A d IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/dir/",
+          "name": "",
+          "lstat": "A A EHt S Pp Pp A S IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/dir/",
+          "name": "file",
+          "lstat": "A A IGk Po Pp Pp A Po IA C Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/",
+          "name": "link",
+          "lstat": "A A KH/ L Pp Pp A L IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/",
+          "name": "testfile",
+          "lstat": "A A IHt B Pp Pp A B IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/",
+          "name": "testfile2",
+          "lstat": "A A IHt IA Pp Pp A IA IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/@NDMP/ndmp-accounting/",
+          "name": "bareos%0",
+          "lstat": "A A IHA A A A A -B BAA B Bqxdl0 Bqxdl0 Bqxdl0 B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        }
+      ]
+    },
+    {
+      "type": "B",
+      "level": "I",
+      "jobstatus": "T",
+      "starttime": "2026-10-07T07:32:41",
+      "endtime": "2026-10-07T07:32:42",
+      "jobtdate": 1791351162,
+      "jobfiles": 4,
+      "jobbytes": 71680,
+      "readbytes": 0,
+      "files": [
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/",
+          "name": "incremental",
+          "lstat": "A A IGk IB Pp Pp A IB IA C Bqxdl4 Bqxdl4 Bqxdl4 B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/",
+          "name": "",
+          "lstat": "A A EHt d Pp Pp A d IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/dir/",
+          "name": "",
+          "lstat": "A A EHt S Pp Pp A S IA B Bqxdlx Bqxdlx Bqxdlx B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/ndmp-accounting/bareos/sub/dir/",
+          "name": "file",
+          "lstat": "A A IGk QAB Pp Pp A QAB IA CB Bqxdl0 Bqxdl4 Bqxdl4 B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        },
+        {
+          "fileindex": 1,
+          "path": "/@NDMP/ndmp-accounting/",
+          "name": "bareos%1",
+          "lstat": "A A IHA A A A A -B BAA B Bqxdl5 Bqxdl5 Bqxdl5 B A B",
+          "md5": "0",
+          "deltaseq": 0,
+          "fhinfo": 0,
+          "fhnode": 0
+        }
+      ]
+    }
+  ],
+  "expected": [
+    {
+      "files": 5,
+      "logical_bytes": 2538,
+      "bytes": 3584,
+      "source_files": [
+        {
+          "name": "empty",
+          "size": 0
+        },
+        {
+          "name": "full",
+          "size": 1025
+        },
+        {
+          "name": "sub/dir/file",
+          "size": 1000
+        },
+        {
+          "name": "testfile",
+          "size": 1
+        },
+        {
+          "name": "testfile2",
+          "size": 512
+        }
+      ]
+    },
+    {
+      "files": 6,
+      "logical_bytes": 67588,
+      "bytes": 69632,
+      "source_files": [
+        {
+          "name": "empty",
+          "size": 0
+        },
+        {
+          "name": "full",
+          "size": 1025
+        },
+        {
+          "name": "incremental",
+          "size": 513
+        },
+        {
+          "name": "sub/dir/file",
+          "size": 65537
+        },
+        {
+          "name": "testfile",
+          "size": 1
+        },
+        {
+          "name": "testfile2",
+          "size": 512
+        }
+      ]
+    }
+  ]
+}

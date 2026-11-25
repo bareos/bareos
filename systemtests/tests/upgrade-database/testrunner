@@ -20,7 +20,60 @@ JobName=backup-bareos-fd
 export SQL_DDL_DIR="${current_test_directory}/bareos_15_db_2004_ddl"
 "${BAREOS_SCRIPTS_DIR}"/setup
 
+"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -v ON_ERROR_STOP=1 "${db_name}" <<'SQL'
+INSERT INTO JobHisto (JobId, Job, Name, Type, Level, JobStatus, JobBytes)
+VALUES (2910, 'history-before-upgrade', 'history', 'B', 'F', 'T', 512);
+SQL
+
 # use the default ddl directory with the current sql definitions
 unset SQL_DDL_DIR
 
 "${BAREOS_SCRIPTS_DIR}/update_bareos_tables" -f
+
+"${POSTGRES_BIN_PATH}/psql" --no-psqlrc -v ON_ERROR_STOP=1 "${db_name}" \
+  -v create_ddl="${BAREOS_SCRIPTS_DIR}/ddl/creates/postgresql.sql" <<'SQL'
+CREATE SCHEMA fresh_catalog;
+SET search_path = fresh_catalog;
+\i :create_ddl
+SET search_path = public;
+
+DO $check$
+DECLARE
+  upgraded_columns JSONB;
+  fresh_columns JSONB;
+BEGIN
+  SELECT jsonb_agg(jsonb_build_array(
+    attname, format_type(atttypid, atttypmod), attnotnull) ORDER BY attnum)
+    INTO upgraded_columns FROM pg_attribute
+    WHERE attrelid='public.jobhisto'::regclass
+      AND attnum > 0 AND NOT attisdropped;
+  SELECT jsonb_agg(jsonb_build_array(
+    attname, format_type(atttypid, atttypmod), attnotnull) ORDER BY attnum)
+    INTO fresh_columns FROM pg_attribute
+    WHERE attrelid='fresh_catalog.jobhisto'::regclass
+      AND attnum > 0 AND NOT attisdropped;
+  IF upgraded_columns IS DISTINCT FROM fresh_columns THEN
+    RAISE EXCEPTION 'Fresh and upgraded JobHisto schemas differ: % vs %',
+      fresh_columns, upgraded_columns;
+  END IF;
+  IF EXISTS (
+    SELECT FROM information_schema.columns WHERE table_name='jobhisto'
+      AND table_schema IN ('public', 'fresh_catalog')
+      AND column_name LIKE 'accounting%'
+  ) THEN
+    RAISE EXCEPTION 'JobHisto must not contain accounting columns';
+  END IF;
+  IF (SELECT VersionId FROM public.Version)
+      IS DISTINCT FROM (SELECT VersionId FROM fresh_catalog.Version) THEN
+    RAISE EXCEPTION 'Fresh and upgraded catalog versions differ';
+  END IF;
+  IF NOT EXISTS (
+    SELECT FROM public.JobHisto WHERE JobId=2910
+      AND Job='history-before-upgrade' AND JobBytes=512
+  ) THEN
+    RAISE EXCEPTION 'Catalog upgrade lost historical job data';
+  END IF;
+END;
+$check$;
+DROP SCHEMA fresh_catalog CASCADE;
+SQL

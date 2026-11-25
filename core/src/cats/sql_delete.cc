@@ -150,7 +150,7 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
 static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
 {
   char ed1[50];
-  struct s_del_ctx del{};
+  struct s_del_ctx del {};
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%" PRIdbid,
@@ -168,6 +168,13 @@ static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
 
   for (auto jobid : del.ids) {
     Dmsg1(400, "Delete JobId=%" PRIu32 "\n", jobid);
+    Mmsg(query,
+         "UPDATE Job accounting SET AccountingValid=FALSE WHERE EXISTS ("
+         "SELECT 1 FROM Job purged WHERE purged.JobId=%s "
+         "AND purged.ClientId=accounting.ClientId "
+         "AND purged.FileSetId=accounting.FileSetId)",
+         edit_int64(jobid, ed1));
+    mdb->SqlQuery(query.c_str());
     Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(jobid, ed1));
     mdb->SqlQuery(query.c_str());
 
@@ -208,6 +215,14 @@ void BareosDb::PurgeFiles(const char* jobids)
   }
 
   PoolMem query(PM_MESSAGE);
+
+  Mmsg(query,
+       "UPDATE Job accounting SET AccountingValid=FALSE WHERE EXISTS ("
+       "SELECT 1 FROM Job purged WHERE purged.JobId IN (%s) "
+       "AND purged.ClientId=accounting.ClientId "
+       "AND purged.FileSetId=accounting.FileSetId)",
+       jobids);
+  SqlQuery(query.c_str());
 
   Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());

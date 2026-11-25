@@ -49,9 +49,15 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  includeLoginRequired: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const visibleErrors = computed(() => (
-  (props.errors ?? []).filter(item => !isDirectorLoginRequiredError(item?.message))
+  (props.errors ?? []).filter(item => (
+    props.includeLoginRequired || !isDirectorLoginRequiredError(item?.message)
+  ))
 ))
 </script>

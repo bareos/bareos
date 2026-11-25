@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
  */
 
 #include <sys/wait.h>
+#include <chrono>
 #if !defined(HAVE_MSVC)
 #  include <unistd.h>
 #endif
@@ -213,7 +214,6 @@ int CloseBpipe(Bpipe* bpipe)
   int chldstatus = 0;
   int status = 0;
   int wait_option;
-  int remaining_wait;
   pid_t wpid = 0;
 
 
@@ -233,7 +233,8 @@ int CloseBpipe(Bpipe* bpipe)
   } else {
     wait_option = WNOHANG; /* don't hang */
   }
-  remaining_wait = bpipe->wait;
+  const auto deadline
+      = std::chrono::steady_clock::now() + std::chrono::seconds(bpipe->wait);
 
   // Wait for worker child to exit
   for (;;) {
@@ -250,9 +251,8 @@ int CloseBpipe(Bpipe* bpipe)
     }
     Dmsg3(800, "Got wpid=%d status=%d ERR=%s\n", wpid, chldstatus,
           wpid == -1 ? strerror(errno) : "none");
-    if (remaining_wait > 0) {
-      Bmicrosleep(1, 0); /* wait one second */
-      remaining_wait--;
+    if (bpipe->wait > 0 && std::chrono::steady_clock::now() < deadline) {
+      Bmicrosleep(0, 10000);
     } else {
       status = ETIME; /* set error status */
       wpid = -1;

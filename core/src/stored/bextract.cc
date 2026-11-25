@@ -40,6 +40,7 @@
 #include "stored/butil.h"
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
+#include "stored/attribute_dedup.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "findlib/find.h"
@@ -88,6 +89,10 @@ static int win32_data_msg = 0;
 static AclData acl_data;
 static XattrData xattr_data;
 static alist<DelayedDataStream*>* delayed_streams = nullptr;
+
+/* A corrected-attributes resend arrives after the file was already
+ * extracted; re-processing it would truncate the extracted file. */
+static AttributeResendFilter resend_filter;
 
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
@@ -525,6 +530,12 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
         ClosePreviousStream();
         extract = false;
+      }
+
+      if (resend_filter.IsResend(rec)) {
+        Dmsg1(100, "Ignoring corrected attributes for FileIndex=%d\n",
+              rec->FileIndex);
+        break;
       }
 
       if (!UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
