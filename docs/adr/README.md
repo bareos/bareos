@@ -24,6 +24,9 @@ number so the ADR appears in the Developer Guide.
 ### Accepting an ADR
 When an ADR had been discussed and agreed upon, its *Status* will be changed to **accepted**. If the ADR isn't numbered yet, a number must be assigned and the name of the file must be updated.
 Please double-check that the filename still matches the title of your ADR, because the title might have been changed during discussion.
+If the ADR filename changes, rename its matching Developer Guide page under
+`docs/manuals/source/DeveloperGuide/adr`, update the page's `mdinclude::` path,
+and update its title and target in that directory's `index.rst` to match.
 The changes applied during this process should again result in an individual commit to your Git branch and the ADR will be published when your branch is merged into the default branch.
 
 ### Changing an accepted ADR
