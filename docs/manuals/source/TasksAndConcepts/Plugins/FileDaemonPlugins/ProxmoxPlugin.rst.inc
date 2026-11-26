@@ -41,9 +41,11 @@ the |proxmox ve| cluster members.
 ================== ========================
 Proxmox VE Version Bareos Repository to use
 ================== ========================
-8.x                Debian_12
 9.x                Debian_13
 ================== ========================
+
+Current packages are not provided for Proxmox VE 8.x (Debian 12).
+Older Bareos releases may still provide them.
 
 Then install the package **bareos-filedaemon-proxmox-plugin** (using :command:`apt`)
 on one of the |proxmox ve| cluster members. This will automatically also

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,8 @@ if(VZDUMP
    AND QMRESTORE
    AND TARGET python3-fd
    AND ENABLE_PROXMOX_PLUGIN
+   AND BAREOS_PLATFORM STREQUAL debian
+   AND DIST_VERSION_ID GREATER_EQUAL 13
 )
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
