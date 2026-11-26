@@ -147,6 +147,17 @@ endif()
 install(CODE "${WEBUI_VUE_INSTALL_CODE}" COMPONENT webui-vue)
 
 install(
+  FILES install/bareos/bareos-dir.d/console/admin.conf.example
+  DESTINATION ${configtemplatedir}/bareos-dir.d/console/
+  COMPONENT webui-vue
+)
+install(
+  FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
+  DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
+  COMPONENT webui-vue
+)
+
+install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf
   DESTINATION ${HTTPD_CONF}/
   COMPONENT webui-vue

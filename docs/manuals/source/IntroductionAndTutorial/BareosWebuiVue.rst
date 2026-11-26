@@ -87,6 +87,14 @@ To use it successfully, ensure that:
   Apache
 * suitable Bareos Director console credentials exist
 
+The Vue package includes example Director console and limited profile
+resources in :file:`/usr/lib/bareos/defaultconfigs/bareos-dir.d/`.
+To use the console example, copy it to
+:file:`/etc/bareos/bareos-dir.d/console/admin.conf` without overwriting an
+existing resource, replace the password placeholder with a unique, strong
+password, and reload the Director.
+The example uses the Director's default TLS-PSK settings.
+
 HTTPS configuration
 -------------------
 
@@ -110,6 +118,8 @@ Upgrading from Bareos 25
 
 For package migration and upgrade instructions, see
 :ref:`section-WebuiMigration26`.
+If the PHP WebUI is installed, upgrade it together with the Vue package so
+the package manager can transfer ownership of the example configuration files.
 
 Configuring multiple directors
 ------------------------------

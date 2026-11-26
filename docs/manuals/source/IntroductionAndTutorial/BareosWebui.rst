@@ -153,8 +153,6 @@ This assumes, |dir| and |webui| are installed on the same host.
 
    Of course, you can choose other names and passwords. For details, see :ref:`section-webui-console`.
 
-   Or rename :file:`/etc/bareos/bareos-dir.d/console/admin.conf.example` to `.conf` and reload |dir| configuration.
-
 #. Login to http://HOSTNAME/bareos-webui with username and password as created.
 
 

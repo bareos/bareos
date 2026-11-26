@@ -662,6 +662,7 @@ Provides:      bareos-webui = %{version}-%{release}
 Obsoletes:     bareos-webui < 25.1.3~pre25
 Provides:      bareos-webui-new = %{version}-%{release}
 Obsoletes:     bareos-webui-new < 26~
+Conflicts:     bareos-webui-php < %{version}-%{release}
 Requires:      %{name}-webui-proxy = %{version}
 %if 0%{?suse_version}
 Requires:      apache2
@@ -1046,8 +1047,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %doc webui/tests/selenium
 %{_datadir}/%{name}-webui/
 %dir /etc/bareos-webui
-%{configtemplatedir}/bareos-dir.d/console/admin.conf.example
-%{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
@@ -1056,6 +1055,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-,root,root,-)
 %doc webui-vue/tests/selenium
 %{_datadir}/%{name}-webui-vue/
+%{configtemplatedir}/bareos-dir.d/console/admin.conf.example
+%{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
 %config(noreplace) %{_apache_conf_dir}/bareos-webui-vue.conf
 
 %files webui-proxy

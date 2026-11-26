@@ -467,6 +467,10 @@ configuration and access to the PHP WebUI before removing legacy
 packages. Explicitly select :file:`bareos-webui-vue` too if both interfaces
 are wanted. This route does not install the Bareos 25 compatibility package.
 
+Some early Bareos 26 prereleases also shipped the PHP WebUI as
+:file:`bareos-webui`. The same direct-upgrade guidance applies to these
+prereleases.
+
 Existing Vue preview installations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -173,11 +173,9 @@ Resource file conventions
 
       -  :file:`CONFIGDIR/COMPONENT.d/RESOURCE/NAME.conf.example`
 
-      -  For example, the |webui| entails one config resource and one config resource example for the |dir|:
+      -  For example, the Vue WebUI package contains a |dir| console example in the template configuration directory:
 
-         -  :file:`CONFIGDIR/bareos-director.d/profile/webui-admin.conf`
-
-         -  :file:`CONFIGDIR/bareos-director.d/console/admin.conf.example`
+         -  :file:`/usr/lib/bareos/defaultconfigs/bareos-dir.d/console/admin.conf.example`
 
 -  .. _section-deleteConfigurationResourceFiles:
 

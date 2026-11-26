@@ -132,12 +132,6 @@ if(NOT client-only)
           DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
   )
 
-  install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
-          DESTINATION ${configtemplatedir}/bareos-dir.d/console/
-  )
-  install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
-          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
-  )
   install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
 
   install(FILES install/directors.ini DESTINATION ${webuiconfdir})
