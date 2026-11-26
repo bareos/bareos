@@ -214,3 +214,20 @@ Note that parents may still inspect their children, so  “gdb bareos-dir” sho
       :caption: To enable debugging running programs permanently, as root do:
 
       echo kernel.yama.ptrace_scope = 0 > /etc/sysctl.d/10-ptrace.conf
+
+
+.. warning::
+
+   If you keep debuginfo packages installed, keep them in sync with the binaries' versions during update.
+   When using the package manager :command:`dnf` use one of these methods:
+
+   - enable permanently bareos-debuginfo repository by setting ``enabled=1`` in :file:`/etc/yum.repos.d/bareos.repo`
+   - enable autoupdate (dnf 4 only) by setting ``autoupdate=1`` in :file:`/etc/dnf/plugins/debuginfo-install.conf`
+   - enable on each update
+
+     .. code-block:: shell-session
+
+        dnf --enablerepo=bareos-debuginfo update
+
+   Note if you run our helper :file:`add_bareos_repositories.sh` the repo will be replaced and set disabled by default.
+
