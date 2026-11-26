@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# bareos-check-sources:disable-copyright-check
 """
 Bareos QMP Backup NBD Server Module
 
@@ -38,13 +39,15 @@ import nbd
 
 logger = logging.getLogger(__package__)
 
+
 class AbortedNegotiationError(IOError):
     pass
 
+
 WRITE_TIMEOUT = 10
 
-BCHUNK_MAGIC = 0x4b4e5842
-HEADER_FORMAT = '<LHHQQ'
+BCHUNK_MAGIC = 0x4B4E5842
+HEADER_FORMAT = "<LHHQQ"
 BCHUNK_OP_DATA = 1
 BCHUNK_OP_ZEROES = 12
 
@@ -53,6 +56,7 @@ BASE_CONTEXT = "base:allocation"
 NBD_STATE_HOLE = 1 << 0
 NBD_STATE_ZERO = 1 << 1
 QEMU_STATE_DIRTY = 1 << 0
+
 
 class BackingStore:
     """
@@ -74,20 +78,24 @@ class BackingStore:
         self.path = path + "/bqmp-{:02d}.bchunks"
         self.serial = 0
         self.file = None
-        self.exports = exports # array of (name, size in bytes) tuples
+        self.exports = exports  # array of (name, size in bytes) tuples
         self.size = 0
         self.check_path()
-        logger.debug("backing store initialized at {}, {} items found.".format(self.dir, self.size))
+        logger.debug(
+            "backing store initialized at {}, {} items found.".format(
+                self.dir, self.size
+            )
+        )
 
     # check if there already are chunk files
     def check_path(self):
-        chunkfiles = glob.glob(self.dir + "/bqmp-*.bchunks") 
+        chunkfiles = glob.glob(self.dir + "/bqmp-*.bchunks")
         self.size = len(chunkfiles)
         self.serial = self.size
 
     # remove any chunk files
     def zap(self):
-        chunkfiles = glob.glob(self.dir + "/bqmp-*.bchunks") 
+        chunkfiles = glob.glob(self.dir + "/bqmp-*.bchunks")
         for f in chunkfiles:
             os.remove(f)
         self.size = 0
@@ -100,7 +108,7 @@ class BackingStore:
         self.serial += 1
         filename = self.get_filename()
         self.file = open(filename, self.mode)
-        logger.debug("opened",filename)
+        logger.debug("opened", filename)
 
     # move back to first chunk file
     def reset(self):
@@ -118,14 +126,16 @@ class BackingStore:
             self.file = None
 
     def write(self, index, offset, data):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_DATA, index, offset, len(data))
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_DATA, index, offset, len(data)
+        )
         self.file.write(header_data)
         self.file.write(data)
 
     def zero(self, index, offset, length):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_ZEROES, index, offset, length)
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_ZEROES, index, offset, length
+        )
         self.file.write(header_data)
 
     async def init_async(self):
@@ -181,6 +191,7 @@ class StdoutBackingStore(BackingStore):
     stream to stdout from incoming NBD writes.
     Used for backups.
     """
+
     def __init__(self, exports):
         self.mode = "wb"
         self.exports = exports
@@ -188,7 +199,7 @@ class StdoutBackingStore(BackingStore):
 
     # move to next chunk file
     def next(self):
-        self.file = io.open(sys.stdout.fileno(), 'wb', closefd=False)
+        self.file = io.open(sys.stdout.fileno(), "wb", closefd=False)
 
     def close(self):
         pass
@@ -198,8 +209,8 @@ class StdoutBackingStore(BackingStore):
 
 
 class StdinBackingStore(BackingStore):
-    """ This BackingStore class will read a bchunks stream
-        from stdin. Used for restores.
+    """This BackingStore class will read a bchunks stream
+    from stdin. Used for restores.
     """
 
     def __init__(self, exports):
@@ -210,7 +221,7 @@ class StdinBackingStore(BackingStore):
 
     # move to next chunk file
     def next(self):
-        self.file = io.open(sys.stdin.fileno(), 'rb', closefd=False)
+        self.file = io.open(sys.stdin.fileno(), "rb", closefd=False)
 
     def close(self):
         pass
@@ -244,9 +255,10 @@ class AsyncBufferedPipe:
     async def _consumer_task(self):
         loop = asyncio.get_running_loop()
         transport, protocol = await loop.connect_write_pipe(
-            asyncio.Protocol, self.output)
+            asyncio.Protocol, self.output
+        )
         high = 16 * 1024 * 1024
-        low  = 4 * 1024 * 1024
+        low = 4 * 1024 * 1024
         transport.set_write_buffer_limits(high=high, low=low)
         writer = transport
         try:
@@ -280,11 +292,12 @@ class AsyncBufferedBackingStore(StdoutBackingStore):
     writes.
     Used for backups.
     """
+
     def __init__(self, exports):
         self.mode = "wb"
         self.exports = exports
         self.max_buffers = 10
-        self.file = io.open(sys.stdout.fileno(), 'wb', closefd=False)
+        self.file = io.open(sys.stdout.fileno(), "wb", closefd=False)
         self.pipe = AsyncBufferedPipe(self.max_buffers, self.file)
         self.lock = asyncio.Lock()
 
@@ -295,15 +308,17 @@ class AsyncBufferedBackingStore(StdoutBackingStore):
         await self.pipe.close()
 
     async def write_async(self, index, offset, data):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_DATA, index, offset, len(data))
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_DATA, index, offset, len(data)
+        )
         async with self.lock:
             await self.pipe.write(header_data)
             await self.pipe.write(data)
 
     async def zero_async(self, index, offset, length):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_ZEROES, index, offset, length)
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_ZEROES, index, offset, length
+        )
         async with self.lock:
             await self.pipe.write(header_data)
 
@@ -314,22 +329,24 @@ class AsyncBackingStore(StdoutBackingStore):
     that uses asyncio writes.
     Used for backups.
     """
+
     def __init__(self, exports):
         self.mode = "wb"
         self.exports = exports
         self.max_buffers = 10
         self.file = None
         self.writer = None
-        #self.lock = asyncio.Lock()
+        # self.lock = asyncio.Lock()
         self.write_count = 0
 
     async def init_async(self):
         loop = asyncio.get_running_loop()
         transport, protocol = await loop.connect_write_pipe(
             lambda: asyncio.StreamReaderProtocol(asyncio.StreamReader()),
-            sys.stdout.buffer)
+            sys.stdout.buffer,
+        )
         high = 128 * 1024 * 1024
-        low  = 4 * 1024 * 1024
+        low = 4 * 1024 * 1024
         transport.set_write_buffer_limits(high=high, low=low)
         self.writer = asyncio.StreamWriter(transport, protocol, None, loop)
 
@@ -338,8 +355,9 @@ class AsyncBackingStore(StdoutBackingStore):
         await self.writer.wait_closed()
 
     async def write_async(self, index, offset, data):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_DATA, index, offset, len(data))
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_DATA, index, offset, len(data)
+        )
         self.writer.write(header_data)
         self.writer.write(data)
         await self._drain()
@@ -351,8 +369,9 @@ class AsyncBackingStore(StdoutBackingStore):
             self.write_count = 0
 
     async def zero_async(self, index, offset, length):
-        header_data = struct.pack(HEADER_FORMAT, BCHUNK_MAGIC,
-            BCHUNK_OP_ZEROES, index, offset, length)
+        header_data = struct.pack(
+            HEADER_FORMAT, BCHUNK_MAGIC, BCHUNK_OP_ZEROES, index, offset, length
+        )
         self.writer.write(header_data)
         await self._drain()
 
@@ -364,7 +383,7 @@ class NbdServer:
 
     # NBD's magic
     NBD_HANDSHAKE = 0x49484156454F5054
-    NBD_REPLY = 0x3e889045565a9
+    NBD_REPLY = 0x3E889045565A9
 
     NBD_REQUEST = 0x25609513
     NBD_RESPONSE = 0x67446698
@@ -384,12 +403,12 @@ class NbdServer:
     NBD_CMD_WRITE_ZEROES = 6
 
     # fixed newstyle handshake
-    NBD_HANDSHAKE_FLAGS = (1 << 0)
+    NBD_HANDSHAKE_FLAGS = 1 << 0
 
     # has flags, supports flush
     NBD_EXPORT_FLAGS = (1 << 0) ^ (1 << 2)
-    NBD_RO_FLAG = (1 << 1)
-    NBD_FLAG_SEND_WRITE_ZEROES = (1 << 6)
+    NBD_RO_FLAG = 1 << 1
+    NBD_FLAG_SEND_WRITE_ZEROES = 1 << 6
 
     def __init__(self, addr, port, backing_store):
         global logger
@@ -404,21 +423,23 @@ class NbdServer:
         self.task = None
 
     async def nbd_response(self, writer, handle, error=0, data=None):
-        writer.write(struct.pack('>LLQ', self.NBD_RESPONSE, error, handle))
+        writer.write(struct.pack(">LLQ", self.NBD_RESPONSE, error, handle))
         if data:
             writer.write(data)
         await writer.drain()
-
 
     async def handler(self, reader, writer):
         """Handle the connection"""
         try:
             host, port = writer.get_extra_info("peername")
             store, container = None, None
-            self.log.info("Incoming connection from %s:%s" % (host,port))
+            self.log.info("Incoming connection from %s:%s" % (host, port))
 
             # initial handshake
-            writer.write(b"NBDMAGIC" + struct.pack(">QH", self.NBD_HANDSHAKE, self.NBD_HANDSHAKE_FLAGS))
+            writer.write(
+                b"NBDMAGIC"
+                + struct.pack(">QH", self.NBD_HANDSHAKE, self.NBD_HANDSHAKE_FLAGS)
+            )
             await writer.drain()
 
             data = await reader.readexactly(4)
@@ -440,7 +461,7 @@ class NbdServer:
             while True:
                 header = await reader.readexactly(16)
                 try:
-                    (magic, opt, length) = struct.unpack(">QLL", header)
+                    magic, opt, length = struct.unpack(">QLL", header)
                 except struct.error as ex:
                     raise IOError("Negotiation failed: Invalid request, disconnecting")
 
@@ -449,12 +470,14 @@ class NbdServer:
 
                 if length:
                     data = await reader.readexactly(length)
-                    if(len(data) != length):
+                    if len(data) != length:
                         raise IOError("Negotiation failed: %s bytes expected" % length)
                 else:
                     data = None
 
-                self.log.debug("[%s:%s]: opt=%s, len=%s, data=%s" % (host, port, opt, length, data))
+                self.log.debug(
+                    "[%s:%s]: opt=%s, len=%s, data=%s" % (host, port, opt, length, data)
+                )
 
                 if opt == self.NBD_OPT_EXPORTNAME:
                     if not data:
@@ -470,7 +493,7 @@ class NbdServer:
                     # find the index of the selected export name
                     index = 0
                     size = -1
-                    for name, sizebytes  in store.exports:
+                    for name, sizebytes in store.exports:
                         if name == data:
                             size = sizebytes
                             break
@@ -480,7 +503,11 @@ class NbdServer:
                         if not fixed:
                             raise IOError("Negotiation failed: unknown export name")
 
-                        writer.write(struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ERR_UNSUP, 0))
+                        writer.write(
+                            struct.pack(
+                                ">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ERR_UNSUP, 0
+                            )
+                        )
                         await writer.drain()
                         continue
 
@@ -489,27 +516,41 @@ class NbdServer:
                         export_flags |= self.NBD_FLAG_SEND_WRITE_ZEROES
                     if False:
                         export_flags ^= self.NBD_RO_FLAG
-                        self.log.info("[%s:%s] %s is read only" % (host, port, "store.container"))
+                        self.log.info(
+                            "[%s:%s] %s is read only" % (host, port, "store.container")
+                        )
 
-                    writer.write(struct.pack('>QH', size, export_flags))
-                    writer.write(b"\x00"*124)
+                    writer.write(struct.pack(">QH", size, export_flags))
+                    writer.write(b"\x00" * 124)
                     await writer.drain()
 
                     break
 
                 elif opt == self.NBD_OPT_LIST:
                     for container, size in self.backing_store.exports:
-                        writer.write(struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_SERVER, len(container) + 4))
+                        writer.write(
+                            struct.pack(
+                                ">QLLL",
+                                self.NBD_REPLY,
+                                opt,
+                                self.NBD_REP_SERVER,
+                                len(container) + 4,
+                            )
+                        )
                         container_encoded = container.encode("utf-8")
                         writer.write(struct.pack(">L", len(container_encoded)))
                         writer.write(container_encoded)
                         await writer.drain()
 
-                    writer.write(struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ACK, 0))
+                    writer.write(
+                        struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ACK, 0)
+                    )
                     await writer.drain()
 
                 elif opt == self.NBD_OPT_ABORT:
-                    writer.write(struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ACK, 0))
+                    writer.write(
+                        struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ACK, 0)
+                    )
                     await writer.drain()
 
                     raise AbortedNegotiationError()
@@ -518,14 +559,20 @@ class NbdServer:
                     if not fixed:
                         raise IOError("Unsupported option")
 
-                    writer.write(struct.pack(">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ERR_UNSUP, 0))
+                    writer.write(
+                        struct.pack(
+                            ">QLLL", self.NBD_REPLY, opt, self.NBD_REP_ERR_UNSUP, 0
+                        )
+                    )
                     await writer.drain()
 
             # operation phase
             while True:
                 header = await reader.readexactly(28)
                 try:
-                    (magic, cmdflags, cmd, handle, offset, length) = struct.unpack(">LhhQQL", header)
+                    magic, cmdflags, cmd, handle, offset, length = struct.unpack(
+                        ">LhhQQL", header
+                    )
                 except struct.error:
                     raise IOError("Invalid request, disconnecting")
                 self.stats_cmds += 1
@@ -533,7 +580,10 @@ class NbdServer:
                 if magic != self.NBD_REQUEST:
                     raise IOError("Bad magic number, disconnecting")
 
-                self.log.debug("[%s:%s]: cmd=%s, handle=%s, offset=%s, len=%s" % (host, port, cmd, handle, offset, length))
+                self.log.debug(
+                    "[%s:%s]: cmd=%s, handle=%s, offset=%s, len=%s"
+                    % (host, port, cmd, handle, offset, length)
+                )
 
                 if cmd == self.NBD_CMD_DISC:
                     self.log.info("[%s:%s] disconnecting" % (host, port))
@@ -541,12 +591,12 @@ class NbdServer:
 
                 elif cmd == self.NBD_CMD_WRITE:
                     data = await reader.readexactly(length)
-                    if(len(data) != length):
+                    if len(data) != length:
                         raise IOError("%s bytes expected, disconnecting" % length)
 
                     try:
                         # skip all-zero chunks
-                        #if data == b"\x00" * len(data):
+                        # if data == b"\x00" * len(data):
                         #    await store.zero_async(index, offset, length)
                         await store.write_async(index, offset, data)
                         self.stats_bytes += len(data)
@@ -575,7 +625,9 @@ class NbdServer:
                     await self.nbd_response(writer, handle)
 
                 else:
-                    self.log.warning("[%s:%s] Unknown cmd %s, disconnecting" % (host, port, cmd))
+                    self.log.warning(
+                        "[%s:%s] Unknown cmd %s, disconnecting" % (host, port, cmd)
+                    )
                     break
 
         except AbortedNegotiationError:
@@ -586,7 +638,10 @@ class NbdServer:
 
         finally:
             writer.close()
-            self.log.info("[%s:%s] Stats: %d commands, %d bytes" % (host, port, self.stats_cmds, self.stats_bytes))
+            self.log.info(
+                "[%s:%s] Stats: %d commands, %d bytes"
+                % (host, port, self.stats_cmds, self.stats_bytes)
+            )
             self.stats_cmds = 0
             self.stats_bytes = 0
 
@@ -610,9 +665,9 @@ class NbdServer:
 
 
 async def run_nbd_server(path, export, ipaddr, port):
-        backing_store = BackingStore(path, export)
-        server = NbdServer(ipaddr, int(port), backing_store)
-        await server.serve_forever()
+    backing_store = BackingStore(path, export)
+    server = NbdServer(ipaddr, int(port), backing_store)
+    await server.serve_forever()
 
 
 def nbd_write(target, offset, data, length):
@@ -642,7 +697,7 @@ def restore_to_nbd(path, exports, count, ipaddr, port):
     for a in range(0, count):
         backing_store.dump(nbdconns, nbd_write)
 
-    backing_store.close() 
+    backing_store.close()
 
     nbdconn.shutdown()
 
@@ -652,7 +707,9 @@ def log(s):
     sys.stderr.flush()
 
 
-def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incremental=False):
+def read_nbd_image(
+    drv_index, export, nbd_addr, bitmap_name, backing_store, incremental=False
+):
     has_dirty = False
     has_alloc = False
     dirty_context = DIRTY_CONTEXT + bitmap_name
@@ -667,7 +724,7 @@ def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incr
     has_dirty = nbdconn.can_meta_context(dirty_context)
     has_alloc = nbdconn.can_meta_context(BASE_CONTEXT)
     disk_size = nbdconn.get_size()
-    #log(f"connected to {export}, reported size {disk_size}, expected size {export[1]}")
+    # log(f"connected to {export}, reported size {disk_size}, expected size {export[1]}")
 
     offset = 0
     QUERY_STEP = 1 * 1024 * 1024 * 1024
@@ -686,14 +743,14 @@ def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incr
 
             descr = ""
             if metacontext == BASE_CONTEXT:
-                #if is_zero:
+                # if is_zero:
                 #    descr += "Z"
-                #log(f"BASE_CONTEXT {curr} {length} {flags} {descr}")
+                # log(f"BASE_CONTEXT {curr} {length} {flags} {descr}")
                 block_map[curr] = (length, flags)
             elif metacontext == dirty_context:
-                #if is_dirty:
+                # if is_dirty:
                 #    descr += "D"
-                #log(f"DIRTY_CONTEXT {curr} {length} {flags} {descr}")
+                # log(f"DIRTY_CONTEXT {curr} {length} {flags} {descr}")
                 dirty_map[curr] = (length, flags)
             curr += length
 
@@ -713,8 +770,9 @@ def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incr
 
         while subrange_offset < subrange_end:
             if has_alloc:
-                alloc_length, alloc_flags = find_alloc_at(block_map,
-                        subrange_offset, subrange_end)
+                alloc_length, alloc_flags = find_alloc_at(
+                    block_map, subrange_offset, subrange_end
+                )
             else:
                 alloc_length, alloc_flags = (subrange_end - subrange_offset), 0
 
@@ -723,7 +781,9 @@ def read_nbd_image(drv_index, export, nbd_addr, bitmap_name, backing_store, incr
             if is_zero:
                 backing_store.zero(drv_index, subrange_offset, alloc_length)
             else:
-                read_nbd_range(nbdconn, subrange_offset, alloc_length, drv_index, backing_store)
+                read_nbd_range(
+                    nbdconn, subrange_offset, alloc_length, drv_index, backing_store
+                )
             subrange_offset += alloc_length
 
     nbdconn.shutdown()
@@ -752,7 +812,7 @@ def read_nbd_range(nbdconn, offset, length, drv_index, backing_store):
 
 async def test2():
     testdata = b"A" * 1024 * 1024
-    exports = ( "Test", 10000 )
+    exports = ("Test", 10000)
     store = AsyncBackingStore(exports)
     print("1")
     await store.init_async()
@@ -760,6 +820,7 @@ async def test2():
         await store.write_async(0, i * len(testdata), testdata)
     await store.close_async()
     print("2")
+
 
 if __name__ == "__main__":
     asyncio.run(test2())

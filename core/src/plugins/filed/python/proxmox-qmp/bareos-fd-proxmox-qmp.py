@@ -32,7 +32,16 @@ import time
 import datetime
 import tempfile
 from os import read, close, pipe, O_NONBLOCK
-from fcntl import fcntl, F_SETPIPE_SZ, F_GETFL, F_SETFL, flock, LOCK_SH, LOCK_EX, LOCK_UN
+from fcntl import (
+    fcntl,
+    F_SETPIPE_SZ,
+    F_GETFL,
+    F_SETFL,
+    flock,
+    LOCK_SH,
+    LOCK_EX,
+    LOCK_UN,
+)
 from select import poll, POLLIN
 
 from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
@@ -41,8 +50,9 @@ import BareosFdPluginBaseclass  # pylint: disable=import-error
 
 lockfile = "/var/lib/bareos/bqmp.state"
 
+
 def read_ports(f):
-    ports = [ i.strip() for i in f.readlines() ]
+    ports = [i.strip() for i in f.readlines()]
     return ports
 
 
@@ -57,9 +67,9 @@ def acquire_port(start_port):
     port = int(start_port)
     try:
         with open(lockfile, "x") as f:
-            write_ports(f, [ str(port) ])
+            write_ports(f, [str(port)])
     except FileExistsError:
-        with open(lockfile,"r+") as f:
+        with open(lockfile, "r+") as f:
             flock(f, LOCK_EX)
             try:
                 ports = read_ports(f)
@@ -76,7 +86,7 @@ def acquire_port(start_port):
 
 
 def release_port(port):
-    with open(lockfile,"r+") as f:
+    with open(lockfile, "r+") as f:
         flock(f, LOCK_EX)
         try:
             ports = read_ports(f)
@@ -125,7 +135,7 @@ class PVEStorageConfig:
 
     def _activate_lv(self, path):
         if not os.path.exists(path):
-            subprocess.run([ "/usr/sbin/lvchange", "-ay", path ])
+            subprocess.run(["/usr/sbin/lvchange", "-ay", path])
 
     def _guess_qsd_driver(self, path):
         if path.startswith("/dev/"):
@@ -145,12 +155,13 @@ class PVEStorageConfig:
         full_path = self._get_full_path(storage_type, storage_path)
         back_driver, front_driver = self._guess_qsd_driver(full_path)
         args = [
-                "--blockdev",
-                f"driver={back_driver},node-name=file_{node_name},filename={full_path},cache.direct=on",
-                "--blockdev",
-                f"driver={front_driver},node-name={node_name},file=file_{node_name}",
-                "--export", f"type=nbd,id={export_name},node-name={node_name},name={export_name},writable=on"
-               ]
+            "--blockdev",
+            f"driver={back_driver},node-name=file_{node_name},filename={full_path},cache.direct=on",
+            "--blockdev",
+            f"driver={front_driver},node-name={node_name},file=file_{node_name}",
+            "--export",
+            f"type=nbd,id={export_name},node-name={node_name},name={export_name},writable=on",
+        ]
         return args
 
 
@@ -160,8 +171,9 @@ def parse_vol_size_gb(s):
     else:
         return 1
 
+
 def parse_vol_size_bytes(sizespec):
-    s  = sizespec
+    s = sizespec
 
     if s.isdigit():
         return int(s)
@@ -191,7 +203,7 @@ def parse_vol_size_bytes(sizespec):
 
 def parse_volume_name(volname):
     parts = volname.split(":")
-    if len(parts)!=2:
+    if len(parts) != 2:
         return (None, None)
 
     if "qcow2" in parts[1]:
@@ -205,9 +217,9 @@ def parse_volume_name(volname):
 def run_command(cmd):
     bareosfd.DebugMessage(10, f"running command {cmd}\n")
 
-    output = subprocess.run(cmd,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        shell=True, check=False).stdout.decode("utf8")
+    output = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=False
+    ).stdout.decode("utf8")
 
     bareosfd.DebugMessage(20, f"command output: {output}\n")
     return output
@@ -217,7 +229,7 @@ def get_vol_size_bytes(storageparams):
     volsize = -1
     for opt in storageparams.split(","):
         if opt.startswith("size="):
-            volsize = parse_vol_size_bytes(opt[len("size="):])
+            volsize = parse_vol_size_bytes(opt[len("size=") :])
     return volsize
 
 
@@ -230,7 +242,7 @@ def get_vol_storage(storageparams):
 def create_volume(vmid, disk, volspec):
     volsize = 0
     iothread = 0
-    parts = volspec.split(",",1)
+    parts = volspec.split(",", 1)
     storageparams = parts[1]
     volname = parts.pop(0)
     storagename, storageformat = parse_volume_name(volname)
@@ -238,14 +250,14 @@ def create_volume(vmid, disk, volspec):
 
     for opt in storageparams.split(","):
         if opt.startswith("size="):
-            volsize = parse_vol_size_gb(opt[len("size="):])
+            volsize = parse_vol_size_gb(opt[len("size=") :])
 
     cmd = f"qm set {vmid} --{disk} {storagename}:{volsize},format={storageformat},{storageparams}"
     output = run_command(cmd)
 
 
 class VMConfig:
-    """ represents PVE configuration files"""
+    """represents PVE configuration files"""
 
     def __init__(self):
         self.lines = []
@@ -256,7 +268,7 @@ class VMConfig:
         return f"/etc/pve/qemu-server/{self.guestid}.conf"
 
     def parse_from_str(self, confdata):
-        self.lines = [ l + "\n" for l in confdata.split("\n") ]
+        self.lines = [l + "\n" for l in confdata.split("\n")]
 
     def parse(self, filename):
         with open(filename, "r") as f:
@@ -280,7 +292,7 @@ class VMConfig:
         search = key.strip() + ":"
         i = 0
         for l in self.lines:
-            if l.startswith('['):
+            if l.startswith("["):
                 break
             if l.startswith(search):
                 return i
@@ -288,7 +300,7 @@ class VMConfig:
         return -1
 
     def _split(self, line):
-        return [ s.strip() for s in line.split(":",1) ]
+        return [s.strip() for s in line.split(":", 1)]
 
     def get(self, key):
         i = self._find_line(key)
@@ -312,7 +324,7 @@ class VMConfig:
     def get_multi(self, key):
         result = []
         for l in self.lines:
-            if l.startswith('['):
+            if l.startswith("["):
                 break
             if l.startswith(key):
                 if l[len(key)].isdigit():
@@ -321,6 +333,7 @@ class VMConfig:
 
     def as_str(self):
         return "".join(self.lines)
+
 
 class LogPipe:
     """special Pipe object to capture log output from subprocess.Popen()"""
@@ -527,7 +540,8 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if chr(self.level) not in "FI ":
             bareosfd.DebugMessage(10, f"unsupported level: {self.level}\n")
             bareosfd.JobMessage(
-                bareosfd.M_FATAL, "Only Full and Incremental backups are currently supported\n"
+                bareosfd.M_FATAL,
+                "Only Full and Incremental backups are currently supported\n",
             )
             return bareosfd.bRC_Error
 
@@ -554,7 +568,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         guest = str(self.options.guestid)
 
-        if op in [ "restore", "toimage" ]:
+        if op in ["restore", "toimage"]:
             disk_args = []
             if self.options.restoretodisk:
                 imgrestore_path = self.options.restorepath
@@ -575,12 +589,16 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             qgapath = "none"
 
         return (
-            "/usr/lib/bareos/plugins/bqmp.py",
-            op, qmppath, qgapath,
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "bareos_proxmox_qmp.py"
+            ),
+            op,
+            qmppath,
+            qgapath,
             ",".join(disk_args),
             "-",
             imgrestore_path,
-            self.options.snapshotpath
+            self.options.snapshotpath,
         )
 
     def _read_vm_config(self):
@@ -591,18 +609,18 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def _get_vm_disk_devices(self, vmconf):
         result = []
 
-        device_types = [ "scsi", "virtio", "efidisk", "ide", "sata" ]
+        device_types = ["scsi", "virtio", "efidisk", "ide", "sata"]
         devices = []
         for d in device_types:
             devices.extend(vmconf.get_multi(d))
         if devices is not None:
             for devname, devparams in devices:
                 if not "media=cdrom" in devparams:
-                   result.append((devname, devparams)) 
+                    result.append((devname, devparams))
         return result
 
     def _get_vm_disk_names(self, vmconf):
-        return [ name for name, _ in self._get_vm_disk_devices(vmconf) ]
+        return [name for name, _ in self._get_vm_disk_devices(vmconf)]
 
     def _set_vm_disk_names(self):
         self.disk_names = self._get_vm_disk_names(self.vmconfig)
@@ -642,14 +660,16 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self._stop_vm()
                 self.vm_was_running = True
             # restore vm config file
-            #self.vmconfig.save_by_id(self.options.guestid)
+            # self.vmconfig.save_by_id(self.options.guestid)
             self._lock_vm()
             return
 
-        bareosfd.DebugMessage(100,
-            f"vm {self.options.guestid} does not exist, creating it\n")
-        bareosfd.JobMessage(bareosfd.M_INFO,
-            f"vm {self.options.guestid} does not exist, creating it\n")
+        bareosfd.DebugMessage(
+            100, f"vm {self.options.guestid} does not exist, creating it\n"
+        )
+        bareosfd.JobMessage(
+            bareosfd.M_INFO, f"vm {self.options.guestid} does not exist, creating it\n"
+        )
 
         # config file does not exist, so we recreate it
         # from the restore object,
@@ -663,13 +683,12 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.vmconfig.remove(device)
 
         self.vmconfig.save_by_id(self.options.guestid)
-        time.sleep(1) # give pve time to recognize the file
+        time.sleep(1)  # give pve time to recognize the file
 
         # then we recreate the disks, which adds
         # them to the configuration file again
         for device, volspec in devices:
-            bareosfd.DebugMessage(100,
-                f"creating empty volume {device} {volspec}\n")
+            bareosfd.DebugMessage(100, f"creating empty volume {device} {volspec}\n")
             create_volume(self.options.guestid, device, volspec)
 
         # read back vm config with created volumes
@@ -692,8 +711,9 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.object_index = 0
         savepkt.statp = bareosfd.StatPacket()
 
-        bareosfd.DebugMessage(100,
-            f"creating restore object {savepkt.fname} from {self.conffile}\n")
+        bareosfd.DebugMessage(
+            100, f"creating restore object {savepkt.fname} from {self.conffile}\n"
+        )
 
         return bareosfd.bRC_OK
 
@@ -702,14 +722,16 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Defines the file to backup and creates the savepkt.
         """
         guest_name = str(self.options.guestid)
-        self.file_to_backup = self._get_virtual_path() + str(self.options.guestid) + ".conf"
+        self.file_to_backup = (
+            self._get_virtual_path() + str(self.options.guestid) + ".conf"
+        )
         self.conffile = self._get_vmconf_path(guest_name)
 
         if self.vmconfig is None:
             if not self._vm_is_running():
                 bareosfd.JobMessage(
                     bareosfd.M_FATAL,
-                    f"vm {guest_name} does not exist or is not running."
+                    f"vm {guest_name} does not exist or is not running.",
                 )
                 return bareosfd.bRC_Error
 
@@ -724,8 +746,9 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if result != bareosfd.bRC_OK:
                 return result
 
-        bareosfd.DebugMessage(100,
-            f"backing up {self.file_to_backup} from {self.conffile}\n")
+        bareosfd.DebugMessage(
+            100, f"backing up {self.file_to_backup} from {self.conffile}\n"
+        )
 
         mystatp = bareosfd.StatPacket()
         try:
@@ -765,7 +788,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if mystatp.st_mtime > last_job_time:
                 bareosfd.JobMessage(
                     bareosfd.M_ERROR,
-                    "VM configuration has changed, please run a full backup."
+                    "VM configuration has changed, please run a full backup.",
                 )
                 return bareosfd.bRC_Error
 
@@ -800,9 +823,9 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         level = chr(self.level)
         write_started = True
 
-        if level == 'F':
+        if level == "F":
             op = "backup"
-        elif level == 'I':
+        elif level == "I":
             op = "incr"
         else:
             assert False
@@ -816,7 +839,6 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             stdout=subprocess.PIPE,
             stderr=self.log_pipe,
         )
-
 
         if not self._check_io_process():
             return bareosfd.bRC_Error
@@ -842,9 +864,10 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         storage_cfg = PVEStorageConfig()
         storage_cfg.parse_config()
-        args = [ "/usr/bin/qemu-storage-daemon",
-             "--nbd-server",
-            f"addr.type=inet,addr.host=127.0.0.1,addr.port={restore_nbd_port}"
+        args = [
+            "/usr/bin/qemu-storage-daemon",
+            "--nbd-server",
+            f"addr.type=inet,addr.host=127.0.0.1,addr.port={restore_nbd_port}",
         ]
 
         for d in self.disk_names:
@@ -855,12 +878,12 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, f"running qemu-storage-daemon: {" ".join(args)} ")
 
         self.qsd_process = subprocess.Popen(args)
-         # give qemu storage daemon chance to start
+        # give qemu storage daemon chance to start
         time.sleep(1)
         # TODO: check if port is open instead of just sleeping
         bareosfd.JobMessage(
             bareosfd.M_INFO,
-            f"Started qemu-storage-daemon at NBD port {self.nbd_port} " \
+            f"Started qemu-storage-daemon at NBD port {self.nbd_port} "
             f"pid {self.qsd_process.pid}\n",
         )
 
@@ -879,10 +902,10 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         basename = os.path.basename(restorepkt.ofname)
         bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {basename}\n")
 
-        if restorepkt.ofname.endswith('.conf'):
+        if restorepkt.ofname.endswith(".conf"):
             return bareosfd.bRC_OK
 
-        elif restorepkt.ofname.endswith('.bchunks'):
+        elif restorepkt.ofname.endswith(".bchunks"):
             # Start the external process if it is not
             # already started. The pipe will be
             # reused for multiple bchunk files
@@ -902,11 +925,13 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     cmd = self._build_cmd("restore")
 
                 bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
-                self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
-                    cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=self.log_pipe,
-                    stderr=self.log_pipe,
+                self.io_process = (
+                    subprocess.Popen(  # pylint: disable=consider-using-with
+                        cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=self.log_pipe,
+                        stderr=self.log_pipe,
+                    )
                 )
 
                 self._despool_log(init_timeout=100)
@@ -945,10 +970,13 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif chr(self.level) == " ":
             if iop.fname.endswith(".conf"):
                 # restore config to temporary file
-                self.file = tempfile.NamedTemporaryFile("wb", prefix="bqmp",
-                    delete=False, delete_on_close=False)
+                self.file = tempfile.NamedTemporaryFile(
+                    "wb", prefix="bqmp", delete=False, delete_on_close=False
+                )
                 self.conffile = self.file.name
-                bareosfd.DebugMessage(100, f"restoring config to file {self.conffile}\n")
+                bareosfd.DebugMessage(
+                    100, f"restoring config to file {self.conffile}\n"
+                )
                 iop.filedes = self.file.fileno()
             else:
                 # restore to io_process' stdin
@@ -1024,18 +1052,18 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         ro_suffix = ".conf.ro"
         if not rop.object_name.endswith(ro_suffix):
-            bareosfd.JobMessage(bareosfd.M_FATAL,
-                f"invalid restore object {rop.object_name}"
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}"
             )
             return bareosfd.bRC_Error
 
         configdata = rop.object.decode()
 
         guestid = os.path.basename(rop.object_name)
-        guestid = guestid[:-len(ro_suffix)]
+        guestid = guestid[: -len(ro_suffix)]
         if not guestid.isdigit():
-            bareosfd.JobMessage(bareosfd.M_FATAL,
-                f"invalid restore object {rop.object_name}"
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"invalid restore object {rop.object_name}"
             )
             return bareosfd.bRC_Error
 
@@ -1074,8 +1102,8 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if not failed:
             return bareosfd.bRC_OK
 
-        bareosfd.JobMessage(bareosfd.M_FATAL,
-            "VM configuration has changed, please run a full backup."
+        bareosfd.JobMessage(
+            bareosfd.M_FATAL, "VM configuration has changed, please run a full backup."
         )
         return bareosfd.bRC_Error
 
@@ -1087,7 +1115,7 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # tell the process we're done writing
             if self.io_process is not None:
                 self.io_process.stdin.close()
-                #self._despool_log(init_timeout=0)
+                # self._despool_log(init_timeout=0)
 
                 if not self._wait_for_io_process():
                     return bareosfd.bRC_Error
@@ -1117,9 +1145,9 @@ class BareosFdQmp(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, "end_job() called\n")
         self._cleanup_job()
         if chr(self.level) == " ":
-                # start vm if it was running
-                if self.vm_was_running:
-                    self._start_vm()
+            # start vm if it was running
+            if self.vm_was_running:
+                self._start_vm()
 
         bareosfd.DebugMessage(100, "end_job(): returning bRC_OK\n")
         return bareosfd.bRC_OK

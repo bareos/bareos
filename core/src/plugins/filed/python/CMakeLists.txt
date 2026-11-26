@@ -154,6 +154,17 @@ if(ENABLE_PROXMOX_PLUGIN)
   list(APPEND PYFILES proxmox/bareos-fd-proxmox.py)
 endif()
 
+if(ENABLE_PROXMOX_QMP_PLUGIN)
+  list(APPEND PYFILES proxmox-qmp/bareos-fd-proxmox-qmp.py
+       proxmox-qmp/proxmox_qmp_nbd.py
+  )
+  install(
+    PROGRAMS proxmox-qmp/bareos_proxmox_qmp.py
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
+endif()
+
 install(
   FILES ${PYFILES}
   DESTINATION ${plugindir}
