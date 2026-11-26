@@ -44,12 +44,12 @@ set_postgresql_environment_variables "${catalog}"
 
 PGOPTIONS="--client-min-messages=warning"
 working_dir="$(get_working_dir)"
-DUMP="${working_dir}/${PGDATABASE}.sql"
+DUMP="${working_dir}/${PGDATABASE}.dump"
 
 cd "${working_dir}"
 rm -f "${DUMP}"
 # Keep export line used on csh
 export PGHOST PGPORT PGSOCKET PGDATABASE PGUSER PGPASSWORD PGOPTIONS DUMP
-pg_dump --format=plain --encoding=SQL_ASCII --clean --file="${DUMP}" "${PGDATABASE}"
+pg_dump --format=custom --encoding=SQL_ASCII --clean --file="${DUMP}" "${PGDATABASE}"
 
 exit $?
