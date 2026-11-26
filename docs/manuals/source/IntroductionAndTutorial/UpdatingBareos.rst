@@ -493,10 +493,7 @@ installed.
 .. warning::
 
    Installing the PHP WebUI on Bareos 26 is not recommended. It is
-   planned to reach end of life (EOL) in Bareos 27. Use the Vue WebUI for new
-   installations and plan to migrate existing PHP WebUI installations before
-   upgrading to Bareos 27. Retaining the PHP WebUI during the
-   Bareos 26 upgrade allows time for this transition.
+   planned to reach end of life (EOL) in Bareos 27.
 
 If the PHP WebUI is still required during the transition, explicitly
 select :file:`bareos-webui-php`.
