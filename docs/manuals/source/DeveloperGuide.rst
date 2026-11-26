@@ -4,6 +4,7 @@ Developer Guide
 .. toctree::
 
    DeveloperGuide/generaldevel.rst
+   DeveloperGuide/adr/index.rst
    DeveloperGuide/BuildAndTestBareos.rst
    DeveloperGuide/AutomaticVersionGeneration.rst
    DeveloperGuide/ReleasingBareos.rst

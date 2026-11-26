@@ -76,16 +76,17 @@ This table should give an overview about the different settings:
 
 |               | on install | on boot (enable)                      | on update                                 | tested on    | changed?   |
 | ---- | ---- | ---- | ---- | ----- | ---- |
-| RPM (RH)      |  -         | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  -         |
-| RPM (SUSE)    |  -         | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  -         |
-| DEB           |  -         | dir,sd,fd (deb-systemd-helper)        | fd (deb-systemd-invoke try-restart)       | Ubuntu 20.04 | [1019](https://github.com/bareos/bareos/pull/1019|PR #1019), [1029](https://github.com/bareos/bareos/pull/1029|PR #1029) |
-| PKG (FreeBSD) |  -         | -                                     | -                                         | FreeBSD 14   |  -         |
-| MSI (Windows) |  dir,sd,fd | dir,sd,fd                             | dir,sd,fd                                 | Windows 10   |  -         |
+| RPM (RH)      |  `-`       | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  `-`       |
+| RPM (SUSE)    |  `-`       | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  `-`       |
+| DEB           |  `-`       | dir,sd,fd (deb-systemd-helper)        | fd (deb-systemd-invoke try-restart)       | Ubuntu 20.04 | [1019](https://github.com/bareos/bareos/pull/1019), [1029](https://github.com/bareos/bareos/pull/1029) |
+| PKG (FreeBSD) |  `-`       | `-`                                   | `-`                                       | FreeBSD 14   |  `-`       |
+| MSI (Windows) |  dir,sd,fd | dir,sd,fd                             | dir,sd,fd                                 | Windows 10   |  `-`       |
 
 
 **Bareos <= 20**
+
 |            | on install                       | on boot (enable)                      | on update                                 | tested on    | changed? |
 | ---- | ---- | ---- | ---- | ----- | ---- |
-| RPM (RH)   |  -                               | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  -       |
-| RPM (SUSE) |  -                               | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  -       |
-| DEB        | fd (invoke-rc.d bareos-fd start) | dir,sd,fd (dh_systemd_enable)         |   .                                       | Debian 9     |  -       |
+| RPM (RH)   |  `-`                             | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  `-`     |
+| RPM (SUSE) |  `-`                             | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  `-`     |
+| DEB        | fd (invoke-rc.d bareos-fd start) | dir,sd,fd (dh_systemd_enable)         |   .                                       | Debian 9     |  `-`     |

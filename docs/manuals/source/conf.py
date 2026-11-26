@@ -401,6 +401,7 @@ scv_banner_main_ref = "bareos-25"
 plantuml_output_format = "svg_img"
 
 m2r_anonymous_references = True
+m2r_parse_relative_links = True
 
 #
 # code-block highlighting
