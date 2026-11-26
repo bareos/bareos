@@ -431,7 +431,7 @@ prerelease before upgrading to Bareos 26. Verify that the compatibility
 package depends on :file:`bareos-webui-php` and that the latter owns the
 PHP WebUI application files.
 
-At 26, the PHP WebUI upgrades as :file:`bareos-webui-php`.
+In Bareos 26, the PHP WebUI is provided by :file:`bareos-webui-php`.
 On Debian-based systems, :file:`bareos-webui` upgrades to a metapackage
 depending on :file:`bareos-webui-vue`. On RPM-based systems, the
 compatibility package from 25 requires :file:`bareos-webui-vue` once the
