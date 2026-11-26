@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: Decrease Incus log verbosity [PR #2922]
 - dird: fix not checking if file exists when writing bsr [PR #2934]
 - webui: fix missing csrf token in form [PR #2941]
+- core: stored increase MaximumChangerWait default to 900 [PR #2948]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2464,5 +2465,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2934]: https://github.com/bareos/bareos/pull/2934
 [PR #2935]: https://github.com/bareos/bareos/pull/2935
 [PR #2941]: https://github.com/bareos/bareos/pull/2941
+[PR #2948]: https://github.com/bareos/bareos/pull/2948
 [PR #2949]: https://github.com/bareos/bareos/pull/2949
 [unreleased]: https://github.com/bareos/bareos/tree/master
