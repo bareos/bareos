@@ -18,7 +18,8 @@ The resulting file should be saved using the filename format `<NNNN>-<slug>.md` 
 
 That file should then be added to your Git branch in an individual commit.
 Add a corresponding page under `docs/manuals/source/DeveloperGuide/adr` and
-include it in that directory's `index.rst` so the ADR appears in the Developer Guide.
+include it in that directory's `index.rst` with an explicit title containing its
+number so the ADR appears in the Developer Guide.
 
 ### Accepting an ADR
 When an ADR had been discussed and agreed upon, its *Status* will be changed to **accepted**. If the ADR isn't numbered yet, a number must be assigned and the name of the file must be updated.
