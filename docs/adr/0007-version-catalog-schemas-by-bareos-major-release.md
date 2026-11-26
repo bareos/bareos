@@ -29,9 +29,19 @@ How should Bareos version catalog schema changes during development while retain
 
 Chosen option: "Assign sequential versions within the target Bareos major's `NNxx` range."
 
-Release planning identifies the target stable Bareos major for schema changes. A schema change intended for Bareos 26 uses the 26xx range: the first such schema version is 2600, followed by 2601, 2602, and so on for subsequent schema changes in that major. Each schema-changing update gets a migration from the preceding catalog version, and fresh-catalog creation must report the current schema version.
+The major number of the current Bareos development version determines the schema version's prefix. A schema change targeting Bareos 26 uses the 26xx range: the first such schema version is 2600, followed by 2601, 2602, and so on for subsequent schema changes in that major. Each schema-changing update gets a migration from the preceding catalog version, and fresh-catalog creation must report the current schema version.
 
-The release process selects the target major prefix; it does not create a version-only migration. If a software release does not change the catalog schema, the database version remains unchanged. At a major boundary, the migration still upgrades directly from the latest preceding schema to the first schema version for the new target major.
+For example:
+
+| Development version | Preceding schema | Schema change | Resulting schema |
+| --- | ---: | --- | ---: |
+| `26.0.0~pre` | 2260 | Yes | 2600 |
+| `26.0.0~pre` | 2600 | Yes | 2601 |
+| `26.1.0~pre` | 2601 | Yes | 2602 |
+| `27.0.0~pre` | 2602 | No | 2602 |
+| `27.0.0~pre` | 2602 | Yes | 2700 |
+
+The minor version and prerelease suffix do not determine the sequence number. A software release without a catalog schema change leaves the database version unchanged, even across a major boundary. When a schema change occurs at a major boundary, its migration upgrades directly from the latest preceding schema to the first schema version for the new major.
 
 Adopt this numbering prospectively. The next schema change targeting Bareos 26 will transition existing version 2260 catalogs directly to 2600. This is a one-time transition from the legacy numbering scheme; do not rename or replay earlier released migrations. Adopting this policy alone leaves the catalog at version 2260.
 
