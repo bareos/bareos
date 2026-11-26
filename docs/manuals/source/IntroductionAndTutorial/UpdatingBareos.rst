@@ -432,13 +432,10 @@ package depends on :file:`bareos-webui-php` and that the latter owns the
 PHP WebUI application files.
 
 In Bareos 26, the PHP WebUI is provided by :file:`bareos-webui-php`.
-On Debian-based systems, :file:`bareos-webui` upgrades to a metapackage
-depending on :file:`bareos-webui-vue`. On RPM-based systems, the
-compatibility package from 25 requires :file:`bareos-webui-vue` once the
-PHP WebUI package reaches version 26. Consequently, the upgrade retains
-the PHP WebUI and automatically adds the Vue WebUI and
-:file:`bareos-webui-proxy`, even if the Vue WebUI preview was never
-installed.
+Upgrading :file:`bareos-webui` to Bareos 26 switches it from the PHP WebUI
+to the Vue WebUI. The upgrade retains the PHP WebUI and automatically
+installs the Vue WebUI and :file:`bareos-webui-proxy`, even if the Vue
+WebUI preview was never installed.
 
 On Debian-based systems, during an upgrade from the Bareos 25
 :file:`bareos-webui` compatibility package, the Bareos 26 metapackage marks
